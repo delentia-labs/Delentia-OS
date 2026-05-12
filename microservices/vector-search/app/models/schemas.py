@@ -2,7 +2,7 @@
 Pydantic Models for Vector Search API - ALGO-16
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from typing import List, Dict, Any, Optional
 
 
@@ -29,7 +29,15 @@ class IndexRequest(BaseModel):
         if not v:
             raise ValueError("Cannot be empty")
         return v
-    
+
+    @model_validator(mode='after')
+    def check_vectors_ids_match(self) -> 'IndexRequest':
+        if len(self.vectors) != len(self.ids):
+            raise ValueError(
+                f"vectors length ({len(self.vectors)}) must match ids length ({len(self.ids)})"
+            )
+        return self
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
