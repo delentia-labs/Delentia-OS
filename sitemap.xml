@@ -2,174 +2,186 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://rctlabs.github.io/rct-platform/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/changelog/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/contributing/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/testing/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/algorithms/mee/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/algorithms/moip/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/algorithms/overview/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/algorithms/tier9-autonomy/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/api/control-plane/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/api/microservices/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/KERNEL_RFC_002_PROCESS_MODEL/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/KERNEL_RFC_003_SCHEDULER/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/KERNEL_RFC_004_IPC/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/KERNEL_RFC_005_SYSCALL/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/KERNEL_RFC_006_FAULT_ISOLATION/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/architecture/observability/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/benchmark/hallucination-methodology/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/benchmark/methodology/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/community/DISCUSSIONS_STARTER_THREADS/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/community/GITHUB_UI_LAUNCH_CHECKLIST/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/architecture/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/fdia/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
+    </url>
+    <url>
+         <loc>https://rctlabs.github.io/rct-platform/concepts/genome-system/</loc>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/governance/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/intent-loop/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/jitna/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/rct-7-thinking/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/concepts/signedai/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
+    </url>
+    <url>
+         <loc>https://rctlabs.github.io/rct-platform/concepts/vault-1068/</loc>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/distribution/CLAIM_REGISTRY/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/distribution/LAUNCH_EVIDENCE_PACK/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/distribution/OPERATIONS_PLAYBOOK/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/distribution/PLATFORM_KITS/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/getting-started/cli-reference/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/getting-started/installation/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/getting-started/quickstart/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/release/PUBLIC_RELEASE_PROVENANCE/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/release/RELEASE_READINESS_CHECKLIST/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/release/SOCIAL_LAUNCH_EXECUTION_PLAN/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/use-cases/devops/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/use-cases/finance/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/use-cases/game-ai/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/use-cases/healthcare/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
     </url>
     <url>
          <loc>https://rctlabs.github.io/rct-platform/use-cases/supply-chain/</loc>
-         <lastmod>2026-05-04</lastmod>
+         <lastmod>2026-05-12</lastmod>
+    </url>
+    <url>
+         <loc>https://rctlabs.github.io/rct-platform/use-cases/trading-agent-architecture/</loc>
+         <lastmod>2026-05-12</lastmod>
     </url>
 </urlset>
