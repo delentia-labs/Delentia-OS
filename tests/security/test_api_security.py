@@ -103,7 +103,11 @@ except Exception:
 @pytest.mark.skipif(not VECTOR_AVAILABLE, reason="vector-search not importable")
 class TestVectorSearchSecurity:
     def setup_method(self):
-        self.client = TestClient(vector_app)
+        self._cm = TestClient(vector_app)
+        self.client = self._cm.__enter__()
+
+    def teardown_method(self):
+        self._cm.__exit__(None, None, None)
 
     def test_health_endpoint(self):
         r = self.client.get("/vector/health")
