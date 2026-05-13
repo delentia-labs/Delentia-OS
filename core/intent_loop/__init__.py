@@ -24,6 +24,13 @@ To run the reference service::
     uvicorn loop_api:app --reload
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
-__all__: list = []
+from .models import IntentBlueprint, FarmResult  # noqa: F401
+from .intent_farmer import IntentFarmer  # noqa: F401
+
+__all__ = [
+    "IntentFarmer",
+    "IntentBlueprint",
+    "FarmResult",
+]
