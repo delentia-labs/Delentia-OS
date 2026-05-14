@@ -10,12 +10,14 @@ Tests:
 
 import sys
 import os
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from core.intent_loop import IntentFarmer, IntentBlueprint, FarmResult
-from core.intent_loop.models import IntentBlueprint, FarmResult  # direct import sanity
+from core.intent_loop.models import (  # direct import sanity — aliases avoid F811  # noqa: F401
+    IntentBlueprint as _IntentBlueprintModel,
+    FarmResult as _FarmResultModel,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

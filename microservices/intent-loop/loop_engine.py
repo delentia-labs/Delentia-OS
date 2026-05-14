@@ -32,9 +32,9 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(_LOOP_ENGINE_DIR))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from core.fdia.fdia import FDIAScorer, NPCAction, NPCIntentType  # Gap 4
-from core.delta_engine.memory_delta import MemoryDeltaEngine  # Gap 5
-from signedai.core.registry import HexaCoreRegistry, HexaCoreRole  # Gap 7
+from core.fdia.fdia import FDIAScorer, NPCAction, NPCIntentType  # Gap 4  # noqa: E402
+from core.delta_engine.memory_delta import MemoryDeltaEngine  # Gap 5  # noqa: E402
+from signedai.core.registry import HexaCoreRegistry, HexaCoreRole  # Gap 7  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

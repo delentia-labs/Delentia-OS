@@ -21,7 +21,8 @@ from .models import FarmResult, IntentBlueprint
 # Lazy-import the real FDIAScorer so the module still imports when the private
 # core SDK is not on the path (useful in isolated unit-test environments).
 try:
-    import sys, os as _os
+    import sys
+    import os as _os
     _FARMER_DIR = _os.path.dirname(_os.path.abspath(__file__))
     _PROJECT_ROOT = _os.path.abspath(_os.path.join(_FARMER_DIR, "../.."))
     if _PROJECT_ROOT not in sys.path:

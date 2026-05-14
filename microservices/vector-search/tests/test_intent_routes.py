@@ -21,7 +21,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.vector_engine import VectorEngine
 from app.backends.faiss_backend import FAISSBackend
-from app.api import routes
 from app.api.intent_routes import set_intent_vector_engine
 
 # ─────────────────────────────────────────────────────────────────────────────
