@@ -33,8 +33,8 @@ try:
 except ImportError:
     _FDIA_AVAILABLE = False
     FDIAScorer = None  # type: ignore[assignment,misc]
-    NPCAction = None  # type: ignore[assignment]
-    NPCIntentType = None  # type: ignore[assignment]
+    NPCAction = None  # type: ignore[assignment,misc]
+    NPCIntentType = None  # type: ignore[assignment,misc]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
