@@ -9,6 +9,7 @@ import os
 from contextlib import asynccontextmanager
 
 from .api import routes
+from .api.intent_routes import router as intent_router, set_intent_vector_engine
 from .core.vector_engine import VectorEngine
 from .backends.faiss_backend import FAISSBackend
 from .backends.qdrant_backend import QdrantBackend
@@ -75,6 +76,7 @@ async def lifespan(app: FastAPI):
     # Create engine
     engine = VectorEngine(backend, dimension)
     routes.set_vector_engine(engine)
+    set_intent_vector_engine(engine)  # Phase 2: intent vector routes
     
     logger.info("✅ Vector Search Service ready on port 8016")
     logger.info(f"   Backend: {backend_type}")
@@ -124,6 +126,7 @@ async def root():
 
 # Include routers
 app.include_router(routes.router)
+app.include_router(intent_router)  # Phase 2: intent vector endpoints
 
 
 @app.exception_handler(Exception)

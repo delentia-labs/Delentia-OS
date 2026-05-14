@@ -21,6 +21,20 @@ import asyncio
 import logging
 import hashlib
 import json
+import sys
+import os
+
+# Ensure project root is on the path so core.* and signedai.* are importable
+# when the module is loaded directly (e.g. during unit tests) rather than via
+# the installed package.
+_LOOP_ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(_LOOP_ENGINE_DIR))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from core.fdia.fdia import FDIAScorer, NPCAction, NPCIntentType  # Gap 4  # noqa: E402
+from core.delta_engine.memory_delta import MemoryDeltaEngine  # Gap 5  # noqa: E402
+from signedai.core.registry import HexaCoreRegistry, HexaCoreRole  # Gap 7  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +59,7 @@ class JITNAPacket:
     user_id: Optional[str] = None
     session_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
+    intent_hash: Optional[str] = None  # Optional pre-computed hash (Gap 5: MemoryDeltaEngine)
     
     def compute_hash(self) -> str:
         """Compute semantic hash for similarity matching"""
@@ -99,29 +114,71 @@ class IntentResult:
 class FDIAGatekeeper:
     """
     Pillar 1: FDIA Gatekeeper (Input Layer)
-    
+
     Enforces: F = (D^I) × A
     - F: Final Output
     - D: Data Quality
     - I: Intent Clarity
     - A: Architect Approval (Human-in-the-loop)
+
+    Integration: Uses FDIAScorer from core.fdia.fdia for mathematical scoring
+    in addition to keyword/length pre-filtering.
     """
-    
+
+    # FDIA score threshold — intents below this are rejected as low quality
+    FDIA_THRESHOLD: float = 0.25
+
     def __init__(self):
         self.constitution_rules = {
             "max_intent_length": 1000,
             "forbidden_keywords": ["hack", "exploit", "bypass"],
             "require_human_approval": False  # Can be enabled for sensitive ops
         }
-        logger.info("FDIAGatekeeper initialized")
-    
+        # SDK integration: use FDIAScorer for mathematical quality scoring
+        self.scorer = FDIAScorer()
+        logger.info("FDIAGatekeeper initialized (FDIAScorer active)")
+
+    # --- static helpers ------------------------------------------------
+
+    @staticmethod
+    def _map_intent_to_npc_type(intent_text: str) -> NPCIntentType:
+        """Map free-text intent to the closest NPCIntentType for FDIA scoring."""
+        text = intent_text.lower()
+        if any(k in text for k in ("protect", "secure", "defend", "guard", "prevent", "safety")):
+            return NPCIntentType.PROTECT
+        if any(k in text for k in ("buy", "sell", "trade", "invest", "profit", "market", "earn", "revenue")):
+            return NPCIntentType.ACCUMULATE
+        if any(k in text for k in ("join", "connect", "share", "collaborate", "team", "partner")):
+            return NPCIntentType.BELONG
+        # Default: DISCOVER — covers analyze, research, learn, build, find, etc.
+        return NPCIntentType.DISCOVER
+
+    @staticmethod
+    def _action_type_for(intent_type: NPCIntentType) -> str:
+        """Return a compatible action type string for the given NPCIntentType."""
+        mapping = {
+            NPCIntentType.PROTECT:    "defend",
+            NPCIntentType.ACCUMULATE: "trade",
+            NPCIntentType.BELONG:     "cooperate",
+            NPCIntentType.DISCOVER:   "explore",
+            NPCIntentType.DOMINATE:   "attack",
+            NPCIntentType.NEUTRAL:    "idle",
+        }
+        return mapping.get(intent_type, "explore")
+
     async def validate(self, packet: JITNAPacket) -> bool:
         """
-        Validate intent against FDIA constitution
-        
+        Validate intent against FDIA constitution.
+
+        Pipeline:
+        1. Length guard (fast pre-filter)
+        2. Forbidden keyword check (fast pre-filter)
+        3. FDIAScorer mathematical quality gate
+        4. Human approval gate (if enabled)
+
         Returns:
             True if intent passes all checks
-        
+
         Raises:
             SecurityViolation if intent violates rules
         """
@@ -129,20 +186,37 @@ class FDIAGatekeeper:
         if len(packet.intent) > self.constitution_rules["max_intent_length"]:
             logger.warning(f"Intent too long: {len(packet.intent)} chars")
             raise SecurityViolation("Intent exceeds maximum length")
-        
+
         # Rule 2: Forbidden keyword check
         intent_lower = packet.intent.lower()
         for keyword in self.constitution_rules["forbidden_keywords"]:
             if keyword in intent_lower:
                 logger.error(f"Forbidden keyword detected: {keyword}")
                 raise SecurityViolation(f"Intent contains forbidden keyword: {keyword}")
-        
-        # Rule 3: Human approval (if required)
+
+        # Rule 3: FDIAScorer mathematical quality gate
+        intent_type = self._map_intent_to_npc_type(packet.intent)
+        action_type = self._action_type_for(intent_type)
+        action = NPCAction(
+            action_id=packet.compute_hash()[:16],
+            action_type=action_type,
+        )
+        fdia_score = self.scorer.score_action(
+            agent_intent=intent_type,
+            action=action,
+            agent_reputation=1.0,
+            governance_penalty=0.0,
+        )
+        if fdia_score < self.FDIA_THRESHOLD:
+            logger.warning(f"FDIA score too low: {fdia_score:.3f} < {self.FDIA_THRESHOLD}")
+            raise SecurityViolation(f"FDIA score below threshold: {fdia_score:.3f}")
+
+        # Rule 4: Human approval (if required)
         if self.constitution_rules["require_human_approval"]:
             # In production: send to approval queue
             logger.info("Intent requires human approval")
-        
-        logger.info(f"Intent validated: {packet.intent[:50]}...")
+
+        logger.info(f"Intent validated (FDIA={fdia_score:.3f}): {packet.intent[:50]}...")
         return True
 
 
@@ -159,8 +233,19 @@ class MemoryLayer:
     def __init__(self):
         # In-memory cache (production: use Redis/Qdrant)
         self.cache: Dict[str, MemoryHit] = {}
-        self.compression_ratio = 3.74  # Average compression from Delta Engine
-        logger.info("MemoryLayer initialized")
+        # SDK integration: MemoryDeltaEngine for live compression tracking (Gap 5)
+        self.delta_engine = MemoryDeltaEngine()
+        self._tick: int = 0  # monotonic tick counter for delta recording
+        logger.info("MemoryLayer initialized (MemoryDeltaEngine active)")
+
+    @property
+    def compression_ratio(self) -> float:
+        """Live compression ratio from MemoryDeltaEngine (replaces hardcoded 3.74)."""
+        cr = self.delta_engine.compute_compression_ratio()
+        if cr <= 0.0 or cr >= 1.0:
+            return 3.74  # fallback before enough data is recorded
+        # cr is 0-1 fractional compression; convert to multiplier form
+        return round(1.0 / (1.0 - cr), 2)
     
     async def recall(self, packet: JITNAPacket) -> Optional[MemoryHit]:
         """
@@ -219,12 +304,33 @@ class MemoryLayer:
             packet: Original JITNA packet
             result: Computation result
         """
-        intent_hash = packet.compute_hash()
-        
-        # Simulate Delta compression
+        intent_hash = packet.intent_hash or packet.compute_hash()
         original_size = len(json.dumps(result))
-        compressed_size = int(original_size / self.compression_ratio)
-        
+
+        # Register this intent in the DeltaEngine if not already tracked (Gap 5)
+        if intent_hash not in self.delta_engine.baseline_states:
+            self.delta_engine.register_agent(
+                agent_id=intent_hash,
+                initial_intent=NPCIntentType.DISCOVER,
+                initial_resources={"size_bytes": float(original_size)},
+            )
+
+        # Record a delta for this store operation
+        self._tick += 1
+        self.delta_engine.record_delta(
+            agent_id=intent_hash,
+            tick=self._tick,
+            intent_type=NPCIntentType.DISCOVER,
+            action_type="process",
+            outcome="success",
+            resource_changes={"size_bytes": float(original_size)},
+            extra_changes={"intent_preview": packet.intent[:50]},
+        )
+
+        # Compute compressed size via live compression ratio
+        ratio = self.compression_ratio  # uses delta_engine under the hood
+        compressed_size = int(original_size / max(ratio, 1.0))
+
         memory_hit = MemoryHit(
             intent_hash=intent_hash,
             result={
@@ -237,59 +343,109 @@ class MemoryLayer:
             last_accessed=datetime.now(),
             delta_size=compressed_size
         )
-        
+
         self.cache[intent_hash] = memory_hit
-        logger.info(f"Stored in memory: {intent_hash[:16]}... (compressed {original_size} → {compressed_size} bytes)")
+        logger.info(
+            f"Stored in memory: {intent_hash[:16]}... "
+            f"(delta tick={self._tick}, {original_size} → {compressed_size} bytes, "
+            f"ratio={ratio:.2f}x)"
+        )
 
 
 class SpecialistExecutor:
     """
     Pillar 3: Specialist Execution (Compute Layer)
-    
-    Routes intent to appropriate specialist module for processing
+
+    Routes intent to the appropriate HexaCore specialist model for processing.
+    Integration: HexaCoreRegistry from signedai.core.registry (Gap 7)
     """
-    
+
+    # Maps intent keywords → HexaCoreRole for model selection
+    _TASK_ROLE_MAP: Dict[str, HexaCoreRole] = {
+        # Regional check first (most specific)
+        "thai":      HexaCoreRole.REGIONAL_THAI,
+        "ภาษา":      HexaCoreRole.REGIONAL_THAI,
+        # Builder roles
+        "code":      HexaCoreRole.LEAD_BUILDER,
+        "program":   HexaCoreRole.LEAD_BUILDER,
+        "debug":     HexaCoreRole.LEAD_BUILDER,
+        # Specialist roles
+        "analyze":   HexaCoreRole.SPECIALIST,
+        "finance":   HexaCoreRole.SPECIALIST,
+        "health":    HexaCoreRole.SPECIALIST,
+        # Librarian roles
+        "research":  HexaCoreRole.LIBRARIAN,
+        "document":  HexaCoreRole.LIBRARIAN,
+        "rag":       HexaCoreRole.LIBRARIAN,
+        # Humanizer roles
+        "translate":  HexaCoreRole.HUMANIZER,
+        "creative":  HexaCoreRole.HUMANIZER,
+    }
+
     def __init__(self):
         self.specialists: Dict[str, Any] = {}
-        logger.info("SpecialistExecutor initialized")
-    
+        # SDK integration: HexaCoreRegistry for dynamic model routing (Gap 7)
+        self.registry = HexaCoreRegistry()
+        logger.info("SpecialistExecutor initialized (HexaCoreRegistry active)")
+
+    def _select_model(self, intent: str) -> tuple[str, HexaCoreRole]:
+        """Select model ID + role from HexaCoreRegistry based on intent content."""
+        intent_lower = intent.lower()
+        for keyword, role in self._TASK_ROLE_MAP.items():
+            if keyword in intent_lower:
+                model_id = self.registry.get_model_id(role)
+                return model_id, role
+        # Default: SUPREME_ARCHITECT for complex / unclassified intents
+        role = HexaCoreRole.SUPREME_ARCHITECT
+        return self.registry.get_model_id(role), role
+
     async def execute(self, packet: JITNAPacket) -> Dict[str, Any]:
         """
-        Execute intent using specialist module
-        
+        Execute intent using the HexaCore-selected specialist model.
+
         Args:
             packet: JITNA packet with intent
-        
+
         Returns:
             Result from specialist processing
         """
-        # In production: route to actual specialist modules
-        # For MVP: simulate processing
-        
-        await asyncio.sleep(0.1)  # Simulate computation time
-        
+        model_id, role = self._select_model(packet.intent)
+
+        # In production: send packet.intent to model_id via OpenRouter API
+        # For reference implementation: simulate processing
+        await asyncio.sleep(0.1)  # Simulate API latency
+
         result = {
             "intent": packet.intent,
             "processed_at": datetime.now().isoformat(),
-            "specialist": "generic_processor",
+            "specialist": model_id,
+            "specialist_role": role.value,
             "output": f"Processed: {packet.intent}",
-            "confidence": 0.95
+            "confidence": 0.95,
         }
-        
-        logger.info(f"Specialist executed: {packet.intent[:50]}...")
+
+        logger.info(f"Specialist executed via {role.value} ({model_id}): {packet.intent[:50]}...")
         return result
 
 
 class SignedAIVerifier:
     """
     Pillar 4: SignedAI Verification (Verification Layer)
-    
-    Multi-LLM consensus voting to verify correctness
+
+    Multi-LLM consensus voting to verify correctness.
+    Integration: Model IDs sourced from HexaCoreRegistry (Gap 7)
     """
-    
+
     def __init__(self):
-        self.models = ["gpt-4o", "claude-3.5-sonnet", "gemini-1.5-pro"]
+        # SDK integration: use HexaCoreRegistry model IDs (Gap 7)
+        _reg = HexaCoreRegistry()
+        self.models = [
+            _reg.get_model_id(HexaCoreRole.SUPREME_ARCHITECT),   # claude-opus-4.6
+            _reg.get_model_id(HexaCoreRole.LEAD_BUILDER),        # kimi-k2.5
+            _reg.get_model_id(HexaCoreRole.SPECIALIST),          # gemini-3-flash
+        ]
         self.consensus_threshold = 0.67  # 2 out of 3
+        logger.info(f"SignedAIVerifier initialized with models: {self.models}")
         logger.info("SignedAIVerifier initialized")
     
     async def verify(
@@ -491,7 +647,10 @@ class IntentLoopEngine:
             "cache_hit_rate": f"{cache_hit_rate * 100:.1f}%",
             "verification_failures": self.metrics["verification_failures"],
             "memory_size": len(self.memory.cache),
-            "compression_ratio": f"{self.memory.compression_ratio}x"
+            "compression_ratio": f"{self.memory.compression_ratio}x",
+            "delta_engine_agents": self.memory.delta_engine.registered_agent_count(),
+            "delta_engine_deltas": self.memory.delta_engine.total_delta_count(),
+            "verifier_models": self.verifier.models,
         }
 
 

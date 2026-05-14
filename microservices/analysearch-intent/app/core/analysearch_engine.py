@@ -16,6 +16,27 @@ from enum import Enum
 import math
 import secrets
 import logging
+import sys
+import os
+
+_AE_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.abspath(os.path.join(_AE_DIR, "../../../.."))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+try:
+    from core.regional_adapter.regional_adapter import LanguageDetector, DetectedLanguage
+    _LANG_DETECTOR_AVAILABLE = True
+except ImportError:
+    _LANG_DETECTOR_AVAILABLE = False
+    LanguageDetector = None  # type: ignore[assignment,misc]
+
+try:
+    from core.graph_search import LocalGraphRAG as _LocalGraphRAG  # Gap 8: GraphRAG
+    _GRAPH_RAG_AVAILABLE = True
+except ImportError:
+    _GRAPH_RAG_AVAILABLE = False
+    _LocalGraphRAG = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -571,6 +592,11 @@ class AnalysearchEngine:
         self.synthesizer = CrossDisciplinarySynthesizer()
         self.mirror = MirrorModeEngine()
         self.gigo = GIGOProtector()
+        self.lang_detector = LanguageDetector() if _LANG_DETECTOR_AVAILABLE else None  # Gap 6: SDK LanguageDetector
+        try:
+            self._graph_rag = _LocalGraphRAG() if _GRAPH_RAG_AVAILABLE else None  # Gap 8: LocalGraphRAG
+        except Exception:
+            self._graph_rag = None
 
         self.sessions: Dict[str, MirrorState] = {}
         self.query_history: List[Dict] = []
@@ -660,7 +686,9 @@ class AnalysearchEngine:
 
     def _build_analysis(self, query: str, keywords: List[Dict], synthesis: Dict) -> Dict:
         """Build structured analysis from keywords and synthesis"""
-        is_thai, thai_ratio = self._detect_thai_language(query)
+        detected = self._detect_language(query)
+        is_thai = detected.code == "th"
+        thai_ratio = round(detected.confidence, 3) if is_thai else 0.0
         return {
             "query_type": self._classify_query(query),
             "complexity": self._estimate_complexity(keywords, synthesis),
@@ -674,7 +702,13 @@ class AnalysearchEngine:
             "disciplines_involved": synthesis.get("disciplines_detected", 0),
             "innovation_potential": synthesis.get("innovation_potential", 0.0),
             "recommended_depth": "deep" if synthesis.get("disciplines_detected", 0) >= 2 else "standard",
-            "language": {"is_thai": is_thai, "thai_ratio": thai_ratio},
+            "language": {
+                "is_thai": is_thai,
+                "thai_ratio": thai_ratio,
+                "lang_code": detected.code,
+                "lang_confidence": round(detected.confidence, 3),
+                "script": detected.script,
+            },
         }
 
     def _classify_query(self, query: str) -> str:
@@ -694,34 +728,57 @@ class AnalysearchEngine:
         else:
             return "exploration"
 
-    @staticmethod
-    def _detect_thai_language(text: str) -> Tuple[bool, float]:
-        """Detect if text is Thai. Returns (is_thai, thai_char_ratio)."""
+    def _detect_language(self, text: str) -> "DetectedLanguage":
+        """Detect language using SDK LanguageDetector (Gap 6). Falls back to simple Thai heuristic."""
+        if self.lang_detector is not None:
+            return self.lang_detector.detect(text)
+        # Fallback: simple Thai heuristic when SDK unavailable
         import re as _re
+        from types import SimpleNamespace
         thai_chars = len(_re.findall(r'[\u0E00-\u0E7F]', text))
         total_alpha = len(_re.findall(r'[a-zA-Z\u0E00-\u0E7F]', text))
         if total_alpha == 0:
-            return False, 0.0
+            return SimpleNamespace(code="en", confidence=0.5, script="Latin")  # type: ignore[return-value]
         ratio = round(thai_chars / total_alpha, 3)
-        return ratio >= 0.3, ratio
+        if ratio >= 0.3:
+            return SimpleNamespace(code="th", confidence=ratio, script="Thai")  # type: ignore[return-value]
+        return SimpleNamespace(code="en", confidence=1.0 - ratio, script="Latin")  # type: ignore[return-value]
 
     def _build_routing_hint(self, analysis: Dict) -> Dict:
-        """Build routing hint for model selection (G38: Typhoon Thai pre-router)."""
+        """Build routing hint for model selection (G38: multi-language ASEAN pre-router)."""
         lang_info = analysis.get("language", {})
         is_thai = lang_info.get("is_thai", False)
         thai_ratio = lang_info.get("thai_ratio", 0.0)
+        lang_code = lang_info.get("lang_code", "en")
+        lang_confidence = lang_info.get("lang_confidence", 0.0)
 
         hint: Dict = {
             "prefer_regional_thai": is_thai,
             "thai_ratio": thai_ratio,
+            "lang_code": lang_code,
+            "lang_confidence": lang_confidence,
             "recommended_task_type": analysis.get("query_type", "general"),
             "complexity": analysis.get("complexity", "low"),
         }
 
-        if is_thai and thai_ratio >= 0.5:
-            hint["model_override"] = "typhoon_v2"
-            hint["reason"] = "High Thai content — route to Typhoon v2 for optimal quality"
+        # Regional model routing for ASEAN + major languages
+        _REGIONAL_MODELS: Dict[str, tuple] = {
+            "th": ("typhoon_v2", "Thai — route to Typhoon v2 for optimal quality"),
+            "ja": ("qwen2_72b", "Japanese — route to multilingual model"),
+            "zh": ("qwen2_72b", "Chinese — route to multilingual model"),
+            "ko": ("qwen2_72b", "Korean — route to multilingual model"),
+            "vi": ("seallm_v3", "Vietnamese — route to SEA LLM"),
+            "id": ("seallm_v3", "Indonesian — route to SEA LLM"),
+            "hi": ("qwen2_72b", "Hindi — route to multilingual model"),
+            "ar": ("qwen2_72b", "Arabic — route to multilingual model"),
+        }
+
+        if lang_code in _REGIONAL_MODELS and lang_confidence >= 0.5:
+            model, reason = _REGIONAL_MODELS[lang_code]
+            hint["model_override"] = model
+            hint["reason"] = reason
         elif is_thai:
+            # Backward-compat: low-confidence Thai still gets fallback
             hint["model_fallback"] = "typhoon_v2"
             hint["reason"] = "Mixed Thai/English — Typhoon v2 as fallback"
 
@@ -811,17 +868,37 @@ class AnalysearchEngine:
         return round(keyword_score + synthesis_score + mirror_score, 3)
 
     def _find_research_sources(self, keywords: List[Dict]) -> List[Dict]:
-        """Find relevant research sources based on keywords"""
-        # In production, this would query RCTDB / GraphRAG
-        sources = []
-        for kw in keywords[:5]:
-            sources.append({
+        """Find relevant research sources using LocalGraphRAG (Gap 8)."""
+        if not keywords:
+            return []
+
+        if self._graph_rag is not None and self._graph_rag.node_count > 0:
+            # Build query from top-5 keyword terms
+            query_text = " ".join(k["keyword"] for k in keywords[:5])
+            results = self._graph_rag.search(query_text, top_k=5, min_score=0.01)
+            return [
+                {
+                    "node_id": r.node_id,
+                    "title": r.title,
+                    "source_type": "graph_rag",
+                    "relevance": r.score,
+                    "neighbors": r.neighbors,
+                    "metadata": r.metadata,
+                    "status": "available",
+                }
+                for r in results
+            ]
+
+        # Fallback: keyword-based stub (no graph data yet)
+        return [
+            {
                 "keyword": kw["keyword"],
                 "source_type": "knowledge_base",
                 "relevance": kw["score"],
-                "status": "available"
-            })
-        return sources
+                "status": "available",
+            }
+            for kw in keywords[:5]
+        ]
 
     def get_session(self, session_id: str) -> Optional[MirrorState]:
         """Get Mirror Mode session by ID"""
