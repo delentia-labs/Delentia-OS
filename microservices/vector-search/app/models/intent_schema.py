@@ -5,7 +5,7 @@ Supports indexing and searching intent embeddings with FDIA scores and JITNA tie
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class IntentVectorRecord(BaseModel):
@@ -37,7 +37,7 @@ class IntentVectorRecord(BaseModel):
         description="JITNA tier 1–9 (1=atomic, 9=meta-intent)",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp when this record was created",
     )
     metadata: Dict[str, Any] = Field(

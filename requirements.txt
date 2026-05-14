@@ -21,6 +21,7 @@ pytest-timeout>=2.3.1  # Kill tests hanging >30s — prevents WSL terminal zombi
 pytest-cov>=4.1.0      # Coverage reporting (used in CI: --cov=microservices)
 httpx>=0.25.0  # For TestClient
 numpy>=1.24.0  # Required by microservices/vector-search/conftest.py (FakeFaissIndex)
+networkx>=3.0  # Required by core/graph_search/local_graph.py (LocalGraphRAG)
 
 # Cryptography - required by rct_control_plane/signed_execution.py (ED25519 signing)
 cryptography>=41.0.0

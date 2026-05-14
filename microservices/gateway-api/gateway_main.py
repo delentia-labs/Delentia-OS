@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import sys
 import os
+import datetime as _dt
 
 # Setup paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -133,7 +134,7 @@ async def rctlabs_system_stats():
         "hallucinationRate": "0.3% benchmark",
         "version": app.version,
         "source": stats.get("source", "baseline"),
-        "timestamp": __import__('datetime').datetime.utcnow().isoformat() + "Z",
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
 
@@ -167,7 +168,7 @@ async def rctlabs_benchmark_summary():
             {"value": 200,  "suffix": "ms", "labelEn": "Response Latency",     "labelTh": "Latency", "prefix": "<"},
         ],
         "version": app.version,
-        "timestamp": __import__('datetime').datetime.utcnow().isoformat() + "Z",
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
 
