@@ -1,0 +1,29 @@
+{
+  "_comment": "RCT Platform — Sample Signed JITNA Packet. Verify with: python tools/verify_signed_ai.py tools/sample_signed_packet.json",
+  "packet": {
+    "packet_id": "27af15fd-ed78-403a-b04a-2a6e261e71cc",
+    "source_agent_id": "rct-kernel-api",
+    "target_agent_id": "rct-analysearch",
+    "message_type": "intent_request",
+    "payload": {
+      "query": "What is the FDIA constitutional equation?",
+      "intent": "discover",
+      "session_id": "demo-session-001"
+    },
+    "timestamp": "2026-05-18T03:43:54.465817+00:00",
+    "schema_version": "2.0",
+    "priority": 3,
+    "correlation_id": null,
+    "metadata": {
+      "demo": true,
+      "generated_by": "verify_signed_ai.py --generate-sample"
+    },
+    "status": "created"
+  },
+  "signature": "aba849268bd93d9a739302f21f9a3e36c7c35f1cbe7783794d2b41715a2669b2da2f2a55bd8b518dc1378c7733ea29f86d77c5062332b029190d6c5bb937570a",
+  "public_key_fingerprint": "9e7c7bdaa3c55af4b361745dac65c6cddef9a7856f3ec4aee1de30b55028a4a8",
+  "signed_at": "2026-05-18T03:43:54.465817+00:00",
+  "verified": null,
+  "algorithm": "ED25519-RFC8032",
+  "signable_content": "SHA-256({\"message_type\": \"intent_request\", \"payl...)"
+}

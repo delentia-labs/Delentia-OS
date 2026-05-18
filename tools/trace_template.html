@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCT Platform — JITNA Execution Trace</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #162032;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --red: #ef4444;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+    --violet: #8b5cf6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Courier New', monospace;
+    font-size: 14px;
+    padding: 2rem;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .page-header { margin-bottom: 2.5rem; }
+  .page-header h1 {
+    font-size: 1.5rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+  }
+  .page-header .equation {
+    color: var(--amber);
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.3rem;
+  }
+  .page-header .subtitle { color: var(--muted); font-size: 0.75rem; }
+  .page-header a { color: var(--accent); text-decoration: none; }
+  .page-header a:hover { text-decoration: underline; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.7rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Trace section */
+  .trace-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .trace-section.trace-blocked { border-color: #7f1d1d; }
+  .trace-section.trace-approved { border-color: #064e3b; }
+
+  .trace-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .trace-header h2 { font-size: 0.95rem; color: var(--text); flex: 1; }
+  .trace-status {
+    padding: 0.25rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .trace-total { color: var(--muted); font-size: 0.72rem; }
+
+  /* Timeline */
+  .timeline { padding: 1rem 1.25rem; position: relative; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 1.85rem;
+    top: 1rem;
+    bottom: 1rem;
+    width: 2px;
+    background: var(--border);
+  }
+
+  /* Event card */
+  .event {
+    position: relative;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background 0.12s;
+    margin-left: 1rem;
+  }
+  .event:hover .event-header { background: rgba(99, 102, 241, 0.06); }
+  .event-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border-left: 3px solid transparent;
+    border-radius: 6px 6px 0 0;
+    transition: background 0.12s;
+  }
+  .event-icon { font-size: 0.95rem; width: 1.4rem; text-align: center; flex-shrink: 0; }
+  .event-name { font-size: 0.72rem; font-weight: 600; flex: 1; letter-spacing: 0.06em; text-transform: uppercase; }
+  .event-ts { color: var(--muted); font-size: 0.68rem; min-width: 7rem; text-align: right; }
+  .event-dur { color: var(--amber); font-size: 0.68rem; min-width: 3.5rem; text-align: right; }
+  .event-toggle { color: var(--muted); font-size: 0.65rem; width: 0.9rem; flex-shrink: 0; transition: transform 0.15s; }
+  .event-toggle.open { transform: rotate(180deg); }
+
+  /* Event details */
+  .event-details {
+    display: none;
+    padding: 0.5rem 0.75rem 0.75rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(51, 65, 85, 0.5);
+    border-radius: 0 0 6px 6px;
+  }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+  .detail-table td {
+    padding: 0.22rem 0.4rem;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+    vertical-align: top;
+    word-break: break-all;
+  }
+  .detail-table td:first-child { color: var(--muted); width: 38%; white-space: nowrap; word-break: normal; }
+  .detail-table .meta { opacity: 0.65; font-size: 0.66rem; }
+  .detail-table tr:last-child td { border-bottom: none; }
+
+  /* Special step styles */
+  .step-blocked .event-header { background: rgba(220, 38, 38, 0.1) !important; }
+  .step-approved .event-header { background: rgba(5, 150, 105, 0.1) !important; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.68rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .legend { gap: 0.75rem; }
+    .timeline::before { display: none; }
+    .event { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>RCT Platform — JITNA Execution Trace</h1>
+  <div class="equation">F = D<sup>I</sup> × A &nbsp;—&nbsp; Constitutional AI OS</div>
+  <div class="subtitle">
+    Generated {{GENERATED_AT}} &nbsp;·&nbsp;
+    <a href="https://rctlabs.co" target="_blank">rctlabs.co</a> &nbsp;·&nbsp;
+    <a href="https://github.com/rctlabs/rct-platform" target="_blank">GitHub</a>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>intent_received</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>fdia_gate</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>fdia_score</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>signedai_consensus</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>delta_commit</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>signed_output</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>BLOCKED (A=0)</div>
+</div>
+
+{{TRACE_SECTIONS}}
+
+<footer>
+  <p>
+    RCT Platform · Apache 2.0 ·
+    <a href="https://github.com/rctlabs/rct-platform" target="_blank">github.com/rctlabs/rct-platform</a>
+    &nbsp;·&nbsp; Built by Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)
+  </p>
+</footer>
+
+<script>
+function toggleEvent(idx) {
+  const details = document.getElementById('details-' + idx);
+  const toggle  = document.getElementById('toggle-' + idx);
+  if (!details) return;
+  const isOpen = details.style.display !== 'none';
+  details.style.display = isOpen ? 'none' : 'block';
+  toggle.textContent = isOpen ? '▼' : '▲';
+  toggle.classList.toggle('open', !isOpen);
+}
+</script>
+
+</body>
+</html>
