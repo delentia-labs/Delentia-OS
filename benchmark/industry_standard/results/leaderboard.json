@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-05-18T03:51:38.970576+00:00",
+  "version": "1.0",
+  "leaderboard": [
+    {
+      "rank": 1,
+      "name": "RCT Platform",
+      "tier": "constitutional-os",
+      "params": "7 models (HexaCore)",
+      "provider": "RCT Labs",
+      "truthfulqa_mc2": null,
+      "halueval_f1": null,
+      "fdia_accuracy": 0.9167,
+      "adversarial_block_rate": 1.0,
+      "composite_score": 95.84,
+      "paper": "RCT OS Definition Paper (2025)"
+    },
+    {
+      "rank": 2,
+      "name": "Claude-3-Sonnet",
+      "tier": "closed-source",
+      "params": "~70B (est.)",
+      "provider": "Anthropic",
+      "truthfulqa_mc2": 0.78,
+      "halueval_f1": 0.76,
+      "fdia_accuracy": null,
+      "adversarial_block_rate": null,
+      "composite_score": 77.2,
+      "paper": "Claude 3 Model Card"
+    },
+    {
+      "rank": 3,
+      "name": "GPT-4 (few-shot)",
+      "tier": "closed-source",
+      "params": "~1.8T (est.)",
+      "provider": "OpenAI",
+      "truthfulqa_mc2": 0.73,
+      "halueval_f1": 0.72,
+      "fdia_accuracy": null,
+      "adversarial_block_rate": null,
+      "composite_score": 72.6,
+      "paper": "GPT-4 Technical Report"
+    },
+    {
+      "rank": 4,
+      "name": "Llama-2-70B",
+      "tier": "open-source",
+      "params": "70B",
+      "provider": "Meta",
+      "truthfulqa_mc2": 0.67,
+      "halueval_f1": 0.64,
+      "fdia_accuracy": null,
+      "adversarial_block_rate": null,
+      "composite_score": 65.8,
+      "paper": "arxiv 2307.09288"
+    },
+    {
+      "rank": 5,
+      "name": "GPT-3 (0-shot)",
+      "tier": "baseline",
+      "params": "175B",
+      "provider": "OpenAI",
+      "truthfulqa_mc2": 0.33,
+      "halueval_f1": 0.55,
+      "fdia_accuracy": null,
+      "adversarial_block_rate": null,
+      "composite_score": 41.8,
+      "paper": "arxiv 2109.07958"
+    }
+  ]
+}
