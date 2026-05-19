@@ -201,7 +201,7 @@ cython_debug/
 
 # Ad-hoc scripts and generated viewers (root-level only)
 test_script.ps1
-delta_trace_view.html
+/delta_trace_view.html
 .cursorignore
 .cursorindexingignore
 
