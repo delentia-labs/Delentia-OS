@@ -31,7 +31,6 @@ from typing import Any, Dict, List, Optional
 
 from core.delta_engine.memory_delta import (
     AgentMemoryState,
-    MemoryDelta,
     MemoryDeltaEngine,
 )
 from core.fdia.fdia import NPCIntentType
