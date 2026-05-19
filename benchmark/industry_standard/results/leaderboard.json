@@ -1,22 +1,9 @@
 {
-  "generated_at": "2026-05-18T03:51:38.970576+00:00",
+  "generated_at": "2026-05-19T03:31:05.912550+00:00",
   "version": "1.0",
   "leaderboard": [
     {
       "rank": 1,
-      "name": "RCT Platform",
-      "tier": "constitutional-os",
-      "params": "7 models (HexaCore)",
-      "provider": "RCT Labs",
-      "truthfulqa_mc2": null,
-      "halueval_f1": 0.5714,
-      "fdia_accuracy": 0.9167,
-      "adversarial_block_rate": 1.0,
-      "composite_score": 95.84,
-      "paper": "RCT OS Definition Paper (2025)"
-    },
-    {
-      "rank": 2,
       "name": "Claude-3-Sonnet",
       "tier": "closed-source",
       "params": "~70B (est.)",
@@ -27,6 +14,19 @@
       "adversarial_block_rate": null,
       "composite_score": 77.2,
       "paper": "Claude 3 Model Card"
+    },
+    {
+      "rank": 2,
+      "name": "RCT Platform",
+      "tier": "constitutional-os",
+      "params": "7 models (HexaCore)",
+      "provider": "RCT Labs",
+      "truthfulqa_mc2": 0.4703,
+      "halueval_f1": 0.5714,
+      "fdia_accuracy": 0.9167,
+      "adversarial_block_rate": 1.0,
+      "composite_score": 73.45,
+      "paper": "RCT OS Definition Paper (2025)"
     },
     {
       "rank": 3,
