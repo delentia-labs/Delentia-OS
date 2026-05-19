@@ -1,0 +1,53 @@
+{
+  "benchmark": "TruthfulQA",
+  "method": "FDIA Heuristic Proxy (no LLM API)",
+  "run_timestamp": "2026-05-19T03:30:01.813043+00:00",
+  "samples_evaluated": 100,
+  "mc1_accuracy": 0.22,
+  "mc2_accuracy": 0.4703,
+  "gpt3_baseline_mc1": 0.21,
+  "gpt3_baseline_mc2": 0.33,
+  "delta_mc1_vs_gpt3": 0.01,
+  "delta_mc2_vs_gpt3": 0.1403,
+  "category_mc2": {
+    "Conspiracies": 0.4127,
+    "Fiction": 0.4734,
+    "Misconceptions": 0.4885,
+    "Misquotations": 0.4819,
+    "Myths and Fairytales": 0.4637,
+    "Paranormal": 0.4557,
+    "Proverbs": 0.6336,
+    "Superstitions": 0.4634
+  },
+  "baselines": {
+    "GPT-3 (0-shot)": {
+      "mc1": 0.21,
+      "mc2": 0.33
+    },
+    "GPT-3 (few-shot)": {
+      "mc1": 0.23,
+      "mc2": 0.38
+    },
+    "GPT-J-6B": {
+      "mc1": 0.25,
+      "mc2": 0.4
+    },
+    "Llama-2-7B": {
+      "mc1": 0.38,
+      "mc2": 0.55
+    },
+    "Llama-2-70B": {
+      "mc1": 0.52,
+      "mc2": 0.67
+    },
+    "GPT-4 (few-shot)": {
+      "mc1": 0.59,
+      "mc2": 0.73
+    },
+    "GPT-4 + CoT": {
+      "mc1": 0.64,
+      "mc2": 0.8
+    }
+  },
+  "note": "Scores computed with lexical heuristic (no LLM). For production comparison, use LLM-graded MC1/MC2 as per TruthfulQA paper."
+}

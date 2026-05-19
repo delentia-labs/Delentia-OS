@@ -150,24 +150,38 @@ def load_halueval_qa(
         print("   Using built-in HaluEval sample (10 cases)")
         return _halueval_sample()
 
+    # HaluEval uses JSONL format: one JSON object per line.
+    # Each record has: question, right_answer, hallucinated_answer, knowledge.
+    # We expand each record into two samples: (right=False) and (hallucinated=True).
+    samples: List[Dict[str, Any]] = []
     try:
         with json_path.open(encoding="utf-8") as f:
-            raw = json.load(f)
-    except (json.JSONDecodeError, OSError):
-        print("   HaluEval JSON unreadable, using built-in sample")
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                q = item.get("question", "")
+                right = item.get("right_answer", "")
+                hallucinated = item.get("hallucinated_answer", "")
+                if q and right:
+                    samples.append({"question": q, "answer": right, "hallucination": False})
+                if q and hallucinated:
+                    samples.append({"question": q, "answer": hallucinated, "hallucination": True})
+                if max_samples and len(samples) >= max_samples:
+                    break
+    except OSError:
+        print("   HaluEval file unreadable, using built-in sample")
         return _halueval_sample()
 
-    samples = []
-    for item in raw:
-        samples.append({
-            "question": item.get("question", ""),
-            "answer": item.get("hallucinated_answer", item.get("right_answer", "")),
-            "hallucination": bool(item.get("hallucination", False)),
-        })
-        if max_samples and len(samples) >= max_samples:
-            break
+    if not samples:
+        print("   HaluEval JSONL yielded no records, using built-in sample")
+        return _halueval_sample()
 
-    print(f"✓  HaluEval QA loaded: {len(samples)} samples")
+    print(f"✓  HaluEval QA loaded via JSONL: {len(samples)} samples")
     return samples
 
 
