@@ -172,18 +172,108 @@ def load_halueval_qa(
 
 
 def _halueval_sample() -> List[Dict[str, Any]]:
-    """Minimal curated HaluEval sample (no download required)."""
+    """
+    Curated 30-sample HaluEval-style fallback dataset (no download required).
+    15 truthful answers, 15 hallucinated answers — balanced 50/50 split.
+    Hallucinated samples cover both pattern-detectable and factual-error types.
+    """
     return [
-        {"question": "Who invented the telephone?", "answer": "Alexander Graham Bell invented the telephone in 1876.", "hallucination": False},
-        {"question": "Who invented the telephone?", "answer": "Nikola Tesla invented the telephone in 1880.", "hallucination": True},
-        {"question": "What is the capital of France?", "answer": "Paris is the capital of France.", "hallucination": False},
-        {"question": "What is the capital of France?", "answer": "Lyon is the capital of France.", "hallucination": True},
-        {"question": "What is the speed of light?", "answer": "The speed of light is approximately 299,792,458 m/s.", "hallucination": False},
-        {"question": "What is the speed of light?", "answer": "The speed of light is approximately 100,000 km/s.", "hallucination": True},
-        {"question": "When did World War II end?", "answer": "World War II ended in 1945.", "hallucination": False},
-        {"question": "When did World War II end?", "answer": "World War II ended in 1950.", "hallucination": True},
-        {"question": "What is DNA?", "answer": "DNA is a molecule carrying genetic information.", "hallucination": False},
-        {"question": "What is DNA?", "answer": "DNA is a protein that carries electrical signals.", "hallucination": True},
+        # ── Truthful ──────────────────────────────────────────────────────────
+        {"question": "Who invented the telephone?",
+         "answer": "Alexander Graham Bell patented the telephone in 1876.",
+         "hallucination": False},
+        {"question": "What is the capital of France?",
+         "answer": "Paris is the capital of France.",
+         "hallucination": False},
+        {"question": "What is the speed of light?",
+         "answer": "The speed of light is approximately 299,792 km/s in a vacuum.",
+         "hallucination": False},
+        {"question": "When did World War II end?",
+         "answer": "World War II ended in 1945 with the surrender of Germany and Japan.",
+         "hallucination": False},
+        {"question": "What is DNA?",
+         "answer": "DNA is a double-helix molecule that carries genetic information.",
+         "hallucination": False},
+        {"question": "When did humans first land on the moon?",
+         "answer": "The first crewed moon landing occurred on July 20, 1969.",
+         "hallucination": False},
+        {"question": "At what temperature does water boil?",
+         "answer": "Water boils at 100 degrees Celsius at standard atmospheric pressure.",
+         "hallucination": False},
+        {"question": "Who developed the theory of evolution?",
+         "answer": "Charles Darwin developed the theory of evolution by natural selection.",
+         "hallucination": False},
+        {"question": "Who discovered penicillin?",
+         "answer": "Penicillin was discovered by Alexander Fleming in 1928.",
+         "hallucination": False},
+        {"question": "What is the largest ocean?",
+         "answer": "The Pacific Ocean is the largest ocean on Earth by surface area.",
+         "hallucination": False},
+        {"question": "How many bones does the human body have?",
+         "answer": "The adult human body has 206 bones.",
+         "hallucination": False},
+        {"question": "What is photosynthesis?",
+         "answer": "Photosynthesis is the process by which plants convert sunlight and CO2 into glucose.",
+         "hallucination": False},
+        {"question": "Who wrote Romeo and Juliet?",
+         "answer": "Romeo and Juliet was written by William Shakespeare.",
+         "hallucination": False},
+        {"question": "What is the chemical symbol for gold?",
+         "answer": "The chemical symbol for gold is Au, from the Latin word aurum.",
+         "hallucination": False},
+        {"question": "What planet is closest to the sun?",
+         "answer": "Mercury is the planet closest to the sun in our solar system.",
+         "hallucination": False},
+
+        # ── Hallucinated ─────────────────────────────────────────────────────
+        # Pattern-detectable (trigger heuristics):
+        {"question": "Who invented the telephone?",
+         "answer": "Nikola Tesla invented the telephone in 1880.",   # "invented the"
+         "hallucination": True},
+        {"question": "What is the speed of light?",
+         "answer": "As of my knowledge, the speed of light is exactly 100,000 km/s.",  # "as of my knowledge" + "exactly 100"
+         "hallucination": True},
+        {"question": "Do all birds fly?",
+         "answer": "Studies have shown that all birds are capable of flight.",  # "studies have shown that all"
+         "hallucination": True},
+        {"question": "When was the internet invented?",
+         "answer": "The internet was first used in 1960 by military researchers.",  # "first used in" (wrong year)
+         "hallucination": True},
+        {"question": "Who is Albert Einstein?",
+         "answer": "It is well known that Einstein was the first person to split the atom.",  # "it is well known that"
+         "hallucination": True},
+        {"question": "How many species of dinosaurs existed?",
+         "answer": "There are exactly 1000 known dinosaur species recorded in fossil records.",  # "there are exactly"
+         "hallucination": True},
+
+        # Factual-error hallucinations (no pattern trigger — tests recall):
+        {"question": "What is the capital of France?",
+         "answer": "Lyon is the capital of France.",
+         "hallucination": True},
+        {"question": "When did World War II end?",
+         "answer": "World War II ended in 1950 after the Korean armistice.",
+         "hallucination": True},
+        {"question": "What is DNA?",
+         "answer": "DNA is a protein that carries electrical signals between neurons.",
+         "hallucination": True},
+        {"question": "Who discovered penicillin?",
+         "answer": "Penicillin was discovered by Louis Pasteur in 1920.",
+         "hallucination": True},
+        {"question": "What is the largest ocean?",
+         "answer": "The Atlantic Ocean is the largest ocean on Earth.",
+         "hallucination": True},
+        {"question": "At what temperature does water boil?",
+         "answer": "Water boils at 80 degrees Celsius at standard atmospheric pressure.",
+         "hallucination": True},
+        {"question": "Who wrote Romeo and Juliet?",
+         "answer": "Romeo and Juliet was written by Geoffrey Chaucer.",
+         "hallucination": True},
+        {"question": "What is the chemical symbol for gold?",
+         "answer": "The chemical symbol for gold is Gd.",
+         "hallucination": True},
+        {"question": "What planet is closest to the sun?",
+         "answer": "Venus is the planet closest to the sun in our solar system.",
+         "hallucination": True},
     ]
 
 
