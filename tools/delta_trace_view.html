@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCT Delta Engine — Compression Trace</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --green: #10b981; --red: #ef4444; --amber: #f59e0b; --blue: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Courier New', monospace; padding: 2rem; }
+  h1 { font-size: 1.4rem; color: var(--blue); margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.75rem; margin-bottom: 2rem; }
+  .equation { color: var(--amber); font-size: 1rem; margin-bottom: 0.3rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+  .card h2 { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; text-align: center; }
+  .stat .value { font-size: 1.6rem; font-weight: 700; }
+  .stat .label { color: var(--muted); font-size: 0.7rem; margin-top: 0.25rem; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .amber { color: var(--amber); }
+  .blue { color: var(--blue); }
+  .slider-section { margin-bottom: 2rem; }
+  .slider-section h2 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  input[type=range] { width: 100%; accent-color: var(--blue); margin-bottom: 0.75rem; }
+  .tick-label { color: var(--amber); font-size: 1.2rem; font-weight: 700; text-align: center; margin-bottom: 1rem; }
+  .snapshot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  .agent-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; font-size: 0.7rem; }
+  .agent-card .agent-name { color: var(--blue); font-weight: 700; margin-bottom: 0.5rem; }
+  .agent-card .kv { display: flex; justify-content: space-between; margin-bottom: 0.2rem; }
+  .agent-card .kv .k { color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: 0.68rem; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  footer a { color: var(--blue); }
+  @media (max-width: 640px) { .grid2, .snapshot-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>RCT Delta Engine — Memory Compression Trace</h1>
+<div class="equation">F = D<sup>I</sup> × A &nbsp;·&nbsp; Delta Compression = 1 - (Δbytes / Snapshot bytes)</div>
+<div class="subtitle">
+  Generated from 180 delta events across 3 agents · 60 ticks ·
+  <a href="https://github.com/rctlabs/rct-platform/blob/main/tools/generate_delta_trace.py" target="_blank">generate_delta_trace.py</a>
+</div>
+
+<div class="stat-row">
+  <div class="stat">
+    <div class="value green">83.3%</div>
+    <div class="label">Memory Compression</div>
+  </div>
+  <div class="stat">
+    <div class="value red">35.16 KB</div>
+    <div class="label">Naive Storage (Full Snapshots)</div>
+  </div>
+  <div class="stat">
+    <div class="value green">5.88 KB</div>
+    <div class="label">RCT Delta Storage</div>
+  </div>
+  <div class="stat">
+    <div class="value amber">0.016 ms</div>
+    <div class="label">Avg Warm Recall</div>
+  </div>
+  <div class="stat">
+    <div class="value blue">0.049 ms</div>
+    <div class="label">Max Recall (worst tick)</div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Memory Usage Over Time</h2>
+    <canvas id="memChart" height="220"></canvas>
+  </div>
+  <div class="card">
+    <h2>Compression Ratio %</h2>
+    <canvas id="compChart" height="220"></canvas>
+  </div>
+</div>
+
+<div class="card slider-section">
+  <h2>⏮ Rollback Timeline — replay any agent to any past tick via delta chain</h2>
+  <input type="range" id="tickSlider" min="1" max="60" value="30" step="1">
+  <div class="tick-label" id="tickDisplay">Tick ← drag slider</div>
+  <div class="snapshot-grid" id="snapshotGrid">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<footer>
+  <p>RCT Platform · Apache 2.0 · <a href="https://github.com/rctlabs/rct-platform" target="_blank">github.com/rctlabs/rct-platform</a> · <a href="https://rctlabs.co" target="_blank">rctlabs.co</a></p>
+</footer>
+
+<script>
+const CHART_DATA = {"ticks":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60],"naive_cumulative":[600,1200,1800,2400,3000,3600,4200,4800,5400,6000,6600,7200,7800,8400,9000,9600,10200,10800,11400,12000,12600,13200,13800,14400,15000,15600,16200,16800,17400,18000,18600,19200,19800,20400,21000,21600,22200,22800,23400,24000,24600,25200,25800,26400,27000,27600,28200,28800,29400,30000,30600,31200,31800,32400,33000,33600,34200,34800,35400,36000],"delta_cumulative":[94,188,282,372,474,572,662,756,850,982,1088,1186,1288,1378,1476,1574,1672,1766,1864,1990,2092,2182,2288,2394,2488,2586,2680,2778,2872,3001,3099,3197,3299,3397,3495,3593,3691,3789,3887,4030,4132,4226,4328,4422,4516,4622,4720,4818,4908,5039,5133,5227,5321,5423,5517,5611,5709,5803,5893,6023],"compression_ratio":[84.3,84.3,84.3,84.5,84.2,84.1,84.2,84.2,84.3,83.6,83.5,83.5,83.5,83.6,83.6,83.6,83.6,83.6,83.6,83.4,83.4,83.5,83.4,83.4,83.4,83.4,83.5,83.5,83.5,83.3,83.3,83.3,83.3,83.3,83.4,83.4,83.4,83.4,83.4,83.2,83.2,83.2,83.2,83.2,83.3,83.3,83.3,83.3,83.3,83.2,83.2,83.2,83.3,83.3,83.3,83.3,83.3,83.3,83.4,83.3],"recall_ms":[0.014,0.01,0.009,0.009,0.009,0.01,0.009,0.01,0.01,0.011,0.011,0.012,0.01,0.011,0.011,0.011,0.011,0.013,0.012,0.012,0.013,0.013,0.014,0.013,0.013,0.014,0.014,0.014,0.014,0.015,0.015,0.016,0.016,0.016,0.017,0.017,0.017,0.017,0.021,0.017,0.018,0.019,0.018,0.044,0.023,0.019,0.019,0.02,0.019,0.014,0.021,0.016,0.016,0.018,0.018,0.017,0.016,0.017,0.017,0.048]};
+const SUMMARY = {"total_events":180,"total_ticks":60,"agents":3,"naive_cumulative_kb":35.16,"delta_cumulative_kb":5.88,"compression_ratio":0.8327,"compression_pct":83.3,"avg_recall_ms":0.016,"max_recall_ms":0.049};
+const SNAPSHOTS = [{"tick":10,"agent_id":"sentinel","resources":{"energy":92.0,"shields":4.0},"reputation":0.96,"violations":2,"actions_taken":10},{"tick":10,"agent_id":"navigator","resources":{"energy":71.0,"maps":6.0},"reputation":0.99,"violations":1,"actions_taken":10},{"tick":10,"agent_id":"merchant","resources":{"energy":60.0,"gold":44.0},"reputation":1.0,"violations":0,"actions_taken":10},{"tick":20,"agent_id":"sentinel","resources":{"energy":79.0,"shields":2.0},"reputation":1.0,"violations":2,"actions_taken":20},{"tick":20,"agent_id":"navigator","resources":{"energy":44.0,"maps":18.0},"reputation":1.0,"violations":1,"actions_taken":20},{"tick":20,"agent_id":"merchant","resources":{"energy":50.0,"gold":79.0},"reputation":1.0,"violations":0,"actions_taken":20},{"tick":30,"agent_id":"sentinel","resources":{"energy":64.0,"shields":-1.0},"reputation":1.0,"violations":3,"actions_taken":30},{"tick":30,"agent_id":"navigator","resources":{"energy":22.0,"maps":25.0},"reputation":1.0,"violations":1,"actions_taken":30},{"tick":30,"agent_id":"merchant","resources":{"energy":37.0,"gold":122.0},"reputation":1.0,"violations":0,"actions_taken":30},{"tick":40,"agent_id":"sentinel","resources":{"energy":51.0,"shields":-3.0},"reputation":1.0,"violations":3,"actions_taken":40},{"tick":40,"agent_id":"navigator","resources":{"energy":-5.0,"maps":37.0},"reputation":1.0,"violations":1,"actions_taken":40},{"tick":40,"agent_id":"merchant","resources":{"energy":23.0,"gold":155.0},"reputation":1.0,"violations":0,"actions_taken":40},{"tick":50,"agent_id":"sentinel","resources":{"energy":37.0,"shields":-7.0},"reputation":0.96,"violations":4,"actions_taken":50},{"tick":50,"agent_id":"navigator","resources":{"energy":-18.0,"maps":42.0},"reputation":0.99,"violations":2,"actions_taken":50},{"tick":50,"agent_id":"merchant","resources":{"energy":17.0,"gold":190.0},"reputation":1.0,"violations":0,"actions_taken":50},{"tick":60,"agent_id":"sentinel","resources":{"energy":24.0,"shields":-9.0},"reputation":1.0,"violations":4,"actions_taken":60},{"tick":60,"agent_id":"navigator","resources":{"energy":-38.0,"maps":47.0},"reputation":1.0,"violations":2,"actions_taken":60},{"tick":60,"agent_id":"merchant","resources":{"energy":16.0,"gold":220.0},"reputation":0.96,"violations":1,"actions_taken":60}];
+
+// Memory comparison chart
+const ctxMem = document.getElementById('memChart').getContext('2d');
+new Chart(ctxMem, {
+  type: 'bar',
+  data: {
+    labels: CHART_DATA.ticks,
+    datasets: [
+      {
+        label: 'Naive (Full Snapshot)',
+        data: CHART_DATA.naive_cumulative,
+        backgroundColor: 'rgba(239,68,68,0.6)',
+        borderColor: '#ef4444',
+        borderWidth: 1,
+      },
+      {
+        label: 'RCT Delta Engine',
+        data: CHART_DATA.delta_cumulative,
+        backgroundColor: 'rgba(16,185,129,0.7)',
+        borderColor: '#10b981',
+        borderWidth: 1,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#94a3b8', font: { family: 'JetBrains Mono, Courier New' } } },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y + ' bytes' } }
+    },
+    scales: {
+      x: { ticks: { color: '#475569', maxTicksLimit: 10 }, grid: { color: '#1e293b' } },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, title: { display: true, text: 'Bytes', color: '#94a3b8' } }
+    }
+  }
+});
+
+// Compression ratio chart
+const ctxComp = document.getElementById('compChart').getContext('2d');
+new Chart(ctxComp, {
+  type: 'line',
+  data: {
+    labels: CHART_DATA.ticks,
+    datasets: [{
+      label: 'Compression %',
+      data: CHART_DATA.compression_ratio,
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16,185,129,0.1)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'JetBrains Mono, Courier New' } } } },
+    scales: {
+      x: { ticks: { color: '#475569', maxTicksLimit: 10 }, grid: { color: '#1e293b' } },
+      y: {
+        min: 0, max: 100,
+        ticks: { color: '#94a3b8', callback: (v) => v + '%' },
+        grid: { color: '#334155' },
+        title: { display: true, text: 'Compression %', color: '#94a3b8' }
+      }
+    }
+  }
+});
+
+// Rollback timeline
+const slider = document.getElementById('tickSlider');
+const tickDisplay = document.getElementById('tickDisplay');
+const snapshotGrid = document.getElementById('snapshotGrid');
+const AGENTS = ['sentinel', 'navigator', 'merchant'];
+
+// Group snapshots by tick
+const snapshotsByTick = {};
+SNAPSHOTS.forEach(s => {
+  if (!snapshotsByTick[s.tick]) snapshotsByTick[s.tick] = {};
+  snapshotsByTick[s.tick][s.agent_id] = s;
+});
+const availableTicks = Object.keys(snapshotsByTick).map(Number).sort((a,b)=>a-b);
+
+function findNearestTick(t) {
+  let best = availableTicks[0];
+  for (const at of availableTicks) {
+    if (at <= t) best = at; else break;
+  }
+  return best;
+}
+
+function updateSnapshot(sliderVal) {
+  const tick = parseInt(sliderVal);
+  const nearestTick = findNearestTick(tick);
+  tickDisplay.innerHTML = 'Tick <span style="color:#f59e0b">' + tick + '</span>' +
+    (nearestTick !== tick ? ' (snapshot at tick ' + nearestTick + ')' : '') +
+    ' &nbsp;<span style="color:#10b981;font-size:0.65rem">State reconstructed in <1ms ✓</span>';
+
+  const agents = snapshotsByTick[nearestTick] || {};
+  snapshotGrid.innerHTML = AGENTS.map(agentId => {
+    const s = agents[agentId];
+    if (!s) return '<div class="agent-card"><div class="agent-name">' + agentId + '</div><div style="color:#475569">no data</div></div>';
+    const resources = Object.entries(s.resources || {})
+      .map(([k,v]) => '<div class="kv"><span class="k">' + k + '</span><span>' + v.toFixed(1) + '</span></div>').join('');
+    return '<div class="agent-card">' +
+      '<div class="agent-name">' + agentId + '</div>' +
+      resources +
+      '<div class="kv"><span class="k">reputation</span><span>' + s.reputation + '</span></div>' +
+      '<div class="kv"><span class="k">actions</span><span>' + s.actions_taken + '</span></div>' +
+      '<div class="kv"><span class="k">violations</span><span style="color:' + (s.violations>0?'#ef4444':'#10b981') + '">' + s.violations + '</span></div>' +
+    '</div>';
+  }).join('');
+}
+
+slider.addEventListener('input', () => updateSnapshot(slider.value));
+updateSnapshot(slider.value);
+</script>
+</body>
+</html>
