@@ -51,6 +51,12 @@ try:
         render_error,
         render_success,
         render_warning,
+        # DX commands — rct start
+        print_splash,
+        boot_sequence_animation,
+        render_hexacore_table,
+        render_architect_veto,
+        render_pipeline_flow,
     )
     _HAS_RICH = True
 except ImportError:
@@ -230,7 +236,7 @@ def format_output(data: Any, format: OutputFormat) -> None:
 # CLI Commands
 
 @click.group()
-@click.version_option(version="1.0.2a0", prog_name="rct")
+@click.version_option(version="1.0.0b0", prog_name="rct")
 def cli():
     """
     RCT Control Plane CLI
@@ -1211,6 +1217,235 @@ def logs(adapter: Optional[str], tail: int, output: str):
         else:
             click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
         sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# rct start — P0 DX: Constitutional Launch Dashboard
+# ---------------------------------------------------------------------------
+
+@cli.command(name="start")
+@click.option("--verbose", "-v", is_flag=True, help="Show raw JITNA packet logs (debug mode)")
+@click.option("--ui-test", "ui_test", is_flag=True, help="Mock mode — renders UI without starting API server")
+@click.option("--port", "-p", default=8000, show_default=True, type=int, help="Port to bind on")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Host to bind on")
+def start(verbose: bool, ui_test: bool, port: int, host: str):
+    """Launch RCT OS — Constitutional AI Operating System.
+
+    Renders splash screen, boot sequence, and HexaCore dashboard,
+    then starts the Control Plane API server.
+
+    Example:
+        rct start                  # Full launch
+        rct start --ui-test        # Test UI without starting server
+        rct start --verbose        # Debug mode (raw logs)
+        rct start --port 8080      # Custom port
+    """
+    import importlib.metadata as _meta
+    try:
+        ver = _meta.version("rct-platform")
+    except _meta.PackageNotFoundError:
+        ver = "1.0.0b0"
+
+    if _HAS_RICH:
+        print_splash(version=ver)
+        boot_sequence_animation(mock=ui_test)
+        render_hexacore_table(mock=ui_test)
+        if verbose:
+            render_pipeline_flow(current_stage="Output")
+    else:
+        click.echo(click.style(f"RCT OS v{ver} — Launching...", fg="cyan", bold=True))
+
+    if ui_test:
+        if _HAS_RICH:
+            render_success("UI test complete — all components rendered successfully")
+        else:
+            click.echo("UI test complete.")
+        return
+
+    # Start the actual API server
+    try:
+        import uvicorn as _uvicorn
+    except ImportError:
+        if _HAS_RICH:
+            render_error("uvicorn is not installed. Run: pip install uvicorn[standard]")
+        else:
+            click.echo(
+                click.style("Error: uvicorn is not installed.", fg="red"), err=True
+            )
+        sys.exit(1)
+
+    if _HAS_RICH:
+        console = get_console()
+        console.print(
+            f"  [bright_green]Listening[/]  →  [bold]http://{host}:{port}[/]"
+            f"  [dim]|  Swagger: http://{host}:{port}/docs[/]"
+        )
+        console.print()
+    else:
+        click.echo(click.style(f"  Listening  →  http://{host}:{port}", fg="green"))
+
+    _uvicorn.run(
+        "rct_control_plane.api:app",
+        host=host,
+        port=port,
+        reload=verbose,
+        log_level="debug" if verbose else "info",
+        workers=1,
+    )
+
+
+# ---------------------------------------------------------------------------
+# rct init — P1: Environment Initializer
+# ---------------------------------------------------------------------------
+
+@cli.command(name="init")
+@click.option("--force", is_flag=True, help="Overwrite existing .env file")
+def init(force: bool):
+    """Initialize environment — create .env from .env.example template.
+
+    Example:
+        rct init
+        rct init --force   # Overwrite existing .env
+    """
+    env_path = Path(".env")
+    example_path = Path(".env.example")
+
+    # Search for .env.example relative to package root if not found locally
+    if not example_path.exists():
+        try:
+            import rct_control_plane as _rcp
+            pkg_root = Path(_rcp.__file__).parent.parent
+            example_path = pkg_root / ".env.example"
+        except Exception:
+            pass
+
+    if env_path.exists() and not force:
+        if _HAS_RICH:
+            render_warning(".env already exists. Use --force to overwrite.")
+        else:
+            click.echo(
+                click.style("Warning: .env already exists. Use --force to overwrite.", fg="yellow")
+            )
+        return
+
+    if not example_path.exists():
+        if _HAS_RICH:
+            render_error(".env.example not found. Run from the rct-platform directory.")
+        else:
+            click.echo(click.style("Error: .env.example not found.", fg="red"), err=True)
+        sys.exit(1)
+
+    import shutil
+    shutil.copy(str(example_path), str(env_path))
+
+    if _HAS_RICH:
+        console = get_console()
+        render_success(".env created from .env.example template")
+        console.print()
+        console.print("  [bold]Next steps:[/]")
+        console.print("  [dim]1.[/]  Open [bold cyan].env[/] and fill in your API keys:")
+        console.print("       [dim]RCT_CORE_BRAIN_KEY=<openrouter-key>[/]")
+        console.print("       [dim]GOOGLE_API_KEY=<google-gemini-key>  (optional)[/]")
+        console.print("       [dim]RCTDB_URL=postgresql://localhost:5432/rctdb_dev[/]")
+        console.print()
+        console.print("  [dim]2.[/]  Run [bold cyan]rct start[/] to launch the system")
+        console.print()
+    else:
+        click.echo(".env created. Fill in your API keys, then run: rct start")
+
+
+# ---------------------------------------------------------------------------
+# rct benchmark — P1: Constitutional Benchmark Runner
+# ---------------------------------------------------------------------------
+
+@cli.command(name="benchmark")
+@click.option(
+    "--suite",
+    default="fdia",
+    show_default=True,
+    type=click.Choice(["fdia", "halueval", "truthfulqa", "all"]),
+    help="Benchmark suite to run",
+)
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+@click.option("--verbose", "-v", is_flag=True, help="Verbose output")
+def benchmark_cmd(suite: str, output: str, verbose: bool):
+    """Run RCT constitutional benchmark suites.
+
+    Example:
+        rct benchmark --suite fdia
+        rct benchmark --suite all --output json
+        rct benchmark --suite truthfulqa --verbose
+    """
+    import subprocess
+
+    # Locate benchmark directory relative to installed package root
+    try:
+        import rct_control_plane as _rcp
+        pkg_root = Path(_rcp.__file__).parent.parent
+    except Exception:
+        pkg_root = Path(".")
+
+    suite_map: Dict[str, List[str]] = {
+        "fdia":       ["benchmark/fdia_benchmark.py"],
+        "halueval":   ["benchmark/industry_standard/run_halueval.py"],
+        "truthfulqa": ["benchmark/industry_standard/run_truthfulqa.py"],
+        "all": [
+            "benchmark/fdia_benchmark.py",
+            "benchmark/industry_standard/run_halueval.py",
+            "benchmark/industry_standard/run_truthfulqa.py",
+        ],
+    }
+
+    scripts = suite_map.get(suite, [])
+
+    if _HAS_RICH:
+        console = get_console()
+        console.print(
+            f"\n  [bold]Running benchmark suite:[/] [bright_cyan]{suite}[/]\n"
+        )
+
+    results: Dict[str, bool] = {}
+    for script_rel in scripts:
+        script_path = pkg_root / script_rel
+        if not script_path.exists():
+            if _HAS_RICH:
+                render_warning(f"Script not found: {script_rel}")
+            else:
+                click.echo(f"Warning: {script_rel} not found", err=True)
+            results[script_rel] = False
+            continue
+
+        args = [sys.executable, str(script_path)]
+        if output == "json":
+            args.append("--json")
+        if verbose:
+            args.append("--verbose")
+
+        try:
+            proc = subprocess.run(args, text=True, cwd=str(pkg_root))
+            results[script_rel] = proc.returncode == 0
+        except Exception as exc:
+            if _HAS_RICH:
+                render_error(f"Failed to run {script_rel}: {exc}")
+            else:
+                click.echo(f"Error running {script_rel}: {exc}", err=True)
+            results[script_rel] = False
+
+    if results:
+        passed = sum(1 for v in results.values() if v)
+        total = len(results)
+        if _HAS_RICH:
+            if passed == total:
+                render_success(f"All benchmarks passed: {passed}/{total}")
+            else:
+                render_warning(f"Benchmarks: {passed}/{total} passed")
+        else:
+            click.echo(f"Benchmarks: {passed}/{total} passed")
+    elif not scripts:
+        if _HAS_RICH:
+            render_warning(f"No benchmark scripts found for suite: {suite}")
+        else:
+            click.echo(f"No scripts for suite: {suite}")
 
 
 def main():

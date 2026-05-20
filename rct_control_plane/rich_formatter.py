@@ -12,11 +12,14 @@ Reference: TUI-CLI RCT Design — Phase 4A
 
 from __future__ import annotations
 
+import time
 from typing import Any, Dict, List, Optional
 
 from rich.console import Console
 from rich.panel import Panel
+from rich.status import Status
 from rich.table import Table
+from rich.text import Text
 from rich.tree import Tree
 from rich.syntax import Syntax
 from rich import box
@@ -439,4 +442,179 @@ def render_warning(message: str) -> None:
         f"[bold yellow]⚠️  {message}[/]",
         border_style="yellow",
         title="[bold white]Warning[/]",
+    ))
+
+
+# ---------------------------------------------------------------------------
+# DX Splash, Boot Sequence & Dashboard — rct start
+# ---------------------------------------------------------------------------
+
+def print_splash(version: str = "1.0.0b0") -> None:
+    """Print the RCT OS Constitutional Declaration splash panel."""
+    console = get_console()
+    content = Text()
+    content.append("\n")
+    content.append("  RCT OS — INTENT CENTRIC AI\n", style="bold bright_white")
+    content.append("  " + "─" * 44 + "\n", style="dim")
+    content.append("\n")
+    content.append("  F = D", style="bold bright_cyan")
+    content.append("ᴵ", style="bold bright_cyan")
+    content.append(" × A", style="bold bright_cyan")
+    content.append("   (Constitutional Guarantee)\n", style="dim")
+    content.append("\n")
+    content.append("  When A = 0  →  OUTPUT = 0  ", style="bold bright_red")
+    content.append("(Multiplicative Block — no exception)\n", style="dim")
+    content.append("\n")
+    content.append(f"  v{version}", style="bold bright_magenta")
+    content.append("  ·  41 Algorithms", style="dim")
+    content.append("  ·  SLA 99.98%", style="dim")
+    content.append("  ·  HexaCore 7-LLM\n", style="dim")
+    content.append("\n")
+    console.print(Panel(
+        content,
+        border_style="bright_cyan",
+        padding=(0, 1),
+    ))
+
+
+def boot_sequence_animation(mock: bool = False) -> None:
+    """Animate 5-service boot sequence with Rich Status spinners."""
+    console = get_console()
+    services = [
+        ("gateway-api",        8000, "Unified entry point"),
+        ("intent-loop",        8001, "JITNA Protocol · <50ms warm recall"),
+        ("analysearch-intent", 8002, "GIGO Protection active"),
+        ("vector-search",      8003, "RCTDB mounted"),
+        ("crystallizer",       8004, "0.3% hallucination guard"),
+        ("delta-engine",       None, "74% memory compression"),
+    ]
+    delay = 0.35 if mock else 0.6
+    console.print()
+    for name, port, desc in services:
+        port_label = f":{port}" if port else "     "
+        label = f"[dim]Booting[/] [bold white]{name}[/] [dim]{port_label}[/]"
+        with Status(label, console=console, spinner="dots"):
+            time.sleep(delay)
+        tag = f"[dim]{port_label}[/]"
+        console.print(
+            f"  [bright_green]✓ OK[/]  [bold white]{name:<24}[/] {tag}  [dim]{desc}[/]"
+        )
+    console.print()
+    console.print(f"  [bright_green]All systems nominal[/] [dim]— {len(services)} components ready[/]")
+    console.print()
+
+
+def render_hexacore_table(
+    mock: bool = False,
+    statuses: Optional[Dict[str, bool]] = None,
+) -> None:
+    """Render the HexaCore 7-LLM Consensus Registry dashboard."""
+    console = get_console()
+    if statuses is None:
+        statuses = {}
+
+    def _badge(name: str) -> str:
+        is_online = statuses.get(name, True)  # default ONLINE in mock/no-check mode
+        dot = "[bright_green]●[/]" if is_online else "[bright_red]●[/]"
+        status_txt = "[bright_green]ONLINE[/]" if is_online else "[bright_red]OFFLINE[/]"
+        return f"{dot} [bold white]{name}[/]  {status_txt}"
+
+    table = Table(
+        title="[bold white]HEXACORE CONSENSUS REGISTRY[/]",
+        box=box.DOUBLE_EDGE,
+        border_style="bright_cyan",
+        show_header=True,
+        padding=(0, 1),
+    )
+    table.add_column("🌐 WESTERN CLUSTER", style="bright_cyan", min_width=32)
+    table.add_column("🌏 EASTERN CLUSTER", style="bright_magenta", min_width=30)
+    table.add_column("🌏 REGIONAL", style="bright_yellow", min_width=22)
+
+    table.add_row(
+        _badge("Claude Sonnet 4.6") + "\n[dim]  Supreme · Governance Lead[/]",
+        _badge("Kimi k2.5") + "\n[dim]  Lead Builder[/]",
+        _badge("Typhoon-v2 70B") + "\n[dim]  TH Regional[/]",
+    )
+    table.add_row(
+        _badge("Gemini 2.5 Flash") + "\n[dim]  Specialist · Research[/]",
+        _badge("Minimax M1") + "\n[dim]  Junior Builder[/]",
+        "",
+    )
+    table.add_row(
+        _badge("Grok 4.1") + "\n[dim]  Librarian · Context[/]",
+        _badge("DeepSeek R2") + "\n[dim]  Humanizer[/]",
+        "",
+    )
+    console.print(table)
+    console.print()
+    online_count = sum(1 for v in statuses.values() if v) if statuses else 7
+    total = 7
+    sla_color = "bright_green" if online_count == total else "yellow"
+    console.print(
+        f"  [{sla_color}]CONSENSUS: {online_count}/{total} LLMs active[/]"
+        f"  [dim]|[/]  [bright_green]SLA: 99.98%[/]"
+        f"  [dim]|[/]  [bright_cyan]WARM RECALL: <50ms[/]"
+        f"  [dim]|[/]  [bright_magenta]SignedAI: ED25519 ✓[/]"
+    )
+    console.print()
+
+
+def render_architect_veto(reason: str = "Policy block enforced") -> None:
+    """Render the A=0 ARCHITECT VETO full-screen alert panel."""
+    console = get_console()
+    content = Text()
+    content.append("\n")
+    content.append("  ██████  SYSTEM HALTED: ARCHITECT VETO  ██████\n", style="bold bright_red")
+    content.append("\n")
+    content.append("  A = 0  →  OUTPUT = 0\n", style="bold bright_red")
+    content.append("  Multiplicative Property Enforced — No output will be produced.\n", style="bright_red")
+    content.append("\n")
+    content.append(f"  Reason: {reason}\n", style="yellow")
+    content.append("\n")
+    content.append("  F = Dᴵ × A   when A = 0,   F = 0   (regardless of Data or Intent)\n", style="dim")
+    content.append("\n")
+    content.append("  To unblock: Update Architect policy and re-submit intent.\n", style="dim")
+    content.append("\n")
+    console.print(Panel(
+        content,
+        border_style="bright_red",
+        title="[bold bright_red]⛔  CONSTITUTIONAL BLOCK[/]",
+        padding=(0, 1),
+    ))
+
+
+def render_pipeline_flow(
+    current_stage: str = "Output",
+    stages_passed: Optional[List[str]] = None,
+) -> None:
+    """Render FDIA→JITNA→HexaCore→SignedAI→Output pipeline progress."""
+    console = get_console()
+    pipeline = [
+        ("FDIA",     "Constitutional Gate"),
+        ("JITNA",    "Intent Packet"),
+        ("HexaCore", "7-LLM Consensus"),
+        ("SignedAI", "ED25519 Sign"),
+        ("Output",   "Final Response"),
+    ]
+    if stages_passed is None:
+        stage_names = [s[0] for s in pipeline]
+        try:
+            idx = stage_names.index(current_stage)
+            stages_passed = stage_names[:idx + 1]
+        except ValueError:
+            stages_passed = []
+    parts: List[str] = []
+    for name, _desc in pipeline:
+        if name in stages_passed and name != current_stage:
+            parts.append(f"[bright_green]✓ {name}[/]")
+        elif name == current_stage:
+            parts.append(f"[bold bright_yellow]⟳ {name}[/]")
+        else:
+            parts.append(f"[dim]○ {name}[/]")
+    flow_line = "  [dim]→[/]  ".join(parts)
+    console.print(Panel(
+        flow_line + f"\n\n  [dim]Current stage:[/] [bold white]{current_stage}[/]",
+        title="[bold white]Intent Pipeline[/]",
+        border_style="bright_cyan",
+        padding=(0, 2),
     ))
