@@ -11,6 +11,7 @@ existing tests:
 
 Together with existing tests, these bring cli.py patch coverage well above 90 %.
 """
+
 from __future__ import annotations
 
 import importlib.metadata as _meta
@@ -20,29 +21,36 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from rct_control_plane._version import PACKAGE_VERSION
+
 
 # ── Shared fixtures ────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(autouse=True)
 def _reset_ctx(monkeypatch):
     """Ensure a clean CLI context for every test in this module."""
     import rct_control_plane.cli as cli_mod
+
     monkeypatch.setattr(cli_mod, "_cli_context", None)
 
 
 @pytest.fixture()
 def runner():
     from click.testing import CliRunner
+
     return CliRunner()
 
 
 @pytest.fixture()
 def cli():
     from rct_control_plane.cli import cli as _cli
+
     return _cli
 
 
 # ── _configure_encoding ────────────────────────────────────────────────────────
+
 
 class TestConfigureEncoding:
     """Unit-test the module-level ``_configure_encoding`` helper."""
@@ -50,6 +58,7 @@ class TestConfigureEncoding:
     def test_runs_without_error_on_current_platform(self):
         """Must not raise on any platform (Linux/macOS are no-ops)."""
         from rct_control_plane.cli import _configure_encoding
+
         _configure_encoding()
 
     def test_silences_reconfigure_exception(self, monkeypatch):
@@ -82,6 +91,7 @@ class TestConfigureEncoding:
 
 
 # ── serve command ──────────────────────────────────────────────────────────────
+
 
 class TestServeCommand:
     """Coverage for branches inside ``rct serve``."""
@@ -120,7 +130,9 @@ class TestServeCommand:
         assert kw.get("workers") == 3
         assert kw.get("reload") is False
 
-    def test_serve_default_host_and_port_passed_to_uvicorn(self, runner, cli, monkeypatch):
+    def test_serve_default_host_and_port_passed_to_uvicorn(
+        self, runner, cli, monkeypatch
+    ):
         """Verify that the default host (127.0.0.1) and port (8000) are forwarded."""
         mock_uv = MagicMock()
         monkeypatch.setitem(sys.modules, "uvicorn", mock_uv)
@@ -161,6 +173,7 @@ class TestServeCommand:
 
 # ── version command ────────────────────────────────────────────────────────────
 
+
 class TestVersionCommand:
     """Coverage for branches inside ``rct version``."""
 
@@ -187,8 +200,9 @@ class TestVersionCommand:
     ):
         """
         When the package metadata is absent (editable install without dist-info),
-        ``version`` must fall back to the hardcoded ``1.0.2a0`` string.
+        ``version`` must fall back to the package default version string.
         """
+
         def _raise_not_found(pkg: str):
             raise _meta.PackageNotFoundError(pkg)
 
@@ -196,7 +210,7 @@ class TestVersionCommand:
 
         result = runner.invoke(cli, ["version"])
         assert result.exit_code == 0
-        assert "1.0.2a0" in result.output
+        assert PACKAGE_VERSION in result.output
 
     def test_version_table_output_has_expected_fields(self, runner, cli):
         """Default table output must show name, license, and homepage."""
@@ -208,6 +222,7 @@ class TestVersionCommand:
 
 
 # ── status command ─────────────────────────────────────────────────────────────
+
 
 class TestStatusCommandCoverage:
     """Coverage for uncovered branches in ``rct status``."""
@@ -230,6 +245,7 @@ class TestStatusCommandCoverage:
         back to plain ``click.echo`` output and still exit 0.
         """
         import rct_control_plane.cli as cli_mod
+
         monkeypatch.setattr(cli_mod, "_HAS_RICH", False)
 
         result = runner.invoke(cli, ["status"])
@@ -241,12 +257,13 @@ class TestStatusCommandCoverage:
     def test_status_no_arg_plain_text_shows_version(self, runner, cli, monkeypatch):
         """Plain-text mode must display the version and recent_intents count."""
         import rct_control_plane.cli as cli_mod
+
         monkeypatch.setattr(cli_mod, "_HAS_RICH", False)
 
         result = runner.invoke(cli, ["status"])
 
         assert result.exit_code == 0
-        assert "1.0.2a0" in result.output or "Version:" in result.output
+        assert PACKAGE_VERSION in result.output or "Version:" in result.output
 
     def test_status_nonexistent_id_exits_one(self, runner, cli):
         """``rct status <unknown-id>`` must exit 1 and not crash."""

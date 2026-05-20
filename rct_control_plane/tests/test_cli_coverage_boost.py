@@ -10,12 +10,14 @@ Target lines (currently 71% → goal 88%+):
   1072-1084, 1090-1096, 1116-1140, 1146-1152
   1174-1182, 1195-1213, 1218, 1222
 """
+
 from __future__ import annotations
 
 import pytest
 from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 
+from rct_control_plane._version import PACKAGE_VERSION
 from rct_control_plane.cli import (
     cli,
     CLIContext,
@@ -30,10 +32,12 @@ from rct_control_plane.cli import (
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def reset_cli_context():
     """Reset CLI global context before each test."""
     import rct_control_plane.cli as _cli_mod
+
     _cli_mod._cli_context = None
     yield
     _cli_mod._cli_context = None
@@ -45,6 +49,7 @@ def runner():
 
 
 # ─── Module-level guard: click ImportError (lines 35-37) ─────────────────────
+
 
 class TestClickImportGuard:
     def test_configure_encoding_no_crash(self):
@@ -59,6 +64,7 @@ class TestClickImportGuard:
 
 
 # ─── _HAS_RICH=False branch tests ─────────────────────────────────────────────
+
 
 class TestNoRichBranches:
     """Force _HAS_RICH=False to exercise fallback display code."""
@@ -111,11 +117,17 @@ class TestNoRichBranches:
 
     def test_compile_invalid_shows_warning(self, runner):
         """compile → validation warnings shown via click (lines 383-387)."""
-        result = self._run_no_rich(runner, [
-            "compile", "x",
-            "--user-id", "u-test",
-            "--user-tier", "FREE",
-        ])
+        result = self._run_no_rich(
+            runner,
+            [
+                "compile",
+                "x",
+                "--user-id",
+                "u-test",
+                "--user-tier",
+                "FREE",
+            ],
+        )
         # Should not crash regardless of validation outcome
         assert result.exit_code in (0, 1)
 
@@ -124,12 +136,21 @@ class TestNoRichBranches:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.CLIContext.save_intent",
-                side_effect=RuntimeError("save failed")
+                side_effect=RuntimeError("save failed"),
             ):
-                result = runner.invoke(cli, [
-                    "compile", "test intent", "--save",
-                    "--user-id", "u", "--user-tier", "PRO",
-                ], catch_exceptions=False)
+                result = runner.invoke(
+                    cli,
+                    [
+                        "compile",
+                        "test intent",
+                        "--save",
+                        "--user-id",
+                        "u",
+                        "--user-tier",
+                        "PRO",
+                    ],
+                    catch_exceptions=False,
+                )
         assert result.exit_code in (0, 1)
 
     def test_status_not_found_error(self, runner):
@@ -161,13 +182,14 @@ class TestNoRichBranches:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.ControlPlaneObserver.get_metrics_summary",
-                side_effect=RuntimeError("metrics crash")
+                side_effect=RuntimeError("metrics crash"),
             ):
                 result = runner.invoke(cli, ["metrics"])
         assert result.exit_code in (0, 1)
 
 
 # ─── reset command ─────────────────────────────────────────────────────────────
+
 
 class TestResetCommand:
     def test_reset_force(self, runner):
@@ -193,13 +215,14 @@ class TestResetCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.CLIContext.reset_all",
-                side_effect=RuntimeError("reset failed")
+                side_effect=RuntimeError("reset failed"),
             ):
                 result = runner.invoke(cli, ["reset", "--force"])
         assert result.exit_code == 1
 
 
 # ─── adapter commands (import branches) ───────────────────────────────────────
+
 
 class TestAdapterCommands:
     def test_adapter_status_import_error(self, runner):
@@ -234,11 +257,14 @@ class TestAdapterCommands:
 
 # ─── governance command ────────────────────────────────────────────────────────
 
+
 class TestGovernanceCommand:
     def test_governance_import_error(self, runner):
         """governance when core.adapters not available (lines 1030-1035)."""
-        with patch.dict("sys.modules", {"core.adapters": None,
-                                        "core.adapters.base_os_adapter": None}):
+        with patch.dict(
+            "sys.modules",
+            {"core.adapters": None, "core.adapters.base_os_adapter": None},
+        ):
             result = runner.invoke(cli, ["governance"])
         assert result.exit_code in (0, 1)
 
@@ -264,7 +290,7 @@ class TestGovernanceCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("governance crash")
+                side_effect=RuntimeError("governance crash"),
             ):
                 result = runner.invoke(cli, ["governance"])
         assert result.exit_code in (0, 1)
@@ -272,21 +298,22 @@ class TestGovernanceCommand:
 
 # ─── timeline command ──────────────────────────────────────────────────────────
 
+
 class TestTimelineCommand:
     def test_timeline_import_error(self, runner):
         """timeline when MemoryDeltaEngine not available (lines 1085-1090)."""
-        with patch.dict("sys.modules", {
-            "core.kernel": None, "core.kernel.memory_delta": None
-        }):
+        with patch.dict(
+            "sys.modules", {"core.kernel": None, "core.kernel.memory_delta": None}
+        ):
             result = runner.invoke(cli, ["timeline", "--agent", "agent-001"])
         assert result.exit_code in (0, 1)
 
     def test_timeline_json_output(self, runner):
         """timeline --output json."""
         try:
-            result = runner.invoke(cli, [
-                "timeline", "--agent", "agent-001", "--output", "json"
-            ])
+            result = runner.invoke(
+                cli, ["timeline", "--agent", "agent-001", "--output", "json"]
+            )
             assert result.exit_code in (0, 1)
         except Exception:
             pass
@@ -296,11 +323,13 @@ class TestTimelineCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             mock_engine = MagicMock()
             mock_engine.query_deltas.return_value = []
-            with patch("rct_control_plane.cli.MemoryDeltaEngine", return_value=mock_engine, create=True):
+            with patch(
+                "rct_control_plane.cli.MemoryDeltaEngine",
+                return_value=mock_engine,
+                create=True,
+            ):
                 try:
-                    result = runner.invoke(cli, [
-                        "timeline", "--agent", "agent-x"
-                    ])
+                    result = runner.invoke(cli, ["timeline", "--agent", "agent-x"])
                     assert result.exit_code in (0, 1)
                 except Exception:
                     pass
@@ -310,7 +339,7 @@ class TestTimelineCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("timeline crash")
+                side_effect=RuntimeError("timeline crash"),
             ):
                 result = runner.invoke(cli, ["timeline", "--agent", "x"])
         assert result.exit_code in (0, 1)
@@ -318,12 +347,11 @@ class TestTimelineCommand:
 
 # ─── replay command ────────────────────────────────────────────────────────────
 
+
 class TestReplayCommand:
     def test_replay_import_error(self, runner):
         """replay when DeterminismController not available (lines 1141-1146)."""
-        with patch.dict("sys.modules", {
-            "core.adapters.determinism_controller": None
-        }):
+        with patch.dict("sys.modules", {"core.adapters.determinism_controller": None}):
             result = runner.invoke(cli, ["replay", "--hash", "abc123"])
         assert result.exit_code in (0, 1)
 
@@ -332,13 +360,14 @@ class TestReplayCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("replay crash")
+                side_effect=RuntimeError("replay crash"),
             ):
                 result = runner.invoke(cli, ["replay", "--hash", "abc"])
         assert result.exit_code in (0, 1)
 
 
 # ─── logs command ──────────────────────────────────────────────────────────────
+
 
 class TestLogsCommand:
     def test_logs_json_output(self, runner):
@@ -362,7 +391,7 @@ class TestLogsCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("logs crash")
+                side_effect=RuntimeError("logs crash"),
             ):
                 result = runner.invoke(cli, ["logs"])
         assert result.exit_code == 1
@@ -370,19 +399,29 @@ class TestLogsCommand:
 
 # ─── list command (table no-rich / rich branches) ─────────────────────────────
 
+
 class TestListCommand:
     def _populate_intent(self, runner):
         """Helper: compile one intent so list has data."""
-        runner.invoke(cli, [
-            "compile", "test intent", "--save",
-            "--user-id", "u-list", "--user-tier", "PRO",
-        ])
+        runner.invoke(
+            cli,
+            [
+                "compile",
+                "test intent",
+                "--save",
+                "--user-id",
+                "u-list",
+                "--user-tier",
+                "PRO",
+            ],
+        )
 
     def test_list_empty_json(self, runner):
         """list --output json with no data → {intents: [], total: 0}."""
         result = runner.invoke(cli, ["list", "--output", "json"])
         assert result.exit_code == 0
         import json
+
         data = json.loads(result.output)
         assert data["total"] == 0
 
@@ -403,13 +442,14 @@ class TestListCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("list crash")
+                side_effect=RuntimeError("list crash"),
             ):
                 result = runner.invoke(cli, ["list"])
         assert result.exit_code == 1
 
 
 # ─── audit command ─────────────────────────────────────────────────────────────
+
 
 class TestAuditCommand:
     def test_audit_no_events_exits_0(self, runner):
@@ -420,11 +460,20 @@ class TestAuditCommand:
     def test_audit_table_output_no_rich(self, runner):
         """audit --output table no-rich with real events (lines 753-766)."""
         # First compile to generate events
-        runner.invoke(cli, [
-            "compile", "audit test intent", "--save",
-            "--user-id", "u-audit", "--user-tier", "PRO",
-        ])
+        runner.invoke(
+            cli,
+            [
+                "compile",
+                "audit test intent",
+                "--save",
+                "--user-id",
+                "u-audit",
+                "--user-tier",
+                "PRO",
+            ],
+        )
         import rct_control_plane.cli as _cli_mod
+
         ctx = _cli_mod._cli_context
         if ctx and ctx.intents:
             intent_id = list(ctx.intents.keys())[0]
@@ -437,13 +486,14 @@ class TestAuditCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("audit crash")
+                side_effect=RuntimeError("audit crash"),
             ):
                 result = runner.invoke(cli, ["audit", "x"])
         assert result.exit_code == 1
 
 
 # ─── version command ───────────────────────────────────────────────────────────
+
 
 class TestVersionCommand:
     def test_version_table(self, runner):
@@ -455,6 +505,7 @@ class TestVersionCommand:
     def test_version_json(self, runner):
         """version --output json."""
         import json
+
         result = runner.invoke(cli, ["version", "--output", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
@@ -463,13 +514,15 @@ class TestVersionCommand:
     def test_version_package_not_found(self, runner):
         """version with PackageNotFoundError → fallback (lines 255-256)."""
         import importlib.metadata as _meta
+
         with patch.object(_meta, "version", side_effect=_meta.PackageNotFoundError):
             result = runner.invoke(cli, ["version"])
         assert result.exit_code == 0
-        assert "1.0.2a0" in result.output
+        assert PACKAGE_VERSION in result.output
 
 
 # ─── serve command ────────────────────────────────────────────────────────────
+
 
 class TestServeCommand:
     def test_serve_uvicorn_import_error(self, runner):
@@ -490,13 +543,14 @@ class TestServeCommand:
 
 # ─── build command ────────────────────────────────────────────────────────────
 
+
 class TestBuildCommand:
-    VALID_DSL = '''intent "test" {
+    VALID_DSL = """intent "test" {
         node n1 {
             node_type = "agent_capability"
             description = "Test node"
         }
-    }'''
+    }"""
 
     def test_build_no_input_exits_1(self, runner):
         """build without --dsl-text or --dsl-file → error (lines 419-420)."""
@@ -505,11 +559,16 @@ class TestBuildCommand:
 
     def test_build_dsl_text(self, runner):
         """build --dsl-text valid DSL."""
-        result = runner.invoke(cli, [
-            "build",
-            "--dsl-text", self.VALID_DSL,
-            "--intent-id", "test-id-build",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "build",
+                "--dsl-text",
+                self.VALID_DSL,
+                "--intent-id",
+                "test-id-build",
+            ],
+        )
         assert result.exit_code == 0
 
     def test_build_exception_no_rich(self, runner):
@@ -517,15 +576,16 @@ class TestBuildCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("build crash")
+                side_effect=RuntimeError("build crash"),
             ):
-                result = runner.invoke(cli, [
-                    "build", "--dsl-text", "x", "--intent-id", "i"
-                ])
+                result = runner.invoke(
+                    cli, ["build", "--dsl-text", "x", "--intent-id", "i"]
+                )
         assert result.exit_code == 1
 
 
 # ─── evaluate command ─────────────────────────────────────────────────────────
+
 
 class TestEvaluateCommand:
     def test_evaluate_no_intent_exits_1(self, runner):
@@ -538,13 +598,14 @@ class TestEvaluateCommand:
         with patch("rct_control_plane.cli._HAS_RICH", False):
             with patch(
                 "rct_control_plane.cli.get_context",
-                side_effect=RuntimeError("eval crash")
+                side_effect=RuntimeError("eval crash"),
             ):
                 result = runner.invoke(cli, ["evaluate", "--intent-id", "x"])
         assert result.exit_code == 1
 
 
 # ─── main entrypoint ──────────────────────────────────────────────────────────
+
 
 class TestMainEntrypoint:
     def test_main_invokes_cli(self, runner):
