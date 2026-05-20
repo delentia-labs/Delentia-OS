@@ -27,6 +27,7 @@ import json
 import signal
 import socket
 import time
+import textwrap
 from urllib.error import URLError
 from urllib.request import urlopen
 from datetime import datetime, timezone
@@ -88,6 +89,37 @@ from rct_control_plane._version import PACKAGE_VERSION, get_package_version
 
 # Preserve builtin list before it gets shadowed by the CLI 'list' command
 _list = list
+
+_DEFAULT_ENV_TEMPLATE = textwrap.dedent(
+    """\
+    # Environment Configuration Example
+    # Copy this file to .env and fill in your values.
+    # NEVER commit .env to version control.
+
+    # --- API Keys (obtain from your provider) ---
+    # OpenRouter key for LLM calls
+    RCT_CORE_BRAIN_KEY=<your-openrouter-key>
+
+    # Google Gemini (optional fallback)
+    GOOGLE_API_KEY=<your-google-api-key>
+
+    # --- Service URLs ---
+    # Production API base URL
+    RCT_API_BASE_URL=https://api.rctlabs.co
+
+    # --- Database (local dev only) ---
+    # RCTDB connection string for local development
+    RCTDB_URL=postgresql://localhost:5432/rctdb_dev
+
+    # --- Observability ---
+    # Optional: trace exporter endpoint
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+
+    # --- Feature Flags ---
+    # Set to "1" to enable development/debug mode
+    RCT_DEBUG=0
+    """
+)
 
 
 def _configure_encoding() -> None:
@@ -1977,6 +2009,7 @@ def init(force: bool):
     """
     env_path = Path(".env")
     example_path = Path(".env.example")
+    template_source = "project template"
 
     # Search for .env.example relative to package root if not found locally
     if not example_path.exists():
@@ -2000,22 +2033,17 @@ def init(force: bool):
             )
         return
 
-    if not example_path.exists():
-        if _HAS_RICH:
-            render_error(".env.example not found. Run from the rct-platform directory.")
-        else:
-            click.echo(
-                click.style("Error: .env.example not found.", fg="red"), err=True
-            )
-        sys.exit(1)
+    if example_path.exists():
+        import shutil
 
-    import shutil
-
-    shutil.copy(str(example_path), str(env_path))
+        shutil.copy(str(example_path), str(env_path))
+    else:
+        env_path.write_text(_DEFAULT_ENV_TEMPLATE, encoding="utf-8")
+        template_source = "built-in fallback template"
 
     if _HAS_RICH:
         console = get_console()
-        render_success(".env created from .env.example template")
+        render_success(f".env created from {template_source}")
         console.print()
         console.print("  [bold]Next steps:[/]")
         console.print(
@@ -2032,7 +2060,7 @@ def init(force: bool):
         console.print()
     else:
         click.echo(
-            ".env created. Fill in your API keys, then run: rct doctor, then rct start"
+            f".env created from {template_source}. Fill in your API keys, then run: rct doctor, then rct start"
         )
 
 

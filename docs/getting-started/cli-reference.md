@@ -5,7 +5,11 @@ The `rct` command-line tool is the primary interface to the RCT Control Plane SD
 **Install the CLI:**
 
 ```bash
-pip install -e .      # from source (alpha)
+pip install -e .
+rct version
+rct start --ui-test
+rct init
+rct doctor
 rct --help
 ```
 
@@ -37,12 +41,22 @@ rct version
 **Output:**
 
 ```
-RCT Platform SDK v1.0.2a0
+RCT Platform SDK v1.0.4b0
 Python 3.11.x
   ✓ core.fdia          — FDIA Scorer + equation engine
   ✓ core.delta_engine  — Memory Delta Engine (74% compression)
   ✓ signedai.core      — SignedAI consensus registry
   ✓ rct_control_plane  — DSL compiler, graph builder, API server
+```
+
+Recommended first-run order for a fresh install:
+
+```bash
+rct version
+rct start --ui-test
+rct init
+rct doctor
+rct start
 ```
 
 ---

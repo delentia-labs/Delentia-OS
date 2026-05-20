@@ -1,7 +1,7 @@
-# RCT Platform — Public Roadmap
+## RCT Platform — Public Roadmap
 
-> Last updated: April 28, 2026  
-> Current version: **v1.0.2a0 (Public Alpha)**  
+> Last updated: May 20, 2026  
+> Current version: **v1.0.4b0 (Beta Preview)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
 ---
@@ -14,6 +14,20 @@
 | 🔄 | In progress |
 | 📋 | Planned — confirmed |
 | 💡 | Considering — not confirmed |
+
+---
+
+## v1.0.4b0 — Beta Preview ✅ (May 2026)
+
+**Goal: harden the public CLI and first-run experience before PyPI release.**
+
+- ✅ Shared package version source across CLI, API, and release metadata
+- ✅ `rct doctor` environment diagnostics
+- ✅ `rct start --ui-test` for zero-key first-run validation
+- ✅ `rct status --live` runtime dashboard with health-endpoint fallback
+- ✅ `rct logs --follow` live log streaming
+- ✅ `rct init` fallback template for wheel and clean-room installs
+- ✅ Focused CLI coverage for first-run onboarding paths
 
 ---
 

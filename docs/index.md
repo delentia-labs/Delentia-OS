@@ -4,7 +4,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/rctlabs/rct-platform/ci.yml?branch=main&label=CI&logo=github)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.0.2a0-blue)](https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.4b0-blue)](https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/rctlabs/rct-platform/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB)](https://pypi.org/project/rct-platform/)
 
@@ -49,7 +49,7 @@ $$F = D^I \times A$$
 
 | Metric | Value |
 |--------|-------|
-| SDK Tests | **1,193 passed · 0 skipped · 94% coverage** |
+| SDK Validation | See `docs/testing/TESTING_CANONICAL.md` for the current verified checkpoint |
 | Algorithms | 41 (Tier 1–9 reference implementations) |
 | LLM Models | 7 HexaCore (3 Western + 3 Eastern + 1 Regional Thai) |
 | Hallucination Rate | **0.3%** (vs industry 12–15%) — 97% reduction |
@@ -70,18 +70,18 @@ $$F = D^I \times A$$
 | Regional Language Adapter | `core/regional_adapter/` |
 | RCT Control Plane DSL | `rct_control_plane/` (15 modules) |
 | 5 Reference Microservices | `microservices/` (258 tests) |
-| CLI entry point | `rct` via `pip install -e .` |
+| CLI entry point | `rct` via editable install or built wheel |
 
 ---
 
 ## Quick Install
 
-!!! warning "Alpha Release — Source Install Required"
-    `rct-platform` v1.0.2a0 is in **Public Alpha** and has not yet been published to PyPI.
-    Use **From Source** install below until v1.0.0 stable.
+!!! warning "Beta Preview — Source Install Today"
+    `rct-platform` v1.0.4b0 is a beta-preview release candidate.
+    Source installs and built wheels are supported; public PyPI publication remains a release step.
 
 ```bash
-# From source (recommended for v1.0.2a0 alpha):
+# From source (recommended today):
 git clone https://github.com/rctlabs/rct-platform.git
 cd rct-platform
 pip install -e .
