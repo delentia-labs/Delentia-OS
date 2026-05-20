@@ -8,7 +8,9 @@ will be added in future releases.
 Apache 2.0 — RCT Labs (https://rctlabs.co)
 """
 
-__version__ = "1.0.2a0"
+from ._version import PACKAGE_VERSION
+
+__version__ = PACKAGE_VERSION
 
 from .intent_schema import (
     IntentType,

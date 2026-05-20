@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4b0] - 2026-05-20
+
+### Added
+- `rct doctor` command — local preflight diagnostics for Python/tooling versions, project files, and localhost service reachability with table or JSON output.
+
+### Changed
+- `rct_control_plane/api.py` — fixed mypy `[truthy-function]` failure by replacing a truthy function guard with an explicit `is not None` check for the Rich veto renderer.
+- `rct_control_plane/rich_formatter.py` — `get_console()` is now TTY-aware so Rich output downgrades cleanly when stdout is piped or executed in CI.
+- `rct_control_plane/cli.py` — installs `rich.traceback`, adds next-step suggestions for DX commands, adds graceful Ctrl-C shutdown handling in `rct start`, and upgrades `rct benchmark` to structured execution with Rich progress feedback.
+- `rct_control_plane/tests/test_cli_api.py` — version assertion updated to `1.0.4b0` and added `rct doctor` coverage.
+
+### Verified
+- Focused validation completed locally: mypy clean for `api.py`, `cli.py`, and `rich_formatter.py`; CLI/API targeted tests passing.
+
 ## [1.0.3b0] - 2026-05-20
 
 ### Added — CLI DX (P0 + P1)
