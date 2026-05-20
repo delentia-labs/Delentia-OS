@@ -181,7 +181,7 @@ class TestCLIVersion:
     def test_version_flag(self, cli_runner, cli):
         result = cli_runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "1.0.0b0" in result.output
+        assert "1.0.3b0" in result.output
 
 
 class TestCLIOutputFormats:

@@ -55,7 +55,6 @@ try:
         print_splash,
         boot_sequence_animation,
         render_hexacore_table,
-        render_architect_veto,
         render_pipeline_flow,
     )
     _HAS_RICH = True
@@ -236,7 +235,7 @@ def format_output(data: Any, format: OutputFormat) -> None:
 # CLI Commands
 
 @click.group()
-@click.version_option(version="1.0.0b0", prog_name="rct")
+@click.version_option(version="1.0.3b0", prog_name="rct")
 def cli():
     """
     RCT Control Plane CLI
@@ -1244,7 +1243,7 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
     try:
         ver = _meta.version("rct-platform")
     except _meta.PackageNotFoundError:
-        ver = "1.0.0b0"
+        ver = "1.0.3b0"
 
     if _HAS_RICH:
         print_splash(version=ver)
@@ -1288,7 +1287,7 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
         "rct_control_plane.api:app",
         host=host,
         port=port,
-        reload=verbose,
+        reload=False,
         log_level="debug" if verbose else "info",
         workers=1,
     )

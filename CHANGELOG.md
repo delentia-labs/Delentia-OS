@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0b0] - 2026-05-20
+## [1.0.3b0] - 2026-05-20
 
 ### Added — CLI DX (P0 + P1)
 - `rct start` command — Constitutional AI OS launch sequence: splash panel (FDIA equation), 6-service boot animation (ports 8000–8004 + delta-engine), HexaCore 7-LLM Consensus Registry dashboard, then starts API server. Flags: `--verbose` (debug logs), `--ui-test` (mock mode, no API calls), `--port`, `--host`.
@@ -19,9 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `render_pipeline_flow(current_stage, stages_passed)` — FDIA→JITNA→HexaCore→SignedAI→Output progress display
 
 ### Changed
-- `pyproject.toml` — version `1.0.3a0` → `1.0.0b0`; classifier `Development Status :: 3 - Alpha` → `Development Status :: 4 - Beta`
-- `rct_control_plane/cli.py` — `@click.version_option` updated from `1.0.2a0` → `1.0.0b0`; added imports for all 5 new rich_formatter DX functions
-- `rct_control_plane/tests/test_cli_api.py` — `TestCLIVersion.test_version_flag` assertion updated to `1.0.0b0`
+- `pyproject.toml` — version `1.0.3a0` → `1.0.3b0`; classifier `Development Status :: 3 - Alpha` → `Development Status :: 4 - Beta`
+- `rct_control_plane/cli.py` — `@click.version_option` updated from `1.0.2a0` → `1.0.3b0`; added imports for all 5 new rich_formatter DX functions
+- `rct_control_plane/tests/test_cli_api.py` — `TestCLIVersion.test_version_flag` assertion updated to `1.0.3b0`
 
 ### Verified
 - 775/775 tests passing · 0 regressions

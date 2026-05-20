@@ -18,10 +18,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .intent_compiler import IntentCompiler
 from .dsl_parser import DSLParser
-from .policy_language import PolicyEvaluator
+from .policy_language import PolicyEvaluator, PolicyAction
 from .control_plane_state import ControlPlaneState, ControlPlanePhase
 from .observability import ControlPlaneObserver
 from .default_policies import get_default_policies
+
+try:
+    from .rich_formatter import render_architect_veto as _render_veto
+    _HAS_RICH = True
+except ImportError:  # pragma: no cover
+    _HAS_RICH = False
+    _render_veto = None  # type: ignore[assignment]
 
 
 # ============================================================================
@@ -555,7 +562,12 @@ class ControlPlaneAPI:
                 
                 # Evaluate
                 eval_result = self.evaluator.evaluate_intent(intent, graph)
-                
+
+                # A=0 block — emit terminal veto panel when Rich is available
+                if eval_result.decision == PolicyAction.REJECT and _HAS_RICH and _render_veto:
+                    reason = eval_result.decision_reason or "; ".join(eval_result.violations) or "Policy REJECT"
+                    _render_veto(reason=reason)
+
                 # Update state if exists
                 if request.intent_id in self.states:
                     state = self.states[request.intent_id]

@@ -449,7 +449,7 @@ def render_warning(message: str) -> None:
 # DX Splash, Boot Sequence & Dashboard — rct start
 # ---------------------------------------------------------------------------
 
-def print_splash(version: str = "1.0.0b0") -> None:
+def print_splash(version: str = "1.0.3b0") -> None:
     """Print the RCT OS Constitutional Declaration splash panel."""
     console = get_console()
     content = Text()
