@@ -16,7 +16,9 @@ import sys
 import time
 from typing import Any, Dict, List, Optional
 
+from rich.columns import Columns
 from rich.console import Console
+from rich.align import Align
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.status import Status
@@ -25,6 +27,13 @@ from rich.text import Text
 from rich.tree import Tree
 from rich.syntax import Syntax
 from rich import box
+
+from rct_control_plane.banner_assets import (
+    RCT_EMBLEM_COMPACT,
+    RCT_EMBLEM_WIDE,
+    RCT_WORDMARK,
+    RCT_WORDMARK_HERO,
+)
 
 
 # Shared console instance
@@ -55,13 +64,21 @@ _STATUS_COLORS = {
     "active": "bright_green",
     "running": "bright_green",
     "healthy": "bright_green",
+    "serving": "bright_green",
     "passed": "bright_green",
     "blocked": "bright_red",
     "error": "bright_red",
     "failed": "bright_red",
     "unhealthy": "bright_red",
+    "offline": "bright_red",
     "warning": "yellow",
     "pending": "yellow",
+    "launching": "yellow",
+    "starting": "yellow",
+    "degraded": "yellow",
+    "health-unknown": "yellow",
+    "preview": "bright_cyan",
+    "ui-test": "bright_cyan",
     "unknown": "dim",
 }
 
@@ -70,6 +87,14 @@ def _colorize_status(status: str) -> str:
     """Wrap status text in a Rich color tag."""
     color = _STATUS_COLORS.get(status.lower(), "white")
     return f"[{color}]{status}[/{color}]"
+
+
+def _render_runtime_status(status: str) -> str:
+    """Render runtime and service statuses with consistent labels."""
+    normalized = status.lower()
+    color = _STATUS_COLORS.get(normalized, "white")
+    label = normalized.replace("-", " ").upper()
+    return f"[{color}]{label}[/{color}]"
 
 
 # ---------------------------------------------------------------------------
@@ -586,13 +611,17 @@ def render_layout_dashboard(
 
     ready_count = 0
     for service in services:
+        service_status = str(
+            service.get("status")
+            or ("online" if bool(service.get("online", False)) else "offline")
+        )
         is_online = bool(service.get("online", False))
-        if is_online:
+        if is_online or service_status in {"serving", "degraded", "health-unknown"}:
             ready_count += 1
         services_table.add_row(
             str(service.get("name", "—")),
             str(service.get("port", "—")),
-            "[bright_green]ONLINE[/]" if is_online else "[bright_red]OFFLINE[/]",
+            _render_runtime_status(service_status),
         )
 
     llm_table = Table(
@@ -627,7 +656,8 @@ def render_layout_dashboard(
     footer = Text()
     footer.append(f"Endpoint: {endpoint}", style="bright_green")
     footer.append("  |  ", style="dim")
-    footer.append(f"Status: {overall_status}", style="bright_white")
+    footer.append("Status: ", style="bright_white")
+    footer.append_text(Text.from_markup(_render_runtime_status(overall_status)))
     footer.append("  |  ", style="dim")
     footer.append(f"Ready services: {ready_count}/{len(services)}", style="bright_cyan")
     footer.append("  |  ", style="dim")
@@ -674,38 +704,161 @@ def render_layout_dashboard(
 # ---------------------------------------------------------------------------
 
 
-def print_splash(version: str = "1.0.4b0") -> None:
-    """Print the RCT OS Constitutional Declaration splash panel."""
+def _build_emblem(compact: bool = False) -> Text:
+    """Build the ANSI-safe emblem derived from the RCT glyph."""
+    emblem = Text()
+    lines = (RCT_EMBLEM_COMPACT if compact else RCT_EMBLEM_WIDE).splitlines()
+    for idx, line in enumerate(lines):
+        for char in line:
+            if char == "●":
+                emblem.append(char, style="bold bright_yellow")
+            elif char.isspace():
+                emblem.append(char)
+            else:
+                emblem.append(char, style="bold bright_white")
+        if idx < len(lines) - 1:
+            emblem.append("\n")
+    return emblem
+
+
+def _build_wordmark() -> Text:
+    """Build the text-first RCT OS wordmark."""
+    return Text(RCT_WORDMARK, style="bold bright_white")
+
+
+def _build_wordmark_hero() -> Text:
+    """Build the large centered RCT OS hero wordmark."""
+    return Text(RCT_WORDMARK_HERO, style="bold bright_white")
+
+
+def _build_brand_stack(hero: bool = False) -> Text:
+    """Compose the emblem and wordmark into a centered brand block."""
+    brand = Text()
+    brand.append_text(_build_emblem(compact=not hero))
+    brand.append("\n\n")
+    brand.append_text(_build_wordmark_hero() if hero else _build_wordmark())
+    return brand
+
+
+def _build_runtime_rail(version: str, endpoint: str, mock: bool) -> Table:
+    """Build the truthful runtime metadata table for the launch banner."""
     console = get_console()
-    content = Text()
-    content.append("\n")
-    content.append("  RCT OS — INTENT CENTRIC AI\n", style="bold bright_white")
-    content.append("  " + "─" * 44 + "\n", style="dim")
-    content.append("\n")
-    content.append("  F = D", style="bold bright_cyan")
-    content.append("ᴵ", style="bold bright_cyan")
-    content.append(" × A", style="bold bright_cyan")
-    content.append("   (Constitutional Guarantee)\n", style="dim")
-    content.append("\n")
-    content.append("  When A = 0  →  OUTPUT = 0  ", style="bold bright_red")
-    content.append("(Multiplicative Block — no exception)\n", style="dim")
-    content.append("\n")
-    content.append(f"  v{version}", style="bold bright_magenta")
-    content.append("  ·  41 Algorithms", style="dim")
-    content.append("  ·  SLA 99.98%", style="dim")
-    content.append("  ·  HexaCore 7-LLM\n", style="dim")
-    content.append("\n")
+    rail = Table.grid(padding=(0, 1))
+    rail.add_column(style="bright_cyan", no_wrap=True)
+    rail.add_column(style="white")
+    rail.add_row("version", f"v{version}")
+    rail.add_row("mode", "UI test surface only" if mock else "Live control-plane boot")
+    rail.add_row("endpoint", endpoint)
+    rail.add_row(
+        "render",
+        f"{'tty' if console.is_terminal else 'buffer'} / {console.color_system or 'plain'} / {console.size.width} cols",
+    )
+    rail.add_row("proof lanes", "Public SDK proof stays separate from enterprise snapshots")
+    return rail
+
+
+def print_splash(
+    version: str = "1.0.4b0",
+    endpoint: str = "http://127.0.0.1:8000",
+    mock: bool = False,
+) -> None:
+    """Print the branded RCT launch header with width-aware fallbacks."""
+    console = get_console()
+    formula = Text()
+    formula.append("F = D", style="bold bright_cyan")
+    formula.append("ᴵ", style="bold bright_cyan")
+    formula.append(" × A", style="bold bright_cyan")
+    formula.append("  Constitutional routing discipline", style="dim")
+
+    detail = Text.from_markup(
+        "[bright_white]Intent-centric AI control plane[/]\n"
+        "[dim]Portable ANSI launch header derived from the RCT icon geometry[/]\n"
+        "[dim]When A = 0, output is blocked by design rather than by marketing copy[/]"
+    )
+    runtime_rail = _build_runtime_rail(version=version, endpoint=endpoint, mock=mock)
+
+    if console.is_terminal and console.size.width >= 140:
+        console.print(
+            Panel(
+                Align.center(_build_brand_stack(hero=True)),
+                title="[bold white]RCT OS[/]",
+                subtitle="[dim]brand-first launch frame[/]",
+                border_style="bright_yellow",
+                padding=(1, 3),
+            )
+        )
+        console.print(
+            Panel(
+                Columns(
+                    [
+                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
+                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_magenta"),
+                    ],
+                    expand=True,
+                    equal=True,
+                ),
+                border_style="bright_cyan",
+                padding=(0, 1),
+            )
+        )
+        console.print(formula)
+        console.print(detail)
+        console.print()
+        return
+
+    if console.is_terminal and console.size.width >= 100:
+        console.print(
+            Panel(
+                Align.center(_build_brand_stack(hero=False)),
+                title="[bold white]RCT OS[/]",
+                subtitle="[dim]standard launch frame[/]",
+                border_style="bright_cyan",
+                padding=(0, 2),
+            )
+        )
+        console.print(
+            Panel(
+                Columns(
+                    [
+                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
+                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_magenta"),
+                    ],
+                    expand=True,
+                    equal=False,
+                ),
+                border_style="bright_cyan",
+                padding=(0, 1),
+            )
+        )
+        console.print(formula)
+        console.print()
+        return
+
+    compact_text = Text()
+    compact_text.append("RCT OS", style="bold bright_white")
+    compact_text.append(f"  v{version}\n", style="bold bright_magenta")
+    compact_text.append(
+        "mode: UI test surface only\n" if mock else "mode: Live control-plane boot\n",
+        style="white",
+    )
+    compact_text.append(f"endpoint: {endpoint}\n", style="white")
+    compact_text.append("proof lanes: public SDK proof remains separate from enterprise snapshots\n", style="dim")
+    compact_text.append("F = D", style="bold bright_cyan")
+    compact_text.append("ᴵ", style="bold bright_cyan")
+    compact_text.append(" × A", style="bold bright_cyan")
+    compact_text.append("  Constitutional routing discipline", style="dim")
     console.print(
         Panel(
-            content,
+            compact_text,
+            title="[bold white]RCT START[/]",
             border_style="bright_cyan",
             padding=(0, 1),
         )
     )
 
 
-def boot_sequence_animation(mock: bool = False) -> None:
-    """Animate 5-service boot sequence with Rich Status spinners."""
+def boot_sequence_animation(mock: bool = False, overall_status: str = "launching") -> None:
+    """Animate a truthful pre-launch sequence with state-aware messaging."""
     console = get_console()
     services = [
         ("gateway-api", 8000, "Unified entry point"),
@@ -716,6 +869,8 @@ def boot_sequence_animation(mock: bool = False) -> None:
         ("delta-engine", None, "74% memory compression"),
     ]
     delay = 0.35 if mock else 0.6
+    phase_label = "PREVIEW" if mock else "STARTING"
+    phase_style = "bright_cyan" if mock else "yellow"
     console.print()
     for name, port, desc in services:
         port_label = f":{port}" if port else "     "
@@ -724,12 +879,22 @@ def boot_sequence_animation(mock: bool = False) -> None:
             time.sleep(delay)
         tag = f"[dim]{port_label}[/]"
         console.print(
-            f"  [bright_green]✓ OK[/]  [bold white]{name:<24}[/] {tag}  [dim]{desc}[/]"
+            f"  [{phase_style}]{phase_label:<8}[/] [bold white]{name:<24}[/] {tag}  [dim]{desc}[/]"
         )
     console.print()
-    console.print(
-        f"  [bright_green]All systems nominal[/] [dim]— {len(services)} components ready[/]"
-    )
+    if overall_status == "ui-test":
+        summary = "[bright_cyan]UI preview complete[/] [dim]— runtime not started[/]"
+    elif overall_status == "launching":
+        summary = "[yellow]Launch sequence prepared[/] [dim]— awaiting API bind[/]"
+    elif overall_status == "serving":
+        summary = f"[bright_green]Runtime serving[/] [dim]— {len(services)} components reachable[/]"
+    elif overall_status == "degraded":
+        summary = "[yellow]Runtime degraded[/] [dim]— review health endpoint output[/]"
+    elif overall_status == "health-unknown":
+        summary = "[yellow]Port probe only[/] [dim]— health endpoint unavailable[/]"
+    else:
+        summary = "[bright_red]Runtime offline[/] [dim]— services not reachable[/]"
+    console.print(f"  {summary}")
     console.print()
 
 

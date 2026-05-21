@@ -171,6 +171,51 @@ class TestServeCommand:
         assert "/health" in result.output
 
 
+class TestStartCommand:
+    def test_start_ui_test_passes_runtime_context_to_splash(
+        self, runner, cli, monkeypatch
+    ):
+        import rct_control_plane.cli as cli_mod
+
+        captured = {}
+        mock_console = MagicMock()
+
+        monkeypatch.setattr(cli_mod, "_HAS_RICH", True)
+        monkeypatch.setattr(
+            cli_mod,
+            "print_splash",
+            lambda version, endpoint, mock: captured.update(
+                {"version": version, "endpoint": endpoint, "mock": mock}
+            ),
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "boot_sequence_animation",
+            lambda mock, overall_status: captured.update({"boot_status": overall_status}),
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "render_layout_dashboard",
+            lambda **kwargs: captured.update({"dashboard": kwargs}) or "dashboard",
+        )
+        monkeypatch.setattr(cli_mod, "get_console", lambda: mock_console)
+        monkeypatch.setattr(cli_mod, "render_success", lambda _message: None)
+        monkeypatch.setattr(cli_mod, "_print_next_steps", lambda _steps: None)
+
+        result = runner.invoke(
+            cli, ["start", "--ui-test", "--host", "0.0.0.0", "--port", "8123"]
+        )
+
+        assert result.exit_code == 0
+        assert captured["endpoint"] == "http://0.0.0.0:8123"
+        assert captured["mock"] is True
+        assert captured["version"] == PACKAGE_VERSION
+        assert captured["boot_status"] == "ui-test"
+        assert captured["dashboard"]["overall_status"] == "ui-test"
+        assert captured["dashboard"]["source"] == "ui-preview"
+        mock_console.print.assert_called_once_with("dashboard")
+
+
 # ── version command ────────────────────────────────────────────────────────────
 
 

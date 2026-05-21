@@ -296,10 +296,12 @@ class TestCLIVersionConsistency:
             cli_mod._fetch_runtime_health = original_fetch
 
         assert state["source"] == "health-endpoint"
-        assert state["overall_status"] == "healthy"
+        assert state["overall_status"] == "serving"
         assert state["environment"] == "test"
         assert state["services"][0]["online"] is True
         assert state["services"][1]["online"] is True
+        assert state["services"][0]["status"] == "serving"
+        assert state["services"][1]["status"] == "degraded"
 
     def test_runtime_dashboard_falls_back_to_port_probe(self):
         import rct_control_plane.cli as cli_mod
@@ -320,6 +322,25 @@ class TestCLIVersionConsistency:
         assert state["source"] == "port-probe"
         assert state["overall_status"] == "offline"
         assert state["services"][0]["port"] == 8123
+
+    def test_runtime_dashboard_port_probe_with_reachable_service_marks_health_unknown(self):
+        import rct_control_plane.cli as cli_mod
+
+        cli_mod._cli_context = None
+        original_fetch = cli_mod._fetch_runtime_health
+        original_snapshot = cli_mod._build_service_snapshot
+        try:
+            cli_mod._fetch_runtime_health = lambda host, port: None
+            cli_mod._build_service_snapshot = lambda default_port=8000: [
+                {"name": "control-plane", "port": default_port, "online": True}
+            ]
+            state = cli_mod._build_runtime_dashboard_state("127.0.0.1", 8123)
+        finally:
+            cli_mod._fetch_runtime_health = original_fetch
+            cli_mod._build_service_snapshot = original_snapshot
+
+        assert state["source"] == "port-probe"
+        assert state["overall_status"] == "health-unknown"
 
     def test_start_ui_test_runs_without_api_keys(self, cli_runner, cli):
         result = cli_runner.invoke(cli, ["start", "--ui-test"])

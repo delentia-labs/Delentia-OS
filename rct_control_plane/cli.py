@@ -283,6 +283,27 @@ def _fetch_runtime_health(host: str, port: int) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _normalize_runtime_overall_status(
+    raw_status: Optional[str],
+    services: List[Dict[str, Any]],
+    source: str,
+) -> str:
+    """Map raw runtime signals into truthful CLI-facing status buckets."""
+    normalized = str(raw_status or "").strip().lower()
+
+    if source == "health-endpoint":
+        if normalized in {"healthy", "running", "active", "serving"}:
+            return "serving"
+        if normalized == "degraded":
+            return "degraded"
+        if normalized in {"offline", "unhealthy", "failed", "error"}:
+            return "offline"
+
+    if any(bool(service.get("online", False)) for service in services):
+        return "health-unknown"
+    return "offline"
+
+
 def _build_runtime_dashboard_state(host: str, port: int) -> Dict[str, Any]:
     """Build dashboard state from live health data with a port-probe fallback."""
     endpoint = f"http://{host}:{port}"
@@ -306,26 +327,69 @@ def _build_runtime_dashboard_state(host: str, port: int) -> Dict[str, Any]:
                     "name": service_name,
                     "port": port_map.get(service_name, "—"),
                     "online": service_status in {"healthy", "degraded"},
+                    "status": (
+                        "serving"
+                        if service_status == "healthy"
+                        else "degraded"
+                        if service_status == "degraded"
+                        else "offline"
+                    ),
                 }
             )
         return {
             "services": services,
             "endpoint": endpoint,
-            "overall_status": str(health.get("status", "unknown")),
+            "overall_status": _normalize_runtime_overall_status(
+                raw_status=str(health.get("status", "unknown")),
+                services=services,
+                source="health-endpoint",
+            ),
             "source": "health-endpoint",
             "uptime_seconds": float(health.get("uptime_seconds", 0.0)),
             "environment": str(health.get("environment", "development")),
             "version": str(health.get("version", PACKAGE_VERSION)),
         }
 
+    services = _build_service_snapshot(default_port=port)
     return {
-        "services": _build_service_snapshot(default_port=port),
+        "services": services,
         "endpoint": endpoint,
-        "overall_status": "offline",
+        "overall_status": _normalize_runtime_overall_status(
+            raw_status=None,
+            services=services,
+            source="port-probe",
+        ),
         "source": "port-probe",
         "uptime_seconds": None,
         "environment": None,
         "version": PACKAGE_VERSION,
+    }
+
+
+def _build_launch_preview_state(
+    host: str,
+    port: int,
+    ui_test: bool,
+    version: str,
+) -> Dict[str, Any]:
+    """Build a truthful pre-launch preview state for `rct start` surfaces."""
+    preview_status = "preview" if ui_test else "starting"
+    services = [
+        {"name": "gateway-api", "port": port, "online": False, "status": preview_status},
+        {"name": "intent-loop", "port": 8001, "online": False, "status": preview_status},
+        {"name": "analysearch-intent", "port": 8002, "online": False, "status": preview_status},
+        {"name": "vector-search", "port": 8003, "online": False, "status": preview_status},
+        {"name": "crystallizer", "port": 8004, "online": False, "status": preview_status},
+        {"name": "delta-engine", "port": "—", "online": False, "status": preview_status},
+    ]
+    return {
+        "services": services,
+        "endpoint": f"http://{host}:{port}",
+        "overall_status": "ui-test" if ui_test else "launching",
+        "source": "ui-preview" if ui_test else "boot-preview",
+        "uptime_seconds": None,
+        "environment": "preview",
+        "version": version,
     }
 
 
@@ -1910,13 +1974,18 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
         ver = PACKAGE_VERSION
 
     if _HAS_RICH:
-        print_splash(version=ver)
-        boot_sequence_animation(mock=ui_test)
+        preview_state = _build_launch_preview_state(host=host, port=port, ui_test=ui_test, version=ver)
+        print_splash(version=ver, endpoint=f"http://{host}:{port}", mock=ui_test)
+        boot_sequence_animation(mock=ui_test, overall_status=str(preview_state["overall_status"]))
         get_console().print(
             render_layout_dashboard(
-                services=_build_service_snapshot(default_port=port),
-                endpoint=f"http://{host}:{port}",
-                version=ver,
+                services=cast(List[Dict[str, Any]], preview_state["services"]),
+                endpoint=str(preview_state["endpoint"]),
+                version=str(preview_state["version"]),
+                overall_status=str(preview_state["overall_status"]),
+                source=str(preview_state["source"]),
+                uptime_seconds=cast(Optional[float], preview_state["uptime_seconds"]),
+                environment=cast(Optional[str], preview_state["environment"]),
             )
         )
         if verbose:
