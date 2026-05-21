@@ -1,10 +1,10 @@
 # RCT Platform — 5-Platform Distribution Kits
 
-**Version:** 1.0.2a0 Launch Wave  
+**Version:** 1.0.4b0 Launch Wave  
 **Created:** 2026-04-30  
 **Claim source:** [`CLAIM_REGISTRY.md`](CLAIM_REGISTRY.md)
 
-This file contains ready-to-post copy for each of the 5 distribution channels. All numbers have been verified against CLAIM_REGISTRY.md. Before posting, run `python -m pytest -q --no-header` one final time to confirm 1,193 passing.
+This file contains ready-to-post copy for each of the 5 distribution channels. All numbers have been verified against CLAIM_REGISTRY.md. Before posting, run `python -m pytest -q --no-header` one final time to confirm 1,287 passing.
 
 ---
 
@@ -13,9 +13,9 @@ This file contains ready-to-post copy for each of the 5 distribution channels. A
 ### Primary Launch Tweet (Thread Root)
 
 ```
-We just open-sourced RCT Platform — the core SDK of an Intent-Centric AI OS.
+We just shipped the beta-preview wave of RCT Platform — the core SDK of an Intent-Centric AI OS.
 
-1,193 tests · 94% coverage · Apache 2.0 · Python 3.10+
+1,287 tests · 92% coverage · Apache 2.0 · Python 3.10+
 
 Try it in 30 seconds (no GPU, no API key needed):
 → github.com/rctlabs/rct-platform
@@ -45,8 +45,8 @@ No benchmarks without proof.
 Run it yourself:
 python -m pytest -q --no-header
 
-Expected: 1,193 passed · 0 failed
-Coverage: 94% (verified, not estimated)
+Expected: 1,287 passed · 0 failed
+Coverage: 92% (verified, not estimated)
 
 Or open in Colab — no login needed:
 colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb
@@ -80,7 +80,7 @@ github.com/rctlabs/rct-platform
 ### Fallback Single Tweet (if thread underperforms)
 
 ```
-Open SDK for Intent-Centric AI — 1,193 tests, 94% coverage, Apache 2.0.
+Open SDK for Intent-Centric AI — 1,287 tests, 92% coverage, Apache 2.0.
 
 Run: python -m pytest -q --no-header to verify.
 Colab demo, no GPU needed.
@@ -95,7 +95,7 @@ github.com/rctlabs/rct-platform #AI #OpenSource #Python
 ### Title
 
 ```
-Show HN: RCT Platform – Intent-centric AI OS with constitutional architecture (1,193 tests, Apache 2.0)
+Show HN: RCT Platform – Intent-centric AI OS with constitutional architecture (1,287 tests, Apache 2.0)
 ```
 
 ### Body (First Comment — post immediately after submission)
@@ -121,7 +121,7 @@ git clone https://github.com/rctlabs/rct-platform
 cd rct-platform
 pip install -e ".[dev]"
 python -m pytest -q --no-header
-# Expected: 1,193 passed · 0 failed · 94% coverage
+# Expected: 1,287 passed · 0 failed · 92% coverage
 ```
 
 Or run the Colab playground without installing anything: [link]
@@ -130,7 +130,7 @@ Or run the Colab playground without installing anything: [link]
 What's open (Apache 2.0): core SDK — FDIA, SignedAI, Delta Engine, Regional Adapter, Control Plane DSL, 5 microservices
 What's not open: production orchestration layer, full enterprise deployment stack
 
-**Status:** public alpha v1.0.2a0. This is a working, tested system — not a demo or prototype. The full ecosystem runs in production. I'm opening the core layer now because the SDK surface is stable enough for external feedback.
+**Status:** beta preview v1.0.4b0. This is a working, tested SDK surface — not just a demo or prototype. The full ecosystem runs separately in production, while this public layer is being hardened for PyPI release.
 
 Happy to answer technical questions. What would you want to verify first?
 ```
@@ -165,7 +165,7 @@ The enterprise stack (not open-source) runs in production at rctlabs.co. This SD
 
 ### r/MachineLearning Post
 
-**Title:** `RCT Platform: open-source intent-centric AI OS with FDIA equation engine, 1,193 tests, Apache 2.0`
+**Title:** `RCT Platform: open-source intent-centric AI OS with FDIA equation engine, 1,287 tests, Apache 2.0`
 
 **Body:**
 ```
@@ -175,8 +175,8 @@ We open-sourced the core SDK of RCT Platform — an intent-centric AI operating 
 Unlike standard orchestration layers, RCT Platform treats intent as a first-class measurable object. The FDIA equation produces a grounded confidence score for every LLM decision — not just a probability, but a decomposed signal with four independent axes.
 
 **Reproducible claims:**
-- 1,193 tests passing · 0 skipped · 0 failed
-- 94% line coverage
+- 1,287 tests passing · 0 skipped · 0 failed
+- 92% line coverage
 - Python 3.10/3.11/3.12
 
 Verify yourself:
@@ -203,7 +203,7 @@ Colab (no login): https://colab.research.google.com/github/rctlabs/rct-platform/
 
 ### r/LocalLLaMA Post
 
-**Title:** `Built an open-source intent OS for AI agents — FDIA scoring, multi-LLM consensus, 1,193 tests`
+**Title:** `Built an open-source intent OS for AI agents — FDIA scoring, multi-LLM consensus, 1,287 tests`
 
 **Body:** (Shorter, lead with the demo)
 ```
@@ -213,7 +213,7 @@ Open-sourced the SDK layer of RCT Platform today.
 ```bash
 pip install -e ".[dev]"
 python -m pytest -q --no-header
-# 1,193 passed · 94% coverage
+# 1,287 passed · 92% coverage
 ```
 
 **Or Colab (no GPU, no login):** [link]
@@ -244,9 +244,9 @@ RCT Platform addresses this with a constitutional architecture:
 
 → Regional Adapter: Native context normalization for ASEAN, Japan, Korea, and China — enterprise AI that respects local constraints by design
 
-→ 1,193 tests passing · 94% coverage · Apache 2.0 · Python 3.10+
+→ 1,287 tests passing · 92% coverage · Apache 2.0 · Python 3.10+
 
-This is public alpha (v1.0.2a0). The full enterprise stack runs in production. We're opening the core SDK because the architecture is now stable enough for external validation and developer adoption.
+This is beta preview (v1.0.4b0). The full enterprise stack runs separately in production. We're hardening the core SDK for external validation and developer adoption ahead of PyPI release.
 
 If you're an AI architect, ML engineer, or enterprise technology leader exploring AI governance infrastructure, I'd welcome your feedback.
 
@@ -270,7 +270,7 @@ If you're an AI architect, ML engineer, or enterprise technology leader explorin
 ```
 🔓 เปิด Source Code ส่วน SDK ของ RCT Platform แล้ว — ระบบปฏิบัติการ AI ที่ออกแบบมาเพื่อองค์กร
 
-ผ่านการทดสอบ 1,193 tests · Coverage 94% · License Apache 2.0 · Python 3.10+
+ผ่านการทดสอบ 1,287 tests · Coverage 92% · License Apache 2.0 · Python 3.10+
 
 ---
 
@@ -298,7 +298,7 @@ FDIA = Factual × Declarative × Inferential × Aligned
 git clone https://github.com/rctlabs/rct-platform
 pip install -e ".[dev]"  
 python -m pytest -q --no-header
-# ผลที่ควรได้: 1,193 passed · 0 failed
+# ผลที่ควรได้: 1,287 passed · 0 failed
 
 ---
 
@@ -308,7 +308,7 @@ python -m pytest -q --no-header
 ✅ Multi-LLM consensus พร้อม audit trail
 ✅ เหมาะกับ enterprise ที่ต้องการ governance จริง
 
-Public alpha v1.0.2a0 — SDK core เสถียรพอสำหรับ external feedback แล้ว
+Beta preview v1.0.4b0 — SDK core กำลังถูก harden สำหรับ external feedback และเส้นทาง PyPI
 
 GitHub: github.com/rctlabs/rct-platform
 เว็บไซต์: rctlabs.co
@@ -340,8 +340,8 @@ GitHub: github.com/rctlabs/rct-platform
 - Control Plane DSL: Declarative orchestration
 
 ตัวเลขที่ยืนยันได้:
-- 1,193 tests ผ่านทั้งหมด · 0 failed
-- Coverage 94%
+- 1,287 tests ผ่านทั้งหมด · 0 failed
+- Coverage 92%
 - Python 3.10/3.11/3.12
 
 ทดสอบได้ใน Colab โดยไม่ต้อง install อะไร: [ลิงก์]

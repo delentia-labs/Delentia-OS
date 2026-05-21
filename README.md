@@ -129,7 +129,7 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 1,193 passing tests · 94% coverage · Python 3.10/3.11/3.12
+├─ 1,287 passing tests · 92% coverage · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -613,7 +613,7 @@ Over the next 10 months, working alone from a room in **Klong Toei, Bangkok**, I
 - 41 production algorithms (Tier 1–9)
 - The JITNA Protocol (RFC-001) — an open standard for AI-to-AI communication
 - SignedAI: multi-LLM consensus with ED25519 cryptographic attestation
-- **1,193 passing tests**, 94% coverage, with 0 skips
+- **1,287 passing tests**, 92% coverage, with 0 skips
 - A 450+ page whitepaper documenting every decision
 
 This is not a research paper. It runs in production at [rctlabs.co](https://rctlabs.co).
@@ -644,7 +644,7 @@ This is not a research paper. It runs in production at [rctlabs.co](https://rctl
 | Jan 2026 | 41 algorithms complete, 4,849 enterprise tests |
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
-| Apr 2026 (current checkpoint) | Public SDK — 1,193 passed, 0 skipped, 94% coverage |
+| May 2026 (current checkpoint) | Public SDK — 1,287 passed, 0 skipped, 92% coverage |
 
 > See [ROADMAP.md](ROADMAP.md) for what comes next.
 

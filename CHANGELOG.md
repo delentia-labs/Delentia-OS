@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- README metrics synced to the current public SDK checkpoint: **1,193 passed · 0 skipped · 94% coverage**
+- README metrics synced to the current public SDK checkpoint: **1,287 passed · 0 skipped · 92% coverage**
 - `docs/testing/TESTING_CANONICAL.md` refreshed as the public single source of truth for test and coverage claims
 - `ROADMAP.md` updated to reflect the current checkpoint and to clarify which launch tasks require GitHub UI configuration
 - `codecov.yml` target raised from `85%` → `90%` to match the current repo floor

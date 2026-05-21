@@ -42,7 +42,7 @@
 - ✅ Regional Language Adapter — 8 ASEAN language pairs
 - ✅ RCT Control Plane DSL — 15 modules, `rct` CLI entry point
 - ✅ 5 reference microservices (intent-loop, analysearch, vector-search, crystallizer, gateway-api)
-- ✅ 1,193 passed, 0 skipped, 94% coverage, Bandit 0 HIGH
+- ✅ 1,287 passed, 0 skipped, 92% coverage, Bandit 0 HIGH
 - ✅ CI/CD: GitHub Actions (ci.yml + security-scan.yml)
 - ✅ MkDocs documentation site
 - ✅ Whitepaper: 450+ pages, bilingual (EN + TH)

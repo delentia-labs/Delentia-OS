@@ -1,7 +1,7 @@
 # RCT Platform — Public Claim Registry
 
-**Version:** 1.0.2a0  
-**Last Updated:** 2026-04-30  
+**Version:** 1.0.4b0  
+**Last Updated:** 2026-05-20  
 **Authoritative source:** [`docs/testing/TESTING_CANONICAL.md`](../testing/TESTING_CANONICAL.md)
 
 This file is the **single approved wording source** for every public-facing claim about RCT Platform. Before publishing anything on X, HN, Reddit, LinkedIn, or Thai communities, check that all numbers and phrases trace to an entry in this registry.
@@ -13,13 +13,13 @@ This file is the **single approved wording source** for every public-facing clai
 ### Test Suite
 | Claim | Approved Wording | Source |
 | --- | --- | --- |
-| Total passing tests | **1,193 passed · 0 skipped · 0 failed** | `TESTING_CANONICAL.md §1` |
-| Coverage | **94% line coverage** (rounded from 93.69%; exact: 12,180 stmts, 769 missed) | `TESTING_CANONICAL.md §1` |
-| Microservice slice | **258 microservice tests passing** | `TESTING_CANONICAL.md §1` |
+| Total passing tests | **1,287 passed · 0 skipped · 0 failed** | `TESTING_CANONICAL.md §1` |
+| Coverage | **92% line coverage** (`13,839` stmts, `1,064` missed) | `TESTING_CANONICAL.md §1` |
+| Microservice slice | **297 microservice tests passing** | `TESTING_CANONICAL.md §1` |
 | Python matrix | **Python 3.10 / 3.11 / 3.12** | `ci.yml` |
 | Coverage floor (CI gate) | **90% minimum enforced by CI** | `ci.yml` + `codecov.yml` |
 
-> **Rounding note:** 94% = ceiling of 93.69%. Approved to use "94%" in all public copy. Do NOT claim "95%" or "nearly 95%". If asked for precision, cite "93.7% (rounded to 94% in public copy)".
+> **Rounding note:** Use **92%** exactly in public copy for the current checkpoint. Do NOT reuse older coverage wording from prior snapshots.
 
 ### Architecture
 | Claim | Approved Wording | Source |
@@ -28,7 +28,7 @@ This file is the **single approved wording source** for every public-facing clai
 | Algorithms | **41-algorithm framework** | `README.md`, `lib/site-config.ts` |
 | Genome subsystems | **7 Genome subsystems** | `README.md` |
 | SDK license | **Apache 2.0** | `LICENSE`, `pyproject.toml` |
-| Status | **public alpha (v1.0.2a0)** | `CHANGELOG.md` |
+| Status | **beta preview (v1.0.4b0)** | `CHANGELOG.md` |
 
 ### Performance (Delta Engine)
 | Claim | Approved Wording | Status |
@@ -42,9 +42,9 @@ This file is the **single approved wording source** for every public-facing clai
 
 Use one of these **approved status phrases** in all public communications:
 
-- ✅ `"public alpha — production-hardened architecture, early SDK surface"`
-- ✅ `"v1.0.2a0 — open SDK layer of a production system"`
-- ✅ `"1,193 tests passing · Apache 2.0 · Python 3.10+"`
+- ✅ `"beta preview — public SDK layer being hardened for PyPI release"`
+- ✅ `"v1.0.4b0 — open SDK layer of a production-derived system"`
+- ✅ `"1,287 tests passing · Apache 2.0 · Python 3.10+"`
 - ❌ Do NOT use `"production-ready"` without qualification
 - ❌ Do NOT use `"state-of-the-art"` without a benchmark link
 - ❌ Do NOT use `"100% hallucination-free"` — not a valid claim
@@ -56,12 +56,12 @@ Use one of these **approved status phrases** in all public communications:
 
 ### X (Twitter/X)
 - Max 280 chars; favor one clear claim + evidence link
-- Approved: `"1,193 tests passing · 94% coverage · Apache 2.0 · Python 3.10+ · Public alpha now open: github.com/rctlabs/rct-platform"`
+- Approved: `"1,287 tests passing · 92% coverage · Apache 2.0 · Python 3.10+ · Beta preview on GitHub: github.com/rctlabs/rct-platform"`
 - Avoid: Thread of metrics without a reproducible evidence link
 
 ### Hacker News (Ask HN / Show HN)
 - Title must be factual; no superlatives
-- Approved title: `"Show HN: RCT Platform – Intent-centric AI OS with constitutional architecture (1,193 tests, Apache 2.0)"`
+- Approved title: `"Show HN: RCT Platform – Intent-centric AI OS with constitutional architecture (1,287 tests, Apache 2.0)"`
 - First comment must include: SSOT test numbers + Colab link + scope boundary table
 
 ### Reddit (r/MachineLearning, r/LocalLLaMA, r/Python)
@@ -69,7 +69,7 @@ Use one of these **approved status phrases** in all public communications:
 - Do NOT open with architecture diagrams alone — lead with working code
 
 ### LinkedIn
-- Professional framing; safe to include 94% coverage + test count
+- Professional framing; safe to include 92% coverage + test count
 - Include FDIA equation description as "intent confidence scoring"
 - Appropriate: include business value + target audience (enterprise AI governance)
 
@@ -95,7 +95,7 @@ Use one of these **approved status phrases** in all public communications:
 | --- | --- | --- |
 | Compare README vs TESTING_CANONICAL | Before each launch wave | Maintainer |
 | Run `python scripts/check_claim_sync.py` | Before each launch wave | CI / Maintainer |
-| Re-run full test suite to verify 1,193 count | Monthly or after any merge to main | CI |
+| Re-run full test suite to verify 1,287 count | Monthly or after any merge to main | CI |
 | Update `SITE_LAST_DEPLOY` in `rctlabs-website/app/sitemap.ts` | Every production deploy | Deployer |
 
 ---
