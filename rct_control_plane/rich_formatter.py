@@ -757,6 +757,30 @@ def _build_runtime_rail(version: str, endpoint: str, mock: bool) -> Table:
     return rail
 
 
+def _build_formula_lockup() -> Text:
+    """Build the short constitutional formula lockup for the launch header."""
+    formula = Text()
+    formula.append("F = D", style="bold bright_cyan")
+    formula.append("ᴵ", style="bold bright_cyan")
+    formula.append(" × A", style="bold bright_cyan")
+    formula.append("  Constitutional routing discipline", style="dim")
+    return formula
+
+
+def _build_operations_note(mock: bool) -> Text:
+    """Build the secondary note that explains the launch surface rules."""
+    note = Text.from_markup(
+        "[bright_white]Prompt runway stays separate from proof lanes[/]\n"
+        "[dim]Public SDK proof | Enterprise runtime footprint | Benchmark scope[/]\n"
+        + (
+            "[dim]Preview mode renders the launch surface only — runtime remains offline[/]"
+            if mock
+            else "[dim]Live mode promotes from launch rail to runtime dashboard after bind completes[/]"
+        )
+    )
+    return note
+
+
 def print_splash(
     version: str = "1.0.4b0",
     endpoint: str = "http://127.0.0.1:8000",
@@ -764,45 +788,25 @@ def print_splash(
 ) -> None:
     """Print the branded RCT launch header with width-aware fallbacks."""
     console = get_console()
-    formula = Text()
-    formula.append("F = D", style="bold bright_cyan")
-    formula.append("ᴵ", style="bold bright_cyan")
-    formula.append(" × A", style="bold bright_cyan")
-    formula.append("  Constitutional routing discipline", style="dim")
-
-    detail = Text.from_markup(
-        "[bright_white]Intent-centric AI control plane[/]\n"
-        "[dim]Portable ANSI launch header derived from the RCT icon geometry[/]\n"
-        "[dim]When A = 0, output is blocked by design rather than by marketing copy[/]"
-    )
+    formula = _build_formula_lockup()
+    detail = _build_operations_note(mock)
     runtime_rail = _build_runtime_rail(version=version, endpoint=endpoint, mock=mock)
 
     if console.is_terminal and console.size.width >= 140:
+        console.print()
+        console.print(Align.center(_build_brand_stack(hero=True)))
+        console.print(Align.center(Text.from_markup("[bold white]RCT OS[/] [dim]brand-first launch frame[/]")))
+        console.print(Align.center(formula))
         console.print(
-            Panel(
-                Align.center(_build_brand_stack(hero=True)),
-                title="[bold white]RCT OS[/]",
-                subtitle="[dim]brand-first launch frame[/]",
-                border_style="bright_yellow",
-                padding=(1, 3),
+            Columns(
+                [
+                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
+                    Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
+                ],
+                expand=True,
+                equal=True,
             )
         )
-        console.print(
-            Panel(
-                Columns(
-                    [
-                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
-                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_magenta"),
-                    ],
-                    expand=True,
-                    equal=True,
-                ),
-                border_style="bright_cyan",
-                padding=(0, 1),
-            )
-        )
-        console.print(formula)
-        console.print(detail)
         console.print()
         return
 
@@ -821,7 +825,7 @@ def print_splash(
                 Columns(
                     [
                         Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
-                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_magenta"),
+                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
                     ],
                     expand=True,
                     equal=False,
@@ -835,22 +839,22 @@ def print_splash(
         return
 
     compact_text = Text()
-    compact_text.append("RCT OS", style="bold bright_white")
-    compact_text.append(f"  v{version}\n", style="bold bright_magenta")
+    compact_text.append_text(_build_emblem(compact=True))
+    compact_text.append("\n")
+    compact_text.append("RCT/OS", style="bold bright_white")
+    compact_text.append(f"  v{version}\n", style="bold bright_cyan")
+    compact_text.append("compact launch rail\n", style="dim")
     compact_text.append(
         "mode: UI test surface only\n" if mock else "mode: Live control-plane boot\n",
         style="white",
     )
     compact_text.append(f"endpoint: {endpoint}\n", style="white")
     compact_text.append("proof lanes: public SDK proof remains separate from enterprise snapshots\n", style="dim")
-    compact_text.append("F = D", style="bold bright_cyan")
-    compact_text.append("ᴵ", style="bold bright_cyan")
-    compact_text.append(" × A", style="bold bright_cyan")
-    compact_text.append("  Constitutional routing discipline", style="dim")
+    compact_text.append_text(formula)
     console.print(
         Panel(
             compact_text,
-            title="[bold white]RCT START[/]",
+            title="[bold white]RCT/OS[/]",
             border_style="bright_cyan",
             padding=(0, 1),
         )

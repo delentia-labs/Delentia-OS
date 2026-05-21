@@ -26,13 +26,14 @@ import sys
 import json
 import signal
 import socket
+import threading
 import time
 import textwrap
 from urllib.error import URLError
 from urllib.request import urlopen
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Union, cast
+from typing import Optional, Dict, Any, List, Union, Callable, cast
 from enum import Enum
 
 try:
@@ -391,6 +392,77 @@ def _build_launch_preview_state(
         "environment": "preview",
         "version": version,
     }
+
+
+def _render_runtime_dashboard_snapshot(host: str, port: int) -> None:
+    """Render a post-bind runtime dashboard snapshot after the server starts."""
+    if not _HAS_RICH:
+        return
+
+    runtime_state = _build_runtime_dashboard_state(host, port)
+    get_console().print(
+        render_layout_dashboard(
+            services=cast(List[Dict[str, Any]], runtime_state["services"]),
+            endpoint=str(runtime_state["endpoint"]),
+            version=str(runtime_state["version"]),
+            overall_status=str(runtime_state["overall_status"]),
+            source=str(runtime_state["source"]),
+            uptime_seconds=cast(Optional[float], runtime_state["uptime_seconds"]),
+            environment=cast(Optional[str], runtime_state["environment"]),
+        )
+    )
+
+
+def _schedule_startup_refresh(
+    on_started: Callable[[], None],
+    delay_seconds: float = 0.2,
+) -> None:
+    """Run a startup callback off the event loop once the server has bound."""
+
+    def _worker() -> None:
+        time.sleep(delay_seconds)
+        on_started()
+
+    threading.Thread(
+        target=_worker,
+        name="rct-startup-refresh",
+        daemon=True,
+    ).start()
+
+
+def _run_uvicorn_server(
+    uvicorn_module: Any,
+    host: str,
+    port: int,
+    verbose: bool,
+    on_started: Optional[Callable[[], None]] = None,
+) -> None:
+    """Run uvicorn with an optional callback once startup reaches a bound socket."""
+
+    config = uvicorn_module.Config(
+        "rct_control_plane.api:app",
+        host=host,
+        port=port,
+        reload=False,
+        log_level="debug" if verbose else "info",
+        workers=1,
+    )
+
+    class _StartupRefreshServer(uvicorn_module.Server):
+        def __init__(self, config: Any, startup_callback: Optional[Callable[[], None]]) -> None:
+            super().__init__(config)
+            self._startup_callback = startup_callback
+
+        async def startup(self, sockets: Optional[List[socket.socket]] = None) -> None:
+            await super().startup(sockets=sockets)
+            if (
+                self._startup_callback is not None
+                and not self.should_exit
+                and getattr(self, "started", False)
+            ):
+                _schedule_startup_refresh(self._startup_callback)
+
+    _StartupRefreshServer(config, on_started).run()
 
 
 def _collect_log_entries(
@@ -2044,13 +2116,16 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
 
     signal.signal(signal.SIGINT, _handle_sigint)
     try:
-        _uvicorn.run(
-            "rct_control_plane.api:app",
+        _run_uvicorn_server(
+            _uvicorn,
             host=host,
             port=port,
-            reload=False,
-            log_level="debug" if verbose else "info",
-            workers=1,
+            verbose=verbose,
+            on_started=(
+                (lambda: _render_runtime_dashboard_snapshot(host, port))
+                if _HAS_RICH
+                else None
+            ),
         )
     except KeyboardInterrupt:
         if _HAS_RICH:

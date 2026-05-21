@@ -94,7 +94,8 @@ class TestPrintSplash:
         print_splash(version="1.2.3", endpoint="http://127.0.0.1:9000", mock=False)
 
         output = buf.getvalue()
-        assert "RCT START" in output
+        assert "RCT/OS" in output
+        assert "compact launch rail" in output
         assert "endpoint: http://127.0.0.1:9000" in output
         assert "Live control-plane boot" in output
         assert "proof lanes:" in output
