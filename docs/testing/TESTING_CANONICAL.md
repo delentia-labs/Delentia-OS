@@ -2,9 +2,9 @@
 
 This document is the **single source of truth** for public test-count and coverage claims used in README, roadmap, release notes, and launch materials.
 
-**Version:** 1.0.2a0  
-**Last Updated:** 2026-04-29  
-**Authoritative checkpoint:** **1,193 passed · 0 skipped · 0 failed · 94% coverage**  
+**Version:** 1.0.4b0  
+**Last Updated:** 2026-05-20  
+**Authoritative checkpoint:** **1,287 passed · 0 skipped · 0 failed · 92% coverage**  
 **CI Status:** [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 
 ---
@@ -15,9 +15,9 @@ The following numbers were verified from the current public repository working t
 
 | Metric | Verified Result | Validation Command |
 |---|---|---|
-| Full SDK suite | **1,193 passed · 0 skipped · 0 failed** | `python -m pytest -q --no-header` |
-| Coverage | **94%** (`12180` statements, `769` missed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header` |
-| Direct microservice tests | **258 passed** | `python -m pytest microservices -q --no-header` |
+| Full SDK suite | **1,287 passed · 0 skipped · 0 failed** | `python -m pytest -q --no-header` |
+| Coverage | **92%** (`13839` statements, `1064` missed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header` |
+| Direct microservice tests | **297 passed** | `python -m pytest microservices -q --no-header` |
 | Supported CI matrix | Python **3.10 / 3.11 / 3.12** | `.github/workflows/ci.yml` |
 | Coverage floor | **90%** | `.github/workflows/ci.yml` + `codecov.yml` |
 
@@ -27,11 +27,11 @@ These are the only public numbers that should be copied into README, roadmap, la
 
 ## 2. Suite Composition
 
-The 1,193 passing tests come from the public SDK surface:
+The 1,287 passing tests come from the public SDK surface:
 
 | Suite | Scope | Current Status |
 |---|---|---|
-| `microservices/` | 5 reference microservices and API surfaces | **258 passed** |
+| `microservices/` | 5 reference microservices and API surfaces | **297 passed** |
 | `core/tests/` | FDIA, Delta Engine, regional and algorithmic primitives | Included in full suite |
 | `signedai/tests/` | SignedAI consensus, registry, routing | Included in full suite |
 | `rct_control_plane/tests/` | DSL, JITNA, replay, middleware, CLI, security | Included in full suite |

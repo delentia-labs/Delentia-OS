@@ -26,12 +26,14 @@ import sys
 import json
 import signal
 import socket
+import threading
 import time
+import textwrap
 from urllib.error import URLError
 from urllib.request import urlopen
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Union, cast
+from typing import Optional, Dict, Any, List, Union, Callable, cast
 from enum import Enum
 
 try:
@@ -88,6 +90,37 @@ from rct_control_plane._version import PACKAGE_VERSION, get_package_version
 
 # Preserve builtin list before it gets shadowed by the CLI 'list' command
 _list = list
+
+_DEFAULT_ENV_TEMPLATE = textwrap.dedent(
+    """\
+    # Environment Configuration Example
+    # Copy this file to .env and fill in your values.
+    # NEVER commit .env to version control.
+
+    # --- API Keys (obtain from your provider) ---
+    # OpenRouter key for LLM calls
+    RCT_CORE_BRAIN_KEY=<your-openrouter-key>
+
+    # Google Gemini (optional fallback)
+    GOOGLE_API_KEY=<your-google-api-key>
+
+    # --- Service URLs ---
+    # Production API base URL
+    RCT_API_BASE_URL=https://api.rctlabs.co
+
+    # --- Database (local dev only) ---
+    # RCTDB connection string for local development
+    RCTDB_URL=postgresql://localhost:5432/rctdb_dev
+
+    # --- Observability ---
+    # Optional: trace exporter endpoint
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+
+    # --- Feature Flags ---
+    # Set to "1" to enable development/debug mode
+    RCT_DEBUG=0
+    """
+)
 
 
 def _configure_encoding() -> None:
@@ -251,6 +284,27 @@ def _fetch_runtime_health(host: str, port: int) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _normalize_runtime_overall_status(
+    raw_status: Optional[str],
+    services: List[Dict[str, Any]],
+    source: str,
+) -> str:
+    """Map raw runtime signals into truthful CLI-facing status buckets."""
+    normalized = str(raw_status or "").strip().lower()
+
+    if source == "health-endpoint":
+        if normalized in {"healthy", "running", "active", "serving"}:
+            return "serving"
+        if normalized == "degraded":
+            return "degraded"
+        if normalized in {"offline", "unhealthy", "failed", "error"}:
+            return "offline"
+
+    if any(bool(service.get("online", False)) for service in services):
+        return "health-unknown"
+    return "offline"
+
+
 def _build_runtime_dashboard_state(host: str, port: int) -> Dict[str, Any]:
     """Build dashboard state from live health data with a port-probe fallback."""
     endpoint = f"http://{host}:{port}"
@@ -274,27 +328,141 @@ def _build_runtime_dashboard_state(host: str, port: int) -> Dict[str, Any]:
                     "name": service_name,
                     "port": port_map.get(service_name, "—"),
                     "online": service_status in {"healthy", "degraded"},
+                    "status": (
+                        "serving"
+                        if service_status == "healthy"
+                        else "degraded"
+                        if service_status == "degraded"
+                        else "offline"
+                    ),
                 }
             )
         return {
             "services": services,
             "endpoint": endpoint,
-            "overall_status": str(health.get("status", "unknown")),
+            "overall_status": _normalize_runtime_overall_status(
+                raw_status=str(health.get("status", "unknown")),
+                services=services,
+                source="health-endpoint",
+            ),
             "source": "health-endpoint",
             "uptime_seconds": float(health.get("uptime_seconds", 0.0)),
             "environment": str(health.get("environment", "development")),
             "version": str(health.get("version", PACKAGE_VERSION)),
         }
 
+    services = _build_service_snapshot(default_port=port)
     return {
-        "services": _build_service_snapshot(default_port=port),
+        "services": services,
         "endpoint": endpoint,
-        "overall_status": "offline",
+        "overall_status": _normalize_runtime_overall_status(
+            raw_status=None,
+            services=services,
+            source="port-probe",
+        ),
         "source": "port-probe",
         "uptime_seconds": None,
         "environment": None,
         "version": PACKAGE_VERSION,
     }
+
+
+def _build_launch_preview_state(
+    host: str,
+    port: int,
+    ui_test: bool,
+    version: str,
+) -> Dict[str, Any]:
+    """Build a truthful pre-launch preview state for `rct start` surfaces."""
+    preview_status = "preview" if ui_test else "starting"
+    services = [
+        {"name": "gateway-api", "port": port, "online": False, "status": preview_status},
+        {"name": "intent-loop", "port": 8001, "online": False, "status": preview_status},
+        {"name": "analysearch-intent", "port": 8002, "online": False, "status": preview_status},
+        {"name": "vector-search", "port": 8003, "online": False, "status": preview_status},
+        {"name": "crystallizer", "port": 8004, "online": False, "status": preview_status},
+        {"name": "delta-engine", "port": "—", "online": False, "status": preview_status},
+    ]
+    return {
+        "services": services,
+        "endpoint": f"http://{host}:{port}",
+        "overall_status": "ui-test" if ui_test else "launching",
+        "source": "ui-preview" if ui_test else "boot-preview",
+        "uptime_seconds": None,
+        "environment": "preview",
+        "version": version,
+    }
+
+
+def _render_runtime_dashboard_snapshot(host: str, port: int) -> None:
+    """Render a post-bind runtime dashboard snapshot after the server starts."""
+    if not _HAS_RICH:
+        return
+
+    runtime_state = _build_runtime_dashboard_state(host, port)
+    get_console().print(
+        render_layout_dashboard(
+            services=cast(List[Dict[str, Any]], runtime_state["services"]),
+            endpoint=str(runtime_state["endpoint"]),
+            version=str(runtime_state["version"]),
+            overall_status=str(runtime_state["overall_status"]),
+            source=str(runtime_state["source"]),
+            uptime_seconds=cast(Optional[float], runtime_state["uptime_seconds"]),
+            environment=cast(Optional[str], runtime_state["environment"]),
+        )
+    )
+
+
+def _schedule_startup_refresh(
+    on_started: Callable[[], None],
+    delay_seconds: float = 0.2,
+) -> None:
+    """Run a startup callback off the event loop once the server has bound."""
+
+    def _worker() -> None:
+        time.sleep(delay_seconds)
+        on_started()
+
+    threading.Thread(
+        target=_worker,
+        name="rct-startup-refresh",
+        daemon=True,
+    ).start()
+
+
+def _run_uvicorn_server(
+    uvicorn_module: Any,
+    host: str,
+    port: int,
+    verbose: bool,
+    on_started: Optional[Callable[[], None]] = None,
+) -> None:
+    """Run uvicorn with an optional callback once startup reaches a bound socket."""
+
+    config = uvicorn_module.Config(
+        "rct_control_plane.api:app",
+        host=host,
+        port=port,
+        reload=False,
+        log_level="debug" if verbose else "info",
+        workers=1,
+    )
+
+    class _StartupRefreshServer(uvicorn_module.Server):
+        def __init__(self, config: Any, startup_callback: Optional[Callable[[], None]]) -> None:
+            super().__init__(config)
+            self._startup_callback = startup_callback
+
+        async def startup(self, sockets: Optional[List[socket.socket]] = None) -> None:
+            await super().startup(sockets=sockets)
+            if (
+                self._startup_callback is not None
+                and not self.should_exit
+                and getattr(self, "started", False)
+            ):
+                _schedule_startup_refresh(self._startup_callback)
+
+    _StartupRefreshServer(config, on_started).run()
 
 
 def _collect_log_entries(
@@ -1878,13 +2046,18 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
         ver = PACKAGE_VERSION
 
     if _HAS_RICH:
-        print_splash(version=ver)
-        boot_sequence_animation(mock=ui_test)
+        preview_state = _build_launch_preview_state(host=host, port=port, ui_test=ui_test, version=ver)
+        print_splash(version=ver, endpoint=f"http://{host}:{port}", mock=ui_test)
+        boot_sequence_animation(mock=ui_test, overall_status=str(preview_state["overall_status"]))
         get_console().print(
             render_layout_dashboard(
-                services=_build_service_snapshot(default_port=port),
-                endpoint=f"http://{host}:{port}",
-                version=ver,
+                services=cast(List[Dict[str, Any]], preview_state["services"]),
+                endpoint=str(preview_state["endpoint"]),
+                version=str(preview_state["version"]),
+                overall_status=str(preview_state["overall_status"]),
+                source=str(preview_state["source"]),
+                uptime_seconds=cast(Optional[float], preview_state["uptime_seconds"]),
+                environment=cast(Optional[str], preview_state["environment"]),
             )
         )
         if verbose:
@@ -1943,13 +2116,16 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
 
     signal.signal(signal.SIGINT, _handle_sigint)
     try:
-        _uvicorn.run(
-            "rct_control_plane.api:app",
+        _run_uvicorn_server(
+            _uvicorn,
             host=host,
             port=port,
-            reload=False,
-            log_level="debug" if verbose else "info",
-            workers=1,
+            verbose=verbose,
+            on_started=(
+                (lambda: _render_runtime_dashboard_snapshot(host, port))
+                if _HAS_RICH
+                else None
+            ),
         )
     except KeyboardInterrupt:
         if _HAS_RICH:
@@ -1977,6 +2153,7 @@ def init(force: bool):
     """
     env_path = Path(".env")
     example_path = Path(".env.example")
+    template_source = "project template"
 
     # Search for .env.example relative to package root if not found locally
     if not example_path.exists():
@@ -2000,22 +2177,17 @@ def init(force: bool):
             )
         return
 
-    if not example_path.exists():
-        if _HAS_RICH:
-            render_error(".env.example not found. Run from the rct-platform directory.")
-        else:
-            click.echo(
-                click.style("Error: .env.example not found.", fg="red"), err=True
-            )
-        sys.exit(1)
+    if example_path.exists():
+        import shutil
 
-    import shutil
-
-    shutil.copy(str(example_path), str(env_path))
+        shutil.copy(str(example_path), str(env_path))
+    else:
+        env_path.write_text(_DEFAULT_ENV_TEMPLATE, encoding="utf-8")
+        template_source = "built-in fallback template"
 
     if _HAS_RICH:
         console = get_console()
-        render_success(".env created from .env.example template")
+        render_success(f".env created from {template_source}")
         console.print()
         console.print("  [bold]Next steps:[/]")
         console.print(
@@ -2032,7 +2204,7 @@ def init(force: bool):
         console.print()
     else:
         click.echo(
-            ".env created. Fill in your API keys, then run: rct doctor, then rct start"
+            f".env created from {template_source}. Fill in your API keys, then run: rct doctor, then rct start"
         )
 
 

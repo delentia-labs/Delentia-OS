@@ -171,6 +171,131 @@ class TestServeCommand:
         assert "/health" in result.output
 
 
+class TestStartCommand:
+    def test_start_ui_test_passes_runtime_context_to_splash(
+        self, runner, cli, monkeypatch
+    ):
+        import rct_control_plane.cli as cli_mod
+
+        captured = {}
+        mock_console = MagicMock()
+
+        monkeypatch.setattr(cli_mod, "_HAS_RICH", True)
+        monkeypatch.setattr(
+            cli_mod,
+            "print_splash",
+            lambda version, endpoint, mock: captured.update(
+                {"version": version, "endpoint": endpoint, "mock": mock}
+            ),
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "boot_sequence_animation",
+            lambda mock, overall_status: captured.update({"boot_status": overall_status}),
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "render_layout_dashboard",
+            lambda **kwargs: captured.update({"dashboard": kwargs}) or "dashboard",
+        )
+        monkeypatch.setattr(cli_mod, "get_console", lambda: mock_console)
+        monkeypatch.setattr(cli_mod, "render_success", lambda _message: None)
+        monkeypatch.setattr(cli_mod, "_print_next_steps", lambda _steps: None)
+
+        result = runner.invoke(
+            cli, ["start", "--ui-test", "--host", "0.0.0.0", "--port", "8123"]
+        )
+
+        assert result.exit_code == 0
+        assert captured["endpoint"] == "http://0.0.0.0:8123"
+        assert captured["mock"] is True
+        assert captured["version"] == PACKAGE_VERSION
+        assert captured["boot_status"] == "ui-test"
+        assert captured["dashboard"]["overall_status"] == "ui-test"
+        assert captured["dashboard"]["source"] == "ui-preview"
+        mock_console.print.assert_called_once_with("dashboard")
+
+    def test_start_live_refreshes_runtime_dashboard_after_bind(
+        self, runner, cli, monkeypatch
+    ):
+        import rct_control_plane.cli as cli_mod
+
+        captured = {"dashboard_calls": []}
+        mock_console = MagicMock()
+
+        monkeypatch.setattr(cli_mod, "_HAS_RICH", True)
+        monkeypatch.setattr(cli_mod, "print_splash", lambda *args, **kwargs: None)
+        monkeypatch.setattr(cli_mod, "boot_sequence_animation", lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            cli_mod,
+            "render_layout_dashboard",
+            lambda **kwargs: captured["dashboard_calls"].append(kwargs) or "dashboard",
+        )
+        monkeypatch.setattr(cli_mod, "get_console", lambda: mock_console)
+        monkeypatch.setattr(cli_mod, "render_pipeline_flow", lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            cli_mod,
+            "_build_launch_preview_state",
+            lambda **kwargs: {
+                "services": [],
+                "endpoint": "http://127.0.0.1:8123",
+                "version": PACKAGE_VERSION,
+                "overall_status": "launching",
+                "source": "boot-preview",
+                "uptime_seconds": None,
+                "environment": "preview",
+            },
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "_build_runtime_dashboard_state",
+            lambda host, port: {
+                "services": [{"name": "control-plane", "port": port, "online": True}],
+                "endpoint": f"http://{host}:{port}",
+                "version": PACKAGE_VERSION,
+                "overall_status": "health-unknown",
+                "source": "port-probe",
+                "uptime_seconds": 1.0,
+                "environment": "test",
+            },
+        )
+        monkeypatch.setattr(
+            cli_mod,
+            "_schedule_startup_refresh",
+            lambda callback, delay_seconds=0.2: callback(),
+        )
+
+        class _FakeServer:
+            def __init__(self, config):
+                self.config = config
+                self.should_exit = False
+                self.started = False
+
+            async def startup(self, sockets=None):
+                self.started = True
+
+            def run(self):
+                import asyncio
+
+                asyncio.run(self.startup())
+
+        class _FakeUvicorn:
+            Config = MagicMock(side_effect=lambda *args, **kwargs: {"args": args, "kwargs": kwargs})
+            Server = _FakeServer
+
+        monkeypatch.setitem(sys.modules, "uvicorn", _FakeUvicorn)
+
+        result = runner.invoke(cli, ["start", "--host", "127.0.0.1", "--port", "8123"])
+
+        assert result.exit_code == 0
+        assert len(captured["dashboard_calls"]) == 2
+        assert captured["dashboard_calls"][0]["overall_status"] == "launching"
+        assert captured["dashboard_calls"][1]["overall_status"] == "health-unknown"
+        assert captured["dashboard_calls"][1]["source"] == "port-probe"
+        dashboard_prints = [args.args[0] for args in mock_console.print.call_args_list if args.args]
+        assert dashboard_prints.count("dashboard") == 2
+
+
 # ── version command ────────────────────────────────────────────────────────────
 
 

@@ -10,6 +10,8 @@ from rich.console import Console
 
 from rct_control_plane.rich_formatter import (
     get_console,
+    print_splash,
+    boot_sequence_animation,
     set_console,
     render_intent_table,
     render_state_panel,
@@ -31,10 +33,16 @@ from rct_control_plane.dsl_parser import DSLParser, DSLParseError
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_console() -> tuple[Console, io.StringIO]:
+def _make_console(width: int = 120, force_terminal: bool = False) -> tuple[Console, io.StringIO]:
     """Return (console, buffer) for captured output testing."""
     buf = io.StringIO()
-    console = Console(file=buf, width=120, no_color=True, highlight=False)
+    console = Console(
+        file=buf,
+        width=width,
+        no_color=True,
+        highlight=False,
+        force_terminal=force_terminal,
+    )
     return console, buf
 
 
@@ -61,6 +69,72 @@ class TestRichFormatterSetup:
         c1 = get_console()
         c2 = get_console()
         assert c1 is c2
+
+
+class TestPrintSplash:
+    def teardown_method(self):
+        set_console(None)
+
+    def test_print_splash_wide_layout_shows_endpoint_and_mode(self):
+        console, buf = _make_console(width=140, force_terminal=True)
+        set_console(console)
+
+        print_splash(version="9.9.9", endpoint="http://127.0.0.1:8123", mock=True)
+
+        output = buf.getvalue()
+        assert "RCT OS" in output
+        assert "http://127.0.0.1:8123" in output
+        assert "UI test surface only" in output
+        assert "Public SDK proof stays separate from enterprise snapshots" in output
+
+    def test_print_splash_compact_fallback_stays_truthful(self):
+        console, buf = _make_console(width=72, force_terminal=False)
+        set_console(console)
+
+        print_splash(version="1.2.3", endpoint="http://127.0.0.1:9000", mock=False)
+
+        output = buf.getvalue()
+        assert "RCT/OS" in output
+        assert "compact launch rail" in output
+        assert "endpoint: http://127.0.0.1:9000" in output
+        assert "Live control-plane boot" in output
+        assert "proof lanes:" in output
+        assert "public SDK proof remains separate" in output
+        assert "enterprise" in output
+        assert "snapshots" in output
+
+    def test_print_splash_standard_tier_keeps_ops_on_second_frame(self):
+        console, buf = _make_console(width=110, force_terminal=True)
+        set_console(console)
+
+        print_splash(version="2.0.0", endpoint="http://127.0.0.1:8123", mock=False)
+
+        output = buf.getvalue()
+        assert "standard launch frame" in output
+        assert "RUNTIME RAIL" in output
+        assert "http://127.0.0.1:8123" in output
+        assert "Live control-plane boot" in output
+
+    def test_boot_sequence_ui_preview_is_not_reported_as_nominal(self):
+        console, buf = _make_console(width=120, force_terminal=True)
+        set_console(console)
+
+        boot_sequence_animation(mock=True, overall_status="ui-test")
+
+        output = buf.getvalue()
+        assert "PREVIEW" in output
+        assert "UI preview complete" in output
+        assert "All systems nominal" not in output
+
+    def test_boot_sequence_launching_reports_pending_bind(self):
+        console, buf = _make_console(width=120, force_terminal=True)
+        set_console(console)
+
+        boot_sequence_animation(mock=False, overall_status="launching")
+
+        output = buf.getvalue()
+        assert "STARTING" in output
+        assert "awaiting API bind" in output
 
 
 # ---------------------------------------------------------------------------

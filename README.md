@@ -3,11 +3,11 @@
 [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.0.2a0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.4b0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://rctlabs.github.io/rct-platform/)
-[![Status](https://img.shields.io/badge/status-PUBLIC%20ALPHA-orange)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-BETA%20PREVIEW-orange)](CHANGELOG.md)
 [![Website](https://img.shields.io/badge/website-rctlabs.co-brightgreen)](https://rctlabs.co)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb)
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/rctlabs/rct-platform/main?filepath=notebooks%2Frct_playground.ipynb)
@@ -58,14 +58,14 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL | ✅ `rct_control_plane/` (15 modules) | — |
 | 5 Reference Microservices | ✅ `microservices/` (258 passing tests) | — |
-| CLI (`rct` entry point) | ✅ `pip install -e .` | — |
+| CLI (`rct` entry point) | ✅ editable install or built wheel | — |
 | Genome / Creator Profile API | ❌ 501 stub (`genome_api.py`) | ✅ Full implementation |
 | Full Production Microservice Stack | ❌ | ✅ 62 microservices |
 | Enterprise Dashboard | ❌ | ✅ |
 | Docker Compose + full infra | ❌ | ✅ |
 | 8-level test pyramid (4,849 tests) | ❌ | ✅ private |
 
-> **SDK alpha** means: API may change without backward-compatibility notice before v1.0.0 stable.  
+> **Beta preview** means: packaging and first-run UX are now part of the supported public surface, but the API may still change before v1.0.0 stable.  
 > **Enterprise** means: runs at [rctlabs.co](https://rctlabs.co) — contact for licensing.
 
 ---
@@ -104,7 +104,7 @@ Accuracy: **0.92** (industry baseline: ~0.65). Implemented in [`core/fdia/fdia.p
 
 | Metric | Value |
 |--------|-------|
-| **SDK Tests (this repo)** | **1,193 passed · 0 skipped · 94% coverage** — current verified public SDK checkpoint |
+| **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
 | **LLM Models** | 7 HexaCore (3 Western + 3 Eastern + 1 Regional Thai) |
 | **Hallucination Rate** | 0.3% (vs industry 12–15%) — 97% reduction via SignedAI |
@@ -115,10 +115,6 @@ Accuracy: **0.92** (industry baseline: ~0.65). Implemented in [`core/fdia/fdia.p
 | **Universal Adapters** | 13 (Home Assistant, Terraform, n8n, Obsidian, Playwright, ...) |
 | **FDIA Accuracy** | 0.92 (industry baseline: ~0.65) |
 
-> **1,193 tests** currently pass across the public SDK suite, with **0 skips**
-> across all paths. Of these, **258 tests** directly cover
-> the 5 reference microservices.
-
 For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md).
 
 ---
@@ -127,13 +123,13 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│               RCT PLATFORM SDK v1.0.2a0                  │
+│               RCT PLATFORM SDK v1.0.4b0                  │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 1,193 passing tests · 94% coverage · Python 3.10/3.11/3.12
+├─ 1,287 passing tests · 92% coverage · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -184,13 +180,21 @@ git clone https://github.com/rctlabs/rct-platform.git
 cd rct-platform
 pip install -e .
 
-# 2. Run the 5-minute offline demo — zero API keys needed
+# 2. Validate the CLI surface without API keys
+rct version
+rct start --ui-test
+
+# 3. Create a local .env template for real runs
+rct init
+rct doctor
+
+# 4. Run the 5-minute offline demo — zero API keys needed
 python examples/quickdemo.py
 
-# 3. Run the FDIA benchmark (target: 0.92 accuracy)
+# 5. Run the FDIA benchmark (target: 0.92 accuracy)
 python benchmark/fdia_benchmark.py --verbose
 
-# 4. Try the CLI
+# 6. Try the CLI
 rct compile 'Protect resources from hostile agents'
 rct governance
 rct timeline
@@ -215,8 +219,8 @@ Delta vs Baseline    : +0.2667 (+41.0%)
 ## Quick Start (With API Keys)
 
 ```bash
-# 1. Configure API keys
-cp .env.example .env
+# 1. Generate a local .env template
+rct init
 # Edit .env with your API keys
 
 # 2. Run tests
@@ -609,7 +613,7 @@ Over the next 10 months, working alone from a room in **Klong Toei, Bangkok**, I
 - 41 production algorithms (Tier 1–9)
 - The JITNA Protocol (RFC-001) — an open standard for AI-to-AI communication
 - SignedAI: multi-LLM consensus with ED25519 cryptographic attestation
-- **1,193 passing tests**, 94% coverage, with 0 skips
+- **1,287 passing tests**, 92% coverage, with 0 skips
 - A 450+ page whitepaper documenting every decision
 
 This is not a research paper. It runs in production at [rctlabs.co](https://rctlabs.co).
@@ -640,7 +644,7 @@ This is not a research paper. It runs in production at [rctlabs.co](https://rctl
 | Jan 2026 | 41 algorithms complete, 4,849 enterprise tests |
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
-| Apr 2026 (current checkpoint) | Public SDK — 1,193 passed, 0 skipped, 94% coverage |
+| May 2026 (current checkpoint) | Public SDK — 1,287 passed, 0 skipped, 92% coverage |
 
 > See [ROADMAP.md](ROADMAP.md) for what comes next.
 

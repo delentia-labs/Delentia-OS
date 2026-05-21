@@ -1,6 +1,6 @@
 # RCT Platform — Launch Evidence Pack & Go/No-Go Rubric
 
-**Version:** 1.0.2a0 Launch Gate  
+**Version:** 1.0.4b0 Launch Gate  
 **Created:** 2026-04-30  
 **Policy:** Do NOT execute primary distribution wave until all HARD GATE items are checked.
 
@@ -40,14 +40,14 @@
 
 ### A2: Test Count Match
 - [ ] Run locally: `python -m pytest -q --no-header`
-- [ ] Output must match EXACTLY: `1193 passed, 0 warnings` (or `1193 passed`)
-- [ ] Compare to TESTING_CANONICAL.md §1: **1,193 passed · 0 skipped · 0 failed**
+- [ ] Output must match EXACTLY: `1287 passed` (or equivalent zero-warning output)
+- [ ] Compare to TESTING_CANONICAL.md §1: **1,287 passed · 0 skipped · 0 failed**
 - [ ] If counts differ: update TESTING_CANONICAL.md before posting
 - **Evidence:** Terminal output paste ← attach here
 
 ### A3: Coverage Gate
 - [ ] Run: `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header`
-- [ ] Output must show ≥ 90% (CI gate) and ~94% (public claim)
+- [ ] Output must show ≥ 90% (CI gate) and **92%** (public claim)
 - [ ] Codecov badge live: https://app.codecov.io/gh/rctlabs/rct-platform
 - **Evidence:** Coverage report summary ← attach here
 
@@ -125,7 +125,7 @@
 
 ### D1: Platform Kits Claim Check
 - [ ] Open PLATFORM_KITS.md
-- [ ] Search for every number: "1,193", "94%", "74%", "Apache 2.0", "v1.0.2a0"
+- [ ] Search for every number: "1,287", "92%", "74%", "Apache 2.0", "v1.0.4b0"
 - [ ] Verify each matches CLAIM_REGISTRY.md
 - [ ] Verify "74% compression" has "(internal benchmark)" qualifier in every occurrence
 - **Evidence:** Checked manually ← sign-off here

@@ -9,17 +9,16 @@
 
 ---
 
-## From PyPI
+## Distribution Status
 
-!!! warning "Alpha Release — Source Install Required"
-    `rct-platform` v1.0.2a0 is in **Public Alpha** and has not yet been published to PyPI.
-    Use the **From Source** method below to install.
-    PyPI publishing is planned for v1.0.0 stable.
+!!! warning "Beta Preview — Packaging Ready, Public PyPI Pending"
+    `rct-platform` v1.0.4b0 can be installed from source today and now supports clean wheel installs.
+    Public PyPI publication is still a separate release step.
 
-```bash
-# Will be available on PyPI at stable release:
-pip install rct-platform
-```
+Current supported install paths:
+
+- editable/source install from this repository
+- local wheel install from `dist/` after `python -m build`
 
 ---
 
@@ -41,6 +40,21 @@ pip install -e .
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
+
+---
+
+## First-Run CLI Check
+
+After installation, validate the CLI before adding secrets:
+
+```bash
+rct version
+rct start --ui-test
+rct init
+rct doctor
+```
+
+`rct init` now creates `.env` from the local project template when available and falls back to a built-in template in clean-room installs.
 
 ---
 
@@ -67,6 +81,10 @@ The `rct` CLI entry point is registered automatically after installation:
 
 ```bash
 rct --help
+rct version
+rct start --ui-test
+rct init
+rct doctor
 rct compile intent.json
 rct graph build --policy default
 ```

@@ -1,7 +1,7 @@
-# RCT Platform — Public Roadmap
+## RCT Platform — Public Roadmap
 
-> Last updated: April 28, 2026  
-> Current version: **v1.0.2a0 (Public Alpha)**  
+> Last updated: May 20, 2026  
+> Current version: **v1.0.4b0 (Beta Preview)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
 ---
@@ -17,6 +17,20 @@
 
 ---
 
+## v1.0.4b0 — Beta Preview ✅ (May 2026)
+
+**Goal: harden the public CLI and first-run experience before PyPI release.**
+
+- ✅ Shared package version source across CLI, API, and release metadata
+- ✅ `rct doctor` environment diagnostics
+- ✅ `rct start --ui-test` for zero-key first-run validation
+- ✅ `rct status --live` runtime dashboard with health-endpoint fallback
+- ✅ `rct logs --follow` live log streaming
+- ✅ `rct init` fallback template for wheel and clean-room installs
+- ✅ Focused CLI coverage for first-run onboarding paths
+
+---
+
 ## v1.0.2a0 — Public Alpha ✅ (April 2026)
 
 **Public release of the RCT Platform open SDK.**
@@ -28,7 +42,7 @@
 - ✅ Regional Language Adapter — 8 ASEAN language pairs
 - ✅ RCT Control Plane DSL — 15 modules, `rct` CLI entry point
 - ✅ 5 reference microservices (intent-loop, analysearch, vector-search, crystallizer, gateway-api)
-- ✅ 1,193 passed, 0 skipped, 94% coverage, Bandit 0 HIGH
+- ✅ 1,287 passed, 0 skipped, 92% coverage, Bandit 0 HIGH
 - ✅ CI/CD: GitHub Actions (ci.yml + security-scan.yml)
 - ✅ MkDocs documentation site
 - ✅ Whitepaper: 450+ pages, bilingual (EN + TH)

@@ -8,6 +8,7 @@ API tests use FastAPI's TestClient (synchronous, no real server).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import pytest
 
 from rct_control_plane._version import PACKAGE_VERSION
@@ -227,6 +228,34 @@ class TestCLIDoctor:
         assert any(check["name"] == "Python" for check in data["checks"])
 
 
+class TestCLIInit:
+    def test_init_creates_env_from_builtin_template_when_example_missing(
+        self, cli_runner, cli, monkeypatch
+    ):
+        import rct_control_plane as rcp_pkg
+
+        original_file = rcp_pkg.__file__
+        monkeypatch.setattr(rcp_pkg, "__file__", str(Path("missing") / "__init__.py"))
+        try:
+            with cli_runner.isolated_filesystem():
+                result = cli_runner.invoke(cli, ["init"])
+                assert result.exit_code == 0
+                created_env = Path(".env")
+                assert created_env.exists()
+                content = created_env.read_text(encoding="utf-8")
+                assert "RCT_CORE_BRAIN_KEY=<your-openrouter-key>" in content
+                assert "built-in fallback template" in result.output
+        finally:
+            monkeypatch.setattr(rcp_pkg, "__file__", original_file)
+
+    def test_init_preserves_existing_env_without_force(self, cli_runner, cli):
+        with cli_runner.isolated_filesystem():
+            Path(".env").write_text("RCT_DEBUG=1\n", encoding="utf-8")
+            result = cli_runner.invoke(cli, ["init"])
+            assert result.exit_code == 0
+            assert Path(".env").read_text(encoding="utf-8") == "RCT_DEBUG=1\n"
+
+
 class TestCLIVersionConsistency:
     def test_status_overview_uses_package_version(self, cli_runner, cli):
         result = cli_runner.invoke(cli, ["status", "--output", "json"])
@@ -267,10 +296,12 @@ class TestCLIVersionConsistency:
             cli_mod._fetch_runtime_health = original_fetch
 
         assert state["source"] == "health-endpoint"
-        assert state["overall_status"] == "healthy"
+        assert state["overall_status"] == "serving"
         assert state["environment"] == "test"
         assert state["services"][0]["online"] is True
         assert state["services"][1]["online"] is True
+        assert state["services"][0]["status"] == "serving"
+        assert state["services"][1]["status"] == "degraded"
 
     def test_runtime_dashboard_falls_back_to_port_probe(self):
         import rct_control_plane.cli as cli_mod
@@ -291,6 +322,30 @@ class TestCLIVersionConsistency:
         assert state["source"] == "port-probe"
         assert state["overall_status"] == "offline"
         assert state["services"][0]["port"] == 8123
+
+    def test_runtime_dashboard_port_probe_with_reachable_service_marks_health_unknown(self):
+        import rct_control_plane.cli as cli_mod
+
+        cli_mod._cli_context = None
+        original_fetch = cli_mod._fetch_runtime_health
+        original_snapshot = cli_mod._build_service_snapshot
+        try:
+            cli_mod._fetch_runtime_health = lambda host, port: None
+            cli_mod._build_service_snapshot = lambda default_port=8000: [
+                {"name": "control-plane", "port": default_port, "online": True}
+            ]
+            state = cli_mod._build_runtime_dashboard_state("127.0.0.1", 8123)
+        finally:
+            cli_mod._fetch_runtime_health = original_fetch
+            cli_mod._build_service_snapshot = original_snapshot
+
+        assert state["source"] == "port-probe"
+        assert state["overall_status"] == "health-unknown"
+
+    def test_start_ui_test_runs_without_api_keys(self, cli_runner, cli):
+        result = cli_runner.invoke(cli, ["start", "--ui-test"])
+        assert result.exit_code == 0
+        assert "UI test complete" in result.output
 
 
 class TestCLILogsFollow:
