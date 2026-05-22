@@ -31,7 +31,6 @@ from rich.progress import (
     TimeElapsedColumn,
 )
 from rich.rule import Rule
-from rich.status import Status
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
@@ -799,7 +798,9 @@ def _build_runtime_rail(version: str, endpoint: str, mock: bool) -> Table:
         "render",
         f"{'tty' if console.is_terminal else 'buffer'} / {console.color_system or 'plain'} / {console.size.width} cols",
     )
-    rail.add_row("proof lanes", "Public SDK proof stays separate from enterprise snapshots")
+    rail.add_row(
+        "proof lanes", "Public SDK proof stays separate from enterprise snapshots"
+    )
     return rail
 
 
@@ -862,9 +863,7 @@ def _make_gradient_wordmark(wordmark: str, tier: str = "standard") -> Text:
     Returns a Rich Text object with 24-bit color per row, centered naturally.
     tier: 'standard' | 'wide' | 'compact'
     """
-    row_colors = (
-        _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
-    )
+    row_colors = _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
     result = Text(no_wrap=True)
     lines = wordmark.splitlines()
     for i, line in enumerate(lines):
@@ -894,9 +893,7 @@ def _animate_wordmark_reveal(
         return
     width = len(lines[0])
     bounds = _LETTER_BOUNDS_FULL if width > 30 else _LETTER_BOUNDS_COMPACT
-    row_colors = (
-        _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
-    )
+    row_colors = _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
 
     # Build blank canvas (all spaces, same dimensions)
     canvas = [list(" " * width) for _ in lines]
@@ -957,7 +954,6 @@ def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
     This creates a 'raised/embossed' depth effect (Claude Code style).
     """
     last_row = wordmark.splitlines()[-1]
-    shadow_color = "#001030"  # very dark navy — shadow under wordmark
     highlight_color = "#002060" if tier == "wide" else "#001833"
     shadow = Text(no_wrap=True)
     for ch in last_row:
@@ -1005,7 +1001,9 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
-        console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide")))
+        console.print(
+            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide"))
+        )
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="wide")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="wide")))
@@ -1018,8 +1016,16 @@ def print_splash(
         console.print(
             Columns(
                 [
-                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#FF9500"),
-                    Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
+                    Panel(
+                        runtime_rail,
+                        title="[bold white]RUNTIME RAIL[/]",
+                        border_style="#FF9500",
+                    ),
+                    Panel(
+                        detail,
+                        title="[bold white]OPERATIONS NOTE[/]",
+                        border_style="bright_white",
+                    ),
                 ],
                 expand=True,
                 equal=True,
@@ -1036,7 +1042,9 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
-        console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard")))
+        console.print(
+            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard"))
+        )
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="standard")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="standard")))
@@ -1046,8 +1054,16 @@ def print_splash(
             Panel(
                 Columns(
                     [
-                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#0099EE"),
-                        Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
+                        Panel(
+                            runtime_rail,
+                            title="[bold white]RUNTIME RAIL[/]",
+                            border_style="#0099EE",
+                        ),
+                        Panel(
+                            detail,
+                            title="[bold white]OPERATIONS NOTE[/]",
+                            border_style="bright_white",
+                        ),
                     ],
                     expand=True,
                     equal=False,
@@ -1066,7 +1082,11 @@ def print_splash(
     # Gradient compact wordmark → Rule → version inside panel
     console.print()
     # Gradient for compact (reuses standard colors, just 3 letters wide)
-    console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK_COMPACT, tier="standard")))
+    console.print(
+        Align.center(
+            _make_gradient_wordmark(RCT_WORDMARK_BLOCK_COMPACT, tier="standard")
+        )
+    )
     console.print()
     console.print(Rule(style="dim #0099EE"))
     console.print()

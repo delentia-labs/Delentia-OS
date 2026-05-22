@@ -25,19 +25,9 @@ from __future__ import annotations
 
 # ── Emblem Glyphs ─────────────────────────────────────────────────────────────
 
-RCT_EMBLEM_WIDE = (
-    "  ▗████▖     ●\n"
-    "  ▐█▀▀██▖\n"
-    "  ▐█ ▗▄█▌\n"
-    "  ▐█▄███▌\n"
-    "   ▀▀  ▀"
-)
+RCT_EMBLEM_WIDE = "  ▗████▖     ●\n  ▐█▀▀██▖\n  ▐█ ▗▄█▌\n  ▐█▄███▌\n   ▀▀  ▀"
 
-RCT_EMBLEM_COMPACT = (
-    " ▗██▖ ●\n"
-    " ▐█▛▙\n"
-    " ▐██▛"
-)
+RCT_EMBLEM_COMPACT = " ▗██▖ ●\n ▐█▛▙\n ▐██▛"
 
 # ── Block Unicode Wordmarks ────────────────────────────────────────────────────
 #
