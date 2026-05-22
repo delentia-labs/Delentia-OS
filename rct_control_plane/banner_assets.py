@@ -52,26 +52,27 @@ RCT_EMBLEM_COMPACT = (
 #   Row 1: █ █ █ █ █ █ ╗ · ·   ← Top bar: solid cols 1-6, ╗ corner at col 7
 #   Row 2: █ █ ╔ ═ ═ █ █ ╗ ·   ← Bowl frame: wall ██, inner ╔══, right ██╗
 #   Row 3: █ █ █ █ █ █ ╔ ╝ ·   ← Bowl body: SOLID cols 1-6, closing compound ╔╝
-#   Row 4: █ █ ╔ ▐ █ █ ╝ · ·   ← Junction: ╔ (col3), ▐ half-block (col4=4.5 left edge), leg ██ (cols5-6), ╝ (col7)
+#   Row 4: █ █ ╔ ═ █ ▌ ╝ · ·   ← Junction: ╔═ (cols3-4), leg █ (col5 full), ▌ half-taper (col6=right edge at 5.5), ╝ (col7)
 #   Row 5: █ █ ║ · · █ █ ╗ ·   ← Legs: left bar ██║ (cols 1-3), right leg ██╗ (cols 6-8)
 #   Row 6: ╚ ═ ╝ · · ╚ ═ ╝ ·   ← Feet: left ╚═╝ (cols 1-3), right ╚═╝ (cols 6-8)
 #
-#   DIAGONAL LEG TRACE (visual left-edge per row):
+#   DIAGONAL LEG TRACE (visual edges per row):
 #     Row 3: col 1-6   ← full solid bowl body
-#     Row 4: col 4.5   ← ▐ RIGHT HALF BLOCK at col4 = sub-column precision (4.5 visual start)
-#                         then solid ██ at cols 5-6 = leg body
-#     Row 5: col 6-8   ← leg shifts to col6 → diagonal shift = +1.5 cols RIGHT ✓
+#     Row 4: col 5–5.5 ← █ at col5 (full) + ▌ at col6 (LEFT HALF = right edge at 5.5)
+#                         RIGHT EDGE TAPERS at 5.5 = leg “pointingtoward” col6 below
+#     Row 5: col 6-8   ← leg expands full-width at col6 = natural rightward continuation
 #     Row 6: col 6-8   ← foot aligns with leg above
 #
-#   WHY ▐ (U+2590 RIGHT HALF BLOCK) at col 4:
+#   WHY ▌ (U+258C LEFT HALF BLOCK) at col6 in Row4:
 #     The R's diagonal leg slants LEFT→RIGHT (upper-left to lower-right).
-#     Using ▐ at col4 fills only the RIGHT half of that cell, visually placing
-#     the leg's left edge at "col 4.5" without moving a full character column.
-#     This creates sub-column precision: Row4 starts at 4.5, Row5 starts at 6
-#     = +1.5 col shift per row = pronounced, realistic R diagonal ✓
+#     Using ▌ at col6 fills only the LEFT half, placing the right edge at "col 5.5".
+#     In Row5, col6 becomes fully solid █ — the transition:
+#       Row4 col6: ▌ (left half only) → Row5 col6: █ (fully solid)
+#     Creates sub-column taper: the leg NARROWS on the right as it descends,
+#     then EXPANDS in Row5, producing a natural diagonal dimension ✓
 #
-#   CONNECTION RAIL AT COL 6 (spine of diagonal):
-#     Row 3: █ (bowl solid) → Row 4: █ (leg top) → Row 5: █ (leg body) → Row 6: ╚ (foot) ✓
+#   CONNECTION RAIL AT COL 5-6 (diagonal spine):
+#     Row 3: col5=█, col6=█ (bowl solid) → Row4: col5=█, col6=▌ (taper) → Row5: col6=█ (leg) ✓
 
 # ─────────────────────────────────────────────────────────────────────────────
 # "RCT OS" — 49 cols × 6 rows
@@ -80,7 +81,7 @@ RCT_WORDMARK_BLOCK = (
     "██████╗   ██████╗████████╗      ██████╗  ███████╗\n"
     "██╔══██╗ ██╔════╝╚══██╔══╝     ██╔═══██╗ ██╔════╝\n"
     "██████╔╝ ██║        ██║        ██║   ██║ ███████╗\n"
-    "██╔▐██╝  ██║        ██║        ██║   ██║ ╚════██║\n"
+    "██╔═█▌╝  ██║        ██║        ██║   ██║ ╚════██║\n"
     "██║  ██╗ ╚██████╗   ██║        ╚██████╔╝ ███████║\n"
     "╚═╝  ╚═╝  ╚═════╝   ╚═╝         ╚═════╝  ╚══════╝"
 )
@@ -92,7 +93,7 @@ RCT_WORDMARK_BLOCK_COMPACT = (
     "██████╗   ██████╗████████╗\n"
     "██╔══██╗ ██╔════╝╚══██╔══╝\n"
     "██████╔╝ ██║        ██║   \n"
-    "██╔▐██╝  ██║        ██║   \n"
+    "██╔═█▌╝  ██║        ██║   \n"
     "██║  ██╗ ╚██████╗   ██║   \n"
     "╚═╝  ╚═╝  ╚═════╝   ╚═╝   "
 )
