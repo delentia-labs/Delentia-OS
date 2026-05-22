@@ -840,14 +840,14 @@ _GRADIENT_ROWS_STANDARD = [
     "#007FDD",  # Row 5
     "#005FCC",  # Row 6 — deep electric blue
 ]
-# Wide tier: same but finishing in deep indigo for extra depth
+# Wide tier: GOLD gradient — warm ember orange for enterprise premium feel
 _GRADIENT_ROWS_WIDE = [
-    "#00E5FF",
-    "#00CCFF",
-    "#00AAFF",
-    "#0088EE",
-    "#0055CC",
-    "#4040BB",  # Row 6 — indigo accent
+    "#FFD700",  # Row 1 — bright gold
+    "#FFBA00",  # Row 2
+    "#FF9500",  # Row 3
+    "#FF7A00",  # Row 4
+    "#FF5500",  # Row 5
+    "#E03000",  # Row 6 — deep ember orange
 ]
 
 # Letter column boundaries within the 49-char "RCT OS" wordmark
@@ -926,14 +926,63 @@ def _animate_wordmark_reveal(
             time.sleep(delay)
 
 
-def _version_badge(version: str) -> Text:
+def _welcome_header(tier: str = "standard") -> Text:
+    """Build a branded welcome line printed ABOVE the wordmark.
+
+    Wide tier:    gold-colored double-rule with diamond markers
+    Standard tier: cyan-colored rule with star markers
+    """
+    t = Text(no_wrap=True)
+    if tier == "wide":
+        t.append("═" * 8, style="#FFD700")
+        t.append("  ◆ ", style="bold #FFD700")
+        t.append("RCT OS", style="bold white")
+        t.append(" — Enterprise Control Plane", style="#FF9500")
+        t.append(" ◆  ", style="bold #FFD700")
+        t.append("═" * 8, style="#FFD700")
+    else:
+        t.append("─" * 4, style="dim #00CCFF")
+        t.append("  ✦ ", style="bold #00E5FF")
+        t.append("RCT Control Plane", style="bold white")
+        t.append(" ✦  ", style="bold #00E5FF")
+        t.append("─" * 4, style="dim #00CCFF")
+    return t
+
+
+def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
+    """Build a 3D shadow row (▀ chars) rendered below the wordmark.
+
+    Scans the last row of the wordmark and places ▀ (UPPER HALF BLOCK)
+    at positions occupied by non-space chars, in a very dark color.
+    This creates a 'raised/embossed' depth effect (Claude Code style).
+    """
+    last_row = wordmark.splitlines()[-1]
+    shadow_color = "#001030"  # very dark navy — shadow under wordmark
+    highlight_color = "#002060" if tier == "wide" else "#001833"
+    shadow = Text(no_wrap=True)
+    for ch in last_row:
+        if ch != " ":
+            shadow.append("▀", style=f"bold {highlight_color}")
+        else:
+            shadow.append(" ", style="")
+    return shadow
+
+
+def _version_badge(version: str, tier: str = "standard") -> Text:
     """Build a centered version badge line: ◆ RCT OS  v1.0.4b0 ◆"""
     badge = Text(no_wrap=True)
-    badge.append("◆  ", style="dim bright_cyan")
-    badge.append("RCT OS", style="bold white")
-    badge.append("  ", style="")
-    badge.append(f"v{version}", style="bold bright_cyan")
-    badge.append("  ◆", style="dim bright_cyan")
+    if tier == "wide":
+        badge.append("◆  ", style="dim #FFD700")
+        badge.append("RCT OS", style="bold white")
+        badge.append("  ", style="")
+        badge.append(f"v{version}", style="bold #FFD700")
+        badge.append("  ◆", style="dim #FFD700")
+    else:
+        badge.append("◆  ", style="dim bright_cyan")
+        badge.append("RCT OS", style="bold white")
+        badge.append("  ", style="")
+        badge.append(f"v{version}", style="bold bright_cyan")
+        badge.append("  ◆", style="dim bright_cyan")
     return badge
 
 
@@ -949,15 +998,19 @@ def print_splash(
     runtime_rail = _build_runtime_rail(version=version, endpoint=endpoint, mock=mock)
 
     # ── Wide Tier (≥ 140 cols) ────────────────────────────────────────────────
-    # Animated gradient wordmark → version badge → Rule → two-column panel
+    # Welcome header → animated gold wordmark → version badge → Rule → panels
     if console.is_terminal and console.size.width >= 140:
+        console.print()
+        console.print(Align.center(_welcome_header(tier="wide")))
+        console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
         console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide")))
+        console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="wide")))
         console.print()
-        console.print(Align.center(_version_badge(version)))
+        console.print(Align.center(_version_badge(version, tier="wide")))
         console.print()
-        console.print(Rule(style="#0055CC"))
+        console.print(Rule(style="#FF7A00"))
         console.print()
         console.print(Align.center(_build_emblem(compact=False)))
         console.print()
@@ -965,7 +1018,7 @@ def print_splash(
         console.print(
             Columns(
                 [
-                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#0099EE"),
+                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#FF9500"),
                     Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
                 ],
                 expand=True,
@@ -976,13 +1029,17 @@ def print_splash(
         return
 
     # ── Standard Tier (≥ 100 cols) ───────────────────────────────────────────
-    # Animated gradient wordmark → version badge → Rule → info panel
+    # Welcome header → animated cyan wordmark → badge → Rule → info panel
     if console.is_terminal and console.size.width >= 100:
+        console.print()
+        console.print(Align.center(_welcome_header(tier="standard")))
+        console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
         console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard")))
+        console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="standard")))
         console.print()
-        console.print(Align.center(_version_badge(version)))
+        console.print(Align.center(_version_badge(version, tier="standard")))
         console.print()
         console.print(Rule(style="#0099EE"))
         console.print(
@@ -1040,11 +1097,17 @@ def print_splash(
     )
 
 
-def boot_sequence_animation(mock: bool = False, overall_status: str = "launching") -> None:
+def boot_sequence_animation(
+    mock: bool = False,
+    overall_status: str = "launching",
+    quiet: bool = False,
+) -> None:
     """Animate a truthful pre-launch sequence with state-aware messaging.
 
     Uses Rich Progress bar to show visual boot progress, then replaces with
     the static V1-style service list after completion.
+
+    quiet=True: suppresses terminal bell sound on boot complete.
     """
     console = get_console()
     services = [
@@ -1108,6 +1171,11 @@ def boot_sequence_animation(mock: bool = False, overall_status: str = "launching
     else:
         summary = "[bright_red]Runtime offline[/] [dim]— services not reachable[/]"
     console.print(f"  {summary}")
+    # ── Boot complete sound (terminal bell) ─────────────────────────
+    if console.is_terminal and not quiet:
+        sys.stdout.write("\a")
+        sys.stdout.flush()
+
     console.print()
 
 
