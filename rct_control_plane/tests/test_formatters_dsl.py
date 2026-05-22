@@ -25,6 +25,7 @@ from rct_control_plane.rich_formatter import (
     render_error,
     render_success,
     render_warning,
+    render_layout_dashboard,
 )
 from rct_control_plane.dsl_parser import DSLParser, DSLParseError
 
@@ -597,3 +598,38 @@ class TestDSLParser:
         # DSL parser stores capability in node.metadata or node.capability
         capability = node.capability or node.metadata.get("capability", "")
         assert "code_analysis" in capability
+
+
+# ---------------------------------------------------------------------------
+# TestRenderLayoutDashboard
+# ---------------------------------------------------------------------------
+
+class TestRenderLayoutDashboard:
+    def setup_method(self):
+        self.console, self.buf = _make_console()
+        set_console(self.console)
+
+    def teardown_method(self):
+        set_console(None)
+
+    def test_render_layout_dashboard_wide(self):
+        console, buf = _make_console(width=120, force_terminal=True)
+        set_console(console)
+        
+        services = [{"name": "control-plane", "port": 8000, "online": True}]
+        layout = render_layout_dashboard(services=services, endpoint="http://127.0.0.1:8000")
+        assert layout is not None
+        
+        body = layout["body"]
+        assert body is not None
+
+    def test_render_layout_dashboard_narrow(self):
+        console, buf = _make_console(width=80, force_terminal=True)
+        set_console(console)
+        
+        services = [{"name": "control-plane", "port": 8000, "online": True}]
+        layout = render_layout_dashboard(services=services, endpoint="http://127.0.0.1:8000")
+        assert layout is not None
+        
+        body = layout["body"]
+        assert body is not None

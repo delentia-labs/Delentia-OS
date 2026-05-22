@@ -20,7 +20,17 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.align import Align
 from rich.layout import Layout
+from rich.live import Live
 from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.rule import Rule
 from rich.status import Status
 from rich.table import Table
 from rich.text import Text
@@ -33,6 +43,8 @@ from rct_control_plane.banner_assets import (
     RCT_EMBLEM_WIDE,
     RCT_WORDMARK,
     RCT_WORDMARK_HERO,
+    RCT_WORDMARK_BLOCK,
+    RCT_WORDMARK_BLOCK_COMPACT,
 )
 
 
@@ -605,9 +617,11 @@ def render_layout_dashboard(
         border_style="bright_cyan",
         padding=(0, 1),
     )
-    services_table.add_column("Service", style="bold white", min_width=20)
-    services_table.add_column("Port", style="bright_cyan", width=8)
-    services_table.add_column("Status", min_width=10)
+    # Column widths carefully sized so Status column remains visible even at
+    # ~40-col split panels: 16+6+8 content + 6 padding + 2 borders = 38 cols min.
+    services_table.add_column("Service", style="bold white", min_width=16)
+    services_table.add_column("Port", style="bright_cyan", width=6)
+    services_table.add_column("Status", min_width=8)
 
     ready_count = 0
     for service in services:
@@ -618,9 +632,11 @@ def render_layout_dashboard(
         is_online = bool(service.get("online", False))
         if is_online or service_status in {"serving", "degraded", "health-unknown"}:
             ready_count += 1
+        port_raw = service.get("port")
+        port_display = f":{port_raw}" if port_raw is not None else "—"
         services_table.add_row(
             str(service.get("name", "—")),
-            str(service.get("port", "—")),
+            port_display,
             _render_runtime_status(service_status),
         )
 
@@ -630,9 +646,10 @@ def render_layout_dashboard(
         border_style="bright_magenta",
         padding=(0, 1),
     )
-    llm_table.add_column("Model", style="bold white", min_width=24)
-    llm_table.add_column("Cluster", style="dim", min_width=10)
-    llm_table.add_column("Status", min_width=10)
+    # 18+6+8 content + 6 padding + 2 borders = 40 cols min — fits in 40-col split panel.
+    llm_table.add_column("Model", style="bold white", min_width=18)
+    llm_table.add_column("Cluster", style="dim", min_width=6)
+    llm_table.add_column("Status", min_width=8)
 
     model_rows = [
         ("Claude Sonnet 4.6", "WEST", llm_statuses.get("Claude Sonnet 4.6", True)),
@@ -673,29 +690,58 @@ def render_layout_dashboard(
     footer.append("  |  ", style="dim")
     footer.append(f"v{version}", style="bright_yellow")
 
+    console = get_console()
+
+    # Expand tables to cover complete panel width
+    services_table.expand = True
+    llm_table.expand = True
+
     layout = Layout(name="root")
     layout.split_column(
         Layout(name="body", ratio=6),
         Layout(Panel(footer, border_style="bright_yellow"), name="footer", size=3),
     )
-    layout["body"].split_row(
-        Layout(
-            Panel(
-                services_table,
-                title="[bold white]BOOT STATUS[/]",
-                border_style="bright_cyan",
+
+    if console.is_terminal and console.size.width < 120:
+        # Stack vertically on standard/compact viewports for premium readability
+        layout["body"].split_column(
+            Layout(
+                Panel(
+                    services_table,
+                    title="[bold white]BOOT STATUS[/]",
+                    border_style="bright_cyan",
+                ),
+                name="services",
             ),
-            name="services",
-        ),
-        Layout(
-            Panel(
-                llm_table,
-                title="[bold white]HEXACORE REGISTRY[/]",
-                border_style="bright_magenta",
+            Layout(
+                Panel(
+                    llm_table,
+                    title="[bold white]HEXACORE REGISTRY[/]",
+                    border_style="bright_magenta",
+                ),
+                name="llms",
             ),
-            name="llms",
-        ),
-    )
+        )
+    else:
+        # Side-by-side split row on wide viewports
+        layout["body"].split_row(
+            Layout(
+                Panel(
+                    services_table,
+                    title="[bold white]BOOT STATUS[/]",
+                    border_style="bright_cyan",
+                ),
+                name="services",
+            ),
+            Layout(
+                Panel(
+                    llm_table,
+                    title="[bold white]HEXACORE REGISTRY[/]",
+                    border_style="bright_magenta",
+                ),
+                name="llms",
+            ),
+        )
     return layout
 
 
@@ -781,6 +827,116 @@ def _build_operations_note(mock: bool) -> Text:
     return note
 
 
+# ---------------------------------------------------------------------------
+# Wordmark Gradient + Animation Helpers
+# ---------------------------------------------------------------------------
+
+# Top-to-bottom gradient: bright sky-cyan → deep electric blue (6 rows)
+_GRADIENT_ROWS_STANDARD = [
+    "#00E5FF",  # Row 1 — bright sky cyan
+    "#00CCFF",  # Row 2
+    "#00B3FF",  # Row 3
+    "#0099EE",  # Row 4
+    "#007FDD",  # Row 5
+    "#005FCC",  # Row 6 — deep electric blue
+]
+# Wide tier: same but finishing in deep indigo for extra depth
+_GRADIENT_ROWS_WIDE = [
+    "#00E5FF",
+    "#00CCFF",
+    "#00AAFF",
+    "#0088EE",
+    "#0055CC",
+    "#4040BB",  # Row 6 — indigo accent
+]
+
+# Letter column boundaries within the 49-char "RCT OS" wordmark
+# Format: (start_col, end_col_inclusive)
+_LETTER_BOUNDS_FULL = [(0, 8), (9, 16), (17, 25), (26, 30), (31, 39), (40, 48)]
+_LETTER_BOUNDS_COMPACT = [(0, 8), (9, 16), (17, 25)]
+
+
+def _make_gradient_wordmark(wordmark: str, tier: str = "standard") -> Text:
+    """Apply per-row top-to-bottom gradient to a block wordmark.
+
+    Returns a Rich Text object with 24-bit color per row, centered naturally.
+    tier: 'standard' | 'wide' | 'compact'
+    """
+    row_colors = (
+        _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
+    )
+    result = Text(no_wrap=True)
+    lines = wordmark.splitlines()
+    for i, line in enumerate(lines):
+        color = row_colors[i] if i < len(row_colors) else row_colors[-1]
+        result.append(line, style=f"bold {color}")
+        if i < len(lines) - 1:
+            result.append("\n")
+    return result
+
+
+def _animate_wordmark_reveal(
+    console: Console,
+    wordmark: str,
+    tier: str = "standard",
+    delay: float = 0.11,
+) -> None:
+    """Reveal the wordmark letter-by-letter using Rich Live display.
+
+    Skipped automatically in non-TTY / narrow terminals / test environments
+    (console.is_terminal check). Animation is < 700ms total.
+    """
+    if not console.is_terminal:
+        return
+
+    lines = wordmark.splitlines()
+    if not lines:
+        return
+    width = len(lines[0])
+    bounds = _LETTER_BOUNDS_FULL if width > 30 else _LETTER_BOUNDS_COMPACT
+    row_colors = (
+        _GRADIENT_ROWS_WIDE if tier == "wide" else _GRADIENT_ROWS_STANDARD
+    )
+
+    # Build blank canvas (all spaces, same dimensions)
+    canvas = [list(" " * width) for _ in lines]
+
+    def _render_canvas() -> Text:
+        result = Text(no_wrap=True)
+        for i, row_chars in enumerate(canvas):
+            color = row_colors[i] if i < len(row_colors) else row_colors[-1]
+            result.append("".join(row_chars), style=f"bold {color}")
+            if i < len(canvas) - 1:
+                result.append("\n")
+        return result
+
+    with Live(
+        Align.center(_render_canvas()),
+        console=console,
+        auto_refresh=False,
+        vertical_overflow="visible",
+        transient=False,
+    ) as live:
+        for start, end in bounds:
+            # Copy this letter's columns from wordmark into canvas
+            for row_i, line in enumerate(lines):
+                for col in range(start, min(end + 1, len(line))):
+                    canvas[row_i][col] = line[col]
+            live.update(Align.center(_render_canvas()), refresh=True)
+            time.sleep(delay)
+
+
+def _version_badge(version: str) -> Text:
+    """Build a centered version badge line: ◆ RCT OS  v1.0.4b0 ◆"""
+    badge = Text(no_wrap=True)
+    badge.append("◆  ", style="dim bright_cyan")
+    badge.append("RCT OS", style="bold white")
+    badge.append("  ", style="")
+    badge.append(f"v{version}", style="bold bright_cyan")
+    badge.append("  ◆", style="dim bright_cyan")
+    return badge
+
+
 def print_splash(
     version: str = "1.0.4b0",
     endpoint: str = "http://127.0.0.1:8000",
@@ -792,15 +948,24 @@ def print_splash(
     detail = _build_operations_note(mock)
     runtime_rail = _build_runtime_rail(version=version, endpoint=endpoint, mock=mock)
 
+    # ── Wide Tier (≥ 140 cols) ────────────────────────────────────────────────
+    # Animated gradient wordmark → version badge → Rule → two-column panel
     if console.is_terminal and console.size.width >= 140:
         console.print()
-        console.print(Align.center(_build_brand_stack(hero=True)))
-        console.print(Align.center(Text.from_markup("[bold white]RCT OS[/] [dim]brand-first launch frame[/]")))
+        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
+        console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide")))
+        console.print()
+        console.print(Align.center(_version_badge(version)))
+        console.print()
+        console.print(Rule(style="#0055CC"))
+        console.print()
+        console.print(Align.center(_build_emblem(compact=False)))
+        console.print()
         console.print(Align.center(formula))
         console.print(
             Columns(
                 [
-                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
+                    Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#0099EE"),
                     Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
                 ],
                 expand=True,
@@ -810,27 +975,29 @@ def print_splash(
         console.print()
         return
 
+    # ── Standard Tier (≥ 100 cols) ───────────────────────────────────────────
+    # Animated gradient wordmark → version badge → Rule → info panel
     if console.is_terminal and console.size.width >= 100:
-        console.print(
-            Panel(
-                Align.center(_build_brand_stack(hero=False)),
-                title="[bold white]RCT OS[/]",
-                subtitle="[dim]standard launch frame[/]",
-                border_style="bright_cyan",
-                padding=(0, 2),
-            )
-        )
+        console.print()
+        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
+        console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard")))
+        console.print()
+        console.print(Align.center(_version_badge(version)))
+        console.print()
+        console.print(Rule(style="#0099EE"))
         console.print(
             Panel(
                 Columns(
                     [
-                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="bright_cyan"),
+                        Panel(runtime_rail, title="[bold white]RUNTIME RAIL[/]", border_style="#0099EE"),
                         Panel(detail, title="[bold white]OPERATIONS NOTE[/]", border_style="bright_white"),
                     ],
                     expand=True,
                     equal=False,
                 ),
-                border_style="bright_cyan",
+                title="[bold white]RCT OS[/]",
+                subtitle="[dim]standard launch frame[/]",
+                border_style="#005FCC",
                 padding=(0, 1),
             )
         )
@@ -838,31 +1005,47 @@ def print_splash(
         console.print()
         return
 
-    compact_text = Text()
-    compact_text.append_text(_build_emblem(compact=True))
-    compact_text.append("\n")
-    compact_text.append("RCT/OS", style="bold bright_white")
-    compact_text.append(f"  v{version}\n", style="bold bright_cyan")
-    compact_text.append("compact launch rail\n", style="dim")
-    compact_text.append(
+    # ── Compact Fallback (< 100 cols or non-terminal) ────────────────────────
+    # Gradient compact wordmark → Rule → version inside panel
+    console.print()
+    # Gradient for compact (reuses standard colors, just 3 letters wide)
+    console.print(Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK_COMPACT, tier="standard")))
+    console.print()
+    console.print(Rule(style="dim #0099EE"))
+    console.print()
+
+    content = Text()
+    content.append("RCT/OS", style="bold bright_white")
+    content.append(f"  v{version}\n", style="bold #00E5FF")
+    content.append("compact launch rail\n", style="dim")
+    content.append(
         "mode: UI test surface only\n" if mock else "mode: Live control-plane boot\n",
         style="white",
     )
-    compact_text.append(f"endpoint: {endpoint}\n", style="white")
-    compact_text.append("proof lanes: public SDK proof remains separate from enterprise snapshots\n", style="dim")
-    compact_text.append_text(formula)
+    content.append(f"endpoint: {endpoint}\n", style="white")
+    content.append("\n")
+    content.append(
+        "proof lanes: public SDK proof remains separate from enterprise snapshots\n",
+        style="dim",
+    )
+    content.append_text(formula)
+
     console.print(
         Panel(
-            compact_text,
+            content,
             title="[bold white]RCT/OS[/]",
-            border_style="bright_cyan",
+            border_style="#0099EE",
             padding=(0, 1),
         )
     )
 
 
 def boot_sequence_animation(mock: bool = False, overall_status: str = "launching") -> None:
-    """Animate a truthful pre-launch sequence with state-aware messaging."""
+    """Animate a truthful pre-launch sequence with state-aware messaging.
+
+    Uses Rich Progress bar to show visual boot progress, then replaces with
+    the static V1-style service list after completion.
+    """
     console = get_console()
     services = [
         ("gateway-api", 8000, "Unified entry point"),
@@ -875,15 +1058,41 @@ def boot_sequence_animation(mock: bool = False, overall_status: str = "launching
     delay = 0.35 if mock else 0.6
     phase_label = "PREVIEW" if mock else "STARTING"
     phase_style = "bright_cyan" if mock else "yellow"
+
+    # ── Progress bar boot sequence (TTY only) ────────────────────────
     console.print()
+    if console.is_terminal:
+        with Progress(
+            SpinnerColumn(spinner_name="dots", style="bold #00E5FF"),
+            TextColumn("[bold white]{task.description}[/]"),
+            BarColumn(
+                bar_width=None,
+                style="#005FCC",
+                complete_style="#00E5FF",
+                finished_style="bold bright_green",
+            ),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+            console=console,
+            transient=True,  # progress bar disappears after completion
+        ) as progress:
+            task = progress.add_task("Booting services", total=len(services))
+            for name, port, desc in services:
+                # Update description to show current service
+                progress.update(task, description=f"[bold white]{name}[/]")
+                time.sleep(delay)
+                progress.advance(task)
+    else:
+        # Non-TTY: simple sequential delay without progress bar
+        for name, _port, _desc in services:
+            time.sleep(delay * 0.2)
+
+    # ── Static service list (V1 aesthetic) ────────────────────────────
     for name, port, desc in services:
         port_label = f":{port}" if port else "     "
-        label = f"[dim]Booting[/] [bold white]{name}[/] [dim]{port_label}[/]"
-        with Status(label, console=console, spinner="dots"):
-            time.sleep(delay)
-        tag = f"[dim]{port_label}[/]"
         console.print(
-            f"  [{phase_style}]{phase_label:<8}[/] [bold white]{name:<24}[/] {tag}  [dim]{desc}[/]"
+            f"  [{phase_style}]{phase_label:<8}[/] [bold bright_white]{name:<20}[/]"
+            f" [bold #00CCFF]{port_label:<6}[/]  [dim]{desc}[/]"
         )
     console.print()
     if overall_status == "ui-test":
