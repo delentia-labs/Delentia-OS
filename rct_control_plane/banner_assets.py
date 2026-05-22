@@ -52,24 +52,25 @@ RCT_EMBLEM_COMPACT = (
 #   Row 1: █ █ █ █ █ █ ╗ · ·   ← Top bar: solid cols 1-6, ╗ corner at col 7
 #   Row 2: █ █ ╔ ═ ═ █ █ ╗ ·   ← Bowl frame: wall ██, inner ╔══, right ██╗
 #   Row 3: █ █ █ █ █ █ ╔ ╝ ·   ← Bowl body: SOLID cols 1-6, closing compound ╔╝
-#   Row 4: █ █ ╔ ═ █ ▌ ╝ · ·   ← Junction: ╔═ (cols3-4), leg █ (col5 full), ▌ half-taper (col6=right edge at 5.5), ╝ (col7)
+#   Row 4: █ █ ╔ ▐ █ ▌ ╝ · ·   ← Junction: ╔ (col3), ▐ right-half (col4.5 start), █ full (col5), ▌ left-half (col5.5 end), ╝ (col7)
 #   Row 5: █ █ ║ · · █ █ ╗ ·   ← Legs: left bar ██║ (cols 1-3), right leg ██╗ (cols 6-8)
 #   Row 6: ╚ ═ ╝ · · ╚ ═ ╝ ·   ← Feet: left ╚═╝ (cols 1-3), right ╚═╝ (cols 6-8)
 #
 #   DIAGONAL LEG TRACE (visual edges per row):
 #     Row 3: col 1-6   ← full solid bowl body
-#     Row 4: col 5–5.5 ← █ at col5 (full) + ▌ at col6 (LEFT HALF = right edge at 5.5)
-#                         RIGHT EDGE TAPERS at 5.5 = leg “pointingtoward” col6 below
-#     Row 5: col 6-8   ← leg expands full-width at col6 = natural rightward continuation
+#     Row 4: col 4.5–5.5 ← ▐ (col4 right-half) + █ (col5 full) + ▌ (col6 left-half)
+#                         SYMMETRIC soft edges: left edge at 4.5, right edge at 5.5
+#                         = perfectly balanced, 1-col-wide leg centered at col 5 ✓
 #     Row 6: col 6-8   ← foot aligns with leg above
 #
-#   WHY ▌ (U+258C LEFT HALF BLOCK) at col6 in Row4:
-#     The R's diagonal leg slants LEFT→RIGHT (upper-left to lower-right).
-#     Using ▌ at col6 fills only the LEFT half, placing the right edge at "col 5.5".
-#     In Row5, col6 becomes fully solid █ — the transition:
-#       Row4 col6: ▌ (left half only) → Row5 col6: █ (fully solid)
-#     Creates sub-column taper: the leg NARROWS on the right as it descends,
-#     then EXPANDS in Row5, producing a natural diagonal dimension ✓
+#   WHY ▐+█+▌ (RIGHT HALF + FULL + LEFT HALF) in Row4:
+#     The R's diagonal leg needs maximum balance and visual dimension.
+#     ▐ at col4: fills RIGHT half only → left edge at "col 4.5"
+#     █ at col5: fully solid → center weight
+#     ▌ at col6: fills LEFT half only → right edge at "col 5.5"
+#     Together: a 1-column-wide solid leg with SOFT HALF-BLOCK edges on BOTH sides,
+#     centered at col5 — the most symmetric and dimensionally balanced design.
+#     Row4 → Row5 diagonal: col5 center (Row4) → col6 left (Row5) = +1 col shift ✓
 #
 #   CONNECTION RAIL AT COL 5-6 (diagonal spine):
 #     Row 3: col5=█, col6=█ (bowl solid) → Row4: col5=█, col6=▌ (taper) → Row5: col6=█ (leg) ✓
@@ -81,7 +82,7 @@ RCT_WORDMARK_BLOCK = (
     "██████╗   ██████╗████████╗      ██████╗  ███████╗\n"
     "██╔══██╗ ██╔════╝╚══██╔══╝     ██╔═══██╗ ██╔════╝\n"
     "██████╔╝ ██║        ██║        ██║   ██║ ███████╗\n"
-    "██╔═█▌╝  ██║        ██║        ██║   ██║ ╚════██║\n"
+    "██╔▐█▌╝  ██║        ██║        ██║   ██║ ╚════██║\n"
     "██║  ██╗ ╚██████╗   ██║        ╚██████╔╝ ███████║\n"
     "╚═╝  ╚═╝  ╚═════╝   ╚═╝         ╚═════╝  ╚══════╝"
 )
@@ -93,7 +94,7 @@ RCT_WORDMARK_BLOCK_COMPACT = (
     "██████╗   ██████╗████████╗\n"
     "██╔══██╗ ██╔════╝╚══██╔══╝\n"
     "██████╔╝ ██║        ██║   \n"
-    "██╔═█▌╝  ██║        ██║   \n"
+    "██╔▐█▌╝  ██║        ██║   \n"
     "██║  ██╗ ╚██████╗   ██║   \n"
     "╚═╝  ╚═╝  ╚═════╝   ╚═╝   "
 )
