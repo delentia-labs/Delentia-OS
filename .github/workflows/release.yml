@@ -64,14 +64,19 @@ jobs:
 
       - name: Publish to TestPyPI (dry-run)
         # Validates the distribution against TestPyPI before touching production.
+        # attestations: false — prevents OIDC attestation being 'claimed' by the
+        # dry-run step, which would block the production PyPI step from generating
+        # its own attestation (causing "already have published attestations" error).
         # continue-on-error so a TestPyPI outage never blocks a production release.
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+          attestations: false
         continue-on-error: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+          # attestations: true (default) — OIDC trusted publishing with provenance
