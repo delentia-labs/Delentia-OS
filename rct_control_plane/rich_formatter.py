@@ -841,6 +841,14 @@ def _build_formula_lockup() -> Text:
     t.append(" → Intent  ·  ", style="dim")
     t.append("A", style="dim bright_magenta")
     t.append(" → Architect", style="dim")
+    t.append("\n")
+    # Constitutional gate warning
+    t.append("  ", style="")
+    t.append("⚠  ", style="bold #FF4444")
+    t.append("A = 0", style="bold #FF4444")
+    t.append("  →  ", style="dim")
+    t.append("F = 0", style="bold #FF4444")
+    t.append("  (Constitutional Block)", style="dim #FF6666")
     t.append("\n\n")
     # Bottom rule
     t.append("─" * 6, style="dim #0055CC")
@@ -1000,14 +1008,18 @@ def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
 
 
 def _version_badge(version: str, tier: str = "standard") -> Text:
-    """Build a centered version badge line: ◆ RCT OS  v1.0.4b0 ◆"""
+    """Build a centered version badge line.
+
+    Wide tier:    ◆◆  RCT OS  vX.X.X  ◆◆  (double diamond, gold)
+    Standard tier: ◆  RCT OS  vX.X.X  ◆   (single diamond, cyan)
+    """
     badge = Text(no_wrap=True)
     if tier == "wide":
-        badge.append("◆  ", style="dim #FFD700")
+        badge.append("◆◆  ", style="bold #FFD700")
         badge.append("RCT OS", style="bold white")
         badge.append("  ", style="")
         badge.append(f"v{version}", style="bold #FFD700")
-        badge.append("  ◆", style="dim #FFD700")
+        badge.append("  ◆◆", style="bold #FFD700")
     else:
         badge.append("◆  ", style="dim bright_cyan")
         badge.append("RCT OS", style="bold white")
@@ -1044,7 +1056,18 @@ def print_splash(
         console.print()
         console.print(Rule(style="#FF7A00"))
         console.print()
-        console.print(Align.center(formula))
+        # Formula as a focused gold-bordered card
+        console.print(
+            Align.center(
+                Panel(
+                    formula,
+                    border_style="#FFD700",
+                    padding=(0, 3),
+                    expand=False,
+                )
+            )
+        )
+        console.print()
         console.print(
             Columns(
                 [
@@ -1056,7 +1079,7 @@ def print_splash(
                     Panel(
                         detail,
                         title="[bold white]OPERATIONS NOTE[/]",
-                        border_style="bright_white",
+                        border_style="#FF9500",
                     ),
                 ],
                 expand=True,
@@ -1093,7 +1116,7 @@ def print_splash(
                         Panel(
                             detail,
                             title="[bold white]OPERATIONS NOTE[/]",
-                            border_style="bright_white",
+                            border_style="#0099EE",
                         ),
                     ],
                     expand=True,
@@ -1105,7 +1128,18 @@ def print_splash(
                 padding=(0, 1),
             )
         )
-        console.print(Align.center(formula))
+        # Formula as a focused cyan-bordered card below panels
+        console.print()
+        console.print(
+            Align.center(
+                Panel(
+                    formula,
+                    border_style="#0099EE",
+                    padding=(0, 3),
+                    expand=False,
+                )
+            )
+        )
         console.print()
         return
 
@@ -1201,13 +1235,15 @@ def boot_sequence_animation(
         for name, _port, _desc in services:
             time.sleep(delay * 0.2)
 
-    # ── Static service list (V1 aesthetic) ────────────────────────────
+    # ── Static service list — staggered reveal (0.05s per line) ──────
     for name, port, desc in services:
         port_label = f":{port}" if port else "     "
         console.print(
             f"  [{phase_style}]{phase_label:<8}[/] [bold bright_white]{name:<20}[/]"
             f" [bold #00CCFF]{port_label:<6}[/]  [dim]{desc}[/]"
         )
+        if console.is_terminal:
+            time.sleep(0.05)  # smooth stagger between service lines
     console.print()
     if overall_status == "ui-test":
         summary = "[bright_cyan]UI preview complete[/] [dim]— runtime not started[/]"
@@ -1226,7 +1262,9 @@ def boot_sequence_animation(
     if console.is_terminal and not quiet:
         sys.stdout.write("\a")
         sys.stdout.flush()
-
+    # Brief pause so tables don't 'pop' instantly after service list
+    if console.is_terminal:
+        time.sleep(0.45)
     console.print()
 
 
