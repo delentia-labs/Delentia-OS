@@ -11,7 +11,7 @@
 [![Website](https://img.shields.io/badge/website-rctlabs.co-brightgreen)](https://rctlabs.co)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb)
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/rctlabs/rct-platform/main?filepath=notebooks%2Frct_playground.ipynb)
-[![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/rctlabs/rct-platform)
+[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/rctlabs/rct-platform)
 
 ## Intent-Centric AI Operating System — Constitutional Architecture
 
@@ -644,7 +644,7 @@ This is not a research paper. It runs in production at [rctlabs.co](https://rctl
 | Jan 2026 | 41 algorithms complete, 4,849 enterprise tests |
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
-| May 2026 (current checkpoint) | Public SDK — 1,287 passed, 0 skipped, 92% coverage |
+| May 2026 (current) | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, 800 tests, PyPI v1.0.4b0 live |
 
 > See [ROADMAP.md](ROADMAP.md) for what comes next.
 
