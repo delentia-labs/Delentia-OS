@@ -5,7 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4b0] - 2026-05-20
+## [1.0.4b0] - 2026-05-23
+
+### Added — Enterprise CLI Design System (branch: 2105-Upperf-CLIDesign)
+- `banner_assets.py` — New file: `RCT_WORDMARK_BLOCK` (49×6 Unicode block art "RCT OS"), `RCT_WORDMARK_BLOCK_COMPACT` (26×6 "RCT" fallback). Letters R/C/T/O/S individually designed with box-drawing anatomy. R letter Row4 uses symmetric `▐█▌` (RightHalf+Full+LeftHalf) for maximum diagonal balance.
+- `rich_formatter.py` — New rendering pipeline functions:
+  - `_animate_wordmark_reveal()` — letter-by-letter animation (R→C→T→O→S, 110ms each, TTY-only)
+  - `_make_gradient_wordmark()` — 6-row top-to-bottom 24-bit gradient (Wide: gold `#FFD700→#E03000`, Standard: cyan `#00E5FF→#005FCC`)
+  - `_welcome_header()` — tier-aware pre-wordmark header (`════ ◆ RCT OS — Enterprise Control Plane ◆ ════`)
+  - `_shadow_row()` — 3D depth `▀▀▀` row below wordmark (dark `#001833`)
+  - `_version_badge()` — tier-aware badge (Wide: `◆◆  RCT OS  v1.0.4b0  ◆◆` gold, Std: `◆  RCT OS  v1.0.4b0  ◆` cyan)
+  - `_build_formula_lockup()` — redesigned multi-line constitutional formula card with color-coded variables (F=gold, D=cyan, I=lt.cyan, A=magenta) and gate warning `⚠ A=0 → F=0 (Constitutional Block)`
+
+### Changed — CLI Design System
+- `print_splash()` — Full 3-tier responsive dispatch redesign:
+  - Wide tier (≥140 cols): welcome header → gold animated wordmark → shadow → `◆◆` badge → gold Rule → Formula Panel card (gold border, `expand=False`) → 2-col panels (both `#FF9500` amber border)
+  - Standard tier (≥100 cols): welcome header → cyan animated wordmark → shadow → `◆` badge → cyan Rule → info panels (both `#0099EE` border) → Formula Panel card (cyan border)
+  - Compact fallback (<100 cols): compact wordmark (26 cols) → Rule → version panel
+- `boot_sequence_animation()` — Staggered service list: `0.05s` delay between each of 6 service lines (300ms total smooth cascade). `0.45s` post-bell pause before tables appear (eliminates jarring 'pop' effect).
+
+### Fixed
+- Duplicate wordmark: `_animate_wordmark_reveal()` uses `transient=False` so final frame stays on screen; removed redundant `console.print(_make_gradient_wordmark(...))` call that caused double wordmark in both wide and standard tiers.
+- Formula alignment: standard tier formula was left-aligned; corrected to `Align.center()`.
+- Ruff F401: removed unused `Status` import from `rich_formatter.py`.
+- Ruff F841: removed unused `shadow_color` variable assignment.
+- `pyproject.toml` version synced from `1.0.3a0` → `1.0.4b0` (was behind `_version.py` and CHANGELOG).
+
+### Verified
+- 800/800 tests passing · 0 regressions · Ruff lint EXIT 0 · Ruff format EXIT 0
+
+
 
 ### Added
 - `rct doctor` command — local preflight diagnostics for Python/tooling versions, project files, and localhost service reachability with table or JSON output.
