@@ -809,7 +809,7 @@ def _build_formula_lockup() -> Text:
 
     F = Dᴵ × A  is the foundational equation of RCT OS:
       F = Final Output
-      D = Data (raised to intent power)
+      D = Data (raised to intent power I)
       A = Architect gate (multiplicative: A=0 → F=0 always)
 
     Rendered as a prominent multi-line visual card, centered.
@@ -830,15 +830,17 @@ def _build_formula_lockup() -> Text:
     t.append("ᴵ", style="bold #00CCFF")
     t.append("  ×  ", style="dim white")
     t.append("A", style="bold bright_magenta")
-    t.append("\n")
-    # Semantic breakdown
+    t.append("\n\n")
+    # Variable legend (readable, no superscript)
     t.append("  ", style="")
-    t.append("Output", style="dim #FFD700")
-    t.append("  =  ", style="dim")
-    t.append("Data", style="dim #00E5FF")
-    t.append("ᴵⁿᵗᵉⁿᵗ", style="dim #00CCFF")
-    t.append("  ×  ", style="dim")
-    t.append("Architect", style="dim bright_magenta")
+    t.append("F", style="dim #FFD700")
+    t.append(" → Output  ·  ", style="dim")
+    t.append("D", style="dim #00E5FF")
+    t.append(" → Data  ·  ", style="dim")
+    t.append("I", style="dim #00CCFF")
+    t.append(" → Intent  ·  ", style="dim")
+    t.append("A", style="dim bright_magenta")
+    t.append(" → Architect", style="dim")
     t.append("\n\n")
     # Bottom rule
     t.append("─" * 6, style="dim #0055CC")
@@ -1041,8 +1043,6 @@ def print_splash(
         console.print(Align.center(_version_badge(version, tier="wide")))
         console.print()
         console.print(Rule(style="#FF7A00"))
-        console.print()
-        console.print(Align.center(_build_emblem(compact=False)))
         console.print()
         console.print(Align.center(formula))
         console.print(
