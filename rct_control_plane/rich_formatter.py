@@ -805,13 +805,46 @@ def _build_runtime_rail(version: str, endpoint: str, mock: bool) -> Table:
 
 
 def _build_formula_lockup() -> Text:
-    """Build the short constitutional formula lockup for the launch header."""
-    formula = Text()
-    formula.append("F = D", style="bold bright_cyan")
-    formula.append("ᴵ", style="bold bright_cyan")
-    formula.append(" × A", style="bold bright_cyan")
-    formula.append("  Constitutional routing discipline", style="dim")
-    return formula
+    """Build the FDIA constitutional formula display.
+
+    F = Dᴵ × A  is the foundational equation of RCT OS:
+      F = Final Output
+      D = Data (raised to intent power)
+      A = Architect gate (multiplicative: A=0 → F=0 always)
+
+    Rendered as a prominent multi-line visual card, centered.
+    """
+    t = Text(justify="center", no_wrap=True)
+    # Top rule
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("  ◆ ", style="bold #FFD700")
+    t.append("CONSTITUTIONAL FORMULA", style="bold white")
+    t.append(" ◆  ", style="bold #FFD700")
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("\n")
+    # Main equation line
+    t.append("\n  ")
+    t.append("F", style="bold #FFD700")
+    t.append("  =  ", style="dim white")
+    t.append("D", style="bold #00E5FF")
+    t.append("ᴵ", style="bold #00CCFF")
+    t.append("  ×  ", style="dim white")
+    t.append("A", style="bold bright_magenta")
+    t.append("\n")
+    # Semantic breakdown
+    t.append("  ", style="")
+    t.append("Output", style="dim #FFD700")
+    t.append("  =  ", style="dim")
+    t.append("Data", style="dim #00E5FF")
+    t.append("ᴵⁿᵗᵉⁿᵗ", style="dim #00CCFF")
+    t.append("  ×  ", style="dim")
+    t.append("Architect", style="dim bright_magenta")
+    t.append("\n\n")
+    # Bottom rule
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("  Constitutional Routing Discipline  ", style="italic dim")
+    t.append("─" * 6, style="dim #0055CC")
+    return t
 
 
 def _build_operations_note(mock: bool) -> Text:
@@ -1001,9 +1034,8 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
-        console.print(
-            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide"))
-        )
+        # Note: animation (transient=False) already leaves final wordmark on screen.
+        # No redundant static print needed for TTY — wide tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="wide")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="wide")))
@@ -1042,9 +1074,8 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
-        console.print(
-            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard"))
-        )
+        # Note: animation (transient=False) already leaves final wordmark on screen.
+        # No redundant static print needed for TTY — standard tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="standard")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="standard")))
@@ -1074,7 +1105,7 @@ def print_splash(
                 padding=(0, 1),
             )
         )
-        console.print(formula)
+        console.print(Align.center(formula))
         console.print()
         return
 
