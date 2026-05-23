@@ -805,13 +805,56 @@ def _build_runtime_rail(version: str, endpoint: str, mock: bool) -> Table:
 
 
 def _build_formula_lockup() -> Text:
-    """Build the short constitutional formula lockup for the launch header."""
-    formula = Text()
-    formula.append("F = D", style="bold bright_cyan")
-    formula.append("ᴵ", style="bold bright_cyan")
-    formula.append(" × A", style="bold bright_cyan")
-    formula.append("  Constitutional routing discipline", style="dim")
-    return formula
+    """Build the FDIA constitutional formula display.
+
+    F = Dᴵ × A  is the foundational equation of RCT OS:
+      F = Final Output
+      D = Data (raised to intent power I)
+      A = Architect gate (multiplicative: A=0 → F=0 always)
+
+    Rendered as a prominent multi-line visual card, centered.
+    """
+    t = Text(justify="center", no_wrap=True)
+    # Top rule
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("  ◆ ", style="bold #FFD700")
+    t.append("CONSTITUTIONAL FORMULA", style="bold white")
+    t.append(" ◆  ", style="bold #FFD700")
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("\n")
+    # Main equation line
+    t.append("\n  ")
+    t.append("F", style="bold #FFD700")
+    t.append("  =  ", style="dim white")
+    t.append("D", style="bold #00E5FF")
+    t.append("ᴵ", style="bold #00CCFF")
+    t.append("  ×  ", style="dim white")
+    t.append("A", style="bold bright_magenta")
+    t.append("\n\n")
+    # Variable legend (readable, no superscript)
+    t.append("  ", style="")
+    t.append("F", style="dim #FFD700")
+    t.append(" → Output  ·  ", style="dim")
+    t.append("D", style="dim #00E5FF")
+    t.append(" → Data  ·  ", style="dim")
+    t.append("I", style="dim #00CCFF")
+    t.append(" → Intent  ·  ", style="dim")
+    t.append("A", style="dim bright_magenta")
+    t.append(" → Architect", style="dim")
+    t.append("\n")
+    # Constitutional gate warning
+    t.append("  ", style="")
+    t.append("⚠  ", style="bold #FF4444")
+    t.append("A = 0", style="bold #FF4444")
+    t.append("  →  ", style="dim")
+    t.append("F = 0", style="bold #FF4444")
+    t.append("  (Constitutional Block)", style="dim #FF6666")
+    t.append("\n\n")
+    # Bottom rule
+    t.append("─" * 6, style="dim #0055CC")
+    t.append("  Constitutional Routing Discipline  ", style="italic dim")
+    t.append("─" * 6, style="dim #0055CC")
+    return t
 
 
 def _build_operations_note(mock: bool) -> Text:
@@ -965,14 +1008,18 @@ def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
 
 
 def _version_badge(version: str, tier: str = "standard") -> Text:
-    """Build a centered version badge line: ◆ RCT OS  v1.0.4b0 ◆"""
+    """Build a centered version badge line.
+
+    Wide tier:    ◆◆  RCT OS  vX.X.X  ◆◆  (double diamond, gold)
+    Standard tier: ◆  RCT OS  vX.X.X  ◆   (single diamond, cyan)
+    """
     badge = Text(no_wrap=True)
     if tier == "wide":
-        badge.append("◆  ", style="dim #FFD700")
+        badge.append("◆◆  ", style="bold #FFD700")
         badge.append("RCT OS", style="bold white")
         badge.append("  ", style="")
         badge.append(f"v{version}", style="bold #FFD700")
-        badge.append("  ◆", style="dim #FFD700")
+        badge.append("  ◆◆", style="bold #FFD700")
     else:
         badge.append("◆  ", style="dim bright_cyan")
         badge.append("RCT OS", style="bold white")
@@ -1001,18 +1048,26 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
-        console.print(
-            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="wide"))
-        )
+        # Note: animation (transient=False) already leaves final wordmark on screen.
+        # No redundant static print needed for TTY — wide tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="wide")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="wide")))
         console.print()
         console.print(Rule(style="#FF7A00"))
         console.print()
-        console.print(Align.center(_build_emblem(compact=False)))
+        # Formula as a focused gold-bordered card
+        console.print(
+            Align.center(
+                Panel(
+                    formula,
+                    border_style="#FFD700",
+                    padding=(0, 3),
+                    expand=False,
+                )
+            )
+        )
         console.print()
-        console.print(Align.center(formula))
         console.print(
             Columns(
                 [
@@ -1024,7 +1079,7 @@ def print_splash(
                     Panel(
                         detail,
                         title="[bold white]OPERATIONS NOTE[/]",
-                        border_style="bright_white",
+                        border_style="#FF9500",
                     ),
                 ],
                 expand=True,
@@ -1042,9 +1097,8 @@ def print_splash(
         console.print()
         console.print()
         _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
-        console.print(
-            Align.center(_make_gradient_wordmark(RCT_WORDMARK_BLOCK, tier="standard"))
-        )
+        # Note: animation (transient=False) already leaves final wordmark on screen.
+        # No redundant static print needed for TTY — standard tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="standard")))
         console.print()
         console.print(Align.center(_version_badge(version, tier="standard")))
@@ -1062,7 +1116,7 @@ def print_splash(
                         Panel(
                             detail,
                             title="[bold white]OPERATIONS NOTE[/]",
-                            border_style="bright_white",
+                            border_style="#0099EE",
                         ),
                     ],
                     expand=True,
@@ -1074,7 +1128,18 @@ def print_splash(
                 padding=(0, 1),
             )
         )
-        console.print(formula)
+        # Formula as a focused cyan-bordered card below panels
+        console.print()
+        console.print(
+            Align.center(
+                Panel(
+                    formula,
+                    border_style="#0099EE",
+                    padding=(0, 3),
+                    expand=False,
+                )
+            )
+        )
         console.print()
         return
 
@@ -1170,13 +1235,15 @@ def boot_sequence_animation(
         for name, _port, _desc in services:
             time.sleep(delay * 0.2)
 
-    # ── Static service list (V1 aesthetic) ────────────────────────────
+    # ── Static service list — staggered reveal (0.05s per line) ──────
     for name, port, desc in services:
         port_label = f":{port}" if port else "     "
         console.print(
             f"  [{phase_style}]{phase_label:<8}[/] [bold bright_white]{name:<20}[/]"
             f" [bold #00CCFF]{port_label:<6}[/]  [dim]{desc}[/]"
         )
+        if console.is_terminal:
+            time.sleep(0.05)  # smooth stagger between service lines
     console.print()
     if overall_status == "ui-test":
         summary = "[bright_cyan]UI preview complete[/] [dim]— runtime not started[/]"
@@ -1195,7 +1262,9 @@ def boot_sequence_animation(
     if console.is_terminal and not quiet:
         sys.stdout.write("\a")
         sys.stdout.flush()
-
+    # Brief pause so tables don't 'pop' instantly after service list
+    if console.is_terminal:
+        time.sleep(0.45)
     console.print()
 
 
