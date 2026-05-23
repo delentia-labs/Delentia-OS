@@ -12,6 +12,8 @@ Reference: TUI-CLI RCT Design — Phase 4A
 
 from __future__ import annotations
 
+import os
+import json
 import sys
 import time
 from typing import Any, Dict, List, Optional
@@ -63,6 +65,18 @@ def set_console(console: Console) -> None:
     """Override the shared console (for testing with StringIO)."""
     global _console
     _console = console
+
+
+def _load_config() -> Dict[str, Any]:
+    """Load configuration from rct.config.json in the current working directory."""
+    config_path = os.path.join(os.getcwd(), "rct.config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 
 # ---------------------------------------------------------------------------
@@ -922,13 +936,15 @@ def _animate_wordmark_reveal(
     wordmark: str,
     tier: str = "standard",
     delay: float = 0.11,
+    no_animation: bool = False,
 ) -> None:
     """Reveal the wordmark letter-by-letter using Rich Live display.
 
     Skipped automatically in non-TTY / narrow terminals / test environments
-    (console.is_terminal check). Animation is < 700ms total.
+    or when no_animation is True.
     """
-    if not console.is_terminal:
+    if no_animation or not console.is_terminal:
+        console.print(Align.center(_make_gradient_wordmark(wordmark, tier=tier)))
         return
 
     lines = wordmark.splitlines()
@@ -994,12 +1010,13 @@ def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
 
     Scans the last row of the wordmark and places ▀ (UPPER HALF BLOCK)
     at positions occupied by non-space chars, in a very dark color.
-    This creates a 'raised/embossed' depth effect (Claude Code style).
+    Shifts the shadow row 1 space to the right to create a realistic 3D depth offset.
     """
     last_row = wordmark.splitlines()[-1]
     highlight_color = "#002060" if tier == "wide" else "#001833"
     shadow = Text(no_wrap=True)
-    for ch in last_row:
+    shadow.append(" ")  # Shift shadow right by 1 space column
+    for ch in last_row[:-1]:  # Drop last character to preserve overall line length
         if ch != " ":
             shadow.append("▀", style=f"bold {highlight_color}")
         else:
@@ -1007,32 +1024,36 @@ def _shadow_row(wordmark: str, tier: str = "standard") -> Text:
     return shadow
 
 
-def _version_badge(version: str, tier: str = "standard") -> Text:
-    """Build a centered version badge line.
-
-    Wide tier:    ◆◆  RCT OS  vX.X.X  ◆◆  (double diamond, gold)
-    Standard tier: ◆  RCT OS  vX.X.X  ◆   (single diamond, cyan)
-    """
-    badge = Text(no_wrap=True)
+def _version_badge(version: str, tier: str = "standard") -> Panel:
+    """Build a centered version badge inside a modern rounded pill-box container."""
+    content = Text(no_wrap=True)
     if tier == "wide":
-        badge.append("◆◆  ", style="bold #FFD700")
-        badge.append("RCT OS", style="bold white")
-        badge.append("  ", style="")
-        badge.append(f"v{version}", style="bold #FFD700")
-        badge.append("  ◆◆", style="bold #FFD700")
+        content.append("RCT OS  ", style="bold white")
+        content.append(f"v{version}", style="bold #FFD700")
+        content.append("  ●", style="bold #00FF00")
+        content.append(" Active", style="bold #FF9500")
+        border_style = "#FFD700"
     else:
-        badge.append("◆  ", style="dim bright_cyan")
-        badge.append("RCT OS", style="bold white")
-        badge.append("  ", style="")
-        badge.append(f"v{version}", style="bold bright_cyan")
-        badge.append("  ◆", style="dim bright_cyan")
-    return badge
+        content.append("RCT OS  ", style="bold white")
+        content.append(f"v{version}", style="bold #00E5FF")
+        content.append("  ●", style="bold #00FF00")
+        content.append(" Active", style="dim white")
+        border_style = "#0099EE"
+
+    return Panel(
+        content,
+        box=box.ROUNDED,
+        border_style=border_style,
+        padding=(0, 2),
+        expand=False,
+    )
 
 
 def print_splash(
-    version: str = "1.0.4b0",
+    version: str = "1.0.4b1",
     endpoint: str = "http://127.0.0.1:8000",
     mock: bool = False,
+    no_animation: bool = False,
 ) -> None:
     """Print the branded RCT launch header with width-aware fallbacks."""
     console = get_console()
@@ -1040,14 +1061,19 @@ def print_splash(
     detail = _build_operations_note(mock)
     runtime_rail = _build_runtime_rail(version=version, endpoint=endpoint, mock=mock)
 
-    # ── Wide Tier (≥ 140 cols) ────────────────────────────────────────────────
+    config = _load_config()
+    wide_threshold = config.get("wide_threshold", 140)
+    standard_threshold = config.get("standard_threshold", 100)
+    no_anim = no_animation or config.get("no_animation", False)
+
+    # ── Wide Tier (≥ wide_threshold cols) ────────────────────────────────────────────────
     # Welcome header → animated gold wordmark → version badge → Rule → panels
-    if console.is_terminal and console.size.width >= 140:
+    if console.is_terminal and console.size.width >= wide_threshold:
         console.print()
         console.print(Align.center(_welcome_header(tier="wide")))
         console.print()
         console.print()
-        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide")
+        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="wide", no_animation=no_anim)
         # Note: animation (transient=False) already leaves final wordmark on screen.
         # No redundant static print needed for TTY — wide tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="wide")))
@@ -1089,14 +1115,14 @@ def print_splash(
         console.print()
         return
 
-    # ── Standard Tier (≥ 100 cols) ───────────────────────────────────────────
+    # ── Standard Tier (≥ standard_threshold cols) ───────────────────────────────────────────
     # Welcome header → animated cyan wordmark → badge → Rule → info panel
-    if console.is_terminal and console.size.width >= 100:
+    if console.is_terminal and console.size.width >= standard_threshold:
         console.print()
         console.print(Align.center(_welcome_header(tier="standard")))
         console.print()
         console.print()
-        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard")
+        _animate_wordmark_reveal(console, RCT_WORDMARK_BLOCK, tier="standard", no_animation=no_anim)
         # Note: animation (transient=False) already leaves final wordmark on screen.
         # No redundant static print needed for TTY — standard tier always requires is_terminal.
         console.print(Align.center(_shadow_row(RCT_WORDMARK_BLOCK, tier="standard")))
@@ -1186,6 +1212,7 @@ def boot_sequence_animation(
     mock: bool = False,
     overall_status: str = "launching",
     quiet: bool = False,
+    no_animation: bool = False,
 ) -> None:
     """Animate a truthful pre-launch sequence with state-aware messaging.
 
@@ -1193,6 +1220,7 @@ def boot_sequence_animation(
     the static V1-style service list after completion.
 
     quiet=True: suppresses terminal bell sound on boot complete.
+    no_animation=True: skips all progress bar sequencing and delays.
     """
     console = get_console()
     services = [
@@ -1203,13 +1231,17 @@ def boot_sequence_animation(
         ("crystallizer", 8004, "0.3% hallucination guard"),
         ("delta-engine", None, "74% memory compression"),
     ]
+
+    config = _load_config()
+    no_anim = no_animation or config.get("no_animation", False)
+
     delay = 0.35 if mock else 0.6
     phase_label = "PREVIEW" if mock else "STARTING"
     phase_style = "bright_cyan" if mock else "yellow"
 
     # ── Progress bar boot sequence (TTY only) ────────────────────────
     console.print()
-    if console.is_terminal:
+    if console.is_terminal and not no_anim:
         with Progress(
             SpinnerColumn(spinner_name="dots", style="bold #00E5FF"),
             TextColumn("[bold white]{task.description}[/]"),
@@ -1230,7 +1262,7 @@ def boot_sequence_animation(
                 progress.update(task, description=f"[bold white]{name}[/]")
                 time.sleep(delay)
                 progress.advance(task)
-    else:
+    elif not no_anim:
         # Non-TTY: simple sequential delay without progress bar
         for name, _port, _desc in services:
             time.sleep(delay * 0.2)
@@ -1242,7 +1274,7 @@ def boot_sequence_animation(
             f"  [{phase_style}]{phase_label:<8}[/] [bold bright_white]{name:<20}[/]"
             f" [bold #00CCFF]{port_label:<6}[/]  [dim]{desc}[/]"
         )
-        if console.is_terminal:
+        if console.is_terminal and not no_anim:
             time.sleep(0.05)  # smooth stagger between service lines
     console.print()
     if overall_status == "ui-test":
@@ -1263,7 +1295,7 @@ def boot_sequence_animation(
         sys.stdout.write("\a")
         sys.stdout.flush()
     # Brief pause so tables don't 'pop' instantly after service list
-    if console.is_terminal:
+    if console.is_terminal and not no_anim:
         time.sleep(0.45)
     console.print()
 

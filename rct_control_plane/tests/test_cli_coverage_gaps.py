@@ -184,14 +184,14 @@ class TestStartCommand:
         monkeypatch.setattr(
             cli_mod,
             "print_splash",
-            lambda version, endpoint, mock: captured.update(
+            lambda version, endpoint, mock, **kwargs: captured.update(
                 {"version": version, "endpoint": endpoint, "mock": mock}
             ),
         )
         monkeypatch.setattr(
             cli_mod,
             "boot_sequence_animation",
-            lambda mock, overall_status: captured.update({"boot_status": overall_status}),
+            lambda mock, overall_status, **kwargs: captured.update({"boot_status": overall_status}),
         )
         monkeypatch.setattr(
             cli_mod,

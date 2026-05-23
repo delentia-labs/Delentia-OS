@@ -2028,7 +2028,13 @@ def logs(
     "--port", "-p", default=8000, show_default=True, type=int, help="Port to bind on"
 )
 @click.option("--host", default="127.0.0.1", show_default=True, help="Host to bind on")
-def start(verbose: bool, ui_test: bool, port: int, host: str):
+@click.option(
+    "--no-animation",
+    "no_animation",
+    is_flag=True,
+    help="Disable CLI letter reveal animation",
+)
+def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool):
     """Launch RCT OS — Constitutional AI Operating System.
 
     Renders splash screen, boot sequence, and HexaCore dashboard,
@@ -2047,8 +2053,8 @@ def start(verbose: bool, ui_test: bool, port: int, host: str):
 
     if _HAS_RICH:
         preview_state = _build_launch_preview_state(host=host, port=port, ui_test=ui_test, version=ver)
-        print_splash(version=ver, endpoint=f"http://{host}:{port}", mock=ui_test)
-        boot_sequence_animation(mock=ui_test, overall_status=str(preview_state["overall_status"]))
+        print_splash(version=ver, endpoint=f"http://{host}:{port}", mock=ui_test, no_animation=no_animation)
+        boot_sequence_animation(mock=ui_test, overall_status=str(preview_state["overall_status"]), no_animation=no_animation)
         get_console().print(
             render_layout_dashboard(
                 services=cast(List[Dict[str, Any]], preview_state["services"]),

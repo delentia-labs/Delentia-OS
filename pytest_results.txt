@@ -1,0 +1,61 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0 -- C:\rct-ecosystem\rct-platform\.venv_ci_check\Scripts\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'ci' -> max_examples=50, suppress_health_check=(HealthCheck.too_slow,)
+rootdir: C:\rct-ecosystem\rct-platform
+configfile: pyproject.toml
+plugins: anyio-4.13.0, hypothesis-6.152.1, asyncio-1.3.0, cov-7.1.0, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 49 items
+
+rct_control_plane/tests/test_formatters_dsl.py::TestRichFormatterSetup::test_get_console_returns_console PASSED [  2%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRichFormatterSetup::test_set_console_overrides PASSED [  4%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRichFormatterSetup::test_get_console_singleton PASSED [  6%]
+rct_control_plane/tests/test_formatters_dsl.py::TestPrintSplash::test_print_splash_wide_layout_shows_endpoint_and_mode PASSED [  8%]
+rct_control_plane/tests/test_formatters_dsl.py::TestPrintSplash::test_print_splash_compact_fallback_stays_truthful PASSED [ 10%]
+rct_control_plane/tests/test_formatters_dsl.py::TestPrintSplash::test_print_splash_standard_tier_keeps_ops_on_second_frame PASSED [ 12%]
+rct_control_plane/tests/test_formatters_dsl.py::TestPrintSplash::test_boot_sequence_ui_preview_is_not_reported_as_nominal PASSED [ 14%]
+rct_control_plane/tests/test_formatters_dsl.py::TestPrintSplash::test_boot_sequence_launching_reports_pending_bind PASSED [ 16%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderIntentTable::test_render_empty_list PASSED [ 18%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderIntentTable::test_render_single_intent PASSED [ 20%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderIntentTable::test_render_invalid_intent_shows_cross PASSED [ 22%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderIntentTable::test_render_multiple_intents PASSED [ 24%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderStatePanel::test_render_basic_state PASSED [ 26%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderStatePanel::test_render_state_with_history PASSED [ 28%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderStatePanel::test_render_unknown_phase_uses_fallback PASSED [ 30%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAuditTree::test_render_empty_audit PASSED [ 32%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAuditTree::test_render_with_events PASSED [ 34%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAuditTree::test_render_flat_integrity PASSED [ 36%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderMetricsPanel::test_render_flat_metrics PASSED [ 38%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderMetricsPanel::test_render_nested_metrics PASSED [ 40%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderMetricsPanel::test_render_empty_metrics PASSED [ 42%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAdapterStatus::test_render_healthy_adapter PASSED [ 44%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAdapterStatus::test_render_unhealthy_adapter PASSED [ 46%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAdapterStatus::test_render_adapter_truncates_actions PASSED [ 48%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderAdapterStatus::test_render_empty_adapters PASSED [ 51%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderGovernance::test_render_no_violations PASSED [ 53%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderGovernance::test_render_violations PASSED [ 55%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderTimeline::test_render_empty_timeline PASSED [ 57%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderTimeline::test_render_with_deltas PASSED [ 59%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderExecutionLog::test_render_empty_log PASSED [ 61%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderExecutionLog::test_render_log_entries PASSED [ 63%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderExecutionLog::test_render_log_no_sha PASSED [ 65%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderReplayResult::test_render_original_only PASSED [ 67%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderReplayResult::test_render_match_true PASSED [ 69%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderReplayResult::test_render_match_false PASSED [ 71%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderHelpers::test_render_error PASSED [ 73%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderHelpers::test_render_success PASSED [ 75%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderHelpers::test_render_warning PASSED [ 77%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_simple_dsl PASSED [ 79%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_sets_intent_id PASSED [ 81%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_stores_intent_name PASSED [ 83%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_two_nodes_with_dependency PASSED [ 85%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_invalid_raises PASSED [ 87%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_node_has_cost PASSED [ 89%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_dsl_parse_error_has_message PASSED [ 91%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_entry_exit_nodes_set PASSED [ 93%]
+rct_control_plane/tests/test_formatters_dsl.py::TestDSLParser::test_parse_capability_set PASSED [ 95%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderLayoutDashboard::test_render_layout_dashboard_wide PASSED [ 97%]
+rct_control_plane/tests/test_formatters_dsl.py::TestRenderLayoutDashboard::test_render_layout_dashboard_narrow PASSED [100%]
+
+============================= 49 passed in 5.95s ==============================

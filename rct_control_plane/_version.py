@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-PACKAGE_VERSION = "1.0.4b0"
+PACKAGE_VERSION = "1.0.4b1"
 
 
 def get_package_version() -> str:
