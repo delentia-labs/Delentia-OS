@@ -1,6 +1,6 @@
 ## RCT Platform — Public Roadmap
 
-> Last updated: May 20, 2026  
+> Last updated: May 23, 2026  
 > Current version: **v1.0.4b0 (Beta Preview)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
@@ -14,6 +14,18 @@
 | 🔄 | In progress |
 | 📋 | Planned — confirmed |
 | 💡 | Considering — not confirmed |
+
+---
+
+## v1.0.5b0 — CLI Polish & Customization 📋 (June 2026)
+
+**Goal: Add aesthetic refinements, drop shadows, animation switches, and custom config thresholds.**
+
+- 📋 CLI version badge refinement: rounded pill-box border format
+- 📋 CLI wordmark drop shadow: offset color duplicate row under standard and wide banners
+- 📋 CLI animation switch: `--no-animation` flag to bypass letter-by-letter reveal in slow TTY environments
+- 📋 CLI Configuration: `rct.config.json` support to define custom terminal width threshold tier overrides
+- 📋 Verify Windows Terminal / Linux TTY specific ASCII compatibility across diverse SSH clients
 
 ---
 
