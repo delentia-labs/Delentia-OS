@@ -18,9 +18,11 @@ The plan engine does NOT execute — it only simulates.
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from rct_control_plane.intent_compiler import IntentCompiler
@@ -45,6 +47,29 @@ try:
     _HAS_SIGNEDAI = True
 except ImportError:
     _HAS_SIGNEDAI = False
+
+
+# ---------------------------------------------------------------------------
+# Pricing loader
+# ---------------------------------------------------------------------------
+
+def _load_pricing() -> Dict[str, Any]:
+    """Load model pricing from config/model_pricing.json.
+
+    Falls back to empty dict on any error — callers must handle missing keys.
+    """
+    candidates = [
+        Path(__file__).parent.parent / "config" / "model_pricing.json",
+        Path("config") / "model_pricing.json",
+    ]
+    for path in candidates:
+        if path.exists():
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    return json.load(fh)
+            except (json.JSONDecodeError, OSError):
+                pass
+    return {}
 
 
 # ---------------------------------------------------------------------------
@@ -180,6 +205,7 @@ class PlanEngine:
         self._observer = observer or ControlPlaneObserver()
         self._compiler = IntentCompiler(observer=self._observer)
         self._evaluator = PolicyEvaluator(observer=self._observer)
+        self._pricing = _load_pricing()
 
     # ------------------------------------------------------------------
     # Public API
@@ -375,41 +401,69 @@ class PlanEngine:
         return models
 
     def _fallback_model_roster(self) -> List[ModelEntry]:
-        """Fallback model roster when signedai is not available."""
-        return [
-            ModelEntry(
-                role="supreme_architect",
-                model_id="anthropic/claude-opus-4.6",
-                provider="Anthropic",
-                country="US",
-                cost_input_per_1m=5.0,
-                cost_output_per_1m=25.0,
-                specialties=["Architecture", "Planning"],
-            ),
-            ModelEntry(
-                role="lead_builder",
-                model_id="moonshotai/kimi-k2.5",
-                provider="Moonshot AI",
-                country="CN",
-                cost_input_per_1m=0.45,
-                cost_output_per_1m=2.25,
-                specialties=["Programming", "Code generation"],
-            ),
-        ]
+        """Fallback model roster — loaded from config/model_pricing.json."""
+        pricing = self._pricing
+        roster_cfg = pricing.get("fallback_roster", [])
+        models_cfg = pricing.get("models", {})
+
+        if not roster_cfg:
+            # Hard fallback if JSON missing
+            return [
+                ModelEntry(
+                    role="supreme_architect",
+                    model_id="anthropic/claude-opus-4.6",
+                    provider="Anthropic",
+                    country="US",
+                    cost_input_per_1m=15.0,
+                    cost_output_per_1m=75.0,
+                    specialties=["Architecture", "Planning"],
+                ),
+                ModelEntry(
+                    role="lead_builder",
+                    model_id="moonshotai/kimi-k2.5",
+                    provider="Moonshot AI",
+                    country="CN",
+                    cost_input_per_1m=0.45,
+                    cost_output_per_1m=2.25,
+                    specialties=["Programming", "Code generation"],
+                ),
+            ]
+
+        result: List[ModelEntry] = []
+        for entry in roster_cfg:
+            model_id = entry.get("model_id", "")
+            m = models_cfg.get(model_id, {})
+            result.append(
+                ModelEntry(
+                    role=entry.get("role", "unknown"),
+                    model_id=model_id,
+                    provider=m.get("provider", "Unknown"),
+                    country=m.get("country", "??"),
+                    cost_input_per_1m=float(m.get("cost_input_per_1m", 1.0)),
+                    cost_output_per_1m=float(m.get("cost_output_per_1m", 5.0)),
+                    specialties=entry.get("specialties", []),
+                )
+            )
+        return result
 
     def _estimate_cost(
         self, models: List[ModelEntry], risk_profile: str
     ) -> Tuple[float, Dict[str, float]]:
         """Estimate execution cost based on model roster and risk profile."""
-        # Estimate tokens based on risk level
-        token_estimates = {
-            RiskProfile.LOW.value:        (2_000, 1_000),    # (input, output) tokens
+        # Load token estimates from pricing JSON (with fallback to hardcoded defaults)
+        te_cfg = self._pricing.get("token_estimates", {})
+        _defaults = {
+            RiskProfile.LOW.value:        (2_000, 1_000),
             RiskProfile.STRUCTURAL.value: (8_000, 4_000),
             RiskProfile.SYSTEMIC.value:   (15_000, 8_000),
         }
-        input_tokens, output_tokens = token_estimates.get(
-            risk_profile, (2_000, 1_000)
-        )
+        risk_key = risk_profile.upper()
+        if risk_key in te_cfg:
+            cfg_entry = te_cfg[risk_key]
+            input_tokens = int(cfg_entry.get("input", 2_000))
+            output_tokens = int(cfg_entry.get("output", 1_000))
+        else:
+            input_tokens, output_tokens = _defaults.get(risk_profile, (2_000, 1_000))
 
         breakdown: Dict[str, float] = {}
         total = 0.0

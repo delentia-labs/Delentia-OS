@@ -1,6 +1,6 @@
 {
   "name": "@rctlabs/rct-platform",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "TypeScript SDK for RCT Platform — FDIA scoring, JITNA packets, SignedAI tier selection",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

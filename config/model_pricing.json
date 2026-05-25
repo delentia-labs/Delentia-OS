@@ -1,0 +1,96 @@
+{
+  "_comment": "RCT Control Plane — model pricing registry (USD per 1,000,000 tokens)",
+  "_version": "1.1.0",
+  "_updated": "2026-06-01",
+
+  "models": {
+    "anthropic/claude-opus-4.6": {
+      "provider": "Anthropic",
+      "country": "US",
+      "cost_input_per_1m": 15.0,
+      "cost_output_per_1m": 75.0,
+      "role_hint": "supreme_architect"
+    },
+    "anthropic/claude-sonnet-4.5": {
+      "provider": "Anthropic",
+      "country": "US",
+      "cost_input_per_1m": 3.0,
+      "cost_output_per_1m": 15.0,
+      "role_hint": "humanizer"
+    },
+    "moonshotai/kimi-k2.5": {
+      "provider": "Moonshot AI",
+      "country": "CN",
+      "cost_input_per_1m": 0.45,
+      "cost_output_per_1m": 2.25,
+      "role_hint": "lead_builder"
+    },
+    "google/gemini-2.5-pro": {
+      "provider": "Google",
+      "country": "US",
+      "cost_input_per_1m": 1.25,
+      "cost_output_per_1m": 10.0,
+      "role_hint": "specialist"
+    },
+    "openai/gpt-4o": {
+      "provider": "OpenAI",
+      "country": "US",
+      "cost_input_per_1m": 2.5,
+      "cost_output_per_1m": 10.0,
+      "role_hint": "junior_builder"
+    },
+    "openai/gpt-4o-mini": {
+      "provider": "OpenAI",
+      "country": "US",
+      "cost_input_per_1m": 0.15,
+      "cost_output_per_1m": 0.60,
+      "role_hint": "librarian"
+    },
+    "meta-llama/llama-3.1-70b": {
+      "provider": "Meta",
+      "country": "US",
+      "cost_input_per_1m": 0.30,
+      "cost_output_per_1m": 0.30,
+      "role_hint": "regional_thai"
+    }
+  },
+
+  "fallback_roster": [
+    {
+      "role": "supreme_architect",
+      "model_id": "anthropic/claude-opus-4.6",
+      "specialties": ["Architecture", "Planning", "Risk analysis"]
+    },
+    {
+      "role": "lead_builder",
+      "model_id": "moonshotai/kimi-k2.5",
+      "specialties": ["Programming", "Code generation", "Refactoring"]
+    },
+    {
+      "role": "junior_builder",
+      "model_id": "openai/gpt-4o",
+      "specialties": ["Implementation", "Testing", "Debugging"]
+    },
+    {
+      "role": "specialist",
+      "model_id": "google/gemini-2.5-pro",
+      "specialties": ["Research", "Analysis", "Summarization"]
+    },
+    {
+      "role": "librarian",
+      "model_id": "openai/gpt-4o-mini",
+      "specialties": ["Documentation", "Search", "Classification"]
+    },
+    {
+      "role": "humanizer",
+      "model_id": "anthropic/claude-sonnet-4.5",
+      "specialties": ["Communication", "Translation", "Localization"]
+    }
+  ],
+
+  "token_estimates": {
+    "LOW":        { "input": 2000,  "output": 1000 },
+    "STRUCTURAL": { "input": 8000,  "output": 4000 },
+    "SYSTEMIC":   { "input": 15000, "output": 8000 }
+  }
+}

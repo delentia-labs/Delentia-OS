@@ -23,6 +23,7 @@ from .policy_language import PolicyEvaluator, PolicyAction
 from .control_plane_state import ControlPlaneState, ControlPlanePhase
 from .observability import ControlPlaneObserver
 from .default_policies import get_default_policies
+from .persistence import ControlPlanePersistence
 from ._version import PACKAGE_VERSION
 
 try:
@@ -310,7 +311,10 @@ class ControlPlaneAPI:
         self.parser = DSLParser(observer=self.observer)
         self.evaluator = PolicyEvaluator(observer=self.observer)
 
-        # Storage for states and intents (in-memory for now)
+        # Persistent storage (SQLite — zero-dep local bridge to RCTDB schema)
+        self._db = ControlPlanePersistence()
+
+        # In-memory state caches (backed by _db on mutation)
         self.states: Dict[str, ControlPlaneState] = {}
         self.intents: Dict[str, Dict[str, Any]] = {}
 
@@ -528,6 +532,17 @@ class ControlPlaneAPI:
                         "compiled_at": datetime.now(timezone.utc).isoformat(),
                         "user_id": request.user_id,
                     }
+
+                    # Persist to SQLite (RCTDB-compatible schema)
+                    self._db.save_intent(
+                        intent_id=intent_id,
+                        user_id=request.user_id,
+                        intent_type=str(result.intent.intent_type),
+                        goal=request.natural_language,
+                        user_tier=request.user_tier,
+                        metadata=request.metadata or {},
+                        is_valid=True,
+                    )
 
                     # Create state and transition to INTENT_COMPILED
                     state = ControlPlaneState(
@@ -754,7 +769,22 @@ class ControlPlaneAPI:
 
         @self.app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
         async def get_prometheus_metrics():
-            """Prometheus-format scrape endpoint. Returns text/plain exposition format."""
+            """Prometheus-format scrape endpoint.
+
+            Returns real prometheus_client exposition format when
+            ``prometheus-client`` is installed (``pip install rct-platform[monitoring]``).
+            Falls back to a hand-crafted text format otherwise.
+            """
+            from .observability import get_prometheus_metrics as _prom_generate
+
+            prom_output = _prom_generate()
+            if prom_output is not None:
+                return PlainTextResponse(
+                    content=prom_output,
+                    media_type="text/plain; version=0.0.4; charset=utf-8",
+                )
+
+            # Fallback: hand-crafted text format (no prometheus_client installed)
             _METRIC_DEFS = [
                 ("rct_total_intents", "Total intents processed", "gauge", "total_intents"),
                 ("rct_total_compilations", "Total intent compilations", "gauge", "total_compilations"),

@@ -28,6 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
 import urllib.request
 import urllib.error
@@ -352,7 +353,7 @@ class ApprovalGateway:
                 },
             ],
         }
-        self._post_json(self._config.slack_webhook_url, payload)
+        self._post_json_async(self._config.slack_webhook_url, payload)
 
     def _send_teams(self, request: ApprovalRequest) -> None:
         """Send a Microsoft Teams adaptive card."""
@@ -378,7 +379,7 @@ class ApprovalGateway:
                 }
             ],
         }
-        self._post_json(self._config.teams_webhook_url, payload)
+        self._post_json_async(self._config.teams_webhook_url, payload)
 
     def _send_generic_webhook(self, request: ApprovalRequest) -> None:
         """Send a generic JSON POST to a webhook URL."""
@@ -391,20 +392,48 @@ class ApprovalGateway:
             "approve_command": f"rct approve {request.request_id}",
             "callback_url": self._config.callback_url,
         }
-        self._post_json(self._config.generic_webhook_url, payload)
+        self._post_json_async(self._config.generic_webhook_url, payload)
 
     @staticmethod
     def _post_json(url: str, payload: Dict[str, Any]) -> None:
-        """Send a JSON POST request. Raises on non-2xx response."""
+        """Send a JSON POST request with exponential backoff retry.
+
+        Retries up to 3 times with delays of 1 s, 2 s, 4 s on transient errors.
+        Raises on non-2xx after all attempts are exhausted.
+        """
         body = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status >= 400:
-                raise urllib.error.HTTPError(
-                    url, resp.status, "Webhook delivery failed", {}, None
+        last_exc: Exception = RuntimeError("No attempts made")
+        delays = [1, 2, 4]
+
+        for attempt, delay in enumerate(delays, start=1):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=body,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
                 )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    if resp.status < 400:
+                        return  # Success
+                    last_exc = urllib.error.HTTPError(
+                        url, resp.status, "Webhook delivery failed", {}, None
+                    )
+            except (urllib.error.URLError, OSError) as exc:
+                last_exc = exc
+
+            if attempt < len(delays):
+                time.sleep(delay)
+
+        raise last_exc
+
+    @staticmethod
+    def _post_json_async(url: str, payload: Dict[str, Any]) -> None:
+        """Dispatch a JSON POST in a background daemon thread (fire-and-forget)."""
+        thread = threading.Thread(
+            target=ApprovalGateway._post_json,
+            args=(url, payload),
+            daemon=True,
+            name=f"rct-webhook-{threading.active_count()}",
+        )
+        thread.start()

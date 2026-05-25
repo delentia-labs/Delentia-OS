@@ -23,6 +23,8 @@ Example:
 """
 
 import re
+import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -49,6 +51,88 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .observability import ControlPlaneObserver
+
+
+# ============================================================================
+# OPTIONAL LLM BACKENDS
+# ============================================================================
+
+_HAS_OPENAI: bool = False
+_HAS_ANTHROPIC: bool = False
+
+try:
+    import openai as _openai_module  # type: ignore[import-untyped]
+    _HAS_OPENAI = True
+except ImportError:
+    pass
+
+try:
+    import anthropic as _anthropic_module  # type: ignore[import-untyped]
+    _HAS_ANTHROPIC = True
+except ImportError:
+    pass
+
+
+_LLM_SYSTEM_PROMPT = (
+    "You are an intent compiler for a constitutional AI control plane. "
+    "Given a natural language instruction, extract a JSON object with these fields:\n"
+    "  intent_type: one of REFACTOR, BUILD_APP, ANALYZE_RISK, DEPLOY, OPTIMIZE, "
+    "DOCUMENT, STRATEGY, TRANSFORM, DEBUG, TEST\n"
+    "  scope_type: one of FILE, MODULE, REPOSITORY, SYSTEM, INFRASTRUCTURE\n"
+    "  priority: one of LOW, MEDIUM, HIGH, CRITICAL\n"
+    "  risk_profile: one of LOW, STRUCTURAL, SYSTEMIC\n"
+    "  max_cost_usd: number or null\n"
+    "  target: the primary file/module/service mentioned, or '.'\n"
+    "Respond ONLY with valid JSON, no prose."
+)
+
+
+def _call_llm(natural_language: str) -> Optional[Dict[str, Any]]:
+    """
+    Call an LLM backend to classify the intent.
+
+    Provider selection order:
+    1. ``RCT_LLM_PROVIDER`` env var: 'openai' | 'anthropic' | 'regex'
+    2. Available API key: OPENAI_API_KEY → ANTHROPIC_API_KEY
+    3. Falls back to None (regex path) if nothing is available.
+
+    Returns a dict with classified fields, or None on any error.
+    """
+    provider = os.environ.get("RCT_LLM_PROVIDER", "auto").lower()
+
+    if provider == "regex":
+        return None
+
+    if (provider in ("auto", "openai")) and _HAS_OPENAI and os.environ.get("OPENAI_API_KEY"):
+        try:
+            client = _openai_module.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+            response = client.chat.completions.create(
+                model=os.environ.get("RCT_OPENAI_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {"role": "system", "content": _LLM_SYSTEM_PROMPT},
+                    {"role": "user", "content": natural_language[:2000]},
+                ],
+                temperature=0.0,
+                max_tokens=256,
+            )
+            return json.loads(response.choices[0].message.content or "{}")
+        except Exception:
+            return None
+
+    if (provider in ("auto", "anthropic")) and _HAS_ANTHROPIC and os.environ.get("ANTHROPIC_API_KEY"):
+        try:
+            client = _anthropic_module.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+            message = client.messages.create(
+                model=os.environ.get("RCT_ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
+                system=_LLM_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": natural_language[:2000]}],
+                max_tokens=256,
+            )
+            return json.loads(message.content[0].text)  # type: ignore[index]
+        except Exception:
+            return None
+
+    return None
 
 
 # ============================================================================
@@ -101,6 +185,23 @@ class CompilationResult:
     def add_warning(self, message: str) -> None:
         """Add compilation warning"""
         self.warnings.append(message)
+
+
+# ============================================================================
+# LLM PROVIDER HELPER (module-level — available before class instantiation)
+# ============================================================================
+
+
+def _detect_active_provider() -> str:
+    """Return the LLM provider that will be used at runtime."""
+    provider = os.environ.get("RCT_LLM_PROVIDER", "auto").lower()
+    if provider == "regex":
+        return "regex"
+    if (provider in ("auto", "openai")) and _HAS_OPENAI and os.environ.get("OPENAI_API_KEY"):
+        return "openai"
+    if (provider in ("auto", "anthropic")) and _HAS_ANTHROPIC and os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    return "regex"
 
 
 # ============================================================================
@@ -197,6 +298,8 @@ class IntentCompiler:
         self.version = PACKAGE_VERSION
         self.compiled_count = 0
         self.observer = observer
+        # Advertise which backend is active
+        self.llm_provider: str = _detect_active_provider()
 
     # ========================================================================
     # MAIN COMPILATION PIPELINE
@@ -241,30 +344,62 @@ class IntentCompiler:
             )
 
         try:
-            # 1. Lexical analysis
+            # Attempt LLM-assisted classification (falls back to regex if unavailable)
+            llm_result = _call_llm(natural_language)
+
+            # 1. Lexical analysis (always run — used as fallback + constraint extraction)
             lexical = self.lex(natural_language)
 
-            # 2. Classify intent type
-            intent_type = self._classify_intent_type(lexical)
+            # 2. Classify intent type (prefer LLM if available)
+            intent_type: Optional[IntentType] = None
+            if llm_result and llm_result.get("intent_type"):
+                try:
+                    intent_type = IntentType(llm_result["intent_type"])
+                except ValueError:
+                    pass
+            if intent_type is None:
+                intent_type = self._classify_intent_type(lexical)
             if not intent_type:
                 result.add_error("Could not determine intent type")
                 result.success = False
                 # Don't increment counter for failures
             else:
-                # 3. Extract scope
+                # 3. Extract scope (prefer LLM target suggestion)
                 scope = self._extract_scope(lexical, natural_language)
+                if llm_result and llm_result.get("scope_type"):
+                    try:
+                        scope.scope_type = ScopeType(llm_result["scope_type"])
+                    except ValueError:
+                        pass
+                if llm_result and llm_result.get("target"):
+                    scope.target = str(llm_result["target"])
 
                 # 4. Extract constraints
                 constraints = self._extract_constraints(lexical)
 
                 # 5. Extract budget
                 budget = self._extract_budget(lexical)
+                if llm_result and llm_result.get("max_cost_usd") is not None:
+                    try:
+                        budget.max_cost_usd = Decimal(str(llm_result["max_cost_usd"]))
+                    except Exception:
+                        pass
 
-                # 6. Determine risk profile
+                # 6. Determine risk profile (prefer LLM)
                 risk_profile = self._determine_risk_profile(intent_type, lexical)
+                if llm_result and llm_result.get("risk_profile"):
+                    try:
+                        risk_profile = RiskProfile(llm_result["risk_profile"])
+                    except ValueError:
+                        pass
 
-                # 7. Determine priority
+                # 7. Determine priority (prefer LLM)
                 priority = self._determine_priority(lexical)
+                if llm_result and llm_result.get("priority"):
+                    try:
+                        priority = IntentPriority(llm_result["priority"])
+                    except ValueError:
+                        pass
 
                 # 8. Build context
                 context = ContextBundle(
