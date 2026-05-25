@@ -2500,8 +2500,6 @@ def plan(intent_text: str, user_id: str, tier: str, output: str):
         if _HAS_RICH:
             from rich.table import Table
             from rich.panel import Panel
-            from rich.columns import Columns
-            from rich.text import Text
 
             console = get_console()
 
@@ -2620,9 +2618,9 @@ def apply_cmd(
     try:
         # Resolve intent text
         if yaml_file:
-            intent_text, extra_context = _parse_intent_yaml(yaml_file)
+            intent_text, _ = _parse_intent_yaml(yaml_file)
         elif intent_text:
-            extra_context: Dict[str, Any] = {}
+            pass
         else:
             if _HAS_RICH:
                 render_error("Provide an intent text or use -f <file>")
@@ -2812,11 +2810,6 @@ def memory_history(intent_id: Optional[str], tail: int, output: str):
     try:
         ctx = get_context()
         trail = ctx.observer.audit_trail
-
-        if intent_id:
-            events = trail.get_events_for_intent(intent_id)[-tail:]
-        else:
-            events = trail.get_recent_events(tail)
 
         entries = []
         for i, entry_obj in enumerate(trail.entries[-tail:]):

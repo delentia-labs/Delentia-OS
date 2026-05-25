@@ -21,7 +21,6 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field
-from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -31,18 +30,12 @@ from rct_control_plane.observability import ControlPlaneObserver
 from rct_control_plane.policy_language import (
     PolicyAction,
     PolicyEvaluator,
-    PolicyRule,
 )
 
 try:
     from signedai.core import (
         HexaCoreRegistry,
         HexaCoreRole,
-        ModelInfo,
-        SignedAIRegistry,
-        SignedAITier,
-        TierConfig,
-        TierRouter,
     )
     _HAS_SIGNEDAI = True
 except ImportError:
@@ -357,7 +350,6 @@ class PlanEngine:
         if not _HAS_SIGNEDAI:
             return self._fallback_model_roster()
 
-        registry = HexaCoreRegistry()
         models: List[ModelEntry] = []
 
         # Select roles based on risk tier

@@ -322,7 +322,7 @@ class ApprovalGateway:
             return
 
         payload = {
-            "text": f":warning: *RCT OS — Approval Required*",
+            "text": ":warning: *RCT OS — Approval Required*",
             "blocks": [
                 {
                     "type": "header",

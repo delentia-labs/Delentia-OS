@@ -23,7 +23,6 @@ Environment variables:
 from __future__ import annotations
 
 import os
-import time
 from typing import Any, Dict, List, Optional
 
 from rct_control_plane.observability import ControlPlaneEvent, ControlPlaneEventType
