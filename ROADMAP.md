@@ -1,6 +1,6 @@
 ## RCT Platform — Public Roadmap
 
-> Last updated: June 2026
+> Last updated: May 2026
 > Current version: **v1.1.0 (Stable)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
@@ -17,11 +17,11 @@
 
 ---
 
-## v1.1.0 — Enterprise Platform ✅ (June 2026)
+## v1.1.0 — Enterprise Platform ✅ (May 2026)
 
 **Goal: Full enterprise-grade CLI, OTel observability, TypeScript SDK, and GitHub Action.**
 
-> Released: June 2026 · 800 tests · 0 failures · commit `9afecb8`
+> Released: May 2026 · 800 tests · 0 failures · commit `58f5b5c`
 
 ### Phase 1 — CLI Lifecycle (rct plan / apply / memory) ✅
 - ✅ `rct plan "<intent>"` — Terraform-style pre-execution simulation (PlanEngine)
@@ -60,8 +60,19 @@
 - ✅ `github-action/src/index.ts` — compile + evaluate + gate logic (Node 20)
 - ✅ Inputs: `intent`, `rct_api_url`, `user_tier`, `min_governance_score`, `fail_on_reject`
 - ✅ Outputs: `decision`, `governance_score`, `risk_profile`, `triggered_rules`
+- ✅ `github-action/tsconfig.json` — TypeScript config (Node 20, ES2020)
+- ✅ `github-action/dist/index.js` — ncc-bundled 751 kB single-file Action artifact
 
-### Phase 6 — RCT Desktop 💡 (Post v1.0.0)
+### Phase 6 — LLM Integration + Persistence ✅ (Sprint 1–4 bonus)
+- ✅ `intent_compiler.py` — OpenAI / Anthropic / regex 3-provider fallback pipeline
+- ✅ `persistence.py` — SQLite bridge (RCTDB-compatible schema, sync + async)
+- ✅ `config/model_pricing.json` — 7-model registry with USD pricing + fallback roster
+- ✅ `observability.py` — 11 real `prometheus_client` metrics (Counter/Gauge/Histogram)
+- ✅ `approval_gateway.py` — 3-attempt exponential backoff (1→2→4 s) + daemon thread
+- ✅ `examples/real_llm_demo.py` — full pipeline demo (compile→evaluate→persist→metrics)
+- ✅ Optional extras: `[llm]`, `[monitoring]`, `[persistence]`, `[full]` in pyproject.toml
+
+### Phase 7 — RCT Desktop 💡 (Post v1.0.0)
 - 💡 Tauri + Next.js desktop app with live `rct start` dashboard
 - 💡 System tray agent with per-intent notifications
 - 💡 Scheduled intent queue and approval inbox
@@ -143,18 +154,18 @@
 
 ---
 
-## v1.1.0 — Observability + Integrations 📋 (Q4 2026)
+## v1.1.x — Integrations + Third-Party Adapters 📋 (Q4 2026)
 
-**Goal: production-ready observability and first third-party integrations.**
+**Goal: first third-party integrations and protocol extensions.**
 
-- 📋 Prometheus `/metrics` endpoint (live in `rct serve`)
-- 📋 Grafana dashboard template (`docs/assets/grafana-dashboard.json`)
-- 📋 `docker-compose.monitoring.yml` — Prometheus + Grafana local stack
-- 📋 OpenTelemetry trace exporter for distributed tracing
+> Note: Core observability (Prometheus, Grafana, OTel) already shipped in v1.1.0 above.
+
 - 📋 n8n integration adapter (from Universal Adapter collection)
 - 📋 Home Assistant integration adapter
 - 📋 Obsidian plugin (knowledge graph ↔ JITNA intent tagging)
 - 📋 JITNA Protocol v2.1 draft — bidirectional agent negotiation
+- 📋 npm publish `@rctlabs/rct-platform@1.1.0` to public registry
+- 📋 PyPI publish `rct-platform==1.1.0` (twine upload — awaiting credentials)
 
 ---
 

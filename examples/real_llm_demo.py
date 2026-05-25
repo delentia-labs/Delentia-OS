@@ -128,9 +128,10 @@ def run_demo() -> None:
     observer = ControlPlaneObserver()
     compiler = IntentCompiler(observer=observer)
     evaluator = PolicyEvaluator(observer=observer)
+    for policy in get_default_policies():
+        evaluator.add_rule(policy)
     engine = PlanEngine(observer=observer)
     db = ControlPlanePersistence()
-    policies = get_default_policies()
 
     # Report active backend
     active_provider = _detect_active_provider()
@@ -165,26 +166,27 @@ def run_demo() -> None:
         intent = result.intent
         _kv("Compile", _green(f"OK ({compile_ms:.1f} ms)"))
         _kv("Intent ID", str(intent.id)[:16] + "…")
-        _kv("Type", _cyan(intent.intent_type.value))
-        _kv("Priority", intent.priority.value)
-        _kv("Risk Profile", intent.risk_profile.value)
+        _kv("Type", _cyan(str(intent.intent_type)))
+        _kv("Priority", str(intent.priority))
+        _kv("Risk Profile", str(intent.risk_profile))
         _kv("Provider Used", result.warnings[0] if result.warnings else active_provider)
 
         # ---- Step 2: Plan (cost simulation) ----
         plan = engine.simulate(demo["text"], user_id=demo["user_id"], user_tier=demo["tier"])
         _kv("Estimated Cost", f"${plan.estimated_cost_usd:.4f} USD")
-        if plan.model_roster:
-            model_summary = ", ".join(m.model_id.split("/")[-1] for m in plan.model_roster[:3])
-            _kv("Models", model_summary + ("…" if len(plan.model_roster) > 3 else ""))
+        if plan.models_roster:
+            model_summary = ", ".join(m.model_id.split("/")[-1] for m in plan.models_roster[:3])
+            _kv("Models", model_summary + ("…" if len(plan.models_roster) > 3 else ""))
 
         # ---- Step 3: Policy evaluation ----
-        eval_result = evaluator.evaluate(intent, policies)
-        if eval_result.action.value == "ALLOW":
+        eval_result = evaluator.evaluate_intent(intent)
+        decision_str = str(eval_result.decision)
+        if "APPROVE" in decision_str:
             _kv("Policy Gate", _green("ALLOW"))
-        elif eval_result.action.value == "REQUIRE_APPROVAL":
+        elif eval_result.requires_approval:
             _kv("Policy Gate", _yellow("REQUIRE APPROVAL"))
         else:
-            _kv("Policy Gate", _red(f"BLOCKED — {eval_result.reason}"))
+            _kv("Policy Gate", _red(f"BLOCKED — {eval_result.decision_reason}"))
 
         if eval_result.triggered_rules:
             rules_str = ", ".join(r.name for r in eval_result.triggered_rules[:3])
@@ -194,7 +196,7 @@ def run_demo() -> None:
         db.save_intent(
             intent_id=str(intent.id),
             user_id=demo["user_id"],
-            intent_type=intent.intent_type.value,
+            intent_type=str(intent.intent_type),
             goal=demo["text"],
             user_tier=demo["tier"],
             is_valid=result.success,
