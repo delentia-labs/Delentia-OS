@@ -1,7 +1,7 @@
 ## RCT Platform — Public Roadmap
 
 > Last updated: June 2026
-> Current version: **v1.0.4b2 (Beta)**  
+> Current version: **v1.1.0 (Stable)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
 ---
@@ -17,9 +17,11 @@
 
 ---
 
-## v1.1.0 — Enterprise Platform (In Progress) 🔄
+## v1.1.0 — Enterprise Platform ✅ (June 2026)
 
 **Goal: Full enterprise-grade CLI, OTel observability, TypeScript SDK, and GitHub Action.**
+
+> Released: June 2026 · 800 tests · 0 failures · commit `9afecb8`
 
 ### Phase 1 — CLI Lifecycle (rct plan / apply / memory) ✅
 - ✅ `rct plan "<intent>"` — Terraform-style pre-execution simulation (PlanEngine)

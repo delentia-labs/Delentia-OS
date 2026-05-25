@@ -3,7 +3,7 @@
 [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.0.4b0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md)
 [![PyPI](https://img.shields.io/pypi/v/rct-platform?label=PyPI&color=gold)](https://pypi.org/project/rct-platform/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/rct-platform?label=downloads&color=brightgreen)](https://pypi.org/project/rct-platform/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
@@ -125,7 +125,7 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│               RCT PLATFORM SDK v1.0.4b0                  │
+│               RCT PLATFORM SDK v1.1.0                    │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
@@ -413,7 +413,57 @@ graph = parser.parse(dsl_text)
 print(f"Nodes: {len(graph.nodes)}, Edges: {len(graph.edges)}")
 ```
 
-Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `intent_compiler` · `policy_language` · `observability` · `control_plane_state` · `jitna_protocol` · `signed_execution` · `replay_engine` · `default_policies` · `cli` · `api` · `middleware` · `rich_formatter`
+Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `intent_compiler` · `policy_language` · `observability` · `control_plane_state` · `jitna_protocol` · `signed_execution` · `replay_engine` · `default_policies` · `cli` · `api` · `middleware` · `rich_formatter` · `plan_engine` · `architect_policy_loader` · `approval_gateway` · `otel_adapter`
+
+### Enterprise CLI Commands (v1.1.0)
+
+```bash
+# Lifecycle
+rct plan "Refactor auth module"         # Terraform-style simulation — cost, risk, model roster
+rct apply "Deploy payment service"       # compile → evaluate → execute
+rct apply -f examples/pipeline.yaml     # Run JITNA pipeline file
+
+# Memory
+rct memory history                       # AI decision timeline with SHA-256 audit chain
+rct memory rollback 3                    # Roll back 3 ticks
+
+# Policy Governance
+rct policy add -f config/architect_policy.yaml   # Load policy rules from YAML
+rct policy list                          # List active rules
+rct policy test "Migrate database"       # Dry-run policy evaluation
+rct approve --pending                    # Interactive approval queue
+
+# Monitoring
+rct serve                                # Start API server (GET /metrics for Prometheus)
+```
+
+### TypeScript SDK (`sdk-typescript/`)
+
+```typescript
+import { computeFDIA, RCTClient, selectSignedAITier } from './src/index';
+
+// FDIA formula
+const score = computeFDIA(0.85, 0.90, 1.0);  // F = D^I × A
+
+// REST client
+const client = new RCTClient('http://localhost:8000');
+const result = await client.compile({ natural_language: 'Deploy service' });
+
+// Governance tier selection
+const tier = selectSignedAITier('enterprise', 'high');
+```
+
+### GitHub Action
+
+```yaml
+- uses: rctlabs/rct-platform/github-action@v1.1.0
+  with:
+    intent: "Deploy to production"
+    rct_api_url: ${{ secrets.RCT_API_URL }}
+    user_tier: enterprise
+    min_governance_score: "0.8"
+    fail_on_reject: "true"
+```
 
 ### Analysearch Intent (`microservices/analysearch-intent/`)
 
@@ -509,16 +559,19 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 ---
 
-## Enterprise Platform Milestone — v5.4.5 (Private)
+## Enterprise Platform — v1.1.0 (Current SDK) · v5.5.0 (Private)
 
-> **Note:** This section records the private enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
+> **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
+✅ **800 Passed · 0 Failed** — Full rct-platform SDK test suite (Phase 1–5 enterprise, commit `9afecb8`)  
+✅ **Plan Engine** — `rct plan` Terraform-style pre-execution simulation  
+✅ **Policy Governance** — `rct policy` + `approval_gateway.py` omni-channel human approval  
+✅ **OTel + Prometheus + Grafana** — `GET /metrics` scrape endpoint + monitoring stack  
+✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  
+✅ **GitHub Action** — `rct-policy-gate` for CI/CD governance enforcement  
+
+Previous milestone:  
 ✅ **4,849 Passed · 16 Skipped · 0 Failed · 0 Errors** — Complete private enterprise test suite (all 62 microservices)  
-✅ **asyncio Modernization** — Python 3.12 compatible, removed all deprecated `event_loop` fixtures  
-✅ **Pydantic Field Ordering Fix** — `VerificationBlock` validator ordering resolved  
-✅ **Module Isolation** — Resolved `app/` namespace collision across 9 microservices  
-✅ **Policy Engine Fix** — `asyncio.get_running_loop()` with safe fallback  
-✅ **REGIONAL_THAI Model** — Typhoon v2 70B (SCB10X) added as 7th HexaCore model  
 
 Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 
@@ -544,18 +597,28 @@ rct-platform/
 │     ├─ registry.py            # HexaCoreRegistry (7 models) + SignedAIRegistry
 │     ├─ router.py              # TierRouter (risk → tier selection)
 │     └─ models.py              # JITNAPacket, AnalysisJob
-├─ rct_control_plane/           # 15-module DSL + intent schema
+├─ rct_control_plane/           # 19-module DSL + intent schema + enterprise platform
+│  ├─ plan_engine.py            # PlanEngine — Terraform-style pre-execution simulation
+│  ├─ architect_policy_loader.py # PolicyRule YAML loader
+│  ├─ approval_gateway.py       # Omni-channel human approval (SHA-256 tokens)
+│  └─ otel_adapter.py           # OpenTelemetry bridge for FDIA metrics
+├─ sdk-typescript/              # TypeScript SDK (fdia, jitna, signedai, client)
+├─ github-action/               # rct-policy-gate GitHub Action (Node 20)
 ├─ microservices/               # 5 reference microservices
 │  ├─ intent-loop/              # Core FDIA execution loop (port 8001)
 │  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8002)
 │  ├─ vector-search/            # RCTDB semantic search (port 8003)
 │  ├─ crystallizer/             # Output crystallization (port 8004)
 │  └─ gateway-api/              # Unified entry + rate limiting (port 8000)
-├─ examples/                    # Working code demos
-│  ├─ signed_ai_demo.py         # SignedAI imports + consensus demo
-│  └─ hexa_core_demo.py         # All 7 models + geopolitical balance
+├─ config/                      # Configuration files
+│  ├─ architect_policy.yaml     # 6 constitutional policy rules
+│  ├─ prometheus.yml            # Prometheus scrape config
+│  └─ grafana-datasources.yml   # Grafana auto-provision
+├─ docker-compose.monitoring.yml # Prometheus + Grafana + OTel Collector stack
+├─ examples/                    # Working code demos + pipeline.yaml
 ├─ contracts/openapi.yaml       # OpenAPI 3.1.0 spec
 └─ docs/                        # Architecture docs + whitepapers
+   └─ assets/grafana-dashboard.json  # Pre-built Control Plane dashboard
 ```
 
 ---
@@ -646,7 +709,8 @@ This is not a research paper. It runs in production at [rctlabs.co](https://rctl
 | Jan 2026 | 41 algorithms complete, 4,849 enterprise tests |
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
-| May 2026 (current) | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, 800 tests, PyPI v1.0.4b0 live |
+| May 2026 | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, PyPI v1.0.4b0 live |
+| June 2026 (current) | Enterprise Platform v1.1.0 — Plan/Apply/Memory/Policy/Approve CLI, TypeScript SDK, GitHub Action, OTel + Prometheus + Grafana, 800 tests 0 failed |
 
 > See [ROADMAP.md](ROADMAP.md) for what comes next.
 

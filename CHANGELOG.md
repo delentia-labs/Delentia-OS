@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-01
+
+### Added — Enterprise Platform (Phases 1–5) — commit `9afecb8`
+
+#### Phase 1 — CLI Lifecycle
+- `plan_engine.py` — `PlanEngine` Terraform-style pre-execution simulation: `simulate(intent, user_id, tier)` → `PlanResult` dataclass; `_infer_risk_profile()`, `_build_model_roster()`, `_estimate_cost()`
+- `rct plan "<intent>"` — simulates intent without executing; shows risk, cost estimate, model roster
+- `rct apply [-f pipeline.yaml]` — compile → policy evaluate → execute with JITNA YAML support
+- `rct memory history` — AI decision timeline with SHA-256 audit chain visualization
+- `rct memory rollback <n>` — roll back N ticks on control plane or NPC delta engine
+- `examples/pipeline.yaml` — JITNA 6-field packet reference (intent/data/delta/architect/result/meta)
+
+#### Phase 2 — Policy Governance (policy-as-code + A-gate)
+- `architect_policy_loader.py` — `ArchitectPolicyLoader.load(path)` → `List[PolicyRule]`; `load_from_string()`; `_build_rule()`; `_build_conditions()`
+- `approval_gateway.py` — `ApprovalGateway`: SHA-256 token generation, `submit()`, `decide()`, `get_pending()`; omni-channel dispatch `_send_slack()`, `_send_teams()`
+- `rct policy add -f <path>` — load policy rules from YAML file
+- `rct policy list` — list active rules with priority and action
+- `rct policy remove <id>` — remove rule by ID
+- `rct policy test "<intent>"` — dry-run evaluate against all active policies
+- `rct approve --pending` — interactive omni-channel approval queue
+- `config/architect_policy.yaml` — 6 constitutional rules (block-systemic, require-approval-above-10usd, reject-above-100usd, notify-on-deploy, require-approval-deploy-production, log-all-intents)
+
+#### Phase 3 — Observability (OTel + Prometheus + Grafana)
+- `otel_adapter.py` — `OTelAdapter.emit(event)`, `emit_fdia_metric()`, `get_otel_adapter()` singleton; `_HAS_OTEL` guard for optional opentelemetry dependency
+- `GET /metrics` — Prometheus scrape endpoint (text/plain exposition format, `include_in_schema=False`)
+- `docker-compose.monitoring.yml` — Prometheus + Grafana + OTel Collector full monitoring stack
+- `docs/assets/grafana-dashboard.json` — pre-built RCT Control Plane dashboard (stat panels + timeseries)
+- `config/prometheus.yml` — Prometheus scrape config targeting rct-platform `/metrics`
+- `config/grafana-datasources.yml` — auto-provision Grafana Prometheus datasource
+
+#### Phase 4 — TypeScript SDK (`sdk-typescript/`)
+- `src/fdia.ts` — `computeFDIA(d, i, a)` → F=D^I×A; `meetsThreshold(result, minF)`
+- `src/jitna.ts` — `JITNAPacket` interface; `constructJITNA()`; `serializeJITNA()`
+- `src/signedai.ts` — `selectSignedAITier(userTier, riskProfile)` → `TierSelection` with HexaCore role names
+- `src/client.ts` — `RCTClient` REST wrapper: `compile()`, `compileJITNA()`, `evaluatePolicy()`, `getMetrics()`, `health()`
+- `src/index.ts` — clean barrel export
+
+#### Phase 5 — GitHub Action (`github-action/`)
+- `action.yml` — `rct-policy-gate` action; inputs: `intent`, `rct_api_url`, `user_tier`, `min_governance_score`, `fail_on_reject`, `rct_api_key`; outputs: `decision`, `governance_score`, `risk_profile`, `triggered_rules`, `requires_approval`
+- `src/index.ts` — compile → evaluate → gate logic using `@actions/core`
+
+### Changed
+- `api.py` — added `GET /metrics` Prometheus endpoint (`PlainTextResponse`, `include_in_schema=False`); added `from fastapi.responses import PlainTextResponse` at module level; 14 FDIA/governance metrics exported
+- `cli.py` — 11 new commands: `plan`, `apply`, `memory history`, `memory rollback`, `policy add/list/remove/test`, `approve`; `_parse_intent_yaml()` helper for YAML/JSON pipeline files
+- `ROADMAP.md` — Phase 1–5 milestones added with ✅ status; version updated to v1.1.0 Stable
+
+### Fixed
+- `api.py` `/metrics` endpoint: replaced `response_class=None` (caused FastAPI OpenAPI schema HTTP 500) with `response_class=PlainTextResponse, include_in_schema=False`; removed duplicate `prometheus_client` import try/except; simplified to single clean implementation
+
+### Verified
+- **800 passed · 0 failed** — full test suite (was 793 passed, 7 failed)
+- 7 previously failing `test_cli_serve_integration.py` tests now pass (root cause: `/openapi.json` HTTP 500 from `response_class=None`)
+- All 23 new files import cleanly; `ruff` lint clean
+
+---
+
 ## [1.0.4b0] - 2026-05-23
 
 ### Added — Enterprise CLI Design System (branch: 2105-Upperf-CLIDesign)

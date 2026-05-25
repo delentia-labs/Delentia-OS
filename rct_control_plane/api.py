@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from .intent_compiler import IntentCompiler
@@ -751,87 +752,37 @@ class ControlPlaneAPI:
 
             return MetricsResponse(**summary)
 
-        @self.app.get("/metrics", response_class=None)
+        @self.app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
         async def get_prometheus_metrics():
-            """
-            Prometheus-format metrics endpoint (scrape target).
-
-            Returns text/plain metrics in Prometheus exposition format.
-            Compatible with Prometheus, Grafana Agent, and VictoriaMetrics.
-
-            Example scrape config:
-                - job_name: rct-platform
-                  static_configs:
-                    - targets: ['localhost:8000']
-            """
-            from fastapi.responses import PlainTextResponse
-
-            # Try prometheus_client if available (preferred)
-            try:
-                from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Gauge
-
-                summary = self.observer.get_metrics_summary()
-
-                # Export each metric as Prometheus gauge/counter
-                lines: List[str] = []
-                metric_defs = [
-                    ("rct_total_intents", "Total intents processed", "gauge", "total_intents"),
-                    ("rct_total_compilations", "Total intent compilations", "gauge", "total_compilations"),
-                    ("rct_total_graphs", "Total execution graphs built", "gauge", "total_graphs"),
-                    ("rct_total_policy_evaluations", "Total policy evaluations", "gauge", "total_policy_evaluations"),
-                    ("rct_total_executions", "Total intent executions", "gauge", "total_executions"),
-                    ("rct_total_nodes_executed", "Total execution graph nodes executed", "gauge", "total_nodes_executed"),
-                    ("rct_total_failures", "Total failures across all operations", "gauge", "total_failures"),
-                    ("rct_avg_compilation_latency_ms", "Average intent compilation latency in ms", "gauge", "avg_compilation_latency_ms"),
-                    ("rct_avg_policy_evaluation_latency_ms", "Average policy evaluation latency in ms", "gauge", "avg_policy_evaluation_latency_ms"),
-                    ("rct_avg_graph_build_latency_ms", "Average execution graph build latency in ms", "gauge", "avg_graph_build_latency_ms"),
-                    ("rct_policy_violations_total", "Total policy violations detected", "gauge", "policy_violations"),
-                    ("rct_approvals_required_total", "Total intents that required human approval", "gauge", "approvals_required"),
-                    ("rct_approvals_granted_total", "Total approvals granted", "gauge", "approvals_granted"),
-                    ("rct_audit_trail_entries", "Current number of audit trail entries", "gauge", "audit_trail_entries"),
-                ]
-                for prom_name, help_text, metric_type, summary_key in metric_defs:
-                    value = summary.get(summary_key, 0)
-                    lines.append(f"# HELP {prom_name} {help_text}")
-                    lines.append(f"# TYPE {prom_name} {metric_type}")
-                    lines.append(f"{prom_name} {value}")
-                lines.append("")  # trailing newline
-
-                return PlainTextResponse(
-                    content="\n".join(lines),
-                    media_type="text/plain; version=0.0.4",
-                )
-            except ImportError:
-                # Fallback: manual Prometheus format
-                summary = self.observer.get_metrics_summary()
-                lines = []
-                metric_defs = [
-                    ("rct_total_intents", "Total intents processed", "gauge", "total_intents"),
-                    ("rct_total_compilations", "Total intent compilations", "gauge", "total_compilations"),
-                    ("rct_total_graphs", "Total execution graphs built", "gauge", "total_graphs"),
-                    ("rct_total_policy_evaluations", "Total policy evaluations", "gauge", "total_policy_evaluations"),
-                    ("rct_total_executions", "Total intent executions", "gauge", "total_executions"),
-                    ("rct_total_nodes_executed", "Total execution graph nodes executed", "gauge", "total_nodes_executed"),
-                    ("rct_total_failures", "Total failures", "gauge", "total_failures"),
-                    ("rct_avg_compilation_latency_ms", "Average compilation latency ms", "gauge", "avg_compilation_latency_ms"),
-                    ("rct_avg_policy_evaluation_latency_ms", "Average policy eval latency ms", "gauge", "avg_policy_evaluation_latency_ms"),
-                    ("rct_avg_graph_build_latency_ms", "Average graph build latency ms", "gauge", "avg_graph_build_latency_ms"),
-                    ("rct_policy_violations_total", "Total policy violations", "gauge", "policy_violations"),
-                    ("rct_approvals_required_total", "Total approvals required", "gauge", "approvals_required"),
-                    ("rct_approvals_granted_total", "Total approvals granted", "gauge", "approvals_granted"),
-                    ("rct_audit_trail_entries", "Audit trail entry count", "gauge", "audit_trail_entries"),
-                ]
-                for prom_name, help_text, metric_type, summary_key in metric_defs:
-                    value = summary.get(summary_key, 0)
-                    lines.append(f"# HELP {prom_name} {help_text}")
-                    lines.append(f"# TYPE {prom_name} {metric_type}")
-                    lines.append(f"{prom_name} {value}")
-                lines.append("")
-
-                return PlainTextResponse(
-                    content="\n".join(lines),
-                    media_type="text/plain; version=0.0.4",
-                )
+            """Prometheus-format scrape endpoint. Returns text/plain exposition format."""
+            _METRIC_DEFS = [
+                ("rct_total_intents", "Total intents processed", "gauge", "total_intents"),
+                ("rct_total_compilations", "Total intent compilations", "gauge", "total_compilations"),
+                ("rct_total_graphs", "Total execution graphs built", "gauge", "total_graphs"),
+                ("rct_total_policy_evaluations", "Total policy evaluations", "gauge", "total_policy_evaluations"),
+                ("rct_total_executions", "Total intent executions", "gauge", "total_executions"),
+                ("rct_total_nodes_executed", "Total execution graph nodes executed", "gauge", "total_nodes_executed"),
+                ("rct_total_failures", "Total failures across all operations", "gauge", "total_failures"),
+                ("rct_avg_compilation_latency_ms", "Average intent compilation latency in ms", "gauge", "avg_compilation_latency_ms"),
+                ("rct_avg_policy_evaluation_latency_ms", "Average policy evaluation latency in ms", "gauge", "avg_policy_evaluation_latency_ms"),
+                ("rct_avg_graph_build_latency_ms", "Average execution graph build latency in ms", "gauge", "avg_graph_build_latency_ms"),
+                ("rct_policy_violations_total", "Total policy violations detected", "gauge", "policy_violations"),
+                ("rct_approvals_required_total", "Total intents that required human approval", "gauge", "approvals_required"),
+                ("rct_approvals_granted_total", "Total approvals granted", "gauge", "approvals_granted"),
+                ("rct_audit_trail_entries", "Current number of audit trail entries", "gauge", "audit_trail_entries"),
+            ]
+            summary = self.observer.get_metrics_summary()
+            lines: List[str] = []
+            for prom_name, help_text, metric_type, summary_key in _METRIC_DEFS:
+                value = summary.get(summary_key, 0)
+                lines.append(f"# HELP {prom_name} {help_text}")
+                lines.append(f"# TYPE {prom_name} {metric_type}")
+                lines.append(f"{prom_name} {value}")
+            lines.append("")
+            return PlainTextResponse(
+                content="\n".join(lines),
+                media_type="text/plain; version=0.0.4",
+            )
 
         @self.app.delete("/v1/state/{intent_id}")
         async def delete_state(intent_id: str):
