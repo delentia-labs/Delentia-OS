@@ -1,0 +1,35 @@
+# RCT Pipeline YAML — JITNA intent packet example
+# Usage:  rct apply -f examples/pipeline.yaml
+#
+# 6-field JITNA schema:
+#   intent    (I) — what the agent should do
+#   data      (D) — input data source
+#   delta     (Δ) — change constraint
+#   architect (A) — approval gate (0=blocked, 1=approved)
+#   result    (R) — expected output
+#   meta      (M) — metadata
+
+intent: "Refactor the authentication module to use clean hexagonal architecture"
+data: "src/auth/**/*.py"
+delta: "only modify auth/ — do not touch database migrations or API contracts"
+architect: 1
+result: "Refactored auth/ with ports-and-adapters pattern, >90% test coverage"
+
+meta:
+  priority: HIGH
+  user_id: dev-team
+  user_tier: PRO
+  organization_id: rctlabs
+  source: pipeline
+  tags:
+    - refactor
+    - auth
+    - hexagonal
+
+scope:
+  type: MODULE
+  target: src/auth
+
+budget:
+  max_cost_usd: "2.50"
+  max_time_seconds: 300

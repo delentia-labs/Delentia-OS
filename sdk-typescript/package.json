@@ -1,0 +1,26 @@
+{
+  "name": "@rctlabs/rct-platform",
+  "version": "1.0.4",
+  "description": "TypeScript SDK for RCT Platform — FDIA scoring, JITNA packets, SignedAI tier selection",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": ["rct", "fdia", "jitna", "signedai", "ai-governance"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0"
+  }
+}

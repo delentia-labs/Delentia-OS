@@ -1,0 +1,101 @@
+# Architect Policy Configuration — RCT Platform constitutional policies
+# Usage:  rct policy add -f config/architect_policy.yaml
+#
+# Schema:
+#   policies[]:
+#     name         — unique policy rule name
+#     description  — human-readable description
+#     scope        — INTENT | GRAPH | NODE | ORGANIZATION | USER
+#     priority     — critical | high | medium | low
+#     conditions[] — list of conditions (field, operator, value)
+#     action       — approve | reject | require_approval | notify | log | escalate
+#     approver_roles — list of roles that can approve (for require_approval)
+#     channel      — notification channel (slack | teams | webhook)
+#     enabled      — true | false
+
+policies:
+
+  # ─── HIGH COST GATE ────────────────────────────────────────────────────────
+  - name: "block-systemic-risk-auto"
+    description: "Block SYSTEMIC risk intents from auto-executing — require human approval"
+    scope: "INTENT"
+    priority: "critical"
+    conditions:
+      - field: "risk_profile"
+        operator: "=="
+        value: "SYSTEMIC"
+    action: "require_approval"
+    approver_roles:
+      - "platform-owners"
+      - "security-team"
+    timeout_seconds: 3600
+    channel: "slack"
+    enabled: true
+
+  # ─── COST GUARD ────────────────────────────────────────────────────────────
+  - name: "require-approval-above-10usd"
+    description: "Require human approval for any intent with estimated cost >$10 USD"
+    scope: "INTENT"
+    priority: "high"
+    conditions:
+      - field: "max_cost_usd"
+        operator: ">="
+        value: 10.0
+    action: "require_approval"
+    approver_roles:
+      - "finance-team"
+    timeout_seconds: 7200
+    channel: "slack"
+    enabled: true
+
+  - name: "reject-above-100usd"
+    description: "Reject intents with cost estimate above $100 USD outright"
+    scope: "INTENT"
+    priority: "critical"
+    conditions:
+      - field: "max_cost_usd"
+        operator: ">="
+        value: 100.0
+    action: "reject"
+    enabled: true
+
+  # ─── DEPLOY GATE ───────────────────────────────────────────────────────────
+  - name: "notify-on-deploy"
+    description: "Notify platform team on all DEPLOY intents"
+    scope: "INTENT"
+    priority: "medium"
+    conditions:
+      - field: "intent_type"
+        operator: "=="
+        value: "DEPLOY"
+    action: "notify"
+    channel: "slack"
+    enabled: true
+
+  - name: "require-approval-deploy-production"
+    description: "All production deployment intents require explicit human approval"
+    scope: "INTENT"
+    priority: "high"
+    conditions:
+      - field: "intent_type"
+        operator: "=="
+        value: "DEPLOY"
+      - field: "risk_profile"
+        operator: "!="
+        value: "LOW"
+    action: "require_approval"
+    approver_roles:
+      - "platform-owners"
+      - "devops-team"
+    timeout_seconds: 3600
+    channel: "teams"
+    enabled: true
+
+  # ─── AUDIT LOG ─────────────────────────────────────────────────────────────
+  - name: "log-all-intents"
+    description: "Log all intents for audit trail completeness"
+    scope: "INTENT"
+    priority: "low"
+    conditions: []
+    action: "log"
+    enabled: true

@@ -1,7 +1,7 @@
 ## RCT Platform — Public Roadmap
 
-> Last updated: May 23, 2026  
-> Current version: **v1.0.4b0 (Beta Preview)**  
+> Last updated: June 2026
+> Current version: **v1.0.4b2 (Beta)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
 ---
@@ -14,6 +14,55 @@
 | 🔄 | In progress |
 | 📋 | Planned — confirmed |
 | 💡 | Considering — not confirmed |
+
+---
+
+## v1.1.0 — Enterprise Platform (In Progress) 🔄
+
+**Goal: Full enterprise-grade CLI, OTel observability, TypeScript SDK, and GitHub Action.**
+
+### Phase 1 — CLI Lifecycle (rct plan / apply / memory) ✅
+- ✅ `rct plan "<intent>"` — Terraform-style pre-execution simulation (PlanEngine)
+- ✅ `rct apply [-f pipeline.yaml]` — compile → evaluate → execute with JITNA YAML support
+- ✅ `rct memory history` — AI decision timeline with SHA-256 audit chain
+- ✅ `rct memory rollback <n>` — Roll back N ticks (control plane or NPC delta engine)
+- ✅ `examples/pipeline.yaml` — JITNA 6-field packet reference example
+
+### Phase 2 — Policy Governance (policy-as-code + A-gate) ✅
+- ✅ `rct policy add -f config/architect_policy.yaml` — load policies from YAML
+- ✅ `rct policy list` — list active policy rules with priority/action
+- ✅ `rct policy remove <id>` — remove a policy by ID or name
+- ✅ `rct policy test "<intent>"` — dry-run evaluate against all policies
+- ✅ `rct approve --pending` — interactive omni-channel approval queue
+- ✅ `approval_gateway.py` — SHA-256 approval tokens, Slack/Teams/webhook dispatch
+- ✅ `architect_policy_loader.py` — load `PolicyRule` objects from YAML policy files
+- ✅ `config/architect_policy.yaml` — reference policy file with 6 constitutional rules
+
+### Phase 3 — Observability (OTel + Prometheus + Grafana) ✅
+- ✅ `otel_adapter.py` — OpenTelemetry bridge for FDIA metrics as OTel spans
+- ✅ `GET /metrics` — Prometheus scrape endpoint (Prometheus exposition format)
+- ✅ `docker-compose.monitoring.yml` — Prometheus + Grafana + OTel Collector stack
+- ✅ `docs/assets/grafana-dashboard.json` — pre-built RCT Control Plane dashboard
+- ✅ `config/prometheus.yml` — Prometheus scrape config for rct-platform
+- ✅ `config/grafana-datasources.yml` — auto-provision Grafana datasource
+
+### Phase 4 — TypeScript SDK ✅
+- ✅ `sdk-typescript/src/fdia.ts` — `computeFDIA(d, i, a)` → F=D^I×A formula
+- ✅ `sdk-typescript/src/jitna.ts` — JITNA 6-field packet type + `constructJITNA()`
+- ✅ `sdk-typescript/src/signedai.ts` — `selectSignedAITier(tier, risk)` → HexaCore roles
+- ✅ `sdk-typescript/src/client.ts` — `RCTClient` REST wrapper (compile, evaluate, metrics)
+- ✅ `sdk-typescript/src/index.ts` — clean barrel export
+
+### Phase 5 — GitHub Action ✅
+- ✅ `github-action/action.yml` — `rct-policy-gate` action definition
+- ✅ `github-action/src/index.ts` — compile + evaluate + gate logic (Node 20)
+- ✅ Inputs: `intent`, `rct_api_url`, `user_tier`, `min_governance_score`, `fail_on_reject`
+- ✅ Outputs: `decision`, `governance_score`, `risk_profile`, `triggered_rules`
+
+### Phase 6 — RCT Desktop 💡 (Post v1.0.0)
+- 💡 Tauri + Next.js desktop app with live `rct start` dashboard
+- 💡 System tray agent with per-intent notifications
+- 💡 Scheduled intent queue and approval inbox
 
 ---
 

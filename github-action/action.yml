@@ -1,0 +1,52 @@
+name: "RCT Policy Gate"
+description: >
+  Evaluate a pull-request's AI intent against RCT Platform constitutional policies.
+  Blocks merges when FDIA A-gate is 0 or policy decision is REJECT.
+  Outputs governance score and triggered policy rules.
+
+author: "RCT Labs"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  intent:
+    description: "Natural language intent describing the PR changes"
+    required: true
+  rct_api_url:
+    description: "Base URL of the running rct-platform API"
+    required: false
+    default: "http://localhost:8000"
+  user_tier:
+    description: "User tier — FREE | PRO | ENTERPRISE"
+    required: false
+    default: "PRO"
+  min_governance_score:
+    description: "Minimum governance score to allow merge (0.0–1.0)"
+    required: false
+    default: "0.6"
+  fail_on_reject:
+    description: "Fail the workflow step when policy decision is REJECT"
+    required: false
+    default: "true"
+  rct_api_key:
+    description: "API key for authenticated rct-platform instances"
+    required: false
+    default: ""
+
+outputs:
+  decision:
+    description: "Policy decision — approve | reject | require_approval | log"
+  governance_score:
+    description: "Governance confidence score (0.0–1.0)"
+  risk_profile:
+    description: "Risk profile — LOW | STRUCTURAL | SYSTEMIC"
+  triggered_rules:
+    description: "Comma-separated list of triggered policy rule names"
+  requires_approval:
+    description: "Whether human approval is required (true/false)"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

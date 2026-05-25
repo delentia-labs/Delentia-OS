@@ -2465,6 +2465,1003 @@ def benchmark_cmd(suite: str, output: str, verbose: bool):
     )
 
 
+# ---------------------------------------------------------------------------
+# rct plan — Phase 1: Pre-execution simulation (Terraform-style)
+# ---------------------------------------------------------------------------
+
+
+@cli.command(name="plan")
+@click.argument("intent_text")
+@click.option("--user-id", default="cli-user", show_default=True, help="User ID for audit trail")
+@click.option("--tier", default="PRO", show_default=True, type=click.Choice(["FREE", "PRO", "ENTERPRISE"]), help="User tier")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+def plan(intent_text: str, user_id: str, tier: str, output: str):
+    """
+    Simulate intent execution — show WHAT WOULD HAPPEN without executing.
+
+    Displays HexaCore model roster, SignedAI tier required,
+    risk profile, estimated cost, and policy decisions.
+
+    Example:
+        rct plan "refactor authentication module"
+        rct plan "deploy to production" --tier ENTERPRISE
+        rct plan "analyze this document" --output json
+    """
+    try:
+        from rct_control_plane.plan_engine import PlanEngine
+
+        engine = PlanEngine()
+        result = engine.simulate(intent_text, user_id=user_id, user_tier=tier)
+
+        if output == "json":
+            print_json(result.to_dict())
+            return
+
+        if _HAS_RICH:
+            from rich.table import Table
+            from rich.panel import Panel
+            from rich.columns import Columns
+            from rich.text import Text
+
+            console = get_console()
+
+            # Header
+            status_color = "red" if result.requires_human_approval else "green"
+            console.print(Panel(
+                f"[bold]Intent:[/] {result.intent_text}\n"
+                f"[bold]Type:[/] {result.intent_type}  "
+                f"[bold]Risk:[/] [{status_color}]{result.risk_profile}[/]  "
+                f"[bold]A-Gate:[/] [{status_color}]{'REQUIRED' if result.requires_human_approval else 'auto-grant'}[/]",
+                title="[bold cyan]RCT Plan — Pre-Execution Simulation[/]",
+                border_style="cyan",
+            ))
+
+            # Model roster
+            roster_table = Table(title="HexaCore Model Roster", border_style="dim")
+            roster_table.add_column("Role", style="bold cyan")
+            roster_table.add_column("Model ID", style="dim")
+            roster_table.add_column("Provider")
+            roster_table.add_column("Country")
+            roster_table.add_column("Cost/1M in", justify="right")
+            roster_table.add_column("Cost/1M out", justify="right")
+            for m in result.models_roster:
+                roster_table.add_row(
+                    m.role,
+                    m.model_id,
+                    m.provider,
+                    m.country,
+                    f"${m.cost_input_per_1m:.2f}",
+                    f"${m.cost_output_per_1m:.2f}",
+                )
+            console.print(roster_table)
+
+            # Summary table
+            summary_table = Table(title="Plan Summary", border_style="dim")
+            summary_table.add_column("Field", style="bold")
+            summary_table.add_column("Value")
+            summary_table.add_row("SignedAI Tier", result.signedai_tier)
+            summary_table.add_row("A-Requirement", result.a_requirement)
+            summary_table.add_row("Estimated Cost", f"${result.estimated_cost_usd:.6f} USD")
+            summary_table.add_row("Policy Decision", result.policy_decision.upper())
+            summary_table.add_row("Data Sources", "\n".join(result.data_sources))
+            if result.triggered_policies:
+                summary_table.add_row("Triggered Policies", ", ".join(result.triggered_policies))
+            if result.policy_warnings:
+                summary_table.add_row("[yellow]Warnings[/]", "\n".join(result.policy_warnings))
+            summary_table.add_row("Simulation Time", f"{result.simulation_time_ms:.1f} ms")
+            console.print(summary_table)
+
+            if result.errors:
+                for err in result.errors:
+                    render_error(err)
+            elif result.is_valid:
+                render_success(
+                    "Plan complete. Run [bold cyan]rct apply[/] to execute."
+                    if not result.requires_human_approval
+                    else "Plan complete. Run [bold cyan]rct approve --pending[/] to gate A-value, then [bold cyan]rct apply[/]."
+                )
+        else:
+            click.echo(f"Intent: {result.intent_text}")
+            click.echo(f"Type: {result.intent_type}  Risk: {result.risk_profile}")
+            click.echo(f"Tier: {result.signedai_tier}")
+            click.echo(f"A-gate: {result.a_requirement}")
+            click.echo(f"Estimated Cost: ${result.estimated_cost_usd:.6f} USD")
+            click.echo(f"Models: {len(result.models_roster)}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# rct apply — Phase 1: Execute intent (with optional YAML file input)
+# ---------------------------------------------------------------------------
+
+
+@cli.command(name="apply")
+@click.argument("intent_text", required=False, default=None)
+@click.option("--file", "-f", "yaml_file", default=None, help="YAML pipeline file to execute")
+@click.option("--user-id", default="cli-user", show_default=True, help="User ID")
+@click.option("--tier", default="PRO", show_default=True, type=click.Choice(["FREE", "PRO", "ENTERPRISE"]))
+@click.option("--yes", "-y", "auto_confirm", is_flag=True, help="Skip confirmation prompt")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def apply_cmd(
+    intent_text: Optional[str],
+    yaml_file: Optional[str],
+    user_id: str,
+    tier: str,
+    auto_confirm: bool,
+    output: str,
+):
+    """
+    Execute an intent — compile, evaluate, and run through execution graph.
+
+    Accepts either free-text intent or a YAML pipeline file.
+
+    YAML schema (intent.yaml):
+        intent: "describe what to do"
+        architect: 1          # A-value (0=blocked, 1=approved)
+        scope:
+          type: MODULE
+          target: "src/auth"
+        budget:
+          max_cost_usd: "2.50"
+        metadata:
+          priority: HIGH
+
+    Example:
+        rct apply "refactor authentication module"
+        rct apply -f examples/pipeline.yaml
+        rct apply "summarize document" --yes
+    """
+    try:
+        # Resolve intent text
+        if yaml_file:
+            intent_text, extra_context = _parse_intent_yaml(yaml_file)
+        elif intent_text:
+            extra_context: Dict[str, Any] = {}
+        else:
+            if _HAS_RICH:
+                render_error("Provide an intent text or use -f <file>")
+            else:
+                click.echo("Error: provide intent_text or -f <file>", err=True)
+            sys.exit(1)
+
+        # Run plan first (simulation)
+        from rct_control_plane.plan_engine import PlanEngine
+        engine = PlanEngine()
+        plan_result = engine.simulate(intent_text, user_id=user_id, user_tier=tier)
+
+        if not plan_result.is_valid:
+            if _HAS_RICH:
+                render_error("\n".join(plan_result.errors) or "Plan simulation failed")
+            else:
+                click.echo("Error: plan simulation failed", err=True)
+            sys.exit(1)
+
+        # Show brief plan summary
+        if _HAS_RICH:
+            from rich.panel import Panel
+            get_console().print(Panel(
+                f"[bold]Intent:[/] {intent_text}\n"
+                f"[bold]Risk:[/] {plan_result.risk_profile}  "
+                f"[bold]Tier:[/] {plan_result.signedai_tier}\n"
+                f"[bold]Est. Cost:[/] ${plan_result.estimated_cost_usd:.6f} USD  "
+                f"[bold]A-gate:[/] {'REQUIRED' if plan_result.requires_human_approval else 'auto'}",
+                title="[bold yellow]rct apply — Plan Review[/]",
+                border_style="yellow",
+            ))
+        else:
+            click.echo(f"Intent: {intent_text}")
+            click.echo(f"Risk: {plan_result.risk_profile}  Tier: {plan_result.signedai_tier}")
+            click.echo(f"Est. Cost: ${plan_result.estimated_cost_usd:.6f} USD")
+
+        if plan_result.requires_human_approval and not auto_confirm:
+            if _HAS_RICH:
+                render_warning("This intent requires human approval (A=1). Run: rct approve --pending")
+            else:
+                click.echo("Warning: human approval required. Run: rct approve --pending", err=True)
+            sys.exit(0)
+
+        # Confirm execution
+        if not auto_confirm:
+            confirmed = click.confirm(
+                click.style("Execute this intent? (A=1 will be set)", bold=True),
+                default=True,
+            )
+            if not confirmed:
+                click.echo("Execution cancelled.")
+                return
+
+        # Execute via existing compile → evaluate → graph pipeline
+        ctx = get_context()
+        compilation = ctx.compiler.compile(intent_text, user_id=user_id, user_tier=tier)
+
+        if not compilation.success or compilation.intent is None:
+            errors = compilation.errors or ["Compilation failed"]
+            if _HAS_RICH:
+                render_error("\n".join(errors))
+            else:
+                click.echo(f"Compile error: {'; '.join(errors)}", err=True)
+            sys.exit(1)
+
+        intent = compilation.intent
+        intent_id = str(intent.id)
+
+        # Evaluate policies
+        policy_result = ctx.evaluator.evaluate_intent(intent)
+
+        if output == "json":
+            print_json({
+                "intent_id": intent_id,
+                "intent_type": str(intent.intent_type),
+                "risk_profile": plan_result.risk_profile,
+                "policy_decision": policy_result.decision.value,
+                "a_value": 1,
+                "status": "submitted",
+            })
+        elif _HAS_RICH:
+            render_success(
+                f"Intent [bold cyan]{intent_id[:16]}...[/] submitted. "
+                f"Risk={plan_result.risk_profile} A=1 Policy={policy_result.decision.value}"
+            )
+        else:
+            click.echo(f"Applied: {intent_id[:16]}  Risk={plan_result.risk_profile}  A=1")
+
+        _print_next_steps([
+            f"Run [bold cyan]rct status {intent_id[:16]}[/] to check progress"
+            if _HAS_RICH else f"Run: rct status {intent_id[:16]}",
+            "Run [bold cyan]rct logs[/] to view execution logs"
+            if _HAS_RICH else "Run: rct logs",
+        ])
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+def _parse_intent_yaml(yaml_file: str) -> tuple[str, Dict[str, Any]]:
+    """
+    Parse an intent YAML file and return (intent_text, extra_context).
+
+    JITNA 6-field schema (I/D/Δ/A/R/M):
+        intent: <I>  — the instruction
+        data: <D>    — data source description
+        delta: <Δ>   — change constraint
+        architect: <A> — approval flag (0/1)
+        result: <R>  — expected result
+        meta: <M>    — metadata dict
+
+    Simplified schema (abstracted):
+        intent: "refactor auth module"
+        scope: {type: MODULE, target: "src/auth"}
+        budget: {max_cost_usd: "2.50"}
+    """
+    path = Path(yaml_file)
+    if not path.exists():
+        raise FileNotFoundError(f"YAML file not found: {yaml_file}")
+
+    content = path.read_text(encoding="utf-8")
+
+    # Try yaml first, fall back to json
+    data: Dict[str, Any] = {}
+    try:
+        import yaml
+        data = yaml.safe_load(content) or {}
+    except ImportError:
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            raise ValueError(f"Cannot parse {yaml_file}: install PyYAML or use JSON format")
+    except Exception as exc:
+        raise ValueError(f"YAML parse error in {yaml_file}: {exc}") from exc
+
+    # Extract intent text (field "intent" or "I" from JITNA)
+    intent_text = str(
+        data.get("intent")
+        or data.get("I")
+        or data.get("description")
+        or ""
+    ).strip()
+
+    if not intent_text:
+        raise ValueError(
+            f"YAML file {yaml_file} must have an 'intent' field with a non-empty string"
+        )
+
+    return intent_text, data
+
+
+# ---------------------------------------------------------------------------
+# rct memory — Phase 1: AI decision timeline + rollback
+# ---------------------------------------------------------------------------
+
+
+@cli.group(name="memory")
+def memory_group():
+    """
+    AI decision memory — view history and roll back to past states.
+
+    Sub-commands:
+        history    View AI decision timeline (Delta-history format)
+        rollback   Restore control plane state to an earlier snapshot
+    """
+
+
+@memory_group.command(name="history")
+@click.option("--intent-id", "-i", default=None, help="Filter by intent ID")
+@click.option("--tail", "-n", default=30, type=int, show_default=True, help="Number of entries")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def memory_history(intent_id: Optional[str], tail: int, output: str):
+    """
+    View AI decision timeline (Docker-history style).
+
+    Shows all recorded control plane events with their SHA-256 chain
+    hashes for auditability.
+
+    Example:
+        rct memory history
+        rct memory history --intent-id abc123 --tail 50
+    """
+    try:
+        ctx = get_context()
+        trail = ctx.observer.audit_trail
+
+        if intent_id:
+            events = trail.get_events_for_intent(intent_id)[-tail:]
+        else:
+            events = trail.get_recent_events(tail)
+
+        entries = []
+        for i, entry_obj in enumerate(trail.entries[-tail:]):
+            evt = entry_obj.event
+            entries.append({
+                "seq": entry_obj.sequence_number,
+                "hash": (entry_obj.entry_hash or "")[:12],
+                "prev_hash": (entry_obj.previous_hash or "—")[:12],
+                "event_type": evt.event_type.value,
+                "intent_id": (evt.intent_id or "—")[:16],
+                "actor": evt.actor,
+                "success": "✓" if evt.success else "✗",
+                "timestamp": evt.timestamp.strftime("%H:%M:%S"),
+            })
+
+        if output == "json":
+            print_json({"entries": entries, "total": len(trail), "integrity": trail.verify_integrity()})
+            return
+
+        if _HAS_RICH:
+            from rich.table import Table
+            t = Table(title="Memory History — Audit Trail", border_style="dim")
+            t.add_column("Seq", justify="right", style="dim")
+            t.add_column("Hash", style="cyan")
+            t.add_column("Prev", style="dim")
+            t.add_column("Event", style="bold")
+            t.add_column("Intent", style="dim")
+            t.add_column("Actor")
+            t.add_column("OK", justify="center")
+            t.add_column("Time", style="dim")
+            for e in entries:
+                t.add_row(
+                    str(e["seq"]),
+                    e["hash"],
+                    e["prev_hash"],
+                    e["event_type"],
+                    e["intent_id"],
+                    e["actor"],
+                    "[green]✓[/]" if e["success"] == "✓" else "[red]✗[/]",
+                    e["timestamp"],
+                )
+            get_console().print(t)
+            integrity = trail.verify_integrity()
+            if integrity:
+                render_success(f"Chain integrity: VERIFIED ({len(trail)} entries)")
+            else:
+                render_warning("Chain integrity: FAILED — audit trail may be tampered")
+        else:
+            headers = ["Seq", "Hash", "Event", "Intent", "OK", "Time"]
+            rows = [[str(e["seq"]), e["hash"], e["event_type"], e["intent_id"], e["success"], e["timestamp"]] for e in entries]
+            print_table(headers, rows)
+            click.echo(f"Total: {len(trail)} entries  Integrity: {'OK' if trail.verify_integrity() else 'FAILED'}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@memory_group.command(name="rollback")
+@click.argument("n_ticks", type=int)
+@click.option("--agent-id", default=None, help="NPC agent ID for delta rollback")
+@click.option("--dry-run", is_flag=True, help="Show what would be rolled back without doing it")
+@click.option("--yes", "-y", "auto_confirm", is_flag=True, help="Skip confirmation")
+def memory_rollback(n_ticks: int, agent_id: Optional[str], dry_run: bool, auto_confirm: bool):
+    """
+    Roll back the last N ticks of control plane state.
+
+    If --agent-id is provided, uses the NPC Delta Engine to restore
+    a specific agent to its state N ticks ago.
+
+    Example:
+        rct memory rollback 5
+        rct memory rollback 10 --dry-run
+        rct memory rollback 3 --agent-id agent-42
+    """
+    try:
+        if n_ticks < 1:
+            raise ValueError("n_ticks must be at least 1")
+
+        if agent_id:
+            # NPC kernel delta rollback
+            try:
+                from core.delta_engine.memory_delta import MemoryDeltaEngine
+                delta_engine = MemoryDeltaEngine()
+                current_tick = delta_engine.get_current_tick(agent_id)
+
+                if dry_run:
+                    msg = f"Would roll back agent '{agent_id}' {n_ticks} ticks (current: tick {current_tick})"
+                    if _HAS_RICH:
+                        render_warning(msg)
+                    else:
+                        click.echo(msg)
+                    return
+
+                if not auto_confirm:
+                    confirmed = click.confirm(
+                        f"Roll back agent '{agent_id}' by {n_ticks} ticks?", default=False
+                    )
+                    if not confirmed:
+                        click.echo("Rollback cancelled.")
+                        return
+
+                delta_engine.rollback(agent_id=agent_id, n_ticks=n_ticks)
+                if _HAS_RICH:
+                    render_success(f"Agent '{agent_id}' rolled back {n_ticks} ticks.")
+                else:
+                    click.echo(f"Rolled back agent '{agent_id}' {n_ticks} ticks.")
+
+            except ImportError:
+                if _HAS_RICH:
+                    render_error("Delta engine not available. Install core.delta_engine.")
+                else:
+                    click.echo("Error: delta engine not available.", err=True)
+                sys.exit(1)
+        else:
+            # Control plane audit trail rollback
+            ctx = get_context()
+            trail = ctx.observer.audit_trail
+            total = len(trail)
+
+            if n_ticks > total:
+                if _HAS_RICH:
+                    render_warning(f"Only {total} entries in trail. Rolling back all {total}.")
+                n_ticks = total
+
+            if dry_run:
+                entries_to_remove = trail.entries[-n_ticks:]
+                msg = f"Would remove {len(entries_to_remove)} audit entries from control plane state"
+                if _HAS_RICH:
+                    from rich.table import Table
+                    t = Table(title="Rollback Preview", border_style="yellow")
+                    t.add_column("Seq", justify="right")
+                    t.add_column("Event")
+                    t.add_column("Time")
+                    for e in entries_to_remove:
+                        t.add_row(
+                            str(e.sequence_number),
+                            e.event.event_type.value,
+                            e.event.timestamp.strftime("%H:%M:%S"),
+                        )
+                    get_console().print(t)
+                    render_warning(msg)
+                else:
+                    click.echo(msg)
+                return
+
+            if not auto_confirm:
+                confirmed = click.confirm(
+                    f"Remove last {n_ticks} entries from audit trail?", default=False
+                )
+                if not confirmed:
+                    click.echo("Rollback cancelled.")
+                    return
+
+            # Remove last n_ticks entries
+            trail.entries = trail.entries[:-n_ticks]
+
+            if _HAS_RICH:
+                render_success(f"Rolled back {n_ticks} control plane events. Remaining: {len(trail)}")
+            else:
+                click.echo(f"Rolled back {n_ticks} events. Remaining: {len(trail)}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# rct policy — Phase 2: Policy-as-Code CRUD
+# ---------------------------------------------------------------------------
+
+
+@cli.group(name="policy")
+def policy_group():
+    """
+    Manage RCT constitutional policies (policy-as-code).
+
+    Sub-commands:
+        add      Add a policy from a YAML file or interactively
+        list     List all active policies
+        remove   Remove a policy by ID or name
+        test     Dry-run evaluate an intent against policies
+    """
+
+
+@policy_group.command(name="add")
+@click.option("--file", "-f", "yaml_file", default=None, help="YAML policy file path")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def policy_add(yaml_file: Optional[str], output: str):
+    """
+    Add one or more policies from a YAML file.
+
+    Example policy file (company_policy.yaml):
+        policies:
+          - name: "block-high-cost"
+            priority: "critical"
+            conditions:
+              - field: "cost_usd"
+                operator: ">="
+                value: 100.0
+            action: "require_approval"
+            approver_roles: ["finance-team"]
+
+    Example:
+        rct policy add -f config/company_policy.yaml
+    """
+    try:
+        from rct_control_plane.architect_policy_loader import ArchitectPolicyLoader, PolicyLoadError
+
+        if not yaml_file:
+            if _HAS_RICH:
+                render_error("Provide a policy file with -f <file>")
+            else:
+                click.echo("Error: provide -f <file>", err=True)
+            sys.exit(1)
+
+        loader = ArchitectPolicyLoader()
+        try:
+            rules = loader.load(yaml_file)
+        except PolicyLoadError as exc:
+            if _HAS_RICH:
+                render_error(str(exc))
+            else:
+                click.echo(f"Policy load error: {exc}", err=True)
+            sys.exit(1)
+
+        ctx = get_context()
+        for rule in rules:
+            ctx.evaluator.add_rule(rule)
+
+        if output == "json":
+            print_json({
+                "added": len(rules),
+                "rules": [r.to_dict() for r in rules],
+            })
+        elif _HAS_RICH:
+            from rich.table import Table
+            t = Table(title=f"Policies Added ({len(rules)})", border_style="green")
+            t.add_column("Rule ID", style="dim")
+            t.add_column("Name", style="bold")
+            t.add_column("Priority")
+            t.add_column("Action", style="cyan")
+            t.add_column("Scope")
+            for r in rules:
+                t.add_row(r.rule_id[:16], r.name, r.priority.value, r.action.value, r.scope.value)
+            get_console().print(t)
+            render_success(f"Added {len(rules)} policy rule(s) from {yaml_file}")
+        else:
+            click.echo(f"Added {len(rules)} rule(s):")
+            for r in rules:
+                click.echo(f"  {r.rule_id[:16]} — {r.name} ({r.priority.value} / {r.action.value})")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@policy_group.command(name="list")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def policy_list(output: str):
+    """
+    List all active policy rules.
+
+    Example:
+        rct policy list
+        rct policy list --output json
+    """
+    try:
+        ctx = get_context()
+        rules = ctx.evaluator.list_rules() if hasattr(ctx.evaluator, "list_rules") else []
+
+        # Fallback: access internal rules list if list_rules not available
+        if not rules and hasattr(ctx.evaluator, "_rules"):
+            rules = list(ctx.evaluator._rules)
+        elif not rules and hasattr(ctx.evaluator, "rules"):
+            rules = list(ctx.evaluator.rules)
+
+        if output == "json":
+            print_json({
+                "count": len(rules),
+                "rules": [r.to_dict() for r in rules],
+            })
+            return
+
+        if not rules:
+            if _HAS_RICH:
+                render_warning("No policies loaded. Use: rct policy add -f policy.yaml")
+            else:
+                click.echo("No policies loaded. Use: rct policy add -f policy.yaml")
+            return
+
+        if _HAS_RICH:
+            from rich.table import Table
+            t = Table(title=f"Active Policies ({len(rules)})", border_style="cyan")
+            t.add_column("Rule ID", style="dim")
+            t.add_column("Name", style="bold")
+            t.add_column("Priority")
+            t.add_column("Action", style="cyan")
+            t.add_column("Scope")
+            t.add_column("Conditions", justify="right")
+            t.add_column("Enabled", justify="center")
+            for r in rules:
+                t.add_row(
+                    r.rule_id[:16],
+                    r.name,
+                    r.priority.value,
+                    r.action.value,
+                    r.scope.value,
+                    str(len(r.conditions)),
+                    "[green]✓[/]" if r.enabled else "[red]✗[/]",
+                )
+            get_console().print(t)
+        else:
+            headers = ["ID", "Name", "Priority", "Action", "Enabled"]
+            rows = [[r.rule_id[:16], r.name, r.priority.value, r.action.value, str(r.enabled)] for r in rules]
+            print_table(headers, rows)
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@policy_group.command(name="remove")
+@click.argument("rule_id_or_name")
+@click.option("--yes", "-y", "auto_confirm", is_flag=True, help="Skip confirmation")
+def policy_remove(rule_id_or_name: str, auto_confirm: bool):
+    """
+    Remove a policy rule by ID prefix or name.
+
+    Example:
+        rct policy remove "block-high-cost"
+        rct policy remove abc123 --yes
+    """
+    try:
+        ctx = get_context()
+
+        # Find matching rules
+        all_rules: List[Any] = []
+        if hasattr(ctx.evaluator, "_rules"):
+            all_rules = list(ctx.evaluator._rules)
+        elif hasattr(ctx.evaluator, "rules"):
+            all_rules = list(ctx.evaluator.rules)
+
+        matches = [
+            r for r in all_rules
+            if r.rule_id.startswith(rule_id_or_name) or r.name == rule_id_or_name
+        ]
+
+        if not matches:
+            if _HAS_RICH:
+                render_warning(f"No policy found matching '{rule_id_or_name}'")
+            else:
+                click.echo(f"No policy found: {rule_id_or_name}", err=True)
+            sys.exit(1)
+
+        if len(matches) > 1:
+            if _HAS_RICH:
+                render_error(f"Ambiguous: {len(matches)} rules match '{rule_id_or_name}'. Use full rule_id.")
+            else:
+                click.echo(f"Ambiguous: {len(matches)} rules match. Use full rule_id.", err=True)
+            sys.exit(1)
+
+        rule = matches[0]
+        if not auto_confirm:
+            confirmed = click.confirm(
+                f"Remove policy '{rule.name}' ({rule.rule_id[:16]})?"
+            )
+            if not confirmed:
+                click.echo("Cancelled.")
+                return
+
+        # Remove from evaluator
+        if hasattr(ctx.evaluator, "remove_rule"):
+            ctx.evaluator.remove_rule(rule.rule_id)
+        elif hasattr(ctx.evaluator, "_rules"):
+            ctx.evaluator._rules = [r for r in ctx.evaluator._rules if r.rule_id != rule.rule_id]
+        elif hasattr(ctx.evaluator, "rules"):
+            ctx.evaluator.rules = [r for r in ctx.evaluator.rules if r.rule_id != rule.rule_id]
+
+        if _HAS_RICH:
+            render_success(f"Policy '{rule.name}' removed.")
+        else:
+            click.echo(f"Removed: {rule.name}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@policy_group.command(name="test")
+@click.argument("intent_text")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def policy_test(intent_text: str, output: str):
+    """
+    Dry-run evaluate an intent against all active policies.
+
+    Shows which policies would trigger without executing the intent.
+
+    Example:
+        rct policy test "deploy to production"
+        rct policy test "read-only analysis" --output json
+    """
+    try:
+        from rct_control_plane.plan_engine import PlanEngine
+
+        engine = PlanEngine()
+        plan_result = engine.simulate(intent_text)
+
+        ctx = get_context()
+        compilation = ctx.compiler.compile(intent_text, user_id="cli-user", user_tier="PRO")
+        policy_result = ctx.evaluator.evaluate_intent(compilation.intent) if compilation.success and compilation.intent else None
+
+        if output == "json":
+            print_json({
+                "intent_text": intent_text,
+                "policy_decision": policy_result.decision.value if policy_result else "compile_failed",
+                "triggered_rules": [r.name for r in (policy_result.triggered_rules if policy_result else [])],
+                "violations": list(policy_result.violations if policy_result else []),
+                "warnings": list(policy_result.warnings if policy_result else []),
+                "requires_approval": policy_result.requires_approval if policy_result else False,
+                "governance_score": policy_result.governance_score if policy_result else 0.0,
+            })
+            return
+
+        if _HAS_RICH:
+            from rich.panel import Panel
+            decision_val = policy_result.decision.value if policy_result else "compile_failed"
+            decision_color = {"approve": "green", "reject": "red", "require_approval": "yellow", "log": "dim"}.get(
+                decision_val, "white"
+            )
+            get_console().print(Panel(
+                f"[bold]Decision:[/] [{decision_color}]{decision_val.upper()}[/]\n"
+                f"[bold]Risk:[/] {plan_result.risk_profile}  "
+                f"[bold]Governance Score:[/] {policy_result.governance_score:.3f if policy_result else 0.0}\n"
+                f"[bold]Triggered Rules:[/] {len(policy_result.triggered_rules) if policy_result else 0}\n"
+                f"[bold]Requires Approval:[/] {policy_result.requires_approval if policy_result else False}",
+                title="[bold cyan]Policy Test Result[/]",
+                border_style="cyan",
+            ))
+            if policy_result and policy_result.triggered_rules:
+                from rich.table import Table
+                t = Table(title="Triggered Rules", border_style="yellow")
+                t.add_column("Name", style="bold")
+                t.add_column("Priority")
+                t.add_column("Action", style="cyan")
+                for r in policy_result.triggered_rules:
+                    t.add_row(r.name, r.priority.value, r.action.value)
+                get_console().print(t)
+            if policy_result and policy_result.violations:
+                for v in policy_result.violations:
+                    render_warning(f"Violation: {v}")
+        else:
+            decision_val = policy_result.decision.value if policy_result else "compile_failed"
+            click.echo(f"Decision: {decision_val.upper()}")
+            click.echo(f"Triggered: {len(policy_result.triggered_rules) if policy_result else 0} rules")
+            click.echo(f"Score: {policy_result.governance_score:.3f if policy_result else 0.0}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# rct approve — Phase 2: Interactive human approval queue
+# ---------------------------------------------------------------------------
+
+
+@cli.command(name="approve")
+@click.argument("request_id", required=False, default=None)
+@click.option("--pending", "show_pending", is_flag=True, help="Show and process all pending approvals")
+@click.option("--auto-approve", "auto_approve_all", is_flag=True, help="Approve all pending (DANGEROUS)")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def approve_cmd(
+    request_id: Optional[str],
+    show_pending: bool,
+    auto_approve_all: bool,
+    output: str,
+):
+    """
+    Process human approval requests for A-gated intents.
+
+    Displays pending approval queue and lets you approve or reject
+    each intent with a Y/N prompt. Decision is stored in the audit trail.
+
+    Example:
+        rct approve --pending
+        rct approve abc123def456
+        rct approve --pending --auto-approve   (DANGEROUS — skips review)
+    """
+    try:
+        from rct_control_plane.approval_gateway import ApprovalGateway
+
+        gateway = ApprovalGateway()
+
+        if show_pending or request_id is None:
+            pending = gateway.get_pending()
+
+            if not pending:
+                if _HAS_RICH:
+                    render_success("No pending approvals.")
+                else:
+                    click.echo("No pending approvals.")
+                return
+
+            if output == "json":
+                print_json({"pending": [r.to_dict() for r in pending], "count": len(pending)})
+                return
+
+            if _HAS_RICH:
+                from rich.table import Table
+                t = Table(title=f"Pending Approvals ({len(pending)})", border_style="yellow")
+                t.add_column("Request ID", style="cyan")
+                t.add_column("Intent", style="bold")
+                t.add_column("Risk")
+                t.add_column("Policy Rule")
+                t.add_column("Expires")
+                for req in pending:
+                    t.add_row(
+                        req.request_id[:16],
+                        req.intent_text[:60] + ("..." if len(req.intent_text) > 60 else ""),
+                        req.risk_profile,
+                        req.policy_rule or "—",
+                        req.expires_at.strftime("%H:%M:%S") if req.expires_at else "—",
+                    )
+                get_console().print(t)
+
+            # Process each pending request
+            for req in pending:
+                if auto_approve_all:
+                    gateway.decide(req.request_id, approved=True, decided_by="auto-approve")
+                    if _HAS_RICH:
+                        render_success(f"Auto-approved: {req.request_id[:16]}")
+                    else:
+                        click.echo(f"Auto-approved: {req.request_id[:16]}")
+                else:
+                    if not _HAS_RICH:
+                        click.echo(f"\nIntent: {req.intent_text}")
+                        click.echo(f"Risk: {req.risk_profile}  Rule: {req.policy_rule or 'manual gate'}")
+
+                    approved = click.confirm(
+                        f"  Approve '{req.intent_text[:50]}' (A=1)?",
+                        default=False,
+                    )
+                    reason = ""
+                    if not approved:
+                        reason = click.prompt("  Rejection reason (optional)", default="", prompt_suffix=": ")
+
+                    result = gateway.decide(
+                        req.request_id,
+                        approved=approved,
+                        decided_by="cli-user",
+                        reason=reason,
+                    )
+
+                    # Record decision in audit trail
+                    ctx = get_context()
+                    from rct_control_plane.observability import (
+                        ControlPlaneEvent,
+                        ControlPlaneEventType,
+                    )
+                    ctx.observer.audit_trail.append(
+                        ControlPlaneEvent(
+                            event_type=ControlPlaneEventType.APPROVAL_GRANTED
+                            if approved
+                            else ControlPlaneEventType.APPROVAL_REQUESTED,
+                            intent_id=req.intent_id,
+                            actor="cli-user",
+                            data={
+                                "request_id": req.request_id,
+                                "a_value": result.a_value,
+                                "decided_by": result.decided_by,
+                                "reason": reason,
+                                "risk_profile": req.risk_profile,
+                                "policy_rule": req.policy_rule,
+                            },
+                        )
+                    )
+
+                    if _HAS_RICH:
+                        if approved:
+                            render_success(f"Approved: {req.request_id[:16]}  A=1")
+                        else:
+                            render_warning(f"Rejected: {req.request_id[:16]}  A=0  Reason: {reason or 'none'}")
+                    else:
+                        status = "APPROVED A=1" if approved else "REJECTED A=0"
+                        click.echo(f"  → {status}")
+
+        elif request_id:
+            req = gateway.get_request(request_id)
+            if req is None:
+                # Try partial match
+                pending = gateway.get_pending()
+                matches = [r for r in pending if r.request_id.startswith(request_id)]
+                if not matches:
+                    if _HAS_RICH:
+                        render_error(f"No approval request found: {request_id}")
+                    else:
+                        click.echo(f"Not found: {request_id}", err=True)
+                    sys.exit(1)
+                req = matches[0]
+
+            approved = click.confirm(
+                f"Approve '{req.intent_text[:60]}'?",
+                default=False,
+            )
+            reason = ""
+            if not approved:
+                reason = click.prompt("Rejection reason", default="", prompt_suffix=": ")
+
+            gateway.decide(req.request_id, approved=approved, decided_by="cli-user", reason=reason)
+
+            if _HAS_RICH:
+                if approved:
+                    render_success(f"Approved {request_id[:16]}  A=1")
+                else:
+                    render_warning(f"Rejected {request_id[:16]}  A=0")
+            else:
+                click.echo(f"Decision recorded: {'APPROVED' if approved else 'REJECTED'}")
+
+    except Exception as e:
+        if _HAS_RICH:
+            render_error(str(e))
+        else:
+            click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
+        sys.exit(1)
+
+
 def main():
     """Main entry point for CLI."""
     cli()
