@@ -30,6 +30,64 @@ pnpm add @rctlabs/rct-platform
 
 ---
 
+## CLI — `npx rct`
+
+The package ships a full command-line interface. Run without installing:
+
+```bash
+npx @rctlabs/rct-platform --help
+```
+
+Or install globally for the `rct` command:
+
+```bash
+npm install -g @rctlabs/rct-platform
+rct --help
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `rct compile "<intent>"` | Compile intent → FDIA + JITNA + policy evaluation |
+| `rct status` | Show control plane metrics (requires running server) |
+| `rct init` | Interactive wizard → writes `.rct.json` config |
+| `rct fdia <d> <i> <a>` | Offline constitutional gate check |
+
+### Examples
+
+```bash
+# Check constitutional gate offline
+npx @rctlabs/rct-platform fdia 0.9 0.95 1.0
+# ╭────── FDIA — Constitutional Gate PASSED ──────╮
+# │  F Score:  0.9048  Risk: LOW  Gate: 0.75 PASS ✔ │
+# ╰───────────────────────────────────────────────╯
+
+# Compile intent (requires rct-platform server running)
+npx @rctlabs/rct-platform compile "Refactor the authentication module" --url http://localhost:8000
+
+# Interactive project setup
+npx @rctlabs/rct-platform init
+
+# Server health + metrics
+npx @rctlabs/rct-platform status
+```
+
+### `rct fdia` — Offline Mode
+
+```bash
+rct fdia <d> <i> <a> [--gate <threshold>] [--no-banner]
+```
+
+| Arg | Range | Description |
+|-----|-------|-------------|
+| `d` | 0.0–1.0 | Delta — change vector magnitude |
+| `i` | 0.0–1.0 | Identity — role confidence |
+| `a` | 0.0–1.0 | Architect gate (0=blocked, 1=approved) |
+| `--gate` | 0.0–1.0 | Minimum pass threshold (default: `0.75`) |
+
+---
+
 ## Quick Start
 
 ### FDIA Constitutional Formula

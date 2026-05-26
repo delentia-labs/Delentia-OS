@@ -3,7 +3,7 @@
 [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue)](CHANGELOG.md)
 [![PyPI](https://img.shields.io/pypi/v/rct-platform?label=PyPI&color=gold)](https://pypi.org/project/rct-platform/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/rct-platform?label=downloads&color=brightgreen)](https://pypi.org/project/rct-platform/)
 [![npm](https://img.shields.io/npm/v/@rctlabs/rct-platform?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/@rctlabs/rct-platform)
