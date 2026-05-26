@@ -1050,7 +1050,7 @@ def _version_badge(version: str, tier: str = "standard") -> Panel:
 
 
 def print_splash(
-    version: str = "1.0.4b2",
+    version: str = "1.2.0",
     endpoint: str = "http://127.0.0.1:8000",
     mock: bool = False,
     no_animation: bool = False,

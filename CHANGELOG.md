@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-26
+
+### Added — Phase N1: `npx rct` CLI — TypeScript SDK
+
+#### CLI Entry & UI Layer
+- `sdk-typescript/src/cli/index.ts` — `rct` Commander program; 4 commands; auto-shows banner + help when invoked with no args
+- `sdk-typescript/src/cli/ui/banner.ts` — ASCII art `RCT` block logo; chalk@4 6-color gradient (cyan → magenta → violet)
+- `sdk-typescript/src/cli/ui/badge.ts` — `badge.{success,error,warn,info,low,structural,systemic,approved,rejected,pending}()`; `riskBadge(risk)`, `decisionBadge(decision)` helpers
+- `sdk-typescript/src/cli/ui/spinner.ts` — ora@5 wrapper: `createSpinner()`, `succeed()`, `fail()`, `warn()`
+- `sdk-typescript/src/cli/ui/output.ts` — `formatCompileBox()` → boxen@5 rounded result panel; `formatMetricsBox()` → metrics table panel
+
+#### CLI Commands
+- `rct compile "<intent>"` — 4-step spinner (JITNA 350ms → FDIA 280ms → compile → policy eval); graceful offline error with server start instructions; options: `-u/--url`, `-t/--tier`, `--no-banner`
+- `rct status` — loads `.rct.json` for baseURL → `client.getMetrics()` → formatted metrics panel; graceful offline error
+- `rct init` — interactive wizard via enquirer@2 (4 prompts: tier, region, fdiaGate, baseURL); saves `.rct.json` to cwd; falls back to defaults if enquirer unavailable
+- `rct fdia <d> <i> <a>` — fully offline constitutional gate check using `computeFDIA()` + `meetsThreshold()`; `--gate <threshold>` option (default `0.75`); shows PASS ✔ / FAIL ✘ / BLOCKED panels
+
+#### Package Updates
+- `package.json` — version `1.1.0` → `1.2.0`; `bin: { "rct": "./dist/cli/index.js" }`; added dependencies: `chalk@^4.1.2`, `ora@^5.4.1`, `boxen@^5.1.2`, `commander@^12.0.0`, `enquirer@^2.4.1`
+
+### Verified
+- **73/73 passed** — all TypeScript SDK tests pass post-CLI addition
+- `rct --version` → `1.2.0`, `rct fdia 0.9 0.95 1.0` → PASS (F=0.9048)
+- Published: `npm install @rctlabs/rct-platform@1.2.0` or `npx @rctlabs/rct-platform fdia ...`
+
+---
+
 ## [1.1.0] - 2026-06-01
 
 ### Added — Enterprise Platform (Phases 1–5) — commit `9afecb8`
