@@ -1,0 +1,33 @@
+# Source files (not needed in published package)
+src/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+tsconfig*.json
+jest.config*
+.eslintrc*
+.prettierrc*
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+__tests__/
+
+# Dev artifacts
+node_modules/
+coverage/
+.nyc_output/
+
+# Build metadata
+*.tsbuildinfo
+patch.diff
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
