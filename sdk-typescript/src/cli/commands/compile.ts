@@ -2,10 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { RCTClient } from "../../client";
 import { showBanner } from "../ui/banner";
-import { createSpinner, succeed, fail } from "../ui/spinner";
-import { formatCompileBox } from "../ui/output";
 
 interface RCTConfig {
   baseURL?: string;
@@ -37,6 +34,11 @@ export const compileCommand = new Command("compile")
   .option("-t, --tier <tier>", "User tier (FREE|PRO|ENTERPRISE)")
   .option("--no-banner", "Skip the banner")
   .action(async (intent: string, opts: Record<string, unknown>) => {
+    // Lazy-load heavy packages
+    const { RCTClient } = await import("../../client");
+    const { createSpinner, succeed, fail } = await import("../ui/spinner");
+    const { formatCompileBox } = await import("../ui/output");
+
     if (opts["banner"] !== false) showBanner();
 
     const config = loadConfig();
@@ -100,6 +102,8 @@ export const compileCommand = new Command("compile")
     }
   });
 
-function warn(spinner: ReturnType<typeof createSpinner>, text: string): void {
+import type { Ora } from "ora";
+
+function warn(spinner: Ora, text: string): void {
   spinner.warn(chalk.yellow(text));
 }

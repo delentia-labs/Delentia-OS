@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import boxen from "boxen";
 import { computeFDIA, meetsThreshold } from "../../fdia";
 import { showBanner } from "../ui/banner";
 import { riskBadge } from "../ui/badge";
@@ -15,7 +14,9 @@ export const fdiaCommand = new Command("fdia")
   .option("-g, --gate <value>", "Minimum FDIA threshold to pass", "0.75")
   .option("--no-banner", "Skip the banner")
   .action(
-    (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
+    async (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
+      const { default: boxen } = await import("boxen");
+
       if (opts["banner"] !== false) showBanner();
 
       const d = parseFloat(dStr);

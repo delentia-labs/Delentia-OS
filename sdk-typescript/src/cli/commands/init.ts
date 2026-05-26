@@ -2,7 +2,6 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import boxen from "boxen";
 import { showBanner } from "../ui/banner";
 
 const CLI_VERSION = "1.2.0";
@@ -20,6 +19,8 @@ export const initCommand = new Command("init")
   .description("Initialize RCT Platform configuration interactively")
   .option("-f, --force", "Overwrite existing .rct.json")
   .action(async (opts: Record<string, unknown>) => {
+    const { default: boxen } = await import("boxen");
+
     showBanner(CLI_VERSION);
 
     const configPath = join(process.cwd(), ".rct.json");
