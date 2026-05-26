@@ -74,7 +74,7 @@ def test_call_llm_openai_success(monkeypatch):
     mock_openai.OpenAI.return_value = mock_client
 
     with patch.object(_ic_mod, "_HAS_OPENAI", True), \
-         patch.object(_ic_mod, "_openai_module", mock_openai):
+         patch.object(_ic_mod, "_openai_module", mock_openai, create=True):
         result = _call_llm("refactor the auth module")
 
     assert result is not None
@@ -97,7 +97,7 @@ def test_call_llm_openai_exception_returns_none(monkeypatch):
     mock_openai.OpenAI.return_value = mock_client
 
     with patch.object(_ic_mod, "_HAS_OPENAI", True), \
-         patch.object(_ic_mod, "_openai_module", mock_openai):
+         patch.object(_ic_mod, "_openai_module", mock_openai, create=True):
         result = _call_llm("refactor the auth module")
 
     assert result is None
@@ -120,7 +120,7 @@ def test_call_llm_openai_invalid_json_returns_none(monkeypatch):
     mock_openai.OpenAI.return_value = mock_client
 
     with patch.object(_ic_mod, "_HAS_OPENAI", True), \
-         patch.object(_ic_mod, "_openai_module", mock_openai):
+         patch.object(_ic_mod, "_openai_module", mock_openai, create=True):
         result = _call_llm("refactor the auth module")
 
     assert result is None
@@ -143,19 +143,10 @@ def test_call_llm_anthropic_success(monkeypatch):
     mock_anthropic = MagicMock()
     mock_anthropic.Anthropic.return_value = mock_client
 
-    # Create _anthropic_module in module scope if it doesn't exist
-    had_attr = hasattr(_ic_mod, "_anthropic_module")
-    if not had_attr:
-        _ic_mod._anthropic_module = mock_anthropic  # type: ignore[attr-defined]
-
-    try:
-        with patch.object(_ic_mod, "_HAS_OPENAI", False), \
-             patch.object(_ic_mod, "_HAS_ANTHROPIC", True), \
-             patch.object(_ic_mod, "_anthropic_module", mock_anthropic):
-            result = _call_llm("deploy to production")
-    finally:
-        if not had_attr:
-            del _ic_mod._anthropic_module  # type: ignore[attr-defined]
+    with patch.object(_ic_mod, "_HAS_OPENAI", False), \
+         patch.object(_ic_mod, "_HAS_ANTHROPIC", True), \
+         patch.object(_ic_mod, "_anthropic_module", mock_anthropic, create=True):
+        result = _call_llm("deploy to production")
 
     assert result is not None
     assert result["intent_type"] == "REFACTOR"
@@ -175,18 +166,10 @@ def test_call_llm_anthropic_exception_returns_none(monkeypatch):
     mock_anthropic = MagicMock()
     mock_anthropic.Anthropic.return_value = mock_client
 
-    had_attr = hasattr(_ic_mod, "_anthropic_module")
-    if not had_attr:
-        _ic_mod._anthropic_module = mock_anthropic  # type: ignore[attr-defined]
-
-    try:
-        with patch.object(_ic_mod, "_HAS_OPENAI", False), \
-             patch.object(_ic_mod, "_HAS_ANTHROPIC", True), \
-             patch.object(_ic_mod, "_anthropic_module", mock_anthropic):
-            result = _call_llm("deploy to production")
-    finally:
-        if not had_attr:
-            del _ic_mod._anthropic_module  # type: ignore[attr-defined]
+    with patch.object(_ic_mod, "_HAS_OPENAI", False), \
+         patch.object(_ic_mod, "_HAS_ANTHROPIC", True), \
+         patch.object(_ic_mod, "_anthropic_module", mock_anthropic, create=True):
+        result = _call_llm("deploy to production")
 
     assert result is None
 

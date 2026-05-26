@@ -26,6 +26,7 @@ Security:
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import threading
@@ -417,7 +418,7 @@ class ApprovalGateway:
                     if resp.status < 400:
                         return  # Success
                     last_exc = urllib.error.HTTPError(
-                        url, resp.status, "Webhook delivery failed", {}, None
+                        url, resp.status, "Webhook delivery failed", http.client.HTTPMessage(), None
                     )
             except (urllib.error.URLError, OSError) as exc:
                 last_exc = exc
