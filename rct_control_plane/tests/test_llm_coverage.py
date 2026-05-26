@@ -221,7 +221,7 @@ def test_call_llm_openai_empty_response(monkeypatch):
     mock_openai.OpenAI.return_value = mock_client
 
     with patch.object(_ic_mod, "_HAS_OPENAI", True), \
-         patch.object(_ic_mod, "_openai_module", mock_openai):
+         patch.object(_ic_mod, "_openai_module", mock_openai, create=True):
         result = _call_llm("refactor auth")
 
     # Empty string → json.loads("") raises, so returns None or empty dict
