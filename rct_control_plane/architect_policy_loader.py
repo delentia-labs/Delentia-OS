@@ -38,7 +38,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 try:
-    import yaml as _yaml  # type: ignore[import-untyped]
+    import yaml as _yaml
     _HAS_YAML = True
 except ImportError:
     _HAS_YAML = False
