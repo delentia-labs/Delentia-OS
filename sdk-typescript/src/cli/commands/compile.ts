@@ -38,6 +38,7 @@ export const compileCommand = new Command("compile")
     const { RCTClient } = await import("../../client");
     const { createSpinner, succeed, fail } = await import("../ui/spinner");
     const { formatCompileBox } = await import("../ui/output");
+    const { centerText } = await import("../ui/align");
 
     if (opts["banner"] !== false) showBanner();
 
@@ -45,7 +46,8 @@ export const compileCommand = new Command("compile")
     const baseURL = (opts["url"] as string | undefined) ?? config.baseURL ?? "http://localhost:8000";
     const userTier = (opts["tier"] as string | undefined) ?? config.userTier ?? "PRO";
 
-    console.log(chalk.gray(`  Intent: "${intent}"\n`));
+    const terminalWidth = process.stdout.columns || 80;
+    console.log(centerText(chalk.gray(`Intent: "${intent}"\n`), terminalWidth));
 
     // Step 1 — JITNA
     const s1 = createSpinner("Initializing JITNA Protocol...");
@@ -81,7 +83,7 @@ export const compileCommand = new Command("compile")
       }
 
       console.log();
-      console.log(formatCompileBox(compiled, evalResult));
+      console.log(centerText(formatCompileBox(compiled, evalResult), terminalWidth));
     } catch (err: unknown) {
       fail(s3, "Connection to RCT Platform server failed");
       const message = err instanceof Error ? err.message : String(err);

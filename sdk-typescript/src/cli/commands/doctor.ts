@@ -14,14 +14,15 @@ export const doctorCommand = new Command("doctor")
   .description("Run E2E preflight diagnostics on RCT Platform and developer environment")
   .option("--no-banner", "Skip the banner")
   .action(async (opts: Record<string, unknown>) => {
-    // Dynamic imports for heavy packages to ensure ultra-fast cold starts
     const { default: boxen } = await import("boxen");
     const { default: ora } = await import("ora");
     const { RCTClient } = await import("../../client");
+    const { centerText } = await import("../ui/align");
 
     if (opts["banner"] !== false) showBanner();
 
-    console.log(chalk.bold.cyan("  Running RCT preflight diagnostics...\n"));
+    const terminalWidth = process.stdout.columns || 80;
+    console.log(centerText(chalk.bold.cyan("Running RCT preflight diagnostics...\n"), terminalWidth));
 
     const spinner = ora("Initiating system diagnostics...").start();
 
@@ -124,16 +125,16 @@ export const doctorCommand = new Command("doctor")
       }
     }
 
-    console.log(
-      boxen(lines.join("\n"), {
-        padding: { top: 1, bottom: 1, left: 2, right: 2 },
-        margin: { top: 0, bottom: 1, left: 0, right: 0 },
-        borderStyle: "round",
-        borderColor: isHealthy ? "green" : "red",
-        title: "RCT Platform — Diagnostic Preflight Report",
-        titleAlignment: "left",
-      })
-    );
+    const outputBox = boxen(lines.join("\n"), {
+      padding: { top: 1, bottom: 1, left: 2, right: 2 },
+      margin: { top: 0, bottom: 1, left: 0, right: 0 },
+      borderStyle: "round",
+      borderColor: isHealthy ? "green" : "red",
+      title: "RCT Platform — Diagnostic Preflight Report",
+      titleAlignment: "left",
+    });
+
+    console.log(centerText(outputBox, terminalWidth));
 
     if (!isHealthy) {
       process.exit(1);

@@ -20,6 +20,7 @@ export const initCommand = new Command("init")
   .option("-f, --force", "Overwrite existing .rct.json")
   .action(async (opts: Record<string, unknown>) => {
     const { default: boxen } = await import("boxen");
+    const { centerText } = await import("../ui/align");
 
     showBanner(CLI_VERSION);
 
@@ -113,14 +114,15 @@ export const initCommand = new Command("init")
       `  ${chalk.cyan('rct compile "your intent"')}${chalk.gray("  — compile an intent")}`,
     ];
 
-    console.log(
-      boxen(lines.join("\n"), {
-        padding: { top: 1, bottom: 1, left: 2, right: 2 },
-        margin: { top: 0, bottom: 1, left: 0, right: 0 },
-        borderStyle: "round",
-        borderColor: "green",
-        title: "RCT Platform Initialized",
-        titleAlignment: "left",
-      }),
-    );
+    const outputBox = boxen(lines.join("\n"), {
+      padding: { top: 1, bottom: 1, left: 2, right: 2 },
+      margin: { top: 0, bottom: 1, left: 0, right: 0 },
+      borderStyle: "round",
+      borderColor: "green",
+      title: "RCT Platform Initialized",
+      titleAlignment: "left",
+    });
+
+    const terminalWidth = process.stdout.columns || 80;
+    console.log(centerText(outputBox, terminalWidth));
   });

@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { computeFDIA, meetsThreshold } from "../../fdia";
 import { showBanner } from "../ui/banner";
 import { riskBadge } from "../ui/badge";
+import { centerText } from "../ui/align";
 
 export const fdiaCommand = new Command("fdia")
   .description(
@@ -44,15 +45,15 @@ export const fdiaCommand = new Command("fdia")
       const borderColor = passes ? "green" : "red";
       const title = passes ? "FDIA — Constitutional Gate PASSED" : "FDIA — Constitutional Gate FAILED";
 
-      console.log(
-        boxen(lines.join("\n"), {
-          padding: { top: 1, bottom: 1, left: 2, right: 2 },
-          margin: { top: 0, bottom: 1, left: 0, right: 0 },
-          borderStyle: "round",
-          borderColor,
-          title,
-          titleAlignment: "center",
-        }),
-      );
+      const outputBox = boxen(lines.join("\n"), {
+        padding: { top: 1, bottom: 1, left: 2, right: 2 },
+        margin: { top: 0, bottom: 1, left: 0, right: 0 },
+        borderStyle: "round",
+        borderColor,
+        title,
+        titleAlignment: "center",
+      });
+
+      console.log(centerText(outputBox));
     },
   );
