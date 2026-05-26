@@ -74,7 +74,7 @@ def _load_config() -> Dict[str, Any]:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
     return {}
 

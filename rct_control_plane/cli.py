@@ -2811,8 +2811,13 @@ def memory_history(intent_id: Optional[str], tail: int, output: str):
         ctx = get_context()
         trail = ctx.observer.audit_trail
 
+        if intent_id:
+            source_entries = [e for e in trail.entries if e.event.intent_id == intent_id][-tail:]
+        else:
+            source_entries = list(trail.entries[-tail:])
+
         entries = []
-        for i, entry_obj in enumerate(trail.entries[-tail:]):
+        for entry_obj in source_entries:
             evt = entry_obj.event
             entries.append({
                 "seq": entry_obj.sequence_number,

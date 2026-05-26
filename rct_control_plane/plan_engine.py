@@ -350,6 +350,7 @@ class PlanEngine:
         if not _HAS_SIGNEDAI:
             return self._fallback_model_roster()
 
+        # TODO: use registry.get_model_for_role(role) in v1.2.0 for dynamic model lookup
         models: List[ModelEntry] = []
 
         # Select roles based on risk tier

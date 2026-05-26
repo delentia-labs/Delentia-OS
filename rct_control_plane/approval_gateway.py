@@ -26,6 +26,7 @@ Security:
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import threading
@@ -416,9 +417,8 @@ class ApprovalGateway:
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     if resp.status < 400:
                         return  # Success
-                    import email.message
                     last_exc = urllib.error.HTTPError(
-                        url, resp.status, "Webhook delivery failed", email.message.Message(), None
+                        url, resp.status, "Webhook delivery failed", http.client.HTTPMessage(), None
                     )
             except (urllib.error.URLError, OSError) as exc:
                 last_exc = exc
