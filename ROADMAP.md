@@ -1,7 +1,7 @@
 ## RCT Platform — Public Roadmap
 
 > Last updated: May 2026
-> Current version: **v1.1.0 (Stable)**  
+> Current version: **v1.2.0 (Stable)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
 
 ---
@@ -14,6 +14,22 @@
 | 🔄 | In progress |
 | 📋 | Planned — confirmed |
 | 💡 | Considering — not confirmed |
+
+---
+
+## v1.2.0 — Phase N1: npx rct CLI ✅ (May 2026)
+
+**Goal: Launch the public NPM registry package `@rctlabs/rct-platform@1.2.0` featuring the Interactive Terminal Simulator.**
+
+> Released: May 2026 · 1,379 tests · 0 failures · 90% coverage
+
+### Phase N1 — CLI & Simulator ✅
+- ✅ `npx @rctlabs/rct-platform --version` → `1.2.0`
+- ✅ `npx @rctlabs/rct-platform fdia` — offline FDIA calculations
+- ✅ Interactive Terminal Simulator inside website homepage with CSS Glassmorphism
+- ✅ Bilingual (English/Thai) FDIA console sliders
+- ✅ Stably gated 90% unit test coverage in CI pipeline
+- ✅ 100% clean check on Ruff linter and Mypy static analysis
 
 ---
 
@@ -164,12 +180,12 @@
 - 📋 Home Assistant integration adapter
 - 📋 Obsidian plugin (knowledge graph ↔ JITNA intent tagging)
 - 📋 JITNA Protocol v2.1 draft — bidirectional agent negotiation
-- 📋 npm publish `@rctlabs/rct-platform@1.1.0` to public registry
+- ✅ npm publish `@rctlabs/rct-platform@1.2.0` to public registry
 - 📋 PyPI publish `rct-platform==1.1.0` (twine upload — awaiting credentials)
 
 ---
 
-## v1.2.0 — ASEAN Expansion 💡 (2027)
+## v1.3.0 — ASEAN Expansion 💡 (2027)
 
 **Goal: first-class multi-language support and ASEAN regulatory alignment.**
 
