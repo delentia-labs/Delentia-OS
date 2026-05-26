@@ -6,6 +6,7 @@
 [![Version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md)
 [![PyPI](https://img.shields.io/pypi/v/rct-platform?label=PyPI&color=gold)](https://pypi.org/project/rct-platform/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/rct-platform?label=downloads&color=brightgreen)](https://pypi.org/project/rct-platform/)
+[![npm](https://img.shields.io/npm/v/@rctlabs/rct-platform?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/@rctlabs/rct-platform)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://rctlabs.github.io/rct-platform/)
