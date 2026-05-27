@@ -39,6 +39,20 @@ from .dsl_parser import (
     DSLParser,
     DSLParseError,
 )
+from .cord_security import (
+    CORDEngine,
+    CORDResult,
+    CORDVerdict,
+    CORDFinding,
+    CORDCheckType,
+    cord_check,
+)
+from .mee_engine import (
+    MEEEngine,
+    MEESession,
+    MEEStepRecord,
+    MEE_VERSION,
+)
 
 __all__ = [
     "__version__",
@@ -66,4 +80,16 @@ __all__ = [
     # dsl_parser
     "DSLParser",
     "DSLParseError",
+    # cord_security
+    "CORDEngine",
+    "CORDResult",
+    "CORDVerdict",
+    "CORDFinding",
+    "CORDCheckType",
+    "cord_check",
+    # mee_engine
+    "MEEEngine",
+    "MEESession",
+    "MEEStepRecord",
+    "MEE_VERSION",
 ]

@@ -2,7 +2,10 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { RCTClient } from "../../client";
 import { showBanner } from "../ui/banner";
+import { createSpinner, succeed, fail } from "../ui/spinner";
+import { formatMetricsBox } from "../ui/output";
 
 interface RCTConfig {
   baseURL?: string;
@@ -25,11 +28,6 @@ export const statusCommand = new Command("status")
   .option("-u, --url <url>", "API endpoint URL")
   .option("--no-banner", "Skip the banner")
   .action(async (opts: Record<string, unknown>) => {
-    const { RCTClient } = await import("../../client");
-    const { createSpinner, succeed, fail } = await import("../ui/spinner");
-    const { formatMetricsBox } = await import("../ui/output");
-    const { centerText } = await import("../ui/align");
-
     if (opts["banner"] !== false) showBanner();
 
     const config = loadConfig();
@@ -38,8 +36,7 @@ export const statusCommand = new Command("status")
       config.baseURL ??
       "http://localhost:8000";
 
-    const terminalWidth = process.stdout.columns || 80;
-    console.log(centerText(chalk.gray(`Connecting to: ${baseURL}\n`), terminalWidth));
+    console.log(chalk.gray(`  Connecting to: ${baseURL}\n`));
 
     const spinner = createSpinner("Fetching system metrics...");
     spinner.start();
@@ -49,7 +46,7 @@ export const statusCommand = new Command("status")
       const metrics = await client.getMetrics();
       succeed(spinner, "Connected — server is healthy");
       console.log();
-      console.log(centerText(formatMetricsBox(metrics), terminalWidth));
+      console.log(formatMetricsBox(metrics));
     } catch (err: unknown) {
       fail(spinner, "Connection failed");
       const message = err instanceof Error ? err.message : String(err);

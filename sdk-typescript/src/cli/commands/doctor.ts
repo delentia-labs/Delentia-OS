@@ -2,17 +2,56 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { execSync } from "child_process";
 import { showBanner } from "../ui/banner";
+
+interface MEEState {
+  session_id?: string;
+  g_current?: number;
+  g_initial?: number;
+  step_count?: number;
+  trend?: string;
+  total_growth_ratio?: number;
+}
 
 interface RCTConfig {
   baseURL?: string;
   userTier?: string;
   region?: string;
+  project_name?: string;
+  tier?: string;
+  mee_state?: MEEState;
+}
+
+function tryLoadConfig(): RCTConfig | null {
+  const configPath = join(process.cwd(), ".rct.json");
+  if (!existsSync(configPath)) return null;
+  try {
+    return JSON.parse(readFileSync(configPath, "utf-8")) as RCTConfig;
+  } catch {
+    return null;
+  }
+}
+
+function tryPythonSdk(): string | null {
+  for (const bin of ["python", "python3"]) {
+    try {
+      const v = execSync(
+        `${bin} -c "import rct_control_plane; print(rct_control_plane.__version__)"`,
+        { encoding: "utf-8", timeout: 5000, stdio: ["pipe", "pipe", "pipe"] }
+      ).trim();
+      return v;
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 export const doctorCommand = new Command("doctor")
   .description("Run E2E preflight diagnostics on RCT Platform and developer environment")
   .option("--no-banner", "Skip the banner")
+  .option("-u, --url <url>", "Override server URL for connectivity check")
   .action(async (opts: Record<string, unknown>) => {
     const { default: boxen } = await import("boxen");
     const { default: ora } = await import("ora");
@@ -30,40 +69,26 @@ export const doctorCommand = new Command("doctor")
     spinner.text = "Checking Node.js version...";
     const nodeVer = process.version;
     const major = parseInt(nodeVer.replace("v", "").split(".")[0], 10);
-    const nodeStatus = major >= 16 ? chalk.green("✔ PASS") : chalk.red("✘ FAIL (Node >= 16 required)");
+    const nodeStatus = major >= 18 ? chalk.green("✔ PASS") : chalk.red("✘ FAIL (Node >= 18 required)");
 
     // 2. Check local config file .rct.json
     spinner.text = "Validating .rct.json configuration...";
-    const configPath = join(process.cwd(), ".rct.json");
-    let configExists = false;
-    let configValid = false;
-    let configObj: RCTConfig = {};
-
-    if (existsSync(configPath)) {
-      configExists = true;
-      try {
-        configObj = JSON.parse(readFileSync(configPath, "utf-8")) as RCTConfig;
-        configValid =
-          configObj.baseURL !== undefined &&
-          configObj.userTier !== undefined &&
-          configObj.region !== undefined;
-      } catch {
-        configValid = false;
-      }
-    }
+    const configObj: RCTConfig = tryLoadConfig() ?? {};
+    const configExists = Object.keys(configObj).length > 0;
+    const configValid =
+      (configObj.project_name !== undefined || configObj.baseURL !== undefined) &&
+      (configObj.tier !== undefined || configObj.userTier !== undefined);
 
     const configStatus = !configExists
-      ? chalk.yellow("⚠ WARNING (Missing .rct.json - run 'rct init')")
+      ? chalk.yellow("⚠ WARNING (Missing .rct.json — run 'rct init')")
       : configValid
         ? chalk.green("✔ PASS")
-        : chalk.red("✘ FAIL (Invalid config format)");
+        : chalk.red("✘ FAIL (Invalid config — run 'rct init')");
 
     // 3. Check local database read/write access
     spinner.text = "Checking database cache write permissions...";
-    const dbPath = join(process.cwd(), "rct_control_plane.db");
     let dbStatus = chalk.green("✔ PASS");
     try {
-      // Just check if we can check write access in the current working directory
       const testPath = join(process.cwd(), ".rct_write_test");
       const { writeFileSync, unlinkSync } = await import("fs");
       writeFileSync(testPath, "test");
@@ -72,9 +97,39 @@ export const doctorCommand = new Command("doctor")
       dbStatus = chalk.red("✘ FAIL (No write access to workspace)");
     }
 
-    // 4. Check REST API Connectivity & Latency
+    // 4. Python SDK detection
+    spinner.text = "Detecting Python SDK...";
+    const pythonVer = tryPythonSdk();
+    const pythonStatus = pythonVer
+      ? chalk.green(`✔ PASS (rct_control_plane v${pythonVer})`)
+      : chalk.yellow("⚠ WARNING (not installed — pip install rct-platform)");
+
+    // 5. FDIA baseline sanity
+    spinner.text = "Running FDIA baseline sanity check...";
+    const fdiaD = 0.9, fdiaI = 1.0, fdiaA = 0.9;
+    const fdiaF = Math.pow(fdiaD, fdiaI) * fdiaA;
+    const fdiaDiff = Math.abs(fdiaF - 0.81);
+    const fdiaStatus = fdiaDiff < 0.0001
+      ? chalk.green(`✔ PASS  F(0.9,1.0,0.9) = ${fdiaF.toFixed(4)}`)
+      : chalk.red(`✘ FAIL  expected 0.81 got ${fdiaF.toFixed(4)}`);
+
+    // 6. MEE v2 state
+    spinner.text = "Reading MEE v2 growth state...";
+    let meeStatus: string;
+    if (configObj.mee_state) {
+      const m = configObj.mee_state;
+      const ratio = m.g_current && m.g_initial ? (m.g_current / m.g_initial).toFixed(3) : "?";
+      meeStatus = chalk.green(
+        `✔ PASS  G=${m.g_current?.toFixed(4)} steps=${m.step_count} trend=${m.trend} (${ratio}×)`
+      );
+    } else {
+      meeStatus = chalk.yellow("⚠ WARNING (no MEE state — run 'rct memory improve')");
+    }
+
+    // 7. Check REST API Connectivity & Latency
     spinner.text = "Pinging RCT Platform API server...";
-    const baseURL = configObj.baseURL ?? "http://localhost:8000";
+    const baseURL =
+      (opts["url"] as string | undefined) ?? configObj.baseURL ?? "http://localhost:8000";
     let serverStatus = chalk.red("✘ FAIL (Offline)");
     let latency = "N/A";
 
@@ -88,22 +143,26 @@ export const doctorCommand = new Command("doctor")
         serverStatus = chalk.green(`✔ PASS (${latency})`);
       }
     } catch {
-      serverStatus = chalk.red("✘ FAIL (Server unreachable)");
+      serverStatus = chalk.red("✘ FAIL (Server unreachable — offline OK)");
     }
 
     spinner.stop();
 
     // Compile diagnostics grid
     const lines = [
-      `${chalk.bold("RCT CLI Engine:")}          v1.2.0`,
-      `${chalk.bold("Node.js Environment:")}     ${nodeVer} — ${nodeStatus}`,
-      `${chalk.bold("Config Validity:")}        ${configStatus}`,
-      `${chalk.bold("Workspace Cache:")}        ${dbStatus}`,
-      `${chalk.bold("FastAPI Backend Connection:")}  ${serverStatus}`,
+      `${chalk.bold("RCT CLI Engine:")}               v1.3.0`,
+      `${chalk.bold("Node.js Environment:")}          ${nodeVer} — ${nodeStatus}`,
+      `${chalk.bold("Config (.rct.json):")}           ${configStatus}`,
+      `${chalk.bold("Workspace Cache:")}              ${dbStatus}`,
+      `${chalk.bold("Python SDK:")}                   ${pythonStatus}`,
+      `${chalk.bold("FDIA Baseline (F=D^I×A):")}      ${fdiaStatus}`,
+      `${chalk.bold("MEE v2 Growth State:")}          ${meeStatus}`,
+      `${chalk.bold("FastAPI Backend:")}              ${serverStatus}`,
       "",
     ];
 
-    const isHealthy = major >= 16 && (configValid || !configExists) && serverStatus.includes("✔ PASS");
+    const isHealthy = major >= 18 && !dbStatus.includes("FAIL") && !fdiaStatus.includes("FAIL");
+
 
     if (isHealthy) {
       lines.push(

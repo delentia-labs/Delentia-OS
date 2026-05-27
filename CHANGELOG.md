@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-05-27
+
+### Added — Phase A: CORD Security Engine + MEE v2 Runtime + CLI v2
+
+#### Python SDK
+- `rct_control_plane/cord_security.py` — **CORDEngine**: Constitutional Oversight & Rejection Detector; `CORDVerdict` (CLEAN/SUSPICIOUS/REJECTED); 50 curated injection patterns (CORD-I001–CORD-I050); Shannon entropy detection; payload size limits (128KB soft / 1MB hard); governance metric gaming detection (spike >0.35, cluster mean≥0.92 stddev<0.02); `cord_check()` module-level convenience; `check_with_fdia()` with FDIA integration
+- `rct_control_plane/mee_engine.py` — **MEE v2 Runtime**: `MEESession` thread-safe (RLock); `MEEEngine` multi-session manager; formula `G(t+1) = max(G_FLOOR, G(t) × (1+M×Δ) × R_t)`; resilience penalty/recovery; G_FLOOR=0.10, G_CAP=1000.0; `to_dict()`/`from_dict()`/`summary()` for persistence
+- `rct_control_plane/__init__.py` — exported CORD + MEE symbols
+- `scripts/benchmark_fdia_delta.py` — 4-benchmark validation script (74% compression, <50ms recall p95, FDIA throughput, CORD throughput)
+
+#### TypeScript CLI
+- `sdk-typescript/src/cli/commands/doctor.ts` — **`rct doctor`**: 7-point health check (Node≥18, .rct.json, workspace write, Python SDK, FDIA baseline, MEE v2 state, server connectivity); `--url` override
+- `sdk-typescript/src/cli/commands/memory.ts` — **`rct memory`**: sub-commands `show`, `improve [delta]`, `reset`; full MEE v2 formula in TypeScript; persists to `.rct.json` under `mee_state`; shows trend (growing/stable/declining); `--gov-violation` flag
+- `sdk-typescript/src/cli/index.ts` — bumped to `1.3.0`; registered `doctorCommand` and `memoryCommand`
+
+#### Tests
+- `rct_control_plane/tests/test_cord_security.py` — 30 tests: clean inputs, injection, entropy, payload, governance, FDIA integration, module-level check, verdict precedence
+- `rct_control_plane/tests/test_mee_engine.py` — 31 tests: session basics, step formula, governance, serialization, MEEEngine multi-session, thread safety, edge cases
+
+### Verified
+- **61/61 passed** — all new CORD + MEE v2 tests pass
+- TypeScript build: clean (`tsc` — 0 errors)
+
+---
+
 ## [1.2.0] - 2026-05-26
 
 ### Added — Phase N1: `npx rct` CLI — TypeScript SDK

@@ -1,9 +1,9 @@
 import { Command } from "commander";
 import chalk from "chalk";
+import boxen from "boxen";
 import { computeFDIA, meetsThreshold } from "../../fdia";
 import { showBanner } from "../ui/banner";
 import { riskBadge } from "../ui/badge";
-import { centerText } from "../ui/align";
 
 export const fdiaCommand = new Command("fdia")
   .description(
@@ -15,9 +15,7 @@ export const fdiaCommand = new Command("fdia")
   .option("-g, --gate <value>", "Minimum FDIA threshold to pass", "0.75")
   .option("--no-banner", "Skip the banner")
   .action(
-    async (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
-      const { default: boxen } = await import("boxen");
-
+    (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
       if (opts["banner"] !== false) showBanner();
 
       const d = parseFloat(dStr);
@@ -45,15 +43,15 @@ export const fdiaCommand = new Command("fdia")
       const borderColor = passes ? "green" : "red";
       const title = passes ? "FDIA — Constitutional Gate PASSED" : "FDIA — Constitutional Gate FAILED";
 
-      const outputBox = boxen(lines.join("\n"), {
-        padding: { top: 1, bottom: 1, left: 2, right: 2 },
-        margin: { top: 0, bottom: 1, left: 0, right: 0 },
-        borderStyle: "round",
-        borderColor,
-        title,
-        titleAlignment: "center",
-      });
-
-      console.log(centerText(outputBox));
+      console.log(
+        boxen(lines.join("\n"), {
+          padding: { top: 1, bottom: 1, left: 2, right: 2 },
+          margin: { top: 0, bottom: 1, left: 0, right: 0 },
+          borderStyle: "round",
+          borderColor,
+          title,
+          titleAlignment: "center",
+        }),
+      );
     },
   );

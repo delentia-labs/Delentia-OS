@@ -2,7 +2,10 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { RCTClient } from "../../client";
 import { showBanner } from "../ui/banner";
+import { createSpinner, succeed, fail } from "../ui/spinner";
+import { formatCompileBox } from "../ui/output";
 
 interface RCTConfig {
   baseURL?: string;
@@ -34,20 +37,13 @@ export const compileCommand = new Command("compile")
   .option("-t, --tier <tier>", "User tier (FREE|PRO|ENTERPRISE)")
   .option("--no-banner", "Skip the banner")
   .action(async (intent: string, opts: Record<string, unknown>) => {
-    // Lazy-load heavy packages
-    const { RCTClient } = await import("../../client");
-    const { createSpinner, succeed, fail } = await import("../ui/spinner");
-    const { formatCompileBox } = await import("../ui/output");
-    const { centerText } = await import("../ui/align");
-
     if (opts["banner"] !== false) showBanner();
 
     const config = loadConfig();
     const baseURL = (opts["url"] as string | undefined) ?? config.baseURL ?? "http://localhost:8000";
     const userTier = (opts["tier"] as string | undefined) ?? config.userTier ?? "PRO";
 
-    const terminalWidth = process.stdout.columns || 80;
-    console.log(centerText(chalk.gray(`Intent: "${intent}"\n`), terminalWidth));
+    console.log(chalk.gray(`  Intent: "${intent}"\n`));
 
     // Step 1 — JITNA
     const s1 = createSpinner("Initializing JITNA Protocol...");
@@ -83,7 +79,7 @@ export const compileCommand = new Command("compile")
       }
 
       console.log();
-      console.log(centerText(formatCompileBox(compiled, evalResult), terminalWidth));
+      console.log(formatCompileBox(compiled, evalResult));
     } catch (err: unknown) {
       fail(s3, "Connection to RCT Platform server failed");
       const message = err instanceof Error ? err.message : String(err);
@@ -104,8 +100,6 @@ export const compileCommand = new Command("compile")
     }
   });
 
-import type { Ora } from "ora";
-
-function warn(spinner: Ora, text: string): void {
+function warn(spinner: ReturnType<typeof createSpinner>, text: string): void {
   spinner.warn(chalk.yellow(text));
 }
