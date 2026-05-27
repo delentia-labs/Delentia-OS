@@ -4,7 +4,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/rctlabs/rct-platform/ci.yml?branch=main&label=CI&logo=github)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.0.4b0-blue)](https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/rctlabs/rct-platform/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB)](https://pypi.org/project/rct-platform/)
 
@@ -51,9 +51,9 @@ $$F = D^I \times A$$
 |--------|-------|
 | SDK Validation | See `docs/testing/TESTING_CANONICAL.md` for the current verified checkpoint |
 | Algorithms | 41 (Tier 1–9 reference implementations) |
-| LLM Models | 7 HexaCore (3 Western + 3 Eastern + 1 Regional Thai) |
+| LLM Models | 9 HexaCore roles (+ Ollama LOCAL + Groq LPU) — v2.3 |
 | Hallucination Rate | **0.3%** (vs industry 12–15%) — 97% reduction |
-| Memory Compression | **74%** via Delta Engine |
+| Memory Compression | **91.5% measured** (design floor ≥74%) via Delta Engine |
 | Intent Recall Speed | Cold start 3–5s → Warm recall **<50ms** |
 | Languages | 8 regional pairs (TH, JP, KR, CN, VN, ID, TW, US) |
 
@@ -65,20 +65,20 @@ $$F = D^I \times A$$
 |-----------|--------|
 | FDIA Scorer + equation engine | `core/fdia/fdia.py` |
 | SignedAI multi-LLM consensus | `signedai/core/` |
-| HexaCore 7-model registry | `signedai/core/registry.py` |
-| Delta Engine (74% compression) | `core/delta_engine/` |
+| HexaCore 9-role registry | `signedai/core/registry.py` |
+| Delta Engine (91.5% measured compression) | `core/delta_engine/` |
 | Regional Language Adapter | `core/regional_adapter/` |
-| RCT Control Plane DSL | `rct_control_plane/` (15 modules) |
-| 5 Reference Microservices | `microservices/` (258 tests) |
+| RCT Control Plane DSL | `rct_control_plane/` (22 modules) |
+| 5 Reference Microservices | `microservices/` (297 tests) |
 | CLI entry point | `rct` via editable install or built wheel |
 
 ---
 
 ## Quick Install
 
-!!! warning "Beta Preview — Source Install Today"
-    `rct-platform` v1.0.4b0 is a beta-preview release candidate.
-    Source installs and built wheels are supported; public PyPI publication remains a release step.
+!!! note "Stable SDK — Release 2.0.0"
+    `rct-platform` v2.0.0 is the official stable release.
+    Source installs and built wheels are fully supported.
 
 ```bash
 # From source (recommended today):

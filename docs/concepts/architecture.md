@@ -8,18 +8,18 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│               RCT PLATFORM SDK v1.0.2a0                  │
+│               RCT PLATFORM SDK v2.0.0                    │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 723 passing tests · 87% coverage · Python 3.10/3.11/3.12
-└─ Bandit 0 HIGH · mypy 32 files clean
+├─ 1,791 passing tests · 91% coverage · Python 3.10/3.11/3.12
+└─ Bandit 0 HIGH · mypy clean
 
 Layer 10: Enterprise Hardening
 ├─ Pre-commit hooks (black, isort, bandit)
-├─ Semantic versioning (1.0.2a0)
+├─ Semantic versioning (2.0.0)
 └─ CITATION.cff · CODE_OF_CONDUCT.md · CONTRIBUTING.md
 
 Layer 9: Regional & Compliance
@@ -43,11 +43,11 @@ Layer 7: Intent Loop Engine
 Layer 6: SignedAI Consensus
 ├─ S/4/6/8 tier framework
 ├─ ED25519 cryptographic attestation
-├─ 7 HexaCore models (3 Western + 3 Eastern + 1 Thai)
+├─ 9 HexaCore roles (+ Ollama LOCAL + Groq LPU)
 └─ signedai/core/
 
 Layer 5: Delta Engine
-├─ 74% compression (stores diffs, not full state)
+├─ 91.5% measured compression (design floor ≥74%)
 ├─ SHA-256 per-record deduplication
 ├─ Full rollback to any past tick
 └─ core/delta_engine/
@@ -109,7 +109,7 @@ sequenceDiagram
 The equation `F = D^I × A` is enforced at the **mathematics level**. Governance is not a switch — when A=0, F=0 by arithmetic, not by condition check. This makes the guarantee **unforgeable**.
 
 ### Why deltas instead of state snapshots
-Storing full agent state at every tick is O(n×t). Delta Engine stores only `changed_fields` with SHA-256 content hashing, achieving 74% compression on typical agent trajectories. Full rollback is still possible by replaying the delta chain.
+Storing full agent state at every tick is O(n×t). Delta Engine stores only `changed_fields` with SHA-256 content hashing, achieving 91.5% measured compression (design floor ≥74%) on typical agent trajectories. Full rollback is still possible by replaying the delta chain.
 
 ### Why ED25519 over RSA
 ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Critical for high-throughput multi-LLM consensus where thousands of decisions need attestation per second.

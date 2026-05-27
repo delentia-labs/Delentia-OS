@@ -2,9 +2,9 @@
 
 This document is the **single source of truth** for public test-count and coverage claims used in README, roadmap, release notes, and launch materials.
 
-**Version:** 1.2.0  
-**Last Updated:** 2026-05-26  
-**Authoritative checkpoint:** **1,379 passed · 0 failed · 90% coverage**  
+**Version:** 2.0.0  
+**Last Updated:** 2026-05-27  
+**Authoritative checkpoint:** **1,791 passed · 0 failed · 90% coverage**  
 **CI Status:** [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 
 ---
@@ -15,7 +15,7 @@ The following numbers were verified from the current public repository working t
 
 | Metric | Verified Result | Validation Command |
 |---|---|---|
-| Full SDK suite | **1,379 passed · 0 failed** | `python -m pytest -q --no-header` |
+| Full SDK suite | **1,791 passed · 0 failed** | `python -m pytest -q --no-header` |
 | Coverage | **90%** (`16429` statements, `1619` missed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header` |
 | Direct microservice tests | **297 passed** | `python -m pytest microservices -q --no-header` |
 | Supported CI matrix | Python **3.10 / 3.11 / 3.12** | `.github/workflows/ci.yml` |
@@ -27,17 +27,28 @@ These are the only public numbers that should be copied into README, roadmap, la
 
 ## 2. Suite Composition
 
-The 1,379 passing tests come from the public SDK surface:
+The 1,791 passing tests come from the public SDK surface:
 
 | Suite | Scope | Current Status |
 |---|---|---|
 | `microservices/` | 5 reference microservices and API surfaces | **297 passed** |
 | `core/tests/` | FDIA, Delta Engine, regional and algorithmic primitives | Included in full suite |
 | `signedai/tests/` | SignedAI consensus, registry, routing | Included in full suite |
-| `rct_control_plane/tests/` | DSL, JITNA, replay, middleware, CLI, security | Included in full suite |
-| `sdk-typescript/` | TypeScript SDK & CLI tests | **73 passed** |
+| `rct_control_plane/tests/` | DSL, JITNA, replay, middleware, CLI, security, CORD, governance | Included in full suite |
+| `sdk-typescript/` | TypeScript SDK & CLI tests (fdia-wasm 32, rct-edge 37) | **37 passed** |
 | `tests/` | top-level integration, security, regression, benchmark support | Included in full suite |
-| `tests/hypothesis/` | property-based correctness checks | Included in full suite |
+| `tests/hypothesis/` | property-based correctness checks (FDIA, Delta, SignedAI, CORD) | Included in full suite |
+
+### Phase-by-Phase Additions (v1.3.0 → v2.0.0)
+
+| Phase | Version | New Tests | Modules |
+|---|---|---|---|
+| Phase A — Security Engine | v1.4.0 | +131 | CORD×74, GovernanceGate×25, fdia-wasm TS×32 |
+| Phase B — Edge + Distributed | v1.6.0 | +128 | PostgresPersistence×40, JITNA v3×30, OllamaFallback×21, rct-edge TS×37 |
+| Phase C — Constitutional Security | v1.8.0 | +107 | ZK-FDIA×28, CORDRedTeam×45, HelixTTD×34 |
+| Phase D — Economy + Scale | v2.0.0 | +79 | PaymentEngine×33, NodeNetwork×24, GroqAdapter×22 |
+| **Total added v1.3.0 → v2.0.0** | — | **+445** | — |
+| **Grand total** | **v2.0.0** | **1,791** | — |
 
 `--collect-only` currently discovers a larger total than the pass count because optional or infra-dependent paths may be skipped depending on environment. The authoritative public-facing claim is the **verified pass count**, not the raw collection count.
 

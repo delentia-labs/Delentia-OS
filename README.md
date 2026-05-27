@@ -3,14 +3,14 @@
 [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](CHANGELOG.md)
 [![PyPI](https://img.shields.io/pypi/v/rct-platform?label=PyPI&color=gold)](https://pypi.org/project/rct-platform/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/rct-platform?label=downloads&color=brightgreen)](https://pypi.org/project/rct-platform/)
 [![npm](https://img.shields.io/npm/v/@rctlabs/rct-platform?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/@rctlabs/rct-platform)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://rctlabs.github.io/rct-platform/)
-[![Status](https://img.shields.io/badge/status-BETA%20PREVIEW-orange)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-STABLE%20SDK-brightgreen)](CHANGELOG.md)
 [![Website](https://img.shields.io/badge/website-rctlabs.co-brightgreen)](https://rctlabs.co)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb)
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/rctlabs/rct-platform/main?filepath=notebooks%2Frct_playground.ipynb)
@@ -56,11 +56,21 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 |-----------|--------------------------|-------------------------------|
 | FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
 | SignedAI multi-LLM consensus | ✅ `signedai/core/` | — |
-| HexaCore 7-model registry | ✅ `signedai/core/registry.py` | — |
-| Delta Engine (74% compression) | ✅ `core/delta_engine/` | — |
+| HexaCoreRole registry (9 roles v2.3) | ✅ `signedai/core/registry.py` | — |
+| Delta Engine (91.5% measured compression, design floor ≥74%) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
-| RCT Control Plane DSL | ✅ `rct_control_plane/` (15 modules) | — |
-| 5 Reference Microservices | ✅ `microservices/` (258 passing tests) | — |
+| RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
+| JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_v3.py` | — |
+| CORD Security Engine (100 injection patterns) | ✅ `rct_control_plane/cord_security.py` | — |
+| ZK-FDIA (Zero-Knowledge Pedersen proofs) | ✅ `rct_control_plane/zk_fdia.py` | — |
+| Helix-TTD (Topological drift detector) | ✅ `rct_control_plane/helix_ttd.py` | — |
+| PaymentEngine (Metered billing & trust gates) | ✅ `rct_control_plane/payment_engine.py` | — |
+| NodeNetwork (2/3 supermajority consensus) | ✅ `rct_control_plane/node_network.py` | — |
+| Groq LPU Adapter (Llama 3.3 integration) | ✅ `signedai/core/groq_adapter.py` | — |
+| PostgresPersistence (Layer 5/6 DB bridge) | ✅ `rct_control_plane/persistence_pg.py` | — |
+| rct-edge (TypeScript Edge Package) | ✅ `sdk-typescript/packages/rct-edge/` | — |
+| fdia-wasm (TypeScript WebAssembly Package) | ✅ `sdk-typescript/packages/fdia-wasm/` | — |
+| 5 Reference Microservices | ✅ `microservices/` (297 passing tests) | — |
 | CLI (`rct` entry point) | ✅ editable install or built wheel | — |
 | Genome / Creator Profile API | ❌ 501 stub (`genome_api.py`) | ✅ Full implementation |
 | Full Production Microservice Stack | ❌ | ✅ 62 microservices |
@@ -68,7 +78,7 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 | Docker Compose + full infra | ❌ | ✅ |
 | 8-level test pyramid (4,849 tests) | ❌ | ✅ private |
 
-> **Beta preview** means: packaging and first-run UX are now part of the supported public surface, but the API may still change before v1.0.0 stable.  
+> **Stable SDK** means: API is stable, CI enforces 90% coverage floor, packages published on PyPI + npm.  
 > **Enterprise** means: runs at [rctlabs.co](https://rctlabs.co) — contact for licensing.
 
 ---
@@ -109,9 +119,9 @@ Accuracy: **0.92** (industry baseline: ~0.65). Implemented in [`core/fdia/fdia.p
 |--------|-------|
 | **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
-| **LLM Models** | 7 HexaCore (3 Western + 3 Eastern + 1 Regional Thai) |
+| **LLM Models** | 9 HexaCore roles (3 Western + 3 Eastern + 1 Thai + 1 Local + 1 LPU) — v2.3 |
 | **Hallucination Rate** | 0.3% (vs industry 12–15%) — 97% reduction via SignedAI |
-| **Memory Compression** | 74% via Delta Engine (stores state diffs, not full state) |
+| **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
 | **Intent Recall Speed** | Cold start 3–5s → Warm recall <50ms (Intent Loop) |
 | **Uptime SLA** | 99.98% |
 | **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
@@ -126,13 +136,13 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│               RCT PLATFORM SDK v1.1.0                    │
+│               RCT PLATFORM SDK v2.0.0                    │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 1,287 passing tests · 92% coverage · Python 3.10/3.11/3.12
+├─ 1,791 passing tests · 90% coverage floor · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -318,7 +328,7 @@ Stores agent memory as compressed delta sequences — only what changed, not ful
 
 | Property | Value |
 |----------|-------|
-| **Compression** | 74% average (stores DIFF, not full state) |
+| **Compression** | 91.5% measured (design floor ≥74%) — stores DIFF, not full state |
 | **Deduplication** | SHA-256 content hash per record |
 | **Rollback** | Replay any agent to any past tick via delta chain |
 
@@ -483,12 +493,12 @@ Key capabilities:
 - **Cross-Disciplinary Synthesis** — Connects insights across unrelated domains automatically
 - **Intent Conservation** — Original intent preserved and checked through every refinement pass
 
-### Hexa-Core Registry (`signedai/core/registry.py`)
+### HexaCore Registry (`signedai/core/registry.py`)
 
-7 purpose-specific AI models with full geopolitical balance:
+9 purpose-specific AI roles with full geopolitical balance (v2.3):
 
 | Role | Model | Country | Specialty |
-|------|-------|---------|-----------|
+|------|-------|---------|----------|
 | SUPREME_ARCHITECT | claude-opus-4.6 | US | Architecture, reasoning, final decisions |
 | LEAD_BUILDER | kimi-k2.5 | CN | Complex coding, visual analysis |
 | JUNIOR_BUILDER | minimax-m2.1 | CN | Routine coding, unit tests |
@@ -496,11 +506,13 @@ Key capabilities:
 | LIBRARIAN | grok-4.1-fast | US | Long context (2M tokens), RAG, science |
 | HUMANIZER | deepseek-v3.2 | CN | Natural language, creative, translation |
 | **REGIONAL_THAI** | **typhoon-v2-70b** | **TH** | **Thai NLP, Thai legal/finance (native quality)** |
+| **OLLAMA_ADAPTER** | **ollama (local)** | **LOCAL** | **Local LLM fallback, air-gapped inference** |
+| **GROQ_ADAPTER** | **llama-3.3-70b-versatile** | **LPU** | **Ultra-fast LPU inference, 128k ctx** |
 
 ```python
 from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
 
-# All 7 models
+# All 9 roles
 for role, model in HexaCoreRegistry.MODELS.items():
     print(f"{role.value}: {model.id} ({model.country})")
 
@@ -564,7 +576,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
-✅ **800 Passed · 0 Failed** — Full rct-platform SDK test suite (Phase 1–5 enterprise, commit `9afecb8`)  
+✅ **1,791 Passed · 0 Failed** — Full rct-platform SDK test suite (Phase A–D v2.0.0)  
 ✅ **Plan Engine** — `rct plan` Terraform-style pre-execution simulation  
 ✅ **Policy Governance** — `rct policy` + `approval_gateway.py` omni-channel human approval  
 ✅ **OTel + Prometheus + Grafana** — `GET /metrics` scrape endpoint + monitoring stack  

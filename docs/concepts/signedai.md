@@ -28,7 +28,7 @@ SignedAI is RCT's hallucination prevention framework. Before any AI output is co
 
 ---
 
-## HexaCore — 7-Model Registry
+## HexaCore — 9-Role Registry (v2.3)
 
 | Model Slot | Provider Region | Model Type |
 |------------|----------------|------------|
@@ -39,6 +39,8 @@ SignedAI is RCT's hallucination prevention framework. Before any AI output is co
 | E2 | Eastern (KR) | Multi-turn dialogue |
 | E3 | Eastern (CN) | Document synthesis |
 | R1 | Regional (TH) | Thai-language specialist |
+| L1 | Local (Air-Gapped) | Local model fallback (Ollama) |
+| Q1 | LPU (US/Global) | Ultra-fast LPU inference (Groq) |
 
 ---
 

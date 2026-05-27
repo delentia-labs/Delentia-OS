@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class HexaCoreRole(str, Enum):
-    """The 7 core AI roles in RCT OS (Hexa-Core Architecture v2.1)."""
+    """The 9 core AI roles in RCT OS (Hexa-Core Architecture v2.3)."""
     SUPREME_ARCHITECT = "supreme_architect"
     LEAD_BUILDER = "lead_builder"
     JUNIOR_BUILDER = "junior_builder"
@@ -30,6 +30,8 @@ class HexaCoreRole(str, Enum):
     LIBRARIAN = "librarian"
     HUMANIZER = "humanizer"
     REGIONAL_THAI = "regional_thai"  # G38: Typhoon v2 — Thai NLP specialist (SCB10X)
+    OLLAMA_ADAPTER = "ollama_adapter"  # Local SLM fallback via Ollama runtime
+    GROQ_ADAPTER = "groq_adapter"      # Groq LPU ultra-low-latency inference (v2.3)
 
 
 class ModelInfo(BaseModel):
@@ -140,6 +142,30 @@ class HexaCoreRegistry:
             context_window=128_000,
             specialties=["Thai NLP", "Thai culture", "Thai legal", "Thai finance", "Translation TH"],
             use_cases=["Thai language tasks (native quality)", "Thai legal/financial document analysis", "TH-EN translation", "Thai culture-aware dialogue"],
+            reasoning_rank=None,
+        ),
+        HexaCoreRole.OLLAMA_ADAPTER: ModelInfo(
+            id="ollama/llama-3.1-8b-instruct",
+            role=HexaCoreRole.OLLAMA_ADAPTER,
+            provider="Ollama",
+            country="LOCAL",
+            cost_input=0.0,
+            cost_output=0.0,
+            context_window=128_000,
+            specialties=["Local inference", "Offline", "Privacy", "Edge deployment"],
+            use_cases=["Air-gapped environments", "Cost-zero fallback", "Privacy-sensitive tasks", "Edge/offline inference"],
+            reasoning_rank=None,
+        ),
+        HexaCoreRole.GROQ_ADAPTER: ModelInfo(
+            id="groq/llama-3.3-70b-versatile",
+            role=HexaCoreRole.GROQ_ADAPTER,
+            provider="Groq",
+            country="US",
+            cost_input=0.59,
+            cost_output=0.79,
+            context_window=128_000,
+            specialties=["Ultra-low latency", "LPU inference", "High throughput", "Real-time"],
+            use_cases=["Real-time streaming responses", "High-throughput pipelines", "Low-latency agent loops", "Token-per-second sensitive workloads"],
             reasoning_rank=None,
         ),
     }
