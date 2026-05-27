@@ -1992,7 +1992,7 @@
 <p><strong>Intent-Centric AI Operating System — Constitutional Architecture</strong></p>
 <p><a href="https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/rctlabs/rct-platform/ci.yml?branch=main&amp;label=CI&amp;logo=github" /></a>
 <a href="https://app.codecov.io/gh/rctlabs/rct-platform"><img alt="codecov" src="https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C" /></a>
-<a href="https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.0.4b0-blue" /></a>
+<a href="https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-2.0.0-blue" /></a>
 <a href="https://github.com/rctlabs/rct-platform/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-green" /></a>
 <a href="https://pypi.org/project/rct-platform/"><img alt="Python" src="https://img.shields.io/badge/python-3.10+-3776AB" /></a></p>
 <hr />
@@ -2082,7 +2082,7 @@
 </tr>
 <tr>
 <td>LLM Models</td>
-<td>7 HexaCore (3 Western + 3 Eastern + 1 Regional Thai)</td>
+<td>9 HexaCore roles (+ Ollama LOCAL + Groq LPU) — v2.3</td>
 </tr>
 <tr>
 <td>Hallucination Rate</td>
@@ -2090,7 +2090,7 @@
 </tr>
 <tr>
 <td>Memory Compression</td>
-<td><strong>74%</strong> via Delta Engine</td>
+<td><strong>91.5% measured</strong> (design floor ≥74%) via Delta Engine</td>
 </tr>
 <tr>
 <td>Intent Recall Speed</td>
@@ -2121,11 +2121,11 @@
 <td><code>signedai/core/</code></td>
 </tr>
 <tr>
-<td>HexaCore 7-model registry</td>
+<td>HexaCore 9-role registry</td>
 <td><code>signedai/core/registry.py</code></td>
 </tr>
 <tr>
-<td>Delta Engine (74% compression)</td>
+<td>Delta Engine (91.5% measured compression)</td>
 <td><code>core/delta_engine/</code></td>
 </tr>
 <tr>
@@ -2134,11 +2134,11 @@
 </tr>
 <tr>
 <td>RCT Control Plane DSL</td>
-<td><code>rct_control_plane/</code> (15 modules)</td>
+<td><code>rct_control_plane/</code> (22 modules)</td>
 </tr>
 <tr>
 <td>5 Reference Microservices</td>
-<td><code>microservices/</code> (258 tests)</td>
+<td><code>microservices/</code> (297 tests)</td>
 </tr>
 <tr>
 <td>CLI entry point</td>
@@ -2148,10 +2148,10 @@
 </table>
 <hr />
 <h2 id="quick-install">Quick Install<a class="headerlink" href="#quick-install" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Beta Preview — Source Install Today</p>
-<p><code>rct-platform</code> v1.0.4b0 is a beta-preview release candidate.
-Source installs and built wheels are supported; public PyPI publication remains a release step.</p>
+<div class="admonition note">
+<p class="admonition-title">Stable SDK — Release 2.0.0</p>
+<p><code>rct-platform</code> v2.0.0 is the official stable release.
+Source installs and built wheels are fully supported.</p>
 </div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># From source (recommended today):</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/rctlabs/rct-platform.git
