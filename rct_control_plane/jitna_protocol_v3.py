@@ -35,7 +35,7 @@ try:
     import zstandard as zstd
     _HAS_ZSTD = True
 except ImportError:  # pragma: no cover
-    zstd: Any = None
+    zstd: Any = None  # type: ignore[no-redef]
     _HAS_ZSTD = False
 
 

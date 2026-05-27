@@ -41,8 +41,8 @@ POSTGRES_PERSISTENCE_VERSION = "1.0"
 _HAS_PSYCOPG2: bool = False
 psycopg2: Any = None  # module-level placeholder so patch() can find it
 try:
-    import psycopg2  # type: ignore[import]
-    import psycopg2.extras  # type: ignore[import]
+    import psycopg2  # type: ignore[import, no-redef]
+    import psycopg2.extras  # type: ignore[import, no-redef]
     _HAS_PSYCOPG2 = True
 except ImportError:
     pass
