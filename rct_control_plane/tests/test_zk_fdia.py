@@ -12,9 +12,7 @@ from rct_control_plane.zk_fdia import (
     ZKFDIAProver,
     ZKFDIAVerifier,
     ZKFDIACommitment,
-    PedersenCommitment,
     _commit_float,
-    _fiat_shamir_proof,
 )
 
 

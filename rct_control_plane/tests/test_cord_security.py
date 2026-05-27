@@ -3,7 +3,6 @@ Tests for CORDEngine — Constitutional Oversight & Rejection Detector
 rct_control_plane/cord_security.py
 """
 
-import pytest
 from rct_control_plane.cord_security import (
     CORDEngine,
     CORDResult,

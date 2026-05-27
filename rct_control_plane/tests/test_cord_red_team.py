@@ -18,20 +18,16 @@ import string
 import unittest
 from typing import List
 
-from hypothesis import given, settings, assume, example, HealthCheck
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 from rct_control_plane.cord_security import (
     CORDEngine,
     CORDResult,
     CORDVerdict,
-    CORDFinding,
     CORDCheckType,
     cord_check,
-    InjectionDetector,
-    EntropyValidator,
     GovernanceViolationDetector,
-    _INJECTION_PATTERNS,
 )
 
 # ---------------------------------------------------------------------------

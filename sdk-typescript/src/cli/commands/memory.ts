@@ -17,6 +17,7 @@ import chalk from "chalk";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import boxen from "boxen";
+import { randomBytes } from "crypto";
 
 // ─── MEE v2 constants ────────────────────────────────────────────────────────
 const MEE_VERSION = "2.0";
@@ -81,7 +82,8 @@ function saveConfig(cfg: RCTConfig): void {
 }
 
 function randomSessionId(): string {
-  return `mee-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const bytes = randomBytes(3);
+  return `mee-${Date.now().toString(36)}-${bytes.toString("hex")}`;
 }
 
 function initialMEEState(): MEEState {

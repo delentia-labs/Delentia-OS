@@ -11,13 +11,10 @@ from rct_control_plane.node_network import (
     CONSENSUS_THRESHOLD,
     Node,
     NodeNetwork,
-    BroadcastResult,
-    ConsensusResult,
 )
 from rct_control_plane.jitna_protocol_v3 import (
     JITNAPacketV3,
     JITNAMessageTypeV3,
-    TTLExpiredError,
 )
 
 

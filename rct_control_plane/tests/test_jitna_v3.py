@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import zlib
 import unittest
 
 from rct_control_plane.jitna_protocol import JITNAPacket, JITNAStatus

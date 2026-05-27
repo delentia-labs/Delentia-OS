@@ -16,7 +16,6 @@ from rct_control_plane.helix_ttd import (
     HelixStateVector,
     TopologicalDriftDetector,
     HelixHistory,
-    DriftAlert,
     drift_velocity,
     euclidean_distance,
 )

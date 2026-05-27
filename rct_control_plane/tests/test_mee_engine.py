@@ -5,7 +5,6 @@ rct_control_plane/mee_engine.py
 MEE v2 formula: G(t+1) = max(G_FLOOR, G(t) × (1 + M × Δ) × R_t)
 """
 
-import math
 import pytest
 from rct_control_plane.mee_engine import (
     MEEEngine,

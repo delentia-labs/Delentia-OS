@@ -6,15 +6,13 @@ from __future__ import annotations
 
 import unittest
 from datetime import date
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from rct_control_plane.payment_engine import (
     PAYMENT_ENGINE_VERSION,
     SubscriptionTier,
     TierPolicy,
     TIER_POLICIES,
-    BillingRecord,
-    BillingError,
     FDIAGateError,
     DailyLimitExceededError,
     StripeEventError,

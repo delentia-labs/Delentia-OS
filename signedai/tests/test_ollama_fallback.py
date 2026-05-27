@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import unittest
-from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 from signedai.core.registry import HexaCoreRole, HexaCoreRegistry

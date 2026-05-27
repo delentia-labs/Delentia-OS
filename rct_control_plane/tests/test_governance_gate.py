@@ -22,7 +22,6 @@ Tests for GovernanceGate — rct_control_plane/governance_gate.py
  - PolicyFlag values present in flagged verdicts
 """
 
-import time
 
 import pytest
 
