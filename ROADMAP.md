@@ -1,8 +1,62 @@
 ## RCT Platform — Public Roadmap
 
 > Last updated: May 2026
-> Current version: **v1.2.0 (Stable)**  
+> Current version: **v2.0.0 (Stable)**  
 > Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
+
+---
+
+## v2.0.0 — Phase D: Economy + Scale ✅ (May 2026)
+
+**Goal: Release the stable SDK with full Economy + Scale support, billing gates, and multi-hop node consensus.**
+
+> Released: May 2026 · 1,791 total tests (Phase D: 33+24+22 new tests) · 90% coverage floor
+
+### Phase D — Economy + Scale ✅
+- ✅ PaymentEngine tiers (Community, Pro, Enterprise billing limits)
+- ✅ FDIA trust-score gates for payment metering
+- ✅ NodeNetwork strict 2/3 supermajority consensus over JITNA v3
+- ✅ Groq LPU adapter integration (llama-3.3-70b-versatile, 128k ctx)
+
+---
+
+## v1.8.0 — Phase C: Constitutional Security ✅ (May 2026)
+
+**Goal: Zero-Knowledge proofs of FDIA scores, topological drift detection, and red-team property verification.**
+
+> Released: May 2026 · 1,712 total tests (Phase C: 28+45+34 new tests)
+
+### Phase C — Constitutional Security ✅
+- ✅ ZK-FDIA (hash-based Pedersen commitments verifying score without exposing D, I, A values)
+- ✅ Helix-TTD (8-dimensional topological drift detector with warning/critical flags)
+- ✅ Red team suite (45 property-based testing constraints using Hypothesis)
+
+---
+
+## v1.6.0 — Phase B: Edge + Distributed ✅ (May 2026)
+
+**Goal: Layered DB support, JITNA intake v3, local inference backup, and edge compiler.**
+
+> Released: May 2026 · 1,605 total tests (Phase B: 40+30+21+37 new tests)
+
+### Phase B — Edge + Distributed ✅
+- ✅ PostgresPersistence (Layer 5/6 PostgreSQL driver + connection pools)
+- ✅ JITNA Protocol v3 intake pipeline and template engines
+- ✅ Ollama Local Adapter (air-gapped local model fallback)
+- ✅ `rct-edge` TypeScript package for lightweight Vercel Edge runtime runs
+
+---
+
+## v1.4.0 — Phase A: Security Engine Expansion ✅ (May 2026)
+
+**Goal: Advanced injection defenses, secure governance gating, and browser WebAssembly engine.**
+
+> Released: May 2026 · 1,477 total tests (Phase A: 74+25+32 new tests)
+
+### Phase A — Security Engine ✅
+- ✅ CORD Security Engine (100 injection patterns mapping security vulnerabilities)
+- ✅ GovernanceGate (multi-outcome action authorization: ALLOWED, WARNING, DENIED, SUSPENDED)
+- ✅ `fdia-wasm` TypeScript package compiling FDIA equation to WASM
 
 ---
 

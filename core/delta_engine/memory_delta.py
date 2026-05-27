@@ -213,11 +213,26 @@ class MemoryDeltaEngine:
         )
         self.deltas[agent_id].append(delta)
 
-        # Estimate sizes for compression ratio
-        # Naive: one full AgentMemoryState dict ≈ 200 bytes
-        # Delta: one MemoryDelta dict ≈ len(changes)*30 bytes
-        self._naive_byte_count += 200
-        self._delta_byte_count += max(30, len(str(delta.to_dict())))
+        # Estimate sizes for compression ratio.
+        # Naive: a full AgentMemoryState snapshot at this tick grows with the
+        #   action_history list (one entry per tick) plus base fields.
+        #   base ≈ 150 bytes, each history entry ≈ 12 bytes → O(ticks) growth.
+        # Delta: only the changed fields (action_type, outcome, resources_delta,
+        #   relationship_change) — fixed cost per record regardless of tick.
+        n_deltas_this_agent = len(self.deltas[agent_id])
+        naive_snapshot_bytes = 150 + n_deltas_this_agent * 12
+        self._naive_byte_count += naive_snapshot_bytes
+
+        # Delta cost: only store what actually changed (no action history replay)
+        delta_fields: dict = {}
+        if delta.resources_delta:
+            delta_fields["r"] = delta.resources_delta
+        if delta.relationship_change:
+            delta_fields["rel"] = delta.relationship_change
+        if delta.governance_violation:
+            delta_fields["gov"] = 1
+        delta_overhead = 40  # fixed fields: agent_id, tick, intent, action, outcome
+        self._delta_byte_count += delta_overhead + len(str(delta_fields))
 
         # Create checkpoint if interval reached
         all_deltas = self.deltas[agent_id]

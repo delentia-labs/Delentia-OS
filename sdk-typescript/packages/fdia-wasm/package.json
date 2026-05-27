@@ -1,0 +1,53 @@
+{
+  "name": "@rctlabs/fdia-wasm",
+  "version": "1.0.0",
+  "description": "Edge-ready FDIA scoring engine — F = D^I × A — pure TypeScript, zero dependencies. Runs in browser, Cloudflare Workers, Deno, and Node.js.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --config jest.config.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "fdia",
+    "rct",
+    "constitutional-ai",
+    "ai-governance",
+    "edge",
+    "cloudflare-workers",
+    "webassembly",
+    "zero-dependencies"
+  ],
+  "author": {
+    "name": "RCT Labs",
+    "email": "founder@rctlabs.co",
+    "url": "https://rctlabs.co"
+  },
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.9.3"
+  }
+}

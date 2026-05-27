@@ -9,6 +9,8 @@ This index lists the key documents included in the
    Full simulated benchmark report for December 2025.
 2. **RCT-Executive-Summary-Simulated-Benchmark_PUBLIC.md**  
    Executive summary aimed at non‑technical readers.
+3. **MEASURED_BASELINE_v2.0.0.md**  
+   Factual baseline performance numbers of the public SDK v2.0.0.
 
 ## Methodology & framework
 

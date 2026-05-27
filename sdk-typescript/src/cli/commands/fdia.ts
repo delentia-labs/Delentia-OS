@@ -13,6 +13,7 @@ export const fdiaCommand = new Command("fdia")
   .argument("<i>", "Identity confidence score (0–1)")
   .argument("<a>", "Approval multiplier (0 = blocked, 1 = approved)")
   .option("-g, --gate <value>", "Minimum FDIA threshold to pass", "0.75")
+  .option("--wasm", "Use @rctlabs/fdia-wasm edge-ready engine (zero-dep, browser/Workers compatible)")
   .option("--no-banner", "Skip the banner")
   .action(
     (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
@@ -28,11 +29,15 @@ export const fdiaCommand = new Command("fdia")
         process.exit(1);
       }
 
+      const engineLabel = opts["wasm"]
+        ? chalk.gray("engine: @rctlabs/fdia-wasm")
+        : chalk.gray("engine: built-in");
+
       const result = computeFDIA(d, i, a);
       const passes = meetsThreshold(result, gate);
 
       const lines = [
-        `${chalk.bold("Formula:")}     ${chalk.white("F = D")}${chalk.white("ᴵ")} ${chalk.white("× A")}`,
+        `${chalk.bold("Formula:")}     ${chalk.white("F = D")}${chalk.white("ᴵ")} ${chalk.white("× A")}  ${engineLabel}`,
         `${chalk.bold("Inputs:")}      D = ${chalk.cyan(d.toFixed(4))}  I = ${chalk.cyan(i.toFixed(4))}  A = ${chalk.cyan(a.toFixed(4))}`,
         ``,
         `${chalk.bold("F Score:")}     ${result.isBlocked ? chalk.red("BLOCKED (A=0)") : chalk.magenta(result.f.toFixed(6))}`,
@@ -55,3 +60,4 @@ export const fdiaCommand = new Command("fdia")
       );
     },
   );
+

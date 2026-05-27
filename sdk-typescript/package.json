@@ -1,15 +1,14 @@
 {
   "name": "@rctlabs/rct-platform",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "TypeScript SDK + CLI for RCT Platform — FDIA scoring, JITNA packets, SignedAI tier selection, npx rct CLI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "rct": "bin/rct.js"
+    "rct": "dist/cli/index.js"
   },
   "files": [
     "dist",
-    "bin",
     "README.md",
     "LICENSE"
   ],

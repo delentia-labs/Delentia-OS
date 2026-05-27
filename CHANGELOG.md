@@ -5,6 +5,127 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-05-27
+
+### Added — Phase D: Agentic Payment MVP + Distributed Node Network + Groq LPU
+
+#### Python SDK
+- `rct_control_plane/payment_engine.py` — **PaymentEngine**: 3-tier agentic billing (Community $0/50 intents·day, Pro $49/500·day, Enterprise $299/unlimited); `meter_intent(user_id, fdia_score)` gates on FDIA minimum and daily quota, writes `BillingRecord`, posts Stripe usage record (non-fatal); `FDIAGateError`, `DailyLimitExceededError`, `StripeEventError`
+- `rct_control_plane/node_network.py` — **NodeNetwork**: multi-hop JITNA v3 broadcast (`broadcast()`) + 2/3 strict supermajority consensus (`consensus_vote()`); `Node` with pluggable `vote_fn`; `BroadcastResult`, `ConsensusResult` with `to_dict()` serialisation; handles TTL exhaustion gracefully
+- `rct_control_plane/__init__.py` — exported all Phase D symbols
+
+#### TypeScript / SignedAI
+- `signedai/core/groq_adapter.py` — **GroqAdapter**: `check_available()` via GET /models; `generate(prompt, model, max_tokens)` via POST /chat/completions; `build_groq_fallback_chain()` 3-tier: primary → Groq → RegexFallback
+- `signedai/core/registry.py` — added `HexaCoreRole.GROQ_ADAPTER` (v2.3 — 9 roles); `ModelInfo` for `groq/llama-3.3-70b-versatile`, $0.59/$0.79 per 1M, 128k ctx, country="US"
+
+#### Tests
+- `rct_control_plane/tests/test_payment_engine.py` — **33 tests** (constants, FDIA gate, daily limit, billing record, Stripe mocking, usage query, multi-tier routing)
+- `rct_control_plane/tests/test_node_network.py` — **24 tests** (construction, broadcast routing, TTL exhaustion, 2/3 consensus, abstain/against/unanimous scenarios)
+- `signedai/tests/test_groq_adapter.py` — **22 tests** (registry, constants, check_available, generate, regex fallback, fallback chain)
+
+### Verified
+- **33/33 payment_engine tests pass** ✅
+- **24/24 node_network tests pass** ✅
+- **22/22 groq_adapter tests pass** ✅
+
+## [1.8.0] - 2026-05-27
+
+### Added — Phase C: ZK-FDIA Proofs + Red Team Glassbox + Helix-TTD
+
+#### Python SDK
+- `rct_control_plane/zk_fdia.py` — **ZK-FDIA Pedersen Commitments**: hash-based zero-knowledge proofs for FDIA scores; `ZKFDIAProver.commit(d, i, a)` produces sealed commitments; `ZKFDIAVerifier.verify_threshold(commitment, min_f)` checks alignment without revealing inputs; Fiat-Shamir `proof_tag`; `ZKFDIAProver.open()` for single-input auditing
+- `rct_control_plane/helix_ttd.py` — **Helix-TTD Topological Drift Detector**: 8D state vector (`HelixStateVector`) tracking fdia, cord_score, mee_g, violation_rate, entropy, latency, throughput, governance_ratio; `TopologicalDriftDetector.observe()` computes normalised Euclidean drift velocity; warning (>0.15) and critical (>0.35) alerts via `DriftAlert`; `HelixHistory` rolling window with mean vector analytics
+- `rct_control_plane/__init__.py` — exported ZKFDIAProver, ZKFDIAVerifier, ZKFDIACommitment, ZK_FDIA_VERSION, HelixStateVector, TopologicalDriftDetector, HelixHistory, DriftAlert, drift_velocity, HELIX_TTD_VERSION, HELIX_STATE_DIM
+- `rct_control_plane/cord_security.py` — fixed CORD-I098 regex to match "ignore the human approval step" ordering
+
+#### Tests
+- `rct_control_plane/tests/test_zk_fdia.py` — **28 tests** (commitments, thresholds, kill-switch, proof integrity)
+- `rct_control_plane/tests/test_cord_red_team.py` — **45 tests** (Hypothesis property-based red team glassbox: structural invariants, 25 known-pattern examples, injection fuzz, entropy edge cases, governance violation properties)
+- `rct_control_plane/tests/test_helix_ttd.py` — **34 tests** (constants, state vector, drift velocity, detector, history)
+
+### Verified
+- **45/45 red team tests pass** ✅
+- **34/34 helix_ttd tests pass** ✅
+- **28/28 zk_fdia tests pass** ✅
+
+## [1.6.0] - 2026-05-27
+
+### Added — Phase B: PostgreSQL Persistence + rct-edge + JITNA v3 + HexaCore Ollama
+
+#### Python SDK
+- `rct_control_plane/persistence_pg.py` — **PostgresPersistence**: drop-in psycopg2 backend for ControlPlanePersistence; DSN via `RCT_PG_DSN` env var or individual `RCT_PG_HOST/PORT/DB/USER/PASS`; JSONB storage; pgvector support; `get_persistence()` factory reads `RCT_DB_BACKEND`
+- `scripts/migrate_sqlite_to_pg.py` — CLI migration tool SQLite → PostgreSQL with `--dry-run` and upsert semantics
+- `rct_control_plane/jitna_protocol_v3.py` — **JITNA v3**: `STREAM_CHUNK`/`STREAM_END` message types; `JITNAPacketV3` with `hop_trace`, `ttl`, `compressed`; `async stream()` generator; `JITNARouter` with TTL enforcement; zstd/zlib compression helpers; `from_v2()` upgrade path
+- `signedai/core/registry.py` — added `HexaCoreRole.OLLAMA_ADAPTER` (v2.2 — 8 roles); `ModelInfo` for `ollama/llama-3.1-8b-instruct`, zero-cost LOCAL provider
+- `signedai/core/ollama_fallback.py` — **OllamaFallback**: `check_available()`, `generate()`; `RegexFallback` stub; `build_fallback_chain()` three-tier: API → Ollama → regex
+- `rct_control_plane/__init__.py` — exported PostgresPersistence, get_persistence, JITNA v3 symbols
+
+#### TypeScript SDK (`@rctlabs/rct-edge`)
+- `sdk-typescript/packages/rct-edge/` — **New edge security package**: zero runtime deps; inline FDIA (`F = D^I × A`); `EDGE_CORD_PATTERNS` — 30 JS/TS injection patterns (E001–E030); `cordCheck()` → CLEAN/SUSPICIOUS/REJECTED; `edgeGate()` kill-switch + CORD + FDIA threshold; targets Cloudflare Workers/edge runtimes
+
+#### Tests
+- `rct_control_plane/tests/test_persistence_pg.py` — **40 tests** (mock psycopg2)
+- `rct_control_plane/tests/test_jitna_v3.py` — **30 tests** (version, packet, compression, streaming, routing)
+- `signedai/tests/test_ollama_fallback.py` — **21 tests** (registry, check_available, generate, fallback chain)
+- `sdk-typescript/packages/rct-edge/src/__tests__/rct-edge.test.ts` — **37 tests**
+
+### Verified
+- **40/40 persistence_pg tests pass** ✅
+- **30/30 JITNA v3 tests pass** ✅
+- **21/21 Ollama fallback tests pass** ✅
+- **37/37 rct-edge TypeScript tests pass** ✅
+
+## [1.4.0] - 2026-05-27
+
+### Added — Phase A: Security Engine Expansion + fdia-wasm + GovernanceGate
+
+#### Python SDK
+- `rct_control_plane/cord_security.py` — **CORD expanded to 100 injection patterns** (CORD-I001–CORD-I100); new categories: Thai/Chinese/Japanese multi-language injection (I051–I061), encoding bypass: percent/HTML entity/octal (I062–I064), indirect/data-path injection (JSON role, Jinja2, shell variables, SQL) (I065–I069), chain-of-thought manipulation (I070–I074), roleplay/persona escalation (I075–I079), token smuggling / invisible chars (I080–I083), prompt format confusion (Llama-3 tokens, turn delimiters, code-fence) (I084–I088), adversarial goal hijacking (I089–I093), agentic tool-use hijacking (I094–I098), persistent memory poisoning (I099–I100)
+- `rct_control_plane/governance_gate.py` — **GovernanceGate standalone module**: `GovernanceGate.audit(agent_id, action, fdia_score) → GovernanceVerdict`; `GovernanceOutcome` (ALLOWED/WARNING/DENIED/SUSPENDED); `GovernancePolicy` with min_fdia, action_blocklist, max_violations, cooldown_seconds, spike_causes_deny; CORD G001/G002 integration; `audit_strict()` raises GovernanceError; `lift_suspension()`, `reset_agent()`
+- `rct_control_plane/__init__.py` — exported GovernanceGate symbols
+
+#### TypeScript SDK (`@rctlabs/fdia-wasm`)
+- `sdk-typescript/packages/fdia-wasm/` — **New edge-ready FDIA package**: pure TypeScript, zero dependencies; `computeFDIA(d, i, a)` constitutional formula `F = D^I × A`; `FDIAScorer` stateful class with `meanScore`, `scoredCount`, `reset()`; `intentAlignment()` cooperative pair matching; `DEFAULT_FDIA_WEIGHTS`; target <15KB gzip; runs in browser, Cloudflare Workers, Deno, Node.js
+- `sdk-typescript/src/cli/commands/fdia.ts` — added `--wasm` flag showing edge engine label in output
+
+#### Tests
+- `rct_control_plane/tests/test_cord_security.py` — **74 tests**: original 20 + 54 new across 11 classes (Thai, Chinese, Japanese, encoding bypass, indirect injection, CoT, roleplay, token smuggling, prompt format, agentic hijacking, memory poisoning, pattern coverage meta-tests)
+- `rct_control_plane/tests/test_governance_gate.py` — **25 tests**: ALLOWED, FDIA threshold, blocklist, spike WARNING/DENY, cooldown, suspension, reset, audit_strict, to_dict, policy helpers, multi-agent isolation
+- `sdk-typescript/packages/fdia-wasm/src/__tests__/fdia-wasm.test.ts` — **32 tests**: formula, kill-switch, risk classification, input validation, meetsThreshold, intentAlignment, FDIAScorer class
+
+### Verified
+- **74/74 CORD tests pass** ✅
+- **25/25 GovernanceGate tests pass** ✅
+- **32/32 fdia-wasm TypeScript tests pass** ✅
+- All Phase A0 benchmarks still pass: compression 91.5%, FDIA 428K/s, CORD 29.7K/s, warm recall 0.023ms
+
+---
+
+## [1.3.0] - 2026-05-27
+
+### Added — Phase A: CORD Security Engine + MEE v2 Runtime + CLI v2
+
+#### Python SDK
+- `rct_control_plane/cord_security.py` — **CORDEngine**: Constitutional Oversight & Rejection Detector; `CORDVerdict` (CLEAN/SUSPICIOUS/REJECTED); 50 curated injection patterns (CORD-I001–CORD-I050); Shannon entropy detection; payload size limits (128KB soft / 1MB hard); governance metric gaming detection (spike >0.35, cluster mean≥0.92 stddev<0.02); `cord_check()` module-level convenience; `check_with_fdia()` with FDIA integration
+- `rct_control_plane/mee_engine.py` — **MEE v2 Runtime**: `MEESession` thread-safe (RLock); `MEEEngine` multi-session manager; formula `G(t+1) = max(G_FLOOR, G(t) × (1+M×Δ) × R_t)`; resilience penalty/recovery; G_FLOOR=0.10, G_CAP=1000.0; `to_dict()`/`from_dict()`/`summary()` for persistence
+- `rct_control_plane/__init__.py` — exported CORD + MEE symbols
+- `scripts/benchmark_fdia_delta.py` — 4-benchmark validation script (74% compression, <50ms recall p95, FDIA throughput, CORD throughput)
+
+#### TypeScript CLI
+- `sdk-typescript/src/cli/commands/doctor.ts` — **`rct doctor`**: 7-point health check (Node≥18, .rct.json, workspace write, Python SDK, FDIA baseline, MEE v2 state, server connectivity); `--url` override
+- `sdk-typescript/src/cli/commands/memory.ts` — **`rct memory`**: sub-commands `show`, `improve [delta]`, `reset`; full MEE v2 formula in TypeScript; persists to `.rct.json` under `mee_state`; shows trend (growing/stable/declining); `--gov-violation` flag
+- `sdk-typescript/src/cli/index.ts` — bumped to `1.3.0`; registered `doctorCommand` and `memoryCommand`
+
+#### Tests
+- `rct_control_plane/tests/test_cord_security.py` — 30 tests: clean inputs, injection, entropy, payload, governance, FDIA integration, module-level check, verdict precedence
+- `rct_control_plane/tests/test_mee_engine.py` — 31 tests: session basics, step formula, governance, serialization, MEEEngine multi-session, thread safety, edge cases
+
+### Verified
+- **61/61 passed** — all new CORD + MEE v2 tests pass
+- TypeScript build: clean (`tsc` — 0 errors)
+
+---
+
 ## [1.2.0] - 2026-05-26
 
 ### Added — Phase N1: `npx rct` CLI — TypeScript SDK
