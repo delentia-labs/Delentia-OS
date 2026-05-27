@@ -195,12 +195,11 @@ class TestBuildGroqFallbackChain(unittest.TestCase):
         self.assertIn("FALLBACK", result)
 
     def test_no_api_key_skips_groq(self):
-        calls = []
         chain = build_groq_fallback_chain(
             primary_fn=lambda p: (_ for _ in ()).throw(Exception("down")),
             groq_api_key=None,
         )
-        with patch("urllib.request.urlopen") as mock_open:
+        with patch("urllib.request.urlopen"):
             chain("test")
             # urlopen should not be called for generate (may be called for check_available)
             # The chain should land on regex fallback
