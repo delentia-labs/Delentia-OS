@@ -15,7 +15,7 @@ Usage:
     python benchmark/industry_standard/compare_baseline.py
     python benchmark/industry_standard/compare_baseline.py --update-leaderboard
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ RCT_PLATFORM_STATIC = {
         "adversarial_block_rate": 1.00,  # 100% from test_a0_constitution.py
         "tier": "constitutional-os",
         "params": "7 models (HexaCore)",
-        "provider": "RCT Labs",
+        "provider": "Delentia Labs",
         "paper": "RCT OS Definition Paper (2025)",
     },
 }

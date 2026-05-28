@@ -1,5 +1,5 @@
 /**
- * @rctlabs/rct-edge โ€” Edge Runtime for RCT Platform
+ * @delentia/rct-edge โ€” Edge Runtime for RCT Platform
  *
  * Cloudflare Workers & browser compatible (no Node.js built-ins).
  * Provides:
@@ -9,14 +9,14 @@
  *
  * @example
  * ```ts
- * import { edgeGate } from '@rctlabs/rct-edge';
+ * import { edgeGate } from '@delentia/rct-edge';
  * const result = edgeGate("Do task X", 0.85, 1.0, 0.9);
  * if (!result.allowed) throw new Error(result.reason);
  * ```
  */
 
 // ---------------------------------------------------------------------------
-// Inline FDIA โ€” F = D^I ร— A  (mirrors @rctlabs/fdia-wasm, zero-dep copy)
+// Inline FDIA โ€” F = D^I ร— A  (mirrors @delentia/fdia-wasm, zero-dep copy)
 // ---------------------------------------------------------------------------
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low';

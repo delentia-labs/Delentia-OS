@@ -13,7 +13,7 @@
 | A1 | CI green on main | ☐ Verify | HARD GATE |
 | A2 | Test count matches TESTING_CANONICAL | ☐ Verify | HARD GATE |
 | A3 | Coverage ≥ 90% CI enforced | ☐ Verify | HARD GATE |
-| A4 | rct-platform repo is PUBLIC | ☐ Verify | HARD GATE |
+| A4 | delentia-os repo is PUBLIC | ☐ Verify | HARD GATE |
 | A5 | Colab opens anonymously | ☐ Verify | HARD GATE |
 | B1 | rctlabs-website build passes | ☐ Verify | HARD GATE |
 | B2 | Smoke pages green | ☐ Verify | HARD GATE |
@@ -33,7 +33,7 @@
 ## Part A — Repository & SDK Hard Gates
 
 ### A1: CI Status (Live Badge)
-- [ ] Open: https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml
+- [ ] Open: https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml
 - [ ] Verify: latest run on `main` branch = **green checkmark**
 - [ ] If red: do NOT post. Fix CI first.
 - **Evidence:** Screenshot of CI page URL + green badge ← attach here
@@ -48,17 +48,17 @@
 ### A3: Coverage Gate
 - [ ] Run: `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header`
 - [ ] Output must show ≥ 90% (CI gate) and **92%** (public claim)
-- [ ] Codecov badge live: https://app.codecov.io/gh/rctlabs/rct-platform
+- [ ] Codecov badge live: https://app.codecov.io/gh/rctlabs/delentia-os
 - **Evidence:** Coverage report summary ← attach here
 
 ### A4: Repo Visibility
-- [ ] Open https://github.com/rctlabs/rct-platform in **incognito mode** (logged out)
+- [ ] Open https://github.com/delentia-labs/delentia-os in **incognito mode** (logged out)
 - [ ] Verify: repo loads, code is visible, README renders
 - [ ] Verify: no "This repository is private" message
 - **Evidence:** Incognito URL screenshot ← attach here
 
 ### A5: Colab Anonymous Run
-- [ ] Open https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb in **incognito mode** (not logged into Google)
+- [ ] Open https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb in **incognito mode** (not logged into Google)
 - [ ] Click "Open in Colab" or load directly
 - [ ] Verify: notebook opens without requiring login
 - [ ] Click "Runtime → Run All" and verify it completes without auth errors
@@ -81,7 +81,7 @@
 - **Evidence:** Smoke test output ← attach here
 
 ### B3: Production URL
-- [ ] Open https://rctlabs.co in browser (not localhost)
+- [ ] Open https://delentia.com in browser (not localhost)
 - [ ] Hero loads with correct text
 - [ ] /en and /th routes work
 - [ ] /studio redirects to signin if not logged in
@@ -90,9 +90,9 @@
 - **Evidence:** Browser URL bar screenshots ← attach here
 
 ### B4: SEO Basics
-- [ ] https://rctlabs.co/sitemap.xml loads and lists pages
-- [ ] https://rctlabs.co/robots.txt loads correctly
-- [ ] OG image: test with https://www.opengraph.xyz/?url=https://rctlabs.co
+- [ ] https://delentia.com/sitemap.xml loads and lists pages
+- [ ] https://delentia.com/robots.txt loads correctly
+- [ ] OG image: test with https://www.opengraph.xyz/?url=https://delentia.com
 - **Evidence:** URL screenshots ← attach here
 
 ---
@@ -100,21 +100,21 @@
 ## Part C — GitHub UI Hard Gates
 
 ### C1: About Panel
-- [ ] Go to https://github.com/rctlabs/rct-platform
+- [ ] Go to https://github.com/delentia-labs/delentia-os
 - [ ] About section (right sidebar) shows:
   - Description: `Intent-Centric AI OS — Constitutional Architecture for AI Agents`
-  - Website: `https://rctlabs.co`
+  - Website: `https://delentia.com`
   - Topics: ai, constitutional-ai, agentic-ai, multi-agent, signedai, fdia, intent-loop, python, fastapi, asean
 - **Evidence:** Screenshot of repo sidebar ← attach here
 
 ### C2: GitHub Discussions
-- [ ] Go to https://github.com/rctlabs/rct-platform/discussions
+- [ ] Go to https://github.com/delentia-labs/delentia-os/discussions
 - [ ] Discussions tab is visible and accessible (not 404)
 - [ ] "Start Here" pinned thread exists OR draft is ready to post
 - **Evidence:** Screenshot of Discussions tab ← attach here
 
 ### C3: Milestones (Soft Gate)
-- [ ] Go to https://github.com/rctlabs/rct-platform/milestones
+- [ ] Go to https://github.com/delentia-labs/delentia-os/milestones
 - [ ] Milestones exist: v1.0.3a0 · v1.0.0 · v1.1.0
 - [ ] Each milestone has description matching ROADMAP.md
 - **Evidence:** Screenshot of milestones page ← attach here

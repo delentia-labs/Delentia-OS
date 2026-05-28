@@ -1,10 +1,10 @@
 /**
  * RCT Platform REST Client
  *
- * Thin Axios wrapper for the rct-platform FastAPI endpoints.
- * Set BASE_URL to your running rct-platform instance.
+ * Thin Axios wrapper for the delentia-os FastAPI endpoints.
+ * Set BASE_URL to your running delentia-os instance.
  *
- * Reference: rct-platform/rct_control_plane/api.py
+ * Reference: delentia-os/rct_control_plane/api.py
  */
 
 import axios, { AxiosInstance, AxiosResponse } from "axios";
@@ -44,7 +44,7 @@ export interface MetricsResponse {
 }
 
 export interface RCTClientConfig {
-  /** Base URL of the rct-platform API (default: http://localhost:8000) */
+  /** Base URL of the delentia-os API (default: http://localhost:8000) */
   baseURL?: string;
   /** Request timeout in ms (default: 10000) */
   timeoutMs?: number;

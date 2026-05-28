@@ -1,5 +1,5 @@
 /**
- * @rctlabs/fdia-wasm — Test Suite
+ * @delentia/fdia-wasm — Test Suite
  *
  * 25 tests covering:
  *  - computeFDIA core formula

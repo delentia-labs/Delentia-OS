@@ -3,7 +3,7 @@
 **Request for Comments: 001**  
 **Category: Standards Track**  
 **Date: February 2, 2026**  
-**Authors: RCT Labs, The Architect**  
+**Authors: Delentia Labs, The Architect**  
 **Status: Proposed Standard**  
 **License: Apache 2.0**
 
@@ -398,7 +398,7 @@ Adapters MUST handle:
 ### 8.1 Reference Implementation
 
 ```
-https://github.com/rctlabs/rct-platform
+https://github.com/delentia-labs/delentia-os
 ```
 
 ### 8.2 Language Bindings
@@ -461,9 +461,9 @@ JITNA_MAX_PAYLOAD_SIZE_BYTES = 1_048_576  # 1 MB
 
 ### 10.2 Informative
 
-- RCT Labs — *RCT Platform SDK* — <https://github.com/rctlabs/rct-platform>
-- RCT Labs — *The 9 Codex: Security Framework for Agentic AI Systems*
-- RCT Labs — *RCT Ecosystem Whitepaper 2026*
+- Delentia Labs — *RCT Platform SDK* — <https://github.com/delentia-labs/delentia-os>
+- Delentia Labs — *The 9 Codex: Security Framework for Agentic AI Systems*
+- Delentia Labs — *RCT Ecosystem Whitepaper 2026*
 
 ---
 
@@ -562,15 +562,15 @@ registry.register(packet)
 
 **Authors' Addresses**
 
-RCT Labs  
-Email: <open-jitna@rctlabs.co>  
-URI: <https://rctlabs.co>
+Delentia Labs  
+Email: <open-jitna@delentia.com>  
+URI: <https://delentia.com>
 
 ---
 
 **Copyright Notice**
 
-Copyright © 2026 RCT Labs. Licensed under the Apache License, Version 2.0.
+Copyright © 2026 Delentia Labs. Licensed under the Apache License, Version 2.0.
 
 ---
 

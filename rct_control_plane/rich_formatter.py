@@ -1227,7 +1227,7 @@ def boot_sequence_animation(
         ("gateway-api", 8000, "Unified entry point"),
         ("intent-loop", 8001, "JITNA Protocol · <50ms warm recall"),
         ("analysearch-intent", 8002, "GIGO Protection active"),
-        ("vector-search", 8003, "RCTDB mounted"),
+        ("vector-search", 8003, "DelentiaDB mounted"),
         ("crystallizer", 8004, "0.3% hallucination guard"),
         ("delta-engine", None, "74% memory compression"),
     ]

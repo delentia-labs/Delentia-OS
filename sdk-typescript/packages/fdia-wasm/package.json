@@ -1,5 +1,5 @@
 {
-  "name": "@rctlabs/fdia-wasm",
+  "name": "@delentia/fdia-wasm",
   "version": "1.0.0",
   "description": "Edge-ready FDIA scoring engine — F = D^I × A — pure TypeScript, zero dependencies. Runs in browser, Cloudflare Workers, Deno, and Node.js.",
   "main": "dist/index.js",
@@ -32,9 +32,9 @@
     "zero-dependencies"
   ],
   "author": {
-    "name": "RCT Labs",
-    "email": "founder@rctlabs.co",
-    "url": "https://rctlabs.co"
+    "name": "Delentia Labs",
+    "email": "founder@delentia.com",
+    "url": "https://delentia.com"
   },
   "license": "Apache-2.0",
   "sideEffects": false,

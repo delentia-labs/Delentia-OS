@@ -93,6 +93,6 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-[1.0.2a0]: https://github.com/rctlabs/rct-platform/compare/v1.0.1a0...v1.0.2a0
-[1.0.1a0]: https://github.com/rctlabs/rct-platform/compare/v1.0.0-alpha...v1.0.1a0
-[1.0.0-alpha]: https://github.com/rctlabs/rct-platform/releases/tag/v1.0.0-alpha
+[1.0.2a0]: https://github.com/delentia-labs/delentia-os/compare/v1.0.1a0...v1.0.2a0
+[1.0.1a0]: https://github.com/delentia-labs/delentia-os/compare/v1.0.0-alpha...v1.0.1a0
+[1.0.0-alpha]: https://github.com/delentia-labs/delentia-os/releases/tag/v1.0.0-alpha

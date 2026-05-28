@@ -12,7 +12,7 @@ Use these drafts when GitHub Discussions is enabled and you need the first two p
 
 **Body**
 
-Welcome to `rct-platform`, the open SDK layer of the broader RCT Ecosystem.
+Welcome to `delentia-os`, the open SDK layer of the broader RCT Ecosystem.
 
 If you are new here, use this order:
 

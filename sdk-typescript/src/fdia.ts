@@ -6,7 +6,7 @@
  * I = Identity (role confidence, 0.0 – 1.0)
  * A = Architect gate (0 = blocked, 1 = approved, float for partial)
  *
- * Reference: rct-platform/core/fdia/
+ * Reference: delentia-os/core/fdia/
  */
 
 export type RiskLevel = "LOW" | "STRUCTURAL" | "SYSTEMIC";

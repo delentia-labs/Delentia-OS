@@ -4,7 +4,7 @@ SignedAI Core Router — standalone public implementation
 Routes analysis jobs to the appropriate consensus tier (S/4/6/8) based on
 a scored risk assessment of the artifact being reviewed.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

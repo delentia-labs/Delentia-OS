@@ -3,19 +3,19 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rct-platform"
+name = "delentia-os"
 version = "2.0.0"
-description = "RCT Platform — Constitutional AI Operating System SDK"
+description = "Delentia OS — Constitutional AI Operating System SDK"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [
     {name = "Ittirit Saengow", email = "ittirit720@gmail.com"},
 ]
 maintainers = [
-    {name = "RCT Labs", email = "founder@rctlabs.co"},
+    {name = "Delentia Labs", email = "founder@delentia.com"},
 ]
 requires-python = ">=3.10"
-keywords = ["ai", "constitutional-ai", "intent-loop", "signedai", "fdia", "rct"]
+keywords = ["ai", "constitutional-ai", "intent-loop", "signedai", "fdia", "delentia", "recot"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -49,13 +49,13 @@ full = [
 ]
 
 [project.urls]
-Homepage = "https://rctlabs.co"
-Repository = "https://github.com/rctlabs/rct-platform"
-Documentation = "https://rctlabs.co/docs"
-"Bug Tracker" = "https://github.com/rctlabs/rct-platform/issues"
+Homepage = "https://delentia.com"
+Repository = "https://github.com/delentia-labs/delentia-os"
+Documentation = "https://delentia.com/docs"
+"Bug Tracker" = "https://github.com/delentia-labs/delentia-os/issues"
 
 [project.scripts]
-rct = "rct_control_plane.cli:main"
+delentia = "rct_control_plane.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -89,3 +89,6 @@ exclude = [
 [[tool.mypy.overrides]]
 module = "rct_control_plane.cli"
 ignore_errors = true
+
+# Legacy alias — kept for backward compat during migration
+# rct CLI was renamed to delentia in v3.0.0

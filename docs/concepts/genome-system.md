@@ -1,7 +1,7 @@
 # Genome System — Seven Interconnected AI Modules
 
-> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/rct-platform/concepts/).  
-> For the full architectural article, see: [rctlabs.co/en/blog/rct-7-genome-system](https://rctlabs.co/en/blog/rct-7-genome-system)
+> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/delentia-os/concepts/).  
+> For the full architectural article, see: [delentia.com/en/blog/rct-7-genome-system](https://delentia.com/en/blog/rct-7-genome-system)
 
 ---
 
@@ -22,7 +22,7 @@ Unlike traditional AI frameworks that treat components as isolated modules, the 
 | G3 | JITNA Genome | Dynamic routing: LLM selection, algorithm tier, processing path | `#C4745B` |
 | G4 | ARTENT Genome | Personal Agent OS: Intent Omnibox, Memory Timeline, Sovereignty Vault | `#7B9E87` |
 | G5 | SignedAI Genome | Multi-model attestation: 6-stage pipeline, Ed25519 signatures | `#B8A9C9` |
-| G6 | Vault Genome | Sovereignty and data protection: A=0 constitutional prohibitions, 8 RCTDB dimensions | `#9B7BB8` |
+| G6 | Vault Genome | Sovereignty and data protection: A=0 constitutional prohibitions, 8 DelentiaDB dimensions | `#9B7BB8` |
 | G7 | RCT-7 Genome | Mental OS + self-evolution: 7-state IntentLoop, G7→G1 performance feedback | `#C4745B` |
 
 ---
@@ -43,7 +43,7 @@ The ADAPT step in G7's 7-state IntentLoop (`IDLE → RECEIVE → PARSE → ROUTE
 
 ## SDK Relationship
 
-In `rct-platform` v1.0.2a0, the following SDK modules implement genome behaviors:
+In `delentia-os` v1.0.2a0, the following SDK modules implement genome behaviors:
 
 | Genome | SDK Module | Path |
 |---|---|---|
@@ -58,16 +58,16 @@ In `rct-platform` v1.0.2a0, the following SDK modules implement genome behaviors
 
 ## Interactive Exploration
 
-The live Genome Explorer is available at [rctlabs.co/en/genome](https://rctlabs.co/en/genome).
+The live Genome Explorer is available at [delentia.com/en/genome](https://delentia.com/en/genome).
 
 Each genome has a detail page:
-- G1: [/genome/architect](https://rctlabs.co/en/genome/architect)
-- G2: [/genome/codex](https://rctlabs.co/en/genome/codex)
-- G3: [/genome/jitna](https://rctlabs.co/en/genome/jitna)
-- G4: [/genome/artent](https://rctlabs.co/en/genome/artent)
-- G5: [/genome/signed-ai](https://rctlabs.co/en/genome/signed-ai)
-- G6: [/genome/vault](https://rctlabs.co/en/genome/vault)
-- G7: [/genome/rct-7](https://rctlabs.co/en/genome/rct-7)
+- G1: [/genome/architect](https://delentia.com/en/genome/architect)
+- G2: [/genome/codex](https://delentia.com/en/genome/codex)
+- G3: [/genome/jitna](https://delentia.com/en/genome/jitna)
+- G4: [/genome/artent](https://delentia.com/en/genome/artent)
+- G5: [/genome/signed-ai](https://delentia.com/en/genome/signed-ai)
+- G6: [/genome/vault](https://delentia.com/en/genome/vault)
+- G7: [/genome/rct-7](https://delentia.com/en/genome/rct-7)
 
 ---
 
@@ -81,4 +81,4 @@ Each genome has a detail page:
 
 ---
 
-*Full architectural article: [rctlabs.co/en/blog/rct-7-genome-system](https://rctlabs.co/en/blog/rct-7-genome-system)*
+*Full architectural article: [delentia.com/en/blog/rct-7-genome-system](https://delentia.com/en/blog/rct-7-genome-system)*

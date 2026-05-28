@@ -12,7 +12,7 @@
 ## Distribution Status
 
 !!! warning "Beta Preview — Packaging Ready, Public PyPI Pending"
-    `rct-platform` v1.0.4b0 can be installed from source today and now supports clean wheel installs.
+    `delentia-os` v1.0.4b0 can be installed from source today and now supports clean wheel installs.
     Public PyPI publication is still a separate release step.
 
 Current supported install paths:
@@ -25,8 +25,8 @@ Current supported install paths:
 ## From Source (Development)
 
 ```bash
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 
 # Create a virtual environment
 python -m venv .venv
@@ -70,7 +70,7 @@ pytest --tb=short -q
 ## What Gets Installed
 
 ```
-rct-platform/
+delentia-os/
 ├── core/           ← FDIA engine, Delta engine, Regional adapter
 ├── signedai/       ← SignedAI consensus, HexaCore registry
 ├── rct_control_plane/  ← 15-module DSL + intent schema
@@ -95,7 +95,7 @@ rct graph build --policy default
 
 Run the FDIA + SignedAI demos directly in your browser via Google Colab — no local install required:
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb)
 
 The notebook walks through:
 1. FDIA equation scoring (`F = D^I × A`)

@@ -148,5 +148,5 @@ We actively encourage independent verification. If you reproduce (or challenge) 
 please open an issue or discussion with your methodology and results.
 
 - 📊 [Benchmark methodology](methodology.md)
-- 🐛 [Open an issue](https://github.com/rctlabs/rct-platform/issues)
-- 💬 [Start a discussion](https://github.com/rctlabs/rct-platform/discussions)
+- 🐛 [Open an issue](https://github.com/delentia-labs/delentia-os/issues)
+- 💬 [Start a discussion](https://github.com/delentia-labs/delentia-os/discussions)

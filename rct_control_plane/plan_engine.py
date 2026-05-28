@@ -487,7 +487,7 @@ class PlanEngine:
         # Keyword-based source detection
         text_lower = text.lower()
         if any(kw in text_lower for kw in ["database", "db", "sql", "rctdb"]):
-            sources.append("RCTDB v2.0 — 8D Schema")
+            sources.append("DelentiaDB v2.0 — 8D Schema")
         if any(kw in text_lower for kw in ["file", "module", "code", "function"]):
             sources.append("Local filesystem (read)")
         if any(kw in text_lower for kw in ["api", "endpoint", "service", "http"]):

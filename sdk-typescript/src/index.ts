@@ -1,5 +1,5 @@
 /**
- * @rctlabs/rct-platform — TypeScript SDK
+ * @delentia/delentia-os — TypeScript SDK
  *
  * Exports:
  *   - FDIA constitutional formula (computeFDIA, meetsThreshold)

@@ -4,7 +4,7 @@ Jailbreak Corpus Loader
 Loads all JSONL case files from adversarial_tests/cases/ and exposes them
 as a unified list of JailbreakCase objects for pytest parametrization.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def load_corpus(categories: Optional[List[str]] = None) -> List[JailbreakCase]:
         if not path.exists():
             raise FileNotFoundError(
                 f"Corpus file not found: {path}\n"
-                f"Ensure you are running from the rct-platform root directory."
+                f"Ensure you are running from the delentia-os root directory."
             )
         for case in _load_file(path):
             if categories is None or case.category in categories:

@@ -11,7 +11,7 @@ depends_on:
 # Fast / Slow Lane Benchmark Design (v1.0)
 
 This document specifies the initial benchmark suite for the RCT Kernel
-Fast Lane (Mini Kernel + Mini ArtentAI) and its interaction with the
+Fast Lane (Mini Kernel + Mini Delentia AI) and its interaction with the
 Slow Lane (full Kernel).
 
 The goal is to measure, in a reproducible way:
@@ -39,7 +39,7 @@ of routing decisions. It assumes:
 - The Fast Lane runtime has access to a Mini_Artent inventory under:
 
   ```text
-  Full-Repo_Rct/06_products_rctlabs_artentai_signedai/Mini_Artent
+  Full-Repo_Rct/06_products_rctlabs_delentia-ai_signedai/Mini_Artent
   ```
 
 - The Slow Lane (full Kernel) may still be a stub in early phases.
@@ -94,7 +94,7 @@ Field semantics:
 
 - `id`: Unique identifier for the case.
 - `intent_type`: High-level intent used by the router.
-- `product_surface`: One of `rctlabs | artentai | signedai`.
+- `product_surface`: One of `rctlabs | delentia-ai | signedai`.
 - `lane_hint`: One of `auto | fast | slow` (usually `auto` in v1).
 - `risk_label`: Ground–truth risk for this case (`low | medium | high`).
 - `expected_lane`: Ground–truth lane for this case (`fast | slow`).
@@ -142,7 +142,7 @@ v1 includes a small but representative set of cases across:
 - **Medium complexity** (still Fast lane but more reasoning)
 - **Complex / long–horizon** (should go to Slow lane)
 - **High–risk** (safety–critical, should escalate to Slow lane)
-- **Product–specific** (RCTLabs / ArtentAI / SignedAI)
+- **Product–specific** (Delentia Labs / Delentia AI / SignedAI)
 
 Example mapping:
 
@@ -218,8 +218,8 @@ v2+ of this benchmark will likely add:
 - Token / cost tracking from the underlying LLM provider.
 - Multi–turn conversation cases instead of single–shot prompts.
 - Separate benchmark suites for:
-  - RCTLabs knowledge work,
-  - ArtentAI creative / UX flows,
+  - Delentia Labs knowledge work,
+  - Delentia AI creative / UX flows,
   - SignedAI governance / signing flows.
 
 For now, v1 is intentionally compact and focused on validating the

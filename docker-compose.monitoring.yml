@@ -41,7 +41,7 @@ services:
       - GF_SERVER_ROOT_URL=http://localhost:3000
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./docs/assets/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/rct-platform.json:ro
+      - ./docs/assets/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/delentia-os.json:ro
       - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
     ports:
       - "3000:3000"

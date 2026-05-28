@@ -1,19 +1,19 @@
 ---
-title: RCTLabs End-to-End Benchmark Design
+title: Delentia Labs End-to-End Benchmark Design
 role: rctlabs_end2end_benchmark_spec
 version: v1.0
 status: draft
 depends_on:
   - RCT_RealBenchmark_MasterSpec_v1.md
-  - 06_products_rctlabs_artentai_signedai/*
+  - 06_products_rctlabs_delentia-ai_signedai/*
   - 10_kernel_runtime/*
   - Rct_system_overview.md
 ---
 
-# RCTLabs End-to-End Benchmark Design (v1.0)
+# Delentia Labs End-to-End Benchmark Design (v1.0)
 
 > **Purpose:**  
-> ทดสอบความสามารถ end-to-end ของ RCTLabs ในฐานะ "ห้องแล็บสำหรับงานความรู้"
+> ทดสอบความสามารถ end-to-end ของ Delentia Labs ในฐานะ "ห้องแล็บสำหรับงานความรู้"
 > บน RCT ecosystem ว่าสามารถช่วยมนุษย์ทำงานจริง (architecture, migration, repo navigation,
 > reading & synthesis) ได้ดีแค่ไหน เทียบกับ baseline LLM ที่ไม่มี RCT backend
 
@@ -24,10 +24,10 @@ depends_on:
 
 ### 1.1 Scope
 
-Benchmark ชุดนี้โฟกัสที่ **RCTLabs surface** (เช่น floating assistant / CLI / API) โดยถือว่า:
+Benchmark ชุดนี้โฟกัสที่ **Delentia Labs surface** (เช่น floating assistant / CLI / API) โดยถือว่า:
 
-- Kernel, Fast/Slow Lane, Memory layer (Vault/GraphRAG/RCTDB) ถูก wired อยู่ข้างหลังแล้ว
-- ผู้ใช้คือ "สถาปนิก / researcher" ที่ต้องการใช้ RCTLabs เพื่อ:
+- Kernel, Fast/Slow Lane, Memory layer (Vault/GraphRAG/DelentiaDB) ถูก wired อยู่ข้างหลังแล้ว
+- ผู้ใช้คือ "สถาปนิก / researcher" ที่ต้องการใช้ Delentia Labs เพื่อ:
   - ทำความเข้าใจโครง RCT repo
   - ออกแบบ/ปรับปรุง architecture
   - วางแผน migration หรือ D-Day plan
@@ -36,19 +36,19 @@ Benchmark ชุดนี้โฟกัสที่ **RCTLabs surface** (เช
 
 ### 1.2 Goals
 
-1. วัดว่า RCTLabs ช่วยให้มนุษย์ทำงาน knowledge work ได้ดีขึ้นเพียงใด เทียบกับ LLM-only:
+1. วัดว่า Delentia Labs ช่วยให้มนุษย์ทำงาน knowledge work ได้ดีขึ้นเพียงใด เทียบกับ LLM-only:
    - ความถูกต้อง/ลึกของผลลัพธ์
    - ความสอดคล้องกับ spec / repo จริง
    - ความเป็นระเบียบและ actionable ของ output
 2. สร้างเคส end-to-end ที่ anchor กับ repo RCT จริง (ไม่ใช่โจทย์ทั่วไป)
-3. ให้ baseline สำหรับวัดความก้าวหน้าของ RCTLabs product ในแต่ละเวอร์ชัน
+3. ให้ baseline สำหรับวัดความก้าวหน้าของ Delentia Labs product ในแต่ละเวอร์ชัน
 
 
 ---
 
 ## 2. Task Taxonomy
 
-ใน v1 แบ่ง task ของ RCTLabs ออกเป็น 3 กลุ่มหลัก:
+ใน v1 แบ่ง task ของ Delentia Labs ออกเป็น 3 กลุ่มหลัก:
 
 ### 2.1 Repo Understanding & Navigation
 
@@ -61,9 +61,9 @@ Benchmark ชุดนี้โฟกัสที่ **RCTLabs surface** (เช
 
 ### 2.2 Architecture & Planning
 
-- โจทย์ที่ให้ RCTLabs สร้าง/ปรับแผนสำหรับระบบจริง
+- โจทย์ที่ให้ Delentia Labs สร้าง/ปรับแผนสำหรับระบบจริง
 - ตัวอย่าง:
-  - สร้าง D-Day plan สำหรับเปิด RCTLabs.co MVP
+  - สร้าง D-Day plan สำหรับเปิด Delentia Labs.co MVP
   - ออกแบบ baseline docker-compose สำหรับ kernel_api + vault + memory
   - วางแผน migration จาก vault เดิมไป Vault-1068 พร้อมขั้นตอนและ risk
 
@@ -82,7 +82,7 @@ Benchmark ชุดนี้โฟกัสที่ **RCTLabs surface** (เช
 
 ### 3.1 Cases file
 
-Cases ของ RCTLabs จะเก็บใน JSONL:
+Cases ของ Delentia Labs จะเก็บใน JSONL:
 
 ```text
 RCT_benchmark_public/RCTLabs_End2End_Benchmark_Cases_v1.jsonl
@@ -122,7 +122,7 @@ RCT_benchmark_public/RCTLabs_End2End_Benchmark_Results_YYYYMMDD.jsonl
 {
   "id": "lab-001",
   "mode": "rctlabs_rct",              // เช่น "llm_only" | "rctlabs_rct"
-  "answer": "ข้อความที่ RCTLabs ตอบ",
+  "answer": "ข้อความที่ Delentia Labs ตอบ",
   "latency_ms": 1234,
   "quality_score": 0.85,
   "usefulness_score": 0.9,
@@ -141,10 +141,10 @@ RCT_benchmark_public/RCTLabs_End2End_Benchmark_Results_YYYYMMDD.jsonl
 
 1. **llm_only** – ตีความว่า:
    - เรียก LLM เดี่ยว ๆ ผ่าน endpoint generic (ไม่มี RCT backend, ไม่มี Memory layer)
-   - ใช้เป็น baseline ว่า "ถ้าไม่มี RCT/RCTLabs เลย" จะตอบได้ระดับไหน
+   - ใช้เป็น baseline ว่า "ถ้าไม่มี RCT/Delentia Labs เลย" จะตอบได้ระดับไหน
 
 2. **rctlabs_rct** – เต็ม stack:
-   - ใช้ RCTLabs API ที่ต่อกับ Kernel + Memory + Vault จริง
+   - ใช้ Delentia Labs API ที่ต่อกับ Kernel + Memory + Vault จริง
    - ใช้การตั้งค่า prompt/pipeline ที่ออกแบบมาเฉพาะ RCT
 
 
@@ -158,7 +158,7 @@ RCT_benchmark_public/RCTLabs_End2End_Benchmark_Results_YYYYMMDD.jsonl
 
 ## 5. Metrics & Evaluation
 
-แนะนำ metric หลักสำหรับ RCTLabs:
+แนะนำ metric หลักสำหรับ Delentia Labs:
 
 1. **quality_score** (0–1)
    - ความถูกต้องเชิงเนื้อหาเมื่อเทียบกับ repo/spec จริง
@@ -192,7 +192,7 @@ Evaluation สามารถใช้:
 หน้าที่:
 
 1. โหลด cases JSONL
-2. เรียก API ของ RCTLabs:
+2. เรียก API ของ Delentia Labs:
    - เช่น `POST /rctlabs/v1/assist/oneshot`
    - ส่ง `input_prompt` + metadata
 3. วัด latency
@@ -224,7 +224,7 @@ Response payload:
 
 ```jsonc
 {
-  "answer": "ข้อความจาก RCTLabs ...",
+  "answer": "ข้อความจาก Delentia Labs ...",
   "latency_ms": 2345,
   "tokens_used": 2048
 }
@@ -235,7 +235,7 @@ Response payload:
 
 ## 7. Reporting
 
-รายงานผลเฉพาะ RCTLabs:
+รายงานผลเฉพาะ Delentia Labs:
 
 ```text
 RCT_benchmark_public/RCTLabs_End2End_Benchmark_Report_YYYYMMDD.md
@@ -244,8 +244,8 @@ RCT_benchmark_public/RCTLabs_End2End_Benchmark_Report_YYYYMMDD.md
 ควรมี:
 
 - ตารางคะแนนเฉลี่ย per scenario_type
-- ตัวอย่างเคสที่ RCTLabs ช่วยได้ดีมาก/แย่มาก
-- ข้อเสนอแนะต่อการออกแบบ UX/prompt/pipeline ของ RCTLabs
+- ตัวอย่างเคสที่ Delentia Labs ช่วยได้ดีมาก/แย่มาก
+- ข้อเสนอแนะต่อการออกแบบ UX/prompt/pipeline ของ Delentia Labs
 
 
 ---

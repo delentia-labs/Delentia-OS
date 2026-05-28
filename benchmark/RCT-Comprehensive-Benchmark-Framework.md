@@ -70,7 +70,7 @@ Total: 520 × 5 × 3+ = 15,000+ test combinations
 
 **ตัวอย่างจาก RCT:** [23]
 - 150 tests (Phase 1: RCT Core)
-- 120 tests (Phase 2: ArtentAI)
+- 120 tests (Phase 2: Delentia AI)
 - 100 tests (Phase 3: SignedAI)
 - 80 tests (Phase 4: Vault v12)
 - 70 tests (Phase 5: Integration)
@@ -351,7 +351,7 @@ Status: VALIDATED PRODUCTION-READY
 #### **TPC-C / TPC-H (Database)**
 - Used by: Enterprise vendors
 - Tests: Transaction throughput, complex queries
-- RCT Applicability: ⭐⭐⭐⭐ (High) — for Vault/RCTDB
+- RCT Applicability: ⭐⭐⭐⭐ (High) — for Vault/DelentiaDB
 
 ---
 
@@ -594,7 +594,7 @@ Tier 3: Planning Decomposition
   Status: ⭐⭐⭐⭐
 
 Tier 4: Draft Generation
-  Generation time: 2.4 min (ArtentAI)
+  Generation time: 2.4 min (Delentia AI)
   Accuracy: 96.9%
   Status: ⭐⭐⭐⭐⭐
 
@@ -614,7 +614,7 @@ Tier 7: Orchestration Routing
   Status: ⭐⭐⭐⭐
 
 Tier 8: Learning Memory
-  RCTDB write latency: 50-100ms
+  DelentiaDB write latency: 50-100ms
   Vault indexing: 70.6 files/min
   Status: ⭐⭐⭐⭐
 
@@ -676,7 +676,7 @@ Confidence: p < 0.001 (extremely significant)
 #### **Use Case 1: Customer Support Chatbot**
 
 ```
-Scenario: Build AI customer support agent via RCTLabs → deploy via SignedAI
+Scenario: Build AI customer support agent via Delentia Labs → deploy via SignedAI
 
 Measured Metrics:
 
@@ -928,7 +928,7 @@ All benchmark data available in CSV format:
 
 Reproducibility package:
 - Docker container: `ghcr.io/rctlabs/rct-benchmark:v1.0`
-- Scripts: https://github.com/rctlabs/benchmark
+- Scripts: https://github.com/delentia-labs/benchmark
 - Data: S3 bucket (signed access)
 
 ---

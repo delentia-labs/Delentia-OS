@@ -1,5 +1,5 @@
 /**
- * Tests for @rctlabs/rct-edge
+ * Tests for @delentia/rct-edge
  *
  * 36 tests across 6 describe blocks:
  *   1. Package metadata

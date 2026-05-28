@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `signedai/core/ollama_fallback.py` — **OllamaFallback**: `check_available()`, `generate()`; `RegexFallback` stub; `build_fallback_chain()` three-tier: API → Ollama → regex
 - `rct_control_plane/__init__.py` — exported PostgresPersistence, get_persistence, JITNA v3 symbols
 
-#### TypeScript SDK (`@rctlabs/rct-edge`)
+#### TypeScript SDK (`@delentia/rct-edge`)
 - `sdk-typescript/packages/rct-edge/` — **New edge security package**: zero runtime deps; inline FDIA (`F = D^I × A`); `EDGE_CORD_PATTERNS` — 30 JS/TS injection patterns (E001–E030); `cordCheck()` → CLEAN/SUSPICIOUS/REJECTED; `edgeGate()` kill-switch + CORD + FDIA threshold; targets Cloudflare Workers/edge runtimes
 
 #### Tests
@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rct_control_plane/governance_gate.py` — **GovernanceGate standalone module**: `GovernanceGate.audit(agent_id, action, fdia_score) → GovernanceVerdict`; `GovernanceOutcome` (ALLOWED/WARNING/DENIED/SUSPENDED); `GovernancePolicy` with min_fdia, action_blocklist, max_violations, cooldown_seconds, spike_causes_deny; CORD G001/G002 integration; `audit_strict()` raises GovernanceError; `lift_suspension()`, `reset_agent()`
 - `rct_control_plane/__init__.py` — exported GovernanceGate symbols
 
-#### TypeScript SDK (`@rctlabs/fdia-wasm`)
+#### TypeScript SDK (`@delentia/fdia-wasm`)
 - `sdk-typescript/packages/fdia-wasm/` — **New edge-ready FDIA package**: pure TypeScript, zero dependencies; `computeFDIA(d, i, a)` constitutional formula `F = D^I × A`; `FDIAScorer` stateful class with `meanScore`, `scoredCount`, `reset()`; `intentAlignment()` cooperative pair matching; `DEFAULT_FDIA_WEIGHTS`; target <15KB gzip; runs in browser, Cloudflare Workers, Deno, Node.js
 - `sdk-typescript/src/cli/commands/fdia.ts` — added `--wasm` flag showing edge engine label in output
 
@@ -149,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verified
 - **73/73 passed** — all TypeScript SDK tests pass post-CLI addition
 - `rct --version` → `1.2.0`, `rct fdia 0.9 0.95 1.0` → PASS (F=0.9048)
-- Published: `npm install @rctlabs/rct-platform@1.2.0` or `npx @rctlabs/rct-platform fdia ...`
+- Published: `npm install @delentia/delentia-os@1.2.0` or `npx @delentia/delentia-os fdia ...`
 
 ---
 
@@ -180,7 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /metrics` — Prometheus scrape endpoint (text/plain exposition format, `include_in_schema=False`)
 - `docker-compose.monitoring.yml` — Prometheus + Grafana + OTel Collector full monitoring stack
 - `docs/assets/grafana-dashboard.json` — pre-built RCT Control Plane dashboard (stat panels + timeseries)
-- `config/prometheus.yml` — Prometheus scrape config targeting rct-platform `/metrics`
+- `config/prometheus.yml` — Prometheus scrape config targeting delentia-os `/metrics`
 - `config/grafana-datasources.yml` — auto-provision Grafana Prometheus datasource
 
 #### Phase 4 — TypeScript SDK (`sdk-typescript/`)
@@ -301,7 +301,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `microservices/intent-loop/loop_engine.py` — `LoopMetrics` dataclass with `total_processed`, `cache_hits`, `cache_misses`, `avg_latency_ms`, `error_count`, `last_updated`, and `cache_hit_rate` property.
-- `docs/concepts/jitna.md` — Complete JITNA Protocol documentation: 3-layer architecture (Protocol/Language/Intake), 6-field canonical language (I/D/Δ/A/R/M), examples in 3 domains, comparison vs Tool-Calling APIs, FDIA+SignedAI+RCTDB integration map, The 9 Codex security rules.
+- `docs/concepts/jitna.md` — Complete JITNA Protocol documentation: 3-layer architecture (Protocol/Language/Intake), 6-field canonical language (I/D/Δ/A/R/M), examples in 3 domains, comparison vs Tool-Calling APIs, FDIA+SignedAI+DelentiaDB integration map, The 9 Codex security rules.
 - `docs/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md` — Full RFC-001 specification (IETF-style format): wire format, negotiation pattern, adapter interface, security levels, 2 appendix examples.
 - `docs/architecture/` directory created.
 - `examples/jitna_demo.py` — Runnable end-to-end demo of all 3 JITNA layers with graceful fallbacks.
@@ -356,4 +356,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions: CI pipeline + security scanning
 - Contributing guide and security policy
 
-[1.0.0-alpha]: https://github.com/rctlabs/rct-platform/releases/tag/v1.0.0-alpha
+[1.0.0-alpha]: https://github.com/delentia-labs/delentia-os/releases/tag/v1.0.0-alpha

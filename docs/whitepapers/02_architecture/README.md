@@ -15,7 +15,7 @@
 | **Document** | Architecture Whitepaper v2.1.3 |
 | **Directory** | `/whitepapers/02_architecture/` |
 | **Status** | ✅ PRODUCTION — Updated February 25, 2026 |
-| **Source** | `docs/HEXA_CORE_SIGNEDAI_ARCHITECTURE.md` · `rct_platform/config/` |
+| **Source** | `docs/HEXA_CORE_SIGNEDAI_ARCHITECTURE.md` · `delentia_os/config/` |
 | **Target Audience** | Solution Architects, System Designers, Technical Leads |
 | **Maintainer** | Ittirit Saengow (The Architect) |
 | **Classification** | PUBLIC / TECHNICAL |
@@ -68,7 +68,7 @@ Six AI models, each with a distinct role. **Geopolitical balance:** 3 US + 3 CN.
 | `LIBRARIAN` | `x-ai/grok-4.1-fast` | xAI | 🇺🇸 US | $0.20 | $0.50 | **2 M** |
 | `HUMANIZER` | `deepseek/deepseek-v3.2` | DeepSeek | 🇨🇳 CN | $0.25 | $0.38 | 200 K |
 
-**Implementation:** `rct_platform/config/hexa_core_registry.py` (317 lines, Pydantic v2)  
+**Implementation:** `delentia_os/config/hexa_core_registry.py` (317 lines, Pydantic v2)  
 **Key methods:** `get_model()`, `get_cheapest_coder()`, `get_longest_context()`, `estimate_cost()`, `get_geopolitical_balance()`
 
 ### Role Specifications
@@ -95,7 +95,7 @@ Roleplay Rank #1. Handles `CHAT`, `TRANSLATION`, `CREATIVE`. Powers user-facing 
 
 ## 3. Smart Task Routing
 
-**Implementation:** `rct_platform/config/model_router.py` (269 lines)  
+**Implementation:** `delentia_os/config/model_router.py` (269 lines)  
 **Entry point:** `ModelRouter.route_task(intent: TaskIntent) → (model_id, HexaCoreRole)`
 
 ### Complete Routing Table
@@ -134,7 +134,7 @@ Roleplay Rank #1. Handles `CHAT`, `TRANSLATION`, `CREATIVE`. Powers user-facing 
 
 ## 4. SignedAI Consensus — 4-Tier Protocol
 
-**Implementation:** `rct_platform/config/signed_ai_tiers.py` (307 lines)  
+**Implementation:** `delentia_os/config/signed_ai_tiers.py` (307 lines)  
 **Purpose:** Multi-model consensus prevents hallucinations (0.3% vs 12–15% industry average)
 
 ### Tier Specifications
@@ -181,7 +181,7 @@ result = SignedAIRegistry.calculate_consensus(
 
 ## 5. Vault-Key Strategy — 6-Key Security Architecture
 
-**Implementation:** `rct_platform/config/key_manager.py` (235 lines)  
+**Implementation:** `delentia_os/config/key_manager.py` (235 lines)  
 **Purpose:** Separate API keys per operational context to contain blast radius, enable cost tracking per pipeline, and support emergency key rotation without system downtime.
 
 | KeyContext | Environment Variable | Usage |
@@ -224,7 +224,7 @@ Each Genome is a specialized behavioral layer with its own identity, memory spac
 | 1 | **Architect** | Creator intelligence | System design, meta-decisions |
 | 2 | **ARTENT** | Creation engine | Artifact generation |
 | 3 | **JITNA** | Protocol layer | Inter-agent routing |
-| 4 | **Codex** | Knowledge vault | Long-term memory, RCTDB access |
+| 4 | **Codex** | Knowledge vault | Long-term memory, DelentiaDB access |
 | 5 | **SignedAI** | Verification layer | Multi-model consensus |
 | 6 | **Vault-1010** | Memory architecture | 8D schema operations |
 | 7 | **RCT-7** | Continuous improvement | Self-reflection, performance tuning |
@@ -234,7 +234,7 @@ Each Genome is a specialized behavioral layer with its own identity, memory spac
 ## 8. Core Module Structure
 
 ```
-rct_platform/
+delentia_os/
 └── config/
     ├── __init__.py              # Public API exports
     ├── hexa_core_registry.py    # 6-model registry (317 lines, Pydantic v2)

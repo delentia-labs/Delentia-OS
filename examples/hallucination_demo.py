@@ -124,9 +124,9 @@ def main() -> None:
   Shows how the FDIA equation + SignedAI consensus
   intercepts outputs that standard LLMs would deliver.
 
-  Website  : https://www.rctlabs.co/th
+  Website  : https://www.delentia.com/th
   Colab    : bit.ly/rct-playground
-  GitHub   : github.com/rctlabs/rct-platform
+  GitHub   : github.com/delentia-labs/delentia-os
 """)
     divider()
 
@@ -206,10 +206,10 @@ def main() -> None:
   The constitutional guarantee is in the algebra, not in the code.
 
   {CYAN}→ Try Section 5 of the Colab notebook for interactive exploration:{RESET}
-    https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb
+    https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb
 
   {CYAN}→ Read the full Thai explainer:{RESET}
-    https://www.rctlabs.co/th/blog/fdia-equation-explained
+    https://www.delentia.com/th/blog/fdia-equation-explained
 """)
     divider()
 

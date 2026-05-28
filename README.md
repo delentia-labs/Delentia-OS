@@ -1,20 +1,20 @@
-# RCT Platform — Intent-Centric AI Operating System
+﻿# Delentia OS — Intent-Centric AI Operating System
 
-[![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
-[![Security](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/security-scan.yml)
-[![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
+[![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
+[![Security](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml)
+[![codecov](https://codecov.io/gh/delentia-labs/delentia-os/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/delentia-os)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue)](CHANGELOG.md)
-[![PyPI](https://img.shields.io/pypi/v/rct-platform?label=PyPI&color=gold)](https://pypi.org/project/rct-platform/)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/rct-platform?label=downloads&color=brightgreen)](https://pypi.org/project/rct-platform/)
-[![npm](https://img.shields.io/npm/v/@rctlabs/rct-platform?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/@rctlabs/rct-platform)
+[![PyPI](https://img.shields.io/pypi/v/delentia-os?label=PyPI&color=gold)](https://pypi.org/project/delentia-os/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/delentia-os?label=downloads&color=brightgreen)](https://pypi.org/project/delentia-os/)
+[![npm](https://img.shields.io/npm/v/@delentia/delentia-os?label=npm&color=cb3837&logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://rctlabs.github.io/rct-platform/)
+[![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/delentia-os/)
 [![Status](https://img.shields.io/badge/status-STABLE%20SDK-brightgreen)](CHANGELOG.md)
-[![Website](https://img.shields.io/badge/website-rctlabs.co-brightgreen)](https://rctlabs.co)
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb)
-[![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/rctlabs/rct-platform/main?filepath=notebooks%2Frct_playground.ipynb)
-[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/rctlabs/rct-platform)
+[![Website](https://img.shields.io/badge/website-delentia.com-brightgreen)](https://delentia.com)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/delentia-os/blob/main/notebooks/rct_playground.ipynb)
+[![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/delentia-os/main?filepath=notebooks%2Frct_playground.ipynb)
+[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/delentia-os)
 
 ## Intent-Centric AI Operating System — Constitutional Architecture
 
@@ -24,17 +24,17 @@
 
 ## What is RCT?
 
-**RCT Platform** is the open SDK layer of the RCT Ecosystem — the world's first **Intent-Centric AI Operating System** with constitutional architecture. Think of it as **"Linux for AI Agents."** It provides:
+**Delentia OS** is the open SDK layer of the RCT Ecosystem — the world's first **Intent-Centric AI Operating System** with constitutional architecture. Think of it as **"Linux for AI Agents."** It provides:
 
 - **Auditability** — every decision traces back to a signed evidence chain
 - **Governance** — multi-tier consensus prevents unilateral AI action  
 - **Interpretability** — the FDIA equation makes intent and confidence explicit
 - **Regional awareness** — built-in adapters for ASEAN, JP, KR, CN contexts
 
-The full ecosystem runs in production at [rctlabs.co](https://rctlabs.co).  
+The full ecosystem runs in production at [delentia.com](https://delentia.com).  
 This SDK exposes the core components under Apache 2.0.
 
-🌐 **Website:** [rctlabs.co](https://rctlabs.co) · 🔗 **GitHub:** [github.com/rctlabs](https://github.com/rctlabs)
+🌐 **Website:** [delentia.com](https://delentia.com) · 🔗 **GitHub:** [github.com/delentia-labs](https://github.com/delentia-labs)
 
 ---
 
@@ -79,7 +79,7 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 | 8-level test pyramid (4,849 tests) | ❌ | ✅ private |
 
 > **Stable SDK** means: API is stable, CI enforces 90% coverage floor, packages published on PyPI + npm.  
-> **Enterprise** means: runs at [rctlabs.co](https://rctlabs.co) — contact for licensing.
+> **Enterprise** means: runs at [delentia.com](https://delentia.com) — contact for licensing.
 
 ---
 
@@ -87,9 +87,9 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 
 | Product | Description | Link |
 |---------|-------------|------|
-| 🤖 **RCTLabs** | Core intent-centric AI platform — full ecosystem access | [rctlabs.co/products/rctlabs](https://rctlabs.co/en/products/rctlabs) |
-| 🎨 **ArtentAI** | AI-powered creative studio — intent-driven content generation | [rctlabs.co/products/artent-ai](https://rctlabs.co/en/products/artent-ai) |
-| ✍️ **SignedAI** | Cryptographic verification layer — ED25519 signed AI outputs | [rctlabs.co/products/signed-ai](https://rctlabs.co/en/products/signed-ai) |
+| 🤖 **Delentia Platform** | Core intent-centric AI platform — full ecosystem access | [delentia.com/products/delentia-platform](https://delentia.com/en/products/delentia-platform) |
+| 🎨 **Delentia AI** | AI-powered creative studio — intent-driven content generation | [delentia.com/products/delentia-ai](https://delentia.com/en/products/delentia-ai) |
+| ✍️ **SignedAI** | Cryptographic verification layer — ED25519 signed AI outputs | [delentia.com/products/signed-ai](https://delentia.com/en/products/signed-ai) |
 
 > All three products run on the same RCT OS constitutional core. SignedAI powers hallucination prevention via multi-LLM consensus + ED25519 attestation.
 
@@ -170,7 +170,7 @@ Layer 5: SignedAI — Multi-LLM Consensus
 ├─ TIER_S (1) · TIER_4 (4) · TIER_6 (6) · TIER_8 (8 + veto)
 └─ Hallucination rate: 0.3% vs industry 12–15%
 
-Layer 4: RCTDB v2.0 — 8-Dimensional Universal Memory
+Layer 4: DelentiaDB v2.0 — 8-Dimensional Universal Memory
 └─ Registry Zone · Vault Zone · Governance Zone
 
 Layer 3: 41 Production Algorithms (Tier 1–9)
@@ -181,7 +181,7 @@ SDK Modules: signedai/ · core/ · rct_control_plane/
              5 reference microservices
 ```
 
-> **Enterprise layer** (62 microservices, proprietary) runs in production at [rctlabs.co](https://rctlabs.co).
+> **Enterprise layer** (62 microservices, proprietary) runs in production at [delentia.com](https://delentia.com).
 
 ---
 
@@ -189,8 +189,8 @@ SDK Modules: signedai/ · core/ · rct_control_plane/
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 pip install -e .
 
 # 2. Validate the CLI surface without API keys
@@ -360,7 +360,7 @@ Every user intent passes through a 7-state pipeline:
 
 ```
 RECEIVED → VALIDATED (FDIA) → MEMORY_CHECK → COMPUTING
-         → VERIFYING (SignedAI) → COMMITTING (RCTDB) → COMPLETED
+         → VERIFYING (SignedAI) → COMMITTING (DelentiaDB) → COMPLETED
 ```
 
 | Property | Value |
@@ -467,7 +467,7 @@ const tier = selectSignedAITier('enterprise', 'high');
 ### GitHub Action
 
 ```yaml
-- uses: rctlabs/rct-platform/github-action@v1.1.0
+- uses: delentia-labs/delentia-os/github-action@v1.1.0
   with:
     intent: "Deploy to production"
     rct_api_url: ${{ secrets.RCT_API_URL }}
@@ -538,7 +538,7 @@ Five reference microservices demonstrating production patterns:
 |---------|------|-------------|
 | `intent-loop` | 8001 | Core FDIA execution loop |
 | `analysearch-intent` | 8002 | Semantic search + intent analysis |
-| `vector-search` | 8003 | Vector similarity search over RCTDB |
+| `vector-search` | 8003 | Vector similarity search over DelentiaDB |
 | `crystallizer` | 8004 | Output crystallization + fact verification |
 | `gateway-api` | 8000 | Unified entry point + rate limiting |
 
@@ -568,7 +568,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 | `/health` | GET | Service health |
 | `/metrics` | GET | Prometheus metrics |
 | `/v1/kernel/execute` | POST | Execute RCT Kernel with intent |
-| `/v1/rctdb/query` | POST | Query RCTDB knowledge vault |
+| `/v1/delentiadb/query` | POST | Query DelentiaDB knowledge vault |
 
 ---
 
@@ -576,7 +576,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
-✅ **1,791 Passed · 0 Failed** — Full rct-platform SDK test suite (Phase A–D v2.0.0)  
+✅ **1,791 Passed · 0 Failed** — Full delentia-os SDK test suite (Phase A–D v2.0.0)  
 ✅ **Plan Engine** — `rct plan` Terraform-style pre-execution simulation  
 ✅ **Policy Governance** — `rct policy` + `approval_gateway.py` omni-channel human approval  
 ✅ **OTel + Prometheus + Grafana** — `GET /metrics` scrape endpoint + monitoring stack  
@@ -600,7 +600,7 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 ## Project Structure
 
 ```
-rct-platform/
+delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
 │  ├─ delta_engine/             # Memory Delta Engine (74% compression)
@@ -620,7 +620,7 @@ rct-platform/
 ├─ microservices/               # 5 reference microservices
 │  ├─ intent-loop/              # Core FDIA execution loop (port 8001)
 │  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8002)
-│  ├─ vector-search/            # RCTDB semantic search (port 8003)
+│  ├─ vector-search/            # DelentiaDB semantic search (port 8003)
 │  ├─ crystallizer/             # Output crystallization (port 8004)
 │  └─ gateway-api/              # Unified entry + rate limiting (port 8000)
 ├─ config/                      # Configuration files
@@ -652,8 +652,8 @@ rct-platform/
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-- 🐛 [Report Bugs](https://github.com/rctlabs/rct-platform/issues)
-- 💡 [Suggest Features](https://github.com/rctlabs/rct-platform/discussions)
+- 🐛 [Report Bugs](https://github.com/delentia-labs/delentia-os/issues)
+- 💡 [Suggest Features](https://github.com/delentia-labs/delentia-os/discussions)
 - 📖 Improve docs
 - 🧪 Add tests
 - 🔌 Build adapters for new integrations
@@ -694,19 +694,19 @@ Over the next 10 months, working alone from a room in **Klong Toei, Bangkok**, I
 - **1,287 passing tests**, 92% coverage, with 0 skips
 - A 450+ page whitepaper documenting every decision
 
-This is not a research paper. It runs in production at [rctlabs.co](https://rctlabs.co).
+This is not a research paper. It runs in production at [delentia.com](https://delentia.com).
 
 | | |
 |---|---|
-| **GitHub** | [@ittirit720](https://github.com/ittirit720) |
+| **GitHub** | [@ittirit720](https://github.com/delentia-labs) |
 | **Email** | ittirit720@gmail.com |
-| **Org** | founder@rctlabs.co |
-| **Website** | [rctlabs.co](https://rctlabs.co) |
+| **Org** | founder@delentia.com |
+| **Website** | [delentia.com](https://delentia.com) |
 | **LinkedIn** | [linkedin.com/in/ittirit-saengow](https://www.linkedin.com/in/ittirit-saengow/) |
 | **X / Twitter** | [@ittirit_rct](https://x.com/ittirit_rct) |
 | **Reddit** | [u/WindLate5307](https://www.reddit.com/user/WindLate5307/) |
 | **BIO** | [ittiritsaengow.link](https://ittiritsaengow.link) |
-| **Docs** | [rctlabs.github.io/rct-platform](https://rctlabs.github.io/rct-platform/) |
+| **Docs** | [rctlabs.github.io/delentia-os](https://delentia-labs.github.io/delentia-os/) |
 | **Location** | Klong Toei, Bangkok, Thailand 🇹🇭 |
 | **Started** | June 2025 |
 | **Turning Point** | August 11, 2025 |
@@ -733,5 +733,6 @@ This is not a research paper. It runs in production at [rctlabs.co](https://rctl
 
 Apache 2.0 — see [LICENSE](LICENSE).
 
-Copyright 2026 Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว) — RCT Labs  
+Copyright 2026 Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว) — Delentia Labs  
 Made with ❤️ from Bangkok, Thailand 🇹🇭
+

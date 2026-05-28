@@ -33,7 +33,7 @@ depends_on:
 
 - TL;DR performance Fast/Slow Lane
 - TL;DR performance MemoryRAG
-- TL;DR performance RCTLabs / SignedAI (ถ้าพร้อม)
+- TL;DR performance Delentia Labs / SignedAI (ถ้าพร้อม)
 - ข้อค้นพบสำคัญ 3–5 ข้อ
 
 ---
@@ -47,7 +47,7 @@ depends_on:
 - Max tokens:
 - Prompting style / system prompt version:
 - Kernel runtime commit / tag:
-- Memory pipeline config (GraphRAG / RCTDB settings):
+- Memory pipeline config (GraphRAG / DelentiaDB settings):
 
 ### 2.2 Benchmark Suites Included
 
@@ -57,7 +57,7 @@ depends_on:
 - [ ] MemoryRAG v1
 - [ ] RCTLabs_End2End v1
 - [ ] SignedAI_Governance v1
-- [ ] ArtentAI_Creative v1 (optional)
+- [ ] Delentia AI_Creative v1 (optional)
 
 ---
 
@@ -118,7 +118,7 @@ depends_on:
 
 ---
 
-## 5. Product-level Benchmarks (RCTLabs / SignedAI / ArtentAI)
+## 5. Product-level Benchmarks (Delentia Labs / SignedAI / Delentia AI)
 
 > ส่วนนี้สามารถเติมภายหลังเมื่อชุด benchmark เหล่านี้พร้อมใช้งาน
 
@@ -126,7 +126,7 @@ depends_on:
 
 - Scenario ที่ทดสอบ (เช่น design architecture, migration plan)
 - Metric คุณภาพ / เวลา / จำนวน iteration
-- Comparison: LLM-only vs LLM+RCT+RCTLabs
+- Comparison: LLM-only vs LLM+RCT+Delentia Labs
 
 ### 5.2 SignedAI_Governance
 
@@ -134,7 +134,7 @@ depends_on:
 - Metric safety / alignment
 - ตัวอย่างเคสที่ระบบจับ risk ได้ดี หรือหลุด
 
-### 5.3 ArtentAI_Creative
+### 5.3 Delentia AI_Creative
 
 - เคส UX / narrative / creative generation
 - Metric ความสอดคล้องกับ ecosystem + คุณภาพการสื่อสาร

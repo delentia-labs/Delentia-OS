@@ -47,7 +47,7 @@ jobs:
         with:
           files: ./coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: rctlabs/rct-platform
+          slug: delentia-labs/delentia-os
           verbose: true
           fail_ci_if_error: false
 

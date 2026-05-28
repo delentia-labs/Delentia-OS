@@ -13,7 +13,7 @@ export const fdiaCommand = new Command("fdia")
   .argument("<i>", "Identity confidence score (0–1)")
   .argument("<a>", "Approval multiplier (0 = blocked, 1 = approved)")
   .option("-g, --gate <value>", "Minimum FDIA threshold to pass", "0.75")
-  .option("--wasm", "Use @rctlabs/fdia-wasm edge-ready engine (zero-dep, browser/Workers compatible)")
+  .option("--wasm", "Use @delentia/fdia-wasm edge-ready engine (zero-dep, browser/Workers compatible)")
   .option("--no-banner", "Skip the banner")
   .action(
     (dStr: string, iStr: string, aStr: string, opts: Record<string, unknown>) => {
@@ -30,7 +30,7 @@ export const fdiaCommand = new Command("fdia")
       }
 
       const engineLabel = opts["wasm"]
-        ? chalk.gray("engine: @rctlabs/fdia-wasm")
+        ? chalk.gray("engine: @delentia/fdia-wasm")
         : chalk.gray("engine: built-in");
 
       const result = computeFDIA(d, i, a);

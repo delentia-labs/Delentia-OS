@@ -12,5 +12,5 @@ Each benchmark:
   3. Computes metrics vs. published baselines
   4. Writes results to benchmark/industry_standard/results/
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """

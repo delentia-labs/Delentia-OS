@@ -111,7 +111,7 @@ Infrastructure:
   ✓ Hetzner 3-node Docker Swarm (CPX41, CPX31, CPX21)
   ✓ 5 databases (PostgreSQL, Neo4j, Redis, Qdrant, Zep)
   ✓ RCT Core API (latest build)
-  ✓ ArtentAI platform
+  ✓ Delentia AI platform
   ✓ SignedAI multi-LLM router (6 providers)
   ✓ Monitoring stack (Prometheus, Grafana)
 

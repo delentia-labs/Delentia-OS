@@ -11,7 +11,7 @@ Open the repository home page, then in the right-side **About** panel click the 
 Set the following:
 
 - **Description**: `Intent-Centric AI OS — Constitutional Architecture for AI Agents`
-- **Website**: `https://rctlabs.co`
+- **Website**: `https://delentia.com`
 - **Topics**:
   - `ai`
   - `constitutional-ai`
@@ -66,12 +66,12 @@ Each milestone should mirror `ROADMAP.md` so the roadmap becomes operational, no
 
 ## 4. Profile Pinning
 
-Open your GitHub profile → **Customize your pins** → pin `rct-platform`.
+Open your GitHub profile → **Customize your pins** → pin `delentia-os`.
 
 Why this matters:
 
 - visitors from social media often land on the maintainer profile first
-- pinning establishes `rct-platform` as the flagship public artifact
+- pinning establishes `delentia-os` as the flagship public artifact
 
 ---
 
@@ -80,7 +80,7 @@ Why this matters:
 Before launch, verify these links manually in the browser:
 
 - repository home page loads the About description correctly
-- website link opens `https://rctlabs.co`
+- website link opens `https://delentia.com`
 - Topics are visible and relevant
 - Discussions tab is visible and opens successfully
 - milestone page is public and non-empty

@@ -1,5 +1,5 @@
 ---
-title: SignedAI Evaluator Spec – RCTLabs End2End
+title: SignedAI Evaluator Spec – Delentia Labs End2End
 role: signedai_evaluator_spec
 family: rctlabs_end2end
 version: v1.0
@@ -9,11 +9,11 @@ depends_on:
   - RCTLabs_End2End_Benchmark_Cases_v1.jsonl
 ---
 
-# SignedAI Evaluator Spec – RCTLabs End2End (v1.0)
+# SignedAI Evaluator Spec – Delentia Labs End2End (v1.0)
 
 ## 1. Purpose
 
-ประเมินว่าคำตอบของ RCTLabs (surface) ช่วยงานมนุษย์ใน scenario จริงได้ดีแค่ไหน
+ประเมินว่าคำตอบของ Delentia Labs (surface) ช่วยงานมนุษย์ใน scenario จริงได้ดีแค่ไหน
 เช่น:
 
 - อธิบาย repo overview
@@ -33,7 +33,7 @@ depends_on:
   "family": "rctlabs_end2end",
   "case_id": "lab-002",
   "mode": "rctlabs_rct",
-  "answer": "ข้อความแผน D-Day จาก RCTLabs",
+  "answer": "ข้อความแผน D-Day จาก Delentia Labs",
   "meta": {
     "runner": "rctlabs_end2end_benchmark_runner_v1",
     "timestamp": "2025-12-02T12:00:00Z"
@@ -54,7 +54,7 @@ SignedAI evaluator มี access ต่อ:
 2. ป้อนข้อมูลเข้า LLM evaluator:
 
    - prompt ของผู้ใช้
-   - คำตอบจาก RCTLabs
+   - คำตอบจาก Delentia Labs
    - success_criteria + rubric
 
 3. ให้คะแนนสองมิติ:

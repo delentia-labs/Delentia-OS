@@ -21,7 +21,7 @@ Security model:
 
 Test coverage: 100 curated public test vectors (see cord_security_tests.py)
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

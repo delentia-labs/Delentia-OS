@@ -1,4 +1,4 @@
-# Prometheus scrape configuration for rct-platform
+# Prometheus scrape configuration for delentia-os
 # Place at: config/prometheus.yml
 # Reference: docker-compose.monitoring.yml
 
@@ -8,13 +8,13 @@ global:
   scrape_timeout: 10s
 
   external_labels:
-    monitor: "rct-platform"
+    monitor: "delentia-os"
     environment: "local"
 
 scrape_configs:
 
   # ─── RCT PLATFORM API ───────────────────────────────────────────────────
-  - job_name: "rct-platform"
+  - job_name: "delentia-os"
     static_configs:
       - targets: ["host.docker.internal:8000"]
         labels:

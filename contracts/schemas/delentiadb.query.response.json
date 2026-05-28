@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://rctlabs.co/schemas/rctdb.query.response.json",
-  "title": "RCTDB Query Response",
-  "description": "Response schema from RCTDB query",
+  "$id": "https://delentia.com/schemas/rctdb.query.response.json",
+  "title": "DelentiaDB Query Response",
+  "description": "Response schema from DelentiaDB query",
   "type": "object",
   "properties": {
     "results": {

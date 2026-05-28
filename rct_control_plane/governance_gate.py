@@ -19,7 +19,7 @@ Typical MEE integration::
         raise GovernanceError(verdict.reason)
     session.step(delta=0.08, governance_violation=not verdict.allowed)
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

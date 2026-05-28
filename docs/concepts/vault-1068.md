@@ -1,7 +1,7 @@
 # Vault-1068 — Constitutional Static Knowledge Store
 
-> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/rct-platform/concepts/).  
-> For the full architectural article, see: [rctlabs.co/en/blog/knowledge-vault-architecture](https://rctlabs.co/en/blog/knowledge-vault-architecture)
+> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/delentia-os/concepts/).  
+> For the full architectural article, see: [delentia.com/en/blog/knowledge-vault-architecture](https://delentia.com/en/blog/knowledge-vault-architecture)
 
 ---
 
@@ -43,7 +43,7 @@ Expired items are archived, not deleted. Agents cannot retrieve knowledge outsid
 
 ## The 8-Dimensional Knowledge Schema
 
-Vault-1068 uses the same 8-dimensional index as RCTDB, enabling static and dynamic knowledge to be queried with the same interface:
+Vault-1068 uses the same 8-dimensional index as DelentiaDB, enabling static and dynamic knowledge to be queried with the same interface:
 
 | Dimension | What it captures |
 |---|---|
@@ -69,7 +69,7 @@ Vault-1068 uses the same 8-dimensional index as RCTDB, enabling static and dynam
 - Compliance checklists and certification requirements
 
 **Not appropriate (other storage locations):**
-- User conversation context → RCTDB via G4/ARTENT
+- User conversation context → DelentiaDB via G4/ARTENT
 - Dynamic market data or real-time feeds → specialized adapters
 - Model weights or configurations → G3/JITNA routing layer
 - Unverified or draft knowledge → staging environment only
@@ -106,19 +106,19 @@ Vault-1068 is one anchor of the combined memory architecture:
 | Store | Answers | Technology |
 |---|---|---|
 | **Vault-1068** | "What is definitively true?" | Constitutional static store |
-| **RCTDB** | "What has been observed and learned?" | 8-dimensional dynamic memory |
+| **DelentiaDB** | "What has been observed and learned?" | 8-dimensional dynamic memory |
 | **Delta Engine** | "What changed recently? What's the efficient recall path?" | State compression + warm recall |
 
-A compliance query uses all three: Vault-1068 retrieves the regulatory rule, RCTDB retrieves historical compliance decisions, Delta Engine determines if warm-recall suffices.
+A compliance query uses all three: Vault-1068 retrieves the regulatory rule, DelentiaDB retrieves historical compliance decisions, Delta Engine determines if warm-recall suffices.
 
 ---
 
 ## SDK Implementation Notes
 
-In `rct-platform` v1.0.2a0:
+In `delentia-os` v1.0.2a0:
 - The **Control Plane DSL** (`rct_control_plane/`) implements G6's access control logic
 - The constitutional `A=0` enforcement in the **FDIA Scorer** (`core/fdia/`) implements the kill-switch behavior
-- Full Vault-1068 as a managed service is an enterprise feature — see [rctlabs.co](https://rctlabs.co)
+- Full Vault-1068 as a managed service is an enterprise feature — see [delentia.com](https://delentia.com)
 
 ---
 
@@ -130,4 +130,4 @@ In `rct-platform` v1.0.2a0:
 
 ---
 
-*Full architectural article: [rctlabs.co/en/blog/knowledge-vault-architecture](https://rctlabs.co/en/blog/knowledge-vault-architecture)*
+*Full architectural article: [delentia.com/en/blog/knowledge-vault-architecture](https://delentia.com/en/blog/knowledge-vault-architecture)*

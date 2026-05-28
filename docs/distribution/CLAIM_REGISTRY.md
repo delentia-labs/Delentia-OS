@@ -88,7 +88,7 @@ Use one of these **approved status phrases** in all public communications:
 
 ### X (Twitter/X)
 - Max 280 chars; favor one clear claim + evidence link
-- Approved: `"1,791 tests passing · 90% coverage · Apache 2.0 · Python 3.10+ · v2.0.0 on GitHub: github.com/rctlabs/rct-platform"`
+- Approved: `"1,791 tests passing · 90% coverage · Apache 2.0 · Python 3.10+ · v2.0.0 on GitHub: github.com/delentia-labs/delentia-os"`
 - Approved: `"Delta Engine: 91.5% measured compression (design floor ≥74%) — reproducible: python scripts/benchmark_fdia_delta.py --json"`
 - Avoid: Thread of metrics without a reproducible evidence link
 
@@ -137,12 +137,12 @@ Use one of these **approved status phrases** in all public communications:
 
 | Purpose | Link |
 | --- | --- |
-| Repository | `https://github.com/rctlabs/rct-platform` |
-| Website | `https://rctlabs.co` |
-| Colab playground (no login needed) | `https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb` |
-| CI badge (live status) | `https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml` |
-| Codecov (live coverage) | `https://app.codecov.io/gh/rctlabs/rct-platform` |
-| Testing SSOT | `https://github.com/rctlabs/rct-platform/blob/main/docs/testing/TESTING_CANONICAL.md` |
+| Repository | `https://github.com/delentia-labs/delentia-os` |
+| Website | `https://delentia.com` |
+| Colab playground (no login needed) | `https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb` |
+| CI badge (live status) | `https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml` |
+| Codecov (live coverage) | `https://app.codecov.io/gh/rctlabs/delentia-os` |
+| Testing SSOT | `https://github.com/delentia-labs/delentia-os/blob/main/docs/testing/TESTING_CANONICAL.md` |
 
 ---
 

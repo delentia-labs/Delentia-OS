@@ -27,7 +27,7 @@ MEE Session lifecycle::
     print(session.g)                  # current growth metric
     print(session.summary())          # full report
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

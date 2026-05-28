@@ -24,7 +24,7 @@ With Anthropic::
 
 Install optional dependencies::
 
-    pip install rct-platform[llm,persistence]
+    pip install delentia-os[llm,persistence]
 
 Environment Variables
 ---------------------
@@ -138,7 +138,7 @@ def run_demo() -> None:
     _kv("LLM Provider", _green(active_provider) if active_provider != "regex" else _yellow("regex (fallback)"))
     _kv("Storage", _green(f"SQLite @ {db.db_path}"))
     has_prom = get_prometheus_metrics() is not None
-    _kv("Prometheus", _green("enabled (prometheus-client)") if has_prom else _yellow("disabled (install rct-platform[monitoring])"))
+    _kv("Prometheus", _green("enabled (prometheus-client)") if has_prom else _yellow("disabled (install delentia-os[monitoring])"))
 
     if active_provider == "regex":
         print(_yellow("\n  ⚠  No LLM API key detected — using regex classifier."))

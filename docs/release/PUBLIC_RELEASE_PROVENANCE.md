@@ -6,7 +6,7 @@ This document explains how the public SDK relates to the larger private RCT Ecos
 
 ## 1. Public Repository Purpose
 
-`rct-platform` is the **open SDK layer** of the broader RCT Ecosystem. Its job is to publish the reusable constitutional AI primitives, reference microservices, and developer-facing documentation that can be shared safely under Apache 2.0.
+`delentia-os` is the **open SDK layer** of the broader RCT Ecosystem. Its job is to publish the reusable constitutional AI primitives, reference microservices, and developer-facing documentation that can be shared safely under Apache 2.0.
 
 Included in the public repository:
 
@@ -41,7 +41,7 @@ This means the public repo is not a mirror of the private monorepo. It is a cura
 
 Use these rules in README, releases, and social copy:
 
-- Say **“open SDK layer”** when referring to `rct-platform`
+- Say **“open SDK layer”** when referring to `delentia-os`
 - Say **“enterprise runtime”** or **“private production ecosystem”** when referring to non-public surfaces
 - Never quote private test counts, service counts, or operational claims as if they belong to the public repository
 - If a capability exists only in private infrastructure, describe it as enterprise-only or out of scope for the OSS repo

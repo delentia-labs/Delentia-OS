@@ -15,7 +15,7 @@
 | **End-to-end accuracy** | 96.0% |
 | **FDIA gate position** | Step 7 (Compare) — score ≥ threshold required before execution |
 | **Variants** | RCT-O · RCT-S · RCT-I |
-| **Source** | [rctlabs.co/technology/rct-7-thinking](https://www.rctlabs.co/en/technology/rct-7-thinking) |
+| **Source** | [delentia.com/technology/rct-7-thinking](https://www.delentia.com/en/technology/rct-7-thinking) |
 
 ---
 

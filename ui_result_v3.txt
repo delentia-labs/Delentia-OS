@@ -21,7 +21,7 @@
   PREVIEW  gateway-api          :8000   Unified entry point
   PREVIEW  intent-loop          :8001   JITNA Protocol ยท <50ms warm recall
   PREVIEW  analysearch-intent   :8002   GIGO Protection active
-  PREVIEW  vector-search        :8003   RCTDB mounted
+  PREVIEW  vector-search        :8003   DelentiaDB mounted
   PREVIEW  crystallizer         :8004   0.3% hallucination guard
   PREVIEW  delta-engine                 74% memory compression
 

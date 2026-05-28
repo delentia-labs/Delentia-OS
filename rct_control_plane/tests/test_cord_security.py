@@ -383,7 +383,7 @@ class TestCORDEncodingBypass:
 
     def test_normal_url_not_flagged(self):
         engine = CORDEngine()
-        result = engine.check("Visit https://rctlabs.co for more information")
+        result = engine.check("Visit https://delentia.com for more information")
         # A short URL should not trigger encoding bypass
         enc_findings = [
             f for f in result.findings if f.pattern_id in ("CORD-I062", "CORD-I063")

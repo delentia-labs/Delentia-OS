@@ -14,7 +14,7 @@ Usage:
     python tools/signedai_demo.py --adversarial          # injects a DAN jailbreak
     python tools/signedai_demo.py --verbose              # show per-signer reasoning
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

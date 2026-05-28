@@ -56,7 +56,7 @@ export const statusCommand = new Command("status")
       console.log();
       console.log(chalk.bold("  To start the server:"));
       console.log(
-        chalk.cyan("    pip install rct-platform") +
+        chalk.cyan("    pip install delentia-os") +
           chalk.gray("  # install the Python SDK"),
       );
       console.log(

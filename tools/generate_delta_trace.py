@@ -15,7 +15,7 @@ Usage:
     python tools/generate_delta_trace.py --demo --output my_trace.html
     python tools/generate_delta_trace.py --session my_trace.jsonl
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -207,7 +207,7 @@ def generate_html(emitter: DeltaTraceEmitter, output_path: Path) -> None:
 <div class="equation">F = D<sup>I</sup> × A &nbsp;·&nbsp; Delta Compression = 1 - (Δbytes / Snapshot bytes)</div>
 <div class="subtitle">
   Generated from {summary['total_events']} delta events across {summary['agents']} agents · {summary['total_ticks']} ticks ·
-  <a href="https://github.com/rctlabs/rct-platform/blob/main/tools/generate_delta_trace.py" target="_blank">generate_delta_trace.py</a>
+  <a href="https://github.com/delentia-labs/delentia-os/blob/main/tools/generate_delta_trace.py" target="_blank">generate_delta_trace.py</a>
 </div>
 
 <div class="stat-row">
@@ -254,7 +254,7 @@ def generate_html(emitter: DeltaTraceEmitter, output_path: Path) -> None:
 </div>
 
 <footer>
-  <p>RCT Platform · Apache 2.0 · <a href="https://github.com/rctlabs/rct-platform" target="_blank">github.com/rctlabs/rct-platform</a> · <a href="https://rctlabs.co" target="_blank">rctlabs.co</a></p>
+  <p>RCT Platform · Apache 2.0 · <a href="https://github.com/delentia-labs/delentia-os" target="_blank">github.com/delentia-labs/delentia-os</a> · <a href="https://delentia.com" target="_blank">delentia.com</a></p>
 </footer>
 
 <script>

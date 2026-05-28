@@ -9,13 +9,13 @@
 **จำนวนหน้า:** ~200+ หน้ารวม (เพิ่มจาก 180+)  
 **การทดสอบ:** 389/390 tests ผ่าน (99.7% success rate) ⭐ Level 4 Virtuoso Certified  
 **อัลกอริทึม:** 41 อัลกอริทึมสมบูรณ์ (Tier 1-9) | ALGO-37 ถึง 41 พร้อมใช้งาน ✨  
-**RCTDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
+**DelentiaDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
 **JITNA Protocol (RFC-001):** เอกสารเทคนิค 52 หน้า | "HTTP ของยุค Agentic AI" 🚀  
 
 **ใหม่ใน v2.1.0 (Enterprise Infrastructure Edition):**  
 ✅ **การรวมระบบ Schema สำเร็จ** - รวม Schema 43 ไฟล์จาก 15+ ที่ตั้งต่างกัน เข้าสู่ `/schemas/` พร้อม SCHEMA_REGISTRY.json (15 KB)  
 ✅ **การจัดระเบียบ Whitepaper สำเร็จ** - จัดระเบียบ 31 whitepapers เข้าสู่ `/whitepapers/` พร้อม WHITEPAPER_REGISTRY.json (190 KB)  
-✅ **การจัดระเบียบ Platform** - ปรับโครงสร้าง 1,678 ไฟล์ (`platform/` → `rct_platform/`) รักษา 48+ microservices  
+✅ **การจัดระเบียบ Platform** - ปรับโครงสร้าง 1,678 ไฟล์ (`platform/` → `delentia_os/`) รักษา 48+ microservices  
 ✅ **การตรวจสอบระดับ Production** - 389/390 tests ผ่าน (99.7%), รับรอง Level 4 Virtuoso, ไม่มี regression  
 ✅ **เอกสารระดับองค์กร** - สองภาษา (English + Thai), 5 เส้นทางการอ่าน, ดัชนีครบถ้วน  
 
@@ -23,7 +23,7 @@
 - **v1.0** (ธ.ค. 2568): เอกสารรากฐาน (~100 หน้า)
 - **v2.0** (9 ม.ค. 2569): รวมผลการทดสอบ (~150 หน้า)
 - **v2.1** (9 ม.ค. 2569): FDIA Equation, JITNA พื้นฐาน (+840 บรรทัด)
-- **v2.2** (10 ม.ค. 2569): RCTDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
+- **v2.2** (10 ม.ค. 2569): DelentiaDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
 - **v3.0** (10 ม.ค. 2569): Cross-chat integration (+2,000+ บรรทัด)
 - **v3.1** (12 ม.ค. 2569): Phase 3 Frontend Foundation (+2,624 บรรทัด)
 - **v5.1** (15 ม.ค. 2569): Genome Edition - 7 Genome Layer 🧬
@@ -56,10 +56,10 @@
 - **RCT-7 Mental OS**: กรอบการคิดแบบมีโครงสร้าง 7 ขั้นตอน
 - **Kernel 9 Tiers**: กระบวนการทำงาน 9 ขั้นตอนจากเจตนาสู่ผลลัพธ์
 - **SignedAI**: ระบบตรวจสอบความถูกต้องแบบ Multi-LLM Consensus
-- **ArtentAI**: เครื่องมือสร้างสถาปัตยกรรมและโค้ดด้วย AI
-- **RCTLabs**: แพลตฟอร์มพัฒนาแบบบูรณาการ
+- **Delentia AI**: เครื่องมือสร้างสถาปัตยกรรมและโค้ดด้วย AI
+- **Delentia Labs**: แพลตฟอร์มพัฒนาแบบบูรณาการ
 - **Floating Assistant**: UI Widget พร้อมใช้งานจริง
-- **RCTDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
+- **DelentiaDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
 - **MemoryRAG**: ระบบดึงข้อมูลขั้นสูงพร้อมสังเคราะห์เอกสารหลายฉบับ
 
 ### ความสำเร็จที่สำคัญ (มกราคม 2026)
@@ -93,8 +93,8 @@
 | **RCT-7 Mental OS** | การคิดแบบมีโครงสร้าง (7 ขั้น) | ✅ สมบูรณ์ | 9/9 |
 | **Kernel 9 Tiers** | กระบวนการทำงาน (9 ขั้น) | ✅ สมบูรณ์ | 11/11 |
 | **SignedAI** | Multi-LLM consensus (S/4/6/8 tiers) | ✅ สมบูรณ์ | 63/64 |
-| **ArtentAI** | สร้างสถาปัตยกรรม | ✅ สมบูรณ์ | ทดสอบบูรณาการแล้ว |
-| **RCTDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
+| **Delentia AI** | สร้างสถาปัตยกรรม | ✅ สมบูรณ์ | ทดสอบบูรณาการแล้ว |
+| **DelentiaDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
 | **Test Console** | กรอบการทดสอบ API | ✅ สมบูรณ์ | 64/64 |
 | **Floating Assistant** | UI widget สำหรับ production | ✅ สมบูรณ์ | Frontend พร้อม |
 | **Security Layer** | JWT, API keys, rate limiting | ✅ สมบูรณ์ | 38/38 |
@@ -267,7 +267,7 @@ class FDIAEquation:
 
 **D (Data / ข้อมูล)**
 - การวัด 0-100 ของความเพียงพอและความเกี่ยวข้องของข้อมูล
-- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ RCTDB
+- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ DelentiaDB
 - <30 = ไม่เพียงพอ, 30-70 = บางส่วน, >70 = เพียงพอ
 - ภาษาอังกฤษ: Data sufficiency measure
 
@@ -290,7 +290,7 @@ class FDIAEquation:
 - ภาษาอังกฤษ: Learning richness score
 
 **M (Memory / ความทรงจำ)**
-- สิ่งที่ต้องเก็บระยะยาวใน RCTDB/Vault
+- สิ่งที่ต้องเก็บระยะยาวใน DelentiaDB/Vault
 - การตัดสินใจสำคัญ, รูปแบบ, ความชอบของผู้ใช้
 - เปิดใช้งานความต่อเนื่องข้ามเซสชัน
 - ภาษาอังกฤษ: Long-term persistence
@@ -325,7 +325,7 @@ packet = JITNAPacket(
 #### เทมเพลต JITNA Workflow
 
 ระบบรวม **30+ เทมเพลต JITNA workflow** ใน:
-- ตำแหน่ง: `06_products_rctlabs_artentai_signedai/ArtentAI/Jitna_workflows/templates_jitna/*.jitna`
+- ตำแหน่ง: `06_products_rctlabs_delentia-ai_signedai/Delentia AI/Jitna_workflows/templates_jitna/*.jitna`
 - ตัวอย่าง:
   - `authentication_flow.jitna` - ขั้นตอนการยืนยันตัวตนผู้ใช้
   - `data_pipeline.jitna` - ETL และการประมวลผลข้อมูล
@@ -388,7 +388,7 @@ Kernel 9 Tiers ให้กระบวนการทำงานสำหร�
       │
       ▼
   T2: ดึงข้อมูลและบริบท (RETRIEVAL & DATA CONTEXT)
-      │  ➜ สอบถาม RCTDB + Vault + GraphRAG
+      │  ➜ สอบถาม DelentiaDB + Vault + GraphRAG
       │     รวบรวมความรู้ที่เกี่ยวข้อง
       │     เตรียม context window
       │
@@ -707,7 +707,7 @@ Timeout: ปิด (deadline=None)
 - ✅ การใช้งาน RCT-7 Mental OS
 - ✅ กระบวนการ Kernel 9 Tiers
 - ✅ SignedAI multi-LLM consensus (95%+)
-- ✅ การบูรณาการ RCTDB
+- ✅ การบูรณาการ DelentiaDB
 - ✅ กรอบงาน Test Console
 - ✅ Floating Assistant Phase 1-2
 - ✅ Security Layer (Grade D Phase 1)
@@ -727,7 +727,7 @@ Timeout: ปิด (deadline=None)
 ### Q3-Q4 2026 (วางแผน)
 
 - 📋 การบูรณาการ SignedAI Live LLM (Claude, GPT-4, Gemini)
-- 📋 ชุดคุณสมบัติ ArtentAI ที่สมบูรณ์
+- 📋 ชุดคุณสมบัติ Delentia AI ที่สมบูรณ์
 - 📋 การค้นหา GraphRAG ขั้นสูง
 - 📋 คุณสมบัติการทำงานร่วมกันแบบ real-time
 - 📋 แอปมือถือ (iOS/Android)

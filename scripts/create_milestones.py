@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create GitHub Milestones for rct-platform via GitHub REST API.
+Create GitHub Milestones for delentia-os via GitHub REST API.
 
 Usage:
     python scripts/create_milestones.py --token ghp_xxxYOURTOKENxxx
@@ -19,7 +19,7 @@ except ImportError:
     sys.exit(1)
 
 REPO_OWNER = "rctlabs"
-REPO_NAME = "rct-platform"
+REPO_NAME = "delentia-os"
 
 MILESTONES = [
     {
@@ -35,7 +35,7 @@ MILESTONES = [
         "title": "v1.0.0 — Stable PyPI Release",
         "due_on": "2026-09-30T00:00:00Z",
         "description": (
-            "pip install rct-platform from PyPI with stability guarantee. "
+            "pip install delentia-os from PyPI with stability guarantee. "
             "Includes type stubs, full API reference, semantic versioning guarantee, "
             "pre-built wheels for Python 3.10/3.11/3.12, and signed GitHub Release."
         ),
@@ -69,7 +69,7 @@ def create_milestone(session: requests.Session, owner: str, repo: str, milestone
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create GitHub milestones for rct-platform")
+    parser = argparse.ArgumentParser(description="Create GitHub milestones for delentia-os")
     parser.add_argument("--token", required=True, help="GitHub Personal Access Token (repo scope)")
     parser.add_argument(
         "--dry-run", action="store_true",

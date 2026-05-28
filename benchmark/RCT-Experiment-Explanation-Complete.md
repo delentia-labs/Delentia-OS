@@ -15,7 +15,7 @@
 
 1. **Methodology** จาก `RCT-December-2025-Benchmark-Plan.md` [29]
 2. **Scope** จาก `RCT-Experiment-Scope-Complete.md` [30]
-3. **Baseline Data** จาก `RCT-Complete-Testing-Report.md` [23] และ `RCTDB_Complete_System_Test_Report.md` [25]
+3. **Baseline Data** จาก `RCT-Complete-Testing-Report.md` [23] และ `DelentiaDB_Complete_System_Test_Report.md` [25]
 4. **Theory** จาก `RCT-Comprehensive-Benchmark-Framework.md` [28]
 
 ### ทำไมต้อง "จำลอง"?
@@ -56,7 +56,7 @@ BASELINE_METRICS = {
 
 ค่าเหล่านี้มาจากไหน:
 - `RCT-Complete-Testing-Report.md` [23]: 520 tests, 15,000 experiments
-- `RCTDB_Complete_System_Test_Report.md` [25]: Load test, endurance test
+- `DelentiaDB_Complete_System_Test_Report.md` [25]: Load test, endurance test
 
 ### Step 2: สร้างผลลัพธ์ Phase-by-Phase
 
@@ -124,7 +124,7 @@ latencies = np.random.lognormal(
    - Breaking point at ~8,000 users (latency > 1s, error > 3%)
 
 2. **Endurance (72 hours @ 500 users):**
-   - Uptime: 99.98% (based on RCTDB report uptime)
+   - Uptime: 99.98% (based on DelentiaDB report uptime)
    - Memory growth: 0.28%/hour (no leak)
    - Error rate: 0.002% (stable)
 

@@ -36,7 +36,7 @@ individual is representing the project in public contexts.
 
 To report violations or safety concerns, contact:
 
-- <team@rctlabs.co>
+- <team@delentia.com>
 
 Please include links, screenshots, timestamps, and any relevant context. Reports
 will be reviewed confidentially and handled as promptly as practical.

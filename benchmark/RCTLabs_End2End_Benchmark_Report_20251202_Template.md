@@ -1,5 +1,5 @@
 ---
-title: RCTLabs End-to-End Benchmark Report
+title: Delentia Labs End-to-End Benchmark Report
 role: rctlabs_end2end_benchmark_report
 version: v1.0
 report_date: 2025-12-02
@@ -9,10 +9,10 @@ depends_on:
   - RCTLabs_End2End_Benchmark_Cases_v1.jsonl
 ---
 
-# RCTLabs End-to-End Benchmark Report (Template)
+# Delentia Labs End-to-End Benchmark Report (Template)
 
 > **Note:**  
-> เอกสารนี้เป็น template สำหรับรายงานผล RCTLabs benchmark ในแต่ละรอบ
+> เอกสารนี้เป็น template สำหรับรายงานผล Delentia Labs benchmark ในแต่ละรอบ
 > แนะนำให้ทำสำเนาเป็น `RCTLabs_End2End_Benchmark_Report_YYYYMMDD.md`
 > แล้วเติมตัวเลข/ข้อค้นพบจากผลรันจริง
 
@@ -30,7 +30,7 @@ depends_on:
 
 **TL;DR:**
 
-- โดยรวม RCTLabs (rctlabs_rct) ดีกว่า baseline LLM-only แค่ไหน?
+- โดยรวม Delentia Labs (rctlabs_rct) ดีกว่า baseline LLM-only แค่ไหน?
 - จุดเด่น/จุดอ่อนที่ชัดเจนในรอบนี้คืออะไร?
 
 
@@ -40,7 +40,7 @@ depends_on:
 
 ### 2.1 Runtime & Model
 
-- RCTLabs API base URL: `RCTLABS_API_BASE_URL`
+- Delentia Labs API base URL: `RCTLABS_API_BASE_URL`
 - Model / provider:
 - Prompting strategy version:
 - Integration กับ Kernel / Memory: (สั้น ๆ)
@@ -78,7 +78,7 @@ depends_on:
 
 - ตัวเลขสำคัญ: avg quality/usefulness ต่อ scenario_type
 - ข้อสังเกต:
-  - RCTLabs ช่วยให้เห็นโครง repo ชัดขึ้นไหม?
+  - Delentia Labs ช่วยให้เห็นโครง repo ชัดขึ้นไหม?
   - ยังมีโฟลเดอร์สำคัญที่ถูกละเลยหรือไม่?
 
 ### 4.2 Architecture Plan (lab-002, ...)
@@ -97,7 +97,7 @@ depends_on:
 
 ## 5. Case Studies
 
-### 5.1 เคสที่ RCTLabs ชนะ LLM-only ชัดเจน
+### 5.1 เคสที่ Delentia Labs ชนะ LLM-only ชัดเจน
 
 - ID: `lab-00X`
 - Task: `scenario_type=...`
@@ -107,7 +107,7 @@ depends_on:
 - บทเรียน: ควรเน้นปรับ prompt/pipeline แบบนี้ต่อ
 
 
-### 5.2 เคสที่ RCTLabs ยังไม่ดีเท่าที่ควร
+### 5.2 เคสที่ Delentia Labs ยังไม่ดีเท่าที่ควร
 
 - ID: `lab-00Y`
 - ปัญหา: เช่น useful น้อย, สับสน context, ไม่เจาะจงกับ repo จริง
@@ -116,7 +116,7 @@ depends_on:
 
 ---
 
-## 6. Implications for RCTLabs Product Design
+## 6. Implications for Delentia Labs Product Design
 
 - สิ่งที่ design ปัจจุบันทำได้ดี (onboarding, architecture planning ฯลฯ)
 - สิ่งที่ควรปรับ (เช่น การถาม back, multi-turn, filter context)
@@ -138,5 +138,5 @@ depends_on:
 
 - [ ] เพิ่ม scenario ใหม่ (เช่น research, experiment design)
 - [ ] เพิ่ม human eval สำหรับเคสสำคัญ
-- [ ] ปรับ RCTLabs API/pipeline ตามข้อค้นพบ
+- [ ] ปรับ Delentia Labs API/pipeline ตามข้อค้นพบ
 - [ ] ผูก benchmark นี้เข้ากับ SignedAI เพื่อมี audit trail และ governance

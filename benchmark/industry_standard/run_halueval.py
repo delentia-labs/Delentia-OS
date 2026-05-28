@@ -22,7 +22,7 @@ Usage:
     python benchmark/industry_standard/run_halueval.py --max-samples 500
     python benchmark/industry_standard/run_halueval.py --update-leaderboard
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

@@ -11,7 +11,7 @@ Usage:
     python adversarial_tests/run_challenge.py --verbose
     python adversarial_tests/run_challenge.py --category dan_prompts
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Optional
 
-# Ensure rct-platform root is on sys.path when run as script
+# Ensure delentia-os root is on sys.path when run as script
 _ROOT = Path(__file__).parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))

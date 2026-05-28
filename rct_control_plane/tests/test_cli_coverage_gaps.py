@@ -318,7 +318,7 @@ class TestVersionCommand:
         result = runner.invoke(cli, ["version", "--output", "json"])
         data = json.loads(result.output)
         assert "repository" in data
-        assert "rct-platform" in data["repository"]
+        assert "delentia-os" in data["repository"]
 
     def test_version_package_not_found_uses_hardcoded_fallback(
         self, runner, cli, monkeypatch
@@ -341,7 +341,7 @@ class TestVersionCommand:
         """Default table output must show name, license, and homepage."""
         result = runner.invoke(cli, ["version"])
         assert result.exit_code == 0
-        assert "rct-platform" in result.output
+        assert "delentia-os" in result.output
         assert "Apache-2.0" in result.output
         assert "rctlabs" in result.output
 
