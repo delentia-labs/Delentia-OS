@@ -343,7 +343,7 @@ class TestVersionCommand:
         assert result.exit_code == 0
         assert "delentia-os" in result.output
         assert "Apache-2.0" in result.output
-        assert "rctlabs" in result.output
+        assert "delentia" in result.output
 
 
 # ── status command ─────────────────────────────────────────────────────────────
