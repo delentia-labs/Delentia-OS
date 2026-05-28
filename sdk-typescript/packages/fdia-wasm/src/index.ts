@@ -1,5 +1,5 @@
 /**
- * @rctlabs/fdia-wasm — Constitutional FDIA Scoring Engine
+ * @delentia/fdia-wasm — Constitutional FDIA Scoring Engine
  *
  * Edge-ready TypeScript implementation of the RCT Platform FDIA formula:
  *   F = D^I × A
@@ -17,9 +17,9 @@
  *   - Constitutional kill switch: A=0 → F=0 regardless of D and I
  *   - Bundle target: <15KB gzip
  *
- * Matches Python reference: rct-platform/core/fdia/fdia.py
+ * Matches Python reference: delentia-os/core/fdia/fdia.py
  *
- * Apache 2.0 — RCT Labs (https://rctlabs.co)
+ * Apache 2.0 — Delentia Labs (https://delentia.com)
  */
 
 // ─────────────────────────────────────────────────────────────────────────────

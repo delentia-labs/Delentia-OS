@@ -106,11 +106,11 @@ _DEFAULT_ENV_TEMPLATE = textwrap.dedent(
 
     # --- Service URLs ---
     # Production API base URL
-    RCT_API_BASE_URL=https://api.rctlabs.co
+    RCT_API_BASE_URL=https://api.delentia.com
 
     # --- Database (local dev only) ---
-    # RCTDB connection string for local development
-    RCTDB_URL=postgresql://localhost:5432/rctdb_dev
+    # DelentiaDB connection string for local development
+    DelentiaDB_URL=postgresql://localhost:5432/rctdb_dev
 
     # --- Observability ---
     # Optional: trace exporter endpoint
@@ -145,7 +145,7 @@ def _configure_encoding() -> None:
 
 def _package_version(distribution: str) -> Optional[str]:
     """Return an installed distribution version when available."""
-    if distribution == "rct-platform":
+    if distribution == "delentia-os":
         return get_package_version()
     try:
         import importlib.metadata as importlib_metadata
@@ -682,17 +682,17 @@ def version_cmd(output: str):
 
     info = {
         "version": ver,
-        "name": "rct-platform",
+        "name": "delentia-os",
         "description": "Constitutional AI Operating System SDK",
         "python": sys.version.split()[0],
         "license": "Apache-2.0",
-        "homepage": "https://rctlabs.co",
-        "repository": "https://github.com/rctlabs/rct-platform",
+        "homepage": "https://delentia.com",
+        "repository": "https://github.com/delentia-labs/delentia-os",
     }
     if output == "json":
         click.echo(json.dumps(info, indent=2))
     else:
-        click.echo(f"rct-platform  v{info['version']}")
+        click.echo(f"delentia-os  v{info['version']}")
         click.echo(f"Python        {info['python']}")
         click.echo(f"License       {info['license']}")
         click.echo(f"Homepage      {info['homepage']}")
@@ -2201,7 +2201,7 @@ def init(force: bool):
         )
         console.print("       [dim]RCT_CORE_BRAIN_KEY=<openrouter-key>[/]")
         console.print("       [dim]GOOGLE_API_KEY=<google-gemini-key>  (optional)[/]")
-        console.print("       [dim]RCTDB_URL=postgresql://localhost:5432/rctdb_dev[/]")
+        console.print("       [dim]DelentiaDB_URL=postgresql://localhost:5432/rctdb_dev[/]")
         console.print()
         console.print(
             "  [dim]2.[/]  Run [bold cyan]rct doctor[/] to verify the environment"

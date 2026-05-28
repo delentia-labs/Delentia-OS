@@ -6,7 +6,7 @@
 
 ## 1. Quick review path
 
-จากโฟลเดอร์ `rct-platform`
+จากโฟลเดอร์ `delentia-os`
 
 ```bash
 .venv_ci_check\Scripts\rct.exe version

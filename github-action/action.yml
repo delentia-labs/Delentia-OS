@@ -4,7 +4,7 @@ description: >
   Blocks merges when FDIA A-gate is 0 or policy decision is REJECT.
   Outputs governance score and triggered policy rules.
 
-author: "RCT Labs"
+author: "Delentia Labs"
 
 branding:
   icon: "shield"
@@ -15,7 +15,7 @@ inputs:
     description: "Natural language intent describing the PR changes"
     required: true
   rct_api_url:
-    description: "Base URL of the running rct-platform API"
+    description: "Base URL of the running delentia-os API"
     required: false
     default: "http://localhost:8000"
   user_tier:
@@ -31,7 +31,7 @@ inputs:
     required: false
     default: "true"
   rct_api_key:
-    description: "API key for authenticated rct-platform instances"
+    description: "API key for authenticated delentia-os instances"
     required: false
     default: ""
 

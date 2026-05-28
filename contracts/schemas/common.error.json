@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://rctlabs.co/schemas/common.error.json",
+  "$id": "https://delentia.com/schemas/common.error.json",
   "title": "Error Response",
   "description": "Standard error response schema for all API endpoints",
   "type": "object",

@@ -256,4 +256,4 @@ assert_monotonic([h["growth"] for h in history])
 - [ALGO-03: Delta Engine](overview.md#algo-03-delta-engine) — storage backend for growth history
 - [ALGO-08: Self-Evolving Systems](overview.md#algo-08-self-evolving-systems) — orchestrator that drives MEE v2 cycles
 - [ALGO-30: ABV](overview.md) — validation gate before each growth step
-- [Blog: MEE v2 explained](https://rctlabs.co/blog/mee-meta-evolution-engine-explained) — design rationale and enterprise use cases
+- [Blog: MEE v2 explained](https://delentia.com/blog/mee-meta-evolution-engine-explained) — design rationale and enterprise use cases

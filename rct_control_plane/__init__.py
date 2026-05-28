@@ -5,7 +5,7 @@ Exports all public symbols from the three core modules that are present
 in this repository. Additional modules (jitna_protocol, intent_compiler, etc.)
 will be added in future releases.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from ._version import PACKAGE_VERSION

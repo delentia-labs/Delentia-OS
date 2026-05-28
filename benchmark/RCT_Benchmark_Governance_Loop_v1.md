@@ -98,4 +98,4 @@ Response (generic):
 
 - implement SignedAI evaluator API จริง
 - ผูก evaluator เข้ากับ SignedAI platform / UI
-- เพิ่มการ sign-off และเก็บ audit trail ใน RCTDB
+- เพิ่มการ sign-off และเก็บ audit trail ใน DelentiaDB

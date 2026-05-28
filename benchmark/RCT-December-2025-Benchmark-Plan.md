@@ -18,7 +18,7 @@ Before touching a single line of code, ensure:
 ☐ Hetzner 3-node cluster operational (CPX41/CPX31/CPX21)
 ☐ All 5 databases running (PostgreSQL, Neo4j, Redis, Qdrant, Zep)
 ☐ RCT Core service deployed (latest build)
-☐ ArtentAI platform running
+☐ Delentia AI platform running
 ☐ SignedAI multi-LLM router active (6 providers connected)
 ☐ Monitoring stack ready (Prometheus, Grafana, Jaeger, Sentry)
 ☐ Load testing tools installed (Locust, JMeter OR k6)
@@ -44,7 +44,7 @@ docker exec qdrant_container curl -s http://localhost:6333/health | jq .
 docker exec zep_container curl -s http://localhost:8000/health | jq .
 
 # 3. Test RCT Core health endpoint
-curl -s http://rct-api.rctlabs.co/health | jq .
+curl -s http://rct-api.delentia.com/health | jq .
 
 # 4. Verify monitoring stack
 curl -s http://prometheus:9090/-/healthy
@@ -160,7 +160,7 @@ RESULTS = []
 
 test_prompts = [
     "What is RCT Ecosystem?",
-    "How do I create a workflow in ArtentAI?",
+    "How do I create a workflow in Delentia AI?",
     "Explain SignedAI verification",
     "What is intent clarity?",
     "Generate a React component for a todo app",
@@ -771,7 +771,7 @@ Load generation via Locust and k6.
 ### Reproducibility
 
 All test scripts, data, and configuration available:
-- GitHub: [rctlabs/benchmark-public](https://github.com/rctlabs/benchmark-public)
+- GitHub: [rctlabs/benchmark-public](https://github.com/delentia-labs/benchmark-public)
 - Data: [S3 bucket with signed URLs]
 - Docker image: `ghcr.io/rctlabs/rct:benchmark-dec-2025`
 
@@ -830,7 +830,7 @@ This directory contains the complete benchmark suite for reproducing RCT's Decem
 
 ```bash
 # 1. Clone
-git clone https://github.com/rctlabs/benchmark-public.git
+git clone https://github.com/delentia-labs/benchmark-public.git
 cd rct-benchmark-december-2025
 
 # 2. Setup infrastructure

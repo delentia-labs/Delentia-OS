@@ -34,7 +34,7 @@ JITNA is not a single class or file. It is a three-layer system where each layer
 │  Layer 2 — JITNA LANGUAGE (6-field templates)                   │
 │  Role: Structured intent communication format                   │
 │  Fields: I / D / Δ / A / R / M                                  │
-│  Used for: prompts, memory tagging, vault metadata, RCTDB        │
+│  Used for: prompts, memory tagging, vault metadata, DelentiaDB        │
 │  Templates: 50+ workflow templates available                    │
 ├──────────────────────────────────────────────────────────────────┤
 │  Layer 3 — JITNA INTAKE (user-facing)                           │
@@ -177,7 +177,7 @@ Execution (Layer 3 Intake)      ← Specialist processes the task
 SignedAI Verification           ← Multi-model consensus
     │
     ▼
-RCTDB Commit                    ← Permanent audit trail
+DelentiaDB Commit                    ← Permanent audit trail
     │
     ▼
 Output
@@ -189,8 +189,8 @@ Every packet's `intent` field is scored by the FDIA equation (`F = D^I × A`). I
 ### JITNA + SignedAI
 For high-criticality tasks, JITNA routes through SignedAI consensus. Multiple models independently process the task and must reach agreement (Tier 4: 75%, Tier 6: 67%, Tier 8: 75%) before the result is committed.
 
-### JITNA + RCTDB
-Every completed JITNA transaction is committed to RCTDB — the 8-dimensional universal memory schema. Any transaction can be replayed from any point. The Delta Engine compresses stored state by 74%.
+### JITNA + DelentiaDB
+Every completed JITNA transaction is committed to DelentiaDB — the 8-dimensional universal memory schema. Any transaction can be replayed from any point. The Delta Engine compresses stored state by 74%.
 
 ---
 

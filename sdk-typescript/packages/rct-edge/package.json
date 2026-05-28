@@ -1,5 +1,5 @@
 {
-  "name": "@rctlabs/rct-edge",
+  "name": "@delentia/rct-edge",
   "version": "1.0.0",
   "description": "RCT Platform edge runtime — Cloudflare Workers & browser compatible CORD check + FDIA gate. <50KB gzip.",
   "main": "dist/index.js",
@@ -31,11 +31,11 @@
     "ai-safety",
     "injection-detection"
   ],
-  "author": "RCT Labs",
+  "author": "Delentia Labs",
   "license": "Apache-2.0",
   "dependencies": {},
   "peerDependencies": {
-    "@rctlabs/fdia-wasm": "^1.0.0"
+    "@delentia/fdia-wasm": "^1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

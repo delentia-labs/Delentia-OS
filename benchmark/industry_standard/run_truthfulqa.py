@@ -21,7 +21,7 @@ Usage:
     python benchmark/industry_standard/run_truthfulqa.py --samples 100
     python benchmark/industry_standard/run_truthfulqa.py --samples 50 --output results/truthfulqa_run.json
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

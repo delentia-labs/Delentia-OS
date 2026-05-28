@@ -23,7 +23,7 @@ Use this checklist before any public launch, social media campaign, GitHub Relea
 ## 3. GitHub UI Configuration
 
 - [x] About description is set
-- [x] Website is set to `https://rctlabs.co`
+- [x] Website is set to `https://delentia.com`
 - [x] Topics are configured for discovery
 - [x] GitHub Discussions is enabled if the repo links to Discussions anywhere in docs or issue templates
 - [x] GitHub Milestones exist for roadmap items referenced in `ROADMAP.md`

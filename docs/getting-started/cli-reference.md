@@ -279,7 +279,7 @@ rct intent submit --intent TEXT --context JSON
 ```bash
 rct intent submit \
   --intent "Analyze security posture of auth module" \
-  --context '{"repo": "rct-platform", "branch": "main"}'
+  --context '{"repo": "delentia-os", "branch": "main"}'
 ```
 
 ---

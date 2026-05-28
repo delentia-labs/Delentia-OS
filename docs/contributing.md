@@ -8,8 +8,8 @@ Thank you for your interest in contributing to RCT Platform!
 
 ```bash
 # Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/rct-platform.git
-cd rct-platform
+git clone https://github.com/YOUR_USERNAME/delentia-os.git
+cd delentia-os
 
 python -m venv .venv
 source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
@@ -73,10 +73,10 @@ Examples:
 
 ## Code of Conduct
 
-This project follows the [Contributor Covenant Code of Conduct](https://github.com/rctlabs/rct-platform/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
+This project follows the [Contributor Covenant Code of Conduct](https://github.com/delentia-labs/delentia-os/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
 
 ---
 
 ## Security
 
-To report a security vulnerability, please follow the process in [SECURITY.md](https://github.com/rctlabs/rct-platform/blob/main/SECURITY.md). Do **not** open a public issue for security vulnerabilities.
+To report a security vulnerability, please follow the process in [SECURITY.md](https://github.com/delentia-labs/delentia-os/blob/main/SECURITY.md). Do **not** open a public issue for security vulnerabilities.

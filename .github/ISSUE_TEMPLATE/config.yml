@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ask a Question / Discussions
-    url: https://github.com/rctlabs/rct-platform/discussions
+    url: https://github.com/delentia-labs/delentia-os/discussions
     about: For questions about usage, architecture, or integrations — please use GitHub Discussions.
   - name: Security Vulnerability
-    url: https://github.com/rctlabs/rct-platform/blob/main/SECURITY.md
+    url: https://github.com/delentia-labs/delentia-os/blob/main/SECURITY.md
     about: Do NOT open a public issue for security vulnerabilities. See SECURITY.md for responsible disclosure.
-  - name: RCT Labs Website
-    url: https://rctlabs.co
+  - name: Delentia Labs Website
+    url: https://delentia.com
     about: Enterprise features, commercial licensing, and production deployments.

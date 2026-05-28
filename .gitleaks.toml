@@ -1,8 +1,8 @@
-title = "rct-platform Gitleaks Configuration"
+title = "delentia-os Gitleaks Configuration"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Allowlist for known false positives in documentation and example files.
-# rct-platform is a PUBLIC SDK repo — it does not contain real credentials.
+# delentia-os is a PUBLIC SDK repo — it does not contain real credentials.
 # Any credential-looking string here is an intentional placeholder / example.
 #
 # IMPORTANT: Do NOT add entire directories to `paths` — allowlist specific

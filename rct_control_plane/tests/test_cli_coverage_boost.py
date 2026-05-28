@@ -500,7 +500,7 @@ class TestVersionCommand:
         """version table output."""
         result = runner.invoke(cli, ["version"])
         assert result.exit_code == 0
-        assert "rct-platform" in result.output
+        assert "delentia-os" in result.output
 
     def test_version_json(self, runner):
         """version --output json."""

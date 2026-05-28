@@ -15,7 +15,7 @@ instead of a silent 500 crash.
 Enterprise module path (private runtime):
   rct_platform/microservices/kernel-api/creator_profile_integration.py
 
-Public reference: https://github.com/rctlabs/rct-platform
+Public reference: https://github.com/delentia-labs/delentia-os
 """
 
 from fastapi import APIRouter, HTTPException, Query
@@ -30,7 +30,7 @@ _ENTERPRISE_UNAVAILABLE_DETAIL = (
     "Genome / Creator Profile endpoints require the RCT enterprise runtime "
     "module (creator_profile_integration). "
     "This module is not included in the public SDK. "
-    "See https://rctlabs.co for enterprise access."
+    "See https://delentia.com for enterprise access."
 )
 
 # Create router

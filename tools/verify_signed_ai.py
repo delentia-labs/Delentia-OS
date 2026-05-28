@@ -3,7 +3,7 @@
 RCT Platform — SignedAI Verifier (Standalone Tool)
 
 Cryptographically verifies that a JITNA packet was signed by
-an authorized RCT Labs ED25519 key.
+an authorized Delentia Labs ED25519 key.
 
 Requires ONLY: cryptography>=38.0.0 (pip install cryptography)
 No other RCT dependencies needed.
@@ -23,7 +23,7 @@ Constitutional connection:
     The ED25519 signature IS the Architect (A) token.
     A tampered signature → A=0 → F=0.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

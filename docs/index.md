@@ -2,11 +2,11 @@
 
 **Intent-Centric AI Operating System — Constitutional Architecture**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/rctlabs/rct-platform/ci.yml?branch=main&label=CI&logo=github)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/rctlabs/rct-platform/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/rct-platform)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](https://github.com/rctlabs/rct-platform/blob/main/CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/rctlabs/rct-platform/blob/main/LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10+-3776AB)](https://pypi.org/project/rct-platform/)
+[![CI](https://img.shields.io/github/actions/workflow/status/rctlabs/delentia-os/ci.yml?branch=main&label=CI&logo=github)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rctlabs/delentia-os/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/rctlabs/delentia-os)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](https://github.com/delentia-labs/delentia-os/blob/main/CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/delentia-labs/delentia-os/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10+-3776AB)](https://pypi.org/project/delentia-os/)
 
 ---
 
@@ -77,21 +77,21 @@ $$F = D^I \times A$$
 ## Quick Install
 
 !!! note "Stable SDK — Release 2.0.0"
-    `rct-platform` v2.0.0 is the official stable release.
+    `delentia-os` v2.0.0 is the official stable release.
     Source installs and built wheels are fully supported.
 
 ```bash
 # From source (recommended today):
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 pip install -e .
 ```
 
 Or, once PyPI publishing is available at stable release:
 
 ```bash
-pip install rct-platform
+pip install delentia-os
 ```
 
 [Get Started →](getting-started/installation.md){ .md-button .md-button--primary }
-[View on GitHub →](https://github.com/rctlabs/rct-platform){ .md-button }
+[View on GitHub →](https://github.com/delentia-labs/delentia-os){ .md-button }

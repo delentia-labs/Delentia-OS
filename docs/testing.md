@@ -91,4 +91,4 @@ Hooks: `black` (formatter), `isort` (import sorter), `bandit` (security scan), s
 
 ## Full canonical testing reference
 
-See [`docs/testing/TESTING_CANONICAL.md`](https://github.com/rctlabs/rct-platform/blob/main/docs/testing/TESTING_CANONICAL.md) for the complete test matrix including exact test names, scopes, and edge-case coverage notes.
+See [`docs/testing/TESTING_CANONICAL.md`](https://github.com/delentia-labs/delentia-os/blob/main/docs/testing/TESTING_CANONICAL.md) for the complete test matrix including exact test names, scopes, and edge-case coverage notes.

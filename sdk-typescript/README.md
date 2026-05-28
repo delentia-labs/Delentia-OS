@@ -1,10 +1,10 @@
-# @rctlabs/rct-platform
+# @delentia/delentia-os
 
-[![npm](https://img.shields.io/npm/v/@rctlabs/rct-platform?color=cb3837&logo=npm)](https://www.npmjs.com/package/@rctlabs/rct-platform)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/rctlabs/rct-platform/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/v/@delentia/delentia-os?color=cb3837&logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](https://github.com/delentia-labs/delentia-os/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**TypeScript / JavaScript SDK for [RCT Platform](https://rctlabs.co)** — the world's first Intent-Centric AI Operating System with constitutional architecture.
+**TypeScript / JavaScript SDK for [RCT Platform](https://delentia.com)** — the world's first Intent-Centric AI Operating System with constitutional architecture.
 
 ---
 
@@ -14,18 +14,18 @@ RCT Platform provides:
 - **FDIA Formula** — `F = D^I × A` — constitutional scoring that governs AI freedom to act
 - **JITNA Packets** — Just-In-Time Need Analysis structured intent envelopes
 - **SignedAI Tiers** — HexaCore role assignment based on user tier and risk profile
-- **REST Client** — typed Axios wrapper for the rct-platform FastAPI backend
+- **REST Client** — typed Axios wrapper for the delentia-os FastAPI backend
 
 ---
 
 ## Installation
 
 ```bash
-npm install @rctlabs/rct-platform
+npm install @delentia/delentia-os
 # or
-yarn add @rctlabs/rct-platform
+yarn add @delentia/delentia-os
 # or
-pnpm add @rctlabs/rct-platform
+pnpm add @delentia/delentia-os
 ```
 
 ---
@@ -35,13 +35,13 @@ pnpm add @rctlabs/rct-platform
 The package ships a full command-line interface. Run without installing:
 
 ```bash
-npx @rctlabs/rct-platform --help
+npx @delentia/delentia-os --help
 ```
 
 Or install globally for the `rct` command:
 
 ```bash
-npm install -g @rctlabs/rct-platform
+npm install -g @delentia/delentia-os
 rct --help
 ```
 
@@ -58,19 +58,19 @@ rct --help
 
 ```bash
 # Check constitutional gate offline
-npx @rctlabs/rct-platform fdia 0.9 0.95 1.0
+npx @delentia/delentia-os fdia 0.9 0.95 1.0
 # ╭────── FDIA — Constitutional Gate PASSED ──────╮
 # │  F Score:  0.9048  Risk: LOW  Gate: 0.75 PASS ✔ │
 # ╰───────────────────────────────────────────────╯
 
-# Compile intent (requires rct-platform server running)
-npx @rctlabs/rct-platform compile "Refactor the authentication module" --url http://localhost:8000
+# Compile intent (requires delentia-os server running)
+npx @delentia/delentia-os compile "Refactor the authentication module" --url http://localhost:8000
 
 # Interactive project setup
-npx @rctlabs/rct-platform init
+npx @delentia/delentia-os init
 
 # Server health + metrics
-npx @rctlabs/rct-platform status
+npx @delentia/delentia-os status
 ```
 
 ### `rct fdia` — Offline Mode
@@ -93,7 +93,7 @@ rct fdia <d> <i> <a> [--gate <threshold>] [--no-banner]
 ### FDIA Constitutional Formula
 
 ```typescript
-import { computeFDIA, meetsThreshold } from "@rctlabs/rct-platform";
+import { computeFDIA, meetsThreshold } from "@delentia/delentia-os";
 
 // Compute F = D^I × A
 const result = computeFDIA(0.7, 0.9, 1.0);
@@ -114,7 +114,7 @@ console.log(allowed); // true
 ### JITNA Packet Construction
 
 ```typescript
-import { constructJITNA, serializeJITNA } from "@rctlabs/rct-platform";
+import { constructJITNA, serializeJITNA } from "@delentia/delentia-os";
 
 const packet = constructJITNA({
   intent: "Refactor the authentication module",
@@ -131,7 +131,7 @@ const json = serializeJITNA(packet);
 ### SignedAI Tier Selection
 
 ```typescript
-import { selectSignedAITier } from "@rctlabs/rct-platform";
+import { selectSignedAITier } from "@delentia/delentia-os";
 
 const selection = selectSignedAITier("PRO", "STRUCTURAL");
 console.log(selection.roles);
@@ -140,10 +140,10 @@ console.log(selection.roles);
 console.log(selection.maxParallelAgents); // 4
 ```
 
-### REST Client (requires running rct-platform server)
+### REST Client (requires running delentia-os server)
 
 ```typescript
-import { RCTClient } from "@rctlabs/rct-platform";
+import { RCTClient } from "@delentia/delentia-os";
 
 const client = new RCTClient({
   baseURL: "https://your-rct-instance.com",
@@ -215,7 +215,7 @@ Map user tier + risk profile to HexaCore role assignments.
 
 ### `RCTClient`
 
-Typed Axios client for the rct-platform REST API.
+Typed Axios client for the delentia-os REST API.
 
 ```typescript
 const client = new RCTClient(config?: RCTClientConfig);
@@ -236,21 +236,21 @@ import type {
   JITNAPacket, JITNAMeta,
   TierSelection, UserTier, HexaCoreRole,
   RCTClientConfig, CompileResponse,
-} from "@rctlabs/rct-platform";
+} from "@delentia/delentia-os";
 ```
 
 ---
 
 ## Links
 
-- **Website**: [rctlabs.co](https://rctlabs.co)
-- **Python SDK (PyPI)**: [rct-platform](https://pypi.org/project/rct-platform/)
-- **GitHub**: [rctlabs/rct-platform](https://github.com/rctlabs/rct-platform)
-- **Docs**: [rctlabs.github.io/rct-platform](https://rctlabs.github.io/rct-platform/)
-- **Issues**: [GitHub Issues](https://github.com/rctlabs/rct-platform/issues)
+- **Website**: [delentia.com](https://delentia.com)
+- **Python SDK (PyPI)**: [delentia-os](https://pypi.org/project/delentia-os/)
+- **GitHub**: [rctlabs/delentia-os](https://github.com/delentia-labs/delentia-os)
+- **Docs**: [rctlabs.github.io/delentia-os](https://rctlabs.github.io/delentia-os/)
+- **Issues**: [GitHub Issues](https://github.com/delentia-labs/delentia-os/issues)
 
 ---
 
 ## License
 
-[Apache 2.0](https://github.com/rctlabs/rct-platform/blob/main/LICENSE) © RCT Labs
+[Apache 2.0](https://github.com/delentia-labs/delentia-os/blob/main/LICENSE) © Delentia Labs

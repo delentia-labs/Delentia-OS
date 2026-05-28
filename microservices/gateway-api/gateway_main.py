@@ -4,7 +4,7 @@ Main Gateway API application combining all RCT services
 
 Services integrated:
 1. SignedAI (Verification)
-2. ArtentAI (Creation) - Future
+2. DelentiaAI (Creation) - Future
 3. Genome API (Creator Profile)
 4. Kernel (Routing) - Future
 
@@ -22,7 +22,7 @@ import datetime as _dt
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, '06_products_rctlabs_artentai_signedai'))
+sys.path.insert(0, os.path.join(project_root, '06_products_delentiaplatform_delentiaai_signedai'))
 sys.path.insert(0, os.path.join(project_root, '10_kernel_runtime'))
 sys.path.insert(0, current_dir)  # Add 01_gateway to path
 
@@ -56,10 +56,10 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 _ALLOWED_ORIGINS = [
     # Production
-    "https://rctlabs.co",
-    "https://www.rctlabs.co",
+    "https://delentia.com",
+    "https://www.delentia.com",
     # Vercel preview deployments (wildcard not supported, but covers main)
-    "https://rctlabs-website.vercel.app",
+    "https://delentia-website.vercel.app",
     # Local dev
     "http://localhost:3000",
     "http://localhost:3001",
@@ -77,7 +77,7 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# RCT Labs public data endpoints (consumed by rctlabs-website)
+# Delentia Labs public data endpoints (consumed by delentia-website)
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -111,9 +111,9 @@ def _load_stats_cache() -> dict:
     return {**_BASELINE_STATS, "source": "baseline"}
 
 
-@app.get("/rctlabs/system/stats", tags=["RCT Labs"])
-async def rctlabs_system_stats():
-    """Live system stats consumed by rctlabs-website /api/stats.
+@app.get("/delentia/system/stats", tags=["Delentia Labs"])
+async def delentia_system_stats():
+    """Live system stats consumed by delentia-website /api/stats.
     Returns the same field names as the website FALLBACK constant so the
     frontend can merge: { ...FALLBACK, ...data, source: 'live' }.
 
@@ -138,9 +138,9 @@ async def rctlabs_system_stats():
     }
 
 
-@app.get("/rctlabs/benchmark/summary", tags=["RCT Labs"])
-async def rctlabs_benchmark_summary():
-    """Public benchmark summary consumed by rctlabs-website /api/benchmark.
+@app.get("/delentia/benchmark/summary", tags=["Delentia Labs"])
+async def delentia_benchmark_summary():
+    """Public benchmark summary consumed by delentia-website /api/benchmark.
     Returns chart data merged with live metadata.
     Format is compatible with the website STATIC_BENCHMARK constant.
     """

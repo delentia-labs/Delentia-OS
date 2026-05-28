@@ -539,7 +539,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
     ),
     "th_rctlabs": TenantRegionalConfig(
         tenant_id="th_rctlabs",
-        tenant_name="RCT Labs Thailand",
+        tenant_name="Delentia Labs Thailand",
         default_language="th",
         default_region="TH",
         preferred_models=["deepseek/deepseek-v3.2"],

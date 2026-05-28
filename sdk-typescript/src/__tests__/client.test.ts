@@ -28,11 +28,11 @@ describe("RCTClient constructor", () => {
   });
 
   test("creates instance with custom baseURL and timeout", () => {
-    const client = new RCTClient({ baseURL: "https://api.rctlabs.co", timeoutMs: 5000 });
+    const client = new RCTClient({ baseURL: "https://api.delentia.com", timeoutMs: 5000 });
     expect(client).toBeInstanceOf(RCTClient);
     expect(mockedAxios.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        baseURL: "https://api.rctlabs.co",
+        baseURL: "https://api.delentia.com",
         timeout: 5000,
       })
     );

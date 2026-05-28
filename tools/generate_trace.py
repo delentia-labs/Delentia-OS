@@ -21,7 +21,7 @@ Usage:
 
 Output: trace_view.html (opens in any browser, no server needed)
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -365,10 +365,10 @@ _DEFAULT_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 <h1>RCT Platform — JITNA Execution Trace</h1>
-<p class="subtitle">Generated {{GENERATED_AT}} · Constitutional AI OS · <a href="https://rctlabs.co" target="_blank">rctlabs.co</a></p>
+<p class="subtitle">Generated {{GENERATED_AT}} · Constitutional AI OS · <a href="https://delentia.com" target="_blank">delentia.com</a></p>
 {{TRACE_SECTIONS}}
 <footer>
-  <p>RCT Platform · Apache 2.0 · <a href="https://github.com/rctlabs/rct-platform" target="_blank">github.com/rctlabs/rct-platform</a></p>
+  <p>RCT Platform · Apache 2.0 · <a href="https://github.com/delentia-labs/delentia-os" target="_blank">github.com/delentia-labs/delentia-os</a></p>
 </footer>
 <script>
 function toggleEvent(idx) {

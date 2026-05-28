@@ -18,7 +18,7 @@ We just shipped the beta-preview wave of RCT Platform — the core SDK of an Int
 1,287 tests · 92% coverage · Apache 2.0 · Python 3.10+
 
 Try it in 30 seconds (no GPU, no API key needed):
-→ github.com/rctlabs/rct-platform
+→ github.com/delentia-labs/delentia-os
 
 🧵 What's inside and why it's different:
 ```
@@ -49,7 +49,7 @@ Expected: 1,287 passed · 0 failed
 Coverage: 92% (verified, not estimated)
 
 Or open in Colab — no login needed:
-colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb
+colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb
 ```
 
 ### Thread Tweet 4 — Scope boundary
@@ -74,7 +74,7 @@ If you're building AI agents that need to be:
 
 Star the repo and try the playground.
 
-github.com/rctlabs/rct-platform
+github.com/delentia-labs/delentia-os
 ```
 
 ### Fallback Single Tweet (if thread underperforms)
@@ -85,7 +85,7 @@ Open SDK for Intent-Centric AI — 1,287 tests, 92% coverage, Apache 2.0.
 Run: python -m pytest -q --no-header to verify.
 Colab demo, no GPU needed.
 
-github.com/rctlabs/rct-platform #AI #OpenSource #Python
+github.com/delentia-labs/delentia-os #AI #OpenSource #Python
 ```
 
 ---
@@ -117,8 +117,8 @@ RCT Platform is the open SDK layer of what I built to solve that.
 
 **Verification (no trust required):**
 ```
-git clone https://github.com/rctlabs/rct-platform
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os
+cd delentia-os
 pip install -e ".[dev]"
 python -m pytest -q --no-header
 # Expected: 1,287 passed · 0 failed · 92% coverage
@@ -149,7 +149,7 @@ LangChain/LlamaIndex are orchestration libraries — they connect components. RC
 
 **"Is this production-ready?"**
 ```
-The enterprise stack (not open-source) runs in production at rctlabs.co. This SDK is public alpha — stable surface, tested, but the API may evolve before v1.0.0. If you need production SLAs today, the enterprise tier is the path. The open SDK is for developers who want to build on the architecture with full source visibility.
+The enterprise stack (not open-source) runs in production at delentia.com. This SDK is public alpha — stable surface, tested, but the API may evolve before v1.0.0. If you need production SLAs today, the enterprise tier is the path. The open SDK is for developers who want to build on the architecture with full source visibility.
 ```
 
 ---
@@ -181,7 +181,7 @@ Unlike standard orchestration layers, RCT Platform treats intent as a first-clas
 
 Verify yourself:
 ```bash
-git clone https://github.com/rctlabs/rct-platform
+git clone https://github.com/delentia-labs/delentia-os
 pip install -e ".[dev]"
 python -m pytest -q --no-header
 ```
@@ -197,8 +197,8 @@ python -m pytest -q --no-header
 **Honest scope:**
 Public alpha. Delta Engine 74% compression figure is from internal benchmarks — not independently verified yet. FDIA scoring and test suite are fully reproducible.
 
-GitHub: https://github.com/rctlabs/rct-platform
-Colab (no login): https://colab.research.google.com/github/rctlabs/rct-platform/blob/main/notebooks/rct_playground.ipynb
+GitHub: https://github.com/delentia-labs/delentia-os
+Colab (no login): https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb
 ```
 
 ### r/LocalLLaMA Post
@@ -222,7 +222,7 @@ Core components: FDIA equation engine (grounded intent scoring), SignedAI (multi
 
 Apache 2.0. Python 3.10+.
 
-https://github.com/rctlabs/rct-platform
+https://github.com/delentia-labs/delentia-os
 ```
 
 ---
@@ -250,8 +250,8 @@ This is beta preview (v1.0.4b0). The full enterprise stack runs separately in pr
 
 If you're an AI architect, ML engineer, or enterprise technology leader exploring AI governance infrastructure, I'd welcome your feedback.
 
-→ GitHub: github.com/rctlabs/rct-platform
-→ Documentation: rctlabs.co
+→ GitHub: github.com/delentia-labs/delentia-os
+→ Documentation: delentia.com
 
 #EnterpriseAI #AIGovernance #OpenSource #ConstitutionalAI #ASEAN #Python
 ```
@@ -295,7 +295,7 @@ FDIA = Factual × Declarative × Inferential × Aligned
 3. ดูผล FDIA score สำหรับ 5 scenarios จริง
 
 หรือจะ Clone และ run tests เอง:
-git clone https://github.com/rctlabs/rct-platform
+git clone https://github.com/delentia-labs/delentia-os
 pip install -e ".[dev]"  
 python -m pytest -q --no-header
 # ผลที่ควรได้: 1,287 passed · 0 failed
@@ -310,8 +310,8 @@ python -m pytest -q --no-header
 
 Beta preview v1.0.4b0 — SDK core กำลังถูก harden สำหรับ external feedback และเส้นทาง PyPI
 
-GitHub: github.com/rctlabs/rct-platform
-เว็บไซต์: rctlabs.co
+GitHub: github.com/delentia-labs/delentia-os
+เว็บไซต์: delentia.com
 
 ถ้าสนใจหรืออยากพูดคุย mention มาได้เลย 🙏
 ```
@@ -346,7 +346,7 @@ GitHub: github.com/rctlabs/rct-platform
 
 ทดสอบได้ใน Colab โดยไม่ต้อง install อะไร: [ลิงก์]
 
-GitHub: https://github.com/rctlabs/rct-platform
+GitHub: https://github.com/delentia-labs/delentia-os
 
 มีคำถามหรืออยากคุยเรื่องนี้ comment มาได้เลยครับ
 ```
@@ -361,4 +361,4 @@ GitHub: https://github.com/rctlabs/rct-platform
 | Reddit post โดนลบ | Post ใน r/Python แทน + Twitter thread เสริม |
 | ไม่มี engagement ใน 2h แรก | Quote tweet พร้อมเพิ่ม "technical detail" thread เสริม |
 | ถูก attack credibility | อ้าง CLAIM_REGISTRY §4 + เชิญ reproduce |
-| Colab link ไม่ทำงาน | เพิ่ม Binder backup ในทุก post: mybinder.org/v2/gh/rctlabs/rct-platform/main |
+| Colab link ไม่ทำงาน | เพิ่ม Binder backup ในทุก post: mybinder.org/v2/gh/rctlabs/delentia-os/main |

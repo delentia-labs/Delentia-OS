@@ -5,7 +5,7 @@ This document is the **single source of truth** for public test-count and covera
 **Version:** 2.0.0  
 **Last Updated:** 2026-05-27  
 **Authoritative checkpoint:** **1,791 passed · 0 failed · 90% coverage**  
-**CI Status:** [![CI](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rctlabs/rct-platform/actions/workflows/ci.yml)
+**CI Status:** [![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
 
 ---
 

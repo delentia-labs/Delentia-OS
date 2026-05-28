@@ -3,7 +3,7 @@ RCT Delta Engine — Trace Emitter
 
 Wraps MemoryDeltaEngine to emit structured JSONL trace events for every
 recorded delta. These events power the Delta Compression Visualizer on
-rctlabs.co and the generate_delta_trace.py CLI tool.
+delentia.com and the generate_delta_trace.py CLI tool.
 
 Each emitted event contains:
   tick               — simulation tick number
@@ -17,7 +17,7 @@ Each emitted event contains:
   compression_ratio  — 1 - (delta_cumulative / naive_cumulative)  ≈ 0.74
   recall_ms          — time to reconstruct agent state at this tick (ms)
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

@@ -311,7 +311,7 @@ class ControlPlaneAPI:
         self.parser = DSLParser(observer=self.observer)
         self.evaluator = PolicyEvaluator(observer=self.observer)
 
-        # Persistent storage (SQLite — zero-dep local bridge to RCTDB schema)
+        # Persistent storage (SQLite — zero-dep local bridge to DelentiaDB schema)
         self._db = ControlPlanePersistence()
 
         # In-memory state caches (backed by _db on mutation)
@@ -434,7 +434,7 @@ class ControlPlaneAPI:
             # --- 5. Finance Layer ---
             t0 = time.perf_counter()
             try:
-                import rct_platform.services.finance  # noqa: F401 — probe import
+                import delentia_os.services.finance  # noqa: F401 — probe import
 
                 svc_status = "healthy"
                 msg = "Finance layer importable"
@@ -533,7 +533,7 @@ class ControlPlaneAPI:
                         "user_id": request.user_id,
                     }
 
-                    # Persist to SQLite (RCTDB-compatible schema)
+                    # Persist to SQLite (DelentiaDB-compatible schema)
                     self._db.save_intent(
                         intent_id=intent_id,
                         user_id=request.user_id,
@@ -772,7 +772,7 @@ class ControlPlaneAPI:
             """Prometheus-format scrape endpoint.
 
             Returns real prometheus_client exposition format when
-            ``prometheus-client`` is installed (``pip install rct-platform[monitoring]``).
+            ``prometheus-client`` is installed (``pip install delentia-os[monitoring]``).
             Falls back to a hand-crafted text format otherwise.
             """
             from .observability import get_prometheus_metrics as _prom_generate

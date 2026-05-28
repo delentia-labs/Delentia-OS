@@ -11,7 +11,7 @@ Run with:
     python scripts/benchmark_fdia_delta.py
     python scripts/benchmark_fdia_delta.py --agents 50 --ticks 200
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

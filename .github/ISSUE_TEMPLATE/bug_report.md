@@ -30,8 +30,8 @@ paste error here
 |------|-------|
 | Python version | `python --version` |
 | OS | Windows / macOS / Linux |
-| `rct-platform` version / commit | `git rev-parse --short HEAD` |
-| Installation method | `pip install -e .` / `pip install rct-platform` |
+| `delentia-os` version / commit | `git rev-parse --short HEAD` |
+| Installation method | `pip install -e .` / `pip install delentia-os` |
 
 ## Minimal Reproducible Example
 <!-- Paste the smallest code snippet that reproduces the issue. -->

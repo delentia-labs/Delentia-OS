@@ -63,7 +63,7 @@ class TestBuildDSN:
         dsn = _build_dsn()
         assert "localhost" in dsn
         assert "5432" in dsn
-        assert "rctdb" in dsn
+        assert "delentiadb" in dsn
 
     def test_full_dsn_env_takes_priority_over_individual(self, monkeypatch):
         monkeypatch.setenv("RCT_PG_DSN", "postgresql://winner/db")

@@ -5,7 +5,7 @@ Loads TruthfulQA and HaluEval datasets for benchmark evaluation.
 Uses HuggingFace datasets library when available, falls back to
 direct URL downloads (no HuggingFace token required for public datasets).
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

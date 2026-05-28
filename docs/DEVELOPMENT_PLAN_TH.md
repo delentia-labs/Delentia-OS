@@ -59,13 +59,13 @@
 ## แผนงาน Phase B — ถัดไป
 
 ### B1: npm Package
-- เผยแพร่ `@rctlabs/rct-platform` บน npm
+- เผยแพร่ `@delentia/delentia-os` บน npm
 - TypeScript type definitions สำหรับ API schema
-- `npm install @rctlabs/rct-platform` เพื่อใช้งาน REST client
+- `npm install @delentia/delentia-os` เพื่อใช้งาน REST client
 
 ### B2: PyPI Release
-- เผยแพร่ `rct-platform==1.1.0` บน PyPI
-- `pip install rct-platform` พร้อมใช้งาน CLI ได้ทันที
+- เผยแพร่ `delentia-os==1.1.0` บน PyPI
+- `pip install delentia-os` พร้อมใช้งาน CLI ได้ทันที
 
 ### B3: Multi-Agent Coordination
 - Shared `ControlPlaneState` ระหว่าง agents
@@ -82,7 +82,7 @@
 ## โครงสร้างโปรเจกต์
 
 ```
-rct-platform/
+delentia-os/
 ├── rct_control_plane/          # Core SDK
 │   ├── api.py                  # FastAPI application
 │   ├── cli.py                  # Click CLI
@@ -109,22 +109,22 @@ rct-platform/
 
 ### Python SDK
 ```bash
-pip install rct-platform
+pip install delentia-os
 
 # เริ่ม API server
-rct-platform serve --port 8000
+delentia-os serve --port 8000
 
 # ส่ง intent ผ่าน CLI
-rct-platform submit --intent-type refactor --risk-level LOW
+delentia-os submit --intent-type refactor --risk-level LOW
 ```
 
 ### npm (TypeScript client)
 ```bash
-npm install @rctlabs/rct-platform
+npm install @delentia/delentia-os
 ```
 
 ```typescript
-import { RCTPlatformClient } from "@rctlabs/rct-platform";
+import { RCTPlatformClient } from "@delentia/delentia-os";
 
 const client = new RCTPlatformClient({ baseUrl: "http://localhost:8000" });
 const result = await client.submitIntent({ intentType: "refactor", riskLevel: "LOW" });

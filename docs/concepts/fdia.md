@@ -102,4 +102,4 @@ weights = FDIAWeights(
 | FDIA Accuracy (SDK v1.0.1a0) | **0.92** |
 | Industry baseline | ~0.65 |
 
-See [`core/tests/test_fdia.py`](https://github.com/rctlabs/rct-platform/blob/main/core/tests/test_fdia.py) for the full benchmark test suite.
+See [`core/tests/test_fdia.py`](https://github.com/delentia-labs/delentia-os/blob/main/core/tests/test_fdia.py) for the full benchmark test suite.

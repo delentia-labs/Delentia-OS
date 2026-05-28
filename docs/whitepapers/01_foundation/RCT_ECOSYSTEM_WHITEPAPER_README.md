@@ -19,8 +19,8 @@
 **Contents:**
 - Executive Summary
 - System Architecture (3 layers: RCT-7, Kernel 9, Products)
-- Core Components (SignedAI, RCTDB, Test Console, etc.)
-- Products & Services (RCTLabs, ArtentAI, Floating Assistant)
+- Core Components (SignedAI, DelentiaDB, Test Console, etc.)
+- Products & Services (Delentia Labs, Delentia AI, Floating Assistant)
 - Testing & Validation (345 tests, 99.7% pass rate)
 - Hypothesis Tests (105,000+ property-based examples)
 - Benchmark Results (26 test cases across 3 families)
@@ -47,7 +47,7 @@
 **เนื้อหา:**
 - บทสรุปสำหรับผู้บริหาร
 - สถาปัตยกรรมระบบ (3 ชั้น: RCT-7, Kernel 9, Products)
-- ส่วนประกอบหลัก (SignedAI, RCTDB, Test Console, ฯลฯ)
+- ส่วนประกอบหลัก (SignedAI, DelentiaDB, Test Console, ฯลฯ)
 - ผลิตภัณฑ์และบริการ
 - การทดสอบและตรวจสอบ (345 tests, 99.7% ผ่าน)
 - การทดสอบสมมติฐาน (105,000+ ตัวอย่าง)
@@ -156,7 +156,7 @@ All documents cover these core components:
    - Status: ✅ 63/64 tests (98.4%)
    - Tiers: S/4/6/8 (1-8 signers)
 
-4. **RCTDB** (Knowledge storage)
+4. **DelentiaDB** (Knowledge storage)
    - Status: ✅ 15/15 tests (100%)
    - Performance: <2ms save/load
 
@@ -238,8 +238,8 @@ pandoc RCT_ECOSYSTEM_EXECUTIVE_SUMMARY_2026.md \
 
 **Part 2: Core Components**
 - SignedAI (Multi-LLM consensus)
-- ArtentAI (Architecture generation)
-- RCTDB (Knowledge storage)
+- Delentia AI (Architecture generation)
+- DelentiaDB (Knowledge storage)
 - Test Console (API testing)
 - Floating Assistant (UI widget)
 - Security Layer (Grade D Phase 1)
@@ -256,7 +256,7 @@ pandoc RCT_ECOSYSTEM_EXECUTIVE_SUMMARY_2026.md \
 - Benchmark Framework (26 cases)
 - FastSlowLane Tests (13 cases)
 - MemoryRAG Tests (10 cases)
-- RCTLabs End2End Tests (3 cases)
+- Delentia Labs End2End Tests (3 cases)
 - Runner Scripts Documentation
 
 **Part 5: Deployment**
@@ -303,7 +303,7 @@ All documents include comprehensive testing data:
 - **Main Tests:** 213/213 passed (Unit, Integration, Security, Performance)
 - **SignedAI:** 63/64 passed (98.4%)
 - **Test Console:** 64/64 passed (100%)
-- **RCTDB:** 15/15 passed (100%)
+- **DelentiaDB:** 15/15 passed (100%)
 - **Stress Tests:** 4/4 edge cases passed
 
 ### Property-Based Tests
@@ -322,7 +322,7 @@ All documents include comprehensive testing data:
   - Input immutability
 
 ### Benchmark Results
-- **Families:** 3 (FastSlowLane, MemoryRAG, RCTLabs End2End)
+- **Families:** 3 (FastSlowLane, MemoryRAG, Delentia Labs End2End)
 - **Cases:** 26 test cases
 - **Runners:** 4 Python scripts
 - **Documentation:** 952 lines

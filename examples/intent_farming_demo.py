@@ -1,7 +1,7 @@
 """
 IntentFarmer Demo — Phase 3 SDK Example
 
-Run from the rct-platform root::
+Run from the delentia-os root::
 
     python examples/intent_farming_demo.py
 """

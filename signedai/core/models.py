@@ -4,7 +4,7 @@ SignedAI Core Models — standalone public implementation
 Defines all data models for the SignedAI consensus verification system.
 No dependency on rct_platform private internals.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ class JITNAPacket(BaseModel):
     engine. The canonical JITNA Protocol wire format is in
     rct_control_plane/jitna_protocol.py.
 
-    JITNA = Just In Time Nodal Assembly (canonical public name, per RCT Labs Architect).
+    JITNA = Just In Time Nodal Assembly (canonical public name, per Delentia Labs Architect).
     """
     I: str = Field(..., description="Intent — primary goal statement")  # noqa: E741
     D: str = Field(..., description="Domain — context/scope")

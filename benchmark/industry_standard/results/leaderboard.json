@@ -20,7 +20,7 @@
       "name": "RCT Platform",
       "tier": "constitutional-os",
       "params": "7 models (HexaCore)",
-      "provider": "RCT Labs",
+      "provider": "Delentia Labs",
       "truthfulqa_mc2": 0.4703,
       "halueval_f1": 0.5714,
       "fdia_accuracy": 0.9167,

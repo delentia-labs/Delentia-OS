@@ -11,7 +11,7 @@
 **Do not open a public GitHub issue for security vulnerabilities.**
 
 Please report security vulnerabilities via email to:
-**security@rctlabs.co**
+**security@delentia.com**
 
 Include in your report:
 - Description of the vulnerability

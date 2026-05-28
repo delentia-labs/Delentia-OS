@@ -256,5 +256,5 @@ pytest tests/algorithms/test_moip.py -v
 - [ALGO-01: FDIA](overview.md#algo-01-fdia) — scoring layer that feeds MOIP
 - [ALGO-06: JITNA Protocol](overview.md#algo-06-jitna-protocol) — signs the MOIP-selected plan
 - [ALGO-08: Self-Evolving Systems](overview.md#algo-08-self-evolving-systems) — uses MOIP for plan selection in autonomous improvement cycles
-- [Blog: MOIP explained](https://rctlabs.co/blog/moip-multi-objective-intent-planning) — non-technical walkthrough with enterprise examples
-- [Dynamic AI Routing solution](https://rctlabs.co/solutions/dynamic-ai-routing) — production use case for MOIP
+- [Blog: MOIP explained](https://delentia.com/blog/moip-multi-objective-intent-planning) — non-technical walkthrough with enterprise examples
+- [Dynamic AI Routing solution](https://delentia.com/solutions/dynamic-ai-routing) — production use case for MOIP

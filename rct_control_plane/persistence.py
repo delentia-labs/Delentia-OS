@@ -2,8 +2,8 @@
 RCT Control Plane — SQLite Persistence Layer
 
 Lightweight local persistence for intents, states, policy decisions, and audit
-trail.  Mirrors the RCTDB 8-dimensional record structure so data can be
-promoted to the enterprise PostgreSQL + pgvector RCTDB without schema changes.
+trail.  Mirrors the DelentiaDB 8-dimensional record structure so data can be
+promoted to the enterprise PostgreSQL + pgvector DelentiaDB without schema changes.
 
 Usage (sync / always available)::
 
@@ -19,7 +19,7 @@ Optional async usage (requires ``aiosqlite``)::
     async with AsyncControlPlanePersistence() as db:
         await db.save_intent(...)
 
-Note: This is a local-dev bridge. Production deployments connect to RCTDB
+Note: This is a local-dev bridge. Production deployments connect to DelentiaDB
 (PostgreSQL + pgvector + Redis) in rct-ecosystem-private.
 """
 
@@ -51,7 +51,7 @@ _DEFAULT_DB_PATH = os.environ.get(
 )
 
 # ---------------------------------------------------------------------------
-# DDL — schema mirrors RCTDB 8-dimensional structure
+# DDL — schema mirrors DelentiaDB 8-dimensional structure
 # ---------------------------------------------------------------------------
 _SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS intents (
     errors       TEXT NOT NULL DEFAULT '[]'
 );
 
--- Key-value state store (mirrors RCTDB context/evolution dimensions)
+-- Key-value state store (mirrors DelentiaDB context/evolution dimensions)
 CREATE TABLE IF NOT EXISTS states (
     id           TEXT PRIMARY KEY,
     namespace    TEXT NOT NULL,
@@ -312,7 +312,7 @@ class AsyncControlPlanePersistence:
     """
     Async SQLite persistence for the RCT Control Plane.
 
-    Requires: ``pip install rct-platform[persistence]``
+    Requires: ``pip install delentia-os[persistence]``
 
     Example::
 
@@ -324,7 +324,7 @@ class AsyncControlPlanePersistence:
         if not _HAS_AIOSQLITE:
             raise ImportError(
                 "AsyncControlPlanePersistence requires aiosqlite. "
-                "Install with: pip install rct-platform[persistence]"
+                "Install with: pip install delentia-os[persistence]"
             )
         self.db_path = db_path
         self._conn: Any = None

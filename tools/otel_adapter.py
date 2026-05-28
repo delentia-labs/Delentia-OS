@@ -28,7 +28,7 @@ Usage:
     # Watch a live-updating JSONL file
     python tools/otel_adapter.py --watch tools/live_trace.jsonl --serve
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

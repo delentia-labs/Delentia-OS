@@ -11,7 +11,7 @@ By participating in this project, you agree to follow the standards in
 
 ### Reporting Bugs
 
-1. Check [existing issues](https://github.com/rctlabs/rct-platform/issues) first.
+1. Check [existing issues](https://github.com/delentia-labs/delentia-os/issues) first.
 2. Open a new issue with a clear title and description.
 3. Include steps to reproduce, expected behavior, and actual behavior.
 4. Include your Python version and OS.
@@ -35,7 +35,7 @@ By participating in this project, you agree to follow the standards in
 
 - [ ] Tests added/updated for new behavior
 - [ ] No hardcoded credentials, API keys, or internal server URLs
-- [ ] Import paths use the `rct-platform` package structure (not `rct-ecosystem-private`)
+- [ ] Import paths use the `delentia-os` package structure (not `rct-ecosystem-private`)
 - [ ] Code follows existing style (PEP 8, type hints where applicable)
 - [ ] Docstrings updated if public API changed
 
@@ -43,8 +43,8 @@ By participating in this project, you agree to follow the standards in
 
 ```bash
 # Clone the repository
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 
 # Install dependencies
 pip install -r requirements.txt
@@ -316,8 +316,8 @@ def test_process_valid_intent():
 
 ```bash
 # Clone and install
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 python -m venv .venv
 source .venv/bin/activate    # Linux/macOS
 # .\.venv\Scripts\Activate.ps1  # Windows
@@ -403,4 +403,4 @@ If you're unsure whether your contribution fits the SDK scope, open an issue wit
 
 ### Guidance: do not reference private modules
 
-Contributions must not import from `rct-ecosystem-private` or reference internal paths like `artent_engine/`, `farmer/`, `gateway/` (private). Use only what's in this repository.
+Contributions must not import from `rct-ecosystem-private` or reference internal paths like `delentia_engine/`, `farmer/`, `gateway/` (private). Use only what's in this repository.

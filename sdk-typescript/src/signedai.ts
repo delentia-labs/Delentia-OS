@@ -8,7 +8,7 @@
  *   PRO        → 6 roles (standard)
  *   ENTERPRISE → 8 roles (full HexaCore)
  *
- * Reference: rct-platform/signedai/hexacore_registry.py
+ * Reference: delentia-os/signedai/hexacore_registry.py
  */
 
 export type UserTier = "FREE" | "PRO" | "ENTERPRISE";

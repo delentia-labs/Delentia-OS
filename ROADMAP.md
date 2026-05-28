@@ -2,7 +2,7 @@
 
 > Last updated: May 2026
 > Current version: **v2.0.0 (Stable)**  
-> Maintained by: Ittirit Saengow — [rctlabs.co](https://rctlabs.co)
+> Maintained by: Ittirit Saengow — [delentia.com](https://delentia.com)
 
 ---
 
@@ -73,13 +73,13 @@
 
 ## v1.2.0 — Phase N1: npx rct CLI ✅ (May 2026)
 
-**Goal: Launch the public NPM registry package `@rctlabs/rct-platform@1.2.0` featuring the Interactive Terminal Simulator.**
+**Goal: Launch the public NPM registry package `@delentia/delentia-os@1.2.0` featuring the Interactive Terminal Simulator.**
 
 > Released: May 2026 · 1,379 tests · 0 failures · 90% coverage
 
 ### Phase N1 — CLI & Simulator ✅
-- ✅ `npx @rctlabs/rct-platform --version` → `1.2.0`
-- ✅ `npx @rctlabs/rct-platform fdia` — offline FDIA calculations
+- ✅ `npx @delentia/delentia-os --version` → `1.2.0`
+- ✅ `npx @delentia/delentia-os fdia` — offline FDIA calculations
 - ✅ Interactive Terminal Simulator inside website homepage with CSS Glassmorphism
 - ✅ Bilingual (English/Thai) FDIA console sliders
 - ✅ Stably gated 90% unit test coverage in CI pipeline
@@ -115,7 +115,7 @@
 - ✅ `GET /metrics` — Prometheus scrape endpoint (Prometheus exposition format)
 - ✅ `docker-compose.monitoring.yml` — Prometheus + Grafana + OTel Collector stack
 - ✅ `docs/assets/grafana-dashboard.json` — pre-built RCT Control Plane dashboard
-- ✅ `config/prometheus.yml` — Prometheus scrape config for rct-platform
+- ✅ `config/prometheus.yml` — Prometheus scrape config for delentia-os
 - ✅ `config/grafana-datasources.yml` — auto-provision Grafana datasource
 
 ### Phase 4 — TypeScript SDK ✅
@@ -135,7 +135,7 @@
 
 ### Phase 6 — LLM Integration + Persistence ✅ (Sprint 1–4 bonus)
 - ✅ `intent_compiler.py` — OpenAI / Anthropic / regex 3-provider fallback pipeline
-- ✅ `persistence.py` — SQLite bridge (RCTDB-compatible schema, sync + async)
+- ✅ `persistence.py` — SQLite bridge (DelentiaDB-compatible schema, sync + async)
 - ✅ `config/model_pricing.json` — 7-model registry with USD pricing + fallback roster
 - ✅ `observability.py` — 11 real `prometheus_client` metrics (Counter/Gauge/Histogram)
 - ✅ `approval_gateway.py` — 3-attempt exponential backoff (1→2→4 s) + daemon thread
@@ -211,9 +211,9 @@
 
 ## v1.0.0 Stable — PyPI Release 📋 (Q3 2026)
 
-**Goal: `pip install rct-platform` works from PyPI.**
+**Goal: `pip install delentia-os` works from PyPI.**
 
-- 📋 Publish to PyPI as `rct-platform==1.0.0`
+- 📋 Publish to PyPI as `delentia-os==1.0.0`
 - 📋 Semantic versioning stability guarantee — no breaking changes without major version bump
 - 📋 Full API reference documentation (`docs/api/`)
 - 📋 Type stubs (`py.typed` marker + complete `__init__.pyi`)
@@ -234,8 +234,8 @@
 - 📋 Home Assistant integration adapter
 - 📋 Obsidian plugin (knowledge graph ↔ JITNA intent tagging)
 - 📋 JITNA Protocol v2.1 draft — bidirectional agent negotiation
-- ✅ npm publish `@rctlabs/rct-platform@1.2.0` to public registry
-- 📋 PyPI publish `rct-platform==1.1.0` (twine upload — awaiting credentials)
+- ✅ npm publish `@delentia/delentia-os@1.2.0` to public registry
+- 📋 PyPI publish `delentia-os==1.1.0` (twine upload — awaiting credentials)
 
 ---
 
@@ -258,19 +258,19 @@ To set clear expectations:
 
 | Out of Scope | Reason |
 |---|---|
-| Full production microservice stack (62 services) | Enterprise tier — [contact rctlabs.co](https://rctlabs.co) |
+| Full production microservice stack (62 services) | Enterprise tier — [contact delentia.com](https://delentia.com) |
 | Genome / Creator Profile API | Enterprise proprietary |
 | Full inference engine | Hardware / cost constraints outside OSS scope |
-| Hosted API / SaaS | Runs at rctlabs.co — enterprise licensing |
+| Hosted API / SaaS | Runs at delentia.com — enterprise licensing |
 
 ---
 
 ## How to Influence the Roadmap
 
-- 💬 Open a [GitHub Discussion](https://github.com/rctlabs/rct-platform/discussions) with your use case once Discussions are enabled in the GitHub UI
-- 🐛 File an [issue](https://github.com/rctlabs/rct-platform/issues) for bugs or missing features
+- 💬 Open a [GitHub Discussion](https://github.com/delentia-labs/delentia-os/discussions) with your use case once Discussions are enabled in the GitHub UI
+- 🐛 File an [issue](https://github.com/delentia-labs/delentia-os/issues) for bugs or missing features
 - 🗳️ Upvote existing issues — high-engagement items move up the priority list
-- 📧 Enterprise timeline requests: founder@rctlabs.co
+- 📧 Enterprise timeline requests: founder@delentia.com
 
 ---
 

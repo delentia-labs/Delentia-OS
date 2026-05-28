@@ -1,11 +1,11 @@
 {
-  "name": "@rctlabs/rct-platform",
+  "name": "@delentia/delentia-os",
   "version": "1.3.0",
-  "description": "TypeScript SDK + CLI for RCT Platform — FDIA scoring, JITNA packets, SignedAI tier selection, npx rct CLI",
+  "description": "TypeScript SDK + CLI for Delentia OS — FDIA scoring, JITNA packets, SignedAI tier selection, npx delentia CLI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "rct": "dist/cli/index.js"
+    "delentia": "dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "rct",
+    "delentia",
     "fdia",
     "jitna",
     "signedai",
@@ -26,22 +26,23 @@
     "constitutional-ai",
     "intent-centric",
     "ai-agents",
-    "hexacore"
+    "hexacore",
+    "recot"
   ],
   "author": {
-    "name": "RCT Labs",
-    "email": "founder@rctlabs.co",
-    "url": "https://rctlabs.co"
+    "name": "Delentia Labs",
+    "email": "founder@delentia.com",
+    "url": "https://delentia.com"
   },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rctlabs/rct-platform.git",
+    "url": "git+https://github.com/delentia-labs/delentia-os.git",
     "directory": "sdk-typescript"
   },
-  "homepage": "https://rctlabs.co",
+  "homepage": "https://delentia.com",
   "bugs": {
-    "url": "https://github.com/rctlabs/rct-platform/issues"
+    "url": "https://github.com/delentia-labs/delentia-os/issues"
   },
   "engines": {
     "node": ">=16.0.0"

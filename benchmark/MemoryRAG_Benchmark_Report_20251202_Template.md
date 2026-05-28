@@ -46,7 +46,7 @@ depends_on:
 - Retrieval config (สำหรับ vanilla_rag / rct_memory):
   - vector DB:
   - top_k:
-  - graph / RCTDB settings (ถ้ามี):
+  - graph / DelentiaDB settings (ถ้ามี):
 
 ### 2.2 Dataset
 
@@ -140,7 +140,7 @@ depends_on:
 2. สิ่งที่ควรปรับปรุง
    - เช่น เพิ่ม field metadata บางอย่าง, เปลี่ยนค่า top_k, แยก index ตาม domain
 3. ไอเดียต่อยอด
-   - เช่น ใช้ RCTDB ทำ audit trail, ใช้ SignedAI eval รอบสองในเคส high-risk
+   - เช่น ใช้ DelentiaDB ทำ audit trail, ใช้ SignedAI eval รอบสองในเคส high-risk
 
 ---
 

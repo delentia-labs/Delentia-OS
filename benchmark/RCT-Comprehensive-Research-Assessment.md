@@ -56,7 +56,7 @@ Where:
 | **Δ (Delta)** | Gap between current state and goal | 0-100 distance | Triggers decomposition strategy |
 | **A (Algorithm/Agent)** | Execution plan from predefined patterns | Tier selection | Constrains search space |
 | **R (Reflection)** | Learned insights from execution | 0-100 richness | Feeds verification and meta-learning |
-| **M (Memory)** | Persistent knowledge for future tasks | Vault/RCTDB pointers | Enables long-term coherence |
+| **M (Memory)** | Persistent knowledge for future tasks | Vault/DelentiaDB pointers | Enables long-term coherence |
 
 **Operational Flow:**
 
@@ -105,7 +105,7 @@ Each user interaction maps to a JITNA packet that:
 
 **Macro Level (Ecosystem):** \(F = D_{\text{sys}} \cdot I_{\text{sys}}^{A_{\text{sys}}}\)
 
-- **D_sys:** Vault-1068 + RCTDB + experiment logs = collective knowledge
+- **D_sys:** Vault-1068 + DelentiaDB + experiment logs = collective knowledge
 - **I_sys:** Vision, strategy, product goals = organizational intent
 - **A_sys:** Infra, governance, culture = systemic architecture
 - **F_sys:** Ecosystem impact, trust, trajectory
@@ -165,7 +165,7 @@ JITNAv0 ──→
 [Architect: Select A_plan] ──→ 
 [Executor: Run workflow] ──→ 
 [Verifier: Score R/F] ──→ 
-[Logger: Write M to RCTDB] ──→ 
+[Logger: Write M to DelentiaDB] ──→ 
 JITNAv1 (refined)
 ```
 
@@ -193,9 +193,9 @@ This ensures all agents (Floating Assistant, IDE plugins, n8n workflows) follow 
 - **01theory:** FDIA, JITNA, Architect model, RCT-7
 - **02whitepaper:** Whitepaper v3 + chapters 1-8
 - **03algorithms:** 36 algorithms, kernel specs K1-K6
-- **04memory:** Vault concepts, RCTDB design
+- **04memory:** Vault concepts, DelentiaDB design
 - **05infrastructure:** MCP toolkit, n8n, containers
-- **06products:** RCTLabs, ArtentAI, SignedAI specs
+- **06products:** Delentia Labs, Delentia AI, SignedAI specs
 - **07uxui:** UI flows, Floating Assistant, wireframes
 - **08ops:** GTM, launch strategy, contingencies
 - **09manuals:** Playbooks, templates, runbooks
@@ -212,7 +212,7 @@ This ensures all agents (Floating Assistant, IDE plugins, n8n workflows) follow 
 
 ---
 
-### 3.2 RCTDB: Runtime Memory & Experiment Log
+### 3.2 DelentiaDB: Runtime Memory & Experiment Log
 
 **Conceptual Schema:**
 
@@ -250,18 +250,18 @@ This ensures all agents (Floating Assistant, IDE plugins, n8n workflows) follow 
 
 ---
 
-### 3.3 Context Window Bridge (Vault + RCTDB)
+### 3.3 Context Window Bridge (Vault + DelentiaDB)
 
 **Problem (Chapter 1):** Three layers of context crisis
 1. **Storage:** Too much to fit in single window
 2. **Addressing:** No language to find right parts
 3. **Temporal:** Knowledge and decisions change over time
 
-**Solution (Vault-1068 + RCTDB):**
+**Solution (Vault-1068 + DelentiaDB):**
 
 1. **Storage Layer:**
    - Vault holds structured, curated knowledge (static reference)
-   - RCTDB holds runtime experience (dynamic log)
+   - DelentiaDB holds runtime experience (dynamic log)
    - Together exceed any single model's context window
 
 2. **Addressing Layer:**
@@ -270,14 +270,14 @@ This ensures all agents (Floating Assistant, IDE plugins, n8n workflows) follow 
    - Manifest provides programmatic index
 
 3. **Temporal Layer:**
-   - RCTDB deltas track evolution of design and performance
+   - DelentiaDB deltas track evolution of design and performance
    - Vault documents tagged with R/M explain how/why things changed
    - Snapshot-before/after comparisons enable learning
 
 **Operational Query Examples:**
 - "Show me all design decisions about container count" → Search A-role docs + delta records
-- "Find experiments that revised Algorithm X" → Query RCTDB.experiments + RCTDB.runs
-- "Gather all reflections on vault evolution 915→1010→1068" → Filter R-role files + RCTDB.deltas
+- "Find experiments that revised Algorithm X" → Query DelentiaDB.experiments + DelentiaDB.runs
+- "Gather all reflections on vault evolution 915→1010→1068" → Filter R-role files + DelentiaDB.deltas
 
 ---
 
@@ -288,13 +288,13 @@ This ensures all agents (Floating Assistant, IDE plugins, n8n workflows) follow 
 | Tier | Function | Primary Role | Example Algorithms | Inputs | Outputs |
 |------|----------|--------------|-------------------|--------|---------|
 | **1** | Intent Parsing | Parse natural language into JITNA | JITNA Compiler, Natural Intent Parser | User text | Structured I, initial D |
-| **2** | Retrieval Context | Fetch from Vault-1068/RCTDB | GraphRAG Coach, Vector Search | Intent, domain | Context bundle, references |
+| **2** | Retrieval Context | Fetch from Vault-1068/DelentiaDB | GraphRAG Coach, Vector Search | Intent, domain | Context bundle, references |
 | **3** | Planning Decomposition | Decide execution strategy | Delta Planner, Task Decomposer | I, D, Δ | Sub-intents, strategy choice |
 | **4** | Draft Generation | Generate initial outputs | LLM prompting, Code Generator | Context, intent | Draft answer/code/plan |
 | **5** | Self-Critique Verify | Evaluate output quality | Consistency Checker, SignedAI Verifier | Draft, spec, policy | Quality score, fix signals |
 | **6** | Synthesis Packaging | Format for user/system | Report Generator, UI Formatter | Verified output | User-facing answer |
 | **7** | Orchestration Routing | Manage workflow between tiers | Router/Scheduler, Multi-agent Coordinator | Tier decisions | Next tier dispatch |
-| **8** | Learning Memory | Write insights to Vault/RCTDB | Memory Writer, Experience Logger | All prior artifacts | Vault entries, RCTDB records |
+| **8** | Learning Memory | Write insights to Vault/DelentiaDB | Memory Writer, Experience Logger | All prior artifacts | Vault entries, DelentiaDB records |
 | **9** | Meta-Governance | Architect oversight, policy checks | Codex Enforcer, Constitutional Verifier | Final result, codices | Approval/veto, meta-updates |
 
 ---
@@ -391,7 +391,7 @@ Each algorithm has explicit D/I/A/F contribution:
 
 **Current Deployment (22 Containers):**
 
-**RCTLabs Domain (5 containers, 7 vCPU, 14GB RAM):**
+**Delentia Labs Domain (5 containers, 7 vCPU, 14GB RAM):**
 1. Intent-Detector (1 vCPU, 2GB)
 2. UI-Generator (1 vCPU, 2GB)
 3. Template-Manager (0.5 vCPU, 1.5GB)
@@ -399,7 +399,7 @@ Each algorithm has explicit D/I/A/F contribution:
 5. Marketplace-API (1 vCPU, 2GB)
 6. Code-Generator (1 vCPU, 2GB)
 
-**ArtentAI Domain (6 containers, 6.5 vCPU, 12.5GB RAM):**
+**Delentia AI Domain (6 containers, 6.5 vCPU, 12.5GB RAM):**
 1. LLM-Router (1 vCPU, 2GB)
 2. LLM-Adapter-A: OpenRouter (1 vCPU, 2GB)
 3. LLM-Adapter-B: ChatGPT-4 (1 vCPU, 2GB)
@@ -487,7 +487,7 @@ Each algorithm has explicit D/I/A/F contribution:
 
 ### 6.1 Three Integrated Platforms
 
-**RCTLabs.co (Front Door + Research Lab)**
+**Delentia Labs.co (Front Door + Research Lab)**
 - Status: MVP-Ready v1.0
 - Users: 50-100 target
 - Focus: Generative AI applications, UX research
@@ -500,7 +500,7 @@ Each algorithm has explicit D/I/A/F contribution:
 - Accuracy: 96.9% intent-to-UI
 - Success Rate: 100% (validated)
 
-**ArtentAI (Builder/Capability Platform)**
+**Delentia AI (Builder/Capability Platform)**
 - Status: Production-Ready v1.0
 - Users: 50-100 target (internal→external expansion)
 - Focus: Capability libraries, workflow orchestration, UI generation
@@ -513,7 +513,7 @@ Each algorithm has explicit D/I/A/F contribution:
 - Internal Use Cases:
   - Vault-1068 management (K1-K6)
   - Whitepaper generation & maintenance
-  - RCTLabs copy & narratives
+  - Delentia Labs copy & narratives
   - Prototype domain-specific assistants
 
 **SignedAI (Verification & Trust)**
@@ -542,7 +542,7 @@ Each algorithm has explicit D/I/A/F contribution:
 4. **Generation** (Tier 4) - Draft response
 5. **Verification** (Tier 5) - SignedAI-lite checks
 6. **Packaging** (Tier 6) - Clean message + reasoning trace
-7. **Memory** (Tier 8) - RCTDB logging
+7. **Memory** (Tier 8) - DelentiaDB logging
 
 **Public-Safe Use Cases (Phase 1):**
 - Explain RCT Ecosystem (guided QA)
@@ -551,7 +551,7 @@ Each algorithm has explicit D/I/A/F contribution:
 - Product Line Overview & Pricing (safe subset)
 
 **Phase 2 Expansion:**
-- ArtentAI builder tutorials
+- Delentia AI builder tutorials
 - SignedAI verification explainers
 - Code generation demos
 - Workflow templates
@@ -598,11 +598,11 @@ KernelContext(session_id, history, fdia_state)
 **Tier 1 Core Subset:**
 - Whitepaper v3 chapters
 - Kernel_v1 docs (K1-K6)
-- Mini ArtentAI specs
+- Mini Delentia AI specs
 
 ---
 
-### 7.3 Phase C: Mini Kernel + Mini ArtentAI
+### 7.3 Phase C: Mini Kernel + Mini Delentia AI
 
 **Enhancement:** Intent-based kernel routing
 
@@ -717,7 +717,7 @@ KernelContext(session_id, history, fdia_state)
 - **Difference:** RCT is vendor-agnostic platform; assistants are proprietary
 
 **Traditional OS (Unix, Windows):**
-- **RCT Analogy:** Vault-1068 = file system, RCTDB = system logs, Tiers = subsystems, Architect = kernel supervisor
+- **RCT Analogy:** Vault-1068 = file system, DelentiaDB = system logs, Tiers = subsystems, Architect = kernel supervisor
 - **Key Difference:** RCT operates on cognitive processes, not hardware resources
 
 ---
@@ -760,7 +760,7 @@ KernelContext(session_id, history, fdia_state)
 
 **Status Indicators:**
 - **Vault-1068:** 98.7% complete, 1,068 files structured
-- **RCTDB schema:** Fully designed, ready for implementation
+- **DelentiaDB schema:** Fully designed, ready for implementation
 - **36 algorithms:** All documented, 99.7% accuracy
 - **22-container architecture:** Specified, tested at scale
 - **Whitepaper v3:** Complete with 8 chapters + reference pack
@@ -819,7 +819,7 @@ KernelContext(session_id, history, fdia_state)
 - **First Constitutional AI OS** with integrated infrastructure
 - **First intent-first paradigm** at scale
 - **First multi-LLM governance layer** with verifiable outputs
-- **First unified memory system** (Vault + RCTDB) solving context window crisis
+- **First unified memory system** (Vault + DelentiaDB) solving context window crisis
 
 **Competitive Moat Duration:** 5-10 years minimum
 - Patent on FDIA equation and core methodology
@@ -920,7 +920,7 @@ The RCT Ecosystem represents a **paradigm shift in AI system design**, moving fr
 - ✅ Architect-governed (human governance as permanent layer)
 
 - ❌ Black-box memory (weights only)
-- ✅ Transparent memory (Vault-1068 + RCTDB traceable)
+- ✅ Transparent memory (Vault-1068 + DelentiaDB traceable)
 
 **Technical Readiness:** 98%
 - All components specified
@@ -1013,7 +1013,7 @@ By 2030, RCT Ecosystem will be recognized as the foundational infrastructure for
 | **FDIA** | Future Design Intelligence Algorithm; \(F = D \cdot I^A\) |
 | **JITNA** | Just-In-Time Narrative Assembly; 6-field intent packet (I,D,Δ,A,R,M) |
 | **Vault-1068** | Knowledge base of 1,068 structured files, FDIA/JITNA-tagged |
-| **RCTDB** | Runtime memory database: runs, steps, experiments, deltas, profiles, architect decisions |
+| **DelentiaDB** | Runtime memory database: runs, steps, experiments, deltas, profiles, architect decisions |
 | **RCT-7** | Seven-step Reverse Component Thinking methodology (O, S, I variants) |
 | **Architect** | Human-guided governance layer; not autonomous AI; meta-level decision maker |
 | **Tier (9)** | Layer of 1-9 tiers in algorithm stack (intent→packaging→governance) |

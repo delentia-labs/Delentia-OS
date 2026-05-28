@@ -20,30 +20,30 @@
 **Test Coverage:** 389/390 integration tests passing (99.7%) | Level 4 Virtuoso Stress Test ⭐  
 **Algorithms:** 41 algorithms complete (Tier 1-9) | ALGO-37 to 41 operational ✨  
 **Phase 5-6:** Universal Integration Layer complete | 10 Universal Adapters operational 🌐  
-**RCTDB v2.0:** 8-dimensional Universal Schema | 3-Zone architecture (Registry/Vaults/Governance) 💎  
+**DelentiaDB v2.0:** 8-dimensional Universal Schema | 3-Zone architecture (Registry/Vaults/Governance) 💎  
 **Open JITNA Protocol:** RFC-001 specification complete | "HTTP of Agentic AI" 🚀  
 **Genome Layer:** 7 integrated genomes (Architect, ARTENT, JITNA, Codex, SignedAI, Vault-1010, RCT-7)  
 
 **New in v2.1.0 (Enterprise Infrastructure Edition):**  
 ✅ **Schema Consolidation Complete** - 43 schemas unified from 15+ locations into `/schemas/` with SCHEMA_REGISTRY.json (15 KB index)  
 ✅ **Whitepaper Organization Complete** - 30 whitepapers organized into `/whitepapers/` with WHITEPAPER_REGISTRY.json (190 KB index)  
-✅ **Platform Reorganization** - 1,678 files reorganized (`platform/` → `rct_platform/`) maintaining 48+ microservices  
+✅ **Platform Reorganization** - 1,678 files reorganized (`platform/` → `delentia_os/`) maintaining 48+ microservices  
 ✅ **Production Validation** - 389/390 tests passing (99.7%), Level 4 Virtuoso certified, zero regressions  
 ✅ **Enterprise Documentation** - Bilingual (English + Thai), 5 reading paths, comprehensive registries  
 ✅ **Git History Tracked** - Full commit history preserved (ee5387b → e8dcf08 on enterprise-refactor branch)
 
 **Previous Major Release (v8.0 - Feb 2, 2026):**  
-Open JITNA Protocol (RFC-001, 52 pages) + RCTDB v2.0 (8-dimensional schema, 3-zone architecture) + 10 Universal Adapters (Home Assistant, Rotki, ComfyUI, Blender, Terraform, n8n, Obsidian, FFmpeg, Playwright, Security) + Phase 5-6 Complete (20 commits, 3,053 Python files) + Ultimate Stress Test Level 4 Virtuoso (100% success) + Advanced AI Features (4 major systems)
+Open JITNA Protocol (RFC-001, 52 pages) + DelentiaDB v2.0 (8-dimensional schema, 3-zone architecture) + 10 Universal Adapters (Home Assistant, Rotki, ComfyUI, Blender, Terraform, n8n, Obsidian, FFmpeg, Playwright, Security) + Phase 5-6 Complete (20 commits, 3,053 Python files) + Ultimate Stress Test Level 4 Virtuoso (100% success) + Advanced AI Features (4 major systems)
 
 **Version History:**
 - **v1.0** (Dec 2025): Foundation whitepaper (~100 pages)
 - **v2.0** (Jan 9, 2026 AM): Test results integration (~150 pages)
 - **v2.1** (Jan 9, 2026 PM): FDIA Equation, JITNA basics (+840 lines)
-- **v2.2** (Jan 10, 2026 AM): RCTDB, Delta Engine, JITNA expansion (+1,500 lines)
+- **v2.2** (Jan 10, 2026 AM): DelentiaDB, Delta Engine, JITNA expansion (+1,500 lines)
 - **v3.0** (Jan 10, 2026 PM): Cross-chat integration, Day 1-5 reports, Specialist Studio (+2,000+ lines)
 - **v3.1** (Jan 12, 2026): Phase 3 Frontend Foundation - Astro SSG platform (+2,624 lines)
 - **v4.0** (Jan 13, 2026): Phase 4 Owner Console + Stack Lock migration roadmap (+4,700 lines)
-- **v4.1** (Jan 15, 2026 AM): The Evolutionary Intelligence Loop chapter - FDIA+JITNA+Delta+SignedAI+RCTDB synergy (+5,800 lines)
+- **v4.1** (Jan 15, 2026 AM): The Evolutionary Intelligence Loop chapter - FDIA+JITNA+Delta+SignedAI+DelentiaDB synergy (+5,800 lines)
 - **v5.0** (Jan 15, 2026 PM): Ultimate Edition - v3 whitepaper integration complete (+1,783 lines)
   - ✨ **The Proof Layer** (Section 12): 520 test framework, 15K experiments, FDIA/JITNA metrics, SignedAI verification integration
   - ✨ **Infrastructure Deep Dive** (Section 29): 22→33 container evolution, MCP toolkit, cost analysis ($310→$1,310), Docker/K8s orchestration
@@ -92,7 +92,7 @@ Open JITNA Protocol (RFC-001, 52 pages) + RCTDB v2.0 (8-dimensional schema, 3-zo
     - "The 9 Codex" security framework built-in
     - Universal Adapter base architecture
     - Apache 2.0 license (open standard ready)
-  - 💎 **RCTDB v2.0 Complete**: Universal Knowledge Infrastructure
+  - 💎 **DelentiaDB v2.0 Complete**: Universal Knowledge Infrastructure
     - 8-dimensional Universal Schema (Identity, Context, Content, Verification, Evolution, Value Exchange, Social Signal, Sovereignty)
     - 3-zone architecture (Registry/Vaults/Governance)
     - Console Integration Manager (4 console types)
@@ -144,14 +144,14 @@ Open JITNA Protocol (RFC-001, 52 pages) + RCTDB v2.0 (8-dimensional schema, 3-zo
 9. [RCT-7 Mental OS](#rct-7-mental-os)
 10. [Kernel 9 Tiers](#kernel-9-tiers)
 11. [SignedAI - Multi-LLM Consensus](#signedai---multi-llm-consensus)
-12. [RCTDB - 3-Layer Hybrid Database](#rctdb---3-layer-hybrid-database)
+12. [DelentiaDB - 3-Layer Hybrid Database](#delentiadb---3-layer-hybrid-database)
 13. [The Proof Layer - Testing & Verification](#the-proof-layer---comprehensive-testing--verification) ✨ **NEW - 520 TESTS + 15K EXPERIMENTS**
 14. [Delta Engine - Compression & Optimization](#delta-engine---compression--optimization)
 15. [JITNA Language - 50+ Workflows](#jitna-language---50-workflows)
 
 **PART III: PRODUCTS & SERVICES**
-16. [RCTLabs Platform](#rctlabs-platform)
-17. [ArtentAI Architecture Engine](#artentai-architecture-engine)
+16. [Delentia Labs Platform](#rctlabs-platform)
+17. [Delentia AI Architecture Engine](#delentia-ai-architecture-engine)
 18. [Floating Assistant UI Widget](#floating-assistant-ui-widget)
 19. [Frontend Foundation - Astro SSG](#frontend-foundation-astro-ssg-platform)
 20. [Phase 4: Owner Console](#phase-4-owner-console) ✨ **NEW**
@@ -195,11 +195,11 @@ The **RCT (Reverse Component Thinking) Ecosystem** is a comprehensive AI operati
 
 **Execution Systems:**
 - **SignedAI**: Multi-LLM consensus verification system (S/4/6/8 tiers)
-- **ArtentAI**: AI-driven architecture and code generation engine
+- **Delentia AI**: AI-driven architecture and code generation engine
 - **JITNA Language**: Intent-centric communication with 50+ workflow templates
 
 **Knowledge & Optimization:**
-- **RCTDB**: 3-layer hybrid knowledge vault (Qdrant + Neo4j + PostgreSQL)
+- **DelentiaDB**: 3-layer hybrid knowledge vault (Qdrant + Neo4j + PostgreSQL)
   - 1,010+ documents in Knowledge Vault
   - 96.1% accuracy, 24.3ms vector search latency
   - 100% test pass rate (15/15 tests)
@@ -209,7 +209,7 @@ The **RCT (Reverse Component Thinking) Ecosystem** is a comprehensive AI operati
 - **MemoryRAG**: Advanced retrieval system with multi-document synthesis
 
 **Platform & Products:**
-- **RCTLabs**: Integrated development platform
+- **Delentia Labs**: Integrated development platform
 - **Floating Assistant**: Production-ready UI widget (8,530+ lines)
 - **Test Console**: API testing framework (64/64 tests passing)
 - **RCT Specialist Studio**: Module platform with backend API ✨ **NEW**
@@ -255,7 +255,7 @@ The **RCT (Reverse Component Thinking) Ecosystem** is a comprehensive AI operati
 ║  🚀 Phase 2 Infrastructure: 🆕 100% COMPLETE                         ║
 ║     • 85/15 Marketplace Model:   350+ lines (5/5 tests pass)         ║
 ║       - Creator receives 85% (highest in industry)                   ║
-║       - RCT Labs: 7%, Sea Dream: 4%, Gateway: 4%                     ║
+║       - Delentia Labs: 7%, Sea Dream: 4%, Gateway: 4%                     ║
 ║     • Intent Loop Engine:        600+ lines (4/4 tests pass)         ║
 ║       - 5 Pillars architecture (FDIA + Memory + Execution)           ║
 ║       - 1500x faster (151ms → 0.1ms cached)                          ║
@@ -407,8 +407,8 @@ The **RCT (Reverse Component Thinking) Ecosystem** is a comprehensive AI operati
 - ✅ 30+ JITNA templates cataloged
 - ✅ Creator profile integration
 
-**Chat Session 4: RCTDB & Delta Engine**
-- ✅ RCTDB complete documentation (+400 lines)
+**Chat Session 4: DelentiaDB & Delta Engine**
+- ✅ DelentiaDB complete documentation (+400 lines)
 - ✅ Delta Engine deep dive (+500 lines)
 - ✅ 1,850+ lines collected and merged
 - ✅ Performance metrics documented
@@ -454,8 +454,8 @@ The **RCT (Reverse Component Thinking) Ecosystem** is a comprehensive AI operati
 | **RCT-7 Mental OS** | Structured thinking (7 steps) | ✅ Complete | 9/9 | Chat 1 |
 | **Kernel 9 Tiers** | Execution pipeline (9 stages) | ✅ Complete | 11/11 | Chat 1 |
 | **SignedAI** | Multi-LLM consensus (S/4/6/8) | ✅ Complete | 63/64 | Chat 1-2 |
-| **ArtentAI** | Architecture generation | ✅ Complete | Integration | Chat 1-2 |
-| **RCTDB** | Knowledge storage + GraphRAG | ✅ Complete | 15/15 | Chat 4 |
+| **Delentia AI** | Architecture generation | ✅ Complete | Integration | Chat 1-2 |
+| **DelentiaDB** | Knowledge storage + GraphRAG | ✅ Complete | 15/15 | Chat 4 |
 | **Delta Engine** | 74-79% compression | ✅ Complete | 22/22 | Chat 4 |
 | **JITNA Language** | 50+ workflow templates | ✅ Complete | Validated | Chat 3, 5 |
 | **Test Console** | API testing framework | ✅ Complete | 64/64 | Chat 2 |
@@ -498,13 +498,13 @@ January 9, 2026 (PM)        FDIA & JITNA Basics v2.1                Chat 3
                             • Creator's story integration (+840 lines total)
 
 January 10, 2026 (AM)       Data Merge & Deep Dive                  Chat 4
-                            • RCTDB complete documentation (400 lines)
+                            • DelentiaDB complete documentation (400 lines)
                             • Delta Engine algorithms (500 lines)
                             • Keyword search (60+ matches)
                             • 1,850+ lines collected and analyzed
 
 January 10, 2026 (Midday)   JITNA Expansion v2.2                    Chat 5
-                            • RCTDB integration section (~400 lines)
+                            • DelentiaDB integration section (~400 lines)
                             • Delta Engine details (~500 lines)
                             • JITNA expansion to 50+ templates (~600 lines)
                             • Specialist Studio design
@@ -542,7 +542,7 @@ January 13, 2026            Phase 4: Owner Console ✨ **NEW**         Chat 8
 
 January 15, 2026 (AM)       Evolutionary Intelligence Loop v4.1      Chat 8
                             • Loop Intent Memory concept (+5,800 lines)
-                            • FDIA + JITNA + Delta + SignedAI + RCTDB synergy
+                            • FDIA + JITNA + Delta + SignedAI + DelentiaDB synergy
                             • Compound intelligence effects explained
 
 January 15, 2026 (PM)       Ultimate Edition v5.0                    Chat 8
@@ -578,7 +578,7 @@ January 20, 2026            External Integration Complete 🚀        Integratio
 | **v1.0** | Dec 2025 | ~100 | Baseline | Foundation theory | ✅ Complete |
 | **v2.0** | Jan 9 AM | ~150 | +50 pages | Test integration | ✅ Complete |
 | **v2.1** | Jan 9 PM | ~165 | +840 | FDIA + JITNA basics | ✅ Complete |
-| **v2.2** | Jan 10 AM | ~200 | +1,500 | RCTDB + Delta + JITNA | ✅ Complete |
+| **v2.2** | Jan 10 AM | ~200 | +1,500 | DelentiaDB + Delta + JITNA | ✅ Complete |
 | **v3.0** | Jan 10 PM | ~250 | +2,000 | Cross-chat + Day 1-5 | ✅ Complete |
 | **v3.1** | Jan 12 | ~270 | +2,624 | Phase 3 Frontend (Astro) | ✅ Complete |
 | **v4.0** | Jan 13 | ~290 | +4,700 | Phase 4 + Stack Lock Plan | ✅ Complete |
@@ -611,7 +611,7 @@ RCT Ecosystem Tests:        345/345 tests (100%)
 ├── RCT-7 Mental OS:        9/9 (100%)
 ├── Kernel 9 Tiers:         11/11 (100%)
 ├── SignedAI:               63/64 (98.4%)
-├── RCTDB:                  15/15 (100%)
+├── DelentiaDB:                  15/15 (100%)
 ├── Delta Engine:           22/22 (100%)
 ├── Test Console:           64/64 (100%)
 ├── Security Layer:         38/38 (100%)
@@ -688,7 +688,7 @@ The RCT Ecosystem's most profound innovation lies not in any single component, b
 ╔═══════════════════════════════════════════════════════════════╗
 ║           THE LOOP INTENT MEMORY EQUATION                     ║
 ║                                                               ║
-║  FDIA + JITNA + Delta Engine + SignedAI + RCTDB =           ║
+║  FDIA + JITNA + Delta Engine + SignedAI + DelentiaDB =           ║
 ║                                                               ║
 ║            EVOLUTIONARY COMPOUND INTELLIGENCE                 ║
 ║                                                               ║
@@ -772,7 +772,7 @@ Thai: โหวตบันทึกผล - ศาลเตี้ยที่�
 - ✅ **Truth Detection:** Catches hallucinations through disagreement patterns
 - ✅ **Competitive Advantage:** Big AI companies (OpenAI, Anthropic) cannot build this - conflict of interest
 
-#### 5. RCTDB - The Knowledge Crystal (The Memory Bank)
+#### 5. DelentiaDB - The Knowledge Crystal (The Memory Bank)
 **Role:** 3-Layer Hybrid Database (Vector + Graph + SQL)
 
 ```
@@ -810,7 +810,7 @@ Thai: บันทึกเจตนาและข้อมูลที่ก�
 │                        ↓                                    │
 │  PROCESSING STAGE: Smart Execution                         │
 │  ┌─────────────────────────────────────────────┐          │
-│  │ 4. RCTDB Query: "Have we solved this before?"│         │
+│  │ 4. DelentiaDB Query: "Have we solved this before?"│         │
 │  │    ├─ YES → Retrieve cached solution (Cost: ~$0) │     │
 │  │    └─ NO  → Route to SignedAI                │         │
 │  │                                              │          │
@@ -827,7 +827,7 @@ Thai: บันทึกเจตนาและข้อมูลที่ก�
 │  │    • Compress by 74% (3.74x ratio)          │          │
 │  │    • Maintain 100% data integrity           │          │
 │  │                                              │          │
-│  │ 7. RCTDB Storage: Memory Crystal            │          │
+│  │ 7. DelentiaDB Storage: Memory Crystal            │          │
 │  │    • Store as: Intent + Solution + Context  │          │
 │  │    • Tag with: Confidence, Source, Timestamp│          │
 │  │    • Index for: Fast retrieval next time    │          │
@@ -868,7 +868,7 @@ Traditional AI System:
 
 RCT Ecosystem with Loop:
 - Query 1: $0.02 (fresh LLM call + SignedAI consensus)
-- Query 2 (same intent): $0.0001 (RCTDB cache hit)
+- Query 2 (same intent): $0.0001 (DelentiaDB cache hit)
 - Query 1000: $0.0001 (still cached)
 - TOTAL: $0.12 for 1000 identical queries
 
@@ -890,7 +890,7 @@ Week 1 (No cached data):
 - Average: 2,500ms (full SignedAI consensus)
 
 Month 1 (20% cache hit rate):
-- Cache hits: 10ms (RCTDB lookup)
+- Cache hits: 10ms (DelentiaDB lookup)
 - Cache misses: 2,500ms
 - Average: 510ms (80% faster)
 
@@ -917,12 +917,12 @@ Initial State:
 - 5% error rate escapes
 
 After 1000 Queries:
-- RCTDB has 800 validated correct patterns
+- DelentiaDB has 800 validated correct patterns
 - New queries match 60% to known patterns
 - Effective error rate: 2% (5% × 40%)
 
 After 100,000 Queries:
-- RCTDB has 85,000 validated patterns
+- DelentiaDB has 85,000 validated patterns
 - New queries match 95% to known patterns
 - Effective error rate: 0.25% (5% × 5%)
 
@@ -1069,7 +1069,7 @@ Traditional AI:
 RCT SignedAI Consensus:
 - Multiple models vote independently
 - Disagreements flagged for human review
-- Complete audit trail in RCTDB
+- Complete audit trail in DelentiaDB
 - Compliance-ready for Thai regulators
 ```
 
@@ -1140,7 +1140,7 @@ The business becomes MORE PROFITABLE over time WITHOUT raising prices
 **Investor Dream Scenario:**
 - ✅ **Negative Churn:** Product gets better as more people use it (network effects)
 - ✅ **Margin Expansion:** Profits increase automatically over time
-- ✅ **Defensibility:** Knowledge base (RCTDB) becomes valuable moat
+- ✅ **Defensibility:** Knowledge base (DelentiaDB) becomes valuable moat
 - ✅ **Scalability:** Serve 10x users without 10x costs
 
 ---
@@ -1181,7 +1181,7 @@ RCT Ecosystem:
 │         ↓                                                │
 │  FDIA Validator (human-in-loop check)                   │
 │         ↓                                                │
-│  RCTDB Query: "Seen this before?"                       │
+│  DelentiaDB Query: "Seen this before?"                       │
 │    ├─ YES → Return cached (Cost: ~$0)                   │
 │    └─ NO  → Continue below                              │
 │         ↓                                                │
@@ -1189,7 +1189,7 @@ RCT Ecosystem:
 │         ↓                                                │
 │  Delta Engine Compression (74% size reduction)          │
 │         ↓                                                │
-│  RCTDB Storage (save for future reuse)                  │
+│  DelentiaDB Storage (save for future reuse)                  │
 │         ↓                                                │
 │  Return result + learning                               │
 └──────────────────────────────────────────────────────────┘
@@ -1242,11 +1242,11 @@ def fdia_validate(intent, user_role):
 # Thai: ตรวจสอบว่าเจตนาชัดเจน และมีมนุษย์อนุมัติถ้าจำเป็น
 ```
 
-**Stage 3: RCTDB Cache Check**
+**Stage 3: DelentiaDB Cache Check**
 
 ```python
-# Query RCTDB: Have we answered this before?
-cache_result = rctdb.semantic_search(
+# Query DelentiaDB: Have we answered this before?
+cache_result = delentiadb.semantic_search(
     intent_code="deploy_nextjs_app",
     similarity_threshold=0.85  # 85% similar = cache hit
 )
@@ -1301,11 +1301,11 @@ compression_ratio = original_size / compressed_size  # 3.85x
 # Savings: 74% fewer tokens to store and retrieve
 ```
 
-**Stage 6: RCTDB Storage**
+**Stage 6: DelentiaDB Storage**
 
 ```python
 # Save to knowledge crystal for future reuse
-rctdb.store_memory({
+delentiadb.store_memory({
     "intent_code": "deploy_nextjs_app",
     "solution": compressed,
     "confidence": 0.92,
@@ -1356,8 +1356,8 @@ user_query_2 = "What's the best way to deploy Next.js to production?"
 jitna_packet_2 = parse_jitna(user_query_2)
 # Intent code: "deploy_nextjs_app" (same as before)
 
-# RCTDB cache hit!
-cache_result_2 = rctdb.semantic_search("deploy_nextjs_app")
+# DelentiaDB cache hit!
+cache_result_2 = delentiadb.semantic_search("deploy_nextjs_app")
 # similarity_score = 0.91 (above 0.85 threshold)
 
 # Return cached answer
@@ -1383,7 +1383,7 @@ This chapter **integrates and elevates** existing concepts throughout the whitep
 - Chapter 4: FDIA Equation (intent foundation)
 - Chapter 11: Delta Engine (compression)
 - Chapter 9: SignedAI (consensus)
-- Chapter 10: RCTDB (storage)
+- Chapter 10: DelentiaDB (storage)
 - Chapter 12: JITNA (intent language)
 
 **Now Unified as:**
@@ -1395,7 +1395,7 @@ This chapter **integrates and elevates** existing concepts throughout the whitep
 - See [FDIA Equation](#fdia-equation--philosophy) for intent amplification details
 - See [Delta Engine](#delta-engine---compression--optimization) for compression algorithms
 - See [SignedAI](#signedai---multi-llm-consensus) for consensus voting mechanism
-- See [RCTDB](#rctdb---3-layer-hybrid-database) for storage architecture
+- See [DelentiaDB](#delentiadb---3-layer-hybrid-database) for storage architecture
 - See [JITNA Language](#jitna-language---50-workflows) for intent parsing
 - See [The Proof Layer](#the-proof-layer---comprehensive-testing--verification) for 520 test framework and 15K experiments
 - See [The Architect's Journey](#the-architects-journey-origin-story) for the human story behind RCT
@@ -1419,7 +1419,7 @@ This chapter **integrates and elevates** existing concepts throughout the whitep
 **For Investors:**
 - This is a **platform play**, not a feature
 - **Margin expansion** built into the architecture
-- **Defensible moat** through accumulated knowledge (RCTDB)
+- **Defensible moat** through accumulated knowledge (DelentiaDB)
 - **Global applicability** beyond Thailand
 
 **For Thailand:**
@@ -1529,7 +1529,7 @@ Growing pile of PDFs, markdown, diagrams, code snippets, experiment logs with no
 - Turn chaos into **Vault-1068** (structured, tagged memory)
 - **Manifest-driven** view of knowledge (not folder hierarchy)
 - **FDIA/JITNA annotation** with clear roles for every document
-- **RCTDB integration** for temporal tracking (what changed when?)
+- **DelentiaDB integration** for temporal tracking (what changed when?)
 
 **Design Impact:**
 - Context window crisis becomes **solved problem** via retrieval architecture
@@ -1570,7 +1570,7 @@ From earliest experiments, the Architect adopted a **4-stage collaborative cycle
 
 **Stage 4: INTEGRATE (System)**
 - Accepted results encoded into Vault-1068
-- Logged in RCTDB as "what actually happened"
+- Logged in DelentiaDB as "what actually happened"
 - Linked via manifests, FDIA, JITNA tagging
 - **Success becomes institutional knowledge**
 
@@ -1630,7 +1630,7 @@ Where for The Architect:
    - Weakness: Risk of dwelling on past, needs system to "pull back to present"
 
 2. **Architect of Intent** - Designing system equations & languages
-   - Output: FDIA, RCT-7, JITNA Language, SignedAI, ArtentAI
+   - Output: FDIA, RCT-7, JITNA Language, SignedAI, Delentia AI
    - Focus: Make intent visible, writable, verifiable
 
 3. **Geneticist of Cognition** - Encoding life experience as system DNA
@@ -1733,7 +1733,7 @@ RCT is not:
 - A vertical niche product
 
 RCT is:
-- **Memory layer:** Vault-1068 + RCTDB
+- **Memory layer:** Vault-1068 + DelentiaDB
 - **Algorithm layer:** 9 tiers, 36 algorithms, FDIA/JITNA
 - **Proof layer:** Experiments, SignedAI verification
 - **Infrastructure layer:** 22→33 containers + MCP toolkit
@@ -1778,7 +1778,7 @@ Ecosystem Track → How others plug in
 
 **Objectives:**
 
-✅ **Launch RCTLabs.co**
+✅ **Launch Delentia Labs.co**
 - Floating AI Assistant public-facing
 - Coherent narrative + initial pricing
 - Early adopter signups + feedback loop
@@ -1795,9 +1795,9 @@ Ecosystem Track → How others plug in
 
 **Key Milestones:**
 
-**"Day 1" RCTLabs Launch:**
+**"Day 1" Delentia Labs Launch:**
 - Curated demos using Floating Assistant
-- Analytics wired into RCTDB
+- Analytics wired into DelentiaDB
 - First paying customers
 
 **Whitepaper Evolution:**
@@ -1813,7 +1813,7 @@ Ecosystem Track → How others plug in
 
 **Objectives:**
 
-✅ **Grow ArtentAI**
+✅ **Grow Delentia AI**
 - Builder platform for external users
 - Capability/workflow environment on top of RCT
 - API access for developers
@@ -1842,7 +1842,7 @@ Ecosystem Track → How others plug in
 
 **NGOs:**
 - Trustworthy AI for local social problems
-- Transparency + audit requirements met by RCTDB
+- Transparency + audit requirements met by DelentiaDB
 
 **Target:** Establish RCT as **platform**, not just product
 
@@ -1859,7 +1859,7 @@ Ecosystem Track → How others plug in
 
 ✅ **Publish Specifications**
 - Formal specs (FDIA/JITNA language, manifest schemas, test taxonomies)
-- Case studies of RCTLabs/ArtentAI/SignedAI in production
+- Case studies of Delentia Labs/Delentia AI/SignedAI in production
 - Academic papers on Loop architecture
 
 ✅ **Explore Open Source**
@@ -1899,7 +1899,7 @@ Ecosystem Track → How others plug in
 
 **3. "Beyond Context Windows"**
 
-*Hook:* How Vault-1068, RCTDB, FDIA/JITNA solve context window crisis
+*Hook:* How Vault-1068, DelentiaDB, FDIA/JITNA solve context window crisis
 
 *Audience:* Technical community, researchers
 
@@ -1907,7 +1907,7 @@ Ecosystem Track → How others plug in
 
 **4. "Floating Assistant as Window into Ecosystem"**
 
-*Hook:* RCTLabs Floating AI Assistant is entry point to entire system
+*Hook:* Delentia Labs Floating AI Assistant is entry point to entire system
 
 *Audience:* End users, SMEs
 
@@ -1977,7 +1977,7 @@ All specs and external docs must reinforce:
 **Risk 3: Data, Privacy, Local Context**
 
 **Danger:**
-- Misusing Vault-1068/RCTDB to store sensitive personal data without protections
+- Misusing Vault-1068/DelentiaDB to store sensitive personal data without protections
 - Mishandling culturally sensitive or contextual content
 - Violating Thai privacy laws or cultural norms
 
@@ -1987,7 +1987,7 @@ Privacy + local-context rules should be:
 - ✅ Encoded into **SignedAI verification tiers**
 - ✅ Reflected in **Architect codex**
 - ✅ Enforced by **infra-level access controls** and logging
-- ✅ Auditable via **RCTDB trail**
+- ✅ Auditable via **DelentiaDB trail**
 
 ---
 
@@ -1997,7 +1997,7 @@ Privacy + local-context rules should be:
 
 **1. A Technical Architecture**
 - FDIA equation + JITNA language
-- Vault-1068 + RCTDB
+- Vault-1068 + DelentiaDB
 - 36 algorithms + 9 tiers
 - 22→33 container infrastructure + MCP toolkit
 
@@ -2295,7 +2295,7 @@ The **Genome Layer** represents RCT's "DNA"—the computable narrative that expl
 2. **10 Codices**
    1. The Equation of the Future (F = (D^I) × A)
    2. Core Methodology (RCT-7)
-   3. Tools (JITNA, SignedAI, RCTDB)
+   3. Tools (JITNA, SignedAI, DelentiaDB)
    4. Case Files (Experiments & Evidence)
    5. Codex of Reflection (Self-awareness)
    6. Systemic Codex (System Analysis)
@@ -2382,7 +2382,7 @@ The **Genome Layer** represents RCT's "DNA"—the computable narrative that expl
    - FDIA/JITNA annotation per document
    - Clear roles for every file
 
-3. **Integration with RCTDB**
+3. **Integration with DelentiaDB**
    - Temporal tracking (what changed when)
    - Vector search (semantic similarity)
    - Graph relationships (knowledge connections)
@@ -2477,7 +2477,7 @@ Query 2 → Fresh LLM call → $0.02
 Query 1000 → Fresh LLM call → $0.02
 TOTAL: $20 for 1000 queries
 
-With Genomes + RCTDB:
+With Genomes + DelentiaDB:
 Query 1 → Fresh call + genome context → $0.02
 Query 2 → Cache hit (genome guides) → $0.0001
 Query 1000 → Cache hit → $0.0001
@@ -2703,7 +2703,7 @@ This personal narrative is encoded into every decision the RCT Ecosystem makes.
 
 **D (Data)**
 - 0-100 measure of data sufficiency and relevance
-- Pulls from user input, context, Vault-1068, and RCTDB
+- Pulls from user input, context, Vault-1068, and DelentiaDB
 - <30 = insufficient, 30-70 = partial, >70 = sufficient
 - Thai: ความพร้อมของข้อมูลที่จำเป็น
 
@@ -2726,7 +2726,7 @@ This personal narrative is encoded into every decision the RCT Ecosystem makes.
 - Thai: การเรียนรู้จากการทำงานครั้งนี้
 
 **M (Memory)**
-- What to persist long-term in RCTDB/Vault
+- What to persist long-term in DelentiaDB/Vault
 - Critical decisions, patterns, user preferences
 - Enables continuity across sessions
 - Thai: สิ่งที่ต้องจดจำระยะยาว
@@ -2763,7 +2763,7 @@ packet = JITNAPacket(
 The ecosystem includes **50+ JITNA workflow templates** organized by category:
 
 **Template Library Overview:**
-- **Location:** `06_products_rctlabs_artentai_signedai/ArtentAI/Jitna_workflows/templates_jitna/`
+- **Location:** `06_products_rctlabs_delentia-ai_signedai/Delentia AI/Jitna_workflows/templates_jitna/`
 - **Total Templates:** 50+ production-ready workflows
 - **Categories:** Business (50), Creative (20+), Operations
 - **Format:** JSON-based .jitna files with complete JITNA packet structure
@@ -2930,8 +2930,8 @@ def run_kernel(jitna_packet: JITNAPacket) -> JITNAPacket:
     jitna_packet.I["intent_score"] = 0.95
 
     # Tier 2 — Retrieval & Data Context (RCT-7: Observe, Analyze)
-    # Query RCTDB for relevant knowledge
-    relevant_docs = rctdb.query_similar(
+    # Query DelentiaDB for relevant knowledge
+    relevant_docs = delentiadb.query_similar(
         query=jitna_packet.I["intent"],
         top_k=5
     )
@@ -2967,14 +2967,14 @@ def run_kernel(jitna_packet: JITNAPacket) -> JITNAPacket:
     if requires_human_review(jitna_packet):
         jitna_packet = tier8_human_review(jitna_packet)
     
-    # Tier 9 — Learn & Persist (Store to RCTDB)
+    # Tier 9 — Learn & Persist (Store to DelentiaDB)
     # Save learning and patterns to memory
     learning = extract_learning(jitna_packet)
     jitna_packet.M["learning"] = learning
     jitna_packet.R["reflection_score"] = score_learning(learning)
     
-    # Persist to RCTDB for future sessions
-    rctdb.save_session(jitna_packet)
+    # Persist to DelentiaDB for future sessions
+    delentiadb.save_session(jitna_packet)
     delta_engine.store_delta(
         DeltaBlock(
             session_id=jitna_packet.M["session_id"],
@@ -3071,7 +3071,7 @@ def from_natural_language(cls, user_input: str, context: Dict) -> 'JITNAPacket':
 │                                                            │
 │  Average Template Size:  200-300 lines JSON               │
 │  Success Rate:           95%+ (when used correctly)       │
-│  Integration:            Kernel 9 Tiers + RCTDB          │
+│  Integration:            Kernel 9 Tiers + DelentiaDB          │
 │  Documentation:          Complete with examples           │
 │                                                            │
 │  Most Used Templates:                                      │
@@ -3139,7 +3139,7 @@ The Kernel 9 Tiers provides a production execution pipeline:
       │
       ▼
   T2: RETRIEVAL & DATA CONTEXT
-      │  ➜ Query RCTDB + Vault + GraphRAG
+      │  ➜ Query DelentiaDB + Vault + GraphRAG
       │     Gather relevant knowledge
       │     Prepare context window
       │
@@ -3274,16 +3274,16 @@ Components:
 
 ## 🧩 Core Components
 
-### 0. RCTDB: Hybrid Knowledge Vault System
+### 0. DelentiaDB: Hybrid Knowledge Vault System
 
-RCTDB is the foundational 3-layer hybrid database powering the entire RCT Ecosystem.
+DelentiaDB is the foundational 3-layer hybrid database powering the entire RCT Ecosystem.
 
 #### Architecture Overview
 
 ```
-RCTDB = 3-Layer Hybrid Architecture
+DelentiaDB = 3-Layer Hybrid Architecture
 ┌──────────────────────────────────────────────────────────────────┐
-│                        RCTDB LAYERS                              │
+│                        DelentiaDB LAYERS                              │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Layer 1: Qdrant (Vector Database)                             │
@@ -3332,10 +3332,10 @@ Semantic       Top K matches          Context graph        Complete records
 ```python
 # signedai/db/signedai_adapter.py
 class SignedAIAdapter:
-    """RCTDB Adapter for SignedAI"""
+    """DelentiaDB Adapter for SignedAI"""
     
     def save_job(self, job: Job) -> bool:
-        """Persist job to RCTDB (Vector + Graph + SQL)"""
+        """Persist job to DelentiaDB (Vector + Graph + SQL)"""
         # Save to all 3 layers simultaneously
         vector_id = self._save_to_qdrant(job)
         graph_id = self._save_to_neo4j(job, vector_id)
@@ -3402,7 +3402,7 @@ class VaultDocument:
 #### Testing Results
 
 ```
-RCTDB Test Suite Results:
+DelentiaDB Test Suite Results:
 ─────────────────────────────────────
 Connection Tests         ✅ 3/3   (100%)
 CRUD Operations          ✅ 4/4   (100%)
@@ -3419,18 +3419,18 @@ Status: PRODUCTION READY ✅
 
 **1. SignedAI Persistence**
 ```python
-# Save every analysis job to RCTDB
+# Save every analysis job to DelentiaDB
 @app.post("/api/v1/analyze")
 async def create_analysis(...):
     job = await intake.process_request(...)
-    db_adapter.save_job(job)  # → RCTDB
+    db_adapter.save_job(job)  # → DelentiaDB
     return {"job_id": job.uid}
 ```
 
 **2. Context Window Enhancement**
 ```python
 # Query relevant knowledge from vault
-relevant_docs = rctdb.query_similar(
+relevant_docs = delentiadb.query_similar(
     query="authentication best practices",
     top_k=5
 )
@@ -3439,10 +3439,10 @@ context_window.add_knowledge(relevant_docs)
 
 **3. Delta Engine Storage**
 ```python
-# Store deltas in RCTDB for long-term persistence
+# Store deltas in DelentiaDB for long-term persistence
 delta = DeltaBlock(session_id="...", ...)
 delta_engine.store_delta(delta)
-rctdb.save_delta(delta)  # Persist to database
+delentiadb.save_delta(delta)  # Persist to database
 ```
 
 #### Implementation Files
@@ -3460,7 +3460,7 @@ rctdb.save_delta(delta)  # Persist to database
 │   └── RCT_Default_Vault_v1.csv # Default configurations
 ├── Vault1068_Spec/
 │   └── Unfdia_JITNA/            # JITNA specifications
-└── RCTDB_INTEGRATION_REPORT.md  # Full integration docs
+└── DelentiaDB_INTEGRATION_REPORT.md  # Full integration docs
 ```
 
 ---
@@ -3481,7 +3481,7 @@ Components:
 ├─ 15,000+ Experiments (Systematic Validation)
 ├─ 389/389 Actual Tests (Production Results)
 ├─ SignedAI Verification (Multi-LLM Consensus)
-├─ RCTDB Integration (Memory & Learning)
+├─ DelentiaDB Integration (Memory & Learning)
 └─ Continuous Improvement Loop
 ```
 
@@ -3495,7 +3495,7 @@ The Proof Layer serves four primary goals, expressing FDIA/JITNA principles in e
 
 Show with data that:
 - The **9-tier, 36-algorithm stack** actually improves robustness and quality
-- **Vault-1068 + RCTDB** actually mitigate context-window limitations
+- **Vault-1068 + DelentiaDB** actually mitigate context-window limitations
 - **FDIA equation** produces measurable improvements in outcomes
 
 In FDIA terms: Measure whether chosen **A (Architecture)** applied over **D (Data)** and **I (Intent)** produces the desired **F (Future Outcome)**.
@@ -3530,8 +3530,8 @@ Every change to algorithms, routing strategies, or memory structures should be t
 The RCT test suite is organized into **~520 test cases** grouped into strategic categories. Each test case is:
 
 - Defined as a **specification** in Vault-1068 (human-readable description, intent, risk class)
-- Stored as a **structured test definition** in RCTDB (input schema, scoring method, linked FDIA/JITNA roles)
-- Attached to one or more **tiers/algorithms** and product contexts (RCTLabs / ArtentAI / SignedAI)
+- Stored as a **structured test definition** in DelentiaDB (input schema, scoring method, linked FDIA/JITNA roles)
+- Attached to one or more **tiers/algorithms** and product contexts (Delentia Labs / Delentia AI / SignedAI)
 
 **Test Categories:**
 
@@ -3546,7 +3546,7 @@ Examples:
 - "Can the system correctly answer questions that require combining 3–5 documents?"
 - "Does it resist forgetting earlier constraints late in a conversation?"
 
-These tests attack the **Context Window Crisis** directly by comparing naive long-context prompting vs FDIA/JITNA-aware retrieval + Vault-1068 + RCTDB.
+These tests attack the **Context Window Crisis** directly by comparing naive long-context prompting vs FDIA/JITNA-aware retrieval + Vault-1068 + DelentiaDB.
 
 **Category 2: Algorithm & Tier-Specific Tests**
 
@@ -3574,7 +3574,7 @@ These tests tune **Tier 7 (Orchestration & Routing)** policies.
 **Category 4: Memory & Delta Tests**
 
 Focus on:
-- **RCTDB integration** effectiveness
+- **DelentiaDB integration** effectiveness
 - Applying **Δ (deltas)** over time
 - Maintaining long-term consistency across sessions and projects
 
@@ -3590,8 +3590,8 @@ These tests operationalize **Δ, R, M** in JITNA:
 **Category 5: Product & UX-Oriented Tests**
 
 Simulate real user workflows:
-- **RCTLabs:** Floating Assistant flows (user-facing demo scenarios)
-- **ArtentAI:** Capability chains (intent → workflow → artifact)
+- **Delentia Labs:** Floating Assistant flows (user-facing demo scenarios)
+- **Delentia AI:** Capability chains (intent → workflow → artifact)
 - **SignedAI:** Verification paths for high-stakes outputs
 
 Measure:
@@ -3607,7 +3607,7 @@ The **15,000+ experiments** are *not* 15,000 different test cases. They are:
 
 - Repeated runs of the ~520 test cases
 - Across multiple models, configuration variants, and time periods
-- Logged and analyzed in RCTDB
+- Logged and analyzed in DelentiaDB
 
 **Variation Dimensions:**
 
@@ -3621,7 +3621,7 @@ The **15,000+ experiments** are *not* 15,000 different test cases. They are:
 
 3. **Memory Strategy**
    - With/without certain vault subsets
-   - Specific RCTDB memories
+   - Specific DelentiaDB memories
    - Delta integration strategies
 
 4. **Safety & Constraints**
@@ -3656,7 +3656,7 @@ Tests are defined as **tasks the ecosystem must solve**, not as "run this model 
 Metrics aligned with FDIA/JITNA roles:
 
 - **I-quality:** Did the system correctly interpret and preserve intent?
-- **D-coverage:** Did it use the right data from Vault-1068/RCTDB?
+- **D-coverage:** Did it use the right data from Vault-1068/DelentiaDB?
 - **Δ-effectiveness:** Did it achieve the required change in state or artifact?
 - **A-appropriateness:** Was the chosen architecture/tier stack proportional to risk/complexity?
 - **R-depth:** Did reflection catch obvious issues and edge cases?
@@ -3711,7 +3711,7 @@ This reduces:
 
 **Key Test Suites:**
 
-1. **RCTDB Integration Tests:** 15/15 (100%)
+1. **DelentiaDB Integration Tests:** 15/15 (100%)
    - Connection tests: 3/3
    - CRUD operations: 4/4
    - Query & filtering: 3/3
@@ -3734,9 +3734,9 @@ This reduces:
 
 | Component | Metric | Value | Status |
 |-----------|--------|-------|--------|
-| **RCTDB** | Vector Search | 24.3ms | ✅ A+ |
-| **RCTDB** | Accuracy | 96.1% | ✅ A+ |
-| **RCTDB** | Test Pass Rate | 100% | ✅ A+ |
+| **DelentiaDB** | Vector Search | 24.3ms | ✅ A+ |
+| **DelentiaDB** | Accuracy | 96.1% | ✅ A+ |
+| **DelentiaDB** | Test Pass Rate | 100% | ✅ A+ |
 | **Delta Engine** | Compression | 74-79% | ✅ A+ |
 | **Delta Engine** | Memory Efficiency | 92% | ✅ A+ |
 | **Delta Engine** | Reconstruction | < 1ms | ✅ A+ |
@@ -3772,15 +3772,15 @@ This reduces:
 
 ---
 
-#### 0.1.7 Experiment Pipeline & RCTDB Integration
+#### 0.1.7 Experiment Pipeline & DelentiaDB Integration
 
 Every experiment is treated as a **first-class citizen** in the system.
 
 **Pipeline Stages:**
 
-**Stage 1: Definition (Vault & RCTDB)**
+**Stage 1: Definition (Vault & DelentiaDB)**
 - Test case described in human-readable form in Vault-1068
-- Structured as test record in RCTDB with:
+- Structured as test record in DelentiaDB with:
   - Input specification
   - Expected behavior or acceptable ranges
   - Scoring method
@@ -3788,12 +3788,12 @@ Every experiment is treated as a **first-class citizen** in the system.
   - Links to related docs and tiers
 
 **Stage 2: Execution**
-- Runner sends inputs via RCTLabs / ArtentAI / SignedAI gateways
+- Runner sends inputs via Delentia Labs / Delentia AI / SignedAI gateways
 - Triggers full tiered stack (1–9) where appropriate
 - Can be fully automated, semi-automated with human-in-the-loop, or interactive
 
-**Stage 3: Collection (RCTDB Storage)**
-RCTDB stores:
+**Stage 3: Collection (DelentiaDB Storage)**
+DelentiaDB stores:
 - Raw inputs
 - Intermediate outputs (per tier, when feasible)
 - Final outputs
@@ -3819,7 +3819,7 @@ Insights feed back into:
 **Closed Loop:**
 
 ```
-Vault-1068 → Algorithms → Experiments → RCTDB → Synthesis → Vault-1068 (updated) → ...
+Vault-1068 → Algorithms → Experiments → DelentiaDB → Synthesis → Vault-1068 (updated) → ...
 ```
 
 The Proof Layer is not separate from the rest of RCT; it is a **built-in nervous system** for feedback and adaptation.
@@ -3851,7 +3851,7 @@ Each axis has:
 
 1. **Evaluate Outputs**
    - Re-check facts against Vault-1068 and external sources (when allowed)
-   - Compare outputs with test specs in RCTDB
+   - Compare outputs with test specs in DelentiaDB
    - Assess consistency across multiple runs and configurations
 
 2. **Decision Actions**
@@ -3859,8 +3859,8 @@ Each axis has:
    - **Request Revision:** Loop back via Tier 4/5
    - **Block:** Risk too high, output rejected
 
-3. **Feed RCTDB**
-   - All verification decisions logged in RCTDB:
+3. **Feed DelentiaDB**
+   - All verification decisions logged in DelentiaDB:
      - Scores and axis-level details
      - Justifications and commentary
      - Linked test cases and configurations
@@ -3891,14 +3891,14 @@ The experiment suite explicitly validates RCT's response to the Context Window C
    - Result: Significant improvement in relevant document selection
 
 3. **Temporal Drift Crisis:** Models struggle with evolving knowledge
-   - Test: RCTDB + Δ/R/M roles for long-term consistency
+   - Test: DelentiaDB + Δ/R/M roles for long-term consistency
    - Result: Successful recall of prior decisions across sessions
 
 **A/B/C Comparisons:**
 
 - **A:** Single-model, long-context baseline
-- **B:** Multi-tier RCT without RCTDB integration
-- **C:** Full RCT (Vault-1068 + RCTDB + verification)
+- **B:** Multi-tier RCT without DelentiaDB integration
+- **C:** Full RCT (Vault-1068 + DelentiaDB + verification)
 
 Results show quantitative improvements in error rates, stability, latency, and cost, plus qualitative improvements in justification quality and traceability.
 
@@ -3943,7 +3943,7 @@ Results show quantitative improvements in error rates, stability, latency, and c
 ✅ **389/389 Tests Passing** - 99.7% production test pass rate  
 ✅ **FDIA/JITNA Metrics** - Evaluation aligned with design philosophy  
 ✅ **SignedAI Verification** - Multi-LLM consensus for trust  
-✅ **RCTDB Integration** - Complete traceability and learning  
+✅ **DelentiaDB Integration** - Complete traceability and learning  
 ✅ **Continuous Improvement** - Built-in feedback loops  
 
 **Why This Matters:**
@@ -4214,7 +4214,7 @@ Benefit: 74% cost reduction
 #### Implementation Files
 
 ```
-04_memory_vault_rctdb/RCTDB/ContextWindow/Rctdb_conwindow/
+04_memory_vault_rctdb/DelentiaDB/ContextWindow/Rctdb_conwindow/
 ├── delta_engine.py              # Main Delta Engine (527 lines)
 ├── context_window_manager.py    # Context management
 ├── test_context_systems.py      # Integration tests
@@ -4322,15 +4322,15 @@ Response: { "verdict": "PASS", "confidence": 0.95, ... }
 GET /api/v1/jobs
 Response: { "jobs": [...], "total": 10 }
 
-# RCTDB Integration Status
-GET /api/v1/rctdb/status
+# DelentiaDB Integration Status
+GET /api/v1/delentiadb/status
 Response: { "connected": true, "total_jobs": 15 }
 ```
 
 #### Implementation Files
 
 ```
-06_products_rctlabs_artentai_signedai/signedai/
+06_products_rctlabs_delentia-ai_signedai/signedai/
 ├── core/
 │   ├── router.py              (Risk assessment + tier routing)
 │   ├── consensus.py           (Weighted voting + veto logic)
@@ -4345,9 +4345,9 @@ Response: { "connected": true, "total_jobs": 15 }
 └── tests/                     (63/64 tests)
 ```
 
-### 2. ArtentAI: AI Architecture & Code Generation
+### 2. Delentia AI: AI Architecture & Code Generation
 
-ArtentAI generates complete architecture blueprints and scaffolding code.
+Delentia AI generates complete architecture blueprints and scaffolding code.
 
 **Capabilities:**
 - Project structure generation
@@ -4358,9 +4358,9 @@ ArtentAI generates complete architecture blueprints and scaffolding code.
 
 **Integration:** Works with RCT-7 Mental OS for architecture planning
 
-### 3. RCTDB: Knowledge Vault & Storage
+### 3. DelentiaDB: Knowledge Vault & Storage
 
-RCTDB provides persistent storage with GraphRAG capabilities.
+DelentiaDB provides persistent storage with GraphRAG capabilities.
 
 #### Test Results (15/15 PASSED)
 
@@ -4442,7 +4442,7 @@ RCT Floating Assistant v2.0
 │   ├── FloatingTrigger (polymorphic icon: Circle/Hexagon/Shield)
 │   ├── FloatingPanel (chat interface)
 │   ├── ConsensusCard (SignedAI results)
-│   ├── BlueprintCard (ArtentAI projects)
+│   ├── BlueprintCard (Delentia AI projects)
 │   └── Simulator (4 scenarios)
 │
 └── Phase 2: Genome Integration (✅ Complete)
@@ -5235,10 +5235,10 @@ interface Props extends Omit<astroHTML.JSX.InputHTMLAttributes, 'class'> {
 
 **Target State (Stack Lock Architecture):**
 - 🎯 Separate apps per role:
-  - `rctlabs.co`: Main website (Astro SSG)
-  - `owner.rctlabs.co`: Owner Console (Bun+Hono)
-  - `test.rctlabs.co`: Test Console (Bun+Hono)
-  - `studio.rctlabs.co`: Specialist Studio (Bun+Hono)
+  - `delentia.com`: Main website (Astro SSG)
+  - `owner.delentia.com`: Owner Console (Bun+Hono)
+  - `test.delentia.com`: Test Console (Bun+Hono)
+  - `studio.delentia.com`: Specialist Studio (Bun+Hono)
 - 🎯 Git-based CMS (Decap) with PR workflow
 - 🎯 GitHub App integration for auth
 - 🎯 Cloudflare Pages deployment with Gates/CI
@@ -5256,7 +5256,7 @@ interface Props extends Omit<astroHTML.JSX.InputHTMLAttributes, 'class'> {
 The **Stack Lock Architecture** represents a comprehensive modernization of the RCT Ecosystem frontend, transforming from a monolithic Astro application into a production-ready, multi-app system with Git-based CMS, automated deployment, and role-based separation.
 
 **Key Decisions:**
-- ✅ `rctlabs.co` = **Astro SSG** on Cloudflare Pages (main website)
+- ✅ `delentia.com` = **Astro SSG** on Cloudflare Pages (main website)
 - ✅ Consoles = **Bun + Hono** apps (owner, test, studio)
 - ✅ CMS = **Decap CMS** (Git-based, open source)
 - ✅ Auth = **GitHub App** (fine-grained permissions)
@@ -5298,25 +5298,25 @@ Total Code: 6,439 lines TypeScript/Astro
 │                    RCT ECOSYSTEM - STACK LOCK               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  🌐 rctlabs.co (Public Website)                             │
+│  🌐 delentia.com (Public Website)                             │
 │     Tech: Astro SSG → Cloudflare Pages                      │
 │     Content: Marketing, docs, blog, about                   │
 │     CMS: Decap CMS (content/* → PR → approve → deploy)      │
 │     Pages: Landing, About, Docs, Blog, Pricing              │
 │                                                             │
-│  👤 owner.rctlabs.co (Owner Console)                        │
+│  👤 owner.delentia.com (Owner Console)                        │
 │     Tech: Bun + Hono → Cloudflare Pages/Workers             │
 │     Auth: Email/password + 2FA                              │
 │     Features: Dashboard, Runs, Settings, Logs, Users        │
 │     Modes: Owner mode, Admin mode (2 interfaces)            │
 │                                                             │
-│  🧪 test.rctlabs.co (Test Console)                          │
+│  🧪 test.delentia.com (Test Console)                          │
 │     Tech: Bun + Hono → Cloudflare Pages                     │
 │     Auth: Share link + optional password                    │
 │     Features: API testing, Run execution, Results           │
 │     Shareable: Yes (public URLs with expiry)                │
 │                                                             │
-│  🎨 studio.rctlabs.co (Specialist Studio)                   │
+│  🎨 studio.delentia.com (Specialist Studio)                   │
 │     Tech: Bun + Hono → Cloudflare Pages                     │
 │     Auth: Specialist role + API key                         │
 │     Features: Module management, Testing, Analytics         │
@@ -5324,7 +5324,7 @@ Total Code: 6,439 lines TypeScript/Astro
 │                                                             │
 │  🤖 Floating Assistant (Widget)                             │
 │     Tech: Hybrid mode (Python backend + JS frontend)        │
-│     Embed: Snippet on rctlabs.co pages                      │
+│     Embed: Snippet on delentia.com pages                      │
 │     Features: Chat, Ask questions, Run JITNA, Show logs     │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -5337,7 +5337,7 @@ Content Change Flow:
 ────────────────────
 
 1. Editor opens Decap CMS
-   └── Navigate to: rctlabs.co/admin
+   └── Navigate to: delentia.com/admin
    
 2. Make content change
    └── Edit blog post, doc page, or marketing copy
@@ -5366,7 +5366,7 @@ Content Change Flow:
    └── main branch updated
    
 9. Production Deploy (automatic)
-   └── Cloudflare deploys to rctlabs.co
+   └── Cloudflare deploys to delentia.com
    
 Duration: 2-5 minutes from save to live
 ```
@@ -5405,7 +5405,7 @@ Permissions Needed:
 Deployment Strategy:
 ───────────────────
 
-Repository: github.com/rctlabs/rct-ecosystem
+Repository: github.com/delentia-labs/rct-ecosystem
 Branch: main (production)
 
 Build Configuration:
@@ -5420,7 +5420,7 @@ Features Used:
 ├── Unlimited bandwidth (Free tier)
 ├── 500 builds/month (Free tier, sufficient)
 ├── Preview per PR (automatic)
-├── Custom domains (rctlabs.co, *.rctlabs.co)
+├── Custom domains (delentia.com, *.delentia.com)
 ├── SSL certificates (automatic)
 ├── CDN (global edge network)
 └── Rollback (one-click to previous deploy)
@@ -5446,7 +5446,7 @@ Tasks:
    ├── gateway-api/         (current 01_gateway)
    ├── kernel-api/          (current 02_kernel)
    ├── signedai/            (TBD)
-   └── rctdb/               (current 04_memory_vault)
+   └── delentiadb/               (current 04_memory_vault)
    
    packages/
    ├── shared-types/        (TypeScript types)
@@ -5469,7 +5469,7 @@ Timeline: 2 days (with guide ready)
 Cost: $800 (16 hours × $50/hour)
 ```
 
-**Phase B: Deploy rctlabs.co (Week 2-3, 3 days)**
+**Phase B: Deploy delentia.com (Week 2-3, 3 days)**
 ```
 Goal: Main website live on Cloudflare Pages
 
@@ -5478,12 +5478,12 @@ Tasks:
 2. Create Pages project for rctlabs-web
 3. Connect GitHub repo
 4. Configure build settings
-5. Add custom domain: rctlabs.co
+5. Add custom domain: delentia.com
 6. Test deployment
 7. Verify SSL certificate
 
 Deliverables:
-├── rctlabs.co live on Cloudflare
+├── delentia.com live on Cloudflare
 ├── HTTPS working (auto SSL)
 ├── Build pipeline functional
 └── Git tag: v4.0.0-phase-b
@@ -5542,7 +5542,7 @@ Cost: $1,200 (24 hours × $50/hour)
 
 **Phase E: Separate Owner Console (Week 5-6, 5 days)**
 ```
-Goal: owner.rctlabs.co with Bun+Hono
+Goal: owner.delentia.com with Bun+Hono
 
 Tasks:
 1. Create apps/owner-console
@@ -5552,12 +5552,12 @@ Tasks:
 5. Setup authentication (email/password + 2FA)
 6. Connect to Gateway API (existing endpoints)
 7. Deploy to Cloudflare Pages
-8. Configure custom domain: owner.rctlabs.co
+8. Configure custom domain: owner.delentia.com
 
 Deliverables:
 ├── Owner Console app complete (Bun+Hono)
 ├── All Phase 4 features ported
-├── owner.rctlabs.co live
+├── owner.delentia.com live
 ├── Authentication working
 └── Git tag: v4.0.0-phase-e
 
@@ -5567,7 +5567,7 @@ Cost: $2,000 (40 hours × $50/hour)
 
 **Phase F: Separate Test Console (Week 6-7, 5 days)**
 ```
-Goal: test.rctlabs.co with shareable testing
+Goal: test.delentia.com with shareable testing
 
 Tasks:
 1. Create apps/test-console
@@ -5576,12 +5576,12 @@ Tasks:
 4. Features: API testing, Run execution, Results
 5. Implement share link system (public URLs + expiry)
 6. Deploy to Cloudflare Pages
-7. Configure custom domain: test.rctlabs.co
+7. Configure custom domain: test.delentia.com
 
 Deliverables:
 ├── Test Console app complete
 ├── Shareable testing links working
-├── test.rctlabs.co live
+├── test.delentia.com live
 └── Git tag: v4.0.0-phase-f
 
 Timeline: 5 days
@@ -5590,7 +5590,7 @@ Cost: $2,000 (40 hours × $50/hour)
 
 **Phase G: Build Specialist Studio (Week 7-8, 5 days)**
 ```
-Goal: studio.rctlabs.co for specialists
+Goal: studio.delentia.com for specialists
 
 Tasks:
 1. Create apps/specialist-studio
@@ -5599,12 +5599,12 @@ Tasks:
 4. Features: Module management, Testing, Analytics
 5. Authentication: Specialist role + API key
 6. Deploy to Cloudflare Pages
-7. Configure custom domain: studio.rctlabs.co
+7. Configure custom domain: studio.delentia.com
 
 Deliverables:
 ├── Specialist Studio app complete
 ├── Connected to backend API (44 tests passing)
-├── studio.rctlabs.co live
+├── studio.delentia.com live
 └── Git tag: v4.0.0-phase-g
 
 Timeline: 5 days
@@ -5613,7 +5613,7 @@ Cost: $2,000 (40 hours × $50/hour)
 
 **Phase H: Floating Assistant (Week 8-9, 4 days)**
 ```
-Goal: Embeddable widget on rctlabs.co
+Goal: Embeddable widget on delentia.com
 
 Tasks:
 1. Create widget package (@rct/floating-assistant)
@@ -5622,7 +5622,7 @@ Tasks:
 4. Backend: Python service (call Gateway/Kernel)
 5. Embed: <script> tag + initialization
 6. Deploy widget script to CDN
-7. Add to rctlabs.co pages
+7. Add to delentia.com pages
 
 Deliverables:
 ├── Floating Assistant widget complete
@@ -5656,7 +5656,7 @@ Cloudflare Pages:
   Free tier: Unlimited sites, bandwidth, 500 builds/month
   If exceeded: $0.50/500 builds ≈ $5-10/month
 
-Domain (rctlabs.co + subdomains):
+Domain (delentia.com + subdomains):
   $10-15/year ≈ $1/month
 
 Backend VPS (Python services):
@@ -5739,7 +5739,7 @@ Total: $25-55/month (average: $30/month)
 
 **Tuesday-Wednesday:**
 1. Create Cloudflare account
-2. Purchase/transfer domain: rctlabs.co
+2. Purchase/transfer domain: delentia.com
 3. Backup all code (using Phase A backup scripts)
 
 **Thursday-Friday:**
@@ -5748,12 +5748,12 @@ Total: $25-55/month (average: $30/month)
 3. Commit and tag: v4.0.0-migration-phase-a
 
 **Next Week (January 20-26):**
-1. Start Phase B (deploy rctlabs.co)
+1. Start Phase B (deploy delentia.com)
 2. Complete Cloudflare Pages setup
 3. Test deployment pipeline
 
 **Questions to Answer:**
-1. ❓ Is rctlabs.co domain already owned?
+1. ❓ Is delentia.com domain already owned?
 2. ❓ Where will Python backend be hosted? (VPS or Cloudflare Workers?)
 3. ❓ Who has GitHub admin access for creating GitHub App?
 4. ❓ Preferred launch deadline? (Flexible or fixed?)
@@ -5770,7 +5770,7 @@ Total: $25-55/month (average: $30/month)
 
 ## 🛠️ Products & Services
 
-### RCTLabs Platform
+### Delentia Labs Platform
 
 Integrated development environment combining all RCT components.
 
@@ -5779,7 +5779,7 @@ Integrated development environment combining all RCT components.
 01_gateway/              - API Gateway + routing
 10_kernel_runtime/       - RCT-7 + Kernel 9 execution
 04_memory_vault_rctdb/   - Knowledge storage
-06_products_rctlabs.../  - SignedAI, ArtentAI, RCTLabs
+06_products_rctlabs.../  - SignedAI, Delentia AI, Delentia Labs
 20_frontend.../          - Floating Assistant UI
 ```
 
@@ -5789,7 +5789,7 @@ Integrated development environment combining all RCT components.
 Gateway:        http://localhost:3000
 SignedAI API:   http://localhost:8000
 Kernel API:     http://localhost:8001
-RCTDB API:      http://localhost:8002
+DelentiaDB API:      http://localhost:8002
 ```
 
 ---
@@ -5874,7 +5874,7 @@ test_runner.py:       18 tests (HTTP, variables, redaction)
 
 **Coverage:** 87%
 
-#### 4. RCTDB Integration Tests (15/15 ✅)
+#### 4. DelentiaDB Integration Tests (15/15 ✅)
 
 All CRUD operations, queries, statistics, and persistence tests passed.
 
@@ -6252,7 +6252,7 @@ python ops/update_whitepaper_benchmarks.py
 
 ```
 FastSlowLane:       13 cases  (Low/Medium/High risk routing)
-RCTLabs End2End:     3 cases  (Architecture, Planning, Synthesis)
+Delentia Labs End2End:     3 cases  (Architecture, Planning, Synthesis)
 MemoryRAG:          10 cases  (Doc QA, Multi-doc, Synthesis)
 ───────────────────────────────────────────────────────────────
 TOTAL:              26 cases  (Complete coverage)
@@ -6271,7 +6271,7 @@ Metrics:  Latency (ms), routing correctness, escalation
 
 **2. MemoryRAG Benchmark Runner (215 lines)**
 ```python
-Purpose:  Test Memory Layer (Vault + GraphRAG + RCTDB)
+Purpose:  Test Memory Layer (Vault + GraphRAG + DelentiaDB)
 Modes:    llm_only, vanilla_rag, rct_memory
 Input:    MemoryRAG_Benchmark_Cases_v1.jsonl
 Output:   Results JSONL with QA accuracy
@@ -6279,9 +6279,9 @@ API:      POST /memoryrag/v1/qa/{mode}
 Metrics:  Retrieval accuracy, answer quality, tokens used
 ```
 
-**3. RCTLabs End2End Runner (221 lines)**
+**3. Delentia Labs End2End Runner (221 lines)**
 ```python
-Purpose:  Test RCTLabs product end-to-end
+Purpose:  Test Delentia Labs product end-to-end
 Scenarios: repo_overview, architecture_plan, reading_synthesis
 Input:    RCTLabs_End2End_Benchmark_Cases_v1.jsonl
 Output:   Results JSONL with task completion metrics
@@ -6410,7 +6410,7 @@ Infrastructure Layer Goals:
 ├─ Expose Clean MCP Interface (Tool-first LLM integration)
 └─ Tie Runtime to Memory & Proof (Complete traceability)
 
-Result: Every action traced back to Vault-1068/RCTDB and Proof Layer
+Result: Every action traced back to Vault-1068/DelentiaDB and Proof Layer
 ```
 
 From FDIA/JITNA perspective:
@@ -6418,7 +6418,7 @@ From FDIA/JITNA perspective:
 - **JITNA roles** implemented as running services:
   - **D** — data/knowledge access
   - **A** — algorithmic workers, routers, tools
-  - **M** — memory services (Vault-1068, RCTDB)
+  - **M** — memory services (Vault-1068, DelentiaDB)
   - **R** — reflection via metrics, logs, verification
 
 ---
@@ -6447,7 +6447,7 @@ Natural growth path without redesign:
 
 Tools exposed with predictable contracts:
 - Retrieval (Vault-1068 search)
-- RCTDB queries
+- DelentiaDB queries
 - Verification (SignedAI)
 - Metrics and observability
 - Each tool: clear schema, safe usage
@@ -6456,7 +6456,7 @@ Tools exposed with predictable contracts:
 
 All flows are:
 - **Observable** (logs, metrics, traces)
-- **Recorded** (RCTDB history)
+- **Recorded** (DelentiaDB history)
 - **Testable** (Proof Layer regression)
 
 > **Key Principle:** Every action can be traced back to memory and evaluated in the Proof Layer.
@@ -6468,8 +6468,8 @@ All flows are:
 **Phase 1 Architecture** is the minimal infrastructure for running RCT:
 
 - 9-tier algorithm stack operational
-- Vault-1068 + RCTDB integrated
-- RCTLabs + Floating Assistant public-facing
+- Vault-1068 + DelentiaDB integrated
+- Delentia Labs + Floating Assistant public-facing
 - Structured experiments executable
 
 **Container Groups:**
@@ -6480,7 +6480,7 @@ All flows are:
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
 ║  1. GATEWAY & FRONTEND GROUP (3-4 containers)               ║
-║     ├─ Web Frontend (RCTLabs)                               ║
+║     ├─ Web Frontend (Delentia Labs)                               ║
 ║     ├─ Assistant API Gateway                                ║
 ║     └─ Static Assets / CDN (optional)                       ║
 ║                                                              ║
@@ -6497,7 +6497,7 @@ All flows are:
 ║  4. RETRIEVAL & MEMORY GROUP (3-4 containers)               ║
 ║     ├─ Vault Access Service                                 ║
 ║     ├─ GraphRAG / Vector Index Service                      ║
-║     └─ RCTDB API                                            ║
+║     └─ DelentiaDB API                                            ║
 ║                                                              ║
 ║  5. EXPERIMENTS & VERIFICATION GROUP (3-4 containers)       ║
 ║     ├─ Experiment Runner Service                            ║
@@ -6519,7 +6519,7 @@ All flows are:
 
 **Group 1: Gateway & Frontend (3-4 containers)**
 
-**Web Frontend (RCTLabs)**
+**Web Frontend (Delentia Labs)**
 - Public-facing site:
   - Landing pages
   - Documentation
@@ -6604,13 +6604,13 @@ All flows are:
 - Serves **Tier 2** retrieval:
   - Search by tags, roles, content, graph neighborhood
 
-**RCTDB API**
+**DelentiaDB API**
 - Controlled access to:
   - Experiment records/runs
   - Delta logs & Architect decisions
   - User/project memory profiles
 
-> Runtime bridge into **memory layer**: Vault-1068 and RCTDB accessed via API, not ad-hoc file reads.
+> Runtime bridge into **memory layer**: Vault-1068 and DelentiaDB accessed via API, not ad-hoc file reads.
 
 **Group 5: Experiments & Verification (3-4 containers)**
 
@@ -6622,14 +6622,14 @@ All flows are:
 - Integrates with:
   - Orchestrator
   - LLM workers
-  - RCTDB logging
+  - DelentiaDB logging
 
 **SignedAI Verifier Service**
 - Implements:
   - Scoring logic
   - Rule-based checks
   - LLM-based verification
-- Writes to RCTDB:
+- Writes to DelentiaDB:
   - Judgments
   - Rationale
   - Risk tags
@@ -6694,12 +6694,12 @@ Split large roles into specialized services:
 **2. More Tenant / Domain Isolation**
 
 As products evolve:
-- Each product (RCTLabs, ArtentAI, SignedAI):
+- Each product (Delentia Labs, Delentia AI, SignedAI):
   - Own frontend + API gateway
   - Partially separated backends
   - Shared core infrastructure:
     - Vault-1068
-    - RCTDB
+    - DelentiaDB
     - Core orchestrator + Proof Layer
 
 Benefits:
@@ -6717,7 +6717,7 @@ Benefits:
 Integrated with:
 - Experiment Runner
 - Metrics Aggregator
-- RCTDB test schemas
+- DelentiaDB test schemas
 
 **4. Extended Toolchain & Partner Integrations**
 
@@ -6726,7 +6726,7 @@ Dedicated containers for:
 - Partner-specific connectors
 - Internal-only tooling
 
-> **Rule:** Conceptual structure (FDIA/JITNA, 9 tiers, Vault-1068/RCTDB) stays the same. Containers specialize for **scale, isolation, reliability**.
+> **Rule:** Conceptual structure (FDIA/JITNA, 9 tiers, Vault-1068/DelentiaDB) stays the same. Containers specialize for **scale, isolation, reliability**.
 
 ---
 
@@ -6760,10 +6760,10 @@ LLMs receive:
 
 **2. Memory & Experiment Tools**
 
-- `rctdb.get_experiment` — Fetch experiment records/outcomes
-- `rctdb.get_run` — Inspect particular run
-- `rctdb.log_event` — Write structured logs
-- `rctdb.get_delta_history` — Inspect change logs
+- `delentiadb.get_experiment` — Fetch experiment records/outcomes
+- `delentiadb.get_run` — Inspect particular run
+- `delentiadb.log_event` — Write structured logs
+- `delentiadb.get_delta_history` — Inspect change logs
 
 **3. Verification Tools (SignedAI)**
 
@@ -6812,7 +6812,7 @@ Benefits:
 
 **2. Correlated across Tiers**
 - Single request journey traceable:
-  - Gateway → 9 tiers → Vault/RCTDB → SignedAI
+  - Gateway → 9 tiers → Vault/DelentiaDB → SignedAI
   - Via correlation IDs
 
 **Metrics Layer:**
@@ -6845,7 +6845,7 @@ Traces provide:
 - Delay/error locations
 - Links to:
   - Vault docs (specs, codex)
-  - RCTDB records (runs, deltas)
+  - DelentiaDB records (runs, deltas)
 
 **Proof Layer Integration:**
 
@@ -6866,11 +6866,11 @@ SignedAI verification results:
 
 ---
 
-#### 0.7 Runtime Relationships: Infra ↔ Vault ↔ RCTDB ↔ Algorithms
+#### 0.7 Runtime Relationships: Infra ↔ Vault ↔ DelentiaDB ↔ Algorithms
 
 **Complete Integration Map:**
 
-**Algorithms → Tools → Vault-1068 / RCTDB**
+**Algorithms → Tools → Vault-1068 / DelentiaDB**
 
 Tiers 1-4, 6-8 use MCP tools to request:
 - Vault search and document retrieval
@@ -6879,13 +6879,13 @@ Tiers 1-4, 6-8 use MCP tools to request:
 
 Examples:
 - **Tier 2** retrieval: `vault.search`, `graphrag.query`
-- **Tiers 5 & 8**: `rctdb.get_experiment`, `rctdb.get_delta_history`
+- **Tiers 5 & 8**: `delentiadb.get_experiment`, `delentiadb.get_delta_history`
 
-**Algorithms → SignedAI & RCTDB**
+**Algorithms → SignedAI & DelentiaDB**
 
 Tiers 4 and 6 (generation/packaging) send outputs to:
 - **SignedAI** via MCP tools for verification
-- **RCTDB** for logging/analysis
+- **DelentiaDB** for logging/analysis
 
 SignedAI returns:
 - Scores
@@ -6914,7 +6914,7 @@ Runtime flows:
 - **Consume** vault content for retrieval, guidance, style, specs
 - Rarely write directly (writes mediated via explicit update processes)
 
-**RCTDB — Write-Heavy During Operations**
+**DelentiaDB — Write-Heavy During Operations**
 
 Stores:
 - Experiment outcomes
@@ -6965,7 +6965,7 @@ Infrastructure provides **rails and engines** keeping loop:
 **Principles Throughout:**
 - Same FDIA/JITNA structure
 - Same 9-tier algorithm stack
-- Same Vault-1068/RCTDB foundation
+- Same Vault-1068/DelentiaDB foundation
 - Only container **granularity** changes
 
 ---
@@ -6980,7 +6980,7 @@ Infrastructure provides **rails and engines** keeping loop:
 | **Gateway** | Latency (p95) | <100ms | 87ms ✅ |
 | **Orchestrator** | Latency (p95) | <200ms | 156ms ✅ |
 | **LLM Workers** | Success Rate | >95% | 97.3% ✅ |
-| **RCTDB** | Query Latency | <50ms | 24.3ms ✅ |
+| **DelentiaDB** | Query Latency | <50ms | 24.3ms ✅ |
 | **Vault** | Retrieval Latency | <100ms | 78ms ✅ |
 | **SignedAI** | Verification Time | <5s | 3.2s ✅ |
 | **Overall** | System Uptime | 99.5% | 99.2% ✅ |
@@ -7002,7 +7002,7 @@ Infrastructure provides **rails and engines** keeping loop:
 - 22 containers defined
 - Local development + staging
 - Simple networking
-- Volume management for Vault-1068/RCTDB
+- Volume management for Vault-1068/DelentiaDB
 
 **Kubernetes Ready (Phase 2+)**
 - Helm charts prepared
@@ -7016,7 +7016,7 @@ Infrastructure provides **rails and engines** keeping loop:
 Base Images:
 ├─ python:3.12-slim (backend services)
 ├─ node:20-alpine (frontend)
-├─ postgres:14 (RCTDB)
+├─ postgres:14 (DelentiaDB)
 ├─ redis:7-alpine (caching)
 └─ nginx:alpine (gateways)
 
@@ -7024,7 +7024,7 @@ Custom Images:
 ├─ rct-orchestrator:latest
 ├─ rct-llm-worker:latest
 ├─ rct-vault-service:latest
-├─ rct-rctdb-api:latest
+├─ rct-delentiadb-api:latest
 ├─ rct-signedai-verifier:latest
 └─ rct-experiment-runner:latest
 ```
@@ -7038,7 +7038,7 @@ Custom Images:
 | Category | Cost (USD) | Notes |
 |----------|------------|-------|
 | Compute (4 cores, 16GB RAM) | $80 | Hetzner dedicated |
-| Storage (100GB SSD) | $20 | RCTDB + Vault cache |
+| Storage (100GB SSD) | $20 | DelentiaDB + Vault cache |
 | Network (100GB) | $10 | API calls + CDN |
 | External APIs (LLM) | $200 | Variable usage |
 | Monitoring | $0 | Self-hosted |
@@ -7086,7 +7086,7 @@ Custom Images:
 **Compliance Readiness:**
 
 - **Data Residency**: Configurable per region
-- **Audit Trail**: Complete via RCTDB + logs
+- **Audit Trail**: Complete via DelentiaDB + logs
 - **Encryption**: At-rest + in-transit
 - **Privacy**: User data isolation
 
@@ -7100,7 +7100,7 @@ Custom Images:
 ✅ **33-Container Vision** - Clear scaling path without redesign  
 ✅ **MCP Toolkit** - Clean LLM-infrastructure interface  
 ✅ **Complete Observability** - Logs, metrics, traces integrated  
-✅ **Memory Integration** - Runtime tied to Vault-1068/RCTDB  
+✅ **Memory Integration** - Runtime tied to Vault-1068/DelentiaDB  
 ✅ **Proof Layer Wired** - Every action testable and traceable  
 ✅ **Cost Efficient** - $310/month Phase 1, scales linearly  
 
@@ -7111,7 +7111,7 @@ Custom Images:
 This infrastructure enables:
 - **Architecture** (FDIA) to become real processes
 - **Algorithms** (9 tiers) to run safely and observably
-- **Memory** (Vault-1068/RCTDB) to be accessed correctly
+- **Memory** (Vault-1068/DelentiaDB) to be accessed correctly
 - **Proof Layer** to continuously validate everything
 - **Products** to be built on solid foundations
 
@@ -7142,7 +7142,7 @@ This infrastructure enables:
 ├─────────────────────────────────────────────────────────────────────┤
 │  • Console-Owner (Workspace Management)                             │
 │  • Console-Studio (Module Builder)                                  │
-│  • Web-RCTLabs (Public Marketplace)                                 │
+│  • Web-Delentia Labs (Public Marketplace)                                 │
 └─────────────────────────────────────────────────────────────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -7174,7 +7174,7 @@ This infrastructure enables:
 │  Existing Engines (Operational ✅):                                 │
 │    • SignedAI (96.1% accuracy)                                      │
 │    • Delta Engine (74-79% compression)                              │
-│    • RCTDB (3-layer hybrid)                                         │
+│    • DelentiaDB (3-layer hybrid)                                         │
 │    • RCT-7 Mental OS                                                │
 │    • Kernel 9 Tiers                                                 │
 │    • JITNA Language (50+ templates)                                 │
@@ -7190,7 +7190,7 @@ This infrastructure enables:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                   LAYER 1: DATA & STORAGE (Extended)                │
 ├─────────────────────────────────────────────────────────────────────┤
-│  PostgreSQL 15 (RCTDB Extended):                                    │
+│  PostgreSQL 15 (DelentiaDB Extended):                                    │
 │    Existing Tables: User, Job, Session                              │
 │    New Tables (9):                                                  │
 │      • workspaces - Workspace management                            │
@@ -7216,7 +7216,7 @@ This infrastructure enables:
 ```
 my-specialist-module/
 ├── manifest.json              # Module metadata & configuration
-├── vault/                     # Knowledge Vault (RCTDB integration)
+├── vault/                     # Knowledge Vault (DelentiaDB integration)
 │   ├── index.json            # Vault index & statistics
 │   ├── contexts/             # Context definitions
 │   │   ├── domain_knowledge.json
@@ -7323,7 +7323,7 @@ CREATE TABLE modules (
 );
 ```
 
-See [RCT_RCTDB_SCHEMA_SPECIALIST_EXTENSION_v1.sql](RCT_RCTDB_SCHEMA_SPECIALIST_EXTENSION_v1.sql) for complete schema.
+See [RCT_DelentiaDB_SCHEMA_SPECIALIST_EXTENSION_v1.sql](RCT_DelentiaDB_SCHEMA_SPECIALIST_EXTENSION_v1.sql) for complete schema.
 
 ### API Endpoints Summary
 
@@ -7699,7 +7699,7 @@ See: [DAY_5_COMPLETION_REPORT_TH_EN.md](DAY_5_COMPLETION_REPORT_TH_EN.md)
 │  RCT-7 Mental OS          9/9        100%        Chat 1            │
 │  Kernel 9 Tiers           11/11      100%        Chat 1            │
 │  SignedAI                 63/64      98.4%       Chat 1-2          │
-│  RCTDB                    15/15      100%        Chat 4            │
+│  DelentiaDB                    15/15      100%        Chat 4            │
 │  Delta Engine             22/22      100%        Chat 4            │
 │  Test Console             64/64      100%        Chat 2            │
 │  Security Layer           38/38      100%        Chat 2            │
@@ -8289,7 +8289,7 @@ Pass Rate: 393/393 (100%)
 │      • Tests: 63/64 (98.4%)                                     │
 │                                                                   │
 │  LAYER 2: KNOWLEDGE (Chat 4)                                     │
-│  ├── RCTDB: 3-layer hybrid database                            │
+│  ├── DelentiaDB: 3-layer hybrid database                            │
 │  │   ├── Qdrant: Vector search (1,010+ documents)             │
 │  │   │   • 24.3ms average latency                             │
 │  │   │   • 96.1% accuracy                                      │
@@ -8311,14 +8311,14 @@ Pass Rate: 393/393 (100%)
 │  └── MemoryRAG: Multi-document synthesis                        │
 │      • Advanced retrieval system                                │
 │      • Cross-document analysis                                  │
-│      • Integration with RCTDB                                   │
+│      • Integration with DelentiaDB                                   │
 │                                                                   │
 │  LAYER 3: PRODUCTS (Chat 1-2, 5-6)                              │
-│  ├── RCTLabs: Integrated platform                               │
+│  ├── Delentia Labs: Integrated platform                               │
 │  │   • Unified development environment                         │
 │  │   • Module marketplace                                       │
 │  │                                                               │
-│  ├── ArtentAI: Architecture generation                          │
+│  ├── Delentia AI: Architecture generation                          │
 │  │   • AI-driven code generation                               │
 │  │   • Integration tested                                       │
 │  │                                                               │
@@ -8366,9 +8366,9 @@ Kernel validates and expands → Tier 4-6 (Execution)
 Results feedback to JITNA → Tier 7-9 (Optimization)
 ```
 
-**2. RCTDB → SignedAI Integration:**
+**2. DelentiaDB → SignedAI Integration:**
 ```
-User Query → RCTDB Qdrant (Vector Search)
+User Query → DelentiaDB Qdrant (Vector Search)
 ↓
 Relevant Documents → SignedAI (Multi-LLM Analysis)
 ↓
@@ -8390,13 +8390,13 @@ Memory Efficiency: 92% saved
 
 **4. Specialist Studio → All Systems:**
 ```
-Module Creation → RCTDB (Store Knowledge Vault)
+Module Creation → DelentiaDB (Store Knowledge Vault)
 ↓
 Module Execution → Kernel 9 Tiers (Run Workflow)
 ↓
 Evidence Generation → SignedAI (Validate Results)
 ↓
-Results Storage → RCTDB (Update Module Stats)
+Results Storage → DelentiaDB (Update Module Stats)
 ```
 
 ### Cross-System Dependencies
@@ -8405,9 +8405,9 @@ Results Storage → RCTDB (Update Module Stats)
 |----------|----------|-------------|--------|
 | **JITNA** | **Kernel** | Packet → Tier 1-3 | ✅ Complete |
 | **Kernel** | **SignedAI** | Tier 4 → Consensus | ✅ Complete |
-| **SignedAI** | **RCTDB** | Result → Storage | ✅ Complete |
-| **RCTDB** | **Delta Engine** | Context → Compression | ✅ Complete |
-| **Specialist Studio** | **RCTDB** | Module → Vault | ✅ Complete |
+| **SignedAI** | **DelentiaDB** | Result → Storage | ✅ Complete |
+| **DelentiaDB** | **Delta Engine** | Context → Compression | ✅ Complete |
+| **Specialist Studio** | **DelentiaDB** | Module → Vault | ✅ Complete |
 | **Specialist Studio** | **Kernel** | Run → Pipeline | ✅ Complete |
 | **Specialist Studio** | **SignedAI** | Validation → Consensus | ✅ Complete |
 
@@ -8421,7 +8421,7 @@ Results Storage → RCTDB (Update Module Stats)
 - ✅ RCT-7 Mental OS implementation
 - ✅ Kernel 9 Tiers execution pipeline
 - ✅ SignedAI multi-LLM consensus (96.1%)
-- ✅ RCTDB 3-layer integration
+- ✅ DelentiaDB 3-layer integration
 - ✅ Delta Engine 74-79% compression
 - ✅ JITNA Language 50+ templates
 - ✅ Test Console framework (64/64 tests)
@@ -8457,7 +8457,7 @@ Results Storage → RCTDB (Update Module Stats)
 ### Q3-Q4 2026 (Planned)
 
 - 📋 SignedAI Live LLM integration (Claude, GPT-4, Gemini)
-- 📋 ArtentAI complete feature set
+- 📋 Delentia AI complete feature set
 - 📋 GraphRAG advanced queries
 - 📋 Real-time collaboration features
 - 📋 Mobile app (iOS/Android)
@@ -8492,11 +8492,11 @@ Full-Repo_Rct_windsurf/
 ├── 03_algorithms_v13/               # Core algorithms
 │
 ├── 04_memory_vault_rctdb/           # Knowledge storage
-│   └── RCTDB/
+│   └── DelentiaDB/
 │
 ├── 05_infrastructure_mcp/           # Infrastructure
 │
-├── 06_products_rctlabs_artentai_signedai/
+├── 06_products_rctlabs_delentia-ai_signedai/
 │   ├── signedai/                    # SignedAI product (63/64 tests)
 │   │   ├── core/
 │   │   ├── intake/
@@ -8504,8 +8504,8 @@ Full-Repo_Rct_windsurf/
 │   │   ├── reporter/
 │   │   ├── api.py
 │   │   └── tests/
-│   ├── ArtentAI/                    # ArtentAI product
-│   └── RCTLabs/                     # RCTLabs platform
+│   ├── Delentia AI/                    # Delentia AI product
+│   └── Delentia Labs/                     # Delentia Labs platform
 │
 ├── 10_kernel_runtime/               # Kernel execution
 │   ├── rct7_kernel_integration.py   # RCT-7 + Kernel 9 (960+ lines)
@@ -8598,7 +8598,7 @@ GET  /metrics                - System metrics
 POST /api/v1/analyze         - Create analysis job
 GET  /api/v1/analysis/{id}   - Get analysis result
 GET  /api/v1/jobs            - List all jobs
-GET  /api/v1/rctdb/status    - RCTDB status
+GET  /api/v1/delentiadb/status    - DelentiaDB status
 ```
 
 **Kernel API (Base: http://localhost:8001)**
@@ -8610,7 +8610,7 @@ GET  /execution/status/{id}  - Get execution status
 GET  /execution/result/{id}  - Get execution result
 ```
 
-**RCTDB API (Base: http://localhost:8002)**
+**DelentiaDB API (Base: http://localhost:8002)**
 
 ```
 POST /vault/save             - Save to vault
@@ -8628,9 +8628,9 @@ DELETE /vault/delete/{id}    - Delete from vault
 
 **SignedAI:** Multi-LLM consensus verification system with 4 tier levels (S/4/6/8)
 
-**ArtentAI:** AI-driven architecture and code generation engine
+**Delentia AI:** AI-driven architecture and code generation engine
 
-**RCTDB:** Knowledge vault and graph database with GraphRAG capabilities
+**DelentiaDB:** Knowledge vault and graph database with GraphRAG capabilities
 
 **JITNA:** Intent, Delta, Architecture, Reasoning, Meta - structured intent format
 

@@ -14,7 +14,7 @@ Constitutional Principle:
 The patterns below are compiled once at import time (O(1) per check).
 This is not a blocklist — it is a constitutional document written in regex.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations

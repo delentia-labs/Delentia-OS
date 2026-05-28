@@ -29,7 +29,7 @@ This index lists the key documents included in the
 
 - This pack focuses **only on benchmark & research artefacts**.
 - The **RCT Kernel**, **Vault‑1068**, and **product repositories**
-  (RCTLabs, ArtentAI, SignedAI) can remain private while this
+  (Delentia Labs, Delentia AI, SignedAI) can remain private while this
   benchmark pack is public.
 - Future benchmark rounds can add new documents here with
   versioned filenames (e.g. `...-2026-01`, `...-v2` etc.).

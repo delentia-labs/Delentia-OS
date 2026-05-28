@@ -134,7 +134,7 @@ async function run(): Promise<void> {
       core.setFailed(
         `RCT API error: ${error.response?.status ?? "network"} — ${
           error.message
-        }. Is rct-platform running at the configured URL?`
+        }. Is delentia-os running at the configured URL?`
       );
     } else if (error instanceof Error) {
       core.setFailed(error.message);

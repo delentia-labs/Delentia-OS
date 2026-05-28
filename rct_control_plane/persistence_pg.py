@@ -9,7 +9,7 @@ environment variable::
     RCT_DB_BACKEND=sqlite     → ControlPlanePersistence  (default)
 
 Connection string priority:
-  1. ``RCT_PG_DSN``   — full DSN, e.g. ``postgresql://user:pass@host:5432/rctdb``
+  1. ``RCT_PG_DSN``   — full DSN, e.g. ``postgresql://user:pass@host:5432/delentiadb``
   2. Individual env vars: RCT_PG_HOST / RCT_PG_PORT / RCT_PG_DB /
      RCT_PG_USER / RCT_PG_PASS
 
@@ -20,7 +20,7 @@ Usage::
     db.save_intent(intent_id, user_id, type, goal)
 
     from rct_control_plane.persistence_pg import PostgresPersistence
-    db = PostgresPersistence(dsn="postgresql://localhost/rctdb")
+    db = PostgresPersistence(dsn="postgresql://localhost/delentiadb")
 
 Requires: ``pip install psycopg2-binary``
 Optional pgvector: ``pip install pgvector`` → enables ``enable_pgvector()``
@@ -58,7 +58,7 @@ def _build_dsn() -> str:
         return dsn
     host = os.environ.get("RCT_PG_HOST", "localhost")
     port = os.environ.get("RCT_PG_PORT", "5432")
-    db   = os.environ.get("RCT_PG_DB",   "rctdb")
+    db   = os.environ.get("RCT_PG_DB",   "delentiadb")
     user = os.environ.get("RCT_PG_USER", "rct")
     pw   = os.environ.get("RCT_PG_PASS", "")
     return f"postgresql://{user}:{pw}@{host}:{port}/{db}"

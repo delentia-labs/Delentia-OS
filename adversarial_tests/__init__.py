@@ -12,7 +12,7 @@ Run:
     pytest adversarial_tests/ -v
     python adversarial_tests/run_challenge.py
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from .fdia_gatekeeper import FDIAConstitution, GatekeeperResult

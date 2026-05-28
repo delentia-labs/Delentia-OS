@@ -19,7 +19,7 @@ Layer 1: REACH (are people seeing it?)
 │   ├── GitHub: traffic → views (unique + total)
 │   └── GitHub: referrer sources (which platform drove traffic)
 └── Website Traffic
-    ├── rctlabs.co: sessions D0–D7 vs baseline
+    ├── delentia.com: sessions D0–D7 vs baseline
     └── /algorithms, /benchmark, /docs: secondary page visits
 
 Layer 2: ACTIVATION (are people engaging meaningfully?)
@@ -38,7 +38,7 @@ Layer 2: ACTIVATION (are people engaging meaningfully?)
 
 Layer 3: RETENTION / BUSINESS SIGNAL
 ├── Return visits (GitHub: unique vs returning)
-├── Contact form submissions (rctlabs.co/contact)
+├── Contact form submissions (delentia.com/contact)
 ├── Email/LinkedIn DMs with business intent
 ├── PR submissions or fork+commit activity
 └── Press/media mentions or secondary shares
@@ -107,7 +107,7 @@ Run this loop every 4 hours during the first 48 hours:
 **Immediate response (< 1 hour):**
 1. Do NOT respond defensively. Do NOT delete the comment.
 2. Respond with: `"Fair challenge. Here's how to verify independently:"` + paste the exact commands from CLAIM_REGISTRY.md §6
-3. Reference the CI badge (live, not a screenshot): link to `github.com/rctlabs/rct-platform/actions`
+3. Reference the CI badge (live, not a screenshot): link to `github.com/delentia-labs/delentia-os/actions`
 4. If they challenge the 74% Delta Engine figure: acknowledge it's internal benchmark, invite them to reproduce it, mention third-party validation is on roadmap
 5. If they find a genuine discrepancy: acknowledge immediately, fix the doc, post correction
 

@@ -6,7 +6,7 @@ for tier selection, cost estimation, and consensus calculation.
 
 No dependency on rct_platform private internals.
 
-Apache 2.0 — RCT Labs (https://rctlabs.co)
+Apache 2.0 — Delentia Labs (https://delentia.com)
 """
 
 from __future__ import annotations
@@ -117,7 +117,7 @@ class HexaCoreRegistry:
             cost_output=0.50,
             context_window=2_000_000,
             specialties=["Long context", "Science", "Memory", "RAG"],
-            use_cases=["RAG systems (long document retrieval)", "Scientific analysis", "Multi-document synthesis", "RCTDB context window tasks"],
+            use_cases=["RAG systems (long document retrieval)", "Scientific analysis", "Multi-document synthesis", "DelentiaDB context window tasks"],
             reasoning_rank=3,
         ),
         HexaCoreRole.HUMANIZER: ModelInfo(

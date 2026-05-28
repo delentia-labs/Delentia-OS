@@ -80,9 +80,9 @@ jobs:
     name: Publish to PyPI
     needs: github-release
     runs-on: ubuntu-latest
-    environment: pypi              # GitHub Environment — OIDC scope + protection rules
+    environment: pypi
     permissions:
-      id-token: write              # trusted PyPI publishing (OIDC)
+      contents: read               # read artifacts only; no OIDC needed (token auth)
 
     steps:
       - name: Download dist artifacts
@@ -92,22 +92,20 @@ jobs:
           path: dist/
 
       - name: Publish to TestPyPI (dry-run validation)
-        # attestations: false — TestPyPI is a dry-run only.
-        # Generating attestations here would 'claim' them and block
-        # the production PyPI step ("already have published attestations").
-        # continue-on-error: TestPyPI outage must never block production.
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           skip-existing: true
           attestations: false
         continue-on-error: true
 
       - name: Publish to PyPI
-        # attestations: true (default) — full OIDC trusted publishing with provenance.
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
           skip-existing: true
+          attestations: false
 
   # ── Job 3: Publish TypeScript SDK to npm ──────────────────────────────────
   npm-publish:

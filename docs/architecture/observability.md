@@ -132,7 +132,7 @@ Metrics are available at `GET /metrics` in Prometheus text format.
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: rct-platform
+  - job_name: delentia-os
     static_configs:
       - targets: ["localhost:8000"]
     metrics_path: /metrics

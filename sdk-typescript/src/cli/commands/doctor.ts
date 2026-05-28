@@ -102,7 +102,7 @@ export const doctorCommand = new Command("doctor")
     const pythonVer = tryPythonSdk();
     const pythonStatus = pythonVer
       ? chalk.green(`✔ PASS (rct_control_plane v${pythonVer})`)
-      : chalk.yellow("⚠ WARNING (not installed — pip install rct-platform)");
+      : chalk.yellow("⚠ WARNING (not installed — pip install delentia-os)");
 
     // 5. FDIA baseline sanity
     spinner.text = "Running FDIA baseline sanity check...";
@@ -174,7 +174,7 @@ export const doctorCommand = new Command("doctor")
         lines.push("");
         lines.push(chalk.bold("  Troubleshooting Backend Connection:"));
         lines.push(`    1. Ensure the Python FastAPI server is active.`);
-        lines.push(`    2. Run ${chalk.cyan("pip install rct-platform")} & ${chalk.cyan("rct serve")} to start it.`);
+        lines.push(`    2. Run ${chalk.cyan("pip install delentia-os")} & ${chalk.cyan("rct serve")} to start it.`);
         lines.push(`    3. Or override base URL using ` + chalk.cyan("rct doctor --url <custom_url>"));
       }
       if (!configExists) {

@@ -1,15 +1,15 @@
-# Trading Agent Architecture — Institutional AI Trading on rct-platform
+# Trading Agent Architecture — Institutional AI Trading on delentia-os
 
 > For the full architectural article with code examples, see:  
-> [rctlabs.co/en/blog/institutional-grade-ai-trading-rct-platform](https://rctlabs.co/en/blog/institutional-grade-ai-trading-rct-platform)
+> [delentia.com/en/blog/institutional-grade-ai-trading-delentia-os](https://delentia.com/en/blog/institutional-grade-ai-trading-delentia-os)
 
 ---
 
 ## Overview
 
-This document describes the architectural blueprint for applying `rct-platform` SDK modules to institutional-grade algorithmic trading. It maps the 7-state IntentLoop to a complete news-driven trading pipeline.
+This document describes the architectural blueprint for applying `delentia-os` SDK modules to institutional-grade algorithmic trading. It maps the 7-state IntentLoop to a complete news-driven trading pipeline.
 
-**Important:** `rct-platform` v1.0.2a0 is a developer SDK — the algorithmic building blocks. A production trading deployment requires additional extensions described in [What You Need to Build](#what-you-need-to-build).
+**Important:** `delentia-os` v1.0.2a0 is a developer SDK — the algorithmic building blocks. A production trading deployment requires additional extensions described in [What You Need to Build](#what-you-need-to-build).
 
 ---
 
@@ -22,7 +22,7 @@ This document describes the architectural blueprint for applying `rct-platform` 
 | `VALIDATED` | FDIA Constitutional Scoring (A=0 kill switch) | `core/fdia/` |
 | `COMPUTING` | Multi-model Analysis (HexaCore 7-model ensemble) | `signedai/` |
 | `VERIFYING` | SignedAI Risk Gating (TIER_S / TIER_4 / TIER_6 / TIER_8) | `signedai/` |
-| `COMMITTING` | RCTDB Trade Outcome Logging | `core/delta_engine/` |
+| `COMMITTING` | DelentiaDB Trade Outcome Logging | `core/delta_engine/` |
 
 ---
 
@@ -98,7 +98,7 @@ The IntentLoop's standby mode reduces inference cost:
 
 ## What You Need to Build
 
-`rct-platform` provides the algorithmic core. Production deployment requires:
+`delentia-os` provides the algorithmic core. Production deployment requires:
 
 ### 1. Market Data Adapters
 
@@ -148,15 +148,15 @@ For MiFID II, SEC, SET, CFTC compliance:
 1. **FDIA Decision Trace** — D/I/A components, resulting F score, constitutional rule applied
 2. **SignedAI Consensus Record** — Ed25519-signed multi-model agreement, model identities, timestamp
 3. **Delta Engine Recall Log** — prior decisions informing warm recall, compression ratio
-4. **RCTDB Outcome Log** — post-trade PnL, loop duration, G7 adaptation signals
+4. **DelentiaDB Outcome Log** — post-trade PnL, loop duration, G7 adaptation signals
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 pip install -e ".[dev]"
 # See notebooks/rct_playground.ipynb for FDIA + SignedAI live demo
 ```
@@ -173,4 +173,4 @@ pip install -e ".[dev]"
 
 ---
 
-*Full article with extended code: [rctlabs.co/en/blog/institutional-grade-ai-trading-rct-platform](https://rctlabs.co/en/blog/institutional-grade-ai-trading-rct-platform)*
+*Full article with extended code: [delentia.com/en/blog/institutional-grade-ai-trading-delentia-os](https://delentia.com/en/blog/institutional-grade-ai-trading-delentia-os)*

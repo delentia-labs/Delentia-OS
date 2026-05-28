@@ -311,8 +311,8 @@ def main() -> None:
             "Next steps:\n"
             "  → [bold]rct compile 'Protect resources from hostile agents'[/bold]\n"
             "  → [bold]rct status[/bold]  /  [bold]rct governance[/bold]  /  [bold]rct timeline[/bold]\n"
-            "  → Docs:   https://rctlabs.github.io/rct-platform\n"
-            "  → GitHub: https://github.com/rctlabs/rct-platform",
+            "  → Docs:   https://rctlabs.github.io/delentia-os\n"
+            "  → GitHub: https://github.com/delentia-labs/delentia-os",
             title="[bold]Summary[/bold]",
             border_style="green",
         )

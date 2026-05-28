@@ -9,7 +9,7 @@
  *   R = Result        — expected output specification
  *   M = Meta          — structured metadata
  *
- * Reference: rct-platform docs + cli.py _parse_intent_yaml()
+ * Reference: delentia-os docs + cli.py _parse_intent_yaml()
  */
 
 export interface JITNAMeta {

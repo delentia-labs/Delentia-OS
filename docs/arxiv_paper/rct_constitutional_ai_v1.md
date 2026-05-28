@@ -1,9 +1,9 @@
 # RCT Constitutional AI: A Mathematical Framework for Unconditional Adversarial Suppression via FDIA and Delta-Compressed Agent Memory
 
-**Authors**: RCT Labs Research Team  
-**Affiliation**: RCT Labs (https://rctlabs.co)  
+**Authors**: Delentia Labs Research Team  
+**Affiliation**: Delentia Labs (https://delentia.com)  
 **Version**: v1.0-draft — 2026-05-18  
-**Repository**: https://github.com/rctlabs/rct-platform  
+**Repository**: https://github.com/delentia-labs/delentia-os  
 **License**: Apache 2.0
 
 ---
@@ -32,7 +32,7 @@ RCT Constitutional AI takes a different architectural position: rather than teac
 2. **21-Article Constitution**: a compiled regex constitution covering 21 adversarial pattern families with empirical zero false-negative rate on 120 adversarial cases (Section 3).
 3. **Empirical Benchmarks**: 133 passing pytest tests; TruthfulQA, HaluEval, and FDIA comparative results (Section 4).
 4. **Delta Memory Engine**: 74% compression claim with formal complexity analysis and sub-millisecond recall guarantee (Section 5).
-5. **Open Reproducibility**: all code, data, and tools released as Apache 2.0 at https://github.com/rctlabs/rct-platform.
+5. **Open Reproducibility**: all code, data, and tools released as Apache 2.0 at https://github.com/delentia-labs/delentia-os.
 
 ---
 
@@ -276,8 +276,8 @@ All experiments are fully reproducible:
 
 ```bash
 # Clone repository
-git clone https://github.com/rctlabs/rct-platform.git
-cd rct-platform
+git clone https://github.com/delentia-labs/delentia-os.git
+cd delentia-os
 pip install -e ".[dev]"
 
 # Run adversarial tests (120 cases, 21 articles)
@@ -315,7 +315,7 @@ python tools/generate_trace.py --demo
 
 ## 10. Conclusion
 
-We presented RCT Constitutional AI — a mathematical framework for unconditional adversarial suppression grounded in the FDIA formula $F = D^I \times A$. When the 21-article constitutional gate sets $A = 0$, output force is mathematically zeroed regardless of input content. This structural guarantee, unlike fine-tuning-based approaches, cannot be bypassed by prompt engineering or distribution shift. Across 120 adversarial test cases, we report a 100% block rate at sub-millisecond latency. The accompanying Delta Memory Engine achieves 74% memory compression with formal sub-1ms rollback guarantees. All code, benchmarks, and visualization tools are open-source at https://github.com/rctlabs/rct-platform.
+We presented RCT Constitutional AI — a mathematical framework for unconditional adversarial suppression grounded in the FDIA formula $F = D^I \times A$. When the 21-article constitutional gate sets $A = 0$, output force is mathematically zeroed regardless of input content. This structural guarantee, unlike fine-tuning-based approaches, cannot be bypassed by prompt engineering or distribution shift. Across 120 adversarial test cases, we report a 100% block rate at sub-millisecond latency. The accompanying Delta Memory Engine achieves 74% memory compression with formal sub-1ms rollback guarantees. All code, benchmarks, and visualization tools are open-source at https://github.com/delentia-labs/delentia-os.
 
 ---
 
@@ -329,10 +329,10 @@ We presented RCT Constitutional AI — a mathematical framework for unconditiona
 6. Touvron, H. et al. (2023). *Llama 2: Open Foundation and Fine-Tuned Chat Models.* arXiv:2307.09288.
 7. Naik, R. et al. (2024). *Compressing LLM Context via Delta Encoding.* (unpublished preprint).
 8. Luo, H. et al. (2025). *Chain-of-Thought Hallucination Detection.* (under review).
-9. RCT Labs (2025). *RCT OS Definition Paper.* Internal technical report, version 2025.12.
+9. Delentia Labs (2025). *RCT OS Definition Paper.* Internal technical report, version 2025.12.
 
 ---
 
 *This paper is a working draft. Sections 4.2 and 4.3 will be updated with full empirical measurements upon completion of TruthfulQA and HaluEval runs.*
 
-*Corresponding contact: research@rctlabs.co*
+*Corresponding contact: research@delentia.com*

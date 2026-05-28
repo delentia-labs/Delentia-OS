@@ -7,7 +7,7 @@ depends_on:
   - RCT_RealBenchmark_MasterSpec_v1.md
   - 04_memory_vault_rctdb/*
   - 05_infrastructure_mcp/Graphrag_Builder/COMPLETE-USAGE-GUIDE.md
-  - 04_memory_vault_rctdb/RCTDB_*
+  - 04_memory_vault_rctdb/DelentiaDB_*
   - 01_theory_fdia_jitna/*
 ---
 
@@ -15,7 +15,7 @@ depends_on:
 
 > **Purpose:**  
 > ทดสอบและวัดประสิทธิภาพของ Memory Layer ทั้งชุดของ RCT ecosystem
-> (Vault-1068 + frontmatter + GraphRAG + RCTDB + retrieval pipeline) เทียบกับ baseline
+> (Vault-1068 + frontmatter + GraphRAG + DelentiaDB + retrieval pipeline) เทียบกับ baseline
 > เช่น LLM-only หรือ vanilla RAG ทั่วไป
 
 Benchmark ชุดนี้จะใช้ corpus จริงจาก Vault RCT (เอกสารทฤษฎี, whitepaper, kernel, products)
@@ -35,7 +35,7 @@ MemoryRAG benchmark ครอบคลุมส่วนประกอบหล
 2. **GraphRAG / Hybrid Retrieval**
    - การใช้ graph + vector + keyword ร่วมกัน
    - การปรับ retrieval strategy ตาม intent
-3. **RCTDB / Memory Store**
+3. **DelentiaDB / Memory Store**
    - การเก็บ knowledge และ citations ในรูปแบบที่ตรวจสอบย้อนหลังได้
 4. **Reasoning over retrieved context**
    - ความสามารถในการใช้ context ที่ดึงมา เพื่อตอบคำถามหรือสังเคราะห์ผลลัพธ์ที่ลึก/ซับซ้อน
@@ -49,7 +49,7 @@ MemoryRAG benchmark ครอบคลุมส่วนประกอบหล
 2. ให้ baseline เปรียบเทียบ 3 โหมด:
    - `llm_only` – ไม่มี retrieval, แค่ให้โมเดลตอบ
    - `vanilla_rag` – ดึง context ด้วย vector search แบบง่าย
-   - `rct_memory` – pipeline เต็ม: frontmatter + GraphRAG + RCTDB (ถ้ามี)
+   - `rct_memory` – pipeline เต็ม: frontmatter + GraphRAG + DelentiaDB (ถ้ามี)
 3. สร้าง dataset + runner + report ที่รันซ้ำได้เพื่อ track คุณภาพ memory layer ในระยะยาว
 
 ---
@@ -84,7 +84,7 @@ MemoryRAG benchmark ครอบคลุมส่วนประกอบหล
 - โจทย์เชิง narrative / explanation ที่ต้องใช้ทั้งทฤษฎี + product + history
 - ตัวอย่าง:
   - เล่า “ภาพรวมของ RCT ecosystem” จากเอกสาร meta + whitepaper + timeline
-  - อธิบายวิธีที่ Fast/Slow lane เชื่อมกับ Vault-1068 และ RCTDB
+  - อธิบายวิธีที่ Fast/Slow lane เชื่อมกับ Vault-1068 และ DelentiaDB
 
 ---
 
@@ -166,7 +166,7 @@ MemoryRAG benchmark จะรันอย่างน้อย 3 โหมดเ
    - ต่อ context ยาว ๆ แล้วให้โมเดลตอบ
    - ใช้เป็น baseline เทียบกับ RCT memory pipeline
 3. **RCT Memory (`rct_memory`)**
-   - ใช้ frontmatter + GraphRAG + RCTDB ตาม design ใน repo
+   - ใช้ frontmatter + GraphRAG + DelentiaDB ตาม design ใน repo
    - ปรับ retrieval ตามประเภท task
    - อาจจำกัดจำนวนเอกสารแต่เน้น precision สูง
 
@@ -236,7 +236,7 @@ Runner script จะรับ parameter เช่น `--mode llm_only` หรื
 ### 6.2 Integration with RCT runtime
 
 - ในโหมด `rct_memory`:
-  - runner ควรเรียก API หรือฟังก์ชันที่เข้าถึง GraphRAG / RCTDB ของจริง
+  - runner ควรเรียก API หรือฟังก์ชันที่เข้าถึง GraphRAG / DelentiaDB ของจริง
   - method การเรียกควรอธิบายในเอกสาร infra / runtime แยกต่างหาก
 - ในโหมด `vanilla_rag`:
   - สามารถใช้ index / vector DB เดียวกัน แต่ไม่ใช้ graph / special routing

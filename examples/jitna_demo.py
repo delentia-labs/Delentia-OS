@@ -3,7 +3,7 @@ JITNA End-to-End Demo
 =====================
 Just In Time Nodal Assembly — all three protocol layers in action.
 
-Run this script from the rct-platform root:
+Run this script from the delentia-os root:
 
     python examples/jitna_demo.py
 
