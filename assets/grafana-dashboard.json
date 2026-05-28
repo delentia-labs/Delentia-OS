@@ -222,7 +222,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["rct-platform", "fdia", "control-plane"],
+  "tags": ["delentia-os", "fdia", "control-plane"],
   "templating": {
     "list": []
   },
