@@ -33,6 +33,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout delentia-os SDK (required for local file: npm deps)
+        uses: actions/checkout@v4
+        with:
+          repository: delentia-labs/delentia-os
+          path: ../delentia-os
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
