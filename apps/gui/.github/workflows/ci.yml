@@ -13,6 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout delentia-os SDK (needed for file: package refs)
+        run: |
+          cd ..
+          git clone --depth=1 https://github.com/delentia-labs/delentia-os.git
+          # Build fdia-wasm
+          cd delentia-os/sdk-typescript/packages/fdia-wasm
+          npm ci --ignore-scripts
+          npm run build 2>/dev/null || true  # Best-effort: types still available
+          # Build rct-edge
+          cd ../rct-edge
+          npm ci --ignore-scripts
+          npm run build 2>/dev/null || true
+          cd $GITHUB_WORKSPACE
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

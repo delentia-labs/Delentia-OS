@@ -4,7 +4,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter};
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IntentRequest {
@@ -167,10 +167,7 @@ pub async fn stream_intent(
         format!("{ws_base}/v1/kernel/stream?token={api_key}")
     };
 
-    let url = ws_url.parse::<tokio_tungstenite::tungstenite::http::Uri>()
-        .map_err(|e| format!("Invalid WS URL: {e}"))?;
-
-    let (mut ws_stream, _) = connect_async(url)
+    let (mut ws_stream, _) = connect_async(&ws_url)
         .await
         .map_err(|e| format!("WS connect failed: {e}"))?;
 
