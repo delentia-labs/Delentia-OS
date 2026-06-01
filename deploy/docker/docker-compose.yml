@@ -1,0 +1,141 @@
+version: "3.9"
+
+# Delentia OS Community Infrastructure
+# 6 services, all images: delentia/<service>:2.0
+# Requires: Docker >= 24, docker-compose-plugin
+
+services:
+  gateway-api:
+    image: ghcr.io/delentia-labs/gateway-api:2.0
+    container_name: delentia-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DELENTIA_ENV=production
+      - POSTGRES_URL=postgresql://delentia:${POSTGRES_PASSWORD}@postgres:5432/delentia
+      - QDRANT_URL=http://vector-search:6333
+      - INTENT_LOOP_URL=http://intent-loop:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vector-search:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - delentia-net
+
+  intent-loop:
+    image: ghcr.io/delentia-labs/intent-loop:2.0
+    container_name: delentia-intent-loop
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - DELENTIA_ENV=production
+      - POSTGRES_URL=postgresql://delentia:${POSTGRES_PASSWORD}@postgres:5432/delentia
+      - GATEWAY_URL=http://gateway-api:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - delentia-net
+
+  analysearch-intent:
+    image: ghcr.io/delentia-labs/analysearch-intent:2.0
+    container_name: delentia-analysearch
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - DELENTIA_ENV=production
+      - QDRANT_URL=http://vector-search:6333
+    depends_on:
+      vector-search:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - delentia-net
+
+  vector-search:
+    image: qdrant/qdrant:latest
+    container_name: delentia-qdrant
+    restart: unless-stopped
+    ports:
+      - "8003:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - delentia-net
+
+  crystallizer:
+    image: ghcr.io/delentia-labs/crystallizer:2.0
+    container_name: delentia-crystallizer
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      - DELENTIA_ENV=production
+      - POSTGRES_URL=postgresql://delentia:${POSTGRES_PASSWORD}@postgres:5432/delentia
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - delentia-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: delentia-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind to localhost only
+    environment:
+      - POSTGRES_USER=delentia
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=delentia
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delentia -d delentia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - delentia-net
+
+volumes:
+  pg_data:
+    driver: local
+  qdrant_data:
+    driver: local
+
+networks:
+  delentia-net:
+    driver: bridge

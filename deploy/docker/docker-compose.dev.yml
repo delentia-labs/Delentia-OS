@@ -1,0 +1,29 @@
+version: "3.9"
+
+# Development overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  gateway-api:
+    environment:
+      - DELENTIA_ENV=development
+      - LOG_LEVEL=debug
+    volumes:
+      - ../../../delentia-os:/app/delentia-os:ro  # Live code mount
+
+  intent-loop:
+    environment:
+      - DELENTIA_ENV=development
+      - LOG_LEVEL=debug
+
+  analysearch-intent:
+    environment:
+      - DELENTIA_ENV=development
+
+  crystallizer:
+    environment:
+      - DELENTIA_ENV=development
+
+  postgres:
+    ports:
+      - "5432:5432"  # Expose to host for dev tools (DBeaver, etc.)

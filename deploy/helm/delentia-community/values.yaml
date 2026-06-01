@@ -1,0 +1,112 @@
+# Delentia Community Helm Chart Values
+# Override with: helm install delentia . -f my-values.yaml
+
+global:
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+
+tier: community
+
+# ── Services ──────────────────────────────────────────────────────────────────
+gatewayApi:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: delentia/gateway-api
+    tag: "2.0"
+  service:
+    port: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+intentLoop:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: delentia/intent-loop
+    tag: "2.0"
+  service:
+    port: 8001
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+analysearchIntent:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: delentia/analysearch-intent
+    tag: "2.0"
+  service:
+    port: 8002
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+crystallizer:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: delentia/crystallizer
+    tag: "2.0"
+  service:
+    port: 8004
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ── Qdrant (vector search) ────────────────────────────────────────────────────
+qdrant:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: qdrant/qdrant
+    tag: latest
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+
+# ── PostgreSQL (Bitnami subchart) ─────────────────────────────────────────────
+postgresql:
+  enabled: true
+  auth:
+    database: delentia
+    username: delentia
+    existingSecret: ""  # Set this for production
+    password: "changeme"  # Only used if existingSecret is empty
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# ── Ingress ────────────────────────────────────────────────────────────────────
+ingress:
+  enabled: false
+  className: nginx
+  host: api.delentia.local
+  tls:
+    enabled: false
+    secretName: delentia-tls
+
+# ── Namespace ─────────────────────────────────────────────────────────────────
+namespace:
+  create: true
+  name: delentia

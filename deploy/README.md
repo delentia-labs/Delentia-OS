@@ -1,2 +1,61 @@
-# delentia-infra-public
-DevOps &amp; Deployment 
+﻿# Delentia Infra — Community Deployment
+
+[![CI](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-infra-public/ci.yml?branch=main&label=CI)](https://github.com/delentia-labs/delentia-infra-public/actions)
+[![Helm](https://img.shields.io/badge/Helm-OCI-orange)](https://github.com/delentia-labs/delentia-infra-public/pkgs/container/charts%2Fdelentia-community)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-%3E%3D24-blue)](https://docs.docker.com/)
+
+**Delentia Infra Public** is the community deployment package for [Delentia OS](https://github.com/delentia-labs/delentia-os).
+
+## Quick Start
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/delentia-labs/delentia-infra-public/main/scripts/install.sh | bash
+
+# Windows PowerShell
+iwr -useb https://raw.githubusercontent.com/delentia-labs/delentia-infra-public/main/scripts/install.ps1 | iex
+```
+
+See [docs/quick-start.md](docs/quick-start.md) for the full guide.
+
+## Kubernetes (Helm OCI)
+
+```bash
+# Install directly from OCI registry — no git clone needed
+helm install delentia \
+  oci://ghcr.io/delentia-labs/charts/delentia-community \
+  --version 2.0.0 \
+  --namespace delentia --create-namespace \
+  --set postgresql.auth.password="$(openssl rand -base64 32)"
+
+# Upgrade
+helm upgrade delentia \
+  oci://ghcr.io/delentia-labs/charts/delentia-community \
+  --version 2.1.0
+
+# Pull chart locally to inspect values
+helm pull oci://ghcr.io/delentia-labs/charts/delentia-community --version 2.0.0
+```
+
+## Services
+
+| Service | Port | Image |
+|---|---|---|
+| gateway-api | 8000 | ghcr.io/delentia-labs/gateway-api:2.0 |
+| intent-loop | 8001 | ghcr.io/delentia-labs/intent-loop:2.0 |
+| analysearch-intent | 8002 | ghcr.io/delentia-labs/analysearch-intent:2.0 |
+| vector-search (Qdrant) | 8003 | qdrant/qdrant:latest |
+| crystallizer | 8004 | ghcr.io/delentia-labs/crystallizer:2.0 |
+| postgres | 5432 | postgres:16-alpine |
+
+## Related Repos
+
+- [delentia-os](https://github.com/delentia-labs/delentia-os)
+- [delentia-gui](https://github.com/delentia-labs/delentia-gui)
+- [delentia-ecosystem](https://github.com/delentia-labs/delentia-ecosystem)
+- [delentia-infra-enterprise](https://github.com/delentia-labs/delentia-infra-enterprise)
+
+## License
+
+Apache 2.0 — © 2026 Delentia Labs

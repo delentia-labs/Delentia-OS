@@ -1,0 +1,108 @@
+name: Publish Helm Charts to OCI Registry
+
+# Publishes community Helm chart to GHCR OCI registry.
+# After push: helm install delentia oci://ghcr.io/delentia-labs/charts/delentia-community --version 2.0.0
+
+on:
+  push:
+    tags:
+      - "helm-v*"        # helm-v2.0.0, helm-v2.1.0
+    paths:
+      - "helm/**"
+  # Also publish when triggered by OS release dispatch
+  repository_dispatch:
+    types: [new-os-release]
+  workflow_dispatch:
+    inputs:
+      chart_version:
+        description: "Chart version (e.g. 2.0.0)"
+        required: true
+        default: "2.0.0"
+
+permissions:
+  contents: read
+  packages: write  # required to push OCI artifacts to GHCR
+
+env:
+  REGISTRY: ghcr.io
+  ORG: delentia-labs
+
+jobs:
+  publish-community-chart:
+    name: Package & Push delentia-community
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.16.0"
+
+      - name: Compute chart version
+        id: ver
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#helm-v}"
+          elif [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ github.event.inputs.chart_version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Chart version: $VERSION"
+
+      - name: Update Chart.yaml version
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          sed -i "s/^version:.*/version: ${VERSION}/" helm/delentia-community/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" helm/delentia-community/Chart.yaml
+          cat helm/delentia-community/Chart.yaml | grep -E "^(version|appVersion)"
+
+      - name: Helm lint
+        run: helm lint helm/delentia-community
+
+      - name: Helm template (dry-run validate)
+        run: |
+          helm template delentia helm/delentia-community \
+            --set postgresql.auth.password=test123 \
+            --dry-run > /dev/null
+          echo "✓ Helm template rendered successfully"
+
+      - name: Package chart
+        run: |
+          mkdir -p /tmp/helm-packages
+          helm package helm/delentia-community \
+            --version "${{ steps.ver.outputs.version }}" \
+            --destination /tmp/helm-packages
+          ls -la /tmp/helm-packages/
+
+      - name: Log in to GHCR OCI registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            helm registry login "${{ env.REGISTRY }}" \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Push chart to OCI registry
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          CHART_FILE="/tmp/helm-packages/delentia-community-${VERSION}.tgz"
+          helm push "$CHART_FILE" "oci://${{ env.REGISTRY }}/${{ env.ORG }}/charts"
+          echo ""
+          echo "✓ Chart published:"
+          echo "  oci://${{ env.REGISTRY }}/${{ env.ORG }}/charts/delentia-community:${VERSION}"
+          echo ""
+          echo "Install with:"
+          echo "  helm install delentia oci://${{ env.REGISTRY }}/${{ env.ORG }}/charts/delentia-community --version ${VERSION}"
+
+      - name: Verify chart is pullable
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          mkdir -p /tmp/helm-verify
+          helm pull "oci://${{ env.REGISTRY }}/${{ env.ORG }}/charts/delentia-community" \
+            --version "$VERSION" \
+            --destination /tmp/helm-verify
+          ls -la /tmp/helm-verify/
+          echo "✓ Chart pull verified"
