@@ -49,6 +49,50 @@ helm pull oci://ghcr.io/delentia-labs/charts/delentia-community --version 2.0.0
 | crystallizer | 8004 | ghcr.io/delentia-labs/crystallizer:2.0 |
 | postgres | 5432 | postgres:16-alpine |
 
+## Minimum Requirements
+
+| Deployment | CPU | RAM | Disk |
+|---|---|---|---|
+| Docker Compose (dev) | 2 cores | 4 GB | 20 GB |
+| Docker Compose (prod) | 4 cores | 8 GB | 50 GB |
+| Kubernetes (Helm) | 4 vCPU | 8 GB | 100 GB |
+| Kubernetes (recommended) | 8 vCPU | 16 GB | 200 GB |
+
+Requires: Docker ≥ 24, Helm ≥ 3.12, kubectl ≥ 1.28 (for K8s deployment).
+
+---
+
+## Troubleshooting
+
+**PostgreSQL password error on Helm install:**
+```bash
+# Always set a strong password at install time
+--set postgresql.auth.password="$(openssl rand -base64 32)"
+# Or use an existing secret:
+--set postgresql.auth.existingSecret=my-db-secret
+```
+
+**Qdrant vector-search pod CrashLoopBackOff:**
+```bash
+# Check storage class supports ReadWriteOnce
+kubectl get storageclass
+# Increase PVC size if needed: --set qdrant.persistence.size=10Gi
+```
+
+**Gateway-api returns 503 on first start:**
+```bash
+# Normal — wait 60s for intent-loop to initialize HexaCore models
+kubectl rollout status deployment/gateway-api -n delentia
+```
+
+**Port 8000 already in use (Docker Compose):**
+```bash
+# Edit docker-compose.yml or override port
+GATEWAY_PORT=8080 docker compose up -d
+```
+
+---
+
 ## Related Repos
 
 - [delentia-os](https://github.com/delentia-labs/delentia-os)
