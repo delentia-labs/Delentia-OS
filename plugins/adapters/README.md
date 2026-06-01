@@ -4,6 +4,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
 [![Adapters](https://img.shields.io/badge/Adapters-2-purple)](registry/adapters)
+[![Skills](https://img.shields.io/badge/Skills-2-teal)](registry/skills)
+[![Registry](https://img.shields.io/badge/Registry-v1.0.0-brightgreen)](https://github.com/delentia-labs/delentia-ecosystem/releases)
 
 **Delentia Ecosystem** is the plugin and skill registry for [Delentia OS](https://github.com/delentia-labs/delentia-os).
 
@@ -131,6 +133,14 @@ curl -X POST http://localhost:8090/validate \
    ```
 
 5. **Open a PR** — CI runs `validate-adapter.yml` automatically.
+
+> **Common validation errors:**
+> ```
+> ManifestValidationError: 'jitna_channel' is a required property
+> ManifestValidationError: 'permissions[0]' must be one of: intent:read, intent:execute, memory:read...
+> ManifestValidationError: 'api_version' must match pattern '^[><=~^]{1,2}\d+\.\d+\.\d+$'
+> ```
+> Run `python -c "from api.validation import validate_manifest; ..."` locally before pushing.
 
 ---
 
