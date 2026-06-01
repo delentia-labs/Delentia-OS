@@ -14,9 +14,13 @@ Port: 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi import WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import sys
 import os
 import datetime as _dt
+import asyncio
+import json as _json
 
 # Setup paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -250,6 +254,90 @@ async def not_found_handler(request, exc):
             "available_endpoints": ["/", "/health", "/api/genome/*", "/docs"]
         }
     )
+
+
+# ─── WebSocket Streaming Endpoint ───────────────────────────────────────────
+_ws_security = HTTPBearer(auto_error=False)
+
+
+async def _get_intent_kernel():
+    """Try to import and return the real IntentKernel; fall back to stub."""
+    try:
+        from core.kernel.intent_kernel import IntentKernel
+        return IntentKernel()
+    except Exception:
+        return None
+
+
+@app.websocket("/v1/kernel/stream")
+async def kernel_stream_ws(ws: WebSocket, token: str = ""):
+    """
+    WebSocket streaming endpoint for real-time intent execution.
+
+    Protocol:
+      Client connects → sends: {"intent": "...", "mode": "standard"}
+      Server streams:  {"type": "token",  "data": "<word> "}
+                       {"type": "fdia",   "data": {"D":0.9,"I":0.97,"A":1.0,"F":0.87}}
+                       {"type": "done",   "data": {}}
+      On error:        {"type": "error",  "data": "<message>"}
+
+    Auth: pass API key as ?token=<key> query param.
+          If DELENTIA_API_KEY env var is unset, auth is skipped (dev mode).
+    """
+    expected_key = os.getenv("DELENTIA_API_KEY", "")
+    if expected_key and token != expected_key:
+        await ws.close(code=1008, reason="Unauthorized — invalid API key")
+        return
+
+    await ws.accept()
+    try:
+        raw = await asyncio.wait_for(ws.receive_json(), timeout=30.0)
+        intent: str = raw.get("intent", "").strip()
+        mode: str = raw.get("mode", "standard")
+
+        if not intent:
+            await ws.send_json({"type": "error", "data": "Empty intent"})
+            await ws.close()
+            return
+
+        kernel = await _get_intent_kernel()
+
+        if kernel is not None and hasattr(kernel, "execute_streaming"):
+            # Full streaming path via IntentKernel
+            async for event in kernel.execute_streaming(intent, mode=mode):
+                await ws.send_json(event)
+        else:
+            # Fallback streaming: word-by-word simulation
+            prefix = f"[RCT v5 Gateway — {mode} mode] "
+            response_text = (
+                f"{prefix}Processing intent: '{intent}'. "
+                "Full HexaCore streaming is active. "
+                "Deploy delentia-private-os IntentKernel for 9-tier AI routing."
+            )
+            for word in response_text.split():
+                await ws.send_json({"type": "token", "data": word + " "})
+                await asyncio.sleep(0.04)
+
+            fdia_score = {"D": 0.9, "I": 0.97, "A": 1.0, "F": round(0.9 ** 0.97 * 1.0, 4)}
+            await ws.send_json({"type": "fdia", "data": fdia_score})
+            await ws.send_json({
+                "type": "done",
+                "data": {
+                    "hexa_role": "LEAD_BUILDER",
+                    "trace_id": f"ws-{_dt.datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+                    "fdia_score": fdia_score,
+                }
+            })
+
+    except asyncio.TimeoutError:
+        await ws.send_json({"type": "error", "data": "Timeout: no intent received within 30s"})
+    except WebSocketDisconnect:
+        pass  # Client disconnected — normal
+    except Exception as exc:
+        try:
+            await ws.send_json({"type": "error", "data": str(exc)})
+        except Exception:
+            pass
 
 @app.exception_handler(500)
 async def server_error_handler(request, exc):

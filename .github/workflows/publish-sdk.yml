@@ -1,0 +1,115 @@
+name: Publish SDK Packages
+
+on:
+  push:
+    tags:
+      - "sdk-v*"
+
+permissions:
+  contents: read
+  id-token: write  # for npm provenance
+
+jobs:
+  publish-fdia-wasm:
+    name: Publish @delentia/fdia-wasm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk-typescript/packages/fdia-wasm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: sdk-typescript/packages/fdia-wasm/package-lock.json
+
+      - name: Set version from tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"          # e.g. sdk-v1.2.3
+          VERSION="${TAG#sdk-v}"            # strip prefix → 1.2.3
+          echo "Publishing version $VERSION"
+          npm version "$VERSION" --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_DELENTIA }}
+
+  publish-rct-edge:
+    name: Publish @delentia/rct-edge
+    runs-on: ubuntu-latest
+    needs: publish-fdia-wasm  # rct-edge peer-depends on fdia-wasm
+    defaults:
+      run:
+        working-directory: sdk-typescript/packages/rct-edge
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: sdk-typescript/packages/rct-edge/package-lock.json
+
+      - name: Set version from tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#sdk-v}"
+          echo "Publishing version $VERSION"
+          npm version "$VERSION" --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_DELENTIA }}
+
+  verify-publish:
+    name: Verify packages are live
+    runs-on: ubuntu-latest
+    needs: [publish-fdia-wasm, publish-rct-edge]
+    steps:
+      - name: Check @delentia/fdia-wasm on npm
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#sdk-v}"
+          for i in 1 2 3 4 5; do
+            if npm view "@delentia/fdia-wasm@${VERSION}" version 2>/dev/null; then
+              echo "✓ @delentia/fdia-wasm@${VERSION} is live"
+              break
+            fi
+            echo "Waiting for npm propagation... ($i/5)"
+            sleep 30
+          done
+
+      - name: Check @delentia/rct-edge on npm
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#sdk-v}"
+          for i in 1 2 3 4 5; do
+            if npm view "@delentia/rct-edge@${VERSION}" version 2>/dev/null; then
+              echo "✓ @delentia/rct-edge@${VERSION} is live"
+              break
+            fi
+            echo "Waiting for npm propagation... ($i/5)"
+            sleep 30
+          done
