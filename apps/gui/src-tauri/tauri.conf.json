@@ -1,0 +1,47 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "identifier": "com.delentia.desk",
+  "productName": "Delentia Desk",
+  "version": "0.1.0",
+  "build": {
+    "frontendDist": "../out",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Delentia Desk",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 680,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:8000 http://localhost:8001 http://localhost:8002 http://localhost:8003 http://localhost:8004; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Delentia OS Desktop Interface",
+    "longDescription": "Visual control surface for Delentia OS — intent-centric constitutional AI in one click.",
+    "copyright": "© 2026 Delentia Labs",
+    "license": "Apache-2.0"
+  }
+}

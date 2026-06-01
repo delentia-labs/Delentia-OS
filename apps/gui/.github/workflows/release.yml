@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  # Triggered by delentia-os when a new OS version tag is pushed
+  repository_dispatch:
+    types: [new-os-release]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+            artifact_suffix: linux
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            artifact_suffix: windows
+          - os: macos-latest
+            rust_target: aarch64-apple-darwin
+            artifact_suffix: macos
+
+    runs-on: ${{ matrix.platform.os }}
+    name: Release — ${{ matrix.platform.artifact_suffix }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.rust_target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+
+      - name: Install Linux system dependencies
+        if: matrix.platform.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build and release with Tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_GATEWAY: https://api.delentia.com
+          NEXT_PUBLIC_API_KEY: ""
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Delentia Desk ${{ github.ref_name }}"
+          releaseBody: |
+            ## Delentia Desk ${{ github.ref_name }}
+
+            Desktop GUI for Delentia OS — Intent-Centric Constitutional AI.
+
+            ### Downloads
+            | Platform | File |
+            |---|---|
+            | Windows | `.msi` or `.exe` |
+            | macOS | `.dmg` |
+            | Linux | `.AppImage` or `.deb` |
+
+            ### What's New
+            See [CHANGELOG](https://github.com/delentia-labs/delentia-gui/blob/main/CHANGELOG.md)
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          args: --target ${{ matrix.platform.rust_target }}
