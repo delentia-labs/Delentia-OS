@@ -1,6 +1,7 @@
 ﻿# Delentia Infra — Community Deployment
 
-[![CI](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-infra-public/ci.yml?branch=main&label=CI)](https://github.com/delentia-labs/delentia-infra-public/actions)
+[![Docker Build](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-infra-public/build-images.yml?branch=main&label=Docker+Build)](https://github.com/delentia-labs/delentia-infra-public/actions/workflows/build-images.yml)
+[![Helm Chart](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-infra-public/publish-helm.yml?label=Helm+Chart)](https://github.com/delentia-labs/delentia-infra-public/actions/workflows/publish-helm.yml)
 [![Helm](https://img.shields.io/badge/Helm-OCI-orange)](https://github.com/delentia-labs/delentia-infra-public/pkgs/container/charts%2Fdelentia-community)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-%3E%3D24-blue)](https://docs.docker.com/)
