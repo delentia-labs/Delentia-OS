@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-01
+
+### Added
+- WebSocket streaming endpoint in `microservices/gateway-api/gateway_main.py` — real-time intent streaming via `/ws/intent/stream`
+- TypeScript SDK publish CI (`publish-sdk.yml`) — OCI publish `@delentia/fdia-wasm` and `@delentia/rct-edge` to GHCR/npm
+- Release dispatch workflow (`trigger-ecosystem-release.yml`) — on `v*` tag, dispatches `new-os-release` event to delentia-gui, delentia-infra-public, delentia-ecosystem
+- `api/__init__.py` added to make `api/` a proper Python package
+
+### Fixed
+- `dispatch-gui-release`, `dispatch-infra-release`, `dispatch-ecosystem-validate` jobs: added `continue-on-error: true` (non-blocking)
+- Removed duplicate `import json as _json` inside `_load_stats_cache()` (ruff F811)
+- Removed unused imports `Depends`, `HTTPException`, `status`, `HTTPAuthorizationCredentials` from gateway_main.py
+
+### Changed
+- Bumped version to `2.2.0` in `pyproject.toml` and `README.md` badges
+- `README.md`: replaced dynamic PyPI/npm badges with static badges (packages not yet published to public registries)
+
+---
+
 ## [2.0.0] - 2026-05-27
 
 ### Added — Phase D: Agentic Payment MVP + Distributed Node Network + Groq LPU
