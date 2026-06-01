@@ -43,6 +43,7 @@ jobs:
     name: Dispatch → delentia-gui
     runs-on: ubuntu-latest
     needs: extract-version
+    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
     steps:
       - name: Send repository_dispatch to delentia-gui
         uses: peter-evans/repository-dispatch@v3
@@ -63,6 +64,7 @@ jobs:
     name: Dispatch → delentia-infra-public
     runs-on: ubuntu-latest
     needs: extract-version
+    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
     steps:
       - name: Send repository_dispatch to delentia-infra-public
         uses: peter-evans/repository-dispatch@v3
@@ -82,6 +84,7 @@ jobs:
     name: Dispatch → delentia-ecosystem
     runs-on: ubuntu-latest
     needs: extract-version
+    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
     steps:
       - name: Send repository_dispatch to delentia-ecosystem
         uses: peter-evans/repository-dispatch@v3

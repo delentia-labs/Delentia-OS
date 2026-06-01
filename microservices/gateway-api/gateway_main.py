@@ -14,8 +14,8 @@ Port: 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi import WebSocket, WebSocketDisconnect, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.security import HTTPBearer
 import sys
 import os
 import datetime as _dt
@@ -101,7 +101,6 @@ _BASELINE_STATS = {
 
 def _load_stats_cache() -> dict:
     """Load stats from cache file written by CI. Falls back to baseline."""
-    import json as _json
     try:
         if os.path.isfile(_STATS_CACHE_PATH):
             mtime = os.path.getmtime(_STATS_CACHE_PATH)
