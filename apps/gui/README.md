@@ -79,6 +79,13 @@ Built with **Tauri v2** (3 MB binary, native WebView security) + **Next.js 15** 
 | Tauri CLI | v2 | installed via `npm install` |
 | Delentia OS | ≥ 2.0.0 | must be running at localhost:8000 |
 
+### Windows extra dependency
+WebView2 Runtime is required on Windows 10/11 (pre-installed on Windows 11):
+```powershell
+# Install WebView2 if not present (Windows 10 only)
+winget install Microsoft.EdgeWebView2Runtime
+```
+
 ### Linux extra dependencies
 ```bash
 sudo apt-get install -y \
