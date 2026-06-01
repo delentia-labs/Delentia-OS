@@ -1,0 +1,23 @@
+{
+  "id": "line-adapter",
+  "name": "LINE Messaging Adapter",
+  "version": "1.0.0",
+  "description": "Connects LINE Messaging API to Delentia OS via JITNA v3 intent routing. Supports text, stickers, and rich menus. Optimized for TH/JP/TW markets.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "line",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["TH", "JP", "TW"],
+  "tags": ["messaging", "line", "chatbot", "thai", "regional"],
+  "security_scan_passed": false,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0"
+}

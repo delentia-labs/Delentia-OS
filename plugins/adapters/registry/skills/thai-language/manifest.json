@@ -1,0 +1,22 @@
+{
+  "id": "thai-language-skill",
+  "name": "Thai Language Constitutional Skill",
+  "version": "1.0.0",
+  "description": "Provides Thai-language constitutional AI capabilities: PDPA compliance checking, Thai legal document parsing, and Typhoon v2 routing for Thai intents.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "thai-language",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "policy:read"
+  ],
+  "entry_point": "index.py",
+  "regional_support": ["TH"],
+  "tags": ["thai", "nlp", "pdpa", "legal", "typhoon", "regional"],
+  "security_scan_passed": false,
+  "license": "Apache-2.0"
+}

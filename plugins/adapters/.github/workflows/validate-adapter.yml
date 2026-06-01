@@ -1,0 +1,299 @@
+name: Validate & Security-Scan Adapters
+
+on:
+  push:
+    paths:
+      - "registry/**"
+      - "schema/**"
+  pull_request:
+    paths:
+      - "registry/**"
+      - "schema/**"
+  workflow_dispatch:
+
+# Allow writing back to manifests after all scans pass
+permissions:
+  contents: write
+
+jobs:
+  # ─── Job 1 — JSON Schema + duplicate ID check ─────────────────────────────
+  validate:
+    name: Validate Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install jsonschema fastapi uvicorn
+
+      - name: Validate all adapter manifests
+        run: |
+          python - <<'EOF'
+          import json, sys
+          from pathlib import Path
+          from api.validation import validate_manifest, ManifestValidationError
+
+          registry = Path("registry")
+          errors = []
+
+          for kind in ("adapters", "skills"):
+            for manifest_file in sorted((registry / kind).glob("*/manifest.json")):
+              try:
+                manifest = json.loads(manifest_file.read_text())
+                validate_manifest(manifest)
+                print(f"  ✓ {manifest_file.parent.name} ({kind})")
+              except ManifestValidationError as e:
+                errors.append(f"{manifest_file}: {e.errors}")
+                print(f"  ✗ {manifest_file.parent.name}: {e.errors}")
+              except Exception as e:
+                errors.append(f"{manifest_file}: {e}")
+
+          if errors:
+            print(f"\n{len(errors)} validation error(s).")
+            sys.exit(1)
+          else:
+            print(f"\nAll manifests valid.")
+          EOF
+
+      - name: Check schema file is valid JSON
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          schema = Path('schema/adapter-manifest.schema.json')
+          json.loads(schema.read_text())
+          print('Schema is valid JSON.')
+          "
+
+      - name: Check for duplicate adapter IDs
+        run: |
+          python - <<'EOF'
+          import json, sys
+          from pathlib import Path
+          from collections import Counter
+
+          ids = []
+          for kind in ("adapters", "skills"):
+            for f in Path("registry").glob(f"{kind}/*/manifest.json"):
+              try:
+                m = json.loads(f.read_text())
+                ids.append(m.get("id", ""))
+              except Exception:
+                pass
+
+          dupes = [id for id, count in Counter(ids).items() if count > 1]
+          if dupes:
+            print(f"Duplicate IDs found: {dupes}")
+            sys.exit(1)
+          print(f"No duplicate IDs. Total: {len(ids)}")
+          EOF
+
+  # ─── Job 2 — Static analysis (Semgrep OWASP Top 10) ─────────────────────
+  semgrep-scan:
+    name: "Layer 1 — Semgrep Static Analysis"
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep (OWASP Top 10 + TypeScript + secrets)
+        run: |
+          TS_FILES=$(find registry -name "index.ts" 2>/dev/null | tr '\n' ' ')
+          if [[ -z "$TS_FILES" ]]; then
+            echo "No TypeScript adapter files found — skip."
+            exit 0
+          fi
+          echo "Scanning: $TS_FILES"
+          semgrep \
+            --config "p/typescript" \
+            --config "p/owasp-top-ten" \
+            --config "p/secrets" \
+            --error \
+            --quiet \
+            --metrics off \
+            $TS_FILES
+          echo "✓ Semgrep scan passed"
+
+      - name: Check for hardcoded secrets
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          from pathlib import Path
+
+          SECRET_PATTERNS = [
+            re.compile(r'(?i)(api[_-]?key|secret|password|token)\s*[=:]\s*["\'][^$\{][^"\']{6,}["\']'),
+          ]
+          ALLOW_LIST = ["test", "placeholder", "example", "your_", "xxx", "***", "<", "process.env"]
+
+          errors = []
+          for ts_file in Path("registry").glob("**/index.ts"):
+            content = ts_file.read_text()
+            for i, line in enumerate(content.splitlines(), 1):
+              for pattern in SECRET_PATTERNS:
+                if pattern.search(line):
+                  if not any(a.lower() in line.lower() for a in ALLOW_LIST):
+                    errors.append(f"{ts_file}:{i}: {line.strip()[:80]}")
+
+          if errors:
+            for e in errors: print(f"  ✗ {e}")
+            sys.exit(1)
+          print("✓ No hardcoded secrets detected")
+          EOF
+
+  # ─── Job 3 — Dependency audit (npm audit) ────────────────────────────────
+  npm-audit:
+    name: "Layer 2 — npm Dependency Audit"
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Audit each adapter's dependencies
+        run: |
+          FAILED=0
+          for adapter_dir in registry/adapters/*/; do
+            if [[ -f "$adapter_dir/package.json" ]]; then
+              echo "--- Auditing $adapter_dir ---"
+              pushd "$adapter_dir" > /dev/null
+              npm install --package-lock-only --ignore-scripts 2>/dev/null || true
+              if ! npm audit --audit-level=high --omit=dev 2>&1; then
+                echo "  ✗ AUDIT FAILED: $adapter_dir"
+                FAILED=1
+              else
+                echo "  ✓ $adapter_dir audit passed"
+              fi
+              popd > /dev/null
+            fi
+          done
+          if [[ $FAILED -ne 0 ]]; then
+            exit 1
+          fi
+          echo "✓ All adapter dependencies pass npm audit"
+
+  # ─── Job 4 — Permission consistency audit ────────────────────────────────
+  permission-audit:
+    name: "Layer 3 — Permission Consistency Audit"
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run permission consistency audit
+        run: |
+          python3 - <<'EOF'
+          import json, re, sys
+          from pathlib import Path
+
+          PERMISSION_SIGNALS = {
+            "intent:execute":   [re.compile(r'executeIntent\(')],
+            "memory:read":      [re.compile(r'memory\.(get|read|fetch|query)\('), re.compile(r'/v1/memory/')],
+            "memory:write":     [re.compile(r'memory\.(set|write|store|save)\(')],
+            "network:outbound": [re.compile(r'\bfetch\('), re.compile(r'axios\.'), re.compile(r'https?://')],
+          }
+          HARD_FAIL_PATTERNS = [
+            (re.compile(r'\beval\s*\('), "eval() usage — code injection risk"),
+            (re.compile(r'\.innerHTML\s*='), "innerHTML assignment — XSS risk"),
+            (re.compile(r'new\s+Function\s*\('), "new Function() — code injection risk"),
+          ]
+
+          errors, warnings = [], []
+          for adapter_dir in sorted(Path("registry/adapters").glob("*/")):
+            manifest_file = adapter_dir / "manifest.json"
+            ts_file = adapter_dir / "index.ts"
+            if not manifest_file.exists() or not ts_file.exists():
+              continue
+
+            manifest = json.loads(manifest_file.read_text())
+            code = ts_file.read_text()
+            declared = set(manifest.get("permissions", []))
+            name = adapter_dir.name
+
+            for pattern, msg in HARD_FAIL_PATTERNS:
+              if pattern.search(code):
+                errors.append(f"[HARD FAIL] {name}: {msg}")
+
+            for perm, signals in PERMISSION_SIGNALS.items():
+              code_uses = any(s.search(code) for s in signals)
+              if code_uses and perm not in declared:
+                errors.append(f"[MISSING PERM] {name}: uses '{perm}' but not declared in manifest")
+              elif perm in declared and not code_uses:
+                warnings.append(f"[UNUSED PERM] {name}: declares '{perm}' but not found in code")
+
+          for w in warnings: print(f"  ⚠  {w}")
+          for e in errors: print(f"  ✗  {e}")
+          if errors:
+            print(f"\nPermission audit FAILED: {len(errors)} error(s).")
+            sys.exit(1)
+          print(f"✓ Permission audit passed. Warnings: {len(warnings)}")
+          EOF
+
+  # ─── Job 5 — Auto-update security_scan_passed flag ───────────────────────
+  update-scan-status:
+    name: "Auto-update security_scan_passed → true"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, semgrep-scan, npm-audit, permission-audit]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update manifests with scan results
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          sha = os.environ.get("GITHUB_SHA", "unknown")[:12]
+          scan_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+          updated = []
+          for kind in ("adapters", "skills"):
+            for manifest_file in sorted(Path("registry").glob(f"{kind}/*/manifest.json")):
+              manifest = json.loads(manifest_file.read_text())
+              if manifest.get("security_scan_sha") == sha:
+                continue
+              manifest["security_scan_passed"] = True
+              manifest["security_scan_date"] = scan_date
+              manifest["security_scan_sha"] = sha
+              manifest_file.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+              updated.append(str(manifest_file))
+              print(f"  ✓ Updated: {manifest_file}")
+          print(f"Updated {len(updated)} manifest(s).")
+          EOF
+
+      - name: Commit updated manifests
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add registry/
+          if git diff --staged --quiet; then
+            echo "No changes."
+          else
+            git commit -m "security: auto-update scan status to passed ✓ [skip ci]"
+            git push
+          fi

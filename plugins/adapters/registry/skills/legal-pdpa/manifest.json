@@ -1,0 +1,21 @@
+{
+  "id": "legal-pdpa-skill",
+  "name": "PDPA Legal Compliance Skill",
+  "version": "1.0.0",
+  "description": "Constitutional AI guardrails for Thailand PDPA (Personal Data Protection Act) compliance. Validates responses for data subject rights, consent management, and prohibited data processing patterns.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "legal-pdpa",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "policy:read"
+  ],
+  "entry_point": "index.py",
+  "regional_support": ["TH"],
+  "tags": ["pdpa", "legal", "compliance", "privacy", "thai", "governance"],
+  "security_scan_passed": false,
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "slack-adapter",
+  "name": "Slack Adapter",
+  "version": "1.0.0",
+  "description": "Connects Slack to Delentia OS via JITNA v3 intent routing. Supports slash commands, mentions, and interactive components. Includes PDPA-compliant message handling.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "slack",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "user:read"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["US", "GB", "AU", "TH", "SG"],
+  "tags": ["messaging", "slack", "enterprise", "slash-command"],
+  "security_scan_passed": false,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0"
+}

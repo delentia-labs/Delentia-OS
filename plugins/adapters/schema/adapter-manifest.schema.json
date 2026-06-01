@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.delentia.com/adapter-manifest/v1.0.0",
+  "title": "Delentia Adapter Manifest",
+  "description": "Manifest schema for Delentia OS adapter and skill packages in the Ecosystem Registry.",
+  "type": "object",
+  "required": ["id", "name", "version", "author", "jitna_channel", "api_version", "permissions"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique kebab-case identifier for this adapter.",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$",
+      "examples": ["line-adapter", "slack-adapter", "thai-language-skill"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name.",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "description": "SemVer version string.",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-(alpha|beta|rc)\\.(0|[1-9]\\d*))?$",
+      "examples": ["1.0.0", "2.3.1-beta.1"]
+    },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name":  { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "url":   { "type": "string", "format": "uri" }
+      }
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "jitna_channel": {
+      "type": "string",
+      "description": "JITNA v3 channel/namespace this adapter operates on.",
+      "pattern": "^[a-z][a-z0-9_-]{0,49}$",
+      "examples": ["line", "slack", "whatsapp", "email", "webhook"]
+    },
+    "api_version": {
+      "type": "string",
+      "description": "Minimum compatible Delentia OS API version (semver range).",
+      "examples": [">=2.0.0", "^2.0.0", "2.0.x"]
+    },
+    "permissions": {
+      "type": "array",
+      "description": "List of permissions this adapter requires.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "intent:read",
+          "intent:execute",
+          "memory:read",
+          "memory:write",
+          "policy:read",
+          "policy:write",
+          "user:read",
+          "metrics:read"
+        ]
+      }
+    },
+    "entry_point": {
+      "type": "string",
+      "description": "Relative path to the adapter entry file.",
+      "default": "index.ts"
+    },
+    "regional_support": {
+      "type": "array",
+      "description": "ISO 3166-1 alpha-2 country codes for regional targeting.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$"
+      },
+      "examples": [["TH", "JP", "TW"]]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "security_scan_passed": {
+      "type": "boolean",
+      "description": "Set by the registry CI — do not set manually."
+    },
+    "repository": {
+      "type": "string",
+      "format": "uri"
+    },
+    "license": {
+      "type": "string",
+      "default": "Apache-2.0"
+    }
+  }
+}
