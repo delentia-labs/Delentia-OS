@@ -1,6 +1,6 @@
 # Delentia Desk
 
-[![Release](https://img.shields.io/github/v/release/delentia-labs/delentia-gui?label=Release&color=blue)](https://github.com/delentia-labs/delentia-gui/releases)
+[![Release](https://img.shields.io/github/v/tag/delentia-labs/delentia-gui?label=Release&color=blue)](https://github.com/delentia-labs/delentia-gui/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-gui/ci.yml?branch=main&label=CI)](https://github.com/delentia-labs/delentia-gui/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-informational)](https://github.com/delentia-labs/delentia-gui/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
