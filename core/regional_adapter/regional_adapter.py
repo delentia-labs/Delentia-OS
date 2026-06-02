@@ -66,6 +66,28 @@ _INDONESIAN_MARKERS = {
     "sangat", "hanya", "oleh", "seperti", "antara", "telah", "bahwa",
 }
 
+# Tagalog (Filipino) common words for keyword-based script disambiguation
+_TAGALOG_MARKERS = {
+    "ang", "mga", "ng", "sa", "at", "na", "dahil", "para", "ito", "si",
+    "ni", "kay", "ay", "may", "wala", "hindi", "ako", "ikaw", "siya",
+    "kami", "sila", "opo", "po"
+}
+
+# Malay common words (distinguished from Indonesian)
+_MALAY_MARKERS = {
+    "dan", "yang", "di", "ini", "itu", "untuk", "dengan", "adalah",
+    "pada", "dari", "dalam", "akan", "tidak", "saya", "kami", "mereka",
+    "atau", "juga", "ke", "sudah", "belum", "ada", "baru", "sangat",
+    "hanya", "oleh", "seperti", "antara", "telah", "bahawa", "kerana",
+    "ialah", "boleh", "tetapi", "ia", "kami", "kita"
+}
+
+# Words specific to Malay that are not used in Indonesian
+_MALAY_ONLY_MARKERS = {
+    "kerana", "ialah", "boleh", "ia", "tetapi", "pula", "mengapa", "sebab",
+    "sahaja"
+}
+
 
 class LanguageDetector:
     """
@@ -155,11 +177,23 @@ class LanguageDetector:
         if vietnamese_count > 0 and vietnamese_count / meaningful > 0.1:
             return DetectedLanguage("vi", min(vietnamese_count / meaningful + 0.3, 1.0), "Vietnamese")
 
-        # 5. Indonesian (Latin + keyword frequency)
+        # 5. Latin-script ASEAN Languages (Indonesian, Malay, Filipino)
         if latin_count > 0 and latin_count / meaningful > 0.5:
             words = set(text.lower().split())
+            
+            # A. Tagalog / Filipino detection
+            fil_matches = len(words & _TAGALOG_MARKERS)
+            if fil_matches >= 2:
+                return DetectedLanguage("fil", min(fil_matches / max(len(words), 1) + 0.4, 1.0), "Filipino")
+                
+            # B. Malay vs Indonesian disambiguation
+            ms_only_matches = len(words & _MALAY_ONLY_MARKERS)
+            ms_matches = len(words & _MALAY_MARKERS)
             id_matches = len(words & _INDONESIAN_MARKERS)
-            if id_matches >= 2:
+            
+            if ms_only_matches >= 1 or (ms_matches >= 2 and ms_matches > id_matches):
+                return DetectedLanguage("ms", min(ms_matches / max(len(words), 1) + 0.35, 1.0), "Malay")
+            elif id_matches >= 2:
                 return DetectedLanguage("id", min(id_matches / max(len(words), 1) + 0.3, 1.0), "Indonesian")
 
         # 6. Default to English
@@ -269,6 +303,34 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
         proficiency=0.80,
         cost_input=0.15, cost_output=0.15,
         specialties=["Bahasa Indonesia", "ASEAN deployment"],
+    ),
+    # --- Filipino (PH) ---
+    RegionalModelEntry(
+        language="fil", region="PH",
+        model_id="alibaba/qwen-2.5-7b",
+        model_name="Qwen 2.5 7B",
+        proficiency=0.80,
+        cost_input=0.15, cost_output=0.15,
+        specialties=["Tagalog NLP", "Filipino market"],
+    ),
+    # --- Malay (MY) ---
+    RegionalModelEntry(
+        language="ms", region="MY",
+        model_id="alibaba/qwen-2.5-7b",
+        model_name="Qwen 2.5 7B",
+        proficiency=0.81,
+        cost_input=0.15, cost_output=0.15,
+        specialties=["Malay NLP", "Malaysia deployment"],
+    ),
+    # --- English (SG) ---
+    RegionalModelEntry(
+        language="en", region="SG",
+        model_id="anthropic/claude-3.5-sonnet",
+        model_name="Claude 3.5 Sonnet",
+        proficiency=0.98,
+        cost_input=3.0, cost_output=15.0,
+        specialties=["Singapore English", "Sovereign deployment"],
+        compliance_tags=["IMDA"],
     ),
 ]
 
@@ -570,6 +632,28 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         compliance_tags=[],
         max_cost_per_1m_tokens=2.0,
     ),
+    "ph_retail": TenantRegionalConfig(
+        tenant_id="ph_retail",
+        tenant_name="PhilippinesRetail",
+        default_language="fil",
+        default_region="PH",
+        preferred_models=["alibaba/qwen-2.5-7b"],
+        fallback_chain=["fil", "en"],
+        data_residency="PH",
+        compliance_tags=[],
+        max_cost_per_1m_tokens=2.0,
+    ),
+    "sg_fintech": TenantRegionalConfig(
+        tenant_id="sg_fintech",
+        tenant_name="SingaporeFintech",
+        default_language="en",
+        default_region="SG",
+        preferred_models=["anthropic/claude-3.5-sonnet"],
+        fallback_chain=["en"],
+        data_residency="SG",
+        compliance_tags=["IMDA"],
+        max_cost_per_1m_tokens=20.0,
+    ),
 }
 
 
@@ -657,7 +741,8 @@ def resolve_model_for_text(
     # Default region mapping
     _lang_to_region = {
         "en": "US", "th": "TH", "ja": "JP", "ko": "KR",
-        "zh": "CN", "vi": "VN", "id": "ID",
+        "zh": "CN", "vi": "VN", "id": "ID", "fil": "PH",
+        "ms": "MY",
     }
     if region is None:
         region = _lang_to_region.get(language, "US")

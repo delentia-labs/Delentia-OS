@@ -769,6 +769,8 @@ class AnalysearchEngine:
             "ko": ("qwen2_72b", "Korean — route to multilingual model"),
             "vi": ("seallm_v3", "Vietnamese — route to SEA LLM"),
             "id": ("seallm_v3", "Indonesian — route to SEA LLM"),
+            "fil": ("seallm_v3", "Filipino — route to SEA LLM"),
+            "ms": ("seallm_v3", "Malay — route to SEA LLM"),
             "hi": ("qwen2_72b", "Hindi — route to multilingual model"),
             "ar": ("qwen2_72b", "Arabic — route to multilingual model"),
         }

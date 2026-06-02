@@ -396,6 +396,16 @@ class TestLanguageDetector:
         result = self.detector.detect("Hello world this is a longer English sentence.")
         assert 0.0 <= result.confidence <= 1.0
 
+    def test_detect_filipino(self):
+        # Using Tagalog/Filipino markers
+        result = self.detector.detect("Magandang araw sa inyong lahat, hindi ko alam kung sino.")
+        assert result.code == "fil"
+
+    def test_detect_malay(self):
+        # Using Malay markers
+        result = self.detector.detect("Saya tidak boleh datang kerana hari ini ialah hari cuti.")
+        assert result.code == "ms"
+
 
 class TestRegionalModelRouter:
     def setup_method(self):
@@ -412,6 +422,18 @@ class TestRegionalModelRouter:
     def test_route_returns_string(self):
         result = self.router.route(language="en", region="US")
         assert isinstance(result, str)
+
+    def test_route_filipino(self):
+        model_id = self.router.route(language="fil", region="PH")
+        assert model_id == "alibaba/qwen-2.5-7b"
+
+    def test_route_malay(self):
+        model_id = self.router.route(language="ms", region="MY")
+        assert model_id == "alibaba/qwen-2.5-7b"
+
+    def test_route_singapore_english(self):
+        model_id = self.router.route(language="en", region="SG")
+        assert model_id == "anthropic/claude-3.5-sonnet"
 
 
 class TestRegionalModelCache:
