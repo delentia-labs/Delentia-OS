@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.delentia.com/adapter-manifest/v1.0.0",
+  "id": "teams-adapter",
+  "name": "Microsoft Teams Enterprise Adapter",
+  "version": "1.0.0",
+  "description": "Connects Microsoft Teams bot messaging and activity feeds to Delentia OS via JITNA v3 intent routing. Supports adaptive cards, corporate channel mentions, and secure Azure Active Directory token authentication.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "license": "Apache-2.0",
+  "jitna_channel": "teams",
+  "api_version": ">=2.0.0",
+  "regional_support": ["GLOBAL"],
+  "security_scan_passed": false,
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "data:read",
+    "data:write",
+    "network:outbound"
+  ],
+  "env_required": [
+    "TEAMS_APP_ID",
+    "TEAMS_APP_PASSWORD",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ],
+  "tags": ["messaging", "teams", "enterprise", "adaptive-cards", "collaboration"],
+  "homepage": "https://teams.microsoft.com",
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem"
+}

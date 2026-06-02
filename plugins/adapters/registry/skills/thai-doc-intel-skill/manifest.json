@@ -1,0 +1,32 @@
+{
+  "id": "thai-doc-intel-skill",
+  "name": "Thai Document Intelligence Skill",
+  "version": "1.0.0",
+  "description": "Provides professional OCR and semantic structure extraction from Thai corporate documents, invoices, citizen ID cards, and government letters. Integrated with Thai-specific NER models and PDPA compliance consent detection.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "thai-doc-intel",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "policy:read",
+    "media:read"
+  ],
+  "entry_point": "index.py",
+  "regional_support": ["TH"],
+  "tags": ["nlp", "ocr", "thai", "pdf", "invoice", "pdpa", "compliance"],
+  "security_scan_passed": false,
+  "license": "Apache-2.0",
+  "env_required": [
+    "THAI_OCR_API_KEY",
+    "PDPA_COMPLIANCE_ENDPOINT"
+  ],
+  "capabilities": [
+    "thai_ocr",
+    "thai_ner",
+    "pdpa_check",
+    "document_structure"
+  ]
+}
