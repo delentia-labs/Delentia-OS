@@ -122,24 +122,24 @@ export function DeltaTimeline({ apiKey, gateway }: DeltaTimelineProps) {
           >
             {/* Tick indicator */}
             <div className="flex flex-col items-center">
-              <div className="w-7 h-7 rounded-full bg-surface-card border border-surface-border flex items-center justify-center text-[10px] font-mono text-gray-400">
+              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-[10px] font-mono text-gray-300 shadow-inner">
                 {delta.tick}
               </div>
-              <div className="flex-1 w-px bg-surface-border mt-1" />
+              <div className="flex-1 w-px bg-white/5 mt-1" />
             </div>
 
             {/* Content */}
-            <div className="flex-1 bg-surface-card border border-surface-border rounded-lg p-3 text-sm mb-2 hover:border-delentia-700 transition">
+            <div className="flex-1 glass-card rounded-xl p-4 text-sm mb-2">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-gray-400">{delta.agent_id}</span>
+                  <span className="font-mono text-xs text-indigo-400">{delta.agent_id}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded border ${OUTCOME_COLORS[delta.outcome]}`}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border ${OUTCOME_COLORS[delta.outcome]}`}
                   >
                     {delta.outcome}
                   </span>
                   {delta.governance_violation && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border bg-red-900/30 border-red-600 text-red-300">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border bg-red-950/20 border-red-500/30 text-red-400 font-semibold glow-red">
                       ⚠ violation
                     </span>
                   )}
@@ -149,17 +149,17 @@ export function DeltaTimeline({ apiKey, gateway }: DeltaTimelineProps) {
                     setRollbackTarget(delta.tick);
                     setRollbackConfirm(true);
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-[10px] text-orange-400 hover:text-orange-300 transition border border-orange-500/40 rounded px-2 py-0.5"
+                  className="opacity-0 group-hover:opacity-100 text-[10px] text-orange-400 hover:text-orange-300 transition duration-150 border border-orange-500/20 rounded-md px-2.5 py-1 bg-orange-500/5 hover:bg-orange-500/10"
                 >
                   Rollback to here
                 </button>
               </div>
-              <p className="text-gray-300">
+              <p className="text-gray-300 font-medium mt-1">
                 {delta.intent_type} → {delta.action_type}
               </p>
               {delta.sha256_hash && (
-                <p className="text-[9px] font-mono text-gray-600 mt-1 truncate">
-                  {delta.sha256_hash}
+                <p className="text-[9px] font-mono text-gray-600 mt-2 truncate max-w-lg bg-black/20 px-2 py-0.5 rounded border border-white/5">
+                  SHA-256: {delta.sha256_hash}
                 </p>
               )}
             </div>
