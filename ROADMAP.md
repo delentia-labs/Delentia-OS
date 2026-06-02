@@ -1,8 +1,56 @@
-## RCT Platform — Public Roadmap
+## Delentia OS — Public Roadmap
 
-> Last updated: May 2026
-> Current version: **v2.0.0 (Stable)**  
+> Last updated: June 2026
+> Current version: **v2.2.0 (Stable)**  
 > Maintained by: Ittirit Saengow — [delentia.com](https://delentia.com)
+
+---
+
+## v2.2.0 — Phase E: Streaming + SDK Publish ✅ (June 2026)
+
+**Goal: WebSocket streaming endpoint, TypeScript SDK CI publish pipeline, and PyPI/npm public release.**
+
+> Released: June 2026 · 1,791 total tests · 90% coverage floor
+
+### Phase E — Streaming + Publish ✅
+- ✅ WebSocket streaming endpoint `/ws/intent/stream` (JITNA v3 live tokens)
+- ✅ TypeScript SDK CI publish workflow (`fdia-wasm` + `rct-edge` packages)
+- ✅ Release dispatch workflow to downstream repos (GUI, ecosystem, website)
+- ✅ PyPI publication: `pip install delentia-os`
+- ✅ npm publication: `npm install @delentia/rct-edge` + `@delentia/fdia-wasm`
+- ✅ Dev status upgraded to Production/Stable
+
+---
+
+## v2.3.0 — Phase F: GUI Integration + Registry API 📋 (Q3 2026)
+
+**Goal: Connect GUI and Ecosystem Registry into cohesive developer UX.**
+
+> Planned: Q3 2026
+
+### Phase F — GUI + Registry 📋
+- 📋 WebSocket streaming client library in `rct-edge`
+- 📋 GUI health-check hooks API (`GET /delentia/gui/status`)
+- 📋 Ecosystem Registry API integration (port 8090 → SDK methods)
+- 📋 Delta Engine timeline API (`GET /v1/memory/timeline`)
+- 📋 Adapter SDK v1.0 documentation and template
+- 📋 Helix-TTD system monitor API for GUI `/monitor` page
+
+---
+
+## v3.0.0 — Phase G: Multi-Modal + Mobile 💡 (Q4 2026)
+
+**Goal: Voice, images, and mobile SDK — full ecosystem for end-users.**
+
+> Planned: Q4 2026
+
+### Phase G — Multi-Modal + Mobile 💡
+- 💡 Voice intent via Whisper (local, no cloud dependency)
+- 💡 Image analysis with FDIA scoring
+- 💡 Mobile SDK: React Native `fdia-mobile` package
+- 💡 `useIntent()` React hook for web apps
+- 💡 JITNA Visual Workflow Builder (drag-and-drop React Flow)
+- 💡 One-click desktop installer (Tauri sidecar + Ollama bundled)
 
 ---
 
