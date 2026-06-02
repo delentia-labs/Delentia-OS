@@ -21,10 +21,14 @@ export default function RootLayout({
           </a>
           <div className="flex-1 flex items-center gap-1 ml-4">
             {[
-              { href: "/",        label: "Dashboard" },
-              { href: "/chat",    label: "Intent Chat" },
-              { href: "/memory",  label: "Memory" },
-              { href: "/settings", label: "Settings" },
+              { href: "/",          label: "Dashboard" },
+              { href: "/chat",      label: "Intent Chat" },
+              { href: "/memory",    label: "Memory" },
+              { href: "/ecosystem", label: "Ecosystem" },
+              { href: "/models",    label: "Models" },
+              { href: "/workflow",  label: "Workflow" },
+              { href: "/monitor",   label: "Monitor" },
+              { href: "/settings",  label: "Settings" },
             ].map(({ href, label }) => (
               <a
                 key={href}
@@ -35,7 +39,7 @@ export default function RootLayout({
               </a>
             ))}
           </div>
-          <span className="text-[10px] font-mono text-gray-600">v0.1.0</span>
+          <span className="text-[10px] font-mono text-gray-600">v1.0.1</span>
         </nav>
         <main className="p-4 md:p-6">{children}</main>
       </body>

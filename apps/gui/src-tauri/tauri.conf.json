@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "identifier": "com.delentia.desk",
   "productName": "Delentia Desk",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",

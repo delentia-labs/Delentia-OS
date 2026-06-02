@@ -1,6 +1,6 @@
 [package]
 name = "delentia-gui"
-version = "0.1.0"
+version = "1.0.1"
 description = "Delentia Desk — Desktop GUI for Delentia OS"
 authors = ["Delentia Labs <infra@delentia.com>"]
 license = "Apache-2.0"
