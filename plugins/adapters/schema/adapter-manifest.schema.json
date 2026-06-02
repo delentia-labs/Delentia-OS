@@ -64,7 +64,11 @@
           "policy:read",
           "policy:write",
           "user:read",
-          "metrics:read"
+          "metrics:read",
+          "data:read",
+          "data:write",
+          "media:read",
+          "network:read"
         ]
       }
     },
@@ -75,10 +79,10 @@
     },
     "regional_support": {
       "type": "array",
-      "description": "ISO 3166-1 alpha-2 country codes for regional targeting.",
+      "description": "ISO 3166-1 alpha-2 country codes or GLOBAL for regional targeting.",
       "items": {
         "type": "string",
-        "pattern": "^[A-Z]{2}$"
+        "pattern": "^([A-Z]{2}|GLOBAL)$"
       },
       "examples": [["TH", "JP", "TW"]]
     },
@@ -97,6 +101,26 @@
     "license": {
       "type": "string",
       "default": "Apache-2.0"
+    },
+    "env_required": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "dependencies": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      ]
     }
   }
 }
