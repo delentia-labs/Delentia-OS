@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout delentia-os SDK (needed for file: package refs)
+      - name: "Checkout delentia-os SDK (needed for file: package refs)"
         run: |
           cd ..
           git clone --depth=1 https://github.com/delentia-labs/delentia-os.git
