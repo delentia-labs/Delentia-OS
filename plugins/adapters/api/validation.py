@@ -66,6 +66,7 @@ def _validate_basic(manifest: dict) -> None:
         "intent:read", "intent:execute", "memory:read", "memory:write",
         "policy:read", "policy:write", "user:read", "metrics:read",
         "data:read", "data:write", "media:read", "network:read",
+        "network:outbound",
     }
     perms = manifest.get("permissions", [])
     if not isinstance(perms, list) or len(perms) == 0:

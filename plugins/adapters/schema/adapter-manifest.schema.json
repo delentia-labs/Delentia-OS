@@ -68,7 +68,8 @@
           "data:read",
           "data:write",
           "media:read",
-          "network:read"
+          "network:read",
+          "network:outbound"
         ]
       }
     },
@@ -97,6 +98,13 @@
     "repository": {
       "type": "string",
       "format": "uri"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "$schema": {
+      "type": "string"
     },
     "license": {
       "type": "string",

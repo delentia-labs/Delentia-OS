@@ -4,14 +4,19 @@
   "name": "My Platform Adapter",
   "version": "1.0.0",
   "description": "Connects My Platform to Delentia OS via JITNA v3 webhooks",
-  "author": "Your Name or Org",
+  "author": {
+    "name": "Your Name or Org",
+    "email": "author@example.com"
+  },
   "license": "Apache-2.0",
   "jitna_channel": "my-platform",
+  "api_version": ">=2.0.0",
   "regional_support": ["GLOBAL"],
   "security_scan_passed": false,
   "permissions": [
     "intent:read",
-    "intent:execute"
+    "intent:execute",
+    "network:outbound"
   ],
   "env_required": [
     "MY_PLATFORM_WEBHOOK_SECRET",

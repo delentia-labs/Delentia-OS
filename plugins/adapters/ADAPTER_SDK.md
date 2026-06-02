@@ -74,6 +74,8 @@ registry/adapters/my-platform-adapter/
 | `media:read` | Download media files |
 | `media:write` | Upload media files |
 | `admin:read` | Read admin/org settings |
+| `network:read` | Inbound/read network endpoints access |
+| `network:outbound` | Outbound network connections (fetch, axios, external HTTP) |
 
 ---
 

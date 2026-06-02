@@ -123,13 +123,19 @@ export interface AdapterConfig {
 
 // ── Manifest ──────────────────────────────────────────────────────────────────
 
+export interface AdapterAuthor {
+  name: string;
+  email?: string;
+  url?: string;
+}
+
 /** JSON Schema for manifest.json validation */
 export interface AdapterManifest {
   id: string;
   name: string;
   version: string;
   description: string;
-  author: string;
+  author: AdapterAuthor;
   license: string;
   jitna_channel: string;
   regional_support: string[];
@@ -139,6 +145,7 @@ export interface AdapterManifest {
   tags?: string[];
   homepage?: string;
   repository?: string;
+  $schema?: string;
 }
 
 export type AdapterPermission =
@@ -148,7 +155,9 @@ export type AdapterPermission =
   | "data:write"
   | "media:read"
   | "media:write"
-  | "admin:read";
+  | "admin:read"
+  | "network:read"
+  | "network:outbound";
 
 /** JSON Schema for skills manifest.json */
 export interface SkillManifest {

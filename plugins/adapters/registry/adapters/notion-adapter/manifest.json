@@ -14,7 +14,8 @@
     "intent:read",
     "intent:execute",
     "data:read",
-    "data:write"
+    "data:write",
+    "network:outbound"
   ],
   "entry_point": "index.ts",
   "regional_support": ["GLOBAL"],

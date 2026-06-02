@@ -13,7 +13,8 @@
   "permissions": [
     "intent:read",
     "intent:execute",
-    "data:write"
+    "data:write",
+    "network:outbound"
   ],
   "entry_point": "index.ts",
   "regional_support": ["GLOBAL"],

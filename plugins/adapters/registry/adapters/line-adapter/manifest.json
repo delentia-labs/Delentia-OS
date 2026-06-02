@@ -12,7 +12,8 @@
   "api_version": ">=2.0.0",
   "permissions": [
     "intent:read",
-    "intent:execute"
+    "intent:execute",
+    "network:outbound"
   ],
   "entry_point": "index.ts",
   "regional_support": ["TH", "JP", "TW"],
