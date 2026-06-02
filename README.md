@@ -1,4 +1,4 @@
-﻿# Delentia OS — Intent-Centric AI Operating System
+# Delentia OS — Intent-Centric AI Operating System
 
 [![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml)
@@ -697,7 +697,7 @@ This is not a research paper. It runs in production at [delentia.com](https://de
 
 | | |
 |---|---|
-| **GitHub** | [@ittirit720](https://github.com/delentia-labs) |
+| **GitHub** | [@ittirit-delentia](https://github.com/ittirit-delentia) |
 | **Email** | ittirit720@gmail.com |
 | **Org** | founder@delentia.com |
 | **Website** | [delentia.com](https://delentia.com) |

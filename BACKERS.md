@@ -32,9 +32,9 @@ This file is maintained manually. Sponsors who select the **Architect's Believer
 
 ---
 
-## 🏢 Enterprise Observers ($50+/month — rctlabs org)
+## 🏢 Enterprise Observers ($50+/month — delentia-labs org)
 
-*For enterprise sponsors via [github.com/sponsors/rctlabs](https://github.com/sponsors/rctlabs)*
+*For enterprise sponsors via [github.com/sponsors/delentia-labs](https://github.com/sponsors/delentia-labs)*
 
 | Organization | Since | Tier |
 |-------------|-------|------|
@@ -45,8 +45,8 @@ This file is maintained manually. Sponsors who select the **Architect's Believer
 ## How to Get Listed
 
 Sponsor at any tier via:
-- 👤 **Personal:** [github.com/sponsors/ittirit720](https://github.com/sponsors/ittirit720)  
-- 🏢 **Enterprise:** [github.com/sponsors/rctlabs](https://github.com/sponsors/rctlabs)
+- 👤 **Personal:** [github.com/sponsors/ittirit-delentia](https://github.com/sponsors/ittirit-delentia)  
+- 🏢 **Enterprise:** [github.com/sponsors/delentia-labs](https://github.com/sponsors/delentia-labs)
 
 Your support directly pays for:
 - ☁️ Cloud infrastructure (Supabase, Vercel, hosting)
