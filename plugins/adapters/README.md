@@ -3,8 +3,8 @@
 [![Validate Adapters](https://img.shields.io/github/actions/workflow/status/delentia-labs/delentia-ecosystem/validate-adapter.yml?branch=main&label=Manifest+CI)](https://github.com/delentia-labs/delentia-ecosystem/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
-[![Adapters](https://img.shields.io/badge/Adapters-2-purple)](registry/adapters)
-[![Skills](https://img.shields.io/badge/Skills-2-teal)](registry/skills)
+[![Adapters](https://img.shields.io/badge/Adapters-8-purple)](registry/adapters)
+[![Skills](https://img.shields.io/badge/Skills-7-teal)](registry/skills)
 [![Registry](https://img.shields.io/badge/Registry-v1.0.0-brightgreen)](https://github.com/delentia-labs/delentia-ecosystem/releases)
 
 **Delentia Ecosystem** is the plugin and skill registry for [Delentia OS](https://github.com/delentia-labs/delentia-os).
@@ -45,15 +45,26 @@ delentia-ecosystem/
 
 | ID | Name | Channel | Permissions | Regions |
 |---|---|---|---|---|
-| `line-adapter` | LINE Messaging Adapter | `line` | intent:read, intent:execute | TH, JP, TW |
-| `slack-adapter` | Slack Adapter | `slack` | intent:read, intent:execute, user:read | US, GB, TH, SG |
+| `discord-adapter` | Discord Bot Adapter | `discord` | intent:read, intent:execute, network:outbound | GLOBAL |
+| `github-adapter` | GitHub App Adapter | `github` | intent:read, intent:execute, data:write, network:outbound | GLOBAL |
+| `line-adapter` | LINE Messaging Adapter | `line` | intent:read, intent:execute, network:outbound | TH, JP, TW |
+| `notion-adapter` | Notion Integration Adapter | `notion` | intent:read, intent:execute, data:read, data:write, network:outbound | GLOBAL |
+| `slack-adapter` | Slack Adapter | `slack` | intent:read, intent:execute, user:read, network:outbound | US, GB, AU, TH, SG |
+| `teams-adapter` | Microsoft Teams Enterprise Adapter | `teams` | intent:read, intent:execute, data:read, data:write, network:outbound | GLOBAL |
+| `telegram-adapter` | Telegram Bot Adapter | `telegram` | intent:read, intent:execute, network:outbound | GLOBAL |
+| `whatsapp-adapter` | WhatsApp Business Adapter | `whatsapp` | intent:read, intent:execute, media:read, network:outbound | TH, BR, IN, US, GLOBAL |
 
 ## Registered Skills
 
 | ID | Name | Permissions | Regions |
 |---|---|---|---|
-| `thai-language-skill` | Thai Language Constitutional Skill | intent:read, intent:execute, policy:read | TH |
-| `legal-pdpa-skill` | PDPA Legal Compliance Skill | intent:read, policy:read | TH |
+| `document-summary` | Document Summarization Skill | intent:read, intent:execute, data:read | GLOBAL |
+| `financial-analysis` | Financial Statement Analysis Skill | intent:read, intent:execute, data:read, policy:read | GLOBAL |
+| `legal-pdpa` | PDPA Legal Compliance Skill | intent:read, policy:read | TH |
+| `thai-doc-intel-skill` | Thai Document Intelligence Skill | intent:read, policy:read, media:read | TH |
+| `thai-language` | Thai Language Constitutional Skill | intent:read, intent:execute, policy:read | TH |
+| `thai-nlp` | Thai Advanced NLP Skill | intent:read, intent:execute, policy:read | TH |
+| `web-search-skill` | Web Search Skill | intent:read, intent:execute, network:read | TH, GLOBAL |
 
 ---
 
