@@ -5,10 +5,12 @@ on:
     paths:
       - "registry/**"
       - "schema/**"
+      - ".github/workflows/**"
   pull_request:
     paths:
       - "registry/**"
       - "schema/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 # Allow writing back to manifests after all scans pass
@@ -29,7 +31,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
 
       - name: Install dependencies
         run: pip install jsonschema fastapi uvicorn
