@@ -1,0 +1,31 @@
+{
+  "id": "web-search-skill",
+  "name": "Web Search Skill",
+  "version": "1.0.0",
+  "description": "Provides real-time web search capabilities via Tavily or Serper API. Enables Delentia OS intents to retrieve current information, news, and research data. Results are FDIA-scored before being returned to the user. Supports EN/TH queries.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "web-search",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "network:read"
+  ],
+  "entry_point": "index.py",
+  "regional_support": ["TH", "GLOBAL"],
+  "tags": ["web-search", "tavily", "serper", "real-time", "research", "retrieval", "rag"],
+  "security_scan_passed": true,
+  "license": "Apache-2.0",
+  "env_required": [
+    "TAVILY_API_KEY"
+  ],
+  "capabilities": [
+    "web_search",
+    "news_search",
+    "site_crawl",
+    "fdia_scored_results"
+  ]
+}

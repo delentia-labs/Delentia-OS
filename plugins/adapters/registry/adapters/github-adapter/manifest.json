@@ -1,0 +1,30 @@
+{
+  "id": "github-adapter",
+  "name": "GitHub App Adapter",
+  "version": "1.0.0",
+  "description": "Connects GitHub App webhooks to Delentia OS via JITNA v3 intent routing. Handles issue comments, PR reviews, CI status checks, and repository dispatch events. Enables AI-driven code review and issue triage workflows.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "github",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "data:write"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["GLOBAL"],
+  "tags": ["github", "ci-cd", "code-review", "developer", "automation", "webhooks"],
+  "security_scan_passed": true,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0",
+  "env_required": [
+    "GITHUB_WEBHOOK_SECRET",
+    "GITHUB_APP_TOKEN",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ]
+}

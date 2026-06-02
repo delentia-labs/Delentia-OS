@@ -1,0 +1,35 @@
+{
+  "id": "thai-nlp-skill",
+  "name": "Thai NLP Advanced Skill",
+  "version": "1.0.0",
+  "description": "Extended Thai NLP capabilities built on PyThaiNLP and Typhoon v2. Provides word segmentation, named-entity recognition (NER), sentiment analysis, transliteration, and spell checking for Thai-language intents. Extends thai-language-skill with ML-powered text processing.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "thai-nlp",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "policy:read"
+  ],
+  "entry_point": "index.py",
+  "dependencies": [
+    "pythainlp>=3.1.0",
+    "transformers>=4.35.0",
+    "torch>=2.0.0"
+  ],
+  "regional_support": ["TH"],
+  "tags": ["thai", "nlp", "ner", "sentiment", "pythainlp", "typhoon", "regional", "ml"],
+  "security_scan_passed": true,
+  "license": "Apache-2.0",
+  "capabilities": [
+    "word_tokenize",
+    "ner",
+    "sentiment_analysis",
+    "transliteration",
+    "spell_check",
+    "pos_tagging"
+  ]
+}

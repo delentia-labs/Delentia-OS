@@ -1,0 +1,30 @@
+{
+  "id": "discord-adapter",
+  "name": "Discord Bot Adapter",
+  "version": "1.0.0",
+  "description": "Connects Discord bot interactions and slash commands to Delentia OS via JITNA v3 intent routing. Supports slash commands, mentions, and message components. Targeted at open-source developer communities.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "discord",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["GLOBAL"],
+  "tags": ["messaging", "discord", "bot", "slash-commands", "developer", "community"],
+  "security_scan_passed": true,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0",
+  "env_required": [
+    "DISCORD_PUBLIC_KEY",
+    "DISCORD_BOT_TOKEN",
+    "DISCORD_APPLICATION_ID",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "my-platform-adapter",
+  "name": "My Platform Adapter",
+  "version": "1.0.0",
+  "description": "Connects My Platform to Delentia OS via JITNA v3 webhooks",
+  "author": "Your Name or Org",
+  "license": "Apache-2.0",
+  "jitna_channel": "my-platform",
+  "regional_support": ["GLOBAL"],
+  "security_scan_passed": false,
+  "permissions": [
+    "intent:read",
+    "intent:execute"
+  ],
+  "env_required": [
+    "MY_PLATFORM_WEBHOOK_SECRET",
+    "MY_PLATFORM_API_TOKEN",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ],
+  "tags": ["messaging"],
+  "homepage": "https://my-platform.example.com",
+  "repository": "https://github.com/your-org/my-platform-adapter"
+}

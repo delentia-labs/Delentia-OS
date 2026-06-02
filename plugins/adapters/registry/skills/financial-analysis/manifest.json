@@ -1,0 +1,34 @@
+{
+  "id": "financial-analysis-skill",
+  "name": "Financial Analysis Skill (TH)",
+  "version": "1.0.0",
+  "description": "Thai enterprise financial analysis skill. Analyzes financial reports, calculates key metrics, performs risk assessment under Thai GAAP standards, and generates structured summaries for BOD presentations. Supports SET-listed company filings and PDPA-compliant data handling.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com"
+  },
+  "jitna_channel": "financial-analysis",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "data:read",
+    "policy:read"
+  ],
+  "entry_point": "index.py",
+  "dependencies": [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0"
+  ],
+  "regional_support": ["TH"],
+  "tags": ["financial", "analysis", "enterprise", "thai-gaap", "set", "pdpa", "risk"],
+  "security_scan_passed": true,
+  "license": "Apache-2.0",
+  "capabilities": [
+    "ratio_analysis",
+    "risk_scoring",
+    "report_generation",
+    "thai_gaap_compliance",
+    "set_filing_parse"
+  ]
+}

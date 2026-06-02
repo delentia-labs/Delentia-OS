@@ -1,0 +1,31 @@
+{
+  "id": "notion-adapter",
+  "name": "Notion Integration Adapter",
+  "version": "1.0.0",
+  "description": "Connects Notion workspace events to Delentia OS via JITNA v3 intent routing. Enables AI-driven page summarization, database query intents, and automated knowledge management workflows for enterprise teams.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "notion",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "data:read",
+    "data:write"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["GLOBAL"],
+  "tags": ["notion", "knowledge-management", "enterprise", "productivity", "documents"],
+  "security_scan_passed": true,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0",
+  "env_required": [
+    "NOTION_API_KEY",
+    "NOTION_DATABASE_ID",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ]
+}

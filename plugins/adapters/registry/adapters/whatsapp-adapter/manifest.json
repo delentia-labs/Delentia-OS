@@ -1,0 +1,31 @@
+{
+  "id": "whatsapp-adapter",
+  "name": "WhatsApp Business Adapter",
+  "version": "1.0.0",
+  "description": "Connects WhatsApp Business Cloud API to Delentia OS via JITNA v3 intent routing. Supports text, templates, interactive buttons, and media messages. Optimized for TH/ASEAN/Global markets.",
+  "author": {
+    "name": "Delentia Labs",
+    "email": "infra@delentia.com",
+    "url": "https://github.com/delentia-labs/delentia-ecosystem"
+  },
+  "jitna_channel": "whatsapp",
+  "api_version": ">=2.0.0",
+  "permissions": [
+    "intent:read",
+    "intent:execute",
+    "media:read"
+  ],
+  "entry_point": "index.ts",
+  "regional_support": ["TH", "BR", "IN", "US", "GLOBAL"],
+  "tags": ["messaging", "whatsapp", "chatbot", "business", "asean", "global"],
+  "security_scan_passed": true,
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "license": "Apache-2.0",
+  "env_required": [
+    "WHATSAPP_PHONE_NUMBER_ID",
+    "WHATSAPP_ACCESS_TOKEN",
+    "WHATSAPP_VERIFY_TOKEN",
+    "DELENTIA_GATEWAY",
+    "DELENTIA_API_KEY"
+  ]
+}
