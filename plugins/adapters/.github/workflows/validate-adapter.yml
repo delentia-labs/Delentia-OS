@@ -47,17 +47,22 @@ jobs:
           for kind in ("adapters", "skills"):
             for manifest_file in sorted((registry / kind).glob("*/manifest.json")):
               try:
-                manifest = json.loads(manifest_file.read_text())
+                manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
                 validate_manifest(manifest)
-                print(f"  ✓ {manifest_file.parent.name} ({kind})")
+                print(f"  [OK] {manifest_file.parent.name} ({kind})")
               except ManifestValidationError as e:
                 errors.append(f"{manifest_file}: {e.errors}")
-                print(f"  ✗ {manifest_file.parent.name}: {e.errors}")
+                print(f"  [FAIL] {manifest_file.parent.name}: {e.errors}")
               except Exception as e:
-                errors.append(f"{manifest_file}: {e}")
+                import traceback
+                tb = traceback.format_exc()
+                errors.append(f"{manifest_file}: {e}\n{tb}")
+                print(f"  [ERROR] {manifest_file.parent.name}: {e}")
 
           if errors:
-            print(f"\n{len(errors)} validation error(s).")
+            print(f"\n{len(errors)} validation error(s) found:")
+            for err in errors:
+              print(f"  - {err}")
             sys.exit(1)
           else:
             print(f"\nAll manifests valid.")
@@ -124,7 +129,7 @@ jobs:
             --quiet \
             --metrics off \
             $TS_FILES
-          echo "✓ Semgrep scan passed"
+          echo "[OK] Semgrep scan passed"
 
       - name: Check for hardcoded secrets
         run: |
@@ -147,9 +152,9 @@ jobs:
                     errors.append(f"{ts_file}:{i}: {line.strip()[:80]}")
 
           if errors:
-            for e in errors: print(f"  ✗ {e}")
+            for e in errors: print(f"  [FAIL] {e}")
             sys.exit(1)
-          print("✓ No hardcoded secrets detected")
+          print("[OK] No hardcoded secrets detected")
           EOF
 
   # ─── Job 3 — Dependency audit (npm audit) ────────────────────────────────
@@ -175,10 +180,10 @@ jobs:
               pushd "$adapter_dir" > /dev/null
               npm install --package-lock-only --ignore-scripts 2>/dev/null || true
               if ! npm audit --audit-level=high --omit=dev 2>&1; then
-                echo "  ✗ AUDIT FAILED: $adapter_dir"
+                echo "  [FAIL] AUDIT FAILED: $adapter_dir"
                 FAILED=1
               else
-                echo "  ✓ $adapter_dir audit passed"
+                echo "  [OK] $adapter_dir audit passed"
               fi
               popd > /dev/null
             fi
@@ -186,7 +191,7 @@ jobs:
           if [[ $FAILED -ne 0 ]]; then
             exit 1
           fi
-          echo "✓ All adapter dependencies pass npm audit"
+          echo "[OK] All adapter dependencies pass npm audit"
 
   # ─── Job 4 — Permission consistency audit ────────────────────────────────
   permission-audit:
@@ -243,12 +248,12 @@ jobs:
               elif perm in declared and not code_uses:
                 warnings.append(f"[UNUSED PERM] {name}: declares '{perm}' but not found in code")
 
-          for w in warnings: print(f"  ⚠  {w}")
-          for e in errors: print(f"  ✗  {e}")
+          for w in warnings: print(f"  [WARN]  {w}")
+          for e in errors: print(f"  [FAIL]  {e}")
           if errors:
             print(f"\nPermission audit FAILED: {len(errors)} error(s).")
             sys.exit(1)
-          print(f"✓ Permission audit passed. Warnings: {len(warnings)}")
+          print(f"[OK] Permission audit passed. Warnings: {len(warnings)}")
           EOF
 
   # ─── Job 5 — Auto-update security_scan_passed flag ───────────────────────
@@ -284,7 +289,7 @@ jobs:
               manifest["security_scan_sha"] = sha
               manifest_file.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
               updated.append(str(manifest_file))
-              print(f"  ✓ Updated: {manifest_file}")
+              print(f"  [OK] Updated: {manifest_file}")
           print(f"Updated {len(updated)} manifest(s).")
           EOF
 
@@ -296,6 +301,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes."
           else
-            git commit -m "security: auto-update scan status to passed ✓ [skip ci]"
+            git commit -m "security: auto-update scan status to passed [OK] [skip ci]"
             git push
           fi
