@@ -33,7 +33,7 @@ pub struct OllamaStatus {
     pub model_count: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OllamaPullProgress {
     pub status: String,
     pub completed: Option<u64>,
