@@ -18,8 +18,16 @@
     "network:outbound"
   ],
   "entry_point": "index.ts",
-  "regional_support": ["GLOBAL"],
-  "tags": ["notion", "knowledge-management", "enterprise", "productivity", "documents"],
+  "regional_support": [
+    "GLOBAL"
+  ],
+  "tags": [
+    "notion",
+    "knowledge-management",
+    "enterprise",
+    "productivity",
+    "documents"
+  ],
   "security_scan_passed": true,
   "repository": "https://github.com/delentia-labs/delentia-ecosystem",
   "license": "Apache-2.0",
@@ -28,5 +36,7 @@
     "NOTION_DATABASE_ID",
     "DELENTIA_GATEWAY",
     "DELENTIA_API_KEY"
-  ]
+  ],
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

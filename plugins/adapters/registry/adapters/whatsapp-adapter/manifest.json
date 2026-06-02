@@ -17,8 +17,21 @@
     "network:outbound"
   ],
   "entry_point": "index.ts",
-  "regional_support": ["TH", "BR", "IN", "US", "GLOBAL"],
-  "tags": ["messaging", "whatsapp", "chatbot", "business", "asean", "global"],
+  "regional_support": [
+    "TH",
+    "BR",
+    "IN",
+    "US",
+    "GLOBAL"
+  ],
+  "tags": [
+    "messaging",
+    "whatsapp",
+    "chatbot",
+    "business",
+    "asean",
+    "global"
+  ],
   "security_scan_passed": true,
   "repository": "https://github.com/delentia-labs/delentia-ecosystem",
   "license": "Apache-2.0",
@@ -28,5 +41,7 @@
     "WHATSAPP_VERIFY_TOKEN",
     "DELENTIA_GATEWAY",
     "DELENTIA_API_KEY"
-  ]
+  ],
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

@@ -20,8 +20,18 @@
     "python-docx>=0.8.11",
     "langchain-text-splitters>=0.0.1"
   ],
-  "regional_support": ["TH", "GLOBAL"],
-  "tags": ["documents", "pdf", "summary", "enterprise", "knowledge", "extraction"],
+  "regional_support": [
+    "TH",
+    "GLOBAL"
+  ],
+  "tags": [
+    "documents",
+    "pdf",
+    "summary",
+    "enterprise",
+    "knowledge",
+    "extraction"
+  ],
   "security_scan_passed": true,
   "license": "Apache-2.0",
   "capabilities": [
@@ -30,5 +40,7 @@
     "chunk_and_summarize",
     "key_points_extract",
     "action_items_detect"
-  ]
+  ],
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

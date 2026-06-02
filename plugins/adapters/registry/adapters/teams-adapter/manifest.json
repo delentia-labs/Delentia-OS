@@ -12,8 +12,10 @@
   "license": "Apache-2.0",
   "jitna_channel": "teams",
   "api_version": ">=2.0.0",
-  "regional_support": ["GLOBAL"],
-  "security_scan_passed": false,
+  "regional_support": [
+    "GLOBAL"
+  ],
+  "security_scan_passed": true,
   "permissions": [
     "intent:read",
     "intent:execute",
@@ -27,7 +29,15 @@
     "DELENTIA_GATEWAY",
     "DELENTIA_API_KEY"
   ],
-  "tags": ["messaging", "teams", "enterprise", "adaptive-cards", "collaboration"],
+  "tags": [
+    "messaging",
+    "teams",
+    "enterprise",
+    "adaptive-cards",
+    "collaboration"
+  ],
   "homepage": "https://teams.microsoft.com",
-  "repository": "https://github.com/delentia-labs/delentia-ecosystem"
+  "repository": "https://github.com/delentia-labs/delentia-ecosystem",
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

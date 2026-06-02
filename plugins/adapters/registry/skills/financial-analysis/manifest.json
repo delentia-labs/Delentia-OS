@@ -20,8 +20,18 @@
     "pandas>=2.0.0",
     "numpy>=1.24.0"
   ],
-  "regional_support": ["TH"],
-  "tags": ["financial", "analysis", "enterprise", "thai-gaap", "set", "pdpa", "risk"],
+  "regional_support": [
+    "TH"
+  ],
+  "tags": [
+    "financial",
+    "analysis",
+    "enterprise",
+    "thai-gaap",
+    "set",
+    "pdpa",
+    "risk"
+  ],
   "security_scan_passed": true,
   "license": "Apache-2.0",
   "capabilities": [
@@ -30,5 +40,7 @@
     "report_generation",
     "thai_gaap_compliance",
     "set_filing_parse"
-  ]
+  ],
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

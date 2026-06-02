@@ -17,9 +17,22 @@
     "network:outbound"
   ],
   "entry_point": "index.ts",
-  "regional_support": ["US", "GB", "AU", "TH", "SG"],
-  "tags": ["messaging", "slack", "enterprise", "slash-command"],
-  "security_scan_passed": false,
+  "regional_support": [
+    "US",
+    "GB",
+    "AU",
+    "TH",
+    "SG"
+  ],
+  "tags": [
+    "messaging",
+    "slack",
+    "enterprise",
+    "slash-command"
+  ],
+  "security_scan_passed": true,
   "repository": "https://github.com/delentia-labs/delentia-ecosystem",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

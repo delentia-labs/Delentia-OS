@@ -15,8 +15,19 @@
     "policy:read"
   ],
   "entry_point": "index.py",
-  "regional_support": ["TH"],
-  "tags": ["thai", "nlp", "pdpa", "legal", "typhoon", "regional"],
-  "security_scan_passed": false,
-  "license": "Apache-2.0"
+  "regional_support": [
+    "TH"
+  ],
+  "tags": [
+    "thai",
+    "nlp",
+    "pdpa",
+    "legal",
+    "typhoon",
+    "regional"
+  ],
+  "security_scan_passed": true,
+  "license": "Apache-2.0",
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

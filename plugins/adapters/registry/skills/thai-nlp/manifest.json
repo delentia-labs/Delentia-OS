@@ -20,8 +20,19 @@
     "transformers>=4.35.0",
     "torch>=2.0.0"
   ],
-  "regional_support": ["TH"],
-  "tags": ["thai", "nlp", "ner", "sentiment", "pythainlp", "typhoon", "regional", "ml"],
+  "regional_support": [
+    "TH"
+  ],
+  "tags": [
+    "thai",
+    "nlp",
+    "ner",
+    "sentiment",
+    "pythainlp",
+    "typhoon",
+    "regional",
+    "ml"
+  ],
   "security_scan_passed": true,
   "license": "Apache-2.0",
   "capabilities": [
@@ -31,5 +42,7 @@
     "transliteration",
     "spell_check",
     "pos_tagging"
-  ]
+  ],
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }

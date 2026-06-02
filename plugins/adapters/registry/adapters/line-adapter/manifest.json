@@ -16,9 +16,21 @@
     "network:outbound"
   ],
   "entry_point": "index.ts",
-  "regional_support": ["TH", "JP", "TW"],
-  "tags": ["messaging", "line", "chatbot", "thai", "regional"],
-  "security_scan_passed": false,
+  "regional_support": [
+    "TH",
+    "JP",
+    "TW"
+  ],
+  "tags": [
+    "messaging",
+    "line",
+    "chatbot",
+    "thai",
+    "regional"
+  ],
+  "security_scan_passed": true,
   "repository": "https://github.com/delentia-labs/delentia-ecosystem",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "security_scan_date": "2026-06-02",
+  "security_scan_sha": "9223520240e1"
 }
