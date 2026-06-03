@@ -4,20 +4,291 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
+/* Default Theme: Dark Modern Default */
 :root {
   --background: 224 71% 4%;
   --surface: 224 71% 4%;
   --surface-card: 224 71% 6%;
   --surface-border: 224 20% 15%;
   --primary: 250 95% 70%;
-  --cyber-turquoise: 190 95% 60%;
-  color-scheme: dark;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 0 0% 95%;
+  --text-secondary: 224 10% 60%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* PowerShell ISE (Light) */
+body.theme-powershell-ise {
+  --background: 210 100% 98%;
+  --surface: 210 100% 98%;
+  --surface-card: 0 0% 100%;
+  --surface-border: 210 30% 85%;
+  --primary: 210 90% 40%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 210 40% 15%;
+  --text-secondary: 210 15% 45%;
+  --shadow-color: 210 30% 10%;
+}
+
+/* Quiet Light (Light) */
+body.theme-quiet-light {
+  --background: 40 30% 96%;
+  --surface: 40 30% 96%;
+  --surface-card: 0 0% 100%;
+  --surface-border: 40 20% 85%;
+  --primary: 30 10% 40%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 30 20% 15%;
+  --text-secondary: 30 10% 45%;
+  --shadow-color: 30 20% 10%;
+}
+
+/* Solarized Light (Light) */
+body.theme-solarized-light {
+  --background: 44 87% 94%;
+  --surface: 44 87% 94%;
+  --surface-card: 44 80% 97%;
+  --surface-border: 44 30% 80%;
+  --primary: 175 59% 40%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 192 100% 10%;
+  --text-secondary: 192 30% 35%;
+  --shadow-color: 44 40% 10%;
+}
+
+/* Tokyo Night Light (Light) */
+body.theme-tokyo-night-light {
+  --background: 230 25% 96%;
+  --surface: 230 25% 96%;
+  --surface-card: 0 0% 100%;
+  --surface-border: 230 20% 85%;
+  --primary: 260 60% 45%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 230 40% 15%;
+  --text-secondary: 230 15% 45%;
+  --shadow-color: 230 25% 10%;
+}
+
+/* Abyss (Dark) */
+body.theme-abyss {
+  --background: 215 80% 8%;
+  --surface: 215 80% 8%;
+  --surface-card: 215 60% 11%;
+  --surface-border: 215 40% 20%;
+  --primary: 210 100% 75%;
+  --primary-foreground: 215 80% 8%;
+  --text-primary: 210 20% 95%;
+  --text-secondary: 215 20% 65%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Dark (Visual Studio) (Dark) */
+body.theme-dark-visual-studio {
+  --background: 220 15% 13%;
+  --surface: 220 15% 13%;
+  --surface-card: 220 15% 18%;
+  --surface-border: 220 15% 25%;
+  --primary: 205 85% 65%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 0 0% 90%;
+  --text-secondary: 220 10% 60%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Dark Modern (Dark) */
+body.theme-dark-modern {
+  --background: 225 12% 10%;
+  --surface: 225 12% 10%;
+  --surface-card: 225 12% 14%;
+  --surface-border: 225 12% 22%;
+  --primary: 205 90% 65%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 0 0% 93%;
+  --text-secondary: 225 8% 62%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Default Dark+ (Dark) */
+body.theme-default-dark-plus {
+  --background: 220 10% 12%;
+  --surface: 220 10% 12%;
+  --surface-card: 220 10% 16%;
+  --surface-border: 220 10% 24%;
+  --primary: 38 95% 60%;
+  --primary-foreground: 220 10% 12%;
+  --text-primary: 0 0% 92%;
+  --text-secondary: 220 5% 62%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Kimbie Dark (Dark) */
+body.theme-kimbie-dark {
+  --background: 30 25% 15%;
+  --surface: 30 25% 15%;
+  --surface-card: 30 25% 19%;
+  --surface-border: 30 20% 28%;
+  --primary: 35 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 30 10% 90%;
+  --text-secondary: 30 5% 62%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Monokai (Dark) */
+body.theme-monokai {
+  --background: 70 5% 15%;
+  --surface: 70 5% 15%;
+  --surface-card: 70 5% 19%;
+  --surface-border: 70 5% 26%;
+  --primary: 70 70% 55%;
+  --primary-foreground: 70 5% 15%;
+  --text-primary: 0 0% 95%;
+  --text-secondary: 70 3% 65%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Monokai Dimmed (Dark) */
+body.theme-monokai-dimmed {
+  --background: 70 4% 18%;
+  --surface: 70 4% 18%;
+  --surface-card: 70 4% 22%;
+  --surface-border: 70 4% 30%;
+  --primary: 70 30% 50%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 0 0% 88%;
+  --text-secondary: 70 3% 60%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Red (Dark) */
+body.theme-red {
+  --background: 350 60% 8%;
+  --surface: 350 60% 8%;
+  --surface-card: 350 50% 11%;
+  --surface-border: 350 40% 20%;
+  --primary: 0 90% 65%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 350 20% 95%;
+  --text-secondary: 350 15% 65%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Solarized Dark (Dark) */
+body.theme-solarized-dark {
+  --background: 192 100% 6%;
+  --surface: 192 100% 6%;
+  --surface-card: 192 80% 9%;
+  --surface-border: 192 40% 18%;
+  --primary: 175 59% 40%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 192 20% 90%;
+  --text-secondary: 192 10% 60%;
+  --shadow-color: 0 0% 0%;
 }
 
 body {
   background-color: hsl(var(--background));
-  color: #f3f4f6;
+  color: hsl(var(--text-primary));
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+  color: hsl(var(--text-primary));
+}
+
+/* Text overrides based on variables */
+.text-gray-100 {
+  color: hsl(var(--text-primary)) !important;
+}
+.text-gray-200 {
+  color: hsl(var(--text-primary)) !important;
+}
+.text-gray-300 {
+  color: hsl(var(--text-primary)) !important;
+}
+.text-gray-400 {
+  color: hsl(var(--text-secondary)) !important;
+}
+.text-gray-500 {
+  color: hsl(var(--text-secondary)) !important;
+}
+
+/* Surface backgrounds */
+.bg-surface {
+  background-color: hsl(var(--background)) !important;
+}
+.bg-surface-card {
+  background-color: hsl(var(--surface-card)) !important;
+}
+.border-surface-border {
+  border-color: hsl(var(--surface-border)) !important;
+}
+
+/* Premium Glassmorphism */
+.glass-card {
+  background: hsla(var(--surface-card) / 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid hsla(var(--text-primary) / 0.08);
+  box-shadow: 0 8px 32px 0 rgba(var(--shadow-color) / 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: hsla(var(--surface-card) / 0.7);
+  border-color: hsla(var(--primary) / 0.25);
+  box-shadow: 0 12px 40px 0 rgba(var(--shadow-color) / 0.6);
+  transform: translateY(-2px);
+}
+
+.glass-nav {
+  background: hsla(var(--background) / 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid hsla(var(--text-primary) / 0.08);
+}
+
+/* Glowing Neon Status Dots */
+.glow-ok {
+  background-color: #10b981;
+  box-shadow: 0 0 16px #10b981, 0 0 4px #10b981;
+}
+
+.glow-degraded {
+  background-color: #f59e0b;
+  box-shadow: 0 0 16px #f59e0b, 0 0 4px #f59e0b;
+}
+
+.glow-offline {
+  background-color: #ef4444;
+  box-shadow: 0 0 16px #ef4444, 0 0 4px #ef4444;
+}
+
+.glow-simulator {
+  background-color: #a855f7;
+  box-shadow: 0 0 16px #a855f7, 0 0 4px #a855f7;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsla(var(--text-primary) / 0.15);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(var(--text-primary) / 0.3);
 }
 
 h1, h2, h3, h4, h5, h6 {

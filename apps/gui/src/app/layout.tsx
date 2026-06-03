@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { ThemeHelper } from "@/components/theme-helper";
 
 export const metadata: Metadata = {
   title: "Delentia Desk",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-surface text-gray-100 antialiased min-h-screen">
+        <ThemeHelper />
         <nav className="glass-nav sticky top-0 z-50 h-14 flex items-center px-6 gap-6 justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
