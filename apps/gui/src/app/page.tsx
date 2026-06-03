@@ -159,7 +159,7 @@ export default function DashboardPage() {
   const isOfflineMode = health?.version?.includes("Offline") || healthStatus === "offline";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-border pb-4">
         <div>

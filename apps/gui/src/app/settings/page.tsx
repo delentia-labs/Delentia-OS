@@ -129,7 +129,7 @@ export default function SettingsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
       <div className="flex justify-between items-center border-b border-surface-border pb-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

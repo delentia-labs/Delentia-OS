@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import type { FDIAScore } from "@/lib/types";
 import { fdiaLevel } from "@/lib/types";
@@ -37,11 +38,11 @@ export function FDIAScoreCard({ score, title = "FDIA Score" }: FDIAScoreCardProp
   const level = fdiaLevel(score.F);
   const c = COLOR_MAP[level];
 
-  const radarData = [
+  const radarData = useMemo(() => [
     { axis: "Data Quality (D)", value: score.D },
     { axis: "Intent Clarity (I)", value: score.I },
     { axis: "Action Confidence (A)", value: score.A },
-  ];
+  ], [score.D, score.I, score.A]);
 
   return (
     <div className={`bg-surface-card border ${c.border} rounded-xl p-4 space-y-4`}>

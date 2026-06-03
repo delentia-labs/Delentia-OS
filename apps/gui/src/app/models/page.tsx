@@ -208,7 +208,7 @@ export default function ModelsPage() {
   }[status];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
       {/* Header + Status */}
       <div className="flex justify-between items-center border-b border-surface-border pb-4">
         <div>

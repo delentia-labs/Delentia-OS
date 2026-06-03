@@ -383,7 +383,7 @@ export default function EcosystemPage() {
   const showSkills   = activeTab === "all" || activeTab === "skills";
 
   return (
-    <div className="space-y-6">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
 
       {/* ── Page Header ── */}
       <div className="flex items-start justify-between flex-wrap gap-4">

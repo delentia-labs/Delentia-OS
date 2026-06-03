@@ -30,8 +30,15 @@ export function CommandPalette() {
         setOpen(false);
       }
     };
+    const handleCustomOpen = () => {
+      setOpen(true);
+    };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-command-palette", handleCustomOpen);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-command-palette", handleCustomOpen);
+    };
   }, []);
 
   // Close when clicking outside
@@ -57,6 +64,7 @@ export function CommandPalette() {
     { id: "go-monitor", category: "นำทาง (Navigation)", name: "ไปที่ System Monitor", desc: "หน้าตรวจสอบสถานะความปลอดภัยและการดริฟต์", action: () => { router.push("/monitor"); setOpen(false); } },
     { id: "go-settings", category: "นำทาง (Navigation)", name: "ไปที่ Settings", desc: "แผงตั้งค่าและชุดธีมสี", action: () => { router.push("/settings"); setOpen(false); } },
     
+    { id: "theme-brand", category: "การออกแบบ (Theme)", name: "เปลี่ยนธีม: Delentia Brand (Warm Cream & Dark Surface)", desc: "สลับเป็นธีมสีครีม/ชาร์โคลแบรนด์อย่างเป็นทางการ", action: () => { setTheme("delentia-brand"); setOpen(false); } },
     { id: "theme-dark", category: "การออกแบบ (Theme)", name: "เปลี่ยนธีม: Space Deep (Default Dark)", desc: "สลับเป็นธีมมืดดั้งเดิมของ Delentia", action: () => { setTheme("dark-modern-default"); setOpen(false); } },
     { id: "theme-abyss", category: "การออกแบบ (Theme)", name: "เปลี่ยนธีม: Abyss (Deep Oceanic)", desc: "สลับเป็นโทนครามลึกก้นทะเล", action: () => { setTheme("abyss"); setOpen(false); } },
     { id: "theme-monokai", category: "การออกแบบ (Theme)", name: "เปลี่ยนธีม: Monokai Classic", desc: "สลับเป็นธีมสีเขียวมะนาว/เทาโมโนไก", action: () => { setTheme("monokai"); setOpen(false); } },

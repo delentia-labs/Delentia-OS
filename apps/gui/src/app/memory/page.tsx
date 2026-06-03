@@ -4,7 +4,7 @@ import { DeltaTimeline } from "@/components/delta-timeline/timeline";
 
 export default function MemoryPage() {
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-4 min-h-0 flex-1">
       <div>
         <h1 className="text-xl font-bold">Memory Timeline</h1>
         <p className="text-sm text-gray-500 mt-0.5">

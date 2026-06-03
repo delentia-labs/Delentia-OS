@@ -248,7 +248,7 @@ export default function WorkflowPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

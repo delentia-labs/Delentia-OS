@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type ThemeName =
+  | "delentia-brand"
   | "dark-modern-default"
   | "powershell-ise"
   | "quiet-light"
@@ -37,7 +38,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: "dark-modern-default",
+      theme: "delentia-brand",
       colorMode: "dark",
       setTheme: (theme) => {
         // Automatically determine default mode based on the theme selection
