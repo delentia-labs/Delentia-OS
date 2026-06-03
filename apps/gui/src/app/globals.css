@@ -4,328 +4,87 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-/* ═══════════════════════════════════════════════════
-   DESIGN TOKENS — HSL-based theme system
-   All themes override these custom properties.
-   ═══════════════════════════════════════════════════ */
-
-/* Default: Dark Modern Default */
 :root {
   --background: 224 71% 4%;
   --surface: 224 71% 4%;
   --surface-card: 224 71% 6%;
   --surface-border: 224 20% 15%;
   --primary: 250 95% 70%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 0 0% 95%;
-  --text-secondary: 224 10% 60%;
-  --shadow-color: 0 0% 0%;
+  --cyber-turquoise: 190 95% 60%;
+  color-scheme: dark;
 }
 
-/* ── Light Themes ─────────────────────────────────── */
-body.theme-powershell-ise {
-  --background: 210 100% 98%;
-  --surface: 210 100% 98%;
-  --surface-card: 0 0% 100%;
-  --surface-border: 210 30% 85%;
-  --primary: 210 90% 40%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 210 40% 15%;
-  --text-secondary: 210 15% 45%;
-  --shadow-color: 210 30% 10%;
-}
-body.theme-quiet-light {
-  --background: 40 30% 96%;
-  --surface: 40 30% 96%;
-  --surface-card: 0 0% 100%;
-  --surface-border: 40 20% 85%;
-  --primary: 30 10% 40%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 30 20% 15%;
-  --text-secondary: 30 10% 45%;
-  --shadow-color: 30 20% 10%;
-}
-body.theme-solarized-light {
-  --background: 44 87% 94%;
-  --surface: 44 87% 94%;
-  --surface-card: 44 80% 97%;
-  --surface-border: 44 30% 80%;
-  --primary: 175 59% 40%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 192 100% 10%;
-  --text-secondary: 192 30% 35%;
-  --shadow-color: 44 40% 10%;
-}
-body.theme-tokyo-night-light {
-  --background: 230 25% 96%;
-  --surface: 230 25% 96%;
-  --surface-card: 0 0% 100%;
-  --surface-border: 230 20% 85%;
-  --primary: 260 60% 45%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 230 40% 15%;
-  --text-secondary: 230 15% 45%;
-  --shadow-color: 230 25% 10%;
-}
-
-/* ── Dark Themes ─────────────────────────────────── */
-body.theme-abyss {
-  --background: 215 80% 8%;
-  --surface: 215 80% 8%;
-  --surface-card: 215 60% 11%;
-  --surface-border: 215 40% 20%;
-  --primary: 210 100% 75%;
-  --primary-foreground: 215 80% 8%;
-  --text-primary: 210 20% 95%;
-  --text-secondary: 215 20% 65%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-dark-visual-studio {
-  --background: 220 15% 13%;
-  --surface: 220 15% 13%;
-  --surface-card: 220 15% 18%;
-  --surface-border: 220 15% 25%;
-  --primary: 205 85% 65%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 0 0% 90%;
-  --text-secondary: 220 10% 60%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-dark-modern {
-  --background: 225 12% 10%;
-  --surface: 225 12% 10%;
-  --surface-card: 225 12% 14%;
-  --surface-border: 225 12% 22%;
-  --primary: 205 90% 65%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 0 0% 93%;
-  --text-secondary: 225 8% 62%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-default-dark-plus {
-  --background: 220 10% 12%;
-  --surface: 220 10% 12%;
-  --surface-card: 220 10% 16%;
-  --surface-border: 220 10% 24%;
-  --primary: 38 95% 60%;
-  --primary-foreground: 220 10% 12%;
-  --text-primary: 0 0% 92%;
-  --text-secondary: 220 5% 62%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-kimbie-dark {
-  --background: 30 25% 15%;
-  --surface: 30 25% 15%;
-  --surface-card: 30 25% 19%;
-  --surface-border: 30 20% 28%;
-  --primary: 35 60% 50%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 30 10% 90%;
-  --text-secondary: 30 5% 62%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-monokai {
-  --background: 70 5% 15%;
-  --surface: 70 5% 15%;
-  --surface-card: 70 5% 19%;
-  --surface-border: 70 5% 26%;
-  --primary: 70 70% 55%;
-  --primary-foreground: 70 5% 15%;
-  --text-primary: 0 0% 95%;
-  --text-secondary: 70 3% 65%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-monokai-dimmed {
-  --background: 70 4% 18%;
-  --surface: 70 4% 18%;
-  --surface-card: 70 4% 22%;
-  --surface-border: 70 4% 30%;
-  --primary: 70 30% 50%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 0 0% 88%;
-  --text-secondary: 70 3% 60%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-red {
-  --background: 350 60% 8%;
-  --surface: 350 60% 8%;
-  --surface-card: 350 50% 11%;
-  --surface-border: 350 40% 20%;
-  --primary: 0 90% 65%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 350 20% 95%;
-  --text-secondary: 350 15% 65%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-solarized-dark {
-  --background: 192 100% 6%;
-  --surface: 192 100% 6%;
-  --surface-card: 192 80% 9%;
-  --surface-border: 192 40% 18%;
-  --primary: 175 59% 40%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 192 20% 90%;
-  --text-secondary: 192 10% 60%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-synthwave-84 {
-  --background: 260 40% 10%;
-  --surface: 260 40% 10%;
-  --surface-card: 260 30% 14%;
-  --surface-border: 320 80% 25%;
-  --primary: 320 100% 65%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 320 20% 95%;
-  --text-secondary: 260 20% 70%;
-  --shadow-color: 320 100% 5%;
-}
-body.theme-tokyo-night {
-  --background: 235 30% 9%;
-  --surface: 235 30% 9%;
-  --surface-card: 235 25% 12%;
-  --surface-border: 235 20% 18%;
-  --primary: 250 85% 75%;
-  --primary-foreground: 235 30% 9%;
-  --text-primary: 235 15% 92%;
-  --text-secondary: 235 10% 65%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-tokyo-night-storm {
-  --background: 230 20% 12%;
-  --surface: 230 20% 12%;
-  --surface-card: 230 18% 15%;
-  --surface-border: 230 15% 22%;
-  --primary: 250 85% 75%;
-  --primary-foreground: 230 20% 12%;
-  --text-primary: 230 12% 90%;
-  --text-secondary: 230 8% 60%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-tomorrow-night-blue {
-  --background: 220 50% 8%;
-  --surface: 220 50% 8%;
-  --surface-card: 220 40% 12%;
-  --surface-border: 220 30% 20%;
-  --primary: 205 100% 70%;
-  --primary-foreground: 220 50% 8%;
-  --text-primary: 220 15% 90%;
-  --text-secondary: 220 10% 62%;
-  --shadow-color: 0 0% 0%;
-}
-
-/* ── High Contrast Themes ────────────────────────── */
-body.theme-dark-high-contrast {
-  --background: 0 0% 0%;
-  --surface: 0 0% 0%;
-  --surface-card: 0 0% 0%;
-  --surface-border: 0 0% 100%;
-  --primary: 0 0% 100%;
-  --primary-foreground: 0 0% 0%;
-  --text-primary: 0 0% 100%;
-  --text-secondary: 0 0% 85%;
-  --shadow-color: 0 0% 0%;
-}
-body.theme-light-high-contrast {
-  --background: 0 0% 100%;
-  --surface: 0 0% 100%;
-  --surface-card: 0 0% 100%;
-  --surface-border: 0 0% 0%;
-  --primary: 0 0% 0%;
-  --primary-foreground: 0 0% 100%;
-  --text-primary: 0 0% 0%;
-  --text-secondary: 0 0% 25%;
-  --shadow-color: 0 0% 80%;
-}
-
-/* ═══════════════════════════════════════════════════
-   BASE STYLES
-   ═══════════════════════════════════════════════════ */
 body {
   background-color: hsl(var(--background));
-  color: hsl(var(--text-primary));
+  color: #f3f4f6;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   letter-spacing: -0.02em;
-  color: hsl(var(--text-primary));
 }
 
-/* ═══════════════════════════════════════════════════
-   THEME-AWARE UTILITY OVERRIDES
-   ═══════════════════════════════════════════════════ */
-.text-gray-100 { color: hsl(var(--text-primary)) !important; }
-.text-gray-200 { color: hsl(var(--text-primary)) !important; }
-.text-gray-300 { color: hsl(var(--text-primary)) !important; }
-.text-gray-400 { color: hsl(var(--text-secondary)) !important; }
-.text-gray-500 { color: hsl(var(--text-secondary)) !important; }
-
-.bg-surface        { background-color: hsl(var(--background)) !important; }
-.bg-surface-card   { background-color: hsl(var(--surface-card)) !important; }
-.border-surface-border { border-color: hsl(var(--surface-border)) !important; }
-
-/* ═══════════════════════════════════════════════════
-   GLASSMORPHISM COMPONENTS
-   ═══════════════════════════════════════════════════ */
+/* Premium Glassmorphism */
 .glass-card {
-  background: hsla(var(--surface-card) / 0.55);
+  background: rgba(8, 10, 18, 0.45);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid hsla(var(--text-primary) / 0.08);
-  box-shadow: 0 8px 32px 0 hsla(var(--shadow-color) / 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .glass-card:hover {
-  background: hsla(var(--surface-card) / 0.7);
-  border-color: hsla(var(--primary) / 0.25);
-  box-shadow: 0 12px 40px 0 hsla(var(--shadow-color) / 0.6);
+  background: rgba(12, 15, 26, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.15);
   transform: translateY(-2px);
 }
+
 .glass-nav {
-  background: hsla(var(--background) / 0.7);
+  background: rgba(6, 8, 15, 0.65);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid hsla(var(--text-primary) / 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ═══════════════════════════════════════════════════
-   NEON STATUS DOTS
-   ═══════════════════════════════════════════════════ */
+/* Glowing Neon Status Dots */
 .glow-ok {
   background-color: #10b981;
   box-shadow: 0 0 16px #10b981, 0 0 4px #10b981;
 }
+
 .glow-degraded {
   background-color: #f59e0b;
   box-shadow: 0 0 16px #f59e0b, 0 0 4px #f59e0b;
 }
+
 .glow-offline {
   background-color: #ef4444;
   box-shadow: 0 0 16px #ef4444, 0 0 4px #ef4444;
 }
+
 .glow-simulator {
   background-color: #a855f7;
   box-shadow: 0 0 16px #a855f7, 0 0 4px #a855f7;
 }
 
-/* ═══════════════════════════════════════════════════
-   CUSTOM SCROLLBAR
-   ═══════════════════════════════════════════════════ */
-::-webkit-scrollbar        { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: hsla(var(--text-primary) / 0.15); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: hsla(var(--text-primary) / 0.3); }
-
-/* ═══════════════════════════════════════════════════
-   WORKFLOW CANVAS
-   ═══════════════════════════════════════════════════ */
-.wf-canvas-wrapper {
-  overflow-x: auto;
-  overflow-y: hidden;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-.wf-canvas-wrapper::-webkit-scrollbar { height: 4px; }
 
-/* Border utility for inline styles */
-.border-3\/10 { border-color: rgba(255,255,255,0.03); }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

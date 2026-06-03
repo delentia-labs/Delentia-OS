@@ -4,11 +4,8 @@ import { useState } from "react";
 import { getHealthStatus } from "@/lib/delentia-client";
 import { HEXACORE_REGISTRY } from "@/lib/types";
 import type { HexaCoreRole } from "@/lib/types";
-import { useThemeStore } from "@/hooks/useTheme";
-import type { ThemeName } from "@/hooks/useTheme";
 
 export default function SettingsPage() {
-  const { theme, setTheme, colorMode, setColorMode } = useThemeStore();
   const [gateway, setGateway] = useState(
     process.env.NEXT_PUBLIC_GATEWAY ?? "http://localhost:8000"
   );
@@ -89,7 +86,7 @@ export default function SettingsPage() {
             type={showKey ? "text" : "password"}
             value={showKey ? apiKey : maskedKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-sksk…"
+            placeholder="sk-…"
             className="flex-1 bg-surface border border-surface-border rounded-lg px-3 py-2 text-sm font-mono text-gray-100 outline-none focus:border-delentia-500"
           />
           <button
@@ -98,65 +95,6 @@ export default function SettingsPage() {
           >
             {showKey ? "Hide" : "Show"}
           </button>
-        </div>
-      </section>
-
-      {/* Color Theme */}
-      <section className="bg-surface-card border border-surface-border rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-200">Color Theme Settings</h2>
-          <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-white/5">
-            <button
-              onClick={() => setColorMode("light")}
-              className={`text-xs px-2.5 py-1 rounded-md transition ${colorMode === "light" ? "bg-white/10 text-white font-medium" : "text-gray-400 hover:text-white"}`}
-            >
-              Light
-            </button>
-            <button
-              onClick={() => setColorMode("dark")}
-              className={`text-xs px-2.5 py-1 rounded-md transition ${colorMode === "dark" ? "bg-white/10 text-white font-medium" : "text-gray-400 hover:text-white"}`}
-            >
-              Dark
-            </button>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500">
-          Select a custom color theme. Changing themes will automatically adjust light or dark system modes.
-        </p>
-        <div className="space-y-2">
-          <label className="text-[10px] uppercase font-bold text-gray-400">Select Color Theme</label>
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value as ThemeName)}
-            className="w-full bg-surface border border-surface-border rounded-lg px-3 py-2 text-sm text-gray-100 outline-none focus:border-indigo-500"
-          >
-            <optgroup label="Light Themes">
-              <option value="powershell-ise">PowerShell ISE</option>
-              <option value="quiet-light">Quiet Light</option>
-              <option value="solarized-light">Solarized Light</option>
-              <option value="tokyo-night-light">Tokyo Night Light</option>
-            </optgroup>
-            <optgroup label="Dark Themes">
-              <option value="dark-modern-default">Default Dark Modern</option>
-              <option value="abyss">Abyss</option>
-              <option value="dark-visual-studio">Dark (Visual Studio)</option>
-              <option value="dark-modern">Dark Modern</option>
-              <option value="default-dark-plus">Dark+ (Default Dark+)</option>
-              <option value="kimbie-dark">Kimbie Dark</option>
-              <option value="monokai">Monokai</option>
-              <option value="monokai-dimmed">Monokai Dimmed</option>
-              <option value="red">Red</option>
-              <option value="solarized-dark">Solarized Dark</option>
-              <option value="synthwave-84">{"SynthWave '84"}</option>
-              <option value="tokyo-night">Tokyo Night</option>
-              <option value="tokyo-night-storm">Tokyo Night Storm</option>
-              <option value="tomorrow-night-blue">Tomorrow Night Blue</option>
-            </optgroup>
-            <optgroup label="High Contrast Themes">
-              <option value="dark-high-contrast">Dark High Contrast</option>
-              <option value="light-high-contrast">Light High Contrast</option>
-            </optgroup>
-          </select>
         </div>
       </section>
 
