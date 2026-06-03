@@ -21,6 +21,7 @@ import type {
   QueryResponse,
   SystemStats,
 } from "./types";
+import { MOCK_MEMORY_DELTAS } from "./mock-data";
 
 const getGateway = (): string =>
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_GATEWAY) ||
@@ -48,10 +49,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 // ─────────────────────────────────────────────
-// MOCK DATA FOR OFFLINE SIMULATION MODE
+// MOCK DATA — imported from mock-data.ts
 // ─────────────────────────────────────────────
+// (MOCK_MEMORY_DELTAS is imported at the top of this file)
 
-const MOCK_MEMORY_DELTAS: MemoryDelta[] = [
+const _unusedMemoryDeltaType: MemoryDelta[] = [
   {
     agent_id: "agent-hexa-librarian-01",
     tick: 524,
