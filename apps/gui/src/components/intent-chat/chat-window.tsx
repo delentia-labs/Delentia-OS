@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useStreamIntent } from "@/hooks/useIntent";
 import { FDIABadge } from "@/components/fdia-visualizer/score-card";
+import { TraceInspector } from "./TraceInspector";
 import {
   Send,
   Square,
@@ -251,6 +252,10 @@ export function ChatWindow() {
                           {msg.timestamp.toLocaleTimeString()}
                         </span>
                       </div>
+                    )}
+
+                    {!msg.streaming && msg.role === "assistant" && (
+                      <TraceInspector hexaRole={msg.hexa_role} fdia={msg.fdia} />
                     )}
 
                     {msg.role === "user" && (

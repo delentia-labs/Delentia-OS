@@ -15,6 +15,7 @@ import {
   Hash,
   Clock,
   Link2,
+  Sliders,
 } from "lucide-react";
 
 const OUTCOME_COLORS = {
@@ -38,6 +39,11 @@ export function DeltaTimeline() {
   const [filterViolation, setFilterViolation] = useState<"" | "true" | "false">("");
   const [rollbackTarget, setRollbackTarget] = useState<number | null>(null);
   const [rollbackConfirm, setRollbackConfirm] = useState(false);
+  const [scrubbedTick, setScrubbedTick] = useState<number | null>(null);
+
+  const ticks = deltas.map((d) => d.tick);
+  const minTick = ticks.length > 0 ? Math.min(...ticks) : 0;
+  const maxTick = ticks.length > 0 ? Math.max(...ticks) : 100;
 
   const fetchDeltas = async () => {
     setLoading(true);
@@ -56,7 +62,14 @@ export function DeltaTimeline() {
     fetchDeltas();
   }, []);
 
+  useEffect(() => {
+    if (deltas.length > 0 && scrubbedTick === null) {
+      setScrubbedTick(maxTick);
+    }
+  }, [deltas, maxTick, scrubbedTick]);
+
   const filtered = deltas.filter((d) => {
+    if (scrubbedTick !== null && d.tick > scrubbedTick) return false;
     if (filterAgentId && !d.agent_id.toLowerCase().includes(filterAgentId.toLowerCase())) return false;
     if (filterOutcome && d.outcome !== filterOutcome) return false;
     if (filterViolation === "true" && !d.governance_violation) return false;
@@ -126,6 +139,36 @@ export function DeltaTimeline() {
           รีเฟรชข้อมูล
         </button>
       </div>
+
+      {/* Scrubber slider */}
+      {deltas.length > 0 && scrubbedTick !== null && (
+        <div className="bg-surface-card border border-surface-border rounded-xl p-4 space-y-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-semibold text-gray-300 flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-delentia-500" />
+              รูดเลือกช่วงเวลาหน่วยความจำ (Interactive Timeline Scrubber)
+            </span>
+            <span className="font-mono text-[10px] text-gray-200 bg-surface border border-surface-border px-2 py-0.5 rounded">
+              Tick: {scrubbedTick} / {maxTick}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-gray-500 font-mono">Tick #{minTick}</span>
+            <input
+              type="range"
+              min={minTick}
+              max={maxTick}
+              value={scrubbedTick}
+              onChange={(e) => setScrubbedTick(Number(e.target.value))}
+              className="flex-1 accent-delentia-500 bg-surface h-1.5 rounded-lg outline-none cursor-pointer"
+            />
+            <span className="text-[10px] text-gray-500 font-mono">Tick #{maxTick}</span>
+          </div>
+          <p className="text-[9px] text-gray-500 font-medium">
+            * ลากแถบสไลเดอร์นี้เพื่อกรองช่วงเหตุการณ์และดูประวัติย้อนหลังในเวลาจริง (Real-time Preview)
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-950/20 border border-red-800/40 rounded-xl p-3 flex items-center gap-2 text-xs text-red-400">
