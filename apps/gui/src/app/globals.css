@@ -4,7 +4,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-/* Default Theme: Dark Modern Default */
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS — HSL-based theme system
+   All themes override these custom properties.
+   ═══════════════════════════════════════════════════ */
+
+/* Default: Dark Modern Default */
 :root {
   --background: 224 71% 4%;
   --surface: 224 71% 4%;
@@ -17,7 +22,7 @@
   --shadow-color: 0 0% 0%;
 }
 
-/* PowerShell ISE (Light) */
+/* ── Light Themes ─────────────────────────────────── */
 body.theme-powershell-ise {
   --background: 210 100% 98%;
   --surface: 210 100% 98%;
@@ -29,8 +34,6 @@ body.theme-powershell-ise {
   --text-secondary: 210 15% 45%;
   --shadow-color: 210 30% 10%;
 }
-
-/* Quiet Light (Light) */
 body.theme-quiet-light {
   --background: 40 30% 96%;
   --surface: 40 30% 96%;
@@ -42,8 +45,6 @@ body.theme-quiet-light {
   --text-secondary: 30 10% 45%;
   --shadow-color: 30 20% 10%;
 }
-
-/* Solarized Light (Light) */
 body.theme-solarized-light {
   --background: 44 87% 94%;
   --surface: 44 87% 94%;
@@ -55,8 +56,6 @@ body.theme-solarized-light {
   --text-secondary: 192 30% 35%;
   --shadow-color: 44 40% 10%;
 }
-
-/* Tokyo Night Light (Light) */
 body.theme-tokyo-night-light {
   --background: 230 25% 96%;
   --surface: 230 25% 96%;
@@ -69,7 +68,7 @@ body.theme-tokyo-night-light {
   --shadow-color: 230 25% 10%;
 }
 
-/* Abyss (Dark) */
+/* ── Dark Themes ─────────────────────────────────── */
 body.theme-abyss {
   --background: 215 80% 8%;
   --surface: 215 80% 8%;
@@ -81,8 +80,6 @@ body.theme-abyss {
   --text-secondary: 215 20% 65%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Dark (Visual Studio) (Dark) */
 body.theme-dark-visual-studio {
   --background: 220 15% 13%;
   --surface: 220 15% 13%;
@@ -94,8 +91,6 @@ body.theme-dark-visual-studio {
   --text-secondary: 220 10% 60%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Dark Modern (Dark) */
 body.theme-dark-modern {
   --background: 225 12% 10%;
   --surface: 225 12% 10%;
@@ -107,8 +102,6 @@ body.theme-dark-modern {
   --text-secondary: 225 8% 62%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Default Dark+ (Dark) */
 body.theme-default-dark-plus {
   --background: 220 10% 12%;
   --surface: 220 10% 12%;
@@ -120,8 +113,6 @@ body.theme-default-dark-plus {
   --text-secondary: 220 5% 62%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Kimbie Dark (Dark) */
 body.theme-kimbie-dark {
   --background: 30 25% 15%;
   --surface: 30 25% 15%;
@@ -133,8 +124,6 @@ body.theme-kimbie-dark {
   --text-secondary: 30 5% 62%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Monokai (Dark) */
 body.theme-monokai {
   --background: 70 5% 15%;
   --surface: 70 5% 15%;
@@ -146,8 +135,6 @@ body.theme-monokai {
   --text-secondary: 70 3% 65%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Monokai Dimmed (Dark) */
 body.theme-monokai-dimmed {
   --background: 70 4% 18%;
   --surface: 70 4% 18%;
@@ -159,8 +146,6 @@ body.theme-monokai-dimmed {
   --text-secondary: 70 3% 60%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Red (Dark) */
 body.theme-red {
   --background: 350 60% 8%;
   --surface: 350 60% 8%;
@@ -172,8 +157,6 @@ body.theme-red {
   --text-secondary: 350 15% 65%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Solarized Dark (Dark) */
 body.theme-solarized-dark {
   --background: 192 100% 6%;
   --surface: 192 100% 6%;
@@ -185,8 +168,6 @@ body.theme-solarized-dark {
   --text-secondary: 192 10% 60%;
   --shadow-color: 0 0% 0%;
 }
-
-/* SynthWave '84 (Dark) */
 body.theme-synthwave-84 {
   --background: 260 40% 10%;
   --surface: 260 40% 10%;
@@ -198,8 +179,6 @@ body.theme-synthwave-84 {
   --text-secondary: 260 20% 70%;
   --shadow-color: 320 100% 5%;
 }
-
-/* Tokyo Night (Dark) */
 body.theme-tokyo-night {
   --background: 235 30% 9%;
   --surface: 235 30% 9%;
@@ -211,8 +190,6 @@ body.theme-tokyo-night {
   --text-secondary: 235 10% 65%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Tokyo Night Storm (Dark) */
 body.theme-tokyo-night-storm {
   --background: 230 20% 12%;
   --surface: 230 20% 12%;
@@ -224,8 +201,6 @@ body.theme-tokyo-night-storm {
   --text-secondary: 230 8% 60%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Tomorrow Night Blue (Dark) */
 body.theme-tomorrow-night-blue {
   --background: 220 50% 8%;
   --surface: 220 50% 8%;
@@ -238,7 +213,7 @@ body.theme-tomorrow-night-blue {
   --shadow-color: 0 0% 0%;
 }
 
-/* Dark High Contrast (High Contrast Dark) */
+/* ── High Contrast Themes ────────────────────────── */
 body.theme-dark-high-contrast {
   --background: 0 0% 0%;
   --surface: 0 0% 0%;
@@ -250,8 +225,6 @@ body.theme-dark-high-contrast {
   --text-secondary: 0 0% 85%;
   --shadow-color: 0 0% 0%;
 }
-
-/* Light High Contrast (High Contrast Light) */
 body.theme-light-high-contrast {
   --background: 0 0% 100%;
   --surface: 0 0% 100%;
@@ -264,6 +237,9 @@ body.theme-light-high-contrast {
   --shadow-color: 0 0% 80%;
 }
 
+/* ═══════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════ */
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--text-primary));
@@ -277,51 +253,36 @@ h1, h2, h3, h4, h5, h6 {
   color: hsl(var(--text-primary));
 }
 
-/* Text overrides based on variables */
-.text-gray-100 {
-  color: hsl(var(--text-primary)) !important;
-}
-.text-gray-200 {
-  color: hsl(var(--text-primary)) !important;
-}
-.text-gray-300 {
-  color: hsl(var(--text-primary)) !important;
-}
-.text-gray-400 {
-  color: hsl(var(--text-secondary)) !important;
-}
-.text-gray-500 {
-  color: hsl(var(--text-secondary)) !important;
-}
+/* ═══════════════════════════════════════════════════
+   THEME-AWARE UTILITY OVERRIDES
+   ═══════════════════════════════════════════════════ */
+.text-gray-100 { color: hsl(var(--text-primary)) !important; }
+.text-gray-200 { color: hsl(var(--text-primary)) !important; }
+.text-gray-300 { color: hsl(var(--text-primary)) !important; }
+.text-gray-400 { color: hsl(var(--text-secondary)) !important; }
+.text-gray-500 { color: hsl(var(--text-secondary)) !important; }
 
-/* Surface backgrounds */
-.bg-surface {
-  background-color: hsl(var(--background)) !important;
-}
-.bg-surface-card {
-  background-color: hsl(var(--surface-card)) !important;
-}
-.border-surface-border {
-  border-color: hsl(var(--surface-border)) !important;
-}
+.bg-surface        { background-color: hsl(var(--background)) !important; }
+.bg-surface-card   { background-color: hsl(var(--surface-card)) !important; }
+.border-surface-border { border-color: hsl(var(--surface-border)) !important; }
 
-/* Premium Glassmorphism */
+/* ═══════════════════════════════════════════════════
+   GLASSMORPHISM COMPONENTS
+   ═══════════════════════════════════════════════════ */
 .glass-card {
   background: hsla(var(--surface-card) / 0.55);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid hsla(var(--text-primary) / 0.08);
-  box-shadow: 0 8px 32px 0 rgba(var(--shadow-color) / 0.4);
+  box-shadow: 0 8px 32px 0 hsla(var(--shadow-color) / 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .glass-card:hover {
   background: hsla(var(--surface-card) / 0.7);
   border-color: hsla(var(--primary) / 0.25);
-  box-shadow: 0 12px 40px 0 rgba(var(--shadow-color) / 0.6);
+  box-shadow: 0 12px 40px 0 hsla(var(--shadow-color) / 0.6);
   transform: translateY(-2px);
 }
-
 .glass-nav {
   background: hsla(var(--background) / 0.7);
   backdrop-filter: blur(24px);
@@ -329,111 +290,42 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom: 1px solid hsla(var(--text-primary) / 0.08);
 }
 
-/* Glowing Neon Status Dots */
+/* ═══════════════════════════════════════════════════
+   NEON STATUS DOTS
+   ═══════════════════════════════════════════════════ */
 .glow-ok {
   background-color: #10b981;
   box-shadow: 0 0 16px #10b981, 0 0 4px #10b981;
 }
-
 .glow-degraded {
   background-color: #f59e0b;
   box-shadow: 0 0 16px #f59e0b, 0 0 4px #f59e0b;
 }
-
 .glow-offline {
   background-color: #ef4444;
   box-shadow: 0 0 16px #ef4444, 0 0 4px #ef4444;
 }
-
 .glow-simulator {
   background-color: #a855f7;
   box-shadow: 0 0 16px #a855f7, 0 0 4px #a855f7;
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* ═══════════════════════════════════════════════════
+   CUSTOM SCROLLBAR
+   ═══════════════════════════════════════════════════ */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: hsla(var(--text-primary) / 0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: hsla(var(--text-primary) / 0.3); }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+/* ═══════════════════════════════════════════════════
+   WORKFLOW CANVAS
+   ═══════════════════════════════════════════════════ */
+.wf-canvas-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
 }
+.wf-canvas-wrapper::-webkit-scrollbar { height: 4px; }
 
-::-webkit-scrollbar-thumb {
-  background: hsla(var(--text-primary) / 0.15);
-  border-radius: 99px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsla(var(--text-primary) / 0.3);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.02em;
-}
-
-/* Premium Glassmorphism */
-.glass-card {
-  background: rgba(8, 10, 18, 0.45);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card:hover {
-  background: rgba(12, 15, 26, 0.55);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.15);
-  transform: translateY(-2px);
-}
-
-.glass-nav {
-  background: rgba(6, 8, 15, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Glowing Neon Status Dots */
-.glow-ok {
-  background-color: #10b981;
-  box-shadow: 0 0 16px #10b981, 0 0 4px #10b981;
-}
-
-.glow-degraded {
-  background-color: #f59e0b;
-  box-shadow: 0 0 16px #f59e0b, 0 0 4px #f59e0b;
-}
-
-.glow-offline {
-  background-color: #ef4444;
-  box-shadow: 0 0 16px #ef4444, 0 0 4px #ef4444;
-}
-
-.glow-simulator {
-  background-color: #a855f7;
-  box-shadow: 0 0 16px #a855f7, 0 0 4px #a855f7;
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 99px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+/* Border utility for inline styles */
+.border-3\/10 { border-color: rgba(255,255,255,0.03); }
