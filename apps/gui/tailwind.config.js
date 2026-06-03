@@ -10,17 +10,17 @@ module.exports = {
       colors: {
         // Delentia brand colors
         delentia: {
-          50:  "#f0f4ff",
-          100: "#e0eaff",
-          500: "#3b6fe8",
-          600: "#2d5cd4",
-          700: "#1e4abf",
-          900: "#0d1f5c",
+          50:  "hsla(var(--primary), 0.1)",
+          100: "hsla(var(--primary), 0.2)",
+          500: "hsl(var(--primary))",
+          600: "hsl(var(--primary))",
+          700: "hsla(var(--primary), 0.8)",
+          900: "hsla(var(--primary), 0.2)",
         },
         surface: {
-          DEFAULT: "#0f1117",
-          card:    "#1a1d27",
-          border:  "#2a2d3e",
+          DEFAULT: "hsl(var(--background))",
+          card:    "hsl(var(--surface-card))",
+          border:  "hsl(var(--surface-border))",
         },
       },
       fontFamily: {

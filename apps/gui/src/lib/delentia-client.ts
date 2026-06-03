@@ -22,12 +22,26 @@ import type {
   SystemStats,
 } from "./types";
 
-const getGateway = (): string =>
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_GATEWAY) ||
-  "http://localhost:8000";
+const getGateway = (): string => {
+  if (typeof window !== "undefined") {
+    const saved = window.localStorage.getItem("delentia_gateway");
+    if (saved) return saved;
+  }
+  return (
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_GATEWAY) ||
+    "http://localhost:8000"
+  );
+};
 
-const getApiKey = (): string =>
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_KEY) || "";
+const getApiKey = (): string => {
+  if (typeof window !== "undefined") {
+    const saved = window.localStorage.getItem("delentia_api_key");
+    if (saved) return saved;
+  }
+  return (
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_KEY) || ""
+  );
+};
 
 /** Build auth headers for /v1/* endpoints */
 const authHeaders = (apiKey: string): Record<string, string> => ({
