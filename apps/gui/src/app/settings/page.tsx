@@ -147,6 +147,14 @@ export default function SettingsPage() {
               <option value="monokai-dimmed">Monokai Dimmed</option>
               <option value="red">Red</option>
               <option value="solarized-dark">Solarized Dark</option>
+              <option value="synthwave-84">{"SynthWave '84"}</option>
+              <option value="tokyo-night">Tokyo Night</option>
+              <option value="tokyo-night-storm">Tokyo Night Storm</option>
+              <option value="tomorrow-night-blue">Tomorrow Night Blue</option>
+            </optgroup>
+            <optgroup label="High Contrast Themes">
+              <option value="dark-high-contrast">Dark High Contrast</option>
+              <option value="light-high-contrast">Light High Contrast</option>
             </optgroup>
           </select>
         </div>

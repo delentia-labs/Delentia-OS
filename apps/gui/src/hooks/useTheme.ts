@@ -17,7 +17,13 @@ export type ThemeName =
   | "monokai"
   | "monokai-dimmed"
   | "red"
-  | "solarized-dark";
+  | "solarized-dark"
+  | "synthwave-84"
+  | "tokyo-night"
+  | "tokyo-night-storm"
+  | "tomorrow-night-blue"
+  | "dark-high-contrast"
+  | "light-high-contrast";
 
 export type ColorMode = "light" | "dark";
 
@@ -40,6 +46,7 @@ export const useThemeStore = create<ThemeState>()(
           "quiet-light",
           "solarized-light",
           "tokyo-night-light",
+          "light-high-contrast",
         ];
         const colorMode = lightThemes.includes(theme) ? "light" : "dark";
         set({ theme, colorMode });

@@ -186,6 +186,84 @@ body.theme-solarized-dark {
   --shadow-color: 0 0% 0%;
 }
 
+/* SynthWave '84 (Dark) */
+body.theme-synthwave-84 {
+  --background: 260 40% 10%;
+  --surface: 260 40% 10%;
+  --surface-card: 260 30% 14%;
+  --surface-border: 320 80% 25%;
+  --primary: 320 100% 65%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 320 20% 95%;
+  --text-secondary: 260 20% 70%;
+  --shadow-color: 320 100% 5%;
+}
+
+/* Tokyo Night (Dark) */
+body.theme-tokyo-night {
+  --background: 235 30% 9%;
+  --surface: 235 30% 9%;
+  --surface-card: 235 25% 12%;
+  --surface-border: 235 20% 18%;
+  --primary: 250 85% 75%;
+  --primary-foreground: 235 30% 9%;
+  --text-primary: 235 15% 92%;
+  --text-secondary: 235 10% 65%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Tokyo Night Storm (Dark) */
+body.theme-tokyo-night-storm {
+  --background: 230 20% 12%;
+  --surface: 230 20% 12%;
+  --surface-card: 230 18% 15%;
+  --surface-border: 230 15% 22%;
+  --primary: 250 85% 75%;
+  --primary-foreground: 230 20% 12%;
+  --text-primary: 230 12% 90%;
+  --text-secondary: 230 8% 60%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Tomorrow Night Blue (Dark) */
+body.theme-tomorrow-night-blue {
+  --background: 220 50% 8%;
+  --surface: 220 50% 8%;
+  --surface-card: 220 40% 12%;
+  --surface-border: 220 30% 20%;
+  --primary: 205 100% 70%;
+  --primary-foreground: 220 50% 8%;
+  --text-primary: 220 15% 90%;
+  --text-secondary: 220 10% 62%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Dark High Contrast (High Contrast Dark) */
+body.theme-dark-high-contrast {
+  --background: 0 0% 0%;
+  --surface: 0 0% 0%;
+  --surface-card: 0 0% 0%;
+  --surface-border: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --text-primary: 0 0% 100%;
+  --text-secondary: 0 0% 85%;
+  --shadow-color: 0 0% 0%;
+}
+
+/* Light High Contrast (High Contrast Light) */
+body.theme-light-high-contrast {
+  --background: 0 0% 100%;
+  --surface: 0 0% 100%;
+  --surface-card: 0 0% 100%;
+  --surface-border: 0 0% 0%;
+  --primary: 0 0% 0%;
+  --primary-foreground: 0 0% 100%;
+  --text-primary: 0 0% 0%;
+  --text-secondary: 0 0% 25%;
+  --shadow-color: 0 0% 80%;
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--text-primary));
