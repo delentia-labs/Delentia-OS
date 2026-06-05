@@ -136,6 +136,53 @@ class JITNAPacketV3:
             status=packet.status,
         )
 
+    # ── TOON (ALGO-42) serialization ──────────────────────────────────
+
+    def to_toon(self) -> str:
+        """
+        Serialize this packet to TOON (Token-Oriented Object Notation).
+
+        TOON reduces token consumption by 40-50% vs JSON by stripping
+        all syntax noise (braces, brackets, quotes, commas).
+
+        Returns:
+            TOON-formatted string representation of this packet
+        """
+        from rct_control_plane.toon_formatter import toon_serialize
+        return toon_serialize(self.to_dict())
+
+    @classmethod
+    def from_toon(cls, toon_str: str) -> "JITNAPacketV3":
+        """
+        Deserialize a TOON string into a JITNAPacketV3 instance.
+
+        Args:
+            toon_str: TOON-formatted string
+
+        Returns:
+            JITNAPacketV3 with all fields populated from the TOON data
+        """
+        from rct_control_plane.toon_formatter import toon_deserialize
+        data = toon_deserialize(toon_str)
+        return cls(
+            packet_id=data.get("packet_id", str(uuid4())),
+            source_agent_id=str(data.get("source_agent_id", "")),
+            target_agent_id=str(data.get("target_agent_id", "")),
+            message_type=data.get("message_type", JITNAMessageTypeV3.INTENT_REQUEST.value),
+            payload=data.get("payload", {}),
+            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat()),
+            schema_version=data.get("schema_version", JITNA_V3_SCHEMA_VERSION),
+            priority=int(data.get("priority", 3)),
+            correlation_id=data.get("correlation_id"),
+            signature=data.get("signature"),
+            metadata=data.get("metadata", {}),
+            status=data.get("status", JITNAStatus.CREATED.value),
+            hop_trace=data.get("hop_trace", []),
+            ttl=int(data.get("ttl", JITNA_V3_DEFAULT_TTL)),
+            compressed=bool(data.get("compressed", False)),
+        )
+
+
 
 # ============================================================
 # Compression helpers

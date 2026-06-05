@@ -59,7 +59,8 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 | Delta Engine (91.5% measured compression, design floor ≥74%) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
-| JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_v3.py` | — |
+| JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_protocol_v3.py` | — |
+| TOON Formatter (ALGO-42 compression engine) | ✅ `rct_control_plane/toon_formatter.py` | — |
 | CORD Security Engine (100 injection patterns) | ✅ `rct_control_plane/cord_security.py` | — |
 | ZK-FDIA (Zero-Knowledge Pedersen proofs) | ✅ `rct_control_plane/zk_fdia.py` | — |
 | Helix-TTD (Topological drift detector) | ✅ `rct_control_plane/helix_ttd.py` | — |
@@ -151,6 +152,7 @@ Layer 10: Enterprise Hardening
 
 Layer 9: Control Plane
 ├─ JITNA Wire Schema (JITNAPacket: I, D, Δ, A, R, M)
+├─ TOON Formatter (ALGO-42 compression, 40-50% token savings)
 ├─ Ed25519 Signed Execution (RFC 8032)
 ├─ Replay Engine (SHA-256 checkpoints)
 └─ rct_control_plane: 15-module DSL + intent schema

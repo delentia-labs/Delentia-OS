@@ -127,6 +127,26 @@ class TestJITNAPacketV3(unittest.TestCase):
         v3 = JITNAPacketV3.from_v2(v2)
         self.assertEqual(v3.packet_id, v2.packet_id)
 
+    def test_to_toon_round_trip(self):
+        p = make_packet(
+            priority=2,
+            correlation_id="corr-999",
+            payload={"intent": "คำนวณภาษี", "nested": {"val": 100}},
+        )
+        toon_str = p.to_toon()
+        assert "priority: 2" in toon_str
+        assert "correlation_id: corr-999" in toon_str
+        assert "intent: คำนวณภาษี" in toon_str
+        assert "val: 100" in toon_str
+
+        p_recovered = JITNAPacketV3.from_toon(toon_str)
+        self.assertEqual(p_recovered.packet_id, p.packet_id)
+        self.assertEqual(p_recovered.priority, p.priority)
+        self.assertEqual(p_recovered.correlation_id, p.correlation_id)
+        self.assertEqual(p_recovered.payload["intent"], p.payload["intent"])
+        self.assertEqual(p_recovered.payload["nested"]["val"], p.payload["nested"]["val"])
+
+
 
 # ============================================================
 # 4. Compression helpers
