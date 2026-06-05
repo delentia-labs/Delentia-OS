@@ -349,7 +349,7 @@ export default function SettingsPage() {
 
       {/* Version and Footer */}
       <div className="text-[10px] text-gray-500 text-center py-4 flex flex-col items-center gap-1">
-        <span>Delentia Desk v1.0.3 — Apache 2.0 License</span>
+        <span>Delentia Desk v1.0.4 — Apache 2.0 License</span>
         <span>ระบบความมั่นคงด้านปัญญาประดิษฐ์ (SignedAI Verified Engine)</span>
       </div>
     </div>

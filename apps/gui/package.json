@@ -1,6 +1,6 @@
 {
   "name": "delentia-gui",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Delentia Desk — Desktop GUI for Delentia OS (Intent-Centric AI)",
   "scripts": {
