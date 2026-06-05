@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.variable} ${kanit.variable} bg-surface text-gray-100 antialiased min-h-screen flex flex-col justify-between`}>
         <ThemeProvider>
           <div className="flex flex-row h-screen w-screen overflow-hidden bg-surface">

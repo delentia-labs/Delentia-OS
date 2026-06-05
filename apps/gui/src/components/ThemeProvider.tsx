@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useThemeStore } from "@/hooks/useTheme";
+import { usePathname } from "next/navigation";
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { theme, colorMode } = useThemeStore();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -28,7 +30,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
     // Also update body color-scheme
     html.style.colorScheme = colorMode;
-  }, [theme, colorMode, mounted]);
+  }, [theme, colorMode, mounted, pathname]);
 
   // Prevent flash during loading by wrapping children
   return <>{children}</>;

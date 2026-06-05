@@ -109,7 +109,7 @@ export function Sidebar() {
           </button>
           <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 shadow-inner flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-            v1.0.1
+            v1.0.3
           </span>
         </div>
       </div>
@@ -132,7 +132,7 @@ export function Sidebar() {
                 Delentia Desk
                 <span className="text-[9px] font-mono font-medium text-gray-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  v1.0.1
+                  v1.0.3
                 </span>
               </span>
             </Link>
