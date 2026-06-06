@@ -32,7 +32,7 @@ Reference: Delentia SLM Fine-tuning TOON specification
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 __all__ = [
     "TOONFormatter",

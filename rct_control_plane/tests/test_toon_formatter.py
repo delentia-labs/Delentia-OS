@@ -11,7 +11,6 @@ Tests cover:
   - Edge cases (empty structures, deeply nested, special characters)
 """
 
-import json
 import pytest
 
 from rct_control_plane.toon_formatter import (
