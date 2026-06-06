@@ -6,7 +6,7 @@ version: "3.9"
 
 services:
   gateway-api:
-    image: ghcr.io/delentia-labs/gateway-api:2.0
+    image: ghcr.io/delentia-labs/gateway-api:2.2.6
     container_name: delentia-gateway
     restart: unless-stopped
     ports:
@@ -31,7 +31,7 @@ services:
       - delentia-net
 
   intent-loop:
-    image: ghcr.io/delentia-labs/intent-loop:2.0
+    image: ghcr.io/delentia-labs/intent-loop:2.2.6
     container_name: delentia-intent-loop
     restart: unless-stopped
     ports:
@@ -53,7 +53,7 @@ services:
       - delentia-net
 
   analysearch-intent:
-    image: ghcr.io/delentia-labs/analysearch-intent:2.0
+    image: ghcr.io/delentia-labs/analysearch-intent:2.2.6
     container_name: delentia-analysearch
     restart: unless-stopped
     ports:
@@ -90,7 +90,7 @@ services:
       - delentia-net
 
   crystallizer:
-    image: ghcr.io/delentia-labs/crystallizer:2.0
+    image: ghcr.io/delentia-labs/crystallizer:2.2.6
     container_name: delentia-crystallizer
     restart: unless-stopped
     ports:
