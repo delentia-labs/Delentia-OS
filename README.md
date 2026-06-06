@@ -1,19 +1,19 @@
 # Delentia OS — Intent-Centric AI Operating System
 
-[![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
-[![Security](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/security-scan.yml)
-[![codecov](https://codecov.io/gh/delentia-labs/delentia-os/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/delentia-os)
-[![Version](https://img.shields.io/badge/version-2.2.0-blue)](CHANGELOG.md)
-[![PyPI](https://img.shields.io/badge/PyPI-v2.2.0-gold)](https://pypi.org/project/delentia-os/)
+[![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
+[![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
+[![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
+[![Version](https://img.shields.io/badge/version-2.2.3-blue)](CHANGELOG.md)
+[![PyPI](https://img.shields.io/badge/PyPI-v2.2.3-gold)](https://pypi.org/project/delentia-os/)
 [![npm](https://img.shields.io/badge/npm-%40delentia%2Fdelentia--os-cb3837?logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/delentia-os/)
+[![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/Delentia-OS/)
 [![Status](https://img.shields.io/badge/status-STABLE%20SDK-brightgreen)](CHANGELOG.md)
 [![Website](https://img.shields.io/badge/website-delentia.com-brightgreen)](https://delentia.com)
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/delentia-os/blob/main/notebooks/rct_playground.ipynb)
-[![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/delentia-os/main?filepath=notebooks%2Frct_playground.ipynb)
-[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/delentia-os)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/Delentia-OS/blob/main/notebooks/rct_playground.ipynb)
+[![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/Delentia-OS/main?filepath=notebooks%2Frct_playground.ipynb)
+[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/Delentia-OS)
 
 ## Intent-Centric AI Operating System — Constitutional Architecture
 
