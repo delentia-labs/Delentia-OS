@@ -78,7 +78,7 @@ describe("package exports", () => {
     });
     const tier = packet.meta?.user_tier ?? "FREE";
     const selection = selectSignedAITier(tier as "FREE" | "PRO" | "ENTERPRISE");
-    expect(selection.roles).toHaveLength(8);
+    expect(selection.roles).toHaveLength(9);
     expect(selection.maxParallelAgents).toBe(8);
   });
 });

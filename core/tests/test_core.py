@@ -435,6 +435,21 @@ class TestRegionalModelRouter:
         model_id = self.router.route(language="en", region="SG")
         assert model_id == "anthropic/claude-3.5-sonnet"
 
+    def test_register_regional_llm(self):
+        from core.regional_adapter.regional_adapter import register_regional_llm, resolve_model_for_text
+        register_regional_llm(
+            language="vi",
+            region="VN",
+            model_id="custom/vietnamese-model",
+            model_name="Custom Vietnamese LLM",
+            proficiency=0.99,
+            cost_input=0.1,
+            cost_output=0.2
+        )
+        resolved = resolve_model_for_text("Xin chào", region="VN")
+        assert resolved.model_id == "custom/vietnamese-model"
+        assert resolved.model_name == "Custom Vietnamese LLM"
+
 
 class TestRegionalModelCache:
     def test_cache_instantiates(self):

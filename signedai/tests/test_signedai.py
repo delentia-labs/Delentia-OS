@@ -233,14 +233,15 @@ class TestHexaCoreRegistryExtended:
         assert isinstance(cost, float)
         assert cost > 0
 
-    def test_geopolitical_balance_sums_to_seven(self):
+    def test_geopolitical_balance_sums_to_ten(self):
         balance = HexaCoreRegistry.get_geopolitical_balance()
         total = sum(balance.values())
-        assert total == 9
+        assert total == 10
         assert "US" in balance
         assert "CN" in balance
         assert "TH" in balance
         assert "LOCAL" in balance
+        assert "REGION" in balance
 
     def test_get_smartest_is_supreme_architect(self):
         result = HexaCoreRegistry.get_smartest()

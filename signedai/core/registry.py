@@ -22,14 +22,15 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class HexaCoreRole(str, Enum):
-    """The 9 core AI roles in RCT OS (Hexa-Core Architecture v2.3)."""
+    """The 10 core AI roles in RCT OS (Hexa-Core Architecture v2.3)."""
     SUPREME_ARCHITECT = "supreme_architect"
     LEAD_BUILDER = "lead_builder"
     JUNIOR_BUILDER = "junior_builder"
     SPECIALIST = "specialist"
     LIBRARIAN = "librarian"
     HUMANIZER = "humanizer"
-    REGIONAL_THAI = "regional_thai"  # G38: Typhoon v2 — Thai NLP specialist (SCB10X)
+    REGIONAL_THAI = "regional_thai"  # Legacy G38: Typhoon v2 — Thai NLP specialist (SCB10X)
+    REGIONAL_CORE = "regional_core"  # Pluggable Regional LLM (hot-swappable)
     OLLAMA_ADAPTER = "ollama_adapter"  # Local SLM fallback via Ollama runtime
     GROQ_ADAPTER = "groq_adapter"      # Groq LPU ultra-low-latency inference (v2.3)
 
@@ -144,6 +145,18 @@ class HexaCoreRegistry:
             use_cases=["Thai language tasks (native quality)", "Thai legal/financial document analysis", "TH-EN translation", "Thai culture-aware dialogue"],
             reasoning_rank=None,
         ),
+        HexaCoreRole.REGIONAL_CORE: ModelInfo(
+            id="regional-llm-pluggable",
+            role=HexaCoreRole.REGIONAL_CORE,
+            provider="Pluggable Regional Provider",
+            country="REGION",
+            cost_input=0.40,
+            cost_output=1.20,
+            context_window=128_000,
+            specialties=["Regional NLP", "Local culture", "Local legal", "Local finance", "Local translation"],
+            use_cases=["Region-specific language tasks", "Regional legal/financial document analysis", "Local compliance verification"],
+            reasoning_rank=None,
+        ),
         HexaCoreRole.OLLAMA_ADAPTER: ModelInfo(
             id="ollama/llama-3.1-8b-instruct",
             role=HexaCoreRole.OLLAMA_ADAPTER,
@@ -175,9 +188,29 @@ class HexaCoreRegistry:
         return cls.MODELS[role]
 
     @classmethod
-    def get_model_id(cls, role: HexaCoreRole) -> str:
-        """Return the OpenRouter model ID for *role*."""
+    def get_model_id(
+        cls,
+        role: HexaCoreRole,
+        context_region: Optional[str] = None,
+        context_lang: Optional[str] = None,
+    ) -> str:
+        """Return the OpenRouter model ID for *role*, dynamically resolved for regional roles."""
+        if role in (HexaCoreRole.REGIONAL_CORE, HexaCoreRole.REGIONAL_THAI) and (context_region or context_lang):
+            try:
+                from core.regional_adapter.regional_adapter import get_regional_router
+                router = get_regional_router()
+                lang = context_lang or ("th" if role == HexaCoreRole.REGIONAL_THAI else "en")
+                reg = context_region or ("TH" if role == HexaCoreRole.REGIONAL_THAI else "US")
+                resolved = router.resolve(lang, reg)
+                return resolved.model_id
+            except Exception:
+                pass
         return cls.MODELS[role].id
+
+    @classmethod
+    def register_model(cls, role: HexaCoreRole, model_info: ModelInfo) -> None:
+        """Dynamically register or override a model for a specific HexaCore role at runtime."""
+        cls.MODELS[role] = model_info
 
     @classmethod
     def estimate_cost(cls, role: HexaCoreRole, input_tokens: int, output_tokens: int) -> float:

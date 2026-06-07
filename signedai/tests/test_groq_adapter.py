@@ -65,10 +65,10 @@ class TestRegistryGroqAdapter(unittest.TestCase):
         model = HexaCoreRegistry.get_model(HexaCoreRole.GROQ_ADAPTER)
         self.assertIn("groq/", model.id)
 
-    def test_total_roles_nine(self):
+    def test_total_roles_ten(self):
         balance = HexaCoreRegistry.get_geopolitical_balance()
         total = sum(balance.values())
-        self.assertEqual(total, 9)
+        self.assertEqual(total, 10)
 
 
 # ============================================================

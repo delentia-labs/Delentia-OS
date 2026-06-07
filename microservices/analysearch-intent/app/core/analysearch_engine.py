@@ -761,28 +761,43 @@ class AnalysearchEngine:
             "complexity": analysis.get("complexity", "low"),
         }
 
-        # Regional model routing for ASEAN + major languages
-        _REGIONAL_MODELS: Dict[str, tuple] = {
-            "th": ("typhoon_v2", "Thai — route to Typhoon v2 for optimal quality"),
-            "ja": ("qwen2_72b", "Japanese — route to multilingual model"),
-            "zh": ("qwen2_72b", "Chinese — route to multilingual model"),
-            "ko": ("qwen2_72b", "Korean — route to multilingual model"),
-            "vi": ("seallm_v3", "Vietnamese — route to SEA LLM"),
-            "id": ("seallm_v3", "Indonesian — route to SEA LLM"),
-            "fil": ("seallm_v3", "Filipino — route to SEA LLM"),
-            "ms": ("seallm_v3", "Malay — route to SEA LLM"),
-            "hi": ("qwen2_72b", "Hindi — route to multilingual model"),
-            "ar": ("qwen2_72b", "Arabic — route to multilingual model"),
-        }
-
-        if lang_code in _REGIONAL_MODELS and lang_confidence >= 0.5:
-            model, reason = _REGIONAL_MODELS[lang_code]
-            hint["model_override"] = model
-            hint["reason"] = reason
-        elif is_thai:
-            # Backward-compat: low-confidence Thai still gets fallback
-            hint["model_fallback"] = "typhoon_v2"
-            hint["reason"] = "Mixed Thai/English — Typhoon v2 as fallback"
+        # Query central pluggable regional router
+        try:
+            from core.regional_adapter.regional_adapter import get_regional_router
+            router = get_regional_router()
+            _lang_to_region = {
+                "en": "US", "th": "TH", "ja": "JP", "ko": "KR",
+                "zh": "CN", "vi": "VN", "id": "ID", "fil": "PH",
+                "ms": "MY", "hi": "IN", "ar": "AE",
+            }
+            reg = _lang_to_region.get(lang_code, "US")
+            if lang_confidence >= 0.5:
+                resolved = router.resolve(lang_code, reg)
+                hint["model_override"] = resolved.model_id
+                hint["reason"] = f"{resolved.model_name} ({lang_code.upper()}/{reg}) — dynamically resolved pluggable model"
+            elif is_thai:
+                resolved = router.resolve("th", "TH")
+                hint["model_fallback"] = resolved.model_id
+                hint["reason"] = f"Mixed Thai/English — {resolved.model_name} as fallback"
+        except Exception:
+            # Fallback to local hardcoded map if import/router fails
+            _REGIONAL_MODELS: Dict[str, tuple] = {
+                "th": ("typhoon_v2", "Thai — route to Typhoon v2 for optimal quality"),
+                "ja": ("qwen2_72b", "Japanese — route to multilingual model"),
+                "zh": ("qwen2_72b", "Chinese — route to multilingual model"),
+                "ko": ("qwen2_72b", "Korean — route to multilingual model"),
+                "vi": ("seallm_v3", "Vietnamese — route to SEA LLM"),
+                "id": ("seallm_v3", "Indonesian — route to SEA LLM"),
+                "fil": ("seallm_v3", "Filipino — route to SEA LLM"),
+                "ms": ("seallm_v3", "Malay — route to SEA LLM"),
+            }
+            if lang_code in _REGIONAL_MODELS and lang_confidence >= 0.5:
+                model, reason = _REGIONAL_MODELS[lang_code]
+                hint["model_override"] = model
+                hint["reason"] = reason
+            elif is_thai:
+                hint["model_fallback"] = "typhoon_v2"
+                hint["reason"] = "Mixed Thai/English — Typhoon v2 as fallback"
 
         return hint
 

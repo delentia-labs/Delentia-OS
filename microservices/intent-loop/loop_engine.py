@@ -365,8 +365,13 @@ class SpecialistExecutor:
     # Maps intent keywords → HexaCoreRole for model selection
     _TASK_ROLE_MAP: Dict[str, HexaCoreRole] = {
         # Regional check first (most specific)
-        "thai":      HexaCoreRole.REGIONAL_THAI,
-        "ภาษา":      HexaCoreRole.REGIONAL_THAI,
+        "thai":      HexaCoreRole.REGIONAL_CORE,
+        "ภาษา":      HexaCoreRole.REGIONAL_CORE,
+        "viet":      HexaCoreRole.REGIONAL_CORE,
+        "indo":      HexaCoreRole.REGIONAL_CORE,
+        "korean":    HexaCoreRole.REGIONAL_CORE,
+        "japanese":  HexaCoreRole.REGIONAL_CORE,
+        "chinese":   HexaCoreRole.REGIONAL_CORE,
         # Builder roles
         "code":      HexaCoreRole.LEAD_BUILDER,
         "program":   HexaCoreRole.LEAD_BUILDER,
@@ -395,8 +400,37 @@ class SpecialistExecutor:
         intent_lower = intent.lower()
         for keyword, role in self._TASK_ROLE_MAP.items():
             if keyword in intent_lower:
+                if role == HexaCoreRole.REGIONAL_CORE:
+                    try:
+                        from core.regional_adapter.regional_adapter import get_regional_router
+                        _TASK_REGIONAL_MAP = {
+                            "thai": ("th", "TH"),
+                            "ภาษา": ("th", "TH"),
+                            "viet": ("vi", "VN"),
+                            "indo": ("id", "ID"),
+                            "korean": ("ko", "KR"),
+                            "japanese": ("ja", "JP"),
+                            "chinese": ("zh", "CN"),
+                        }
+                        lang, reg = _TASK_REGIONAL_MAP.get(keyword, ("en", "US"))
+                        router = get_regional_router()
+                        entry = router.resolve(lang, reg)
+                        return entry.model_id, role
+                    except Exception:
+                        pass
                 model_id = self.registry.get_model_id(role)
                 return model_id, role
+
+        # If no keyword matches, try dynamic language detection for regional LLMs
+        try:
+            from core.regional_adapter.regional_adapter import detect_language, resolve_model_for_text
+            detected = detect_language(intent)
+            if detected.code in ["th", "ja", "ko", "zh", "vi", "id", "fil", "ms"] and detected.confidence >= 0.5:
+                entry = resolve_model_for_text(intent)
+                return entry.model_id, HexaCoreRole.REGIONAL_CORE
+        except Exception:
+            pass
+
         # Default: SUPREME_ARCHITECT for complex / unclassified intents
         role = HexaCoreRole.SUPREME_ARCHITECT
         return self.registry.get_model_id(role), role

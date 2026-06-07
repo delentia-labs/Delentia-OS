@@ -22,12 +22,13 @@ describe("selectSignedAITier", () => {
     expect(s.maxParallelAgents).toBe(2);
   });
 
-  test("FREE tier SYSTEMIC risk: escalates to ENTERPRISE roles (8)", () => {
+  test("FREE tier SYSTEMIC risk: escalates to ENTERPRISE roles (9)", () => {
     const s = selectSignedAITier("FREE", "SYSTEMIC");
     expect(s.tier).toBe("FREE");
-    expect(s.roles).toHaveLength(8);
+    expect(s.roles).toHaveLength(9);
     expect(s.roles).toContain("SUPREME_ARCHITECT");
     expect(s.roles).toContain("REGIONAL_THAI");
+    expect(s.roles).toContain("REGIONAL_CORE");
     expect(s.roles).toContain("REVIEWER");
   });
 
@@ -48,20 +49,21 @@ describe("selectSignedAITier", () => {
     expect(s.maxParallelAgents).toBe(4);
   });
 
-  test("PRO tier SYSTEMIC risk: escalates to all 8 ENTERPRISE roles", () => {
+  test("PRO tier SYSTEMIC risk: escalates to all 9 ENTERPRISE roles", () => {
     const s = selectSignedAITier("PRO", "SYSTEMIC");
     expect(s.tier).toBe("PRO");
-    expect(s.roles).toHaveLength(8);
+    expect(s.roles).toHaveLength(9);
     expect(s.roles).toContain("REGIONAL_THAI");
+    expect(s.roles).toContain("REGIONAL_CORE");
     expect(s.roles).toContain("REVIEWER");
   });
 
   // ── ENTERPRISE tier ──────────────────────────────────────────────────────
 
-  test("ENTERPRISE tier LOW risk: 8 roles, maxParallelAgents=8", () => {
+  test("ENTERPRISE tier LOW risk: 9 roles, maxParallelAgents=8", () => {
     const s = selectSignedAITier("ENTERPRISE", "LOW");
     expect(s.tier).toBe("ENTERPRISE");
-    expect(s.roles).toHaveLength(8);
+    expect(s.roles).toHaveLength(9);
     expect(s.maxParallelAgents).toBe(8);
     const expected = [
       "SUPREME_ARCHITECT",
@@ -71,6 +73,7 @@ describe("selectSignedAITier", () => {
       "LIBRARIAN",
       "HUMANIZER",
       "REGIONAL_THAI",
+      "REGIONAL_CORE",
       "REVIEWER",
     ];
     for (const role of expected) {
@@ -78,9 +81,9 @@ describe("selectSignedAITier", () => {
     }
   });
 
-  test("ENTERPRISE SYSTEMIC: still 8 roles (already max)", () => {
+  test("ENTERPRISE SYSTEMIC: still 9 roles (already max)", () => {
     const s = selectSignedAITier("ENTERPRISE", "SYSTEMIC");
-    expect(s.roles).toHaveLength(8);
+    expect(s.roles).toHaveLength(9);
     expect(s.maxParallelAgents).toBe(8);
   });
 

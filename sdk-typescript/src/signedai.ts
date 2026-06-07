@@ -22,6 +22,7 @@ export type HexaCoreRole =
   | "LIBRARIAN"
   | "HUMANIZER"
   | "REGIONAL_THAI"
+  | "REGIONAL_CORE"
   | "REVIEWER";
 
 export interface TierSelection {
@@ -50,6 +51,7 @@ const TIER_ROLE_MAP: Record<UserTier, HexaCoreRole[]> = {
     "LIBRARIAN",
     "HUMANIZER",
     "REGIONAL_THAI",
+    "REGIONAL_CORE",
     "REVIEWER",
   ],
 };

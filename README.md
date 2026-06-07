@@ -506,27 +506,33 @@ Key capabilities:
 | SPECIALIST | gemini-3-flash | US | Finance, health, multimodal, speed |
 | LIBRARIAN | grok-4.1-fast | US | Long context (2M tokens), RAG, science |
 | HUMANIZER | deepseek-v3.2 | CN | Natural language, creative, translation |
-| **REGIONAL_THAI** | **typhoon-v2-70b** | **TH** | **Thai NLP, Thai legal/finance (native quality)** |
+| **REGIONAL_CORE** | **pluggable (e.g. typhoon-v2, HyperCLOVA, Rakuten AI)** | **VARIOUS** | **Pluggable regional LLM, cultural & legal compliance** |
+| **REGIONAL_THAI** | **typhoon-v2-70b** | **TH** | **Legacy Thai NLP specialist (maps to REGIONAL_CORE)** |
 | **OLLAMA_ADAPTER** | **ollama (local)** | **LOCAL** | **Local LLM fallback, air-gapped inference** |
 | **GROQ_ADAPTER** | **llama-3.3-70b-versatile** | **LPU** | **Ultra-fast LPU inference, 128k ctx** |
 
 ```python
 from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
 
-# All 9 roles
+# All 10 roles
 for role, model in HexaCoreRegistry.MODELS.items():
     print(f"{role.value}: {model.id} ({model.country})")
 
 # Geopolitical balance
 balance = HexaCoreRegistry.get_geopolitical_balance()
-# → {'US': 3, 'CN': 3, 'TH': 1}
+# → {'US': 3, 'CN': 3, 'TH': 1, 'REGION': 1}
 
-# Thai specialist
-thai = HexaCoreRegistry.get_model(HexaCoreRole.REGIONAL_THAI)
-print(thai.specialties)  # ['Thai NLP', 'Thai culture', 'Thai legal', ...]
+# Pluggable regional specialist
+regional = HexaCoreRegistry.get_model(HexaCoreRole.REGIONAL_CORE)
+print(regional.specialties)  # ['Regional NLP', 'Local culture', 'Local legal', ...]
 
-# Filter by region
-thai_models = HexaCoreRegistry.get_models_by_country("TH")
+# Dynamic model resolution based on request context (e.g. Vietnam)
+model_id = HexaCoreRegistry.get_model_id(
+    HexaCoreRole.REGIONAL_CORE,
+    context_lang="vi",
+    context_region="VN"
+)
+# → 'alibaba/qwen-2.5-7b' (or any custom registered model)
 ```
 
 ---

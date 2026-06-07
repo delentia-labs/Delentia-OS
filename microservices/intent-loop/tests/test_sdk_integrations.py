@@ -174,6 +174,16 @@ class TestSpecialistExecutorRegistry:
         assert result["specialist"] == expected
 
     @pytest.mark.asyncio
+    async def test_japanese_intent_routes_to_regional_core(self):
+        """Intent with 'japanese' keyword should route to the pluggable REGIONAL_CORE model."""
+        from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
+        se = SpecialistExecutor()
+        pkt = JITNAPacket(intent="translate japanese document to english")
+        result = await se.execute(pkt)
+        assert result["specialist"] == "anthropic/claude-3.5-sonnet"
+        assert result["specialist_role"] == HexaCoreRole.REGIONAL_CORE.value
+
+    @pytest.mark.asyncio
     async def test_specialist_role_returned_in_result(self):
         """execute() must include specialist_role in result dict."""
         se = SpecialistExecutor()

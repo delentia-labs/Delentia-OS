@@ -240,11 +240,11 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Thai (TH) ---
     RegionalModelEntry(
         language="th", region="TH",
-        model_id="deepseek/deepseek-v3.2",
-        model_name="DeepSeek V3.2",
-        proficiency=0.92,
-        cost_input=0.25, cost_output=0.38,
-        specialties=["Thai translation", "Natural language"],
+        model_id="scb10x/typhoon-v2-70b-instruct",
+        model_name="Typhoon v2 70B",
+        proficiency=0.99,
+        cost_input=0.40, cost_output=1.20,
+        specialties=["Thai NLP", "Thai culture", "Thai legal", "Thai finance", "Translation TH"],
         compliance_tags=["PDPA"],
     ),
     # --- Japanese (JP) ---
@@ -753,3 +753,29 @@ def resolve_model_for_text(
 def get_regional_router() -> RegionalModelRouter:
     """Get the default regional model router instance."""
     return _DEFAULT_ROUTER
+
+
+def register_regional_llm(
+    language: str,
+    region: str,
+    model_id: str,
+    model_name: str,
+    proficiency: float,
+    cost_input: float,
+    cost_output: float,
+    specialties: Optional[List[str]] = None,
+    compliance_tags: Optional[List[str]] = None,
+) -> None:
+    """Convenience module-level function to register a pluggable regional model."""
+    entry = RegionalModelEntry(
+        language=language,
+        region=region,
+        model_id=model_id,
+        model_name=model_name,
+        proficiency=proficiency,
+        cost_input=cost_input,
+        cost_output=cost_output,
+        specialties=specialties or [],
+        compliance_tags=compliance_tags or [],
+    )
+    _DEFAULT_ROUTER.add_model(entry)
