@@ -49,7 +49,7 @@ A registry dashboard detailing connected adapters, database connectors (such as 
 ![Ecosystem Registry](./public/screenshots/ecosystem-page.png)
 
 #### 5. Local SLM Models (`/models`)
-A downloader and connection diagnostics hub for offline-capable Small Language Models (SLMs) running locally via Ollama (e.g., `typhoon-v2-7b`, `llama3-8b`).
+A downloader and connection diagnostics hub for offline-capable Small Language Models (SLMs) running locally via Ollama (including the specialized **1+4 Pillar adapters**: Executor, Router, Guardian, Scribe).
 ![Local SLM Models](./public/screenshots/models-page.png)
 
 #### 6. JITNA Workflows (`/workflow`)
@@ -116,8 +116,8 @@ An administrative control center to configure general parameters, API keys, gate
 #### 2. Development Mode
 ```bash
 # Clone the repository
-git clone https://github.com/delentia-labs/delentia-gui
-cd delentia-gui
+git clone https://github.com/delentia-labs/Delentia-OS-Gui.git
+cd Delentia-OS-Gui
 
 # Create environment configuration
 cp .env.example .env.local
@@ -174,7 +174,7 @@ Build outputs are located at `src-tauri/target/release/bundle/`.
 ![Ecosystem Registry](./public/screenshots/ecosystem-page.png)
 
 #### 5. แดชบอร์ดโมเดลภาษาภายใน (Local SLM Models — `/models`)
-ศูนย์จัดการดาวน์โหลดและตรวจสอบการเชื่อมต่อโมเดลภาษาขนาดเล็ก (Small Language Models - SLM) ผ่านเครือข่ายออฟไลน์ภายในองค์กร (เช่น `typhoon-v2-7b`, `llama3-8b`) ผ่านตัวจัดการ Ollama
+ศูนย์จัดการดาวน์โหลดและตรวจสอบการเชื่อมต่อโมเดลภาษาขนาดเล็ก (Small Language Models - SLM) ผ่านเครือข่ายออฟไลน์ภายในองค์กร (รวมถึงการใช้งานโมเดลเฉพาะทางทั้ง 4 ของ **1+4 Pillar Architecture**: Executor, Router, Guardian, Scribe) ผ่านตัวจัดการ Ollama
 ![Local SLM Models](./public/screenshots/models-page.png)
 
 #### 6. เครื่องมือสร้างและจำลองเอเจนต์ (JITNA Workflows — `/workflow`)
@@ -215,8 +215,8 @@ Build outputs are located at `src-tauri/target/release/bundle/`.
 #### 2. ขั้นตอนการรันโหมดพัฒนา
 ```bash
 # Clone และเข้าโฟลเดอร์โปรเจกต์
-git clone https://github.com/delentia-labs/delentia-gui
-cd delentia-gui
+git clone https://github.com/delentia-labs/Delentia-OS-Gui.git
+cd Delentia-OS-Gui
 
 # สร้างไฟล์กำหนดสภาพแวดล้อม
 cp .env.example .env.local
