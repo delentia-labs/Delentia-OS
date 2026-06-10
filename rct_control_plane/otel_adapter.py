@@ -70,6 +70,10 @@ _EVENT_SPAN_NAMES: Dict[str, str] = {
     ControlPlaneEventType.GRAPH_FAILED.value:       "rct.graph.failed",
     ControlPlaneEventType.STATE_TRANSITION.value:   "rct.state.transition",
     ControlPlaneEventType.ERROR_OCCURRED.value:     "rct.error",
+    ControlPlaneEventType.GUARDIAN_CHECKED.value:   "rct.guardian.check",
+    ControlPlaneEventType.ROUTER_CLASSIFIED.value:  "rct.router.classify",
+    ControlPlaneEventType.SCRIBE_COMPRESSED.value:  "rct.scribe.compress",
+    ControlPlaneEventType.EXECUTOR_RUN.value:       "rct.executor.run",
 }
 
 
