@@ -8,7 +8,7 @@ Runs classification head locally in python backend.
 
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 try:
     import torch
@@ -37,8 +37,8 @@ class LoRARouter:
         else:
             self.adapter_path = Path(__file__).parents[2] / "Delentia-AI-SLM/models/adapters/jitna_router_v1"
             
-        self.model = None
-        self.tokenizer = None
+        self.model: Optional[Any] = None
+        self.tokenizer: Optional[Any] = None
         self.mock_mode = True
 
         self.label_map = {
@@ -63,9 +63,10 @@ class LoRARouter:
 
         print("[INFO] LoRA Router: Loading sequence classification model...")
         # Classification head loaded on CPU fallback or GPU auto configuration
-        self.tokenizer = AutoTokenizer.from_pretrained(str(self.adapter_path))
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        tokenizer = AutoTokenizer.from_pretrained(str(self.adapter_path))
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        self.tokenizer = tokenizer
 
         base_model = AutoModelForSequenceClassification.from_pretrained(
             self.base_model_name,
@@ -73,7 +74,7 @@ class LoRARouter:
             load_in_4bit=True,
             device_map="auto"
         )
-        base_model.config.pad_token_id = self.tokenizer.pad_token_id
+        base_model.config.pad_token_id = tokenizer.pad_token_id
 
         self.model = PeftModel.from_pretrained(base_model, str(self.adapter_path))
         print("[INFO] LoRA Router: Classifier adapter loaded successfully.")
@@ -92,6 +93,9 @@ class LoRARouter:
             latency = (time.perf_counter() - start_time) * 1000
             print(f"[MOCK] LoRA Router: Classifed intent as: [yellow]{label}[/] (Latency: {latency:.2f}ms)")
             return label, latency
+
+        if self.tokenizer is None or self.model is None:
+            raise RuntimeError("Model and tokenizer are not loaded.")
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         prompt = f"You are The Router (slm-jitna-router)...\\n\\nUser intent: {intent}"

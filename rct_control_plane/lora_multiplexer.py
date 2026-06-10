@@ -8,11 +8,10 @@ Provides a fallback/mock mode when adapter folders are not trained/available.
 
 import time
 from pathlib import Path
-from typing import Optional
-
-import torch
+from typing import Any, Optional
 
 try:
+    import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import PeftModel
     _HAS_TRANSFORMERS = True
@@ -39,9 +38,9 @@ class LoRAMultiplexer:
         else:
             self.adapters_dir = Path(__file__).parents[2] / "Delentia-AI-SLM/models/adapters"
             
-        self.model = None
-        self.tokenizer = None
-        self.current_adapter = None
+        self.model: Optional[Any] = None
+        self.tokenizer: Optional[Any] = None
+        self.current_adapter: Optional[str] = None
         self.mock_mode = True
 
         self.executor_path = self.adapters_dir / "jitna_executor_v1"
@@ -124,7 +123,8 @@ class LoRAMultiplexer:
             return latency
 
         # Swap weights dynamically in PEFT
-        self.model.set_adapter(adapter_name)
+        if self.model is not None:
+            self.model.set_adapter(adapter_name)
         self.current_adapter = adapter_name
         
         latency = (time.perf_counter() - start_time) * 1000
@@ -135,6 +135,9 @@ class LoRAMultiplexer:
         """Generates response using the active model/adapter."""
         if self.mock_mode:
             return self._generate_mock(prompt)
+
+        if self.tokenizer is None or self.model is None:
+            raise RuntimeError("Model and tokenizer are not loaded.")
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         inputs = self.tokenizer(prompt, return_tensors="pt").to(device)

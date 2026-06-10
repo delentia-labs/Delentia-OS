@@ -49,7 +49,7 @@ class DelentiaOrchestrator:
         start_time = time.perf_counter()
         pipeline_log = []
         status = "COMPLETED"
-        result = {}
+        result: Dict[str, Any] = {}
 
         # Step 1: Guardian Safety Shield Check
         print("\n[Step 1] Invoking Guardian Safety Shield (FDIA Gate)...")
@@ -155,6 +155,28 @@ class DelentiaOrchestrator:
             )
             result = {"summary": summary_dict, "type": "compressed_context"}
             print(f"Scribe Summary: {summary_dict}")
+
+        elif route_label == "ROUTER_GUARDIAN":
+            print("\n[Step 3] Routing directly to Guardian for escalation/review...")
+            swap_lat = self.multiplexer.swap_adapter("guardian")
+            gen_start = time.perf_counter()
+            response = self.multiplexer.generate("Review security compliance logs and status.")
+            guardian_lat = (time.perf_counter() - gen_start) * 1000
+            
+            pipeline_log.append({
+                "step": "guardian_review",
+                "swap_latency_ms": swap_lat,
+                "review_latency_ms": guardian_lat,
+                "action": "SECURITY_AUDIT"
+            })
+            self.observer.observe_event(
+                ControlPlaneEventType.GUARDIAN_CHECKED,
+                intent_id=intent_id,
+                success=True,
+                duration_ms=guardian_lat,
+                data={"review": response}
+            )
+            result = {"escalation": "Escalated to security officer for manual review.", "type": "security_escalation"}
 
         elif route_label == "ROUTER_BASE":
             print("\n[Step 3] Routing to base kernel (Zero-shot conversational fallback)...")
