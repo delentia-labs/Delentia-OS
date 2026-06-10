@@ -6,7 +6,6 @@ Labels: ROUTER_EXECUTOR, ROUTER_SCRIBE, ROUTER_GUARDIAN, ROUTER_BASE
 Runs classification head locally in python backend.
 """
 
-import os
 import time
 from pathlib import Path
 from typing import Optional, Tuple

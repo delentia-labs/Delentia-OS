@@ -176,7 +176,7 @@ class TestSpecialistExecutorRegistry:
     @pytest.mark.asyncio
     async def test_japanese_intent_routes_to_regional_core(self):
         """Intent with 'japanese' keyword should route to the pluggable REGIONAL_CORE model."""
-        from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
+        from signedai.core.registry import HexaCoreRole
         se = SpecialistExecutor()
         pkt = JITNAPacket(intent="translate japanese document to english")
         result = await se.execute(pkt)

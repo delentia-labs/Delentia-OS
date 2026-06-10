@@ -66,7 +66,7 @@ class DelentiaOrchestrator:
             )
         except SecurityException as sec_err:
             guardian_lat = (time.perf_counter() - g_start) * 1000
-            print(f"[BLOCKED] Guardian Shield triggered. Terminating pipeline execution.")
+            print("[BLOCKED] Guardian Shield triggered. Terminating pipeline execution.")
             pipeline_log.append({"step": "guardian", "status": "REJECTED", "error": str(sec_err)})
             self.observer.observe_event(
                 ControlPlaneEventType.GUARDIAN_CHECKED,
@@ -178,7 +178,7 @@ class DelentiaOrchestrator:
         
         return {
             "intent_id": intent_id,
-            "status": "COMPLETED",
+            "status": status,
             "route_label": route_label,
             "result": result,
             "pipeline_trace": pipeline_log,
@@ -198,7 +198,7 @@ def run_demo() -> None:
     ]
 
     for intent, i_id in test_cases:
-        trace = orchestrator.process_intent(intent, i_id)
+        orchestrator.process_intent(intent, i_id)
         print("="*60)
         time.sleep(0.5)
 
