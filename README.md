@@ -55,7 +55,7 @@ If you're arriving from social media or seeing RCT Platform for the first time, 
 |-----------|--------------------------|-------------------------------|
 | FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
 | SignedAI multi-LLM consensus | ✅ `signedai/core/` | — |
-| HexaCoreRole registry (9 roles v2.3) | ✅ `signedai/core/registry.py` | — |
+| HexaCoreRole registry (10 roles v2.3) | ✅ `signedai/core/registry.py` | — |
 | Delta Engine (91.5% measured compression, design floor ≥74%) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
@@ -119,7 +119,7 @@ Accuracy: **0.92** (industry baseline: ~0.65). Implemented in [`core/fdia/fdia.p
 |--------|-------|
 | **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
-| **LLM Models** | 9 HexaCore roles (3 Western + 3 Eastern + 1 Thai + 1 Local + 1 LPU) — v2.3 |
+| **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) — v2.3 |
 | **Hallucination Rate** | 0.3% (vs industry 12–15%) — 97% reduction via SignedAI |
 | **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
 | **Intent Recall Speed** | Cold start 3–5s → Warm recall <50ms (Intent Loop) |
@@ -496,7 +496,7 @@ Key capabilities:
 
 ### HexaCore Registry (`signedai/core/registry.py`)
 
-9 purpose-specific AI roles with full geopolitical balance (v2.3):
+10 purpose-specific AI roles with full geopolitical balance (v2.3):
 
 | Role | Model | Country | Specialty |
 |------|-------|---------|----------|
@@ -508,7 +508,7 @@ Key capabilities:
 | HUMANIZER | deepseek-v3.2 | CN | Natural language, creative, translation |
 | **REGIONAL_CORE** | **pluggable (e.g. typhoon-v2, HyperCLOVA, Rakuten AI)** | **VARIOUS** | **Pluggable regional LLM, cultural & legal compliance** |
 | **REGIONAL_THAI** | **typhoon-v2-70b** | **TH** | **Legacy Thai NLP specialist (maps to REGIONAL_CORE)** |
-| **OLLAMA_ADAPTER** | **ollama (local)** | **LOCAL** | **Local LLM fallback, air-gapped inference** |
+| **OLLAMA_ADAPTER** | **ollama (local)** | **LOCAL** | **Local LLM fallback supporting the 1+4 Pillar Architecture (Executor, Router, Guardian, Scribe) for air-gapped inference** |
 | **GROQ_ADAPTER** | **llama-3.3-70b-versatile** | **LPU** | **Ultra-fast LPU inference, 128k ctx** |
 
 ```python
