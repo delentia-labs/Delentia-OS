@@ -742,14 +742,14 @@ Delentia OS is the open-source core. The full ecosystem extends across:
 
 | Repository | Purpose | Status |
 |---|---|---|
-| [delentia-os](https://github.com/delentia-labs/delentia-os) | Core SDK — JITNA v3, FDIA, HexaCore, IntentKernel | ✅ Apache 2.0 |
-| [delentia-gui](https://github.com/delentia-labs/delentia-gui) | Tauri desktop app — Delentia Desk (Win/Mac/Linux) | ✅ Apache 2.0 |
-| [delentia-ai](https://github.com/delentia-labs/delentia-ai) | SLM fine-tuning factory — Llama 3.1 8B + QLoRA | ✅ Apache 2.0 |
-| [delentia-ecosystem](https://github.com/delentia-labs/delentia-ecosystem) | Plugin registry — LINE, Slack, skill manifests | ✅ Apache 2.0 |
-| [delentia-infra-public](https://github.com/delentia-labs/delentia-infra-public) | Community deployment — Docker, K8s, Helm, Terraform | ✅ Apache 2.0 |
-| [delentia-infra-enterprise](https://github.com/delentia-labs/delentia-infra-enterprise) | Enterprise HA — EKS/GKE, Vault, PDPA/GDPR compliance | 🔒 Proprietary |
-| [delentia-private-os](https://github.com/delentia-labs/delentia-private-os) | Enterprise platform — 62 microservices, 4,849 tests | 🔒 Proprietary |
-| [delentia-website](https://github.com/delentia-labs/delentia-website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |
+| [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Core SDK — JITNA v3, FDIA, HexaCore, IntentKernel | ✅ Apache 2.0 |
+| [Delentia-OS-Gui](https://github.com/delentia-labs/Delentia-OS-Gui) | Tauri desktop app — Delentia Desk (Win/Mac/Linux) | ✅ Apache 2.0 |
+| [Delentia-AI-SLM](https://github.com/delentia-labs/Delentia-AI-SLM) | SLM fine-tuning factory — Llama 3.1 8B + QLoRA | ✅ Apache 2.0 |
+| [Delentia-Ecosystem](https://github.com/delentia-labs/Delentia-Ecosystem) | Plugin registry — LINE, Slack, skill manifests | ✅ Apache 2.0 |
+| [Delentia-Infra-Public](https://github.com/delentia-labs/Delentia-Infra-Public) | Community deployment — Docker, K8s, Helm, Terraform | ✅ Apache 2.0 |
+| [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault, PDPA/GDPR compliance | 🔒 Proprietary |
+| [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform — 62 microservices, 4,849 tests | 🔒 Proprietary |
+| [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |
 
 ---
 
