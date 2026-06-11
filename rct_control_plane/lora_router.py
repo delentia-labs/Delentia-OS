@@ -99,7 +99,7 @@ class LoRARouter:
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         prompt = f"You are The Router (slm-jitna-router)...\\n\\nUser intent: {intent}"
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048, padding="max_length").to(device)
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(device)
 
         with torch.no_grad():
             outputs = self.model(**inputs)
