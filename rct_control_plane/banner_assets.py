@@ -69,24 +69,24 @@ RCT_EMBLEM_COMPACT = " ▗██▖ ●\n ▐█▛▙\n ▐██▛"
 # "RCT OS" — 49 cols × 6 rows
 # ─────────────────────────────────────────────────────────────────────────────
 RCT_WORDMARK_BLOCK = (
-    "██████╗   ██████╗████████╗      ██████╗  ███████╗\n"
-    "██╔══██╗ ██╔════╝╚══██╔══╝     ██╔═══██╗ ██╔════╝\n"
-    "██████╔╝ ██║        ██║        ██║   ██║ ███████╗\n"
-    "██╔▐█▌╝  ██║        ██║        ██║   ██║ ╚════██║\n"
-    "██║  ██╗ ╚██████╗   ██║        ╚██████╔╝ ███████║\n"
-    "╚═╝  ╚═╝  ╚═════╝   ╚═╝         ╚═════╝  ╚══════╝"
+    " ██████╗ ███████╗██╗     ███████╗███╗   ██╗████████╗██╗ █████╗      ██████╗ ███████╗\n"
+    " ██╔══██╗██╔════╝██║     ██╔════╝████╗  ██║╚══██╔══╝██║██╔══██╗    ██╔═══██╗██╔════╝\n"
+    " ██║  ██║█████╗  ██║     █████╗  ██╔██╗ ██║   ██║   ██║███████║    ██║   ██║███████╗\n"
+    " ██║  ██║██╔══╝  ██║     ██╔══╝  ██║ ╚████║   ██║   ██║██╔══██║    ██║   ██║╚════██║\n"
+    " ██████╔╝███████╗███████╗███████╗██║  ╚███║   ██║   ██║██║  ██║    ╚██████╔╝███████║\n"
+    " ╚═════╝ ╚══════╝╚══════╝╚══════╝╚═╝   ╚══╝   ╚═╝   ╚═╝╚═╝  ╚═╝     ╚═════╝ ╚══════╝"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # "RCT" — 26 cols × 6 rows  (compact fallback, < 100 cols terminal)
 # ─────────────────────────────────────────────────────────────────────────────
 RCT_WORDMARK_BLOCK_COMPACT = (
-    "██████╗   ██████╗████████╗\n"
-    "██╔══██╗ ██╔════╝╚══██╔══╝\n"
-    "██████╔╝ ██║        ██║   \n"
-    "██╔▐█▌╝  ██║        ██║   \n"
-    "██║  ██╗ ╚██████╗   ██║   \n"
-    "╚═╝  ╚═╝  ╚═════╝   ╚═╝   "
+    " ██████╗ ███████╗██╗     ███████╗███╗   ██╗████████╗██╗ █████╗ \n"
+    " ██╔══██╗██╔════╝██║     ██╔════╝████╗  ██║╚══██╔══╝██║██╔══██╗\n"
+    " ██║  ██║█████╗  ██║     █████╗  ██╔██╗ ██║   ██║   ██║███████║\n"
+    " ██║  ██║██╔══╝  ██║     ██╔══╝  ██║ ╚████║   ██║   ██║██╔══██║\n"
+    " ██████╔╝███████╗███████╗███████╗██║  ╚███║   ██║   ██║██║  ██║\n"
+    " ╚═════╝ ╚══════╝╚══════╝╚══════╝╚═╝   ╚══╝   ╚═╝   ╚═╝╚═╝  ╚═╝"
 )
 
 # ── Plain ASCII Fallback Wordmarks ────────────────────────────────────────────
@@ -94,18 +94,18 @@ RCT_WORDMARK_BLOCK_COMPACT = (
 
 # 31 cols × 5 rows
 RCT_WORDMARK = (
-    "RRR    CCC  TTTTT    OOO    SSS\n"
-    "R  R  C       T     O   O  S   \n"
-    "RRR   C       T     O   O   SS \n"
-    "R  R  C       T     O   O     S\n"
-    "R   R  CCC    T      OOO   SSS "
+    "DDDD   EEEE  L     EEEE  N   N TTTTT  I   AAA      OOO   SSS \n"
+    "D   D  E     L     E     NN  N   T    I  A   A    O   O S    \n"
+    "D   D  EEE   L     EEE   N N N   T    I  AAAAA    O   O  SSS \n"
+    "D   D  E     L     E     N  NN   T    I  A   A    O   O     S\n"
+    "DDDD   EEEE  LLLLL EEEE  N   N   T    I  A   A     OOO   SSS "
 )
 
 # 55 cols × 5 rows
 RCT_WORDMARK_HERO = (
-    "RRRRR      CCCCCC   TTTTTTTTT      OOOOOOO      SSSSSSS\n"
-    "RR   RR   CC           TTT        OOO   OOO   SSS      \n"
-    "RRRRR    CC            TTT        OO     OO     SSSS   \n"
-    "RR  RR   CC            TTT        OOO   OOO        SSS \n"
-    "RR   RR   CCCCCC       TTT         OOOOOOO    SSSSSSS  "
+    "DDDDDDD   EEEEEEEE L        EEEEEEEE N     N TTTTTTTTT I   AAAAA       OOOOOOO   SSSSSSS \n"
+    "D      D  E        L        E        NN    N     TTT   I  A     A     O       O S        \n"
+    "D      D  EEEEE    L        EEEEE    N N   N     TTT   I AAAAAAAA     O       O  SSSSSS  \n"
+    "D      D  E        L        E        N  N  N     TTT   I A      A     O       O        S \n"
+    "DDDDDDD   EEEEEEEE LLLLLLLL EEEEEEEE N   N N     TTT   I A      A      OOOOOOO   SSSSSSS "
 )

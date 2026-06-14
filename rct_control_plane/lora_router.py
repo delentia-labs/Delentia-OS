@@ -88,11 +88,13 @@ class LoRARouter:
 
         if self.mock_mode:
             label = self._classify_mock(intent)
-            # Emulate class evaluation latency
-            time.sleep(0.012)  # 12ms sequence classification latency
+            # Emulate class evaluation latency (20-50ms intent scanning)
+            import random
+            time.sleep(random.uniform(0.020, 0.050))
             latency = (time.perf_counter() - start_time) * 1000
-            print(f"[MOCK] LoRA Router: Classifed intent as: [yellow]{label}[/] (Latency: {latency:.2f}ms)")
+            print(f"[MOCK] LoRA Router: Classified intent as: [yellow]{label}[/] (Latency: {latency:.2f}ms)")
             return label, latency
+
 
         if self.tokenizer is None or self.model is None:
             raise RuntimeError("Model and tokenizer are not loaded.")

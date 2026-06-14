@@ -134,6 +134,8 @@ class ControlPlaneEventType(str, Enum):
     ROUTER_CLASSIFIED = "router_classified"
     SCRIBE_COMPRESSED = "scribe_compressed"
     EXECUTOR_RUN = "executor_run"
+    HEXACORE_CONSENSUS_RUN = "hexacore_consensus_run"
+    OS_STORAGE_SAVED = "os_storage_saved"
 
 
 @dataclass

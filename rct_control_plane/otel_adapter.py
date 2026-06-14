@@ -24,6 +24,9 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from rct_control_plane.observability import ControlPlaneEvent, ControlPlaneEventType
 
@@ -74,6 +77,8 @@ _EVENT_SPAN_NAMES: Dict[str, str] = {
     ControlPlaneEventType.ROUTER_CLASSIFIED.value:  "rct.router.classify",
     ControlPlaneEventType.SCRIBE_COMPRESSED.value:  "rct.scribe.compress",
     ControlPlaneEventType.EXECUTOR_RUN.value:       "rct.executor.run",
+    ControlPlaneEventType.HEXACORE_CONSENSUS_RUN.value: "rct.hexacore.consensus",
+    ControlPlaneEventType.OS_STORAGE_SAVED.value:   "rct.storage.saved",
 }
 
 
@@ -82,14 +87,66 @@ _EVENT_SPAN_NAMES: Dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 def _extract_fdia_attributes(event: ControlPlaneEvent) -> Dict[str, Any]:
-    """Extract F/D/I/A values from event data as OTel span attributes."""
+    """Extract F/D/I/A, Scribe, and Executor values from event data as OTel span attributes."""
     data = event.data or {}
     attrs: Dict[str, Any] = {}
 
+    # 1. Base FDIA attributes (flat)
     for key in ("f_score", "d_score", "i_score", "a_value",
                 "fdia_score", "governance_score", "risk_level"):
         if key in data:
             attrs[f"rct.{key}"] = data[key]
+
+    # 2. Extract nested fdia dictionary
+    if "fdia" in data and isinstance(data["fdia"], dict):
+        fdia = data["fdia"]
+        for k, v in fdia.items():
+            attrs[f"rct.fdia.{k.lower()}"] = v
+            # Map capital letters D, I, A, F to standard lower keys as well
+            if k in ("D", "I", "A", "F"):
+                if k == "D":
+                    attrs["rct.d_score"] = float(v)
+                elif k == "I":
+                    attrs["rct.i_score"] = float(v)
+                elif k == "A":
+                    attrs["rct.a_value"] = int(v)
+                elif k == "F":
+                    attrs["rct.f_score"] = float(v)
+
+    # 3. Extract status/reason from safety verdict
+    if "status" in data:
+        attrs["rct.status"] = data["status"]
+    if "reason" in data:
+        attrs["rct.reason"] = data["reason"]
+    if "rct_rule_violated" in data:
+        attrs["rct.rule_violated"] = data["rct_rule_violated"]
+
+    # 4. Scribe compression attributes
+    if "compression_ratio" in data:
+        attrs["rct.scribe.compression_ratio"] = float(data["compression_ratio"])
+    if "original_tokens" in data:
+        attrs["rct.scribe.original_tokens"] = int(data["original_tokens"])
+    if "compressed_tokens" in data:
+        attrs["rct.scribe.compressed_tokens"] = int(data["compressed_tokens"])
+        if "original_tokens" in data:
+            attrs["rct.scribe.tokens_saved"] = int(data["original_tokens"]) - int(data["compressed_tokens"])
+
+    # 5. Executor JSON validity & tool calling parameters
+    if "payload" in data:
+        payload_str = data["payload"]
+        import json
+        attrs["rct.executor.payload"] = payload_str
+        try:
+            payload_json = json.loads(payload_str)
+            attrs["rct.executor.json_valid"] = True
+            tool_call = payload_json.get("tool_call", {})
+            if tool_call:
+                attrs["rct.executor.tool_name"] = tool_call.get("name", "unknown")
+                args = tool_call.get("arguments", {})
+                for k, v in args.items():
+                    attrs[f"rct.executor.param.{k}"] = str(v)
+        except json.JSONDecodeError:
+            attrs["rct.executor.json_valid"] = False
 
     # SignedAI votes
     if "signedai_tier" in data:
@@ -105,7 +162,30 @@ def _extract_fdia_attributes(event: ControlPlaneEvent) -> Dict[str, Any]:
     if "cost_usd" in data:
         attrs["rct.cost_usd"] = float(data["cost_usd"])
 
+    # HexaCore Consensus Attributes (isolated to consensus event to prevent collision)
+    if event.event_type == ControlPlaneEventType.HEXACORE_CONSENSUS_RUN:
+        if "models_enrolled" in data:
+            attrs["rct.hexacore.models_enrolled"] = int(data["models_enrolled"])
+        if "votes" in data:
+            attrs["rct.hexacore.votes"] = str(data["votes"])
+        if "consensus_pct" in data:
+            attrs["rct.hexacore.consensus_pct"] = float(data["consensus_pct"])
+        if "verdict" in data:
+            attrs["rct.hexacore.verdict"] = str(data["verdict"])
+
+    # OS Storage / Security Attributes (isolated to storage event)
+    if event.event_type == ControlPlaneEventType.OS_STORAGE_SAVED:
+        if "delta_saved_pct" in data:
+            attrs["rct.storage.delta_saved_pct"] = float(data["delta_saved_pct"])
+        if "signature_verified" in data:
+            attrs["rct.storage.signature_verified"] = bool(data["signature_verified"])
+        if "signature" in data:
+            attrs["rct.storage.signature"] = str(data["signature"])
+        if "fingerprint" in data:
+            attrs["rct.storage.fingerprint"] = str(data["fingerprint"])
+
     return attrs
+
 
 
 # ---------------------------------------------------------------------------
