@@ -48,11 +48,13 @@ class LoRARouter:
             3: "ROUTER_BASE"
         }
 
-        if self.adapter_path.exists() and _HAS_TRANSFORMERS:
+        if _HAS_TRANSFORMERS:
             self.mock_mode = False
-            print("[INFO] LoRA Router: Found Router adapter directory. Running in PEFT mode.")
+            self.adapter_hf_id = "Delentia/delentia-slm-jitna-router"
+            self.router_model_id = str(self.adapter_path) if self.adapter_path.exists() else self.adapter_hf_id
+            print(f"[INFO] LoRA Router: Initialized in PEFT mode. Adapter: {self.router_model_id}")
         else:
-            reason = "missing adapter directory" if _HAS_TRANSFORMERS else "transformers not installed"
+            reason = "transformers not installed"
             print(f"[WARNING] LoRA Router: Running in MOCK mode ({reason}).")
 
     def load_model(self) -> None:
@@ -62,22 +64,31 @@ class LoRARouter:
             return
 
         print("[INFO] LoRA Router: Loading sequence classification model...")
-        # Classification head loaded on CPU fallback or GPU auto configuration
-        tokenizer = AutoTokenizer.from_pretrained(str(self.adapter_path))
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        self.tokenizer = tokenizer
+        try:
+            # Classification head loaded on CPU fallback or GPU auto configuration
+            # Load tokenizer from base or adapter (if adapter has tokenizer configs)
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(self.router_model_id)
+            except Exception:
+                tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
+                
+            if tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+            self.tokenizer = tokenizer
 
-        base_model = AutoModelForSequenceClassification.from_pretrained(
-            self.base_model_name,
-            num_labels=4,
-            load_in_4bit=True,
-            device_map="auto"
-        )
-        base_model.config.pad_token_id = tokenizer.pad_token_id
+            base_model = AutoModelForSequenceClassification.from_pretrained(
+                self.base_model_name,
+                num_labels=4,
+                load_in_4bit=True,
+                device_map="auto"
+            )
+            base_model.config.pad_token_id = tokenizer.pad_token_id
 
-        self.model = PeftModel.from_pretrained(base_model, str(self.adapter_path))
-        print("[INFO] LoRA Router: Classifier adapter loaded successfully.")
+            self.model = PeftModel.from_pretrained(base_model, self.router_model_id)
+            print("[INFO] LoRA Router: Classifier adapter loaded successfully.")
+        except Exception as e:
+            print(f"[ERROR] Failed to load PEFT sequence classification model: {e}. Falling back to MOCK mode.")
+            self.mock_mode = True
 
     def classify(self, intent: str) -> Tuple[str, float]:
         """

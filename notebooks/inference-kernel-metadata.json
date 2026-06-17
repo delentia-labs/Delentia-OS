@@ -1,0 +1,16 @@
+{
+  "id": "ittiritsaengow/delentia-os-live-slm-inference-demo",
+  "title": "Delentia OS: Live SLM Inference Demo",
+  "code_file": "delentia_os_live_inference.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "ittiritsaengow/delentia-rct-intent-dataset"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

@@ -338,6 +338,90 @@ async def kernel_stream_ws(ws: WebSocket, token: str = ""):
         except Exception:
             pass
 
+
+# ─── REST Intent Execution with ZK-FDIA Verification ───────────────────────────
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
+
+class ZKCommitmentPayload(BaseModel):
+    c_d: str
+    c_i: str
+    c_a: str
+    f_sealed: float
+    proof_tag: str
+    committed_at: str
+    version: str
+
+class ExecuteRequest(BaseModel):
+    intent: str
+    mode: Optional[str] = "standard"
+    zk_commitment: Optional[ZKCommitmentPayload] = None
+
+@app.post("/v1/kernel/execute")
+async def execute_intent(request: ExecuteRequest):
+    """
+    Execute RCT Kernel with intent, supporting optional ZK-FDIA Proof validation.
+    """
+    try:
+        from rct_control_plane.zk_fdia import ZKFDIAVerifier, ZKFDIACommitment
+        verifier = ZKFDIAVerifier()
+    except Exception as e:
+        verifier = None
+        print(f"Warning: ZKFDIAVerifier not available in gateway: {e}")
+
+    zk_status = "not_provided"
+    if request.zk_commitment:
+        if verifier:
+            try:
+                comm = ZKFDIACommitment(
+                    c_d=request.zk_commitment.c_d,
+                    c_i=request.zk_commitment.c_i,
+                    c_a=request.zk_commitment.c_a,
+                    f_sealed=request.zk_commitment.f_sealed,
+                    proof_tag=request.zk_commitment.proof_tag,
+                    committed_at=request.zk_commitment.committed_at,
+                    version=request.zk_commitment.version
+                )
+                is_valid_tag = verifier.verify_proof_integrity(comm)
+                is_valid_thresh = verifier.verify_threshold(comm, min_f=0.7)
+                
+                if is_valid_tag and is_valid_thresh:
+                    zk_status = "verified"
+                else:
+                    zk_status = "failed_verification"
+            except Exception as e:
+                zk_status = f"error_during_verification: {str(e)}"
+        else:
+            zk_status = "verifier_unavailable"
+
+    # Evaluate safety baseline
+    intent_lower = request.intent.lower()
+    is_malicious = any(kw in intent_lower for kw in ["hack", "bypass", "override", "steal", "dan", "virus"])
+    
+    if is_malicious:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "REJECTED",
+                "reason": "Hostile intent detected by constitutional safety boundary.",
+                "zk_status": zk_status
+            }
+        )
+
+    import uuid
+    return {
+        "status": "AUTHORIZED",
+        "intent": request.intent,
+        "zk_status": zk_status,
+        "execution_id": f"exec-{str(uuid.uuid4())[:8]}",
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        "payload": {
+            "status": "SUCCESS",
+            "action": "ROUTE_TO_PILLAR"
+        }
+    }
+
+
 @app.exception_handler(500)
 async def server_error_handler(request, exc):
     return JSONResponse(

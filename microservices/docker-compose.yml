@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  gateway-api:
+    build:
+      context: ..
+      dockerfile: microservices/gateway-api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - RCT_LOG_LEVEL=INFO
+      - RCT_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  intent-loop:
+    build:
+      context: ..
+      dockerfile: microservices/intent-loop/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - RCT_LOG_LEVEL=INFO
+      - RCT_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  analysearch-intent:
+    build:
+      context: ..
+      dockerfile: microservices/analysearch-intent/Dockerfile
+    ports:
+      - "8020:8020"
+    environment:
+      - RCT_LOG_LEVEL=INFO
+      - RCT_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8020/analysearch/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  vector-search:
+    build:
+      context: ..
+      dockerfile: microservices/vector-search/Dockerfile
+    ports:
+      - "8016:8016"
+    environment:
+      - RCT_LOG_LEVEL=INFO
+      - RCT_ENV=development
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8016/vector/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  crystallizer:
+    build:
+      context: ..
+      dockerfile: microservices/crystallizer/Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - RCT_LOG_LEVEL=INFO
+      - RCT_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

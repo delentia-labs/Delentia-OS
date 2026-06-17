@@ -187,14 +187,17 @@ class OpenRouterClient:
             timeout: Request timeout in seconds
             max_retries: Maximum retry attempts for failed requests
         """
-        self.api_key = api_key or os.getenv("RCT_CORE_BRAIN_KEY") or os.getenv("OPENROUTER_API_KEY")
-        if not self.api_key or "your-key" in self.api_key or "placeholder" in self.api_key:
-            raise ValueError(
-                "OpenRouter API key required. Set RCT_CORE_BRAIN_KEY or OPENROUTER_API_KEY environment variable "
-                "or pass api_key parameter."
-            )
+        custom_url = os.getenv("RCT_MODEL_BACKEND_URL")
+        self.base_url = custom_url or base_url
         
-        self.base_url = base_url
+        self.api_key = api_key or os.getenv("RCT_CORE_BRAIN_KEY") or os.getenv("OPENROUTER_API_KEY")
+        if not custom_url:
+            if not self.api_key or "your-key" in self.api_key or "placeholder" in self.api_key:
+                raise ValueError(
+                    "OpenRouter API key required. Set RCT_CORE_BRAIN_KEY or OPENROUTER_API_KEY environment variable "
+                    "or pass api_key parameter."
+                )
+        
         self.timeout = timeout
         self.max_retries = max_retries
         

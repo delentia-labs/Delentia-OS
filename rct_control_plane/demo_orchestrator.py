@@ -118,15 +118,18 @@ class DelentiaOrchestrator:
         self.observer = ControlPlaneObserver()
         self.observer.register_handler(self.otel.emit)
         
-        # Check OpenRouter API configuration
+        # Check OpenRouter API or custom L4 GPU backend configuration
         api_key = os.getenv("RCT_CORE_BRAIN_KEY") or os.getenv("OPENROUTER_API_KEY")
-        self.is_real_api = api_key is not None and len(api_key) > 20 and "your-key" not in api_key and "placeholder" not in api_key
+        custom_url = os.getenv("RCT_MODEL_BACKEND_URL")
+        self.is_real_api = custom_url is not None or (api_key is not None and len(api_key) > 20 and "your-key" not in api_key and "placeholder" not in api_key)
         
         if not IS_TESTING:
-            if self.is_real_api:
+            if custom_url:
+                self.console.print(f"[bold green]✓[/bold green] [dim]Real API consensus enabled via custom L4 GPU Backend: {custom_url}[/dim]")
+            elif self.is_real_api:
                 self.console.print("[bold green]✓[/bold green] [dim]Real API consensus enabled via OpenRouter.[/dim]")
             else:
-                self.console.print("[bold yellow]![/bold yellow] [dim]OpenRouter API Key not configured. Using Simulated Consensus.[/dim]")
+                self.console.print("[bold yellow]![/bold yellow] [dim]Model API Key/URL not configured. Using Simulated Consensus.[/dim]")
             self.console.print()
 
     def print_trace_tree(self, intent_id: str) -> None:

@@ -72,19 +72,25 @@ class LoRAMultiplexer:
             self.use_gguf = True
             self.mock_mode = False
             print("[INFO] LoRA Multiplexer: Found GGUF base model. Running in GGUF mode.")
-        elif (
-            self.executor_path.exists()
-            and self.guardian_path.exists()
-            and self.scribe_path.exists()
-            and _HAS_TRANSFORMERS
-        ):
+        elif _HAS_TRANSFORMERS:
+            # We can run in PEFT mode using local adapters if they exist, otherwise using HF Hub IDs
             self.use_gguf = False
             self.mock_mode = False
-            print("[INFO] LoRA Multiplexer: Found all adapter directories. Running in PEFT mode.")
+            
+            # Hugging Face Hub Fallback IDs
+            self.executor_hf_id = "Delentia/delentia-slm-jitna-executor"
+            self.guardian_hf_id = "Delentia/delentia-slm-jitna-guardian"
+            self.scribe_hf_id = "Delentia/delentia-slm-jitna-scribe"
+            
+            # Use local paths if they exist, otherwise use HF Hub IDs
+            self.executor_model_id = str(self.executor_path) if self.executor_path.exists() else self.executor_hf_id
+            self.guardian_model_id = str(self.guardian_path) if self.guardian_path.exists() else self.guardian_hf_id
+            self.scribe_model_id = str(self.scribe_path) if self.scribe_path.exists() else self.scribe_hf_id
+            
+            print(f"[INFO] LoRA Multiplexer: Initialized in PEFT mode. Adapters mapping: "
+                  f"executor->{self.executor_model_id}, guardian->{self.guardian_model_id}, scribe->{self.scribe_model_id}")
         else:
-            reason = "missing adapter directories/files"
-            if not _HAS_TRANSFORMERS and not _HAS_LLAMA_CPP:
-                reason = "transformers/peft/llama-cpp-python not installed"
+            reason = "transformers/peft/llama-cpp-python not installed"
             print(f"[WARNING] LoRA Multiplexer: Running in MOCK mode ({reason}).")
             
         if self.mock_mode and self.multi_gpu:
@@ -115,38 +121,42 @@ class LoRAMultiplexer:
 
         # PEFT mode loading
         print("[INFO] LoRA Multiplexer: Loading base model in 4-bit...")
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
-            bnb_4bit_use_double_quant=True,
-        )
+        try:
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+                bnb_4bit_use_double_quant=True,
+            )
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        base_model = AutoModelForCausalLM.from_pretrained(
-            self.base_model_name,
-            quantization_config=bnb_config,
-            device_map="auto",
-        )
-        base_model.config.pad_token_id = self.tokenizer.pad_token_id
+            base_model = AutoModelForCausalLM.from_pretrained(
+                self.base_model_name,
+                quantization_config=bnb_config,
+                device_map="auto",
+            )
+            base_model.config.pad_token_id = self.tokenizer.pad_token_id
 
-        # Wrap with PeftModel and load the first adapter
-        print("[INFO] LoRA Multiplexer: Loading LoRA adapters...")
-        self.model = PeftModel.from_pretrained(
-            base_model,
-            str(self.executor_path),
-            adapter_name="executor",
-        )
+            # Wrap with PeftModel and load the first adapter
+            print("[INFO] LoRA Multiplexer: Loading LoRA adapters...")
+            self.model = PeftModel.from_pretrained(
+                base_model,
+                self.executor_model_id,
+                adapter_name="executor",
+            )
 
-        # Load additional adapters
-        self.model.load_adapter(str(self.guardian_path), adapter_name="guardian")
-        self.model.load_adapter(str(self.scribe_path), adapter_name="scribe")
-        
-        self.current_adapter = "executor"
-        print("[INFO] LoRA Multiplexer: All adapters loaded successfully.")
+            # Load additional adapters
+            self.model.load_adapter(self.guardian_model_id, adapter_name="guardian")
+            self.model.load_adapter(self.scribe_model_id, adapter_name="scribe")
+            
+            self.current_adapter = "executor"
+            print("[INFO] LoRA Multiplexer: All adapters loaded successfully.")
+        except Exception as e:
+            print(f"[ERROR] Failed to load PEFT model/adapters: {e}. Falling back to MOCK mode.")
+            self.mock_mode = True
 
     def swap_adapter(self, adapter_name: str) -> float:
         """
