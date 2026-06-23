@@ -129,7 +129,7 @@ export const MOCK_MEMORY_DELTAS: MemoryDelta[] = [
     agent_id: "agent-hexa-librarian-01",
     tick: 514,
     intent_type: "VECTOR_DB_INDEXING",
-    action_type: "DELENTIADB_CHUNK_STORED",
+    action_type: "RCTDB_CHUNK_STORED",
     outcome: "success",
     changes: { chunks_indexed: 512, embedding_model: "text-embedding-3-large", namespace: "legal_th_v2" },
     relationship_change: { "user-client-main": 0.02 },

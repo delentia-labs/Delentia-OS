@@ -10,7 +10,7 @@
  *   GET  /delentia/system/stats       — no auth
  *   GET  /delentia/benchmark/summary  — no auth
  *   POST /v1/kernel/execute           — Bearer auth required
- *   POST /v1/delentiadb/query         — Bearer auth required
+ *   POST /v1/rctdb/query         — Bearer auth required
  */
 
 import type {
@@ -225,8 +225,8 @@ export async function executeIntent(
   }
 }
 
-/** POST /v1/delentiadb/query — vector / graph / hybrid search */
-export async function queryDelentiaDB(
+/** POST /v1/rctdb/query — vector / graph / hybrid search */
+export async function queryRCTDB(
   query: string,
   queryType: "vector" | "graph" | "hybrid" = "hybrid",
   options: { apiKey?: string; gateway?: string; topK?: number } = {}
@@ -234,7 +234,7 @@ export async function queryDelentiaDB(
   const { apiKey = getApiKey(), gateway = getGateway(), topK = 5 } = options;
 
   try {
-    const res = await fetch(`${gateway}/v1/delentiadb/query`, {
+    const res = await fetch(`${gateway}/v1/rctdb/query`, {
       method: "POST",
       headers: authHeaders(apiKey),
       body: JSON.stringify({ query, query_type: queryType, top_k: topK }),

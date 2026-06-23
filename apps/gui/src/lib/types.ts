@@ -252,7 +252,7 @@ export interface IntentExecuteResponse {
   jitna_packet?: JITNAPacketV3;
 }
 
-/** Response from POST /v1/delentiadb/query */
+/** Response from POST /v1/rctdb/query */
 export interface QueryResponse {
   results: Array<{
     id: string;
