@@ -672,6 +672,8 @@ def render_layout_dashboard(
         ("Minimax M1", "EAST", llm_statuses.get("Minimax M1", True)),
         ("DeepSeek R2", "EAST", llm_statuses.get("DeepSeek R2", True)),
         ("Typhoon-v2 70B", "TH", llm_statuses.get("Typhoon-v2 70B", True)),
+        ("Ollama Adapter", "LOCAL", llm_statuses.get("Ollama Adapter", True)),
+        ("Groq Adapter", "US", llm_statuses.get("Groq Adapter", True)),
     ]
     llm_online = 0
     for name, cluster, is_online in model_rows:
@@ -691,7 +693,7 @@ def render_layout_dashboard(
     footer.append("  |  ", style="dim")
     footer.append(f"Ready services: {ready_count}/{len(services)}", style="bright_cyan")
     footer.append("  |  ", style="dim")
-    footer.append(f"Consensus: {llm_online}/7", style="bright_magenta")
+    footer.append(f"Consensus: {llm_online}/9", style="bright_magenta")
     footer.append("  |  ", style="dim")
     footer.append(f"Source: {source}", style="dim")
     if uptime_seconds is not None:
@@ -1227,7 +1229,7 @@ def boot_sequence_animation(
         ("gateway-api", 8000, "Unified entry point"),
         ("intent-loop", 8001, "JITNA Protocol · <50ms warm recall"),
         ("analysearch-intent", 8002, "GIGO Protection active"),
-        ("vector-search", 8003, "DelentiaDB mounted"),
+        ("vector-search", 8003, "RCTDB mounted"),
         ("crystallizer", 8004, "0.3% hallucination guard"),
         ("delta-engine", None, "74% memory compression"),
     ]
@@ -1304,7 +1306,7 @@ def render_hexacore_table(
     mock: bool = False,
     statuses: Optional[Dict[str, bool]] = None,
 ) -> None:
-    """Render the HexaCore 7-LLM Consensus Registry dashboard."""
+    """Render the HexaCore 9-LLM Consensus Registry dashboard."""
     console = get_console()
     if statuses is None:
         statuses = {}
@@ -1326,7 +1328,7 @@ def render_hexacore_table(
     )
     table.add_column("🌐 WESTERN CLUSTER", style="bright_cyan", min_width=32)
     table.add_column("🌏 EASTERN CLUSTER", style="bright_magenta", min_width=30)
-    table.add_column("🌏 REGIONAL", style="bright_yellow", min_width=22)
+    table.add_column("🌏 REGIONAL / LOCAL", style="bright_yellow", min_width=26)
 
     table.add_row(
         _badge("Claude Sonnet 4.6") + "\n[dim]  Supreme · Governance Lead[/]",
@@ -1336,17 +1338,17 @@ def render_hexacore_table(
     table.add_row(
         _badge("Gemini 2.5 Flash") + "\n[dim]  Specialist · Research[/]",
         _badge("Minimax M1") + "\n[dim]  Junior Builder[/]",
-        "",
+        _badge("Ollama Adapter") + "\n[dim]  Local SLM Fallback[/]",
     )
     table.add_row(
         _badge("Grok 4.1") + "\n[dim]  Librarian · Context[/]",
         _badge("DeepSeek R2") + "\n[dim]  Humanizer[/]",
-        "",
+        _badge("Groq Adapter") + "\n[dim]  Ultra-Low Latency[/]",
     )
     console.print(table)
     console.print()
-    online_count = sum(1 for v in statuses.values() if v) if statuses else 7
-    total = 7
+    online_count = sum(1 for v in statuses.values() if v) if statuses else 9
+    total = 9
     sla_color = "bright_green" if online_count == total else "yellow"
     console.print(
         f"  [{sla_color}]CONSENSUS: {online_count}/{total} LLMs active[/]"
@@ -1402,7 +1404,7 @@ def render_pipeline_flow(
     pipeline = [
         ("FDIA", "Constitutional Gate"),
         ("JITNA", "Intent Packet"),
-        ("HexaCore", "7-LLM Consensus"),
+        ("HexaCore", "9-LLM Consensus"),
         ("SignedAI", "ED25519 Sign"),
         ("Output", "Final Response"),
     ]

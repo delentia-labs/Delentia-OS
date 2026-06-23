@@ -5,7 +5,7 @@ Unified Cognitive OS Kernel (Delentia OS v0.4)
 Coordinates the complete 4-step pipeline:
   Step 1. Input Control: TOON serialization and token savings assessment (ALGO-42).
   Step 2. Local SLM Plane: Guardian safety check, Router classification, and target LoRA execution.
-  Step 3. Cognitive Overlay: HexaCore Consensus voting across 7 models (via real OpenRouter API or fallback simulation).
+  Step 3. Cognitive Overlay: HexaCore Consensus voting across 9 models (via real OpenRouter API or fallback simulation).
   Step 4. OS Storage & Cybersecurity: Cryptographic ED25519 signing and verification (JITNA Protocol), and Delta memory compression.
 """
 
@@ -641,13 +641,15 @@ class DelentiaOrchestrator:
         is_malicious = local_verdict.get("status") == "REJECTED"
         votes = {}
         models = [
-            ("GPT-4 Turbo", ModelTier.SOVEREIGN, 1400, 2100),
-            ("Claude 3.5 Sonnet", ModelTier.SOVEREIGN, 1200, 1800),
-            ("Typhoon v1.5 Instruct", ModelTier.TIER_4, 800, 1300),
-            ("DeepSeek Chat", ModelTier.TIER_4, 450, 750),
-            ("Gemini Pro 1.5", ModelTier.TIER_6, 600, 950),
-            ("Llama 3 70B", ModelTier.TIER_6, 700, 1100),
-            ("Qwen 2.5 72B", ModelTier.TIER_8, 350, 550)
+            ("Claude Sonnet 4.6", ModelTier.SOVEREIGN, 1400, 2100),
+            ("Kimi k2.5", ModelTier.SOVEREIGN, 1200, 1800),
+            ("Gemini 2.5 Flash", ModelTier.TIER_4, 600, 950),
+            ("Minimax M1", ModelTier.TIER_4, 450, 750),
+            ("Grok 4.1", ModelTier.TIER_6, 700, 1100),
+            ("DeepSeek R2", ModelTier.TIER_6, 350, 550),
+            ("Typhoon-v2 70B", ModelTier.TIER_8, 800, 1300),
+            ("Ollama Adapter", ModelTier.TIER_8, 50, 150),
+            ("Groq Adapter", ModelTier.TIER_8, 100, 200)
         ]
         
         allows = 0

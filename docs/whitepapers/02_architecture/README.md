@@ -224,7 +224,7 @@ Each Genome is a specialized behavioral layer with its own identity, memory spac
 | 1 | **Architect** | Creator intelligence | System design, meta-decisions |
 | 2 | **ARTENT** | Creation engine | Artifact generation |
 | 3 | **JITNA** | Protocol layer | Inter-agent routing |
-| 4 | **Codex** | Knowledge vault | Long-term memory, DelentiaDB access |
+| 4 | **Codex** | Knowledge vault | Long-term memory, RCTDB access |
 | 5 | **SignedAI** | Verification layer | Multi-model consensus |
 | 6 | **Vault-1010** | Memory architecture | 8D schema operations |
 | 7 | **RCT-7** | Continuous improvement | Self-reflection, performance tuning |

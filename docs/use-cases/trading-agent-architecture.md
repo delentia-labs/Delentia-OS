@@ -22,7 +22,7 @@ This document describes the architectural blueprint for applying `delentia-os` S
 | `VALIDATED` | FDIA Constitutional Scoring (A=0 kill switch) | `core/fdia/` |
 | `COMPUTING` | Multi-model Analysis (HexaCore 7-model ensemble) | `signedai/` |
 | `VERIFYING` | SignedAI Risk Gating (TIER_S / TIER_4 / TIER_6 / TIER_8) | `signedai/` |
-| `COMMITTING` | DelentiaDB Trade Outcome Logging | `core/delta_engine/` |
+| `COMMITTING` | RCTDB Trade Outcome Logging | `core/delta_engine/` |
 
 ---
 
@@ -148,7 +148,7 @@ For MiFID II, SEC, SET, CFTC compliance:
 1. **FDIA Decision Trace** — D/I/A components, resulting F score, constitutional rule applied
 2. **SignedAI Consensus Record** — Ed25519-signed multi-model agreement, model identities, timestamp
 3. **Delta Engine Recall Log** — prior decisions informing warm recall, compression ratio
-4. **DelentiaDB Outcome Log** — post-trade PnL, loop duration, G7 adaptation signals
+4. **RCTDB Outcome Log** — post-trade PnL, loop duration, G7 adaptation signals
 
 ---
 

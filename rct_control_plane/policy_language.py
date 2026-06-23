@@ -6,14 +6,14 @@ Policies can approve, reject, escalate, or require manual approval for intents.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 from uuid import uuid4
 
-from .execution_graph_ir import ExecutionGraph
-from .intent_schema import IntentObject
+from .execution_graph_ir import ExecutionGraph, NodeType
+from .intent_schema import IntentObject, IntentType, RiskProfile
 
 from typing import TYPE_CHECKING
 
@@ -23,37 +23,33 @@ if TYPE_CHECKING:
 
 class PolicyAction(str, Enum):
     """Actions a policy can take"""
-
-    APPROVE = "approve"  # Auto-approve execution
-    REJECT = "reject"  # Block execution
-    ESCALATE = "escalate"  # Escalate to human reviewer
-    NOTIFY = "notify"  # Send notification but allow
-    LOG = "log"  # Log event but allow
-    REQUIRE_APPROVAL = "require_approval"  # Manual approval required
+    APPROVE = "approve"                     # Auto-approve execution
+    REJECT = "reject"                       # Block execution
+    ESCALATE = "escalate"                   # Escalate to human reviewer
+    NOTIFY = "notify"                       # Send notification but allow
+    LOG = "log"                             # Log event but allow
+    REQUIRE_APPROVAL = "require_approval"   # Manual approval required
 
 
 class PolicyPriority(str, Enum):
     """Priority for policy evaluation (lower number = higher priority)"""
-
-    CRITICAL = "critical"  # 1 - Security, compliance (blocks)
-    HIGH = "high"  # 2 - Cost caps, risk gates
-    MEDIUM = "medium"  # 3 - Quality, resource limits
-    LOW = "low"  # 4 - Notifications, logging
+    CRITICAL = "critical"      # 1 - Security, compliance (blocks)
+    HIGH = "high"              # 2 - Cost caps, risk gates
+    MEDIUM = "medium"          # 3 - Quality, resource limits
+    LOW = "low"                # 4 - Notifications, logging
 
 
 class PolicyScope(str, Enum):
     """What the policy applies to"""
-
-    INTENT = "intent"  # Applies to intent level
-    GRAPH = "graph"  # Applies to execution graph
-    NODE = "node"  # Applies to individual nodes
+    INTENT = "intent"          # Applies to intent level
+    GRAPH = "graph"            # Applies to execution graph
+    NODE = "node"              # Applies to individual nodes
     ORGANIZATION = "organization"  # Org-wide policy
-    USER = "user"  # User-specific policy
+    USER = "user"              # User-specific policy
 
 
 class ConditionOperator(str, Enum):
     """Comparison operators for conditions"""
-
     EQUALS = "=="
     NOT_EQUALS = "!="
     GREATER_THAN = ">"
@@ -63,41 +59,40 @@ class ConditionOperator(str, Enum):
     IN = "in"
     NOT_IN = "not_in"
     CONTAINS = "contains"
-    MATCHES = "matches"  # Regex match
+    MATCHES = "matches"        # Regex match
 
 
 @dataclass
 class PolicyCondition:
     """
     A boolean condition that must be satisfied.
-
+    
     Examples:
     - cost_usd > 100.00
     - risk_level == SYSTEMIC
     - intent_type in [BUILD_APP, DEPLOY]
     - estimated_duration_seconds >= 3600
     """
-
-    field: str  # Field to check (e.g., "cost_usd", "risk_level")
+    field: str                              # Field to check (e.g., "cost_usd", "risk_level")
     operator: ConditionOperator
-    value: Any  # Value to compare against
+    value: Any                              # Value to compare against
     description: Optional[str] = None
-
+    
     def evaluate(self, context: Dict[str, Any]) -> bool:
         """
         Evaluate condition against a context.
-
+        
         Args:
             context: Dict with fields like cost_usd, risk_level, intent_type, etc.
-
+            
         Returns:
             True if condition is satisfied, False otherwise
         """
         if self.field not in context:
             return False
-
+        
         actual_value = context[self.field]
-
+        
         # Handle different operators
         if self.operator == ConditionOperator.EQUALS:
             return actual_value == self.value
@@ -119,18 +114,17 @@ class PolicyCondition:
             return self.value in actual_value
         elif self.operator == ConditionOperator.MATCHES:
             import re
-
             return bool(re.search(self.value, str(actual_value)))
         else:
             return False
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
             "field": self.field,
             "operator": self.operator.value,
             "value": str(self.value) if isinstance(self.value, Decimal) else self.value,
-            "description": self.description,
+            "description": self.description
         }
 
 
@@ -138,55 +132,54 @@ class PolicyCondition:
 class PolicyRule:
     """
     A policy rule that evaluates conditions and takes actions.
-
+    
     A rule consists of:
     - Conditions: One or more conditions (AND logic)
     - Action: What to do if conditions are met
     - Priority: Execution priority
     - Scope: What the rule applies to
     """
-
     rule_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = "Unnamed Policy"
     description: str = ""
     scope: PolicyScope = PolicyScope.INTENT
     priority: PolicyPriority = PolicyPriority.MEDIUM
-
+    
     # Conditions (all must be true for rule to trigger)
     conditions: List[PolicyCondition] = field(default_factory=list)
-
+    
     # Action to take if conditions are met
     action: PolicyAction = PolicyAction.LOG
     action_metadata: Dict[str, Any] = field(default_factory=dict)
-
+    
     # Enable/disable
     enabled: bool = True
-
+    
     # Audit
     created_by: str = "system"
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-
+    
     def evaluate(self, context: Dict[str, Any]) -> bool:
         """
         Evaluate all conditions against context.
-
+        
         Args:
             context: Evaluation context with fields
-
+            
         Returns:
             True if all conditions are satisfied, False otherwise
         """
         if not self.enabled:
             return False
-
+        
         # All conditions must be true (AND logic)
         for condition in self.conditions:
             if not condition.evaluate(context):
                 return False
-
+        
         return True
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -201,9 +194,9 @@ class PolicyRule:
             "enabled": self.enabled,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "updated_at": self.updated_at.isoformat()
         }
-
+    
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PolicyRule":
         """Create from dictionary"""
@@ -218,57 +211,52 @@ class PolicyRule:
             enabled=data.get("enabled", True),
             created_by=data.get("created_by", "system"),
             created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=datetime.fromisoformat(data["updated_at"]),
+            updated_at=datetime.fromisoformat(data["updated_at"])
         )
-
+        
         # Restore conditions
         for cond_data in data.get("conditions", []):
             condition = PolicyCondition(
                 field=cond_data["field"],
                 operator=ConditionOperator(cond_data["operator"]),
                 value=cond_data["value"],
-                description=cond_data.get("description"),
+                description=cond_data.get("description")
             )
             rule.conditions.append(condition)
-
+        
         return rule
 
 
 @dataclass
 class PolicyEvaluationResult:
     """Result of evaluating policies against an intent/graph"""
-
     intent_id: str
     evaluated_at: datetime = field(default_factory=datetime.now)
-
+    
     # Overall decision
     decision: PolicyAction = PolicyAction.APPROVE
     decision_reason: str = ""
-
+    
     # Triggered rules
     triggered_rules: List[PolicyRule] = field(default_factory=list)
     violations: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
-
+    
     # Approval tracking
     requires_approval: bool = False
     approval_granted: bool = False
     approved_by: Optional[str] = None
     approved_at: Optional[datetime] = None
-
+    
     # Escalation
     escalated: bool = False
     escalated_to: Optional[str] = None
     escalation_reason: Optional[str] = None
-
+    
     # Metadata
     evaluation_time_ms: float = 0.0
-    governance_score: float = 1.0
-    governance_label: str = "HIGH CONFIDENCE"
-    blocking_priority: Optional[str] = None
-    score_components: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
-
+    
     def is_approved(self) -> bool:
         """Check if execution is approved"""
         if self.decision == PolicyAction.REJECT:
@@ -276,7 +264,7 @@ class PolicyEvaluationResult:
         if self.requires_approval:
             return self.approval_granted
         return True
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -295,215 +283,118 @@ class PolicyEvaluationResult:
             "escalated_to": self.escalated_to,
             "escalation_reason": self.escalation_reason,
             "evaluation_time_ms": self.evaluation_time_ms,
-            "governance_score": self.governance_score,
-            "governance_label": self.governance_label,
-            "blocking_priority": self.blocking_priority,
-            "score_components": self.score_components,
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
 
 class PolicyEvaluator:
     """
     Evaluates policies against intents and execution graphs.
-
+    
     Evaluation order:
     1. CRITICAL priority policies (security, compliance)
     2. HIGH priority policies (cost, risk)
     3. MEDIUM priority policies (quality, resources)
     4. LOW priority policies (notifications, logging)
-
+    
     First REJECT or ESCALATE action wins.
     REQUIRE_APPROVAL accumulates.
     """
-
-    def __init__(self, observer: Optional["ControlPlaneObserver"] = None):
+    
+    def __init__(self, observer: Optional['ControlPlaneObserver'] = None):
         """Initialize evaluator
-
+        
         Args:
             observer: Optional ControlPlaneObserver for event tracking
         """
         self.rules: List[PolicyRule] = []
         self.observer = observer
-
+    
     def add_rule(self, rule: PolicyRule):
         """Add a policy rule"""
         self.rules.append(rule)
         # Sort by priority
         self._sort_rules()
-
+    
     def remove_rule(self, rule_id: str):
         """Remove a policy rule"""
         self.rules = [r for r in self.rules if r.rule_id != rule_id]
-
+    
     def _sort_rules(self):
         """Sort rules by priority (CRITICAL first, then HIGH, MEDIUM, LOW)"""
         priority_order = {
             PolicyPriority.CRITICAL: 1,
             PolicyPriority.HIGH: 2,
             PolicyPriority.MEDIUM: 3,
-            PolicyPriority.LOW: 4,
+            PolicyPriority.LOW: 4
         }
         self.rules.sort(key=lambda r: priority_order[r.priority])
-
-    def _calculate_governance_score(
-        self, triggered_rules: List[PolicyRule], decision: PolicyAction
-    ) -> tuple[float, str, Optional[str], List[Dict[str, Any]]]:
-        """Calculate a governance confidence score without changing decision semantics."""
-        weight_map = {
-            PolicyPriority.CRITICAL: 4,
-            PolicyPriority.HIGH: 3,
-            PolicyPriority.MEDIUM: 2,
-            PolicyPriority.LOW: 1,
-        }
-        contribution_map = {
-            PolicyAction.APPROVE: 1.0,
-            PolicyAction.NOTIFY: 1.0,
-            PolicyAction.LOG: 1.0,
-            PolicyAction.REQUIRE_APPROVAL: 0.5,
-            PolicyAction.ESCALATE: 0.25,
-            PolicyAction.REJECT: 0.0,
-        }
-
-        if decision == PolicyAction.REJECT:
-            return (
-                0.0,
-                "BLOCKED",
-                triggered_rules[0].priority.value
-                if triggered_rules
-                else PolicyPriority.CRITICAL.value,
-                [
-                    {
-                        "rule": rule.name,
-                        "action": rule.action.value,
-                        "priority": rule.priority.value,
-                        "weight": weight_map[rule.priority],
-                        "contribution": 0.0,
-                    }
-                    for rule in triggered_rules
-                ],
-            )
-
-        if not triggered_rules:
-            return 1.0, "HIGH CONFIDENCE", None, []
-
-        weighted_sum = 0.0
-        total_weight = 0
-        highest_priority: Optional[PolicyPriority] = None
-        components: List[Dict[str, Any]] = []
-        for rule in triggered_rules:
-            weight = weight_map[rule.priority]
-            contribution = contribution_map[rule.action]
-            weighted_sum += weight * contribution
-            total_weight += weight
-            if highest_priority is None or weight > weight_map[highest_priority]:
-                highest_priority = rule.priority
-            components.append(
-                {
-                    "rule": rule.name,
-                    "action": rule.action.value,
-                    "priority": rule.priority.value,
-                    "weight": weight,
-                    "contribution": contribution,
-                }
-            )
-
-        score = weighted_sum / total_weight if total_weight else 1.0
-        if decision == PolicyAction.ESCALATE:
-            score = min(score, 0.25)
-        elif any(
-            rule.action == PolicyAction.REQUIRE_APPROVAL for rule in triggered_rules
-        ):
-            score = min(score, 0.5)
-
-        if score >= 0.85:
-            label = "HIGH CONFIDENCE"
-        elif score >= 0.6:
-            label = "GUARDED"
-        elif score >= 0.5:
-            label = "REVIEW REQUIRED"
-        else:
-            label = "ESCALATED"
-
-        return (
-            round(score, 2),
-            label,
-            highest_priority.value if highest_priority else None,
-            components,
-        )
-
+    
     def evaluate_intent(
-        self, intent: IntentObject, graph: Optional[ExecutionGraph] = None
+        self,
+        intent: IntentObject,
+        graph: Optional[ExecutionGraph] = None
     ) -> PolicyEvaluationResult:
         """
         Evaluate all policies against an intent and optional graph.
-
+        
         Args:
             intent: Intent to evaluate
             graph: Optional execution graph
-
+            
         Returns:
             PolicyEvaluationResult with decision and triggered rules
         """
         start_time = datetime.now()
-
+        
         result = PolicyEvaluationResult(intent_id=str(intent.id))
-
+        
         # Build evaluation context
         context = self._build_context(intent, graph)
-
+        
         # Evaluate rules in priority order
         for rule in self.rules:
             if not rule.enabled:
                 continue
-
+            
             # Check if rule applies to this scope
             if not self._rule_applies(rule, intent, graph):
                 continue
-
+            
             # Evaluate rule conditions
             if rule.evaluate(context):
                 result.triggered_rules.append(rule)
-
+                
                 # Handle action
                 if rule.action == PolicyAction.REJECT:
                     result.decision = PolicyAction.REJECT
                     result.decision_reason = rule.description or rule.name
                     result.violations.append(f"{rule.name}: {rule.description}")
                     break  # REJECT wins, stop evaluation
-
+                
                 elif rule.action == PolicyAction.ESCALATE:
                     result.decision = PolicyAction.ESCALATE
                     result.escalated = True
                     result.escalation_reason = rule.description or rule.name
-                    result.escalated_to = rule.action_metadata.get(
-                        "escalate_to", "admin"
-                    )
+                    result.escalated_to = rule.action_metadata.get("escalate_to", "admin")
                     break  # ESCALATE wins, stop evaluation
-
+                
                 elif rule.action == PolicyAction.REQUIRE_APPROVAL:
                     result.requires_approval = True
                     result.decision_reason += f"{rule.name}; "
-
+                
                 elif rule.action == PolicyAction.NOTIFY:
                     result.warnings.append(f"{rule.name}: {rule.description}")
-
+                
                 # LOG action is passive
-
+        
         # Calculate evaluation time
         end_time = datetime.now()
         result.evaluation_time_ms = (end_time - start_time).total_seconds() * 1000
-        (
-            result.governance_score,
-            result.governance_label,
-            result.blocking_priority,
-            result.score_components,
-        ) = self._calculate_governance_score(result.triggered_rules, result.decision)
-
+        
         # Emit event: POLICY_EVALUATED
         if self.observer:
             from .observability import ControlPlaneEventType
-
             self.observer.observe_event(
                 event_type=ControlPlaneEventType.POLICY_EVALUATED,
                 intent_id=str(intent.id),
@@ -514,19 +405,21 @@ class PolicyEvaluator:
                     "warnings": result.warnings,
                     "requires_approval": result.requires_approval,
                     "escalated": result.escalated,
-                    "triggered_rules_count": len(result.triggered_rules),
+                    "triggered_rules_count": len(result.triggered_rules)
                 },
                 duration_ms=result.evaluation_time_ms,
-                success=True,
+                success=True
             )
-
+        
         return result
-
+    
     def _build_context(
-        self, intent: IntentObject, graph: Optional[ExecutionGraph]
+        self,
+        intent: IntentObject,
+        graph: Optional[ExecutionGraph]
     ) -> Dict[str, Any]:
         """Build evaluation context from intent and graph"""
-        context: Dict[str, Any] = {
+        context = {
             "intent_id": str(intent.id),
             "intent_type": intent.intent_type,
             "priority": intent.priority,
@@ -536,36 +429,35 @@ class PolicyEvaluator:
             "user_tier": intent.context.user_tier,
             "organization_id": intent.context.organization_id,
         }
-
+        
         # Add budget constraints if present
         if intent.budget:
             if intent.budget.max_cost_usd:
                 context["max_cost_usd"] = intent.budget.max_cost_usd
             if intent.budget.max_time:
-                context["max_time_seconds"] = int(
-                    intent.budget.max_time.total_seconds()
-                )
-
+                context["max_time_seconds"] = int(intent.budget.max_time.total_seconds())
+        
         # Add graph metrics if present
         if graph:
             context["graph_id"] = graph.graph_id
             context["node_count"] = len(graph.nodes)
             context["estimated_cost_usd"] = graph.total_estimated_cost
-            context["estimated_duration_seconds"] = (
-                graph.total_estimated_duration_seconds
-            )
-
+            context["estimated_duration_seconds"] = graph.total_estimated_duration_seconds
+            
             # Count node types
-            node_type_counts: Dict[str, int] = {}
+            node_type_counts = {}
             for node in graph.nodes.values():
                 node_type = node.node_type.value
                 node_type_counts[node_type] = node_type_counts.get(node_type, 0) + 1
             context["node_type_counts"] = node_type_counts
-
+        
         return context
-
+    
     def _rule_applies(
-        self, rule: PolicyRule, intent: IntentObject, graph: Optional[ExecutionGraph]
+        self,
+        rule: PolicyRule,
+        intent: IntentObject,
+        graph: Optional[ExecutionGraph]
     ) -> bool:
         """Check if rule applies to this intent/graph based on scope"""
         if rule.scope == PolicyScope.INTENT:
@@ -578,15 +470,15 @@ class PolicyEvaluator:
             return True
         else:
             return True
-
+    
     def get_rules_by_priority(self, priority: PolicyPriority) -> List[PolicyRule]:
         """Get all rules of a specific priority"""
         return [r for r in self.rules if r.priority == priority]
-
+    
     def get_enabled_rules(self) -> List[PolicyRule]:
         """Get all enabled rules"""
         return [r for r in self.rules if r.enabled]
-
+    
     def clear_rules(self):
         """Remove all rules"""
         self.rules = []

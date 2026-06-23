@@ -22,7 +22,7 @@ Unlike traditional AI frameworks that treat components as isolated modules, the 
 | G3 | JITNA Genome | Dynamic routing: LLM selection, algorithm tier, processing path | `#C4745B` |
 | G4 | ARTENT Genome | Personal Agent OS: Intent Omnibox, Memory Timeline, Sovereignty Vault | `#7B9E87` |
 | G5 | SignedAI Genome | Multi-model attestation: 6-stage pipeline, Ed25519 signatures | `#B8A9C9` |
-| G6 | Vault Genome | Sovereignty and data protection: A=0 constitutional prohibitions, 8 DelentiaDB dimensions | `#9B7BB8` |
+| G6 | Vault Genome | Sovereignty and data protection: A=0 constitutional prohibitions, 8 RCTDB dimensions | `#9B7BB8` |
 | G7 | RCT-7 Genome | Mental OS + self-evolution: 7-state IntentLoop, G7→G1 performance feedback | `#C4745B` |
 
 ---

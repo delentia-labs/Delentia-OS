@@ -118,7 +118,7 @@ class HexaCoreRegistry:
             cost_output=0.50,
             context_window=2_000_000,
             specialties=["Long context", "Science", "Memory", "RAG"],
-            use_cases=["RAG systems (long document retrieval)", "Scientific analysis", "Multi-document synthesis", "DelentiaDB context window tasks"],
+            use_cases=["RAG systems (long document retrieval)", "Scientific analysis", "Multi-document synthesis", "RCTDB context window tasks"],
             reasoning_rank=3,
         ),
         HexaCoreRole.HUMANIZER: ModelInfo(

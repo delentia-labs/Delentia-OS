@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://delentia.com/schemas/kernel.execute.response.json",
+  "$id": "https://rctlabs.co/schemas/kernel.execute.response.json",
   "title": "Kernel Execute Response",
   "description": "Response schema from RCT Kernel execution",
   "type": "object",

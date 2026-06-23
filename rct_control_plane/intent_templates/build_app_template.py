@@ -18,9 +18,9 @@ Example:
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from ..intent_schema import IntentObject, IntentType, ScopeType
+from ..intent_schema import IntentObject, IntentType, RiskProfile, ScopeType
 
 
 @dataclass
@@ -188,7 +188,7 @@ class BuildAppTemplate:
         ))
         
         # Calculate totals
-        total_cost = sum((p.estimated_cost for p in phases), Decimal("0.0"))
+        total_cost = sum(p.estimated_cost for p in phases)
         total_duration = sum(p.estimated_duration_seconds for p in phases)
         
         # Collect all artifacts

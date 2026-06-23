@@ -4,7 +4,7 @@ Intent Loop Engine: The Evolutionary Intelligence Core
 This is the heart of RCT Ecosystem - a self-optimizing loop that learns from every interaction.
 
 The Master Equation:
-FDIA + JITNA + Delta Engine + SignedAI + DelentiaDB = Evolutionary Compound Intelligence
+FDIA + JITNA + Delta Engine + SignedAI + RCTDB = Evolutionary Compound Intelligence
 
 Philosophy:
 - Cold Start: First time = 3-5 seconds (full computation)
@@ -224,7 +224,7 @@ class FDIAGatekeeper:
 
 class MemoryLayer:
     """
-    Pillar 2: DelentiaDB + Delta Engine (Memory Layer)
+    Pillar 2: RCTDB + Delta Engine (Memory Layer)
     
     Responsibilities:
     - Store processed intents with results

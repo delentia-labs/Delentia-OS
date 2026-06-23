@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rctlabs.co/schemas/rctdb.query.response.json",
+  "title": "RCTDB Query Response",
+  "description": "Response schema from RCTDB query",
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "array",
+      "description": "Query results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Result item ID"
+          },
+          "type": {
+            "type": "string",
+            "description": "Result type (document, entity, etc.)"
+          },
+          "content": {
+            "type": "object",
+            "description": "Result content",
+            "additionalProperties": true
+          },
+          "score": {
+            "type": "number",
+            "description": "Relevance score (0-1)",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Result metadata",
+            "additionalProperties": true
+          }
+        },
+        "required": ["id", "type", "content"]
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "description": "Pagination information",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "description": "Total number of results",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Results per page",
+          "minimum": 1
+        },
+        "offset": {
+          "type": "integer",
+          "description": "Current offset",
+          "minimum": 0
+        },
+        "has_more": {
+          "type": "boolean",
+          "description": "Whether more results are available"
+        }
+      },
+      "required": ["total", "limit", "offset", "has_more"]
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "Trace ID for observability",
+      "format": "uuid"
+    },
+    "query_metadata": {
+      "type": "object",
+      "description": "Query execution metadata",
+      "properties": {
+        "duration_ms": {
+          "type": "number",
+          "description": "Query execution time in milliseconds"
+        },
+        "query_type_used": {
+          "type": "string",
+          "description": "Actual query type executed"
+        }
+      }
+    }
+  },
+  "required": ["results", "pagination"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "results": [
+        {
+          "id": "doc-123",
+          "type": "document",
+          "content": {
+            "title": "Machine Learning Guide",
+            "summary": "Comprehensive ML guide..."
+          },
+          "score": 0.95
+        }
+      ],
+      "pagination": {
+        "total": 42,
+        "limit": 10,
+        "offset": 0,
+        "has_more": true
+      },
+      "trace_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+}

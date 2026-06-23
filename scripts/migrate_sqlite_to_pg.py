@@ -11,7 +11,7 @@ Usage::
 
     python scripts/migrate_sqlite_to_pg.py \\
         --sqlite rct_control_plane.db \\
-        --dsn postgresql://rct:secret@localhost/delentiadb
+        --dsn postgresql://rct:secret@localhost/rctdb
 
     # or via env vars:
     RCT_PG_DSN=postgresql://... python scripts/migrate_sqlite_to_pg.py
@@ -199,7 +199,7 @@ def main(argv: List[str] | None = None) -> int:
     if not dsn:
         host = os.environ.get("RCT_PG_HOST", "localhost")
         port = os.environ.get("RCT_PG_PORT", "5432")
-        db   = os.environ.get("RCT_PG_DB",   "delentiadb")
+        db   = os.environ.get("RCT_PG_DB",   "rctdb")
         user = os.environ.get("RCT_PG_USER", "rct")
         pw   = os.environ.get("RCT_PG_PASS", "")
         dsn  = f"postgresql://{user}:{pw}@{host}:{port}/{db}"

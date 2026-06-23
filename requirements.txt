@@ -3,9 +3,9 @@
 # Do NOT add "python>=X.Y" here — it is not a valid pip package name.
 
 # FastAPI and ASGI server
-fastapi>=0.110.0,<0.136.0
+fastapi>=0.104.0,<0.136.0
 uvicorn[standard]>=0.24.0
-pydantic>=2.13.1
+pydantic>=2.0.0
 
 # CLI
 click>=8.1.0
@@ -18,18 +18,18 @@ pyfiglet>=1.0.2
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 pytest-timeout>=2.3.1  # Kill tests hanging >30s — prevents WSL terminal zombie processes
-pytest-cov>=4.1.0      # Coverage reporting (used in CI: --cov=microservices)
 httpx>=0.25.0  # For TestClient
-numpy>=1.24.0  # Required by microservices/vector-search/conftest.py (FakeFaissIndex)
-networkx>=3.0  # Required by core/graph_search/local_graph.py (LocalGraphRAG)
-
-# Cryptography - required by rct_control_plane/signed_execution.py (ED25519 signing)
-cryptography>=41.0.0
 
 # Optional: Production deployment
 gunicorn>=21.2.0  # For production WSGI serving
 
-# ── Dashboard deps (internal only — not published to public repo) ────────────
-# streamlit, plotly, pandas, watchdog, streamlit-autorefresh
-# are development/dashboard tools and are excluded from the public SDK.
-# Install them separately if you run the internal Benchmark Command Center.
+# ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
+streamlit>=1.32.0          # War Room UI
+plotly>=5.18.0             # Interactive charts (line, bar, gauge)
+pandas>=2.0.0              # Data aggregation and tabular display
+watchdog>=4.0.0            # File-system monitoring (live log refresh)
+streamlit-autorefresh>=1.0.1  # st_autorefresh component
+
+# ── Phase C: Qdrant vector search ───────────────────────────────────────────
+qdrant-client>=1.7.0       # Qdrant Python client (async + sync)
+openai>=1.10.0             # OpenAI SDK (used for embeddings via OpenRouter)

@@ -2,13 +2,13 @@
 OpenRouter Client for SignedAI Multi-Model Consensus System
 
 This client manages parallel API calls to multiple AI models through OpenRouter,
-implementing the 8-model jury system with tier-based routing.
+implementing the 9-model jury system with tier-based routing.
 
 Tier Structure:
-- Tier-S (Sovereign): GPT-4, Claude 3.5 Sonnet
-- Tier-4: Typhoon v1.5, GLM-4
-- Tier-6: Gemini Pro 1.5, Llama 3 70B
-- Tier-8: DeepSeek Coder, Qwen 2.5 72B
+- Tier-S (Sovereign): Claude Sonnet 4.6, Kimi k2.5
+- Tier-4: Gemini 2.5 Flash, Minimax M1
+- Tier-6: Grok 4.1, DeepSeek R2
+- Tier-8: Typhoon-v2 70B, Ollama Adapter, Groq Adapter
 
 Features:
 - Async parallel execution (8 concurrent API calls)
@@ -62,70 +62,86 @@ class ModelConfig:
     enabled: bool = True       # Whether model is active
 
 
-# 8-Model Jury Configuration
-# We enrollment 7 models to achieve the target consensus voting array.
+# 9-Model Jury Configuration
+# We enroll 9 models to achieve the target consensus voting array.
 JURY_ROSTER: List[ModelConfig] = [
-    # Tier-S: Sovereign (Highest capability)
+    # Tier-S: Sovereign / Supreme / Lead Builder
     ModelConfig(
-        model_id="openai/gpt-4-turbo",
-        display_name="GPT-4 Turbo",
+        model_id="anthropic/claude-opus-4.6",
+        display_name="Claude Sonnet 4.6",
         tier=ModelTier.SOVEREIGN,
-        cost_per_1k_input=0.01,
-        cost_per_1k_output=0.03,
+        cost_per_1k_input=0.005,
+        cost_per_1k_output=0.025,
         temperature=0.7
     ),
     ModelConfig(
-        model_id="anthropic/claude-3.5-sonnet",
-        display_name="Claude 3.5 Sonnet",
+        model_id="moonshotai/kimi-k2.5",
+        display_name="Kimi k2.5",
         tier=ModelTier.SOVEREIGN,
-        cost_per_1k_input=0.003,
-        cost_per_1k_output=0.015,
+        cost_per_1k_input=0.00045,
+        cost_per_1k_output=0.00225,
         temperature=0.7
     ),
     
-    # Tier-4: Strong Reasoning
+    # Tier-4: Specialist & Junior Builder
     ModelConfig(
-        model_id="scb10x/typhoon-v1.5x-70b-instruct",
-        display_name="Typhoon v1.5 Instruct",
+        model_id="google/gemini-3-flash",
+        display_name="Gemini 2.5 Flash",
         tier=ModelTier.TIER_4,
-        cost_per_1k_input=0.0008,
-        cost_per_1k_output=0.0008,
+        cost_per_1k_input=0.00050,
+        cost_per_1k_output=0.00300,
         temperature=0.7
     ),
     ModelConfig(
-        model_id="deepseek/deepseek-chat",
-        display_name="DeepSeek Chat",
+        model_id="minimax/minimax-m2.1",
+        display_name="Minimax M1",
         tier=ModelTier.TIER_4,
-        cost_per_1k_input=0.00014,
-        cost_per_1k_output=0.00028,
+        cost_per_1k_input=0.00027,
+        cost_per_1k_output=0.00095,
         temperature=0.7
     ),
     
-    # Tier-6: Balanced Performance
+    # Tier-6: Librarian & Humanizer
     ModelConfig(
-        model_id="google/gemini-pro-1.5",
-        display_name="Gemini Pro 1.5",
+        model_id="x-ai/grok-4.1-fast",
+        display_name="Grok 4.1",
         tier=ModelTier.TIER_6,
-        cost_per_1k_input=0.0005,
-        cost_per_1k_output=0.0015,
+        cost_per_1k_input=0.00020,
+        cost_per_1k_output=0.00050,
         temperature=0.7
     ),
     ModelConfig(
-        model_id="meta-llama/llama-3-70b-instruct",
-        display_name="Llama 3 70B",
+        model_id="deepseek/deepseek-v3.2",
+        display_name="DeepSeek R2",
         tier=ModelTier.TIER_6,
-        cost_per_1k_input=0.0007,
-        cost_per_1k_output=0.0009,
+        cost_per_1k_input=0.00025,
+        cost_per_1k_output=0.00038,
         temperature=0.7
     ),
     
-    # Tier-8: Fast & Efficient
+    # Tier-8: Regional & Adapters
     ModelConfig(
-        model_id="qwen/qwen-2.5-72b-instruct",
-        display_name="Qwen 2.5 72B",
+        model_id="scb10x/typhoon-v2-70b-instruct",
+        display_name="Typhoon-v2 70B",
         tier=ModelTier.TIER_8,
-        cost_per_1k_input=0.0004,
-        cost_per_1k_output=0.0004,
+        cost_per_1k_input=0.00040,
+        cost_per_1k_output=0.00120,
+        temperature=0.7
+    ),
+    ModelConfig(
+        model_id="ollama/llama-3.1-8b-instruct",
+        display_name="Ollama Adapter",
+        tier=ModelTier.TIER_8,
+        cost_per_1k_input=0.0,
+        cost_per_1k_output=0.0,
+        temperature=0.7
+    ),
+    ModelConfig(
+        model_id="groq/llama-3.3-70b-versatile",
+        display_name="Groq Adapter",
+        tier=ModelTier.TIER_8,
+        cost_per_1k_input=0.00059,
+        cost_per_1k_output=0.00079,
         temperature=0.7
     ),
 ]

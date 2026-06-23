@@ -70,9 +70,9 @@ def _load_pricing() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 _RISK_TO_TIER: Dict[str, str] = {
-    RiskProfile.LOW.value:        "Tier 4 — 4/7 models, 75% consensus (standard)",
-    RiskProfile.STRUCTURAL.value: "Tier 6 — 6/7 models, 86% consensus (elevated)",
-    RiskProfile.SYSTEMIC.value:   "Tier 8 — 7/7 models, 100% consensus (maximum)",
+    RiskProfile.LOW.value:        "Tier 4 — 4/9 signers, 75% consensus (standard)",
+    RiskProfile.STRUCTURAL.value: "Tier 6 — 6/9 signers, 86% consensus (elevated)",
+    RiskProfile.SYSTEMIC.value:   "Tier 8 — 9/9 signers, 100% consensus (maximum)",
 }
 
 _RISK_TO_A_REQUIREMENT: Dict[str, str] = {
@@ -355,10 +355,20 @@ class PlanEngine:
 
         # Select roles based on risk tier
         if risk_profile == RiskProfile.SYSTEMIC.value:
-            # Tier 8: all 7 roles
-            selected_roles = list(HexaCoreRole)
+            # Tier 8: all 9 active roles (exclude regional_core)
+            selected_roles = [
+                HexaCoreRole.SUPREME_ARCHITECT,
+                HexaCoreRole.LEAD_BUILDER,
+                HexaCoreRole.JUNIOR_BUILDER,
+                HexaCoreRole.SPECIALIST,
+                HexaCoreRole.LIBRARIAN,
+                HexaCoreRole.HUMANIZER,
+                HexaCoreRole.REGIONAL_THAI,
+                HexaCoreRole.OLLAMA_ADAPTER,
+                HexaCoreRole.GROQ_ADAPTER,
+            ]
         elif risk_profile == RiskProfile.STRUCTURAL.value:
-            # Tier 6: 6 roles (exclude REGIONAL_THAI unless needed)
+            # Tier 6: 6 roles (exclude REGIONAL_THAI / adapters unless needed)
             selected_roles = [
                 HexaCoreRole.SUPREME_ARCHITECT,
                 HexaCoreRole.LEAD_BUILDER,
@@ -487,7 +497,7 @@ class PlanEngine:
         # Keyword-based source detection
         text_lower = text.lower()
         if any(kw in text_lower for kw in ["database", "db", "sql", "rctdb"]):
-            sources.append("DelentiaDB v2.0 — 8D Schema")
+            sources.append("RCTDB v2.0 — 8D Schema")
         if any(kw in text_lower for kw in ["file", "module", "code", "function"]):
             sources.append("Local filesystem (read)")
         if any(kw in text_lower for kw in ["api", "endpoint", "service", "http"]):

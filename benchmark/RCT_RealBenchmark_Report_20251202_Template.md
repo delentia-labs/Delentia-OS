@@ -47,7 +47,7 @@ depends_on:
 - Max tokens:
 - Prompting style / system prompt version:
 - Kernel runtime commit / tag:
-- Memory pipeline config (GraphRAG / DelentiaDB settings):
+- Memory pipeline config (GraphRAG / RCTDB settings):
 
 ### 2.2 Benchmark Suites Included
 

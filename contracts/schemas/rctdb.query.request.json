@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rctlabs.co/schemas/rctdb.query.request.json",
+  "title": "RCTDB Query Request",
+  "description": "Request schema for querying the RCTDB knowledge vault",
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Natural language query or search string",
+      "minLength": 1,
+      "maxLength": 5000,
+      "examples": [
+        "Find similar documents",
+        "Related entities",
+        "Documents about machine learning"
+      ]
+    },
+    "query_type": {
+      "type": "string",
+      "description": "Type of query to execute",
+      "enum": ["vector", "graph", "hybrid", "exact"],
+      "default": "hybrid",
+      "examples": ["vector", "graph"]
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum number of results to return",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10
+    },
+    "offset": {
+      "type": "integer",
+      "description": "Number of results to skip (for pagination)",
+      "minimum": 0,
+      "default": 0
+    },
+    "filters": {
+      "type": "object",
+      "description": "Optional filters to apply to query",
+      "properties": {
+        "document_type": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Filter by document types"
+        },
+        "created_after": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Filter documents created after this timestamp"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Filter by tags"
+        }
+      }
+    },
+    "graph_options": {
+      "type": "object",
+      "description": "Options specific to graph traversal queries",
+      "properties": {
+        "start_node": {
+          "type": "string",
+          "description": "Starting node ID for graph traversal"
+        },
+        "max_depth": {
+          "type": "integer",
+          "description": "Maximum traversal depth",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "relationship_types": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Filter by relationship types"
+        }
+      }
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "Optional trace ID for observability",
+      "format": "uuid"
+    }
+  },
+  "required": ["query"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "query": "Find similar documents",
+      "query_type": "vector",
+      "limit": 10
+    },
+    {
+      "query": "Find related entities",
+      "query_type": "graph",
+      "graph_options": {
+        "start_node": "node-123",
+        "max_depth": 3,
+        "relationship_types": ["RELATED_TO", "PART_OF"]
+      },
+      "trace_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+}

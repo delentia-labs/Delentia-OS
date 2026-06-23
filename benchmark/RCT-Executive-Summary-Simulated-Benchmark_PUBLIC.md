@@ -22,7 +22,7 @@ related_pdf: "RCT-Ecosystem-December-2025-Simulated-Benchmark-Report.pdf"
 Instead of being “just another chatbot” or “agent framework”, RCT positions itself as:
 
 - A **Kernel** that manages human **Intent** as a first‑class object
-- A **Knowledge Layer** (Vault‑1068, GraphRAG, DelentiaDB) that the kernel can read/write
+- A **Knowledge Layer** (Vault‑1068, GraphRAG, RCTDB) that the kernel can read/write
 - A library of **Mini Kernels / Mini Delentia AI** for specific use‑cases
 - A set of **developer surfaces** (CLI / API / IDE prompts) for building products on top
 

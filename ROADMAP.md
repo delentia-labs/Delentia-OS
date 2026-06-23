@@ -183,7 +183,7 @@
 
 ### Phase 6 — LLM Integration + Persistence ✅ (Sprint 1–4 bonus)
 - ✅ `intent_compiler.py` — OpenAI / Anthropic / regex 3-provider fallback pipeline
-- ✅ `persistence.py` — SQLite bridge (DelentiaDB-compatible schema, sync + async)
+- ✅ `persistence.py` — SQLite bridge (RCTDB-compatible schema, sync + async)
 - ✅ `config/model_pricing.json` — 7-model registry with USD pricing + fallback roster
 - ✅ `observability.py` — 11 real `prometheus_client` metrics (Counter/Gauge/Histogram)
 - ✅ `approval_gateway.py` — 3-attempt exponential backoff (1→2→4 s) + daemon thread

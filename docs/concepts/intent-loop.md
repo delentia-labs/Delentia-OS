@@ -22,7 +22,7 @@ RECEIVED → VALIDATED → MEMORY_CHECK → COMPUTING
 | **MEMORY_CHECK** | Delta Engine queried for similar past intents | Cache hit → skip COMPUTING |
 | **COMPUTING** | Multi-step DSL graph executed | Error → REJECTED |
 | **VERIFYING** | SignedAI consensus across N models | Consensus < threshold → REJECTED |
-| **COMMITTING** | ED25519-signed result written to DelentiaDB | Write failure → REJECTED |
+| **COMMITTING** | ED25519-signed result written to RCTDB | Write failure → REJECTED |
 | **COMPLETED** | Result returned + delta stored in memory | — |
 
 ---

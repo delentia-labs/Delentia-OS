@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://delentia.com/schemas/kernel.execute.request.json",
+  "$id": "https://rctlabs.co/schemas/kernel.execute.request.json",
   "title": "Kernel Execute Request",
   "description": "Request schema for executing the RCT Kernel with a user intent",
   "type": "object",

@@ -32,7 +32,7 @@ from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 
 # ============================================================================
@@ -244,9 +244,7 @@ class ExecutionGraph:
     metadata: Dict[str, Any] = field(default_factory=dict)
     
     def add_node(self, node: ExecutionNode) -> None:
-        """Add a node to the graph. Raises ValueError if node already exists."""
-        if node.id in self.nodes:
-            raise ValueError(f"Node {node.id!r} already exists in graph")
+        """Add a node to the graph"""
         self.nodes[node.id] = node
         self._update_entry_exit_nodes()
     
@@ -361,10 +359,11 @@ class ExecutionGraph:
         Returns:
             List of validation error messages (empty if valid)
         """
-        errors: list[str] = []
-
-        # Empty graph is considered valid (no nodes = no errors)
+        errors = []
+        
+        # Check for empty graph
         if not self.nodes:
+            errors.append("Graph has no nodes")
             return errors
         
         # Check for cycles
@@ -472,71 +471,3 @@ class ExecutionGraph:
             "optimization_metadata": self.optimization_metadata,
             "metadata": self.metadata,
         }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ExecutionGraph":
-        """Restore an ExecutionGraph from its serialized dictionary form.
-
-        This is the inverse of :meth:`to_dict` and is used by
-        :class:`~rct_control_plane.control_plane_state.ControlPlaneState`
-        when deserialising state snapshots from storage.
-        """
-        graph = cls(
-            intent_id=data["intent_id"],
-            graph_id=data.get("graph_id", str(uuid4())),
-            total_estimated_cost=Decimal(data.get("total_estimated_cost", "0.0")),
-            total_estimated_duration_seconds=data.get("total_estimated_duration_seconds", 0),
-            critical_path_duration_seconds=data.get("critical_path_duration_seconds", 0),
-            created_at=data.get("created_at"),
-            optimized=data.get("optimized", False),
-            optimization_metadata=data.get("optimization_metadata", {}),
-            metadata=data.get("metadata", {}),
-        )
-
-        # Restore nodes
-        for node_data in data.get("nodes", {}).values():
-            resources_data = node_data.get("resources", {})
-            resources = ResourceRequirement(
-                max_cost_usd=Decimal(resources_data["max_cost_usd"]) if resources_data.get("max_cost_usd") else None,
-                max_time=timedelta(seconds=resources_data["max_time"]) if resources_data.get("max_time") else None,
-                max_memory_mb=resources_data.get("max_memory_mb"),
-                max_cpu_cores=resources_data.get("max_cpu_cores"),
-                max_tokens=resources_data.get("max_tokens"),
-                requires_gpu=resources_data.get("requires_gpu", False),
-            )
-            node = ExecutionNode(
-                id=node_data["id"],
-                node_type=NodeType(node_data["node_type"]),
-                capability=node_data.get("capability"),
-                tool_name=node_data.get("tool_name"),
-                parameters=node_data.get("parameters", {}),
-                required_inputs=node_data.get("required_inputs", []),
-                produces_outputs=node_data.get("produces_outputs", []),
-                resources=resources,
-                estimated_cost=Decimal(node_data.get("estimated_cost", "0.0")),
-                estimated_duration_seconds=node_data.get("estimated_duration_seconds", 0),
-                status=NodeStatus(node_data.get("status", NodeStatus.PENDING.value)),
-                retry_count=node_data.get("retry_count", 0),
-                max_retries=node_data.get("max_retries", 3),
-                description=node_data.get("description", ""),
-                metadata=node_data.get("metadata", {}),
-            )
-            graph.nodes[node.id] = node
-
-        # Restore edges (skipping validation to avoid re-sorting entry/exit nodes redundantly)
-        for edge_data in data.get("edges", []):
-            edge = DependencyEdge(
-                from_node=edge_data["from_node"],
-                to_node=edge_data["to_node"],
-                dependency_type=DependencyType(edge_data.get("dependency_type", DependencyType.SEQUENTIAL.value)),
-                data_mapping=edge_data.get("data_mapping", {}),
-                condition=edge_data.get("condition"),
-                metadata=edge_data.get("metadata", {}),
-            )
-            graph.edges.append(edge)
-
-        # Restore pre-computed entry/exit node lists
-        graph.entry_nodes = data.get("entry_nodes", [])
-        graph.exit_nodes = data.get("exit_nodes", [])
-
-        return graph

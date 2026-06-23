@@ -4,7 +4,7 @@ info:
   title: RCT Ecosystem API
   version: 1.0.0
   description: |
-    Unified API for the RCT Ecosystem including Kernel execution, DelentiaDB queries,
+    Unified API for the RCT Ecosystem including Kernel execution, RCTDB queries,
     and observability endpoints.
     
     ## Authentication
@@ -21,9 +21,9 @@ info:
     All requests support optional `X-Trace-Id` header for observability correlation.
     Responses will include the same trace ID.
   contact:
-    name: Delentia Labs API Support
-    url: https://delentia.com/support
-    email: api@delentia.com
+    name: RCT Labs API Support
+    url: https://rctlabs.co/support
+    email: api@rctlabs.co
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
@@ -31,7 +31,7 @@ info:
 servers:
   - url: http://localhost:8000
     description: Local Development
-  - url: https://api.delentia.com
+  - url: https://api.rctlabs.co
     description: Production
 
 paths:
@@ -188,15 +188,15 @@ paths:
               schema:
                 $ref: './schemas/common.error.json'
 
-  /v1/delentiadb/query:
+  /v1/rctdb/query:
     post:
-      operationId: queryDelentiaDB
-      summary: Query DelentiaDB knowledge vault
+      operationId: queryRCTDB
+      summary: Query RCTDB knowledge vault
       description: |
-        Execute a query against the DelentiaDB knowledge vault. Supports vector search,
+        Execute a query against the RCTDB knowledge vault. Supports vector search,
         graph traversal, and hybrid queries.
       tags:
-        - DelentiaDB
+        - RCTDB
       security:
         - bearerAuth: []
       parameters:
@@ -211,7 +211,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas/delentiadb.query.request.json'
+              $ref: './schemas/rctdb.query.request.json'
             examples:
               vector_search:
                 summary: Vector similarity search
@@ -232,7 +232,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas/delentiadb.query.response.json'
+                $ref: './schemas/rctdb.query.response.json'
         '400':
           description: Invalid query
           content:
@@ -310,3 +310,15 @@ components:
                 limit: 100
                 window: "1 minute"
               trace_id: "550e8400-e29b-41d4-a716-446655440000"
+
+tags:
+  - name: System
+    description: System health and monitoring endpoints
+  - name: Kernel
+    description: RCT Kernel execution endpoints
+  - name: RCTDB
+    description: RCTDB knowledge vault query endpoints
+
+externalDocs:
+  description: Full API Documentation
+  url: https://docs.rctlabs.co/api

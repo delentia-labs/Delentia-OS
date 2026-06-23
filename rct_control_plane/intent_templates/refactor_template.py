@@ -18,7 +18,7 @@ Example:
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from ..intent_schema import IntentObject, IntentType, RiskProfile, ScopeType
 
@@ -176,7 +176,7 @@ class RefactorTemplate:
         ))
         
         # Calculate totals
-        total_cost = sum((p.estimated_cost for p in phases), Decimal("0.0"))
+        total_cost = sum(p.estimated_cost for p in phases)
         total_duration = sum(p.estimated_duration_seconds for p in phases)
         
         # Check if approval required
@@ -247,7 +247,7 @@ class RefactorTemplate:
         """
         lines = [
             f'intent "refactor_{plan.intent_id[:8]}" {{',
-            f'  risk_level = "{plan.risk_level.value if hasattr(plan.risk_level, "value") else plan.risk_level}"',
+            f'  risk_level = "{plan.risk_level.value}"',
             f'  estimated_cost = {plan.total_estimated_cost}',
             f'  estimated_duration = {plan.total_estimated_duration_seconds}',
             '',

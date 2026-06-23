@@ -351,7 +351,7 @@ Status: VALIDATED PRODUCTION-READY
 #### **TPC-C / TPC-H (Database)**
 - Used by: Enterprise vendors
 - Tests: Transaction throughput, complex queries
-- RCT Applicability: ⭐⭐⭐⭐ (High) — for Vault/DelentiaDB
+- RCT Applicability: ⭐⭐⭐⭐ (High) — for Vault/RCTDB
 
 ---
 
@@ -614,7 +614,7 @@ Tier 7: Orchestration Routing
   Status: ⭐⭐⭐⭐
 
 Tier 8: Learning Memory
-  DelentiaDB write latency: 50-100ms
+  RCTDB write latency: 50-100ms
   Vault indexing: 70.6 files/min
   Status: ⭐⭐⭐⭐
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://delentia.com/schemas/rctdb.query.request.json",
-  "title": "DelentiaDB Query Request",
-  "description": "Request schema for querying the DelentiaDB knowledge vault",
+  "title": "RCTDB Query Request",
+  "description": "Request schema for querying the RCTDB knowledge vault",
   "type": "object",
   "properties": {
     "query": {

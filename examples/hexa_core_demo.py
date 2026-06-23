@@ -3,13 +3,11 @@
 RCT Hexa-Core Architecture Demo
 
 Demonstrates:
-1. All 6 Hexa-Core models
+1. All 6 core models
 2. Model capabilities and pricing
-3. SignedAI consensus routing by risk level
-4. SignedAI tier cost comparison
+3. Task routing examples
+4. Cost comparison
 5. Geopolitical balance
-6. Specialist capabilities
-7. Performance rankings
 """
 
 import sys
@@ -18,14 +16,12 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from signedai.core.registry import (
+from rct_platform.config import (
     HexaCoreRole,
     HexaCoreRegistry,
-    SignedAITier,
-    RiskLevel,
-    SignedAIRegistry,
+    TaskIntent,
+    ModelRouter
 )
-from signedai.core.router import TierRouter
 
 
 def print_header(text: str):
@@ -59,85 +55,110 @@ def demo_all_models():
 def demo_geopolitical_balance():
     """Demonstrate geopolitical balance."""
     print_header("GEOPOLITICAL BALANCE")
-
+    
     balance = HexaCoreRegistry.get_geopolitical_balance()
-
+    
     print("Model Distribution:")
-    for country, count in sorted(balance.items()):
-        print(f"  {country}: {count} model{'s' if count > 1 else ''}")
-
+    for country, count in balance.items():
+        print(f"  {country}: {count} models")
+    
     print("\nWest (US) Models:")
-    for model in HexaCoreRegistry.get_models_by_country("US"):
+    us_models = HexaCoreRegistry.get_models_by_country("US")
+    for model in us_models:
         print(f"  • {model.id} ({model.role.value})")
-
+    
     print("\nEast (CN) Models:")
-    for model in HexaCoreRegistry.get_models_by_country("CN"):
+    cn_models = HexaCoreRegistry.get_models_by_country("CN")
+    for model in cn_models:
         print(f"  • {model.id} ({model.role.value})")
-
-    print("\nRegional (TH) Models:")
-    for model in HexaCoreRegistry.get_models_by_country("TH"):
-        print(f"  • {model.id} ({model.role.value})")
-
-    us_count = balance.get("US", 0)
-    cn_count = balance.get("CN", 0)
-    th_count = balance.get("TH", 0)
-    print(f"\n✅ Geopolitical Balance: {us_count} West + {cn_count} East + {th_count} Regional Thai = {sum(balance.values())} total")
+    
+    print(f"\n✅ Balance: {balance['US']} West + {balance['CN']} East = Perfect parity")
 
 
-def demo_signedai_routing():
-    """Demonstrate SignedAI tier selection by risk level."""
-    print_header("SIGNEDAI CONSENSUS ROUTING")
-
+def demo_task_routing():
+    """Demonstrate task routing."""
+    print_header("TASK ROUTING EXAMPLES")
+    
     examples = [
-        (RiskLevel.LOW, "Chat response, low-stakes query"),
-        (RiskLevel.MEDIUM, "Code review, API design decision"),
-        (RiskLevel.HIGH, "Production deployment, DB migration"),
-        (RiskLevel.CRITICAL, "Critical infrastructure change"),
+        (TaskIntent.CODING_COMPLEX, "Complex system design with visual analysis"),
+        (TaskIntent.CODING_SIMPLE, "Write unit tests for API endpoint"),
+        (TaskIntent.FINANCE, "Analyze quarterly financial report"),
+        (TaskIntent.RAG_RETRIEVAL, "Search 100,000 lines of documentation"),
+        (TaskIntent.CHAT, "Natural user conversation in Thai"),
+        (TaskIntent.CRITICAL, "Critical architecture decision")
     ]
-
-    for risk, description in examples:
-        tier_cfg = SignedAIRegistry.get_tier_by_risk(risk)
+    
+    for intent, description in examples:
+        model_id, role = ModelRouter.route_task(intent)
+        model = HexaCoreRegistry.get_model(role)
+        
         print(f"Task: {description}")
-        print(f"  Risk: {risk.value}")
-        print(f"  → Tier: {tier_cfg.tier.value}  ({len(tier_cfg.signers)} signers, {tier_cfg.required_votes} votes required)")
-        result = SignedAIRegistry.calculate_consensus(
-            tier_cfg.tier,
-            votes_for=tier_cfg.required_votes,
-            votes_against=len(tier_cfg.signers) - tier_cfg.required_votes,
-        )
-        print(f"  → Consensus: {result.consensus_reached}, confidence={result.confidence:.0%}")
+        print(f"  Intent: {intent.value}")
+        print(f"  → Routes to: {role.value.replace('_', ' ').title()}")
+        print(f"  → Model: {model.id}")
+        print(f"  → Why: {model.specialties[0]}")
         print()
 
 
-def demo_tier_cost():
-    """Demonstrate SignedAI tier cost estimation."""
-    print_header("SIGNEDAI TIER COST COMPARISON")
-
+def demo_cost_comparison():
+    """Demonstrate cost optimization."""
+    print_header("COST OPTIMIZATION - SIMPLE VS COMPLEX CODING")
+    
     tokens_in = 10_000
     tokens_out = 5_000
+    
+    # Simple task → Cheap model
+    simple_cost = ModelRouter.estimate_cost(
+        TaskIntent.CODING_SIMPLE,
+        input_tokens=tokens_in,
+        output_tokens=tokens_out
+    )
+    
+    # Complex task → Expensive model
+    complex_cost = ModelRouter.estimate_cost(
+        TaskIntent.CODING_COMPLEX,
+        input_tokens=tokens_in,
+        output_tokens=tokens_out
+    )
+    
+    # Architecture → Most expensive
+    critical_cost = ModelRouter.estimate_cost(
+        TaskIntent.ARCHITECTURE,
+        input_tokens=tokens_in,
+        output_tokens=tokens_out
+    )
+    
     print(f"Token count: {tokens_in:,} input + {tokens_out:,} output\n")
-
-    tiers = [
-        SignedAITier.TIER_S,
-        SignedAITier.TIER_4,
-        SignedAITier.TIER_6,
-        SignedAITier.TIER_8,
-    ]
-
-    costs = []
-    for tier in tiers:
-        total, breakdown = SignedAIRegistry.estimate_tier_cost(tier, tokens_in, tokens_out)
-        costs.append(total)
-        cfg = SignedAIRegistry.get_tier(tier)
-        print(f"{tier.value.upper()} ({len(cfg.signers)} signers): ${total:.4f}")
-        print(f"  Breakdown: {', '.join(f"{m[:12]}: ${c:.4f}" for m, c in list(breakdown.items())[:2])} ...")
-        print()
-
-    tier_s_cost = costs[0]
-    tier_8_cost = costs[3]
-    overhead = ((tier_8_cost - tier_s_cost) / tier_8_cost) * 100
-    print(f"TIER_S vs TIER_8 overhead: {overhead:.1f}% of TIER_8 cost is the consensus premium")
-    print(f"✅ Strategy: Use TIER_S for chat, TIER_8 for critical infrastructure.")
+    
+    print(f"1. SIMPLE CODING (Unit tests, bug fixes)")
+    print(f"   Model: {simple_cost['model_id']}")
+    print(f"   Cost: ${simple_cost['cost_usd']:.4f}")
+    print()
+    
+    print(f"2. COMPLEX CODING (System integration, visual)")
+    print(f"   Model: {complex_cost['model_id']}")
+    print(f"   Cost: ${complex_cost['cost_usd']:.4f}")
+    print()
+    
+    print(f"3. ARCHITECTURE (Critical decisions)")
+    print(f"   Model: {critical_cost['model_id']}")
+    print(f"   Cost: ${critical_cost['cost_usd']:.4f}")
+    print()
+    
+    # Calculate savings
+    savings_vs_complex = (
+        (complex_cost['cost_usd'] - simple_cost['cost_usd']) / 
+        complex_cost['cost_usd'] * 100
+    )
+    savings_vs_critical = (
+        (critical_cost['cost_usd'] - simple_cost['cost_usd']) / 
+        critical_cost['cost_usd'] * 100
+    )
+    
+    print(f"💡 SAVINGS:")
+    print(f"   • Simple vs Complex: {savings_vs_complex:.1f}% cheaper")
+    print(f"   • Simple vs Critical: {savings_vs_critical:.1f}% cheaper")
+    print(f"\n✅ Strategy: Delegate simple tasks to Junior Builder, save 40-60%!")
 
 
 def demo_specialist_capabilities():
@@ -187,14 +208,9 @@ def demo_ranking_summary():
     print(f"  • Librarian: {librarian.id} ({librarian.context_window:,} tokens)")
     print()
     
-    print("Cost Champion (Coding):")
+    print("Cost Champion:")
     junior = HexaCoreRegistry.get_cheapest_coder()
     print(f"  • Junior Builder: ${junior.cost_input}/{junior.cost_output} per 1M tokens")
-    print()
-
-    print("Thai NLP #1 (Regional Specialist):")
-    thai = HexaCoreRegistry.get_model(HexaCoreRole.REGIONAL_THAI)
-    print(f"  • Regional Thai: {thai.id} ({thai.context_window:,} tokens)")
 
 
 def main():
@@ -205,8 +221,8 @@ def main():
     
     demo_all_models()
     demo_geopolitical_balance()
-    demo_signedai_routing()
-    demo_tier_cost()
+    demo_task_routing()
+    demo_cost_comparison()
     demo_specialist_capabilities()
     demo_ranking_summary()
     

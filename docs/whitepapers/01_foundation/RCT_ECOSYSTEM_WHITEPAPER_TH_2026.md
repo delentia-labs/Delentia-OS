@@ -9,7 +9,7 @@
 **จำนวนหน้า:** ~200+ หน้ารวม (เพิ่มจาก 180+)  
 **การทดสอบ:** 389/390 tests ผ่าน (99.7% success rate) ⭐ Level 4 Virtuoso Certified  
 **อัลกอริทึม:** 41 อัลกอริทึมสมบูรณ์ (Tier 1-9) | ALGO-37 ถึง 41 พร้อมใช้งาน ✨  
-**DelentiaDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
+**RCTDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
 **JITNA Protocol (RFC-001):** เอกสารเทคนิค 52 หน้า | "HTTP ของยุค Agentic AI" 🚀  
 
 **ใหม่ใน v2.1.0 (Enterprise Infrastructure Edition):**  
@@ -23,7 +23,7 @@
 - **v1.0** (ธ.ค. 2568): เอกสารรากฐาน (~100 หน้า)
 - **v2.0** (9 ม.ค. 2569): รวมผลการทดสอบ (~150 หน้า)
 - **v2.1** (9 ม.ค. 2569): FDIA Equation, JITNA พื้นฐาน (+840 บรรทัด)
-- **v2.2** (10 ม.ค. 2569): DelentiaDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
+- **v2.2** (10 ม.ค. 2569): RCTDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
 - **v3.0** (10 ม.ค. 2569): Cross-chat integration (+2,000+ บรรทัด)
 - **v3.1** (12 ม.ค. 2569): Phase 3 Frontend Foundation (+2,624 บรรทัด)
 - **v5.1** (15 ม.ค. 2569): Genome Edition - 7 Genome Layer 🧬
@@ -59,7 +59,7 @@
 - **Delentia AI**: เครื่องมือสร้างสถาปัตยกรรมและโค้ดด้วย AI
 - **Delentia Labs**: แพลตฟอร์มพัฒนาแบบบูรณาการ
 - **Floating Assistant**: UI Widget พร้อมใช้งานจริง
-- **DelentiaDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
+- **RCTDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
 - **MemoryRAG**: ระบบดึงข้อมูลขั้นสูงพร้อมสังเคราะห์เอกสารหลายฉบับ
 
 ### ความสำเร็จที่สำคัญ (มกราคม 2026)
@@ -94,7 +94,7 @@
 | **Kernel 9 Tiers** | กระบวนการทำงาน (9 ขั้น) | ✅ สมบูรณ์ | 11/11 |
 | **SignedAI** | Multi-LLM consensus (S/4/6/8 tiers) | ✅ สมบูรณ์ | 63/64 |
 | **Delentia AI** | สร้างสถาปัตยกรรม | ✅ สมบูรณ์ | ทดสอบบูรณาการแล้ว |
-| **DelentiaDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
+| **RCTDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
 | **Test Console** | กรอบการทดสอบ API | ✅ สมบูรณ์ | 64/64 |
 | **Floating Assistant** | UI widget สำหรับ production | ✅ สมบูรณ์ | Frontend พร้อม |
 | **Security Layer** | JWT, API keys, rate limiting | ✅ สมบูรณ์ | 38/38 |
@@ -267,7 +267,7 @@ class FDIAEquation:
 
 **D (Data / ข้อมูล)**
 - การวัด 0-100 ของความเพียงพอและความเกี่ยวข้องของข้อมูล
-- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ DelentiaDB
+- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ RCTDB
 - <30 = ไม่เพียงพอ, 30-70 = บางส่วน, >70 = เพียงพอ
 - ภาษาอังกฤษ: Data sufficiency measure
 
@@ -290,7 +290,7 @@ class FDIAEquation:
 - ภาษาอังกฤษ: Learning richness score
 
 **M (Memory / ความทรงจำ)**
-- สิ่งที่ต้องเก็บระยะยาวใน DelentiaDB/Vault
+- สิ่งที่ต้องเก็บระยะยาวใน RCTDB/Vault
 - การตัดสินใจสำคัญ, รูปแบบ, ความชอบของผู้ใช้
 - เปิดใช้งานความต่อเนื่องข้ามเซสชัน
 - ภาษาอังกฤษ: Long-term persistence
@@ -388,7 +388,7 @@ Kernel 9 Tiers ให้กระบวนการทำงานสำหร�
       │
       ▼
   T2: ดึงข้อมูลและบริบท (RETRIEVAL & DATA CONTEXT)
-      │  ➜ สอบถาม DelentiaDB + Vault + GraphRAG
+      │  ➜ สอบถาม RCTDB + Vault + GraphRAG
       │     รวบรวมความรู้ที่เกี่ยวข้อง
       │     เตรียม context window
       │
@@ -707,7 +707,7 @@ Timeout: ปิด (deadline=None)
 - ✅ การใช้งาน RCT-7 Mental OS
 - ✅ กระบวนการ Kernel 9 Tiers
 - ✅ SignedAI multi-LLM consensus (95%+)
-- ✅ การบูรณาการ DelentiaDB
+- ✅ การบูรณาการ RCTDB
 - ✅ กรอบงาน Test Console
 - ✅ Floating Assistant Phase 1-2
 - ✅ Security Layer (Grade D Phase 1)

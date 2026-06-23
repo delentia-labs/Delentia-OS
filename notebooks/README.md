@@ -14,7 +14,7 @@ Upload this to Kaggle to replace the current `delentia-os-1-4-pillar-tracing-san
 | Section | System | Highlights |
 |---------|--------|-----------|
 | 1 | Environment Setup | Auto-detects Kaggle/Colab/Local, no API keys |
-| 2 | Dataset Explorer | Loads 1,384 JITNA v3 scenarios + Pillar distribution chart |
+| 2 | Dataset Explorer | Loads 3,184 JITNA v3 scenarios + Pillar distribution chart |
 | 3 | FDIA Calculator | `F = D^I × A` — 8 scenarios, A=0 guarantee, bar chart |
 | 4 | TOON Benchmark | 38-50% token savings, 3 payload comparison charts |
 | 5 | 1+4 Pillar Trace | OpenTelemetry-style spans for all 4 pillars |

@@ -171,7 +171,7 @@ Layer 5: SignedAI — Multi-LLM Consensus
 ├─ TIER_S (1) · TIER_4 (4) · TIER_6 (6) · TIER_8 (8 + veto)
 └─ Hallucination rate: 0.3% vs industry 12–15%
 
-Layer 4: DelentiaDB v2.0 — 8-Dimensional Universal Memory
+Layer 4: RCTDB v2.0 — 8-Dimensional Universal Memory
 └─ Registry Zone · Vault Zone · Governance Zone
 
 Layer 3: 41 Production Algorithms (Tier 1–9)
@@ -361,7 +361,7 @@ Every user intent passes through a 7-state pipeline:
 
 ```
 RECEIVED → VALIDATED (FDIA) → MEMORY_CHECK → COMPUTING
-         → VERIFYING (SignedAI) → COMMITTING (DelentiaDB) → COMPLETED
+         → VERIFYING (SignedAI) → COMMITTING (RCTDB) → COMPLETED
 ```
 
 | Property | Value |
@@ -545,7 +545,7 @@ Five reference microservices demonstrating production patterns:
 |---------|------|-------------|
 | `intent-loop` | 8001 | Core FDIA execution loop |
 | `analysearch-intent` | 8002 | Semantic search + intent analysis |
-| `vector-search` | 8003 | Vector similarity search over DelentiaDB |
+| `vector-search` | 8003 | Vector similarity search over RCTDB |
 | `crystallizer` | 8004 | Output crystallization + fact verification |
 | `gateway-api` | 8000 | Unified entry point + rate limiting |
 
@@ -575,7 +575,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 | `/health` | GET | Service health |
 | `/metrics` | GET | Prometheus metrics |
 | `/v1/kernel/execute` | POST | Execute RCT Kernel with intent |
-| `/v1/delentiadb/query` | POST | Query DelentiaDB knowledge vault |
+| `/v1/rctdb/query` | POST | Query RCTDB knowledge vault |
 
 ---
 
@@ -627,7 +627,7 @@ delentia-os/
 ├─ microservices/               # 5 reference microservices
 │  ├─ intent-loop/              # Core FDIA execution loop (port 8001)
 │  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8002)
-│  ├─ vector-search/            # DelentiaDB semantic search (port 8003)
+│  ├─ vector-search/            # RCTDB semantic search (port 8003)
 │  ├─ crystallizer/             # Output crystallization (port 8004)
 │  └─ gateway-api/              # Unified entry + rate limiting (port 8000)
 ├─ config/                      # Configuration files

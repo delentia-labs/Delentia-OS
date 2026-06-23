@@ -328,7 +328,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `microservices/intent-loop/loop_engine.py` — `LoopMetrics` dataclass with `total_processed`, `cache_hits`, `cache_misses`, `avg_latency_ms`, `error_count`, `last_updated`, and `cache_hit_rate` property.
-- `docs/concepts/jitna.md` — Complete JITNA Protocol documentation: 3-layer architecture (Protocol/Language/Intake), 6-field canonical language (I/D/Δ/A/R/M), examples in 3 domains, comparison vs Tool-Calling APIs, FDIA+SignedAI+DelentiaDB integration map, The 9 Codex security rules.
+- `docs/concepts/jitna.md` — Complete JITNA Protocol documentation: 3-layer architecture (Protocol/Language/Intake), 6-field canonical language (I/D/Δ/A/R/M), examples in 3 domains, comparison vs Tool-Calling APIs, FDIA+SignedAI+RCTDB integration map, The 9 Codex security rules.
 - `docs/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md` — Full RFC-001 specification (IETF-style format): wire format, negotiation pattern, adapter interface, security levels, 2 appendix examples.
 - `docs/architecture/` directory created.
 - `examples/jitna_demo.py` — Runnable end-to-end demo of all 3 JITNA layers with graceful fallbacks.

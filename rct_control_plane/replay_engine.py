@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .control_plane_state import ControlPlaneState
+from .control_plane_state import ControlPlaneState, ControlPlanePhase
 
 
 # ============================================================
@@ -70,7 +70,7 @@ def compute_execution_hash(state: ControlPlaneState) -> str:
         try:
             intent_data = state.intent_snapshot.model_dump()
             parts.append(f"intent:{json.dumps(intent_data, sort_keys=True, default=str)}")
-        except Exception:  # pragma: no cover
+        except Exception:
             parts.append(f"intent:{str(state.intent_snapshot)}")
     else:
         parts.append("intent:null")
@@ -80,7 +80,7 @@ def compute_execution_hash(state: ControlPlaneState) -> str:
         try:
             graph_data = state.graph_snapshot.to_dict()
             parts.append(f"graph:{json.dumps(graph_data, sort_keys=True, default=str)}")
-        except Exception:  # pragma: no cover
+        except Exception:
             parts.append(f"graph:{str(state.graph_snapshot)}")
     else:
         parts.append("graph:null")

@@ -26,7 +26,7 @@ depends_on:
 
 Benchmark ชุดนี้โฟกัสที่ **Delentia Labs surface** (เช่น floating assistant / CLI / API) โดยถือว่า:
 
-- Kernel, Fast/Slow Lane, Memory layer (Vault/GraphRAG/DelentiaDB) ถูก wired อยู่ข้างหลังแล้ว
+- Kernel, Fast/Slow Lane, Memory layer (Vault/GraphRAG/RCTDB) ถูก wired อยู่ข้างหลังแล้ว
 - ผู้ใช้คือ "สถาปนิก / researcher" ที่ต้องการใช้ Delentia Labs เพื่อ:
   - ทำความเข้าใจโครง RCT repo
   - ออกแบบ/ปรับปรุง architecture

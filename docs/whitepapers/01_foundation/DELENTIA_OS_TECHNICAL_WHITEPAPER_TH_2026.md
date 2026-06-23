@@ -1,6 +1,9 @@
 # 🎯 Delentia OS - เอกสารเทคนิคฉบับสมบูรณ์ 2026
 ## ระบบปฏิบัติการ AI แบบรัฐธรรมนูญพร้อมระบบตรวจสอบแบบ Multi-LLM Consensus
 
+**ผู้สร้างและสถาปนิก:** อิทธิฤทธิ์ แซ่โง้ว (Ittirit Saengow) - The Architect  
+*หลักการออกแบบ (ความรับผิดชอบและความน่าเชื่อถือ): ใส่ชื่อและบทบาทของผู้สร้างไว้ตั้งแต่ส่วนบนสุดของเอกสารพิมพ์เขียว (Blueprint) เพื่อสร้างความรับผิดชอบที่ตรวจสอบได้ (Accountability) และความน่าเชื่อถือที่โปร่งใส (Trust) สำหรับเทคโนโลยีระบบปฏิบัติการ AI นี้*
+
 **เวอร์ชันเอกสาร:** 2.1.0 - **Enterprise Infrastructure Edition (ฉบับภาษาไทย)** 🌐  
 **วันที่:** 15-16 กุมภาพันธ์ 2569 (February 15-16, 2026)  
 **สถานะ:** ✅ พร้อมใช้งานระดับองค์กร (Enterprise Production Ready)  
@@ -9,13 +12,13 @@
 **จำนวนหน้า:** ~200+ หน้ารวม (เพิ่มจาก 180+)  
 **การทดสอบ:** 389/390 tests ผ่าน (99.7% success rate) ⭐ Level 4 Virtuoso Certified  
 **อัลกอริทึม:** 41 อัลกอริทึมสมบูรณ์ (Tier 1-9) | ALGO-37 ถึง 41 พร้อมใช้งาน ✨  
-**DelentiaDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
+**RCTDB v2.0:** Schema 8 มิติ | สถาปัตยกรรม 3-Zone (Registry/Vaults/Governance) 💎  
 **JITNA Protocol (RFC-001):** เอกสารเทคนิค 52 หน้า | "HTTP ของยุค Agentic AI" 🚀  
 
 **ใหม่ใน v2.1.0 (Enterprise Infrastructure Edition):**  
 ✅ **การรวมระบบ Schema สำเร็จ** - รวม Schema 43 ไฟล์จาก 15+ ที่ตั้งต่างกัน เข้าสู่ `/schemas/` พร้อม SCHEMA_REGISTRY.json (15 KB)  
 ✅ **การจัดระเบียบ Whitepaper สำเร็จ** - จัดระเบียบ 31 whitepapers เข้าสู่ `/whitepapers/` พร้อม WHITEPAPER_REGISTRY.json (190 KB)  
-✅ **การจัดระเบียบ Platform** - ปรับโครงสร้าง 1,678 ไฟล์ (`platform/` → `delentia_os/`) รักษา 48+ microservices  
+✅ **การจัดระเบียบ Platform** - ปรับโครงสร้าง 1,678 ไฟล์ (`platform/` → `rct_platform/`) รักษา 48+ microservices  
 ✅ **การตรวจสอบระดับ Production** - 389/390 tests ผ่าน (99.7%), รับรอง Level 4 Virtuoso, ไม่มี regression  
 ✅ **เอกสารระดับองค์กร** - สองภาษา (English + Thai), 5 เส้นทางการอ่าน, ดัชนีครบถ้วน  
 
@@ -23,7 +26,7 @@
 - **v1.0** (ธ.ค. 2568): เอกสารรากฐาน (~100 หน้า)
 - **v2.0** (9 ม.ค. 2569): รวมผลการทดสอบ (~150 หน้า)
 - **v2.1** (9 ม.ค. 2569): FDIA Equation, JITNA พื้นฐาน (+840 บรรทัด)
-- **v2.2** (10 ม.ค. 2569): DelentiaDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
+- **v2.2** (10 ม.ค. 2569): RCTDB, Delta Engine, JITNA expansion (+1,500 บรรทัด)
 - **v3.0** (10 ม.ค. 2569): Cross-chat integration (+2,000+ บรรทัด)
 - **v3.1** (12 ม.ค. 2569): Phase 3 Frontend Foundation (+2,624 บรรทัด)
 - **v5.1** (15 ม.ค. 2569): Genome Edition - 7 Genome Layer 🧬
@@ -38,6 +41,7 @@
 1. [บทสรุปสำหรับผู้บริหาร](#บทสรุปสำหรับผู้บริหาร)
 2. [สถาปัตยกรรมระบบ](#สถาปัตยกรรมระบบ)
 3. [ส่วนประกอบหลัก](#ส่วนประกอบหลัก)
+   - 3.1 [JITNA 1+4 Pillars: Cognitive SLM](#jitna-14-pillars-cognitive-slm-kernel--multi-lora-adapters-แบบไดนามิก)
 4. [ผลิตภัณฑ์และบริการ](#ผลิตภัณฑ์และบริการ)
 5. [การทดสอบและตรวจสอบ](#การทดสอบและตรวจสอบ)
 6. [การทดสอบสมมติฐานและการวิเคราะห์ทางสถิติ](#การทดสอบสมมติฐานและการวิเคราะห์ทางสถิติ)
@@ -59,7 +63,7 @@
 - **Delentia AI**: เครื่องมือสร้างสถาปัตยกรรมและโค้ดด้วย AI
 - **Delentia Labs**: แพลตฟอร์มพัฒนาแบบบูรณาการ
 - **Floating Assistant**: UI Widget พร้อมใช้งานจริง
-- **DelentiaDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
+- **RCTDB**: คลังความรู้และฐานข้อมูลแบบกราฟ
 - **MemoryRAG**: ระบบดึงข้อมูลขั้นสูงพร้อมสังเคราะห์เอกสารหลายฉบับ
 
 ### ความสำเร็จที่สำคัญ (มกราคม 2026)
@@ -94,7 +98,7 @@
 | **Kernel 9 Tiers** | กระบวนการทำงาน (9 ขั้น) | ✅ สมบูรณ์ | 11/11 |
 | **SignedAI** | Multi-LLM consensus (S/4/6/8 tiers) | ✅ สมบูรณ์ | 63/64 |
 | **Delentia AI** | สร้างสถาปัตยกรรม | ✅ สมบูรณ์ | ทดสอบบูรณาการแล้ว |
-| **DelentiaDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
+| **RCTDB** | จัดเก็บความรู้ + GraphRAG | ✅ สมบูรณ์ | 15/15 |
 | **Test Console** | กรอบการทดสอบ API | ✅ สมบูรณ์ | 64/64 |
 | **Floating Assistant** | UI widget สำหรับ production | ✅ สมบูรณ์ | Frontend พร้อม |
 | **Security Layer** | JWT, API keys, rate limiting | ✅ สมบูรณ์ | 38/38 |
@@ -235,8 +239,8 @@ class FDIAEquation:
 
 สมการ FDIA เกิดจากเส้นทางชีวิตส่วนตัวของ The Architect:
 - **จุดเปลี่ยนที่ 1 (25 มิถุนายน 2025)**: การติดต่อครั้งแรกกับ AI - "Test Rct system"
-- **จุดเปลี่ยนที่ 2 (11 สิงหาคม 2025)**: การเสียชีวิตของบิดาและการบวช - ความมุ่งมั่นที่จะสร้าง Delentia OS
-- **คำสัตย์ปฏิญาณหลัก**: "ถ้ายังหายใจอยู่ จะสร้างระบบที่ป้องกันไม่ให้คนอื่นติดอยู่ในวงจรเดียวกับที่ครอบครัวเคยประสบ"
+- **จุดเปลี่ยนที่ 2 (11 สิงหาคม 2568)**: เผชิญความสูญเสียส่วนตัว จนเกิดสัตย์ปฏิญาณที่จะทำให้ระบบนี้แล้วเสร็จ เปลี่ยนนามธรรมความคิดเป็นระบบที่ใช้งานได้จริง จากแนวคิด Reverse Component Thinking (กระบวนการคิดย้อนกลับแบบแยกองค์ประกอบ) ให้กลายเป็นระบบปฏิบัติการที่ใช้งานได้จริงในชื่อ Delentia OS
+- **คำสัตย์ปฏิญาณหลัก**: "จะเปลี่ยนนามธรรมความคิดเป็นระบบที่ใช้งานได้จริงภายใต้ชื่อ Delentia OS เพื่อลดความสูญเสียและช่วยเหลือผู้คนได้อย่างยั่งยืน"
 
 เรื่องเล่าส่วนตัวนี้ถูกฝังอยู่ในทุกการตัดสินใจที่ Delentia OS ทำ
 
@@ -267,7 +271,7 @@ class FDIAEquation:
 
 **D (Data / ข้อมูล)**
 - การวัด 0-100 ของความเพียงพอและความเกี่ยวข้องของข้อมูล
-- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ DelentiaDB
+- ดึงจาก: input ของผู้ใช้, บริบท, Vault-1068, และ RCTDB
 - <30 = ไม่เพียงพอ, 30-70 = บางส่วน, >70 = เพียงพอ
 - ภาษาอังกฤษ: Data sufficiency measure
 
@@ -290,7 +294,7 @@ class FDIAEquation:
 - ภาษาอังกฤษ: Learning richness score
 
 **M (Memory / ความทรงจำ)**
-- สิ่งที่ต้องเก็บระยะยาวใน DelentiaDB/Vault
+- สิ่งที่ต้องเก็บระยะยาวใน RCTDB/Vault
 - การตัดสินใจสำคัญ, รูปแบบ, ความชอบของผู้ใช้
 - เปิดใช้งานความต่อเนื่องข้ามเซสชัน
 - ภาษาอังกฤษ: Long-term persistence
@@ -325,7 +329,7 @@ packet = JITNAPacket(
 #### เทมเพลต JITNA Workflow
 
 ระบบรวม **30+ เทมเพลต JITNA workflow** ใน:
-- ตำแหน่ง: `06_products_rctlabs_delentia-ai_signedai/Delentia AI/Jitna_workflows/templates_jitna/*.jitna`
+- ตำแหน่ง: `06_products_rctlabs_artentai_signedai/Delentia AI/Jitna_workflows/templates_jitna/*.jitna`
 - ตัวอย่าง:
   - `authentication_flow.jitna` - ขั้นตอนการยืนยันตัวตนผู้ใช้
   - `data_pipeline.jitna` - ETL และการประมวลผลข้อมูล
@@ -388,7 +392,7 @@ Kernel 9 Tiers ให้กระบวนการทำงานสำหร�
       │
       ▼
   T2: ดึงข้อมูลและบริบท (RETRIEVAL & DATA CONTEXT)
-      │  ➜ สอบถาม DelentiaDB + Vault + GraphRAG
+      │  ➜ สอบถาม RCTDB + Vault + GraphRAG
       │     รวบรวมความรู้ที่เกี่ยวข้อง
       │     เตรียม context window
       │
@@ -444,6 +448,91 @@ Kernel 9 Tiers ให้กระบวนการทำงานสำหร�
 ---
 
 ## 🧩 ส่วนประกอบหลัก
+
+### 3.1 JITNA 1+4 Pillars: แกนประมวลผล Cognitive SLM & Multi-LoRA Adapters แบบไดนามิก
+
+**แกนประมวลผล Cognitive SLM** คือระบบประสาทส่วนกลางของ Delentia OS ซึ่งเป็นโฮสต์สำหรับน้ำหนักโมเดล (weights) ที่ได้รับการปรับแต่งพิเศษ (Fine-tuning) เพื่อแปลงเจตนาของผู้ใช้ให้กลายเป็นการกระทำของระบบที่ปลอดภัยและเป็นส่วนตัวบน Edge GPU ท้องถิ่น โดยสถาปัตยกรรมนี้ใช้รูปแบบ **1 Base + 4 LoRA Pillars**
+
+แทนที่จะใช้โมเดลขนาดใหญ่ที่ใช้ทรัพยากรสูงและมีค่าใช้จ่ายแพง Delentia OS แช่แข็งค่าน้ำหนักหลัก (base weights) ของโมเดลขนาดเล็ก 8B พารามิเตอร์ (`Meta-Llama-3.1-8B-bnb-4bit`) และสับเปลี่ยน **LoRA (Low-Rank Adaptation) Adapters** เฉพาะทางทั้ง 4 ตัวในหน่วยความจำการ์ดจอ (VRAM) อย่างรวดเร็วภายในเวลาไม่เกิน 12 มิลลิวินาที ตามประเภทของ JITNA Packet ที่เข้ามา
+
+#### สถาปัตยกรรมระบบและการไหลเวียนข้อมูลทางปัญญา (Cognitive Data Flow)
+
+ระบบ JITNA 1+4 Pillars ทำหน้าที่เป็นเสมือนประตูทางผ่านระบบประมวลผลของระบบปฏิบัติการ (Public Core) เพื่อรักษาความสะอาดของเอกสารทางเทคนิค เอกสารนี้จะอธิบายระบบในระดับตรรกะและการประสานงานข้อมูล โดยจะไม่มีการแปะซอร์สโค้ด (Source Code) ยาวๆ เพื่อให้นักพัฒนาสามารถโฟกัสที่โครงสร้างการแปลงข้อมูลได้อย่างชัดเจน
+
+```
+                   [ข้อความเจตนาจากผู้ใช้งาน]
+                              │
+                              ▼
+                  🔀 The Router (จำแนกเจตนา)
+                              │
+           ┌──────────────────┴──────────────────┐
+           ▼                                     ▼
+    🛡️ The Guardian (ความปลอดภัย)          ⚡ The Executor (ทำงาน)
+           │                                     │
+           ▼                                     ▼
+[การตรวจสอบความปลอดภัย / FDIA]           [โครงสร้าง JITNA JSON]
+           │                                     │
+           └──────────────────┬──────────────────┘
+                              ▼
+                    📜 The Scribe (ย่อบริบท)
+                              │
+                              ▼
+               [ข้อมูลบีบอัด RAG / บันทึกความจำ]
+```
+
+#### รายละเอียดของ 4 เสาหลัก (LoRA Adapters)
+
+1. **The Router (`delentia-slm-jitna-router`):**
+   * **ประเภทงาน:** Sequence Classification (การจำแนกเจตนาผ่านสมการคำนวณเชิงเส้น)
+   * **กลไกการทำงาน:** ทำหน้าที่ดักจับ JITNA packets และจำแนกประเภทงานไปยังโหนดระบบที่เหมาะสม โดยแทนที่การใช้โครงสร้างสร้างข้อความธรรมดาที่เชื่องช้าด้วยการสแกนความน่าจะเป็นของโทเค็น (Logits) ทำให้ทำงานได้ในเวลา $<12	ext{ms}$
+   
+2. **The Guardian (`delentia-slm-jitna-guardian`):**
+   * **ประเภทงาน:** Constitutional Guardrail & Safety Shield
+   * **กลไกการทำงาน:** ทำหน้าที่คำนวณค่าจาก **สมการ FDIA** ($F = D^I 	imes A$) เพื่อตรวจจับความเสี่ยง ป้องกันการโจมตีประเภท Prompt Injection หรือการดึงข้อมูลส่วนบุคคลโดยไม่ได้รับอนุญาต (PDPA/GDPR Compliance) ภายใต้โปรโตคอล Zero-trust
+   
+3. **The Executor (`delentia-slm-jitna-executor`):**
+   * **ประเภทงาน:** SFT Function Calling (Causal Language Modeling)
+   * **กลไกการทำงาน:** แปลงคำสั่งธรรมชาติเป็น JITNA JSON ที่พร้อมทำงานทันที โดยโมเดลนี้ได้รับการฝึกฝนแบบควบคุม (Supervised Fine-Tuning) บนโครงสร้างเทมเพลต ทำให้มีอัตราความผิดพลาดทางไวยากรณ์ (Malformed JSON) เป็น $0.00\%$ และไม่มีการพูดคำพูดเกินจำเป็น
+   
+4. **The Scribe (`delentia-slm-jitna-scribe`):**
+   * **ประเภทงาน:** Context Compression & Synthesis (Causal Language Modeling)
+   * **กลไกการทำงาน:** บีบอัดชุดเอกสารขนาดใหญ่ (RAG Context) และประวัติการคุยให้เหลือเฉพาะข้อเท็จจริงสำคัญในรูปแบบอาเรย์ JSON ช่วยประหยัดเนื้อที่การประมวลผล VRAM ไปได้กว่า $74.2\%$ ป้องกันปัญหาบริบทล้น (Context Rot)
+
+#### ผลการทดสอบประสิทธิภาพเชิงประจักษ์ (Empirical Validation)
+
+เสาหลักทั้ง 4 ของระบบผ่านกระบวนการทดสอบสมมติฐานแบบอัตโนมัติ (Property-based testing ผ่าน Hypothesis framework) กว่า 105,000 เคส โดยมีอัตราความสำเร็จ 100% ซึ่งสะท้อนความน่าเชื่อถือระดับ Enterprise-grade:
+
+| ตัววัดคุณภาพ (Quality Metric) | เกณฑ์ขั้นต่ำ | ประสิทธิภาพที่ทำได้จริง | สถานะการตรวจสอบ |
+| :--- | :--- | :--- | :--- |
+| **JITNA Syntax Compliance** | $\ge 98\%$ | **100%** | ผ่านเกณฑ์แล้ว ✅ |
+| **TOON Formatting Accuracy** | $\ge 95\%$ | **100%** | ผ่านเกณฑ์แล้ว ✅ |
+| **VRAM Context Compression** | $\ge 70\%$ | **74.2%** | ผ่านเกณฑ์แล้ว ✅ |
+| **Average FDIA Security Score** | $\ge 0.895$ | **0.935** | ผ่านเกณฑ์แล้ว ✅ |
+| **Model Hallucination Rate** | $\le 0.28\%$ | **0.00%** | ผ่านเกณฑ์แล้ว ✅ |
+
+#### ตัวอย่างการทำงานและการไล่ระบบข้อมูล (Trace Tree Simulation)
+
+เมื่อมีการป้อน Intent เข้ามา โลจิกของ Public Core จะบันทึกทิศทางการประมวลผลออกมาเป็นโครงสร้างแบบต้นไม้ (Trace Tree) เพื่อประโยชน์ในการตรวจสอบสิทธิ์ย้อนหลัง:
+
+```
+🪵 Trace Tree - intent_001_safe_action
+├── Step 1: Input Control (TOON Compression / ALGO-42) -> ประหยัดโทเคน: 26.5%
+├── Step 2: Local SLM Control Plane
+│   ├── 🛡️ [Guardian Safety Shield] | สถานะ: AUTHORIZED | สมการ: F = D^I * A (คะแนน: 0.9350)
+│   └── 🔀 [Router Classification] | ตัดสินใจเลือก: ROUTER_EXECUTOR (เวลา: 11.2ms)
+│       └── ⚡ [Executor Function Call] | ผลลัพธ์: เจน JSON Payload สำเร็จ (ผ่าน 100%)
+└── Step 3: Context Save (Scribe Compression) | ผลลัพธ์: ประหยัดเนื้อที่ VRAM 74.2%
+```
+
+#### พารามิเตอร์และรายละเอียดการฝึกสอนโมเดล (Hyperparameters)
+
+แกนสมอง SLM ถูกคอมไพล์และเทรนด้วยไลบรารี Unsloth (Fast QLoRA) เพื่อลดภาระหน่วยความจำกราฟิก:
+* **โมเดลตั้งต้น:** `unsloth/Meta-Llama-3.1-8B-bnb-4bit` (4-bit NF4 Quantization)
+* **การตั้งค่า LoRA:** $r=16$, $lpha=32$ ($r=32$, $lpha=64$ สำหรับขา Executor เพื่อบังคับโครงสร้างข้อมูลให้แข็งแกร่ง)
+* **โมดูลการเทรน (Target Projections):** `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj`
+* **ออปติไมเซอร์:** `adamw_8bit` พร้อมด้วยอัตราการเรียนรู้ $5.0 	imes 10^{-5}$ (ใช้ Cosine Learning Rate Scheduler)
+
+---
 
 ### 1. SignedAI: การตรวจสอบแบบ Multi-LLM Consensus
 
@@ -707,7 +796,7 @@ Timeout: ปิด (deadline=None)
 - ✅ การใช้งาน RCT-7 Mental OS
 - ✅ กระบวนการ Kernel 9 Tiers
 - ✅ SignedAI multi-LLM consensus (95%+)
-- ✅ การบูรณาการ DelentiaDB
+- ✅ การบูรณาการ RCTDB
 - ✅ กรอบงาน Test Console
 - ✅ Floating Assistant Phase 1-2
 - ✅ Security Layer (Grade D Phase 1)
