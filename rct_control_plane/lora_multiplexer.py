@@ -49,7 +49,7 @@ class LoRAMultiplexer:
             self.adapters_dir = Path(__file__).parents[2] / "Delentia-AI-SLM/models/adapters"
             
         self.gguf_dir = Path(__file__).parents[2] / "Delentia-AI-SLM/models/gguf"
-        self.gguf_base_path = self.gguf_dir / "delentia-jitna-v0.3-Q4_K_M.gguf"
+        self.gguf_base_path = self.gguf_dir / "delentia-jitna-v0.4-Q4_K_M.gguf"
         
         self.model: Optional[Any] = None
         self.tokenizer: Optional[Any] = None
@@ -58,14 +58,16 @@ class LoRAMultiplexer:
         self.use_gguf = False
 
         # PEFT Adapter Paths
-        self.executor_path = self.adapters_dir / "jitna_executor_v1"
-        self.guardian_path = self.adapters_dir / "jitna_guardian_v1"
-        self.scribe_path = self.adapters_dir / "jitna_scribe_v1"
+        self.executor_path = self.adapters_dir / "jitna_executor_v0.4"
+        self.guardian_path = self.adapters_dir / "jitna_guardian_v0.4"
+        self.scribe_path = self.adapters_dir / "jitna_scribe_v0.4"
+        self.router_path = self.adapters_dir / "jitna_router_v0.4"
 
         # GGUF Adapter Paths
-        self.gguf_executor_path = self.gguf_dir / "jitna_executor_v1.gguf"
-        self.gguf_guardian_path = self.gguf_dir / "jitna_guardian_v1.gguf"
-        self.gguf_scribe_path = self.gguf_dir / "jitna_scribe_v1.gguf"
+        self.gguf_executor_path = self.gguf_dir / "delentia-jitna-executor-Q4_K_M.gguf"
+        self.gguf_guardian_path = self.gguf_dir / "delentia-jitna-guardian-Q4_K_M.gguf"
+        self.gguf_scribe_path = self.gguf_dir / "delentia-jitna-scribe-Q4_K_M.gguf"
+        self.gguf_router_path = self.gguf_dir / "delentia-jitna-router-Q4_K_M.gguf"
 
         # Determine best execution engine (GGUF, PEFT, or MOCK fallback)
         if _HAS_LLAMA_CPP and self.gguf_base_path.exists() and self.gguf_base_path.stat().st_size > 100:
@@ -78,17 +80,19 @@ class LoRAMultiplexer:
             self.mock_mode = False
             
             # Hugging Face Hub Fallback IDs
-            self.executor_hf_id = "Delentia/delentia-slm-jitna-executor"
-            self.guardian_hf_id = "Delentia/delentia-slm-jitna-guardian"
-            self.scribe_hf_id = "Delentia/delentia-slm-jitna-scribe"
+            self.executor_hf_id = "Delentia/delentia-slm-jitna-executor-v0.4"
+            self.guardian_hf_id = "Delentia/delentia-slm-jitna-guardian-v0.4"
+            self.scribe_hf_id = "Delentia/delentia-slm-jitna-scribe-v0.4"
+            self.router_hf_id = "Delentia/delentia-slm-jitna-router-v0.4"
             
             # Use local paths if they exist, otherwise use HF Hub IDs
             self.executor_model_id = str(self.executor_path) if self.executor_path.exists() else self.executor_hf_id
             self.guardian_model_id = str(self.guardian_path) if self.guardian_path.exists() else self.guardian_hf_id
             self.scribe_model_id = str(self.scribe_path) if self.scribe_path.exists() else self.scribe_hf_id
+            self.router_model_id = str(self.router_path) if self.router_path.exists() else self.router_hf_id
             
             print(f"[INFO] LoRA Multiplexer: Initialized in PEFT mode. Adapters mapping: "
-                  f"executor->{self.executor_model_id}, guardian->{self.guardian_model_id}, scribe->{self.scribe_model_id}")
+                  f"executor->{self.executor_model_id}, guardian->{self.guardian_model_id}, scribe->{self.scribe_model_id}, router->{self.router_model_id}")
         else:
             reason = "transformers/peft/llama-cpp-python not installed"
             print(f"[WARNING] LoRA Multiplexer: Running in MOCK mode ({reason}).")
@@ -120,24 +124,33 @@ class LoRAMultiplexer:
             return
 
         # PEFT mode loading
-        print("[INFO] LoRA Multiplexer: Loading base model in 4-bit...")
+        print("[INFO] LoRA Multiplexer: Loading base model weights...")
         try:
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
-                bnb_4bit_use_double_quant=True,
-            )
-
             self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
 
-            base_model = AutoModelForCausalLM.from_pretrained(
-                self.base_model_name,
-                quantization_config=bnb_config,
-                device_map="auto",
-            )
+            if torch.cuda.is_available():
+                print("[INFO] CUDA GPU detected. Loading base model in 4-bit NF4...")
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                )
+                base_model = AutoModelForCausalLM.from_pretrained(
+                    self.base_model_name,
+                    quantization_config=bnb_config,
+                    device_map="auto",
+                )
+            else:
+                print("[INFO] CPU Environment detected. Loading base model in float16...")
+                base_model = AutoModelForCausalLM.from_pretrained(
+                    self.base_model_name,
+                    dtype=torch.float16 if hasattr(torch, "float16") else "auto",
+                    low_cpu_mem_usage=True,
+                    device_map="cpu",
+                )
             base_model.config.pad_token_id = self.tokenizer.pad_token_id
 
             # Wrap with PeftModel and load the first adapter
@@ -151,6 +164,7 @@ class LoRAMultiplexer:
             # Load additional adapters
             self.model.load_adapter(self.guardian_model_id, adapter_name="guardian")
             self.model.load_adapter(self.scribe_model_id, adapter_name="scribe")
+            self.model.load_adapter(self.router_model_id, adapter_name="router")
             
             self.current_adapter = "executor"
             print("[INFO] LoRA Multiplexer: All adapters loaded successfully.")
@@ -164,7 +178,7 @@ class LoRAMultiplexer:
         Returns the swap latency in milliseconds.
         """
         adapter_name = adapter_name.lower()
-        if adapter_name not in ["executor", "guardian", "scribe"]:
+        if adapter_name not in ["executor", "guardian", "scribe", "router"]:
             raise ValueError(f"Unknown adapter: {adapter_name}")
 
         if self.current_adapter == adapter_name:
@@ -186,7 +200,7 @@ class LoRAMultiplexer:
             time.sleep(latency_sleep)
             self.current_adapter = adapter_name
             latency = (time.perf_counter() - start_time) * 1000
-            print(f"[MOCK] LoRA Multiplexer: Swapped to GGUF adapter: [yellow]{adapter_name}[/] (Latency: {latency:.2f}ms, GPU VRAM Cap: 6.84GB, Mode: {gpu_tag})")
+            print(f"[MOCK] LoRA Multiplexer: Swapped to adapter: [yellow]{adapter_name}[/] (Latency: {latency:.2f}ms, Mode: {gpu_tag})")
             return latency
 
         if self.use_gguf:
@@ -260,6 +274,47 @@ class LoRAMultiplexer:
         if response.startswith(prompt):
             response = response[len(prompt):].strip()
         return response
+
+    def generate_stream(self, prompt: str, max_new_tokens: int = 256):
+        """Yields streaming response tokens using the active model/adapter."""
+        if self.mock_mode:
+            response = self._generate_mock(prompt)
+            for word in response.split(" "):
+                yield word + " "
+                time.sleep(0.02)
+            return
+
+        if self.use_gguf:
+            if self.model is None:
+                raise RuntimeError("GGUF model is not loaded.")
+            stream = self.model(
+                prompt,
+                max_tokens=max_new_tokens,
+                stop=["\n\n", "User intent:"],
+                echo=False,
+                stream=True
+            )
+            for output in stream:
+                text = output["choices"][0]["text"]
+                yield text
+            return
+
+        if self.tokenizer is None or self.model is None:
+            raise RuntimeError("Model and tokenizer are not loaded.")
+
+        from transformers import TextIteratorStreamer
+        from threading import Thread
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(device)
+        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
+        
+        generation_kwargs = dict(**inputs, streamer=streamer, max_new_tokens=max_new_tokens, do_sample=False)
+        thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
+        thread.start()
+
+        for new_text in streamer:
+            yield new_text
 
     def _generate_mock(self, prompt: str) -> str:
         """Mock generation logic for testing when adapters are not loaded."""

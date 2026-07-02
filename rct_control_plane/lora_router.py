@@ -35,7 +35,7 @@ class LoRARouter:
         if adapter_path:
             self.adapter_path = Path(adapter_path)
         else:
-            self.adapter_path = Path(__file__).parents[2] / "Delentia-AI-SLM/models/adapters/jitna_router_v1"
+            self.adapter_path = Path(__file__).parents[2] / "Delentia-AI-SLM/models/adapters/jitna_router_v0.4"
             
         self.model: Optional[Any] = None
         self.tokenizer: Optional[Any] = None
@@ -50,7 +50,7 @@ class LoRARouter:
 
         if _HAS_TRANSFORMERS:
             self.mock_mode = False
-            self.adapter_hf_id = "Delentia/delentia-slm-jitna-router"
+            self.adapter_hf_id = "Delentia/delentia-slm-jitna-router-v0.4"
             self.router_model_id = str(self.adapter_path) if self.adapter_path.exists() else self.adapter_hf_id
             print(f"[INFO] LoRA Router: Initialized in PEFT mode. Adapter: {self.router_model_id}")
         else:
