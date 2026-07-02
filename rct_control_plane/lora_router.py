@@ -50,7 +50,7 @@ class LoRARouter:
 
         if _HAS_TRANSFORMERS:
             self.mock_mode = False
-            self.adapter_hf_id = "Delentia/delentia-slm-jitna-router-v0.4"
+            self.adapter_hf_id = "Delentia/delentia-lora-router-v0.4"
             self.router_model_id = str(self.adapter_path) if self.adapter_path.exists() else self.adapter_hf_id
             print(f"[INFO] LoRA Router: Initialized in PEFT mode. Adapter: {self.router_model_id}")
         else:

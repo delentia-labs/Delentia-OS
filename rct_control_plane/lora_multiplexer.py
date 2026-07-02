@@ -80,10 +80,10 @@ class LoRAMultiplexer:
             self.mock_mode = False
             
             # Hugging Face Hub Fallback IDs
-            self.executor_hf_id = "Delentia/delentia-slm-jitna-executor-v0.4"
-            self.guardian_hf_id = "Delentia/delentia-slm-jitna-guardian-v0.4"
-            self.scribe_hf_id = "Delentia/delentia-slm-jitna-scribe-v0.4"
-            self.router_hf_id = "Delentia/delentia-slm-jitna-router-v0.4"
+            self.executor_hf_id = "Delentia/delentia-lora-executor-v0.4"
+            self.guardian_hf_id = "Delentia/delentia-lora-guardian-v0.4"
+            self.scribe_hf_id = "Delentia/delentia-lora-scribe-v0.4"
+            self.router_hf_id = "Delentia/delentia-lora-router-v0.4"
             
             # Use local paths if they exist, otherwise use HF Hub IDs
             self.executor_model_id = str(self.executor_path) if self.executor_path.exists() else self.executor_hf_id
