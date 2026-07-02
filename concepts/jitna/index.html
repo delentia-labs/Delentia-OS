@@ -901,10 +901,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jitna-delentiadb" class="md-nav__link">
+  <a href="#jitna-rctdb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JITNA + DelentiaDB
+        JITNA + RCTDB
       
     </span>
   </a>
@@ -2161,7 +2161,7 @@
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  Layer 2 — JITNA LANGUAGE (6-field templates)                   │
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│  Role: Structured intent communication format                   │
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│  Fields: I / D / Δ / A / R / M                                  │
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  Used for: prompts, memory tagging, vault metadata, DelentiaDB        │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  Used for: prompts, memory tagging, vault metadata, RCTDB        │
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│  Templates: 50+ workflow templates available                    │
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>├──────────────────────────────────────────────────────────────────┤
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│  Layer 3 — JITNA INTAKE (user-facing)                           │
@@ -2344,7 +2344,7 @@ M=Memory) are the primary schema for prompts, memory, and vault tagging.</p>
 </span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>SignedAI Verification           ← Multi-model consensus
 </span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    │
 </span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    ▼
-</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>DelentiaDB Commit                    ← Permanent audit trail
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>RCTDB Commit                    ← Permanent audit trail
 </span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>    │
 </span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    ▼
 </span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>Output
@@ -2353,8 +2353,8 @@ M=Memory) are the primary schema for prompts, memory, and vault tagging.</p>
 <p>Every packet's <code>intent</code> field is scored by the FDIA equation (<code>F = D^I × A</code>). If the score falls below threshold, the transaction is blocked before any agent begins work.</p>
 <h3 id="jitna-signedai">JITNA + SignedAI<a class="headerlink" href="#jitna-signedai" title="Permanent link">&para;</a></h3>
 <p>For high-criticality tasks, JITNA routes through SignedAI consensus. Multiple models independently process the task and must reach agreement (Tier 4: 75%, Tier 6: 67%, Tier 8: 75%) before the result is committed.</p>
-<h3 id="jitna-delentiadb">JITNA + DelentiaDB<a class="headerlink" href="#jitna-delentiadb" title="Permanent link">&para;</a></h3>
-<p>Every completed JITNA transaction is committed to DelentiaDB — the 8-dimensional universal memory schema. Any transaction can be replayed from any point. The Delta Engine compresses stored state by 74%.</p>
+<h3 id="jitna-rctdb">JITNA + RCTDB<a class="headerlink" href="#jitna-rctdb" title="Permanent link">&para;</a></h3>
+<p>Every completed JITNA transaction is committed to RCTDB — the 8-dimensional universal memory schema. Any transaction can be replayed from any point. The Delta Engine compresses stored state by 74%.</p>
 <hr />
 <h2 id="security-the-9-codex">Security: The 9 Codex<a class="headerlink" href="#security-the-9-codex" title="Permanent link">&para;</a></h2>
 <p>All JITNA implementations enforce <strong>The 9 Codex</strong> — nine constitutional security rules:</p>

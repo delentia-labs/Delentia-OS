@@ -1892,7 +1892,7 @@ For the full architectural article, see: <a href="https://delentia.com/en/blog/k
 <p>Expired items are archived, not deleted. Agents cannot retrieve knowledge outside its validity window.</p>
 <hr />
 <h2 id="the-8-dimensional-knowledge-schema">The 8-Dimensional Knowledge Schema<a class="headerlink" href="#the-8-dimensional-knowledge-schema" title="Permanent link">&para;</a></h2>
-<p>Vault-1068 uses the same 8-dimensional index as DelentiaDB, enabling static and dynamic knowledge to be queried with the same interface:</p>
+<p>Vault-1068 uses the same 8-dimensional index as RCTDB, enabling static and dynamic knowledge to be queried with the same interface:</p>
 <table>
 <thead>
 <tr>
@@ -1945,7 +1945,7 @@ For the full architectural article, see: <a href="https://delentia.com/en/blog/k
 - Verified domain taxonomies (ICD-10, ISIC, etc.)
 - Compliance checklists and certification requirements</p>
 <p><strong>Not appropriate (other storage locations):</strong>
-- User conversation context → DelentiaDB via G4/ARTENT
+- User conversation context → RCTDB via G4/ARTENT
 - Dynamic market data or real-time feeds → specialized adapters
 - Model weights or configurations → G3/JITNA routing layer
 - Unverified or draft knowledge → staging environment only</p>
@@ -1984,7 +1984,7 @@ For the full architectural article, see: <a href="https://delentia.com/en/blog/k
 <td>Constitutional static store</td>
 </tr>
 <tr>
-<td><strong>DelentiaDB</strong></td>
+<td><strong>RCTDB</strong></td>
 <td>"What has been observed and learned?"</td>
 <td>8-dimensional dynamic memory</td>
 </tr>
@@ -1995,7 +1995,7 @@ For the full architectural article, see: <a href="https://delentia.com/en/blog/k
 </tr>
 </tbody>
 </table>
-<p>A compliance query uses all three: Vault-1068 retrieves the regulatory rule, DelentiaDB retrieves historical compliance decisions, Delta Engine determines if warm-recall suffices.</p>
+<p>A compliance query uses all three: Vault-1068 retrieves the regulatory rule, RCTDB retrieves historical compliance decisions, Delta Engine determines if warm-recall suffices.</p>
 <hr />
 <h2 id="sdk-implementation-notes">SDK Implementation Notes<a class="headerlink" href="#sdk-implementation-notes" title="Permanent link">&para;</a></h2>
 <p>In <code>delentia-os</code> v1.0.2a0:
