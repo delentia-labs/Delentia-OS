@@ -186,7 +186,7 @@ class DelentiaOrchestrator:
                 # Find the Step 2 branch to add router details
                 step2_branch = None
                 for child in tree.children:
-                    if "Step 2" in child.label:
+                    if isinstance(child.label, str) and "Step 2" in child.label:
                         step2_branch = child
                         break
                 if not step2_branch:
@@ -202,7 +202,7 @@ class DelentiaOrchestrator:
             elif event.event_type == ControlPlaneEventType.SCRIBE_COMPRESSED:
                 step2_branch = None
                 for child in tree.children:
-                    if "Step 2" in child.label:
+                    if isinstance(child.label, str) and "Step 2" in child.label:
                         step2_branch = child
                         break
                 if not step2_branch:
@@ -221,7 +221,7 @@ class DelentiaOrchestrator:
             elif event.event_type == ControlPlaneEventType.EXECUTOR_RUN:
                 step2_branch = None
                 for child in tree.children:
-                    if "Step 2" in child.label:
+                    if isinstance(child.label, str) and "Step 2" in child.label:
                         step2_branch = child
                         break
                 if not step2_branch:
@@ -708,7 +708,7 @@ class DelentiaOrchestrator:
         packet = JITNAPacket(
             packet_id=intent_id,
             priority=3,
-            payload=payload_str
+            payload=payload
         )
         
         private_bytes, public_bytes = generate_keypair()

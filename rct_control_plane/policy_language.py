@@ -441,7 +441,7 @@ class PolicyEvaluator:
         graph: Optional[ExecutionGraph]
     ) -> Dict[str, Any]:
         """Build evaluation context from intent and graph"""
-        context = {
+        context: Dict[str, Any] = {
             "intent_id": str(intent.id),
             "intent_type": intent.intent_type,
             "priority": intent.priority,

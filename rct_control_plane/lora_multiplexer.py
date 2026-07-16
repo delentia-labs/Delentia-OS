@@ -222,6 +222,8 @@ class LoRAMultiplexer:
             else:
                 try:
                     # Apply LoRA adapter dynamically
+                    if self.model is None:
+                        raise RuntimeError("llama_cpp model is not initialized")
                     err = llama_cpp.llama_model_apply_lora_from_file(
                         self.model.model,
                         str(adapter_path).encode("utf-8"),

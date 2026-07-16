@@ -33,7 +33,7 @@ from rct_control_plane.policy_language import (
 )
 
 try:
-    from signedai.core import (
+    from signedai.core import (  # type: ignore
         HexaCoreRegistry,
         HexaCoreRole,
     )

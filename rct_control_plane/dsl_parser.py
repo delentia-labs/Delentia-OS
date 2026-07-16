@@ -368,7 +368,7 @@ class DSLParser:
     
     def _parse_parameters_block(self, body: str) -> Dict[str, Any]:
         """Parse a parameters { } block"""
-        params = {}
+        params: Dict[str, Any] = {}
         
         for line in body.split('\n'):
             line = line.strip()
@@ -411,7 +411,7 @@ class DSLParser:
         
         # Build node
         node = ExecutionNode(
-            id=node_data.get("id"),
+            id=str(node_data.get("id") or ""),
             node_type=node_data.get("node_type", NodeType.AGENT_CAPABILITY),
             capability=node_data.get("capability"),
             tool_name=node_data.get("tool_name"),
