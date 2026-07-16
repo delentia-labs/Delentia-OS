@@ -1,4 +1,4 @@
-# Delentia OS — Intent-Centric AI Operating System
+# Delentia OS — An Experimental Causal-Constraint AI Operating System SDK
 
 [![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
@@ -17,7 +17,7 @@
 
 > 💬 **RFC-001 is Live!** We just crossed **5,195 monthly downloads** on Hugging Face. Join our architecture review and help us audit weight-level security constraints in our [GitHub Discussions #58](https://github.com/delentia-labs/Delentia-OS/discussions/58).
 
-## Intent-Centric AI Operating System — Constitutional Architecture
+## Causal-Constraint AI Operating System — Experimental Constitutional SDK
 
 > **RCT** = **Reverse Component Thinking** — decompose any system into its smallest verifiable parts, then rebuild with constitutional guarantees.
 
@@ -25,15 +25,17 @@
 
 ## What is RCT?
 
-**Delentia OS** is the open SDK layer of the RCT Ecosystem — the world's first **Intent-Centric AI Operating System** with constitutional architecture. Think of it as **"Linux for AI Agents."** It provides:
+**Delentia OS** is the open SDK layer of the RCT Ecosystem — an experimental **Causal-Constraint AI Operating System SDK** built to test weight-level AI safety. This project is a research hobby experiment by a self-taught creator with a facilities management background (optimizing resource flow under hardware limits). **It is not a commercial enterprise product and is not yet production-stable for critical workloads.** 
+
+It provides:
 
 - **Auditability** — every decision traces back to a signed evidence chain
 - **Governance** — multi-tier consensus prevents unilateral AI action  
 - **Interpretability** — the FDIA equation makes intent and confidence explicit
 - **Regional awareness** — built-in adapters for ASEAN, JP, KR, CN contexts
 
-The full ecosystem runs in production at [delentia.com](https://delentia.com).  
-This SDK exposes the core components under Apache 2.0.
+The ecosystem is undergoing development at [delentia.com](https://delentia.com).  
+This SDK exposes the core components under Apache 2.0 to invite developer feedback.
 
 🌐 **Website:** [delentia.com](https://delentia.com) · 🔗 **GitHub:** [github.com/delentia-labs](https://github.com/delentia-labs)
 
@@ -111,24 +113,25 @@ $$F = D^I \times A$$
 > **When Intent is high (I→2), even moderate Data quality produces excellent results.**  
 > **When A = 0, all output is blocked** — Constitutional AI guarantee. The system never acts without human approval.
 
-Accuracy: **0.92** (industry baseline: ~0.65). Implemented in [`core/fdia/fdia.py`](core/fdia/fdia.py).
-
 ---
 
 ## Key Numbers
+
+> [!NOTE]  
+> **Disclaimer on Metrics:** The metrics below (such as hallucination rate, compression, and accuracy) represent synthetic measurements gathered under controlled testing environments (using local properties suites and mock benchmarks). They are not live SLAs and may vary under real enterprise traffic.
 
 | Metric | Value |
 |--------|-------|
 | **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
-| **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) — v2.3 |
-| **Hallucination Rate** | 0.3% (vs industry 12–15%) — 97% reduction via SignedAI |
+| **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) - v2.3 |
+| **Hallucination Rate** | 0.3% (measured under SignedAI consensus simulation vs industry 12–15%) |
 | **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
-| **Intent Recall Speed** | Cold start 3–5s → Warm recall <50ms (Intent Loop) |
-| **Uptime SLA** | 99.98% |
+| **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
+| **Uptime SLA** | N/A (Experimental Hobby Platform, no enterprise SLA guaranteed) |
 | **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
 | **Universal Adapters** | 13 (Home Assistant, Terraform, n8n, Obsidian, Playwright, ...) |
-| **FDIA Accuracy** | 0.92 (industry baseline: ~0.65) |
+| **FDIA Accuracy** | 0.9167 (measured on adversarial dataset; baseline: ~0.65) |
 
 For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md).
 
@@ -261,10 +264,14 @@ Supreme Architect: anthropic/claude-opus-4.6
 
 Use these paths when you need evidence, not marketing copy:
 
-- **Current test and coverage checkpoint** — [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md)
-- **Release gate checklist** — [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
-- **Public export and provenance policy** — [`docs/release/PUBLIC_RELEASE_PROVENANCE.md`](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
-- **GitHub UI launch tasks** — [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md)
+- **Property-based safety verification** - Audit the FDIA safety gate natively by running the Hypothesis properties suite:
+  ```bash
+  pytest tests/hypothesis/test_fdia_properties.py -v
+  ```
+- **Current test and coverage checkpoint** - [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md)
+- **Release gate checklist** - [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
+- **Public export and provenance policy** - [`docs/release/PUBLIC_RELEASE_PROVENANCE.md`](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
+- **GitHub UI launch tasks** - [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md)
 
 ---
 
