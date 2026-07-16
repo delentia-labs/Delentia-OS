@@ -16,11 +16,9 @@ Uses the `cryptography` library's Ed25519 implementation (RFC 8032).
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from uuid import uuid4
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,

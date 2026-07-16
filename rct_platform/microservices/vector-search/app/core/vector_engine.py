@@ -3,7 +3,7 @@ Vector Engine Core - ALGO-16
 Handles vector operations and backend abstraction
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 import numpy as np
 from dataclasses import dataclass

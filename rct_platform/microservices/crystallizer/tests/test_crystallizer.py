@@ -3,7 +3,6 @@ Tests for ALGO-41: The Crystallizer — Golden Keyword Extraction & Auto-Concept
 """
 
 import sys
-import os
 import pytest
 from pathlib import Path
 

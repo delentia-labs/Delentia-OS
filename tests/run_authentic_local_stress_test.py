@@ -12,7 +12,6 @@ import sys
 import json
 import time
 import platform
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 

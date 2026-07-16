@@ -18,9 +18,9 @@ Example:
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from ..intent_schema import IntentObject, IntentType, RiskProfile, ScopeType
+from ..intent_schema import IntentObject, IntentType, ScopeType
 
 
 @dataclass

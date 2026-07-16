@@ -16,6 +16,7 @@ from rct_control_plane.demo_orchestrator import DelentiaOrchestrator
 @pytest.fixture
 def multiplexer():
     mux = LoRAMultiplexer()
+    mux.mock_mode = True
     mux.load_model_and_adapters()
     return mux
 
@@ -23,6 +24,7 @@ def multiplexer():
 @pytest.fixture
 def router():
     r = LoRARouter()
+    r.mock_mode = True
     r.load_model()
     return r
 

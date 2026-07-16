@@ -11,7 +11,7 @@ Services integrated:
 Port: 8000
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import sys
@@ -85,7 +85,7 @@ async def rctlabs_system_stats():
     Returns the same field names as the website FALLBACK constant so the
     frontend can merge: { ...FALLBACK, ...data, source: 'live' }.
     """
-    import subprocess, json as _json
+    import subprocess
 
     # Attempt to read live test count from pytest cache; fall back to baseline
     test_count = 4849
@@ -253,9 +253,9 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("🚀 Starting RCT Gateway API")
     print("="*60)
-    print(f"📍 Gateway URL: http://localhost:8000")
-    print(f"📚 API Docs: http://localhost:8000/docs")
-    print(f"🧬 Genome API: http://localhost:8000/api/genome/health")
+    print("📍 Gateway URL: http://localhost:8000")
+    print("📚 API Docs: http://localhost:8000/docs")
+    print("🧬 Genome API: http://localhost:8000/api/genome/health")
     print("="*60 + "\n")
     
     uvicorn.run(

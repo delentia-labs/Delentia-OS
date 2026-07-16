@@ -24,11 +24,10 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Optional
+from rct_control_plane.observability import ControlPlaneEvent, ControlPlaneEventType
 from dotenv import load_dotenv
 
 load_dotenv()
-
-from rct_control_plane.observability import ControlPlaneEvent, ControlPlaneEventType
 
 
 # ---------------------------------------------------------------------------

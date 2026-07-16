@@ -110,7 +110,6 @@ def _simulate(n_ticks: int = 60) -> DeltaTraceEmitter:
 
 def _build_chart_data(emitter: DeltaTraceEmitter) -> dict:
     """Extract per-tick chart data (averaged across all agents per tick)."""
-    from collections import defaultdict
 
     # Per-tick cumulative totals (use last event of each tick)
     tick_data: dict = {}

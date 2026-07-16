@@ -14,7 +14,7 @@ Used by: Frontend Floating Assistant (React widget)
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 import sys
 import os
 

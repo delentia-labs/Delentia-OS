@@ -76,7 +76,7 @@ async def lifespan(app: FastAPI):
     engine = VectorEngine(backend, dimension)
     routes.set_vector_engine(engine)
     
-    logger.info(f"✅ Vector Search Service ready on port 8016")
+    logger.info("✅ Vector Search Service ready on port 8016")
     logger.info(f"   Backend: {backend_type}")
     logger.info(f"   Dimension: {dimension}")
     

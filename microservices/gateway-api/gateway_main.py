@@ -11,6 +11,8 @@ Services integrated:
 Port: 8000
 """
 
+from pydantic import BaseModel
+from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -340,8 +342,6 @@ async def kernel_stream_ws(ws: WebSocket, token: str = ""):
 
 
 # ─── REST Intent Execution with ZK-FDIA Verification ───────────────────────────
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
 
 class ZKCommitmentPayload(BaseModel):
     c_d: str

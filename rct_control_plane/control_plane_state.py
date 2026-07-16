@@ -303,7 +303,6 @@ class ControlPlaneState:
     def from_dict(cls, data: Dict[str, Any]) -> "ControlPlaneState":
         """Create from dictionary"""
         from .intent_schema import IntentObject
-        from .execution_graph_ir import ExecutionGraph
         
         state = cls(
             state_id=data["state_id"],

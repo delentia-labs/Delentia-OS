@@ -6,7 +6,6 @@ Verifies homomorphic Pedersen Commitments for database state transitions
 and ZK proofs during transaction rollbacks.
 """
 
-import sys
 
 # 256-bit prime field for cryptographic operations
 # Standard prime for secure group operations
@@ -56,7 +55,7 @@ def main():
     S0 = 1000
     r0 = 4819273892719382193892837  # Initial blinding factor
     C_S0 = pedersen_commit(S0, r0)
-    print(f"[Initial State S0]")
+    print("[Initial State S0]")
     print(f"  Balance       : {S0} USD")
     print(f"  Blinding (r0) : {r0}")
     print(f"  Commit (C_S0) : {C_S0}\n")
@@ -65,7 +64,7 @@ def main():
     delta1 = -300
     r_d1 = 1928392819382193829103982  # Delta blinding factor
     C_d1 = pedersen_commit(delta1, r_d1)
-    print(f"[Transaction Delta d1]")
+    print("[Transaction Delta d1]")
     print(f"  Amount       : {delta1} USD")
     print(f"  Blinding (rd): {r_d1}")
     print(f"  Commit (C_d1) : {C_d1}\n")
@@ -77,7 +76,7 @@ def main():
 
     # Homomorphic verification: C(S1) = C(S0) * C(d1) mod P
     C_S1_homomorphic = (C_S0 * C_d1) % P
-    print(f"[State S1 Transition]")
+    print("[State S1 Transition]")
     print(f"  Balance       : {S1} USD")
     print(f"  Expected Com  : {C_S1_expected}")
     print(f"  Homomorphic C : {C_S1_homomorphic}")
@@ -89,7 +88,7 @@ def main():
     # Homomorphic: C(S0) = C(S1) * C(d1)^-1 mod P
     C_d1_inv = mod_inverse(C_d1, P)
     C_S0_rolled_back = (C_S1_homomorphic * C_d1_inv) % P
-    print(f"[Delta Rollback Triggered]")
+    print("[Delta Rollback Triggered]")
     print(f"  C_d1 Inverse  : {C_d1_inv}")
     print(f"  Rolled Back C : {C_S0_rolled_back}")
     print(f"  Initial C_S0  : {C_S0}")

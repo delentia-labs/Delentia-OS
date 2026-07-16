@@ -4,9 +4,9 @@ import torch
 import logging
 import uuid
 import time
-from fastapi import FastAPI, HTTPException, Security, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel
-from typing import Dict, Any, List, Optional
+from typing import List, Optional
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 

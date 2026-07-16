@@ -3,7 +3,6 @@ import sys
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
 
 # Setup path to import crystallizer and core packages
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +13,7 @@ if current_dir not in sys.path:
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from crystallizer import Crystallizer
+from crystallizer import Crystallizer  # noqa: E402
 
 app = FastAPI(title="Delentia OS - Crystallizer Engine")
 engine = Crystallizer()

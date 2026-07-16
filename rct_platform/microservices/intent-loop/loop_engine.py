@@ -14,11 +14,10 @@ Philosophy:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from enum import Enum
 from datetime import datetime
 import asyncio
-import uuid
 import logging
 import hashlib
 import json
@@ -577,8 +576,8 @@ async def demo():
     
     print("=" * 80)
     print("🎉 Evolution Proof:")
-    print(f"   - First request: ~100ms (cold start)")
-    print(f"   - Repeated requests: <10ms (warm recall)")
+    print("   - First request: ~100ms (cold start)")
+    print("   - Repeated requests: <10ms (warm recall)")
     print(f"   - Cache hit rate: {metrics['cache_hit_rate']}")
     print(f"   - Cost reduction: ~{(1 - float(metrics['cache_hit_rate'].strip('%')) / 100) * 100:.0f}% savings")
     print("=" * 80)

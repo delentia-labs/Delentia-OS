@@ -10,8 +10,7 @@ import logging
 from ..core.vector_engine import (
     VectorBackendInterface,
     SearchResult,
-    VectorRecord,
-    DistanceMetric
+    VectorRecord
 )
 
 logger = logging.getLogger(__name__)

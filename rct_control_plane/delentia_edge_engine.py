@@ -7,7 +7,6 @@ Provides lightweight, high-throughput local inference running on GGUF C++ binari
 maintaining a minimal ~4.9 GB RAM footprint on consumer edge hardware.
 """
 
-import os
 import sys
 import time
 from pathlib import Path

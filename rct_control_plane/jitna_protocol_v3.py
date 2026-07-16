@@ -202,7 +202,7 @@ def decompress_payload(data: bytes) -> bytes:
     """
     Decompress bytes.  Auto-detects zstd (magic 0xFD2FB528) vs zlib.
     """
-    if len(data) >= 4 and data[:4] == b"\xfd\x2f\xb5\x28":
+    if len(data) >= 4 and data[:4] == b"\x28\xb5\x2f\xfd":
         if not _HAS_ZSTD:
             raise RuntimeError(
                 "zstandard not installed; cannot decompress zstd-compressed payload"

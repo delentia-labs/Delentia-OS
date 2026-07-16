@@ -24,10 +24,8 @@ import argparse
 import json
 import os
 import sys
-import uuid
-from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -42,8 +40,8 @@ from rct_control_plane.policy_language import (
     PolicyScope,
     ConditionOperator,
 )
-from rct_control_plane.control_plane_state import ControlPlaneState, ControlPlanePhase
-from rct_control_plane.intent_schema import IntentObject, RiskProfile
+from rct_control_plane.control_plane_state import ControlPlanePhase
+from rct_control_plane.intent_schema import IntentObject
 from rct_control_plane.observability import ControlPlaneObserver
 from rct_control_plane.default_policies import (
     create_cost_cap_policy,
@@ -92,7 +90,7 @@ def step_compile(
     print(f"  Budget         : ${intent.budget.max_cost_usd if intent.budget else 'N/A'}")
 
     if verbose:
-        print(f"\n  Full intent (JSON excerpt):")
+        print("\n  Full intent (JSON excerpt):")
         d = {
             "id": str(intent.id),
             "goal": intent.goal,
@@ -102,7 +100,7 @@ def step_compile(
         }
         print("  " + json.dumps(d, indent=2).replace("\n", "\n  "))
 
-    print(f"  Status: ✓ Compiled successfully")
+    print("  Status: ✓ Compiled successfully")
     return intent
 
 
@@ -147,7 +145,7 @@ def step_build(intent: IntentObject, verbose: bool = False) -> Any:
     print(f"  Graph valid    : {'✓ yes' if not errors else '✗ ' + str(errors)}")
 
     if verbose and graph.nodes:
-        print(f"\n  Node types:")
+        print("\n  Node types:")
         from collections import Counter
         node_types = Counter(_enum_val(n.node_type) for n in graph.nodes.values())
         for nt, cnt in node_types.items():
@@ -157,7 +155,7 @@ def step_build(intent: IntentObject, verbose: bool = False) -> Any:
         float(n.estimated_cost) for n in graph.nodes.values()
     )
     print(f"  Estimated cost : ${estimated_cost:.4f}")
-    print(f"  Status: ✓ Graph built")
+    print("  Status: ✓ Graph built")
     return graph
 
 
@@ -203,7 +201,7 @@ def step_evaluate(intent: IntentObject, verbose: bool = False) -> bool:
     eval_result = evaluator.evaluate_intent(intent)
 
     if eval_result.decision == PolicyAction.APPROVE and not eval_result.requires_approval:
-        print(f"  Result         : ✓ APPROVED — no policy violations")
+        print("  Result         : ✓ APPROVED — no policy violations")
         approved = True
     elif eval_result.decision in (PolicyAction.REJECT, PolicyAction.ESCALATE):
         print(f"  Result         : ✗ BLOCKED — {eval_result.decision_reason or 'governance violation'}")
@@ -299,10 +297,10 @@ def step_audit(intent: IntentObject, verbose: bool = False) -> None:
     for ev in audit_events:
         print(f"  [{ev['seq']}] {ev['event']:25s} | {ev['actor']:20s} | {ev['detail']}")
 
-    print(f"\n  Note: In production, audit events are cryptographically")
-    print(f"  chained via Ed25519-signed JITNA packets. Use:")
+    print("\n  Note: In production, audit events are cryptographically")
+    print("  chained via Ed25519-signed JITNA packets. Use:")
     print(f"    rct audit {intent.id} --verify")
-    print(f"  to verify the chain integrity.")
+    print("  to verify the chain integrity.")
 
 
 # ---------------------------------------------------------------------------
@@ -316,8 +314,8 @@ def run_walkthrough(
     print("\n" + "=" * 65)
     print("  RCT PLATFORM — CONTROL PLANE CLI WALKTHROUGH")
     print("=" * 65)
-    print(f"  This demo replicates the full `rct` CLI pipeline:")
-    print(f"  compile → build → evaluate → status → audit")
+    print("  This demo replicates the full `rct` CLI pipeline:")
+    print("  compile → build → evaluate → status → audit")
     print("=" * 65)
 
     # Step 1: Compile

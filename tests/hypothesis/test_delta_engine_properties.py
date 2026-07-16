@@ -12,10 +12,9 @@ Properties verified:
   8. Registered agent count is always accurate
 """
 
-import copy
-from hypothesis import given, assume, strategies as st
+from hypothesis import given, strategies as st
 
-from core.delta_engine.memory_delta import MemoryDeltaEngine, AgentMemoryState
+from core.delta_engine.memory_delta import MemoryDeltaEngine
 from core.fdia.fdia import NPCIntentType
 
 # ── Strategies ────────────────────────────────────────────────────────────

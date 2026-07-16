@@ -130,17 +130,17 @@ def demo_cost_comparison():
     
     print(f"Token count: {tokens_in:,} input + {tokens_out:,} output\n")
     
-    print(f"1. SIMPLE CODING (Unit tests, bug fixes)")
+    print("1. SIMPLE CODING (Unit tests, bug fixes)")
     print(f"   Model: {simple_cost['model_id']}")
     print(f"   Cost: ${simple_cost['cost_usd']:.4f}")
     print()
     
-    print(f"2. COMPLEX CODING (System integration, visual)")
+    print("2. COMPLEX CODING (System integration, visual)")
     print(f"   Model: {complex_cost['model_id']}")
     print(f"   Cost: ${complex_cost['cost_usd']:.4f}")
     print()
     
-    print(f"3. ARCHITECTURE (Critical decisions)")
+    print("3. ARCHITECTURE (Critical decisions)")
     print(f"   Model: {critical_cost['model_id']}")
     print(f"   Cost: ${critical_cost['cost_usd']:.4f}")
     print()
@@ -155,10 +155,10 @@ def demo_cost_comparison():
         critical_cost['cost_usd'] * 100
     )
     
-    print(f"💡 SAVINGS:")
+    print("💡 SAVINGS:")
     print(f"   • Simple vs Complex: {savings_vs_complex:.1f}% cheaper")
     print(f"   • Simple vs Critical: {savings_vs_critical:.1f}% cheaper")
-    print(f"\n✅ Strategy: Delegate simple tasks to Junior Builder, save 40-60%!")
+    print("\n✅ Strategy: Delegate simple tasks to Junior Builder, save 40-60%!")
 
 
 def demo_specialist_capabilities():

@@ -7,7 +7,6 @@ Loads actual weights and specialized LoRA adapters (Router, Guardian, Scribe, Ex
 to perform real-time local cognitive inference and streaming.
 """
 
-import os
 import sys
 import time
 from pathlib import Path

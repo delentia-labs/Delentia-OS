@@ -9,7 +9,6 @@ and live letter-by-letter token streaming across all 4 specialist pillars.
 
 import sys
 import time
-import os
 from pathlib import Path
 
 # Force UTF-8 unbuffered output for instant terminal flushing on Windows

@@ -77,7 +77,7 @@ def main() -> None:
     # Final stats
     final_ratio = engine.compute_compression_ratio()
     print(f"\n  Final compression: {final_ratio:.1%}  (engine internal estimate)")
-    print(f"  Note: internal naive baseline = 200B/state; real gains visible with large states")
+    print("  Note: internal naive baseline = 200B/state; real gains visible with large states")
     print(f"  Total delta records: {engine.total_delta_count()}")
     print(f"  Registered agents: {engine.registered_agent_count()}")
 
@@ -95,7 +95,7 @@ def main() -> None:
 
     status_recall = "\u2713 PASS" if warm_ms < 50 else "\u2717 FAIL"
     print(f"\n  Warm recall:  {status_recall}")
-    print(f"  Delta storage API: \u2713 PASS (50 deltas recorded, state reconstructed)")
+    print("  Delta storage API: \u2713 PASS (50 deltas recorded, state reconstructed)")
     print("=" * 62 + "\n")
 
 

@@ -3,7 +3,6 @@ API Routes for Vector Search - ALGO-16
 """
 
 from fastapi import APIRouter, HTTPException, status
-from typing import Dict, Any
 import logging
 from ..models.schemas import (
     IndexRequest,

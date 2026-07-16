@@ -25,9 +25,14 @@ Output Formats:
 import sys
 import json
 import time
+import signal
+import socket
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Callable, cast
+from urllib.request import urlopen
+from urllib.error import URLError
 from enum import Enum
 
 try:
@@ -51,10 +56,24 @@ try:
         render_error,
         render_success,
         render_warning,
+        print_splash,
+        boot_sequence_animation,
+        render_layout_dashboard,
+        render_pipeline_flow,
+        render_doctor_report,
     )
+    from rct_control_plane._version import PACKAGE_VERSION, get_package_version
     _HAS_RICH = True
 except ImportError:
+    from rct_control_plane._version import PACKAGE_VERSION, get_package_version
     _HAS_RICH = False
+    # Placeholders for monkeypatching compatibility
+    get_console = None
+    print_splash = None
+    boot_sequence_animation = None
+    render_layout_dashboard = None
+    render_pipeline_flow = None
+    render_doctor_report = None
 
 from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.dsl_parser import DSLParser
@@ -77,8 +96,8 @@ def _configure_encoding() -> None:
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
-        except AttributeError:
-            # Stream doesn't have reconfigure (e.g., MagicMock, StringIO)
+        except Exception:
+            # Stream doesn't have reconfigure or is read-only (e.g., MagicMock, StringIO)
             pass
 
 
@@ -227,7 +246,7 @@ def format_output(data: Any, format: OutputFormat) -> None:
 # CLI Commands
 
 @click.group()
-@click.version_option(version="2.2.0", prog_name="rct")
+@click.version_option(version=PACKAGE_VERSION, prog_name="rct")
 def cli():
     """
     RCT Control Plane CLI
@@ -494,9 +513,22 @@ def evaluate(intent_id: str, use_default_policies: bool, output: str, save: bool
 @cli.command()
 @click.argument("intent_id", required=False, default=None)
 @click.option("--output", "-o", type=click.Choice(["json", "table", "tree"]), default="table", help="Output format")
-def status(intent_id: Optional[str], output: str):
+@click.option("--live", "live_status", is_flag=True, default=False, help="Render live status dashboard.")
+@click.option("--interval", default=1.0, show_default=True, type=float, help="Refresh interval in seconds.")
+@click.option("--refresh-count", default=0, show_default=True, type=int, help="Max refresh cycles (0 for infinite).")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Bind host for API checks.")
+@click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port for API checks.")
+def status(
+    intent_id: Optional[str],
+    output: str,
+    live_status: bool,
+    interval: float,
+    refresh_count: int,
+    host: str,
+    port: int,
+):
     """
-    Get current state of an intent, or show system overview.
+    Get current state of an intent, or show system overview when called without arguments.
 
     Example:
         rct status abc-123
@@ -506,21 +538,70 @@ def status(intent_id: Optional[str], output: str):
         ctx = get_context()
 
         # No intent_id → show system overview
-        if not intent_id:
-            metrics = ctx.observer.get_metrics_summary()
+        if intent_id is None:
+            recent_ids = _list(ctx.intents.keys())[-3:]
             overview = {
-                "Status: System Overview": "",
-                "total_intents": metrics.get("total_intents", 0),
-                "active_states": len(ctx.states),
-                "total_compilations": metrics.get("total_compilations", 0),
-                "total_policy_evaluations": metrics.get("total_policy_evaluations", 0),
-                "total_failures": metrics.get("total_failures", 0),
+                "status": "healthy",
+                "version": PACKAGE_VERSION,
+                "recent_intents": len(ctx.intents),
+                "states_tracked": len(ctx.states),
+                "intents_sample": recent_ids,
             }
+            if live_status:
+                if not _HAS_RICH:
+                    click.echo("Live dashboard requires Rich support.", err=True)
+                    sys.exit(1)
+                if output == "json":
+                    click.echo("--live is only supported with table output.", err=True)
+                    sys.exit(1)
+
+                from rich.live import Live
+                live_cycles = refresh_count if refresh_count > 0 else None
+                try:
+                    with Live(
+                        console=get_console(),
+                        refresh_per_second=max(1, int(1 / interval)) if interval > 0 else 4,
+                    ) as live:
+                        rendered_cycles = 0
+                        while True:
+                            runtime_state = _build_runtime_dashboard_state(host, port)
+                            live.update(
+                                render_layout_dashboard(
+                                    services=runtime_state["services"],
+                                    endpoint=runtime_state["endpoint"],
+                                    version=str(runtime_state["version"]),
+                                    overall_status=str(runtime_state["overall_status"]),
+                                    source=str(runtime_state["source"]),
+                                    uptime_seconds=cast(Optional[float], runtime_state["uptime_seconds"]),
+                                    environment=cast(Optional[str], runtime_state["environment"]),
+                                )
+                            )
+                            rendered_cycles += 1
+                            if live_cycles is not None and rendered_cycles >= live_cycles:
+                                break
+                            time.sleep(max(interval, 0.05))
+                except KeyboardInterrupt:
+                    if _HAS_RICH:
+                        render_warning("Live dashboard stopped by Ctrl-C")
+                    else:
+                        click.echo("Live dashboard stopped by Ctrl-C", err=True)
+                    raise SystemExit(130)
+                _print_next_steps(
+                    [
+                        "Run [bold cyan]rct doctor[/] for dependency and port diagnostics",
+                        f"Run [bold cyan]rct start --host {host} --port {port}[/] to bring the API online",
+                    ]
+                )
+                return
+
             if output == "json":
-                print_json(metrics)
+                print_json(overview)
+            elif _HAS_RICH:
+                render_state_panel(overview)
             else:
-                for k, v in overview.items():
-                    click.echo(f"{k}: {v}" if v != "" else k)
+                click.echo(f"Status: {overview['status']}")
+                click.echo(f"Version: {overview['version']}")
+                click.echo(f"Recent intents: {overview['recent_intents']}")
             return
 
         state = ctx.get_state(intent_id)
@@ -1076,44 +1157,300 @@ def replay(packet_hash: str, verify: bool, output: str):
         sys.exit(1)
 
 
+def _package_version(distribution: str) -> Optional[str]:
+    """Return an installed distribution version when available."""
+    if distribution == "rct-platform":
+        return get_package_version()
+    try:
+        import importlib.metadata as importlib_metadata
+
+        return importlib_metadata.version(distribution)
+    except importlib_metadata.PackageNotFoundError:
+        return None
+
+
+def _run_doctor_checks() -> List[Dict[str, Any]]:
+    """Collect environment, project, and local connectivity diagnostics."""
+    checks: List[Dict[str, Any]] = []
+
+    checks.append(
+        {
+            "category": "environment",
+            "name": "Python",
+            "ok": sys.version_info >= (3, 10),
+            "detail": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            "hint": "Use Python 3.10 or newer.",
+        }
+    )
+
+    for package_name, distribution in [
+        ("click", "click"),
+        ("rich", "rich"),
+        ("fastapi", "fastapi"),
+        ("uvicorn", "uvicorn"),
+        ("pydantic", "pydantic"),
+    ]:
+        version = _package_version(distribution)
+        checks.append(
+            {
+                "category": "environment",
+                "name": package_name,
+                "ok": version is not None,
+                "detail": version or "not installed",
+                "hint": f"Install with: pip install {distribution}",
+            }
+        )
+
+    for file_name, hint in [
+        (".env", "Run rct init to generate the environment file."),
+        (".env.example", "Commit or regenerate the template with rct init --force."),
+        ("pyproject.toml", "Run from the project root or restore pyproject.toml."),
+    ]:
+        path = Path(file_name)
+        is_readable = path.exists() and path.is_file()
+        checks.append(
+            {
+                "category": "project",
+                "name": file_name,
+                "ok": is_readable,
+                "detail": "readable" if is_readable else "missing",
+                "hint": hint,
+            }
+        )
+
+    for port in range(8000, 8005):
+        started = time.perf_counter()
+        is_online = False
+        latency_ms: Optional[float] = None
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                is_online = True
+                latency_ms = (time.perf_counter() - started) * 1000
+        except OSError:
+            is_online = False
+
+        detail = f"online ({latency_ms:.1f}ms)" if latency_ms is not None else "offline"
+        checks.append(
+            {
+                "category": "connectivity",
+                "name": f"127.0.0.1:{port}",
+                "ok": is_online,
+                "detail": detail,
+                "hint": f"Run rct start --port {port} if this service should be available.",
+            }
+        )
+
+    return checks
+
+
+def _collect_log_entries(ctx, adapter: Optional[str], tail: int) -> List[Dict[str, Any]]:
+    log_entries = []
+    events_list = list(ctx.observer._events.values()) if hasattr(ctx.observer, '_events') else []
+    for event in events_list:
+        data = event.data if hasattr(event, 'data') else {}
+        adapter_name = data.get("adapter", data.get("adapter_name"))
+        if adapter and adapter_name and adapter.lower() != adapter_name.lower():
+            continue
+        if adapter_name or data.get("action"):
+            log_entries.append({
+                "packet_id": data.get("packet_id", data.get("intent_id", "N/A"))[:16],
+                "action": data.get("action", event.event_type.value if hasattr(event, 'event_type') else "N/A"),
+                "status": data.get("status", "ok"),
+                "sha256": data.get("sha256", data.get("hash", ""))[:16],
+                "latency_ms": data.get("latency_ms", "N/A"),
+                "timestamp": event.timestamp.isoformat()[:19] if hasattr(event, 'timestamp') else "N/A",
+            })
+    return log_entries[-tail:]
+
+
+@cli.command(name="init")
+@click.option("--force", is_flag=True, help="Overwrite existing .env file")
+def init(force: bool):
+    """Initialize environment — create .env from .env.example template.
+
+    Example:
+        rct init
+        rct init --force   # Overwrite existing .env
+    """
+    env_path = Path(".env")
+    example_path = Path(".env.example")
+
+    # Search for .env.example relative to package root if not found locally
+    if not example_path.exists():
+        try:
+            import rct_control_plane as _rcp
+
+            pkg_root = Path(_rcp.__file__).parent.parent
+            example_path = pkg_root / ".env.example"
+        except Exception:
+            pass
+
+    if env_path.exists() and not force:
+        if _HAS_RICH:
+            render_warning(".env already exists. Use --force to overwrite.")
+        else:
+            click.echo(
+                click.style(
+                    "Warning: .env already exists. Use --force to overwrite.",
+                    fg="yellow",
+                )
+            )
+        return
+
+    if not example_path.exists():
+        # Built-in fallback template when example is missing
+        env_content = (
+            "# Built-in fallback template\n"
+            "RCT_CORE_BRAIN_KEY=<your-openrouter-key>\n"
+            "GOOGLE_API_KEY=<your-gemini-key>\n"
+            "RCTDB_URL=postgresql://localhost:5432/rctdb_dev\n"
+        )
+        env_path.write_text(env_content, encoding="utf-8")
+        click.echo("Created .env file using built-in fallback template")
+        return
+
+    import shutil
+
+    shutil.copy(str(example_path), str(env_path))
+
+    if _HAS_RICH:
+        console = get_console()
+        render_success(".env created from .env.example template")
+        console.print()
+        console.print("  [bold]Next steps:[/]")
+        console.print(
+            "  [dim]1.[/]  Open [bold cyan].env[/] and fill in your API keys:"
+        )
+        console.print("       [dim]RCT_CORE_BRAIN_KEY=<openrouter-key>[/]")
+        console.print("       [dim]GOOGLE_API_KEY=<google-gemini-key>  (optional)[/]")
+        console.print("       [dim]RCTDB_URL=postgresql://localhost:5432/rctdb_dev[/]")
+        console.print()
+        console.print(
+            "  [dim]2.[/]  Run [bold cyan]rct doctor[/] to verify the environment"
+        )
+        console.print("  [dim]3.[/]  Run [bold cyan]rct start[/] to launch the system")
+        console.print()
+    else:
+        click.echo(
+            ".env created. Fill in your API keys, then run: rct doctor, then rct start"
+        )
+
+
+@cli.command(name="doctor")
+@click.option(
+    "--output",
+    "output",
+    type=click.Choice(["json", "table"]),
+    default="table",
+    help="Output format",
+)
+def doctor_cmd(output: str):
+    """Run local preflight checks for the RCT development environment."""
+    checks = _run_doctor_checks()
+    issues = sum(1 for check in checks if not check["ok"])
+    summary = {
+        "issues": issues,
+        "ok": issues == 0,
+        "checks": checks,
+    }
+
+    if output == "json":
+        print_json(summary)
+        return
+
+    if _HAS_RICH:
+        render_doctor_report(checks, issues)
+    else:
+        print_table(
+            ["Category", "Check", "Status", "Detail", "Hint"],
+            [
+                [
+                    str(check["category"]),
+                    str(check["name"]),
+                    "OK" if check["ok"] else "FAIL",
+                    str(check["detail"]),
+                    str(check["hint"] if not check["ok"] else "—"),
+                ]
+                for check in checks
+            ],
+        )
+        click.echo(
+            f"Doctor summary: {'healthy' if issues == 0 else f'{issues} issue(s) found'}"
+        )
+
+    next_steps: List[str] = []
+    if any(check["name"] == ".env" and not check["ok"] for check in checks):
+        next_steps.append(
+            "Run [bold cyan]rct init[/] to create .env"
+            if _HAS_RICH
+            else "Run rct init to create .env"
+        )
+    if any(check["category"] == "connectivity" and not check["ok"] for check in checks):
+        next_steps.append(
+            "Run [bold cyan]rct start[/] to bring the local API online"
+            if _HAS_RICH
+            else "Run rct start to bring the local API online"
+        )
+    if not next_steps:
+        next_steps.append(
+            "Run [bold cyan]rct benchmark --suite fdia[/] to validate constitutional behavior"
+            if _HAS_RICH
+            else "Run rct benchmark --suite fdia to validate constitutional behavior"
+        )
+    _print_next_steps(next_steps)
+
+
 @cli.command()
 @click.option("--adapter", "-a", default=None, help="Filter logs by adapter name")
 @click.option("--tail", "-n", default=25, type=int, help="Number of recent log entries")
 @click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
-def logs(adapter: Optional[str], tail: int, output: str):
+@click.option("--follow", "-f", "follow_logs", is_flag=True, default=False, help="Follow log stream in real time.")
+@click.option("--interval", default=1.0, show_default=True, type=float, help="Refresh interval in seconds.")
+@click.option("--refresh-count", default=0, show_default=True, type=int, help="Max refresh cycles (0 for infinite).")
+def logs(
+    adapter: Optional[str],
+    tail: int,
+    output: str,
+    follow_logs: bool,
+    interval: float,
+    refresh_count: int,
+):
     """
     View adapter execution logs.
-    
+
     Example:
         rct logs --adapter openclaw --tail 50
     """
     try:
         ctx = get_context()
-        
-        # Gather log entries from observer events
-        log_entries = []
-        events_list = list(ctx.observer._events.values()) if hasattr(ctx.observer, '_events') else []
-        
-        for event in events_list:
-            data = event.data if hasattr(event, 'data') else {}
-            adapter_name = data.get("adapter", data.get("adapter_name"))
-            
-            # Filter by adapter if specified
-            if adapter and adapter_name and adapter.lower() != adapter_name.lower():
-                continue
-            
-            if adapter_name or data.get("action"):
-                log_entries.append({
-                    "packet_id": data.get("packet_id", data.get("intent_id", "N/A"))[:16],
-                    "action": data.get("action", event.event_type.value if hasattr(event, 'event_type') else "N/A"),
-                    "status": data.get("status", "ok"),
-                    "sha256": data.get("sha256", data.get("hash", ""))[:16],
-                    "latency_ms": data.get("latency_ms", "N/A"),
-                    "timestamp": event.timestamp.isoformat()[:19] if hasattr(event, 'timestamp') else "N/A",
-                })
-        
-        log_entries = log_entries[-tail:]
-        
+
+        if follow_logs:
+            if output == "json":
+                click.echo("Follow mode is only supported with table output.", err=True)
+                sys.exit(1)
+
+            if not _HAS_RICH:
+                click.echo("Follow mode requires Rich support.", err=True)
+                sys.exit(1)
+
+            from rich.live import Live
+            live_cycles = refresh_count if refresh_count > 0 else None
+            rendered_cycles = 0
+            try:
+                with Live(console=get_console(), refresh_per_second=max(1, int(1 / interval)) if interval > 0 else 4) as live:
+                    while True:
+                        current_logs = _collect_log_entries(ctx, adapter, tail)
+                        live.update(render_execution_log(current_logs))
+                        rendered_cycles += 1
+                        if live_cycles is not None and rendered_cycles >= live_cycles:
+                            break
+                        time.sleep(max(interval, 0.05))
+            except KeyboardInterrupt:
+                pass
+            return
+
+        log_entries = _collect_log_entries(ctx, adapter, tail)
+
         if output == "json":
             print_json({"logs": log_entries, "total": len(log_entries), "filter_adapter": adapter})
         elif _HAS_RICH:
@@ -1164,10 +1501,14 @@ def version_command(output: str) -> None:
         python_ver = "unknown"
 
     data = {
-        "package": "delentia-os",
         "version": pkg_ver,
+        "package": "delentia-os",
+        "name": "delentia-os",
+        "description": "Constitutional AI Operating System SDK",
         "python": python_ver,
-        "platform": sys.platform,
+        "license": "Apache-2.0",
+        "homepage": "https://delentia.com",
+        "repository": "https://github.com/delentia-labs/delentia-os",
     }
 
     if output == "json":
@@ -1181,16 +1522,18 @@ def version_command(output: str) -> None:
             table.add_row(k, v)
         get_console().print(table)
     else:
-        for k, v in data.items():
-            click.echo(f"{k}: {v}")
+        click.echo(f"delentia-os  v{data['version']}")
+        click.echo(f"Python        {data['python']}")
+        click.echo(f"License       {data['license']}")
+        click.echo(f"Homepage      {data['homepage']}")
 
 
 # ─── serve command ────────────────────────────────────────────────────────────
 
 
 @cli.command("serve")
-@click.option("--host", default="0.0.0.0", show_default=True, help="Bind host.")
-@click.option("--port", "-p", default=8080, show_default=True, type=int, help="Bind port.")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
+@click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")
 @click.option("--reload", is_flag=True, default=False, help="Enable auto-reload (dev mode).")
 @click.option("--workers", default=1, show_default=True, type=int, help="Number of worker processes.")
 def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
@@ -1199,7 +1542,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
         import uvicorn  # type: ignore
     except ImportError:
         msg = (
-            "uvicorn is required to run the API server. "
+            "uvicorn is not installed. "
             "Install it with: pip install uvicorn[standard]"
         )
         if _HAS_RICH:
@@ -1210,11 +1553,14 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
 
     if reload:
         click.echo(
-            click.style("[DEV MODE] Auto-reload enabled. Workers forced to 1.", fg="yellow")
+            click.style("Dev mode: auto-reload enabled. Workers forced to 1.", fg="yellow")
         )
         workers = 1
 
     click.echo(f"Starting Delentia OS API on {host}:{port} (workers={workers})")
+    click.echo(f"  Listening  →  http://{host}:{port}")
+    click.echo(f"  Swagger: http://{host}:{port}/docs")
+    click.echo(f"  Health: http://{host}:{port}/health")
     uvicorn.run(
         "rct_control_plane.api:app",
         host=host,
@@ -1222,6 +1568,372 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
         reload=reload,
         workers=workers,
     )
+
+
+def _print_next_steps(steps: List[str]) -> None:
+    """Render concise follow-up guidance after successful CLI workflows."""
+    if not steps:
+        return
+
+    if _HAS_RICH:
+        console = get_console()
+        console.print()
+        console.print("  [bold]Next steps:[/]")
+        for index, step in enumerate(steps, start=1):
+            console.print(f"  [dim]{index}.[/]  {step}")
+        console.print()
+    else:
+        click.echo()
+        click.echo("Next steps:")
+        for index, step in enumerate(steps, start=1):
+            click.echo(f"  {index}. {step}")
+        click.echo()
+
+
+def _build_service_snapshot(default_port: int = 8000) -> List[Dict[str, Any]]:
+    """Probe the local service surface for dashboard rendering."""
+    services = [
+        ("gateway-api", default_port),
+        ("intent-loop", 8001),
+        ("analysearch-intent", 8002),
+        ("vector-search", 8003),
+        ("crystallizer", 8004),
+        ("delta-engine", "—"),
+    ]
+
+    snapshot: List[Dict[str, Any]] = []
+    for name, port in services:
+        is_online = False
+        if isinstance(port, int):
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.15):
+                    is_online = True
+            except OSError:
+                is_online = False
+        snapshot.append({"name": name, "port": port, "online": is_online})
+    return snapshot
+
+
+def _fetch_runtime_health(host: str, port: int) -> Optional[Dict[str, Any]]:
+    """Fetch detailed health from a running Control Plane server when available."""
+    url = f"http://{host}:{port}/health/detailed"
+    try:
+        with urlopen(url, timeout=0.4) as response:
+            if response.status != 200:
+                return None
+            return cast(Dict[str, Any], json.loads(response.read().decode("utf-8")))
+    except (OSError, TimeoutError, ValueError, URLError):
+        return None
+
+
+def _normalize_runtime_overall_status(
+    raw_status: Optional[str],
+    services: List[Dict[str, Any]],
+    source: str,
+) -> str:
+    """Map raw runtime signals into truthful CLI-facing status buckets."""
+    normalized = str(raw_status or "").strip().lower()
+
+    if source == "health-endpoint":
+        if normalized in {"healthy", "running", "active", "serving"}:
+            return "serving"
+        if normalized == "degraded":
+            return "degraded"
+        if normalized in {"offline", "unhealthy", "failed", "error"}:
+            return "offline"
+
+    if any(bool(service.get("online", False)) for service in services):
+        return "health-unknown"
+    return "offline"
+
+
+def _build_runtime_dashboard_state(host: str, port: int) -> Dict[str, Any]:
+    """Build dashboard state from live health data with a port-probe fallback."""
+    endpoint = f"http://{host}:{port}"
+    health = _fetch_runtime_health(host, port)
+
+    if health is not None:
+        port_map = {
+            "intent_compiler": port,
+            "dsl_parser": 8001,
+            "policy_evaluator": 8002,
+            "observer": 8003,
+            "finance_layer": 8004,
+            "feature_flags": "—",
+        }
+        services = []
+        for service in health.get("services", []):
+            service_name = str(service.get("name", "—"))
+            service_status = str(service.get("status", "unknown"))
+            services.append(
+                {
+                    "name": service_name,
+                    "port": port_map.get(service_name, "—"),
+                    "online": service_status in {"healthy", "degraded"},
+                    "status": (
+                        "serving"
+                        if service_status == "healthy"
+                        else "degraded"
+                        if service_status == "degraded"
+                        else "offline"
+                    ),
+                }
+            )
+        return {
+            "services": services,
+            "endpoint": endpoint,
+            "overall_status": _normalize_runtime_overall_status(
+                raw_status=str(health.get("status", "unknown")),
+                services=services,
+                source="health-endpoint",
+            ),
+            "source": "health-endpoint",
+            "uptime_seconds": float(health.get("uptime_seconds", 0.0)),
+            "environment": str(health.get("environment", "development")),
+            "version": str(health.get("version", PACKAGE_VERSION)),
+        }
+
+    services = _build_service_snapshot(default_port=port)
+    return {
+        "services": services,
+        "endpoint": endpoint,
+        "overall_status": _normalize_runtime_overall_status(
+            raw_status=None,
+            services=services,
+            source="port-probe",
+        ),
+        "source": "port-probe",
+        "uptime_seconds": None,
+        "environment": None,
+        "version": PACKAGE_VERSION,
+    }
+
+
+def _build_launch_preview_state(
+    host: str,
+    port: int,
+    ui_test: bool,
+    version: str,
+) -> Dict[str, Any]:
+    """Build a truthful pre-launch preview state for `rct start` surfaces."""
+    preview_status = "preview" if ui_test else "starting"
+    services = [
+        {"name": "gateway-api", "port": port, "online": False, "status": preview_status},
+        {"name": "intent-loop", "port": 8001, "online": False, "status": preview_status},
+        {"name": "analysearch-intent", "port": 8002, "online": False, "status": preview_status},
+        {"name": "vector-search", "port": 8003, "online": False, "status": preview_status},
+        {"name": "crystallizer", "port": 8004, "online": False, "status": preview_status},
+        {"name": "delta-engine", "port": "—", "online": False, "status": preview_status},
+    ]
+    return {
+        "services": services,
+        "endpoint": f"http://{host}:{port}",
+        "overall_status": "ui-test" if ui_test else "launching",
+        "source": "ui-preview" if ui_test else "boot-preview",
+        "uptime_seconds": None,
+        "environment": "preview",
+        "version": version,
+    }
+
+
+def _render_runtime_dashboard_snapshot(host: str, port: int) -> None:
+    """Render a post-bind runtime dashboard snapshot after the server starts."""
+    if not _HAS_RICH:
+        return
+
+    runtime_state = _build_runtime_dashboard_state(host, port)
+    get_console().print(
+        render_layout_dashboard(
+            services=cast(List[Dict[str, Any]], runtime_state["services"]),
+            endpoint=str(runtime_state["endpoint"]),
+            version=str(runtime_state["version"]),
+            overall_status=str(runtime_state["overall_status"]),
+            source=str(runtime_state["source"]),
+            uptime_seconds=cast(Optional[float], runtime_state["uptime_seconds"]),
+            environment=cast(Optional[str], runtime_state["environment"]),
+        )
+    )
+
+
+def _schedule_startup_refresh(
+    on_started: Callable[[], None],
+    delay_seconds: float = 0.2,
+) -> None:
+    """Run a startup callback off the event loop once the server has bound."""
+
+    def _worker() -> None:
+        time.sleep(delay_seconds)
+        on_started()
+
+    threading.Thread(
+        target=_worker,
+        name="rct-startup-refresh",
+        daemon=True,
+    ).start()
+
+
+def _run_uvicorn_server(
+    uvicorn_module: Any,
+    host: str,
+    port: int,
+    verbose: bool,
+    on_started: Optional[Callable[[], None]] = None,
+) -> None:
+    """Run uvicorn with an optional callback once startup reaches a bound socket."""
+
+    config = uvicorn_module.Config(
+        "rct_control_plane.api:app",
+        host=host,
+        port=port,
+        reload=False,
+        log_level="debug" if verbose else "info",
+        workers=1,
+    )
+
+    class _StartupRefreshServer(uvicorn_module.Server):
+        def __init__(self, config: Any, startup_callback: Optional[Callable[[], None]]) -> None:
+            super().__init__(config)
+            self._startup_callback = startup_callback
+
+        async def startup(self, sockets: Optional[List[socket.socket]] = None) -> None:
+            await super().startup(sockets=sockets)
+            if (
+                self._startup_callback is not None
+                and not self.should_exit
+                and getattr(self, "started", False)
+            ):
+                _schedule_startup_refresh(self._startup_callback)
+
+    _StartupRefreshServer(config, on_started).run()
+
+
+@cli.command(name="start")
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Show raw JITNA packet logs (debug mode)"
+)
+@click.option(
+    "--ui-test",
+    "ui_test",
+    is_flag=True,
+    help="Mock mode — renders UI without starting API server",
+)
+@click.option(
+    "--port", "-p", default=8000, show_default=True, type=int, help="Port to bind on"
+)
+@click.option("--host", default="127.0.0.1", show_default=True, help="Host to bind on")
+@click.option(
+    "--no-animation",
+    "no_animation",
+    is_flag=True,
+    help="Disable CLI letter reveal animation",
+)
+def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool):
+    """Launch RCT OS — Constitutional AI Operating System.
+
+    Renders splash screen, boot sequence, and HexaCore dashboard,
+    then starts the Control Plane API server.
+
+    Example:
+        rct start                  # Full launch
+        rct start --ui-test        # Test UI without starting server
+        rct start --verbose        # Debug mode (raw logs)
+        rct start --port 8080      # Custom port
+    """
+    try:
+        ver = get_package_version()
+    except Exception:
+        ver = PACKAGE_VERSION
+
+    if _HAS_RICH:
+        preview_state = _build_launch_preview_state(host=host, port=port, ui_test=ui_test, version=ver)
+        print_splash(version=ver, endpoint=f"http://{host}:{port}", mock=ui_test, no_animation=no_animation)
+        boot_sequence_animation(mock=ui_test, overall_status=str(preview_state["overall_status"]), no_animation=no_animation)
+        get_console().print(
+            render_layout_dashboard(
+                services=cast(List[Dict[str, Any]], preview_state["services"]),
+                endpoint=str(preview_state["endpoint"]),
+                version=str(preview_state["version"]),
+                overall_status=str(preview_state["overall_status"]),
+                source=str(preview_state["source"]),
+                uptime_seconds=cast(Optional[float], preview_state["uptime_seconds"]),
+                environment=cast(Optional[str], preview_state["environment"]),
+            )
+        )
+        if verbose:
+            render_pipeline_flow(current_stage="Output")
+    else:
+        click.echo(click.style(f"RCT OS v{ver} — Launching...", fg="cyan", bold=True))
+
+    if ui_test:
+        if _HAS_RICH:
+            render_success("UI test complete — all components rendered successfully")
+        else:
+            click.echo("UI test complete.")
+        _print_next_steps(
+            [
+                "Run [bold cyan]rct doctor[/] to verify the local environment"
+                if _HAS_RICH
+                else "Run rct doctor to verify the local environment",
+                f"Run [bold cyan]rct start --port {port}[/] for a real launch"
+                if _HAS_RICH
+                else f"Run rct start --port {port} for a real launch",
+            ]
+        )
+        return
+
+    # Start the actual API server
+    try:
+        import uvicorn as _uvicorn
+    except ImportError:
+        if _HAS_RICH:
+            render_error("uvicorn is not installed. Run: pip install uvicorn[standard]")
+        else:
+            click.echo(
+                click.style("Error: uvicorn is not installed.", fg="red"), err=True
+            )
+        sys.exit(1)
+
+    if _HAS_RICH:
+        console = get_console()
+        console.print(
+            f"  [bright_green]Listening[/]  →  [bold]http://{host}:{port}[/]"
+            f"  [dim]|  Swagger: http://{host}:{port}/docs[/]"
+        )
+        console.print()
+    else:
+        click.echo(click.style(f"  Listening  →  http://{host}:{port}", fg="green"))
+
+    original_sigint = signal.getsignal(signal.SIGINT)
+
+    def _handle_sigint(signum: int, frame: Optional[object]) -> None:
+        del signum, frame
+        if _HAS_RICH:
+            render_warning("RCT OS shutting down on Ctrl-C")
+        else:
+            click.echo("RCT OS shutting down on Ctrl-C", err=True)
+        raise SystemExit(130)
+
+    signal.signal(signal.SIGINT, _handle_sigint)
+    try:
+        _run_uvicorn_server(
+            _uvicorn,
+            host=host,
+            port=port,
+            verbose=verbose,
+            on_started=(
+                (lambda: _render_runtime_dashboard_snapshot(host, port))
+                if _HAS_RICH
+                else None
+            ),
+        )
+    except KeyboardInterrupt:
+        if _HAS_RICH:
+            render_warning("RCT OS interrupted during shutdown")
+        else:
+            click.echo("RCT OS interrupted during shutdown", err=True)
+        raise SystemExit(130)
+    finally:
+        signal.signal(signal.SIGINT, cast(signal.Handlers, original_sigint))
 
 
 def main():

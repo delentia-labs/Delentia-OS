@@ -15,7 +15,6 @@ It demonstrates:
 
 from __future__ import annotations
 
-import sys
 import time
 import uuid
 from datetime import datetime
@@ -71,13 +70,13 @@ def demo_layer1_protocol() -> None:
     except ImportError:
         # Protocol module requires full ecosystem — show structure only
         packet_id = str(uuid.uuid4())
-        print(f"  [Protocol module not loaded — showing packet schema]")
+        print("  [Protocol module not loaded — showing packet schema]")
         print(f"  Packet ID    : {packet_id}")
-        print(f"  Source       : demo-orchestrator → specialist-analyst")
-        print(f"  Action       : analyze (priority 3)")
-        print(f"  Schema Ver.  : 2.0")
-        print(f"  Security     : Ed25519 signature (The 9 Codex)")
-        print(f"  Ref          : docs/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md")
+        print("  Source       : demo-orchestrator → specialist-analyst")
+        print("  Action       : analyze (priority 3)")
+        print("  Schema Ver.  : 2.0")
+        print("  Security     : Ed25519 signature (The 9 Codex)")
+        print("  Ref          : docs/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

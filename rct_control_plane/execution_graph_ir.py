@@ -32,7 +32,7 @@ from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 
 # ============================================================================
@@ -93,6 +93,21 @@ class ResourceRequirement:
             "max_tokens": self.max_tokens,
             "requires_gpu": self.requires_gpu,
         }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'ResourceRequirement':
+        if not d:
+            return cls()
+        max_cost_usd = Decimal(d["max_cost_usd"]) if d.get("max_cost_usd") is not None else None
+        max_time = timedelta(seconds=float(d["max_time"])) if d.get("max_time") is not None else None
+        return cls(
+            max_cost_usd=max_cost_usd,
+            max_time=max_time,
+            max_memory_mb=d.get("max_memory_mb"),
+            max_cpu_cores=d.get("max_cpu_cores"),
+            max_tokens=d.get("max_tokens"),
+            requires_gpu=d.get("requires_gpu", False),
+        )
 
 
 @dataclass
@@ -175,6 +190,34 @@ class ExecutionNode:
             "metadata": self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'ExecutionNode':
+        node_type = NodeType(d["node_type"]) if d.get("node_type") else NodeType.AGENT_CAPABILITY
+        status = NodeStatus(d["status"]) if d.get("status") else NodeStatus.PENDING
+        
+        resources_dict = d.get("resources")
+        resources = ResourceRequirement.from_dict(resources_dict) if resources_dict else ResourceRequirement()
+        
+        estimated_cost = Decimal(d["estimated_cost"]) if d.get("estimated_cost") is not None else Decimal("0.00")
+        
+        return cls(
+            id=d["id"],
+            node_type=node_type,
+            capability=d.get("capability"),
+            tool_name=d.get("tool_name"),
+            parameters=d.get("parameters", {}),
+            required_inputs=d.get("required_inputs", []),
+            produces_outputs=d.get("produces_outputs", []),
+            resources=resources,
+            estimated_cost=estimated_cost,
+            estimated_duration_seconds=d.get("estimated_duration_seconds", 0.0),
+            status=status,
+            retry_count=d.get("retry_count", 0),
+            max_retries=d.get("max_retries", 3),
+            description=d.get("description", ""),
+            metadata=d.get("metadata", {}),
+        )
+
 
 @dataclass
 class DependencyEdge:
@@ -207,6 +250,18 @@ class DependencyEdge:
             "condition": self.condition,
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'DependencyEdge':
+        dep_type = DependencyType(d["dependency_type"]) if d.get("dependency_type") else DependencyType.SEQUENTIAL
+        return cls(
+            from_node=d["from_node"],
+            to_node=d["to_node"],
+            dependency_type=dep_type,
+            data_mapping=d.get("data_mapping", {}),
+            condition=d.get("condition"),
+            metadata=d.get("metadata", {}),
+        )
 
 
 @dataclass
@@ -245,6 +300,8 @@ class ExecutionGraph:
     
     def add_node(self, node: ExecutionNode) -> None:
         """Add a node to the graph"""
+        if node.id in self.nodes:
+            raise ValueError(f"Node {node.id} already exists in graph")
         self.nodes[node.id] = node
         self._update_entry_exit_nodes()
     
@@ -363,7 +420,6 @@ class ExecutionGraph:
         
         # Check for empty graph
         if not self.nodes:
-            errors.append("Graph has no nodes")
             return errors
         
         # Check for cycles
@@ -471,3 +527,28 @@ class ExecutionGraph:
             "optimization_metadata": self.optimization_metadata,
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'ExecutionGraph':
+        g = cls(intent_id=d["intent_id"])
+        g.graph_id = d.get("graph_id", g.graph_id)
+        
+        # Reconstruct nodes
+        for node_id, node_dict in d.get("nodes", {}).items():
+            g.add_node(ExecutionNode.from_dict(node_dict))
+            
+        # Reconstruct edges
+        for edge_dict in d.get("edges", []):
+            g.add_edge(DependencyEdge.from_dict(edge_dict))
+            
+        g.entry_nodes = d.get("entry_nodes", [])
+        g.exit_nodes = d.get("exit_nodes", [])
+        g.total_estimated_cost = Decimal(d["total_estimated_cost"]) if d.get("total_estimated_cost") is not None else Decimal("0.00")
+        g.total_estimated_duration_seconds = d.get("total_estimated_duration_seconds", 0.0)
+        g.critical_path_duration_seconds = d.get("critical_path_duration_seconds", 0.0)
+        g.created_at = d.get("created_at", g.created_at)
+        g.optimized = d.get("optimized", False)
+        g.optimization_metadata = d.get("optimization_metadata", {})
+        g.metadata = d.get("metadata", {})
+        
+        return g

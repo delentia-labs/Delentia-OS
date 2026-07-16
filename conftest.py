@@ -41,7 +41,6 @@ settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))
 
 # ── UTF-8 encoding (Windows CP874 guard) ──────────────────────────────────
 if sys.platform == "win32":
-    import io
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if hasattr(sys.stderr, "reconfigure"):

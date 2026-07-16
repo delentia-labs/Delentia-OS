@@ -156,7 +156,7 @@ def generate_sample(output_dir: Path) -> None:
 
     # Private key raw bytes (DEMO ONLY — printed, never stored to disk)
     priv_raw = private_key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
-    print(f"⚠  Private key (raw, hex — DEMO ONLY, discard after use):")
+    print("⚠  Private key (raw, hex — DEMO ONLY, discard after use):")
     print(f"   {priv_raw.hex()}")
 
     # Build sample JITNA packet

@@ -18,7 +18,6 @@ Properties verified:
   8. Zero reputation → score ≤ 0.5 (reputation floor = 0.5)
 """
 
-import pytest
 from hypothesis import given, assume, strategies as st
 
 from core.fdia.fdia import (

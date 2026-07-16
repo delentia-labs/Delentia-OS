@@ -22,7 +22,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # Allow running from repo root
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -32,7 +32,6 @@ from core.fdia.fdia import (
     FDIAScorer,
     NPCAction,
     NPCIntentType,
-    intent_alignment,
 )
 from core.delta_engine.memory_delta import MemoryDeltaEngine
 from rct_control_plane.cord_security import CORDEngine

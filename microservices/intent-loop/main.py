@@ -14,7 +14,7 @@ if current_dir not in sys.path:
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from loop_engine import IntentLoopEngine, JITNAPacket
+from loop_engine import IntentLoopEngine, JITNAPacket  # noqa: E402
 
 app = FastAPI(title="Delentia OS - Intent Loop Engine")
 engine = IntentLoopEngine()

@@ -5,9 +5,8 @@ token-level Jaccard similarity and keyword overlap scoring.
 """
 from __future__ import annotations
 
-import math
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 # Detects Thai Unicode range (U+0E00–U+0E7F)
 _THAI_RANGE = re.compile(r'[\u0E00-\u0E7F]')

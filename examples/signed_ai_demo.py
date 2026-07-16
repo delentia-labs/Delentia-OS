@@ -45,7 +45,7 @@ def demo_all_tiers():
         print(f"  Recommended for: {', '.join(config.recommended_for[:2])}")
         
         # Show signers
-        print(f"  Signers:")
+        print("  Signers:")
         for role in config.signers[:3]:
             model_id = HexaCoreRegistry.get_model_id(role)
             print(f"    • {model_id}")
@@ -139,9 +139,9 @@ def demo_cost_analysis():
     
     multiplier = tier_8_cost / tier_s_cost if tier_s_cost > 0 else 0
     
-    print(f"💡 COST SCALING:")
+    print("💡 COST SCALING:")
     print(f"   Tier S → Tier 8: {multiplier:.1f}x increase")
-    print(f"   Trade-off: Higher cost = Higher accuracy + More verification")
+    print("   Trade-off: Higher cost = Higher accuracy + More verification")
 
 
 def demo_geopolitical_balance():

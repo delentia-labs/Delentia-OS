@@ -18,7 +18,7 @@ Example:
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..intent_schema import IntentObject, IntentType, RiskProfile, ScopeType
 
@@ -247,7 +247,7 @@ class RefactorTemplate:
         """
         lines = [
             f'intent "refactor_{plan.intent_id[:8]}" {{',
-            f'  risk_level = "{plan.risk_level.value}"',
+            f'  risk_level = "{plan.risk_level.value if hasattr(plan.risk_level, "value") else plan.risk_level}"',
             f'  estimated_cost = {plan.total_estimated_cost}',
             f'  estimated_duration = {plan.total_estimated_duration_seconds}',
             '',

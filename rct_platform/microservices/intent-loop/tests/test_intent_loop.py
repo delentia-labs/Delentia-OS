@@ -1,11 +1,10 @@
 """Tests for Intent Loop Engine — 25 tests."""
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pytest
-import asyncio
-import json
 from datetime import datetime
-from loop_engine import IntentState, JITNAPacket, IntentResult, IntentLoopEngine
+from loop_engine import IntentState, JITNAPacket, IntentLoopEngine
 
 
 # ─────────────────────────────────────────────────────────────────────────────

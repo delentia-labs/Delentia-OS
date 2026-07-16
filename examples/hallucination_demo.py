@@ -25,8 +25,7 @@ if hasattr(sys.stdout, "reconfigure"):
 # Make sure we can import from repo root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.fdia.fdia import FDIAScorer, FDIAWeights, NPCAction, NPCIntentType
-from signedai.core.registry import SignedAIRegistry, SignedAITier, RiskLevel
+from signedai.core.registry import SignedAIRegistry, SignedAITier
 
 
 # ─── ANSI colours ─────────────────────────────────────────────────────────────

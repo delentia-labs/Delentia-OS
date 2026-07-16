@@ -30,7 +30,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from adversarial_tests.fdia_gatekeeper import FDIAConstitution
-from adversarial_tests.jailbreak_corpus import JailbreakCase, load_corpus, stats
+from adversarial_tests.jailbreak_corpus import load_corpus
 
 
 # ============================================================
@@ -219,8 +219,8 @@ Examples:
     parser.add_argument("--output", "-o", default="challenge_results.json", help="Output JSON file")
     args = parser.parse_args()
 
-    print(f"🛡  RCT Constitutional Challenge — F = D^I × A")
-    print(f"   Loading adversarial corpus...")
+    print("🛡  RCT Constitutional Challenge — F = D^I × A")
+    print("   Loading adversarial corpus...")
 
     report = run_challenge(categories=args.category, verbose=args.verbose)
     print_report(report)

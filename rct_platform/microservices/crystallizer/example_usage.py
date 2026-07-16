@@ -5,8 +5,6 @@ Demonstrates keyword extraction and concept expansion
 """
 
 import asyncio
-import sys
-import json
 from crystallizer import Crystallizer
 
 
@@ -47,18 +45,18 @@ async def main():
         print()
         
         if concept_map.expansion_nodes:
-            print(f"  Related concepts:")
+            print("  Related concepts:")
             for node in concept_map.expansion_nodes:
                 print(f"    - {node.keyword}: {node.definition}")
         print()
         
         if concept_map.actionable_next_steps:
-            print(f"  What you can do:")
+            print("  What you can do:")
             for action in concept_map.actionable_next_steps:
                 print(f"    [{action['id']}] {action['label']}")
         print()
         
-        print(f"  UI Schema:")
+        print("  UI Schema:")
         print(f"    Type: {concept_map.ui_schema['type']}")
         print(f"    Sections: {len(concept_map.ui_schema['sections'])}")
         print()
@@ -143,15 +141,15 @@ async def main():
     print()
     
     # Step 2: Pass to ITSR for tech stack recommendation
-    print(f"Step 2 (ITSR): Would analyze requirements:")
-    print(f"  - realtime: needs_realtime=True")
-    print(f"  - sovereignty: self_hosted=True, open_source=True")
-    print(f"  - inventory: business_domain='inventory'")
+    print("Step 2 (ITSR): Would analyze requirements:")
+    print("  - realtime: needs_realtime=True")
+    print("  - sovereignty: self_hosted=True, open_source=True")
+    print("  - inventory: business_domain='inventory'")
     print()
     
-    print(f"Step 3 (Genesis): Would synthesize module based on:")
-    print(f"  - Tech stack from ITSR")
-    print(f"  - Concept maps from Crystallizer")
+    print("Step 3 (Genesis): Would synthesize module based on:")
+    print("  - Tech stack from ITSR")
+    print("  - Concept maps from Crystallizer")
     print(f"  - Intent: {conversation4}")
     print()
     

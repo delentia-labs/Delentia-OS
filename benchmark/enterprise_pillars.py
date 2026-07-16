@@ -29,7 +29,6 @@ import statistics
 import sys
 import time
 from dataclasses import dataclass, field
-from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -46,8 +45,7 @@ from rct_control_plane.policy_language import (
     PolicyScope,
     ConditionOperator,
 )
-from rct_control_plane.intent_schema import IntentType, RiskProfile
-from rct_control_plane.execution_graph_ir import ExecutionGraph
+from rct_control_plane.intent_schema import RiskProfile
 from rct_control_plane.intent_compiler import IntentCompiler
 
 # ---------------------------------------------------------------------------
@@ -137,7 +135,7 @@ def run_pillar_1(n_runs: int = 500, verbose: bool = False) -> PillarResult:
     }
 
     if verbose:
-        print(f"  Pillar 1 | Cognitive Latency")
+        print("  Pillar 1 | Cognitive Latency")
         print(f"    n={n_runs}  p50={p50:.4f}ms  p95={p95:.4f}ms  p99={p99:.4f}ms  threshold={threshold_ms}ms")
         print(f"    → {'✓ PASS' if passed else '✗ FAIL'}")
 
@@ -230,7 +228,7 @@ def run_pillar_2(n_runs: int = 200, verbose: bool = False) -> PillarResult:
     }
 
     if verbose:
-        print(f"  Pillar 2 | Governance Interrupt RTO")
+        print("  Pillar 2 | Governance Interrupt RTO")
         print(f"    n={n_runs}  intercept={intercept_rate:.0%}  p95={p95_ms:.4f}ms")
         print(f"    threshold: rate={threshold_rate:.0%}, latency<{threshold_latency}ms")
         print(f"    → {'✓ PASS' if passed else '✗ FAIL'}")
@@ -322,7 +320,7 @@ def run_pillar_3(n_agents: int = 10, n_ticks: int = 1000, verbose: bool = False)
     }
 
     if verbose:
-        print(f"  Pillar 3 | Memory Compression Endurance")
+        print("  Pillar 3 | Memory Compression Endurance")
         print(f"    n_agents={n_agents}  n_ticks={n_ticks}  total_events={total_events}")
         print(f"    conceptual_compression={ratio:.2%}  threshold={threshold:.0%}")
         print(f"    engine_internal_ratio={engine_ratio:.2%}")
@@ -387,7 +385,7 @@ def run_pillar_4(n_runs: int = 100, verbose: bool = False) -> PillarResult:
         details["mismatch_run_ids"] = mismatches[:10]  # cap at 10
 
     if verbose:
-        print(f"  Pillar 4 | Deterministic Integrity")
+        print("  Pillar 4 | Deterministic Integrity")
         print(f"    n={n_runs}  match={match_count}/{n_runs}  rate={match_rate:.0%}")
         if reference:
             print(f"    reference ranking: {[r[0] for r in reference]}")

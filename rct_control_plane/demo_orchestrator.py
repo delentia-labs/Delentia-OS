@@ -17,6 +17,17 @@ import zlib
 import asyncio
 from typing import Any, Dict, List
 
+from rct_control_plane.lora_multiplexer import LoRAMultiplexer
+from rct_control_plane.lora_router import LoRARouter
+from rct_control_plane.guardian_evaluator import GuardianEvaluator, SecurityException
+from rct_control_plane.scribe_compressor import ScribeCompressor
+from rct_control_plane.otel_adapter import get_otel_adapter
+from rct_control_plane.observability import ControlPlaneObserver, ControlPlaneEventType
+from rct_control_plane.toon_formatter import toon_serialize, toon_token_savings_estimate
+from rct_control_plane.openrouter_client import OpenRouterClient, ModelTier
+from rct_control_plane.jitna_protocol import JITNAPacket
+from rct_control_plane.signed_execution import generate_keypair, sign_packet, verify_packet, compute_key_fingerprint
+
 # Reconfigure stdout/stderr to UTF-8 on Windows to prevent CP874 UnicodeEncodeError
 if sys.platform.startswith("win"):
     try:
@@ -29,17 +40,6 @@ from dotenv import load_dotenv
 
 # Load configuration values
 load_dotenv()
-
-from rct_control_plane.lora_multiplexer import LoRAMultiplexer
-from rct_control_plane.lora_router import LoRARouter
-from rct_control_plane.guardian_evaluator import GuardianEvaluator, SecurityException
-from rct_control_plane.scribe_compressor import ScribeCompressor
-from rct_control_plane.otel_adapter import get_otel_adapter
-from rct_control_plane.observability import ControlPlaneObserver, ControlPlaneEventType, ControlPlaneEvent
-from rct_control_plane.toon_formatter import toon_serialize, toon_token_savings_estimate
-from rct_control_plane.openrouter_client import OpenRouterClient, ModelTier, JURY_ROSTER
-from rct_control_plane.jitna_protocol import JITNAPacket
-from rct_control_plane.signed_execution import generate_keypair, sign_packet, verify_packet, compute_key_fingerprint
 
 # Check if running under pytest to bypass animation delays
 IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ
@@ -233,7 +233,7 @@ class DelentiaOrchestrator:
                     payload_json = json.loads(payload)
                     params = payload_json.get("tool_call", {}).get("arguments", {})
                     params_str = json.dumps(params)
-                except:
+                except Exception:
                     is_valid = "INVALID"
                     params_str = "{}"
                     

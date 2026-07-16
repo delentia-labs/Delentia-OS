@@ -257,7 +257,7 @@ def _serve_metrics(store: MetricStore, port: int, input_path: Optional[Path], wa
         server = HTTPServer(("0.0.0.0", port), MetricsHandler)
         print(f"  ✓  Prometheus metrics: http://localhost:{port}/metrics")
         print(f"  ✓  Health check:       http://localhost:{port}/health")
-        print(f"  Press Ctrl+C to stop.")
+        print("  Press Ctrl+C to stop.")
         server.serve_forever()
 
     except ImportError:

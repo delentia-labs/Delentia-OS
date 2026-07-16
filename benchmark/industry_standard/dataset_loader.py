@@ -11,9 +11,8 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, List, Optional
 import urllib.request
 
 # Cache directory for downloaded datasets
@@ -298,11 +297,11 @@ def _halueval_sample() -> List[Dict[str, Any]]:
 def dataset_summary() -> None:
     """Print available datasets and cache status."""
     print("Available Benchmark Datasets:")
-    print(f"  TruthfulQA : 817 questions, 38 categories")
-    print(f"               https://github.com/sylinrl/TruthfulQA")
-    print(f"  HaluEval   : 10K QA pairs (hallucination labels)")
-    print(f"               https://github.com/RUCAIBox/HaluEval")
-    print(f"  FDIA Bench : 12 classification cases (local)")
+    print("  TruthfulQA : 817 questions, 38 categories")
+    print("               https://github.com/sylinrl/TruthfulQA")
+    print("  HaluEval   : 10K QA pairs (hallucination labels)")
+    print("               https://github.com/RUCAIBox/HaluEval")
+    print("  FDIA Bench : 12 classification cases (local)")
     print()
     print(f"Cache directory: {_CACHE_DIR}")
     for f in _CACHE_DIR.glob("*") if _CACHE_DIR.exists() else []:

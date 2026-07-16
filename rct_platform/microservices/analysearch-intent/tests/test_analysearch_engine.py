@@ -1,6 +1,5 @@
 """Tests for Analysearch Intent Engine"""
 
-import pytest
 from app.core.analysearch_engine import (
     AnalysearchEngine,
     AnalysearchMode,

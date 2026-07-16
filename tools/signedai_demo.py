@@ -29,7 +29,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 _ROOT = Path(__file__).parent.parent
 if str(_ROOT) not in sys.path:
@@ -164,7 +163,7 @@ class MockSigner:
         if not constitutional_pass:
             verdict = Verdict.BLOCK
             confidence = 1.0
-            reasoning = f"Constitutional gate failure — A=0 triggered. F=0 unconditionally."
+            reasoning = "Constitutional gate failure — A=0 triggered. F=0 unconditionally."
         else:
             # Heuristic scoring: reward clarity, penalise vagueness
             intent_len = len(packet.intent.split())
@@ -221,9 +220,9 @@ def run_consensus(packet: JITNAPacket, verbose: bool = False) -> ConsensusResult
     if verbose:
         if fdia_blocked:
             print(f"\n  [FDIA Gate] ❌ BLOCKED — matched pattern: \"{matched}\"")
-            print(f"             A=0 → F = D^I × 0 = 0 → all votes forced BLOCK")
+            print("             A=0 → F = D^I × 0 = 0 → all votes forced BLOCK")
         else:
-            print(f"\n  [FDIA Gate] ✅ PASS — no constitutional violation detected")
+            print("\n  [FDIA Gate] ✅ PASS — no constitutional violation detected")
 
     # Step 2 — Collect signer votes
     votes: list[SignerVote] = []

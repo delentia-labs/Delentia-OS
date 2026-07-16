@@ -2,15 +2,11 @@
 import sys
 import os
 import pytest
-import asyncio
-import hashlib
-import json
-from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from loop_engine import (
-    IntentState, JITNAPacket, MemoryHit, IntentResult, IntentLoopEngine
+    IntentState, JITNAPacket, IntentResult, IntentLoopEngine
 )
 
 

@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .control_plane_state import ControlPlaneState, ControlPlanePhase
+from .control_plane_state import ControlPlaneState
 
 
 # ============================================================

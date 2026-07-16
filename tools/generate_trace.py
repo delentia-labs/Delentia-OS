@@ -28,11 +28,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 _ROOT = Path(__file__).parent.parent
 _TEMPLATE_PATH = Path(__file__).parent / "trace_template.html"

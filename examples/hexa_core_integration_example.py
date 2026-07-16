@@ -15,16 +15,16 @@ import asyncio
 from typing import Dict, Any
 import logging
 
-from config.key_manager import KeyContext, get_key, track_usage as track_key_usage
+from config.key_manager import get_key
 from config.hexa_core_registry import (
-    ModelRole, TaskType, HexaCoreRegistry, SignedAITiers
+    TaskType, HexaCoreRegistry, SignedAITiers
 )
 from core.task_router import (
-    route_task, ComplexityLevel, CostPriority, get_task_router
+    route_task, ComplexityLevel, CostPriority
 )
 from core.cost_tracker import track_request, get_summary, get_cost_tracker
 from core.circuit_breaker import (
-    get_circuit_breaker_manager, call_with_fallback, CircuitBreakerOpenError
+    get_circuit_breaker_manager, call_with_fallback
 )
 
 # Configure logging
@@ -80,7 +80,7 @@ def example_1_basic_routing():
         cost_priority=CostPriority.BALANCED
     )
     
-    print(f"\n📍 Routing Decision:")
+    print("\n📍 Routing Decision:")
     print(f"   Model: {decision.model_config.model_id}")
     print(f"   Role: {decision.model_role.value}")
     print(f"   Reasoning: {decision.reasoning}")
@@ -98,7 +98,7 @@ def example_1_basic_routing():
         prompt=prompt
     )
     
-    print(f"\n✅ Response received:")
+    print("\n✅ Response received:")
     print(f"   Input tokens: {response['usage']['input_tokens']}")
     print(f"   Output tokens: {response['usage']['output_tokens']}")
     
@@ -111,7 +111,7 @@ def example_1_basic_routing():
         task_type=TaskType.CODING_COMPLEX.value
     )
     
-    print(f"\n💰 Cost Tracking:")
+    print("\n💰 Cost Tracking:")
     print(f"   Input cost: ${entry.input_cost:.4f}")
     print(f"   Output cost: ${entry.output_cost:.4f}")
     print(f"   Total cost: ${entry.total_cost:.4f}")
@@ -133,7 +133,7 @@ def example_2_circuit_breaker_fallback():
         "anthropic/claude-opus-4.6"
     ]
     
-    print(f"\n🔄 Fallback Chain:")
+    print("\n🔄 Fallback Chain:")
     print(f"   Primary: {primary_model}")
     print(f"   Fallbacks: {fallback_models}")
     
@@ -153,7 +153,7 @@ def example_2_circuit_breaker_fallback():
     
     # Show circuit breaker stats
     stats = cb_manager.get_all_stats()
-    print(f"\n📊 Circuit Breaker Stats:")
+    print("\n📊 Circuit Breaker Stats:")
     for model_id, stat in list(stats.items())[:3]:  # Show first 3
         print(f"\n   {model_id}:")
         print(f"      State: {stat['state']}")
@@ -269,17 +269,17 @@ def example_5_cost_tracking_summary():
     # Get summary
     summary = get_summary()
     
-    print(f"\n💰 Cost Summary:")
+    print("\n💰 Cost Summary:")
     print(f"   Total cost: ${summary['total']['cost']:.4f}")
     print(f"   Total tokens: {summary['total']['tokens']:,}")
     print(f"   Total requests: {summary['total']['requests']}")
     print(f"   Avg cost per request: ${summary['total']['cost'] / summary['total']['requests']:.4f}")
     
-    print(f"\n📊 Cost by Model:")
+    print("\n📊 Cost by Model:")
     for model, cost in sorted(summary['by_model'].items(), key=lambda x: x[1], reverse=True):
         print(f"   {model}: ${cost:.4f}")
     
-    print(f"\n🔑 Cost by Context:")
+    print("\n🔑 Cost by Context:")
     for context, cost in summary['by_context'].items():
         print(f"   {context}: ${cost:.4f}")
 
@@ -348,9 +348,9 @@ def example_7_budget_alerts():
     tracker.set_alert_threshold(0.80)  # 80%
     
     print("\n💵 Budget Configuration:")
-    print(f"   Daily budget: $10.00")
-    print(f"   Monthly budget: $300.00")
-    print(f"   Alert threshold: 80%")
+    print("   Daily budget: $10.00")
+    print("   Monthly budget: $300.00")
+    print("   Alert threshold: 80%")
     
     # Simulate high-cost requests
     print("\n📝 Simulating high-cost requests...")

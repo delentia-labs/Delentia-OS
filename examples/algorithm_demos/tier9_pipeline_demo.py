@@ -56,7 +56,7 @@ def main() -> None:
     intent_type = NPCIntentType.DISCOVER
     print(f"  ✓ Parsed intent type: {intent_type.value}")
     print(f"  ✓ Intent text length: {len(intent_text)} chars")
-    print(f"  ✓ Validation: PASS")
+    print("  ✓ Validation: PASS")
 
     # --- Step 2: Memory Retrieval ---
     step_header(2, "Memory Retrieval (Delta Engine)")
@@ -123,16 +123,16 @@ def main() -> None:
         resource_changes={"energy": -25.0, "knowledge": 5.0},
     )
     ratio = engine.compute_compression_ratio()
-    print(f"  \u2713 State delta committed (tick 0 \u2192 1)")
+    print("  \u2713 State delta committed (tick 0 \u2192 1)")
     print(f"  \u2713 Compression ratio: {ratio:.1%}")
-    print(f"  ✓ Knowledge updated: 85.0 → 90.0")
+    print("  ✓ Knowledge updated: 85.0 → 90.0")
 
     # --- Step 6: Policy Evaluation ---
     step_header(6, "Policy Evaluation (Governance)")
     print(f"  \u2713 Action type: {action.action_type} (resource: {action.resource_id})")
     print(f"  \u2713 Amount: {action.amount} (within resource budget)")
     print(f"  ✓ Architect override: NOT required (A={A})")
-    print(f"  ✓ Policy result: COMPLIANT")
+    print("  ✓ Policy result: COMPLIANT")
 
     # --- Step 7: Output Generation ---
     step_header(7, "Output Generation")
@@ -141,12 +141,12 @@ def main() -> None:
         "session_id": session_id,
         "intent": intent_text,
         "fdia_score": round(F, 4),
-        "consensus_tier": f"TIER_4",
+        "consensus_tier": "TIER_4",
         "policy_status": "COMPLIANT",
         "processing_ms": round(total_ms, 2),
         "audit_hash": f"sha256:{uuid.uuid4().hex[:16]}...",
     }
-    print(f"  ✓ Output signed with audit trail")
+    print("  ✓ Output signed with audit trail")
     for k, v in output.items():
         print(f"     {k:<20}: {v}")
 

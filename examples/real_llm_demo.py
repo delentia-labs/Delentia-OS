@@ -38,9 +38,7 @@ Environment Variables
 
 from __future__ import annotations
 
-import os
 import sys
-import textwrap
 import time
 from pathlib import Path
 

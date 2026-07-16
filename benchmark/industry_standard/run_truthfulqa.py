@@ -32,7 +32,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 _ROOT = Path(__file__).parent.parent.parent
 if str(_ROOT) not in sys.path:

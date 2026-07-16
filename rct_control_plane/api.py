@@ -6,25 +6,23 @@ Provides endpoints for intent compilation, graph building, policy evaluation,
 state management, observability, and deep health checks.
 """
 
-import asyncio
 import os
 import sys
 import time
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Query, status, Header
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from .intent_compiler import IntentCompiler, CompilationResult
+from .intent_compiler import IntentCompiler
 from .dsl_parser import DSLParser
-from .policy_language import PolicyEvaluator, PolicyEvaluationResult
+from .policy_language import PolicyEvaluator
 from .control_plane_state import ControlPlaneState, ControlPlanePhase
 from .observability import ControlPlaneObserver
 from .default_policies import get_default_policies
+from .persistence import ControlPlanePersistence
+from ._version import PACKAGE_VERSION
 
 
 # ============================================================================
@@ -130,6 +128,8 @@ class PolicyEvaluateResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     triggered_rules_count: int = 0
     evaluation_time_ms: float
+    governance_score: float = 1.0
+    governance_label: str = "APPROVED"
 
 
 class StateResponse(BaseModel):
@@ -254,7 +254,7 @@ class ControlPlaneAPI:
         self.app = FastAPI(
             title="RCT Control Plane API",
             description="Intent-to-Execution Orchestration Infrastructure",
-            version="1.0.0",
+            version=PACKAGE_VERSION,
             docs_url="/docs",
             redoc_url="/redoc"
         )
@@ -267,6 +267,7 @@ class ControlPlaneAPI:
         self.compiler = IntentCompiler(observer=self.observer)
         self.parser = DSLParser(observer=self.observer)
         self.evaluator = PolicyEvaluator(observer=self.observer)
+        self._db = ControlPlanePersistence()
         
         # Storage for states and intents (in-memory for now)
         self.states: Dict[str, ControlPlaneState] = {}
@@ -283,7 +284,7 @@ class ControlPlaneAPI:
             """Root endpoint - health check"""
             return HealthResponse(
                 status="healthy",
-                version="1.0.0",
+                version=PACKAGE_VERSION,
                 timestamp=datetime.utcnow().isoformat()
             )
         
@@ -292,7 +293,7 @@ class ControlPlaneAPI:
             """Health check endpoint"""
             return HealthResponse(
                 status="healthy",
-                version="1.0.0",
+                version=PACKAGE_VERSION,
                 timestamp=datetime.utcnow().isoformat()
             )
         
@@ -304,7 +305,10 @@ class ControlPlaneAPI:
             Checks: IntentCompiler, DSLParser, PolicyEvaluator, Observer,
                     in-memory stores, Python runtime, feature flags.
             """
-            import resource as _resource
+            try:
+                import resource as _resource
+            except ImportError:
+                _resource = None
 
             now = datetime.utcnow().isoformat()
             uptime = time.time() - self._start_time
@@ -374,7 +378,7 @@ class ControlPlaneAPI:
             # --- 5. Finance Layer ---
             t0 = time.perf_counter()
             try:
-                from rct_platform.services.finance import StripePaymentService, WalletService
+                from rct_platform.services.finance import StripePaymentService, WalletService  # noqa: F401
                 svc_status = "healthy"
                 msg = "Finance layer importable"
             except ImportError as exc:
@@ -408,8 +412,11 @@ class ControlPlaneAPI:
 
             # Memory usage
             try:
-                mem_bytes = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss * 1024
-                mem_mb = round(mem_bytes / 1024 / 1024, 2)
+                if _resource is not None:
+                    mem_bytes = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss * 1024
+                    mem_mb = round(mem_bytes / 1024 / 1024, 2)
+                else:
+                    mem_mb = -1.0
             except Exception:
                 mem_mb = -1.0
 
@@ -424,7 +431,7 @@ class ControlPlaneAPI:
 
             return DetailedHealthResponse(
                 status=overall,
-                version="1.0.0",
+                version=PACKAGE_VERSION,
                 timestamp=now,
                 uptime_seconds=round(uptime, 2),
                 python_version=sys.version,
@@ -469,6 +476,18 @@ class ControlPlaneAPI:
                     )
                     state.transition_to(ControlPlanePhase.INTENT_COMPILED, actor="api")
                     self.states[intent_id] = state
+
+                    # Save compile results to the database
+                    self._db.save_intent(
+                        intent_id=intent_id,
+                        user_id=request.user_id,
+                        intent_type=result.intent.intent_type.value if hasattr(result.intent.intent_type, 'value') else str(result.intent.intent_type),
+                        goal=request.natural_language,
+                        user_tier=request.user_tier,
+                        metadata=request.metadata,
+                        is_valid=result.validation.is_valid if result.validation else True,
+                        errors=result.errors,
+                    )
                 
                 return IntentCompileResponse(
                     success=result.success,
@@ -563,7 +582,9 @@ class ControlPlaneAPI:
                     violations=eval_result.violations,
                     warnings=eval_result.warnings,
                     triggered_rules_count=len(eval_result.triggered_rules),
-                    evaluation_time_ms=eval_result.evaluation_time_ms
+                    evaluation_time_ms=eval_result.evaluation_time_ms,
+                    governance_score=float(eval_result.governance_score),
+                    governance_label=eval_result.governance_label
                 )
             
             except Exception as e:

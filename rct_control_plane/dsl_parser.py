@@ -43,8 +43,10 @@ Example:
 
 import re
 from decimal import Decimal
-from datetime import timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rct_control_plane.observability import ControlPlaneObserver
 
 from .execution_graph_ir import (
     DependencyEdge,
