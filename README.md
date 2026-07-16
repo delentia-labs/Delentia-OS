@@ -15,6 +15,8 @@
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/Delentia-OS/main?filepath=notebooks%2Frct_playground.ipynb)
 [![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/Delentia-OS)
 
+> 💬 **RFC-001 is Live!** We just crossed **5,195 monthly downloads** on Hugging Face. Join our architecture review and help us audit weight-level security constraints in our [GitHub Discussions #58](https://github.com/delentia-labs/Delentia-OS/discussions/58).
+
 ## Intent-Centric AI Operating System — Constitutional Architecture
 
 > **RCT** = **Reverse Component Thinking** — decompose any system into its smallest verifiable parts, then rebuild with constitutional guarantees.
