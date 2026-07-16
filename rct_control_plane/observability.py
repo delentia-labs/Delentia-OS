@@ -29,11 +29,13 @@ try:
     )
     _HAS_PROMETHEUS = True
     _RCT_REGISTRY = CollectorRegistry()
-    PROMETHEUS_CONTENT_TYPE: Optional[str] = CONTENT_TYPE_LATEST
+    PROMETHEUS_CONTENT_TYPE: str = CONTENT_TYPE_LATEST
 except ImportError:
     _HAS_PROMETHEUS = False
     _RCT_REGISTRY = None
-    PROMETHEUS_CONTENT_TYPE = None
+    # Fallback to the standard Prometheus exposition content type string so that
+    # code depending on this constant (and tests) can always treat it as a str.
+    PROMETHEUS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 
 
 def _make_counter(name: str, description: str) -> Optional[Any]:
@@ -82,6 +84,34 @@ def get_prometheus_metrics() -> Optional[bytes]:
     except Exception:
         return None
 
+
+# ---------------------------------------------------------------------------
+# Module-level Prometheus metric instances
+# These are None when prometheus_client is not installed, but tests can
+# patch them via patch.object() to verify that observe_event() calls them.
+# ---------------------------------------------------------------------------
+_PROM_INTENTS_TOTAL = _make_counter(
+    "rct_intents_total", "Total number of intents received by the Control Plane.")
+_PROM_COMPILATIONS_TOTAL = _make_counter(
+    "rct_compilations_total", "Total number of intent compilations.")
+_PROM_COMPILATION_LATENCY = _make_histogram(
+    "rct_compilation_latency_ms", "Intent compilation latency in milliseconds.",
+    buckets=[5, 10, 25, 50, 100, 250, 500, 1000])
+_PROM_POLICY_EVALS_TOTAL = _make_counter(
+    "rct_policy_evals_total", "Total number of policy evaluations.")
+_PROM_POLICY_LATENCY = _make_histogram(
+    "rct_policy_latency_ms", "Policy evaluation latency in milliseconds.",
+    buckets=[1, 5, 10, 25, 50, 100, 250])
+_PROM_POLICY_VIOLATIONS_TOTAL = _make_counter(
+    "rct_policy_violations_total", "Total number of policy violations.")
+_PROM_EXECUTIONS_TOTAL = _make_counter(
+    "rct_executions_total", "Total number of graph executions started.")
+_PROM_FAILURES_TOTAL = _make_counter(
+    "rct_failures_total", "Total number of execution or graph failures.")
+_PROM_APPROVALS_GRANTED = _make_counter(
+    "rct_approvals_granted_total", "Total number of approvals granted.")
+_PROM_AUDIT_ENTRIES = _make_gauge(
+    "rct_audit_entries", "Current number of entries in the audit trail.")
 
 
 class ControlPlaneEventType(str, Enum):
@@ -408,44 +438,69 @@ class ControlPlaneObserver:
         return event
     
     def _update_metrics(self, event: ControlPlaneEvent):
-        """Update metrics based on event"""
+        """Update in-memory and Prometheus metrics based on event."""
         if event.event_type == ControlPlaneEventType.INTENT_RECEIVED:
             self.metrics["total_intents"] += 1
-        
+            if _PROM_INTENTS_TOTAL:
+                _PROM_INTENTS_TOTAL.inc()
+
         elif event.event_type == ControlPlaneEventType.INTENT_COMPILED:
             self.metrics["total_compilations"] += 1
+            if _PROM_COMPILATIONS_TOTAL:
+                _PROM_COMPILATIONS_TOTAL.inc()
             if event.duration_ms:
                 self.metrics["compilation_latency_ms"].append(event.duration_ms)
-        
+                if _PROM_COMPILATION_LATENCY:
+                    _PROM_COMPILATION_LATENCY.observe(event.duration_ms)
+
         elif event.event_type == ControlPlaneEventType.GRAPH_BUILT:
             self.metrics["total_graphs"] += 1
             if event.duration_ms:
                 self.metrics["graph_build_latency_ms"].append(event.duration_ms)
-        
+
         elif event.event_type == ControlPlaneEventType.POLICY_EVALUATED:
             self.metrics["total_policy_evaluations"] += 1
+            if _PROM_POLICY_EVALS_TOTAL:
+                _PROM_POLICY_EVALS_TOTAL.inc()
             if event.duration_ms:
                 self.metrics["policy_evaluation_latency_ms"].append(event.duration_ms)
+                if _PROM_POLICY_LATENCY:
+                    _PROM_POLICY_LATENCY.observe(event.duration_ms)
             if event.data.get("violations"):
-                self.metrics["policy_violations"] += len(event.data["violations"])
+                viol_count = len(event.data["violations"])
+                self.metrics["policy_violations"] += viol_count
+                if _PROM_POLICY_VIOLATIONS_TOTAL:
+                    _PROM_POLICY_VIOLATIONS_TOTAL.inc(viol_count)
             if event.data.get("requires_approval"):
                 self.metrics["approvals_required"] += 1
-        
+
         elif event.event_type == ControlPlaneEventType.APPROVAL_GRANTED:
             self.metrics["approvals_granted"] += 1
-        
+            if _PROM_APPROVALS_GRANTED:
+                _PROM_APPROVALS_GRANTED.inc()
+
         elif event.event_type == ControlPlaneEventType.EXECUTION_STARTED:
             self.metrics["total_executions"] += 1
-        
+            if _PROM_EXECUTIONS_TOTAL:
+                _PROM_EXECUTIONS_TOTAL.inc()
+
         elif event.event_type == ControlPlaneEventType.NODE_COMPLETED:
             self.metrics["total_nodes_executed"] += 1
-        
+
         elif event.event_type == ControlPlaneEventType.GRAPH_FAILED:
             self.metrics["total_failures"] += 1
-        
+            if _PROM_FAILURES_TOTAL:
+                _PROM_FAILURES_TOTAL.inc()
+
         elif event.event_type == ControlPlaneEventType.ERROR_OCCURRED:
             self.metrics["total_failures"] += 1
-    
+            if _PROM_FAILURES_TOTAL:
+                _PROM_FAILURES_TOTAL.inc()
+
+        # Always update the audit trail gauge
+        if _PROM_AUDIT_ENTRIES:
+            _PROM_AUDIT_ENTRIES.set(len(self.audit_trail))
+
     def register_handler(self, handler: Callable[[ControlPlaneEvent], None]):
         """Register an event handler"""
         self.event_handlers.append(handler)

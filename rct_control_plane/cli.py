@@ -492,23 +492,42 @@ def evaluate(intent_id: str, use_default_policies: bool, output: str, save: bool
 
 
 @cli.command()
-@click.argument("intent_id")
+@click.argument("intent_id", required=False, default=None)
 @click.option("--output", "-o", type=click.Choice(["json", "table", "tree"]), default="table", help="Output format")
-def status(intent_id: str, output: str):
+def status(intent_id: Optional[str], output: str):
     """
-    Get current state of an intent.
-    
+    Get current state of an intent, or show system overview.
+
     Example:
         rct status abc-123
+        rct status
     """
     try:
         ctx = get_context()
-        
+
+        # No intent_id → show system overview
+        if not intent_id:
+            metrics = ctx.observer.get_metrics_summary()
+            overview = {
+                "Status: System Overview": "",
+                "total_intents": metrics.get("total_intents", 0),
+                "active_states": len(ctx.states),
+                "total_compilations": metrics.get("total_compilations", 0),
+                "total_policy_evaluations": metrics.get("total_policy_evaluations", 0),
+                "total_failures": metrics.get("total_failures", 0),
+            }
+            if output == "json":
+                print_json(metrics)
+            else:
+                for k, v in overview.items():
+                    click.echo(f"{k}: {v}" if v != "" else k)
+            return
+
         state = ctx.get_state(intent_id)
         if not state:
             click.echo(click.style(f"Error: State for intent {intent_id} not found", fg="red"), err=True)
             sys.exit(1)
-        
+
         # Format output
         output_data = {
             "state_id": state.state_id,
@@ -524,12 +543,12 @@ def status(intent_id: str, output: str):
             "transitions_count": len(state.transitions),
             "requires_approval": getattr(state, 'requires_approval', False)
         }
-        
+
         if _HAS_RICH and output != "json":
             render_state_panel(output_data)
         else:
             format_output(output_data, OutputFormat(output))
-        
+
     except Exception as e:
         if _HAS_RICH:
             render_error(str(e))
@@ -1116,6 +1135,93 @@ def logs(adapter: Optional[str], tail: int, output: str):
         else:
             click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
         sys.exit(1)
+
+
+
+# ─── version command ──────────────────────────────────────────────────────────
+
+
+@cli.command("version")
+@click.option(
+    "--output", "-o",
+    type=click.Choice(["table", "json"]),
+    default="table",
+    help="Output format.",
+)
+def version_command(output: str) -> None:
+    """Show Delentia OS version information."""
+    import importlib.metadata as _meta
+
+    try:
+        pkg_ver = _meta.version("delentia-os")
+    except _meta.PackageNotFoundError:
+        from rct_control_plane._version import PACKAGE_VERSION
+        pkg_ver = PACKAGE_VERSION
+
+    try:
+        python_ver = sys.version.split()[0]
+    except Exception:
+        python_ver = "unknown"
+
+    data = {
+        "package": "delentia-os",
+        "version": pkg_ver,
+        "python": python_ver,
+        "platform": sys.platform,
+    }
+
+    if output == "json":
+        print_json(data)
+    elif _HAS_RICH:
+        from rich.table import Table
+        table = Table(title="Delentia OS — Version Info")
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", style="white")
+        for k, v in data.items():
+            table.add_row(k, v)
+        get_console().print(table)
+    else:
+        for k, v in data.items():
+            click.echo(f"{k}: {v}")
+
+
+# ─── serve command ────────────────────────────────────────────────────────────
+
+
+@cli.command("serve")
+@click.option("--host", default="0.0.0.0", show_default=True, help="Bind host.")
+@click.option("--port", "-p", default=8080, show_default=True, type=int, help="Bind port.")
+@click.option("--reload", is_flag=True, default=False, help="Enable auto-reload (dev mode).")
+@click.option("--workers", default=1, show_default=True, type=int, help="Number of worker processes.")
+def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
+    """Start the Delentia OS API server (requires uvicorn)."""
+    try:
+        import uvicorn  # type: ignore
+    except ImportError:
+        msg = (
+            "uvicorn is required to run the API server. "
+            "Install it with: pip install uvicorn[standard]"
+        )
+        if _HAS_RICH:
+            render_error(msg)
+        else:
+            click.echo(click.style(f"Error: {msg}", fg="red"), err=True)
+        sys.exit(1)
+
+    if reload:
+        click.echo(
+            click.style("[DEV MODE] Auto-reload enabled. Workers forced to 1.", fg="yellow")
+        )
+        workers = 1
+
+    click.echo(f"Starting Delentia OS API on {host}:{port} (workers={workers})")
+    uvicorn.run(
+        "rct_control_plane.api:app",
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers,
+    )
 
 
 def main():
