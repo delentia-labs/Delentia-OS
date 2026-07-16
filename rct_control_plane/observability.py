@@ -7,12 +7,81 @@ Provides visibility into compilation, policy evaluation, and execution.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable
 from uuid import uuid4
 import hashlib
 import json
+
+
+# ============================================================================
+# PROMETHEUS METRICS INTEGRATION (optional — graceful degradation)
+# ============================================================================
+
+try:
+    from prometheus_client import (  # type: ignore
+        Counter,
+        Gauge,
+        Histogram,
+        CollectorRegistry,
+        generate_latest,
+        CONTENT_TYPE_LATEST,
+    )
+    _HAS_PROMETHEUS = True
+    _RCT_REGISTRY = CollectorRegistry()
+    PROMETHEUS_CONTENT_TYPE: Optional[str] = CONTENT_TYPE_LATEST
+except ImportError:
+    _HAS_PROMETHEUS = False
+    _RCT_REGISTRY = None
+    PROMETHEUS_CONTENT_TYPE = None
+
+
+def _make_counter(name: str, description: str) -> Optional[Any]:
+    """Create a Prometheus Counter, or return None if prometheus is unavailable."""
+    if not _HAS_PROMETHEUS or _RCT_REGISTRY is None:
+        return None
+    try:
+        return Counter(name, description, registry=_RCT_REGISTRY)
+    except Exception:
+        return None
+
+
+def _make_gauge(name: str, description: str) -> Optional[Any]:
+    """Create a Prometheus Gauge, or return None if prometheus is unavailable."""
+    if not _HAS_PROMETHEUS or _RCT_REGISTRY is None:
+        return None
+    try:
+        return Gauge(name, description, registry=_RCT_REGISTRY)
+    except Exception:
+        return None
+
+
+def _make_histogram(name: str, description: str, buckets: Optional[List[float]] = None) -> Optional[Any]:
+    """Create a Prometheus Histogram, or return None if prometheus is unavailable."""
+    if not _HAS_PROMETHEUS or _RCT_REGISTRY is None:
+        return None
+    try:
+        kwargs: Dict[str, Any] = {"registry": _RCT_REGISTRY}
+        if buckets:
+            kwargs["buckets"] = buckets
+        return Histogram(name, description, **kwargs)
+    except Exception:
+        return None
+
+
+def get_prometheus_metrics() -> Optional[bytes]:
+    """Return Prometheus metrics in text format, or None if prometheus is unavailable.
+
+    Returns:
+        bytes: Prometheus exposition format metrics, or None if not available.
+    """
+    if not _HAS_PROMETHEUS or _RCT_REGISTRY is None:
+        return None
+    try:
+        return generate_latest(_RCT_REGISTRY)
+    except Exception:
+        return None
+
 
 
 class ControlPlaneEventType(str, Enum):

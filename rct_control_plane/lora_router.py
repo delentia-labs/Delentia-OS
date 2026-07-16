@@ -6,9 +6,13 @@ Labels: ROUTER_EXECUTOR, ROUTER_SCRIBE, ROUTER_GUARDIAN, ROUTER_BASE
 Runs classification head locally in python backend.
 """
 
+import os
 import time
 from pathlib import Path
 from typing import Any, Optional, Tuple
+
+# Automatically detect if we are running inside pytest to prevent heavy model loading
+_IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ
 
 try:
     import torch
@@ -48,7 +52,11 @@ class LoRARouter:
             3: "ROUTER_BASE"
         }
 
-        if _HAS_TRANSFORMERS:
+        if _IS_TESTING:
+            # During pytest, force MOCK mode to prevent heavyweight model loading/network calls
+            self.mock_mode = True
+            print("[MOCK] LoRA Router: Running in CI/pytest MOCK mode (PYTEST_CURRENT_TEST detected).")
+        elif _HAS_TRANSFORMERS:
             self.mock_mode = False
             self.adapter_hf_id = "Delentia/delentia-lora-router-v0.4"
             self.router_model_id = str(self.adapter_path) if self.adapter_path.exists() else self.adapter_hf_id

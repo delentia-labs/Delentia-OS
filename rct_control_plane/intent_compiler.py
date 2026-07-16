@@ -26,8 +26,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID, uuid4
+from typing import Any, Dict, List, Optional
 
 from .intent_schema import (
     BudgetSpec,
@@ -48,6 +47,91 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .observability import ControlPlaneObserver
+
+
+# ============================================================================
+# LLM PROVIDER INTEGRATION (optional — graceful degradation)
+# ============================================================================
+
+import os
+import json as _json
+
+try:
+    import openai as _openai_module  # type: ignore
+    _HAS_OPENAI = True
+except ImportError:
+    _openai_module = None  # type: ignore
+    _HAS_OPENAI = False
+
+try:
+    import anthropic as _anthropic_module  # type: ignore
+    _HAS_ANTHROPIC = True
+except ImportError:
+    _anthropic_module = None  # type: ignore
+    _HAS_ANTHROPIC = False
+
+
+def _call_llm(prompt: str) -> Optional[Dict[str, Any]]:
+    """Call an LLM provider to assist with intent classification.
+
+    Returns a parsed dict from the LLM response, or None on any failure.
+
+    Provider selection order (controlled by RCT_LLM_PROVIDER env var):
+      - ``regex``   : Disable LLM, always return None.
+      - ``openai``  : Force OpenAI.
+      - ``anthropic``: Force Anthropic.
+      - ``auto``    : Try OpenAI first, then Anthropic (default).
+    """
+    provider = os.getenv("RCT_LLM_PROVIDER", "auto").lower()
+    if provider == "regex":
+        return None
+
+    system_prompt = (
+        "You are an intent classifier. Given a user request, output a JSON object with keys: "
+        "intent_type, scope_type, priority, risk_profile, max_cost_usd, target. "
+        "Return ONLY the JSON object."
+    )
+
+    # ---- OpenAI path ----
+    use_openai = provider in ("openai", "auto")
+    if use_openai and _HAS_OPENAI:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key:
+            try:
+                client = _openai_module.OpenAI(api_key=api_key)
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=256,
+                )
+                content = response.choices[0].message.content or ""
+                return _json.loads(content) if content else None
+            except Exception:
+                return None
+
+    # ---- Anthropic path ----
+    use_anthropic = provider in ("anthropic", "auto")
+    if use_anthropic and _HAS_ANTHROPIC:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if api_key:
+            try:
+                client = _anthropic_module.Anthropic(api_key=api_key)
+                message = client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=256,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                content = message.content[0].text if message.content else ""
+                return _json.loads(content) if content else None
+            except Exception:
+                return None
+
+    return None
+
 
 
 # ============================================================================

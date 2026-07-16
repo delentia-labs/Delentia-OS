@@ -66,6 +66,23 @@ from rct_control_plane.observability import ControlPlaneObserver
 _list = list
 
 
+def _configure_encoding() -> None:
+    """Configure stdout and stderr to use UTF-8 encoding.
+
+    On Windows, the default encoding may be CP874 or similar which can cause
+    UnicodeEncodeError when printing non-ASCII characters. This function
+    safely reconfigures the streams to UTF-8, silently skipping streams
+    that don't support the reconfigure() method.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except AttributeError:
+            # Stream doesn't have reconfigure (e.g., MagicMock, StringIO)
+            pass
+
+
+
 class OutputFormat(str, Enum):
     """Output format options."""
     JSON = "json"
@@ -748,11 +765,11 @@ def reset(force: bool):
                 f"{graph_count} graphs deleted. All metrics reset."
             )
         else:
-            click.echo(click.style(f"✓ Reset complete", fg="green"))
+            click.echo(click.style("✓ Reset complete", fg="green"))
             click.echo(f"  - Deleted {intent_count} intents")
             click.echo(f"  - Deleted {state_count} states")
             click.echo(f"  - Deleted {graph_count} graphs")
-            click.echo(f"  - Reset all metrics")
+            click.echo("  - Reset all metrics")
         
     except click.Abort:
         click.echo("Reset cancelled")
@@ -1088,9 +1105,9 @@ def logs(adapter: Optional[str], tail: int, output: str):
             else:
                 headers = ["Packet", "Action", "Status", "Latency", "Time"]
                 rows = [
-                    [l["packet_id"], l["action"], l["status"],
-                     str(l["latency_ms"]), l["timestamp"]]
-                    for l in log_entries
+                    [entry["packet_id"], entry["action"], entry["status"],
+                     str(entry["latency_ms"]), entry["timestamp"]]
+                    for entry in log_entries
                 ]
                 print_table(headers, rows)
     except Exception as e:

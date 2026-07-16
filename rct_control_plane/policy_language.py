@@ -6,14 +6,14 @@ Policies can approve, reject, escalate, or require manual approval for intents.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from .execution_graph_ir import ExecutionGraph, NodeType
-from .intent_schema import IntentObject, IntentType, RiskProfile
+from .execution_graph_ir import ExecutionGraph
+from .intent_schema import IntentObject
 
 from typing import TYPE_CHECKING
 
@@ -257,6 +257,26 @@ class PolicyEvaluationResult:
     evaluation_time_ms: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    @property
+    def governance_score(self) -> float:
+        """Calculate governance score based on decision and approval status"""
+        if self.decision == PolicyAction.REJECT:
+            return 0.0
+        elif self.requires_approval:
+            return 0.5
+        else:
+            return 1.0
+
+    @property
+    def governance_label(self) -> str:
+        """Determine governance label based on decision and approval status"""
+        if self.decision == PolicyAction.REJECT:
+            return "BLOCKED"
+        elif self.requires_approval:
+            return "REVIEW REQUIRED"
+        else:
+            return "APPROVED"
+
     def is_approved(self) -> bool:
         """Check if execution is approved"""
         if self.decision == PolicyAction.REJECT:
@@ -283,6 +303,8 @@ class PolicyEvaluationResult:
             "escalated_to": self.escalated_to,
             "escalation_reason": self.escalation_reason,
             "evaluation_time_ms": self.evaluation_time_ms,
+            "governance_score": self.governance_score,
+            "governance_label": self.governance_label,
             "metadata": self.metadata
         }
 

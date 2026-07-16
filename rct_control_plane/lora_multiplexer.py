@@ -7,9 +7,11 @@ Supports both Hugging Face PEFT/transformers and llama.cpp/GGUF modes,
 with a graceful high-fidelity mock fallback.
 """
 
+import os
 import time
 from pathlib import Path
 from typing import Any, Optional
+
 
 try:
     import torch
@@ -70,7 +72,15 @@ class LoRAMultiplexer:
         self.gguf_router_path = self.gguf_dir / "delentia-jitna-router-Q4_K_M.gguf"
 
         # Determine best execution engine (GGUF, PEFT, or MOCK fallback)
-        if _HAS_LLAMA_CPP and self.gguf_base_path.exists() and self.gguf_base_path.stat().st_size > 100:
+        # During pytest, force MOCK mode to prevent heavyweight model loading/network calls.
+        # Note: PYTEST_CURRENT_TEST is checked at instantiation time (not import time)
+        # so that it is set correctly when each test runs.
+        _is_testing = "PYTEST_CURRENT_TEST" in os.environ
+        if _is_testing:
+            self.mock_mode = True
+            self.use_gguf = False
+            print("[MOCK] LoRA Multiplexer: Running in CI/pytest MOCK mode (PYTEST_CURRENT_TEST detected).")
+        elif _HAS_LLAMA_CPP and self.gguf_base_path.exists() and self.gguf_base_path.stat().st_size > 100:
             self.use_gguf = True
             self.mock_mode = False
             print("[INFO] LoRA Multiplexer: Found GGUF base model. Running in GGUF mode.")
