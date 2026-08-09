@@ -117,7 +117,7 @@ class TestTierRouter:
         job = _make_job(
             artifact_type="text",
             artifact_content="hello world",
-            intent=_make_jitna(D="playground", R="no constraints"),
+            intent=_make_jitna(I="simple test", D="playground", R="no constraints", **{"Δ": "minor change"}),
         )
         result = self.router.route(job)
         assert result.risk_level == RiskLevel.LOW

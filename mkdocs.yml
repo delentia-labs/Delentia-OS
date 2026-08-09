@@ -116,11 +116,11 @@ nav:
     - SignedAI Consensus: concepts/signedai.md
     - Intent Loop: concepts/intent-loop.md
     - Governance: concepts/governance.md
-  - Algorithms:
-    - 41 Algorithms Overview: algorithms/overview.md
+  - Algorithms & Architecture:
+    - Open-Core Architecture Overview: algorithms/overview.md
     - MOIP — Multi-Objective Intent Planning: algorithms/moip.md
-    - MEE v2 — Meta-Evolution Engine: algorithms/mee.md
-    - Tier 9 — Autonomous Pipeline: algorithms/tier9-autonomy.md
+    - MEE — Meta-Evolution Engine: algorithms/mee.md
+    - Autonomous Pipeline Governance: algorithms/tier9-autonomy.md
   - Architecture:
     - RFC-001 JITNA Protocol Spec: architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md
     - RFC-002 Agent Process Model: architecture/KERNEL_RFC_002_PROCESS_MODEL.md

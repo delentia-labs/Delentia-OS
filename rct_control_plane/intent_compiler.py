@@ -411,9 +411,9 @@ class IntentCompiler:
         
         return keywords
     
-    def _extract_entities(self, text: str, text_lower: str) -> Dict[str, List[str]]:
+    def _extract_entities(self, text: str, text_lower: str) -> Dict[str, List[Any]]:
         """Extract named entities (files, modules, services)"""
-        entities = {
+        entities: Dict[str, List[Any]] = {
             "files": [],
             "modules": [],
             "services": [],
@@ -438,7 +438,7 @@ class IntentCompiler:
     
     def _extract_constraint_values(self, text: str) -> Dict[str, Any]:
         """Extract constraint values from text"""
-        constraints = {}
+        constraints: Dict[str, Any] = {}
         
         # Cost constraints: $X.XX, $X, X dollars
         cost_patterns = [
@@ -492,7 +492,7 @@ class IntentCompiler:
             return None
         
         # Return type with highest score
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
     
     def _extract_scope(self, lexical: LexicalResult, full_text: str) -> ScopeObject:
         """Extract scope from lexical analysis"""

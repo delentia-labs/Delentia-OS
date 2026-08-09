@@ -176,7 +176,7 @@ class RefactorTemplate:
         ))
         
         # Calculate totals
-        total_cost = sum(p.estimated_cost for p in phases)
+        total_cost = sum((p.estimated_cost for p in phases), Decimal("0.0"))
         total_duration = sum(p.estimated_duration_seconds for p in phases)
         
         # Check if approval required

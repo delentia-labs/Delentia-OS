@@ -11,10 +11,22 @@ import types
 import importlib.util as _iu
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_LEGACY_CORE_PATH = os.path.normpath(
-    os.path.join(_HERE, '..', '..', 'rct_platform', 'services', 'signedai', 'legacy', 'core')
-)
+_CANDIDATES = [
+    os.path.join(_HERE, '..', '..', 'rct_platform', 'services', 'signedai', 'legacy', 'core'),
+    os.path.join(_HERE, '..', '..', '..', 'Delentia-Private-OS', 'rct_platform', 'services', 'signedai', 'legacy', 'core'),
+]
+_LEGACY_CORE_PATH = ""
+for path in _CANDIDATES:
+    norm_path = os.path.normpath(path)
+    if os.path.exists(norm_path):
+        _LEGACY_CORE_PATH = norm_path
+        break
+
+if not _LEGACY_CORE_PATH:
+    _LEGACY_CORE_PATH = os.path.normpath(_CANDIDATES[0])
+
 _LEGACY_ROUTER = os.path.join(_LEGACY_CORE_PATH, 'router.py')
+
 
 # Ensure the legacy models module is already loaded (models.py shim does this)
 from signedai.core import models as _models_shim  # noqa: E402, F401
@@ -36,6 +48,8 @@ if _models_legacy_mod is not None:
 _router_mod_name = f"{_PKG}.router"
 if _router_mod_name not in sys.modules:
     _spec = _iu.spec_from_file_location(_router_mod_name, _LEGACY_ROUTER)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load legacy router module from spec: {_LEGACY_ROUTER}")
     _router_mod = _iu.module_from_spec(_spec)
     _router_mod.__package__ = _PKG
     sys.modules[_router_mod_name] = _router_mod

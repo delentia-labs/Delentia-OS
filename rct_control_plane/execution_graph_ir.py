@@ -416,7 +416,7 @@ class ExecutionGraph:
         Returns:
             List of validation error messages (empty if valid)
         """
-        errors = []
+        errors: List[str] = []
         
         # Check for empty graph
         if not self.nodes:
