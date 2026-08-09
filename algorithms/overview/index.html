@@ -25,15 +25,15 @@
       
       
       <link rel="icon" href="../../assets/RCTicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>41 Algorithms Overview - RCT Platform</title>
+        <title>Open-Core Architecture Overview - RCT Platform</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#41-algorithms-reference-overview" class="md-skip">
+        <a href="#open-core-architecture-public-reference-overview" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              41 Algorithms Overview
+              Open-Core Architecture Overview
             
           </span>
         </div>
@@ -299,7 +299,7 @@
           
   
   
-  Algorithms
+  Algorithms & Architecture
 
         </a>
       </li>
@@ -950,7 +950,7 @@
   <span class="md-ellipsis">
     
   
-    Algorithms
+    Algorithms & Architecture
   
 
     
@@ -966,7 +966,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Algorithms
+    Algorithms & Architecture
   
 
           </label>
@@ -995,7 +995,7 @@
   <span class="md-ellipsis">
     
   
-    41 Algorithms Overview
+    Open-Core Architecture Overview
   
 
     
@@ -1013,7 +1013,7 @@
   <span class="md-ellipsis">
     
   
-    41 Algorithms Overview
+    Open-Core Architecture Overview
   
 
     
@@ -1039,10 +1039,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#architecture-at-a-glance" class="md-nav__link">
+  <a href="#architecture-topology-boundaries" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Architecture at a Glance
+        Architecture Topology &amp; Boundaries
       
     </span>
   </a>
@@ -1050,22 +1050,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tier-1-meta-foundation" class="md-nav__link">
+  <a href="#public-core-components" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tier 1 — Meta Foundation
+        Public Core Components
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Tier 1 — Meta Foundation">
+    <nav class="md-nav" aria-label="Public Core Components">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#algo-01-fdia" class="md-nav__link">
+  <a href="#1-fdia-scorer-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ALGO-01: FDIA
+        1. FDIA Scorer Engine
       
     </span>
   </a>
@@ -1073,10 +1073,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#algo-02-moip" class="md-nav__link">
+  <a href="#2-jitna-protocol-rfc-001" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ALGO-02: MOIP
+        2. JITNA Protocol (RFC-001)
       
     </span>
   </a>
@@ -1084,10 +1084,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#algo-03-delta-engine" class="md-nav__link">
+  <a href="#3-signedai-consensus" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ALGO-03: Delta Engine
+        3. SignedAI Consensus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-5-reference-microservices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 5 Reference Microservices
       
     </span>
   </a>
@@ -1100,392 +1111,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tier-2-core-processing" class="md-nav__link">
+  <a href="#proof-of-scale-enterprise-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tier 2 — Core Processing
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tier 2 — Core Processing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#algo-04-rct-7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-04: RCT-7
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-05-graphrag" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-05: GraphRAG
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-06-jitna-protocol" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-06: JITNA Protocol
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-3-enhancement-reflection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 3 — Enhancement &amp; Reflection
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tier 3 — Enhancement &amp; Reflection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#algo-07-mee-v2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-07: MEE v2
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-08-self-evolving-systems" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-08: Self-Evolving Systems
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-09-reflexion" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-09: Reflexion+
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-10-delta-memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-10: Delta Memory
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-11-bbapcf" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-11: BBA→P→CF
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-4-generation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 4 — Generation
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tier 4 — Generation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#algo-12-meta-algorithm-generator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-12: Meta-Algorithm Generator (Γ)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-13-rct-diffusion" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-13: RCT-Diffusion
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-14-graphrag-complete" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-14: GraphRAG Complete
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-15-hrm-controller" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-15: HRM Controller
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-16-vector-search" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-16: Vector Search
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-5-infrastructure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 5 — Infrastructure
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tier 5 — Infrastructure">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#algo-17-graph-traversal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-17: Graph Traversal
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-18-adaptive-prompting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-18: Adaptive Prompting
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-19-data-fusion-v2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-19: Data Fusion v2
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-20-workflow-orchestrator-v2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-20: Workflow Orchestrator v2
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-21-fastslow-router" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-21: Fast/Slow Router
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-22-halting-detection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-22: Halting Detection
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-6-support-systems" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 6 — Support Systems
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tier 6 — Support Systems">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#algo-23-content-box" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-23: Content-Box
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-24-benchmark-suite" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-24: Benchmark Suite
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-25-delta-block" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-25: Delta Block
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#algo-26-intent-classification" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ALGO-26: Intent Classification
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-7-evolution-cycle-1-performance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 7 — Evolution Cycle 1 (Performance)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-8-evolution-cycle-2-error-reduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 8 — Evolution Cycle 2 (Error Reduction)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tier-9-autonomy-layer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tier 9 — Autonomy Layer
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary-table" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary Table
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-system-wide-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key System-Wide Metrics
+        Proof of Scale &amp; Enterprise Metrics
       
     </span>
   </a>
@@ -1543,7 +1172,7 @@
   <span class="md-ellipsis">
     
   
-    MEE v2 — Meta-Evolution Engine
+    MEE — Meta-Evolution Engine
   
 
     
@@ -1571,7 +1200,7 @@
   <span class="md-ellipsis">
     
   
-    Tier 9 — Autonomous Pipeline
+    Autonomous Pipeline Governance
   
 
     
@@ -2377,815 +2006,74 @@
   
 
 
-<h1 id="41-algorithms-reference-overview">41 Algorithms — Reference Overview<a class="headerlink" href="#41-algorithms-reference-overview" title="Permanent link">&para;</a></h1>
-<p><strong>RCT Platform</strong> is driven by <strong>41 algorithms</strong> organized into a 9-Tier stack. Each Tier builds on the one below it — from mathematical foundations at Tier 1 to fully autonomous generation at Tier 9.</p>
+<h1 id="open-core-architecture-public-reference-overview">Open-Core Architecture &amp; Public Reference Overview<a class="headerlink" href="#open-core-architecture-public-reference-overview" title="Permanent link">&para;</a></h1>
+<p><strong>RCT Platform / Delentia OS</strong> provides an intent-centric constitutional AI SDK built on a 9-Tier architecture. The ecosystem is organized around a clear <strong>Open-Core Architecture Boundary</strong>: the <strong>Public Open-Source Core (Apache 2.0)</strong> and the <strong>Private Enterprise Full Engine</strong>.</p>
 <div class="admonition tip">
-<p class="admonition-title">Design Philosophy</p>
-<p>Algorithms are not isolated tools. They form an <strong>intent-preserving pipeline</strong>: every input is scored, planned, verified, and crystallized before it reaches execution.</p>
+<p class="admonition-title">Open-Core Design Philosophy</p>
+<p>The Public Core SDK ships complete reference implementations for intent scoring, multi-LLM consensus, memory compression, and 5 production reference microservices. High-value enterprise orchestration and proprietary execution clusters are smart-masked within the Private Enterprise Engine.</p>
 </div>
 <hr />
-<h2 id="architecture-at-a-glance">Architecture at a Glance<a class="headerlink" href="#architecture-at-a-glance" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌──────────────────────────────────────────────────────────┐
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  Tier 1  │  Meta Foundation            │  3 algorithms   │
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│  Tier 2  │  Core Processing            │  3 algorithms   │
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  Tier 3  │  Enhancement &amp; Reflection   │  5 algorithms   │
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  Tier 4  │  Generation                 │  5 algorithms   │
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│  Tier 5  │  Infrastructure             │  6 algorithms   │
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  Tier 6  │  Support Systems            │  4 algorithms   │
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│  Tier 7  │  Evolution — Performance    │  5 algorithms   │
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  Tier 8  │  Evolution — Error Reduction│  5 algorithms   │
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│  Tier 9  │  Autonomy Layer             │  5 algorithms   │
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>├──────────────────────────────────────────────────────────┤
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  TOTAL                                 │  41 algorithms  │
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>└──────────────────────────────────────────────────────────┘
+<h2 id="architecture-topology-boundaries">Architecture Topology &amp; Boundaries<a class="headerlink" href="#architecture-topology-boundaries" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌────────────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│                        🌐 PUBLIC CORE (Apache 2.0 Open Source SDK)                     │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│  • FDIA Scorer Engine (core/fdia/fdia.py)                                               │
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  • JITNA Protocol RFC-001 Reference (rct_control_plane/)                              │
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  • SignedAI Multi-LLM Consensus Layer (signedai/core/)                                 │
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│  • Delta Engine Memory State Diffing (core/delta_engine/)                              │
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  • Regional Language Adapter (core/regional_adapter/)                                  │
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│                                                                                        │
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  5 Production Reference Microservices (Integration Examples):                          │
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│   1. [analysearch-intent] — Intent Analysis &amp; Search Service                           │
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│   2. [crystallizer]       — Context Compression &amp; Memory State Service                 │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│   3. [gateway-api]        — Public API Gateway Interface                               │
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│   4. [intent-loop]        — FDIA Control Loop Engine Service                           │
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│   5. [vector-search]      — Basic Vector Embedding Search Service                      │
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                                           │
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                                           ▼ (Commercial Moat Boundary)
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>┌────────────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│                     🔒 PRIVATE ENTERPRISE ENGINE (Smart Masked Clusters)               │
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│  • Cluster 1: [Delta Intent Engine Cluster]        ──▶ 15 Microservices / 10 Algorithms   │
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│  • Cluster 2: [Logic &amp; Safety Guard Cluster]      ──▶ 20 Microservices / 15 Algorithms   │
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│  • Cluster 3: [Optimized Nodal Assembler Cluster]  ──▶ 27 Microservices / 16 Algorithms   │
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│                                                                                        │
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│  Proof of Scale &amp; Complexity Metrics:                                                  │
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│   - Verified by 4,849 Enterprise Tests | 100% Pass Rate                                │
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│   - 0.3% Hallucination Rate Target                                                      │
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│   - 0.00% System Crash Rate Guarantee                                                  │
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│   - 74.2% VRAM Optimization via Dynamic LoRA Swapping (&lt;12ms)                           │
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
 </span></code></pre></div>
-<p>All 41 algorithms are validated against <strong>500,000+ property-based test examples</strong> using the Hypothesis framework. The SDK ships reference implementations for the core tiers (Tier 1–3).</p>
 <hr />
-<h2 id="tier-1-meta-foundation">Tier 1 — Meta Foundation<a class="headerlink" href="#tier-1-meta-foundation" title="Permanent link">&para;</a></h2>
-<p>The philosophical and mathematical bedrock. Every intent processed by RCT passes through Tier 1 first.</p>
-<hr />
-<h3 id="algo-01-fdia">ALGO-01: FDIA<a class="headerlink" href="#algo-01-fdia" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Fundamental Decision Intelligence Algorithm<br />
-<strong>Score:</strong> 9.2 / 10</p>
-<p>The <strong>core equation</strong> of the entire RCT system. Every AI action is scored before execution.</p>
+<h2 id="public-core-components">Public Core Components<a class="headerlink" href="#public-core-components" title="Permanent link">&para;</a></h2>
+<h3 id="1-fdia-scorer-engine">1. FDIA Scorer Engine<a class="headerlink" href="#1-fdia-scorer-engine" title="Permanent link">&para;</a></h3>
+<p>The mathematical core of intent grounding. Every action is scored before execution.</p>
 <div class="arithmatex">\[F = D^I \times A\]</div>
-<table>
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>F</strong></td>
-<td>Future — the output the AI must deliver</td>
-</tr>
-<tr>
-<td><strong>D</strong></td>
-<td>Data quality (0.0 – 1.0)</td>
-</tr>
-<tr>
-<td><strong>I</strong></td>
-<td>Intent precision — acts as an <strong>exponent</strong>, not a multiplier</td>
-</tr>
-<tr>
-<td><strong>A</strong></td>
-<td>Architect — human-in-the-loop gate. When <strong>A = 0</strong>, output is <strong>constitutionally blocked</strong></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Why I is an exponent:</strong> High intent amplifies good data exponentially. Low intent degrades the result even with perfect data. This is intentional — clarity of purpose is the primary lever.</p>
-<p><strong>Use with:</strong> <a href="../../concepts/fdia/"><code>core/fdia/</code></a> — full implementation guide with code examples.</p>
+<ul>
+<li><strong>F (Future/Fulfillment):</strong> Execution confidence output score.</li>
+<li><strong>D (Data):</strong> Data quality score (<span class="arithmatex">\(0.0 - 1.0\)</span>).</li>
+<li><strong>I (Intent):</strong> Intent precision exponent (<span class="arithmatex">\(I \ge 1.0\)</span>).</li>
+<li><strong>A (Architect):</strong> Human-in-the-loop gate. When <span class="arithmatex">\(A=0\)</span>, output is constitutionally blocked.</li>
+</ul>
+<h3 id="2-jitna-protocol-rfc-001">2. JITNA Protocol (RFC-001)<a class="headerlink" href="#2-jitna-protocol-rfc-001" title="Permanent link">&para;</a></h3>
+<p>Canonical reference for intent packet transport (<span class="arithmatex">\(I, D, \Delta, A, R, M\)</span>).</p>
+<h3 id="3-signedai-consensus">3. SignedAI Consensus<a class="headerlink" href="#3-signedai-consensus" title="Permanent link">&para;</a></h3>
+<p>Jury-based multi-LLM consensus voting (<span class="arithmatex">\(\ge 75\%\)</span> consensus threshold, variance <span class="arithmatex">\(\le \pm 0.20\)</span>) with SHA-256 cryptographic attestation.</p>
+<h3 id="4-5-reference-microservices">4. 5 Reference Microservices<a class="headerlink" href="#4-5-reference-microservices" title="Permanent link">&para;</a></h3>
+<p>Shipped in <code>microservices/</code> with 142 dedicated integration tests:
+- <code>analysearch-intent</code>: Intent classification and entity parsing.
+- <code>crystallizer</code>: Memory state compaction.
+- <code>gateway-api</code>: Standard REST/GraphQL gateway.
+- <code>intent-loop</code>: FDIA scoring control loop.
+- <code>vector-search</code>: Basic vector search backend.</p>
 <hr />
-<h3 id="algo-02-moip">ALGO-02: MOIP<a class="headerlink" href="#algo-02-moip" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Multi-Objective Intent Planning<br />
-<strong>Score:</strong> 9.1 / 10</p>
-<p>Uses <strong>Pareto optimization</strong> to plan across multiple competing goals simultaneously — cost, speed, quality, compliance — without collapsing them into a single weighted score.</p>
-<p><strong>Use cases:</strong> Enterprise workflow planning with multi-stakeholder constraints, budget vs. quality tradeoff resolution, compliance-aware resource allocation.</p>
-<hr />
-<h3 id="algo-03-delta-engine">ALGO-03: Delta Engine<a class="headerlink" href="#algo-03-delta-engine" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Gap Analysis &amp; Compression Engine<br />
-<strong>Score:</strong> 8.7 / 10</p>
-<p>Stores and computes <strong>state differences</strong> (deltas) rather than full snapshots — the equivalent of git diffs for AI memory.</p>
-<div class="arithmatex">\[\Delta = \text{State}_{\text{after}} - \text{State}_{\text{before}}\]</div>
-<p><strong>Result:</strong> 74% memory compression with full audit-trail replay capability.</p>
-<p><strong>Connects to:</strong> ALGO-10 (Delta Memory), ALGO-25 (Delta Block) — both use Delta Engine as their computation backend.</p>
-<hr />
-<h2 id="tier-2-core-processing">Tier 2 — Core Processing<a class="headerlink" href="#tier-2-core-processing" title="Permanent link">&para;</a></h2>
-<p>The main cognitive processing layer. Handles intent parsing, knowledge retrieval, and structured reasoning.</p>
-<hr />
-<h3 id="algo-04-rct-7">ALGO-04: RCT-7<a class="headerlink" href="#algo-04-rct-7" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> 7-Step Cognitive Process Framework<br />
-<strong>Score:</strong> 9.0 / 10 | End-to-end accuracy: <strong>96.0%</strong></p>
-<p>The structured reasoning kernel. Every complex request passes through all 7 steps in sequence — no step can be skipped for Tier-O (high-stakes) operations.</p>
-<table>
-<thead>
-<tr>
-<th>Step</th>
-<th>Name</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td><strong>Observe</strong></td>
-<td>Capture raw input without interpretation</td>
-</tr>
-<tr>
-<td>2</td>
-<td><strong>Analyze</strong></td>
-<td>Parse into structured entities and constraints</td>
-</tr>
-<tr>
-<td>3</td>
-<td><strong>Deconstruct</strong></td>
-<td>Break into atomic executable sub-tasks</td>
-</tr>
-<tr>
-<td>4</td>
-<td><strong>Reverse Reasoning</strong></td>
-<td>Work backward from goal to validate plan</td>
-</tr>
-<tr>
-<td>5</td>
-<td><strong>Identify Core Intent</strong></td>
-<td>Resolve the single primary intent from competing signals</td>
-</tr>
-<tr>
-<td>6</td>
-<td><strong>Reconstruct</strong></td>
-<td>Build the verified, signed execution plan</td>
-</tr>
-<tr>
-<td>7</td>
-<td><strong>Compare</strong></td>
-<td>FDIA-score the plan against the original intent</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Three variants:</strong> RCT-O (full, 7 steps) · RCT-S (condensed, 4 steps) · RCT-I (interpretive, for ambiguous inputs).</p>
-<p><strong>See:</strong> <a href="../../concepts/rct-7-thinking/">RCT-7 Thinking Protocol</a> — full documentation with examples.</p>
-<hr />
-<h3 id="algo-05-graphrag">ALGO-05: GraphRAG<a class="headerlink" href="#algo-05-graphrag" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Graph-Based Retrieval Augmented Generation<br />
-<strong>Score:</strong> 8.5 / 10</p>
-<p>Combines <strong>graph traversal</strong> with semantic vector search for knowledge retrieval. Standard RAG finds similar text; GraphRAG finds similar text <strong>and</strong> follows entity relationships across the knowledge graph.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Query → Vector Search (semantic)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>      + Graph Traversal (relationships)
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>      → Multi-hop Context Assembly
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      → Grounded Generation
-</span></code></pre></div>
-<p><strong>Result:</strong> Significantly reduced hallucination rate by anchoring generation to graph-verified facts.</p>
-<hr />
-<h3 id="algo-06-jitna-protocol">ALGO-06: JITNA Protocol<a class="headerlink" href="#algo-06-jitna-protocol" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Just In Time Nodal Assembly<br />
-<strong>Score:</strong> 8.3 / 10</p>
-<p>The <strong>communication protocol</strong> of the RCT kernel. Every message between agents is a JITNA packet with 6 canonical fields:</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>I</strong></td>
-<td>Intent</td>
-</tr>
-<tr>
-<td><strong>D</strong></td>
-<td>Data</td>
-</tr>
-<tr>
-<td><strong>Δ</strong></td>
-<td>Delta (gap between current and target state)</td>
-</tr>
-<tr>
-<td><strong>A</strong></td>
-<td>Architect (accountability assignment)</td>
-</tr>
-<tr>
-<td><strong>R</strong></td>
-<td>Reflection</td>
-</tr>
-<tr>
-<td><strong>M</strong></td>
-<td>Memory reference</td>
-</tr>
-</tbody>
-</table>
-<p><strong>See:</strong> <a href="../../concepts/jitna/">JITNA Protocol</a> · <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/">RFC-001 Specification</a></p>
-<hr />
-<h2 id="tier-3-enhancement-reflection">Tier 3 — Enhancement &amp; Reflection<a class="headerlink" href="#tier-3-enhancement-reflection" title="Permanent link">&para;</a></h2>
-<p>Self-improvement, evolutionary growth, and reflection loops that make the system learn from its own outputs.</p>
-<hr />
-<h3 id="algo-07-mee-v2">ALGO-07: MEE v2<a class="headerlink" href="#algo-07-mee-v2" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Meta-Evolution Engine v2<br />
-<strong>Score:</strong> 9.85 / 10</p>
-<p>The engine that enables <strong>monotonic growth</strong> — the system's output value increases every generation, with mathematical proof that it never decreases.</p>
-<div class="arithmatex">\[G_{n+1} = G_n \times (1 + M \times \Delta) \times R_t\]</div>
-<table>
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>G</td>
-<td>Growth value (current generation)</td>
-</tr>
-<tr>
-<td>M</td>
-<td>Mutation rate</td>
-</tr>
-<tr>
-<td>Δ</td>
-<td>Improvement delta per evolution cycle</td>
-</tr>
-<tr>
-<td>R_t</td>
-<td>Retention factor at time t</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Property:</strong> Monotonic — growth is guaranteed to be non-negative across all configurations.</p>
-<hr />
-<h3 id="algo-08-self-evolving-systems">ALGO-08: Self-Evolving Systems<a class="headerlink" href="#algo-08-self-evolving-systems" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Autonomous Self-Improvement System<br />
-<strong>Score:</strong> 9.85 / 10</p>
-<p>An autonomous system that observes its own performance metrics, identifies improvement opportunities through FDIA scoring, proposes modifications through MEE v2, validates through SignedAI consensus, and applies changes — forming a closed improvement loop without human intervention.</p>
-<p><strong>Depends on:</strong> ALGO-07 (MEE v2) as the growth engine, ALGO-30 (ABV) for validation confidence.</p>
-<hr />
-<h3 id="algo-09-reflexion">ALGO-09: Reflexion+<a class="headerlink" href="#algo-09-reflexion" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Enhanced Self-Reflection Agent<br />
-<strong>Score:</strong> 8.6 / 10</p>
-<p>A multi-round self-correction loop. The agent generates an output, an external critic (SignedAI) evaluates it, the agent reflects on the critique, and regenerates — converging toward a verified answer.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Attempt → Critic (SignedAI) → Reflection → Improved Attempt → Convergence Test
-</span></code></pre></div>
-<p><strong>Differentiator from standard Reflexion:</strong> Uses an <strong>external verifier</strong> at the Critic stage instead of self-evaluation only.</p>
-<hr />
-<h3 id="algo-10-delta-memory">ALGO-10: Delta Memory<a class="headerlink" href="#algo-10-delta-memory" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Incremental Memory Storage<br />
-<strong>Score:</strong> 8.0 / 10</p>
-<p>User-facing memory API built on ALGO-03 (Delta Engine). Stores session and long-term memory as delta chains rather than full snapshots — enabling instant warm recall at &lt; 50ms (vs cold start 3–5s).</p>
-<hr />
-<h3 id="algo-11-bbapcf">ALGO-11: BBA→P→CF<a class="headerlink" href="#algo-11-bbapcf" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Belief → Plan → Consequence Flow<br />
-<strong>Score:</strong> 9.3 / 10</p>
-<p>A causal reasoning pipeline: starts from stated beliefs/assumptions, builds an executable plan, then simulates the downstream consequences before committing. Exposes hidden causal chains and prevents unintended side effects.</p>
-<hr />
-<h2 id="tier-4-generation">Tier 4 — Generation<a class="headerlink" href="#tier-4-generation" title="Permanent link">&para;</a></h2>
-<p>Algorithms that <strong>create</strong> — new knowledge, new algorithms, new modules, and new structured outputs.</p>
-<hr />
-<h3 id="algo-12-meta-algorithm-generator">ALGO-12: Meta-Algorithm Generator (Γ)<a class="headerlink" href="#algo-12-meta-algorithm-generator" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Meta-Algorithm Generator<br />
-<strong>Score:</strong> 8.9 / 10</p>
-<p>Given a problem description, generates a new algorithm specification automatically. Operates as a <strong>meta-programming layer</strong> above the algorithm stack — capable of spawning new specialized algorithms to fill gaps.</p>
-<hr />
-<h3 id="algo-13-rct-diffusion">ALGO-13: RCT-Diffusion<a class="headerlink" href="#algo-13-rct-diffusion" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Diffusion-Based Generative Algorithm<br />
-<strong>Score:</strong> 9.6 / 10</p>
-<p>Applies the <strong>diffusion model paradigm</strong> (iterative denoising) to structured data generation — synthetic datasets, enterprise knowledge augmentation, and sparse-data enrichment. Generates with higher fidelity than autoregressive approaches for structured schemas.</p>
-<hr />
-<h3 id="algo-14-graphrag-complete">ALGO-14: GraphRAG Complete<a class="headerlink" href="#algo-14-graphrag-complete" title="Permanent link">&para;</a></h3>
-<p>The production-grade successor to ALGO-05. Integrates full Neo4j graph database with Qdrant vector search for enterprise-scale knowledge retrieval with multi-hop reasoning across arbitrarily large knowledge graphs.</p>
-<hr />
-<h3 id="algo-15-hrm-controller">ALGO-15: HRM Controller<a class="headerlink" href="#algo-15-hrm-controller" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Human-in-the-loop Reasoning Manager<br />
-<strong>Score:</strong> 9.0 / 10 | Accuracy: <strong>98.0%</strong></p>
-<p>Manages the escalation pipeline to human reviewers. Triggers when FDIA score falls below threshold, when policy evaluation returns <code>REQUIRES_REVIEW</code>, or when Constitutional AI gate fires. Delivers a complete context package to the reviewer — not just an alert.</p>
-<p><strong>See:</strong> <a href="../../concepts/governance/">Governance Layer</a></p>
-<hr />
-<h3 id="algo-16-vector-search">ALGO-16: Vector Search<a class="headerlink" href="#algo-16-vector-search" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> HNSW Semantic Search<br />
-<strong>Score:</strong> 7.0 / 10</p>
-<p>High-performance semantic search using HNSW (Hierarchical Navigable Small World) graph algorithm on Qdrant. Target latency: &lt; 50ms (p95, warm cache). Supports quantization for 70% index size reduction.</p>
-<hr />
-<h2 id="tier-5-infrastructure">Tier 5 — Infrastructure<a class="headerlink" href="#tier-5-infrastructure" title="Permanent link">&para;</a></h2>
-<p>The routing, orchestration, and fusion layer that connects all other algorithms.</p>
-<hr />
-<h3 id="algo-17-graph-traversal">ALGO-17: Graph Traversal<a class="headerlink" href="#algo-17-graph-traversal" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 7.2 / 10</p>
-<p>Multi-algorithm graph navigation: BFS, DFS, Dijkstra, PageRank, Betweenness Centrality. Powers knowledge graph navigation, dependency resolution, and influence ranking across the RCT knowledge base.</p>
-<hr />
-<h3 id="algo-18-adaptive-prompting">ALGO-18: Adaptive Prompting<a class="headerlink" href="#algo-18-adaptive-prompting" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 7.8 / 10</p>
-<p>Dynamically adapts prompt templates based on user profile, domain expertise level, language preference, and historical response quality — without requiring manual template engineering.</p>
-<hr />
-<h3 id="algo-19-data-fusion-v2">ALGO-19: Data Fusion v2<a class="headerlink" href="#algo-19-data-fusion-v2" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 9.0 / 10</p>
-<p>Fuses data from multiple sources with <strong>conflict resolution</strong>. When sources disagree, applies source reliability weighting, timestamp recency scoring, and provenance analysis to produce a consensus value with a confidence score.</p>
-<hr />
-<h3 id="algo-20-workflow-orchestrator-v2">ALGO-20: Workflow Orchestrator v2<a class="headerlink" href="#algo-20-workflow-orchestrator-v2" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 9.2 / 10</p>
-<p>DAG-based async workflow engine for multi-agent tasks. Supports parallel execution of independent tasks, retry with exponential backoff, dead letter queues for failed tasks, and checkpoint/restore for long-running workflows.</p>
-<hr />
-<h3 id="algo-21-fastslow-router">ALGO-21: Fast/Slow Router<a class="headerlink" href="#algo-21-fastslow-router" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 8.8 / 10 | Accuracy: <strong>95.8%</strong></p>
-<p>The primary routing algorithm. Classifies every incoming intent by complexity and routes to the appropriate lane:</p>
-<table>
-<thead>
-<tr>
-<th>Lane</th>
-<th>Criteria</th>
-<th>Target Latency</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Fast Lane</strong></td>
-<td>Simple, high-confidence, cached patterns</td>
-<td>&lt; 200ms</td>
-</tr>
-<tr>
-<td><strong>Slow Lane</strong></td>
-<td>Complex, ambiguous, high-stakes</td>
-<td>Full RCT-7 pipeline</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3 id="algo-22-halting-detection">ALGO-22: Halting Detection<a class="headerlink" href="#algo-22-halting-detection" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 8.5 / 10</p>
-<p>Detects infinite loops, deadlocks, and stuck states in multi-agent workflows through execution timeout monitoring, cycle detection in the execution graph, and heartbeat tracking. Failed tasks are routed to the Dead Letter Queue with full context.</p>
-<hr />
-<h2 id="tier-6-support-systems">Tier 6 — Support Systems<a class="headerlink" href="#tier-6-support-systems" title="Permanent link">&para;</a></h2>
-<hr />
-<h3 id="algo-23-content-box">ALGO-23: Content-Box<a class="headerlink" href="#algo-23-content-box" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 8.2 / 10</p>
-<p>Structured output rendering engine. Takes validated AI output and renders it into the appropriate format — Markdown, JSON, HTML, or React component schemas — based on the requesting consumer.</p>
-<hr />
-<h3 id="algo-24-benchmark-suite">ALGO-24: Benchmark Suite<a class="headerlink" href="#algo-24-benchmark-suite" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 7.6 / 10</p>
-<p>The testing framework for all 41 algorithms. Five test profiles from Normal (250 examples) to Ultra-continuous (250,000 examples), all using property-based testing via Hypothesis. Used to generate the accuracy and reliability scores reported throughout this documentation.</p>
-<hr />
-<h3 id="algo-25-delta-block">ALGO-25: Delta Block<a class="headerlink" href="#algo-25-delta-block" title="Permanent link">&para;</a></h3>
-<p><strong>Score:</strong> 7.7 / 10</p>
-<p>The atomic storage unit inside ALGO-03 (Delta Engine). A Delta Block captures a single state transition with full provenance — what changed, when, by which agent, and under which FDIA score.</p>
-<hr />
-<h3 id="algo-26-intent-classification">ALGO-26: Intent Classification<a class="headerlink" href="#algo-26-intent-classification" title="Permanent link">&para;</a></h3>
-<p><strong>Full Name:</strong> Intent Conservation &amp; Tracking<br />
-<strong>Score:</strong> 9.4 / 10</p>
-<p>Tracks and preserves intent across multi-turn conversations and multi-agent handoffs. Prevents <strong>intent drift</strong> — the gradual corruption of the original request as it passes between agents and transformation steps.</p>
-<hr />
-<h2 id="tier-7-evolution-cycle-1-performance">Tier 7 — Evolution Cycle 1 (Performance)<a class="headerlink" href="#tier-7-evolution-cycle-1-performance" title="Permanent link">&para;</a></h2>
-<p>Five algorithms that scale the platform from prototype to production throughput.</p>
-<table>
-<thead>
-<tr>
-<th>ALGO</th>
-<th>Name</th>
-<th>Key Target</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ALGO-27</td>
-<td>TVRA — Time-aware Video Reasoning &amp; Analysis</td>
-<td>+18pp video comprehension improvement</td>
-</tr>
-<tr>
-<td>ALGO-28</td>
-<td>CIO — Concurrent I/O Optimizer</td>
-<td>1,000 → 10,000 concurrent requests</td>
-</tr>
-<tr>
-<td>ALGO-29</td>
-<td>UIA — Universal Integration Adapter</td>
-<td>15 → 5,000 API integrations</td>
-</tr>
-<tr>
-<td>ALGO-30</td>
-<td>ABV — Adaptive Bayesian Validator</td>
-<td>Confidence 70% → 95%</td>
-</tr>
-<tr>
-<td>ALGO-31</td>
-<td>ALBAS — Auto-Load Balancing &amp; Auto-Scaling</td>
-<td>1,000 → 10,000 requests/sec throughput</td>
-</tr>
-</tbody>
-</table>
-<p><strong>ALGO-30 (ABV)</strong> uses Bayesian inference to continuously update confidence scores as evidence accumulates — reducing both false positives and false negatives in fact verification.</p>
-<hr />
-<h2 id="tier-8-evolution-cycle-2-error-reduction">Tier 8 — Evolution Cycle 2 (Error Reduction)<a class="headerlink" href="#tier-8-evolution-cycle-2-error-reduction" title="Permanent link">&para;</a></h2>
-<p>Five algorithms that drive error rates toward zero.</p>
-<table>
-<thead>
-<tr>
-<th>ALGO</th>
-<th>Name</th>
-<th>Key Target</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ALGO-32</td>
-<td>MCTR — Multi-Chain Thought Reasoning</td>
-<td>−15% reasoning errors</td>
-</tr>
-<tr>
-<td>ALGO-33</td>
-<td>FGHF — Fact-Grounded Hallucination Filter</td>
-<td>Hallucination rate <strong>&lt; 0.3%</strong> (vs industry 12–15%)</td>
-</tr>
-<tr>
-<td>ALGO-34</td>
-<td>SWCAR — Semantic Web &amp; Content Auto-Repair</td>
-<td>−12% web content errors</td>
-</tr>
-<tr>
-<td>ALGO-35</td>
-<td>ATC — Adaptive Timeout Controller</td>
-<td>−7% timeout failures</td>
-</tr>
-<tr>
-<td>ALGO-36</td>
-<td>RFLH — Rare-Failure Learning Heuristic</td>
-<td>−3% edge case failures</td>
-</tr>
-</tbody>
-</table>
-<p><strong>ALGO-33 (FGHF)</strong> verifies every factual claim against the knowledge base before output reaches the user. Combined with ALGO-05 (GraphRAG) and ALGO-30 (ABV), it achieves a hallucination rate of <strong>&lt; 0.3%</strong> — a 97% reduction from the industry baseline.</p>
-<hr />
-<h2 id="tier-9-autonomy-layer">Tier 9 — Autonomy Layer<a class="headerlink" href="#tier-9-autonomy-layer" title="Permanent link">&para;</a></h2>
-<p>The autonomous generation pipeline. See the full showcase: <a href="../tier9-autonomy/">Tier 9 — Autonomous Pipeline</a>.</p>
-<table>
-<thead>
-<tr>
-<th>ALGO</th>
-<th>Name</th>
-<th>Score</th>
-<th>Capability</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ALGO-37</td>
-<td>Planning Depth Expander</td>
-<td><strong>10.0</strong></td>
-<td>15-level hierarchical planning (+400% depth)</td>
-</tr>
-<tr>
-<td>ALGO-38</td>
-<td>CSP Solver</td>
-<td><strong>10.0</strong></td>
-<td>Constraint satisfaction via AC-3 + Backtracking</td>
-</tr>
-<tr>
-<td>ALGO-39</td>
-<td>Genesis Engine</td>
-<td>9.5</td>
-<td>Auto-instantiates new modules in ~2 seconds</td>
-</tr>
-<tr>
-<td>ALGO-40</td>
-<td>ITSR</td>
-<td><strong>9.8</strong></td>
-<td>Tech stack recommendation, 98.7% accuracy</td>
-</tr>
-<tr>
-<td>ALGO-41</td>
-<td>The Crystallizer</td>
-<td>9.6</td>
-<td>Golden keyword extraction via entropy scoring</td>
-</tr>
-</tbody>
-</table>
-<p>These five algorithms form an <strong>end-to-end autonomous pipeline</strong>: plain text in → production-ready module out, in approximately 2 seconds.</p>
-<hr />
-<h2 id="summary-table">Summary Table<a class="headerlink" href="#summary-table" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Short Name</th>
-<th>Full Name</th>
-<th>Score</th>
-<th>Tier</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ALGO-01</td>
-<td>FDIA</td>
-<td>Fundamental Decision Intelligence Algorithm</td>
-<td>9.2</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ALGO-02</td>
-<td>MOIP</td>
-<td>Multi-Objective Intent Planning</td>
-<td>9.1</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ALGO-03</td>
-<td>Delta Engine</td>
-<td>Gap Analysis &amp; Compression Engine</td>
-<td>8.7</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ALGO-04</td>
-<td>RCT-7</td>
-<td>7-Step Cognitive Process Framework</td>
-<td>9.0</td>
-<td>2</td>
-</tr>
-<tr>
-<td>ALGO-05</td>
-<td>GraphRAG</td>
-<td>Graph-Based Retrieval Augmented Generation</td>
-<td>8.5</td>
-<td>2</td>
-</tr>
-<tr>
-<td>ALGO-06</td>
-<td>JITNA</td>
-<td>Just In Time Nodal Assembly Protocol</td>
-<td>8.3</td>
-<td>2</td>
-</tr>
-<tr>
-<td>ALGO-07</td>
-<td>MEE v2</td>
-<td>Meta-Evolution Engine v2</td>
-<td>9.85</td>
-<td>3</td>
-</tr>
-<tr>
-<td>ALGO-08</td>
-<td>Self-Evolving</td>
-<td>Autonomous Self-Improvement System</td>
-<td>9.85</td>
-<td>3</td>
-</tr>
-<tr>
-<td>ALGO-09</td>
-<td>Reflexion+</td>
-<td>Enhanced Self-Reflection Agent</td>
-<td>8.6</td>
-<td>3</td>
-</tr>
-<tr>
-<td>ALGO-10</td>
-<td>Delta Memory</td>
-<td>Incremental Memory Storage</td>
-<td>8.0</td>
-<td>3</td>
-</tr>
-<tr>
-<td>ALGO-11</td>
-<td>BBA→P→CF</td>
-<td>Belief → Plan → Consequence Flow</td>
-<td>9.3</td>
-<td>3</td>
-</tr>
-<tr>
-<td>ALGO-12</td>
-<td>Meta-Algorithm Γ</td>
-<td>Meta-Algorithm Generator</td>
-<td>8.9</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ALGO-13</td>
-<td>RCT-Diffusion</td>
-<td>Diffusion-Based Generative Algorithm</td>
-<td>9.6</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ALGO-14</td>
-<td>GraphRAG Complete</td>
-<td>Full-Stack Graph + Vector Hybrid</td>
-<td>—</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ALGO-15</td>
-<td>HRM</td>
-<td>Human-in-the-loop Reasoning Manager</td>
-<td>9.0</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ALGO-16</td>
-<td>Vector Search</td>
-<td>HNSW Semantic Search</td>
-<td>7.0</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ALGO-17</td>
-<td>Graph Traversal</td>
-<td>BFS / DFS / PageRank Navigation</td>
-<td>7.2</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-18</td>
-<td>Adaptive Prompting</td>
-<td>Dynamic Prompt Adaptation Engine</td>
-<td>7.8</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-19</td>
-<td>Data Fusion v2</td>
-<td>Multi-Source Fusion with Conflict Resolution</td>
-<td>9.0</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-20</td>
-<td>Workflow Orchestrator v2</td>
-<td>DAG-Based Async Workflow Engine</td>
-<td>9.2</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-21</td>
-<td>Fast/Slow Router</td>
-<td>Dual-Lane Routing by Complexity</td>
-<td>8.8</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-22</td>
-<td>Halting Detection</td>
-<td>Deadlock &amp; Loop Detection</td>
-<td>8.5</td>
-<td>5</td>
-</tr>
-<tr>
-<td>ALGO-23</td>
-<td>Content-Box</td>
-<td>Structured Output Rendering Engine</td>
-<td>8.2</td>
-<td>6</td>
-</tr>
-<tr>
-<td>ALGO-24</td>
-<td>Benchmark Suite</td>
-<td>Algorithm Performance Testing Framework</td>
-<td>7.6</td>
-<td>6</td>
-</tr>
-<tr>
-<td>ALGO-25</td>
-<td>Delta Block</td>
-<td>Incremental State Storage Unit</td>
-<td>7.7</td>
-<td>6</td>
-</tr>
-<tr>
-<td>ALGO-26</td>
-<td>Intent Classification</td>
-<td>Intent Conservation &amp; Tracking</td>
-<td>9.4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>ALGO-27</td>
-<td>TVRA</td>
-<td>Time-aware Video Reasoning &amp; Analysis</td>
-<td>—</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ALGO-28</td>
-<td>CIO</td>
-<td>Concurrent I/O Optimizer</td>
-<td>—</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ALGO-29</td>
-<td>UIA</td>
-<td>Universal Integration Adapter</td>
-<td>—</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ALGO-30</td>
-<td>ABV</td>
-<td>Adaptive Bayesian Validator</td>
-<td>—</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ALGO-31</td>
-<td>ALBAS</td>
-<td>Auto-Load Balancing &amp; Auto-Scaling</td>
-<td>—</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ALGO-32</td>
-<td>MCTR</td>
-<td>Multi-Chain Thought Reasoning</td>
-<td>—</td>
-<td>8</td>
-</tr>
-<tr>
-<td>ALGO-33</td>
-<td>FGHF</td>
-<td>Fact-Grounded Hallucination Filter</td>
-<td>—</td>
-<td>8</td>
-</tr>
-<tr>
-<td>ALGO-34</td>
-<td>SWCAR</td>
-<td>Semantic Web &amp; Content Auto-Repair</td>
-<td>—</td>
-<td>8</td>
-</tr>
-<tr>
-<td>ALGO-35</td>
-<td>ATC</td>
-<td>Adaptive Timeout Controller</td>
-<td>—</td>
-<td>8</td>
-</tr>
-<tr>
-<td>ALGO-36</td>
-<td>RFLH</td>
-<td>Rare-Failure Learning Heuristic</td>
-<td>—</td>
-<td>8</td>
-</tr>
-<tr>
-<td>ALGO-37</td>
-<td>Planning Expander</td>
-<td>15-Step Hierarchical Planning Expander</td>
-<td>10.0</td>
-<td>9</td>
-</tr>
-<tr>
-<td>ALGO-38</td>
-<td>CSP Solver</td>
-<td>Constraint Satisfaction Solver (AC-3)</td>
-<td>10.0</td>
-<td>9</td>
-</tr>
-<tr>
-<td>ALGO-39</td>
-<td>Genesis Engine</td>
-<td>Auto-Instantiation Protocol</td>
-<td>9.5</td>
-<td>9</td>
-</tr>
-<tr>
-<td>ALGO-40</td>
-<td>ITSR</td>
-<td>Intent-Driven Tech Stack Recommender</td>
-<td>9.8</td>
-<td>9</td>
-</tr>
-<tr>
-<td>ALGO-41</td>
-<td>The Crystallizer</td>
-<td>Golden Keyword Extraction Engine</td>
-<td>9.6</td>
-<td>9</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="key-system-wide-metrics">Key System-Wide Metrics<a class="headerlink" href="#key-system-wide-metrics" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-<th>Source Algorithm</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Hallucination rate</td>
-<td><strong>&lt; 0.3%</strong> (industry: 12–15%)</td>
-<td>ALGO-33 FGHF</td>
-</tr>
-<tr>
-<td>Memory compression</td>
-<td><strong>74%</strong></td>
-<td>ALGO-03 Delta Engine</td>
-</tr>
-<tr>
-<td>Intent recall (warm)</td>
-<td><strong>&lt; 50ms</strong></td>
-<td>ALGO-10 Delta Memory</td>
-</tr>
-<tr>
-<td>Confidence calibration</td>
-<td><strong>95%</strong></td>
-<td>ALGO-30 ABV</td>
-</tr>
-<tr>
-<td>Reasoning accuracy</td>
-<td><strong>96.0%</strong></td>
-<td>ALGO-04 RCT-7</td>
-</tr>
-<tr>
-<td>Routing accuracy</td>
-<td><strong>95.8%</strong></td>
-<td>ALGO-21 Fast/Slow Router</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<p><em>Full architecture specifications: <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/">RFC-001 through RFC-006</a></em><br />
-<em>Autonomous generation pipeline: <a href="../tier9-autonomy/">Tier 9 — Autonomous Pipeline</a></em></p>
+<h2 id="proof-of-scale-enterprise-metrics">Proof of Scale &amp; Enterprise Metrics<a class="headerlink" href="#proof-of-scale-enterprise-metrics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Enterprise Test Suite:</strong> 4,849 property-based and integration test cases across Python 3.10–3.12.</li>
+<li><strong>Hallucination Protection:</strong> Target <span class="arithmatex">\(&lt;0.3\%\)</span> hallucination rate via SignedAI multi-model consensus.</li>
+<li><strong>System Stability:</strong> <span class="arithmatex">\(0.00\%\)</span> crash rate across production test suites.</li>
+<li><strong>Memory Compression:</strong> <span class="arithmatex">\(74.2\%\)</span> memory state compression ratio (Delta Engine internal benchmark).</li>
+</ul>
 
 
 
@@ -3325,7 +2213,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "none"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       
