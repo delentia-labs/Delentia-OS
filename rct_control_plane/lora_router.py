@@ -11,8 +11,8 @@ import time
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
-# Automatically detect if we are running inside pytest to prevent heavy model loading
-_IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ
+# Automatically detect if we are running inside pytest or CI to prevent heavy model loading
+_IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
 
 try:
     import torch

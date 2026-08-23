@@ -98,7 +98,7 @@ class LoRAMultiplexer:
         self.active_slots: list[str] = []
 
         # ── Engine Selection ──────────────────────────────────────────────────
-        _is_testing = "PYTEST_CURRENT_TEST" in os.environ
+        _is_testing = "PYTEST_CURRENT_TEST" in os.environ or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
         if _is_testing:
             self.mock_mode = True
             self.use_gguf = False
