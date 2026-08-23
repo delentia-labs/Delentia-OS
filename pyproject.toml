@@ -90,5 +90,24 @@ exclude = [
 module = "rct_control_plane.cli"
 ignore_errors = true
 
-# Legacy alias — kept for backward compat during migration
-# rct CLI was renamed to delentia in v3.0.0
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    ".git",
+    "__pycache__",
+    "docs",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = ["F"]
+ignore = [
+    "F403",  # star imports
+    "F405",  # undefined or defined from star imports
+]
+

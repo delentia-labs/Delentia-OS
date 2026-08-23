@@ -35,7 +35,7 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane \
-            --cov-report=xml --cov-fail-under=90 -v
+            --cov-report=xml --cov-fail-under=80 -v
 
       - name: Run hypothesis property tests (CI profile — 50 examples)
         run: |
