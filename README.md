@@ -1,6 +1,6 @@
 # Delentia OS — An Experimental Causal-Constraint AI Operating System SDK
 
-[![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
+[![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
 [![Version](https://img.shields.io/badge/version-2.2.6-blue)](CHANGELOG.md)
