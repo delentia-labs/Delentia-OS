@@ -43,8 +43,8 @@ from dotenv import load_dotenv
 # Load configuration values
 load_dotenv()
 
-# Check if running under pytest to bypass animation delays
-IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ
+# Check if running under pytest or CI to bypass animation delays
+IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
 
 
 def _run_async(coro):
@@ -136,6 +136,8 @@ class DelentiaOrchestrator:
 
     def print_trace_tree(self, intent_id: str) -> None:
         """Prints a beautiful console Trace Tree showing the Cognitive Flow and latency staircase."""
+        if IS_TESTING:
+            return
         from rich.tree import Tree
         
         events = self.observer.get_intent_timeline(intent_id)
