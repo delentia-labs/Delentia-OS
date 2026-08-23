@@ -317,7 +317,7 @@ class LoRAMultiplexer:
     def load_model_and_adapters(self) -> None:
         """Loads base model and PEFT/GGUF adapters if not in mock mode."""
         if self.mock_mode:
-            print(f"[MOCK] LoRA Multiplexer v0.5.1: Initialized base model Qwen3.6-27B (mock).")
+            print("[MOCK] LoRA Multiplexer v0.5.1: Initialized base model Qwen3.6-27B (mock).")
             return
 
         if self.use_gguf:

@@ -273,7 +273,9 @@ class ControlPlaneAPI:
         self.states: Dict[str, ControlPlaneState] = {}
         self.intents: Dict[str, Dict[str, Any]] = {}
         
-        # Register routes
+        # Register routes and routers
+        from .mcp_gateway import mcp_router
+        self.app.include_router(mcp_router)
         self._register_routes()
     
     def _register_routes(self):

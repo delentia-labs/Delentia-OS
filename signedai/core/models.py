@@ -9,6 +9,7 @@ import sys
 import os
 import importlib.util
 from typing import Optional
+from pydantic import Field
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CANDIDATES = [
@@ -43,11 +44,10 @@ JITNAPacket = _mod.JITNAPacket
 AnalysisRequest = _mod.AnalysisRequest
 SignerVote = _mod.SignerVote
 ConsensusResult = _mod.ConsensusResult
-from pydantic import Field
-AnalysisJob = _mod.AnalysisJob
+_BaseAnalysisJob = _mod.AnalysisJob
 
 # Add the artifact_content field dynamically to class to prevent modifying private repository
-class AnalysisJob(AnalysisJob):  # type: ignore[no-redef]
+class AnalysisJob(_BaseAnalysisJob):  # type: ignore[valid-type, misc]
     artifact_content: Optional[str] = Field(None, description="เนื้อหาที่วิเคราะห์")
 
 
@@ -63,3 +63,4 @@ __all__ = [
     "ConsensusResult",
     "AnalysisJob",
 ]
+
