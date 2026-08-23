@@ -1934,7 +1934,7 @@
 <p>This mathematical structure guarantees that no amount of prompt engineering, persona injection, or authority spoofing can produce a non-zero output force once <span class="arithmatex">\(A = 0\)</span> is set. The safety guarantee is <strong>architectural</strong>, not behavioral.</p>
 <h3 id="23-constitutional-gate-implementation">2.3 Constitutional Gate Implementation<a class="headerlink" href="#23-constitutional-gate-implementation" title="Permanent link">&para;</a></h3>
 <p>The constitutional authority <span class="arithmatex">\(A_t\)</span> is determined by a compiled regular-expression evaluator (<code>FDIAConstitution</code>) that checks the incoming packet text against 21 constitutional articles:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>A_t = 1 - FDIA_Constitution.evaluate(input_text)[&quot;blocked&quot;]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>A_t = 1 - FDIA_Constitution.evaluate(input_text)["blocked"]
 </span></code></pre></div>
 <p>The evaluator runs in O(|text| × |articles|) time with pre-compiled patterns, achieving mean latency of 0.08 ms on a standard laptop (Python 3.11, regex module).</p>
 <hr />
@@ -2340,7 +2340,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Clone repository</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/delentia-labs/delentia-os.git
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">cd</span><span class="w"> </span>delentia-os
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Run adversarial tests (120 cases, 21 articles)</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>pytest<span class="w"> </span>adversarial_tests/<span class="w"> </span>-v

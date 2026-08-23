@@ -2257,7 +2257,7 @@ period. Agent is blocked for <code>quarantine_ticks</code> before re-entering th
 queue. Auto-unblocked by <code>ProcessTable.unblock_expired()</code> during scheduler
 <code>build_schedule()</code> (RFC-003).</p>
 <h4 id="exile">EXILE<a class="headerlink" href="#exile" title="Permanent link">&para;</a></h4>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>process_table.terminate(pid, tick, reason=&quot;severe_fault&quot;)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>process_table.terminate(pid, tick, reason="severe_fault")
 </span></code></pre></div>
 <p><strong>Rationale:</strong> Catastrophic errors (stack overflow, memory exhaustion) indicate
 an agent that cannot safely continue. Immediate termination prevents cascading
@@ -2265,11 +2265,11 @@ failures.</p>
 <h3 id="4-faultrecord-structured-fault-log">4. FaultRecord (Structured Fault Log)<a class="headerlink" href="#4-faultrecord-structured-fault-log" title="Permanent link">&para;</a></h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@dataclass</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">FaultRecord</span><span class="p">:</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">pid</span><span class="p">:</span> <span class="nb">int</span>                   <span class="c1"># Faulted agent&#39;s PID</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">pid</span><span class="p">:</span> <span class="nb">int</span>                   <span class="c1"># Faulted agent's PID</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">agent_id</span><span class="p">:</span> <span class="nb">str</span>              <span class="c1"># Application-level agent name</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">tick</span><span class="p">:</span> <span class="nb">int</span>                  <span class="c1"># Tick at which fault occurred</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">phase</span><span class="p">:</span> <span class="nb">str</span>                 <span class="c1"># Simulation phase (OBSERVE, DECIDE, ACT)</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">exception_type</span><span class="p">:</span> <span class="nb">str</span>        <span class="c1"># e.g. &quot;ValueError&quot;, &quot;RuntimeError&quot;</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">exception_type</span><span class="p">:</span> <span class="nb">str</span>        <span class="c1"># e.g. "ValueError", "RuntimeError"</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># First 200 chars of exception message</span>
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">traceback_hash</span><span class="p">:</span> <span class="nb">str</span>        <span class="c1"># MD5 hash of traceback (12-char hex)</span>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">severity</span><span class="p">:</span> <span class="n">FaultSeverity</span>    <span class="c1"># Classified severity</span>

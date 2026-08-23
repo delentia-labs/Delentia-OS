@@ -2180,7 +2180,7 @@ into a <strong>verified, intent-preserved, FDIA-scored</strong> execution plan.<
 <p><strong>What:</strong> Capture the raw input exactly as received — no interpretation yet.</p>
 <p><strong>Purpose:</strong> Establish an immutable ground truth of "what was said / requested."</p>
 <p><strong>Example:</strong>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Input: &quot;Allocate 200 resources to agent_B for defense&quot;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Input: "Allocate 200 resources to agent_B for defense"
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Observation: {raw_text, timestamp, sender_id, channel}
 </span></code></pre></div></p>
 <hr />
@@ -2189,11 +2189,11 @@ into a <strong>verified, intent-preserved, FDIA-scored</strong> execution plan.<
 <p><strong>Purpose:</strong> Surface implicit assumptions, ambiguous pronouns, and missing parameters.</p>
 <p><strong>Example:</strong>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Parsed: {
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  action:    &quot;allocate&quot;,
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  action:    "allocate",
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  amount:    200,
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  target:    &quot;agent_B&quot;,
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  goal:      &quot;defense&quot;,
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  implicit:  [&quot;requires budget_ok&quot;, &quot;requires permission_grant&quot;]
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  target:    "agent_B",
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  goal:      "defense",
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  implicit:  ["requires budget_ok", "requires permission_grant"]
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>}
 </span></code></pre></div></p>
 <hr />
@@ -2362,13 +2362,13 @@ into a <strong>verified, intent-preserved, FDIA-scored</strong> execution plan.<
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">scorer</span> <span class="o">=</span> <span class="n">FDIAScorer</span><span class="p">()</span>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">score</span> <span class="o">=</span> <span class="n">scorer</span><span class="o">.</span><span class="n">score_action</span><span class="p">(</span>
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">agent_intent</span><span class="o">=</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">PROTECT</span><span class="p">,</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">action</span><span class="o">=</span><span class="n">NPCAction</span><span class="p">(</span><span class="n">action_id</span><span class="o">=</span><span class="s2">&quot;plan_v1&quot;</span><span class="p">,</span> <span class="n">action_type</span><span class="o">=</span><span class="s2">&quot;cooperate&quot;</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mf">200.0</span><span class="p">),</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="n">world_resources</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;res_alpha&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">},</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">action</span><span class="o">=</span><span class="n">NPCAction</span><span class="p">(</span><span class="n">action_id</span><span class="o">=</span><span class="s2">"plan_v1"</span><span class="p">,</span> <span class="n">action_type</span><span class="o">=</span><span class="s2">"cooperate"</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mf">200.0</span><span class="p">),</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="n">world_resources</span><span class="o">=</span><span class="p">{</span><span class="s2">"res_alpha"</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">},</span>
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="n">agent_reputation</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
 </span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="n">other_intents</span><span class="o">=</span><span class="p">[</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">PROTECT</span><span class="p">],</span>
 </span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="p">)</span>
 </span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="c1"># score in [0.0, 1.0] — deterministic, no side effects</span>
-</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FDIA score: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FDIA score: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="kernel-tier-mapping">Kernel Tier Mapping<a class="headerlink" href="#kernel-tier-mapping" title="Permanent link">&para;</a></h2>
