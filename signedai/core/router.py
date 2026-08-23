@@ -141,7 +141,9 @@ class TierRouter:
         """
         เลือก Tier ตาม risk level
         """
-        risk_to_tier = {
+        if job.risk_level is None:
+            return TierLevel.TIER_S
+        risk_to_tier: Dict[RiskLevel, TierLevel] = {
             RiskLevel.LOW: TierLevel.TIER_S,
             RiskLevel.MEDIUM: TierLevel.TIER_4,
             RiskLevel.HIGH: TierLevel.TIER_6,

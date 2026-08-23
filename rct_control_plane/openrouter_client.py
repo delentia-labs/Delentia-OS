@@ -29,14 +29,16 @@ from enum import Enum
 
 try:
     import aiohttp
-    from dotenv import load_dotenv
-except ImportError as e:
-    print("⚠️  Missing dependencies. Install with:")
-    print("   pip3 install aiohttp python-dotenv")
-    raise e
+    _HAS_AIOHTTP = True
+except ImportError:
+    aiohttp = None  # type: ignore[assignment]
+    _HAS_AIOHTTP = False
 
-# Load environment variables
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 
 class ModelTier(Enum):
