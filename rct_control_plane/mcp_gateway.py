@@ -170,6 +170,16 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
         tier = args.get("user_tier", "PRO")
         cord_res = cord_engine.check(nl)
         if not cord_res.is_clean:
+            from .websocket_manager import WS_MANAGER
+            WS_MANAGER.broadcast_sync(
+                "SECURITY_VETO",
+                {
+                    "status": "VETOED_BY_CORD",
+                    "error": f"CORD Security blocked input: {cord_res.verdict}",
+                    "findings": [getattr(f, "pattern_id", str(f)) for f in cord_res.findings]
+                },
+                intent_id="malicious_attack"
+            )
             return {
                 "status": "VETOED_BY_CORD",
                 "error": f"CORD Security blocked input: {cord_res.verdict}",
