@@ -4,13 +4,11 @@ Unified Cognitive OS Kernel (Delentia OS v2.2.6)
 """
 
 import os
-import sys
 import time
-import json
 import asyncio
-from typing import AsyncGenerator, Dict, Any, List
+from typing import AsyncGenerator, Dict, Any
 
-from rct_control_plane.signed_execution import generate_keypair, sign_packet, compute_key_fingerprint
+from rct_control_plane.signed_execution import generate_keypair, compute_key_fingerprint
 
 
 async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> AsyncGenerator[Dict[str, Any], None]:
@@ -18,7 +16,6 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     Executes full RCT-7 Thinking, HexaCore Multi-Model Jury Deliberation,
     and Autonomous MCP Tool Calling with token-by-token streaming.
     """
-    t_start = time.perf_counter()
     intent_clean = intent.strip()
     
     # -------------------------------------------------------------------------
@@ -28,7 +25,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
         "type": "token",
         "data": f"🧠 **[RCT-7 Thinking • สเต็ป 1–3: Observe & Analyze]**\n"
                 f"• วิเคราะห์เจตจำนง: *\"{intent_clean}\"*\n"
-                f"• ระดับความสำคัญ: Priority Level 1 (Sovereign Tier)\n"
+                f"• โหมดประมวลผล: {mode.upper()} (Sovereign Tier)\n"
                 f"• สถานะเกราะ CORD Entropy: 4.4872 (CLEAN ✅)\n\n"
     }
     await asyncio.sleep(0.1)
@@ -41,9 +38,9 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     if is_tool_request:
         yield {
             "type": "token",
-            "data": f"⚙️ **[MCP Gateway • Autonomous Tool Calling]**\n"
-                    f"• ตรวจพบคำสั่งดำเนินการระบบ (Tool Execution Detected)\n"
-                    f"• กำลังสั่งการผ่าน Layer 5 MCP Tool Protocol Gateway...\n\n"
+            "data": "⚙️ **[MCP Gateway • Autonomous Tool Calling]**\n"
+                    "• ตรวจพบคำสั่งดำเนินการระบบ (Tool Execution Detected)\n"
+                    "• กำลังสั่งการผ่าน Layer 5 MCP Tool Protocol Gateway...\n\n"
         }
         await asyncio.sleep(0.15)
 
@@ -67,8 +64,8 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     # -------------------------------------------------------------------------
     yield {
         "type": "token",
-        "data": f"🏛️ **[SignedAI • HexaCore Multi-Model Jury Deliberation]**\n"
-                f"เปิดสภาถกเถียง 6 ขุนพลสมองกล (Multi-Model Consensus Session):\n\n"
+        "data": "🏛️ **[SignedAI • HexaCore Multi-Model Jury Deliberation]**\n"
+                "เปิดสภาถกเถียง 6 ขุนพลสมองกล (Multi-Model Consensus Session):\n\n"
     }
     await asyncio.sleep(0.12)
 
@@ -90,8 +87,8 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
 
     yield {
         "type": "token",
-        "data": f"\n📊 **ผลฉันทามติ (Consensus Result): 5/5 เสียงเป็นเอกฉันท์ (100% Passed)**\n"
-                f"────────────────────────────────────────────────────────────\n\n"
+        "data": "\n📊 **ผลฉันทามติ (Consensus Result): 5/5 เสียงเป็นเอกฉันท์ (100% Passed)**\n"
+                "────────────────────────────────────────────────────────────\n\n"
     }
     await asyncio.sleep(0.1)
 
@@ -111,8 +108,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     elif "กฎหมาย" in intent_clean:
         synthesis = (
             "📜 **รายงานวิเคราะห์กฎหมาย AI และการกำกับดูแลในไทย (ฉบับเจาะลึก 2026):**\n\n"
-            "จากการประมวลผลร่วมกันของสภาโมเดล HexaCore (รวมถึง Typhoon v2):"
-            "\n\n"
+            "จากการประมวลผลร่วมกันของสภาโมเดล HexaCore (รวมถึง Typhoon v2):\n\n"
             "1. **กรอบจริยธรรมและ พ.ร.บ. ปัญญาประดิษฐ์ (AI Ethics & Governance):**\n"
             "   • บังคับให้ระบบ AI ที่ทำงานอัตโนมัติ (Autonomous Agents) ต้องมีระบบบันทึก Log ที่ไม่สามารถแก้ไขได้\n"
             "   • กำหนดให้มี **กลไกการหยุดฉุกเฉิน (Kill Switch)** ซึ่งตรงกับระบบ `VETO / A = 0` ของ Delentia OS\n\n"
@@ -141,7 +137,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     # -------------------------------------------------------------------------
     # 5. Stream FDIA Score & Signed Completion
     # -------------------------------------------------------------------------
-    sk, pk = generate_keypair()
+    _, pk = generate_keypair()
     fingerprint = compute_key_fingerprint(pk)
 
     fdia_score = {
