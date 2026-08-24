@@ -9,10 +9,11 @@ state management, observability, and deep health checks.
 import os
 import sys
 import time
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI, HTTPException, Query, status, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from .intent_compiler import IntentCompiler
@@ -22,6 +23,8 @@ from .control_plane_state import ControlPlaneState, ControlPlanePhase
 from .observability import ControlPlaneObserver
 from .default_policies import get_default_policies
 from .persistence import ControlPlanePersistence
+from .websocket_manager import WS_MANAGER
+from .approval_queue import APPROVAL_QUEUE
 from ._version import PACKAGE_VERSION
 
 
@@ -809,6 +812,84 @@ class ControlPlaneAPI:
             if not ok:
                 raise HTTPException(status_code=404, detail=f"Flag '{flag_key}' not found")
             return {"flag_key": flag_key, "user_id": user_id, "action": "override_removed"}
+
+        # --------------------------------------------------------------------
+        # WebSocket Real-Time Telemetry Stream
+        # --------------------------------------------------------------------
+        @self.app.websocket("/ws/events")
+        async def websocket_events_stream(websocket: WebSocket):
+            """Real-time pub/sub telemetry stream for GUI, Dashboard, and CLI."""
+            await WS_MANAGER.connect(websocket)
+            try:
+                while True:
+                    msg = await websocket.receive_text()
+                    if msg == "ping":
+                        pong = {"type": "pong", "timestamp": datetime.now(timezone.utc).isoformat()}
+                        await websocket.send_text(json.dumps(pong))
+            except WebSocketDisconnect:
+                await WS_MANAGER.disconnect(websocket)
+            except Exception:
+                await WS_MANAGER.disconnect(websocket)
+
+        # --------------------------------------------------------------------
+        # Human-in-the-Loop (HITL) Cryptographic Approval Queue Endpoints
+        # --------------------------------------------------------------------
+        @self.app.get("/v1/approval/pending")
+        @self.app.get("/approval/pending")
+        async def list_pending_approvals(limit: int = Query(50, ge=1, le=200)):
+            """Retrieve all active intents on HOLD awaiting human authorization (A = 1)."""
+            pending = APPROVAL_QUEUE.list_pending(limit=limit)
+            return {
+                "total_pending": len(pending),
+                "tickets": [t.to_dict() for t in pending]
+            }
+
+        @self.app.post("/v1/approval/request")
+        @self.app.post("/approval/request")
+        async def create_approval_request(
+            intent_id: str = Query(..., description="Intent ID requiring approval"),
+            action: str = Query(..., description="Action name"),
+            risk_level: str = Query("HIGH", description="Risk level"),
+            reason: str = Query("Constitutional boundary requires human attestation", description="Reason for HOLD"),
+            timeout_seconds: int = Query(300, ge=30, le=86400, description="Ticket expiry timeout")
+        ):
+            """Create an approval ticket and set Intent state to HOLD."""
+            ticket = APPROVAL_QUEUE.request_approval(
+                intent_id=intent_id,
+                action=action,
+                risk_level=risk_level,
+                reason=reason,
+                timeout_seconds=timeout_seconds
+            )
+            return {"success": True, "ticket": ticket.to_dict()}
+
+        @self.app.post("/v1/approval/decide")
+        @self.app.post("/approval/decide")
+        async def submit_approval_decision(
+            ticket_id: str = Query(..., description="Ticket ID to authorize or reject"),
+            decision: str = Query(..., description="Decision: APPROVED or REJECTED"),
+            approver: str = Query("SecurityOfficer", description="Approver identity"),
+            signature: Optional[str] = Query(None, description="Optional ED25519 hex signature")
+        ):
+            """Execute human decision (A = 1 for Approved, A = 0 for Rejected)."""
+            result = APPROVAL_QUEUE.decide(
+                ticket_id=ticket_id,
+                decision=decision,
+                approver=approver,
+                signature_hex=signature
+            )
+            if not result.get("success"):
+                raise HTTPException(status_code=400, detail=result.get("error"))
+            return result
+
+        @self.app.get("/v1/approval/{ticket_id}")
+        @self.app.get("/approval/{ticket_id}")
+        async def get_approval_ticket(ticket_id: str):
+            """Get approval ticket details by ticket ID."""
+            ticket = APPROVAL_QUEUE.get_ticket(ticket_id)
+            if not ticket:
+                raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
+            return ticket.to_dict()
 
 
 # ============================================================================
