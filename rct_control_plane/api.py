@@ -981,72 +981,10 @@ class ControlPlaneAPI:
                         }))
                         continue
 
-                    # 2. RCT-7 Step 1-3 Streaming
-                    await websocket.send_text(json.dumps({
-                        "type": "token",
-                        "data": f"🧠 [RCT-7 Thinking • สเต็ป 1-3] สังเกตการณ์ (Observe) และวิเคราะห์คำสั่ง: \"{intent_text}\"\n"
-                    }))
-                    await asyncio.sleep(0.15)
-
-                    await websocket.send_text(json.dumps({
-                        "type": "token",
-                        "data": f"⚙️ [RCT-7 Thinking • สเต็ป 4-6] แตกโครงสร้างงานเป็น DAG และสลับโมเดล LoRA (Executor / Bonsai-27B)\n\n"
-                    }))
-                    await asyncio.sleep(0.2)
-
-                    # 3. Stream intelligent response based on prompt
-                    if "กฎหมาย" in intent_text:
-                        response_body = (
-                            "📜 **สรุปการอัปเดตและกรอบกฎหมาย AI ในไทยล่าสุด (ปี 2026):**\n\n"
-                            "1. **พ.ร.บ. ปัญญาประดิษฐ์เชิงรับผิดชอบ (Responsible AI Act):** บังคับใช้การประเมินความเสี่ยงโมเดลก่อน Deploy ในระดับ Enterprise\n"
-                            "2. **หลักการตรวจสอบย้อนกลับ (Cryptographic Auditability):** กำหนดให้ทุก Action ของ AI Agent ต้องมีลายเซ็นดิจิทัลรับรอง (ตรงตามมาตรฐาน SignedAI ของ Delentia OS)\n"
-                            "3. **สิทธิมนุษย์ในการยับยั้ง (Human-in-the-Loop Gate):** คำสั่งที่มีผลกระทบต่อข้อมูลส่วนบุคคล (PDPA) ต้องมีสถานะ HOLD เพื่อให้มนุษย์เซ็นอนุมัติเสมอ (A = 1)\n\n"
-                            "✅ *ระบบ Delentia OS ออกแบบครอบคลุมตามข้อกำหนดทั้ง 3 ข้อ 100%*"
-                        )
-                    elif "ทำอะไรได้บ้าง" in intent_text or "ทำอะไรได้" in intent_text:
-                        response_body = (
-                            "🤖 **Delentia OS สามารถทำหน้าที่เป็นระบบปฏิบัติการความปลอดภัย AI ครบวงจร:**\n\n"
-                            "1. **⚡ Intent Execution & DAG Swarm:** แปลงคำสั่งภาษาธรรมชาติเป็นแผนงานคู่ขนาน (Multi-Agent Parallel Swarm)\n"
-                            "2. **🛡️ FDIA Multiplicative Safety Gate:** ประเมินสมการความปลอดภัย $F = D^I \\times A$ สกัดกั้นการฉีดโค้ดและแฮก 100%\n"
-                            "3. **🧠 4-Pillar LoRA Multiplexing:** สลับสมองกล 4 ก้อน (Scribe สรุปความ, Guardian ตรวจสอบ, Executor รันงาน, Router สลับงาน) ภายใน 2.0ms\n"
-                            "4. **🔌 MCP Gateway (10 Tools):** เชื่อมต่อและสั่งการไฟล์ระบบ, Git, และฐานข้อมูลในเครื่องของคุณแบบปลอดภัย\n"
-                            "5. **💾 Delta Memory Engine:** บันทึกเฉพาะส่วนต่างความเปลี่ยนแปลง ประหยัดพื้นที่จัดเก็บ 74%"
-                        )
-                    else:
-                        response_body = (
-                            f"✨ **ผลการประมวลผลคำสั่งสำเร็จ:**\n\n"
-                            f"ระบบได้ประมวลผลคำสั่ง: *\"{intent_text}\"* ผ่านสถาปัตยกรรม 10-Layer Cognitive Stack ของ Delentia OS เรียบร้อยแล้ว\n\n"
-                            f"• **โมเดลที่เลือกใช้:** HexaCore Regional/Executor (Bonsai-27B + LoRA Adapter v0.5.1)\n"
-                            f"• **ความเร็วสลับบทบาท:** 3.42ms\n"
-                            f"• **ความถูกต้องของเจตจำนง:** 96.0% (RCT-7 Protocol Compliant)\n"
-                            f"• **สถานะการลงลายเซ็น:** ED25519 Cryptographically Signed ✅"
-                        )
-
-                    # Stream text chunk by chunk
-                    words = response_body.split(" ")
-                    for i in range(0, len(words), 3):
-                        chunk = " ".join(words[i:i+3]) + " "
-                        await websocket.send_text(json.dumps({
-                            "type": "token",
-                            "data": chunk
-                        }))
-                        await asyncio.sleep(0.04)
-
-                    # 4. Stream FDIA Score
-                    await websocket.send_text(json.dumps({
-                        "type": "fdia",
-                        "data": {"D": 0.98, "I": 0.96, "A": 1.0, "F": 0.94, "signed": True, "signature_hash": "a9f8e7d6c5b4a3f2e1d0c9b8"}
-                    }))
-
-                    # 5. Stream Completion
-                    await websocket.send_text(json.dumps({
-                        "type": "done",
-                        "data": {
-                            "hexa_role": "REGIONAL_THAI" if "ไทย" in intent_text or "กฎหมาย" in intent_text else "EXECUTOR",
-                            "trace_id": f"trace-{int(time.time()*1000)}",
-                            "fdia_score": {"D": 0.98, "I": 0.96, "A": 1.0, "F": 0.94, "signed": True, "signature_hash": "a9f8e7d6c5b4a3f2e1d0c9b8"}
-                        }
-                    }))
+                    # 2. Dynamic Cognition with HexaCore Multi-Model Jury & Autonomous MCP Tool Calling
+                    from rct_control_plane.dynamic_reasoner import stream_dynamic_cognition
+                    async for event in stream_dynamic_cognition(intent_text, mode=mode):
+                        await websocket.send_text(json.dumps(event))
             except WebSocketDisconnect:
                 pass
             except Exception as exc:
