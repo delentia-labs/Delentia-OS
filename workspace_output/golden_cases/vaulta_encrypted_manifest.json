@@ -1,0 +1,5 @@
+{
+  "vault_id": "family_safe_01",
+  "encryption": "AES-GCM-256",
+  "offline": true
+}

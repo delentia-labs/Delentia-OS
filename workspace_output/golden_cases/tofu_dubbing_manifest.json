@@ -1,0 +1,5 @@
+{
+  "extension": "TofuDubbing",
+  "sync_latency_ms": 350,
+  "tts_voice": "TyphoonThai-Neural"
+}

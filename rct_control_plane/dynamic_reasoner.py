@@ -93,46 +93,70 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     await asyncio.sleep(0.1)
 
     # -------------------------------------------------------------------------
-    # 4. Final Comprehensive Dynamic Synthesis
+    # 4. Final Comprehensive Dynamic Synthesis (Live AI / Heuristic)
     # -------------------------------------------------------------------------
-    if "ใครเป็นคนสร้าง" in intent_clean or "ใครสร้างคุณ" in intent_clean or "ผู้สร้าง" in intent_clean:
-        synthesis = (
-            "💎 **ผู้สร้างและสถาปัตยกรรมของ Delentia OS:**\n\n"
-            "**Delentia OS** ถูกออกแบบและพัฒนาขึ้นโดย **คุณ Ittirit Saengow (Whale)** ร่วมกับทีมวิจัย **Delentia Labs (RCT Labs)** "
-            "โดยมีวิสัยทัศน์ในการสร้าง **'ระบบปฏิบัติการความปลอดภัยและศูนย์บัญชาการ AI เชิงกติกา (Constitutional AI & Multi-Agent OS)'** แห่งแรกที่สามารถ:\n\n"
-            "1. **ทำงานได้อย่างเป็นอิสระ (Sovereign AI):** รันบนคอมพิวเตอร์พกพา (ROG Ally X) และ Local PC ด้วยสถาปัตยกรรม 1+4 LoRA Multiplexing (VRAM ต่ำกว่า 6GB)\n"
-            "2. **รักษาความปลอดภัยระดับสูงสุด:** คุมเข้มด้วยสมการ FDIA (`F = D^I * A`) และดักจับคำสั่งโจมตีด้วย CORD Shannon Entropy\n"
-            "3. **ตรวจสอบได้ 100%:** ทุกการกระทำลงลายเซ็นดิจิทัลเข้ารหัส ED25519 (SignedAI Standard) ป้องกันการสวมรอย\n\n"
-            "🌟 *ระบบนี้เกิดจากการผสานเทคโนโลยีชั้นยอดระหว่างโมเดลฝั่งตะวันตก (US) และฝั่งตะวันออก (Asia/CN) เข้าด้วยกันอย่างสมดุล*"
-        )
-    elif "กฎหมาย" in intent_clean:
-        synthesis = (
-            "📜 **รายงานวิเคราะห์กฎหมาย AI และการกำกับดูแลในไทย (ฉบับเจาะลึก 2026):**\n\n"
-            "จากการประมวลผลร่วมกันของสภาโมเดล HexaCore (รวมถึง Typhoon v2):\n\n"
-            "1. **กรอบจริยธรรมและ พ.ร.บ. ปัญญาประดิษฐ์ (AI Ethics & Governance):**\n"
-            "   • บังคับให้ระบบ AI ที่ทำงานอัตโนมัติ (Autonomous Agents) ต้องมีระบบบันทึก Log ที่ไม่สามารถแก้ไขได้\n"
-            "   • กำหนดให้มี **กลไกการหยุดฉุกเฉิน (Kill Switch)** ซึ่งตรงกับระบบ `VETO / A = 0` ของ Delentia OS\n\n"
-            "2. **ความสอดคล้องกับ PDPA (คุ้มครองข้อมูลส่วนบุคคล):**\n"
-            "   • ข้อมูลประวัติการคุยและการจำลองสถานะจะถูกบีบอัดและจัดเก็บในเครื่อง Local (On-Device Memory Delta) ไม่รั่วไหลออกนอกประเทศ\n\n"
-            "3. **การรับรองความรับผิดชอบทางกฎหมาย (Legal Auditability):**\n"
-            "   • การใช้ลายเซ็นดิจิทัล ED25519 กำกับทุกคำสั่ง ทำให้สามารถใช้เป็นหลักฐานทางกฎหมาย (Admissible Evidence) ได้ตาม พ.ร.บ. ธุรกรรมทางอิเล็กทรอนิกส์"
-        )
-    else:
-        synthesis = (
-            f"✨ **ผลการสังเคราะห์และประมวลผลคำสั่งเชิงลึก:**\n\n"
-            f"คำสั่ง: **\"{intent_clean}\"**\n\n"
-            f"• **การวิเคราะห์เชิงเทคนิค:** ระบบได้ทำ Reverse Reasoning และจัดระเบียบข้อมูลตามมาตรฐาน RCT-7 Protocol\n"
-            f"• **การประหยัดทรัพยากร:** บีบอัด Context ประหยัด Token ไปได้ **46.2%** ด้วย TOON Serialization\n"
-            f"• **ความพร้อมในการทำงาน:** โหนดประมวลผล DAG พร้อมกระจายงานไปยัง Sub-agents ผ่านท่อ JITNA Protocol v3 ทันที\n\n"
-            f"💡 *คุณสามารถสั่งให้ Delentia OS ดำเนินการต่อ เช่น เขียนโค้ด, ตรวจสอบไฟล์, หรือทดสอบระบบความปลอดภัยได้ทันทีครับ!*"
-        )
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    streamed_live = False
 
-    # Stream synthesis word-by-word
-    words = synthesis.split(" ")
-    for i in range(0, len(words), 3):
-        chunk = " ".join(words[i:i+3]) + " "
-        yield {"type": "token", "data": chunk}
-        await asyncio.sleep(0.035)
+    if openrouter_api_key:
+        try:
+            from rct_control_plane.openrouter_client import OpenRouterClient
+            client = OpenRouterClient(api_key=openrouter_api_key)
+            system_instruction = (
+                "You are Delentia OS — a Constitutional Multi-Agent Operating System kernel. "
+                "You provide intelligent, deep, accurate, and structured answers in Thai. "
+                "Include code blocks, bullet points, and technical insights when appropriate."
+            )
+            async for token in client.stream_chat_completion(
+                prompt=intent_clean,
+                system_prompt=system_instruction,
+                model_id="anthropic/claude-3.7-sonnet"
+            ):
+                yield {"type": "token", "data": token}
+                streamed_live = True
+        except Exception as e:
+            print(f"[WARN] OpenRouter live stream failed: {e}")
+            streamed_live = False
+
+    if not streamed_live:
+        if "ใครเป็นคนสร้าง" in intent_clean or "ใครสร้างคุณ" in intent_clean or "ผู้สร้าง" in intent_clean:
+            synthesis = (
+                "💎 **ผู้สร้างและสถาปัตยกรรมของ Delentia OS:**\n\n"
+                "**Delentia OS** ถูกออกแบบและพัฒนาขึ้นโดย **คุณ Ittirit Saengow (Whale)** ร่วมกับทีมวิจัย **Delentia Labs (RCT Labs)** "
+                "โดยมีวิสัยทัศน์ในการสร้าง **'ระบบปฏิบัติการความปลอดภัยและศูนย์บัญชาการ AI เชิงกติกา (Constitutional AI & Multi-Agent OS)'** แห่งแรกที่สามารถ:\n\n"
+                "1. **ทำงานได้อย่างเป็นอิสระ (Sovereign AI):** รันบนคอมพิวเตอร์พกพา (ROG Ally X) และ Local PC ด้วยสถาปัตยกรรม 1+4 LoRA Multiplexing (VRAM ต่ำกว่า 6GB)\n"
+                "2. **รักษาความปลอดภัยระดับสูงสุด:** คุมเข้มด้วยสมการ FDIA (`F = D^I * A`) และดักจับคำสั่งโจมตีด้วย CORD Shannon Entropy\n"
+                "3. **ตรวจสอบได้ 100%:** ทุกการกระทำลงลายเซ็นดิจิทัลเข้ารหัส ED25519 (SignedAI Standard) ป้องกันการสวมรอย\n\n"
+                "🌟 *ระบบนี้เกิดจากการผสานเทคโนโลยีชั้นยอดระหว่างโมเดลฝั่งตะวันตก (US) และฝั่งตะวันออก (Asia/CN) เข้าด้วยกันอย่างสมดุล*"
+            )
+        elif "กฎหมาย" in intent_clean:
+            synthesis = (
+                "📜 **รายงานวิเคราะห์กฎหมาย AI และการกำกับดูแลในไทย (ฉบับเจาะลึก 2026):**\n\n"
+                "จากการประมวลผลร่วมกันของสภาโมเดล HexaCore (รวมถึง Typhoon v2):\n\n"
+                "1. **กรอบจริยธรรมและ พ.ร.บ. ปัญญาประดิษฐ์ (AI Ethics & Governance):**\n"
+                "   • บังคับให้ระบบ AI ที่ทำงานอัตโนมัติ (Autonomous Agents) ต้องมีระบบบันทึก Log ที่ไม่สามารถแก้ไขได้\n"
+                "   • กำหนดให้มี **กลไกการหยุดฉุกเฉิน (Kill Switch)** ซึ่งตรงกับระบบ `VETO / A = 0` ของ Delentia OS\n\n"
+                "2. **ความสอดคล้องกับ PDPA (คุ้มครองข้อมูลส่วนบุคคล):**\n"
+                "   • ข้อมูลประวัติการคุยและการจำลองสถานะจะถูกบีบอัดและจัดเก็บในเครื่อง Local (On-Device Memory Delta) ไม่รั่วไหลออกนอกประเทศ\n\n"
+                "3. **การรับรองความรับผิดชอบทางกฎหมาย (Legal Auditability):**\n"
+                "   • การใช้ลายเซ็นดิจิทัล ED25519 กำกับทุกคำสั่ง ทำให้สามารถใช้เป็นหลักฐานทางกฎหมาย (Admissible Evidence) ได้ตาม พ.ร.บ. ธุรกรรมทางอิเล็กทรอนิกส์"
+            )
+        else:
+            synthesis = (
+                f"✨ **ผลการสังเคราะห์และประมวลผลคำสั่งเชิงลึก:**\n\n"
+                f"คำสั่ง: **\"{intent_clean}\"**\n\n"
+                f"• **การวิเคราะห์เชิงเทคนิค:** ระบบได้ทำ Reverse Reasoning และจัดระเบียบข้อมูลตามมาตรฐาน RCT-7 Protocol\n"
+                f"• **การประหยัดทรัพยากร:** บีบอัด Context ประหยัด Token ไปได้ **46.2%** ด้วย TOON Serialization\n"
+                f"• **ความพร้อมในการทำงาน:** โหนดประมวลผล DAG พร้อมกระจายงานไปยัง Sub-agents ผ่านท่อ JITNA Protocol v3 ทันที\n\n"
+                f"💡 *คุณสามารถสั่งให้ Delentia OS ดำเนินการต่อ เช่น เขียนโค้ด, ตรวจสอบไฟล์, หรือทดสอบระบบความปลอดภัยได้ทันทีครับ!*"
+            )
+
+        # Stream synthesis word-by-word
+        words = synthesis.split(" ")
+        for i in range(0, len(words), 3):
+            chunk = " ".join(words[i:i+3]) + " "
+            yield {"type": "token", "data": chunk}
+            await asyncio.sleep(0.035)
 
     # -------------------------------------------------------------------------
     # 5. Stream FDIA Score & Signed Completion

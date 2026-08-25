@@ -1,0 +1,11 @@
+{
+  "assets": [
+    {
+      "id": 1,
+      "type": "condo",
+      "province": "BKK",
+      "distance_km": 12.5
+    }
+  ],
+  "status": "ACTIVE"
+}

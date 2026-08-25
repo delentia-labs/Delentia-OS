@@ -430,11 +430,68 @@ class OpenRouterClient:
             successful_models=successful,
             failed_models=failed
         )
-    
+
+    async def stream_chat_completion(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        model_id: str = "anthropic/claude-3.7-sonnet"
+    ):
+        """
+        Stream chat tokens from OpenRouter API in real time.
+        Yields partial text chunks.
+        """
+        if not self.api_key or not _HAS_AIOHTTP:
+            return
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://delentia.ai",
+            "X-Title": "Delentia OS Jury",
+            "Content-Type": "application/json"
+        }
+
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": model_id,
+            "messages": messages,
+            "stream": True,
+            "temperature": 0.7,
+            "max_tokens": 2048
+        }
+
+        session = await self.get_session()
+        try:
+            async with session.post(
+                f"{self.base_url}/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=45)
+            ) as response:
+                if response.status == 200:
+                    import json
+                    async for line in response.content:
+                        line_str = line.decode("utf-8").strip()
+                        if line_str.startswith("data: ") and line_str != "data: [DONE]":
+                            data_json = line_str[6:]
+                            try:
+                                chunk = json.loads(data_json)
+                                delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                if delta:
+                                    yield delta
+                            except Exception:
+                                pass
+        except Exception as e:
+            print(f"[WARN] OpenRouter streaming fallback: {e}")
+
     def get_stats(self) -> Dict[str, Any]:
         """Get client statistics"""
         return self.stats.copy()
-    
+
     def reset_stats(self):
         """Reset statistics counters"""
         self.stats = {

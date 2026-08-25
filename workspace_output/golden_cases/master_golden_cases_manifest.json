@@ -1,0 +1,182 @@
+[
+  {
+    "id": "01_LawLoop",
+    "title": "LawLoop — ระบบค้นหาข้อกฎหมายและอ่านออกเสียง",
+    "pillar": "Legal & Regulatory",
+    "file": "lawloop_engine.py",
+    "size_bytes": 180,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "02_PhiSith",
+    "title": "พี่สิทธิ์ — AI ที่ปรึกษาสิทธิแรงงานและร่างคำฟ้อง",
+    "pillar": "Legal & Regulatory",
+    "file": "phisith_labor_lawsuit.txt",
+    "size_bytes": 209,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "03_PBLegalTech",
+    "title": "PBLegalTech — MCP Server รวมคำพิพากษาศาลฎีกา 200,000 เรื่อง",
+    "pillar": "Legal & Regulatory",
+    "file": "pblegal_mcp_manifest.json",
+    "size_bytes": 94,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "04_FastLEDChecker",
+    "title": "FastLEDChecker — ระบบปักหมุดทรัพย์บังคับคดีบนแผนที่ Realtime",
+    "pillar": "GIS & Real Estate",
+    "file": "led_asset_map.json",
+    "size_bytes": 154,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "05_BrainAITrading",
+    "title": "Brain AI — Autonomous Futures Trading System (SMC Strategy)",
+    "pillar": "Finance & Trading",
+    "file": "smc_futures_strategy.py",
+    "size_bytes": 106,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "06_KhunQuantAI",
+    "title": "KhunQuant AI — ผู้ช่วยดูแลพอร์ต หุ้นไทย/นอก/Crypto",
+    "pillar": "Finance & Trading",
+    "file": "khunquant_portfolio.json",
+    "size_bytes": 106,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "07_OpenLedgerCFO",
+    "title": "OpenLedger CFO — AI การเงินส่วนตัวบน Local Terminal",
+    "pillar": "Finance & Trading",
+    "file": "openledger_cfo.py",
+    "size_bytes": 98,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "08_VaultaFamily",
+    "title": "Vaulta Family — ตู้เซฟมรดกและทรัพย์สินครอบครัว เข้ารหัส On-Device",
+    "pillar": "Privacy & Security",
+    "file": "vaulta_encrypted_manifest.json",
+    "size_bytes": 88,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "09_MyPDFsApp",
+    "title": "MyPDFs.app — 43 เครื่องมือ PDF บนเบราว์เซอร์ ไฟล์ไม่เคยออกจากเครื่อง",
+    "pillar": "Privacy & Security",
+    "file": "mypdfs_wasm_driver.js",
+    "size_bytes": 102,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "10_SelfOSOrbit",
+    "title": "Self OS / Orbit — Personal OS คุม Claude Code/Codex ผ่าน MCP",
+    "pillar": "Autonomous Agents",
+    "file": "self_os_orbit_router.json",
+    "size_bytes": 131,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "11_AetoxAgent",
+    "title": "Aetox — AI Agent สั่งการในเครื่องคอมพิวเตอร์",
+    "pillar": "Autonomous Agents",
+    "file": "aetox_agent_runner.py",
+    "size_bytes": 100,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "12_HermesRestaurant",
+    "title": "Hermes Restaurant — 17 ระบบคุมร้านอาหารและ Marketing อัตโนมัติ",
+    "pillar": "Autonomous Agents",
+    "file": "hermes_restaurant_hub.json",
+    "size_bytes": 85,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "13_24CarFix",
+    "title": "24CarFix — แพลตฟอร์มเรียกช่างซ่อมรถ 24 ชม. ทั่วประเทศ",
+    "pillar": "Enterprise SaaS",
+    "file": "carfix_dispatcher.py",
+    "size_bytes": 123,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "14_HRWelfareStar",
+    "title": "HR Welfare ดาวสะสม — ระบบเบิกสวัสดิการและอนุมัติ 2 ชั้น (HR -> MD)",
+    "pillar": "Enterprise SaaS",
+    "file": "hr_star_welfare.json",
+    "size_bytes": 105,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "15_ZnapDoc",
+    "title": "ZnapDoc — แปลง PO จากห้างให้ส่งของได้ใน 3 นาที",
+    "pillar": "Enterprise SaaS",
+    "file": "znapdoc_po_converter.py",
+    "size_bytes": 116,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "16_SiahraRadar",
+    "title": "Siahra Radar — แผนที่ 3D ภัยพิบัติและเตือนภัยน้ำท่วมเรียลไทม์",
+    "pillar": "Health & Disaster",
+    "file": "siahra_radar_stream.json",
+    "size_bytes": 93,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "17_TofuDubbing",
+    "title": "เต้าหู้แปลภาษา (Tofu Dubbing) — Chrome Extension พากย์เสียงไทยทับคลิป",
+    "pillar": "Media & Audio AI",
+    "file": "tofu_dubbing_manifest.json",
+    "size_bytes": 99,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "18_WuxiaRPG",
+    "title": "Wuxia RPG — เกมต่อสู้จอมยุทธ์และระบบ AI NPC Behavior Tree",
+    "pillar": "Game & Simulation",
+    "file": "wuxia_battle_engine.js",
+    "size_bytes": 131,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "19_MorAI",
+    "title": "หมออัยย์ & มหาเฮง — ระบบคำนวณสุริยยาตร์และฉีเหมินตุ้นเจี่ย",
+    "pillar": "Thai Cultural Logic",
+    "file": "astrology_suriyart.py",
+    "size_bytes": 170,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  },
+  {
+    "id": "20_FireKeeper",
+    "title": "Fire Keeper — Cognitive AI Decision Governance System (PCA)",
+    "pillar": "Cognitive Governance",
+    "file": "fire_keeper_governance.json",
+    "size_bytes": 131,
+    "status": "SUCCESS",
+    "signed_hash": "181ab31d241622da9d7303fe"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "approval_levels": [
+    "HR",
+    "MD"
+  ],
+  "rule": "A=1 required",
+  "star_balance": 450
+}
