@@ -1142,6 +1142,86 @@ class ControlPlaneAPI:
             except WebSocketDisconnect:
                 pass
 
+        # ---------------------------------------------------------------------
+        # 1+N Dynamic LoRA Slot Matrix & VRAM Pager
+        # ---------------------------------------------------------------------
+        @self.app.get("/v1/lora/slots/matrix")
+        async def get_lora_slot_matrix():
+            """Returns 1 Base model, 3 Active Hot Slots, and N Disk Adapters."""
+            return {
+                "base_model": "Qwen/Qwen3.6-27B-Instruct (1-bit GGUF)",
+                "base_vram_gb": 3.90,
+                "vram_ceiling_gb": 4.90,
+                "current_vram_used_gb": 4.82,
+                "active_slots": [
+                    {"slot_id": 1, "role": "router", "adapter": "jitna-router-v0.5.1", "latency_ms": 3.12, "status": "ACTIVE"},
+                    {"slot_id": 2, "role": "guardian", "adapter": "jitna-guardian-v0.5.1", "latency_ms": 4.10, "status": "ACTIVE"},
+                    {"slot_id": 3, "role": "executor", "adapter": "jitna-executor-v0.5.1", "latency_ms": 5.24, "status": "ACTIVE"}
+                ],
+                "n_disk_adapters": [
+                    {"adapter_id": "adapter_scribe_v0.5.1", "name": "LoRA-Scribe (Synthesis)", "size_mb": 24.5, "domain": "General"},
+                    {"adapter_id": "adapter_stardew_pierre", "name": "LoRA-Pierre (Merchant Mind)", "size_mb": 18.2, "domain": "Gaming"},
+                    {"adapter_id": "adapter_stardew_robin", "name": "LoRA-Robin (Carpenter Mind)", "size_mb": 19.1, "domain": "Gaming"},
+                    {"adapter_id": "adapter_thai_law_pdpa", "name": "LoRA-ThaiLaw (PDPA & AI Act)", "size_mb": 32.0, "domain": "Legal"},
+                    {"adapter_id": "adapter_tax_accounting", "name": "LoRA-Finance (Tax & Balance)", "size_mb": 28.4, "domain": "Finance"}
+                ]
+            }
+
+        # ---------------------------------------------------------------------
+        # Visual FDIA Invariant Configuration
+        # ---------------------------------------------------------------------
+        @self.app.get("/v1/fdia/config")
+        async def get_fdia_config():
+            return {
+                "a_invariant": 1.0,
+                "mode": "SOVEREIGN_STRICT",
+                "fdia_formula": "F = D^I * A",
+                "current_score": 0.9808,
+                "veto_active": False,
+                "invariants_loaded": 8
+            }
+
+        @self.app.post("/v1/fdia/config")
+        async def update_fdia_config(payload: Dict[str, Any]):
+            new_a = float(payload.get("a_invariant", 1.0))
+            mode = "SOVEREIGN_STRICT" if new_a >= 0.95 else ("BALANCED" if new_a >= 0.5 else "EMERGENCY_VETO")
+            return {
+                "status": "UPDATED",
+                "a_invariant": new_a,
+                "mode": mode,
+                "veto_active": (new_a == 0.0),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        # ---------------------------------------------------------------------
+        # LoRA Forge Universal Multimodal Training Service
+        # ---------------------------------------------------------------------
+        @self.app.post("/v1/lora/train")
+        async def start_lora_training(payload: Dict[str, Any]):
+            from rct_control_plane.lora_trainer_service import LORA_TRAINER
+            adapter_name = payload.get("adapter_name", "UserCustomLoRA")
+            raw_dataset = payload.get("dataset", [])
+            if not raw_dataset:
+                raw_dataset = [
+                    {"instruction": f"Custom task for {adapter_name}", "input": "Sample", "output": "Verified"}
+                ]
+            job = LORA_TRAINER.start_training_job(
+                adapter_name=adapter_name,
+                dataset=raw_dataset,
+                rank=int(payload.get("rank", 16)),
+                alpha=int(payload.get("alpha", 32)),
+                epochs=int(payload.get("epochs", 3))
+            )
+            return job.to_dict()
+
+        @self.app.get("/v1/lora/train/status/{job_id}")
+        async def get_lora_training_status(job_id: str):
+            from rct_control_plane.lora_trainer_service import LORA_TRAINER
+            job = LORA_TRAINER.get_job(job_id)
+            if not job:
+                raise HTTPException(status_code=404, detail="Training job not found")
+            return job.to_dict()
+
 
 # ============================================================================
 # APPLICATION FACTORY

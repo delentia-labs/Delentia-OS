@@ -1,0 +1,15 @@
+{
+  "adapter_name": "MyUniversalLegalGamingLoRA",
+  "base_model": "Qwen/Qwen3.6-27B",
+  "r": 16,
+  "lora_alpha": 32,
+  "target_modules": [
+    "q_proj",
+    "v_proj",
+    "k_proj",
+    "o_proj"
+  ],
+  "trained_at": "2026-08-25 11:17:25",
+  "dataset_samples": 9,
+  "final_loss": 1.5246
+}
