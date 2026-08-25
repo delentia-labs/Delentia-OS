@@ -10,6 +10,9 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.parse
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 # EMVCo PromptPay Payload Generator (Real Math & CRC16)
 def crc16_ccitt(data: str) -> str:
     crc = 0xFFFF
