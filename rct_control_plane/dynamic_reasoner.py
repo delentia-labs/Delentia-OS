@@ -13,6 +13,9 @@ import time
 import asyncio
 from pathlib import Path
 from typing import AsyncGenerator, Dict, Any
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> AsyncGenerator[Dict[str, Any], None]:

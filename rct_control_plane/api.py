@@ -1134,13 +1134,19 @@ class ControlPlaneAPI:
                     data_text = await websocket.receive_text()
                     try:
                         event_data = json.loads(data_text)
-                        response = STARDEW_ENGINE.process_game_event(event_data)
+                        response = await STARDEW_ENGINE.process_game_event(event_data)
                         if response and response.get("action_type") != "NOOP":
                             await websocket.send_text(json.dumps(response, ensure_ascii=False))
                     except Exception as parse_err:
                         await websocket.send_text(json.dumps({"error": str(parse_err)}))
             except WebSocketDisconnect:
                 pass
+
+        @self.app.post("/v1/game/stardew/interact")
+        async def stardew_valley_interact(payload: Dict[str, Any]):
+            """Direct HTTP REST endpoint for NPC dialogue generation via Real AI."""
+            from rct_control_plane.stardew_bridge_server import STARDEW_ENGINE
+            return await STARDEW_ENGINE.process_game_event(payload)
 
         # ---------------------------------------------------------------------
         # 1+N Dynamic LoRA Slot Matrix & VRAM Pager
