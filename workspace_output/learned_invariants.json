@@ -1,0 +1,20 @@
+[
+  {
+    "id": "INV-1787622497014",
+    "task_name": "sme_tax_calculator",
+    "error_signature": "NegativeTaxCalculatedError: SME tax cannot be negative when profit <= 0",
+    "learned_rule": "INVARIANT_TAX_NON_NEGATIVE: IF profit <= 0 THEN tax = 0.0",
+    "fdia_veto_rule": "VETO if error matches 'NegativeTaxCalculatedError: SME tax cann'",
+    "timestamp": 1787622497.0148628,
+    "status": "ENFORCED"
+  },
+  {
+    "id": "INV-1787622919172",
+    "task_name": "ecommerce_checkout",
+    "error_signature": "StockNotDeductedError: Inventory.deduct_stock() must be invoked before confirming order",
+    "learned_rule": "INVARIANT_ATOMIC_STOCK_DEDUCTION: EVERY checkout MUST deduct inventory stock",
+    "fdia_veto_rule": "VETO if error matches 'StockNotDeductedError: Inventory.deduct_'",
+    "timestamp": 1787622919.172505,
+    "status": "ENFORCED"
+  }
+]
