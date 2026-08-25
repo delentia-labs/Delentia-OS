@@ -1124,6 +1124,24 @@ class ControlPlaneAPI:
                 ]
             }
 
+        @self.app.websocket("/v1/game/stardew/stream")
+        async def stardew_valley_stream(websocket: WebSocket):
+            """Real-time bidirectional WebSocket bridge for Stardew Valley 1.6+ SMAPI Mod."""
+            await websocket.accept()
+            from rct_control_plane.stardew_bridge_server import STARDEW_ENGINE
+            try:
+                while True:
+                    data_text = await websocket.receive_text()
+                    try:
+                        event_data = json.loads(data_text)
+                        response = STARDEW_ENGINE.process_game_event(event_data)
+                        if response and response.get("action_type") != "NOOP":
+                            await websocket.send_text(json.dumps(response, ensure_ascii=False))
+                    except Exception as parse_err:
+                        await websocket.send_text(json.dumps({"error": str(parse_err)}))
+            except WebSocketDisconnect:
+                pass
+
 
 # ============================================================================
 # APPLICATION FACTORY
