@@ -1174,6 +1174,51 @@ class ControlPlaneAPI:
             }
 
         # ---------------------------------------------------------------------
+        # RCT-7 Deep Profiler & 1+N LoRA Dynamic Engine
+        # ---------------------------------------------------------------------
+        @self.app.post("/v1/profiler/session/start")
+        async def start_deep_profiling_session(payload: Dict[str, Any]):
+            """Starts an RCT-7 Deep Profiling session and mounts Deep_Profiler_LoRA."""
+            from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
+            goal = payload.get("goal", "สร้าง Digital Product สร้างรายได้ $3,000/เดือน")
+            revenue = payload.get("target_revenue", "$3,000/mo")
+            session = DEEP_PROFILER_ENGINE.start_session(goal, revenue)
+            return {
+                "status": "SESSION_STARTED",
+                "session": session.to_dict(),
+                "initial_question": session.chat_history[0]["content"]
+            }
+
+        @self.app.post("/v1/profiler/step")
+        async def step_deep_profiling(payload: Dict[str, Any]):
+            """Processes user response, compresses Delta Memory, and returns next question."""
+            from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
+            session_id = payload.get("session_id", "")
+            user_reply = payload.get("user_reply", "")
+            if not session_id or not user_reply:
+                raise HTTPException(status_code=400, detail="Missing session_id or user_reply")
+            return DEEP_PROFILER_ENGINE.process_user_turn(session_id, user_reply)
+
+        @self.app.post("/v1/profiler/synthesize")
+        async def synthesize_profiling_blueprint(payload: Dict[str, Any]):
+            """Synthesizes the final Executable Digital Product Blueprint."""
+            from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
+            session_id = payload.get("session_id", "")
+            if not session_id:
+                raise HTTPException(status_code=400, detail="Missing session_id")
+            blueprint = DEEP_PROFILER_ENGINE.synthesize_blueprint(session_id)
+            return {"status": "SUCCESS", "blueprint": blueprint}
+
+        @self.app.get("/v1/profiler/state/{session_id}")
+        async def get_profiling_state(session_id: str):
+            """Retrieves live session state, radar metrics, and delta memory."""
+            from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
+            session = DEEP_PROFILER_ENGINE.sessions.get(session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+            return {"status": "SUCCESS", "session": session.to_dict()}
+
+        # ---------------------------------------------------------------------
         # Visual FDIA Invariant Configuration
         # ---------------------------------------------------------------------
         @self.app.get("/v1/fdia/config")
