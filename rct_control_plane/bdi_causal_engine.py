@@ -21,6 +21,8 @@ from dotenv import load_dotenv
 # Force UTF-8 encoding
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 # Load Environment
 env_path = Path(__file__).resolve().parents[1] / ".env"
