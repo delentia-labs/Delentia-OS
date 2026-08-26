@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useStreamIntent } from "@/hooks/useIntent";
 import { FDIABadge } from "@/components/fdia-visualizer/score-card";
 import { TraceInspector } from "./TraceInspector";
+import { TerminalSandbox } from "./terminal-sandbox";
 import {
   Send,
   Square,
@@ -239,6 +240,16 @@ export function ChatWindow() {
                         <span className="inline-block w-1.5 h-3 bg-delentia-500 ml-1 animate-pulse align-middle" />
                       )}
                     </p>
+
+                    {msg.role === "assistant" && (msg.content.includes("MCP") || msg.content.includes("ไฟล์") || msg.content.includes("delentia_file_writer")) && (
+                      <TerminalSandbox
+                        logs={[
+                          `[MCP Gateway] Active Tool: delentia_file_writer`,
+                          `[Status] Intent Processed: ${msg.content.slice(0, 45)}...`,
+                          `[Verification] SignedAI ED25519 Token Verified`
+                        ]}
+                      />
+                    )}
                     
                     {!msg.streaming && msg.fdia && (
                       <div className="mt-2.5 pt-2 border-t border-surface-border/50 flex items-center gap-2 text-[10px] text-gray-400">

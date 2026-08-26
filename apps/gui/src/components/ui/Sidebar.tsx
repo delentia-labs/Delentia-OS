@@ -49,6 +49,7 @@ export function Sidebar() {
       links: [
         { href: "/",          label: "Dashboard",   icon: LayoutDashboard },
         { href: "/chat",      label: "Intent Chat", icon: MessageSquare },
+        { href: "/brains",    label: "Brain Slots", icon: Brain },
         { href: "/memory",    label: "Memory",      icon: Brain },
       ],
     },

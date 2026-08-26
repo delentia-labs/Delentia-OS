@@ -210,10 +210,12 @@ export default function MonitorPage() {
     try {
       const res = await fetch(`${gateway}/delentia/system/stats`);
       if (!res.ok) throw new Error();
-      const data: SystemStats = await res.json();
+      const data: any = await res.json();
       setStats(data);
 
-      if (data.fdia_avg !== undefined) {
+      if (Array.isArray(data.fdia_history) && data.fdia_history.length > 0) {
+        setFdiaHistory(data.fdia_history);
+      } else if (data.fdia_avg !== undefined) {
         setFdiaHistory((prev) => [...prev.slice(-11), data.fdia_avg!]);
       }
 

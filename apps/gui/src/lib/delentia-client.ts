@@ -383,7 +383,7 @@ export async function* streamIntent(
         simulatedStream = true;
       }
       r();
-    }, 100);
+    }, 2500);
     if (ws) {
       ws.addEventListener("open", () => { clearTimeout(timer); r(); });
       ws.addEventListener("error", () => { clearTimeout(timer); simulatedStream = true; r(); });
