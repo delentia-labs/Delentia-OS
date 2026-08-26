@@ -524,7 +524,7 @@ class ControlPlaneAPI:
                 "จงตอบคำถามหรือสนทนากับผู้ใช้อย่างชาญฉลาด มีเหตุผล ชัดเจน และเป็นมิตร\n"
                 "ใช้ภาษาไทยที่เป็นธรรมชาติ คล่องแคล่ว และตอบตรงประเด็นตามหลัก Reverse Component Thinking (RCT-7)"
             )
-            ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(intent_text, system_prompt, max_tokens=1024)
+            ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(system_prompt, intent_text, max_tokens=1024)
             if not ai_reply:
                 ai_reply = f"สวัสดีครับ! Delentia OS ได้รับคำสั่ง '{intent_text}' เรียบร้อยแล้ว ระบบกำลังประมวลผลผ่าน 41 Algorithms Master Kernel และ FDIA Gate ({fdia_score:.4f}) มีเรื่องอะไรให้ผมช่วยคิด วิเคราะห์ หรือสร้างทีม AI เพิ่มเติมไหมครับ?"
 

@@ -68,7 +68,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
         "ใช้ภาษาไทยที่เป็นธรรมชาติ คล่องแคล่ว และแสดงความกระตือรือร้นในการช่วยเหลือผู้ใช้อย่างเต็มที่"
     )
 
-    ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(intent_clean, system_prompt, max_tokens=1024)
+    ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(system_prompt, intent_clean, max_tokens=1024)
 
     if not ai_reply:
         # High-Fidelity Intelligent Fallback

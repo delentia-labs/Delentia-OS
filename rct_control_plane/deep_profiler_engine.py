@@ -214,34 +214,44 @@ class RCT7DeepProfilerEngine:
         session.radar_metrics["operations"] = min(90, session.radar_metrics["operations"] + 10)
 
     def _call_real_generative_ai(self, system_prompt: str, user_prompt: str, max_tokens: int = 800) -> Optional[str]:
-        """Multi-provider Real AI Caller: Local Delentia-OS SLM (Ollama) + Cloud Fallbacks."""
+        """Multi-provider Real AI Caller: Local SOTA SLM (Qwen 2.5 / Llama 3.2 / Delentia SLM) + Cloud Fallbacks."""
         import urllib.request
 
-        # Provider 1 (PRIMARY): Real Local Delentia OS SLM on Ollama (localhost:11434)
-        try:
-            url = "http://127.0.0.1:11434/api/generate"
-            full_prompt = f"{system_prompt}\n\n[USER INPUT]: {user_prompt}\n\n[DELENTIA AI ASSISTANT]:"
-            payload = {
-                "model": "delentia-os:latest",
-                "prompt": full_prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.4,
-                    "num_predict": max_tokens
+        # Provider 1 (PRIMARY): Real Local SLM on Ollama (/api/chat)
+        # We try modern conversational models first (qwen2.5:7b, llama3.2:3b, delentia-os:latest)
+        ollama_models = ["qwen2.5:7b", "llama3.2:3b", "delentia-os:latest"]
+        for m in ollama_models:
+            try:
+                url = "http://127.0.0.1:11434/api/chat"
+                payload = {
+                    "model": m,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "num_predict": max_tokens
+                    }
                 }
-            }
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
-            )
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                text = data.get("response", "").strip()
-                if text:
-                    return normalize_thai_text(text)
-        except Exception as ex:
-            print(f"[WARN] Local Ollama Delentia-OS SLM call fallback: {ex}")
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=25) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    text = data.get("message", {}).get("content", "").strip()
+                    if text:
+                        # Clean any legacy training artifact prefixes if present
+                        cleaned = text
+                        for pfx in ["I:", "D:", "A:", "R:", "M:", "[DELENTIA AI ASSISTANT]:", "[USER INPUT]:"]:
+                            if cleaned.startswith(pfx):
+                                cleaned = cleaned[len(pfx):].strip()
+                        return normalize_thai_text(cleaned)
+            except Exception:
+                continue
 
         # Provider 2: OpenRouter (Cloud fallback)
         openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
@@ -255,7 +265,7 @@ class RCT7DeepProfilerEngine:
                         {"role": "user", "content": user_prompt}
                     ],
                     "max_tokens": max_tokens,
-                    "temperature": 0.4
+                    "temperature": 0.7
                 }
                 req = urllib.request.Request(
                     url,
@@ -272,8 +282,8 @@ class RCT7DeepProfilerEngine:
                     text = data["choices"][0]["message"]["content"].strip()
                     if text:
                         return normalize_thai_text(text)
-            except Exception as ex:
-                print(f"[WARN] OpenRouter Deep Profiler call fallback: {ex}")
+            except Exception:
+                pass
 
         return None
 
