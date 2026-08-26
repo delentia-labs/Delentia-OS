@@ -88,11 +88,36 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
         yield {"type": "token", "data": trace_header}
         await asyncio.sleep(0.05)
 
-    # 4. Generate Grounded Conversational Response via Local SLM / Generative AI (Non-blocking Thread)
+    # 4. Web Ingestion / URL Scraping Pipeline
+    from rct_control_plane.web_ingestion_service import extract_first_url, fetch_and_scrape_url
+    target_url = extract_first_url(intent_clean)
+    scraped_context = None
+
+    if target_url:
+        yield {"type": "token", "data": f"🕷️ **[Web Ingestion Active]** กำลังเชื่อมต่อและดึงข้อมูลจาก `{target_url}`...\n\n"}
+        await asyncio.sleep(0.05)
+        scrape_res = await asyncio.to_thread(fetch_and_scrape_url, target_url)
+        if scrape_res.get("success"):
+            scraped_context = scrape_res
+            yield {"type": "token", "data": f"✅ **ดึงข้อมูลสำเร็จ:** *{scrape_res['title']}* (ขนาด {scrape_res['total_length']:,} ตัวอักษร)\n\n---\n\n"}
+            await asyncio.sleep(0.05)
+            user_prompt_for_slm = (
+                f"ผู้ใช้ส่งลิงก์เว็บไซต์: {target_url}\n"
+                f"ชื่อหน้าเว็บ: {scrape_res['title']}\n"
+                f"เนื้อหาที่ดึงมาจากหน้าเว็บจริง:\n\"\"\"\n{scrape_res['content_preview']}\n\"\"\"\n\n"
+                f"คำถามหรือความต้องการของผู้ใช้: {intent_clean}\n"
+                f"จงวิเคราะห์ สรุปสาระสำคัญ และให้ข้อมูลเชิงลึกเกี่ยวกับเว็บไซต์นี้อย่างละเอียด เป็นระเบียบ และคมคาย"
+            )
+        else:
+            user_prompt_for_slm = f"{intent_clean}\n(หมายเหตุ: ไม่สามารถเข้าถึง URL ได้เนื่องจาก: {scrape_res.get('error')})"
+    else:
+        user_prompt_for_slm = intent_clean
+
+    # 5. Generate Grounded Conversational Response via Local SLM / Generative AI (Non-blocking Thread)
     ai_reply = await asyncio.to_thread(
         DEEP_PROFILER_ENGINE._call_real_generative_ai,
         DELENTIA_CONSTITUTIONAL_PROMPT,
-        intent_clean,
+        user_prompt_for_slm,
         1024
     )
 
