@@ -114,8 +114,9 @@ class CORDResult:
 # ============================================================================
 
 # Max Shannon entropy before triggering (bits per character, 0–8 scale)
-_ENTROPY_HARD_THRESHOLD = 5.8   # very high → likely obfuscation / base64 blob
-_ENTROPY_SOFT_THRESHOLD = 5.0   # moderate → worth flagging
+# Calibrated for multilingual Unicode (Thai, CJK, English mixed text)
+_ENTROPY_HARD_THRESHOLD = 6.8   # very high → likely obfuscation / base64 blob / encrypted payload
+_ENTROPY_SOFT_THRESHOLD = 5.6   # moderate → worth soft flagging for review
 _MIN_LENGTH_FOR_ENTROPY = 64    # don't entropy-check short strings
 
 

@@ -218,8 +218,8 @@ class RCT7DeepProfilerEngine:
         import urllib.request
 
         # Provider 1 (PRIMARY): Real Local SOTA SLM on Ollama (/api/chat)
-        # Priority: Qwen 2.5 7B (Fast SOTA Multilingual) ➔ Llama 3.2 3B (Ultra Fast) ➔ Bonsai-27B ➔ Legacy SLM
-        ollama_models = ["qwen2.5:7b", "llama3.2:3b", "bonsai-27b:latest", "delentia-os:latest"]
+        # Priority: Llama 3.2 3B (Ultra Fast <1.5s) ➔ Qwen 2.5 7B (Deep Multilingual) ➔ Bonsai-27B ➔ Legacy SLM
+        ollama_models = ["llama3.2:3b", "qwen2.5:7b", "bonsai-27b:latest", "delentia-os:latest"]
         for m in ollama_models:
             try:
                 url = "http://127.0.0.1:11434/api/chat"
@@ -240,7 +240,7 @@ class RCT7DeepProfilerEngine:
                     data=json.dumps(payload).encode("utf-8"),
                     headers={"Content-Type": "application/json"}
                 )
-                with urllib.request.urlopen(req, timeout=12) as resp:
+                with urllib.request.urlopen(req, timeout=35) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                     text = data.get("message", {}).get("content", "").strip()
                     if text:

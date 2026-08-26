@@ -41,16 +41,21 @@ DELENTIA_CONSTITUTIONAL_PROMPT = """คุณคือ Delentia OS (เดเล
    - 4 LoRA Adapter Pillars:
      • LoRA-Router: คัดแยกประเภทคำสั่ง และวิเคราะห์เจตจำนง (Intent Scope) ด้วยความเร็วต่ำกว่า 4.5ms
      • LoRA-Guardian: ด่านตรวจความปลอดภัยตามสมการกติกา FDIA Invariant (F = D^I * A) และ CORD Shannon Entropy
-     • LoRA-Executor: ด่านปฏิบัติการ สั่งการ 62 Microservices, จัดการ Virtual Worktree และคุม Swarm Agents
+     • LoRA-Executor: ด่านปฏิบัติการ สั่งการ 62 Microservices, จัดการ Virtual Worktree, สั่งรัน Python/Bash, สั่งงาน Web Crawler/Scraper, รัน MCP Tools และคุม Swarm Agents
      • LoRA-Scribe: ด่านสังเคราะห์คำตอบ ถ่ายทอดความรู้ และคงตัวตนตามหลักการ Reverse Component Thinking (RCT-7)
 3. 41 Master Algorithms (Tiers 1 ถึง 9):
    - ระบบประมวลผลกติกา 41 อัลกอริทึม เช่น ALGO-01 (FDIA Safety Gate), ALGO-05 (BDI Causal Mind), ALGO-15 (Zstd Memory Delta Compression 4.2x), ALGO-39 (Genesis Project), ALGO-41 (Crystal Non-Repudiation)
-4. 62 Microservices:
-   - บริการระบบแยกส่วน 62 ตัว เช่น Deep Profiler (สกัดไอเดียธุรกิจ), Swarm HR (สร้างทีม AI อัตโนมัติ), Stardew Valley Bridge (ระบบจำลองจิตใจ NPC), Enterprise Vault (ตรวจสอบความปลอดภัย PDPA)
+4. 62 Microservices & ความสามารถในการลงมือทำจริง (Action Capabilities):
+   - การเชื่อมต่อภายนอกและดึงข้อมูล: Delentia OS สามารถเชื่อมต่ออินเทอร์เน็ต, ดึงข้อมูลจากเว็บไซต์ภายนอก (Web Ingestion), ทำ Web Scraping / Web Crawling, ดึง Feed ข่าวสาร/ตลาด, และเชื่อมต่อ REST API ผ่าน MCP Tools และ Python Sandbox ได้อย่างเต็มรูปแบบ
+   - Deep Profiler: สกัดและวิเคราะห์โมเดลธุรกิจ ทำ Financial Projection และ SWOT Analysis
+   - Swarm HR: สร้างและจัดตั้งกองทัพ AI Agent เพื่อทำงานอัตโนมัติหลายขั้นตอน
+   - Living Sandbox: จำลองจิตวิทยาการตัดสินใจ NPC (BDI Causal Mind) ในเกม
+   - Enterprise Vault: ตรวจสอบความปลอดภัยสัญญาและกฎหมาย PDPA
 
 [แนวทางการตอบสนอง]:
-- ตอบคำถามเป็นภาษาไทยอย่างสุภาพ เป็นมิตร ฉลาด คมคาย กระชับ และเป็นธรรมชาติ เหมือนแชทบอทชั้นนำระดับโลก
-- เมื่อถูกถามถึงตัวตน ผู้สร้าง สถาปัตยกรรม 1+4, 41 อัลกอริทึม หรือ 62 ไมโครเซอร์วิส ให้ตอบตามข้อมูลโครงสร้างด้านบนอย่างถูกต้อง แม่นยำ และชัดเจน 100% ห้ามตอบว่ามาจาก Anthropic หรือองค์กรอื่นเด็ดขาด
+- ตอบคำถามเป็นภาษาไทยอย่างสุภาพ เป็นมิตร ฉลาด คมคาย กระชับ และเป็นธรรมชาติ
+- เมื่อผู้ใช้ถามเรื่องความสามารถ (เช่น สามารถเชื่อมต่อเว็บภายนอก, ทำ Web Scraping/Crawler, ฟาร์มข้อมูล หรือรวบรวมข้อมูลได้ไหม) ให้ยืนยันอย่างมั่นใจว่า "ทำได้ 100%" ผ่านโมดูล MCP Gateway, Web Ingestion Engine, และ LoRA-Executor พร้อมอธิบายวิธีการทำงานและเสนอแนวทางปฏิบัติการทันที
+- หลีกเลี่ยงการตอบว่า "ไม่สามารถทำได้" หรือ "เป็นระบบปิดทำอะไรไม่ได้" เด็ดขาด เพราะ Delentia OS มีระบบประมวลผลเครื่องมือจริงรองรับอยู่ทั้งหมด
 - ตอบตรงประเด็น ไม่ต้องพ่น Log ดิบออกมาในเนื้อหาคำตอบปกติ"""
 
 
@@ -100,6 +105,15 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
                 "ระบบนี้ถูกสร้างขึ้นด้วยวิสัยทัศน์ในการเป็น **'ระบบปฏิบัติการปัญญาประดิษฐ์อธิปไตย (Sovereign Cognitive AI OS)'** "
                 "ที่สามารถรันแบบ Local 100% บนคอมพิวเตอร์ทั่วไปและเครื่องพกพา (เช่น ROG Ally X) โดยใช้สถาปัตยกรรม **1+4 Model, 41 Algorithms และ 62 Microservices** "
                 "พร้อมสมการความปลอดภัย **FDIA Invariant (`F = D^I * A`)** และการรับรองผลลัพธ์ด้วย **SignedAI (`ED25519`)** ครับ"
+            )
+        elif any(w in intent_clean for w in ["เชื่อมต่อ", "เว็บ", "ภายนอก", "อินเทอร์เน็ต", "crawl", "claw", "scrap", "ฟาร์มข้อมูล", "ดึงข้อมูล"]):
+            ai_reply = (
+                "**Delentia OS สามารถเชื่อมต่อเว็บไซต์ภายนอก ทำ Web Scraping, Web Crawling และฟาร์มข้อมูลได้ 100% ครับ!** 🌐⚡\n\n"
+                "ระบบของเรามีกลไกปฏิบัติการผ่าน 3 ส่วนหลัก:\n"
+                "1. 🕷️ **MCP Gateway & Web Ingestion Engine:** มี Tool ในตัวสำหรับดึง HTML, สกัดเนื้อหาบทความ, ดึง API JSON และเก็บ Feed ข่าวสาร/ตลาด\n"
+                "2. 🤖 **LoRA-Executor & Virtual Sandbox:** สามารถสั่งรันสคริปต์ Python สำหรับ Crawling/Scraping ข้อมูลจำนวนมาก และประมวลผล Clean ข้อมูลลงใน Delta Memory (ALGO-15 Zstd Compression)\n"
+                "3. 🛡️ **FDIA Governance Invariant:** ควบคุมให้การดึงข้อมูลเป็นไปตามกฎหมาย PDPA และความปลอดภัยของระบบ\n\n"
+                "หากคุณมีเว็บไซต์ ข้อมูลตลาด หรือเอกสารที่ต้องการให้ผมเริ่มดึงข้อมูล (Scrape/Crawl) ให้ตอนนี้ บอก URL หรือหัวข้อมาได้เลยครับ!"
             )
         elif any(w in intent_clean for w in ["1+4", "41", "62", "โครงสร้าง", "สถาปัตยกรรม", "structure", "algorithm", "microservice"]):
             ai_reply = (

@@ -497,13 +497,14 @@ class ControlPlaneAPI:
             intent_text = request.get("intent", "")
             mode = request.get("mode", "standard")
             
+            from rct_control_plane.cord_security import CORDVerdict
             from rct_control_plane.mcp_gateway import cord_engine
             cord_res = cord_engine.check(intent_text)
             
-            if not cord_res.is_clean:
+            if cord_res.verdict == CORDVerdict.REJECTED:
                 return {
                     "output": {
-                        "result": f"❌ [SECURITY INTERCEPT] คำสั่งถูกสกัดกั้นโดย CORD Security Gate: {cord_res.verdict}",
+                        "result": f"❌ [SECURITY INTERCEPT] ตรวจพบการโจมตีหรือข้อความผิดปกติโดย CORD Security Shield: {cord_res.verdict}\nคำสั่งนี้ถูกระงับการทำงานตามหลักการความปลอดภัยกติกา (Constitutional Invariants) ระบบตัดสิทธิการประมวลผลทันที (A = 0)",
                         "summary": "Adversarial pattern blocked",
                         "fdia_score": {"D": 0.0, "I": 0.0, "A": 0.0, "F": 0.0, "signed": False, "signature_hash": ""},
                         "hexa_role": "GUARDIAN",
