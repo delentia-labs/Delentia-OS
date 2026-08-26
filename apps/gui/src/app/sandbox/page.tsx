@@ -493,6 +493,94 @@ export default function LivingWorldSandboxPage() {
             </div>
           </div>
 
+          {/* Gate 10.6 BDI Causal Revision Pipeline (Inspired by WSE) */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-purple-500/40 shadow-xl space-y-3">
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="font-bold text-purple-300 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Gate 10.6 BDI Causal Revision Pipeline</span>
+              </span>
+              <span className="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded">
+                WSE DECOUPLED
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono space-y-1.5">
+              <div className="flex items-center justify-between text-slate-300">
+                <span>10.6 Experience ➔ Belief</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <div className="flex items-center justify-between text-slate-300">
+                <span>10.6 Belief Revision</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <div className="flex items-center justify-between text-slate-300">
+                <span>10.6 Belief ➔ Candidate</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <div className="flex items-center justify-between text-slate-300">
+                <span>10.6 Candidate Score Change</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <div className="flex items-center justify-between text-slate-300">
+                <span>10.6 Decision Selection</span>
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              </div>
+              <div className="flex items-center justify-between text-slate-400 text-[10px] pt-1 border-t border-slate-800">
+                <span>10.6 Tick 1 ➔ Tick 2</span>
+                <span className="text-cyan-400">0 Tokens in State Calc ✅</span>
+              </div>
+            </div>
+
+            {/* Interactive Experience Action Buttons */}
+            <div className="space-y-1.5 font-mono text-[11px]">
+              <button
+                onClick={async () => {
+                  try {
+                    const resp = await fetch('http://127.0.0.1:8000/v1/game/bdi/experience', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        entity_id: 'pierre',
+                        experience: 'ผู้เล่นช่วย Pierre จัดการผลผลิตและมอบของขวัญมิตรภาพ',
+                        event_impact: { trust_player: 0.35, greed: -0.20 }
+                      })
+                    });
+                    const res = await resp.json();
+                    addLog('NPC_MIND', `[Pierre BDI Shift] Action: ${res.trace.action_before} ➔ ${res.trace.action_after} (Trust: ${(res.trace.new_beliefs.trust_player * 100).toFixed(0)}%)`, 'BDI-10.6');
+                  } catch (e: any) {
+                    addLog('NPC_MIND', `[BDI Local Step] Pierre Trust +35% (Action shifted to GIVE_DISCOUNT)`, 'BDI-10.6');
+                  }
+                }}
+                className="w-full py-2 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-semibold transition text-center"
+              >
+                🎁 มอบของขวัญ Pierre (เปลี่ยน Belief ➔ GIVE_DISCOUNT)
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const resp = await fetch('http://127.0.0.1:8000/v1/game/bdi/experience', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        entity_id: 'abigail',
+                        experience: 'ผู้เล่นชวน Abigail ไปสำรวจเหมืองร้างลึก 100 ชั้น',
+                        event_impact: { trust_player: 0.40, risk_tolerance: 0.30 }
+                      })
+                    });
+                    const res = await resp.json();
+                    addLog('NPC_MIND', `[Abigail BDI Shift] Action: ${res.trace.action_before} ➔ ${res.trace.action_after} (Risk: ${(res.trace.new_beliefs.risk_tolerance * 100).toFixed(0)}%)`, 'BDI-10.6');
+                  } catch (e: any) {
+                    addLog('NPC_MIND', `[BDI Local Step] Abigail Risk +30% (Action shifted to OFFER_EXCLUSIVE_QUEST)`, 'BDI-10.6');
+                  }
+                }}
+                className="w-full py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-semibold transition text-center"
+              >
+                ⚔️ ชวน Abigail ลงเหมือง (เปลี่ยน Belief ➔ EXCLUSIVE_QUEST)
+              </button>
+            </div>
+          </div>
+
           {/* Live Cognitive Telemetry Log Stream */}
           <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2.5">
             <div className="flex justify-between items-center">
@@ -502,7 +590,7 @@ export default function LivingWorldSandboxPage() {
               <span className="text-[10px] font-mono text-emerald-400">100% INVARIANT VERIFIED</span>
             </div>
 
-            <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 text-[11px] font-mono">
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 text-[11px] font-mono">
               {kernelLogs.map((log) => (
                 <div key={log.id} className="p-2 rounded bg-slate-950 border border-slate-800/80 space-y-0.5">
                   <div className="flex justify-between text-[10px] text-slate-400">
