@@ -75,12 +75,15 @@ class WebSocketManager:
     def broadcast_sync(self, event_type: str, data: Dict[str, Any], intent_id: Optional[str] = None) -> None:
         """Thread-safe synchronous wrapper for broadcast."""
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.create_task(self.broadcast(event_type, data, intent_id))
-            else:
-                loop.run_until_complete(self.broadcast(event_type, data, intent_id))
-        except RuntimeError:
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    loop.create_task(self.broadcast(event_type, data, intent_id))
+                    return
+            except RuntimeError:
+                pass
+            asyncio.run(self.broadcast(event_type, data, intent_id))
+        except Exception:
             pass
 
 

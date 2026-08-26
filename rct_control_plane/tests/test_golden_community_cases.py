@@ -139,8 +139,7 @@ class TestGoldenCommunityCases:
         graph.add_node(n1)
         graph.add_node(n2)
         
-        loop = asyncio.get_event_loop()
-        res = loop.run_until_complete(self.parallel_engine.execute_graph_parallel(graph))
+        res = asyncio.run(self.parallel_engine.execute_graph_parallel(graph))
         assert res["total_nodes"] == 2
 
     def test_pillar_9_thai_astrology_and_rct7_reasoning(self):

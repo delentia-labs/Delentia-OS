@@ -4,7 +4,6 @@ Handles real-time game telemetry, NPC Delta Memory state, and autonomous farm di
 """
 
 import os
-import json
 from pathlib import Path
 from typing import Dict, Any
 from dotenv import load_dotenv

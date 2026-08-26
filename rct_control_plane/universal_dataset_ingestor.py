@@ -9,12 +9,11 @@ Supported Extensions:
 • Images & Diagrams: .png, .jpg, .jpeg, .webp (OCR & Vision Text Extraction)
 """
 
-import os
 import re
 import csv
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Tuple
 
 
 class UniversalDatasetIngestor:

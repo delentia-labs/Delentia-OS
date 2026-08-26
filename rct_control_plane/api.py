@@ -1318,6 +1318,57 @@ class ControlPlaneAPI:
             return {"status": "SUCCESS", "data": res}
 
         # ---------------------------------------------------------------------
+        # Human-in-the-Loop Approval Queue Endpoints
+        # ---------------------------------------------------------------------
+        @self.app.post("/v1/approval/request")
+        async def api_request_approval(
+            intent_id: str,
+            action: str,
+            risk_level: str = "HIGH",
+            reason: str = "Structural policy threshold exceeded",
+            timeout_seconds: int = 300
+        ):
+            from rct_control_plane.approval_queue import APPROVAL_QUEUE
+            ticket = APPROVAL_QUEUE.request_approval(
+                intent_id=intent_id,
+                action=action,
+                risk_level=risk_level,
+                reason=reason,
+                timeout_seconds=timeout_seconds
+            )
+            return {"status": "SUCCESS", "ticket": ticket.to_dict()}
+
+        @self.app.get("/v1/approval/pending")
+        async def api_list_pending_approvals(limit: int = 50):
+            from rct_control_plane.approval_queue import APPROVAL_QUEUE
+            pending = APPROVAL_QUEUE.list_pending(limit=limit)
+            return {
+                "status": "SUCCESS",
+                "total_pending": len(pending),
+                "tickets": [t.to_dict() for t in pending]
+            }
+
+        @self.app.get("/v1/approval/{ticket_id}")
+        async def api_get_approval_ticket(ticket_id: str):
+            from rct_control_plane.approval_queue import APPROVAL_QUEUE
+            ticket = APPROVAL_QUEUE.get_ticket(ticket_id)
+            if not ticket:
+                raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' not found")
+            return ticket.to_dict()
+
+        @self.app.post("/v1/approval/decide")
+        async def api_decide_approval(
+            ticket_id: str,
+            decision: str,
+            approver: str = "SecurityOfficer"
+        ):
+            from rct_control_plane.approval_queue import APPROVAL_QUEUE
+            res = APPROVAL_QUEUE.decide(ticket_id=ticket_id, decision=decision, approver=approver)
+            if not res.get("success"):
+                raise HTTPException(status_code=400, detail=res.get("error", "Decision failed"))
+            return res
+
+        # ---------------------------------------------------------------------
         # Visual FDIA Invariant Configuration
         # ---------------------------------------------------------------------
         @self.app.get("/v1/fdia/config")
