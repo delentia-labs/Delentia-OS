@@ -517,16 +517,12 @@ class ControlPlaneAPI:
             algo_res = ALGORITHM_KERNEL.process_intent_full_pipeline(intent_text)
             fdia_score = algo_res["fdia_score"]
 
-            # Call Local SLM / Generative AI engine
+            # Call Local SLM / Generative AI engine with Constitutional Ground-Truth
             from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
-            system_prompt = (
-                "คุณคือ Delentia OS Sovereign AI ผู้ช่วยปัญญาประดิษฐ์ระดับองค์กร\n"
-                "จงตอบคำถามหรือสนทนากับผู้ใช้อย่างชาญฉลาด มีเหตุผล ชัดเจน และเป็นมิตร\n"
-                "ใช้ภาษาไทยที่เป็นธรรมชาติ คล่องแคล่ว และตอบตรงประเด็นตามหลัก Reverse Component Thinking (RCT-7)"
-            )
-            ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(system_prompt, intent_text, max_tokens=1024)
+            from rct_control_plane.dynamic_reasoner import DELENTIA_CONSTITUTIONAL_PROMPT
+            ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(DELENTIA_CONSTITUTIONAL_PROMPT, intent_text, max_tokens=1024)
             if not ai_reply:
-                ai_reply = f"สวัสดีครับ! Delentia OS ได้รับคำสั่ง '{intent_text}' เรียบร้อยแล้ว ระบบกำลังประมวลผลผ่าน 41 Algorithms Master Kernel และ FDIA Gate ({fdia_score:.4f}) มีเรื่องอะไรให้ผมช่วยคิด วิเคราะห์ หรือสร้างทีม AI เพิ่มเติมไหมครับ?"
+                ai_reply = f"สวัสดีครับ! ผมคือ Delentia OS ระบบ AI ที่พัฒนาโดยคุณอิทธิฤทธิ์ แซ่โง้ว (Whale) และทีมวิจัย Delentia Labs ครับ ได้รับข้อความ '{intent_text}' เรียบร้อยแล้ว ระบบกำลังประมวลผลผ่าน 41 Algorithms Master Kernel และ FDIA Gate ({fdia_score:.4f}) มีเรื่องอะไรให้ผมช่วยคิด วิเคราะห์ หรือสร้างทีม AI เพิ่มเติมไหมครับ?"
 
             intent_id = f"intent_{int(time.time()*1000)}"
             sig_hash = f"ED25519-{os.urandom(8).hex()}"
