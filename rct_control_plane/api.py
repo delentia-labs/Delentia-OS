@@ -1280,6 +1280,44 @@ class ControlPlaneAPI:
             }
 
         # ---------------------------------------------------------------------
+        # Swarm HR Provisioner & SME Template Engine
+        # ---------------------------------------------------------------------
+        @self.app.get("/v1/swarm/templates")
+        async def get_swarm_templates():
+            """Retrieves the 3 Golden SME Swarm templates."""
+            from rct_control_plane.swarm_hr_engine import SWARM_HR_ENGINE
+            return {
+                "status": "SUCCESS",
+                "templates": {k: t.to_dict() for k, t in SWARM_HR_ENGINE.templates.items()}
+            }
+
+        @self.app.post("/v1/swarm/provision")
+        async def provision_swarm_team(payload: Dict[str, Any]):
+            """Conversational HR Team Builder: Deconstructs brief into a 3-agent swarm."""
+            from rct_control_plane.swarm_hr_engine import SWARM_HR_ENGINE
+            brief = payload.get("brief", "ช่วยจัดการร้านค้าออนไลน์")
+            team = SWARM_HR_ENGINE.provision_team_from_brief(brief)
+            return {"status": "SUCCESS", "team": team.to_dict()}
+
+        @self.app.post("/v1/swarm/run-team")
+        async def run_swarm_pipeline(payload: Dict[str, Any]):
+            """Executes subagents in parallel for a given team task."""
+            from rct_control_plane.swarm_hr_engine import SWARM_HR_ENGINE
+            team_id = payload.get("team_id", "ECOMMERCE_SOLO")
+            task = payload.get("task", "ลูกค้ารายใหม่สอบถามราคาสินค้าและโปรโมชั่น")
+            result = SWARM_HR_ENGINE.execute_swarm_pipeline(team_id, task)
+            return {"status": "SUCCESS", "data": result}
+
+        @self.app.post("/v1/swarm/approve-action")
+        async def approve_swarm_action(payload: Dict[str, Any]):
+            """Human-in-the-Loop Smart Review Queue: Approves pending high-stakes actions (A = 1.0)."""
+            from rct_control_plane.swarm_hr_engine import SWARM_HR_ENGINE
+            team_id = payload.get("team_id", "ECOMMERCE_SOLO")
+            approval_id = payload.get("approval_id", "")
+            res = SWARM_HR_ENGINE.approve_pending_action(team_id, approval_id)
+            return {"status": "SUCCESS", "data": res}
+
+        # ---------------------------------------------------------------------
         # Visual FDIA Invariant Configuration
         # ---------------------------------------------------------------------
         @self.app.get("/v1/fdia/config")
