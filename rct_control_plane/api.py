@@ -1219,6 +1219,26 @@ class ControlPlaneAPI:
             return {"status": "SUCCESS", "session": session.to_dict()}
 
         # ---------------------------------------------------------------------
+        # BDI Causal Revision Engine (Gate 10.6 Decoupled Intelligence)
+        # ---------------------------------------------------------------------
+        @self.app.post("/v1/game/bdi/experience")
+        async def submit_bdi_experience(payload: Dict[str, Any]):
+            """Executes Gate 10.6: Experience -> Belief Revision -> Candidate Scoring -> Action Selection."""
+            from rct_control_plane.bdi_causal_engine import BDI_CAUSAL_ENGINE
+            entity_id = payload.get("entity_id", "pierre")
+            experience_text = payload.get("experience", "ผู้เล่นนำผลผลิตทองคำมาขายให้ Pierre ในราคามิตรภาพ")
+            event_impact = payload.get("event_impact", {"trust_player": +0.25, "greed": -0.10})
+            
+            trace_result = BDI_CAUSAL_ENGINE.step_experience_pipeline(entity_id, experience_text, event_impact)
+            return {"status": "SUCCESS", "trace": trace_result}
+
+        @self.app.get("/v1/game/bdi/state")
+        async def get_bdi_world_state():
+            """Retrieves the complete deterministic state of all living NPCs and recent causal traces."""
+            from rct_control_plane.bdi_causal_engine import BDI_CAUSAL_ENGINE
+            return {"status": "SUCCESS", "data": BDI_CAUSAL_ENGINE.get_world_and_bdi_state()}
+
+        # ---------------------------------------------------------------------
         # Visual FDIA Invariant Configuration
         # ---------------------------------------------------------------------
         @self.app.get("/v1/fdia/config")
