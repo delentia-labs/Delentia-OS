@@ -145,7 +145,7 @@ class BDICausalRevisionEngine:
             npc.candidate_actions[k] = max(0.01, npc.candidate_actions[k])
 
         # Phase 3: Decision Selection (Highest Candidate Action Selected)
-        action_after = max(npc.candidate_actions, key=npc.candidate_actions.get)
+        action_after = max(npc.candidate_actions, key=lambda k: float(npc.candidate_actions[k]))
         npc.last_selected_action = action_after
         self.world_tick += 1
 

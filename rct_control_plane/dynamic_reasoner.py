@@ -80,7 +80,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
     from rct_control_plane.autonomous_backedge_daemon import AutonomousBackEdgeDaemon
 
-    graph = ExecutionGraph(intent_id=intent_id)
+    graph = ExecutionGraph(intent_id=str(intent_id))
     graph.add_node(ExecutionNode(id="subagent_architect", node_type=NodeType.AGENT_CAPABILITY, capability="architect"))
     graph.add_node(ExecutionNode(id="subagent_builder", node_type=NodeType.AGENT_CAPABILITY, capability="code_generation"))
     graph.add_node(ExecutionNode(id="subagent_auditor", node_type=NodeType.AGENT_CAPABILITY, capability="security_audit"))

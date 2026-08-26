@@ -464,27 +464,27 @@ class OpenRouterClient:
             "max_tokens": 2048
         }
 
-        session = await self.get_session()
         try:
-            async with session.post(
-                f"{self.base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=45)
-            ) as response:
-                if response.status == 200:
-                    import json
-                    async for line in response.content:
-                        line_str = line.decode("utf-8").strip()
-                        if line_str.startswith("data: ") and line_str != "data: [DONE]":
-                            data_json = line_str[6:]
-                            try:
-                                chunk = json.loads(data_json)
-                                delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                if delta:
-                                    yield delta
-                            except Exception:
-                                pass
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.base_url}/chat/completions",
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=45)
+                ) as response:
+                    if response.status == 200:
+                        import json
+                        async for line in response.content:
+                            line_str = line.decode("utf-8").strip()
+                            if line_str.startswith("data: ") and line_str != "data: [DONE]":
+                                data_json = line_str[6:]
+                                try:
+                                    chunk = json.loads(data_json)
+                                    delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if delta:
+                                        yield delta
+                                except Exception:
+                                    pass
         except Exception as e:
             print(f"[WARN] OpenRouter streaming fallback: {e}")
 
