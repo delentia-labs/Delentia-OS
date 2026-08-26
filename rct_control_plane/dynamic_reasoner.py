@@ -113,18 +113,48 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     else:
         user_prompt_for_slm = intent_clean
 
-    # 5. Generate Grounded Conversational Response via Local SLM / Generative AI (Non-blocking Thread)
-    ai_reply = await asyncio.to_thread(
-        DEEP_PROFILER_ENGINE._call_real_generative_ai,
-        DELENTIA_CONSTITUTIONAL_PROMPT,
-        user_prompt_for_slm,
-        1024
-    )
+    # 5. Native Real-Time Streaming Generation from Local SLM via aiohttp
+    import aiohttp
+    streamed_any_token = False
+    models_to_try = ["qwen2.5:7b", "llama3.2:3b", "bonsai-27b:latest", "delentia-os:latest"]
 
-    # 5. Deterministic High-Fidelity Grounding Fallback
-    if not ai_reply:
+    for model_name in models_to_try:
+        try:
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": DELENTIA_CONSTITUTIONAL_PROMPT},
+                        {"role": "user", "content": user_prompt_for_slm}
+                    ],
+                    "stream": True,
+                    "options": {
+                        "temperature": 0.7,
+                        "num_predict": 1024
+                    }
+                }
+                async with session.post("http://127.0.0.1:11434/api/chat", json=payload, timeout=aiohttp.ClientTimeout(total=45)) as resp:
+                    if resp.status == 200:
+                        async for line in resp.content:
+                            if not line:
+                                continue
+                            try:
+                                chunk = json.loads(line.decode("utf-8"))
+                                token = chunk.get("message", {}).get("content", "")
+                                if token:
+                                    streamed_any_token = True
+                                    yield {"type": "token", "data": token}
+                            except Exception:
+                                pass
+                        if streamed_any_token:
+                            break
+        except Exception:
+            continue
+
+    # 6. Fallback if local SLM didn't stream any tokens
+    if not streamed_any_token:
         if any(w in intent_clean for w in ["ใครสร้าง", "ผู้สร้าง", "ใครเป็นคนสร้าง", "สร้างคุณ", "อิทธิฤทธิ์", "whale", "แซ่โง้ว"]):
-            ai_reply = (
+            fallback_text = (
                 "**Delentia OS** ถูกออกแบบและพัฒนาสถาปัตยกรรมขึ้นโดย **คุณอิทธิฤทธิ์ แซ่โง้ว (Ittirit Saengow / Whale)** "
                 "ร่วมกับทีมวิจัย **Delentia Labs (RCT Labs)** จากชุมชนคลองเตย กรุงเทพฯ ครับ 😊\n\n"
                 "ระบบนี้ถูกสร้างขึ้นด้วยวิสัยทัศน์ในการเป็น **'ระบบปฏิบัติการปัญญาประดิษฐ์อธิปไตย (Sovereign Cognitive AI OS)'** "
@@ -132,7 +162,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
                 "พร้อมสมการความปลอดภัย **FDIA Invariant (`F = D^I * A`)** และการรับรองผลลัพธ์ด้วย **SignedAI (`ED25519`)** ครับ"
             )
         elif any(w in intent_clean for w in ["เชื่อมต่อ", "เว็บ", "ภายนอก", "อินเทอร์เน็ต", "crawl", "claw", "scrap", "ฟาร์มข้อมูล", "ดึงข้อมูล"]):
-            ai_reply = (
+            fallback_text = (
                 "**Delentia OS สามารถเชื่อมต่อเว็บไซต์ภายนอก ทำ Web Scraping, Web Crawling และฟาร์มข้อมูลได้ 100% ครับ!** 🌐⚡\n\n"
                 "ระบบของเรามีกลไกปฏิบัติการผ่าน 3 ส่วนหลัก:\n"
                 "1. 🕷️ **MCP Gateway & Web Ingestion Engine:** มี Tool ในตัวสำหรับดึง HTML, สกัดเนื้อหาบทความ, ดึง API JSON และเก็บ Feed ข่าวสาร/ตลาด\n"
@@ -141,7 +171,7 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
                 "หากคุณมีเว็บไซต์ ข้อมูลตลาด หรือเอกสารที่ต้องการให้ผมเริ่มดึงข้อมูล (Scrape/Crawl) ให้ตอนนี้ บอก URL หรือหัวข้อมาได้เลยครับ!"
             )
         elif any(w in intent_clean for w in ["1+4", "41", "62", "โครงสร้าง", "สถาปัตยกรรม", "structure", "algorithm", "microservice"]):
-            ai_reply = (
+            fallback_text = (
                 "โครงสร้างสถาปัตยกรรมหลักของ **Delentia OS** ประกอบด้วย 3 เสาหลักที่เชื่อมต่อกันอย่างสมบูรณ์แบบครับ:\n\n"
                 "1. 🧠 **1+4 Model Architecture:**\n"
                 "   • **1 Base Model:** Bonsai-27B (1-bit GGUF ~3.80 GB VRAM)\n"
@@ -152,8 +182,8 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
                 "   • โมดูลบริการระบบ 62 ตัว เช่น Deep Profiler, Swarm HR, Stardew Valley Mind Simulator, Enterprise Vault และ Payment Verification"
             )
         elif any(w in intent_clean for w in ["สวัสดี", "hello", "hi", "หวัดดี", "ใคร", "ทำอะไรได้"]):
-            ai_reply = (
-                "สวัสดีครับ! ผมคือ **Delentia OS** ระบบปฏิบัติการปัญญาประดิษฐ์อัจฉริยะ (Sovereign Cognitive AI OS) ยินดีที่ได้พูดคุยกับคุณครับ 😊\n\n"
+            fallback_text = (
+                "สวัสดีครับ! ผมคือ **Delentia OS** ระบบปฏิบัติการปัญญาประดิษฐ์อัจฉริยะ (Sovereign Cognitive AI OS) พัฒนาโดยคุณอิทธิฤทธิ์ แซ่โง้ว (Whale) และ Delentia Labs ยินดีที่ได้พูดคุยกับคุณครับ 😊\n\n"
                 "ผมสามารถช่วยคุณได้หลากหลายด้าน เช่น:\n"
                 "1. 💡 **พูดคุย ให้คำปรึกษา และวางแผนธุรกิจ** (RCT-7 Deep Profiler)\n"
                 "2. 👔 **สร้างและสั่งการทีม AI Agent อัตโนมัติ** (Swarm HR Builder)\n"
@@ -163,17 +193,16 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
                 "วันนี้มีเรื่องอะไรที่คุณอยากให้ผมช่วยคิด หรืออยากพูดคุยปรึกษาเรื่องไหนไหมครับ?"
             )
         else:
-            ai_reply = f"ผมได้รับข้อความของคุณแล้วครับ เกี่ยวกับ *\"{intent_clean}\"* ผมพร้อมช่วยคุณวิเคราะห์และดำเนินการตามโครงสร้าง Delentia OS ทันทีครับ มีมุมไหนที่คุณอยากให้เจาะลึกเป็นพิเศษไหมครับ?"
+            fallback_text = f"ผมได้รับข้อความของคุณแล้วครับ เกี่ยวกับ *\"{intent_clean}\"* ผมพร้อมช่วยคุณวิเคราะห์และดำเนินการตามโครงสร้าง Delentia OS ทันทีครับ มีมุมไหนที่คุณอยากให้เจาะลึกเป็นพิเศษไหมครับ?"
 
-    # 6. Stream words smoothly to simulate real interactive typing
-    words = ai_reply.split(" ")
-    buffer = ""
-    for i, word in enumerate(words):
-        buffer += word + " "
-        if (i + 1) % 4 == 0 or i == len(words) - 1:
-            yield {"type": "token", "data": buffer}
-            buffer = ""
-            await asyncio.sleep(0.03)
+        words = fallback_text.split(" ")
+        buffer = ""
+        for i, word in enumerate(words):
+            buffer += word + " "
+            if (i + 1) % 4 == 0 or i == len(words) - 1:
+                yield {"type": "token", "data": buffer}
+                buffer = ""
+                await asyncio.sleep(0.03)
 
     # 7. Send Structured FDIA & Completion Event for GUI Badges
     yield {
