@@ -218,8 +218,8 @@ class RCT7DeepProfilerEngine:
         import urllib.request
 
         # Provider 1 (PRIMARY): Real Local SLM on Ollama (/api/chat)
-        # We try modern conversational models first (qwen2.5:7b, llama3.2:3b, delentia-os:latest)
-        ollama_models = ["qwen2.5:7b", "llama3.2:3b", "delentia-os:latest"]
+        # Priority: Bonsai-27B (Foundation) ➔ Qwen 2.5 7B (Multilingual) ➔ Llama 3.2 3B ➔ Delentia SLM
+        ollama_models = ["bonsai-27b:latest", "qwen2.5:7b", "llama3.2:3b", "delentia-os:latest"]
         for m in ollama_models:
             try:
                 url = "http://127.0.0.1:11434/api/chat"
