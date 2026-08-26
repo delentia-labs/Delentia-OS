@@ -213,76 +213,171 @@ class RCT7DeepProfilerEngine:
         """Gradually refines 6-axis radar balance."""
         session.radar_metrics["operations"] = min(90, session.radar_metrics["operations"] + 10)
 
-    def _generate_adaptive_question(self, session: DeepProfilerSession, target_var: str, last_reply: str) -> str:
-        """Calls Google Gemma-27B Generative AI to formulate the next RCT-7 question."""
-        gemini_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    def _call_real_generative_ai(self, system_prompt: str, user_prompt: str, max_tokens: int = 800) -> Optional[str]:
+        """Multi-provider Real AI Caller: Local Delentia-OS SLM (Ollama) + Cloud Fallbacks."""
+        import urllib.request
 
-        var_prompts = {
-            "weekly_hours": "คุณมีเวลาทุ่มเทให้กับโปรเจกต์นี้ประมาณสัปดาห์ละกี่ชั่วโมง หรือวันละกี่ชั่วโมงครับ?",
-            "capital_budget": "คุณตั้งงบประมาณเริ่มต้นในการสร้างหรือทำระบบไว้ประมาณเท่าไหร่ครับ (หรือเน้นแบบต้นทุน 0 บาท)?",
-            "target_audience": "กลุ่มผู้ใช้หรือลูกค้าในอุดมคติที่คุณอยากแก้ปัญหาให้พวกเขามากที่สุดคือกลุ่มไหนครับ?",
-            "unfair_advantage": "คุณมีจุดเด่นพิเศษ ความสัมพันธ์ หรือประสบการณ์ในวงการใดที่คู่แข่งคนอื่นลอกเลียนแบบได้ยากไหมครับ?",
-            "disliked_tasks": "มีงานหรือกระบวนการประเภทใดที่คุณไม่อยากทำเลย (เช่น ไม่ชอบคุยเซลส์, ไม่ชอบทำกราฟิก) เพื่อให้ระบบสร้างระบบอัตโนมัติมาทดแทนให้ครับ?"
+        # Provider 1 (PRIMARY): Real Local Delentia OS SLM on Ollama (localhost:11434)
+        try:
+            url = "http://127.0.0.1:11434/api/generate"
+            full_prompt = f"{system_prompt}\n\n[USER INPUT]: {user_prompt}\n\n[DELENTIA AI ASSISTANT]:"
+            payload = {
+                "model": "delentia-os:latest",
+                "prompt": full_prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.4,
+                    "num_predict": max_tokens
+                }
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                text = data.get("response", "").strip()
+                if text:
+                    return normalize_thai_text(text)
+        except Exception as ex:
+            print(f"[WARN] Local Ollama Delentia-OS SLM call fallback: {ex}")
+
+        # Provider 2: OpenRouter (Cloud fallback)
+        openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        if openrouter_key:
+            try:
+                url = "https://openrouter.ai/api/v1/chat/completions"
+                payload = {
+                    "model": "google/gemini-2.5-flash",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "max_tokens": max_tokens,
+                    "temperature": 0.4
+                }
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {openrouter_key}",
+                        "HTTP-Referer": "https://delentia.ai",
+                        "X-Title": "Delentia OS Deep Profiler"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    text = data["choices"][0]["message"]["content"].strip()
+                    if text:
+                        return normalize_thai_text(text)
+            except Exception as ex:
+                print(f"[WARN] OpenRouter Deep Profiler call fallback: {ex}")
+
+        return None
+
+    def _generate_adaptive_question(self, session: DeepProfilerSession, target_var: str, last_reply: str) -> str:
+        """Generates dynamic, context-aware adaptive questions tailored to user's exact words."""
+        var_descriptions = {
+            "weekly_hours": "เวลาว่างที่สามารถทุ่มเทให้โปรเจกต์ต่อสัปดาห์",
+            "capital_budget": "งบประมาณเริ่มต้นหรือความต้องการต้นทุน 0 บาท",
+            "target_audience": "กลุ่มเป้าหมายหรือลูกค้าในอุดมคติที่ต้องการเจาะจง",
+            "unfair_advantage": "จุดเด่น ประสบการณ์ หรือความได้เปรียบเฉพาะตัวที่คนอื่นลอกเลียนแบบยาก",
+            "disliked_tasks": "งานที่ไม่ชอบทำเพื่อให้อัตโนมัติเข้ามาช่วยจัดการแทน"
         }
 
-        default_q = var_prompts.get(target_var, "คุณมีความสนใจหรืออยากเพิ่มเติมข้อมูลในมิติใดอีกบ้างครับ?")
+        system_prompt = (
+            "คุณคือ Delentia OS Deep Profiler AI เชี่ยวชาญหลัก Reverse Component Thinking (RCT-7)\n"
+            "หน้าที่ของคุณคือถามคำถามต่อเนื่องภาษาไทยที่เป็นธรรมชาติ คมคาย และเชื่อมโยงกับคำตอบล่าสุดของผู้ใช้อย่างลึกซึ้ง\n"
+            f"เป้าหมายของคำถามนี้คือเจาะลึกตัวแปร: '{var_descriptions.get(target_var, target_var)}'\n"
+            "ห้ามใช้ประโยคสำเร็จรูปที่แข็งทื่อ จงสะท้อนสิ่งที่ผู้ใช้เพิ่งพูดและชวนคิดต่ออย่างตรงจุด ความยาว 1-2 ย่อหน้าสั้นๆ"
+        )
+        user_prompt = (
+            f"เป้าหมายของผู้ใช้: {session.goal}\n"
+            f"ข้อมูลที่สกัดได้แล้ว: {json.dumps(session.delta_memory, ensure_ascii=False)}\n"
+            f"คำตอบล่าสุดของผู้ใช้: {last_reply}\n"
+            f"จงสร้างคำถามที่คมชัดเพื่อสกัดตัวแปร '{target_var}'"
+        )
 
-        if gemini_key:
-            try:
-                import urllib.request
-                model_name = "gemma-4-26b-a4b-it"
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
-                
-                system_instruction = (
-                    "You are Delentia OS Deep Profiler AI specializing in Reverse Component Thinking (RCT-7). "
-                    "Analyze the user's previous answer and formulate the next highly engaging, sharp, and structured question in Thai "
-                    f"to extract the variable '{target_var}'. Keep it concise, professional, and encouraging (1-2 paragraphs)."
-                )
+        ai_reply = self._call_real_generative_ai(system_prompt, user_prompt, max_tokens=250)
+        if ai_reply:
+            return ai_reply
 
-                payload = {
-                    "contents": [
-                        {
-                            "parts": [
-                                {"text": f"{system_instruction}\n\nคำตอบล่าสุดของผู้ใช้: {last_reply}\nคำถามเป้าหมายพื้นฐาน: {default_q}"}
-                            ]
-                        }
-                    ]
-                }
-                req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    res_json = json.loads(resp.read().decode("utf-8"))
-                    ai_q = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    return normalize_thai_text(ai_q)
-            except Exception as ex:
-                print(f"[WARN] Live Profiler AI generation fallback: {ex}")
-
-        return default_q
+        # Dynamic fallback that reflects target variable
+        fallbacks = {
+            "weekly_hours": f"จากที่คุณพูดถึง '{last_reply}' เพื่อให้เราวางแผนขนาดระบบได้สมจริง อยากทราบว่าคุณมีเวลาทุ่มเทให้โปรเจกต์นี้ประมาณกี่ชั่วโมงต่อสัปดาห์ครับ?",
+            "capital_budget": f"เพื่อให้สอดคล้องกับแนวทางของคุณ คุณตั้งงบประมาณเริ่มต้นไว้เท่าไหร่ หรือเน้นโมเดลแบบ Lean ต้นทุน 0 บาทครับ?",
+            "target_audience": f"คุณมองว่ากลุ่มผู้ใช้งานหรือลูกค้ากลุ่มแรกที่จะได้รับคุณค่าจากระบบนี้มากที่สุดคือใครครับ?",
+            "unfair_advantage": f"เมื่อพิจารณาจาก '{last_reply}' คุณมีจุดเด่นพิเศษ ความเชี่ยวชาญเฉพาะทาง หรือมุมมองที่คู่แข่งในตลาดลอกเลียนแบบได้ยากในเรื่องใดบ้างครับ?",
+            "disliked_tasks": "มีขั้นตอนหรืองานประเภทไหนที่คุณไม่อยากทำเลย เพื่อให้ Delentia OS ออกแบบ Micro-Agent มารับช่วงต่อแบบอัตโนมัติครับ?"
+        }
+        return fallbacks.get(target_var, "คุณมีความคิดเห็นหรืออยากเพิ่มเติมข้อมูลในมิติใดอีกบ้างครับ?")
 
     def synthesize_blueprint(self, session_id: str) -> Dict[str, Any]:
-        """Synthesizes the final Executable Digital Product Blueprint."""
+        """Synthesizes a 100% genuine, deeply personalized Executable Digital Product Blueprint using Real AI."""
         session = self.sessions.get(session_id)
         if not session:
             raise ValueError("Session not found")
 
-        primary_skill = session.delta_memory.get("primary_skill", "Specialized Knowledge")
-        hours = session.delta_memory.get("time_commitment", "10 hrs/week")
+        system_prompt = (
+            "คุณคือ Delentia OS Master Product Architect ทำหน้าที่สังเคราะห์ Digital Product Blueprint จากผลการสัมภาษณ์ RCT-7\n"
+            "จงวิเคราะห์ข้อมูลตัวตน ทักษะ งบประมาณ เวลา และความได้เปรียบเฉพาะตัวของผู้ใช้ แล้วสร้าง Blueprint ผลิตภัณฑ์ดิจิทัลที่เจาะจง ไม่ซ้ำใคร และทำเงินได้จริง\n"
+            "ตอบกลับเป็น JSON เท่านั้นในโครงสร้างดังนี้:\n"
+            "{\n"
+            '  "product_name": "ชื่อผลิตภัณฑ์ที่เฉพาะเจาะจงและทรงพลัง",\n'
+            '  "business_model": "โมเดลการสร้างรายได้และราคาที่เหมาะสม",\n'
+            '  "recommended_tech_stack": "Tech stack ที่ประหยัดต้นทุนและเหมาะสม",\n'
+            '  "market_wedge": "จุดขายและกลยุทธ์เจาะตลาด 1 บรรทัด",\n'
+            '  "execution_steps": ["ขั้นตอนที่ 1", "ขั้นตอนที่ 2", "ขั้นตอนที่ 3", "ขั้นตอนที่ 4"]\n'
+            "}"
+        )
+        user_prompt = (
+            f"เป้าหมายของผู้ใช้: {session.goal}\n"
+            f"เป้าหมายรายได้: {session.target_revenue}\n"
+            f"Delta Memory ที่สกัดได้: {json.dumps(session.delta_memory, ensure_ascii=False)}\n"
+            f"ประวัติการสัมภาษณ์: {json.dumps(session.chat_history[-6:], ensure_ascii=False)}\n"
+        )
 
-        # Dynamic Product Formulation based on profile
-        if "Python" in str(primary_skill) or "Web" in str(primary_skill):
-            product_name = "Autonomous Micro-SaaS API & Workflow Automator"
-            business_model = f"Monthly Recurring Subscription ($29 - $99/mo) [{hours}]"
-            tech_stack = "Next.js 15, FastAPI, SQLite / PostgreSQL, Delentia 1+N LoRA"
-            wedge = "ระบบอัตโนมัติที่ช่วยลดเวลาทำงานเอกสารและคำนวณภาษีให้ SME ไทย"
-        elif "Legal" in str(primary_skill) or "Finance" in str(primary_skill):
-            product_name = "AI Contract & PDPA Compliance Audit Vault"
-            business_model = "Per-Audit Token & Enterprise License"
-            tech_stack = "Delentia Guardian FDIA Engine, PDF Vector Search, React"
-            wedge = "เครื่องมือตรวจจับความเสี่ยงสัญญาและข้อกฎหมาย PDPA อัตโนมัติใน 10 วินาที"
+        ai_json_str = self._call_real_generative_ai(system_prompt, user_prompt, max_tokens=600)
+        parsed_data = None
+
+        if ai_json_str:
+            try:
+                # Clean possible markdown formatting
+                clean_str = ai_json_str.replace("```json", "").replace("```", "").strip()
+                parsed_data = json.loads(clean_str)
+            except Exception as e:
+                print(f"[WARN] Failed to parse AI blueprint JSON: {e}")
+
+        # If AI parsed successfully, use dynamic AI output
+        if parsed_data and "product_name" in parsed_data:
+            product_name = parsed_data["product_name"]
+            business_model = parsed_data.get("business_model", "Subscription / Digital License")
+            tech_stack = parsed_data.get("recommended_tech_stack", "Next.js 15, FastAPI, PromptPay QR, Delentia 1+N LoRA")
+            wedge = parsed_data.get("market_wedge", "โซลูชันที่ปรับแต่งเฉพาะทางตามจุดแข็งของผู้ใช้")
+            steps = parsed_data.get("execution_steps", [
+                "1. แตกกิ่ง Virtual Worktree: swarm/agent_digital_product",
+                "2. สร้าง Database Schema & PromptPay Billing Integration",
+                "3. รัน 41 Algorithms ตรวจสอบ Invariant ความปลอดภัย",
+                "4. สั่ง LoRA-Executor ทำการ Build & Deploy Standalone Web App"
+            ])
         else:
-            product_name = "Hyper-Personalized Knowledge & Creator Hub"
-            business_model = "Digital Download & Premium Community"
-            tech_stack = "Markdown Knowledge Base, PromptPay QR, Stripe"
-            wedge = "ระบบเรียนรู้และเครื่องมือดิจิทัลเฉพาะทางแบบ Plug & Play"
+            # Contextual fallback deeply binding user inputs
+            user_skill = session.delta_memory.get("primary_skill", "Specialized Knowledge")
+            user_budget = session.delta_memory.get("capital_budget", "ต้นทุน 0 บาท")
+            user_adv = session.delta_memory.get("unfair_advantage", "Reverse Thinking")
+            
+            product_name = f"Lean {user_skill} Automation & Knowledge System"
+            business_model = f"Freemium & PromptPay Pro Tier ({session.target_revenue}) [เงื่อนไข: {user_budget}]"
+            tech_stack = "Next.js 15, FastAPI, SQLite, Delentia 1+N LoRA, PromptPay CRC-16"
+            wedge = f"ระบบสร้างคุณค่าที่ชูจุดเด่น '{user_adv}' แก้ปัญหาให้กลุ่มเป้าหมายอย่างตรงจุด"
+            steps = [
+                f"1. สกัดโมเดล '{user_adv}' เข้าสู่ Delentia Control Plane",
+                f"2. วางโครงสร้างระบบแบบ Lean สอดคล้องกับ '{user_budget}'",
+                "3. ติดตั้งท่อชำระเงิน PromptPay QR เพื่อรับรายได้บาทแรก",
+                "4. สั่ง LoRA-Executor เริ่มเขียนโค้ดและส่งมอบระบบ"
+            ]
 
         blueprint = {
             "blueprint_id": f"BLUP-{int(time.time())}-{uuid.uuid4().hex[:4]}",
@@ -292,12 +387,7 @@ class RCT7DeepProfilerEngine:
             "recommended_tech_stack": tech_stack,
             "market_wedge": wedge,
             "user_strengths_summary": session.delta_memory,
-            "execution_steps": [
-                "1. แตกกิ่ง Virtual Worktree: swarm/agent_digital_product",
-                "2. สร้าง Database Schema & PromptPay Billing Integration",
-                "3. รัน 41 Algorithms ตรวจสอบ Invariant ความปลอดภัย",
-                "4. สั่ง LoRA-Executor ทำการ Build & Deploy Standalone Web App"
-            ],
+            "execution_steps": steps,
             "signedai_attestation": f"ED25519-{hashlib.sha256(f'{session.session_id}_{product_name}'.encode()).hexdigest()[:24]}",
             "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
         }
