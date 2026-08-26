@@ -25,6 +25,9 @@ import {
   LogOut,
   Mail,
   User,
+  Gamepad2,
+  CreditCard,
+  Flame,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -54,13 +57,22 @@ export function Sidebar() {
       ],
     },
     {
-      title: "EXPLORE SYSTEM",
+      title: "🚀 MONETIZABLE MVPS",
       links: [
-        { href: "/ecosystem", label: "Ecosystem Registry", icon: Package },
-        { href: "/models",    label: "Local SLM Models",    icon: Cpu },
-        { href: "/workflow",  label: "JITNA Workflows",    icon: GitBranch },
-        { href: "/monitor",   label: "System Monitor",     icon: Activity },
-        { href: "/discovery", label: "Research Discovery",   icon: Compass },
+        { href: "/sandbox",    label: "🎮 Living Sandbox (MVP 1)",  icon: Gamepad2 },
+        { href: "/profiler",   label: "🧠 Deep Profiler (MVP 2)",  icon: Sparkles },
+        { href: "/enterprise", label: "🛡️ Enterprise Vault (MVP 3)", icon: ShieldCheck },
+        { href: "/billing",    label: "💳 Billing & Monetization", icon: CreditCard },
+      ],
+    },
+    {
+      title: "SYSTEM INFRASTRUCTURE",
+      links: [
+        { href: "/brains/train", label: "LoRA Forge Studio",  icon: Flame },
+        { href: "/ecosystem",    label: "Ecosystem Registry", icon: Package },
+        { href: "/models",       label: "Local SLM Models",    icon: Cpu },
+        { href: "/workflow",     label: "JITNA Workflows",    icon: GitBranch },
+        { href: "/monitor",      label: "System Monitor",     icon: Activity },
       ],
     },
   ];

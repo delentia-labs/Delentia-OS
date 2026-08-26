@@ -205,27 +205,124 @@ export default function DashboardPage() {
       {/* Quick intent bar */}
       <QuickIntentBar />
 
+      {/* 3 Core Monetizable MVPs Showcase Grid */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            🚀 3 MONETIZABLE MVPS (พร้อมเปิดทดสอบและทำเงินจริง)
+          </h2>
+          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded">
+            ALL ACTIVE (PORT 8000 & 3000)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* MVP 1 Card */}
+          <Link
+            href="/sandbox"
+            className="glass-card rounded-2xl p-5 group border border-cyan-500/30 hover:border-cyan-400 transition duration-300 flex flex-col justify-between space-y-3 bg-gradient-to-b from-cyan-950/20 to-transparent"
+          >
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono font-bold">
+                  MVP 1: VIRAL B2C
+                </span>
+                <span className="text-xs">🎮</span>
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-cyan-300 transition duration-150">
+                Stardew Living World & 2D Sandbox
+              </h3>
+              <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
+                โลกเสมือนจริง 100 NPCs ใน RAM (0 Token) ขับเคลื่อนด้วย WSE Decoupled และ BDI Causal Engine (Gate 10.6)
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono text-cyan-400">
+              <span>เปิด Sandbox จำลอง ➔</span>
+              <span>100% Offline Free</span>
+            </div>
+          </Link>
+
+          {/* MVP 2 Card */}
+          <Link
+            href="/profiler"
+            className="glass-card rounded-2xl p-5 group border border-purple-500/30 hover:border-purple-400 transition duration-300 flex flex-col justify-between space-y-3 bg-gradient-to-b from-purple-950/20 to-transparent"
+          >
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
+                  MVP 2: SOLO-CREATOR
+                </span>
+                <span className="text-xs">🧠</span>
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-purple-300 transition duration-150">
+                RCT-7 Deep Profiler & Blueprint
+              </h3>
+              <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
+                สกัดตัวตนด้วย Reverse Component Thinking และบีบอัดลง Delta Memory เพื่อสร้าง Digital Product Blueprint ใน 5 นาที
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono text-purple-400">
+              <span>เริ่ม Deep Profiling ➔</span>
+              <span>Zero Context Drift</span>
+            </div>
+          </Link>
+
+          {/* MVP 3 Card */}
+          <Link
+            href="/enterprise"
+            className="glass-card rounded-2xl p-5 group border border-amber-500/30 hover:border-amber-400 transition duration-300 flex flex-col justify-between space-y-3 bg-gradient-to-b from-amber-950/20 to-transparent"
+          >
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold">
+                  MVP 3: ENTERPRISE B2B
+                </span>
+                <span className="text-xs">🛡️</span>
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-amber-300 transition duration-150">
+                Sovereign Enterprise Offline Vault
+              </h3>
+              <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
+                ออกบิล PromptPay CRC-16, ตรวจสัญญา PDPA 2562 และประทับตรา SignedAI ED25519 แบบไม่ต้องต่อเน็ต
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono text-amber-400">
+              <span>เปิด Enterprise Vault ➔</span>
+              <span>Air-Gapped Ready</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
       {/* Nav cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           {
             href: "/chat",
             title: "Intent Chat",
-            desc: "แชทสนทนากับระบบประมวลผลที่ผ่านระบบคะแนนความปลอดภัย FDIA และลายเซ็นดิจิทัลรับประกันความมั่นคง SignedAI",
+            desc: "แชทสนทนากับระบบประมวลผลผ่านคะแนน FDIA และ SignedAI",
             icon: MessageSquare,
             color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
           },
           {
-            href: "/memory",
-            title: "Memory Timeline",
-            desc: "ตรวจสอบบันทึกการเปลี่ยนแปลงสิทธิ์ (Audit delta log) คัดกรองตามรายโมเดล เอเจนต์ผู้ดูแล หรือสถานะการละเมิดกติกาความมั่นคง",
-            icon: History,
-            color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+            href: "/billing",
+            title: "Billing & Quotas",
+            desc: "จัดการแพ็กเกจ Pro/Enterprise และชำระเงินผ่าน PromptPay QR",
+            icon: ShieldCheck,
+            color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+          },
+          {
+            href: "/brains/train",
+            title: "LoRA Forge Studio",
+            desc: "เทรนและปรับแต่ง N-Adapter ส่วนตัวผ่าน Multi-Format Upload",
+            icon: Brain,
+            color: "text-rose-400 bg-rose-500/10 border-rose-500/20",
           },
           {
             href: "/settings",
             title: "Settings",
-            desc: "ปรับแต่งธีมสว่าง/มืด, ที่อยู่เซิร์ฟเวอร์ Gateway URL, รหัสสิทธิ์เชื่อมต่อ API Key และกำหนดโมเดลเริ่มต้น",
+            desc: "ปรับแต่งธีม, ที่อยู่เซิร์ฟเวอร์ Gateway URL และ API Keys",
             icon: Settings,
             color: "text-gray-400 bg-gray-500/10 border-gray-500/20",
           },
@@ -233,18 +330,18 @@ export default function DashboardPage() {
           <Link
             key={card.href}
             href={card.href}
-            className="glass-card rounded-2xl p-5 group border border-surface-border/50 hover:border-delentia-500/25 transition duration-300 flex flex-col gap-2"
+            className="glass-card rounded-2xl p-4 group border border-surface-border/50 hover:border-delentia-500/25 transition duration-300 flex flex-col gap-2"
           >
             <div className="flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-lg ${card.color.split(" ")[1]} flex items-center justify-center`}>
-                <card.icon className={`w-4.5 h-4.5 ${card.color.split(" ")[0]}`} />
+              <span className={`w-7 h-7 rounded-lg ${card.color.split(" ")[1]} flex items-center justify-center`}>
+                <card.icon className={`w-4 h-4 ${card.color.split(" ")[0]}`} />
               </span>
               <h3 className="font-bold text-xs text-gray-200 group-hover:text-delentia-400 transition duration-150 flex items-center gap-1">
                 {card.title}
                 <span className="opacity-0 group-hover:opacity-100 transition duration-150">→</span>
               </h3>
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed mt-1 font-medium">{card.desc}</p>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-medium">{card.desc}</p>
           </Link>
         ))}
       </div>
