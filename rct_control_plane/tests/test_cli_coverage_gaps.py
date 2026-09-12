@@ -89,6 +89,33 @@ class TestConfigureEncoding:
 
         _configure_encoding()  # must not raise
 
+    def test_actually_called_when_the_cli_group_runs(self, monkeypatch):
+        """
+        Regression test: `_configure_encoding()` existed and had the 3 unit
+        tests above passing, but was never actually invoked anywhere in the
+        real program (verified by grepping cli.py for a call site — there
+        was none) until it was wired into the `cli()` group callback. Found
+        by actually running `rct compile` end-to-end on a Windows machine
+        under a non-UTF-8 console codepage (cp874) and hitting
+        `UnicodeEncodeError` inside render_error() — the exact failure mode
+        this function exists to prevent. This test proves the wiring, not
+        just the helper in isolation: invoking any real subcommand through
+        the `cli` group must call it.
+        """
+        import rct_control_plane.cli as cli_mod
+        from click.testing import CliRunner
+
+        called = {"count": 0}
+        original = cli_mod._configure_encoding
+
+        def spy():
+            called["count"] += 1
+            return original()
+
+        monkeypatch.setattr(cli_mod, "_configure_encoding", spy)
+        CliRunner().invoke(cli_mod.cli, ["version"])
+        assert called["count"] >= 1, "_configure_encoding() must run when any real subcommand is invoked"
+
 
 # ── serve command ──────────────────────────────────────────────────────────────
 

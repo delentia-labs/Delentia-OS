@@ -18,13 +18,35 @@ import math
 import time
 from typing import Dict, Any, List, Optional
 
+from rct_control_plane.mee_engine import MEEEngine
+
 
 class AlgorithmKernel41:
-    """Master Kernel orchestrating all 41 Algorithms across 9 Tiers."""
+    """Master Kernel orchestrating the 41 designed Algorithms across 9 Tiers.
+
+    Only Tier 1-2, ALGO-07, and Tier 9 (12 of 41 IDs) have real method
+    implementations as of 2026-09-12. Tier 3-8 minus ALGO-07 (ALGO-08 to
+    ALGO-36, 29 IDs) are designed/named but not yet implemented — see
+    NOT_IMPLEMENTED_ALGO_IDS. This kernel reports that honestly instead of
+    claiming all 41 executed.
+
+    ALGO-07 (MEE v2) wiring note: mee_engine.py already had real, tested
+    logic (MEEEngine/MEESession implementing G(t+1) = G(t)×(1+MΔ)×R_t) but
+    an audit on 2026-09-12 found it was never imported or called from
+    anywhere in the entire codebase — this kernel's own docstring even
+    listed "ALGO-07 (MEE v2)" while leaving it in NOT_IMPLEMENTED_ALGO_IDS.
+    Wired in below via a single kernel-lifetime MEE session that treats
+    each pipeline run's FDIA score as its growth signal.
+    """
+
+    IMPLEMENTED_ALGO_IDS: List[str] = [f"ALGO-{i:02d}" for i in list(range(1, 8)) + list(range(37, 42))]
+    NOT_IMPLEMENTED_ALGO_IDS: List[str] = [f"ALGO-{i:02d}" for i in range(8, 37)]
 
     def __init__(self):
         self.version = "v2.2.6-41-ALGO-FULL"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
+        self._mee_engine = MEEEngine()
+        self._mee_engine.create_session("kernel_default")
 
     # =========================================================================
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
@@ -79,6 +101,23 @@ class AlgorithmKernel41:
         return {"has_error": bool(error), "correction_action": "APPLY_INVARIANT" if error else "PASS"}
 
     # =========================================================================
+    # Tier 3 (partial): ALGO-07 — the only Tier 3-8 algorithm with a real
+    # implementation as of 2026-09-12 (see class docstring for wiring note)
+    # =========================================================================
+    def algo_07_mee(self, growth_signal: float, governance_violation: bool = False) -> Dict[str, Any]:
+        """
+        ALGO-07: MEE v2 Meta-Evolution Engine. Advances the kernel's one
+        persistent growth session by a real step (G(t+1) = G(t)×(1+MΔ)×R_t,
+        via mee_engine.MEEEngine) — not a hardcoded return. `growth_signal`
+        is the signed delta for this step (e.g. this pipeline run's FDIA
+        score minus a 0.5 neutral midpoint, so a confidently-authorized run
+        counts as real growth and a low-confidence one as real decline).
+        """
+        self.executed_counts["ALGO-07"] += 1
+        record = self._mee_engine.step("kernel_default", delta=growth_signal, governance_violation=governance_violation)
+        return record.to_dict()
+
+    # =========================================================================
     # Tier 9: Extended Master Tier (ALGO-37 to ALGO-41)
     # =========================================================================
     def algo_37_planning_depth_expander(self, task: str) -> List[str]:
@@ -123,9 +162,16 @@ class AlgorithmKernel41:
         graphrag_data = self.algo_05_graphrag(intent)
         reflexion_check = self.algo_06_reflexion("INITIAL_PASS")
 
-        # Mark all tiers 3 to 8
-        for i in range(7, 37):
-            self.executed_counts[f"ALGO-{i:02d}"] += 1
+        # Tier 3 (partial): ALGO-07 real step, using this run's FDIA score as
+        # the growth signal (see algo_07_mee's docstring) and this run's
+        # reflexion error state as the governance-violation flag.
+        mee_step = self.algo_07_mee(
+            growth_signal=fdia_score - 0.5,
+            governance_violation=reflexion_check["has_error"],
+        )
+
+        # Tiers 4-8 (ALGO-08 to ALGO-36): not yet implemented.
+        # Honestly reported below instead of faking execution counts.
 
         # Tier 9
         depth_stages = self.algo_37_planning_depth_expander(intent)
@@ -138,7 +184,13 @@ class AlgorithmKernel41:
 
         return {
             "version": self.version,
-            "total_algorithms_executed": 41,
+            # Honest status: only IMPLEMENTED_ALGO_IDS actually ran below.
+            # NOT_IMPLEMENTED_ALGO_IDS (Tier 3-8) are designed but have no
+            # method yet — do not report them as executed.
+            "algorithms_designed": 41,
+            "algorithms_implemented": len(self.IMPLEMENTED_ALGO_IDS),
+            "total_algorithms_executed": len(self.IMPLEMENTED_ALGO_IDS),
+            "not_implemented_ids": self.NOT_IMPLEMENTED_ALGO_IDS,
             "latency_ms": round(latency_ms, 2),
             "fdia_score": fdia_score,
             "rct7_steps": rct7_steps,
@@ -146,6 +198,8 @@ class AlgorithmKernel41:
             "delta_stat": delta_stat,
             "graphrag": graphrag_data,
             "reflexion": reflexion_check,
+            "mee_step": mee_step,
+            "mee_growth_summary": self._mee_engine.summary("kernel_default"),
             "depth_stages": depth_stages,
             "constraints_satisfied": constraints_ok,
             "genesis": genesis,

@@ -253,7 +253,16 @@ def cli():
     
     Command-line interface for Control Plane operations.
     """
-    pass
+    # _configure_encoding() already existed, already had 3 passing unit tests
+    # (TestConfigureEncoding in tests/test_cli_coverage_gaps.py), but was never
+    # actually called from anywhere in the real program — found by running
+    # `rct compile` end-to-end on this machine (Windows, Thai-locale cp874
+    # console codepage) and hitting `UnicodeEncodeError: 'charmap' codec can't
+    # encode character '❌'` inside render_error(), which this function
+    # exists specifically to prevent. Wiring it into the group callback (runs
+    # before every subcommand, via both `rct ...` and CliRunner-based tests)
+    # makes the existing fix actually take effect instead of being dead code.
+    _configure_encoding()
 
 
 @cli.command()
@@ -286,7 +295,24 @@ def compile(natural_language: str, user_id: str, user_tier: str, organization_id
         # Extract intent data (CompilationResult is a dataclass, not dict)
         intent_obj = result.intent
         validation = result.validation
-        
+
+        # `compile()` legitimately returns intent=None when it cannot classify
+        # the input into any known IntentType (e.g. it recognizes refactor/
+        # build/deploy/etc. task language, not arbitrary free text) — that is
+        # correct, honest behavior from the compiler itself. This command was
+        # missing the corresponding check and crashed with an unhandled
+        # `AttributeError: 'NoneType' object has no attribute 'id'` on any
+        # such input instead of surfacing the real reason. Found by actually
+        # running `rct compile` against varied real intents, not by reading
+        # the code or unit tests alone.
+        if intent_obj is None:
+            error_detail = "; ".join(result.errors) if result.errors else "Could not determine intent type"
+            if _HAS_RICH:
+                render_error(f"Compilation failed: {error_detail}")
+            else:
+                click.echo(click.style(f"Error: Compilation failed: {error_detail}", fg="red"), err=True)
+            sys.exit(1)
+
         # Create state if save flag is set
         if save:
             intent_id_str = str(intent_obj.id)

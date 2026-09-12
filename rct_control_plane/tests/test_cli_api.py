@@ -108,6 +108,33 @@ class TestCLICompile:
         data = json.loads(result.output)
         assert "compilation_time_ms" in data
 
+    def test_compile_unclassifiable_input_fails_cleanly_not_a_crash(self, cli_runner, cli):
+        """
+        Regression test for a real bug found by running `rct compile` end to
+        end against varied intents: when intent_compiler.compile() can't map
+        the input to any known IntentType (its keyword vocabulary only
+        covers refactor/build/analyze/deploy/optimize/document/strategize/
+        transform/debug/test — task-oriented software-engineering language,
+        not arbitrary free text like a database operation), it correctly
+        returns `intent=None` with an error message. `compile()` in cli.py
+        did not check for that before accessing `intent_obj.id`, so it
+        crashed with an unhandled `AttributeError: 'NoneType' object has no
+        attribute 'id'` instead of surfacing the real reason. The existing
+        `test_compile_warns_on_empty_goal` above only asserted
+        `exit_code in (0, 1)`, which a CliRunner-caught unhandled exception
+        also satisfies — it did not actually prove there was no crash.
+        """
+        result = cli_runner.invoke(cli, ["compile", "drop the production database table"])
+        assert result.exit_code == 1
+        # click's own sys.exit(1) surfaces through CliRunner as a SystemExit
+        # in result.exception even on a clean, intentional exit — that is
+        # expected. The real bug being regression-tested here was an
+        # AttributeError (or any other exception type) escaping instead.
+        assert result.exception is None or isinstance(result.exception, SystemExit), (
+            f"must fail via a clean sys.exit, not an unhandled exception: {result.exception!r}"
+        )
+        assert "Could not determine intent type" in result.output
+
 
 class TestCLIList:
     def test_list_empty(self, cli_runner, cli):

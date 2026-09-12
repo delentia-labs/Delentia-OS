@@ -5,6 +5,9 @@ rct_control_plane/mee_engine.py
 MEE v2 formula: G(t+1) = max(G_FLOOR, G(t) × (1 + M × Δ) × R_t)
 """
 
+import json
+import os
+
 import pytest
 from rct_control_plane.mee_engine import (
     MEEEngine,
@@ -12,6 +15,7 @@ from rct_control_plane.mee_engine import (
     MEEStepRecord,
     MEE_VERSION,
     DEFAULT_META_RATE,
+    DEFAULT_STATE_FILE,
     G_FLOOR,
     G_CAP,
     RESILIENCE_PENALTY,
@@ -298,3 +302,116 @@ class TestMEEEdgeCases:
             sess.step(delta=0.1)
             assert sess.g >= prev
             prev = sess.g
+
+    def test_g_can_shrink_despite_positive_delta_when_resilience_is_low(self):
+        """
+        Regression test for an overclaim caught during the 2026-09-12 audit:
+        the module docstring stated unconditional "monotonic growth when
+        Δ > 0 and M > 0", but G(t+1) = G(t) × (1+MΔ) × R_t multiplies by R_t
+        unconditionally — a resilience factor suppressed by prior governance
+        violations can still shrink G even with a positive delta. This test
+        proves the counter-example the original claim missed, corrected in
+        the docstring rather than silently left inaccurate.
+        """
+        sess = MEESession(session_id="low-resilience-counterexample")
+        # Drive resilience down with repeated violations — deliberately NOT
+        # enough steps to also push G down to G_FLOOR (checked empirically:
+        # 8 steps suppresses resilience to ~0.84 while G stays well above
+        # the 0.10 floor, so the shrinkage below isn't masked by clamping).
+        for _ in range(8):
+            sess.step(delta=0.0, governance_violation=True)
+        low_resilience = sess.resilience
+        assert low_resilience < 0.9, "setup assumption: resilience must be meaningfully suppressed"
+
+        g_before = sess.g
+        assert g_before > G_FLOOR * 2, "setup assumption: must not already be at/near the floor"
+        # A small positive delta: (1 + 0.1*0.05) * low_resilience < 1 when
+        # low_resilience is low enough, so G shrinks despite delta > 0.
+        record = sess.step(delta=0.05)
+        assert record.delta > 0
+        assert record.g_after < g_before, "G shrank despite a positive delta, because R_t < 1 — the real, documented behavior"
+
+
+# ─── Tests: real file persistence (save_to_file / load_from_file) ────────────
+
+class TestMEEPersistence:
+    """
+    Regression tests for a real bug found in the 2026-09-12 audit: this
+    module's docstring always claimed sessions were "saved to .rct.json",
+    but no method anywhere ever wrote a file — to_dict()/from_dict() only
+    did in-memory (de)serialization. save_to_file()/load_from_file() below
+    make the documented claim actually true.
+    """
+
+    def test_save_to_file_actually_writes_a_real_file(self, tmp_path):
+        path = str(tmp_path / "test.rct.json")
+        sess = MEESession(session_id="persist-1")
+        sess.step(0.2)
+        sess.step(-0.1, governance_violation=True)
+
+        returned_path = sess.save_to_file(path)
+        assert returned_path == path
+        assert os.path.exists(path)
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        assert "mee_state" in data
+        assert "persist-1" in data["mee_state"]
+        assert data["mee_state"]["persist-1"]["g_current"] == pytest.approx(sess.g)
+
+    def test_save_to_file_merges_rather_than_overwrites_existing_content(self, tmp_path):
+        """`.rct.json` is a shared control-plane state file, not MEE-exclusive — saving must not clobber other keys already there."""
+        path = str(tmp_path / "test.rct.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"some_other_control_plane_key": {"unrelated": True}}, f)
+
+        sess = MEESession(session_id="persist-2")
+        sess.step(0.1)
+        sess.save_to_file(path)
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        assert data["some_other_control_plane_key"] == {"unrelated": True}
+        assert "persist-2" in data["mee_state"]
+
+    def test_load_from_file_round_trips_g_and_resilience(self, tmp_path):
+        path = str(tmp_path / "test.rct.json")
+        original = MEESession(session_id="persist-3")
+        original.step(0.15)
+        original.step(-0.08, governance_violation=True)
+        original.save_to_file(path)
+
+        restored = MEESession.load_from_file("persist-3", path)
+        assert restored.g == pytest.approx(original.g)
+        assert restored.resilience == pytest.approx(original.resilience)
+
+    def test_load_from_file_raises_key_error_for_unknown_session(self, tmp_path):
+        path = str(tmp_path / "test.rct.json")
+        MEESession(session_id="known").save_to_file(path)
+        with pytest.raises(KeyError):
+            MEESession.load_from_file("unknown-session-id", path)
+
+    def test_default_state_file_constant_matches_documented_filename(self):
+        assert DEFAULT_STATE_FILE == ".rct.json"
+
+
+class TestMEEEnginePersistence:
+    def test_engine_save_and_load_session_round_trip(self, tmp_path):
+        path = str(tmp_path / "test.rct.json")
+        engine = MEEEngine()
+        engine.create_session("agent-x")
+        engine.step("agent-x", delta=0.3)
+        expected_g = engine.summary("agent-x")["g_current"]
+
+        engine.save_session("agent-x", path)
+
+        fresh_engine = MEEEngine()
+        restored = fresh_engine.load_session("agent-x", path)
+        assert restored.session_id == "agent-x"
+        assert fresh_engine.summary("agent-x")["g_current"] == pytest.approx(expected_g)
+
+    def test_save_session_raises_for_unknown_session(self, tmp_path):
+        path = str(tmp_path / "test.rct.json")
+        engine = MEEEngine()
+        with pytest.raises(KeyError):
+            engine.save_session("does-not-exist", path)

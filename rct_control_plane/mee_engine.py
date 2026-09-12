@@ -13,10 +13,25 @@ Where:
     R_t    — resilience factor at step t (1.0 = stable; <1.0 = recovery mode)
 
 Behaviour guarantees:
-    - Monotonic growth when Δ > 0 and M > 0
+    - Growth when Δ > 0, M > 0, AND resilience R_t is at/near baseline (1.0).
+      NOTE (corrected 2026-09-12, found via audit — this line previously
+      overclaimed unconditional "monotonic growth"): G(t+1) = G(t) × (1+MΔ)
+      × R_t multiplies by R_t unconditionally, so a low R_t left over from
+      prior governance violations can still shrink G even with positive Δ.
+      Growth is only guaranteed monotonic in the R_t=1.0 special case — see
+      tests/test_mee_engine.py::test_g_can_shrink_despite_positive_delta_when_resilience_is_low
+      for the counter-example this claim previously missed.
     - Bounded decay when Δ < 0 (G never drops below G_floor)
-    - R_t automatically computed from violation history
-    - Session-level persistence: G saved to .rct.json under "mee_state"
+    - R_t is a real, non-hardcoded running update driven by the
+      governance_violation flag on each step() call (penalty/recovery), not
+      a literal analysis of stored history — "computed from violation
+      history" describes its effect, not its implementation.
+    - Session-level persistence: call session.save_to_file() to persist G to
+      .rct.json under "mee_state" (NOT automatic on every step — this was
+      previously documented but never implemented anywhere in this module;
+      to_dict()/from_dict() existed for in-memory (de)serialization only.
+      Added 2026-09-12: save_to_file()/load_from_file() below actually touch
+      the file now).
     - Thread-safe: MEESession uses an internal lock
 
 MEE Session lifecycle::
@@ -32,6 +47,8 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 
 from __future__ import annotations
 
+import json
+import os
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -42,6 +59,7 @@ from typing import Any, Dict, List, Optional
 # ============================================================================
 
 MEE_VERSION = "2.0"
+DEFAULT_STATE_FILE = ".rct.json"
 
 # Default hyperparameters
 DEFAULT_META_RATE: float = 0.10        # M — learning rate
@@ -247,6 +265,41 @@ class MEESession:
         session._g = data.get("g_current", data.get("g_initial", 1.0))
         return session
 
+    def save_to_file(self, path: str = DEFAULT_STATE_FILE) -> str:
+        """
+        Persist this session's state to `path` under the "mee_state" key,
+        merging with whatever else is already in that file rather than
+        overwriting it (`.rct.json` is a shared control-plane state file,
+        not MEE-exclusive). Added 2026-09-12: this module's docstring always
+        claimed sessions were "saved to .rct.json" — an audit found no
+        method anywhere ever actually wrote a file; to_dict() only produced
+        an in-memory dict. Returns the path written.
+        """
+        payload = self.to_dict()
+        existing: Dict[str, Any] = {}
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                existing = {}
+        mee_state = existing.get("mee_state", {})
+        mee_state[self.session_id] = payload
+        existing["mee_state"] = mee_state
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2)
+        return path
+
+    @classmethod
+    def load_from_file(cls, session_id: str, path: str = DEFAULT_STATE_FILE) -> "MEESession":
+        """Load a previously `save_to_file()`-persisted session by id from `path`. Raises KeyError if absent."""
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        mee_state = data.get("mee_state", {})
+        if session_id not in mee_state:
+            raise KeyError(f"No persisted MEE session '{session_id}' found in {path}")
+        return cls.from_dict(mee_state[session_id])
+
     # ── Summary ───────────────────────────────────────────────────────────
 
     def summary(self) -> Dict[str, Any]:
@@ -378,6 +431,21 @@ class MEEEngine:
     def restore_session(self, data: Dict[str, Any]) -> MEESession:
         """Restore a persisted session from a dict (e.g. loaded from .rct.json)."""
         session = MEESession.from_dict(data)
+        with self._lock:
+            self._sessions[session.session_id] = session
+        return session
+
+    def save_session(self, session_id: str, path: str = DEFAULT_STATE_FILE) -> str:
+        """Persist the named session to `path` (see MEESession.save_to_file)."""
+        with self._lock:
+            session = self._sessions.get(session_id)
+        if session is None:
+            raise KeyError(f"Session '{session_id}' not found.")
+        return session.save_to_file(path)
+
+    def load_session(self, session_id: str, path: str = DEFAULT_STATE_FILE) -> MEESession:
+        """Load a persisted session from `path` and register it in this engine."""
+        session = MEESession.load_from_file(session_id, path)
         with self._lock:
             self._sessions[session.session_id] = session
         return session
