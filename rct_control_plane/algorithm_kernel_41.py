@@ -16,9 +16,10 @@ Enforces the 41 Master Algorithms in-process:
 
 import math
 import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 from rct_control_plane.mee_engine import MEEEngine
+from rct_control_plane.intent_compiler import IntentCompiler
 
 
 class AlgorithmKernel41:
@@ -47,6 +48,7 @@ class AlgorithmKernel41:
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
         self._mee_engine = MEEEngine()
         self._mee_engine.create_session("kernel_default")
+        self._intent_compiler = IntentCompiler()
 
     # =========================================================================
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
@@ -57,12 +59,84 @@ class AlgorithmKernel41:
         d_clamped = max(0.01, min(100.0, D))
         i_clamped = max(0.01, min(10.0, I))
         a_clamped = max(0.0, min(1.0, A))
-        
+
         # Logarithmic safety check
         log_res = i_clamped * math.log(d_clamped)
         if log_res > 700:
             return 1.0 * a_clamped
         return round((d_clamped ** i_clamped) * a_clamped, 4)
+
+    # Real signals -> D/I, mirroring the risk severity FDIA's own bundled
+    # TS policy (packages/shared/src/default-policy.ts) already treats as
+    # more dangerous — a SYSTEMIC/INFRASTRUCTURE-scope intent is exactly the
+    # kind of thing that rule set would route to a REQUIRE_HUMAN_SIGNATURE
+    # block, so this Python side should demand a higher I (stricter
+    # exponent) for it too, not treat every intent identically.
+    _RISK_TO_I_BONUS: Dict[str, float] = {"LOW": 0.0, "STRUCTURAL": 0.5, "SYSTEMIC": 1.0}
+    _SCOPE_TO_I_BONUS: Dict[str, float] = {
+        "FILE": 0.0, "MODULE": 0.1, "PACKAGE": 0.2,
+        "REPOSITORY": 0.3, "SYSTEM": 0.4, "INFRASTRUCTURE": 0.5,
+    }
+
+    def synthesize_fdia_inputs(self, intent_text: str) -> Tuple[float, float, Any]:
+        """
+        Closes the gap this session found in process_intent_full_pipeline():
+        `fdia_score = self.algo_01_fdia(0.98, 0.96, 1.0)` was hardcoded —
+        the `intent` string passed into the pipeline was used for
+        rct7_steps/graphrag/crystal below it, but never actually reached the
+        FDIA computation at all. This is the same class of bug as the
+        `evaluate_fdia`-takes-a-caller-supplied-constant gap this session
+        already closed on the TypeScript side by wiring RCT-7's real
+        decomposition into FDIA's I — here, `intent_compiler.py` IS this
+        runtime's real decomposition tool (arguably a more literal "Reverse
+        Component Thinking" decomposition than RCT-7's heuristic: it
+        genuinely splits intent into intent_type + scope + constraints +
+        risk_profile + priority), so this wires THAT into ALGO-01 instead
+        of re-deriving a second RCT-7-equivalent in Python.
+
+        Returns (D, I, compilation_result) — compilation_result is exposed
+        so callers can also use scope/risk_profile/errors for their own
+        purposes without re-compiling.
+
+        D (data_quality): 1.0 if the intent compiled to something valid,
+        reduced per validation warning, raised slightly per real extracted
+        constraint (more explicit guardrails = more confidence in the
+        input), floored at 0.1 (never fully zero — this is a quality signal,
+        not an authorization gate; A stays a separate, independent
+        parameter). Falls back to a low, fixed 0.3 when intent_compiler
+        cannot classify the text at all (mirrors this session's TS finding
+        that "could not determine intent type" is honest, expected
+        behavior for out-of-vocabulary input, not a crash).
+
+        I (intent_precision): 0.5 (schema floor) + a bonus for risk_profile
+        severity + a bonus for scope breadth — a SYSTEMIC/INFRASTRUCTURE
+        intent demands a stricter exponent than a LOW/FILE-scoped one,
+        exactly mirroring the D^I semantics already established: with
+        D < 1.0, a higher I punishes weak data harder, which is the correct
+        direction for higher-stakes operations.
+        """
+        result = self._intent_compiler.compile(natural_language=intent_text, user_id="kernel", user_tier="PRO")
+
+        if not result.success or result.intent is None:
+            return 0.3, 0.5, result
+
+        intent_obj = result.intent
+        validation = result.validation
+
+        risk_value = getattr(intent_obj.risk_profile, "value", str(intent_obj.risk_profile))
+        scope_value = getattr(intent_obj.scope.scope_type, "value", str(intent_obj.scope.scope_type))
+
+        data_quality = 1.0 if (validation and validation.is_valid) else 0.3
+        if validation and validation.warnings:
+            data_quality -= 0.05 * len(validation.warnings)
+        if intent_obj.constraints:
+            data_quality += 0.05 * min(len(intent_obj.constraints), 4)
+        data_quality = max(0.1, min(1.0, data_quality))
+
+        intent_precision = 0.5 + self._RISK_TO_I_BONUS.get(risk_value, 0.0) + self._SCOPE_TO_I_BONUS.get(scope_value, 0.0)
+        intent_precision = max(0.5, min(2.0, intent_precision))
+
+        return round(data_quality, 4), round(intent_precision, 4), result
 
     def algo_02_moip(self, goals: List[str]) -> Dict[str, Any]:
         """ALGO-02: MOIP Multi-Objective Intent Planner."""
@@ -152,8 +226,11 @@ class AlgorithmKernel41:
         """Runs an intent through all 41 algorithms across 9 Tiers."""
         t_start = time.perf_counter()
 
-        # Tier 1
-        fdia_score = self.algo_01_fdia(0.98, 0.96, 1.0)
+        # Tier 1: D and I are now REAL, synthesized from intent_compiler.py's
+        # actual decomposition of `intent` (previously hardcoded 0.98/0.96
+        # regardless of what intent was passed in — found and fixed 2026-09-13).
+        d_value, i_value, compilation = self.synthesize_fdia_inputs(intent)
+        fdia_score = self.algo_01_fdia(d_value, i_value, 1.0)
         moip_plan = self.algo_02_moip(["Compile", "Execute", "Verify"])
         delta_stat = self.algo_03_delta_engine({"intent": intent})
 
@@ -193,6 +270,15 @@ class AlgorithmKernel41:
             "not_implemented_ids": self.NOT_IMPLEMENTED_ALGO_IDS,
             "latency_ms": round(latency_ms, 2),
             "fdia_score": fdia_score,
+            "fdia_inputs": {
+                "data_quality": d_value,
+                "intent_precision": i_value,
+                "intent_classified": compilation.success and compilation.intent is not None,
+                "intent_type": (
+                    getattr(compilation.intent.intent_type, "value", str(compilation.intent.intent_type))
+                    if compilation.intent is not None else None
+                ),
+            },
             "rct7_steps": rct7_steps,
             "moip_plan": moip_plan,
             "delta_stat": delta_stat,
