@@ -6,6 +6,7 @@ Provides endpoints for intent compilation, graph building, policy evaluation,
 state management, observability, and deep health checks.
 """
 
+import logging
 import os
 import sys
 import time
@@ -26,6 +27,22 @@ from .persistence import ControlPlanePersistence
 from .websocket_manager import WS_MANAGER
 from .approval_queue import APPROVAL_QUEUE
 from ._version import PACKAGE_VERSION
+from rct_control_plane.lora_multiplexer import LoRAMultiplexer
+
+logger = logging.getLogger(__name__)
+
+# Module-level singleton so a real (non-mock) LoRAMultiplexer's weights are
+# loaded at most once per process, not once per /v1/lora/swap request. Same
+# warm-process-caching pattern as the isolate-scoped Ed25519 keypair cache
+# added to the TypeScript sovereign gateway the same day (packages/jitna).
+_lora_mux: Optional[LoRAMultiplexer] = None
+
+
+def _get_lora_multiplexer() -> LoRAMultiplexer:
+    global _lora_mux
+    if _lora_mux is None:
+        _lora_mux = LoRAMultiplexer()
+    return _lora_mux
 
 
 # ============================================================================
@@ -1063,25 +1080,58 @@ class ControlPlaneAPI:
         async def swap_lora_adapter(
             slot: str = Query(..., description="Adapter name: executor, guardian, scribe, router")
         ):
-            """Execute real LoRA adapter hot-swap in VRAM and measure latency."""
-            t_start = time.perf_counter()
+            """Swap the active LoRA adapter. Runs a genuine PEFT hot-swap
+            (mux.swap_adapter, v0.5.1's 4-pillar Brain Slot manager) when
+            real weights are present at Delentia-AI-SLM/models/adapters/
+            v0.5.1/{executor,guardian,scribe,router} and transformers/peft
+            are installed; otherwise honestly reports mock mode instead of
+            fabricating a "real" result.
+
+            Fixed 2026-09-14 (architecture audit): this endpoint previously
+            hardcoded mock_mode=True unconditionally, and separately
+            lora_multiplexer.py's own real-weight detection was looking for
+            adapter directories named "jitna_<role>_v0.5.1" which never
+            existed on disk — the real weights ship as plain "<role>"
+            subdirectories. Both were real infra sitting unused next to a
+            forced/broken mock flag; fixed at the source in
+            lora_multiplexer.py so mock_mode now genuinely reflects whether
+            real weights are present. Also removed a fabricated latency
+            substitution that replaced any real measurement under 1ms with
+            a fake `2.0 + (time.time() % 3.5)` number.
+            """
             slot_name = slot.lower().strip()
-            
-            from rct_control_plane.lora_multiplexer import LoRAMultiplexer
-            mux = LoRAMultiplexer()
-            mux.mock_mode = True
-            mux.swap_adapter(slot_name)
-            
-            latency_ms = (time.perf_counter() - t_start) * 1000
-            if latency_ms < 1.0:
-                latency_ms = round(2.0 + (time.time() % 3.5), 2)
-                
+
+            mux = _get_lora_multiplexer()
+
+            try:
+                mux._validate_adapter_name(slot_name)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+            if not mux.mock_mode and mux.model is None:
+                # Lazy, one-time real weight load on first real-mode swap —
+                # not repeated per request, and not attempted eagerly at
+                # startup (a multi-GB model load with no caller yet).
+                try:
+                    mux.load_model_and_adapters()
+                except Exception as e:
+                    logger.warning(f"LoRA real-mode load failed, falling back to mock: {e}")
+
+            t_start = time.perf_counter()
+            latency_ms = mux.swap_adapter(slot_name)
+            if latency_ms == 0.0 and mux.current_adapter == slot_name:
+                # swap_adapter short-circuits to 0.0 when already on this
+                # adapter — report the real (near-zero) elapsed time of
+                # that no-op instead of a fabricated substitute.
+                latency_ms = (time.perf_counter() - t_start) * 1000
+
             return {
                 "success": True,
                 "active_slot": slot_name,
-                "latency_ms": round(latency_ms, 2),
-                "vram_allocated_mb": 4250,
-                "status": "HOT_SWAPPED_ONLINE"
+                "latency_ms": round(latency_ms, 4),
+                "slot_status": mux.get_slot_status(),
+                "status": "HOT_SWAPPED_ONLINE" if not mux.mock_mode else "MOCK_SWAPPED",
+                "simulated": mux.mock_mode,
             }
 
         @self.app.get("/delentia/system/stats")

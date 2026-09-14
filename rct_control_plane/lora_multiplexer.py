@@ -81,10 +81,17 @@ class LoRAMultiplexer:
         self.use_gguf = False
 
         # ── v0.5.1 PEFT Adapter Paths ───────────────────────────────────────────
-        self.executor_path = self.adapters_dir / "jitna_executor_v0.5.1"
-        self.guardian_path = self.adapters_dir / "jitna_guardian_v0.5.1"
-        self.scribe_path   = self.adapters_dir / "jitna_scribe_v0.5.1"
-        self.router_path   = self.adapters_dir / "jitna_router_v0.5.1"
+        # Fixed 2026-09-14 (architecture audit): the real shipped weights
+        # live at Delentia-AI-SLM/models/adapters/v0.5.1/{executor,guardian,
+        # scribe,router}/adapter_config.json — plain role names, no
+        # "jitna_"/"_v0.5.1" wrapping. The old "jitna_<role>_v0.5.1" names
+        # never existed on disk, so .exists() below was always False and
+        # every real-weight check silently fell through to the HF Hub ID
+        # fallback (or mock) even with real local weights present.
+        self.executor_path = self.adapters_dir / "executor"
+        self.guardian_path = self.adapters_dir / "guardian"
+        self.scribe_path   = self.adapters_dir / "scribe"
+        self.router_path   = self.adapters_dir / "router"
 
         # ── v0.5.1 GGUF Adapter Paths ───────────────────────────────────────────
         self.gguf_executor_path = self.gguf_dir / "jitna-executor-v0.5.1-Q4_K_M.gguf"
