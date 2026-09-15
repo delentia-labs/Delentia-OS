@@ -2,6 +2,16 @@
 Multi-Agent Parallel Execution Engine
 Executes DAG ExecutionGraph nodes concurrently using asyncio.gather.
 Handles PARALLEL_FAN_OUT and PARALLEL_FAN_IN with real-time WebSocket telemetry emission.
+
+Round 13 (2026-09-15): the architecture doc's ">70% time savings" claim
+for this engine had no supporting benchmark anywhere. Measured for real
+(Delentia-Private-OS/scripts/architecture_claim_benchmarks.py) across 3
+realistic topologies: a mostly-linear-chain workflow (low parallelism)
+saves only ~12%; a 3-wave fan-out/fan-in workflow (medium) saves ~75%;
+a single wide 12-node fan-out (high) saves ~92%. The claim holds, but
+only for workflows with genuine independent-node width — it is a
+property of the workload's shape, not a fixed guarantee this engine
+provides regardless of what's submitted to it.
 """
 
 import time
