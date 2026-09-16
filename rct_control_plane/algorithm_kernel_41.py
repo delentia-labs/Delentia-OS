@@ -354,30 +354,105 @@ class AlgorithmKernel41:
         return {"planned_goals": goals, "priority_matrix": {g: 1.0 / (idx + 1) for idx, g in enumerate(goals)}}
 
     def algo_03_delta_engine(self, state_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """ALGO-03: Delta Engine Tick Compressor."""
+        """ALGO-03: Delta Engine Tick Compressor. Real zstd compression of
+        the real serialized state_dict (was a hardcoded "74.2%" string
+        regardless of actual content, found and fixed 2026-09-16 during a
+        gap-analysis audit of the original 12 Tier 1/2/9 algorithms that
+        pre-date this session's 29-algorithm porting effort — see
+        algorithm_kernel_41.py's class docstring)."""
         self.executed_counts["ALGO-03"] += 1
-        return {"tick": int(time.time()), "delta_bytes": len(str(state_dict)), "compressed_ratio": "74.2%"}
+        import json
+        import zstandard
+
+        raw = json.dumps(state_dict, default=str, sort_keys=True).encode("utf-8")
+        compressed = zstandard.ZstdCompressor(level=3).compress(raw)
+        ratio = 1 - (len(compressed) / len(raw)) if raw else 0.0
+        return {
+            "tick": int(time.time()), "delta_bytes": len(raw),
+            "compressed_bytes": len(compressed), "compressed_ratio": f"{ratio * 100:.1f}%",
+        }
 
     # =========================================================================
     # Tier 2: Core Tier (ALGO-04 to ALGO-06)
     # =========================================================================
     def algo_04_rct7(self, intent: str) -> List[str]:
-        """ALGO-04: RCT-7 Reverse Component Thinking 7-Step Deconstruction."""
+        """ALGO-04: RCT-7 Reverse Component Thinking 7-Step Deconstruction.
+        Real per-input decomposition via IntentCompiler (was a static
+        template — every step but Step 1 was identical text regardless of
+        the actual intent, found and fixed 2026-09-16 during a gap-
+        analysis audit of the original 12 Tier 1/2/9 algorithms — see
+        class docstring). Reuses the SAME real compiler synthesize_fdia_
+        inputs() already runs, rather than a second parallel decomposer."""
         self.executed_counts["ALGO-04"] += 1
+        result = self._intent_compiler.compile(natural_language=intent, user_id="kernel", user_tier="PRO")
+
+        if not result.success or result.intent is None:
+            errors = "; ".join(result.errors) if getattr(result, "errors", None) else "no recognized intent_type"
+            return [
+                f"Step 1 (Observation): {intent[:60]}",
+                f"Step 2 (Deconstruction): could not classify - {errors}",
+                "Step 3 (Invariant Extraction): none extracted (compilation failed)",
+                "Step 4 (Reverse Dependency Tree): not built (compilation failed)",
+                "Step 5 (Multi-Model Synthesis): skipped (compilation failed)",
+                "Step 6 (Sandbox Execution): skipped (compilation failed)",
+                f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(intent) & 0xFFFFFFFF):08x}",
+            ]
+
+        intent_obj = result.intent
+        validation = result.validation
+        intent_type = getattr(intent_obj.intent_type, "value", str(intent_obj.intent_type))
+        scope_value = getattr(intent_obj.scope.scope_type, "value", str(intent_obj.scope.scope_type))
+        risk_value = getattr(intent_obj.risk_profile, "value", str(intent_obj.risk_profile))
+        constraints = intent_obj.constraints or []
+        warnings = validation.warnings if validation else []
+
         return [
-            f"Step 1 (Observation): {intent[:30]}...",
-            "Step 2 (Deconstruction): Identifying modular boundaries",
-            "Step 3 (Invariant Extraction): Defining hard non-negotiable constraints",
-            "Step 4 (Reverse Dependency Tree): Building backward DAG",
-            "Step 5 (Multi-Model Synthesis): Consulting Jury",
-            "Step 6 (Sandbox Execution): Running verified actions",
-            "Step 7 (Attestation & Proof): ED25519 Signing"
+            f"Step 1 (Observation): {intent[:60]}",
+            f"Step 2 (Deconstruction): intent_type={intent_type}, scope={scope_value}",
+            f"Step 3 (Invariant Extraction): {len(constraints)} real constraint(s) extracted"
+            + (f" - {'; '.join(f'{c.constraint_type}{c.operator}{c.value}' for c in constraints[:3])}" if constraints else " - none"),
+            f"Step 4 (Reverse Dependency Tree): risk_profile={risk_value} "
+            f"(I-bonus={self._RISK_TO_I_BONUS.get(risk_value, 0.0)}, scope-bonus={self._SCOPE_TO_I_BONUS.get(scope_value, 0.0)})",
+            f"Step 5 (Multi-Model Synthesis): validation {'passed' if (validation and validation.is_valid) else 'flagged'}, "
+            f"{len(warnings)} warning(s)" + (f" - {'; '.join(warnings[:2])}" if warnings else ""),
+            f"Step 6 (Sandbox Execution): compilation succeeded, priority={getattr(intent_obj.priority, 'value', intent_obj.priority)}",
+            f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(str(result.intent.dict()) if hasattr(result.intent, 'dict') else str(intent_obj)) & 0xFFFFFFFF):08x}",
         ]
 
     def algo_05_graphrag(self, query: str) -> Dict[str, Any]:
-        """ALGO-05: GraphRAG Knowledge Node Retrieval."""
+        """ALGO-05: GraphRAG Knowledge Node Retrieval. Real, persistent,
+        query-derived graph building (was 3 hardcoded fixed nodes
+        regardless of query, found and fixed 2026-09-16 during a gap-
+        analysis audit). Reuses `self._graph_engine` — ALGO-17's real
+        GraphEngine, which was already instantiated in __init__ but never
+        actually used anywhere until this fix — so real keywords
+        extracted from every intent that flows through this kernel
+        genuinely accumulate into one persistent knowledge graph over the
+        kernel's lifetime, matching the architecture doc's actual intent
+        ("ดึงข้อมูลและสร้างคำตอบร่วมกับ Knowledge Graph") more literally
+        than the previous static 3-node stub ever did. ALGO-13
+        (GraphRAGEngine, TF-IDF+vector+2-hop retrieval) remains the
+        deeper, LLM-adjacent sibling for full RAG queries; this one is
+        the lightweight, always-on, no-I/O graph-accumulation step that
+        can run synchronously inside the per-intent pipeline."""
         self.executed_counts["ALGO-05"] += 1
-        return {"nodes": ["Delentia_Core", "SignedAI_Ledger", "CORD_Shield"], "edges": [("Delentia_Core", "SignedAI_Ledger")]}
+        words = [w.strip(".,!?;:()[]{}\"'").lower() for w in query.split()]
+        keywords = list(dict.fromkeys(w for w in words if len(w) >= 4 and w.isalpha()))[:5]
+
+        for kw in keywords:
+            if kw not in self._graph_engine.nodes:
+                self._graph_engine.add_node(GraphNode(node_id=kw, labels=["Keyword"], properties={"first_seen_query": query[:100]}))
+
+        edges_added = []
+        for i in range(len(keywords) - 1):
+            rel_id = f"r-{keywords[i]}-{keywords[i + 1]}-{self.executed_counts['ALGO-05']}"
+            self._graph_engine.add_relationship(GraphRelationship(
+                relationship_id=rel_id, from_node=keywords[i], to_node=keywords[i + 1],
+                relationship_type="CO_OCCURS", properties={},
+            ))
+            edges_added.append([keywords[i], keywords[i + 1]])
+
+        return {"nodes": keywords, "edges": edges_added, "graph_stats": self._graph_engine.get_stats()}
 
     def algo_06_reflexion(self, execution_output: str, error: Optional[str] = None) -> Dict[str, Any]:
         """ALGO-06: Reflexion Self-Correction Loop."""
@@ -415,14 +490,59 @@ class AlgorithmKernel41:
         return len(constraints) > 0
 
     def algo_39_genesis_engine(self, project_name: str) -> Dict[str, Any]:
-        """ALGO-39: Genesis Project Generator."""
+        """ALGO-39: Genesis Project Generator. Real file scaffolding under
+        ./workspace_output/genesis/ (was a hardcoded "files_scaffolded":
+        3 regardless of whether anything was actually created, found and
+        fixed 2026-09-16 during a gap-analysis audit). A modest, honest
+        real scaffold (README + .gitignore) — not the full "on-the-fly
+        module synthesis" the architecture doc envisions, which would
+        need real code-generation logic, but genuinely creates real files
+        with a real, accurate count rather than a fabricated one."""
         self.executed_counts["ALGO-39"] += 1
-        return {"project": project_name, "files_scaffolded": 3, "status": "GENESIS_INITIALIZED"}
+        import os
+        import re
+
+        safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", project_name)[:50] or "unnamed_project"
+        project_dir = os.path.join("./workspace_output/genesis", f"{safe_name}_{int(time.time())}")
+        os.makedirs(project_dir, exist_ok=True)
+
+        files_created = []
+        readme_path = os.path.join(project_dir, "README.md")
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(f"# {project_name}\n\nReal scaffold generated by ALGO-39 Genesis Engine.\n")
+        files_created.append(readme_path)
+
+        gitignore_path = os.path.join(project_dir, ".gitignore")
+        with open(gitignore_path, "w", encoding="utf-8") as f:
+            f.write("__pycache__/\n*.pyc\n.env\n")
+        files_created.append(gitignore_path)
+
+        return {
+            "project": project_name, "project_dir": project_dir,
+            "files_scaffolded": len(files_created), "files": files_created,
+            "status": "GENESIS_INITIALIZED",
+        }
 
     def algo_40_itsr_recommender(self, domain: str) -> Dict[str, str]:
-        """ALGO-40: ITSR Tech Stack Recommender."""
+        """ALGO-40: ITSR Tech Stack Recommender. Real domain-keyword-
+        derived recommendation (was one fixed dict returned regardless of
+        `domain`, found and fixed 2026-09-16 during a gap-analysis
+        audit). Simple, honest rule-based matching — not an ML
+        recommender, but genuinely reads and varies by the real input
+        rather than ignoring it."""
         self.executed_counts["ALGO-40"] += 1
-        return {"backend": "FastAPI + Python 3.13", "frontend": "Next.js 15 + React", "db": "PostgreSQL + Qdrant"}
+        domain_lower = domain.lower()
+
+        if any(k in domain_lower for k in ("mobile", "app", "ios", "android")):
+            return {"backend": "FastAPI + Python 3.13", "frontend": "React Native + Expo", "db": "SQLite + Supabase", "domain_matched": "mobile"}
+        if any(k in domain_lower for k in ("data", "analytics", "ml", "ai", "machine learning")):
+            return {"backend": "FastAPI + Python 3.13", "frontend": "Streamlit / Next.js Dashboard", "db": "PostgreSQL + Qdrant", "domain_matched": "data/ml"}
+        if any(k in domain_lower for k in ("realtime", "chat", "socket", "game", "live")):
+            return {"backend": "FastAPI + WebSockets", "frontend": "Next.js 15 + React", "db": "Redis + PostgreSQL", "domain_matched": "realtime"}
+        if any(k in domain_lower for k in ("enterprise", "erp", "b2b")):
+            return {"backend": "FastAPI + Python 3.13", "frontend": "Next.js 15 + React", "db": "PostgreSQL + Qdrant", "domain_matched": "enterprise"}
+
+        return {"backend": "FastAPI + Python 3.13", "frontend": "Next.js 15 + React", "db": "PostgreSQL + Qdrant", "domain_matched": "general (no specific keyword matched)"}
 
     def algo_41_crystallizer(self, knowledge: Dict[str, Any]) -> str:
         """ALGO-41: The Crystallizer (Final State Condenser)."""
@@ -862,11 +982,17 @@ class AlgorithmKernel41:
         # Tiers 4-8 (ALGO-08 to ALGO-36): not yet implemented.
         # Honestly reported below instead of faking execution counts.
 
-        # Tier 9
+        # Tier 9. genesis/tech_stack now derive their inputs from the real
+        # `intent` text (previously hardcoded "Delentia_Autonomous_Project"/
+        # "enterprise" literals regardless of what intent was passed in -
+        # the same class of gap as the FDIA D/I hardcoding this session
+        # already found and fixed elsewhere - found and fixed 2026-09-16
+        # during a gap-analysis audit of the original 12 Tier 1/2/9
+        # algorithms).
         depth_stages = self.algo_37_planning_depth_expander(intent)
         constraints_ok = self.algo_38_constraint_solver(["No Negative Tax", "Atomic Stock Deduction"])
-        genesis = self.algo_39_genesis_engine("Delentia_Autonomous_Project")
-        tech_stack = self.algo_40_itsr_recommender("enterprise")
+        genesis = self.algo_39_genesis_engine(intent[:60] if intent else "Delentia_Autonomous_Project")
+        tech_stack = self.algo_40_itsr_recommender(intent)
         crystal = self.algo_41_crystallizer({"fdia": fdia_score, "intent": intent})
 
         latency_ms = (time.perf_counter() - t_start) * 1000
@@ -904,6 +1030,74 @@ class AlgorithmKernel41:
             "tech_stack": tech_stack,
             "crystal_token": crystal,
             "algorithms_stats": self.executed_counts
+        }
+
+    async def process_intent_deep_pipeline(self, intent: str) -> Dict[str, Any]:
+        """
+        The full real, deep intent-to-execution journey, matching the
+        architecture doc's own 6-phase model (§5): Ingestion -> FDIA
+        safety gate -> Cognitive Routing -> Swarm/downstream execution ->
+        (consensus not modeled here - see note below) -> Delta
+        persistence. Deliberately separate from process_intent_full_
+        pipeline() (sync, Tier 1/2/9 only) rather than making that one
+        async - this session's kernel docstring already flagged that as
+        a deliberate, separate decision to avoid rippling an async
+        requirement to every existing sync caller (CLI, API, the whole
+        existing test suite). This method composes the sync pipeline
+        with the genuinely async downstream steps instead.
+
+        Phase 1 (Ingestion): the raw `intent` string, as given.
+        Phase 2 (FDIA gate) + RCT-7 (real per-input decomposition, see
+        algo_04_rct7): both already real, run via process_intent_full_
+        pipeline() below - this is the direct answer to "input -> RCT-7
+        thinking to analyze/separate intent" that must come first.
+        Phase 3 (Cognitive Routing): ALGO-21's real Fast/Slow Router,
+        using the SAME intent text and the SAME IntentCompiler
+        compilation process_intent_full_pipeline() already ran (not a
+        second parallel classification).
+        Phase 4 (Swarm/downstream execution): whatever ALGO-21 actually
+        dispatched to (a real no-LLM fast path, or a real Reflexion+/
+        BBA-PCF/MCTR call) - this kernel's real equivalent of "distribute
+        across microservices," since those algorithms' logic now lives
+        in-process here rather than as separately deployed services.
+        Consensus (Layer 8's multi-model jury voting) is NOT modeled
+        here: no real multi-model consensus mechanism exists yet in this
+        kernel (see the accompanying gap-analysis report) - only single-
+        model ALGO-32 MCTR calls have been verified real.
+        Phase 6 (Delta persistence): the FDIA gate's own real MEE step
+        already advances persistent growth state; this phase also
+        records a real ALGO-25 delta block for this run.
+        """
+        t_start = time.perf_counter()
+
+        # Phase 1-2: Ingestion, FDIA gate, real RCT-7 decomposition (sync)
+        pipeline_result = self.process_intent_full_pipeline(intent)
+
+        # Phase 3-4: real cognitive routing + real downstream dispatch
+        routing_result = await self.algo_21_fast_slow_route(intent)
+
+        # Phase 6: real delta persistence of this run
+        delta_result = self.algo_25_delta_block(
+            session_id="deep_pipeline", change_description=f"processed intent: {intent[:80]}",
+        )
+
+        latency_ms = (time.perf_counter() - t_start) * 1000
+
+        return {
+            "intent": intent,
+            "phase_1_ingestion": {"intent_length": len(intent)},
+            "phase_2_fdia_gate": {
+                "fdia_score": pipeline_result["fdia_score"],
+                "rct7_steps": pipeline_result["rct7_steps"],
+            },
+            "phase_3_4_routing_and_execution": routing_result,
+            "phase_5_consensus": {
+                "modeled": False,
+                "reason": "no real multi-model consensus mechanism exists yet - see gap-analysis report",
+            },
+            "phase_6_delta_persistence": delta_result,
+            "mee_growth_summary": pipeline_result["mee_growth_summary"],
+            "total_latency_ms": round(latency_ms, 2),
         }
 
 
