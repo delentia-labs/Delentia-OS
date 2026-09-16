@@ -34,6 +34,12 @@ dependencies = [
     "click>=8.1.0",
     "rich>=13.7.0",
     "cryptography>=41.0.0",
+    # Round 19: already importable in this environment (transitive deps of
+    # fastapi/uvicorn) and now directly used by several ported algorithm
+    # modules (algo_09/11's real Ollama calls, algo_28's connection pool) —
+    # declaring explicitly rather than relying on them staying transitive.
+    "httpx>=0.27.0",
+    "structlog>=24.1.0",
 ]
 
 [project.optional-dependencies]
@@ -42,10 +48,23 @@ qdrant = ["qdrant-client>=1.7"]
 monitoring = ["prometheus-client>=0.20.0"]
 persistence = ["aiosqlite>=0.19.0"]
 llm = ["openai>=1.0.0", "anthropic>=0.20.0"]
+# Round 19: algorithm-porting extras. All were already importable/installed
+# in this dev environment (nothing new installed to declare these) except
+# spacy/en_core_web_sm and the faiss-cpu note below — declaring them here so
+# a fresh environment can reproduce the same set of real (non-simulated)
+# algorithm behavior instead of silently falling back to each module's
+# honest-degradation path.
+vector = ["faiss-cpu>=1.8.0"]  # ALGO-16 Vector Search
+ml = ["torch>=2.0.0", "scikit-learn>=1.3.0"]  # ALGO-36 RFLH (real MAML/Prototypical gradients)
+web-intelligence = ["spacy>=3.7.0", "nltk>=3.8.0", "textblob>=0.18.0"]  # ALGO-34 SWCAR (run `python -m spacy download en_core_web_sm` after installing)
+integrations = ["gql>=3.5.0", "websockets>=12.0", "loguru>=0.7.0"]  # ALGO-29 UIA
 full = [
     "networkx>=3.0", "numpy>=1.24", "qdrant-client>=1.7",
     "prometheus-client>=0.20.0", "aiosqlite>=0.19.0",
     "openai>=1.0.0", "anthropic>=0.20.0",
+    "faiss-cpu>=1.8.0", "torch>=2.0.0", "scikit-learn>=1.3.0",
+    "spacy>=3.7.0", "nltk>=3.8.0", "textblob>=0.18.0",
+    "gql>=3.5.0", "websockets>=12.0", "loguru>=0.7.0",
 ]
 
 [project.urls]
