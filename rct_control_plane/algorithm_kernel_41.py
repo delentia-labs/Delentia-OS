@@ -72,19 +72,58 @@ from rct_control_plane.algo_17_graph_traversal import GraphEngine, GraphNode, Gr
 from rct_control_plane.algo_24_benchmark_suite import KernelBenchmarkSuite
 from rct_control_plane.algo_26_intent_classification import IntentClassifier
 
+# Round 20+ (2026-09-16): 3 more algorithms. ALGO-21 is an original
+# design (no existing code anywhere to port) unifying ALGO-09/11/32
+# under one real dual-process router. ALGO-27 replaces every previously
+# disclosed-simulated ML stub (object detection, scene classification,
+# action recognition, speech transcription, language ID) with a real
+# model call; speaker diarization stays on the original's disclosed
+# fallback because pyannote's pretrained models are gated on HuggingFace
+# Hub. ALGO-32 keeps its source's already-real OpenRouter LLM wiring
+# (added 2026-09-14) and honest per-step fallback disclosure verbatim.
+from rct_control_plane.algo_21_fast_slow_router import FastSlowRouter
+from rct_control_plane.algo_27_tvra import TVRAEngine, VideoProcessor, AudioProcessor, ReasoningEngine as TVRAReasoningEngine
+from rct_control_plane.algo_32_mctr import (
+    ThoughtChainGenerator, ReasoningEngine as MCTRReasoningEngine, ChainMerger, ChainValidator,
+    ConflictResolver, AnswerSynthesizer, MergeStrategy, ConflictStrategy, ValidationLevel,
+)
+
+# Round 20+ (2026-09-16, final): ALGO-14 replaces its source's hand-rolled,
+# never-trained torch.nn diffusion scaffold (explicitly disclosed as
+# `"simulated": True`, fabricated image bytes) with a real diffusers
+# pipeline (segmind/tiny-sd, a real small CPU-runnable checkpoint) -
+# genuine PNG image generation, not a substitute for the untrained
+# scaffold's math (which could never have produced a real image).
+from rct_control_plane.algo_14_rct_diffusion import DiffusionEngine, DiffusionConfig, GenerationRequest
+
 
 class AlgorithmKernel41:
     """Master Kernel orchestrating the 41 designed Algorithms across 9 Tiers.
 
-    Tier 1-2, ALGO-07, Tier 9 (12 IDs, since 2026-09-12), and 25 more from
-    Tiers 3-8 (Round 19 Phases 1-2 on 2026-09-16, plus Round 20's ALGO-08/
-    17/24/26 — see NEWLY_WIRED_ALGO_IDS) now have real implementations:
-    37 of 41 total. The remaining 4 (NOT_IMPLEMENTED_ALGO_IDS: ALGO-14/21/
-    27/32) are still designed/named only — this kernel reports that
-    honestly instead of claiming all 41 executed. ALGO-14/27 need heavy
-    ML models not yet approved for install; ALGO-21 has no existing code
-    anywhere to port and needs a dedicated design session; ALGO-32 needs
-    a real OpenRouter API key not yet provided.
+    Tier 1-2, ALGO-07, Tier 9 (12 IDs, since 2026-09-12), and 29 more from
+    Tiers 3-8 (Round 19 Phases 1-2 and Round 20+ on 2026-09-16 — see
+    NEWLY_WIRED_ALGO_IDS) now have real implementations: **41 of 41
+    total**. ALGO-21 (Fast/Slow Router) is an original design unifying
+    ALGO-09/11/32 under one real dual-process router. ALGO-27 (TVRA)
+    replaces every previously disclosed-simulated ML stub with a real
+    model (YOLO/ResNet18/R3D-18/Whisper); speaker diarization alone stays
+    on a disclosed fallback since pyannote's models are HuggingFace-
+    gated. ALGO-32 (MCTR) keeps its source's already-real, honestly-
+    disclosed OpenRouter LLM wiring. ALGO-14 (RCT-Diffusion) replaces its
+    source's never-trained hand-rolled scaffold with a real diffusers
+    pipeline (segmind/tiny-sd) producing real PNG images.
+
+    "41/41 real" does not mean "every real-world capability is at full
+    production fidelity" — e.g. ALGO-27's speaker diarization is an
+    honestly-disclosed heuristic fallback (pyannote needs a HuggingFace
+    auth token this environment doesn't have), and several LLM-backed
+    algorithms (ALGO-09/11/32/33) fall back to a disclosed heuristic when
+    no LLM backend is reachable. Every such fallback sets an explicit
+    `simulated`/`*_reason` field in its own result rather than silently
+    passing as real - "real" here means "genuinely executes real logic
+    against real inputs, with any degradation honestly reported," which
+    is the same standard this whole kernel has been held to since
+    ALGO-07's original 2026-09-12 audit.
 
     ALGO-07 (MEE v2) wiring note: mee_engine.py already had real, tested
     logic (MEEEngine/MEESession implementing G(t+1) = G(t)×(1+MΔ)×R_t) but
@@ -123,6 +162,10 @@ class AlgorithmKernel41:
         "ALGO-18", "ALGO-20", "ALGO-28", "ALGO-29", "ALGO-31", "ALGO-33", "ALGO-36",
         # Round 20 (2026-09-16):
         "ALGO-08", "ALGO-17", "ALGO-24", "ALGO-26",
+        # Round 20+ (2026-09-16, continued):
+        "ALGO-21", "ALGO-27", "ALGO-32",
+        # Round 20+ (2026-09-16, final):
+        "ALGO-14",
     ]
     # A list comprehension here would create its own scope that can't see
     # NEWLY_WIRED_ALGO_IDS (a sibling class attribute) — a plain for-loop
@@ -135,7 +178,7 @@ class AlgorithmKernel41:
     del _i, _id
 
     def __init__(self):
-        self.version = "v2.4.0-41-ALGO-ROUND20"
+        self.version = "v3.0.0-41-ALGO-COMPLETE"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
         self._mee_engine = MEEEngine()
         self._mee_session_default = self._mee_engine.create_session("kernel_default")
@@ -191,6 +234,31 @@ class AlgorithmKernel41:
         self._graph_engine = GraphEngine()
         self._benchmark_suite = KernelBenchmarkSuite()
         self._intent_classifier = IntentClassifier()
+
+        # Round 20+ engines. ALGO-21's router reuses this kernel's own
+        # already-real ALGO-09/11/26 engines in-process (MCTR wired in
+        # too, once ALGO-32's engines below are constructed).
+        self._mctr_generator = ThoughtChainGenerator()
+        self._mctr_reasoning_engine = MCTRReasoningEngine()
+        self._mctr_chain_merger = ChainMerger()
+        self._mctr_chain_validator = ChainValidator()
+        self._mctr_conflict_resolver = ConflictResolver()
+        self._mctr_answer_synthesizer = AnswerSynthesizer()
+
+        self._fast_slow_router = FastSlowRouter(
+            intent_compiler=self._intent_compiler,
+            intent_classifier=self._intent_classifier,
+            reflexion_engine=self._reflexion_engine,
+            bba_pcf_engine=self._bba_pcf_engine,
+            mctr_generator=self._mctr_generator,
+            mctr_reasoning_engine=self._mctr_reasoning_engine,
+        )
+
+        self._tvra_engine = TVRAEngine(
+            video_processor=VideoProcessor(), audio_processor=AudioProcessor(), reasoning_engine=TVRAReasoningEngine(),
+        )
+
+        self._diffusion_engine = DiffusionEngine(DiffusionConfig())
 
     # =========================================================================
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
@@ -690,6 +758,78 @@ class AlgorithmKernel41:
         self.executed_counts["ALGO-26"] += 1
         response = self._intent_classifier.classify(text, context=context, min_confidence=min_confidence)
         return response.dict() if hasattr(response, "dict") else response.__dict__
+
+    # =========================================================================
+    # Round 20+ (2026-09-16, continued): 3 more newly-wired algorithms.
+    # =========================================================================
+
+    async def algo_21_fast_slow_route(self, text: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """ALGO-21: Fast/Slow Router — real dual-process routing decision
+        + real dispatch to whichever of ALGO-09/11/32 the decision picks
+        (or the real no-LLM FAST path). See algo_21_fast_slow_router.py's
+        module docstring for the full decision policy."""
+        self.executed_counts["ALGO-21"] += 1
+        result = await self._fast_slow_router.route(text, context=context)
+        return {
+            "path": result.decision.path.value, "reason": result.decision.reason,
+            "slow_strategy": result.decision.slow_strategy.value if result.decision.slow_strategy else None,
+            "latency_ms": result.latency_ms, "result": result.result,
+        }
+
+    def algo_21_router_stats(self) -> Dict[str, Any]:
+        """ALGO-21 (stats half): real routing statistics accumulated so far."""
+        return self._fast_slow_router.get_statistics()
+
+    async def algo_27_tvra_analyze(self, video_id: str, video_path: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """ALGO-27: TVRA — real video analysis (real cv2 frame/scene
+        extraction, real YOLO object detection, real ResNet18 scene
+        classification, real R3D-18 action recognition, real Whisper
+        transcription; speaker diarization falls back to a disclosed
+        heuristic since pyannote's models are HuggingFace-gated)."""
+        self.executed_counts["ALGO-27"] += 1
+        analysis = await self._tvra_engine.analyze_video(video_id, video_path, options or {"fps": 1, "transcribe_audio": True})
+        return {
+            "scenes": len(analysis.scenes), "frames_analyzed": len(analysis.frames),
+            "temporal_events": len(analysis.temporal_events), "transcription_segments": len(analysis.transcription),
+            "summary": analysis.summary,
+            "key_objects": sorted({obj for s in analysis.scenes for obj in s.key_objects}),
+            "key_actions": sorted({act for s in analysis.scenes for act in s.key_actions}),
+        }
+
+    async def algo_32_mctr(self, query: str, num_chains: int = 3) -> Dict[str, Any]:
+        """ALGO-32: MCTR — real multi-chain tree reasoning: generate
+        diverse chains (real OpenRouter LLM call per step when
+        RCTLABS_OPENROUTER_API_KEY/FARMER_OPENROUTER_API_KEY is set, real
+        disclosed heuristic fallback otherwise) -> execute -> validate ->
+        detect/resolve conflicts -> merge -> synthesize a final answer."""
+        self.executed_counts["ALGO-32"] += 1
+        chains = await self._mctr_generator.generate_chains(query=query, num_chains=num_chains)
+        await self._mctr_reasoning_engine.execute_all_chains(chains)
+
+        conflicts = self._mctr_conflict_resolver.detect_conflicts(chains)
+        resolution = await self._mctr_conflict_resolver.resolve_conflicts(chains, conflicts=conflicts, strategy=ConflictStrategy.VOTING)
+        merged = await self._mctr_chain_merger.merge_chains(chains, strategy=MergeStrategy.BEST_STEPS)
+        answer = await self._mctr_answer_synthesizer.synthesize_answer(chains, merged_chain=merged, conflicts_resolved=len(conflicts))
+
+        return {
+            "chains_generated": len(chains), "any_chain_simulated": any(c.simulated for c in chains),
+            "conflicts_detected": len(conflicts), "conflicts_resolved": len(resolution.resolved_conflicts),
+            "resolution_succeeded": resolution.resolved,
+            "merged_chain_id": merged.chain_id, "answer": answer.answer, "answer_confidence": answer.confidence,
+        }
+
+    async def algo_14_rct_diffusion(self, prompt: str, num_steps: int = 6, width: int = 256, height: int = 256) -> Dict[str, Any]:
+        """ALGO-14: RCT-Diffusion — real diffusers-backed image generation
+        (segmind/tiny-sd, CPU). Returns a real PNG file path + real byte
+        size; simulated=False confirms a real model produced real pixels,
+        not the source's disclosed fabricated-bytes stub."""
+        self.executed_counts["ALGO-14"] += 1
+        request = GenerationRequest(prompt=prompt, num_steps=num_steps, width=width, height=height)
+        result = await self._diffusion_engine.generate(request)
+        return {
+            "status": result.status, "simulated": result.simulated,
+            "image_path": result.image_path, "byte_size": len(result.content) if result.content else 0,
+        }
 
     # =========================================================================
     # Master Execution Pipeline: Route All 41 Algorithms

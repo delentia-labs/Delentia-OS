@@ -58,6 +58,19 @@ vector = ["faiss-cpu>=1.8.0"]  # ALGO-16 Vector Search
 ml = ["torch>=2.0.0", "scikit-learn>=1.3.0"]  # ALGO-36 RFLH (real MAML/Prototypical gradients)
 web-intelligence = ["spacy>=3.7.0", "nltk>=3.8.0", "textblob>=0.18.0"]  # ALGO-34 SWCAR (run `python -m spacy download en_core_web_sm` after installing)
 integrations = ["gql>=3.5.0", "websockets>=12.0", "loguru>=0.7.0"]  # ALGO-29 UIA
+# Round 20+: heavy ML extras for the previously-deferred algorithms
+# (ALGO-14/27), installed and verified real end-to-end in this session
+# with the user's explicit approval. All CPU-runnable — no GPU required,
+# though real inference is faster with one.
+diffusion = ["diffusers>=0.30.0", "accelerate>=0.30.0", "safetensors>=0.4.0"]  # ALGO-14 RCT-Diffusion (segmind/tiny-sd)
+media-ai = [
+    "ultralytics>=8.0.0",       # ALGO-27 real object detection (YOLOv8n)
+    "openai-whisper>=20231117", # ALGO-27 real speech transcription + language ID
+    "pyannote.audio>=3.0.0",    # ALGO-27 real speaker diarization (its pretrained models are HuggingFace-gated; falls back to a disclosed heuristic without a real auth token)
+    "soundfile>=0.12.0",        # ALGO-27 real audio metadata
+    "librosa>=0.10.0",          # ALGO-27 audio processing utilities
+    "imageio-ffmpeg>=0.5.0",    # ALGO-27 real ffmpeg binary (no system ffmpeg required)
+]
 full = [
     "networkx>=3.0", "numpy>=1.24", "qdrant-client>=1.7",
     "prometheus-client>=0.20.0", "aiosqlite>=0.19.0",
@@ -65,6 +78,9 @@ full = [
     "faiss-cpu>=1.8.0", "torch>=2.0.0", "scikit-learn>=1.3.0",
     "spacy>=3.7.0", "nltk>=3.8.0", "textblob>=0.18.0",
     "gql>=3.5.0", "websockets>=12.0", "loguru>=0.7.0",
+    "diffusers>=0.30.0", "accelerate>=0.30.0", "safetensors>=0.4.0",
+    "ultralytics>=8.0.0", "openai-whisper>=20231117", "pyannote.audio>=3.0.0",
+    "soundfile>=0.12.0", "librosa>=0.10.0", "imageio-ffmpeg>=0.5.0",
 ]
 
 [project.urls]
