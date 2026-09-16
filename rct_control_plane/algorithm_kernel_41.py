@@ -21,15 +21,38 @@ from typing import Dict, Any, List, Optional, Tuple
 from rct_control_plane.mee_engine import MEEEngine
 from rct_control_plane.intent_compiler import IntentCompiler
 
+# Round 19 Phase 1 (2026-09-16): 14 more algorithms ported from
+# Delentia-Private-OS's real microservices into standalone, importable
+# modules here (same pattern as mee_engine.py for ALGO-07), following a
+# 3-agent audit that read every candidate microservice's actual source
+# and confirmed each was real, self-contained logic. See
+# reports/algorithm_reports/ROUND_19_ALGORITHM_GAP_PLAN_2026_09_15.md
+# (Delentia-Private-OS) for the full per-algorithm evidence.
+from rct_control_plane.algo_09_reflexion_plus import ReflexionEngine
+from rct_control_plane.algo_10_delta_memory import RCTDBClient
+from rct_control_plane.algo_11_bba_pcf import BBAPCFEngine
+from rct_control_plane.algo_12_meta_algorithm_generator import MetaAlgorithmEngine, CompositionMode
+from rct_control_plane.algo_13_graphrag import GraphRAGEngine, SearchMode
+from rct_control_plane.algo_15_hrm import Scheduler as HRMScheduler, Task as HRMTask
+from rct_control_plane.algo_16_vector import VectorEngine, FAISSBackend
+from rct_control_plane.algo_19_fusion import FusionEngine, ModalityData, FusionStrategy
+from rct_control_plane.algo_22_halting_detection import HaltingAnalyzer
+from rct_control_plane.algo_23_content_box import LocalStorageHandler
+from rct_control_plane.algo_25_delta_block import DeltaEngine, DeltaBlock, DeltaDiff, DeltaType
+from rct_control_plane.algo_30_abv import ABVEngine, ValidateBeliefRequest, Evidence, EvidenceType, EvidenceStrength
+from rct_control_plane.algo_34_swcar import WebCrawler, SemanticAnalyzer
+from rct_control_plane.algo_35_atc import TimeoutController, PredictiveEngine, PredictionContext, WorkloadType
+
 
 class AlgorithmKernel41:
     """Master Kernel orchestrating the 41 designed Algorithms across 9 Tiers.
 
-    Only Tier 1-2, ALGO-07, and Tier 9 (12 of 41 IDs) have real method
-    implementations as of 2026-09-12. Tier 3-8 minus ALGO-07 (ALGO-08 to
-    ALGO-36, 29 IDs) are designed/named but not yet implemented — see
-    NOT_IMPLEMENTED_ALGO_IDS. This kernel reports that honestly instead of
-    claiming all 41 executed.
+    Tier 1-2, ALGO-07, Tier 9 (12 IDs, since 2026-09-12), and 14 more from
+    Tiers 3-8 (since 2026-09-16, Round 19 Phase 1 — see
+    NEWLY_WIRED_ALGO_IDS) now have real implementations: 26 of 41 total.
+    The remaining 15 (NOT_IMPLEMENTED_ALGO_IDS) are still designed/named
+    only — this kernel reports that honestly instead of claiming all 41
+    executed.
 
     ALGO-07 (MEE v2) wiring note: mee_engine.py already had real, tested
     logic (MEEEngine/MEESession implementing G(t+1) = G(t)×(1+MΔ)×R_t) but
@@ -38,17 +61,69 @@ class AlgorithmKernel41:
     listed "ALGO-07 (MEE v2)" while leaving it in NOT_IMPLEMENTED_ALGO_IDS.
     Wired in below via a single kernel-lifetime MEE session that treats
     each pipeline run's FDIA score as its growth signal.
+
+    Round 19 Phase 1 wiring note: unlike ALGO-01 to 07 and 37-41, which
+    are all genuine steps of "process one natural-language intent" and so
+    are called automatically inside process_intent_full_pipeline() below,
+    the 14 newly-wired algorithms are utility/infrastructure capabilities
+    (vector search, halting-problem code analysis, multi-modal data
+    fusion, timeout control, web crawling, content storage...) that don't
+    naturally run once per intent — forcing e.g. a halting-problem
+    analysis of arbitrary user intent text as Python source would be
+    nonsensical, not more "complete". They're real, tested, and callable
+    directly (see the "Round 19 Phase 1" section below) but intentionally
+    left out of the automatic per-intent pipeline. 8 of the 14 are async
+    (their real engines are natively async — ReflexionEngine,
+    BBAPCFEngine, MetaAlgorithmEngine, GraphRAGEngine, HRMScheduler,
+    LocalStorageHandler, WebCrawler, TimeoutController/PredictiveEngine)
+    while process_intent_full_pipeline() itself is sync; making the whole
+    pipeline async to accommodate them would ripple to every existing
+    caller, so that's left as a deliberate, separate future decision
+    rather than done unilaterally here.
     """
 
     IMPLEMENTED_ALGO_IDS: List[str] = [f"ALGO-{i:02d}" for i in list(range(1, 8)) + list(range(37, 42))]
-    NOT_IMPLEMENTED_ALGO_IDS: List[str] = [f"ALGO-{i:02d}" for i in range(8, 37)]
+    NEWLY_WIRED_ALGO_IDS: List[str] = [
+        "ALGO-09", "ALGO-10", "ALGO-11", "ALGO-12", "ALGO-13", "ALGO-15",
+        "ALGO-16", "ALGO-19", "ALGO-22", "ALGO-23", "ALGO-25", "ALGO-30",
+        "ALGO-34", "ALGO-35",
+    ]
+    # A list comprehension here would create its own scope that can't see
+    # NEWLY_WIRED_ALGO_IDS (a sibling class attribute) — a plain for-loop
+    # in the class body executes directly in the class namespace instead.
+    NOT_IMPLEMENTED_ALGO_IDS: List[str] = []
+    for _i in range(8, 37):
+        _id = f"ALGO-{_i:02d}"
+        if _id not in NEWLY_WIRED_ALGO_IDS:
+            NOT_IMPLEMENTED_ALGO_IDS.append(_id)
+    del _i, _id
 
     def __init__(self):
-        self.version = "v2.2.6-41-ALGO-FULL"
+        self.version = "v2.3.0-41-ALGO-ROUND19"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
         self._mee_engine = MEEEngine()
         self._mee_engine.create_session("kernel_default")
         self._intent_compiler = IntentCompiler()
+
+        # Round 19 Phase 1 engines — instantiated once, kernel-lifetime,
+        # matching the ALGO-07/_mee_engine pattern.
+        self._reflexion_engine = ReflexionEngine()
+        self._rctdb_client = RCTDBClient(mock_mode=True)  # no Postgres in this environment yet
+        self._bba_pcf_engine = BBAPCFEngine()
+        self._meta_algorithm_engine = MetaAlgorithmEngine()
+        self._graphrag_engine = GraphRAGEngine()
+        self._hrm_scheduler = HRMScheduler()
+        _vector_backend = FAISSBackend(index_type="flat", metric="cosine")
+        _vector_backend.initialize(dimension=384)
+        self._vector_engine = VectorEngine(_vector_backend, dimension=384)
+        self._fusion_engine = FusionEngine()
+        self._halting_analyzer = HaltingAnalyzer()
+        self._content_box = LocalStorageHandler(storage_path="./workspace_output/content_box")
+        self._delta_engine = DeltaEngine()
+        self._abv_engine = ABVEngine()
+        self._semantic_analyzer = SemanticAnalyzer()
+        self._timeout_controller = TimeoutController()
+        self._predictive_engine = PredictiveEngine()
 
     # =========================================================================
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
@@ -218,6 +293,170 @@ class AlgorithmKernel41:
         """ALGO-41: The Crystallizer (Final State Condenser)."""
         self.executed_counts["ALGO-41"] += 1
         return f"CRYSTAL-HASH-{(hash(str(knowledge)) & 0xFFFFFFFF):08x}"
+
+    # =========================================================================
+    # Round 19 Phase 1 (2026-09-16): 14 newly-wired algorithms. Real
+    # implementations, directly callable (see class docstring for why
+    # these are NOT auto-invoked from process_intent_full_pipeline()).
+    # Sync ones first, then the 8 async ones.
+    # =========================================================================
+
+    def algo_10_delta_memory(self, query: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
+        """ALGO-10: Delta Memory — real RCTDBClient (mock_mode; Postgres not
+        connected in this environment). Search the vault, or get stats if
+        no query given."""
+        self.executed_counts["ALGO-10"] += 1
+        if query:
+            results = self._rctdb_client.search_documents(query, limit=limit)
+            return {"query": query, "results": [r.__dict__ if hasattr(r, "__dict__") else r for r in results]}
+        return self._rctdb_client.get_vault_stats().__dict__
+
+    def algo_16_vector_search(self, query_vector: List[float], k: int = 10) -> Dict[str, Any]:
+        """ALGO-16: Vector Search — real FAISS-backed similarity search."""
+        self.executed_counts["ALGO-16"] += 1
+        return self._vector_engine.search(query_vector, k=k)
+
+    def algo_19_data_fusion(self, modalities: Dict[str, List[float]], strategy: str = "hybrid") -> Dict[str, Any]:
+        """ALGO-19: Data Fusion v2 — real early/late/hybrid multi-modal fusion."""
+        self.executed_counts["ALGO-19"] += 1
+        import numpy as np
+        modality_data = {
+            name: ModalityData(name, np.array(vec), confidence=1.0, metadata={})
+            for name, vec in modalities.items()
+        }
+        result = self._fusion_engine.fuse(modality_data, strategy=FusionStrategy(strategy))
+        return result.__dict__ if hasattr(result, "__dict__") else result
+
+    def algo_22_halting_detection(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """ALGO-22: Halting Detection — real AST analysis + sandboxed execution."""
+        self.executed_counts["ALGO-22"] += 1
+        result = self._halting_analyzer.analyze(code, language=language)
+        return result.__dict__ if hasattr(result, "__dict__") else result
+
+    def algo_25_delta_block(self, session_id: str, change_description: str, source: str = "kernel") -> Dict[str, Any]:
+        """ALGO-25: Delta Block — real block-level incremental encoding
+        (same delta engine measured at 64.6-78% real compression in
+        Round 13's benchmark). Distinct from the kernel's own algo_03
+        (a simpler tick-compressor stub)."""
+        self.executed_counts["ALGO-25"] += 1
+        delta = DeltaBlock(
+            session_id=session_id,
+            timestamp=time.time(),
+            delta_type=DeltaType.STATE_CHANGE,
+            diff=DeltaDiff(added=[change_description], removed=[], modified=[]),
+            source=source,
+        )
+        delta_id = self._delta_engine.store_delta(delta)
+        return {"delta_id": delta_id, "stats": self._delta_engine.get_stats()}
+
+    def algo_30_abv(self, statement: str, evidence_texts: List[str]) -> Dict[str, Any]:
+        """ALGO-30: ABV (Adaptive Belief Validation) — real Bayesian
+        confidence scoring with KL-divergence information gain."""
+        self.executed_counts["ALGO-30"] += 1
+        evidence = [
+            Evidence(
+                source=f"evidence-{i}",
+                content=text,
+                type=EvidenceType.INDIRECT,
+                strength=EvidenceStrength.MODERATE,
+                credibility=0.8,
+            )
+            for i, text in enumerate(evidence_texts)
+        ]
+        request = ValidateBeliefRequest(belief=statement, evidence=evidence)
+        response = self._abv_engine.validate_belief(request)
+        return response.dict() if hasattr(response, "dict") else response.__dict__
+
+    def algo_34_semantic_analysis(self, text: str, url: str = "internal://kernel") -> Dict[str, Any]:
+        """ALGO-34 (semantic half of SWCAR): real spaCy NER + NLTK + TextBlob
+        sentiment + Flesch readability. The web-crawling half
+        (WebCrawler, real robots.txt/rate-limit/circuit-breaker) is
+        available separately via algo_34_web_crawl (async)."""
+        self.executed_counts["ALGO-34"] += 1
+        result = self._semantic_analyzer.analyze(text, url=url)
+        return result.dict() if hasattr(result, "dict") else result.__dict__
+
+    # --- Async (see class docstring for why these aren't auto-pipelined) ---
+
+    async def algo_09_reflexion_plus(self, query: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """ALGO-09: Reflexion+ — real generate->judge->reflect->refine loop
+        against local Ollama, with real ALGO-10-backed memory of past
+        sessions."""
+        self.executed_counts["ALGO-09"] += 1
+        session_id = await self._reflexion_engine.start_reflexion(query, context=context)
+        return self._reflexion_engine.get_final_result(session_id)
+
+    async def algo_11_bba_pcf(self, query: str, evidence: List[str], goals: List[str]) -> Dict[str, Any]:
+        """ALGO-11: BBA->P->CF — real Bayesian belief tracking -> plan
+        generation -> consequence forecasting -> recommendation, against
+        local Ollama."""
+        self.executed_counts["ALGO-11"] += 1
+        session_id = await self._bba_pcf_engine.analyze(query=query, evidence=evidence, goals=goals)
+        return self._bba_pcf_engine.get_analysis(session_id)
+
+    async def algo_12_meta_algorithm_generator(
+        self, component_ids: List[str], mode: str, goal: str, constraints: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """ALGO-12: Meta-Algorithm Generator — real composition of registered
+        algorithms (sequential/parallel/conditional/iterative/recursive)."""
+        self.executed_counts["ALGO-12"] += 1
+        session_id = await self._meta_algorithm_engine.compose(
+            component_ids=component_ids,
+            mode=CompositionMode(mode),
+            goal=goal,
+            constraints=constraints or [],
+        )
+        return self._meta_algorithm_engine.get_session(session_id)
+
+    async def algo_13_graphrag(self, query: str, mode: str = "graphrag", top_k: int = 5) -> Dict[str, Any]:
+        """ALGO-13: GraphRAG Complete — real TF-IDF + vector + 2-hop graph
+        retrieval with RRF/linear/weighted/max fusion."""
+        self.executed_counts["ALGO-13"] += 1
+        session_id = await self._graphrag_engine.search(query, mode=SearchMode(mode), top_k=top_k)
+        return self._graphrag_engine.get_session(session_id)
+
+    async def algo_15_hrm_scheduler(self, tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """ALGO-15: HRM Controller — real DAG cycle detection + Kahn's
+        topological sort + priority-queue worker scheduling."""
+        self.executed_counts["ALGO-15"] += 1
+        for t in tasks:
+            self._hrm_scheduler.add_task(HRMTask(
+                task_id=t["id"],
+                task_type=t.get("task_type", "generic"),
+                payload=t.get("payload", {}),
+                priority=t.get("priority", 5),
+                dependencies=t.get("dependencies", []),
+            ))
+        assignments = await self._hrm_scheduler.schedule()
+        return {"assignments": assignments}
+
+    async def algo_23_content_box(self, content_id: str, version: int, data: bytes) -> Dict[str, Any]:
+        """ALGO-23: Content-Box Service — real local-filesystem storage with
+        sharding and streaming SHA-256 checksums."""
+        self.executed_counts["ALGO-23"] += 1
+        import io
+        return await self._content_box.save(content_id, version, io.BytesIO(data))
+
+    async def algo_34_web_crawl(self, url: str) -> Dict[str, Any]:
+        """ALGO-34 (crawling half of SWCAR): real httpx crawler with real
+        robots.txt compliance, per-domain rate limiting, and circuit
+        breaker. Makes a real outbound HTTP request."""
+        self.executed_counts["ALGO-34"] += 1
+        async with WebCrawler() as crawler:
+            return await crawler.crawl(url)
+
+    async def algo_35_adaptive_timeout(self, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """ALGO-35: ATC — real p95-percentile timeout control + real
+        statistical workload/time-of-day prediction."""
+        self.executed_counts["ALGO-35"] += 1
+        current_timeout = await self._timeout_controller.get_timeout()
+        prediction = await self._predictive_engine.predict_timeout(
+            PredictionContext(workload_type=WorkloadType(context.get("workload_type", "api_call")) if context else WorkloadType.API_CALL)
+        )
+        return {
+            "current_timeout_s": current_timeout,
+            "predicted_timeout_s": prediction.predicted_timeout if hasattr(prediction, "predicted_timeout") else prediction,
+        }
 
     # =========================================================================
     # Master Execution Pipeline: Route All 41 Algorithms

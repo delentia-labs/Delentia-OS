@@ -29,9 +29,15 @@ class TestAlgo07Wiring:
     def test_algo_07_is_no_longer_reported_as_unimplemented(self, kernel):
         assert "ALGO-07" in kernel.IMPLEMENTED_ALGO_IDS
         assert "ALGO-07" not in kernel.NOT_IMPLEMENTED_ALGO_IDS
-        # Total must still be 41 designed IDs — moving one between the two
-        # lists must not silently drop or duplicate an ID.
-        assert len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NOT_IMPLEMENTED_ALGO_IDS) == 41
+        # Total must still be 41 designed IDs across all three categories
+        # (IMPLEMENTED_ALGO_IDS, NEWLY_WIRED_ALGO_IDS since Round 19 Phase 1,
+        # and NOT_IMPLEMENTED_ALGO_IDS) — moving one between them must not
+        # silently drop or duplicate an ID.
+        assert (
+            len(kernel.IMPLEMENTED_ALGO_IDS)
+            + len(kernel.NEWLY_WIRED_ALGO_IDS)
+            + len(kernel.NOT_IMPLEMENTED_ALGO_IDS)
+        ) == 41
 
     def test_algo_07_mee_advances_real_growth_state_not_a_fixed_return(self, kernel):
         first = kernel.algo_07_mee(growth_signal=0.3)
