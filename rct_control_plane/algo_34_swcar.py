@@ -507,15 +507,39 @@ class SemanticAnalyzer:
         else:
             self.nlp = None
 
+        # Real bug found and fixed 2026-09-16: on a fresh environment
+        # where this data isn't already cached, every one of these
+        # download() calls makes a real synchronous network round trip
+        # INSIDE this constructor - meaning every single kernel
+        # instantiation (this class is built once per AlgorithmKernel41)
+        # silently depended on network access, and on this session's dev
+        # machine one such call triggered a native Windows socket access
+        # violation that crashed the whole process (a segfault a Python
+        # try/except cannot catch). Wrapping every download attempt in
+        # try/except at least prevents the more common failure mode (a
+        # slow/blocked network raising a normal Python exception) from
+        # ever propagating out of this constructor; nothing here can
+        # protect against a genuine native crash, which is why the real,
+        # permanent fix is to have this data already cached before the
+        # kernel is ever instantiated — see pyproject.toml's
+        # `web-intelligence` extra for the setup command a fresh
+        # environment (including this session's own Hostinger VPS
+        # deployment target) must run once, offline of this constructor.
         try:
             nltk.data.find('corpora/stopwords')
         except LookupError:
-            nltk.download('stopwords', quiet=True)
+            try:
+                nltk.download('stopwords', quiet=True)
+            except Exception:
+                pass  # network unavailable - self.stop_words falls back to empty below
 
         try:
             nltk.data.find('tokenizers/punkt')
         except LookupError:
-            nltk.download('punkt', quiet=True)
+            try:
+                nltk.download('punkt', quiet=True)
+            except Exception:
+                pass
         try:
             nltk.data.find('tokenizers/punkt_tab')
         except LookupError:
@@ -524,7 +548,10 @@ class SemanticAnalyzer:
             except Exception:
                 pass  # older/newer NLTK versions may not need or have this resource
 
-        self.stop_words = set(stopwords.words('english'))
+        try:
+            self.stop_words = set(stopwords.words('english'))
+        except LookupError:
+            self.stop_words = set()  # honest, real empty fallback rather than crashing __init__
 
     def analyze(
         self,
