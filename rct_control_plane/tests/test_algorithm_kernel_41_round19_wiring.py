@@ -30,8 +30,10 @@ async def main():
     print(f"Implemented (original 12): {len(kernel.IMPLEMENTED_ALGO_IDS)}")
     print(f"Newly wired (Round 19): {len(kernel.NEWLY_WIRED_ALGO_IDS)}")
     print(f"Still not implemented: {len(kernel.NOT_IMPLEMENTED_ALGO_IDS)}")
-    check("26 total implemented", len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NEWLY_WIRED_ALGO_IDS) == 26)
-    check("15 total not implemented", len(kernel.NOT_IMPLEMENTED_ALGO_IDS) == 15)
+    # >= (not ==) because later rounds (Phase 2, Round 20, ...) legitimately
+    # wire more algorithms on top of this Phase 1 snapshot.
+    check("at least the 26 total implemented as of Round 19 Phase 1",
+          len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NEWLY_WIRED_ALGO_IDS) >= 26)
 
     print("\n--- ALGO-10 Delta Memory ---")
     stats = kernel.algo_10_delta_memory()
@@ -115,11 +117,16 @@ async def main():
 
     print("\n--- executed_counts sanity ---")
     print(kernel.executed_counts)
-    for algo_id in kernel.NEWLY_WIRED_ALGO_IDS:
-        if algo_id != "ALGO-34":  # web-crawl half not exercised here
-            check(f"{algo_id} executed_counts incremented", kernel.executed_counts[algo_id] >= 1)
-        else:
-            check(f"{algo_id} executed_counts incremented", kernel.executed_counts[algo_id] >= 1)
+    # Fixed list of the 14 Phase 1 IDs this script actually calls above
+    # (not kernel.NEWLY_WIRED_ALGO_IDS, which now also holds later rounds'
+    # IDs this Phase 1 script never exercises).
+    phase1_exercised_ids = [
+        "ALGO-09", "ALGO-10", "ALGO-11", "ALGO-12", "ALGO-13", "ALGO-15",
+        "ALGO-16", "ALGO-19", "ALGO-22", "ALGO-23", "ALGO-25", "ALGO-30",
+        "ALGO-34", "ALGO-35",
+    ]
+    for algo_id in phase1_exercised_ids:
+        check(f"{algo_id} executed_counts incremented", kernel.executed_counts[algo_id] >= 1)
 
     print("\nALL ROUND 19 KERNEL WIRING ASSERTIONS PASSED")
 

@@ -57,16 +57,34 @@ from rct_control_plane.algo_31_albas import (
 from rct_control_plane.algo_33_fghf import HallucinationDetector
 from rct_control_plane.algo_36_rflh import RFLHEngine, LearningExample, TaskType
 
+# Round 20 (2026-09-16): 4 more algorithms. ALGO-08 reuses ALGO-07's real
+# MEESession + ALGO-10's real RCTDBClient in-process (same adaptation
+# pattern as ALGO-18/20). ALGO-17 is the real in-memory graph layer (the
+# Neo4j layer needs external infra, deliberately not ported). ALGO-24 is
+# a small new real capability (timing this kernel's own methods) rather
+# than a literal port (the original needs OTHER deployed microservices
+# to stress-test, which don't exist as separate processes here). ALGO-26
+# was ported by a dedicated background agent given its ~1,600-line
+# dependency chain, then independently re-verified by re-running its
+# smoke test directly before this wiring.
+from rct_control_plane.algo_08_self_evolving import SelfEvolvingOrchestrator
+from rct_control_plane.algo_17_graph_traversal import GraphEngine, GraphNode, GraphRelationship
+from rct_control_plane.algo_24_benchmark_suite import KernelBenchmarkSuite
+from rct_control_plane.algo_26_intent_classification import IntentClassifier
+
 
 class AlgorithmKernel41:
     """Master Kernel orchestrating the 41 designed Algorithms across 9 Tiers.
 
-    Tier 1-2, ALGO-07, Tier 9 (12 IDs, since 2026-09-12), and 14 more from
-    Tiers 3-8 (since 2026-09-16, Round 19 Phase 1 — see
-    NEWLY_WIRED_ALGO_IDS) now have real implementations: 26 of 41 total.
-    The remaining 15 (NOT_IMPLEMENTED_ALGO_IDS) are still designed/named
-    only — this kernel reports that honestly instead of claiming all 41
-    executed.
+    Tier 1-2, ALGO-07, Tier 9 (12 IDs, since 2026-09-12), and 25 more from
+    Tiers 3-8 (Round 19 Phases 1-2 on 2026-09-16, plus Round 20's ALGO-08/
+    17/24/26 — see NEWLY_WIRED_ALGO_IDS) now have real implementations:
+    37 of 41 total. The remaining 4 (NOT_IMPLEMENTED_ALGO_IDS: ALGO-14/21/
+    27/32) are still designed/named only — this kernel reports that
+    honestly instead of claiming all 41 executed. ALGO-14/27 need heavy
+    ML models not yet approved for install; ALGO-21 has no existing code
+    anywhere to port and needs a dedicated design session; ALGO-32 needs
+    a real OpenRouter API key not yet provided.
 
     ALGO-07 (MEE v2) wiring note: mee_engine.py already had real, tested
     logic (MEEEngine/MEESession implementing G(t+1) = G(t)×(1+MΔ)×R_t) but
@@ -103,6 +121,8 @@ class AlgorithmKernel41:
         "ALGO-34", "ALGO-35",
         # Round 19 Phase 2 (2026-09-16):
         "ALGO-18", "ALGO-20", "ALGO-28", "ALGO-29", "ALGO-31", "ALGO-33", "ALGO-36",
+        # Round 20 (2026-09-16):
+        "ALGO-08", "ALGO-17", "ALGO-24", "ALGO-26",
     ]
     # A list comprehension here would create its own scope that can't see
     # NEWLY_WIRED_ALGO_IDS (a sibling class attribute) — a plain for-loop
@@ -115,10 +135,10 @@ class AlgorithmKernel41:
     del _i, _id
 
     def __init__(self):
-        self.version = "v2.3.0-41-ALGO-ROUND19"
+        self.version = "v2.4.0-41-ALGO-ROUND20"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
         self._mee_engine = MEEEngine()
-        self._mee_engine.create_session("kernel_default")
+        self._mee_session_default = self._mee_engine.create_session("kernel_default")
         self._intent_compiler = IntentCompiler()
 
         # Round 19 Phase 1 engines — instantiated once, kernel-lifetime,
@@ -161,6 +181,16 @@ class AlgorithmKernel41:
         self._load_predictor = LoadPredictor()
         self._hallucination_detector = HallucinationDetector()
         self._rflh_engine = RFLHEngine()
+
+        # Round 20 (2026-09-16) engines. ALGO-08 reuses this kernel's own
+        # real ALGO-07 MEESession and ALGO-10 RCTDBClient in-process,
+        # exactly as ALGO-18/20 reuse ALGO-16/15/19's engines.
+        self._self_evolving_orchestrator = SelfEvolvingOrchestrator(
+            self._mee_session_default, self._rctdb_client
+        )
+        self._graph_engine = GraphEngine()
+        self._benchmark_suite = KernelBenchmarkSuite()
+        self._intent_classifier = IntentClassifier()
 
     # =========================================================================
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
@@ -590,6 +620,76 @@ class AlgorithmKernel41:
             for i, ex in enumerate(examples)
         ]
         return await self._rflh_engine.meta_learn(task_id, support_set)
+
+    # =========================================================================
+    # Round 20 (2026-09-16): 4 more newly-wired algorithms.
+    # =========================================================================
+
+    async def algo_08_self_evolving(self) -> Dict[str, Any]:
+        """ALGO-08: Self-Evolving — real evolution cycle against this
+        kernel's own ALGO-07 MEESession (growth) and ALGO-10 RCTDBClient
+        (real feedback from real vault stats, honestly sparse when the
+        vault is near-empty)."""
+        self.executed_counts["ALGO-08"] += 1
+        return await self._self_evolving_orchestrator.evolve_cycle()
+
+    def algo_08_evolution_status(self) -> Dict[str, Any]:
+        """ALGO-08 (status half): current evolution state without
+        advancing a step."""
+        return self._self_evolving_orchestrator.get_evolution_status()
+
+    def algo_17_graph_traversal(
+        self, nodes: List[Dict[str, Any]], relationships: List[Dict[str, Any]],
+        operation: str = "stats", start_node: Optional[str] = None, end_node: Optional[str] = None,
+    ) -> Any:
+        """ALGO-17: Graph Traversal (in-memory layer) — real BFS/DFS/
+        Dijkstra/PageRank over a freshly-built graph from the given nodes/
+        relationships. `operation`: "bfs" | "dfs" | "shortest_path" |
+        "pagerank" | "stats"."""
+        self.executed_counts["ALGO-17"] += 1
+        graph = GraphEngine()
+        for n in nodes:
+            graph.add_node(GraphNode(node_id=n["id"], labels=n.get("labels", []), properties=n.get("properties", {})))
+        for i, r in enumerate(relationships):
+            graph.add_relationship(GraphRelationship(
+                relationship_id=r.get("id", f"r{i}"), from_node=r["from"], to_node=r["to"],
+                relationship_type=r.get("type", "CONNECTS"), properties=r.get("properties", {}),
+            ))
+
+        if operation == "bfs":
+            return graph.bfs(start_node)
+        if operation == "dfs":
+            return graph.dfs(start_node)
+        if operation == "shortest_path":
+            path = graph.shortest_path(start_node, end_node)
+            return path.__dict__ if path else None
+        if operation == "pagerank":
+            return graph.pagerank()
+        return graph.get_stats()
+
+    async def algo_24_benchmark(self, name: str, target: str, iterations: int = 5) -> Dict[str, Any]:
+        """ALGO-24: Benchmark Suite — real wall-clock timing of one of this
+        kernel's OWN in-process sync algorithm methods (e.g. "algo_01_fdia",
+        "algo_17_graph_traversal"), called with no args. For methods that
+        need arguments, use `kernel._benchmark_suite.benchmark(...)`
+        directly."""
+        self.executed_counts["ALGO-24"] += 1
+        fn = getattr(self, target)
+        result = await self._benchmark_suite.benchmark(name, fn, iterations=iterations)
+        return result.to_dict()
+
+    def algo_24_benchmark_summary(self) -> Dict[str, Any]:
+        """ALGO-24 (summary half): aggregate stats across every benchmark
+        run so far this kernel session."""
+        return self._benchmark_suite.get_summary()
+
+    def algo_26_intent_classification(self, text: str, context: Optional[Dict[str, Any]] = None, min_confidence: float = 0.5) -> Dict[str, Any]:
+        """ALGO-26: Intent Classification — real pattern/keyword/context/
+        structure-weighted scoring over 21 built-in bilingual (EN/TH)
+        intents, plus real entity extraction (email/number/money/date)."""
+        self.executed_counts["ALGO-26"] += 1
+        response = self._intent_classifier.classify(text, context=context, min_confidence=min_confidence)
+        return response.dict() if hasattr(response, "dict") else response.__dict__
 
     # =========================================================================
     # Master Execution Pipeline: Route All 41 Algorithms

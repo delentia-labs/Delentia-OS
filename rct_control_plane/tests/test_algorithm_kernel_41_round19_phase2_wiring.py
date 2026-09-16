@@ -26,7 +26,10 @@ async def main():
     kernel = AlgorithmKernel41()
     print(f"Kernel version: {kernel.version}")
     print(f"Total implemented: {len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NEWLY_WIRED_ALGO_IDS)}")
-    check("33 total implemented", len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NEWLY_WIRED_ALGO_IDS) == 33)
+    # >= (not ==) because later rounds (Round 20, ...) legitimately wire
+    # more algorithms on top of this Phase 2 snapshot.
+    check("at least the 33 total implemented as of Round 19 Phase 2",
+          len(kernel.IMPLEMENTED_ALGO_IDS) + len(kernel.NEWLY_WIRED_ALGO_IDS) >= 33)
 
     print("\n--- ALGO-18 Adaptive Prompting ---")
     kernel._prompt_engine.add_template(PromptTemplate(
