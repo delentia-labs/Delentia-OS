@@ -201,8 +201,23 @@ class AlgorithmKernel41:
     def __init__(self):
         self.version = "v3.0.0-41-ALGO-COMPLETE"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
+
+        # Round 21 Phase 4 Task 9: instantiated BEFORE _mee_engine so a
+        # real, previously-persisted MEE growth session can be restored
+        # instead of always starting fresh at G=1.0. Explicit db_path
+        # matches Phase 1 Task 3's choice — a separate real file from the
+        # LIVE rct_control_plane.db this session must never write to.
+        from rct_control_plane.persistence import ControlPlanePersistence
+        self._persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+
         self._mee_engine = MEEEngine()
-        self._mee_session_default = self._mee_engine.create_session("kernel_default")
+        restored_mee_row = self._persistence.get_state(namespace="mee", key="kernel_default")
+        if restored_mee_row is not None:
+            from rct_control_plane.mee_engine import MEESession
+            self._mee_session_default = MEESession.from_dict(restored_mee_row["value"])
+            self._mee_engine._sessions["kernel_default"] = self._mee_session_default
+        else:
+            self._mee_session_default = self._mee_engine.create_session("kernel_default")
         self._intent_compiler = IntentCompiler()
 
         # Round 19 Phase 1 engines — instantiated once, kernel-lifetime,
@@ -285,12 +300,9 @@ class AlgorithmKernel41:
         # ControlPlanePersistence (persistence.py) - previously
         # instantiated only by api.py, never by this kernel, so every
         # process_intent_deep_pipeline() call was unaccountable (nothing
-        # recorded who issued it). Explicit db_path: the class's own
-        # default points at the LIVE rct_control_plane.db this session
-        # must never write to (it's edited live in the user's parallel
-        # session) - a separate real file here avoids that collision.
-        from rct_control_plane.persistence import ControlPlanePersistence
-        self._persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+        # recorded who issued it). self._persistence itself is now
+        # instantiated earlier in __init__ (Phase 4 Task 9), before
+        # _mee_engine, so real MEE growth state can be restored.
 
         # Layer 1 / Layer 10: real keypairs, LAZY (not generated here).
         # A real, reproducible crash was found 2026-09-16: generating
@@ -539,6 +551,14 @@ class AlgorithmKernel41:
         """
         self.executed_counts["ALGO-07"] += 1
         record = self._mee_engine.step("kernel_default", delta=growth_signal, governance_violation=governance_violation)
+
+        # Round 21 Phase 4 Task 9: real save after every step, so a
+        # future kernel restart resumes real growth state instead of
+        # resetting to G=1.0.
+        self._persistence.save_state(
+            state_id=f"mee-{int(time.time() * 1000)}", namespace="mee", key="kernel_default",
+            value=self._mee_session_default.to_dict(),
+        )
         return record.to_dict()
 
     # =========================================================================
