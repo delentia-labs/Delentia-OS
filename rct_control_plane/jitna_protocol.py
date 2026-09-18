@@ -11,6 +11,24 @@ JITNA (Joint Intent Transfer & Negotiation Architecture) provides:
 
 The JITNA Protocol operates as the "HTTP of Agentic AI" — a standardized
 transport-agnostic schema for deterministic multi-agent negotiation.
+
+CANONICAL STATUS (declared Round 21, 2026-09-16+): a deep audit of this
+whole workspace found SIX real, mutually incompatible implementations of
+"JITNA" (this file's RFC-001 v2.0 wire format; the original philosophical
+spec "The JITNA Genome.py" defining I/D/Delta/A=Action-Artifact/R=
+Reflection/M; an orphaned-worktree RFC-001 doc using A=Approach; a
+deployed TypeScript "v3" tying A to a LoRA-pillar enum; this session's
+own now-deprecated `wire_protocol.py` using A=Authorization/R=Resource;
+and `jitna-gateway`'s own packet shape in Delentia-Private-OS). THIS
+FILE is now the one canonical Python wire-format implementation: RFC-001
+v2.0's `{header/intent/payload/validation}`-shaped envelope (here,
+`JITNAPacket`'s flat fields) is the transport; Genome.py's 6-primitive
+philosophy (I/D/Delta/A/R/M — the ORIGINAL semantics, A=Action/Artifact,
+R=Reflection, NOT the Authorization/Resource pair `wire_protocol.py`
+used) is meant to live inside `payload` as the intent-language content.
+New code should import signing/verification from here, not from
+`wire_protocol.py` (kept, per Zero-Delete Policy, with its own
+deprecation docstring).
 """
 
 from __future__ import annotations
@@ -22,6 +40,79 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
+
+
+# ============================================================
+# Real Ed25519 signing (added Round 21 — canonicalizes the signing
+# this session's separate wire_protocol.py implemented under different
+# field semantics; see that file's own deprecation docstring for the
+# mapping)
+# ============================================================
+
+class JITNAKeypair:
+    """Real Ed25519 keypair. Import of cryptography.hazmat is LOCAL to
+    generate_keypair()/sign_packet()/verify_packet(), not at this
+    module's top level — a real, reproduced crash (native access
+    violation during a full pytest run) was found 2026-09-16 when
+    cryptography.hazmat was imported at algorithm_kernel_41.py's module
+    level on top of its already-heavy torch/faiss/cv2/pyannote/diffusers
+    import chain; deferred imports are the confirmed fix."""
+
+    def __init__(self, private_key: Any) -> None:
+        self._private_key = private_key
+        self._public_key = private_key.public_key()
+
+    def public_key_raw(self) -> bytes:
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        return self._public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)
+
+    def fingerprint(self) -> str:
+        return hashlib.sha256(self.public_key_raw()).hexdigest()
+
+
+def generate_keypair() -> "JITNAKeypair":
+    """Real Ed25519 keypair generation."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    return JITNAKeypair(Ed25519PrivateKey.generate())
+
+
+def sign_packet(packet: "JITNAPacket", keypair: "JITNAKeypair") -> "JITNAPacket":
+    """Real Ed25519 signature over the packet's real content hash
+    (reuses JITNAPacket.compute_hash(), the same hash the packet already
+    exposes for integrity checks). Returns a signed COPY; the original
+    packet is left untouched."""
+    import copy
+    signed = copy.deepcopy(packet)
+    content_hash = signed.compute_hash().encode("utf-8")
+    signature = keypair._private_key.sign(content_hash)
+    signed.signature = signature.hex()
+    signed.metadata = {**signed.metadata, "sender_fingerprint": keypair.fingerprint()}
+    return signed
+
+
+def verify_packet(packet: "JITNAPacket", sender_public_key_raw: bytes) -> bool:
+    """Real Ed25519 verification. Returns True only if the claimed
+    sender_fingerprint genuinely matches a SHA-256 of the given public
+    key AND the signature genuinely matches the packet's real content
+    hash under that key — a single tampered field (even after the
+    packet was already signed) makes this fail."""
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    claimed_fp = packet.metadata.get("sender_fingerprint")
+    real_fp = hashlib.sha256(sender_public_key_raw).hexdigest()
+    if claimed_fp != real_fp:
+        return False
+    if not packet.signature:
+        return False
+
+    content_hash = packet.compute_hash().encode("utf-8")
+    public_key = Ed25519PublicKey.from_public_bytes(sender_public_key_raw)
+    try:
+        public_key.verify(bytes.fromhex(packet.signature), content_hash)
+        return True
+    except InvalidSignature:
+        return False
 
 
 # ============================================================
