@@ -164,6 +164,12 @@ async def check_architect_veto(kernel):
     check("a clean intent still proceeds to real routing/execution",
           clean_result["phase_3_4_routing_and_execution"]["path"] in ("fast", "slow"))
 
+    # Round 23 Phase 11 Task 24: the veto is also recorded as a real,
+    # dedicated architect_decisions row (not just the generic audit_trail).
+    decisions = kernel._persistence.list_architect_decisions(limit=5)
+    check("a real dedicated architect_decisions row exists for the veto",
+          any(d["decision_type"] == "ARCHITECT_VETO" and d["jitna_after"]["A_FDIA"] == 0 for d in decisions))
+
 
 async def check_rct7_benchmark_with_intent(kernel):
     """Round 22: restores RCT-7's original Step 7 "Benchmark with Intent"

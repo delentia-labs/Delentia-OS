@@ -252,6 +252,16 @@ class AlgorithmKernel41:
         self._halting_analyzer = HaltingAnalyzer()
         self._content_box = LocalStorageHandler(storage_path="./workspace_output/content_box")
         self._delta_engine = DeltaEngine()
+
+        # Round 23 Phase 11 Task 25: real RCTDBFacade unifying the 5
+        # conceptual RCTDB collections (experiments, deltas, mem_profiles,
+        # architect_decisions - all real by this point in __init__) into
+        # one correctly-named object, per the original whitepaper spec.
+        from rct_control_plane.rctdb_facade import RCTDBFacade
+        self._rctdb_facade = RCTDBFacade(
+            persistence=self._persistence, delta_engine=self._delta_engine, agent_memory=self._agent_memory,
+        )
+
         self._abv_engine = ABVEngine()
         self._semantic_analyzer = SemanticAnalyzer()
         self._timeout_controller = TimeoutController()
@@ -1310,6 +1320,19 @@ class AlgorithmKernel41:
                 entity_type="jitna_packet", entity_id=signed_packet.packet_id,
                 action="ARCHITECT_VETO", actor=signed_packet.metadata["sender_fingerprint"],
                 changes={"intent": intent[:200], "cord_findings": routing_result["cord_findings"]},
+            )
+            # Round 23 Phase 11 Task 24: also record a dedicated
+            # architect_decisions row (real jitna_before/after snapshot),
+            # matching the original RCTDB spec's own architect_decisions
+            # collection - the generic audit_trail row above stays too
+            # (Zero-Delete, additive not replacing).
+            self._persistence.save_architect_decision(
+                decision_id=f"veto-{signed_packet.packet_id}",
+                decision_type="ARCHITECT_VETO",
+                description="CORD detected a real safety violation; A_FDIA forced to 0",
+                jitna_before={"intent": intent[:200], "A_FDIA": 1},
+                jitna_after={"A_FDIA": 0, "cord_findings": routing_result["cord_findings"]},
+                linked_intent_id=signed_packet.packet_id,
             )
         else:
             try:
