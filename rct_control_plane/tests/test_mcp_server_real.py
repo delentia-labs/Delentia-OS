@@ -37,3 +37,19 @@ def test_assemble_nodes_mcp_tool():
     }))
     payload = json.loads(result.content[0].text)
     assert "answer" in payload
+
+
+def test_autonomous_loop_mcp_tool():
+    result = asyncio.run(mcp.call_tool("delentia_autonomous_loop", {
+        "goal": "Say hello and finish immediately, no tool needed.", "max_iterations": 2,
+    }))
+    payload = json.loads(result.content[0].text)
+    assert "final_answer" in payload or "steps" in payload
+
+
+def test_delegate_mcp_tool():
+    result = asyncio.run(mcp.call_tool("delentia_delegate", {
+        "profile_name": "mcp_test_profile", "sub_goal": "Say hi and finish, no tool needed.", "max_iterations": 2,
+    }))
+    payload = json.loads(result.content[0].text)
+    assert payload["profile_name"] == "mcp_test_profile"

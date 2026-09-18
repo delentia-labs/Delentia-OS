@@ -18,6 +18,8 @@ from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.sandbox import run_sandboxed
 from rct_control_plane.nodal_assembly import assemble
 from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
+from rct_control_plane.autonomous_loop import AutonomousLoop
+from rct_control_plane.agent_profile import delegate_to_profile
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
@@ -68,6 +70,25 @@ async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
         nodes.append((name, fn, args, kwargs))
     answer = await assemble(query, nodes, ChainMerger(), AnswerSynthesizer())
     return {"answer": answer.answer, "confidence": answer.confidence, "chains_used": answer.chains_used}
+
+
+@mcp.tool()
+async def delentia_autonomous_loop(goal: str, max_iterations: int = 5) -> dict:
+    """Real autonomous decide/act/observe loop over this kernel's MCP
+    tools. Bounded by max_iterations and a 120s wall-clock cap. Only has
+    access to this server's own already safety-reviewed tools."""
+    loop = AutonomousLoop(mcp_server=mcp, persistence=_kernel._persistence,
+                           max_iterations=max_iterations, namespace="mcp_loop")
+    return await loop.run(goal)
+
+
+@mcp.tool()
+async def delentia_delegate(profile_name: str, sub_goal: str, max_iterations: int = 3) -> dict:
+    """Delegate a sub-goal to a real, isolated agent profile (own MEE
+    growth state + own persistence namespace), running its own
+    AutonomousLoop. Multiple profiles can be delegated to concurrently
+    with genuinely independent state."""
+    return await delegate_to_profile(_kernel, profile_name, sub_goal, max_iterations)
 
 
 if __name__ == "__main__":
