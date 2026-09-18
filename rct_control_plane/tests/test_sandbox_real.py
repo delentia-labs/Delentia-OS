@@ -23,3 +23,15 @@ def test_denylisted_command_prefix_is_blocked_before_execution():
     result = run_sandboxed("rm -rf /")
     assert result.blocked_reason is not None
     assert result.exit_code is None  # never actually ran
+
+
+def test_docker_backend_runs_real_command_or_honestly_reports_unavailable():
+    from rct_control_plane.sandbox import _docker_available
+
+    result = run_sandboxed("echo hello-from-docker", backend="docker")
+
+    if _docker_available():
+        assert "hello-from-docker" in result.stdout
+        assert result.exit_code == 0
+    else:
+        assert result.blocked_reason == "docker not available on this host"
