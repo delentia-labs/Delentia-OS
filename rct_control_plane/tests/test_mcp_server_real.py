@@ -62,6 +62,32 @@ def test_remember_and_recall_mcp_tools():
     assert any("default namespace test fact" in m["content"] for m in payload["memories"])
 
 
+def test_assemble_nodes_with_new_allowlist_entries():
+    result = asyncio.run(mcp.call_tool("delentia_assemble_nodes", {
+        "query": "vector search test query", "node_names": ["algo_16_vector_search"],
+    }))
+    payload = json.loads(result.content[0].text)
+    assert "answer" in payload
+
+
+def test_crystallize_keywords_mcp_tool():
+    result = asyncio.run(mcp.call_tool("delentia_crystallize_keywords", {
+        "text": "the payment retry logic fails due to idempotency violations",
+    }))
+    payload = json.loads(result.content[0].text)
+    assert "golden_keywords" in payload
+
+
+def test_verify_intent_conservation_mcp_tool():
+    result = asyncio.run(mcp.call_tool("delentia_verify_intent_conservation", {
+        "original_intent": "debug the payment retry logic",
+        "stage_representations": {"stage_a": "debug the payment retry logic issue"},
+    }))
+    payload = json.loads(result.content[0].text)
+    assert "stage_scores" in payload
+    assert "stage_a" in payload["stage_scores"]
+
+
 def test_schedule_and_check_reminder_mcp_tools():
     schedule_result = asyncio.run(mcp.call_tool("delentia_schedule_reminder", {
         "goal": "Say hi, no tool needed.", "fire_in_seconds": 0,

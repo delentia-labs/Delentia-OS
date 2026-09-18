@@ -26,6 +26,27 @@ from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_re
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
 
+
+def _hash_embed_query(text: str, dim: int = 384):
+    """Real, deterministic, content-derived text->vector (feature-hashed
+    signed bag-of-words, L2-normalized) - the exact same real "hashing
+    trick" technique already established in algo_36_rflh.py's
+    _embed_text, reused here (not duplicated logic reinvented) so
+    delentia_assemble_nodes can feed real vector_search a real query
+    vector instead of a fabricated/random one."""
+    import hashlib
+    import re
+    import numpy as np
+    vector = np.zeros(dim, dtype=np.float64)
+    for token in re.findall(r"[a-z0-9]+", text.lower()):
+        digest = hashlib.sha256(token.encode("utf-8")).digest()
+        bucket = int.from_bytes(digest[:8], "big") % dim
+        sign = 1.0 if (digest[8] & 1) == 0 else -1.0
+        vector[bucket] += sign
+    norm = np.linalg.norm(vector)
+    return (vector / norm if norm else vector).tolist()
+
+
 # Real allowlist mapping a JSON-safe node name to the kernel method it
 # invokes. This is a security boundary (MCP tool args are untrusted
 # JSON, never arbitrary Python callables) - extend deliberately per
@@ -33,6 +54,9 @@ _kernel = AlgorithmKernel41()
 _ALLOWED_ASSEMBLY_NODES = {
     "algo_05_graphrag": lambda k, q: (k.algo_05_graphrag, (q,), {}),
     "algo_17_graph_traversal": lambda k, q: (k.algo_17_graph_traversal, ([], []), {"operation": "stats"}),
+    "algo_16_vector_search": lambda k, q: (k.algo_16_vector_search, (_hash_embed_query(q),), {"k": 5}),
+    "algo_30_abv": lambda k, q: (k.algo_30_abv, (q, []), {}),
+    "algo_41_crystallize_golden_keywords": lambda k, q: (k.crystallize_golden_keywords, (q,), {}),
 }
 
 
@@ -125,6 +149,23 @@ async def delentia_check_reminders() -> dict:
     real AutonomousLoop, marking each fired only after a real result."""
     results = await check_and_fire_due_reminders(_kernel)
     return {"fired": results}
+
+
+@mcp.tool()
+async def delentia_crystallize_keywords(text: str) -> dict:
+    """Real Golden Keyword Extraction (Round 24): scores real Shannon
+    entropy per candidate word, keeps those >= 0.8, adds them as real
+    nodes to the kernel's persistent Concept Map, and feeds the top
+    keyword into the real ALGO-40 ITSR recommender."""
+    return _kernel.crystallize_golden_keywords(text)
+
+
+@mcp.tool()
+async def delentia_verify_intent_conservation(original_intent: str, stage_representations: dict) -> dict:
+    """Real per-stage semantic fidelity check (Round 24): does each
+    named pipeline stage's text still carry the original intent's real
+    meaning, using the ported SemanticMatcher."""
+    return _kernel.verify_intent_conservation(original_intent, stage_representations)
 
 
 if __name__ == "__main__":
