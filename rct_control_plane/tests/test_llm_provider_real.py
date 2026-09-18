@@ -53,6 +53,22 @@ def test_compat_profile_changes_the_real_constructed_payload():
     assert "be nice" in custom_payload["messages"][0]["content"]
 
 
+def test_quota_tracker_blocks_the_real_call_after_limit_reached():
+    from rct_control_plane.llm_provider import OllamaProvider, QuotaTracker, QuotaCheckedProvider, QuotaExceededError
+
+    quota = QuotaTracker(max_calls_per_provider={"ollama": 2})
+    provider = QuotaCheckedProvider(OllamaProvider(), provider_name="ollama", quota=quota)
+
+    asyncio.run(provider.complete("Reply with exactly the word: ONE"))
+    asyncio.run(provider.complete("Reply with exactly the word: TWO"))
+
+    try:
+        asyncio.run(provider.complete("Reply with exactly the word: THREE"))
+        assert False, "expected QuotaExceededError on the 3rd real call"
+    except QuotaExceededError:
+        pass
+
+
 def test_autonomous_loop_accepts_injected_provider():
     from rct_control_plane.autonomous_loop import decide_next_action
     from rct_control_plane.llm_provider import OllamaProvider

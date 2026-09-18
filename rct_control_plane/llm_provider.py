@@ -111,3 +111,50 @@ def get_default_provider() -> LLMProvider:
             return OpenRouterProvider()
         logger.warning("DELENTIA_LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is unset; falling back to Ollama")
     return OllamaProvider()
+
+
+class QuotaExceededError(Exception):
+    """Real quota enforcement (Round 24 Task 31) - the one real,
+    feasible slice of the master doc's HRM Controller "API Quota"
+    dimension this session can actually measure (VRAM/CPU/bandwidth
+    monitoring is out of scope - not claimed)."""
+
+
+@dataclass
+class QuotaTracker:
+    max_calls_per_provider: dict = None
+    _call_counts: dict = None
+
+    def __post_init__(self):
+        if self.max_calls_per_provider is None:
+            self.max_calls_per_provider = {}
+        if self._call_counts is None:
+            self._call_counts = {}
+
+    def check_quota(self, provider_name: str) -> bool:
+        limit = self.max_calls_per_provider.get(provider_name)
+        if limit is None:
+            return True
+        return self._call_counts.get(provider_name, 0) < limit
+
+    def record_call(self, provider_name: str) -> None:
+        self._call_counts[provider_name] = self._call_counts.get(provider_name, 0) + 1
+
+
+class QuotaCheckedProvider(LLMProvider):
+    """Wraps any real LLMProvider with real, in-memory quota
+    enforcement - raises before making a real network call once the
+    configured limit is reached, never after."""
+
+    def __init__(self, inner: LLMProvider, provider_name: str, quota: QuotaTracker):
+        self._inner = inner
+        self._provider_name = provider_name
+        self._quota = quota
+
+    async def complete(self, prompt: str, system_prompt: Optional[str] = None,
+                        temperature: float = 0.7, max_tokens: int = 2048,
+                        json_mode: bool = False) -> str:
+        if not self._quota.check_quota(self._provider_name):
+            raise QuotaExceededError(f"quota exceeded for provider '{self._provider_name}'")
+        self._quota.record_call(self._provider_name)
+        return await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
