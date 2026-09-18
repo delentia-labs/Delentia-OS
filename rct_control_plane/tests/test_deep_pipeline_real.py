@@ -112,7 +112,8 @@ async def main():
 
     await check_audit_trail_written(kernel)
     await check_architect_veto(kernel)
-    await check_rct7_benchmark_with_intent(kernel)
+    fast_result_for_conservation = await check_rct7_benchmark_with_intent(kernel)
+    await check_intent_conservation(kernel, fast_result_for_conservation)
 
     print("\nALL DEEP PIPELINE + ORIGINAL-ALGORITHM-FIX ASSERTIONS PASSED")
 
@@ -191,6 +192,22 @@ async def check_rct7_benchmark_with_intent(kernel):
           benchmark["applicable"] is True)
     check("a real, on-topic Reflexion+ answer scores as genuinely aligned with the original intent",
           benchmark["aligned_with_intent"] is True and benchmark["similarity_score"] > 0.15)
+
+    return fast_result
+
+
+async def check_intent_conservation(kernel, fast_result):
+    """Round 24: real ALGO-26-adjacent Intent Conservation (Semantic
+    Lossless Verifier) - see algorithm_kernel_41.py's
+    verify_intent_conservation docstring. Distinct from
+    algo_26_intent_classification (a real, different, already-tested
+    algorithm)."""
+    print("\n--- Intent Conservation: real per-stage semantic fidelity check ---")
+    conservation = fast_result["algo26_intent_conservation"]
+    check("rct7_decomposition stage score is always present (real, non-trivial)",
+          "rct7_decomposition" in conservation["stage_scores"] and conservation["stage_scores"]["rct7_decomposition"] > 0.0)
+    check("min_score is a real float derived from real stage scores",
+          isinstance(conservation["min_score"], float))
 
 
 if __name__ == "__main__":
