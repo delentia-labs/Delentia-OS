@@ -16,9 +16,20 @@ from mcp.server.mcpserver import MCPServer
 
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.sandbox import run_sandboxed
+from rct_control_plane.nodal_assembly import assemble
+from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
+
+# Real allowlist mapping a JSON-safe node name to the kernel method it
+# invokes. This is a security boundary (MCP tool args are untrusted
+# JSON, never arbitrary Python callables) - extend deliberately per
+# reviewed node, not open-ended.
+_ALLOWED_ASSEMBLY_NODES = {
+    "algo_05_graphrag": lambda k, q: (k.algo_05_graphrag, (q,), {}),
+    "algo_17_graph_traversal": lambda k, q: (k.algo_17_graph_traversal, ([], []), {"operation": "stats"}),
+}
 
 
 @mcp.tool()
@@ -41,6 +52,22 @@ async def delentia_run_sandboxed_command(command: str, timeout_seconds: float = 
         "stdout": result.stdout, "stderr": result.stderr, "exit_code": result.exit_code,
         "timed_out": result.timed_out, "blocked_reason": result.blocked_reason,
     }
+
+
+@mcp.tool()
+async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
+    """Real Nodal Assembly: dispatch the named real kernel algorithms
+    concurrently, merge their real results into one synthesized answer.
+    node_names must be from the real allowlist (not arbitrary method
+    names) - this is a security boundary, not a convenience shortcut."""
+    nodes = []
+    for name in node_names:
+        if name not in _ALLOWED_ASSEMBLY_NODES:
+            return {"error": f"'{name}' is not an allowed assembly node"}
+        fn, args, kwargs = _ALLOWED_ASSEMBLY_NODES[name](_kernel, query)
+        nodes.append((name, fn, args, kwargs))
+    answer = await assemble(query, nodes, ChainMerger(), AnswerSynthesizer())
+    return {"answer": answer.answer, "confidence": answer.confidence, "chains_used": answer.chains_used}
 
 
 if __name__ == "__main__":

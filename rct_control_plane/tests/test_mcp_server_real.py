@@ -29,3 +29,11 @@ def test_process_intent_tool_real_call():
     assert payload["phase_1_ingestion"]["jitna_verified"] is True
     assert "jitna_packet_id" in payload["phase_1_ingestion"]
     assert payload["phase_3_4_routing_and_execution"]["path"] == "fast"
+
+
+def test_assemble_nodes_mcp_tool():
+    result = asyncio.run(mcp.call_tool("delentia_assemble_nodes", {
+        "query": "graph stats check", "node_names": ["algo_17_graph_traversal"],
+    }))
+    payload = json.loads(result.content[0].text)
+    assert "answer" in payload
