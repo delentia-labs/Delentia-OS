@@ -300,9 +300,11 @@ class AlgorithmKernel41:
 
     @property
     def _jitna_keypair(self) -> JITNAKeypair:
+        # Round 21: canonical jitna_protocol.py, not the deprecated
+        # wire_protocol.py (see that module's own deprecation docstring).
         if self._jitna_keypair_lazy is None:
-            from rct_control_plane.wire_protocol import JITNAKeypair
-            self._jitna_keypair_lazy = JITNAKeypair.generate()
+            from rct_control_plane.jitna_protocol import generate_keypair
+            self._jitna_keypair_lazy = generate_keypair()
         return self._jitna_keypair_lazy
 
     @property
@@ -1133,17 +1135,22 @@ class AlgorithmKernel41:
         records a real ALGO-25 delta block AND issues a real Layer 10
         RS256 JWT "receipt" token for this processed intent.
         """
-        from rct_control_plane.wire_protocol import JITNAPacket, sign_packet, verify_packet
+        # Round 21: canonical jitna_protocol.py (RFC-001 v2.0 wire format),
+        # not the deprecated wire_protocol.py.
+        from rct_control_plane.jitna_protocol import JITNAPacket, JITNAMessageType, sign_packet, verify_packet
         from rct_control_plane.enterprise_hardening import CircuitBreaker, CircuitOpenError, issue_jwt
 
         t_start = time.perf_counter()
 
         # Phase 1: real Layer 1 JITNA packet - signed, then verified
         # round-trip, proving the signature is genuinely checkable, not
-        # merely attached.
+        # merely attached. Genome.py's I/D/Delta/A/R/M semantic content
+        # lives inside `payload` (the canonical envelope's intent-language
+        # slot), per the Round 21 canonicalization decision.
         jitna_packet = JITNAPacket(
-            intent=intent, data={}, delta={}, authorization=1.0,
-            resource={"pipeline": "deep"}, memory={"kernel_version": self.version},
+            source_agent_id="kernel", target_agent_id="deep_pipeline",
+            message_type=JITNAMessageType.INTENT_REQUEST.value,
+            payload={"intent": intent, "kernel_version": self.version},
         )
         signed_packet = sign_packet(jitna_packet, self._jitna_keypair)
         packet_verified = verify_packet(signed_packet, self._jitna_keypair.public_key_raw())
@@ -1167,7 +1174,7 @@ class AlgorithmKernel41:
             session_id="deep_pipeline", change_description=f"processed intent: {intent[:80]}",
         )
         receipt_token = issue_jwt(
-            {"sender_fingerprint": signed_packet.sender_fingerprint, "delta_id": delta_result["delta_id"]},
+            {"sender_fingerprint": signed_packet.metadata["sender_fingerprint"], "delta_id": delta_result["delta_id"]},
             self._rs256_keypair, expires_in_seconds=3600,
         )
 
@@ -1178,7 +1185,7 @@ class AlgorithmKernel41:
             "phase_1_ingestion": {
                 "intent_length": len(intent),
                 "jitna_signed": True, "jitna_verified": packet_verified,
-                "jitna_sender_fingerprint": signed_packet.sender_fingerprint,
+                "jitna_sender_fingerprint": signed_packet.metadata["sender_fingerprint"],
             },
             "phase_2_fdia_gate": {
                 "fdia_score": pipeline_result["fdia_score"],

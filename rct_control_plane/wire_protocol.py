@@ -31,6 +31,21 @@ tamper-detection. It does NOT implement a literal custom network
 transport (no raw socket/QUIC handling) — packets are meant to be sent
 over whatever transport the caller already has (HTTP body, WebSocket
 message, etc.), the same way JWTs or signed webhooks work in practice.
+
+DEPRECATED as of Round 21 (2026-09-16+): this module's I/D/Delta/A(=
+Authorization)/R(=Resource)/M packet was this session's own reinvention
+of JITNA, built before a deep audit found 5 OTHER real, pre-existing
+JITNA implementations across the workspace — including
+`rct_control_plane/jitna_protocol.py` (already committed on `main`,
+implementing the more complete RFC-001 v2.0 wire format) and the
+original philosophical spec ("The JITNA Genome.py", where A=Action/
+Artifact and R=Reflection, NOT Authorization/Resource as used here).
+
+`jitna_protocol.py` is now canonical. This file's real, working Ed25519
+signing/verification/fingerprint/replay-protection logic is preserved
+here (not deleted, per Zero-Delete Policy) and was the direct basis for
+`jitna_protocol.py`'s own signing functions (Task 1, Round 21) — but new
+code should import from `jitna_protocol` instead of this module.
 """
 from __future__ import annotations
 
