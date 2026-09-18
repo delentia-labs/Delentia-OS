@@ -559,6 +559,20 @@ class AlgorithmKernel41:
             state_id=f"mee-{int(time.time() * 1000)}", namespace="mee", key="kernel_default",
             value=self._mee_session_default.to_dict(),
         )
+
+        # Round 21 Phase 4 Task 10: real Delta-compressed history via the
+        # already-real DeltaEngine (Genome.py's "Delta over Rebuild"),
+        # in addition to Task 9's full-snapshot save above.
+        from rct_control_plane.algo_25_delta_block import DeltaBlock, DeltaType
+        prior_state = getattr(self, "_last_mee_state_snapshot", {})
+        new_state = self._mee_session_default.to_dict()
+        diff = self._delta_engine.compute_delta(prior_state, new_state)
+        self._delta_engine.store_delta(DeltaBlock(
+            session_id="mee_growth", timestamp=time.time(), delta_type=DeltaType.STATE_CHANGE,
+            diff=diff, source="algo_07_mee",
+        ))
+        self._last_mee_state_snapshot = new_state
+
         return record.to_dict()
 
     # =========================================================================

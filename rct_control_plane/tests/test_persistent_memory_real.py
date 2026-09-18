@@ -23,3 +23,16 @@ def test_mee_growth_state_survives_a_real_kernel_restart():
     assert kernel2._mee_session_default.g == pytest.approx(g_after_step, abs=1e-6), (
         "a fresh kernel instance must resume the REAL persisted G, not reset to 1.0"
     )
+
+
+def test_mee_state_changes_are_really_delta_compressed():
+    kernel = AlgorithmKernel41()
+    kernel.algo_07_mee(growth_signal=0.9)
+    kernel.algo_07_mee(growth_signal=0.85)
+    kernel.algo_07_mee(growth_signal=0.95)
+
+    deltas = kernel._delta_engine.get_session_deltas(session_id="mee_growth")
+    assert len(deltas) >= 3, "each real MEE step must produce a real, separately-stored delta block"
+
+    stats = kernel._delta_engine.get_stats()
+    assert stats["total_deltas"] >= 3
