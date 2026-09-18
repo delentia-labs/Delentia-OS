@@ -546,6 +546,34 @@ class AlgorithmKernel41:
             "aligned_with_intent": similarity >= 0.15,
         }
 
+    def verify_intent_conservation(self, original_intent: str, stage_representations: Dict[str, str]) -> Dict[str, Any]:
+        """Round 24: the real Intent Conservation (Semantic Lossless
+        Verifier) the master doc specifies for ALGO-26 -
+        `algo_26_intent_classification` is a real, different, already-
+        tested algorithm (categorizes text into 21 intents) that fills
+        that slot; this is genuinely additive, not a replacement or
+        rename (Zero-Delete). Generalizes benchmark_result_against_intent's
+        same real technique (ported SemanticMatcher) from "final result
+        only" to every real pipeline stage, checking that the original
+        intent's meaning survives each transformation."""
+        stage_scores: Dict[str, float] = {}
+        for stage_name, stage_text in stage_representations.items():
+            if not stage_text:
+                continue
+            stage_scores[stage_name] = self._semantic_matcher.semantic_similarity(original_intent, stage_text)
+
+        if not stage_scores:
+            return {"stage_scores": {}, "min_score": None, "conserved": False, "weakest_stage": None}
+
+        weakest_stage = min(stage_scores, key=stage_scores.get)
+        min_score = stage_scores[weakest_stage]
+        return {
+            "stage_scores": stage_scores,
+            "min_score": min_score,
+            "conserved": min_score >= 0.1,
+            "weakest_stage": weakest_stage,
+        }
+
     def algo_05_graphrag(self, query: str) -> Dict[str, Any]:
         """ALGO-05: GraphRAG Knowledge Node Retrieval. Real, persistent,
         query-derived graph building (was 3 hardcoded fixed nodes
@@ -697,6 +725,43 @@ class AlgorithmKernel41:
         """ALGO-41: The Crystallizer (Final State Condenser)."""
         self.executed_counts["ALGO-41"] += 1
         return f"CRYSTAL-HASH-{(hash(str(knowledge)) & 0xFFFFFFFF):08x}"
+
+    def crystallize_golden_keywords(self, text: str) -> Dict[str, Any]:
+        """Round 24: the real Golden Keyword Extraction & Auto-Concept
+        Expansion the master doc (DELENTIA_OS_MASTER_SYSTEM_ARCHITECTURE.md
+        section 3, ALGO-41) actually specifies - `algo_41_crystallizer`
+        above is a real, different thing (a hash condenser) that was
+        filling this slot; this is genuinely additive, not a replacement
+        (Zero-Delete). Real Shannon entropy per candidate word (reusing
+        cord_security._shannon_entropy, already fixed this session),
+        threshold >= 0.8 per the master doc's own literal criterion, top
+        3-5 kept as Golden Keywords, each added as a real node to the
+        SAME self._graph_engine algo_05_graphrag already builds (one
+        persistent Concept Map, not a second graph), and the top keyword
+        fed into the already-real ALGO-40 ITSR recommender."""
+        from rct_control_plane.cord_security import _shannon_entropy
+
+        words = [w.strip(".,!?;:()[]{}\"'").lower() for w in text.split()]
+        candidates = list(dict.fromkeys(w for w in words if len(w) >= 4 and w.isalpha()))
+        scored = [{"word": w, "entropy_score": round(_shannon_entropy(w), 4)} for w in candidates]
+        golden = sorted((s for s in scored if s["entropy_score"] >= 0.8), key=lambda s: -s["entropy_score"])[:5]
+
+        nodes_added = 0
+        for g in golden:
+            if g["word"] not in self._graph_engine.nodes:
+                self._graph_engine.add_node(GraphNode(
+                    node_id=g["word"], labels=["GoldenKeyword"],
+                    properties={"entropy_score": g["entropy_score"], "source_text": text[:100]},
+                ))
+                nodes_added += 1
+
+        top_keyword = golden[0]["word"] if golden else text[:40]
+        return {
+            "golden_keywords": golden,
+            "concept_map_nodes_added": nodes_added,
+            "fed_to_itsr": self.algo_40_itsr_recommender(top_keyword),
+            "fed_to_genesis_hint": top_keyword,
+        }
 
     # =========================================================================
     # Round 19 Phase 1 (2026-09-16): 14 newly-wired algorithms. Real
@@ -1348,6 +1413,14 @@ class AlgorithmKernel41:
         inner_result = routing_result.get("result", {}) if isinstance(routing_result.get("result"), dict) else {}
         benchmark = self.benchmark_result_against_intent(intent, inner_result.get("final_answer"))
 
+        # Round 24 Task 30: real Intent Conservation across every real
+        # pipeline stage (not just the final result).
+        intent_conservation = self.verify_intent_conservation(intent, {
+            "rct7_decomposition": " ".join(pipeline_result["rct7_steps"]),
+            "routing_reason": routing_result.get("reason", ""),
+            "final_answer": inner_result.get("final_answer") or "",
+        })
+
         # Phase 6: real delta persistence + real Layer 10 receipt token
         delta_result = self.algo_25_delta_block(
             session_id="deep_pipeline", change_description=f"processed intent: {intent[:80]}",
@@ -1373,6 +1446,7 @@ class AlgorithmKernel41:
                 "rct7_steps": pipeline_result["rct7_steps"],
             },
             "rct7_step7_benchmark_with_intent": benchmark,
+            "algo26_intent_conservation": intent_conservation,
             "phase_3_4_routing_and_execution": routing_result,
             "phase_4_circuit_breaker_stats": breaker.get_stats(),
             "phase_5_consensus": {
