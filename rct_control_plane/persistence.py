@@ -120,11 +120,55 @@ CREATE TABLE IF NOT EXISTS memories (
     last_accessed  TEXT
 );
 
+-- RCTDB unification (Round 23 Phase 11): experiments/experiment_runs
+-- close the last conceptual RCTDB collection with zero prior real
+-- implementation (whitepapers/01_foundation/chapters/Chapter03).
+CREATE TABLE IF NOT EXISTS experiments (
+    id           TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    description  TEXT NOT NULL DEFAULT '',
+    created_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS experiment_runs (
+    id             TEXT PRIMARY KEY,
+    experiment_id  TEXT NOT NULL,
+    timestamp      TEXT NOT NULL,
+    algorithm_id   TEXT NOT NULL,
+    metrics        TEXT NOT NULL DEFAULT '{}',
+    jitna_state    TEXT NOT NULL DEFAULT '{}',
+    FOREIGN KEY(experiment_id) REFERENCES experiments(id) ON DELETE CASCADE
+);
+
+-- RCTDB unification: architect_decisions as a dedicated collection
+-- (was previously folded into the generic audit_trail only).
+CREATE TABLE IF NOT EXISTS architect_decisions (
+    id               TEXT PRIMARY KEY,
+    decision_type    TEXT NOT NULL,
+    description      TEXT NOT NULL DEFAULT '',
+    jitna_before     TEXT NOT NULL DEFAULT '{}',
+    jitna_after      TEXT NOT NULL DEFAULT '{}',
+    linked_intent_id TEXT,
+    created_at       TEXT NOT NULL
+);
+
+-- Session-scoped scheduling (Round 23 Phase 12 Task 27).
+CREATE TABLE IF NOT EXISTS reminders (
+    id           TEXT PRIMARY KEY,
+    namespace    TEXT NOT NULL,
+    fire_at      REAL NOT NULL,
+    goal         TEXT NOT NULL,
+    created_at   TEXT NOT NULL,
+    fired        INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_intents_user   ON intents(user_id);
 CREATE INDEX IF NOT EXISTS idx_intents_type   ON intents(intent_type);
 CREATE INDEX IF NOT EXISTS idx_states_ns_key  ON states(namespace, key);
 CREATE INDEX IF NOT EXISTS idx_audit_entity   ON audit_trail(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_memories_namespace ON memories(namespace);
+CREATE INDEX IF NOT EXISTS idx_experiment_runs_experiment ON experiment_runs(experiment_id);
+CREATE INDEX IF NOT EXISTS idx_reminders_fire_at ON reminders(fire_at, fired);
 """
 
 
@@ -361,6 +405,110 @@ class ControlPlanePersistence:
                 (now, memory_id),
             )
 
+    # ------------------------------------------------------------------
+    # Experiments / experiment runs (Round 23 Phase 11 Task 23)
+    # ------------------------------------------------------------------
+
+    def save_experiment(self, experiment_id: str, name: str, description: str = "") -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO experiments (id, name, description, created_at) VALUES (?, ?, ?, ?)",
+                (experiment_id, name, description, now),
+            )
+
+    def save_experiment_run(
+        self, run_id: str, experiment_id: str, algorithm_id: str,
+        metrics: Dict[str, Any], jitna_state: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO experiment_runs
+                   (id, experiment_id, timestamp, algorithm_id, metrics, jitna_state)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (run_id, experiment_id, now, algorithm_id, json.dumps(metrics), json.dumps(jitna_state or {})),
+            )
+
+    def get_experiment_runs(self, experiment_id: str) -> List[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT * FROM experiment_runs WHERE experiment_id = ? ORDER BY timestamp ASC",
+                (experiment_id,),
+            ).fetchall()
+        return [_row_to_dict(r) for r in rows]
+
+    def compare_experiment_runs(self, experiment_id: str) -> Dict[str, Any]:
+        runs = self.get_experiment_runs(experiment_id)
+        if len(runs) < 2:
+            return {}
+        first_metrics, last_metrics = runs[0]["metrics"], runs[-1]["metrics"]
+        comparison: Dict[str, Any] = {}
+        for key, first_value in first_metrics.items():
+            if key in last_metrics and isinstance(first_value, (int, float)) and isinstance(last_metrics[key], (int, float)):
+                comparison[key] = {
+                    "first": first_value, "last": last_metrics[key],
+                    "delta": last_metrics[key] - first_value,
+                }
+        return comparison
+
+    # ------------------------------------------------------------------
+    # Architect decisions (Round 23 Phase 11 Task 24)
+    # ------------------------------------------------------------------
+
+    def save_architect_decision(
+        self, decision_id: str, decision_type: str, description: str,
+        jitna_before: Dict[str, Any], jitna_after: Dict[str, Any],
+        linked_intent_id: Optional[str] = None,
+    ) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO architect_decisions
+                   (id, decision_type, description, jitna_before, jitna_after, linked_intent_id, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (decision_id, decision_type, description, json.dumps(jitna_before), json.dumps(jitna_after),
+                 linked_intent_id, now),
+            )
+
+    def list_architect_decisions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT * FROM architect_decisions ORDER BY created_at DESC LIMIT ?", (limit,),
+            ).fetchall()
+        return [_row_to_dict(r) for r in rows]
+
+    # ------------------------------------------------------------------
+    # Reminders / scheduling (Round 23 Phase 12 Task 27)
+    # ------------------------------------------------------------------
+
+    def save_reminder(self, reminder_id: str, namespace: str, fire_at: float, goal: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO reminders (id, namespace, fire_at, goal, created_at, fired) VALUES (?, ?, ?, ?, ?, 0)",
+                (reminder_id, namespace, fire_at, goal, now),
+            )
+
+    def get_due_reminders(self, now: float, namespace: Optional[str] = None) -> List[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            if namespace:
+                rows = conn.execute(
+                    "SELECT * FROM reminders WHERE fire_at <= ? AND fired = 0 AND namespace = ?", (now, namespace),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM reminders WHERE fire_at <= ? AND fired = 0", (now,),
+                ).fetchall()
+        return [_row_to_dict(r) for r in rows]
+
+    def mark_reminder_fired(self, reminder_id: str) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("UPDATE reminders SET fired = 1 WHERE id = ?", (reminder_id,))
+
 
 # ===========================================================================
 # Async implementation (requires aiosqlite)
@@ -466,7 +614,7 @@ class AsyncControlPlanePersistence:
 def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
     d = dict(row)
     # Decode JSON columns
-    for col in ("metadata", "errors", "value", "changes", "context"):
+    for col in ("metadata", "errors", "value", "changes", "context", "metrics", "jitna_state", "jitna_before", "jitna_after"):
         if col in d and isinstance(d[col], str):
             try:
                 d[col] = json.loads(d[col])
