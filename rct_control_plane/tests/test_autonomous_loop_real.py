@@ -45,3 +45,21 @@ def test_autonomous_loop_real_tool_call_end_to_end():
 
     recent = persistence.recent_audit(limit=10)
     assert any(row["entity_type"] == "autonomous_loop_step" and row["actor"] == "test_loop" for row in recent)
+
+
+def test_autonomous_loop_pauses_for_approval_on_medium_risk_command():
+    from rct_control_plane.autonomous_loop import AutonomousLoop
+    from rct_control_plane.persistence import ControlPlanePersistence
+    from rct_control_plane.mcp_server import mcp
+
+    persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+    loop = AutonomousLoop(mcp_server=mcp, persistence=persistence, max_iterations=3, namespace="test_approval_loop")
+
+    result = asyncio.run(loop.run(
+        "Run the exact shell command 'git push origin main' using the sandboxed command tool."
+    ))
+
+    assert result["stopped_reason"] == "pending_approval", f"expected a pending_approval halt; got steps={result['steps']}"
+    pending_steps = [s for s in result["steps"] if s["tool_result"] and s["tool_result"].get("pending_approval")]
+    assert len(pending_steps) >= 1
+    assert "git push" in pending_steps[0]["tool_result"]["command"]

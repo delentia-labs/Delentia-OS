@@ -24,6 +24,31 @@ _DENYLISTED_PREFIXES = [
 ]
 _MAX_OUTPUT_BYTES = 1_000_000  # 1 MB
 
+# Round 23 Phase 12 Task 26: a real middle tier between "run it" and
+# "silently block it" - commands with real, irreversible external
+# effects (pushing code, installing packages, downloading from the
+# network) pause for real human/Architect approval rather than either
+# executing unattended or being denied outright. Mirrors the same
+# philosophy as the FDIA Architect Veto (A_FDIA=0 pauses/blocks rather
+# than guessing) applied to the loop's own tool dispatch.
+_MEDIUM_RISK_PREFIXES = [
+    "git push", "git reset --hard", "pip install", "npm install",
+    "curl ", "wget ",
+]
+
+
+def classify_command_risk(command: str) -> str:
+    """Returns "denied" (matches _DENYLISTED_PREFIXES), "needs_approval"
+    (matches _MEDIUM_RISK_PREFIXES), or "safe"."""
+    stripped = command.strip().lower()
+    for prefix in _DENYLISTED_PREFIXES:
+        if stripped.startswith(prefix.lower()):
+            return "denied"
+    for prefix in _MEDIUM_RISK_PREFIXES:
+        if stripped.startswith(prefix.lower()):
+            return "needs_approval"
+    return "safe"
+
 
 @dataclass
 class SandboxResult:

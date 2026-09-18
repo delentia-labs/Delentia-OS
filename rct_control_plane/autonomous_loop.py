@@ -147,6 +147,22 @@ class AutonomousLoop:
 
             tool_name = decision["tool_name"]
             tool_args = decision.get("tool_args") or {}
+
+            # Round 23 Phase 12 Task 26: real approval-gate for
+            # medium-risk sandboxed commands - halt BEFORE dispatch,
+            # never execute the command while pending.
+            if tool_name == "delentia_run_sandboxed_command":
+                from rct_control_plane.sandbox import classify_command_risk
+                risk = classify_command_risk(tool_args.get("command", ""))
+                if risk == "needs_approval":
+                    step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args,
+                                     tool_result={"pending_approval": True, "command": tool_args.get("command", "")},
+                                     llm_reasoning=decision["reasoning"])
+                    history.append(step)
+                    self._persist_step(step)
+                    stopped_reason = "pending_approval"
+                    break
+
             try:
                 raw_result = await self._mcp.call_tool(tool_name, tool_args)
                 tool_result = json.loads(raw_result.content[0].text)
