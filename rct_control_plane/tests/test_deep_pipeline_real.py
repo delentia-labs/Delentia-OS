@@ -110,7 +110,27 @@ async def main():
     check("ALGO-40 genuinely varies its recommendation by real domain input",
           tech1["domain_matched"] != tech2["domain_matched"])
 
+    await check_audit_trail_written(kernel)
+
     print("\nALL DEEP PIPELINE + ORIGINAL-ALGORITHM-FIX ASSERTIONS PASSED")
+
+
+async def check_audit_trail_written(kernel):
+    """Round 21 Phase 1 Task 3: every process_intent_deep_pipeline() call
+    must leave a real, queryable row in the kernel's own
+    ControlPlanePersistence - the 'log who issued commands' requirement,
+    using already-real infra (persistence.py) instead of new code."""
+    print("\n--- Audit trail: every deep-pipeline call is really logged ---")
+    result = await kernel.process_intent_deep_pipeline("document the audit trail feature")
+    intent_id = result["phase_1_ingestion"]["jitna_packet_id"]
+    row = kernel._persistence.get_intent(intent_id)
+    check("a real intent row exists in ControlPlanePersistence after the call", row is not None)
+    check("the real row's actor matches this run's real JITNA sender_fingerprint",
+          row is not None and row.get("user_id") == result["phase_1_ingestion"]["jitna_sender_fingerprint"])
+
+    recent = kernel._persistence.recent_audit(limit=5)
+    check("a real audit_trail row was also appended for this call",
+          any(a.get("entity_id") == intent_id for a in recent))
 
 
 if __name__ == "__main__":

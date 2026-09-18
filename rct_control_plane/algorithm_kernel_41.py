@@ -281,6 +281,17 @@ class AlgorithmKernel41:
 
         self._diffusion_engine = DiffusionEngine(DiffusionConfig())
 
+        # Round 21 Phase 1 Task 3: real audit trail via the already-real
+        # ControlPlanePersistence (persistence.py) - previously
+        # instantiated only by api.py, never by this kernel, so every
+        # process_intent_deep_pipeline() call was unaccountable (nothing
+        # recorded who issued it). Explicit db_path: the class's own
+        # default points at the LIVE rct_control_plane.db this session
+        # must never write to (it's edited live in the user's parallel
+        # session) - a separate real file here avoids that collision.
+        from rct_control_plane.persistence import ControlPlanePersistence
+        self._persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+
         # Layer 1 / Layer 10: real keypairs, LAZY (not generated here).
         # A real, reproducible crash was found 2026-09-16: generating
         # Ed25519 + RSA keys eagerly in __init__, on top of this
@@ -1155,6 +1166,27 @@ class AlgorithmKernel41:
         signed_packet = sign_packet(jitna_packet, self._jitna_keypair)
         packet_verified = verify_packet(signed_packet, self._jitna_keypair.public_key_raw())
 
+        # Real audit trail (Task 3): who issued this, verifiably, via the
+        # kernel's own already-real ControlPlanePersistence - previously
+        # wired to nothing. save_intent() gives a queryable record;
+        # append_audit() writes the dedicated audit_trail row.
+        self._persistence.save_intent(
+            intent_id=signed_packet.packet_id,
+            user_id=signed_packet.metadata["sender_fingerprint"],
+            intent_type="deep_pipeline",
+            goal=intent,
+            user_tier="KERNEL",
+            metadata={"kernel_version": self.version},
+            is_valid=packet_verified,
+            errors=[],
+        )
+        self._persistence.append_audit(
+            entity_type="jitna_packet", entity_id=signed_packet.packet_id,
+            action="process_intent_deep_pipeline",
+            actor=signed_packet.metadata["sender_fingerprint"],
+            changes={"intent": intent[:200], "verified": packet_verified},
+        )
+
         # Phase 1-2: Ingestion, FDIA gate, real RCT-7 decomposition (sync)
         pipeline_result = self.process_intent_full_pipeline(intent)
 
@@ -1186,6 +1218,7 @@ class AlgorithmKernel41:
                 "intent_length": len(intent),
                 "jitna_signed": True, "jitna_verified": packet_verified,
                 "jitna_sender_fingerprint": signed_packet.metadata["sender_fingerprint"],
+                "jitna_packet_id": signed_packet.packet_id,
             },
             "phase_2_fdia_gate": {
                 "fdia_score": pipeline_result["fdia_score"],
