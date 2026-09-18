@@ -21,7 +21,7 @@ from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
 from rct_control_plane.autonomous_loop import AutonomousLoop
 from rct_control_plane.agent_profile import delegate_to_profile
 from rct_control_plane.agent_memory import MemoryType
-from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders
+from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders, schedule_self_evolution
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
@@ -166,6 +166,16 @@ async def delentia_verify_intent_conservation(original_intent: str, stage_repres
     named pipeline stage's text still carry the original intent's real
     meaning, using the ported SemanticMatcher."""
     return _kernel.verify_intent_conservation(original_intent, stage_representations)
+
+
+@mcp.tool()
+async def delentia_schedule_self_evolution(interval_seconds: float = 3600.0) -> dict:
+    """Schedules a real periodic ALGO-08 self-evolution cycle (Round 25).
+    Fires via delentia_check_reminders like any other reminder, but is
+    dispatched directly as a real algorithm call, not routed through an
+    LLM-driven loop."""
+    reminder_id = schedule_self_evolution(_kernel, interval_seconds)
+    return {"reminder_id": reminder_id}
 
 
 if __name__ == "__main__":
