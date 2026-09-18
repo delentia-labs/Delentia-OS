@@ -2,11 +2,9 @@
 Autonomous Reasoning Loop (Round 22 Phase 7) — a real decide->act->observe
 cycle over the kernel's own MCP tool registry.
 
-Reuses algo_09_reflexion_plus.py's already-proven real Ollama call
-pattern (/api/generate, format="json") rather than inventing a new LLM
-call convention here; Phase 10 (Task 22) later swaps this for the
-pluggable LLMProvider abstraction without changing this module's loop
-logic.
+Round 22 Phase 10 Task 22: uses the pluggable LLMProvider abstraction
+(defaults to OllamaProvider via get_default_provider()) instead of a
+direct httpx call, so this loop works against any registered backend.
 """
 from __future__ import annotations
 
@@ -14,14 +12,12 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-
-import httpx
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from rct_control_plane.persistence import ControlPlanePersistence
 
-DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-DEFAULT_MODEL = "qwen2.5:7b"
+if TYPE_CHECKING:
+    from rct_control_plane.llm_provider import LLMProvider
 
 
 @dataclass
@@ -55,9 +51,11 @@ async def decide_next_action(
     goal: str,
     history: List[LoopStep],
     available_tools: List[Dict[str, Any]],
-    llm_url: str = DEFAULT_OLLAMA_URL,
-    model: str = DEFAULT_MODEL,
+    llm_provider: Optional["LLMProvider"] = None,
 ) -> Dict[str, Any]:
+    from rct_control_plane.llm_provider import get_default_provider
+    provider = llm_provider or get_default_provider()
+
     tools_desc = "\n".join(
         f"- {t['name']}: {t['description']} (args schema: {t.get('input_schema', {})})"
         for t in available_tools
@@ -82,14 +80,7 @@ OR, if the goal is already achieved or no tool call is needed:
 {{"action": "finish", "reasoning": "<why>", "final_answer": "<your answer to the goal>"}}
 """
 
-    async with httpx.AsyncClient(timeout=90.0) as client:
-        response = await client.post(
-            f"{llm_url}/api/generate",
-            json={"model": model, "prompt": prompt, "stream": False, "format": "json",
-                  "options": {"temperature": 0.3}},
-        )
-        response.raise_for_status()
-        raw_text = response.json()["response"]
+    raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
 
     decision = _extract_json(raw_text)
     if decision is None or "action" not in decision:
