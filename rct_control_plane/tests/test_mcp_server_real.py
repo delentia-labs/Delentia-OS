@@ -60,3 +60,14 @@ def test_remember_and_recall_mcp_tools():
     result = asyncio.run(mcp.call_tool("delentia_recall", {"query": "kernel default namespace"}))
     payload = json.loads(result.content[0].text)
     assert any("default namespace test fact" in m["content"] for m in payload["memories"])
+
+
+def test_schedule_and_check_reminder_mcp_tools():
+    schedule_result = asyncio.run(mcp.call_tool("delentia_schedule_reminder", {
+        "goal": "Say hi, no tool needed.", "fire_in_seconds": 0,
+    }))
+    reminder_id = json.loads(schedule_result.content[0].text)["reminder_id"]
+
+    check_result = asyncio.run(mcp.call_tool("delentia_check_reminders", {}))
+    fired = json.loads(check_result.content[0].text)["fired"]
+    assert any(f["reminder_id"] == reminder_id for f in fired)

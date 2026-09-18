@@ -21,6 +21,7 @@ from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
 from rct_control_plane.autonomous_loop import AutonomousLoop
 from rct_control_plane.agent_profile import delegate_to_profile
 from rct_control_plane.agent_memory import MemoryType
+from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
@@ -106,6 +107,24 @@ async def delentia_recall(query: str, limit: int = 5) -> dict:
     ranked by real semantic similarity to the query."""
     memories = await _kernel._agent_memory.recall(query, limit=limit)
     return {"memories": memories}
+
+
+@mcp.tool()
+async def delentia_schedule_reminder(goal: str, fire_in_seconds: float) -> dict:
+    """Schedule a real, session-scoped reminder that runs a real
+    AutonomousLoop for `goal` once it becomes due. Session-local, not a
+    cron/calendar system - call delentia_check_reminders to actually
+    fire due ones."""
+    reminder_id = schedule_reminder(_kernel, goal, fire_in_seconds)
+    return {"reminder_id": reminder_id}
+
+
+@mcp.tool()
+async def delentia_check_reminders() -> dict:
+    """Poll for due reminders and really run each one's goal through a
+    real AutonomousLoop, marking each fired only after a real result."""
+    results = await check_and_fire_due_reminders(_kernel)
+    return {"fired": results}
 
 
 if __name__ == "__main__":
