@@ -107,10 +107,24 @@ CREATE TABLE IF NOT EXISTS audit_trail (
     created_at   TEXT NOT NULL
 );
 
+-- General-purpose agent memory (Round 22 Phase 9)
+CREATE TABLE IF NOT EXISTS memories (
+    id             TEXT PRIMARY KEY,
+    namespace      TEXT NOT NULL,
+    memory_type    TEXT NOT NULL,
+    content        TEXT NOT NULL,
+    context        TEXT NOT NULL DEFAULT '{}',
+    importance     REAL NOT NULL DEFAULT 0.5,
+    created_at     TEXT NOT NULL,
+    accessed_count INTEGER NOT NULL DEFAULT 0,
+    last_accessed  TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_intents_user   ON intents(user_id);
 CREATE INDEX IF NOT EXISTS idx_intents_type   ON intents(intent_type);
 CREATE INDEX IF NOT EXISTS idx_states_ns_key  ON states(namespace, key);
 CREATE INDEX IF NOT EXISTS idx_audit_entity   ON audit_trail(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_memories_namespace ON memories(namespace);
 """
 
 
@@ -303,6 +317,50 @@ class ControlPlanePersistence:
             ).fetchall()
         return [_row_to_dict(r) for r in rows]
 
+    # ------------------------------------------------------------------
+    # Memories (Round 22 Phase 9 — general-purpose agent memory)
+    # ------------------------------------------------------------------
+
+    def save_memory(
+        self,
+        memory_id: str,
+        namespace: str,
+        memory_type: str,
+        content: str,
+        context: Optional[Dict[str, Any]] = None,
+        importance: float = 0.5,
+    ) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """INSERT INTO memories
+                   (id, namespace, memory_type, content, context, importance, created_at, accessed_count, last_accessed)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)""",
+                (memory_id, namespace, memory_type, content, json.dumps(context or {}), importance, now),
+            )
+
+    def list_memories(self, namespace: str, memory_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            if memory_type:
+                rows = conn.execute(
+                    "SELECT * FROM memories WHERE namespace = ? AND memory_type = ?",
+                    (namespace, memory_type),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM memories WHERE namespace = ?", (namespace,),
+                ).fetchall()
+        return [_row_to_dict(r) for r in rows]
+
+    def touch_memory(self, memory_id: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "UPDATE memories SET accessed_count = accessed_count + 1, last_accessed = ? WHERE id = ?",
+                (now, memory_id),
+            )
+
 
 # ===========================================================================
 # Async implementation (requires aiosqlite)
@@ -408,7 +466,7 @@ class AsyncControlPlanePersistence:
 def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
     d = dict(row)
     # Decode JSON columns
-    for col in ("metadata", "errors", "value", "changes"):
+    for col in ("metadata", "errors", "value", "changes", "context"):
         if col in d and isinstance(d[col], str):
             try:
                 d[col] = json.loads(d[col])
