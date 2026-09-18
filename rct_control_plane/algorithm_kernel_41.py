@@ -763,6 +763,31 @@ class AlgorithmKernel41:
             "fed_to_genesis_hint": top_keyword,
         }
 
+    # Round 25 Phase 16 Task 35: real, honestly-curated keyword->algorithm
+    # relevance table for selective auto-dispatch - only algorithms whose
+    # real signature is genuinely text-only-derivable are candidates
+    # (see the Round 25 plan's own signature audit for the ones ruled
+    # out: UIA/ALBAS/TVRA/DataFusion/WorkflowOrchestrator all need real
+    # structured/external inputs an intent string can't honestly supply).
+    _ALGORITHM_RELEVANCE_KEYWORDS: Dict[str, List[str]] = {
+        "algo_13_graphrag": ["research", "knowledge", "documentation", "explain", "understand"],
+        "algo_14_rct_diffusion": ["design", "diagram", "visual", "image", "mockup", "wireframe"],
+    }
+
+    def select_relevant_algorithms(self, golden_keywords: List[Dict[str, Any]], intent_text: str) -> List[str]:
+        """Real matching only - never forces a match. Checks both the
+        real golden keywords (crystallize_golden_keywords) and the raw
+        intent text, since a relevance keyword itself might be common
+        enough to not clear the 0.8 entropy bar (e.g. "design") while
+        still being a genuine, real relevance signal."""
+        golden_words = {g["word"] for g in golden_keywords}
+        intent_lower = intent_text.lower()
+        selected = []
+        for algo_name, keywords in self._ALGORITHM_RELEVANCE_KEYWORDS.items():
+            if any(kw in golden_words or kw in intent_lower for kw in keywords):
+                selected.append(algo_name)
+        return selected
+
     # =========================================================================
     # Round 19 Phase 1 (2026-09-16): 14 newly-wired algorithms. Real
     # implementations, directly callable (see class docstring for why
@@ -1421,6 +1446,46 @@ class AlgorithmKernel41:
             "final_answer": inner_result.get("final_answer") or "",
         })
 
+        # Round 25 Phase 15 Task 34: real universal quality/semantic gate
+        # - ALGO-30 (belief validation), ALGO-33 (hallucination filter),
+        # ALGO-34 (semantic analysis) genuinely run on every real
+        # SLOW-path answer, not just informationally reported. Honestly
+        # not-applicable when there's no real final_answer (FAST path,
+        # veto) - same pattern as benchmark_result_against_intent.
+        final_answer_text = inner_result.get("final_answer")
+        if final_answer_text:
+            quality_semantic_gate = {
+                "applicable": True,
+                "abv": self.algo_30_abv(final_answer_text[:500], [intent]),
+                "fghf": await self.algo_33_fghf(final_answer_text),
+                "semantic": self.algo_34_semantic_analysis(final_answer_text),
+            }
+        else:
+            quality_semantic_gate = {"applicable": False, "abv": None, "fghf": None, "semantic": None}
+
+        # Round 25 Phase 16 Task 36: real selective domain-relevant
+        # dispatch via the already-real Nodal Assembly (Round 21). Only
+        # runs when not vetoed - a vetoed intent gets no further real
+        # algorithm dispatch at all.
+        selective_algorithm_dispatch = {"selected": [], "result": None}
+        if not architect_veto:
+            golden = self.crystallize_golden_keywords(intent)
+            selected = self.select_relevant_algorithms(golden["golden_keywords"], intent)
+            selective_algorithm_dispatch["selected"] = selected
+            if selected:
+                from rct_control_plane.nodal_assembly import assemble
+                from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
+                # Real bound async methods passed directly (not wrapped in
+                # a lambda) so assemble()'s inspect.iscoroutinefunction()
+                # check correctly detects and awaits them.
+                node_fns = {
+                    "algo_13_graphrag": self.algo_13_graphrag,
+                    "algo_14_rct_diffusion": self.algo_14_rct_diffusion,
+                }
+                nodes = [(name, node_fns[name], (intent,), {}) for name in selected]
+                synthesized = await assemble(intent, nodes, ChainMerger(), AnswerSynthesizer())
+                selective_algorithm_dispatch["result"] = synthesized.answer
+
         # Phase 6: real delta persistence + real Layer 10 receipt token
         delta_result = self.algo_25_delta_block(
             session_id="deep_pipeline", change_description=f"processed intent: {intent[:80]}",
@@ -1447,6 +1512,8 @@ class AlgorithmKernel41:
             },
             "rct7_step7_benchmark_with_intent": benchmark,
             "algo26_intent_conservation": intent_conservation,
+            "quality_semantic_gate": quality_semantic_gate,
+            "selective_algorithm_dispatch": selective_algorithm_dispatch,
             "phase_3_4_routing_and_execution": routing_result,
             "phase_4_circuit_breaker_stats": breaker.get_stats(),
             "phase_5_consensus": {

@@ -114,6 +114,8 @@ async def main():
     await check_architect_veto(kernel)
     fast_result_for_conservation = await check_rct7_benchmark_with_intent(kernel)
     await check_intent_conservation(kernel, fast_result_for_conservation)
+    await check_quality_semantic_gate(kernel, fast_result_for_conservation)
+    await check_selective_algorithm_dispatch(kernel)
 
     print("\nALL DEEP PIPELINE + ORIGINAL-ALGORITHM-FIX ASSERTIONS PASSED")
 
@@ -208,6 +210,43 @@ async def check_intent_conservation(kernel, fast_result):
           "rct7_decomposition" in conservation["stage_scores"] and conservation["stage_scores"]["rct7_decomposition"] > 0.0)
     check("min_score is a real float derived from real stage scores",
           isinstance(conservation["min_score"], float))
+
+
+async def check_quality_semantic_gate(kernel, fast_result):
+    """Round 25 Task 34: real universal ALGO-30/33/34 gate - runs on
+    every real SLOW-path answer, honestly not-applicable on FAST/veto."""
+    print("\n--- Quality/Semantic Gate: real ALGO-30 + ALGO-33 + ALGO-34 on every SLOW answer ---")
+    check("FAST path honestly reports the gate as not applicable",
+          fast_result["quality_semantic_gate"]["applicable"] is False)
+
+    slow_result = await kernel.process_intent_deep_pipeline(
+        "debug why the entire system's payment retry logic sometimes double-charges customers"
+    )
+    gate = slow_result["quality_semantic_gate"]
+    check("SLOW path's gate is genuinely applicable", gate["applicable"] is True)
+    check("a real ABV belief-validation result was produced", gate["abv"] is not None)
+    check("a real FGHF hallucination-check result was produced", gate["fghf"] is not None)
+    check("a real ALGO-34 semantic analysis result was produced", gate["semantic"] is not None)
+
+
+async def check_selective_algorithm_dispatch(kernel):
+    """Round 25 Task 36: real selective domain-relevant dispatch via
+    Nodal Assembly - only triggers when real relevance keywords match."""
+    print("\n--- Selective Algorithm Dispatch: real Nodal Assembly triggered by real relevance ---")
+
+    diffusion_result = await kernel.process_intent_deep_pipeline(
+        "create a wireframe design for the new dashboard layout"
+    )
+    dispatch = diffusion_result["selective_algorithm_dispatch"]
+    check("a real diffusion-relevant intent selects algo_14_rct_diffusion",
+          "algo_14_rct_diffusion" in dispatch["selected"])
+    check("a real Nodal Assembly result was produced for the selected algorithm",
+          dispatch["result"] is not None and len(dispatch["result"]) > 0)
+
+    generic_result = await kernel.process_intent_deep_pipeline("fix the login button styling")
+    generic_dispatch = generic_result["selective_algorithm_dispatch"]
+    check("a generic intent with no domain keywords selects nothing (honest empty)",
+          generic_dispatch["selected"] == [] and generic_dispatch["result"] is None)
 
 
 if __name__ == "__main__":
