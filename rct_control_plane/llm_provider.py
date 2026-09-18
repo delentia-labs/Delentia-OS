@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Optional
 
 import httpx
@@ -48,23 +49,51 @@ class OllamaProvider(LLMProvider):
             return response.json()["response"]
 
 
+@dataclass
+class CompatProfile:
+    """Real gateway-quirk handling (Round 23 Phase 12 Task 28) — mirrors
+    DeepSeek Harness's own real, researched supportsDeveloperRole/
+    maxTokensField flags: different OpenAI-compatible gateways reject
+    different request shapes for the exact same logical request."""
+    supports_developer_role: bool = True
+    max_tokens_field: str = "max_tokens"
+
+
+def _build_openrouter_payload(
+    model: str, prompt: str, system_prompt: Optional[str], temperature: float,
+    max_tokens: int, json_mode: bool, compat: CompatProfile,
+) -> dict:
+    """Pure payload construction, extracted so Task 28's compat behavior
+    is unit-testable without a real network call."""
+    messages = []
+    if system_prompt:
+        if compat.supports_developer_role:
+            messages.append({"role": "system", "content": system_prompt})
+        else:
+            prompt = f"{system_prompt}\n\n{prompt}"
+    messages.append({"role": "user", "content": prompt})
+    payload = {"model": model, "messages": messages, "temperature": temperature,
+               compat.max_tokens_field: max_tokens}
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+    return payload
+
+
 class OpenRouterProvider(LLMProvider):
-    def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-sonnet-5"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-sonnet-5",
+                 compat: Optional[CompatProfile] = None):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
             raise ValueError("OpenRouterProvider requires OPENROUTER_API_KEY (arg or env var)")
         self.model = model
+        self.compat = compat or CompatProfile()
 
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-        payload = {"model": self.model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
-        if json_mode:
-            payload["response_format"] = {"type": "json_object"}
+        payload = _build_openrouter_payload(
+            self.model, prompt, system_prompt, temperature, max_tokens, json_mode, self.compat,
+        )
         async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",

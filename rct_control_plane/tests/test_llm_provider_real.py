@@ -34,6 +34,25 @@ def test_get_default_provider_defaults_to_ollama(monkeypatch):
     assert isinstance(provider, OllamaProvider)
 
 
+def test_compat_profile_changes_the_real_constructed_payload():
+    from rct_control_plane.llm_provider import CompatProfile, _build_openrouter_payload
+
+    default_payload = _build_openrouter_payload(
+        "anthropic/claude-sonnet-5", "hello", None, 0.7, 2048, False, CompatProfile(),
+    )
+    assert "max_tokens" in default_payload
+    assert "max_completion_tokens" not in default_payload
+
+    custom_payload = _build_openrouter_payload(
+        "anthropic/claude-sonnet-5", "hello", "be nice", 0.7, 2048, False,
+        CompatProfile(max_tokens_field="max_completion_tokens", supports_developer_role=False),
+    )
+    assert "max_completion_tokens" in custom_payload
+    assert "max_tokens" not in custom_payload
+    assert not any(m["role"] == "system" for m in custom_payload["messages"])
+    assert "be nice" in custom_payload["messages"][0]["content"]
+
+
 def test_autonomous_loop_accepts_injected_provider():
     from rct_control_plane.autonomous_loop import decide_next_action
     from rct_control_plane.llm_provider import OllamaProvider
