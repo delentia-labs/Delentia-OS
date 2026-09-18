@@ -10,6 +10,8 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
+from rct_control_plane.agent_memory import AgentMemory
+
 
 @dataclass
 class AgentProfile:
@@ -17,6 +19,7 @@ class AgentProfile:
     mee_session_key: str
     persistence_namespace: str
     created_at: float
+    agent_memory: AgentMemory
 
 
 def get_or_create_profile(kernel, profile_name: str) -> AgentProfile:
@@ -24,8 +27,11 @@ def get_or_create_profile(kernel, profile_name: str) -> AgentProfile:
     # Real, already-existing MEEEngine method - ensures the profile's
     # own isolated MEESession exists without creating a second engine.
     kernel._mee_engine.get_or_create(key)
+    # Round 22 Phase 9 Task 19: each profile gets its own real AgentMemory
+    # namespace, isolated the same way MEE growth state is isolated.
+    memory = AgentMemory(namespace=key, persistence=kernel._persistence)
     return AgentProfile(profile_name=profile_name, mee_session_key=key,
-                         persistence_namespace=key, created_at=time.time())
+                         persistence_namespace=key, created_at=time.time(), agent_memory=memory)
 
 
 async def delegate_to_profile(kernel, profile_name: str, sub_goal: str, max_iterations: int = 3) -> dict:

@@ -20,6 +20,7 @@ from rct_control_plane.nodal_assembly import assemble
 from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
 from rct_control_plane.autonomous_loop import AutonomousLoop
 from rct_control_plane.agent_profile import delegate_to_profile
+from rct_control_plane.agent_memory import MemoryType
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
@@ -89,6 +90,22 @@ async def delentia_delegate(profile_name: str, sub_goal: str, max_iterations: in
     AutonomousLoop. Multiple profiles can be delegated to concurrently
     with genuinely independent state."""
     return await delegate_to_profile(_kernel, profile_name, sub_goal, max_iterations)
+
+
+@mcp.tool()
+async def delentia_remember(content: str, memory_type: str = "fact") -> dict:
+    """Store a real memory in the kernel's default namespace, recallable
+    later via delentia_recall (semantic ranking, not exact match)."""
+    memory_id = await _kernel._agent_memory.store(content, MemoryType(memory_type))
+    return {"memory_id": memory_id}
+
+
+@mcp.tool()
+async def delentia_recall(query: str, limit: int = 5) -> dict:
+    """Recall real memories from the kernel's default namespace,
+    ranked by real semantic similarity to the query."""
+    memories = await _kernel._agent_memory.recall(query, limit=limit)
+    return {"memories": memories}
 
 
 if __name__ == "__main__":

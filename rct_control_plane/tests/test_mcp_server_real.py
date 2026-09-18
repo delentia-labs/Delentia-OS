@@ -53,3 +53,10 @@ def test_delegate_mcp_tool():
     }))
     payload = json.loads(result.content[0].text)
     assert payload["profile_name"] == "mcp_test_profile"
+
+
+def test_remember_and_recall_mcp_tools():
+    asyncio.run(mcp.call_tool("delentia_remember", {"content": "The kernel's default namespace test fact", "memory_type": "fact"}))
+    result = asyncio.run(mcp.call_tool("delentia_recall", {"query": "kernel default namespace"}))
+    payload = json.loads(result.content[0].text)
+    assert any("default namespace test fact" in m["content"] for m in payload["memories"])

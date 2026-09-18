@@ -210,6 +210,23 @@ class AlgorithmKernel41:
         from rct_control_plane.persistence import ControlPlanePersistence
         self._persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
 
+        # Round 22 Phase 9 Task 19: general-purpose memory, kernel-default
+        # namespace (separate from any per-profile namespace - see
+        # agent_profile.py's get_or_create_profile).
+        from rct_control_plane.agent_memory import AgentMemory
+        self._agent_memory = AgentMemory(namespace="kernel_default", persistence=self._persistence)
+
+        # Round 22: restores RCT-7's original Step 7 "Benchmark with
+        # Intent" (see Docs-Obsidian/Slumdog_Brain/02_NightShift_Philo/
+        # RCT7_Mental_OS.md) - comparing the final result against the
+        # original intent was never implemented; algo_04_rct7's own
+        # "Step 7" is a cryptographic Attestation hash, a genuinely
+        # different (also valuable) thing. Reuses the same ported
+        # SemanticMatcher Phase 9's AgentMemory already uses for real
+        # recall ranking.
+        from rct_control_plane.semantic_matcher import SemanticMatcher
+        self._semantic_matcher = SemanticMatcher()
+
         self._mee_engine = MEEEngine()
         restored_mee_row = self._persistence.get_state(namespace="mee", key="kernel_default")
         if restored_mee_row is not None:
@@ -495,6 +512,29 @@ class AlgorithmKernel41:
             f"Step 6 (Sandbox Execution): compilation succeeded, priority={getattr(intent_obj.priority, 'value', intent_obj.priority)}",
             f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(str(result.intent.dict()) if hasattr(result.intent, 'dict') else str(intent_obj)) & 0xFFFFFFFF):08x}",
         ]
+
+    def benchmark_result_against_intent(self, intent: str, result_text: Optional[str]) -> Dict[str, Any]:
+        """Restores RCT-7's original philosophical Step 7 "Benchmark with
+        Intent" (Docs-Obsidian/Slumdog_Brain/02_NightShift_Philo/
+        RCT7_Mental_OS.md: "ตรวจสอบผลลัพธ์ว่าตรงตาม Core Intent เดิม
+        หรือไม่") - a real check that the FINAL result actually answers
+        what was originally asked, not just that intermediate steps ran.
+        This is genuinely different from algo_04_rct7's own "Step 7
+        (Attestation & Proof)", which is a cryptographic fingerprint of
+        the COMPILED intent, not a fidelity check on the eventual result
+        - both are real and both are useful, but only this one closes
+        the actual "reverse thinking" verification loop the philosophy
+        describes. Only meaningful when a real natural-language result
+        exists (the SLOW/LLM-backed path); the FAST path's result is a
+        routing decision, not an artifact to benchmark."""
+        if not result_text:
+            return {"applicable": False, "reason": "no natural-language result to benchmark (e.g. FAST path or veto)"}
+        similarity = self._semantic_matcher.semantic_similarity(intent, result_text)
+        return {
+            "applicable": True,
+            "similarity_score": similarity,
+            "aligned_with_intent": similarity >= 0.15,
+        }
 
     def algo_05_graphrag(self, query: str) -> Dict[str, Any]:
         """ALGO-05: GraphRAG Knowledge Node Retrieval. Real, persistent,
@@ -1224,16 +1264,66 @@ class AlgorithmKernel41:
         # Phase 1-2: Ingestion, FDIA gate, real RCT-7 decomposition (sync)
         pipeline_result = self.process_intent_full_pipeline(intent)
 
+        # Round 22: real A_FDIA Architect Veto - restores the original
+        # design (Docs-Obsidian/Slumdog_Brain/03_Excalidraw_Canvas/
+        # FDIA_Safety_Gate_Nodes.md: "A_FDIA=0 -> F=0.00 immediately";
+        # 04_Work_Breakdown_and_Roadmap/FEATURE_DEEP_PROFILING_RCT7_LORA_
+        # ROADMAP.md's own acceptance test: "when A=0 the system must
+        # reject and VETO immediately, 100% of the time"). A was
+        # hardcoded to 1.0 at every real call site until now, so this
+        # gate never actually gated anything - fdia_score was purely
+        # informational. CORD's real injection/entropy engine (fixed
+        # this round - see cord_security.py) is the automated proxy for
+        # "was this genuinely authorized by the responsible architect,
+        # or is it a hijack attempt smuggled past them": a REJECTED
+        # verdict forces A=0.
+        from rct_control_plane.cord_security import CORDEngine, CORDVerdict
+        cord_result = CORDEngine().check(intent)
+        architect_veto = cord_result.verdict == CORDVerdict.REJECTED
+        real_a = 0.0 if architect_veto else 1.0
+        fdia_score = self.algo_01_fdia(
+            pipeline_result["fdia_inputs"]["data_quality"],
+            pipeline_result["fdia_inputs"]["intent_precision"],
+            real_a,
+        )
+
         # Phase 3-4: real cognitive routing + real downstream dispatch,
-        # routed through a real per-strategy circuit breaker.
+        # routed through a real per-strategy circuit breaker - but only
+        # when the Architect Veto did NOT trigger. A vetoed intent halts
+        # here; it never reaches real execution.
         breaker_key = "fast_slow_router"
         if breaker_key not in self._circuit_breakers:
             self._circuit_breakers[breaker_key] = CircuitBreaker(failure_threshold=5, recovery_timeout_seconds=30.0, name=breaker_key)
         breaker = self._circuit_breakers[breaker_key]
-        try:
-            routing_result = await breaker.acall(self.algo_21_fast_slow_route, intent)
-        except CircuitOpenError as e:
-            routing_result = {"path": "circuit_open", "error": str(e)}
+
+        if architect_veto:
+            routing_result = {
+                "path": "vetoed",
+                "reason": "CORD detected a real safety violation (injection/entropy) - A_FDIA=0, F=0.00, execution halted",
+                "cord_findings": [f.check_type.value for f in cord_result.findings],
+            }
+            # Accountability: a blocked attempt is logged, not silently
+            # dropped - matches this kernel's own "log who issued
+            # commands" requirement, arguably more important for a
+            # rejected action than an approved one.
+            self._persistence.append_audit(
+                entity_type="jitna_packet", entity_id=signed_packet.packet_id,
+                action="ARCHITECT_VETO", actor=signed_packet.metadata["sender_fingerprint"],
+                changes={"intent": intent[:200], "cord_findings": routing_result["cord_findings"]},
+            )
+        else:
+            try:
+                routing_result = await breaker.acall(self.algo_21_fast_slow_route, intent)
+            except CircuitOpenError as e:
+                routing_result = {"path": "circuit_open", "error": str(e)}
+
+        # Round 22: real RCT-7 Step 7 "Benchmark with Intent" - only
+        # meaningful when the routing path actually produced natural-
+        # language text to benchmark (currently Reflexion+; BBA-PCF/MCTR/
+        # FAST/vetoed honestly report not-applicable rather than a
+        # fabricated score).
+        inner_result = routing_result.get("result", {}) if isinstance(routing_result.get("result"), dict) else {}
+        benchmark = self.benchmark_result_against_intent(intent, inner_result.get("final_answer"))
 
         # Phase 6: real delta persistence + real Layer 10 receipt token
         delta_result = self.algo_25_delta_block(
@@ -1255,9 +1345,11 @@ class AlgorithmKernel41:
                 "jitna_packet_id": signed_packet.packet_id,
             },
             "phase_2_fdia_gate": {
-                "fdia_score": pipeline_result["fdia_score"],
+                "fdia_score": fdia_score,
+                "architect_veto": architect_veto,
                 "rct7_steps": pipeline_result["rct7_steps"],
             },
+            "rct7_step7_benchmark_with_intent": benchmark,
             "phase_3_4_routing_and_execution": routing_result,
             "phase_4_circuit_breaker_stats": breaker.get_stats(),
             "phase_5_consensus": {

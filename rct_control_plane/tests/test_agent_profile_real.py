@@ -4,8 +4,11 @@ Real Agent Profile / multi-agent delegation tests — Round 22 Phase 8.
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+import asyncio
+
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.agent_profile import get_or_create_profile
+from rct_control_plane.agent_memory import MemoryType
 
 
 def test_two_profiles_have_independent_mee_growth_state():
@@ -45,3 +48,19 @@ def test_delegate_to_two_profiles_concurrently_stays_independent():
     actors = {row["actor"] for row in recent if row["entity_type"] == "autonomous_loop_step"}
     assert "profile:profile_x" in actors
     assert "profile:profile_y" in actors
+
+
+def test_profile_has_its_own_isolated_agent_memory():
+    kernel = AlgorithmKernel41()
+    profile_a = get_or_create_profile(kernel, "memory_profile_a")
+    profile_b = get_or_create_profile(kernel, "memory_profile_b")
+
+    async def run():
+        await profile_a.agent_memory.store("Profile A's private fact", MemoryType.FACT)
+        results_a = await profile_a.agent_memory.recall("private fact")
+        results_b = await profile_b.agent_memory.recall("private fact")
+        return results_a, results_b
+
+    results_a, results_b = asyncio.run(run())
+    assert len(results_a) >= 1
+    assert len(results_b) == 0, "profile B must not see profile A's real memory"
