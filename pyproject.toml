@@ -35,6 +35,7 @@ dependencies = [
     "rich>=13.7.0",
     "cryptography>=41.0.0",
     "PyJWT>=2.8.0",  # Round 20+: Layer 10 real RS256 JWT issuing (enterprise_hardening.py)
+    "mcp>=2.0.0",  # Round 21 Phase 2: real MCP tool registry (mcp_server.py) - note: mcp 2.x renamed FastMCP to MCPServer
     # Round 19: already importable in this environment (transitive deps of
     # fastapi/uvicorn) and now directly used by several ported algorithm
     # modules (algo_09/11's real Ollama calls, algo_28's connection pool) —
