@@ -262,6 +262,12 @@ class AlgorithmKernel41:
             persistence=self._persistence, delta_engine=self._delta_engine, agent_memory=self._agent_memory,
         )
 
+        # Round 26 Phase 18 Task 39: real, persisted, queryable ground-truth
+        # fact table closing ALGO-33's "ground truth IN A DATABASE" gap
+        # (the existing HallucinationDetector only carries an in-code dict).
+        from rct_control_plane.ground_truth_store import GroundTruthStore
+        self._ground_truth_store = GroundTruthStore()
+
         self._abv_engine = ABVEngine()
         self._semantic_analyzer = SemanticAnalyzer()
         self._timeout_controller = TimeoutController()
@@ -347,6 +353,27 @@ class AlgorithmKernel41:
         self._jitna_keypair_lazy: Optional[JITNAKeypair] = None
         self._rs256_keypair_lazy: Optional[RS256KeyPair] = None
         self._circuit_breakers: Dict[str, CircuitBreaker] = {}
+
+        # Round 26 Phase 20 Task 42: scoped, ADDITIVE capability registry —
+        # NOT a rewrite of this __init__'s existing direct construction
+        # above (Zero-Delete; every self._xxx line above is untouched).
+        # Registers already-constructed real engines under stable names so
+        # a FUTURE round's new capability can look up a dependency via
+        # get_capability() instead of requiring a hand-edit to this
+        # constructor plus every call site that needs it (the friction
+        # Round 25's Task 35-36 selective-dispatch surfaced).
+        from rct_control_plane.capability_registry import CapabilityRegistry
+        self._capability_registry = CapabilityRegistry()
+        self._capability_registry.register("graphrag_engine", lambda: self._graphrag_engine)
+        self._capability_registry.register("vector_engine", lambda: self._vector_engine)
+        self._capability_registry.register("graph_engine", lambda: self._graph_engine)
+        self._capability_registry.register("ground_truth_store", lambda: self._ground_truth_store)
+        self._capability_registry.register("semantic_matcher", lambda: self._semantic_matcher)
+
+    def get_capability(self, name: str) -> Any:
+        """Round 26 Task 42: public wrapper around the additive
+        CapabilityRegistry — see that module's docstring for scope."""
+        return self._capability_registry.get(name)
 
     @property
     def _jitna_keypair(self) -> JITNAKeypair:
@@ -494,11 +521,11 @@ class AlgorithmKernel41:
             errors = "; ".join(result.errors) if getattr(result, "errors", None) else "no recognized intent_type"
             return [
                 f"Step 1 (Observation): {intent[:60]}",
-                f"Step 2 (Deconstruction): could not classify - {errors}",
-                "Step 3 (Invariant Extraction): none extracted (compilation failed)",
-                "Step 4 (Reverse Dependency Tree): not built (compilation failed)",
-                "Step 5 (Multi-Model Synthesis): skipped (compilation failed)",
-                "Step 6 (Sandbox Execution): skipped (compilation failed)",
+                f"Step 2 (Analyze): could not classify - {errors}",
+                "Step 3 (Deconstruct): none extracted (compilation failed)",
+                "Step 4 (Reverse Think): not built (compilation failed)",
+                "Step 5 (Identify Core Intent): skipped (compilation failed)",
+                "Step 6 (Rebuild): skipped (compilation failed)",
                 f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(intent) & 0xFFFFFFFF):08x}",
             ]
 
@@ -512,14 +539,14 @@ class AlgorithmKernel41:
 
         return [
             f"Step 1 (Observation): {intent[:60]}",
-            f"Step 2 (Deconstruction): intent_type={intent_type}, scope={scope_value}",
-            f"Step 3 (Invariant Extraction): {len(constraints)} real constraint(s) extracted"
+            f"Step 2 (Analyze): intent_type={intent_type}, scope={scope_value}",
+            f"Step 3 (Deconstruct): {len(constraints)} real constraint(s) extracted"
             + (f" - {'; '.join(f'{c.constraint_type}{c.operator}{c.value}' for c in constraints[:3])}" if constraints else " - none"),
-            f"Step 4 (Reverse Dependency Tree): risk_profile={risk_value} "
+            f"Step 4 (Reverse Think): risk_profile={risk_value} "
             f"(I-bonus={self._RISK_TO_I_BONUS.get(risk_value, 0.0)}, scope-bonus={self._SCOPE_TO_I_BONUS.get(scope_value, 0.0)})",
-            f"Step 5 (Multi-Model Synthesis): validation {'passed' if (validation and validation.is_valid) else 'flagged'}, "
+            f"Step 5 (Identify Core Intent): validation {'passed' if (validation and validation.is_valid) else 'flagged'}, "
             f"{len(warnings)} warning(s)" + (f" - {'; '.join(warnings[:2])}" if warnings else ""),
-            f"Step 6 (Sandbox Execution): compilation succeeded, priority={getattr(intent_obj.priority, 'value', intent_obj.priority)}",
+            f"Step 6 (Rebuild): compilation succeeded, priority={getattr(intent_obj.priority, 'value', intent_obj.priority)}",
             f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(str(result.intent.dict()) if hasattr(result.intent, 'dict') else str(intent_obj)) & 0xFFFFFFFF):08x}",
         ]
 
@@ -931,6 +958,15 @@ class AlgorithmKernel41:
         import io
         return await self._content_box.save(content_id, version, io.BytesIO(data))
 
+    async def algo_23_convert_content(self, content_id: str, version: int, target_format: str) -> Dict[str, Any]:
+        """ALGO-23 (conversion half, Round 26 Task 38): real Markdown/HTML/
+        JSON/PDF format conversion of already-stored content, closing the
+        master doc's specified capability that the original storage-only
+        port didn't cover. See LocalStorageHandler.convert_content for the
+        real implementation (markdown/reportlab, both already installed)."""
+        self.executed_counts["ALGO-23"] += 1
+        return await self._content_box.convert_content(content_id, version, target_format)
+
     async def algo_34_web_crawl(self, url: str) -> Dict[str, Any]:
         """ALGO-34 (crawling half of SWCAR): real httpx crawler with real
         robots.txt compliance, per-domain rate limiting, and circuit
@@ -1037,6 +1073,17 @@ class AlgorithmKernel41:
         result = await self._hallucination_detector.detect(text)
         return result.__dict__ if hasattr(result, "__dict__") else result
 
+    def algo_33_fghf_verify_against_ground_truth(self, subject: str, predicate: str, claimed_value: str) -> Dict[str, Any]:
+        """ALGO-33 (ground-truth-database half, Round 26 Task 39): real
+        persisted, queryable fact check, closing the master doc's specified
+        "ตรวจเทียบคำตอบกับ Ground Truth ในฐานข้อมูล" (check against ground
+        truth IN A DATABASE) — `algo_33_fghf`'s existing `HallucinationDetector`
+        only carries a small in-code Python dict, not a database. Wired
+        alongside, not replacing, the existing pattern-based check. See
+        GroundTruthStore for the real sqlite-backed implementation."""
+        self.executed_counts["ALGO-33"] += 1
+        return self._ground_truth_store.check_claim(subject, predicate, claimed_value)
+
     async def algo_36_rflh(self, task_id: str, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
         """ALGO-36: RFLH — real few-shot meta-learning (MAML: genuine
         PyTorch autograd gradient descent; embeddings: real content-
@@ -1109,6 +1156,43 @@ class AlgorithmKernel41:
         """ALGO-24 (summary half): aggregate stats across every benchmark
         run so far this kernel session."""
         return self._benchmark_suite.get_summary()
+
+    async def algo_24_humaneval_style_benchmark(self, candidate_solutions: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        """ALGO-24 (HumanEval-STYLE half, Round 26 Task 40): real correctness
+        micro-benchmark closing the gap between the master doc's "GAIA and
+        HumanEval" claim and algo_24_benchmark's real latency-only scope.
+        Honestly a 5-problem micro-benchmark, NOT the official 164-problem
+        HumanEval suite. Each task's candidate solution (or, if none is
+        supplied for a task_id, the built-in real reference solution) is
+        real-executed together with its real assert-based test via the
+        existing sandbox.run_sandboxed - a real pass/fail per task, not a
+        simulated score."""
+        self.executed_counts["ALGO-24"] += 1
+        from rct_control_plane.humaneval_style_tasks import HUMANEVAL_STYLE_TASKS
+        from rct_control_plane.sandbox import run_sandboxed
+        import tempfile
+
+        candidate_solutions = candidate_solutions or {}
+        task_results = []
+        for task in HUMANEVAL_STYLE_TASKS:
+            solution = candidate_solutions.get(task["task_id"], task["reference_solution"])
+            source = f"{solution}\n\n{task['test_code']}\nprint('PASS')\n"
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+                f.write(source)
+                script_path = f.name
+            result = run_sandboxed(f'python "{script_path}"', timeout_seconds=10.0)
+            task_results.append({
+                "task_id": task["task_id"],
+                "passed": result.exit_code == 0,
+                "stderr": result.stderr[:500] if result.exit_code != 0 else "",
+            })
+
+        pass_count = sum(1 for r in task_results if r["passed"])
+        return {
+            "suite": "humaneval-style (N=5 real problems, not the official HumanEval-164)",
+            "task_results": task_results,
+            "pass_rate": pass_count / len(task_results),
+        }
 
     def algo_26_intent_classification(self, text: str, context: Optional[Dict[str, Any]] = None, min_confidence: float = 0.5) -> Dict[str, Any]:
         """ALGO-26: Intent Classification — real pattern/keyword/context/

@@ -158,6 +158,41 @@ class LocalStorageHandler(StorageHandler):
 
         return sorted(versions)
 
+    async def convert_content(self, content_id: str, version: int, target_format: str) -> dict:
+        """Round 26 Phase 18 Task 38: real ALGO-23 format conversion, closing
+        the gap between the master doc's spec ("รองรับการแปลงรูปแบบ Markdown,
+        HTML, JSON, PDF") and this handler's original storage-only scope.
+        Loads real stored content via the existing `load()` and converts it
+        with real, already-installed libraries — `markdown` for HTML,
+        `reportlab` for PDF (both confirmed installed in this environment;
+        no new dependency added). An unsupported format is reported
+        honestly rather than faked."""
+        raw = await self.load(content_id, version)
+        text = raw.decode("utf-8")
+
+        if target_format == "html":
+            import markdown
+            return {"converted": True, "format": "html", "output": markdown.markdown(text)}
+
+        if target_format == "json":
+            import json
+            payload = json.dumps({"content_id": content_id, "version": version, "text": text}, indent=2)
+            return {"converted": True, "format": "json", "output": payload}
+
+        if target_format == "pdf":
+            from reportlab.platypus import SimpleDocTemplate, Paragraph
+            from reportlab.lib.styles import getSampleStyleSheet
+
+            output_path = self._get_content_path(content_id, version).with_suffix(".pdf")
+            doc = SimpleDocTemplate(str(output_path))
+            style = getSampleStyleSheet()["Normal"]
+            story = [Paragraph(paragraph.replace("\n", "<br/>"), style) for paragraph in text.split("\n\n") if paragraph.strip()]
+            doc.build(story)
+            size_bytes = output_path.stat().st_size
+            return {"converted": True, "format": "pdf", "output_path": str(output_path), "size_bytes": size_bytes}
+
+        return {"converted": False, "reason": f"format '{target_format}' not supported"}
+
     async def get_storage_stats(self) -> dict:
         """Get storage statistics"""
         total_size = 0
