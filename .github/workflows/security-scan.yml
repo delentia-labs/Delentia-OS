@@ -64,21 +64,40 @@ jobs:
         # appears to mean.
         run: |
           pip install -r requirements.txt -r requirements-dev.txt
+          # Round 29 Task 64: verified via `importlib.metadata.requires()`
+          # that none of requirements.txt/requirements-dev.txt's own
+          # packages transitively pull in torch/nltk/accelerate - this
+          # job's real scope never installs them, so its pip-audit run
+          # can never see them. setuptools (a bootstrap tool ALWAYS
+          # present) is the one real exception; bumped explicitly here
+          # since this scope has no torch installed to conflict with it
+          # (unlike the full-extras dev environment - see pyproject.toml's
+          # `diffusion` extra comment for that real, separate constraint).
+          pip install "setuptools>=83.0.0"
           pip install pip-audit
 
       - name: CVE scan — real installed environment
-        # continue-on-error: still non-blocking. NOT because packages are
-        # "almost upgraded" (the previous comment's premise was wrong —
-        # the old scan mode wouldn't have caught real issues even after
-        # upgrades) but because a real environment-wide scan on
-        # 2026-09-19 found 178 known vulnerabilities across 25 installed
-        # packages, several of them heavy ML dependencies (torch, pillow,
-        # nltk, starlette) that real algorithm modules (ALGO-14/27/34/36)
-        # depend on for exact behavior — remediating those safely needs a
-        # dedicated round with full-suite verification per upgrade, not a
-        # blocking gate flipped on today. See
-        # DELENTIA_ROUND28_*_SYNTHESIS.md for the full package list and
-        # the Round 29 remediation plan.
+        # Round 29 Task 64: flipped to BLOCKING. Round 28 found 178 real
+        # vulnerabilities across 25 packages in the FULL-extras dev
+        # environment; Round 29 fixed everything reachable (aiohttp,
+        # anyio, cryptography, h2, lxml, lxml-html-clean, mkdocs-material,
+        # msgpack, pillow, pip, pydantic-settings, pygments, pyjwt,
+        # pymdown-extensions, pytest, python-multipart, requests,
+        # soupsieve, starlette, urllib3 - 19 packages closed for real,
+        # verified via full regression suite per group). The 4 that
+        # remain in the full-extras environment (accelerate, nltk, torch,
+        # setuptools) are honestly blocked: accelerate/nltk have NO
+        # upstream fix published yet (fix_versions: [] in real pip-audit
+        # output); torch's fix hit a real Windows path-length install
+        # failure needing the Architect's own system-setting change
+        # first; setuptools's fix conflicts with torch's own declared
+        # ceiling. NONE of those 4 packages are installed in THIS job's
+        # scope (requirements.txt + requirements-dev.txt only, matching
+        # what ci.yml's own test run installs) — verified, not assumed —
+        # so blocking here is honest: this scope should now be clean.
+        # This does NOT mean the full-extras/production ML path is
+        # vulnerability-free; that gap is real and tracked as a Round 30
+        # candidate (extending this scan's scope to the optional extras).
         run: |
           mkdir -p artifacts/security
           pip-audit \
@@ -87,7 +106,6 @@ jobs:
             --output artifacts/security/pip-audit.json \
             --progress-spinner off \
             || (cat artifacts/security/pip-audit.json ; exit 1)
-        continue-on-error: true
 
       - name: Upload CVE report
         uses: actions/upload-artifact@v5
