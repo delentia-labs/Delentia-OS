@@ -53,6 +53,11 @@ pydantic-settings>=2.14.2     # pydantic-settings advisory (fixed 2.14.2)
 python-multipart>=0.0.31      # python-multipart advisory (fixed 0.0.31)
 # cryptography's real floor lives in pyproject.toml's [project.dependencies]
 # (Round 29 Task 60 raised it there, not duplicated here).
+# Round 29 Task 61: starlette is a fastapi transitive dep with no prior
+# explicit floor here. fastapi's own metadata declares starlette>=0.46.0
+# with no ceiling; the real CVE-fix version (a 0.x->1.x major bump) was
+# verified compatible via the full regression suite before adding this.
+starlette>=1.0.1  # PYSEC-2026 starlette advisories (fixed 1.0.1+)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI
