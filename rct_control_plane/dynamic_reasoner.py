@@ -12,6 +12,7 @@ Enforces:
 """
 
 import sys
+import json
 import time
 import asyncio
 from pathlib import Path
@@ -113,43 +114,41 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     else:
         user_prompt_for_slm = intent_clean
 
-    # 5. Native Real-Time Streaming Generation from Local SLM via aiohttp
+    # 5. Native Real-Time Streaming Generation with Pinned Fast SLM (Sub-Second Latency)
     import aiohttp
     streamed_any_token = False
-    models_to_try = ["qwen2.5:7b", "llama3.2:3b", "bonsai-27b:latest", "delentia-os:latest"]
+    pinned_model = "llama3.2:3b"  # 2.0 GB VRAM target, sub-second response on ROG Ally X / Local PC
 
-    for model_name in models_to_try:
-        try:
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "model": model_name,
-                    "messages": [
-                        {"role": "system", "content": DELENTIA_CONSTITUTIONAL_PROMPT},
-                        {"role": "user", "content": user_prompt_for_slm}
-                    ],
-                    "stream": True,
-                    "options": {
-                        "temperature": 0.7,
-                        "num_predict": 1024
-                    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "model": pinned_model,
+                "messages": [
+                    {"role": "system", "content": DELENTIA_CONSTITUTIONAL_PROMPT},
+                    {"role": "user", "content": user_prompt_for_slm}
+                ],
+                "stream": True,
+                "keep_alive": -1,  # Never unload from VRAM to eliminate cold-start latency
+                "options": {
+                    "temperature": 0.7,
+                    "num_predict": 512
                 }
-                async with session.post("http://127.0.0.1:11434/api/chat", json=payload, timeout=aiohttp.ClientTimeout(total=45)) as resp:
-                    if resp.status == 200:
-                        async for line in resp.content:
-                            if not line:
-                                continue
-                            try:
-                                chunk = json.loads(line.decode("utf-8"))
-                                token = chunk.get("message", {}).get("content", "")
-                                if token:
-                                    streamed_any_token = True
-                                    yield {"type": "token", "data": token}
-                            except Exception:
-                                pass
-                        if streamed_any_token:
-                            break
-        except Exception:
-            continue
+            }
+            async with session.post("http://127.0.0.1:11434/api/chat", json=payload, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+                if resp.status == 200:
+                    async for line in resp.content:
+                        if not line:
+                            continue
+                        try:
+                            chunk = json.loads(line.decode("utf-8"))
+                            token = chunk.get("message", {}).get("content", "")
+                            if token:
+                                streamed_any_token = True
+                                yield {"type": "token", "data": token}
+                        except Exception:
+                            pass
+    except Exception:
+        streamed_any_token = False
 
     # 6. Fallback if local SLM didn't stream any tokens
     if not streamed_any_token:
