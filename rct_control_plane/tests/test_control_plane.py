@@ -6,6 +6,7 @@ All public API surfaces with no external I/O dependencies.
 
 import pytest
 from decimal import Decimal
+from pydantic import ValidationError
 
 from rct_control_plane.control_plane_state import (
     ControlPlanePhase,
@@ -250,7 +251,7 @@ class TestIntentSchema:
         assert intent.risk_profile == RiskProfile.LOW
 
     def test_intent_empty_goal_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             IntentObject(
                 goal="",
                 intent_type=IntentType.DEPLOY,
@@ -264,7 +265,7 @@ class TestIntentSchema:
         assert budget.max_time is None
 
     def test_budget_spec_negative_cost_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             BudgetSpec(max_cost_usd=Decimal("-5.00"))
 
     def test_scope_object_target(self):

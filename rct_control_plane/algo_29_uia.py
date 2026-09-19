@@ -131,7 +131,7 @@ class BaseAdapter(abc.ABC):
     async def test_connection(self) -> bool:
         pass
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # noqa: B027 - deliberate optional override, not abstract (unlike the 3 methods above); most adapters have nothing to close
         pass
 
     def record_call(self, success: bool, overhead_ms: float) -> None:

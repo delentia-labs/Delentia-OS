@@ -64,7 +64,7 @@ def test_quota_tracker_blocks_the_real_call_after_limit_reached():
 
     try:
         asyncio.run(provider.complete("Reply with exactly the word: THREE"))
-        assert False, "expected QuotaExceededError on the 3rd real call"
+        raise AssertionError("expected QuotaExceededError on the 3rd real call")
     except QuotaExceededError:
         pass
 

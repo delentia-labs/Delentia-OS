@@ -24,8 +24,11 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from rct_control_plane.persistence import _ReusableConnectionContext
 
 _DEFAULT_DB_PATH = os.environ.get(
     "GROUND_TRUTH_DB_PATH",
@@ -56,23 +59,36 @@ _SEED_FACTS = [
 class GroundTruthStore:
     """Real, persisted, queryable ground-truth fact table."""
 
-    def __init__(self, db_path: str = _DEFAULT_DB_PATH, seed: bool = True) -> None:
+    def __init__(self, db_path: str = _DEFAULT_DB_PATH, seed: bool = True, reuse_connection: bool = False) -> None:
         self.db_path = db_path
-        with sqlite3.connect(self.db_path) as conn:
+        self.reuse_connection = reuse_connection
+        self._cached_conn: Optional[sqlite3.Connection] = None
+        self._conn_lock = threading.Lock()
+        with self._connect() as conn:
             conn.executescript(_SCHEMA_SQL)
         if seed:
             for subject, predicate, value in _SEED_FACTS:
                 self.add_fact(subject, predicate, value)
 
+    def _connect(self):
+        """Round 28 Phase 27 Task 54: same additive, OFF-by-default reuse
+        pattern as persistence.py's ControlPlanePersistence._connect() -
+        see that method's docstring for the full rationale."""
+        if not self.reuse_connection:
+            return sqlite3.connect(self.db_path)
+        if self._cached_conn is None:
+            self._cached_conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        return _ReusableConnectionContext(self._cached_conn, self._conn_lock)
+
     def add_fact(self, subject: str, predicate: str, value: str) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO ground_truth_facts (subject, predicate, value) VALUES (?, ?, ?)",
                 (subject.lower(), predicate.lower(), value),
             )
 
     def check_claim(self, subject: str, predicate: str, claimed_value: str) -> Dict[str, Any]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             row = conn.execute(
                 "SELECT value FROM ground_truth_facts WHERE subject = ? AND predicate = ?",
                 (subject.lower(), predicate.lower()),

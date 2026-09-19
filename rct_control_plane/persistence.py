@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -176,6 +177,32 @@ CREATE INDEX IF NOT EXISTS idx_reminders_fire_at ON reminders(fire_at, fired);
 # Sync implementation (zero extra deps)
 # ===========================================================================
 
+class _ReusableConnectionContext:
+    """Round 28 Phase 27 Task 54: context-manager wrapper around a cached,
+    reused real sqlite3.Connection — commits/rolls back like the normal
+    sqlite3 context-manager protocol, but does NOT close the connection on
+    exit (that's the whole point of reuse). A real threading.Lock
+    serializes callers instead of risking corrupted shared state."""
+
+    def __init__(self, conn: sqlite3.Connection, lock: "threading.Lock") -> None:
+        self._conn = conn
+        self._lock = lock
+
+    def __enter__(self) -> sqlite3.Connection:
+        self._lock.acquire()
+        return self._conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        try:
+            if exc_type is None:
+                self._conn.commit()
+            else:
+                self._conn.rollback()
+        finally:
+            self._lock.release()
+        return False
+
+
 class ControlPlanePersistence:
     """
     Synchronous SQLite persistence for the RCT Control Plane.
@@ -183,9 +210,31 @@ class ControlPlanePersistence:
     Always available — no optional dependencies required.
     """
 
-    def __init__(self, db_path: str = _DEFAULT_DB_PATH) -> None:
+    def __init__(self, db_path: str = _DEFAULT_DB_PATH, reuse_connection: bool = False) -> None:
         self.db_path = db_path
+        self.reuse_connection = reuse_connection
+        self._cached_conn: Optional[sqlite3.Connection] = None
+        self._conn_lock = threading.Lock()
         self._init_schema()
+
+    # ------------------------------------------------------------------
+    # Connection lifecycle (Round 28 Phase 27 Task 54)
+    # ------------------------------------------------------------------
+
+    def _connect(self):
+        """Used everywhere below as `with self._connect() as conn:`,
+        replacing the previous direct `with sqlite3.connect(self.db_path)
+        as conn:` at each call site. Default (`reuse_connection=False`)
+        returns a real, fresh `sqlite3.connect(...)` exactly as before -
+        byte-identical behavior, proven by a real call-counting test. When
+        `reuse_connection=True`, lazily creates ONE real
+        `sqlite3.connect(..., check_same_thread=False)`, cached and reused
+        across every call, guarded by `_ReusableConnectionContext`'s lock."""
+        if not self.reuse_connection:
+            return sqlite3.connect(self.db_path)
+        if self._cached_conn is None:
+            self._cached_conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        return _ReusableConnectionContext(self._cached_conn, self._conn_lock)
 
     # ------------------------------------------------------------------
     # Schema bootstrap
@@ -193,7 +242,7 @@ class ControlPlanePersistence:
 
     def _init_schema(self) -> None:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.executescript(_SCHEMA_SQL)
 
     # ------------------------------------------------------------------
@@ -213,7 +262,7 @@ class ControlPlanePersistence:
         errors: Optional[List[str]] = None,
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT OR REPLACE INTO intents
                    (id, user_id, user_tier, intent_type, goal, metadata,
@@ -234,7 +283,7 @@ class ControlPlanePersistence:
             self._append_audit(conn, "intent", intent_id, "SAVE", user_id, {})
 
     def get_intent(self, intent_id: str) -> Optional[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
                 "SELECT * FROM intents WHERE id = ?", (intent_id,)
@@ -249,7 +298,7 @@ class ControlPlanePersistence:
         limit: int = 50,
         offset: int = 0,
     ) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if user_id:
                 rows = conn.execute(
@@ -276,7 +325,7 @@ class ControlPlanePersistence:
         value: Dict[str, Any],
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT INTO states (id, namespace, key, value, created_at, updated_at)
                    VALUES (?, ?, ?, ?, ?, ?)
@@ -287,7 +336,7 @@ class ControlPlanePersistence:
             )
 
     def get_state(self, namespace: str, key: str) -> Optional[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
                 "SELECT * FROM states WHERE namespace = ? AND key = ?",
@@ -312,7 +361,7 @@ class ControlPlanePersistence:
         reason: Optional[str] = None,
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT OR REPLACE INTO policy_decisions
                    (id, intent_id, user_id, decision, policy_name, reason, created_at)
@@ -332,7 +381,7 @@ class ControlPlanePersistence:
         actor: Optional[str] = None,
         changes: Optional[Dict[str, Any]] = None,
     ) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             self._append_audit(conn, entity_type, entity_id, action, actor, changes or {})
 
     @staticmethod
@@ -353,7 +402,7 @@ class ControlPlanePersistence:
         )
 
     def recent_audit(self, limit: int = 100) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT * FROM audit_trail ORDER BY created_at DESC LIMIT ?",
@@ -375,7 +424,7 @@ class ControlPlanePersistence:
         importance: float = 0.5,
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT INTO memories
                    (id, namespace, memory_type, content, context, importance, created_at, accessed_count, last_accessed)
@@ -384,7 +433,7 @@ class ControlPlanePersistence:
             )
 
     def list_memories(self, namespace: str, memory_type: Optional[str] = None) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if memory_type:
                 rows = conn.execute(
@@ -399,7 +448,7 @@ class ControlPlanePersistence:
 
     def touch_memory(self, memory_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "UPDATE memories SET accessed_count = accessed_count + 1, last_accessed = ? WHERE id = ?",
                 (now, memory_id),
@@ -411,7 +460,7 @@ class ControlPlanePersistence:
 
     def save_experiment(self, experiment_id: str, name: str, description: str = "") -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO experiments (id, name, description, created_at) VALUES (?, ?, ?, ?)",
                 (experiment_id, name, description, now),
@@ -422,7 +471,7 @@ class ControlPlanePersistence:
         metrics: Dict[str, Any], jitna_state: Optional[Dict[str, Any]] = None,
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT OR REPLACE INTO experiment_runs
                    (id, experiment_id, timestamp, algorithm_id, metrics, jitna_state)
@@ -431,7 +480,7 @@ class ControlPlanePersistence:
             )
 
     def get_experiment_runs(self, experiment_id: str) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT * FROM experiment_runs WHERE experiment_id = ? ORDER BY timestamp ASC",
@@ -463,7 +512,7 @@ class ControlPlanePersistence:
         linked_intent_id: Optional[str] = None,
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """INSERT OR REPLACE INTO architect_decisions
                    (id, decision_type, description, jitna_before, jitna_after, linked_intent_id, created_at)
@@ -473,7 +522,7 @@ class ControlPlanePersistence:
             )
 
     def list_architect_decisions(self, limit: int = 50) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT * FROM architect_decisions ORDER BY created_at DESC LIMIT ?", (limit,),
@@ -486,14 +535,14 @@ class ControlPlanePersistence:
 
     def save_reminder(self, reminder_id: str, namespace: str, fire_at: float, goal: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO reminders (id, namespace, fire_at, goal, created_at, fired) VALUES (?, ?, ?, ?, ?, 0)",
                 (reminder_id, namespace, fire_at, goal, now),
             )
 
     def get_due_reminders(self, now: float, namespace: Optional[str] = None) -> List[Dict[str, Any]]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if namespace:
                 rows = conn.execute(
@@ -506,7 +555,7 @@ class ControlPlanePersistence:
         return [_row_to_dict(r) for r in rows]
 
     def mark_reminder_fired(self, reminder_id: str) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute("UPDATE reminders SET fired = 1 WHERE id = ?", (reminder_id,))
 
 

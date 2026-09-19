@@ -486,6 +486,13 @@ class AlgorithmKernel41:
         self._rs256_keypair_lazy: Optional[RS256KeyPair] = None
         self._circuit_breakers: Dict[str, CircuitBreaker] = {}
 
+        # Round 28 Phase 30 Task 57: real structured logging for the
+        # kernel's own lifecycle events (bounded, high-value slice - not
+        # a 48-file print()-to-logging sweep, see Round 29 candidates).
+        from rct_control_plane.logging_config import configure_logging
+        self._logger = configure_logging(name="delentia.kernel")
+        self._logger.info("AlgorithmKernel41 initialized: version=%s", self.version)
+
     def get_capability(self, name: str) -> Any:
         """Round 26 Task 42: public wrapper around the additive
         CapabilityRegistry — see that module's docstring for scope."""
@@ -1706,6 +1713,14 @@ class AlgorithmKernel41:
                 jitna_before={"intent": intent[:200], "A_FDIA": 1},
                 jitna_after={"A_FDIA": 0, "cord_findings": routing_result["cord_findings"]},
                 linked_intent_id=signed_packet.packet_id,
+            )
+            # Round 28 Task 57: a real security-relevant event previously
+            # only reached the database (append_audit/save_architect_
+            # decision above) - never a log stream an ops dashboard could
+            # tail in real time. Additive, doesn't replace either DB call.
+            self._logger.warning(
+                "ARCHITECT_VETO: packet_id=%s cord_findings=%s",
+                signed_packet.packet_id, routing_result["cord_findings"],
             )
         else:
             try:

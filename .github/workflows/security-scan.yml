@@ -52,17 +52,36 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install pip-audit
-        # pip-audit replaces safety v3 which requires a paid API key.
-        # pip-audit is free, maintained by PyPA, and needs no authentication.
-        run: pip install pip-audit
+      - name: Install project + pip-audit
+        # Round 28 Phase 26 Task 52: `pip-audit -r requirements.txt` (the
+        # previous approach) audits requirements.txt's version SPECIFIERS,
+        # not what actually gets installed/runs — verified this really
+        # differs: isolating `aiohttp>=3.9.0` (exactly as declared) into
+        # its own file and auditing it reports clean, while the real
+        # installed aiohttp (3.14.1, resolved from that same specifier)
+        # has 6 known CVEs. Installing for real first and auditing the
+        # actual environment is the only way this scan means what it
+        # appears to mean.
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip install pip-audit
 
-      - name: CVE scan — requirements.txt
-        # continue-on-error: report vulnerabilities but do not block the build.
-        # Remove this once all flagged packages are upgraded.
+      - name: CVE scan — real installed environment
+        # continue-on-error: still non-blocking. NOT because packages are
+        # "almost upgraded" (the previous comment's premise was wrong —
+        # the old scan mode wouldn't have caught real issues even after
+        # upgrades) but because a real environment-wide scan on
+        # 2026-09-19 found 178 known vulnerabilities across 25 installed
+        # packages, several of them heavy ML dependencies (torch, pillow,
+        # nltk, starlette) that real algorithm modules (ALGO-14/27/34/36)
+        # depend on for exact behavior — remediating those safely needs a
+        # dedicated round with full-suite verification per upgrade, not a
+        # blocking gate flipped on today. See
+        # DELENTIA_ROUND28_*_SYNTHESIS.md for the full package list and
+        # the Round 29 remediation plan.
         run: |
           mkdir -p artifacts/security
-          pip-audit -r requirements.txt \
+          pip-audit \
             --desc on \
             --format json \
             --output artifacts/security/pip-audit.json \

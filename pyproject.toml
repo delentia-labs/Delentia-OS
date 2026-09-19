@@ -34,7 +34,7 @@ dependencies = [
     "click>=8.1.0",
     "rich>=13.7.0",
     "cryptography>=41.0.0",
-    "PyJWT>=2.8.0",  # Round 20+: Layer 10 real RS256 JWT issuing (enterprise_hardening.py)
+    "PyJWT>=2.13.0",  # Round 20+: Layer 10 real RS256 JWT issuing (enterprise_hardening.py); floor raised Round 28 Task 53 past real CVEs PYSEC-2026-175/176/177/178/179 (fixed 2.13.0)
     "mcp>=2.0.0",  # Round 21 Phase 2: real MCP tool registry (mcp_server.py) - note: mcp 2.x renamed FastMCP to MCPServer
     # Round 19: already importable in this environment (transitive deps of
     # fastapi/uvicorn) and now directly used by several ported algorithm
@@ -142,7 +142,14 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["F"]
+# Round 28 Task 56: narrow, reviewed bugbear additions - NOT the full "B"
+# category (81 real findings, not individually triaged this round) or a
+# broader E/B/C4/UP/SIM expansion (3178 findings, verified via a real
+# dry-run - too large to safely absorb in one round). These 5 specific
+# codes were each triaged and fixed (or narrowly noqa'd with a reason)
+# in Round 28; see DELENTIA_ROUND28_*_SYNTHESIS.md for the Round 29 plan
+# to work through the rest incrementally.
+select = ["F", "B006", "B011", "B017", "B027", "B033"]
 ignore = [
     "F403",  # star imports
     "F405",  # undefined or defined from star imports

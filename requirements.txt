@@ -6,7 +6,7 @@
 fastapi>=0.104.0,<0.136.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.0.0
-aiohttp>=3.9.0
+aiohttp>=3.14.3  # Round 28 Task 53: floor raised past real CVEs PYSEC-2026-3545/3546/3547 (fixed 3.14.2/3.14.3)
 python-dotenv>=1.0.0
 
 # CLI
@@ -17,13 +17,33 @@ rich>=13.7.0
 pyfiglet>=1.0.2
 
 # Testing
-pytest>=7.4.0
+pytest>=9.0.3  # Round 28 Task 53: floor raised past real CVE PYSEC-2026-1845 (fixed 9.0.3)
 pytest-asyncio>=0.21.0
 pytest-timeout>=2.3.1  # Kill tests hanging >30s — prevents WSL terminal zombie processes
 httpx>=0.25.0  # For TestClient
 
 # Optional: Production deployment
 gunicorn>=21.2.0  # For production WSGI serving
+
+# ── Round 28 Task 53: explicit security floors for transitive deps ──────────
+# These are not directly imported by this project's own code; they're pulled
+# in transitively (by openai/qdrant-client/kaggle/etc.) at versions a real
+# pip-audit scan of the actual installed environment found vulnerable.
+# Declaring an explicit floor here forces a safe resolution regardless of
+# what any future transitive dependency requests.
+requests>=2.33.0    # PYSEC-2026-2275 (fixed 2.33.0)
+urllib3>=2.7.0       # PYSEC-2026-141/142 (fixed 2.7.0)
+# setuptools: PYSEC-2026-3447 (fixed 83.0.0) NOT bumped here - real,
+# verified conflict: torch==2.12.1 declares `setuptools<82`, so >=83.0.0
+# and torch cannot coexist in this environment. Deferred to Round 29,
+# bundled with the broader torch remediation (see the synthesis doc's
+# Round 29 candidate list) rather than force a conflicting resolution.
+anyio>=4.14.2        # CVE-2026-63374/64847 (fixed 4.14.2)
+h2>=4.4.1            # PYSEC-2026-3628 (fixed 4.4.1)
+msgpack>=1.2.1       # PYSEC-2026-3625 (fixed 1.2.1)
+pip>=26.2.0          # PYSEC-2026-3721 (fixed 26.2.0)
+pygments>=2.20.0     # PYSEC-2026-2987 (fixed 2.20.0)
+soupsieve>=2.9.0     # PYSEC-2026-3071/3072, CVE-2026-85999/86000 (fixed 2.9.0)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI

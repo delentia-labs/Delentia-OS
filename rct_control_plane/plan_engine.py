@@ -311,7 +311,7 @@ class PlanEngine:
         """Infer risk profile from intent type and text keywords."""
         systemic_keywords = {
             "deploy", "production", "migrate", "database", "infrastructure",
-            "delete", "drop", "rm", "remove", "destroy", "rollback", "production",
+            "delete", "drop", "rm", "remove", "destroy", "rollback",
             "kubernetes", "docker", "cloud", "aws", "gcp", "azure", "terraform",
         }
         structural_keywords = {

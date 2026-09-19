@@ -170,9 +170,11 @@ if __name__ == "__main__":
             await asyncio.sleep(0.005)
             return True
 
-        def flaky_fn(counter=[0]):
-            counter[0] += 1
-            if counter[0] % 2 == 0:
+        flaky_counter = [0]
+
+        def flaky_fn():
+            flaky_counter[0] += 1
+            if flaky_counter[0] % 2 == 0:
                 raise ValueError("real deliberate failure for the even calls")
             return True
 
