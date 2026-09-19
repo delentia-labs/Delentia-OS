@@ -51,6 +51,8 @@ lxml-html-clean>=0.4.5       # lxml-html-clean advisory (fixed 0.4.5)
 datasets>=5.0.1               # HF datasets advisory (fixed 5.0.1)
 pydantic-settings>=2.14.2     # pydantic-settings advisory (fixed 2.14.2)
 python-multipart>=0.0.31      # python-multipart advisory (fixed 0.0.31)
+# cryptography's real floor lives in pyproject.toml's [project.dependencies]
+# (Round 29 Task 60 raised it there, not duplicated here).
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI

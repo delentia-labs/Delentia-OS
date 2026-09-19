@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import tempfile
 
 from rct_control_plane.ground_truth_store import GroundTruthStore
-from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 
 
 def _store():
@@ -43,10 +42,11 @@ def test_add_fact_persists_and_is_queryable():
     assert result["matches"] is True
 
 
-def test_kernel_algo33_verify_against_ground_truth_wraps_the_real_store():
-    kernel = AlgorithmKernel41()
-    result = kernel.algo_33_fghf_verify_against_ground_truth("einstein", "birth_year", "1879")
+def test_kernel_algo33_verify_against_ground_truth_wraps_the_real_store(shared_kernel):
+    # Round 29 Phase 33 Task 65: migrated onto shared_kernel - reviewed
+    # safe: read-only queries against pre-seeded, unchanging facts.
+    result = shared_kernel.algo_33_fghf_verify_against_ground_truth("einstein", "birth_year", "1879")
     assert result["matches"] is True
 
-    wrong = kernel.algo_33_fghf_verify_against_ground_truth("einstein", "birth_year", "1900")
+    wrong = shared_kernel.algo_33_fghf_verify_against_ground_truth("einstein", "birth_year", "1900")
     assert wrong["matches"] is False

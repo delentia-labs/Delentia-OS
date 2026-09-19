@@ -17,7 +17,6 @@ import asyncio
 import tempfile
 
 from rct_control_plane.algo_23_content_box import LocalStorageHandler
-from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 
 
 def _handler():
@@ -79,12 +78,16 @@ def test_convert_to_unsupported_format_is_honest_not_fabricated():
     assert "not supported" in result["reason"]
 
 
-def test_kernel_algo23_convert_content_wraps_the_real_content_box():
-    kernel = AlgorithmKernel41()
-    save_result = asyncio.run(kernel.algo_23_content_box("kernel-doc1", 1, b"# Title\n\nBody text."))
+def test_kernel_algo23_convert_content_wraps_the_real_content_box(shared_kernel):
+    # Round 29 Phase 33 Task 65: migrated onto shared_kernel - reviewed
+    # safe: content_id "kernel-doc1" is unique to this test, and the
+    # underlying content_box storage path is already shared across all
+    # kernel instances regardless (same real filesystem directory), so
+    # sharing the kernel object changes nothing about isolation here.
+    save_result = asyncio.run(shared_kernel.algo_23_content_box("kernel-doc1", 1, b"# Title\n\nBody text."))
     assert save_result["checksum"].startswith("sha256:")
 
-    convert_result = asyncio.run(kernel.algo_23_convert_content("kernel-doc1", 1, target_format="html"))
+    convert_result = asyncio.run(shared_kernel.algo_23_convert_content("kernel-doc1", 1, target_format="html"))
 
     assert convert_result["converted"] is True
     assert "<h1>Title</h1>" in convert_result["output"]

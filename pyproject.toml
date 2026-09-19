@@ -33,7 +33,7 @@ dependencies = [
     "uvicorn[standard]>=0.29",
     "click>=8.1.0",
     "rich>=13.7.0",
-    "cryptography>=41.0.0",
+    "cryptography>=48.0.1",  # Round 29 Task 60: floor raised past real PYSEC-2026 advisories (fixed 48.0.1); only real usages are stable hazmat primitives (Ed25519/RSA/serialization), verified via full suite
     "PyJWT>=2.13.0",  # Round 20+: Layer 10 real RS256 JWT issuing (enterprise_hardening.py); floor raised Round 28 Task 53 past real CVEs PYSEC-2026-175/176/177/178/179 (fixed 2.13.0)
     "mcp>=2.0.0",  # Round 21 Phase 2: real MCP tool registry (mcp_server.py) - note: mcp 2.x renamed FastMCP to MCPServer
     # Round 19: already importable in this environment (transitive deps of

@@ -11,6 +11,10 @@ import time
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.lora_router")
+
 # Automatically detect if we are running inside pytest or CI to prevent heavy model loading
 _IS_TESTING = "PYTEST_CURRENT_TEST" in os.environ or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
 
@@ -55,23 +59,23 @@ class LoRARouter:
         if _IS_TESTING:
             # During pytest, force MOCK mode to prevent heavyweight model loading/network calls
             self.mock_mode = True
-            print("[MOCK] LoRA Router: Running in CI/pytest MOCK mode (PYTEST_CURRENT_TEST detected).")
+            logger.info("LoRA Router: Running in CI/pytest MOCK mode (PYTEST_CURRENT_TEST detected).")
         elif _HAS_TRANSFORMERS:
             self.mock_mode = False
             self.adapter_hf_id = "Delentia/delentia-lora-router-v0.4"
             self.router_model_id = str(self.adapter_path) if self.adapter_path.exists() else self.adapter_hf_id
-            print(f"[INFO] LoRA Router: Initialized in PEFT mode. Adapter: {self.router_model_id}")
+            logger.info("LoRA Router: Initialized in PEFT mode. Adapter: %s", self.router_model_id)
         else:
             reason = "transformers not installed"
-            print(f"[WARNING] LoRA Router: Running in MOCK mode ({reason}).")
+            logger.warning("LoRA Router: Running in MOCK mode (%s).", reason)
 
     def load_model(self) -> None:
         """Loads sequence classification model and tokenizer if not in mock mode."""
         if self.mock_mode:
-            print("[MOCK] LoRA Router: Initialized classification head for Router.")
+            logger.info("LoRA Router: Initialized classification head for Router.")
             return
 
-        print("[INFO] LoRA Router: Loading sequence classification model...")
+        logger.info("LoRA Router: Loading sequence classification model...")
         try:
             # Classification head loaded on CPU fallback or GPU auto configuration
             # Load tokenizer from base or adapter (if adapter has tokenizer configs)
@@ -93,9 +97,9 @@ class LoRARouter:
             base_model.config.pad_token_id = tokenizer.pad_token_id
 
             self.model = PeftModel.from_pretrained(base_model, self.router_model_id)
-            print("[INFO] LoRA Router: Classifier adapter loaded successfully.")
+            logger.info("LoRA Router: Classifier adapter loaded successfully.")
         except Exception as e:
-            print(f"[ERROR] Failed to load PEFT sequence classification model: {e}. Falling back to MOCK mode.")
+            logger.error("Failed to load PEFT sequence classification model: %s. Falling back to MOCK mode.", e)
             self.mock_mode = True
 
     def classify(self, intent: str) -> Tuple[str, float]:
@@ -111,7 +115,7 @@ class LoRARouter:
             import random
             time.sleep(random.uniform(0.020, 0.050))
             latency = (time.perf_counter() - start_time) * 1000
-            print(f"[MOCK] LoRA Router: Classified intent as: [yellow]{label}[/] (Latency: {latency:.2f}ms)")
+            logger.info("LoRA Router: Classified intent as: [yellow]%s[/] (Latency: %.2fms)", label, latency)
             return label, latency
 
 
@@ -128,7 +132,7 @@ class LoRARouter:
 
         label = self.label_map.get(pred_id, "ROUTER_BASE")
         latency = (time.perf_counter() - start_time) * 1000
-        print(f"[INFO] LoRA Router: Classified intent as: {label} (Latency: {latency:.2f}ms)")
+        logger.info("LoRA Router: Classified intent as: %s (Latency: %.2fms)", label, latency)
         return label, latency
 
     def _classify_mock(self, intent: str) -> str:

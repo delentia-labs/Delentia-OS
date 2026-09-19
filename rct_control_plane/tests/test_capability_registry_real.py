@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import pytest
 
 from rct_control_plane.capability_registry import CapabilityRegistry
-from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 
 
 def test_dependency_is_resolved_before_the_dependent_and_result_is_a_real_singleton():
@@ -47,9 +46,9 @@ def test_unregistered_capability_raises_a_clear_keyerror():
         registry.get("does_not_exist")
 
 
-def test_kernel_get_capability_wraps_the_real_already_constructed_engine_not_a_duplicate():
-    kernel = AlgorithmKernel41()
+def test_kernel_get_capability_wraps_the_real_already_constructed_engine_not_a_duplicate(shared_kernel):
+    # Round 29 Phase 33 Task 65: migrated onto shared_kernel - a pure
+    # identity check, unaffected by any other test's kernel usage.
+    resolved = shared_kernel.get_capability("graphrag_engine")
 
-    resolved = kernel.get_capability("graphrag_engine")
-
-    assert resolved is kernel._graphrag_engine, "registry must return the SAME real instance, not a second copy"
+    assert resolved is shared_kernel._graphrag_engine, "registry must return the SAME real instance, not a second copy"

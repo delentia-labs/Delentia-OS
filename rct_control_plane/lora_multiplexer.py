@@ -20,6 +20,10 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.lora_multiplexer")
+
 
 try:
     import torch
@@ -109,11 +113,11 @@ class LoRAMultiplexer:
         if _is_testing:
             self.mock_mode = True
             self.use_gguf = False
-            print("[MOCK] LoRA Multiplexer v0.5.1: Running in CI/pytest MOCK mode.")
+            logger.info("LoRA Multiplexer v0.5.1: Running in CI/pytest MOCK mode.")
         elif _HAS_LLAMA_CPP and self.gguf_base_path.exists() and self.gguf_base_path.stat().st_size > 100:
             self.use_gguf = True
             self.mock_mode = False
-            print(f"[INFO] LoRA Multiplexer v0.5.1: GGUF mode — {self.gguf_base_path.name}")
+            logger.info("LoRA Multiplexer v0.5.1: GGUF mode — %s", self.gguf_base_path.name)
         elif _HAS_TRANSFORMERS:
             self.use_gguf = False
             self.mock_mode = False
@@ -130,19 +134,19 @@ class LoRAMultiplexer:
             self.scribe_model_id   = str(self.scribe_path) if self.scribe_path.exists() else self.scribe_hf_id
             self.router_model_id   = str(self.router_path) if self.router_path.exists() else self.router_hf_id
 
-            print(
-                f"[INFO] LoRA Multiplexer v0.5.1: PEFT mode — "
-                f"executor={self.executor_model_id.split('/')[-1]}, "
-                f"guardian={self.guardian_model_id.split('/')[-1]}, "
-                f"scribe={self.scribe_model_id.split('/')[-1]}, "
-                f"router={self.router_model_id.split('/')[-1]}"
+            logger.info(
+                "LoRA Multiplexer v0.5.1: PEFT mode — executor=%s, guardian=%s, scribe=%s, router=%s",
+                self.executor_model_id.split('/')[-1],
+                self.guardian_model_id.split('/')[-1],
+                self.scribe_model_id.split('/')[-1],
+                self.router_model_id.split('/')[-1],
             )
         else:
-            print("[WARNING] LoRA Multiplexer v0.5.1: Running in MOCK mode (no transformers/llama-cpp found).")
+            logger.warning("LoRA Multiplexer v0.5.1: Running in MOCK mode (no transformers/llama-cpp found).")
 
         if self.mock_mode and self.multi_gpu:
-            print("[MOCK] LoRA Multiplexer v0.5.1: GPU Multi-LoRA parallel mapping active "
-                  "(GPU 0: Base+Executor | GPU 1: Guardian, Scribe).")
+            logger.info("LoRA Multiplexer v0.5.1: GPU Multi-LoRA parallel mapping active "
+                        "(GPU 0: Base+Executor | GPU 1: Guardian, Scribe).")
 
     # ── v0.5.1 Brain Slot Management ────────────────────────────────────────────
 
@@ -184,10 +188,9 @@ class LoRAMultiplexer:
 
         latency = (time.perf_counter() - start_time) * 1000
         vram_est = self._estimate_vram_gb()
-        print(
-            f"[INFO] LoRA v0.5.1: Loaded Brain Slot '{adapter_name}' "
-            f"({len(self.active_slots)}/{MAX_ACTIVE_SLOTS} slots, "
-            f"~{vram_est:.1f}GB VRAM est, {latency:.2f}ms)"
+        logger.info(
+            "LoRA v0.5.1: Loaded Brain Slot '%s' (%d/%d slots, ~%.1fGB VRAM est, %.2fms)",
+            adapter_name, len(self.active_slots), MAX_ACTIVE_SLOTS, vram_est, latency,
         )
         return latency
 
@@ -199,7 +202,7 @@ class LoRAMultiplexer:
         self._validate_adapter_name(adapter_name)
 
         if adapter_name not in self.active_slots:
-            print(f"[INFO] LoRA v0.5.1: '{adapter_name}' is not in active slots — no-op.")
+            logger.info("LoRA v0.5.1: '%s' is not in active slots — no-op.", adapter_name)
             return
 
         self.active_slots.remove(adapter_name)
@@ -209,9 +212,9 @@ class LoRAMultiplexer:
             self.current_adapter = self.active_slots[-1] if self.active_slots else None
 
         vram_est = self._estimate_vram_gb()
-        print(
-            f"[INFO] LoRA v0.5.1: Unloaded '{adapter_name}'. "
-            f"Active slots: {self.active_slots} (~{vram_est:.1f}GB VRAM est)"
+        logger.info(
+            "LoRA v0.5.1: Unloaded '%s'. Active slots: %s (~%.1fGB VRAM est)",
+            adapter_name, self.active_slots, vram_est,
         )
 
     def get_slot_status(self) -> dict:
@@ -250,7 +253,7 @@ class LoRAMultiplexer:
                         1.0, None, 4
                     )
                 except Exception as e:
-                    print(f"[WARNING] GGUF LoRA apply failed for '{adapter_name}': {e}")
+                    logger.warning("GGUF LoRA apply failed for '%s': %s", adapter_name, e)
         elif self.model is not None:
             self.model.set_adapter(adapter_name)
 
@@ -283,13 +286,13 @@ class LoRAMultiplexer:
             self.current_adapter = adapter_name
             latency = (time.perf_counter() - start_time) * 1000
             gpu_tag = "Multi-GPU Parallel" if self.multi_gpu else "Single-GPU Serial"
-            print(f"[MOCK] LoRA v0.5.1: Switched active adapter → [{adapter_name}] ({latency:.2f}ms, {gpu_tag})")
+            logger.info("LoRA v0.5.1: Switched active adapter → [%s] (%.2fms, %s)", adapter_name, latency, gpu_tag)
             return latency
 
         if self.use_gguf:
             adapter_path = getattr(self, f"gguf_{adapter_name}_path")
             if not adapter_path.exists():
-                print(f"[WARNING] GGUF adapter path {adapter_path} not found. Mock swap.")
+                logger.warning("GGUF adapter path %s not found. Mock swap.", adapter_path)
                 time.sleep(0.002)
             else:
                 try:
@@ -303,12 +306,12 @@ class LoRAMultiplexer:
                     if err != 0:
                         raise RuntimeError(f"lora_from_file failed: code {err}")
                 except Exception as e:
-                    print(f"[WARNING] GGUF LoRA swap failed: {e}")
+                    logger.warning("GGUF LoRA swap failed: %s", e)
                     time.sleep(0.003)
 
             self.current_adapter = adapter_name
             latency = (time.perf_counter() - start_time) * 1000
-            print(f"[INFO] LoRA v0.5.1: Switched GGUF adapter → {adapter_name} ({latency:.2f}ms)")
+            logger.info("LoRA v0.5.1: Switched GGUF adapter → %s (%.2fms)", adapter_name, latency)
             return latency
 
         # PEFT mode
@@ -316,7 +319,7 @@ class LoRAMultiplexer:
             self.model.set_adapter(adapter_name)
         self.current_adapter = adapter_name
         latency = (time.perf_counter() - start_time) * 1000
-        print(f"[INFO] LoRA v0.5.1: Switched PEFT adapter → {adapter_name} ({latency:.2f}ms)")
+        logger.info("LoRA v0.5.1: Switched PEFT adapter → %s (%.2fms)", adapter_name, latency)
         return latency
 
     # ── Model Loading ──────────────────────────────────────────────────────────
@@ -324,11 +327,11 @@ class LoRAMultiplexer:
     def load_model_and_adapters(self) -> None:
         """Loads base model and PEFT/GGUF adapters if not in mock mode."""
         if self.mock_mode:
-            print("[MOCK] LoRA Multiplexer v0.5.1: Initialized base model Qwen3.6-27B (mock).")
+            logger.info("LoRA Multiplexer v0.5.1: Initialized base model Qwen3.6-27B (mock).")
             return
 
         if self.use_gguf:
-            print(f"[INFO] LoRA v0.5.1: Loading GGUF base model from {self.gguf_base_path}...")
+            logger.info("LoRA v0.5.1: Loading GGUF base model from %s...", self.gguf_base_path)
             try:
                 self.model = llama_cpp.Llama(
                     model_path=str(self.gguf_base_path),
@@ -337,21 +340,21 @@ class LoRAMultiplexer:
                     verbose=False
                 )
                 self.current_adapter = None
-                print("[INFO] LoRA v0.5.1: GGUF model loaded successfully.")
+                logger.info("LoRA v0.5.1: GGUF model loaded successfully.")
             except Exception as e:
-                print(f"[ERROR] Failed to load GGUF model: {e}. Falling back to MOCK mode.")
+                logger.error("Failed to load GGUF model: %s. Falling back to MOCK mode.", e)
                 self.mock_mode = True
             return
 
         # PEFT mode loading
-        print(f"[INFO] LoRA v0.5.1: Loading base model {self.base_model_name}...")
+        logger.info("LoRA v0.5.1: Loading base model %s...", self.base_model_name)
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
 
             if torch.cuda.is_available():
-                print("[INFO] CUDA GPU detected. Loading base model in 4-bit NF4...")
+                logger.info("CUDA GPU detected. Loading base model in 4-bit NF4...")
                 bnb_config = BitsAndBytesConfig(
                     load_in_4bit=True,
                     bnb_4bit_quant_type="nf4",
@@ -364,7 +367,7 @@ class LoRAMultiplexer:
                     device_map="auto",
                 )
             else:
-                print("[INFO] CPU Environment detected. Loading base model in float16...")
+                logger.info("CPU Environment detected. Loading base model in float16...")
                 base_model = AutoModelForCausalLM.from_pretrained(
                     self.base_model_name,
                     dtype=torch.float16 if hasattr(torch, "float16") else "auto",
@@ -373,7 +376,7 @@ class LoRAMultiplexer:
                 )
             base_model.config.pad_token_id = self.tokenizer.pad_token_id
 
-            print("[INFO] LoRA v0.5.1: Loading LoRA adapters (4 pillars)...")
+            logger.info("LoRA v0.5.1: Loading LoRA adapters (4 pillars)...")
             self.model = PeftModel.from_pretrained(
                 base_model,
                 self.executor_model_id,
@@ -385,9 +388,9 @@ class LoRAMultiplexer:
 
             self.current_adapter = "executor"
             self.active_slots = ["executor"]
-            print("[INFO] LoRA v0.5.1: All 4 pillar adapters loaded successfully.")
+            logger.info("LoRA v0.5.1: All 4 pillar adapters loaded successfully.")
         except Exception as e:
-            print(f"[ERROR] Failed to load PEFT model/adapters: {e}. Falling back to MOCK mode.")
+            logger.error("Failed to load PEFT model/adapters: %s. Falling back to MOCK mode.", e)
             self.mock_mode = True
 
     # ── Generation ─────────────────────────────────────────────────────────────

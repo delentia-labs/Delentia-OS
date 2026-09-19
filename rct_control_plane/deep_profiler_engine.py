@@ -28,6 +28,9 @@ load_dotenv(env_path)
 
 from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
 from rct_control_plane.thai_normalizer import normalize_thai_text
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.deep_profiler_engine")
 
 
 class DeepProfilerSession:
@@ -358,7 +361,7 @@ class RCT7DeepProfilerEngine:
                 clean_str = ai_json_str.replace("```json", "").replace("```", "").strip()
                 parsed_data = json.loads(clean_str)
             except Exception as e:
-                print(f"[WARN] Failed to parse AI blueprint JSON: {e}")
+                logger.warning("Failed to parse AI blueprint JSON: %s", e)
 
         # If AI parsed successfully, use dynamic AI output
         if parsed_data and "product_name" in parsed_data:
