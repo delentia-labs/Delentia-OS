@@ -12,6 +12,8 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+import re
+from pathlib import Path
 from typing import Optional
 
 from mcp.server.mcpserver import MCPServer
@@ -27,11 +29,18 @@ from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_re
 from rct_control_plane.exchange_bridge import NeuralExchangeBridge, PathTraversalError
 from rct_control_plane.algo_34_swcar import WebCrawler
 from rct_control_plane.ground_truth_store import GroundTruthStore
+from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
+
+# Round 32: real repo root for the read-only file-access tools (Task 73) -
+# mcp_server.py lives at <repo_root>/rct_control_plane/mcp_server.py.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+_SKIP_DIR_NAMES = {".git", "__pycache__", "node_modules", ".delentia_worktrees", ".venv", "venv"}
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
 _exchange_bridge = NeuralExchangeBridge()
 _web_crawler = WebCrawler()
+_worktree_isolator = GitWorktreeIsolator()
 
 
 def _hash_embed_query(text: str, dim: int = 384):
@@ -258,6 +267,143 @@ async def delentia_check_ground_truth_claim(subject: str, predicate: str, claime
     Returns matches=None (honest unknown) when the subject/predicate
     pair isn't seeded - never guesses."""
     return _kernel._ground_truth_store.check_claim(subject, predicate, claimed_value)
+
+
+def _resolve_within_repo(relative_path: str) -> Path:
+    """Real traversal guard for repo-wide (not just exchange-bridge-scoped)
+    file access - Round 32 Task 73. Generalizes Round 31's
+    _safe_path_component to a relative path that may contain
+    subdirectories."""
+    resolved = (REPO_ROOT / relative_path).resolve()
+    if not resolved.is_relative_to(REPO_ROOT):
+        raise PathTraversalError(f"path escapes repo root: {relative_path!r}")
+    return resolved
+
+
+@mcp.tool()
+async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000) -> dict:
+    """Real, read-only access to any file inside this kernel's own repo
+    (Round 32) - closes the gap where Round 31's file tools were scoped
+    only to the exchange/ bridge directory. Bounded to max_bytes to avoid
+    dumping huge binaries/model weights into an MCP response. Write/patch
+    access is deliberately NOT included this round (higher blast radius,
+    needs its own explicit sign-off - see Round 32 synthesis)."""
+    try:
+        resolved = _resolve_within_repo(relative_path)
+    except PathTraversalError as e:
+        return {"error": str(e)}
+    if not resolved.is_file():
+        return {"error": f"not found: {relative_path}"}
+    raw = resolved.read_bytes()[:max_bytes]
+    try:
+        text = raw.decode("utf-8")
+        return {"path": relative_path, "content_text": text, "truncated": resolved.stat().st_size > max_bytes}
+    except UnicodeDecodeError:
+        return {"path": relative_path, "error": "file is not valid UTF-8 text (binary content not returned)"}
+
+
+@mcp.tool()
+async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_results: int = 30) -> dict:
+    """Real, read-only grep-style search across this kernel's own repo
+    (Round 32) - a real work grep, not a fabricated result. Skips
+    .git/__pycache__/node_modules/.delentia_worktrees/venv directories."""
+    try:
+        regex = re.compile(pattern)
+    except re.error as e:
+        return {"error": f"invalid regex: {e}"}
+    matches = []
+    for path in REPO_ROOT.glob(glob):
+        if len(matches) >= max_results:
+            break
+        if not path.is_file() or any(part in _SKIP_DIR_NAMES for part in path.parts):
+            continue
+        try:
+            for i, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
+                if regex.search(line):
+                    matches.append({
+                        "path": path.relative_to(REPO_ROOT).as_posix(),
+                        "line_number": i,
+                        "line_text": line.strip(),
+                    })
+                    if len(matches) >= max_results:
+                        break
+        except OSError:
+            continue
+    return {"matches": matches}
+
+
+@mcp.tool()
+async def delentia_list_capabilities() -> dict:
+    """Real list of every capability registered in the kernel's
+    CapabilityRegistry (Round 32) - closes the Hermes skills_list gap
+    with zero new logic (the registry has existed since Round 26)."""
+    return {"capabilities": _kernel._capability_registry.list_capabilities()}
+
+
+@mcp.tool()
+async def delentia_convert_content(content_id: str, version: int, target_format: str) -> dict:
+    """Real ALGO-23 format conversion (Round 26 capability, exposed as an
+    MCP tool in Round 32): converts previously-saved content to html/pdf/
+    json. Honestly reports converted=False for unsupported formats."""
+    return await _kernel._content_box.convert_content(content_id, version, target_format)
+
+
+@mcp.tool()
+async def delentia_synthesize_function(capability_spec: str, function_name: str, smoke_test_code: str) -> dict:
+    """Real ALGO-39 on-the-fly single-function synthesis (Round 27
+    capability, exposed as an MCP tool in Round 32): generates a real
+    Python function via the LLM, writes it + a real smoke test, and
+    actually executes it in the sandbox. Honestly reports verified=False
+    (not a crash) when the generated code fails its own smoke test."""
+    return await _kernel.algo_39_genesis_synthesize_module(capability_spec, function_name, smoke_test_code)
+
+
+@mcp.tool()
+async def delentia_export_session_state(session_id: str) -> dict:
+    """Real ALGO-06 JITNA state container export (Round 27 capability,
+    exposed as an MCP tool in Round 32): real, signed, portable export
+    of a session's reconstructed context."""
+    return _kernel.algo_06_jitna_export_state_container(session_id)
+
+
+@mcp.tool()
+async def delentia_import_session_state(packet: dict) -> dict:
+    """Real ALGO-06 JITNA state container import (Round 27 capability,
+    exposed as an MCP tool in Round 32): real signature verification
+    before ever handing back "restored" context - a tampered or
+    unverifiable packet honestly returns no context."""
+    return _kernel.algo_06_jitna_import_state_container(packet)
+
+
+@mcp.tool()
+async def delentia_generate_image(prompt: str, num_steps: int = 6, width: int = 256, height: int = 256) -> dict:
+    """Real ALGO-14 RCT-Diffusion image generation (exposed as an MCP
+    tool in Round 32) - real diffusers-backed generation (segmind/tiny-sd,
+    CPU). Runs on CPU and is slow, not claiming GPU speed it doesn't have."""
+    return await _kernel.algo_14_rct_diffusion(prompt, num_steps=num_steps, width=width, height=height)
+
+
+@mcp.tool()
+async def delentia_create_worktree(agent_id: str, base_branch: str = "main") -> dict:
+    """Real git worktree creation for isolated parallel subagents (Round
+    32, Architect-approved). Always creates a branch named
+    swarm/agent_{agent_id} under .delentia_worktrees/ - never touches
+    main or any branch outside that naming convention."""
+    return _worktree_isolator.create_worktree(agent_id, base_branch)
+
+
+@mcp.tool()
+async def delentia_remove_worktree(agent_id: str) -> dict:
+    """Real removal of an isolated agent worktree created via
+    delentia_create_worktree - only ever operates on the isolated
+    .delentia_worktrees/{agent_id} path, never the main working tree."""
+    return {"removed": _worktree_isolator.remove_worktree(agent_id)}
+
+
+@mcp.tool()
+async def delentia_list_worktrees() -> dict:
+    """Real list of currently active isolated agent worktrees."""
+    return {"active": _worktree_isolator.list_active()}
 
 
 if __name__ == "__main__":
