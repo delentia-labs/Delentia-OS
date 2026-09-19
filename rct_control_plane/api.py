@@ -1457,6 +1457,30 @@ class ControlPlaneAPI:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
+        # Round 31 Task (item 1, highest-impact): a real, minimal HTTP
+        # bridge endpoint proving `delentia-mcp-ecosystem` (the actually-
+        # deployed TS Worker) CAN call into this Python kernel for real -
+        # unlike /v1/fdia/config above (a hardcoded mock, current_score
+        # always 0.9808 regardless of input), this genuinely runs
+        # ALGORITHM_KERNEL.algo_01_fdia(D, I, A) and returns the real
+        # F = (D^I)*A result. Deliberately separate from the existing
+        # /v1/fdia/config route (Zero-Delete - that route is untouched)
+        # and from gateway_main.py (on this project's do-not-touch list).
+        @self.app.post("/v1/kernel/fdia/evaluate", tags=["Kernel"])
+        async def evaluate_fdia_via_kernel(payload: Dict[str, Any]):
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+            D = float(payload.get("data_quality", payload.get("D", 1.0)))
+            I = float(payload.get("intent_precision", payload.get("I", 1.0)))
+            A = float(payload.get("authorized", payload.get("A", 1.0)))
+            f_score = ALGORITHM_KERNEL.algo_01_fdia(D, I, A)
+            return {
+                "future_score": f_score,
+                "authorized": f_score > 0.0,
+                "D": D, "I": I, "A": A,
+                "formula": "F = (D^I) * A",
+                "source": "python_kernel_real_computation",
+            }
+
         # ---------------------------------------------------------------------
         # LoRA Forge Universal Multimodal Training Service
         # ---------------------------------------------------------------------

@@ -11,6 +11,25 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 
+class PathTraversalError(ValueError):
+    """Raised when a category or filename would escape the exchange root."""
+
+
+def _safe_path_component(name: str, label: str) -> str:
+    """Reject any path component that could traverse outside the exchange
+    root (`..`, path separators, absolute paths, embedded NUL). Round 31:
+    found during the MCP-tool-expansion audit that save_file/read_file
+    built paths via a bare os.path.join with zero sanitization - a real,
+    pre-existing latent path-traversal gap. This closes it without
+    changing behavior for any legitimate (separator-free) category or
+    filename."""
+    if not name or name in (".", "..") or "\x00" in name:
+        raise PathTraversalError(f"invalid {label}: {name!r}")
+    if os.path.isabs(name) or os.sep in name or (os.altsep and os.altsep in name) or ".." in name.split("/"):
+        raise PathTraversalError(f"{label} must be a plain name with no path separators: {name!r}")
+    return name
+
+
 class NeuralExchangeBridge:
     """
     Neural File Bridge manager for Delentia OS.
@@ -48,7 +67,11 @@ class NeuralExchangeBridge:
     def list_files(self, category: str = "all") -> List[Dict[str, Any]]:
         """List files in the exchange bridge with metadata and SHA-256 checksums"""
         results = []
-        categories = ["projects", "audio", "video", "logs", "datasets", "podcasts"] if category == "all" else [category]
+        categories = (
+            ["projects", "audio", "video", "logs", "datasets", "podcasts"]
+            if category == "all"
+            else [_safe_path_component(category, "category")]
+        )
 
         for cat in categories:
             cat_path = os.path.join(self.root_dir, cat)
@@ -71,6 +94,8 @@ class NeuralExchangeBridge:
 
     def save_file(self, category: str, filename: str, content: bytes) -> Dict[str, Any]:
         """Save a file into the exchange bridge with SHA-256 verification"""
+        category = _safe_path_component(category, "category")
+        filename = _safe_path_component(filename, "filename")
         cat_path = os.path.join(self.root_dir, category)
         os.makedirs(cat_path, exist_ok=True)
         fpath = os.path.join(cat_path, filename)
@@ -91,6 +116,8 @@ class NeuralExchangeBridge:
 
     def read_file(self, category: str, filename: str) -> Optional[Dict[str, Any]]:
         """Read a file and its integrity hash from the exchange bridge"""
+        category = _safe_path_component(category, "category")
+        filename = _safe_path_component(filename, "filename")
         fpath = os.path.join(self.root_dir, category, filename)
         if not os.path.exists(fpath):
             return None

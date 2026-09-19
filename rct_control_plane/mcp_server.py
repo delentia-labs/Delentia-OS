@@ -12,6 +12,8 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+from typing import Optional
+
 from mcp.server.mcpserver import MCPServer
 
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
@@ -22,9 +24,14 @@ from rct_control_plane.autonomous_loop import AutonomousLoop
 from rct_control_plane.agent_profile import delegate_to_profile
 from rct_control_plane.agent_memory import MemoryType
 from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders, schedule_self_evolution
+from rct_control_plane.exchange_bridge import NeuralExchangeBridge, PathTraversalError
+from rct_control_plane.algo_34_swcar import WebCrawler
+from rct_control_plane.ground_truth_store import GroundTruthStore
 
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
+_exchange_bridge = NeuralExchangeBridge()
+_web_crawler = WebCrawler()
 
 
 def _hash_embed_query(text: str, dim: int = 384):
@@ -176,6 +183,81 @@ async def delentia_schedule_self_evolution(interval_seconds: float = 3600.0) -> 
     LLM-driven loop."""
     reminder_id = schedule_self_evolution(_kernel, interval_seconds)
     return {"reminder_id": reminder_id}
+
+
+@mcp.tool()
+async def delentia_list_exchange_files(category: str = "all") -> dict:
+    """Real listing of the Neural Exchange Bridge's shared file-transfer
+    directory (Round 31): categories are projects/audio/video/logs/
+    datasets/podcasts, each entry includes a real SHA-256 checksum.
+    `category` is validated against path traversal (Round 31 security fix)."""
+    try:
+        return {"files": _exchange_bridge.list_files(category)}
+    except PathTraversalError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+async def delentia_read_exchange_file(category: str, filename: str) -> dict:
+    """Real read of a file from the Neural Exchange Bridge, with its
+    real SHA-256 integrity hash. Content is returned as UTF-8 text when
+    decodable, otherwise as a note that it's binary (never silently
+    corrupts binary content by force-decoding it)."""
+    try:
+        result = _exchange_bridge.read_file(category, filename)
+    except PathTraversalError as e:
+        return {"error": str(e)}
+    if result is None:
+        return {"error": f"not found: {category}/{filename}"}
+    try:
+        text = result["content"].decode("utf-8")
+        return {**{k: v for k, v in result.items() if k != "content"}, "content_text": text}
+    except UnicodeDecodeError:
+        return {**{k: v for k, v in result.items() if k != "content"}, "content_binary": True}
+
+
+@mcp.tool()
+async def delentia_save_exchange_file(category: str, filename: str, content_text: str) -> dict:
+    """Real save of UTF-8 text content into the Neural Exchange Bridge.
+    `category`/`filename` are validated against path traversal (Round 31
+    security fix) before anything touches the filesystem."""
+    try:
+        return _exchange_bridge.save_file(category, filename, content_text.encode("utf-8"))
+    except PathTraversalError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+async def delentia_crawl_url(url: str) -> dict:
+    """Real web crawl of a single URL (Round 31), subject to SWCAR's real
+    robots.txt honoring, per-domain rate limiting, and circuit breaker -
+    not a fabricated fetch, a genuine HTTP GET through algo_34_swcar."""
+    page = await _web_crawler.crawl(url)
+    return page.model_dump(mode="json")
+
+
+@mcp.tool()
+async def delentia_query_audit_log(limit: int = 50) -> dict:
+    """Real query of the kernel's persisted audit trail (Round 31) -
+    every append_audit call this session (ARCHITECT_VETO events, etc.)
+    is queryable here, most recent first."""
+    return {"entries": _kernel._persistence.recent_audit(limit=limit)}
+
+
+@mcp.tool()
+async def delentia_query_intents(user_id: Optional[str] = None, limit: int = 20) -> dict:
+    """Real query of persisted intents processed by the kernel (Round 31),
+    optionally filtered by user_id, most recent first."""
+    return {"intents": _kernel._persistence.list_intents(user_id=user_id, limit=limit)}
+
+
+@mcp.tool()
+async def delentia_check_ground_truth_claim(subject: str, predicate: str, claimed_value: str) -> dict:
+    """Real ALGO-33 ground-truth check (Round 31): verifies a claimed
+    fact against the kernel's persisted, seeded ground-truth database.
+    Returns matches=None (honest unknown) when the subject/predicate
+    pair isn't seeded - never guesses."""
+    return _kernel._ground_truth_store.check_claim(subject, predicate, claimed_value)
 
 
 if __name__ == "__main__":
