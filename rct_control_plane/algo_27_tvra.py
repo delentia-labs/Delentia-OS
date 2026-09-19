@@ -341,7 +341,7 @@ class VideoProcessor:
             top_probs, top_idx = torch.topk(probs, top_k)
             return [
                 {"label": self._resnet_labels[idx], "confidence": round(float(p), 4)}
-                for p, idx in zip(top_probs, top_idx)
+                for p, idx in zip(top_probs, top_idx, strict=True)
             ]
 
         top_predictions = await asyncio.to_thread(_infer)

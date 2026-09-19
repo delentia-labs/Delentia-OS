@@ -282,12 +282,12 @@ class RFLHEngine:
         support_labels_t = [torch.tensor(l, dtype=torch.float32) for l in support_labels]
 
         step_loss = torch.zeros((), dtype=torch.float32)
-        for step in range(num_steps):
+        for _step in range(num_steps):
             W_t = torch.tensor(adapted_W, dtype=torch.float32, requires_grad=True)
             b_t = torch.tensor(adapted_b, dtype=torch.float32, requires_grad=True)
 
             step_loss = torch.zeros((), dtype=torch.float32)
-            for emb_t, label_t in zip(support_embeddings_t, support_labels_t):
+            for emb_t, label_t in zip(support_embeddings_t, support_labels_t, strict=True):
                 pred_t = W_t @ emb_t + b_t
                 step_loss = step_loss + torch.mean((pred_t - label_t) ** 2)
             step_loss = step_loss / len(support_set)
@@ -316,7 +316,7 @@ class RFLHEngine:
             accuracy = correct / len(query_set)
         else:
             correct = 0
-            for emb, label in zip(support_embeddings, support_labels):
+            for emb, label in zip(support_embeddings, support_labels, strict=True):
                 pred = np.dot(adapted_W, emb) + adapted_b
                 if np.linalg.norm(pred - label) < 0.5:
                     correct += 1

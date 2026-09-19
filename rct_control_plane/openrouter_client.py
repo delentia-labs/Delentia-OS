@@ -23,6 +23,10 @@ import os
 import asyncio
 import time
 from typing import Dict, List, Optional, Any
+
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.openrouter_client")
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -486,7 +490,7 @@ class OpenRouterClient:
                                 except Exception:
                                     pass
         except Exception as e:
-            print(f"[WARN] OpenRouter streaming fallback: {e}")
+            logger.warning("OpenRouter streaming fallback: %s", e)
 
     def get_stats(self) -> Dict[str, Any]:
         """Get client statistics"""

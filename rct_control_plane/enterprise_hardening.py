@@ -256,7 +256,7 @@ if __name__ == "__main__":
             raise RuntimeError("real simulated downstream failure")
 
         # 3 real failures -> circuit trips OPEN
-        for i in range(3):
+        for _i in range(3):
             try:
                 await breaker.acall(flaky_dependency)
             except RuntimeError:

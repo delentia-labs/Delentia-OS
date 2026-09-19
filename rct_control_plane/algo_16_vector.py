@@ -450,7 +450,7 @@ class FAISSBackend(VectorBackendInterface):
         start_idx = self.next_idx
         self.faiss_index.add(vectors_np)
 
-        for i, (vec_id, vec) in enumerate(zip(ids, vectors)):
+        for i, (vec_id, vec) in enumerate(zip(ids, vectors, strict=True)):
             idx = start_idx + i
             self.id_to_idx[vec_id] = idx
             self.idx_to_id[idx] = vec_id
@@ -474,7 +474,7 @@ class FAISSBackend(VectorBackendInterface):
         distances, indices = self.faiss_index.search(query_np, k)
 
         results = []
-        for dist, idx in zip(distances[0], indices[0]):
+        for dist, idx in zip(distances[0], indices[0], strict=True):
             if idx == -1:  # FAISS returns -1 for missing results
                 continue
 

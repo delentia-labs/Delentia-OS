@@ -115,6 +115,57 @@ jobs:
           path: artifacts/security/pip-audit.json
           retention-days: 30
 
+  cve-scan-ml-extras:
+    name: CVE Scan — ML extras (non-blocking, real visibility)
+    runs-on: ubuntu-latest
+    # Round 30 Task (item 2 of the Round 29 candidate list): the main
+    # cve-scan job above only ever installs requirements.txt +
+    # requirements-dev.txt, which never pulls in torch/nltk/accelerate/
+    # pillow (verified via importlib.metadata.requires() in Round 29
+    # Task 64) - so that job's "blocking, clean" result says nothing
+    # about the real ML extras path real algorithm modules (ALGO-14/27/
+    # 34/36) actually use in production. This job gives that real
+    # visibility. Non-blocking (continue-on-error) because 2 real,
+    # currently-unfixable findings (accelerate, nltk - no upstream fix
+    # published as of Round 29) will always show up here regardless of
+    # what we do - see the Round 29/30 synthesis docs. Also genuinely
+    # useful: this runs on ubuntu-latest, where the Windows path-length
+    # install failure that blocked torch's own CVE fix locally may not
+    # even occur - this job can tell us for real, without needing the
+    # Architect's own machine.
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install project with full ML extras + pip-audit
+        run: |
+          pip install -e ".[full]"
+          pip install pip-audit
+
+      - name: CVE scan — real ML-extras environment (report only)
+        run: |
+          mkdir -p artifacts/security
+          pip-audit \
+            --desc on \
+            --format json \
+            --output artifacts/security/pip-audit-ml-extras.json \
+            --progress-spinner off \
+            || (cat artifacts/security/pip-audit-ml-extras.json ; exit 1)
+        continue-on-error: true
+
+      - name: Upload ML-extras CVE report
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: cve-report-ml-extras-${{ github.sha }}
+          path: artifacts/security/pip-audit-ml-extras.json
+          retention-days: 30
+
   bandit:
     name: SAST (bandit)
     runs-on: ubuntu-latest

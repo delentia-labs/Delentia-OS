@@ -237,7 +237,7 @@ class TestHelixHistory(unittest.TestCase):
 
     def test_states_list_grows(self):
         h = HelixHistory()
-        for i in range(5):
+        for _i in range(5):
             h.push(_stable(fdia=0.8))
         self.assertEqual(len(h.states), 5)
 

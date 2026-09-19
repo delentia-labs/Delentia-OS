@@ -735,7 +735,7 @@ class RequestBatcher:
             grouped[url].append(item)
 
         tasks = []
-        for url, items in grouped.items():
+        for _url, items in grouped.items():
             task = asyncio.create_task(self._process_group(batch_id, items))
             tasks.append(task)
 

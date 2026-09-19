@@ -198,7 +198,7 @@ class LocalStorageHandler(StorageHandler):
         total_size = 0
         file_count = 0
 
-        for root, dirs, files in os.walk(self.storage_path):
+        for root, _dirs, files in os.walk(self.storage_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 total_size += os.path.getsize(file_path)

@@ -137,7 +137,7 @@ def euclidean_distance(a: Tuple[float, ...], b: Tuple[float, ...]) -> float:
     """Euclidean distance between two equal-length tuples."""
     if len(a) != len(b):
         raise ValueError(f"Dimension mismatch: {len(a)} vs {len(b)}")
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)))
 
 
 def drift_velocity(v1: HelixStateVector, v2: HelixStateVector) -> float:

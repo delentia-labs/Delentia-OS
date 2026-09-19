@@ -1652,7 +1652,7 @@ class ConflictResolver:
 
         # Compare each pair of chains
         for i, chain1 in enumerate(chains):
-            for j, chain2 in enumerate(chains[i+1:], i+1):
+            for _j, chain2 in enumerate(chains[i+1:], i+1):
                 chain_conflicts = self._compare_chains(chain1, chain2)
                 conflicts.extend(chain_conflicts)
 

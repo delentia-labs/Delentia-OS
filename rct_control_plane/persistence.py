@@ -635,7 +635,7 @@ class AsyncControlPlanePersistence:
         if row is None:
             return None
         cols = [d[0] for d in cursor.description]
-        return dict(zip(cols, row))
+        return dict(zip(cols, row, strict=True))
 
     async def save_state(
         self,

@@ -11,6 +11,9 @@ import time
 from typing import Any, Dict, List, Tuple
 
 from rct_control_plane.lora_multiplexer import LoRAMultiplexer
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.scribe_compressor")
 
 
 class ScribeCompressor:
@@ -67,7 +70,7 @@ class ScribeCompressor:
         orig = summary.get("original_tokens", 0)
         comp = summary.get("compressed_tokens", 0)
         
-        print(f"[INFO] Scribe Compressor: Compressed context ({orig} words -> {comp} words, ratio={ratio}x)")
+        logger.info("Scribe Compressor: Compressed context (%s words -> %s words, ratio=%sx)", orig, comp, ratio)
         return summary, latency
 
     def filter_noise(self, query: str, retrieved_docs: List[str]) -> Tuple[Dict[str, Any], float]:
@@ -104,5 +107,8 @@ class ScribeCompressor:
                 "precision": 0.5,
             }
 
-        print(f"[INFO] Scribe Compressor: Filtered noise ({filtered.get('relevant_results', [])} relevant of {len(retrieved_docs)} documents)")
+        logger.info(
+            "Scribe Compressor: Filtered noise (%s relevant of %d documents)",
+            filtered.get('relevant_results', []), len(retrieved_docs),
+        )
         return filtered, latency

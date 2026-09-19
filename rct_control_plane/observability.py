@@ -13,6 +13,10 @@ from uuid import uuid4
 import hashlib
 import json
 
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.observability")
+
 
 # ============================================================================
 # PROMETHEUS METRICS INTEGRATION (optional — graceful degradation)
@@ -433,7 +437,7 @@ class ControlPlaneObserver:
                 handler(event)
             except Exception as e:
                 # Don't let handler errors break observability
-                print(f"Event handler error: {e}")
+                logger.error("Event handler error: %s", e)
         
         return event
     

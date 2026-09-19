@@ -394,7 +394,7 @@ class IntentCompiler:
         """Extract action keywords from text"""
         keywords = []
         
-        for intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
+        for _intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             for keyword in type_keywords:
                 if keyword in text:
                     keywords.append(keyword)

@@ -13,6 +13,9 @@ load_dotenv(env_path)
 
 from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
 from rct_control_plane.thai_normalizer import normalize_thai_text
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.stardew_bridge_server")
 
 
 class StardewLivingWorldEngine:
@@ -124,7 +127,7 @@ class StardewLivingWorldEngine:
                                 res_json = await resp.json()
                                 real_ai_dialogue = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
                 except Exception as ex:
-                    print(f"[WARN] Live NPC AI generation fallback: {ex}")
+                    logger.warning("Live NPC AI generation fallback: %s", ex)
 
             if real_ai_dialogue:
                 dialogue = real_ai_dialogue

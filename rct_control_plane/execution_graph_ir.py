@@ -534,7 +534,7 @@ class ExecutionGraph:
         g.graph_id = d.get("graph_id", g.graph_id)
         
         # Reconstruct nodes
-        for node_id, node_dict in d.get("nodes", {}).items():
+        for _node_id, node_dict in d.get("nodes", {}).items():
             g.add_node(ExecutionNode.from_dict(node_dict))
             
         # Reconstruct edges

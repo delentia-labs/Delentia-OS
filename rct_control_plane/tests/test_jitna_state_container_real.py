@@ -13,41 +13,42 @@ cryptographic integrity, no fabrication.
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
+# Round 30 (item 4 of Round 29's candidate list): migrated onto
+# shared_kernel - reviewed safe: every assertion compares values
+# captured within the SAME test right after each other (never a
+# hardcoded expected snapshot), so accumulation of "mee_growth" deltas
+# from other tests sharing this kernel cannot break them.
 
 
-def test_export_produces_a_real_signed_packet_with_the_real_restored_context():
-    kernel = AlgorithmKernel41()
-    kernel.algo_07_mee(growth_signal=0.9)  # real step, creates real "mee_growth" deltas
+def test_export_produces_a_real_signed_packet_with_the_real_restored_context(shared_kernel):
+    shared_kernel.algo_07_mee(growth_signal=0.9)  # real step, creates real "mee_growth" deltas
 
-    exported = kernel.algo_06_jitna_export_state_container("mee_growth")
+    exported = shared_kernel.algo_06_jitna_export_state_container("mee_growth")
 
     assert exported["message_type"] == "STATE_CONTAINER"
     assert exported["signature"] is not None
-    expected_context = kernel._rctdb_facade.restore_session_context("mee_growth")
+    expected_context = shared_kernel._rctdb_facade.restore_session_context("mee_growth")
     assert exported["payload"] == expected_context
 
 
-def test_import_verifies_a_real_untampered_packet_and_returns_the_real_context():
-    kernel = AlgorithmKernel41()
-    kernel.algo_07_mee(growth_signal=0.9)
-    exported = kernel.algo_06_jitna_export_state_container("mee_growth")
+def test_import_verifies_a_real_untampered_packet_and_returns_the_real_context(shared_kernel):
+    shared_kernel.algo_07_mee(growth_signal=0.9)
+    exported = shared_kernel.algo_06_jitna_export_state_container("mee_growth")
 
-    imported = kernel.algo_06_jitna_import_state_container(exported)
+    imported = shared_kernel.algo_06_jitna_import_state_container(exported)
 
     assert imported["verified"] is True
     assert imported["restored_context"] == exported["payload"]
 
 
-def test_import_rejects_a_real_tampered_packet():
-    kernel = AlgorithmKernel41()
-    kernel.algo_07_mee(growth_signal=0.9)
-    exported = kernel.algo_06_jitna_export_state_container("mee_growth")
+def test_import_rejects_a_real_tampered_packet(shared_kernel):
+    shared_kernel.algo_07_mee(growth_signal=0.9)
+    exported = shared_kernel.algo_06_jitna_export_state_container("mee_growth")
 
     tampered = dict(exported)
     tampered["payload"] = {"fabricated": "data"}
 
-    imported = kernel.algo_06_jitna_import_state_container(tampered)
+    imported = shared_kernel.algo_06_jitna_import_state_container(tampered)
 
     assert imported["verified"] is False
     assert imported["restored_context"] is None

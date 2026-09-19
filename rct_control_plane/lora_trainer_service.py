@@ -98,7 +98,7 @@ class LoRATrainerService:
 
         for epoch in range(1, job.epochs + 1):
             job.current_epoch = epoch
-            for step in range(max(1, len(dataset) // 4)):
+            for _step in range(max(1, len(dataset) // 4)):
                 current_step += 1
                 job.progress_pct = (current_step / total_steps) * 100.0
                 loss = max(0.12, base_loss * (0.85 ** (current_step / 2)) + (0.02 * (epoch % 2)))
@@ -137,7 +137,7 @@ class LoRATrainerService:
 
         for epoch in range(1, job.epochs + 1):
             job.current_epoch = epoch
-            for step in range(max(1, len(dataset) // 4)):
+            for _step in range(max(1, len(dataset) // 4)):
                 current_step += 1
                 job.progress_pct = (current_step / total_steps) * 100.0
                 

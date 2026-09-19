@@ -1259,14 +1259,14 @@ def boot_sequence_animation(
             transient=True,  # progress bar disappears after completion
         ) as progress:
             task = progress.add_task("Booting services", total=len(services))
-            for name, port, desc in services:
+            for name, _port, _desc in services:
                 # Update description to show current service
                 progress.update(task, description=f"[bold white]{name}[/]")
                 time.sleep(delay)
                 progress.advance(task)
     elif not no_anim:
         # Non-TTY: simple sequential delay without progress bar
-        for name, _port, _desc in services:
+        for _name, _port, _desc in services:
             time.sleep(delay * 0.2)
 
     # ── Static service list — staggered reveal (0.05s per line) ──────

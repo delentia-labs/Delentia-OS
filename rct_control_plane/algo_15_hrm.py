@@ -180,7 +180,7 @@ class TaskGraph:
         """
         ready = []
 
-        for task_id, task in self.tasks.items():
+        for _task_id, task in self.tasks.items():
             if task.status not in [TaskStatus.PENDING, TaskStatus.QUEUED]:
                 continue
 

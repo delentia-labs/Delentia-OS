@@ -198,13 +198,17 @@ def print_table(headers: List[str], rows: List[List[str]]) -> None:
             col_widths[i] = max(col_widths[i], len(str(cell)))
     
     # Print header
-    header_line = " | ".join(h.ljust(w) for h, w in zip(headers, col_widths))
+    header_line = " | ".join(h.ljust(w) for h, w in zip(headers, col_widths, strict=True))
     click.echo(header_line)
     click.echo("-" * len(header_line))
     
     # Print rows
     for row in rows:
-        row_line = " | ".join(str(cell).ljust(w) for cell, w in zip(row, col_widths))
+        # strict=False (not True like the header above): a data row's real
+        # length isn't guaranteed to match col_widths the way the header
+        # row is by construction - tolerating a short/long row here
+        # preserves this table renderer's existing lenient behavior.
+        row_line = " | ".join(str(cell).ljust(w) for cell, w in zip(row, col_widths, strict=False))
         click.echo(row_line)
 
 
@@ -1026,7 +1030,7 @@ def governance(last: int, output: str):
         ctx = get_context()
         violations = []
         
-        for event_id, event in list(ctx.observer._events.items())[-last * 5:]:
+        for _event_id, event in list(ctx.observer._events.items())[-last * 5:]:
             data = event.data if hasattr(event, 'data') else {}
             if data.get("violation") or data.get("blocked"):
                 violations.append({

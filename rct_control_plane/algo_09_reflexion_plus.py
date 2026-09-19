@@ -637,7 +637,7 @@ Suggestions: {', '.join(judge_result.suggestions)}
 
         if len(previous_attempts) > 1:
             reflection_prompt += "\nPattern Analysis:\n"
-            for i, attempt in enumerate(previous_attempts[-3:], 1):
+            for _i, attempt in enumerate(previous_attempts[-3:], 1):
                 reflection_prompt += (
                     f"Attempt {attempt.iteration}: "
                     f"Score {attempt.judge_result.score:.2f}, "

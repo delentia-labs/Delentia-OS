@@ -19,13 +19,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import asyncio
 
-from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
+# Round 30 (item 4 of Round 29's candidate list): migrated onto
+# shared_kernel - reviewed safe: real LLM call + sandbox execution, pure
+# function of the passed capability_spec/function_name/smoke_test_code.
 
 
-def test_synthesizes_and_verifies_a_real_simple_function():
-    kernel = AlgorithmKernel41()
-
-    result = asyncio.run(kernel.algo_39_genesis_synthesize_module(
+def test_synthesizes_and_verifies_a_real_simple_function(shared_kernel):
+    result = asyncio.run(shared_kernel.algo_39_genesis_synthesize_module(
         capability_spec="returns True if the input integer is even, False otherwise",
         function_name="is_even_generated",
         smoke_test_code="assert is_even_generated(4) is True\nassert is_even_generated(3) is False",

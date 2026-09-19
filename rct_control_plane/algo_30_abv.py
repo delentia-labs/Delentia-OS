@@ -450,7 +450,7 @@ class BayesianEngine:
         current_prior = prior
         params_list = []
 
-        for evidence, supporting in zip(evidence_list, supporting_flags):
+        for evidence, supporting in zip(evidence_list, supporting_flags, strict=True):
             params = self.update_belief_single(current_prior, evidence, supporting)
             params_list.append(params)
             current_prior = params.posterior
@@ -530,7 +530,7 @@ class BayesianEngine:
         likelihood_samples = np.clip(likelihood_samples, 0.01, 0.99)
 
         posteriors = []
-        for p, l in zip(prior_samples, likelihood_samples):
+        for p, l in zip(prior_samples, likelihood_samples, strict=True):
             marginal = (l * p) + ((1 - l) * (1 - p))
             posterior = (l * p) / max(marginal, 0.0001)
             posteriors.append(min(max(posterior, 0.0), 1.0))
@@ -1316,7 +1316,7 @@ class UncertaintyQuantifier:
         for i in range(n_bins):
             lower = bins[i]
             upper = bins[i + 1]
-            in_bin = [(p, o) for p, o in zip(predictions, outcomes) if lower <= p < upper]
+            in_bin = [(p, o) for p, o in zip(predictions, outcomes, strict=True) if lower <= p < upper]
 
             if in_bin:
                 bin_centers.append((lower + upper) / 2)
@@ -1350,7 +1350,7 @@ class UncertaintyQuantifier:
         for i in range(n_bins):
             lower = bins[i]
             upper = bins[i + 1]
-            in_bin = [(p, o) for p, o in zip(predictions, outcomes) if lower <= p < upper]
+            in_bin = [(p, o) for p, o in zip(predictions, outcomes, strict=True) if lower <= p < upper]
 
             if in_bin:
                 bin_conf = sum(p for p, _ in in_bin) / len(in_bin)

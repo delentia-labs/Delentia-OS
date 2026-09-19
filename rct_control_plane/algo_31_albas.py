@@ -565,7 +565,7 @@ class LoadPredictor:
             if not continuation:
                 continue
 
-            diff = sum(abs(a - b) for a, b in zip(current_pattern, pattern))
+            diff = sum(abs(a - b) for a, b in zip(current_pattern, pattern, strict=True))
             similarity = 1.0 / (1.0 + diff)
 
             if similarity > best_match_score:

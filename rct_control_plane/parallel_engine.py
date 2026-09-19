@@ -75,7 +75,7 @@ class ParallelExecutionEngine:
             tasks = [self.node_executor(node) for node in ready_nodes]
             wave_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for node, res in zip(ready_nodes, wave_results):
+            for node, res in zip(ready_nodes, wave_results, strict=True):
                 if isinstance(res, Exception):
                     node.status = NodeStatus.FAILED
                     results[node.id] = {"error": str(res), "status": "FAILED"}

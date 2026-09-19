@@ -12,6 +12,9 @@ from typing import Any, Dict, Tuple
 
 from rct_control_plane.lora_multiplexer import LoRAMultiplexer
 from rct_control_plane.otel_adapter import get_otel_adapter
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.guardian_evaluator")
 
 
 class SecurityException(Exception):
@@ -88,15 +91,17 @@ class GuardianEvaluator:
                 risk_level="HIGH" if a_value == 0 else "LOW",
             )
 
-        print(f"[INFO] Guardian Evaluator: Safety status is {status} (FDIA: F={f_score:.4f}, A={a_value})")
+        logger.info("Guardian Evaluator: Safety status is %s (FDIA: F=%.4f, A=%s)", status, f_score, a_value)
 
         if status == "REJECTED" or a_value == 0:
             reason = verdict.get("reason", "Hostile intent detected.")
             rule = verdict.get("rct_rule_violated", "RCT-1: Constitutional Boundary")
             incident = verdict.get("incident_id", "sec_unassigned")
-            
-            # Print detailed security violation log
-            print(f"[SECURITY ALERT] Harmful request blocked! Incident ID: {incident}, Rule Violated: {rule}, Reason: {reason}")
+
+            logger.warning(
+                "Guardian Evaluator: SECURITY ALERT — harmful request blocked! Incident ID: %s, Rule Violated: %s, Reason: %s",
+                incident, rule, reason,
+            )
             raise SecurityException(
                 f"Security block (FDIA={f_score:.2f}, A={a_value}). Intent violated rule {rule}. Reason: {reason}"
             )

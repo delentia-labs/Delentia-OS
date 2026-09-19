@@ -17,6 +17,9 @@ import hashlib
 from typing import Dict, Any, List
 from pathlib import Path
 from dotenv import load_dotenv
+from rct_control_plane.logging_config import configure_logging
+
+logger = configure_logging(name="delentia.bdi_causal_engine")
 
 # Force UTF-8 encoding
 if hasattr(sys.stdout, "reconfigure"):
@@ -216,7 +219,7 @@ class BDICausalRevisionEngine:
                     ai_reply = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
                     return normalize_thai_text(ai_reply)
             except Exception as ex:
-                print(f"[WARN] Live BDI Persona fallback: {ex}")
+                logger.warning("Live BDI Persona fallback: %s", ex)
 
         return default_text
 
