@@ -272,7 +272,9 @@ class RESTAdapter(BaseAdapter):
 
         overhead_ms = (time.time() - start_time) * 1000
         self.record_call(success=False, overhead_ms=overhead_ms)
-        raise last_exception
+        if last_exception is not None:
+            raise last_exception
+        raise RuntimeError(f"UIA adapter call failed with no retry attempts executed (retry_attempts={self.retry_attempts})")
 
     async def test_connection(self) -> bool:
         try:

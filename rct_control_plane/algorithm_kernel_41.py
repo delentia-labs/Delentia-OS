@@ -17,7 +17,19 @@ from __future__ import annotations  # lets Layer 1/10 type hints below stay lazy
 
 import math
 import time
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Round 27 Task 48: TYPE_CHECKING-guarded only — always False at
+    # runtime, so this adds ZERO eager imports and cannot reintroduce the
+    # real native-crash bug Round 21 fixed by deferring these same real
+    # imports (see the Layer 1/10 comment below). Resolves 5 real
+    # ruff F821 / mypy "undefined name" findings for JITNAKeypair/
+    # RS256KeyPair/CircuitBreaker, which are otherwise only ever used as
+    # (correctly lazy, per `from __future__ import annotations` above)
+    # string type hints.
+    from rct_control_plane.jitna_protocol import JITNAKeypair
+    from rct_control_plane.enterprise_hardening import RS256KeyPair, CircuitBreaker
 
 from rct_control_plane.mee_engine import MEEEngine
 from rct_control_plane.intent_compiler import IntentCompiler
@@ -202,19 +214,40 @@ class AlgorithmKernel41:
         self.version = "v3.0.0-41-ALGO-COMPLETE"
         self.executed_counts: Dict[str, int] = {f"ALGO-{i:02d}": 0 for i in range(1, 42)}
 
+        # Round 27 Phase 23 Task 47: kernel DI rewrite. Every engine below
+        # is now REGISTERED as a factory (nothing is constructed yet - only
+        # a lambda/local function is stored) and resolved via the SAME
+        # CapabilityRegistry Round 26 introduced additively; the
+        # resolve+assign block right after keeps every self._xxx attribute
+        # name identical to what it held before this rewrite (Zero-Delete:
+        # the 11 attributes real tests read directly - _agent_memory,
+        # _delta_engine, _graph_engine, _graphrag_engine, _mee_engine,
+        # _mee_session_default, _meta_algorithm_engine, _persistence,
+        # _prompt_engine, _tvra_engine, _vector_engine - keep pointing at
+        # equivalent real objects). Explicit depends_on= edges below were
+        # verified by reading the ORIGINAL construction order, not guessed.
+        from rct_control_plane.capability_registry import CapabilityRegistry
+        self._capability_registry = CapabilityRegistry()
+
         # Round 21 Phase 4 Task 9: instantiated BEFORE _mee_engine so a
         # real, previously-persisted MEE growth session can be restored
         # instead of always starting fresh at G=1.0. Explicit db_path
         # matches Phase 1 Task 3's choice — a separate real file from the
         # LIVE rct_control_plane.db this session must never write to.
         from rct_control_plane.persistence import ControlPlanePersistence
-        self._persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+        self._capability_registry.register(
+            "persistence", lambda: ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+        )
 
         # Round 22 Phase 9 Task 19: general-purpose memory, kernel-default
         # namespace (separate from any per-profile namespace - see
         # agent_profile.py's get_or_create_profile).
         from rct_control_plane.agent_memory import AgentMemory
-        self._agent_memory = AgentMemory(namespace="kernel_default", persistence=self._persistence)
+        self._capability_registry.register(
+            "agent_memory",
+            lambda: AgentMemory(namespace="kernel_default", persistence=self._capability_registry.get("persistence")),
+            depends_on=["persistence"],
+        )
 
         # Round 22: restores RCT-7's original Step 7 "Benchmark with
         # Intent" (see Docs-Obsidian/Slumdog_Brain/02_NightShift_Philo/
@@ -225,109 +258,205 @@ class AlgorithmKernel41:
         # SemanticMatcher Phase 9's AgentMemory already uses for real
         # recall ranking.
         from rct_control_plane.semantic_matcher import SemanticMatcher
-        self._semantic_matcher = SemanticMatcher()
+        self._capability_registry.register("semantic_matcher", lambda: SemanticMatcher())
 
-        self._mee_engine = MEEEngine()
-        restored_mee_row = self._persistence.get_state(namespace="mee", key="kernel_default")
-        if restored_mee_row is not None:
-            from rct_control_plane.mee_engine import MEESession
-            self._mee_session_default = MEESession.from_dict(restored_mee_row["value"])
-            self._mee_engine._sessions["kernel_default"] = self._mee_session_default
-        else:
-            self._mee_session_default = self._mee_engine.create_session("kernel_default")
-        self._intent_compiler = IntentCompiler()
+        self._capability_registry.register("mee_engine", lambda: MEEEngine())
+
+        def _build_mee_session_default():
+            mee_engine = self._capability_registry.get("mee_engine")
+            restored_mee_row = self._capability_registry.get("persistence").get_state(namespace="mee", key="kernel_default")
+            if restored_mee_row is not None:
+                from rct_control_plane.mee_engine import MEESession
+                session = MEESession.from_dict(restored_mee_row["value"])
+                mee_engine._sessions["kernel_default"] = session
+                return session
+            return mee_engine.create_session("kernel_default")
+
+        self._capability_registry.register(
+            "mee_session_default", _build_mee_session_default, depends_on=["mee_engine", "persistence"]
+        )
+        self._capability_registry.register("intent_compiler", lambda: IntentCompiler())
 
         # Round 19 Phase 1 engines — instantiated once, kernel-lifetime,
         # matching the ALGO-07/_mee_engine pattern.
-        self._reflexion_engine = ReflexionEngine()
-        self._rctdb_client = RCTDBClient(mock_mode=True)  # no Postgres in this environment yet
-        self._bba_pcf_engine = BBAPCFEngine()
-        self._meta_algorithm_engine = MetaAlgorithmEngine()
-        self._graphrag_engine = GraphRAGEngine()
-        self._hrm_scheduler = HRMScheduler()
-        _vector_backend = FAISSBackend(index_type="flat", metric="cosine")
-        _vector_backend.initialize(dimension=384)
-        self._vector_engine = VectorEngine(_vector_backend, dimension=384)
-        self._fusion_engine = FusionEngine()
-        self._halting_analyzer = HaltingAnalyzer()
-        self._content_box = LocalStorageHandler(storage_path="./workspace_output/content_box")
-        self._delta_engine = DeltaEngine()
+        self._capability_registry.register("reflexion_engine", lambda: ReflexionEngine())
+        self._capability_registry.register("rctdb_client", lambda: RCTDBClient(mock_mode=True))  # no Postgres in this environment yet
+        self._capability_registry.register("bba_pcf_engine", lambda: BBAPCFEngine())
+        self._capability_registry.register("meta_algorithm_engine", lambda: MetaAlgorithmEngine())
+        self._capability_registry.register("graphrag_engine", lambda: GraphRAGEngine())
+        self._capability_registry.register("hrm_scheduler", lambda: HRMScheduler())
+
+        def _build_vector_engine():
+            vector_backend = FAISSBackend(index_type="flat", metric="cosine")
+            vector_backend.initialize(dimension=384)
+            return VectorEngine(vector_backend, dimension=384)
+
+        self._capability_registry.register("vector_engine", _build_vector_engine)
+        self._capability_registry.register("fusion_engine", lambda: FusionEngine())
+        self._capability_registry.register("halting_analyzer", lambda: HaltingAnalyzer())
+        self._capability_registry.register("content_box", lambda: LocalStorageHandler(storage_path="./workspace_output/content_box"))
+        self._capability_registry.register("delta_engine", lambda: DeltaEngine())
 
         # Round 23 Phase 11 Task 25: real RCTDBFacade unifying the 5
         # conceptual RCTDB collections (experiments, deltas, mem_profiles,
         # architect_decisions - all real by this point in __init__) into
         # one correctly-named object, per the original whitepaper spec.
         from rct_control_plane.rctdb_facade import RCTDBFacade
-        self._rctdb_facade = RCTDBFacade(
-            persistence=self._persistence, delta_engine=self._delta_engine, agent_memory=self._agent_memory,
+        self._capability_registry.register(
+            "rctdb_facade",
+            lambda: RCTDBFacade(
+                persistence=self._capability_registry.get("persistence"),
+                delta_engine=self._capability_registry.get("delta_engine"),
+                agent_memory=self._capability_registry.get("agent_memory"),
+            ),
+            depends_on=["persistence", "delta_engine", "agent_memory"],
         )
 
         # Round 26 Phase 18 Task 39: real, persisted, queryable ground-truth
         # fact table closing ALGO-33's "ground truth IN A DATABASE" gap
         # (the existing HallucinationDetector only carries an in-code dict).
         from rct_control_plane.ground_truth_store import GroundTruthStore
-        self._ground_truth_store = GroundTruthStore()
+        self._capability_registry.register("ground_truth_store", lambda: GroundTruthStore())
 
-        self._abv_engine = ABVEngine()
-        self._semantic_analyzer = SemanticAnalyzer()
-        self._timeout_controller = TimeoutController()
-        self._predictive_engine = PredictiveEngine()
+        self._capability_registry.register("abv_engine", lambda: ABVEngine())
+        self._capability_registry.register("semantic_analyzer", lambda: SemanticAnalyzer())
+        self._capability_registry.register("timeout_controller", lambda: TimeoutController())
+        self._capability_registry.register("predictive_engine", lambda: PredictiveEngine())
 
         # Round 19 Phase 2 engines. ALGO-18's RAGEngine and ALGO-20's
         # IntegrationManager are wired to the SAME VectorEngine/HRM
         # Scheduler/FusionEngine instances constructed above — real
         # in-process calls, not a second copy of state.
-        self._prompt_engine = PromptEngine()
-        self._rag_engine = RAGEngine(self._vector_engine)
-        self._workflow_engine = WorkflowEngine(
-            integration_manager=IntegrationManager(self._hrm_scheduler, self._fusion_engine)
+        self._capability_registry.register("prompt_engine", lambda: PromptEngine())
+        self._capability_registry.register(
+            "rag_engine", lambda: RAGEngine(self._capability_registry.get("vector_engine")), depends_on=["vector_engine"]
         )
-        self._request_batcher = RequestBatcher()
-        self._scaling_engine = ScalingEngine()
-        self._scaling_engine.register_policy(ScalingPolicy(
-            id="kernel-default", name="Default target-tracking policy",
-            policy_type=PolicyType.TARGET_TRACKING, metric="cpu_usage",
-            target_value=50.0, scale_up_threshold=70.0, scale_down_threshold=30.0,
-        ))
-        self._scaling_engine.set_active_policy("kernel-default")
-        self._load_predictor = LoadPredictor()
-        self._hallucination_detector = HallucinationDetector()
-        self._rflh_engine = RFLHEngine()
+        self._capability_registry.register(
+            "workflow_engine",
+            lambda: WorkflowEngine(integration_manager=IntegrationManager(
+                self._capability_registry.get("hrm_scheduler"), self._capability_registry.get("fusion_engine")
+            )),
+            depends_on=["hrm_scheduler", "fusion_engine"],
+        )
+        self._capability_registry.register("request_batcher", lambda: RequestBatcher())
+
+        def _build_scaling_engine():
+            engine = ScalingEngine()
+            engine.register_policy(ScalingPolicy(
+                id="kernel-default", name="Default target-tracking policy",
+                policy_type=PolicyType.TARGET_TRACKING, metric="cpu_usage",
+                target_value=50.0, scale_up_threshold=70.0, scale_down_threshold=30.0,
+            ))
+            engine.set_active_policy("kernel-default")
+            return engine
+
+        self._capability_registry.register("scaling_engine", _build_scaling_engine)
+        self._capability_registry.register("load_predictor", lambda: LoadPredictor())
+        self._capability_registry.register("hallucination_detector", lambda: HallucinationDetector())
+        self._capability_registry.register("rflh_engine", lambda: RFLHEngine())
 
         # Round 20 (2026-09-16) engines. ALGO-08 reuses this kernel's own
         # real ALGO-07 MEESession and ALGO-10 RCTDBClient in-process,
         # exactly as ALGO-18/20 reuse ALGO-16/15/19's engines.
-        self._self_evolving_orchestrator = SelfEvolvingOrchestrator(
-            self._mee_session_default, self._rctdb_client
+        self._capability_registry.register(
+            "self_evolving_orchestrator",
+            lambda: SelfEvolvingOrchestrator(
+                self._capability_registry.get("mee_session_default"), self._capability_registry.get("rctdb_client")
+            ),
+            depends_on=["mee_session_default", "rctdb_client"],
         )
-        self._graph_engine = GraphEngine()
-        self._benchmark_suite = KernelBenchmarkSuite()
-        self._intent_classifier = IntentClassifier()
+        self._capability_registry.register("graph_engine", lambda: GraphEngine())
+        self._capability_registry.register("benchmark_suite", lambda: KernelBenchmarkSuite())
+        self._capability_registry.register("intent_classifier", lambda: IntentClassifier())
 
         # Round 20+ engines. ALGO-21's router reuses this kernel's own
         # already-real ALGO-09/11/26 engines in-process (MCTR wired in
         # too, once ALGO-32's engines below are constructed).
-        self._mctr_generator = ThoughtChainGenerator()
-        self._mctr_reasoning_engine = MCTRReasoningEngine()
-        self._mctr_chain_merger = ChainMerger()
-        self._mctr_chain_validator = ChainValidator()
-        self._mctr_conflict_resolver = ConflictResolver()
-        self._mctr_answer_synthesizer = AnswerSynthesizer()
+        self._capability_registry.register("mctr_generator", lambda: ThoughtChainGenerator())
+        self._capability_registry.register("mctr_reasoning_engine", lambda: MCTRReasoningEngine())
+        self._capability_registry.register("mctr_chain_merger", lambda: ChainMerger())
+        self._capability_registry.register("mctr_chain_validator", lambda: ChainValidator())
+        self._capability_registry.register("mctr_conflict_resolver", lambda: ConflictResolver())
+        self._capability_registry.register("mctr_answer_synthesizer", lambda: AnswerSynthesizer())
 
-        self._fast_slow_router = FastSlowRouter(
-            intent_compiler=self._intent_compiler,
-            intent_classifier=self._intent_classifier,
-            reflexion_engine=self._reflexion_engine,
-            bba_pcf_engine=self._bba_pcf_engine,
-            mctr_generator=self._mctr_generator,
-            mctr_reasoning_engine=self._mctr_reasoning_engine,
+        self._capability_registry.register(
+            "fast_slow_router",
+            lambda: FastSlowRouter(
+                intent_compiler=self._capability_registry.get("intent_compiler"),
+                intent_classifier=self._capability_registry.get("intent_classifier"),
+                reflexion_engine=self._capability_registry.get("reflexion_engine"),
+                bba_pcf_engine=self._capability_registry.get("bba_pcf_engine"),
+                mctr_generator=self._capability_registry.get("mctr_generator"),
+                mctr_reasoning_engine=self._capability_registry.get("mctr_reasoning_engine"),
+            ),
+            depends_on=["intent_compiler", "intent_classifier", "reflexion_engine", "bba_pcf_engine", "mctr_generator", "mctr_reasoning_engine"],
         )
 
-        self._tvra_engine = TVRAEngine(
-            video_processor=VideoProcessor(), audio_processor=AudioProcessor(), reasoning_engine=TVRAReasoningEngine(),
+        self._capability_registry.register(
+            "tvra_engine",
+            lambda: TVRAEngine(
+                video_processor=VideoProcessor(), audio_processor=AudioProcessor(), reasoning_engine=TVRAReasoningEngine(),
+            ),
         )
 
-        self._diffusion_engine = DiffusionEngine(DiffusionConfig())
+        self._capability_registry.register("diffusion_engine", lambda: DiffusionEngine(DiffusionConfig()))
+
+        # Round 27 Task 46: registers the bound METHODS (not engine objects)
+        # selected by select_relevant_algorithms/_ALGORITHM_RELEVANCE_KEYWORDS
+        # so process_intent_deep_pipeline's selective-dispatch node_fns dict
+        # no longer needs a hardcoded literal per algorithm.
+        self._capability_registry.register("algo_13_graphrag", lambda: self.algo_13_graphrag)
+        self._capability_registry.register("algo_14_rct_diffusion", lambda: self.algo_14_rct_diffusion)
+
+        # --- Resolve + assign: same attribute names, same real object
+        # kinds, same relative order as the original direct construction
+        # (preserves any native-library load-order sensitivity previously
+        # documented in this file) - the ONLY thing that changed above is
+        # HOW each one gets built, never WHAT ends up on self.
+        self._persistence = self._capability_registry.get("persistence")
+        self._agent_memory = self._capability_registry.get("agent_memory")
+        self._semantic_matcher = self._capability_registry.get("semantic_matcher")
+        self._mee_engine = self._capability_registry.get("mee_engine")
+        self._mee_session_default = self._capability_registry.get("mee_session_default")
+        self._intent_compiler = self._capability_registry.get("intent_compiler")
+        self._reflexion_engine = self._capability_registry.get("reflexion_engine")
+        self._rctdb_client = self._capability_registry.get("rctdb_client")
+        self._bba_pcf_engine = self._capability_registry.get("bba_pcf_engine")
+        self._meta_algorithm_engine = self._capability_registry.get("meta_algorithm_engine")
+        self._graphrag_engine = self._capability_registry.get("graphrag_engine")
+        self._hrm_scheduler = self._capability_registry.get("hrm_scheduler")
+        self._vector_engine = self._capability_registry.get("vector_engine")
+        self._fusion_engine = self._capability_registry.get("fusion_engine")
+        self._halting_analyzer = self._capability_registry.get("halting_analyzer")
+        self._content_box = self._capability_registry.get("content_box")
+        self._delta_engine = self._capability_registry.get("delta_engine")
+        self._rctdb_facade = self._capability_registry.get("rctdb_facade")
+        self._ground_truth_store = self._capability_registry.get("ground_truth_store")
+        self._abv_engine = self._capability_registry.get("abv_engine")
+        self._semantic_analyzer = self._capability_registry.get("semantic_analyzer")
+        self._timeout_controller = self._capability_registry.get("timeout_controller")
+        self._predictive_engine = self._capability_registry.get("predictive_engine")
+        self._prompt_engine = self._capability_registry.get("prompt_engine")
+        self._rag_engine = self._capability_registry.get("rag_engine")
+        self._workflow_engine = self._capability_registry.get("workflow_engine")
+        self._request_batcher = self._capability_registry.get("request_batcher")
+        self._scaling_engine = self._capability_registry.get("scaling_engine")
+        self._load_predictor = self._capability_registry.get("load_predictor")
+        self._hallucination_detector = self._capability_registry.get("hallucination_detector")
+        self._rflh_engine = self._capability_registry.get("rflh_engine")
+        self._self_evolving_orchestrator = self._capability_registry.get("self_evolving_orchestrator")
+        self._graph_engine = self._capability_registry.get("graph_engine")
+        self._benchmark_suite = self._capability_registry.get("benchmark_suite")
+        self._intent_classifier = self._capability_registry.get("intent_classifier")
+        self._mctr_generator = self._capability_registry.get("mctr_generator")
+        self._mctr_reasoning_engine = self._capability_registry.get("mctr_reasoning_engine")
+        self._mctr_chain_merger = self._capability_registry.get("mctr_chain_merger")
+        self._mctr_chain_validator = self._capability_registry.get("mctr_chain_validator")
+        self._mctr_conflict_resolver = self._capability_registry.get("mctr_conflict_resolver")
+        self._mctr_answer_synthesizer = self._capability_registry.get("mctr_answer_synthesizer")
+        self._fast_slow_router = self._capability_registry.get("fast_slow_router")
+        self._tvra_engine = self._capability_registry.get("tvra_engine")
+        self._diffusion_engine = self._capability_registry.get("diffusion_engine")
 
         # Round 21 Phase 1 Task 3: real audit trail via the already-real
         # ControlPlanePersistence (persistence.py) - previously
@@ -349,26 +478,13 @@ class AlgorithmKernel41:
         # properties below generate the keypair on first real use
         # instead, after the constructor's own native-heavy work has
         # already settled - a real robustness fix, not just a workaround
-        # for this one symptom.
+        # for this one symptom. Deliberately kept OUTSIDE the Task 47 DI
+        # rewrite above — registering these as eager registry factories
+        # would reconstruct the exact crash-prone eager-construction
+        # scenario this comment describes.
         self._jitna_keypair_lazy: Optional[JITNAKeypair] = None
         self._rs256_keypair_lazy: Optional[RS256KeyPair] = None
         self._circuit_breakers: Dict[str, CircuitBreaker] = {}
-
-        # Round 26 Phase 20 Task 42: scoped, ADDITIVE capability registry —
-        # NOT a rewrite of this __init__'s existing direct construction
-        # above (Zero-Delete; every self._xxx line above is untouched).
-        # Registers already-constructed real engines under stable names so
-        # a FUTURE round's new capability can look up a dependency via
-        # get_capability() instead of requiring a hand-edit to this
-        # constructor plus every call site that needs it (the friction
-        # Round 25's Task 35-36 selective-dispatch surfaced).
-        from rct_control_plane.capability_registry import CapabilityRegistry
-        self._capability_registry = CapabilityRegistry()
-        self._capability_registry.register("graphrag_engine", lambda: self._graphrag_engine)
-        self._capability_registry.register("vector_engine", lambda: self._vector_engine)
-        self._capability_registry.register("graph_engine", lambda: self._graph_engine)
-        self._capability_registry.register("ground_truth_store", lambda: self._ground_truth_store)
-        self._capability_registry.register("semantic_matcher", lambda: self._semantic_matcher)
 
     def get_capability(self, name: str) -> Any:
         """Round 26 Task 42: public wrapper around the additive
@@ -641,6 +757,35 @@ class AlgorithmKernel41:
         self.executed_counts["ALGO-06"] += 1
         return {"has_error": bool(error), "correction_action": "APPLY_INVARIANT" if error else "PASS"}
 
+    def algo_06_jitna_export_state_container(self, session_id: str) -> Dict[str, Any]:
+        """ALGO-06 (JITNA State Container half, Round 27 Task 43): real,
+        signed, portable export of a session's real reconstructed context
+        (deltas + state, via the already-real RCTDBFacade), closing the
+        master doc's "State Container...ทำให้บริบทของงานไม่สูญหายเมื่อย้าย
+        เครื่องประมวลผล" (context survives moving to another machine) half
+        that algo_06_reflexion never covered. Composes real, already-tested
+        pieces (RCTDBFacade.restore_session_context, JITNAPacket signing) -
+        no new persistence or crypto logic."""
+        self.executed_counts["ALGO-06"] += 1
+        from rct_control_plane.jitna_protocol import JITNAPacket, sign_packet
+
+        context = self._rctdb_facade.restore_session_context(session_id)
+        packet = JITNAPacket(message_type="STATE_CONTAINER", source_agent_id="kernel", payload=context)
+        signed = sign_packet(packet, self._jitna_keypair)
+        return signed.to_dict()
+
+    def algo_06_jitna_import_state_container(self, packet_dict: Dict[str, Any], sender_public_key_raw: Optional[bytes] = None) -> Dict[str, Any]:
+        """ALGO-06 (JITNA State Container half, import side): real signature
+        verification before ever handing back "restored" context - a
+        tampered or unverifiable packet honestly returns no context rather
+        than trusting it anyway."""
+        self.executed_counts["ALGO-06"] += 1
+        from rct_control_plane.jitna_protocol import JITNAPacket, verify_packet
+
+        packet = JITNAPacket(**packet_dict)
+        verified = verify_packet(packet, sender_public_key_raw or self._jitna_keypair.public_key_raw())
+        return {"verified": verified, "restored_context": packet.payload if verified else None}
+
     # =========================================================================
     # Tier 3 (partial): ALGO-07 — the only Tier 3-8 algorithm with a real
     # implementation as of 2026-09-12 (see class docstring for wiring note)
@@ -725,6 +870,47 @@ class AlgorithmKernel41:
             "project": project_name, "project_dir": project_dir,
             "files_scaffolded": len(files_created), "files": files_created,
             "status": "GENESIS_INITIALIZED",
+        }
+
+    async def algo_39_genesis_synthesize_module(self, capability_spec: str, function_name: str, smoke_test_code: str) -> Dict[str, Any]:
+        """ALGO-39 (on-the-fly synthesis half, Round 27 Task 45): real,
+        modestly-scoped closing of the master doc's "สังเคราะห์โมดูลใหม่
+        แบบ On-the-Fly เมื่อระบบตรวจพบว่าไม่มี Tool ที่รองรับงานนั้นๆ"
+        (synthesize a new module on-the-fly when no tool supports the
+        task) — a single real function, not full multi-file module
+        generation. Generates real code via the real default LLM provider,
+        writes it to a real file, and PROVES it works via the same
+        real generate-then-sandbox-verify pattern Round 26's
+        algo_24_humaneval_style_benchmark already established, rather than
+        trusting the LLM's output blindly. `verified: False` (not a crash)
+        is the honest outcome when generated code fails its own smoke
+        test — generated-code correctness is never guaranteed."""
+        self.executed_counts["ALGO-39"] += 1
+        import os
+        import re
+        import tempfile
+        from rct_control_plane.llm_provider import get_default_provider
+        from rct_control_plane.sandbox import run_sandboxed
+
+        prompt = (
+            f"Write a single real Python function named exactly `{function_name}` that: "
+            f"{capability_spec}. Return ONLY the function code, no explanation, no markdown fences."
+        )
+        provider = get_default_provider()
+        raw_code = await provider.complete(prompt, temperature=0.2)
+        code = re.sub(r"^```(?:python)?\s*|```\s*$", "", raw_code.strip(), flags=re.MULTILINE).strip()
+
+        os.makedirs("./workspace_output/genesis", exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, dir="./workspace_output/genesis", encoding="utf-8",
+        ) as f:
+            f.write(f"{code}\n\n{smoke_test_code}\nprint('SYNTHESIS_OK')\n")
+            file_path = f.name
+
+        result = run_sandboxed(f'python "{file_path}"', timeout_seconds=10.0)
+        return {
+            "synthesized": True, "file_path": file_path,
+            "verified": result.exit_code == 0, "stdout": result.stdout, "stderr": result.stderr,
         }
 
     def algo_40_itsr_recommender(self, domain: str) -> Dict[str, str]:
@@ -831,6 +1017,19 @@ class AlgorithmKernel41:
             results = self._rctdb_client.search_documents(query, limit=limit)
             return {"query": query, "results": [r.__dict__ if hasattr(r, "__dict__") else r for r in results]}
         return self._rctdb_client.get_vault_stats().__dict__
+
+    def algo_10_delta_memory_incremental_store(self, session_id: str, change_description: str) -> Dict[str, Any]:
+        """ALGO-10 (state-delta half, Round 27 Task 44): master doc
+        specifies ALGO-10 as "long-term incremental storage...linked to
+        ALGO-03" (state deltas). `algo_10_delta_memory` above is a real,
+        confirmed naming collision — the actual RCTDBClient it wraps is a
+        Vault-1068 document client, not delta storage (see
+        Chapter03_Vault1068_and_RCTDB_full.md). The real state-delta
+        capability the master doc describes already exists under ALGO-25;
+        this is a thin, honestly-labeled delegation rather than a second
+        implementation."""
+        self.executed_counts["ALGO-10"] += 1
+        return self.algo_25_delta_block(session_id, change_description, source="algo_10")
 
     def algo_16_vector_search(self, query_vector: List[float], k: int = 10) -> Dict[str, Any]:
         """ALGO-16: Vector Search — real FAISS-backed similarity search."""
@@ -1559,14 +1758,15 @@ class AlgorithmKernel41:
             if selected:
                 from rct_control_plane.nodal_assembly import assemble
                 from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
-                # Real bound async methods passed directly (not wrapped in
-                # a lambda) so assemble()'s inspect.iscoroutinefunction()
-                # check correctly detects and awaits them.
-                node_fns = {
-                    "algo_13_graphrag": self.algo_13_graphrag,
-                    "algo_14_rct_diffusion": self.algo_14_rct_diffusion,
-                }
-                nodes = [(name, node_fns[name], (intent,), {}) for name in selected]
+                # Round 27 Task 46: looked up via CapabilityRegistry instead
+                # of a hardcoded dict literal — adding a 3rd selectively-
+                # dispatched algorithm now needs one register() call in
+                # __init__ plus a _ALGORITHM_RELEVANCE_KEYWORDS entry, not a
+                # 3rd hand-edit of this dict too. get_capability() returns
+                # the real bound method directly (not wrapped in a lambda),
+                # so assemble()'s inspect.iscoroutinefunction() check still
+                # correctly detects and awaits it.
+                nodes = [(name, self.get_capability(name), (intent,), {}) for name in selected]
                 synthesized = await assemble(intent, nodes, ChainMerger(), AnswerSynthesizer())
                 selective_algorithm_dispatch["result"] = synthesized.answer
 
