@@ -44,6 +44,13 @@ msgpack>=1.2.1       # PYSEC-2026-3625 (fixed 1.2.1)
 pip>=26.2.0          # PYSEC-2026-3721 (fixed 26.2.0)
 pygments>=2.20.0     # PYSEC-2026-2987 (fixed 2.20.0)
 soupsieve>=2.9.0     # PYSEC-2026-3071/3072, CVE-2026-85999/86000 (fixed 2.9.0)
+# Round 29 Task 59: not directly imported by this project's own code
+# either (verified via grep), pulled in transitively.
+lxml>=6.1.0                  # PYSEC-2026 lxml advisory (fixed 6.1.0)
+lxml-html-clean>=0.4.5       # lxml-html-clean advisory (fixed 0.4.5)
+datasets>=5.0.1               # HF datasets advisory (fixed 5.0.1)
+pydantic-settings>=2.14.2     # pydantic-settings advisory (fixed 2.14.2)
+python-multipart>=0.0.31      # python-multipart advisory (fixed 0.0.31)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI

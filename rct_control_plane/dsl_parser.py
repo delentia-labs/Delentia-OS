@@ -452,7 +452,7 @@ class DSLParser:
                         graph.add_edge(edge)
                     except ValueError as e:
                         # Cycle detected
-                        raise DSLParseError(str(e))
+                        raise DSLParseError(str(e)) from e
         
         # Calculate total cost
         total_cost = Decimal("0.0")

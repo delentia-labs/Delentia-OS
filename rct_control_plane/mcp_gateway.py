@@ -408,7 +408,7 @@ async def handle_mcp_jsonrpc(request: Request):
     try:
         body = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        raise HTTPException(status_code=400, detail="Invalid JSON payload") from None
 
     req_id = body.get("id")
     method = body.get("method")

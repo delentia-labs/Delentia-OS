@@ -149,7 +149,7 @@ exclude = [
 # codes were each triaged and fixed (or narrowly noqa'd with a reason)
 # in Round 28; see DELENTIA_ROUND28_*_SYNTHESIS.md for the Round 29 plan
 # to work through the rest incrementally.
-select = ["F", "B006", "B011", "B017", "B027", "B033"]
+select = ["F", "B006", "B011", "B017", "B027", "B033", "B904"]
 ignore = [
     "F403",  # star imports
     "F405",  # undefined or defined from star imports

@@ -407,6 +407,11 @@ class AlgorithmKernel41:
         # no longer needs a hardcoded literal per algorithm.
         self._capability_registry.register("algo_13_graphrag", lambda: self.algo_13_graphrag)
         self._capability_registry.register("algo_14_rct_diffusion", lambda: self.algo_14_rct_diffusion)
+        # Round 29 Task 68: registers the text-input ADAPTER (not the raw
+        # algo_16_vector_search, which needs a real vector, not text) so
+        # selective dispatch's uniform `callable(intent)` call shape works
+        # for this algorithm too.
+        self._capability_registry.register("algo_16_vector_search", lambda: self.algo_16_vector_search_from_text)
 
         # --- Resolve + assign: same attribute names, same real object
         # kinds, same relative order as the original direct construction
@@ -992,6 +997,11 @@ class AlgorithmKernel41:
     _ALGORITHM_RELEVANCE_KEYWORDS: Dict[str, List[str]] = {
         "algo_13_graphrag": ["research", "knowledge", "documentation", "explain", "understand"],
         "algo_14_rct_diffusion": ["design", "diagram", "visual", "image", "mockup", "wireframe"],
+        # Round 29 Task 68: real text-only-derivable candidate, added via
+        # algo_16_vector_search_from_text (below) rather than the raw
+        # algo_16_vector_search, which genuinely needs a caller-supplied
+        # vector, not text.
+        "algo_16_vector_search": ["search", "similar", "lookup", "nearest", "embedding"],
     }
 
     def select_relevant_algorithms(self, golden_keywords: List[Dict[str, Any]], intent_text: str) -> List[str]:
@@ -1042,6 +1052,19 @@ class AlgorithmKernel41:
         """ALGO-16: Vector Search — real FAISS-backed similarity search."""
         self.executed_counts["ALGO-16"] += 1
         return self._vector_engine.search(query_vector, k=k)
+
+    def algo_16_vector_search_from_text(self, text: str) -> Dict[str, Any]:
+        """ALGO-16 (text-input adapter, Round 29 Task 68): real,
+        deterministic text->vector conversion (the same hashing-trick
+        technique mcp_server.py's _hash_embed_query already establishes
+        and already uses for this exact algorithm in Nodal Assembly's
+        allowlist) so ALGO-16 can join Round 25's selective-dispatch pool
+        alongside ALGO-13/14, which take raw intent text directly.
+        algo_16_vector_search itself is untouched - still takes a real
+        caller-supplied vector."""
+        from rct_control_plane.mcp_server import _hash_embed_query
+        query_vector = _hash_embed_query(text, dim=self._vector_engine.dimension)
+        return self.algo_16_vector_search(query_vector, k=5)
 
     def algo_19_data_fusion(self, modalities: Dict[str, List[float]], strategy: str = "hybrid") -> Dict[str, Any]:
         """ALGO-19: Data Fusion v2 — real early/late/hybrid multi-modal fusion."""

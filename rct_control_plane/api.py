@@ -649,8 +649,8 @@ class ControlPlaneAPI:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Intent compilation failed: {str(e)}"
-                )
-        
+                ) from e
+
         @self.app.post("/v1/graph/build", response_model=GraphBuildResponse)
         async def build_graph(request: GraphBuildRequest):
             """
@@ -737,8 +737,8 @@ class ControlPlaneAPI:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Policy evaluation failed: {str(e)}"
-                )
-        
+                ) from e
+
         @self.app.get("/v1/state/{intent_id}", response_model=StateResponse)
         async def get_state(intent_id: str):
             """
@@ -922,7 +922,7 @@ class ControlPlaneAPI:
             try:
                 ok = FLAG_STORE.set_rollout(flag_key, body.percentage)
             except ValueError as exc:
-                raise HTTPException(status_code=400, detail=str(exc))
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
             if not ok:
                 raise HTTPException(status_code=404, detail=f"Flag '{flag_key}' not found")
             return {"flag_key": flag_key, "rollout_percentage": body.percentage}
@@ -1106,7 +1106,7 @@ class ControlPlaneAPI:
             try:
                 mux._validate_adapter_name(slot_name)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
 
             if not mux.mock_mode and mux.model is None:
                 # Lazy, one-time real weight load on first real-mode swap —

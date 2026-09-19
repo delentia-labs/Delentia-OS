@@ -611,7 +611,7 @@ def status(
                         render_warning("Live dashboard stopped by Ctrl-C")
                     else:
                         click.echo("Live dashboard stopped by Ctrl-C", err=True)
-                    raise SystemExit(130)
+                    raise SystemExit(130) from None
                 _print_next_steps(
                     [
                         "Run [bold cyan]rct doctor[/] for dependency and port diagnostics",
@@ -1957,7 +1957,7 @@ def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool
             render_warning("RCT OS interrupted during shutdown")
         else:
             click.echo("RCT OS interrupted during shutdown", err=True)
-        raise SystemExit(130)
+        raise SystemExit(130) from None
     finally:
         signal.signal(signal.SIGINT, cast(signal.Handlers, original_sigint))
 
