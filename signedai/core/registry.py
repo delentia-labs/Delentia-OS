@@ -256,6 +256,7 @@ class SignedAITier(str, Enum):
     TIER_S = "tier_s"   # 1 signer  — fast, low-cost
     TIER_4 = "tier_4"   # 4 signers — 2 West + 2 East
     TIER_6 = "tier_6"   # 6 signers — 3 West + 3 East (production default)
+    TIER_7_REGIONAL = "tier_7_regional"  # 7 signers — 3 West + 3 East + 1 Thai (Round 32: real >=75% consensus, regional-inclusive)
     TIER_8 = "tier_8"   # 8 signers — Tier 6 + Chairman + Reasoner (God Mode)
 
 
@@ -277,6 +278,19 @@ class TierConfig(BaseModel):
     east_count: int
     cost_multiplier: float
     recommended_for: List[str] = Field(default_factory=list)
+    consensus_threshold: float = Field(
+        default=0.75,
+        description=(
+            "Round 32: minimum fraction of votes-for (of total votes cast) "
+            "required, in addition to required_votes. Closes a real gap "
+            "found in the Round 31 audit - no ratio-based threshold existed "
+            "anywhere in this file before; calculate_consensus() only ever "
+            "checked the raw vote count. Each existing tier's value below "
+            "is set to preserve its exact current pass/fail behavior "
+            "(Zero-Delete) - see calculate_consensus()'s own comment for "
+            "why TIER_6 is not simply defaulted to 0.75."
+        ),
+    )
 
 
 class ConsensusResult(BaseModel):
@@ -343,7 +357,44 @@ class SignedAIRegistry:
             west_count=3,
             east_count=3,
             cost_multiplier=6.0,
+            # Round 32: explicitly set to TIER_6's own real current ratio
+            # (4 of 6 signers), not the new 0.75 default - preserves the
+            # documented "Bare majority (4/6)" scenario in
+            # examples/signed_ai_demo.py, which genuinely relies on 4/6
+            # (~66.7%) reaching consensus. TIER_6 is intentionally a lower,
+            # honestly-disclosed bar than TIER_7_REGIONAL/TIER_4 below - not
+            # every tier needs the same threshold.
+            consensus_threshold=4 / 6,
             recommended_for=["Production releases", "DB migrations", "Security-critical code"],
+        ),
+        # Round 32: real, additive tier closing the audit-confirmed gap
+        # where the design doc's "3 US, 3 CN, 1 Thai" consensus composition
+        # was never actually reachable through any real TierConfig -
+        # REGIONAL_THAI was declared in the registry but never included in
+        # any tier's signers list. TIER_6 is left completely untouched
+        # above (Zero-Delete) - this is a new, separate tier, not a
+        # mutation of it.
+        SignedAITier.TIER_7_REGIONAL: TierConfig(
+            tier=SignedAITier.TIER_7_REGIONAL,
+            signers=[
+                HexaCoreRole.SUPREME_ARCHITECT,
+                HexaCoreRole.SPECIALIST,
+                HexaCoreRole.LIBRARIAN,
+                HexaCoreRole.LEAD_BUILDER,
+                HexaCoreRole.JUNIOR_BUILDER,
+                HexaCoreRole.HUMANIZER,
+                HexaCoreRole.REGIONAL_THAI,
+            ],
+            required_votes=6,
+            chairman_veto=False,
+            west_count=3,
+            east_count=3,
+            cost_multiplier=7.0,
+            consensus_threshold=0.75,
+            recommended_for=[
+                "Regional/Thai-market production releases",
+                "Security-critical code with regional compliance needs",
+            ],
         ),
         SignedAITier.TIER_8: TierConfig(
             tier=SignedAITier.TIER_8,
@@ -421,8 +472,15 @@ class SignedAIRegistry:
             consensus = chairman_override
             confidence = 1.0 if chairman_override else 0.0
         else:
-            consensus = votes_for >= config.required_votes
             confidence = (votes_for / total_votes) if total_votes > 0 else 0.0
+            # Round 32: real ratio-based threshold, closing the audit-
+            # confirmed gap where no >=X% check existed anywhere in this
+            # method before (only the raw votes_for >= required_votes
+            # count). Each tier's consensus_threshold is set (see the
+            # TierConfig definitions above) to preserve every tier's exact
+            # pre-Round-32 pass/fail behavior except where a tier is
+            # specifically designed to require a real minimum ratio.
+            consensus = votes_for >= config.required_votes and confidence >= config.consensus_threshold
 
         avg_cost_per_call = 0.001  # rough estimate per signer request
         cost = len(config.signers) * avg_cost_per_call * config.cost_multiplier
