@@ -58,6 +58,12 @@ python-multipart>=0.0.31      # python-multipart advisory (fixed 0.0.31)
 # with no ceiling; the real CVE-fix version (a 0.x->1.x major bump) was
 # verified compatible via the full regression suite before adding this.
 starlette>=1.0.1  # PYSEC-2026 starlette advisories (fixed 1.0.1+)
+# Round 29 Task 62: pillow's CVE fix (12.2.0+) landed as a real side
+# effect of restoring torch/torchvision after the torch 2.13.0 install
+# failure (see pyproject.toml's `diffusion` extra comment) - torchvision
+# 0.27.1's own flexible pillow constraint let pip resolve straight to
+# 12.3.0. Declared explicitly here so a fresh environment gets it too.
+pillow>=12.2.0  # PYSEC-2026 pillow advisories (fixed 12.2.0/12.3.0)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI

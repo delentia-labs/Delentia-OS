@@ -65,6 +65,16 @@ integrations = ["gql>=3.5.0", "websockets>=12.0", "loguru>=0.7.0"]  # ALGO-29 UI
 # with the user's explicit approval. All CPU-runnable — no GPU required,
 # though real inference is faster with one.
 diffusion = ["diffusers>=0.30.0", "accelerate>=0.30.0", "safetensors>=0.4.0"]  # ALGO-14 RCT-Diffusion (segmind/tiny-sd)
+# Round 29 Task 62: torch's own CVE fix (2.13.0) could not be installed
+# in this environment - a real Windows path-length limit was hit
+# ("filename or extension is too long") on a deeply-nested third-party
+# license file inside the 2.13.0 wheel's dist-info, unrelated to any
+# code compatibility issue. Reverted to the known-good torch==2.12.1 /
+# torchvision==0.27.1 pair immediately (verified via full suite: 1416
+# passed, 0 failed) rather than leave the environment broken. Fixing
+# torch's CVE for real needs Windows Long Path support enabled first
+# (a system setting change, the Architect's own action) - see the Round
+# 29 synthesis doc's Round 30 candidate list.
 media-ai = [
     "ultralytics>=8.0.0",       # ALGO-27 real object detection (YOLOv8n)
     "openai-whisper>=20231117", # ALGO-27 real speech transcription + language ID
