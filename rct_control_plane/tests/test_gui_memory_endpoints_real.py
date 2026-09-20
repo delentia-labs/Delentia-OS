@@ -61,6 +61,18 @@ class TestRctdbQueryEndpoint:
         assert data["query_type"] == "hybrid"
 
 
+class TestSystemStatsEndpoint:
+    def test_stats_reflect_real_verified_counts_not_fabricated_marketing_numbers(self, api_client):
+        resp = api_client.get("/delentia/system/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["algorithmCount"] == 41
+        assert data["microserviceCount"] == 5
+        assert data["hexaCoreCount"] == 10
+        assert data["sla"] == "not measured"
+        assert data["uptime_seconds"] >= 0
+
+
 class TestMemoryRollbackEndpoint:
     def test_rollback_to_a_real_recent_delta_succeeds(self, api_client):
         ALGORITHM_KERNEL.algo_25_delta_block("gui_rollback_test", "first change")
