@@ -269,6 +269,18 @@ async def delentia_check_ground_truth_claim(subject: str, predicate: str, claime
     return _kernel._ground_truth_store.check_claim(subject, predicate, claimed_value)
 
 
+# Round 33: files that write/patch tools must never touch, mirroring this
+# workspace's own permanent do-not-touch list (.clinerules/delentia.config.yaml)
+# exactly - a real, additional safety boundary before granting any MCP
+# client write access to this kernel's own source.
+_WRITE_BLOCKED_PATTERNS = (".env", "_secret", "credentials.json", "vault_master.key")
+
+
+def _is_write_blocked(relative_path: str) -> bool:
+    lowered = relative_path.lower()
+    return any(pattern in lowered for pattern in _WRITE_BLOCKED_PATTERNS) or ".git" in Path(relative_path).parts
+
+
 def _resolve_within_repo(relative_path: str) -> Path:
     """Real traversal guard for repo-wide (not just exchange-bridge-scoped)
     file access - Round 32 Task 73. Generalizes Round 31's
@@ -330,6 +342,51 @@ async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_re
         except OSError:
             continue
     return {"matches": matches}
+
+
+@mcp.tool()
+async def delentia_write_repo_file(relative_path: str, content_text: str) -> dict:
+    """Real, write-capable repo file tool (Round 33, Architect-approved as
+    part of "improve everything"). Higher blast radius than the Round 32
+    read-only tools - an MCP client can create or overwrite a real file in
+    this kernel's own repo. Guarded by: (1) the same path-traversal check
+    as delentia_read_repo_file, (2) an explicit blocklist matching this
+    workspace's own permanent do-not-touch patterns (.env*, *_secret*,
+    credentials.json, vault_master.key, anything under .git/)."""
+    try:
+        resolved = _resolve_within_repo(relative_path)
+    except PathTraversalError as e:
+        return {"error": str(e)}
+    if _is_write_blocked(relative_path):
+        return {"error": f"writes to this path are blocked by policy: {relative_path!r}"}
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved.write_text(content_text, encoding="utf-8")
+    return {"path": relative_path, "written_bytes": len(content_text.encode("utf-8"))}
+
+
+@mcp.tool()
+async def delentia_patch_repo_file(relative_path: str, old_text: str, new_text: str) -> dict:
+    """Real, targeted patch tool (Round 33) - requires old_text to appear
+    EXACTLY once in the file (same discipline as this session's own Edit
+    tool), refusing ambiguous or no-op patches rather than guessing which
+    occurrence was meant. Same path-traversal + blocklist guards as
+    delentia_write_repo_file."""
+    try:
+        resolved = _resolve_within_repo(relative_path)
+    except PathTraversalError as e:
+        return {"error": str(e)}
+    if _is_write_blocked(relative_path):
+        return {"error": f"writes to this path are blocked by policy: {relative_path!r}"}
+    if not resolved.is_file():
+        return {"error": f"not found: {relative_path}"}
+    original = resolved.read_text(encoding="utf-8")
+    count = original.count(old_text)
+    if count == 0:
+        return {"error": "old_text not found in file"}
+    if count > 1:
+        return {"error": f"old_text is ambiguous - appears {count} times, must appear exactly once"}
+    resolved.write_text(original.replace(old_text, new_text, 1), encoding="utf-8")
+    return {"path": relative_path, "patched": True}
 
 
 @mcp.tool()
