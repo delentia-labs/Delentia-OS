@@ -1,10 +1,27 @@
 # Deploying the Python Kernel API (Real HTTP Bridge, Production Prep)
 
-**Status:** prep-only (Round 32). Nothing here has been deployed to a real,
-publicly-reachable host by this engagement — this document exists so the
-Architect can complete the last real step (choosing and provisioning a
-host) whenever ready, without another round needing to re-derive the
-wiring from scratch.
+**Status:** the container is now genuinely built and verified working
+end-to-end (Round 35) — `docker build` succeeds, the running container's
+`/v1/kernel/fdia/evaluate`, `/health`, `/delentia/system/stats`, and
+`/v1/memory/history` endpoints all confirmed returning real, varying,
+correctly-computed data via real `curl` calls. What's still prep-only:
+nothing has been deployed to a real, publicly-reachable host yet — this
+document exists so the Architect can complete that last real step
+(choosing and provisioning a host) whenever ready.
+
+**Round 35 build fixes (4 real issues found and fixed via actually running
+`docker build`, not assumed):** the base `requirements.txt` alone isn't
+enough - `algorithm_kernel_41.py` is monolithic and imports all 41
+algorithms' dependencies at construction time, even for this one
+lightweight endpoint. Fixed: (1) `robotexclusionrulesparser` was
+genuinely undeclared in every manifest; (2) `pyproject.toml`'s `full`
+extras group needed manual sync with `web-intelligence`'s deps (it's a
+flat list, not a composition); (3) the default `torch` wheel pulls
+~1.5GB of unused NVIDIA CUDA libraries inside the Linux container - now
+pinned to the real CPU-only wheel; (4) `ultralytics`'s `opencv-python`
+dependency needs real X11 libraries absent from the slim base image -
+now force-reinstalls `opencv-python-headless` last (the code never uses
+any GUI cv2 function).
 
 ## Why this exists
 
@@ -24,9 +41,19 @@ docker build -t delentia-os-kernel .
 docker run -p 8000:8000 delentia-os-kernel
 ```
 
-(Not verified this round — the Docker daemon was not running on the
-machine this was written on. Docker's CLI was present; verify the build
-once the daemon is available.)
+**Verified working (Round 35)**: real build succeeds (~3 min once
+Docker's layer cache is warm), real container starts cleanly, and a
+real end-to-end test confirmed genuinely varying, correctly-computed
+scores:
+
+```
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":1.0}'
+# -> {"future_score":0.95,"authorized":true,...,"source":"python_kernel_real_computation"}
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.1,"intent_precision":2.0,"authorized":1.0}'
+# -> {"future_score":0.01,...}  (genuinely different, not hardcoded)
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":0.0}'
+# -> {"future_score":0.0,"authorized":false,...}  (real veto)
+```
 
 ## 2. Choose a real host
 
