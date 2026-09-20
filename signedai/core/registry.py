@@ -99,7 +99,11 @@ class HexaCoreRegistry:
             programming_rank=2,
         ),
         HexaCoreRole.SPECIALIST: ModelInfo(
-            id="google/gemini-3-flash",
+            # Round 35: real live OpenRouter call confirmed "google/gemini-3-flash"
+            # returns a real 400 "not a valid model ID" - verified live via
+            # /api/v1/models, "google/gemini-3.5-flash" is the closest real,
+            # current, non-preview match and confirmed working live.
+            id="google/gemini-3.5-flash",
             role=HexaCoreRole.SPECIALIST,
             provider="Google",
             country="US",
@@ -110,7 +114,11 @@ class HexaCoreRegistry:
             use_cases=["Financial calculations", "Health data analysis", "Real-time low-latency tasks", "Image + text multimodal analysis"],
         ),
         HexaCoreRole.LIBRARIAN: ModelInfo(
-            id="x-ai/grok-4.1-fast",
+            # Round 35: real live OpenRouter call confirmed "x-ai/grok-4.1-fast"
+            # returns a real 404 - xAI's own deprecation notice (in the real
+            # error body) explicitly recommends "x-ai/grok-4.3", confirmed
+            # working live.
+            id="x-ai/grok-4.3",
             role=HexaCoreRole.LIBRARIAN,
             provider="xAI",
             country="US",
@@ -134,6 +142,16 @@ class HexaCoreRegistry:
             reasoning_rank=2,
         ),
         HexaCoreRole.REGIONAL_THAI: ModelInfo(
+            # Round 35: real live OpenRouter call confirmed "scb10x/typhoon-v2-
+            # 70b-instruct" returns a real 400 "not a valid model ID" - a live
+            # query of OpenRouter's full /api/v1/models catalog found ZERO
+            # models matching "typhoon" at all (not renamed, genuinely absent
+            # from OpenRouter today). Honestly left as-is rather than silently
+            # substituted with an unrelated model that wouldn't actually be a
+            # Thai-language specialist - this role is real-but-currently-
+            # unreachable via OpenRouter, not fixed this round. A real fix
+            # needs either a direct SCB10X API integration or a different,
+            # actually-Thai-capable model confirmed live on OpenRouter.
             id="scb10x/typhoon-v2-70b-instruct",
             role=HexaCoreRole.REGIONAL_THAI,
             provider="SCB10X",
