@@ -80,7 +80,7 @@ from rct_control_plane.algo_35_atc import TimeoutController, PredictiveEngine, P
 # ported) — ALGO-18's RAG and ALGO-20's IntegrationManager originally
 # called other microservices over HTTP; now wired as real direct in-
 # process calls to ALGO-16/15/19's already-instantiated engines instead.
-from rct_control_plane.algo_18_adaptive_prompting import PromptEngine, PromptTemplate, RAGEngine
+from rct_control_plane.algo_18_adaptive_prompting import PromptEngine, RAGEngine
 from rct_control_plane.algo_20_workflow_orchestrator import WorkflowEngine, IntegrationManager, ExecutionMode
 from rct_control_plane.algo_28_cio import RequestBatcher, HTTPRequest
 from rct_control_plane.algo_29_uia import AdapterFactory, AdapterType as UIAAdapterType
@@ -88,7 +88,7 @@ from rct_control_plane.algo_31_albas import (
     ScalingEngine, LoadPredictor, ScalingPolicy, ScalingMetrics, PolicyType,
 )
 from rct_control_plane.algo_33_fghf import HallucinationDetector
-from rct_control_plane.algo_36_rflh import RFLHEngine, LearningExample, TaskType
+from rct_control_plane.algo_36_rflh import RFLHEngine, LearningExample
 
 # Round 20 (2026-09-16): 4 more algorithms. ALGO-08 reuses ALGO-07's real
 # MEESession + ALGO-10's real RCTDBClient in-process (same adaptation
@@ -118,7 +118,7 @@ from rct_control_plane.algo_21_fast_slow_router import FastSlowRouter
 from rct_control_plane.algo_27_tvra import TVRAEngine, VideoProcessor, AudioProcessor, ReasoningEngine as TVRAReasoningEngine
 from rct_control_plane.algo_32_mctr import (
     ThoughtChainGenerator, ReasoningEngine as MCTRReasoningEngine, ChainMerger, ChainValidator,
-    ConflictResolver, AnswerSynthesizer, MergeStrategy, ConflictStrategy, ValidationLevel,
+    ConflictResolver, AnswerSynthesizer, MergeStrategy, ConflictStrategy,
 )
 
 # Round 20+ (2026-09-16, final): ALGO-14 replaces its source's hand-rolled,

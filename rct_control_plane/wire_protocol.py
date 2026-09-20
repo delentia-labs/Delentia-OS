@@ -51,17 +51,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import secrets
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import (
     Encoding, PrivateFormat, PublicFormat, NoEncryption,
-    load_pem_private_key, load_pem_public_key,
+    load_pem_private_key,
 )
 
 

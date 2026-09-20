@@ -16,7 +16,7 @@ official 164-problem HumanEval suite.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Dict, List
 
 HUMANEVAL_STYLE_TASKS: List[Dict[str, str]] = [
     {

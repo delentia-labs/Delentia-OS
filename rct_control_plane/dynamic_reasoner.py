@@ -29,7 +29,6 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from rct_control_plane.thai_normalizer import normalize_thai_text
 from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
-from rct_control_plane.deep_profiler_engine import DEEP_PROFILER_ENGINE
 from rct_control_plane.signed_execution import generate_keypair, compute_key_fingerprint
 
 
@@ -92,14 +91,12 @@ async def stream_dynamic_cognition(intent: str, mode: str = "standard") -> Async
     # 4. Web Ingestion / URL Scraping Pipeline
     from rct_control_plane.web_ingestion_service import extract_first_url, fetch_and_scrape_url
     target_url = extract_first_url(intent_clean)
-    scraped_context = None
 
     if target_url:
         yield {"type": "token", "data": f"🕷️ **[Web Ingestion Active]** กำลังเชื่อมต่อและดึงข้อมูลจาก `{target_url}`...\n\n"}
         await asyncio.sleep(0.05)
         scrape_res = await asyncio.to_thread(fetch_and_scrape_url, target_url)
         if scrape_res.get("success"):
-            scraped_context = scrape_res
             yield {"type": "token", "data": f"✅ **ดึงข้อมูลสำเร็จ:** *{scrape_res['title']}* (ขนาด {scrape_res['total_length']:,} ตัวอักษร)\n\n---\n\n"}
             await asyncio.sleep(0.05)
             user_prompt_for_slm = (

@@ -11,10 +11,9 @@ import subprocess
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-import pytest
 
 import rct_control_plane.mcp_server as mcp_server
-from rct_control_plane.mcp_server import mcp, REPO_ROOT
+from rct_control_plane.mcp_server import mcp
 from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
 
 

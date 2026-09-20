@@ -28,7 +28,6 @@ from rct_control_plane.agent_memory import MemoryType
 from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders, schedule_self_evolution
 from rct_control_plane.exchange_bridge import NeuralExchangeBridge, PathTraversalError
 from rct_control_plane.algo_34_swcar import WebCrawler
-from rct_control_plane.ground_truth_store import GroundTruthStore
 from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
 
 # Round 32: real repo root for the read-only file-access tools (Task 73) -

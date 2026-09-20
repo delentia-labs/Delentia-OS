@@ -71,7 +71,6 @@ import logging
 import os
 import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -311,8 +310,6 @@ class VideoProcessor:
 
     def _ensure_resnet(self):
         if self._resnet_model is None:
-            import torch
-            import torchvision
             from torchvision.models import resnet18, ResNet18_Weights
             logger.info("Loading real ImageNet-pretrained ResNet18 weights (torchvision) - first use only")
             weights = ResNet18_Weights.DEFAULT
@@ -355,7 +352,6 @@ class VideoProcessor:
 
     def _ensure_r3d(self):
         if self._r3d_model is None:
-            import torch
             from torchvision.models.video import r3d_18, R3D_18_Weights
             logger.info("Loading real Kinetics-400-pretrained R3D-18 weights (torchvision) - first use only")
             weights = R3D_18_Weights.DEFAULT

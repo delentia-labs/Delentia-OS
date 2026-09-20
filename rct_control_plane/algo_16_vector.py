@@ -283,7 +283,6 @@ class VectorEngine:
 
     def clear(self) -> Dict[str, Any]:
         """Clear all vectors."""
-        count = self.backend.count()
         deleted = self.backend.clear()
 
         logger.warning(f"Cleared {deleted} vectors from index")

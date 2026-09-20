@@ -2370,7 +2370,7 @@ if __name__ == "__main__":
             merged_chain=merged,
             conflicts_resolved=len(resolution.resolved_conflicts),
         )
-        print(f"\n[6] synthesize_answer() ->")
+        print("\n[6] synthesize_answer() ->")
         print(f"    confidence={answer.confidence}")
         print(f"    chains_used={answer.chains_used} total_steps={answer.total_steps} "
               f"conflicts_resolved={answer.conflicts_resolved}")

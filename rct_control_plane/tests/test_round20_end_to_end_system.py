@@ -19,10 +19,8 @@ ALGO_IDS bookkeeping is internally consistent across the whole run.
 Run: python rct_control_plane/tests/test_round20_end_to_end_system.py
 """
 import asyncio
-import io
 import os
 import sys
-from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
