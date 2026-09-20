@@ -558,36 +558,91 @@ class ControlPlaneAPI:
 
         @self.app.get("/v1/memory/history", tags=["Memory"])
         async def memory_history_endpoint(limit: int = 50):
-            """Returns delta memory audit history for Delentia Desk GUI"""
+            """Round 35: real delta-memory history for Delentia-OS-Gui's
+            memory page, replacing a fully hardcoded mock (a second,
+            duplicate route below this one at the same path is dead/
+            unreachable due to FastAPI's first-registration-wins behavior -
+            left in place, not deleted, but no longer the active one).
+
+            Real DeltaBlock objects don't carry the GUI's exact expected
+            fields (agent_id/tick/relationship_change/resources_delta are
+            not tracked anywhere in DeltaEngine) - mapped honestly to the
+            closest real field where one exists (session_id, delta_type,
+            the real diff contents, the real checksum) and to an honest
+            empty/default value where no real signal exists, rather than
+            fabricating plausible-looking fake data."""
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+
+            all_deltas = sorted(
+                ALGORITHM_KERNEL._delta_engine._delta_index.values(),
+                key=lambda d: d.timestamp, reverse=True,
+            )[:limit]
+            total = len(ALGORITHM_KERNEL._delta_engine._delta_index)
             return {
                 "deltas": [
                     {
-                        "agent_id": "agent-hexa-librarian-01",
-                        "tick": 524,
-                        "intent_type": "QUERY_LEGAL_ARCHIVE",
-                        "action_type": "ZSTD_DECOMPRESS_COMPLETED",
+                        "agent_id": d.session_id,
+                        "tick": total - i,
+                        "intent_type": d.delta_type.value if hasattr(d.delta_type, "value") else str(d.delta_type),
+                        "action_type": "DELTA_STORED",
                         "outcome": "success",
-                        "changes": {"decompressed_bytes": 1048576, "compression_ratio": "4.2x"},
-                        "relationship_change": {"agent-hexa-regional-thai-01": 0.05},
+                        "changes": {"added": d.diff.added, "removed": d.diff.removed, "modified": d.diff.modified},
+                        "relationship_change": {},
                         "governance_violation": False,
-                        "resources_delta": {"cpu_seconds": 0.02, "ram_mb": 4.5},
-                        "sha256_hash": "a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8",
-                    },
-                    {
-                        "agent_id": "agent-hexa-regional-thai-01",
-                        "tick": 523,
-                        "intent_type": "TRANSLATE_LEGAL_TERMS",
-                        "action_type": "RCT_TRANSLATION_EXECUTED",
-                        "outcome": "success",
-                        "changes": {"target_language": "TH", "translated_tokens": 420},
-                        "relationship_change": {"user-client-main": 0.08},
-                        "governance_violation": False,
-                        "resources_delta": {"cpu_seconds": 0.08, "ram_mb": 12.8},
-                        "sha256_hash": "8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e",
+                        "resources_delta": {},
+                        "sha256_hash": getattr(d, "checksum", None),
                     }
+                    for i, d in enumerate(all_deltas)
                 ],
-                "total_deltas": 2
+                "total_deltas": total,
             }
+
+        @self.app.post("/v1/rctdb/query", tags=["Memory"])
+        async def rctdb_query_endpoint(payload: Dict[str, Any]):
+            """Round 35: real vector/graph/hybrid query for Delentia-OS-Gui,
+            replacing a client-side-only mock (the fetch always failed
+            with 404 before this endpoint existed). vector -> real FAISS
+            search (ALGO-16), graph -> real graph-accumulation query
+            (ALGO-05), hybrid -> both, merged."""
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+
+            query = str(payload.get("query", ""))
+            query_type = payload.get("query_type", "hybrid")
+            top_k = int(payload.get("top_k", 5))
+            results: List[Dict[str, Any]] = []
+
+            if query_type in ("vector", "hybrid"):
+                vec_result = ALGORITHM_KERNEL.algo_16_vector_search_from_text(query)
+                for r in vec_result.get("results", [])[:top_k]:
+                    results.append({"id": r["id"], "score": r["score"], "payload": r.get("metadata", {})})
+
+            if query_type in ("graph", "hybrid"):
+                graph_result = ALGORITHM_KERNEL.algo_05_graphrag(query)
+                for node in graph_result.get("nodes", [])[:top_k]:
+                    results.append({"id": node, "score": 1.0, "payload": {"type": "graph_node", "graph_stats": graph_result.get("graph_stats", {})}})
+
+            return {"results": results, "query_type": query_type, "total": len(results)}
+
+        @self.app.post("/v1/memory/rollback", tags=["Memory"])
+        async def memory_rollback_endpoint(payload: Dict[str, Any]):
+            """Round 35: real rollback for Delentia-OS-Gui, replacing a
+            client-side-only mock. "ticks" is interpreted as "N deltas
+            back from the most recent, across all sessions" (DeltaEngine
+            has no native tick counter) - resolves to a real session_id +
+            timestamp, then calls the real DeltaEngine.rollback_to_timestamp."""
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+
+            ticks = int(payload.get("ticks", 1))
+            all_deltas = sorted(
+                ALGORITHM_KERNEL._delta_engine._delta_index.values(),
+                key=lambda d: d.timestamp, reverse=True,
+            )
+            if ticks < 1 or ticks > len(all_deltas):
+                return {"success": False, "rolledback_to_tick": len(all_deltas), "error": f"no delta {ticks} steps back (only {len(all_deltas)} deltas recorded)"}
+
+            target = all_deltas[ticks - 1]
+            ALGORITHM_KERNEL._delta_engine.rollback_to_timestamp(target.session_id, target.timestamp)
+            return {"success": True, "rolledback_to_tick": len(all_deltas) - ticks}
 
         @self.app.post("/v1/intent/compile", response_model=IntentCompileResponse)
         async def compile_intent(request: IntentCompileRequest):
