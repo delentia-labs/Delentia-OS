@@ -38,10 +38,18 @@ import uuid
 from typing import Any, Dict, Optional
 
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, RichLog, Static, TextArea
+from textual.widgets import Footer, Header, OptionList, RichLog, Static, TextArea
+from textual.widgets.option_list import Option
 
 _DEFAULT_NAMESPACE = "terminal-default"
 _TRANSCRIPT_MEMORY_TYPE = "tui_transcript"
+
+_SLASH_COMMANDS = {
+    "/help": "show this message",
+    "/reset": "start a fresh, isolated session (new namespace)",
+    "/status": "show real daemon + kernel status",
+    "/quit": "exit",
+}
 
 _HELP_TEXT = (
     "[bold]Commands[/]\n"
@@ -50,6 +58,7 @@ _HELP_TEXT = (
     "  /status  show real daemon + kernel status\n"
     "  /quit    exit\n"
     "Type a message and press Ctrl+S to send (Enter inserts a newline).\n"
+    "Ctrl+T toggles light/dark theme.\n"
     "Anything else is sent to Delentia as a real goal."
 )
 
@@ -74,6 +83,14 @@ class DelentiaChatApp(App):
         margin-bottom: 1;
         border: solid $accent;
     }
+    #autocomplete {
+        dock: bottom;
+        height: auto;
+        max-height: 6;
+        margin-bottom: 4;
+        border: solid $accent;
+        display: none;
+    }
     #status_bar {
         dock: bottom;
         height: 1;
@@ -85,6 +102,7 @@ class DelentiaChatApp(App):
     BINDINGS = [
         ("ctrl+c", "quit", "Quit"),
         ("ctrl+s", "submit_composer", "Send"),
+        ("ctrl+t", "toggle_dark", "Theme"),
     ]
 
     def __init__(self, kernel: Any, namespace: Optional[str] = None):
@@ -101,6 +119,7 @@ class DelentiaChatApp(App):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield RichLog(id="conversation", wrap=True, markup=True, highlight=True)
+        yield OptionList(id="autocomplete")
         yield Static("ready", id="status_bar")
         yield TextArea(id="composer")
         yield Footer()
@@ -155,10 +174,44 @@ class DelentiaChatApp(App):
     def _set_status(self, text: str) -> None:
         self.query_one("#status_bar", Static).update(text)
 
+    def _hide_autocomplete(self) -> None:
+        self.query_one("#autocomplete", OptionList).display = False
+
+    def on_text_area_changed(self, event: TextArea.Changed) -> None:
+        """Round 38: real floating slash-command autocomplete - filters
+        _SLASH_COMMANDS by prefix as the user types, shown only while
+        composing a single-line slash command (not once real multi-line
+        text or a space follows, since that's no longer a command being
+        typed)."""
+        if event.text_area.id != "composer":
+            return
+        text = event.text_area.text
+        panel = self.query_one("#autocomplete", OptionList)
+        if text.startswith("/") and "\n" not in text and " " not in text:
+            matches = [cmd for cmd in _SLASH_COMMANDS if cmd.startswith(text)]
+            if matches:
+                panel.clear_options()
+                for cmd in matches:
+                    panel.add_option(Option(f"{cmd}  [dim]{_SLASH_COMMANDS[cmd]}[/]", id=cmd))
+                panel.highlighted = 0
+                panel.display = True
+                return
+        panel.display = False
+
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        if event.option_list.id != "autocomplete":
+            return
+        composer = self.query_one("#composer", TextArea)
+        composer.load_text(str(event.option.id) + " ")
+        composer.move_cursor(composer.document.end)
+        self._hide_autocomplete()
+        composer.focus()
+
     def action_submit_composer(self) -> None:
         composer = self.query_one("#composer", TextArea)
         text = composer.text.strip()
         composer.clear()
+        self._hide_autocomplete()
         if not text or self._busy:
             return
         if text.startswith("/"):

@@ -18,7 +18,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import pytest
-from textual.widgets import RichLog, TextArea
+from textual.widgets import OptionList, RichLog, TextArea
 
 from rct_control_plane.tui.chat_app import DelentiaChatApp, _TRANSCRIPT_MEMORY_TYPE
 
@@ -175,6 +175,66 @@ async def test_real_dispatch_wires_on_step_into_the_conversation_log(monkeypatch
         rendered = _rendered(app)
         assert "fake_tool" in rendered
         assert "step 1" in rendered
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_panel_shows_matching_slash_commands():
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        await pilot.click("#composer")
+        await pilot.press(*"/he")
+        await pilot.pause()
+        panel = app.query_one("#autocomplete", OptionList)
+        assert panel.display is True
+        assert panel.option_count == 1
+        assert panel.get_option_at_index(0).id == "/help"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_panel_hides_once_a_space_follows():
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        await pilot.click("#composer")
+        await pilot.press(*"/help ")
+        await pilot.pause()
+        panel = app.query_one("#autocomplete", OptionList)
+        assert panel.display is False
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_panel_hides_for_non_slash_text():
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        await pilot.click("#composer")
+        await pilot.press(*"hello")
+        await pilot.pause()
+        panel = app.query_one("#autocomplete", OptionList)
+        assert panel.display is False
+
+
+@pytest.mark.asyncio
+async def test_selecting_an_autocomplete_option_fills_the_composer():
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        await pilot.click("#composer")
+        await pilot.press(*"/he")
+        await pilot.pause()
+        panel = app.query_one("#autocomplete", OptionList)
+        panel.action_select()
+        await pilot.pause()
+        composer = app.query_one("#composer", TextArea)
+        assert composer.text == "/help "
+        assert panel.display is False
+
+
+@pytest.mark.asyncio
+async def test_ctrl_t_toggles_the_theme():
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        initial = app.theme
+        await pilot.press("ctrl+t")
+        await pilot.pause()
+        assert app.theme != initial
 
 
 @pytest.mark.asyncio

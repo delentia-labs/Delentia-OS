@@ -424,6 +424,18 @@ async def delentia_convert_content(content_id: str, version: int, target_format:
 
 
 @mcp.tool()
+async def delentia_compress_intent_delta(prior_intent_state: dict, current_intent_state: dict) -> dict:
+    """Real, redesigned ALGO-25 intent-centric compression (Round 38):
+    a genuine key-aware structural diff between two intent-state dicts,
+    combined with real zstd compression (applied only past a real size
+    threshold, since small payloads measurably expand under zstd) and
+    real approximate token-count measurement. Closes the gap the
+    original compute_delta() left open - see algorithm_kernel_41.py's
+    algo_25_delta_block docstring for the real measured evidence."""
+    return _kernel.algo_25_compress_intent_delta(prior_intent_state, current_intent_state)
+
+
+@mcp.tool()
 async def delentia_synthesize_function(capability_spec: str, function_name: str, smoke_test_code: str) -> dict:
     """Real ALGO-39 on-the-fly single-function synthesis (Round 27
     capability, exposed as an MCP tool in Round 32): generates a real

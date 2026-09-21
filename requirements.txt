@@ -19,6 +19,11 @@ textual>=1.0.0  # Round 36: real chat-capable Terminal UI (`rct chat`)
 
 # Messaging gateways
 discord.py>=2.0.0  # Round 37: real Discord gateway (no public URL needed, same profile as Telegram)
+slack-bolt>=1.30.0 # Round 38: real Slack gateway via Socket Mode (no public URL needed, same profile as Discord/Telegram)
+
+# Compression / tokenization
+zstandard>=0.25.0  # Round 38: real dependency for ALGO-03's and the redesigned ALGO-25's zstd compression - was already installed/imported but never declared in any manifest until now
+tiktoken>=0.14.0   # Round 38: real (approximate, cl100k_base) token-count measurement for the redesigned Delta Engine's compress_intent_delta()
 
 # Testing
 pytest>=9.0.3  # Round 28 Task 53: floor raised past real CVE PYSEC-2026-1845 (fixed 9.0.3)
