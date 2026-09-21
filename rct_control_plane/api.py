@@ -14,6 +14,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, status, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
@@ -257,6 +258,53 @@ class DetailedHealthResponse(BaseModel):
 # FASTAPI APPLICATION
 # ============================================================================
 
+# Round 36: real, observable daemon status - set by the lifespan handler
+# below, read by GET /v1/daemon/status. Module-level (not an instance
+# attribute) so the status endpoint can report on it without needing a
+# reference threaded through ControlPlaneAPI's own construction.
+_DAEMON_SCHEDULER = None
+_DAEMON_STARTED_AT: Optional[float] = None
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Round 36: starts the real AutonomousScheduler daemon (reminder
+    polling + any other registered background input sources) when `rct
+    serve` starts, and stops it cleanly on shutdown (SIGTERM/Ctrl-C) -
+    closing the real gap where nothing ever drove
+    check_and_fire_due_reminders unattended.
+
+    Gated behind DELENTIA_DAEMON_ENABLED=1 (set by cli.py's serve_command,
+    below), deliberately NOT on-by-default: FastAPI's lifespan fires for
+    ANY TestClient(...) context-manager use too, and this codebase's own
+    test suite has dozens of tests that spin one up just to hit an
+    unrelated endpoint (test_gui_memory_endpoints_real.py,
+    test_fdia_kernel_bridge_endpoint_real.py, etc.) - letting the daemon
+    auto-start there would mean real, unattended reminder-polling running
+    against the SAME shared ALGORITHM_KERNEL/reminders table those tests
+    also touch, a real cross-test interference risk this round's own
+    Round-33-established discipline (never introduce new test flakiness)
+    says to avoid. Real uvicorn serving is the only path that sets the
+    env var."""
+    global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT
+    if os.environ.get("DELENTIA_DAEMON_ENABLED") != "1":
+        yield
+        return
+
+    from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+    from rct_control_plane.autonomous_scheduler import AutonomousScheduler
+
+    _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
+    _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
+    _DAEMON_STARTED_AT = time.time()
+    try:
+        yield
+    finally:
+        if _DAEMON_SCHEDULER is not None:
+            await _DAEMON_SCHEDULER.stop()
+        _DAEMON_STARTED_AT = None
+
+
 class ControlPlaneAPI:
     """
     Control Plane REST API
@@ -276,7 +324,8 @@ class ControlPlaneAPI:
             description="Intent-to-Execution Orchestration Infrastructure",
             version=PACKAGE_VERSION,
             docs_url="/docs",
-            redoc_url="/redoc"
+            redoc_url="/redoc",
+            lifespan=_lifespan,
         )
         
         # Enable CORS for Delentia Desk GUI and Browser clients
@@ -566,6 +615,21 @@ class ControlPlaneAPI:
                     "signed": True
                 },
                 "trace_id": f"trace-{int(time.time()*1000)}"
+            }
+
+        @self.app.get("/v1/daemon/status", tags=["Daemon"])
+        async def daemon_status_endpoint():
+            """Round 36: real, observable status for the background
+            AutonomousScheduler daemon (reminder polling + registered
+            gateway input sources) - a real signal, not a black box.
+            Honestly reports not-running when DELENTIA_DAEMON_ENABLED
+            isn't set (e.g. under TestClient) rather than pretending."""
+            running = _DAEMON_SCHEDULER is not None and _DAEMON_SCHEDULER._is_running
+            return {
+                "running": running,
+                "started_at": _DAEMON_STARTED_AT,
+                "uptime_seconds": (time.time() - _DAEMON_STARTED_AT) if _DAEMON_STARTED_AT else None,
+                "tasks": _DAEMON_SCHEDULER.list_tasks() if _DAEMON_SCHEDULER is not None else [],
             }
 
         @self.app.get("/v1/memory/history", tags=["Memory"])

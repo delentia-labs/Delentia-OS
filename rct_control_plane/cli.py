@@ -22,6 +22,7 @@ Output Formats:
     --output tree   : Tree view (for graphs)
 """
 
+import os
 import sys
 import json
 import time
@@ -1591,6 +1592,20 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
     click.echo(f"  Listening  →  http://{host}:{port}")
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
+    click.echo(f"  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+
+    # Round 36: real uvicorn serving is the only path that enables the
+    # background AutonomousScheduler daemon (see api.py's _lifespan) -
+    # deliberately not on by default, since FastAPI's TestClient also
+    # triggers lifespan events and this codebase's test suite has many
+    # tests that spin one up just to hit an unrelated endpoint. Note:
+    # with workers>1, each worker process gets its own daemon instance
+    # polling the same shared reminders table - fine for this engagement's
+    # real single-worker dev/local deployment; multi-worker coordination
+    # (avoiding duplicate fires across workers) is a real, honestly
+    # undeferred limitation, not solved this round.
+    os.environ["DELENTIA_DAEMON_ENABLED"] = "1"
+
     uvicorn.run(
         "rct_control_plane.api:app",
         host=host,

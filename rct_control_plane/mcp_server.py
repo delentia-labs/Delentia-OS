@@ -167,6 +167,25 @@ async def delentia_check_reminders() -> dict:
 
 
 @mcp.tool()
+async def delentia_daemon_status() -> dict:
+    """Round 36: real status of the background AutonomousScheduler
+    daemon (reminder polling + gateway input sources). This MCP tool
+    reflects the daemon running in THIS process only - if the real
+    daemon is running inside a separate `rct serve` process, use
+    GET /v1/daemon/status against that server instead; this honestly
+    reports not-running rather than falsely claiming a cross-process
+    daemon's state."""
+    from rct_control_plane import api as _api_module
+    scheduler = _api_module._DAEMON_SCHEDULER
+    running = scheduler is not None and scheduler._is_running
+    return {
+        "running": running,
+        "started_at": _api_module._DAEMON_STARTED_AT,
+        "tasks": scheduler.list_tasks() if scheduler is not None else [],
+    }
+
+
+@mcp.tool()
 async def delentia_crystallize_keywords(text: str) -> dict:
     """Real Golden Keyword Extraction (Round 24): scores real Shannon
     entropy per candidate word, keeps those >= 0.8, adds them as real
