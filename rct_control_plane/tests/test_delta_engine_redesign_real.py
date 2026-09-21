@@ -11,7 +11,7 @@ The original compute_delta()/DeltaDiff are untouched (Zero-Delete) -
 see test_delta_memory_incremental_real.py and other pre-existing tests
 for that mechanism's own coverage, unaffected by this file.
 """
-import sys, os, json
+import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from rct_control_plane.algo_25_delta_block import DeltaEngine

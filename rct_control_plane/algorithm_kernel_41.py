@@ -1788,10 +1788,18 @@ class AlgorithmKernel41:
         benchmark = self.benchmark_result_against_intent(intent, inner_result.get("final_answer"))
 
         # Round 24 Task 30: real Intent Conservation across every real
-        # pipeline stage (not just the final result).
+        # pipeline stage that's actually a RE-EXPRESSION of the intent
+        # (not just the final result). Round 39: "routing_reason" was
+        # removed from this check - direct verification found its real
+        # content is pure routing-decision metadata (e.g. "IntentCompiler:
+        # risk=LOW, scope=NARROW (low blast radius)", see
+        # algo_21_fast_slow_router.py) that was never meant to restate the
+        # intent's meaning at all, so comparing it for "conservation"
+        # measured the wrong thing and produced a structurally-guaranteed
+        # near-zero score for any normal intent - not a real signal about
+        # whether the intent was actually lost anywhere.
         intent_conservation = self.verify_intent_conservation(intent, {
             "rct7_decomposition": " ".join(pipeline_result["rct7_steps"]),
-            "routing_reason": routing_result.get("reason", ""),
             "final_answer": inner_result.get("final_answer") or "",
         })
 

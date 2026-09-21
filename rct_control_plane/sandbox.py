@@ -67,6 +67,21 @@ _FILE_WRITE_REDIRECT_PATTERN = re.compile(r">{1,2}(?!&)")
 _COMMAND_SEPARATOR_PATTERN = re.compile(r"&&|\|\||;|\n|\|")
 _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 
+# Round 39: a THIRD escape class found via a dedicated re-audit,
+# reproduced directly (not speculation) - `run_sandboxed`'s CWD-scoping
+# fix (Round 38 Gap 3) sets the SUBPROCESS's INITIAL working directory
+# via Popen(cwd=...), but a real `cd <path> && ...` command changes the
+# SHELL's own current directory for everything that follows it in the
+# same command line, completely overriding that. Confirmed by direct
+# reproduction: `cd C:\...\Delentia-OS && python -c "open('file.py',
+# 'w').write(...)"` - no `>` character, no denylisted/medium-risk
+# prefix on any `&&`-split sub-command - classified "safe" and executed
+# by default, writing a real file into the real repo root. Any `cd `
+# sub-command (to anywhere - not just a specific dangerous path, since
+# ANY directory change invalidates the CWD-scoping guarantee for every
+# subsequent relative path) now needs approval.
+_CD_COMMAND_PATTERN = re.compile(r"^cd(\s|$)", re.IGNORECASE)
+
 
 def _split_into_subcommands(command: str) -> List[str]:
     parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
@@ -80,8 +95,9 @@ def _split_into_subcommands(command: str) -> List[str]:
 def classify_command_risk(command: str) -> str:
     """Returns "denied" (any real sub-command matches
     _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
-    matches _MEDIUM_RISK_PREFIXES or contains a real file-write
-    redirect), or "safe" only if every real sub-command is safe."""
+    matches _MEDIUM_RISK_PREFIXES, contains a real file-write redirect,
+    or changes directory via `cd`), or "safe" only if every real
+    sub-command is safe."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
         sub_stripped = sub.lower()
@@ -92,6 +108,8 @@ def classify_command_risk(command: str) -> str:
             if sub_stripped.startswith(prefix.lower()):
                 worst = "needs_approval"
         if _FILE_WRITE_REDIRECT_PATTERN.search(sub):
+            worst = "needs_approval"
+        if _CD_COMMAND_PATTERN.match(sub_stripped):
             worst = "needs_approval"
     return worst
 

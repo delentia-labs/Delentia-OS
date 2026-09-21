@@ -21,8 +21,35 @@ from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 def kernel() -> AlgorithmKernel41:
     """A fresh kernel per test — the module-level ALGORITHM_KERNEL singleton
     accumulates MEE growth across the whole test session, which would make
-    tests order-dependent."""
-    return AlgorithmKernel41()
+    tests order-dependent.
+
+    Round 39: a fresh AlgorithmKernel41() object is NOT enough on its own -
+    real, confirmed via direct reproduction after an extensive real-testing
+    session: __init__ restores _mee_session_default from the real, shared,
+    on-disk `rct_control_plane_agentic.db` (this is the genuine cross-
+    session MEE persistence mechanism, working exactly as designed - see
+    the Round 38 RCTDB/MEE investigation), so a "fresh kernel" still
+    inherits whatever G the real database has accumulated from every OTHER
+    real pipeline call across this whole test session. After enough real
+    testing, G legitimately reaches its own cap (1000.0), and this test's
+    "G must evolve" assertion fails not because growth is broken, but
+    because it's genuinely saturated. Reset the in-memory session (both the
+    engine's own session dict and the cached default reference point to the
+    SAME object) to a real fresh one, matching exactly what __init__ builds
+    when no persisted row exists - without touching the shared db file
+    itself (other real cross-session-persistence tests still need it)."""
+    from rct_control_plane.mee_engine import MEESession
+
+    kernel = AlgorithmKernel41()
+    # NOT mee_engine.create_session() - it raises ValueError for a
+    # session_id that already exists (real, confirmed via direct check
+    # of its source), and __init__ already registered "kernel_default".
+    # Constructs a session directly with the same real defaults
+    # create_session() itself would have used.
+    fresh_session = MEESession("kernel_default")
+    kernel._mee_engine._sessions["kernel_default"] = fresh_session
+    kernel._mee_session_default = fresh_session
+    return kernel
 
 
 class TestAlgo07Wiring:

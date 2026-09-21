@@ -9,11 +9,12 @@ signedai/openrouter_client.py) are left as-is per Zero-Delete; NEW code
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import httpx
 
@@ -28,6 +29,21 @@ class LLMProvider(ABC):
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         ...
+
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        """Round 39: real token streaming - default implementation for
+        any provider that doesn't override this (Zero-Delete: no
+        existing provider is forced to implement it) falls back to one
+        single "chunk" containing the whole completion, honestly not a
+        real stream. OllamaProvider/OpenRouterProvider below override
+        this with genuine incremental yielding from each provider's own
+        real streaming API. Deliberately has NO json_mode parameter -
+        streaming is for free-text answers (see autonomous_loop.py's
+        real use of this for AutonomousLoop's final-answer generation),
+        not the structured decision JSON decide_next_action() parses,
+        which still needs one complete, parseable response."""
+        yield await self.complete(prompt, system_prompt, temperature, max_tokens, json_mode=False)
 
 
 class OllamaProvider(LLMProvider):
@@ -47,6 +63,28 @@ class OllamaProvider(LLMProvider):
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
             return response.json()["response"]
+
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        """Real token streaming via Ollama's own `stream: true` mode -
+        the response body is real newline-delimited JSON, one object per
+        real generated chunk (`{"response": "...", "done": false}`,
+        ending with a final `{"done": true, ...}`)."""
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        payload = {"model": self.model, "prompt": full_prompt, "stream": True,
+                   "options": {"temperature": temperature}}
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.strip():
+                        continue
+                    chunk = json.loads(line)
+                    text = chunk.get("response", "")
+                    if text:
+                        yield text
+                    if chunk.get("done"):
+                        break
 
 
 @dataclass
@@ -103,6 +141,37 @@ class OpenRouterProvider(LLMProvider):
             response.raise_for_status()
             return response.json()["choices"][0]["message"]["content"]
 
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        """Real token streaming via OpenRouter's OpenAI-compatible SSE
+        mode (`"stream": True`) - real `data: {...}` lines, each with a
+        real incremental `choices[0]["delta"]["content"]` fragment,
+        terminated by the real literal `data: [DONE]` sentinel line."""
+        payload = _build_openrouter_payload(
+            self.model, prompt, system_prompt, temperature, max_tokens, json_mode=False, compat=self.compat,
+        )
+        payload["stream"] = True
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            async with client.stream(
+                "POST", "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[len("data:"):].strip()
+                    if data == "[DONE]":
+                        break
+                    if not data:
+                        continue
+                    chunk = json.loads(data)
+                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                    text = delta.get("content")
+                    if text:
+                        yield text
+
 
 def get_default_provider() -> LLMProvider:
     choice = os.getenv("DELENTIA_LLM_PROVIDER", "ollama").lower()
@@ -158,3 +227,11 @@ class QuotaCheckedProvider(LLMProvider):
             raise QuotaExceededError(f"quota exceeded for provider '{self._provider_name}'")
         self._quota.record_call(self._provider_name)
         return await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
+
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        if not self._quota.check_quota(self._provider_name):
+            raise QuotaExceededError(f"quota exceeded for provider '{self._provider_name}'")
+        self._quota.record_call(self._provider_name)
+        async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
+            yield chunk

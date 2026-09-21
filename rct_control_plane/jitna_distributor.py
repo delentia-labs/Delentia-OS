@@ -96,7 +96,9 @@ async def distribute_to_subagents(
     dispatch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
     real_results: List[Dict[str, Any]] = []
-    for agent_id, goal, worktree_info, dispatch_result in zip(agent_ids, goals, worktree_infos, dispatch_results):
+    for agent_id, goal, worktree_info, dispatch_result in zip(
+        agent_ids, goals, worktree_infos, dispatch_results, strict=True,
+    ):
         if isinstance(dispatch_result, Exception):
             outcome = {"agent_id": agent_id, "goal": goal, "success": False, "error": str(dispatch_result)}
         else:

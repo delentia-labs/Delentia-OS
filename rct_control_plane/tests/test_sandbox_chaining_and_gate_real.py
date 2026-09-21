@@ -55,6 +55,28 @@ class TestCommandChainingIsNoLongerInvisible:
     def test_stderr_redirect_inside_a_chained_command_is_not_falsely_flagged(self):
         assert classify_command_risk("some_command 2>&1 && echo done") == "safe"
 
+    def test_a_cd_command_needs_approval_even_with_no_redirect_or_denylisted_word(self):
+        """Round 39: real, reproduced escape - `cd <path> && ...`
+        overrides run_sandboxed's own CWD-scoping fix (the shell's `cd`
+        changes the CURRENT directory for everything after it,
+        regardless of what cwd= was passed to Popen), and with no `>`
+        character and no denylisted/medium-risk word on any sub-command,
+        this previously sailed through as "safe" and executed by
+        default - confirmed via direct reproduction before this fix."""
+        assert classify_command_risk(
+            'cd C:\\Users\\whale\\Delentia\\Delentia-OS && '
+            'python -c "open(\'file.py\', \'w\').write(\'pwned\')"'
+        ) == "needs_approval"
+
+    def test_a_bare_cd_with_no_further_command_also_needs_approval(self):
+        assert classify_command_risk("cd /tmp") == "needs_approval"
+
+    def test_cd_as_a_substring_of_another_word_is_not_falsely_flagged(self):
+        """`cd` must only match as a real standalone command, not as a
+        substring of e.g. "echo" or "cdrom"."""
+        assert classify_command_risk("echo hello") == "safe"
+        assert classify_command_risk("cdrom-tool --list") == "safe"
+
 
 class TestRunSandboxedEnforcesTheGateItself:
     """Proves the fix works at the actual execution entry point, not
@@ -78,6 +100,21 @@ class TestRunSandboxedEnforcesTheGateItself:
         result = run_sandboxed("echo hi; rm -rf /")
         assert result.exit_code is None
         assert result.blocked_reason is not None
+
+    def test_run_sandboxed_refuses_a_real_cd_based_cwd_escape_by_default(self, tmp_path):
+        """Round 39: real, direct reproduction of the exact escape found
+        this round - `cd <real repo path> && python -c "open(...)..."`
+        previously executed by default (approved=False) and wrote a
+        real file into the real repo root, completely bypassing Round
+        38's own CWD-scoping fix. Proves it's now refused before
+        execution."""
+        marker_file = tmp_path / "cd_escape_marker.txt"
+        result = run_sandboxed(
+            f'cd "{tmp_path}" && python -c "open(\'cd_escape_marker.txt\', \'w\').write(\'pwned\')"'
+        )
+        assert result.blocked_reason is not None
+        assert result.exit_code is None
+        assert not marker_file.exists()
 
     def test_run_sandboxed_still_executes_a_genuinely_safe_command(self):
         result = run_sandboxed("echo hello-from-sandbox")
