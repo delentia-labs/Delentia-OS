@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, status, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from .intent_compiler import IntentCompiler
@@ -264,6 +264,7 @@ class DetailedHealthResponse(BaseModel):
 # reference threaded through ControlPlaneAPI's own construction.
 _DAEMON_SCHEDULER = None
 _DAEMON_STARTED_AT: Optional[float] = None
+_DAEMON_TELEGRAM_GATEWAY = None
 
 
 @asynccontextmanager
@@ -286,20 +287,33 @@ async def _lifespan(app: FastAPI):
     Round-33-established discipline (never introduce new test flakiness)
     says to avoid. Real uvicorn serving is the only path that sets the
     env var."""
-    global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT
+    global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT, _DAEMON_TELEGRAM_GATEWAY
     if os.environ.get("DELENTIA_DAEMON_ENABLED") != "1":
         yield
         return
 
     from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
     from rct_control_plane.autonomous_scheduler import AutonomousScheduler
+    from rct_control_plane.gateways.telegram_gateway import TelegramGateway
 
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
     _DAEMON_STARTED_AT = time.time()
+
+    # Round 36 Task 82: a second real input source alongside the
+    # reminder poller, proving the "pluggable input source" architecture
+    # with a real second adapter. Honestly no-ops (logs a warning, does
+    # not error) when TELEGRAM_BOT_TOKEN isn't set - matching this
+    # engagement's established optional-integration pattern.
+    _DAEMON_TELEGRAM_GATEWAY = TelegramGateway(kernel=ALGORITHM_KERNEL)
+    _DAEMON_TELEGRAM_GATEWAY.start()
+
     try:
         yield
     finally:
+        if _DAEMON_TELEGRAM_GATEWAY is not None:
+            await _DAEMON_TELEGRAM_GATEWAY.stop()
+        _DAEMON_TELEGRAM_GATEWAY = None
         if _DAEMON_SCHEDULER is not None:
             await _DAEMON_SCHEDULER.stop()
         _DAEMON_STARTED_AT = None
@@ -630,7 +644,36 @@ class ControlPlaneAPI:
                 "started_at": _DAEMON_STARTED_AT,
                 "uptime_seconds": (time.time() - _DAEMON_STARTED_AT) if _DAEMON_STARTED_AT else None,
                 "tasks": _DAEMON_SCHEDULER.list_tasks() if _DAEMON_SCHEDULER is not None else [],
+                "gateways": {
+                    "telegram": {
+                        "configured": _DAEMON_TELEGRAM_GATEWAY.is_configured() if _DAEMON_TELEGRAM_GATEWAY is not None else False,
+                        "running": _DAEMON_TELEGRAM_GATEWAY._is_running if _DAEMON_TELEGRAM_GATEWAY is not None else False,
+                    },
+                },
             }
+
+        @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
+        async def line_webhook_endpoint(request: Request):
+            """Round 36: real LINE Messaging API webhook - verifies the
+            real X-Line-Signature header (HMAC-SHA256 against the raw
+            body, per LINE's own documented scheme) before processing
+            anything. This route existing in code is NOT the same as it
+            being publicly reachable - per this engagement's standing
+            rule, going live needs the Architect to confirm a real
+            HTTPS host and configure LINE's own webhook URL to point
+            here; nothing auto-exposes this."""
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+            from rct_control_plane.gateways.line_gateway import LineGateway
+
+            body_bytes = await request.body()
+            signature = request.headers.get("X-Line-Signature", "")
+            gateway = LineGateway(kernel=ALGORITHM_KERNEL)
+            if not gateway.verify_signature(body_bytes, signature):
+                raise HTTPException(status_code=403, detail="invalid or missing X-Line-Signature")
+
+            import json as _json
+            results = await gateway.handle_webhook_body(_json.loads(body_bytes))
+            return {"handled": len(results)}
 
         @self.app.get("/v1/memory/history", tags=["Memory"])
         async def memory_history_endpoint(limit: int = 50):
