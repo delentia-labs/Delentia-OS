@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 _DENYLISTED_PREFIXES = [
     "rm -rf", "del /f", "format ", "dd if=", "mkfs", ":(){:|:&};:",
@@ -53,21 +53,47 @@ _MEDIUM_RISK_PREFIXES = [
 # not a file-write risk) via the `(?!&)` negative lookahead.
 _FILE_WRITE_REDIRECT_PATTERN = re.compile(r">{1,2}(?!&)")
 
+# Round 38: a second, real gap found via a dedicated re-audit the Round
+# 37 incident motivated - classify_command_risk() only ever checked the
+# PREFIX of the whole command string. `echo hi; rm -rf /` does not
+# START WITH "rm -rf", so it sailed through as "safe" even though a
+# real denylisted command is chained onto it. Same story for `&&`/`||`/
+# `|`, and for `$(...)`/backtick command substitution, which can smuggle
+# an arbitrary command inside an outer command that itself looks benign
+# (e.g. `echo $(rm -rf /)`). Splits the command into every real
+# sub-command a shell would actually execute and classifies each one
+# independently - the overall risk is the worst risk found across all
+# of them, with "denied" short-circuiting immediately.
+_COMMAND_SEPARATOR_PATTERN = re.compile(r"&&|\|\||;|\n|\|")
+_SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
+
+
+def _split_into_subcommands(command: str) -> List[str]:
+    parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
+    for match in _SUBSTITUTION_PATTERN.finditer(command):
+        inner = match.group(1) if match.group(1) is not None else match.group(2)
+        if inner:
+            parts.append(inner)
+    return [p.strip() for p in parts if p.strip()]
+
 
 def classify_command_risk(command: str) -> str:
-    """Returns "denied" (matches _DENYLISTED_PREFIXES), "needs_approval"
-    (matches _MEDIUM_RISK_PREFIXES or contains a real file-write
-    redirect), or "safe"."""
-    stripped = command.strip().lower()
-    for prefix in _DENYLISTED_PREFIXES:
-        if stripped.startswith(prefix.lower()):
-            return "denied"
-    for prefix in _MEDIUM_RISK_PREFIXES:
-        if stripped.startswith(prefix.lower()):
-            return "needs_approval"
-    if _FILE_WRITE_REDIRECT_PATTERN.search(command):
-        return "needs_approval"
-    return "safe"
+    """Returns "denied" (any real sub-command matches
+    _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
+    matches _MEDIUM_RISK_PREFIXES or contains a real file-write
+    redirect), or "safe" only if every real sub-command is safe."""
+    worst = "safe"
+    for sub in _split_into_subcommands(command):
+        sub_stripped = sub.lower()
+        for prefix in _DENYLISTED_PREFIXES:
+            if sub_stripped.startswith(prefix.lower()):
+                return "denied"
+        for prefix in _MEDIUM_RISK_PREFIXES:
+            if sub_stripped.startswith(prefix.lower()):
+                worst = "needs_approval"
+        if _FILE_WRITE_REDIRECT_PATTERN.search(sub):
+            worst = "needs_approval"
+    return worst
 
 
 @dataclass
@@ -105,6 +131,36 @@ def _kill_process_tree(proc: subprocess.Popen) -> None:
         pass
 
 
+# Round 38: a THIRD real gap found via direct incident reproduction (not
+# speculation) - the file-write-redirect fix (Gap 1) and the chaining
+# fix (Gap 2) both operate on the SHELL COMMAND STRING, one abstraction
+# level above what actually happened here: a real local-LLM-driven test
+# (a "say hello, no tool needed" goal - the same documented confusion
+# pattern that makes this model misbehave) hallucinated a call to the
+# sandboxed-command tool that overwrote algorithm_kernel_41.py a SECOND
+# time, immediately after Gap 1/2's fix landed. The write almost
+# certainly happened via a mechanism with no `>` character at all (e.g.
+# `python -c "open('rct_control_plane/algorithm_kernel_41.py','w')..."`)
+# - a regex over the command string can never enumerate every possible
+# file-writing API in every possible interpreter. The durable fix is a
+# different layer entirely: relative paths inside the sandboxed command
+# now resolve against a dedicated scratch directory, NOT this process's
+# real working directory (which, for `rct serve`/pytest, IS the real
+# source tree) - so `open("rct_control_plane/algorithm_kernel_41.py",
+# "w")` from INSIDE a sandboxed command now creates a harmless file
+# under the scratch dir instead of touching the real kernel file. This
+# does not stop an ABSOLUTE path write - real container/VM isolation
+# (already disclosed above as separate follow-up work) is what closes
+# that - but it closes the exact relative-path-escape class that both
+# real incidents actually exhibited.
+_SANDBOX_SCRATCH_DIR = os.path.join("workspace_output", "sandbox_scratch")
+
+
+def _sandbox_cwd() -> str:
+    os.makedirs(_SANDBOX_SCRATCH_DIR, exist_ok=True)
+    return os.path.abspath(_SANDBOX_SCRATCH_DIR)
+
+
 def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
     stripped = command.strip().lower()
     for prefix in _DENYLISTED_PREFIXES:
@@ -112,7 +168,7 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
             return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
                                   blocked_reason=f"command prefix '{prefix}' is denylisted")
 
-    popen_kwargs = {}
+    popen_kwargs = {"cwd": _sandbox_cwd()}
     if os.name == "nt":
         popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
@@ -194,13 +250,39 @@ def run_sandboxed_docker(command: str, image: str = "python:3.11-slim", timeout_
         )
 
 
-def run_sandboxed(command: str, timeout_seconds: float = 10.0, backend: str = "local") -> SandboxResult:
+def run_sandboxed(
+    command: str, timeout_seconds: float = 10.0, backend: str = "local", approved: bool = False,
+) -> SandboxResult:
     """Real subprocess execution with real timeout/output-cap/denylist
     protections. See this module's own docstring for the honest scope
     of what "sandbox" means here. On timeout, the REAL child process
     tree is killed (not just abandoned) - see _kill_process_tree().
     `backend="docker"` routes to run_sandboxed_docker (Round 24 Task 33);
-    default "local" is unchanged from Round 21 (Zero-Delete)."""
+    default "local" is unchanged from Round 21 (Zero-Delete).
+
+    Round 38: enforces classify_command_risk() HERE, at the one real
+    entry point every caller shares - including the delentia_run_
+    sandboxed_command MCP tool, which calls this function directly and
+    has NO risk gate of its own. Before this, the only place that ever
+    checked _MEDIUM_RISK_PREFIXES/the file-write-redirect pattern was
+    AutonomousLoop.run()'s own pre-dispatch check - a real, confirmed
+    bypass: any OTHER caller of the MCP tool (a direct MCP client, a
+    future code path that doesn't route through AutonomousLoop) got
+    ZERO medium-risk protection, only the hard denylist. A "denied"
+    command is refused unconditionally; a "needs_approval" command is
+    refused UNLESS the caller passes `approved=True`, meaning a real
+    approval step already happened upstream (e.g. a human/Architect
+    sign-off, or - for AutonomousLoop's own call sites, which already
+    halt and never reach this function for a needs_approval command -
+    this is defense in depth, not a behavior change for that path)."""
+    risk = classify_command_risk(command)
+    if risk == "denied":
+        return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
+                              blocked_reason="command is denylisted (risk=denied)")
+    if risk == "needs_approval" and not approved:
+        return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
+                              blocked_reason="command needs approval before running (risk=needs_approval) "
+                                             "- call again with approved=True after explicit sign-off")
     if backend == "docker":
         return run_sandboxed_docker(command, timeout_seconds=timeout_seconds)
     return _run_local(command, timeout_seconds)
