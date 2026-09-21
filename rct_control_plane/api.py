@@ -265,6 +265,7 @@ class DetailedHealthResponse(BaseModel):
 _DAEMON_SCHEDULER = None
 _DAEMON_STARTED_AT: Optional[float] = None
 _DAEMON_TELEGRAM_GATEWAY = None
+_DAEMON_DISCORD_GATEWAY = None
 
 
 @asynccontextmanager
@@ -287,7 +288,7 @@ async def _lifespan(app: FastAPI):
     Round-33-established discipline (never introduce new test flakiness)
     says to avoid. Real uvicorn serving is the only path that sets the
     env var."""
-    global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT, _DAEMON_TELEGRAM_GATEWAY
+    global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT, _DAEMON_TELEGRAM_GATEWAY, _DAEMON_DISCORD_GATEWAY
     if os.environ.get("DELENTIA_DAEMON_ENABLED") != "1":
         yield
         return
@@ -295,22 +296,30 @@ async def _lifespan(app: FastAPI):
     from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
     from rct_control_plane.autonomous_scheduler import AutonomousScheduler
     from rct_control_plane.gateways.telegram_gateway import TelegramGateway
+    from rct_control_plane.gateways.discord_gateway import DiscordGateway
 
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
     _DAEMON_STARTED_AT = time.time()
 
-    # Round 36 Task 82: a second real input source alongside the
-    # reminder poller, proving the "pluggable input source" architecture
-    # with a real second adapter. Honestly no-ops (logs a warning, does
-    # not error) when TELEGRAM_BOT_TOKEN isn't set - matching this
-    # engagement's established optional-integration pattern.
+    # Round 36 Task 82 / Round 37: additional real input sources
+    # alongside the reminder poller, proving the "pluggable input
+    # source" architecture with real second/third adapters. Each
+    # honestly no-ops (logs a warning, does not error) when its own
+    # token isn't set - matching this engagement's established
+    # optional-integration pattern.
     _DAEMON_TELEGRAM_GATEWAY = TelegramGateway(kernel=ALGORITHM_KERNEL)
     _DAEMON_TELEGRAM_GATEWAY.start()
+
+    _DAEMON_DISCORD_GATEWAY = DiscordGateway(kernel=ALGORITHM_KERNEL)
+    _DAEMON_DISCORD_GATEWAY.start()
 
     try:
         yield
     finally:
+        if _DAEMON_DISCORD_GATEWAY is not None:
+            await _DAEMON_DISCORD_GATEWAY.stop()
+        _DAEMON_DISCORD_GATEWAY = None
         if _DAEMON_TELEGRAM_GATEWAY is not None:
             await _DAEMON_TELEGRAM_GATEWAY.stop()
         _DAEMON_TELEGRAM_GATEWAY = None
@@ -648,6 +657,10 @@ class ControlPlaneAPI:
                     "telegram": {
                         "configured": _DAEMON_TELEGRAM_GATEWAY.is_configured() if _DAEMON_TELEGRAM_GATEWAY is not None else False,
                         "running": _DAEMON_TELEGRAM_GATEWAY._is_running if _DAEMON_TELEGRAM_GATEWAY is not None else False,
+                    },
+                    "discord": {
+                        "configured": _DAEMON_DISCORD_GATEWAY.is_configured() if _DAEMON_DISCORD_GATEWAY is not None else False,
+                        "running": _DAEMON_DISCORD_GATEWAY._is_running if _DAEMON_DISCORD_GATEWAY is not None else False,
                     },
                 },
             }

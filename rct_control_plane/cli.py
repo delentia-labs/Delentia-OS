@@ -1592,7 +1592,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
     click.echo(f"  Listening  →  http://{host}:{port}")
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
-    click.echo(f"  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+    click.echo("  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
 
     # Round 36: real uvicorn serving is the only path that enables the
     # background AutonomousScheduler daemon (see api.py's _lifespan) -

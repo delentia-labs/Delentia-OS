@@ -14,6 +14,7 @@ here.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from typing import Optional
@@ -36,10 +37,27 @@ _MEDIUM_RISK_PREFIXES = [
     "curl ", "wget ",
 ]
 
+# Round 37: closes a real gap found via direct incident, not
+# speculation - a real local-LLM-driven test (test_scheduler_real.py's
+# reminder goal, dispatched through the real Ollama-backed
+# AutonomousLoop) produced a shell command starting with "echo" that
+# redirected output into `rct_control_plane/algorithm_kernel_41.py`,
+# truncating the entire 41-algorithm kernel file to 2 lines. Prefix-only
+# matching against _DENYLISTED_PREFIXES/_MEDIUM_RISK_PREFIXES cannot
+# catch this - the command's PREFIX ("echo") is completely benign; the
+# danger is the file-write REDIRECT that can appear anywhere in the
+# string. Recovered via `git checkout` (the corruption was
+# working-tree-only, never committed) - this pattern now pauses for
+# approval instead of executing silently. Deliberately does NOT flag
+# `2>&1`/`>&2`-style file-descriptor redirects (extremely common and
+# not a file-write risk) via the `(?!&)` negative lookahead.
+_FILE_WRITE_REDIRECT_PATTERN = re.compile(r">{1,2}(?!&)")
+
 
 def classify_command_risk(command: str) -> str:
     """Returns "denied" (matches _DENYLISTED_PREFIXES), "needs_approval"
-    (matches _MEDIUM_RISK_PREFIXES), or "safe"."""
+    (matches _MEDIUM_RISK_PREFIXES or contains a real file-write
+    redirect), or "safe"."""
     stripped = command.strip().lower()
     for prefix in _DENYLISTED_PREFIXES:
         if stripped.startswith(prefix.lower()):
@@ -47,6 +65,8 @@ def classify_command_risk(command: str) -> str:
     for prefix in _MEDIUM_RISK_PREFIXES:
         if stripped.startswith(prefix.lower()):
             return "needs_approval"
+    if _FILE_WRITE_REDIRECT_PATTERN.search(command):
+        return "needs_approval"
     return "safe"
 
 

@@ -17,7 +17,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import asyncio
 import time
 
-import pytest
 
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.autonomous_scheduler import AutonomousScheduler

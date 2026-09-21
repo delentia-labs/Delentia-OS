@@ -12,9 +12,7 @@ import asyncio
 import base64
 import hashlib
 import hmac
-import json
 
-import pytest
 
 from rct_control_plane.gateways.line_gateway import LineGateway
 

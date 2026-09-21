@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import base64
 import hashlib
 import hmac
-import json
 
 import pytest
 from fastapi.testclient import TestClient

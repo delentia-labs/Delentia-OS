@@ -17,6 +17,9 @@ rich>=13.7.0
 pyfiglet>=1.0.2
 textual>=1.0.0  # Round 36: real chat-capable Terminal UI (`rct chat`)
 
+# Messaging gateways
+discord.py>=2.0.0  # Round 37: real Discord gateway (no public URL needed, same profile as Telegram)
+
 # Testing
 pytest>=9.0.3  # Round 28 Task 53: floor raised past real CVE PYSEC-2026-1845 (fixed 9.0.3)
 pytest-asyncio>=0.21.0

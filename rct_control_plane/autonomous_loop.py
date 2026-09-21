@@ -8,11 +8,12 @@ direct httpx call, so this loop works against any registered backend.
 """
 from __future__ import annotations
 
+import inspect
 import json
 import re
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from rct_control_plane.persistence import ControlPlanePersistence
 
@@ -113,12 +114,30 @@ class AutonomousLoop:
         tools = await self._mcp.list_tools()
         return [{"name": t.name, "description": t.description, "input_schema": t.input_schema} for t in tools]
 
-    async def run(self, goal: str) -> dict:
+    async def run(
+        self,
+        goal: str,
+        on_step: Optional[Callable[[LoopStep], Any]] = None,
+    ) -> dict:
+        """Round 37: `on_step` is an optional, real live-introspection
+        hook - called once per real LoopStep as it's appended to history,
+        BEFORE run() returns. Accepts a sync or async callable (awaited
+        if it returns an awaitable, matching autonomous_scheduler.py's
+        own trigger_task_async pattern). Defaults to None, which
+        preserves this method's exact prior behavior for every existing
+        caller (Zero-Delete)."""
         t_start = time.time()
         available_tools = await self._available_tools()
         history: list = []
         stopped_reason = "max_iterations_reached"
         final_answer = None
+
+        async def _notify(step: LoopStep) -> None:
+            if on_step is None:
+                return
+            result = on_step(step)
+            if inspect.isawaitable(result):
+                await result
 
         for i in range(1, self.max_iterations + 1):
             if time.time() - t_start > self.max_seconds:
@@ -134,6 +153,7 @@ class AutonomousLoop:
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)
                 self._persist_step(step)
+                await _notify(step)
                 break
 
             if decision["action"] == "finish":
@@ -143,6 +163,7 @@ class AutonomousLoop:
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)
                 self._persist_step(step)
+                await _notify(step)
                 break
 
             tool_name = decision["tool_name"]
@@ -160,6 +181,7 @@ class AutonomousLoop:
                                      llm_reasoning=decision["reasoning"])
                     history.append(step)
                     self._persist_step(step)
+                    await _notify(step)
                     stopped_reason = "pending_approval"
                     break
 
@@ -173,6 +195,7 @@ class AutonomousLoop:
                              tool_result=tool_result, llm_reasoning=decision["reasoning"])
             history.append(step)
             self._persist_step(step)
+            await _notify(step)
 
         return {
             "goal": goal,
