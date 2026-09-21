@@ -15,6 +15,7 @@ click>=8.1.0
 # TUI — Rich Terminal UI (used by CLI, install_ui, tune_signedai)
 rich>=13.7.0
 pyfiglet>=1.0.2
+textual>=1.0.0  # Round 36: real chat-capable Terminal UI (`rct chat`)
 
 # Testing
 pytest>=9.0.3  # Round 28 Task 53: floor raised past real CVE PYSEC-2026-1845 (fixed 9.0.3)

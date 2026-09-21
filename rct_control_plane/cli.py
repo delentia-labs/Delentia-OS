@@ -1615,6 +1615,24 @@ def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
     )
 
 
+# ─── chat command ─────────────────────────────────────────────────────────
+
+
+@cli.command("chat")
+def chat_command() -> None:
+    """Launch the real, interactive Delentia Terminal UI (Round 36)."""
+    try:
+        from rct_control_plane.tui.chat_app import run_chat
+    except ImportError:
+        msg = "textual is not installed. Install it with: pip install textual"
+        if _HAS_RICH:
+            render_error(msg)
+        else:
+            click.echo(click.style(f"Error: {msg}", fg="red"), err=True)
+        sys.exit(1)
+    run_chat()
+
+
 def _print_next_steps(steps: List[str]) -> None:
     """Render concise follow-up guidance after successful CLI workflows."""
     if not steps:
