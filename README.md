@@ -110,7 +110,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | Docker Compose + full infra | ❌ | ✅ |
 | 8-level test pyramid (4,849 tests) | ❌ | ✅ private |
 
-> **Stable SDK** means: API is stable, CI enforces 90% coverage floor, packages published on PyPI + npm.  
+> **Stable SDK** means: API is stable, CI enforces an 80% coverage floor (`--cov-fail-under=80`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
 > **Enterprise** means: runs at [delentia.com](https://delentia.com) — contact for licensing.
 
 ---
@@ -175,7 +175,7 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 1,791 passing tests · 90% coverage floor · Python 3.10/3.11/3.12
+├─ 2,240 passing tests (10 skipped, 3 known-flaky/live-connectivity - see TESTING_CANONICAL.md) · coverage pending re-measurement · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -620,7 +620,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
-✅ **1,791 Passed · 0 Failed** — Full delentia-os SDK test suite (Phase A–D v2.0.0)  
+✅ **2,240 Passed · 10 Skipped · 3 Known (see TESTING_CANONICAL.md)** — Full delentia-os SDK test suite (Phase A-D v2.0.0)  
 ✅ **Plan Engine** — `rct plan` Terraform-style pre-execution simulation  
 ✅ **Policy Governance** — `rct policy` + `approval_gateway.py` omni-channel human approval  
 ✅ **OTel + Prometheus + Grafana** — `GET /metrics` scrape endpoint + monitoring stack  

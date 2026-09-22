@@ -1,7 +1,7 @@
 # RCT Platform — Public Claim Registry
 
-**Version:** 2.0.0  
-**Last Updated:** 2026-05-27  
+**Version:** 2.0.1  
+**Last Updated:** 2026-09-22  
 **Authoritative source:** [`docs/testing/TESTING_CANONICAL.md`](../testing/TESTING_CANONICAL.md)
 
 This file is the **single approved wording source** for every public-facing claim about RCT Platform. Before publishing anything on X, HN, Reddit, LinkedIn, or Thai communities, check that all numbers and phrases trace to an entry in this registry.
@@ -13,14 +13,14 @@ This file is the **single approved wording source** for every public-facing clai
 ### Test Suite
 | Claim | Approved Wording | Source |
 | --- | --- | --- |
-| Total passing tests | **1,791 passed · 0 skipped · 0 failed** | `TESTING_CANONICAL.md §1` |
-| Coverage | **90% line coverage (floor enforced by CI)** | `TESTING_CANONICAL.md §1` |
-| Microservice slice | **297 microservice tests passing** | `TESTING_CANONICAL.md §1` |
+| Total passing tests | **2,240 passed · 10 skipped · 3 failed (2 known Ollama-connectivity, 1 live-network check - see TESTING_CANONICAL.md)** | `TESTING_CANONICAL.md §1` |
+| Coverage | *(pending re-measurement - do not quote 90%/91% until re-run; see `TESTING_CANONICAL.md §1`)* | `TESTING_CANONICAL.md §1` |
+| Microservice slice | *(pending re-measurement alongside coverage)* | `TESTING_CANONICAL.md §1` |
 | Python matrix | **Python 3.10 / 3.11 / 3.12** | `ci.yml` |
-| Coverage floor (CI gate) | **90% minimum enforced by CI** | `ci.yml` + `codecov.yml` |
-| TypeScript edge packages | **37 rct-edge tests + 32 fdia-wasm tests** | `sdk-typescript/packages/` |
+| Coverage floor (CI gate, as actually enforced) | **80% minimum** (`--cov-fail-under=80`); Codecov separately targets 90% with a 2% tolerance band - these are two different gates, do not merge into one claim | `ci.yml` + `codecov.yml` |
+| TypeScript edge packages | *(not re-verified this update - re-check before quoting)* | `sdk-typescript/packages/` |
 
-> **Checkpoint note:** 1,791 tests = v1.3.0 baseline (1,346) + Phase A (+131) + Phase B (+128) + Phase C (+107) + Phase D (+79). All phases shipped May 2026.
+> **Checkpoint note:** 2,240 tests measured 2026-09-22 via `python -m pytest -q --no-header` from repo root. This replaces the 2026-05-27 snapshot of 1,791 (v1.3.0 baseline 1,346 + Phase A +131 + Phase B +128 + Phase C +107 + Phase D +79) - the ~450-test difference reflects roughly four months of real ongoing development, not a discrepancy to explain away. `scripts/check_claim_sync.py` (this repo's own drift-detection tool) had itself been silently broken since a documented-checkpoint format change; it is fixed and should be re-run before the next public claim update rather than trusted blindly again.
 
 ### Architecture
 | Claim | Approved Wording | Source |
@@ -75,7 +75,7 @@ Use one of these **approved status phrases** in all public communications:
 
 - ✅ `"stable SDK (v2.0.0) — Phase A–D complete · Apache 2.0"`
 - ✅ `"v2.0.0 — open SDK layer of a production-derived constitutional AI system"`
-- ✅ `"1,791 tests passing · 90% coverage floor · Apache 2.0 · Python 3.10+"`
+- ✅ `"2,240 tests passing · Apache 2.0 · Python 3.10+"`
 - ✅ `"91.5% measured compression (design floor ≥74%) — reproducible with benchmark script"`
 - ❌ Do NOT use `"production-ready"` without qualification
 - ❌ Do NOT use `"state-of-the-art"` without a benchmark link
@@ -88,13 +88,13 @@ Use one of these **approved status phrases** in all public communications:
 
 ### X (Twitter/X)
 - Max 280 chars; favor one clear claim + evidence link
-- Approved: `"1,791 tests passing · 90% coverage · Apache 2.0 · Python 3.10+ · v2.0.0 on GitHub: github.com/delentia-labs/delentia-os"`
+- Approved: `"2,240 tests passing · Apache 2.0 · Python 3.10+ · v2.0.0 on GitHub: github.com/delentia-labs/delentia-os"`
 - Approved: `"Delta Engine: 91.5% measured compression (design floor ≥74%) — reproducible: python scripts/benchmark_fdia_delta.py --json"`
 - Avoid: Thread of metrics without a reproducible evidence link
 
 ### Hacker News (Ask HN / Show HN)
 - Title must be factual; no superlatives
-- Approved title: `"Show HN: RCT Platform – Constitutional AI OS with FDIA equation + ZK proofs (1,791 tests, Apache 2.0)"`
+- Approved title: `"Show HN: RCT Platform - Constitutional AI OS with FDIA equation + ZK proofs (2,240 tests, Apache 2.0)"`
 - First comment must include: SSOT test numbers + Colab link + scope boundary table
 
 ### Reddit (r/MachineLearning, r/LocalLLaMA, r/Python)
@@ -102,7 +102,7 @@ Use one of these **approved status phrases** in all public communications:
 - Do NOT open with architecture diagrams alone — lead with working code
 
 ### LinkedIn
-- Professional framing; safe to include 92% coverage + test count
+- Professional framing; safe to include the test count (coverage % pending re-measurement, see §1)
 - Include FDIA equation description as "intent confidence scoring"
 - Appropriate: include business value + target audience (enterprise AI governance)
 
@@ -128,7 +128,7 @@ Use one of these **approved status phrases** in all public communications:
 | --- | --- | --- |
 | Compare README vs TESTING_CANONICAL | Before each launch wave | Maintainer |
 | Run `python scripts/check_claim_sync.py` | Before each launch wave | CI / Maintainer |
-| Re-run full test suite to verify 1,791 count | Monthly or after any merge to main | CI |
+| Re-run full test suite to verify the current count (2,240 as of 2026-09-22) | Monthly or after any merge to main | CI |
 | Update `SITE_LAST_DEPLOY` in `rctlabs-website/app/sitemap.ts` | Every production deploy | Deployer |
 
 ---

@@ -14,7 +14,7 @@
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 1,791 passing tests · 91% coverage · Python 3.10/3.11/3.12
+├─ 2,240 passing tests (10 skipped, 3 known - see TESTING_CANONICAL.md) · coverage pending re-measurement · Python 3.10/3.11/3.12
 └─ Bandit 0 HIGH · mypy clean
 
 Layer 10: Enterprise Hardening

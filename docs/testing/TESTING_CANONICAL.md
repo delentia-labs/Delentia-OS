@@ -2,10 +2,12 @@
 
 This document is the **single source of truth** for public test-count and coverage claims used in README, roadmap, release notes, and launch materials.
 
-**Version:** 2.0.0  
-**Last Updated:** 2026-05-27  
-**Authoritative checkpoint:** **1,791 passed · 0 failed · 90% coverage**  
+**Version:** 2.0.1  
+**Last Updated:** 2026-09-22  
+**Authoritative checkpoint:** **2,240 passed · 10 skipped · 3 failed · coverage pending re-measurement**  
 **CI Status:** [![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
+
+> **On "3 failed":** 2 are pre-existing, already-documented Ollama-connectivity non-determinism (`test_autonomous_loop_real.py`, tracked across multiple prior rounds); 1 (`test_hexacore_live_verification_real.py::test_role_is_genuinely_reachable_live[junior_builder]`) is a live external-connectivity check whose own name says what it depends on. None were investigated as a code regression as part of this update - re-run in a clean environment before treating any of the 3 as fixed or as a real bug.
 
 ---
 
@@ -15,11 +17,11 @@ The following numbers were verified from the current public repository working t
 
 | Metric | Verified Result | Validation Command |
 |---|---|---|
-| Full SDK suite | **1,791 passed · 0 failed** | `python -m pytest -q --no-header` |
-| Coverage | **90%** (`16429` statements, `1619` missed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header` |
-| Direct microservice tests | **297 passed** | `python -m pytest microservices -q --no-header` |
+| Full SDK suite | **2,240 passed · 10 skipped · 3 failed** (see note above) | `python -m pytest -q --no-header` |
+| Coverage | *(pending re-measurement - the 2026-05-27 "90%" figure predates roughly 450 net new tests and should not be quoted as current until re-run)* | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term --cov-config=pyproject.toml -q --no-header` |
+| Direct microservice tests | *(pending re-measurement alongside coverage)* | `python -m pytest microservices -q --no-header` |
 | Supported CI matrix | Python **3.10 / 3.11 / 3.12** | `.github/workflows/ci.yml` |
-| Coverage floor | **90%** | `.github/workflows/ci.yml` + `codecov.yml` |
+| Coverage floor (as actually enforced) | **80%** (`--cov-fail-under=80` in `.github/workflows/ci.yml`) - `codecov.yml` separately targets 90% with a 2% tolerance band; these are two different gates and should not be quoted as one number | `.github/workflows/ci.yml` + `codecov.yml` |
 
 These are the only public numbers that should be copied into README, roadmap, launch copy, or release notes.
 
