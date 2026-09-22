@@ -35,6 +35,13 @@ _MAX_OUTPUT_BYTES = 1_000_000  # 1 MB
 _MEDIUM_RISK_PREFIXES = [
     "git push", "git reset --hard", "pip install", "npm install",
     "curl ", "wget ",
+    # Round 41: two Windows LOLBins that achieve the exact same effect
+    # curl/wget exist to gate - fetching attacker-controlled content
+    # over the network - and were simply absent from this list. Not a
+    # new risk category, just an under-populated instance of an
+    # already-recognized one (confirmed by direct reproduction:
+    # classify_command_risk() returned "safe" for both before this).
+    "certutil ", "bitsadmin ",
 ]
 
 # Round 37: closes a real gap found via direct incident, not
@@ -64,7 +71,21 @@ _FILE_WRITE_REDIRECT_PATTERN = re.compile(r">{1,2}(?!&)")
 # sub-command a shell would actually execute and classifies each one
 # independently - the overall risk is the worst risk found across all
 # of them, with "denied" short-circuiting immediately.
-_COMMAND_SEPARATOR_PATTERN = re.compile(r"&&|\|\||;|\n|\|")
+#
+# Round 41: a dedicated, systematic (not reactive) re-audit found a
+# real gap in this exact fix - cmd.exe's OTHER sequential separator, a
+# BARE `&` (runs the next command unconditionally, unlike `&&` which
+# requires the first to succeed - confirmed interactively: `echo first
+# & echo second` runs both), was never added here. `echo hi & rm -rf /`
+# is the identical "prefix-safe, chained-dangerous" shape Round 38 set
+# out to close, just via the one separator that fix's regex omitted.
+# The lookaround guards keep `2>&1`/`>&2`-style fd-duplication (already
+# relied on staying intact by the existing file-write-redirect tests)
+# from being torn apart: a `&` immediately preceded by `>` is part of
+# that idiom, not a command separator, and `&&` itself is matched
+# whole by the earlier alternative so its own two characters are never
+# individually reconsidered as a lone `&`.
+_COMMAND_SEPARATOR_PATTERN = re.compile(r"&&|\|\||;|\n|\||(?<!>)&(?!&)")
 _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 
 # Round 39: a THIRD escape class found via a dedicated re-audit,
@@ -98,8 +119,52 @@ _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 # classifier's guarantees are honestly unverified for anything running
 # inside a PowerShell invocation - refusing by default until that's
 # properly audited is the honest choice, not silently trusting it.
-_CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|$)", re.IGNORECASE)
-_POWERSHELL_INVOCATION_PATTERN = re.compile(r"^(powershell(\.exe)?|pwsh(\.exe)?)(\s|$)", re.IGNORECASE)
+#
+# Round 41: a dedicated re-audit confirmed interactively (on this
+# machine, non-destructively) that cmd.exe accepts all three of
+# `cd..`, `cd/d <path>` and `pushd\<path>` with NO space after the
+# keyword - real, working syntax the previous `(\s|$)` boundary never
+# matched, silently exempting them from the Round 39/40 "any directory
+# change needs approval" decision. Broadened to also accept `.`, `/`
+# and `\` immediately after the keyword, while still requiring one of
+# those characters (not just any character) so unrelated commands/
+# filenames that merely start with "cd" (e.g. `cdrom-tool`) are not
+# falsely flagged.
+_CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|[./\\]|$)", re.IGNORECASE)
+# Round 41: broadened from an anchored `^...` prefix match to a
+# boundary-aware SEARCH anywhere in the sub-command. The prior anchored
+# match only caught a bare `powershell`/`pwsh` as the literal first
+# token, silently missing the same invocation via its full path (e.g.
+# `"C:\Windows\...\powershell.exe" -Command ...`, confirmed by direct
+# reproduction) or nested inside another shell (`cmd /c powershell
+# ...`, also confirmed) - both completely defeat the Round 40 "refuse
+# any PowerShell invocation by default" decision, since that decision
+# was never reached. The boundary groups avoid matching "powershell"
+# as a mere substring of an unrelated word (e.g. `mypowershellscript.txt`).
+_POWERSHELL_INVOCATION_PATTERN = re.compile(
+    r"(?:^|[\\/\s\"'])(powershell(?:\.exe)?|pwsh(?:\.exe)?)(?:[\s\"']|$)",
+    re.IGNORECASE,
+)
+# Round 41: the Round 38 Gap 3 fix scopes RELATIVE paths to a scratch
+# CWD via Popen(cwd=...) - a starting-point change only, not a jail.
+# `..` walks back out of that scratch dir using completely ordinary OS
+# path semantics; confirmed by direct reproduction (scratch dir
+# monkeypatched to a throwaway tmp_path in the test, never the real
+# repo) that a relative-path write containing `..` lands OUTSIDE the
+# scratch dir. Bounded by path/quote/whitespace/start/end characters so
+# ordinary text like `echo Loading...` is not falsely flagged.
+_PARENT_DIR_TRAVERSAL_PATTERN = re.compile(r"(?:^|[\\/\s\"'])\.\.(?:[\\/\s\"']|$)")
+# Round 41: NTFS directory junctions (`mklink /J`) need no admin rights
+# on Windows (confirmed interactively) and were not covered by any
+# existing pattern. A "safe"-classified `mklink` inside the scratch dir
+# builds a bridge to anywhere on disk; a second, also
+# "safe"-classified relative-path write then walks through it,
+# defeating the one real containment property the local backend has
+# (the same Gap 3 scratch-dir scoping the `..` fix above protects).
+# `fsutil hardlink create` achieves a closely related effect (a second
+# name for a file outside the scratch dir becomes reachable from
+# inside it) and is flagged for the same reason.
+_LINK_CREATION_PATTERN = re.compile(r"\bmklink\b|\bfsutil\s+hardlink\b", re.IGNORECASE)
 
 
 def _split_into_subcommands(command: str) -> List[str]:
@@ -115,8 +180,11 @@ def classify_command_risk(command: str) -> str:
     """Returns "denied" (any real sub-command matches
     _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
     matches _MEDIUM_RISK_PREFIXES, contains a real file-write redirect,
-    changes directory via `cd`/`chdir`/`pushd`, or invokes PowerShell),
-    or "safe" only if every real sub-command is safe."""
+    changes directory via `cd`/`chdir`/`pushd` - with or without a
+    following space - invokes PowerShell (by name, full path, or
+    nested inside another shell), contains a `..` parent-directory
+    traversal, or creates a filesystem link/junction/hardlink), or
+    "safe" only if every real sub-command is safe."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
         sub_stripped = sub.lower()
@@ -130,7 +198,11 @@ def classify_command_risk(command: str) -> str:
             worst = "needs_approval"
         if _CD_COMMAND_PATTERN.match(sub_stripped):
             worst = "needs_approval"
-        if _POWERSHELL_INVOCATION_PATTERN.match(sub_stripped):
+        if _POWERSHELL_INVOCATION_PATTERN.search(sub_stripped):
+            worst = "needs_approval"
+        if _PARENT_DIR_TRAVERSAL_PATTERN.search(sub):
+            worst = "needs_approval"
+        if _LINK_CREATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"
     return worst
 
