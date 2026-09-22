@@ -288,14 +288,14 @@ def run_all(n_agents: int = DEFAULT_AGENTS, n_ticks: int = DEFAULT_TICKS) -> Dic
     fdia = benchmark_fdia_throughput()
     results["fdia_throughput"] = fdia
     status = "PASS" if fdia["passes_1ms_target"] else "FAIL"
-    print(f"      Per-eval: {fdia['per_eval_us']}µs  Throughput: {fdia['throughput_per_sec']:,}/s  [{status}]")
+    print(f"      Per-eval: {fdia['per_eval_us']}us  Throughput: {fdia['throughput_per_sec']:,}/s  [{status}]")
 
     # 4. CORD throughput
     print("[4/4] CORD security engine throughput...")
     cord = benchmark_cord_throughput()
     results["cord_throughput"] = cord
     status = "PASS" if cord["passes_10ms_target"] else "FAIL"
-    print(f"      Per-check: {cord['per_check_us']}µs  Detection rate: {cord['injection_detection_rate']}%  [{status}]")
+    print(f"      Per-check: {cord['per_check_us']}us  Detection rate: {cord['injection_detection_rate']}%  [{status}]")
 
     # Summary
     all_pass = all([

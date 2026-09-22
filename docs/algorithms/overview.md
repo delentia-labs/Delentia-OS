@@ -33,12 +33,27 @@
 │  • Cluster 2: [Logic & Safety Guard Cluster]      ──▶ 20 Microservices / 15 Algorithms   │
 │  • Cluster 3: [Optimized Nodal Assembler Cluster]  ──▶ 27 Microservices / 16 Algorithms   │
 │                                                                                        │
-│  Proof of Scale & Complexity Metrics:                                                  │
-│   - Verified by 4,849 Enterprise Tests | 100% Pass Rate                                │
-│   - 0.3% Hallucination Rate Target                                                      │
-│   - 0.00% System Crash Rate Guarantee                                                  │
-│   - 74.2% VRAM Optimization via Dynamic LoRA Swapping (<12ms)                           │
+│  Proof of Scale & Complexity Metrics (self-reported enterprise snapshot,                │
+│  not independently verified — see note below):                                          │
+│   - 4,849 enterprise test cases (private runtime, separate from the public              │
+│     SDK's own verified suite — see the Public Core's own test count instead             │
+│     for an independently reproducible number)                                           │
+│   - <0.3% hallucination rate target (internal methodology; see                          │
+│     docs/benchmark/hallucination-methodology.md for the full protocol and               │
+│     its own disclosed limitations)                                                      │
+│   - Crash-rate and VRAM-optimization figures for this private tier are not              │
+│     yet published with a reproducible methodology and are omitted here                  │
+│     pending one — see CLAIM_REGISTRY.md §2 for what "not yet qualified"                 │
+│     means in practice                                                                    │
 └────────────────────────────────────────────────────────────────────────────────────────┘
+
+!!! warning "On the Enterprise metrics above"
+    These describe `Delentia-Private-OS`'s runtime, a separate private codebase this
+    document does not have access to audit. They are reproduced here as self-reported
+    context, not as claims this repository can verify. The Public Core's own numbers
+    (this repo, this SDK) are independently reproducible by anyone who clones it and
+    runs the test suite themselves — that is the standard this page holds itself to for
+    everything it presents as "public."
 ```
 
 ---
@@ -73,7 +88,12 @@ Shipped in `microservices/` with 142 dedicated integration tests:
 
 ## Proof of Scale & Enterprise Metrics
 
-- **Enterprise Test Suite:** 4,849 property-based and integration test cases across Python 3.10–3.12.
-- **Hallucination Protection:** Target $<0.3\%$ hallucination rate via SignedAI multi-model consensus.
-- **System Stability:** $0.00\%$ crash rate across production test suites.
-- **Memory Compression:** $74.2\%$ memory state compression ratio (Delta Engine internal benchmark).
+!!! note "Scope of this section"
+    The figures below describe `Delentia-Private-OS`'s enterprise runtime — a separate,
+    non-public codebase. They are self-reported and not independently verifiable from
+    this repository. For an independently reproducible number, use the Public Core's own
+    verified test count (this repo's own `docs/testing/TESTING_CANONICAL.md`) instead.
+
+- **Enterprise Test Suite:** 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).
+- **Hallucination Protection:** Target $<0.3\%$ hallucination rate via SignedAI multi-model consensus — internal methodology, see `docs/benchmark/hallucination-methodology.md` for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).
+- **Memory Compression:** Delta Engine's public, independently reproducible measurement is 91.5% (design floor ≥74%) — run `python scripts/benchmark_fdia_delta.py --json` yourself to verify.

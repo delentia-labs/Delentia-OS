@@ -41,15 +41,43 @@ This SDK exposes the core components under Apache 2.0 to invite developer feedba
 
 ---
 
-## Start Here in 5 Minutes
+## Install & Run (5-10 minutes, fully local, no API keys)
 
-If you're arriving from social media or seeing RCT Platform for the first time, use this path:
+**Linux / macOS / WSL2:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/delentia-labs/delentia-os/main/install.sh | bash
+```
 
-1. **Try the offline demo** — run `python examples/quickdemo.py` or open `notebooks/rct_playground.ipynb`
-2. **Verify the claims** — see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current authoritative test and coverage checkpoint
-3. **Understand the scope boundary** — compare the open SDK surface vs enterprise-only surface in the table below
-4. **Check release readiness** — see [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
-5. **Find support channels** — see [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md) for Discussions, milestones, About, Topics, and profile setup
+**Windows PowerShell:**
+```powershell
+iex (irm https://raw.githubusercontent.com/delentia-labs/delentia-os/main/install.ps1)
+```
+
+Or, if you just want the CLI without cloning the repo:
+```bash
+pip install delentia-os
+```
+
+Either way, then:
+```bash
+delentia doctor     # real preflight check - tells you exactly what's missing
+delentia init        # creates a local .env from the template
+delentia chat        # start the terminal chat UI
+```
+
+For a fully local, zero-cloud setup (nothing leaves your machine, no account, no API key): [install Ollama](https://ollama.com/download), run `ollama pull llama3.1`, and `delentia` talks to it at `http://127.0.0.1:11434` by default.
+
+Both installer scripts only create a project-local virtualenv - no sudo, no elevation, no system-wide changes. Read them before running them if you'd rather not pipe-to-shell: [`install.sh`](install.sh), [`install.ps1`](install.ps1).
+
+## Start Here in 5 Minutes (verify the claims yourself)
+
+If you're arriving from social media or seeing RCT Platform for the first time and want to check our work rather than take our word for it, use this path:
+
+1. **Try the offline demo** - run `python examples/quickdemo.py` or open `notebooks/rct_playground.ipynb`
+2. **Verify the claims** - see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current authoritative test and coverage checkpoint
+3. **Understand the scope boundary** - compare the open SDK surface vs enterprise-only surface in the table below
+4. **Check release readiness** - see [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
+5. **Find support channels** - see [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md) for Discussions, milestones, About, Topics, and profile setup
 
 ---
 

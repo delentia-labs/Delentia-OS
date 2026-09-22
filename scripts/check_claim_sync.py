@@ -19,14 +19,23 @@ def read_text(path: Path) -> str:
 
 
 def extract_canonical_metrics(text: str) -> tuple[str, str, str]:
+    # The "skipped" segment is optional: TESTING_CANONICAL.md's checkpoint
+    # line has drifted between "N passed · N skipped · 0 failed · N%
+    # coverage" and a shorter "N passed · 0 failed · N% coverage" form over
+    # past updates, which silently broke this script (it always raised
+    # ValueError against the shorter form, so drift-checking has not
+    # actually run since whichever edit dropped that segment). Accepting
+    # both forms - defaulting skipped to "0" when absent - makes this
+    # script actually run against the doc's real current content instead
+    # of requiring a specific historical formatting choice.
     pattern = re.compile(
         r"\*\*Authoritative checkpoint:\*\* \*\*(?P<passed>[\d,]+) passed · "
-        r"(?P<skipped>[\d,]+) skipped · 0 failed · (?P<coverage>[\d]+)% coverage\*\*"
+        r"(?:(?P<skipped>[\d,]+) skipped · )?0 failed · (?P<coverage>[\d]+)% coverage\*\*"
     )
     match = pattern.search(text)
     if not match:
         raise ValueError("Could not find authoritative checkpoint in TESTING_CANONICAL.md")
-    return match.group("passed"), match.group("skipped"), match.group("coverage")
+    return match.group("passed"), match.group("skipped") or "0", match.group("coverage")
 
 
 def require(pattern: str, text: str, label: str, errors: list[str]) -> None:
