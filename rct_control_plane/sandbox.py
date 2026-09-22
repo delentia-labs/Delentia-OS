@@ -80,7 +80,26 @@ _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 # sub-command (to anywhere - not just a specific dangerous path, since
 # ANY directory change invalidates the CWD-scoping guarantee for every
 # subsequent relative path) now needs approval.
-_CD_COMMAND_PATTERN = re.compile(r"^cd(\s|$)", re.IGNORECASE)
+#
+# Round 40: the SAME escape class, confirmed via direct reproduction to
+# also work via `pushd` (Windows cmd.exe's other real directory-change
+# builtin - `pushd C:\...\Delentia-OS && python -c "..."` classified
+# "safe" and wrote a real file to the real repo root, identically to
+# the `cd` case). `chdir` (an alias `cd` also accepts on Windows) is the
+# same risk by construction, added proactively rather than waiting for
+# a third reproduction of an already-understood pattern. A command that
+# invokes PowerShell (`powershell`/`pwsh`) is ALSO flagged outright -
+# not because PowerShell's own `Set-Location`/`cd`/`sl` builtins were
+# individually reproduced as unsafe, but because this classifier's
+# sub-command splitting (`_COMMAND_SEPARATOR_PATTERN`) assumes cmd.exe/
+# POSIX shell quoting rules; a `-Command "..."` argument can contain
+# `;`/`&&` that this splitter would incorrectly treat as top-level
+# separators (PowerShell's own quoting is genuinely different), so this
+# classifier's guarantees are honestly unverified for anything running
+# inside a PowerShell invocation - refusing by default until that's
+# properly audited is the honest choice, not silently trusting it.
+_CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|$)", re.IGNORECASE)
+_POWERSHELL_INVOCATION_PATTERN = re.compile(r"^(powershell(\.exe)?|pwsh(\.exe)?)(\s|$)", re.IGNORECASE)
 
 
 def _split_into_subcommands(command: str) -> List[str]:
@@ -96,8 +115,8 @@ def classify_command_risk(command: str) -> str:
     """Returns "denied" (any real sub-command matches
     _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
     matches _MEDIUM_RISK_PREFIXES, contains a real file-write redirect,
-    or changes directory via `cd`), or "safe" only if every real
-    sub-command is safe."""
+    changes directory via `cd`/`chdir`/`pushd`, or invokes PowerShell),
+    or "safe" only if every real sub-command is safe."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
         sub_stripped = sub.lower()
@@ -110,6 +129,8 @@ def classify_command_risk(command: str) -> str:
         if _FILE_WRITE_REDIRECT_PATTERN.search(sub):
             worst = "needs_approval"
         if _CD_COMMAND_PATTERN.match(sub_stripped):
+            worst = "needs_approval"
+        if _POWERSHELL_INVOCATION_PATTERN.match(sub_stripped):
             worst = "needs_approval"
     return worst
 

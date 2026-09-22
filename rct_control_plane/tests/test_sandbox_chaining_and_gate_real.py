@@ -77,6 +77,38 @@ class TestCommandChainingIsNoLongerInvisible:
         assert classify_command_risk("echo hello") == "safe"
         assert classify_command_risk("cdrom-tool --list") == "safe"
 
+    def test_a_pushd_command_needs_approval_the_same_way_cd_does(self):
+        """Round 40: the SAME escape class as `cd`, confirmed via direct
+        reproduction - `pushd <path> && ...` classified "safe" and wrote
+        a real file to the real repo root before this fix, identically
+        to the `cd` case."""
+        assert classify_command_risk(
+            'pushd C:\\Users\\whale\\Delentia\\Delentia-OS && '
+            'python -c "open(\'file.py\', \'w\').write(\'pwned\')"'
+        ) == "needs_approval"
+
+    def test_a_chdir_command_also_needs_approval(self):
+        assert classify_command_risk("chdir C:\\Windows") == "needs_approval"
+
+    def test_a_powershell_invocation_needs_approval_regardless_of_content(self):
+        """This classifier's sub-command splitting assumes cmd.exe/POSIX
+        quoting rules - a PowerShell -Command string can contain `;`/`&&`
+        this splitter would misinterpret, so its guarantees are honestly
+        unverified inside a PowerShell invocation; refused by default."""
+        assert classify_command_risk('powershell -Command "Get-ChildItem"') == "needs_approval"
+        assert classify_command_risk("pwsh -c 'echo hi'") == "needs_approval"
+
+    def test_run_sandboxed_refuses_a_real_pushd_based_cwd_escape_by_default(self, tmp_path):
+        """Direct reproduction of the exact Round 40 escape, proving it's
+        refused before execution."""
+        marker_file = tmp_path / "pushd_escape_marker.txt"
+        result = run_sandboxed(
+            f'pushd "{tmp_path}" && python -c "open(\'pushd_escape_marker.txt\', \'w\').write(\'pwned\')"'
+        )
+        assert result.blocked_reason is not None
+        assert result.exit_code is None
+        assert not marker_file.exists()
+
 
 class TestRunSandboxedEnforcesTheGateItself:
     """Proves the fix works at the actual execution entry point, not

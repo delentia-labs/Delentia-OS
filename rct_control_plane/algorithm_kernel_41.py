@@ -1859,9 +1859,21 @@ class AlgorithmKernel41:
         # _last_intent_state's own docstring for the disclosed scoping).
         # None on the very first call in a process, honestly (nothing to
         # diff against yet), not a fabricated baseline.
+        #
+        # Round 40: expanded scope, per Round 39's own real finding that
+        # zstd never actually activated (zstd_applied: False in every
+        # tested case) against the original 4-field state - real payloads
+        # that small never crossed the real 200-byte threshold, so all
+        # measured compression came from the structural diff alone. Now
+        # tracks the REAL full RCT-7 decomposition text and the REAL MEE
+        # growth summary too - genuinely representative of the actual
+        # context an LLM call would need re-sent each turn, not a
+        # deliberately-undersized proxy.
         current_intent_state = {
             "intent": intent, "fdia_score": fdia_score, "architect_veto": architect_veto,
             "rct7_step_count": len(pipeline_result["rct7_steps"]),
+            "rct7_decomposition": pipeline_result["rct7_steps"],
+            "mee_growth_summary": pipeline_result["mee_growth_summary"],
         }
         intent_delta_compression = (
             self.algo_25_compress_intent_delta(self._last_intent_state, current_intent_state)

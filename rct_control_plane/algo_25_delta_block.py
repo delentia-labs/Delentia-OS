@@ -489,7 +489,23 @@ class DeltaEngine:
         exposed for offline counting here) are included so the actual
         design question this closes - "does this reduce LLM context
         tokens, and by how much" - has a real, measured answer instead
-        of only a byte-size claim."""
+        of only a byte-size claim.
+
+        Round 40: `final_bytes`/`byte_reduction_pct` and
+        `patch_tokens_approx`/`token_reduction_pct_approx` are governed
+        by INDEPENDENT fallback decisions, not one shared flag - found
+        necessary via direct measurement (a 12-turn realistic mixed
+        conversation) after an earlier, single-flag version still showed
+        negative token "savings" on turns where the byte-level fallback
+        HADN'T triggered. The reason: zstd's compressed output is binary,
+        never valid LLM prompt text - an LLM would need the patch
+        decompressed back to raw JSON before reading it, so real LLM
+        context cost is always governed by the RAW patch's token count,
+        completely independent of whether zstd helped the wire/storage
+        byte count. Byte savings (real value: RCTDB storage, network
+        transmission) and token savings (real value: LLM context window
+        cost) are genuinely different economics with different real
+        baselines - conflating them was a real bug, not a simplification."""
         structural = self.compute_structural_delta(old_state, new_state)
         patch_json = json.dumps(structural["ops"], sort_keys=True).encode("utf-8")
 
@@ -514,20 +530,59 @@ class DeltaEngine:
         except ImportError:
             old_tokens = new_tokens = patch_tokens = None
 
+        # Round 40: a real safety valve, added after direct measurement
+        # (a 12-turn realistic mixed conversation - refinements, topic
+        # switches, asides, topic returns) found the delta genuinely
+        # costs MORE than the full new state for turns unrelated to the
+        # immediately-prior one (up to -63% "savings" on a trivial
+        # aside, -12.4% average on "return to an earlier topic" turns -
+        # this method only ever diffs against the single most recent
+        # prior state, so an unrelated turn produces a large, unhelpful
+        # patch). Never report/use a cost worse than just sending the
+        # real full new_state as-is - this guarantees the mechanism can
+        # only help, never actively hurt, at the cost of being honest
+        # that "compression" sometimes means "decline to compress."
+        #
+        # This fallback is decided SEPARATELY for bytes and tokens - a
+        # real, important distinction found via the SAME 12-turn
+        # measurement re-run after the byte-only version of this fix
+        # still showed negative token "savings" on the same turns.
+        # `final_bytes` (after zstd) is the real WIRE/STORAGE cost - but
+        # zstd's compressed output is binary, not valid LLM prompt text,
+        # so it can NEVER reduce real LLM context tokens; the token cost
+        # an LLM would actually see is always the RAW, uncompressed
+        # patch JSON (it would have to be decompressed back to text
+        # before any LLM could read it). Conflating the two into one
+        # fallback flag was itself the bug - byte savings (zstd-backed,
+        # relevant for RCTDB storage/network transmission) and token
+        # savings (structural-diff-only, relevant for LLM context cost)
+        # are genuinely different economics and must be judged against
+        # their own real baseline independently.
+        used_fallback_to_full_state = final_bytes >= full_new_bytes and full_new_bytes > 0
+        if used_fallback_to_full_state:
+            final_bytes = full_new_bytes
+
+        used_token_fallback = (
+            patch_tokens is not None and new_tokens is not None and patch_tokens >= new_tokens
+        )
+        reported_tokens = new_tokens if used_token_fallback else patch_tokens
+
         return {
             "ops": structural["ops"],
             "op_count": structural["op_count"],
             "full_new_state_bytes": full_new_bytes,
             "structural_patch_bytes": structural["patch_bytes"],
             "zstd_applied": zstd_applied,
+            "used_fallback_to_full_state": used_fallback_to_full_state,
+            "used_token_fallback_to_full_state": used_token_fallback,
             "final_bytes": final_bytes,
             "byte_reduction_pct": round((1 - final_bytes / full_new_bytes) * 100, 2) if full_new_bytes else 0.0,
             "old_state_tokens_approx": old_tokens,
             "new_state_tokens_approx": new_tokens,
-            "patch_tokens_approx": patch_tokens,
+            "patch_tokens_approx": reported_tokens,
             "token_reduction_pct_approx": (
-                round((1 - patch_tokens / new_tokens) * 100, 2) if new_tokens else None
-            ) if patch_tokens is not None else None,
+                round((1 - reported_tokens / new_tokens) * 100, 2) if new_tokens else None
+            ) if reported_tokens is not None else None,
         }
 
     def rollback_to_timestamp(

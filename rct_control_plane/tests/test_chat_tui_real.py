@@ -153,7 +153,7 @@ async def test_real_dispatch_wires_on_step_into_the_conversation_log(monkeypatch
         def __init__(self, mcp_server, persistence, namespace):
             self.namespace = namespace
 
-        async def run(self, goal, on_step=None):
+        async def run(self, goal, on_step=None, on_answer_token=None):
             if on_step is not None:
                 step = autonomous_loop_module.LoopStep(
                     iteration=1, tool_name="fake_tool", tool_args={},
@@ -175,6 +175,43 @@ async def test_real_dispatch_wires_on_step_into_the_conversation_log(monkeypatch
         rendered = _rendered(app)
         assert "fake_tool" in rendered
         assert "step 1" in rendered
+
+
+@pytest.mark.asyncio
+async def test_real_dispatch_wires_on_answer_token_into_the_streaming_preview(monkeypatch):
+    """Round 40: proves the DEFAULT _dispatch_to_autonomous_loop really
+    passes self._on_answer_token through to AutonomousLoop.run(), and
+    that the streaming preview widget shows the accumulated text live,
+    then hides once the exchange finishes."""
+    import rct_control_plane.autonomous_loop as autonomous_loop_module
+
+    class _FakeLoop:
+        def __init__(self, mcp_server, persistence, namespace):
+            self.namespace = namespace
+
+        async def run(self, goal, on_step=None, on_answer_token=None):
+            chunks = []
+            if on_answer_token is not None:
+                for chunk in ["Real", " streamed", " text"]:
+                    chunks.append(chunk)
+                    result = on_answer_token(chunk)
+                    if hasattr(result, "__await__"):
+                        await result
+            return {"final_answer": "".join(chunks) or "done", "iterations": 1}
+
+    monkeypatch.setattr(autonomous_loop_module, "AutonomousLoop", _FakeLoop)
+
+    app = DelentiaChatApp(kernel=_FakeKernel())
+    async with app.run_test() as pilot:
+        await pilot.click("#composer")
+        await pilot.press(*"go")
+        await pilot.press("ctrl+s")
+        await pilot.pause()
+        rendered = _rendered(app)
+        assert "Real streamed text" in rendered
+        # The preview widget is hidden again once the exchange completes.
+        preview = app.query_one("#streaming_preview")
+        assert preview.display is False
 
 
 @pytest.mark.asyncio

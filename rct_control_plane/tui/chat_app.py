@@ -91,6 +91,15 @@ class DelentiaChatApp(App):
         border: solid $accent;
         display: none;
     }
+    #streaming_preview {
+        dock: bottom;
+        height: auto;
+        max-height: 6;
+        margin-bottom: 4;
+        border: solid $accent;
+        color: $text-muted;
+        display: none;
+    }
     #status_bar {
         dock: bottom;
         height: 1;
@@ -115,11 +124,13 @@ class DelentiaChatApp(App):
         # fresh" intent.
         self.namespace = namespace or _DEFAULT_NAMESPACE
         self._busy = False
+        self._streaming_buffer = ""
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield RichLog(id="conversation", wrap=True, markup=True, highlight=True)
         yield OptionList(id="autocomplete")
+        yield Static("", id="streaming_preview")
         yield Static("ready", id="status_bar")
         yield TextArea(id="composer")
         yield Footer()
@@ -257,7 +268,22 @@ class DelentiaChatApp(App):
         from rct_control_plane.mcp_server import mcp
 
         loop = AutonomousLoop(mcp_server=mcp, persistence=self.kernel._persistence, namespace=namespace)
-        return await loop.run(goal, on_step=self._on_loop_step)
+        return await loop.run(goal, on_step=self._on_loop_step, on_answer_token=self._on_answer_token)
+
+    def _on_answer_token(self, chunk: str) -> None:
+        """Round 40: real per-token rendering of AutonomousLoop's dual-
+        call streamed final answer (see autonomous_loop.py's own
+        on_answer_token docstring) - a genuine second LLM call streaming
+        in, not a replay of already-generated text. RichLog only ever
+        APPENDS (no in-place update), so the live-in-progress answer is
+        shown in a separate Static widget that supports real in-place
+        `.update()`; the final, complete text is written into the
+        permanent RichLog transcript once streaming finishes (see
+        _send_message)."""
+        self._streaming_buffer += chunk
+        preview = self.query_one("#streaming_preview", Static)
+        preview.update(f"[dim]{self._streaming_buffer}[/]")
+        preview.display = True
 
     def _on_loop_step(self, step: Any) -> None:
         """Real live-introspection hook (Round 37) - renders each actual
@@ -280,6 +306,7 @@ class DelentiaChatApp(App):
         log.write(f"[bold green]You:[/] {text}")
         self._persist_transcript_entry("user", text)
         self._busy = True
+        self._streaming_buffer = ""
         self._set_status("thinking...")
         start = time.monotonic()
         try:
@@ -294,6 +321,10 @@ class DelentiaChatApp(App):
             self._set_status("ready")
         finally:
             self._busy = False
+            self._streaming_buffer = ""
+            preview = self.query_one("#streaming_preview", Static)
+            preview.update("")
+            preview.display = False
 
 
 def run_chat(kernel: Optional[Any] = None) -> None:

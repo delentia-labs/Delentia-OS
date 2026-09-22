@@ -118,6 +118,7 @@ class AutonomousLoop:
         self,
         goal: str,
         on_step: Optional[Callable[[LoopStep], Any]] = None,
+        on_answer_token: Optional[Callable[[str], Any]] = None,
     ) -> dict:
         """Round 37: `on_step` is an optional, real live-introspection
         hook - called once per real LoopStep as it's appended to history,
@@ -125,7 +126,23 @@ class AutonomousLoop:
         if it returns an awaitable, matching autonomous_scheduler.py's
         own trigger_task_async pattern). Defaults to None, which
         preserves this method's exact prior behavior for every existing
-        caller (Zero-Delete)."""
+        caller (Zero-Delete).
+
+        Round 40: `on_answer_token` is a second, independent, optional
+        hook enabling REAL token streaming of the final answer - a
+        genuine dual-call design, not a cosmetic reveal of text that
+        already fully exists. decide_next_action()'s own JSON-mode call
+        (needed every iteration to get a parseable tool-or-finish
+        decision) still runs exactly as before; when the LLM decides to
+        finish AND on_answer_token is provided, ONE additional, separate
+        plain-text streaming call (LLMProvider.stream_complete(), Round
+        39's real, tested streaming infrastructure) narrates the same
+        answer, calling on_answer_token once per real incremental
+        chunk as it arrives from the provider - not simulated. This is
+        a real, disclosed cost/latency tradeoff (one extra LLM call only
+        on the finish step, only when a caller actually wants streamed
+        output) - defaults to None, so every existing caller's behavior
+        and cost profile is completely unchanged (Zero-Delete)."""
         t_start = time.time()
         available_tools = await self._available_tools()
         history: list = []
@@ -159,6 +176,8 @@ class AutonomousLoop:
             if decision["action"] == "finish":
                 stopped_reason = "llm_finished"
                 final_answer = decision.get("final_answer")
+                if on_answer_token is not None:
+                    final_answer = await self._stream_final_answer(goal, history, on_answer_token)
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)
@@ -204,6 +223,38 @@ class AutonomousLoop:
             "iterations": len(history),
             "stopped_reason": stopped_reason,
         }
+
+    async def _stream_final_answer(
+        self, goal: str, history: List[LoopStep], on_answer_token: Callable[[str], Any],
+    ) -> str:
+        """Round 40: the real second call of the dual-call streaming
+        design - a plain-text (not json_mode) prompt, reusing the same
+        goal/history context decide_next_action() itself builds, sent
+        through LLMProvider.stream_complete() so the caller genuinely
+        sees the answer as it's generated, not after the fact."""
+        from rct_control_plane.llm_provider import get_default_provider
+        provider = get_default_provider()
+
+        history_desc = "\n".join(
+            f"Iteration {s.iteration}: called {s.tool_name}({s.tool_args}) -> {s.tool_result}"
+            for s in history
+        ) or "(no actions taken yet)"
+
+        prompt = f"""You are an autonomous agent that has finished working toward this goal:
+{goal}
+
+Actions taken:
+{history_desc}
+
+Write your final answer to the goal, in natural language. Do not use JSON - plain text only."""
+
+        chunks: List[str] = []
+        async for chunk in provider.stream_complete(prompt, temperature=0.3):
+            chunks.append(chunk)
+            result = on_answer_token(chunk)
+            if inspect.isawaitable(result):
+                await result
+        return "".join(chunks)
 
     def _persist_step(self, step: LoopStep) -> None:
         self._persistence.append_audit(
