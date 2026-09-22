@@ -112,6 +112,11 @@ from .node_network import (
     NODE_NETWORK_VERSION,
     CONSENSUS_THRESHOLD,
 )
+from .skill_library import (
+    SkillLibrary,
+    SkillRecord,
+    SKILL_LIBRARY_VERSION,
+)
 
 __all__ = [
     "__version__",
@@ -203,4 +208,8 @@ __all__ = [
     "ConsensusResult",
     "NODE_NETWORK_VERSION",
     "CONSENSUS_THRESHOLD",
+    # skill_library
+    "SkillLibrary",
+    "SkillRecord",
+    "SKILL_LIBRARY_VERSION",
 ]
