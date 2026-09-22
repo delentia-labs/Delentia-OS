@@ -55,6 +55,7 @@ Usage::
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -584,6 +585,98 @@ class DeltaEngine:
                 round((1 - reported_tokens / new_tokens) * 100, 2) if new_tokens else None
             ) if reported_tokens is not None else None,
         }
+
+    def apply_structural_delta(
+        self, old_state: Dict[str, Any], ops: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Round 41: real decompression - the exact inverse of
+        compute_structural_delta()'s _diff_into(). Applies a JSON-Patch-
+        style op list (as returned in compress_intent_delta()'s/
+        compute_structural_delta()'s own "ops" field) back onto
+        old_state to reconstruct new_state, field-for-field.
+
+        This closes the other half of the gap Round 38/40 left open:
+        those methods could COMPUTE and REPORT a compact delta, but
+        nothing in this codebase could turn a delta back into a full
+        state. That mattered only as long as compression was reported,
+        not actually sent anywhere; autonomous_loop.py's Round 41 wiring
+        now genuinely replaces full per-turn context with these `ops`
+        when compress_intent_delta() finds real token savings, so a real
+        caller must be able to get the full state back - not just read a
+        diff. Deep-copies old_state so the caller's original object is
+        never mutated.
+
+        Note on list ops: compute_structural_delta()'s own list diffing
+        is a real, honestly-simple POSITIONAL diff (see _diff_into's own
+        docstring) that always emits "remove" ops for trailing indices in
+        ASCENDING order (i.e. the shorter list's length up to the longer
+        list's length - 1). Applied naively in that same ascending order,
+        each removal shifts later indices left, corrupting subsequent
+        removals. This method applies "remove" ops in descending
+        path order (deepest/highest-index first) so each removal is
+        resolved against the list layout it was actually computed
+        against - "add"/"replace" ops need no such reordering (dict-key
+        writes are order-independent here; list "add" ops from this
+        diff are always sequential trailing appends, order-preserving
+        either way)."""
+        new_state = copy.deepcopy(old_state)
+
+        removes = [op for op in ops if op.get("op") == "remove"]
+        others = [op for op in ops if op.get("op") != "remove"]
+
+        def _path_sort_key(op: Dict[str, Any]):
+            segments = [s for s in op["path"].split("/") if s != ""]
+            return [(0, int(s)) if s.isdigit() else (1, s) for s in segments]
+
+        removes.sort(key=_path_sort_key, reverse=True)
+
+        for op in removes:
+            self._apply_op(new_state, op)
+        for op in others:
+            self._apply_op(new_state, op)
+
+        return new_state
+
+    def _apply_op(self, root: Dict[str, Any], op: Dict[str, Any]) -> None:
+        """Apply a single JSON-Patch-style op ({"op", "path", "value"?})
+        to `root` in place, navigating dicts by key and lists by
+        integer index."""
+        path = op["path"]
+        segments = [s for s in path.split("/") if s != ""]
+
+        if not segments:
+            # Whole-root replace - only meaningful when old/new state
+            # types differ at the top level (rare for this codebase's
+            # always-dict states, but handled honestly rather than
+            # silently dropped).
+            if op["op"] == "replace" and isinstance(op.get("value"), dict):
+                root.clear()
+                root.update(op["value"])
+            return
+
+        parent: Any = root
+        for seg in segments[:-1]:
+            parent = parent[int(seg)] if isinstance(parent, list) else parent[seg]
+
+        last = segments[-1]
+        op_type = op["op"]
+
+        if isinstance(parent, list):
+            if op_type == "add":
+                idx = int(last)
+                if idx >= len(parent):
+                    parent.append(op["value"])
+                else:
+                    parent.insert(idx, op["value"])
+            elif op_type == "remove":
+                del parent[int(last)]
+            elif op_type == "replace":
+                parent[int(last)] = op["value"]
+        else:
+            if op_type == "add" or op_type == "replace":
+                parent[last] = op["value"]
+            elif op_type == "remove":
+                del parent[last]
 
     def rollback_to_timestamp(
         self,
