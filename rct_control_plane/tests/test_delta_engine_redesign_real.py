@@ -189,3 +189,97 @@ class TestCompressIntentDeltaRealThresholdBehavior:
         diff = engine.compute_delta(old, new)
         assert diff.added == ["z"]
         assert diff.removed == ["y"]
+
+
+class TestApplyStructuralDeltaIsRealDecompression:
+    """Round 41: compute_structural_delta()/compress_intent_delta() could
+    COMPUTE and REPORT a compact delta but nothing could turn it back
+    into a full state - apply_structural_delta() closes that gap. Every
+    case here proves old_state + ops == new_state, i.e. genuinely
+    lossless round-tripping, not just "doesn't crash"."""
+
+    def test_round_trips_simple_flat_changes(self):
+        engine = DeltaEngine()
+        old = {"a": 1, "b": 2}
+        new = {"a": 1, "c": 3}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_round_trips_nested_dict_changes(self):
+        engine = DeltaEngine()
+        old = {"intent": "deploy", "metadata": {"user": "architect", "tags": ["prod"]}, "score": 0.9}
+        new = {"intent": "deploy", "metadata": {"user": "architect", "tags": ["prod", "urgent"]}, "score": 0.95}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_round_trips_value_swap_between_keys(self):
+        engine = DeltaEngine()
+        old = {"field_a": "hello", "field_b": "world"}
+        new = {"field_a": "world", "field_b": "hello"}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_round_trips_multi_element_trailing_list_removal(self):
+        """The real ordering hazard: compute_structural_delta() emits
+        ascending-index "remove" ops for a shrinking list (e.g. indices
+        2,3,4 removed in that order) - applying them naively in that
+        same ascending order corrupts later indices after the first
+        deletion shifts the list. apply_structural_delta() must apply
+        removes in descending order internally to round-trip correctly."""
+        engine = DeltaEngine()
+        old = {"items": ["a", "b", "c", "d", "e"]}
+        new = {"items": ["a", "b"]}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_round_trips_list_of_dicts_with_partial_change_and_shrink(self):
+        engine = DeltaEngine()
+        old = {"steps": [{"name": "a", "done": False}, {"name": "b", "done": False}, {"name": "c", "done": False}]}
+        new = {"steps": [{"name": "a", "done": True}, {"name": "b", "done": False}]}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_round_trips_list_growth(self):
+        engine = DeltaEngine()
+        old = {"items": ["a", "b"]}
+        new = {"items": ["a", "b", "c", "d"]}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new
+
+    def test_does_not_mutate_old_state(self):
+        """apply_structural_delta() must deep-copy - a caller reusing
+        old_state as the next turn's `prior_state` would silently
+        corrupt history if this method mutated it in place."""
+        engine = DeltaEngine()
+        old = {"a": 1, "nested": {"b": [1, 2, 3]}}
+        old_copy_for_comparison = {"a": 1, "nested": {"b": [1, 2, 3]}}
+        new = {"a": 1, "nested": {"b": [1, 2, 3, 4]}}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        engine.apply_structural_delta(old, ops)
+        assert old == old_copy_for_comparison
+
+    def test_empty_ops_reconstructs_identical_state(self):
+        engine = DeltaEngine()
+        state = {"a": 1, "b": {"c": 2}}
+        assert engine.apply_structural_delta(state, []) == state
+
+    def test_round_trips_the_real_intent_state_shape_used_by_the_kernel(self):
+        """A real-shaped state matching algorithm_kernel_41.py's own
+        Phase 6 current_intent_state dict (intent/fdia_score/
+        architect_veto/rct7_step_count/rct7_decomposition/
+        mee_growth_summary) - proves apply_structural_delta() works on
+        the actual production shape, not just synthetic toy dicts."""
+        engine = DeltaEngine()
+        old = {
+            "intent": "Deploy the payment service with retries",
+            "fdia_score": 0.92,
+            "architect_veto": False,
+            "rct7_step_count": 7,
+            "rct7_decomposition": [f"step_{i}: analyze aspect {i}" for i in range(7)],
+            "mee_growth_summary": {"nodes": 12, "edges": 30, "growth_rate": 0.15},
+        }
+        new = dict(old)
+        new["fdia_score"] = 0.94
+        new["mee_growth_summary"] = {"nodes": 13, "edges": 33, "growth_rate": 0.16}
+        ops = engine.compute_structural_delta(old, new)["ops"]
+        assert engine.apply_structural_delta(old, ops) == new

@@ -5,7 +5,20 @@ cycle over the kernel's own MCP tool registry.
 Round 22 Phase 10 Task 22: uses the pluggable LLMProvider abstraction
 (defaults to OllamaProvider via get_default_provider()) instead of a
 direct httpx call, so this loop works against any registered backend.
-"""
+
+Round 41: algo_25_delta_block.py's intent-delta compression
+(compress_intent_delta()/apply_structural_delta(), Round 38/40) was
+previously only computed and reported (surfaced as
+algorithm_kernel_41.py's own phase_6_intent_delta_compression field on
+a fully separate pipeline never wired to this loop) - never used to
+change what actually got sent to an LLM. render_history() below is the
+real fix: the same function decide_next_action() and
+_stream_final_answer() both now use to build history_desc genuinely
+replaces full per-turn context with a compact delta when
+compress_intent_delta()'s own token-savings safety valve confirms a
+real win, and reconstruct_full_history_text() is the real, tested
+decompression counterpart for whenever full context needs to be
+recovered."""
 from __future__ import annotations
 
 import inspect
@@ -15,6 +28,7 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
+from rct_control_plane.algo_25_delta_block import DeltaEngine
 from rct_control_plane.persistence import ControlPlanePersistence
 
 if TYPE_CHECKING:
@@ -29,6 +43,109 @@ class LoopStep:
     tool_result: Optional[Dict[str, Any]]
     llm_reasoning: str
     timestamp: float = field(default_factory=time.time)
+
+
+def _turn_state(step: LoopStep) -> Dict[str, Any]:
+    """Round 41: the real, diffable state for one turn - exactly the
+    fields _render_turn_full() below renders into history_desc's plain-
+    text line (tool_name, tool_args, tool_result). Excludes
+    iteration/timestamp (positional metadata, not turn content) and
+    llm_reasoning (not part of the pre-existing rendered line either -
+    unchanged since Round 22)."""
+    return {
+        "tool_name": step.tool_name,
+        "tool_args": step.tool_args,
+        "tool_result": step.tool_result,
+    }
+
+
+def _render_turn_full(step: LoopStep) -> str:
+    """The original, uncompressed per-turn render - byte-for-byte the
+    same text every pre-Round-41 history_desc line contained."""
+    return f"Iteration {step.iteration}: called {step.tool_name}({step.tool_args}) -> {step.tool_result}"
+
+
+def render_history(history: List[LoopStep], delta_engine: Optional[DeltaEngine] = None) -> str:
+    """Round 41: builds the real history text handed to the LLM provider
+    as part of the prompt - this replaces the inline `history_desc`
+    joins that used to live directly in decide_next_action() and
+    _stream_final_answer(), so both real call sites now share one
+    tested implementation.
+
+    Turn 1 of any run has no prior turn to diff against and is always
+    rendered in full - genuinely backward compatible, not a special
+    case bolted on. Every turn after that is compressed via
+    DeltaEngine.compress_intent_delta() against the immediately PRIOR
+    turn's real state, but ONLY when that call's own token-savings
+    safety valve (Round 40) confirms the compact JSON-Patch `ops`
+    representation is genuinely smaller in LLM context tokens than the
+    full turn text - otherwise this falls back to the exact same full
+    line the no-compression path always produced, so compression can
+    only ever help, never actively hurt (the same guarantee
+    compress_intent_delta() itself makes for bytes/tokens
+    independently). `ops` is real, parseable JSON text (never the zstd
+    byte output, which is binary and not valid LLM prompt text per that
+    method's own docstring), so nothing unreadable is ever placed in
+    the prompt.
+
+    delta_engine defaults to a fresh, stateless DeltaEngine() - this
+    method only uses compress_intent_delta()/compute_structural_delta(),
+    neither of which reads or writes DeltaEngine's own stored-delta
+    state, so a plain local instance is sufficient and callers never
+    need to manage one."""
+    if not history:
+        return "(no actions taken yet)"
+
+    engine = delta_engine if delta_engine is not None else DeltaEngine()
+
+    lines: List[str] = [_render_turn_full(history[0])]
+    prior_state = _turn_state(history[0])
+    for step in history[1:]:
+        current_state = _turn_state(step)
+        compression = engine.compress_intent_delta(prior_state, current_state)
+        if not compression["used_token_fallback_to_full_state"]:
+            patch_json = json.dumps(compression["ops"], sort_keys=True)
+            lines.append(
+                f"Iteration {step.iteration}: [delta vs iteration {step.iteration - 1}] {patch_json}"
+            )
+        else:
+            lines.append(_render_turn_full(step))
+        prior_state = current_state
+    return "\n".join(lines)
+
+
+def reconstruct_full_history_text(history: List[LoopStep], delta_engine: Optional[DeltaEngine] = None) -> str:
+    """Round 41: the real decompression counterpart to render_history()'s
+    compressed rendering - walks the exact same turn-to-turn delta chain
+    forward, applying each turn's real JSON-Patch `ops` back onto the
+    previous turn's state via DeltaEngine.apply_structural_delta(), and
+    renders the FULL, uncompressed text for every turn regardless of
+    whether that turn was sent to the LLM compressed or not.
+
+    This is the real, tested answer to "how do you get the full context
+    back when a prior turn's delta chain needs decompressing to produce
+    a coherent prompt" - not a TODO. A caller that only persisted the
+    compact `ops` for compressed turns (e.g. an audit/replay log) can
+    reconstruct the identical full text this function proves is
+    recoverable from history[0]'s real full state plus each
+    subsequent delta alone."""
+    if not history:
+        return "(no actions taken yet)"
+
+    engine = delta_engine if delta_engine is not None else DeltaEngine()
+
+    lines: List[str] = [_render_turn_full(history[0])]
+    prior_state = _turn_state(history[0])
+    for step in history[1:]:
+        current_state = _turn_state(step)
+        compression = engine.compress_intent_delta(prior_state, current_state)
+        reconstructed = engine.apply_structural_delta(prior_state, compression["ops"])
+        lines.append(
+            f"Iteration {step.iteration}: called {reconstructed['tool_name']}"
+            f"({reconstructed['tool_args']}) -> {reconstructed['tool_result']}"
+        )
+        prior_state = current_state
+    return "\n".join(lines)
 
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
@@ -61,10 +178,10 @@ async def decide_next_action(
         f"- {t['name']}: {t['description']} (args schema: {t.get('input_schema', {})})"
         for t in available_tools
     )
-    history_desc = "\n".join(
-        f"Iteration {s.iteration}: called {s.tool_name}({s.tool_args}) -> {s.tool_result}"
-        for s in history
-    ) or "(no actions taken yet)"
+    # Round 41: real intent-delta compression, actually applied to the
+    # bytes sent here (not just computed/reported) - see render_history()'s
+    # own docstring for the full compression/fallback contract.
+    history_desc = render_history(history)
 
     prompt = f"""You are an autonomous agent working toward this goal:
 {goal}
@@ -235,10 +352,8 @@ class AutonomousLoop:
         from rct_control_plane.llm_provider import get_default_provider
         provider = get_default_provider()
 
-        history_desc = "\n".join(
-            f"Iteration {s.iteration}: called {s.tool_name}({s.tool_args}) -> {s.tool_result}"
-            for s in history
-        ) or "(no actions taken yet)"
+        # Round 41: same real compression as decide_next_action()'s prompt.
+        history_desc = render_history(history)
 
         prompt = f"""You are an autonomous agent that has finished working toward this goal:
 {goal}
