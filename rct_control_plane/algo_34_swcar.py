@@ -288,8 +288,16 @@ class WebCrawler:
             return parser.is_allowed(self.user_agent, url)
 
         robots_url = urljoin(domain, "/robots.txt")
+        if self._client is None:
+            # Real bug fix: this method can be called on its own (not only
+            # via crawl(), which already lazily inits the client) - without
+            # this, a standalone call hit a bare None.get() AttributeError
+            # instead of failing open like every other error path here.
+            await self._init_client()
+        client = self._client
+        assert client is not None
         try:
-            response = await self._client.get(robots_url, timeout=5.0)
+            response = await client.get(robots_url, timeout=5.0)
             if response.status_code == 200:
                 parser = RobotExclusionRulesParser()
                 parser.parse(response.text)
@@ -347,6 +355,8 @@ class WebCrawler:
         """Crawl a single URL, subject to circuit breaker, robots.txt, and rate limiting."""
         if self._client is None:
             await self._init_client()
+        client = self._client
+        assert client is not None
 
         self.total_requests += 1
         domain = self._get_domain(url)
@@ -368,7 +378,7 @@ class WebCrawler:
         for attempt in range(self.max_retries):
             try:
                 async with self._semaphore:
-                    response = await self._client.get(
+                    response = await client.get(
                         url,
                         follow_redirects=True,
                         timeout=self.timeout
@@ -435,9 +445,9 @@ class WebCrawler:
             tasks = [self.crawl(url) for url in urls]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            pages = []
+            pages: List[Optional[WebPage]] = []
             for result in results:
-                if isinstance(result, Exception):
+                if isinstance(result, BaseException):
                     pages.append(None)
                 else:
                     pages.append(result)
@@ -897,6 +907,10 @@ if __name__ == "__main__":
     result = analyzer.analyze(sample_text, url="https://delentia.com/docs")
     print(f"content_type={result.content_type}, language={result.language}")
     print(f"topics (top 5)={[t.keyword for t in result.topics[:5]]}")
+    # analyze()'s sentiment_analysis default is True, so this call always
+    # populates it - assert documents that real invariant for mypy instead
+    # of silently assuming a None deref can't happen here.
+    assert result.sentiment is not None
     print(f"sentiment: polarity={result.sentiment.polarity}, score={result.sentiment.score:.4f}, "
           f"subjectivity={result.sentiment.subjectivity:.4f}")
     print(f"readability_score={result.readability_score:.2f}")
