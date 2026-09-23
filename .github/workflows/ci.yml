@@ -67,6 +67,18 @@ jobs:
           done
           curl -sf http://127.0.0.1:11434/api/tags > /dev/null || { echo "Ollama never became reachable"; exit 1; }
           curl -sf -X POST http://127.0.0.1:11434/api/pull -d '{"name": "qwen2.5:7b", "stream": false}' --max-time 600
+          # Real, confirmed problem from the first real run of this service
+          # container (2026-09-23): 4 tests failed with httpx.ReadTimeout,
+          # not ConnectError - the model was genuinely reachable and being
+          # pulled/loaded, but a 7B model's FIRST inference on a CPU-only
+          # runner (no GPU) includes real model-load-into-RAM time on top
+          # of generation time, and that combined cold-start cost exceeded
+          # individual tests' own timeouts. A real warm-up generate call
+          # here (thrown away, keep_alive kept high so the model stays
+          # resident) pays that one-time cost up front instead of inside
+          # the first real test's own timeout budget - the same technique
+          # real Ollama deployments use before serving traffic.
+          curl -sf -X POST http://127.0.0.1:11434/api/generate -d '{"model": "qwen2.5:7b", "prompt": "hi", "stream": false, "keep_alive": "30m"}' --max-time 300 > /dev/null
 
       - name: Run tests
         # Real, measured coverage as of 2026-09-23. Two different numbers,
