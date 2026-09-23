@@ -330,7 +330,7 @@ class DeltaEngine:
         deltas.sort(key=lambda d: d.timestamp)
 
         # Apply deltas sequentially
-        state_data = {}
+        state_data: Dict[str, Any] = {}
         last_timestamp = 0.0
 
         for delta in deltas:
@@ -522,6 +522,9 @@ class DeltaEngine:
 
         full_new_bytes = structural["full_new_state_bytes"]
 
+        old_tokens: Optional[int]
+        new_tokens: Optional[int]
+        patch_tokens: Optional[int]
         try:
             import tiktoken
             encoding = tiktoken.get_encoding("cl100k_base")

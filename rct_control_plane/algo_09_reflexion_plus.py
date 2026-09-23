@@ -326,14 +326,13 @@ class ReflexionEngine:
         self.sessions: Dict[str, ReflexionState] = {}
 
         self.use_memory = use_memory
+        self.memory: Optional[Algo10MemoryAdapter] = None
         if use_memory:
             try:
                 self.memory = memory_client if memory_client is not None else Algo10MemoryAdapter()
             except Exception as e:
                 logger.warning(f"Memory integration unavailable: {e}")
                 self.memory = None
-        else:
-            self.memory = None
 
         # Real convergence detector: looks for score plateau / oscillation
         # across the last few attempts and signals early stop.
