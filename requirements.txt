@@ -84,3 +84,21 @@ streamlit-autorefresh>=1.0.1  # st_autorefresh component
 # ── Phase C: Qdrant vector search ───────────────────────────────────────────
 qdrant-client>=1.7.0       # Qdrant Python client (async + sync)
 openai>=1.10.0             # OpenAI SDK (used for embeddings via OpenRouter)
+
+# ── ALGO-34 SWCAR (Web Crawler + Semantic Analyzer) ──────────────────────────
+# rct_control_plane/algo_34_swcar.py imports these unconditionally at module
+# level, and algorithm_kernel_41.py imports algo_34_swcar at ITS OWN module
+# level - so every test in rct_control_plane/tests/ fails to even collect
+# without them (conftest.py imports the kernel). pyproject.toml's own
+# `web-intelligence` extra and requirements.lock.txt already declared these
+# (Round 35's own comment there calls this exact gap out: "undeclared in
+# every manifest in this repo... a real, latent 'works on my machine only'
+# gap") but requirements.txt itself - the file CI's `pip install -r
+# requirements.txt` and a fresh clone's Quickstart both actually use - was
+# never updated to match. Confirmed via a real GitHub Actions CI run
+# (2026-09-23) that this is the actual, current, reproducible cause of
+# "ModuleNotFoundError: No module named 'robotexclusionrulesparser'"
+# failing "Run tests" on all 3 Python versions - not a hypothetical gap.
+robotexclusionrulesparser>=1.7.1
+textblob>=0.18.0
+nltk>=3.10.3                # floor matches pyproject.toml's own CVE-motivated raise (Round 29 Task 63)
