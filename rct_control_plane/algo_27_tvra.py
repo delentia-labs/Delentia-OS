@@ -173,7 +173,7 @@ class VideoProcessor:
     def __init__(self, scene_threshold: float = 30.0, min_frame_quality: float = 0.7):
         self.scene_threshold = scene_threshold
         self.min_frame_quality = min_frame_quality
-        self._yolo_model = None          # lazy-loaded (real ultralytics YOLOv8n)
+        self._yolo_model: Optional[Any] = None          # lazy-loaded (real ultralytics YOLOv8n)
         self._resnet_model = None        # lazy-loaded (real torchvision ResNet18)
         self._resnet_transform = None
         self._resnet_labels = None
@@ -290,6 +290,7 @@ class VideoProcessor:
     async def detect_objects(self, frame: np.ndarray, confidence_threshold: float = 0.5) -> List[Dict[str, Any]]:
         """Real YOLOv8n object detection on the real frame."""
         self._ensure_yolo()
+        assert self._yolo_model is not None
         results = await asyncio.to_thread(self._yolo_model, frame, verbose=False)
         objects = []
         for r in results:
@@ -406,7 +407,7 @@ class AudioProcessor:
         self.whisper_model_name = whisper_model
         self.language = language
         self._whisper_model = None
-        self._diarization_pipeline = None
+        self._diarization_pipeline: Optional[Any] = None
         self._diarization_load_error: Optional[str] = None
         logger.info(f"Initializing AudioProcessor with Whisper {whisper_model}")
 
