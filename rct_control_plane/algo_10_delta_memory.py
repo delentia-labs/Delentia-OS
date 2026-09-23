@@ -289,6 +289,18 @@ class RCTDBClient:
             self.connection = None
             logger.info("Disconnected from RCTDB")
 
+    def _require_connection(self) -> Any:
+        """Real bug fix: every real (non-mock) DB path below used to call
+        `self.connection.cursor()` directly - if `connect()` was never
+        called, or it was called but failed (returns False on exception,
+        leaving self.connection as None), that raised an opaque
+        `AttributeError: 'NoneType' object has no attribute 'cursor'`
+        instead of a clear, actionable error. Centralizing the None-check
+        here also gives mypy a concrete non-Optional return type."""
+        if self.connection is None:
+            raise RuntimeError("Not connected to RCTDB - call connect() first (or use mock_mode)")
+        return self.connection
+
     def get_document(self, doc_id: str) -> Optional[VaultDocument]:
         """
         Get document by ID
@@ -305,7 +317,7 @@ class RCTDBClient:
                     return doc
             return None
 
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self._require_connection().cursor(cursor_factory=RealDictCursor)
         try:
             cursor.execute(
                 "SELECT * FROM vault_documents WHERE uid = %s",
@@ -382,10 +394,10 @@ class RCTDBClient:
             return results
 
         # Real database search
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self._require_connection().cursor(cursor_factory=RealDictCursor)
         try:
             sql = "SELECT * FROM vault_documents WHERE 1=1"
-            params = []
+            params: List[Any] = []
 
             if text:
                 sql += " AND (title ILIKE %s OR subtitle ILIKE %s)"
@@ -424,9 +436,9 @@ class RCTDBClient:
             VaultStats with current statistics
         """
         if self.mock_mode:
-            docs_by_type = {}
-            docs_by_status = {}
-            docs_by_section = {}
+            docs_by_type: Dict[str, int] = {}
+            docs_by_status: Dict[str, int] = {}
+            docs_by_section: Dict[str, int] = {}
 
             for doc in self._mock_documents:
                 docs_by_type[doc.doc_type.value] = docs_by_type.get(doc.doc_type.value, 0) + 1
@@ -442,7 +454,7 @@ class RCTDBClient:
                 vault_version="Vault-1068"
             )
 
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self._require_connection().cursor(cursor_factory=RealDictCursor)
         try:
             # Total count
             cursor.execute("SELECT COUNT(*) as total FROM vault_documents")
@@ -556,7 +568,8 @@ class RCTDBClient:
 
     def _insert_document(self, doc: VaultDocument):
         """Insert document into database"""
-        cursor = self.connection.cursor()
+        connection = self._require_connection()
+        cursor = connection.cursor()
         try:
             cursor.execute("""
                 INSERT INTO vault_documents
@@ -571,7 +584,7 @@ class RCTDBClient:
                 doc.slug, doc.title, doc.doc_type.value, doc.status.value,
                 doc.version, doc.created_at, doc.updated_at
             ))
-            self.connection.commit()
+            connection.commit()
         finally:
             cursor.close()
 
