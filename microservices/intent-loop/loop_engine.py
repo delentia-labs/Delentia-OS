@@ -271,7 +271,7 @@ class MemoryLayer:
         
         # Semantic similarity search (production: use vector DB)
         # For MVP: simple substring matching
-        for cached_hash, cached_hit in self.cache.items():
+        for _cached_hash, cached_hit in self.cache.items():
             # This is simplified - production uses embeddings
             similarity = self._calculate_similarity(packet.intent, cached_hit.result.get("original_intent", ""))
             if similarity > 0.95:

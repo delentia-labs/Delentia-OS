@@ -117,7 +117,7 @@ class QdrantBackend(VectorBackendInterface):
         """
         # Create points
         points = []
-        for i, (vec_id, vector) in enumerate(zip(ids, vectors)):
+        for i, (vec_id, vector) in enumerate(zip(ids, vectors, strict=True)):
             payload = metadata[i] if metadata and i < len(metadata) else {}
             
             point = PointStruct(

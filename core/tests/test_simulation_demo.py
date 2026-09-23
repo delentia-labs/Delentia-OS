@@ -249,7 +249,7 @@ class TestRunTick:
     def test_decisions_contain_action_and_score(self):
         world = create_world()
         _, decisions = run_tick(1, self.agents, world, self.scorer, self.engine)
-        for agent_id, (action, score) in decisions.items():
+        for _agent_id, (action, score) in decisions.items():
             assert isinstance(action, NPCAction)
             assert 0.0 <= score <= 1.0
 

@@ -79,7 +79,7 @@ _MALAY_MARKERS = {
     "pada", "dari", "dalam", "akan", "tidak", "saya", "kami", "mereka",
     "atau", "juga", "ke", "sudah", "belum", "ada", "baru", "sangat",
     "hanya", "oleh", "seperti", "antara", "telah", "bahawa", "kerana",
-    "ialah", "boleh", "tetapi", "ia", "kami", "kita"
+    "ialah", "boleh", "tetapi", "ia", "kita"
 }
 
 # Words specific to Malay that are not used in Indonesian

@@ -137,9 +137,9 @@ async def analyze(req: AnalyzeRequest):
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}") from e
 
 
 @router.post("/validate")
@@ -156,7 +156,7 @@ async def validate_input(req: ValidateRequest):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/crystallize", response_model=List[KeywordResponse])
@@ -171,7 +171,7 @@ async def crystallize_keywords(req: CrystallizeRequest):
         return [KeywordResponse(**kw) for kw in keywords]
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/synthesize")
@@ -188,7 +188,7 @@ async def synthesize_disciplines(req: SynthesizeRequest):
         return result
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/sessions/{session_id}")

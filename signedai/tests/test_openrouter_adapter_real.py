@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from signedai.core.openrouter_adapter import (
-    OPENROUTER_API_URL,
     OpenRouterAdapter,
     OpenRouterUnavailableError,
     OpenRouterGenerateError,

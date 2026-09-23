@@ -260,7 +260,7 @@ class TestDirectoryJunctionCreationNeedsApproval:
         )
         assert not (fake_scratch / "escape_link").exists()
 
-        write_result = run_sandboxed(
+        run_sandboxed(
             "python -c \"open('escape_link/canary.txt', 'w').write('OVERWRITTEN')\""
         )
         # Even if somehow reached, the write itself must not have gone

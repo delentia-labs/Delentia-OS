@@ -57,13 +57,13 @@ async def index_vectors(request: IndexRequest):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Indexing error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to index vectors"
-        )
+        ) from e
 
 
 @router.post("/search", response_model=SearchResponse)
@@ -91,13 +91,13 @@ async def search_vectors(request: SearchRequest):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Search error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search vectors"
-        )
+        ) from e
 
 
 @router.post("/search/batch", response_model=BatchSearchResponse)
@@ -123,13 +123,13 @@ async def batch_search_vectors(request: BatchSearchRequest):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Batch search error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to batch search vectors"
-        )
+        ) from e
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -152,7 +152,7 @@ async def health_check():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Service unhealthy"
-        )
+        ) from e
 
 
 @router.get("/stats", response_model=StatsResponse)
@@ -176,7 +176,7 @@ async def get_stats():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get statistics"
-        )
+        ) from e
 
 
 @router.get("/{vector_id}", response_model=VectorResponse)
@@ -206,7 +206,7 @@ async def get_vector(vector_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get vector"
-        )
+        ) from e
 
 
 @router.put("/{vector_id}", response_model=UpdateResponse)
@@ -247,13 +247,13 @@ async def update_vector(vector_id: str, request: UpdateRequest):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Update error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update vector"
-        )
+        ) from e
 
 
 @router.delete("/{vector_id}", response_model=DeleteResponse)
@@ -283,7 +283,7 @@ async def delete_vector(vector_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete vector"
-        )
+        ) from e
 
 
 @router.delete("/clear", response_model=ClearResponse)
@@ -304,4 +304,4 @@ async def clear_index():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to clear index"
-        )
+        ) from e

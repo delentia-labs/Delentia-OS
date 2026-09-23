@@ -27,7 +27,7 @@ async def crystallize_text(req: CrystallizeRequest):
         concept_maps = await engine.crystallize(req.text)
         return [cmap.to_dict() for cmap in concept_maps]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @app.get("/health")
 async def health():
