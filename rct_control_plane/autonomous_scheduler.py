@@ -72,6 +72,13 @@ class AutonomousScheduler:
         was a timer to call it unattended."""
         from rct_control_plane.scheduler import check_and_fire_due_reminders
 
+        if self._kernel is None:
+            # Real bug fix: this handler is only ever registered when
+            # kernel is not None (see __init__), but nothing previously
+            # enforced that invariant here - a future caller wiring this
+            # handler up differently would have hit an opaque error deep
+            # inside check_and_fire_due_reminders instead of a clear one.
+            raise RuntimeError("_poll_reminders requires a kernel, but none was configured")
         fired = await check_and_fire_due_reminders(self._kernel)
         return f"{len(fired)} reminder(s) fired" if fired else "no reminders due"
 
