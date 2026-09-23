@@ -72,7 +72,7 @@ starlette>=1.0.1  # PYSEC-2026 starlette advisories (fixed 1.0.1+)
 # failure (see pyproject.toml's `diffusion` extra comment) - torchvision
 # 0.27.1's own flexible pillow constraint let pip resolve straight to
 # 12.3.0. Declared explicitly here so a fresh environment gets it too.
-pillow>=12.2.0  # PYSEC-2026 pillow advisories (fixed 12.2.0/12.3.0)
+pillow>=12.3.0  # PYSEC-2026 pillow advisories (fixed 12.2.0/12.3.0)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
 streamlit>=1.32.0          # War Room UI
