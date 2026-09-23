@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 _THAI_RANGE = re.compile(r'[฀-๿]')
 
@@ -57,9 +57,14 @@ class SemanticMatcher:
     ):
         self.min_token_length = min_token_length
         self.mode = mode
-        self._embedding_engine: Optional[object] = None
+        # Any, not object: ThaiEmbeddingEngine lives in the private
+        # rct_platform package (only imported lazily below, may not be
+        # importable at all in a public checkout), so there is no real
+        # static type to name here - matching algo_16_vector.py's
+        # faiss_index precedent for the same lazy-optional-dependency shape.
+        self._embedding_engine: Optional[Any] = None
 
-    def _get_embedding_engine(self) -> Optional[object]:
+    def _get_embedding_engine(self) -> Optional[Any]:
         """Lazily load ThaiEmbeddingEngine; return None on ImportError."""
         if self._embedding_engine is not None:
             return self._embedding_engine

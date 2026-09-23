@@ -13,7 +13,7 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncIterator, Optional
 
 import httpx
@@ -191,14 +191,15 @@ class QuotaExceededError(Exception):
 
 @dataclass
 class QuotaTracker:
-    max_calls_per_provider: dict = None
-    _call_counts: dict = None
-
-    def __post_init__(self):
-        if self.max_calls_per_provider is None:
-            self.max_calls_per_provider = {}
-        if self._call_counts is None:
-            self._call_counts = {}
+    # field(default_factory=dict), not `= None` + __post_init__: the real
+    # intent here is "always a dict, never actually None" (every real use
+    # below calls .get()/indexes it with no None-check) - the old
+    # `dict = None` default was an implicit-Optional PEP 484 violation
+    # mypy no longer allows, and giving it a real Optional[dict] type
+    # instead would have made every one of those real call sites need an
+    # unnecessary None-check for a state that can't occur post-__init__.
+    max_calls_per_provider: dict = field(default_factory=dict)
+    _call_counts: dict = field(default_factory=dict)
 
     def check_quota(self, provider_name: str) -> bool:
         limit = self.max_calls_per_provider.get(provider_name)

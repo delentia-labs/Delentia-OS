@@ -31,7 +31,7 @@ import sqlite3
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 # ---------------------------------------------------------------------------
 # Optional async backend
@@ -192,7 +192,7 @@ class _ReusableConnectionContext:
         self._lock.acquire()
         return self._conn
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Literal[False]:
         try:
             if exc_type is None:
                 self._conn.commit()
