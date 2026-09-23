@@ -58,7 +58,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
 from queue import PriorityQueue
-from typing import Dict, List, Optional, Set, Tuple
+from typing import DefaultDict, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -295,7 +295,7 @@ class TaskGraph:
 
     def get_stats(self) -> Dict:
         """Get graph statistics."""
-        status_counts = defaultdict(int)
+        status_counts: DefaultDict[str, int] = defaultdict(int)
         for task in self.tasks.values():
             status_counts[task.status.value] += 1
 
@@ -421,7 +421,7 @@ class Scheduler:
         Returns:
             List of (task_id, worker_id) assignments
         """
-        assignments = []
+        assignments: List[Tuple[str, str]] = []
 
         available_workers = [
             w for w in self.workers.values()
@@ -504,10 +504,16 @@ class Scheduler:
         for dep_id in descendants:
             dep_task = self.task_graph.get_task(dep_id)
             if dep_task and dep_task.status == TaskStatus.PENDING:
-                all_done = all(
-                    self.task_graph.get_task(d).status == TaskStatus.COMPLETED
-                    for d in dep_task.dependencies
-                )
+                # Real bug fix: get_task(d) is Optional - a dependency id
+                # that no longer resolves to a real task (e.g. removed from
+                # the graph) used to crash this check with an AttributeError
+                # instead of honestly treating an unresolvable dependency as
+                # "not done".
+                def _is_completed(dep_id: str) -> bool:
+                    t = self.task_graph.get_task(dep_id)
+                    return t is not None and t.status == TaskStatus.COMPLETED
+
+                all_done = all(_is_completed(d) for d in dep_task.dependencies)
                 if all_done:
                     self._enqueue_task(dep_task)
 
