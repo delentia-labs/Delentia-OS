@@ -1062,7 +1062,7 @@ class IntentClassifier:
         self._load_intents()
 
         # Statistics
-        self.stats = {
+        self.stats: Dict[str, Any] = {
             "total_classifications": 0,
             "total_confidence": 0.0,
             "total_processing_time": 0.0,
