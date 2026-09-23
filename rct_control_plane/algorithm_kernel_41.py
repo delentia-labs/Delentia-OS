@@ -17,7 +17,7 @@ from __future__ import annotations  # lets Layer 1/10 type hints below stay lazy
 
 import math
 import time
-from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, Tuple, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     # Round 27 Task 48: TYPE_CHECKING-guarded only — always False at
@@ -726,7 +726,7 @@ class AlgorithmKernel41:
         if not stage_scores:
             return {"stage_scores": {}, "min_score": None, "conserved": False, "weakest_stage": None}
 
-        weakest_stage = min(stage_scores, key=stage_scores.get)
+        weakest_stage = min(stage_scores, key=lambda k: stage_scores[k])
         min_score = stage_scores[weakest_stage]
         return {
             "stage_scores": stage_scores,
@@ -974,7 +974,7 @@ class AlgorithmKernel41:
 
         words = [w.strip(".,!?;:()[]{}\"'").lower() for w in text.split()]
         candidates = list(dict.fromkeys(w for w in words if len(w) >= 4 and w.isalpha()))
-        scored = [{"word": w, "entropy_score": round(_shannon_entropy(w), 4)} for w in candidates]
+        scored: List[Dict[str, Any]] = [{"word": w, "entropy_score": round(_shannon_entropy(w), 4)} for w in candidates]
         golden = sorted((s for s in scored if s["entropy_score"] >= 0.8), key=lambda s: -s["entropy_score"])[:5]
 
         nodes_added = 0
@@ -1387,11 +1387,22 @@ class AlgorithmKernel41:
                 relationship_type=r.get("type", "CONNECTS"), properties=r.get("properties", {}),
             ))
 
+        # Real bug fix: a missing start_node/end_node used to reach
+        # GraphEngine.bfs/dfs/shortest_path as literal `None`, which those
+        # methods happily stringify into a confusing "Start node 'None' not
+        # found" ValueError. Fail with a clear, accurate message instead of
+        # leaning on that accidental side effect.
         if operation == "bfs":
+            if start_node is None:
+                raise ValueError("operation 'bfs' requires start_node")
             return graph.bfs(start_node)
         if operation == "dfs":
+            if start_node is None:
+                raise ValueError("operation 'dfs' requires start_node")
             return graph.dfs(start_node)
         if operation == "shortest_path":
+            if start_node is None or end_node is None:
+                raise ValueError("operation 'shortest_path' requires start_node and end_node")
             path = graph.shortest_path(start_node, end_node)
             return path.__dict__ if path else None
         if operation == "pagerank":
@@ -1738,7 +1749,7 @@ class AlgorithmKernel41:
         breaker = self._circuit_breakers[breaker_key]
 
         if architect_veto:
-            routing_result = {
+            routing_result: Dict[str, Any] = {
                 "path": "vetoed",
                 "reason": "CORD detected a real safety violation (injection/entropy) - A_FDIA=0, F=0.00, execution halted",
                 "cord_findings": [f.check_type.value for f in cord_result.findings],
@@ -1784,7 +1795,7 @@ class AlgorithmKernel41:
         # language text to benchmark (currently Reflexion+; BBA-PCF/MCTR/
         # FAST/vetoed honestly report not-applicable rather than a
         # fabricated score).
-        inner_result = routing_result.get("result", {}) if isinstance(routing_result.get("result"), dict) else {}
+        inner_result: Dict[str, Any] = routing_result.get("result", {}) if isinstance(routing_result.get("result"), dict) else {}
         benchmark = self.benchmark_result_against_intent(intent, inner_result.get("final_answer"))
 
         # Round 24 Task 30: real Intent Conservation across every real
@@ -1824,7 +1835,7 @@ class AlgorithmKernel41:
         # dispatch via the already-real Nodal Assembly (Round 21). Only
         # runs when not vetoed - a vetoed intent gets no further real
         # algorithm dispatch at all.
-        selective_algorithm_dispatch = {"selected": [], "result": None}
+        selective_algorithm_dispatch: Dict[str, Any] = {"selected": [], "result": None}
         if not architect_veto:
             golden = self.crystallize_golden_keywords(intent)
             selected = self.select_relevant_algorithms(golden["golden_keywords"], intent)
@@ -1840,7 +1851,9 @@ class AlgorithmKernel41:
                 # the real bound method directly (not wrapped in a lambda),
                 # so assemble()'s inspect.iscoroutinefunction() check still
                 # correctly detects and awaits it.
-                nodes = [(name, self.get_capability(name), (intent,), {}) for name in selected]
+                nodes: List[Tuple[str, Callable, tuple, dict]] = [
+                    (name, self.get_capability(name), (intent,), {}) for name in selected
+                ]
                 synthesized = await assemble(intent, nodes, ChainMerger(), AnswerSynthesizer())
                 selective_algorithm_dispatch["result"] = synthesized.answer
 
