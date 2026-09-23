@@ -822,9 +822,9 @@ class ReasoningEngine:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Convert exceptions to failed results
-            final_results = []
+            final_results: List[ChainResult] = []
             for i, result in enumerate(results):
-                if isinstance(result, Exception):
+                if isinstance(result, BaseException):
                     failed_result = ChainResult(
                         chain=chains[i],
                         success=False,
@@ -838,12 +838,12 @@ class ReasoningEngine:
             return final_results
         else:
             # Execute chains sequentially
-            results = []
+            sequential_results: List[ChainResult] = []
             for chain in chains:
                 result = await self.execute_chain(chain, context)
-                results.append(result)
+                sequential_results.append(result)
 
-            return results
+            return sequential_results
 
     async def _execute_step(
         self,
@@ -1321,9 +1321,9 @@ class ChainValidator:
         Returns:
             ValidationResult with detailed checks
         """
-        errors = []
-        warnings = []
-        suggestions = []
+        errors: List[str] = []
+        warnings: List[str] = []
+        suggestions: List[str] = []
 
         # 1. Check logic consistency
         logic_consistent = self._check_logic_consistency(chain, errors, warnings)
@@ -1842,7 +1842,7 @@ class ConflictResolver:
             group_scores[conclusion] = total_confidence
 
         # Choose winning group
-        winning_conclusion = max(group_scores, key=group_scores.get)
+        winning_conclusion = max(group_scores, key=lambda k: group_scores[k])
         winning_chains = conclusion_groups[winning_conclusion]
 
         # Calculate resolution confidence
@@ -1973,7 +1973,7 @@ class ConflictResolver:
 
     def _group_by_conclusion(self, chains: List[ThoughtChain]) -> Dict[str, List[ThoughtChain]]:
         """Group chains by similar conclusions"""
-        groups = {}
+        groups: Dict[str, List[ThoughtChain]] = {}
 
         for chain in chains:
             # Simplified grouping by conclusion text
@@ -2143,7 +2143,7 @@ class AnswerSynthesizer:
             return 0.0
 
         # Count common words
-        word_counts = {}
+        word_counts: Dict[str, int] = {}
         for word in all_words:
             word_counts[word] = word_counts.get(word, 0) + 1
 
