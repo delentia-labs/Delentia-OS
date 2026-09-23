@@ -396,7 +396,13 @@ class WebSocketAdapter(BaseAdapter):
         self.protocols = config.get("protocols", [])
         self.timeout = config.get("timeout", 30)
 
-        self._connection = None
+        # Optional[Any]: `websockets` is only imported lazily below (and
+        # ships no type stubs mypy can resolve under --ignore-missing-
+        # imports), and a bare `self._connection = None` here made mypy
+        # infer the attribute's type as literal None, which in turn made
+        # the awaited websockets.connect() assignment below look like it
+        # was expected to return None too.
+        self._connection: Optional[Any] = None
 
     def get_adapter_type(self) -> AdapterType:
         return AdapterType.WEBSOCKET
@@ -420,11 +426,13 @@ class WebSocketAdapter(BaseAdapter):
                     raise ValueError("Message required for send action")
 
                 await self._ensure_connected()
+                assert self._connection is not None
                 await asyncio.wait_for(self._connection.send(message), timeout=timeout)
                 result = {"status": "sent", "message": message}
 
             elif action == "receive":
                 await self._ensure_connected()
+                assert self._connection is not None
                 received = await asyncio.wait_for(self._connection.recv(), timeout=timeout)
                 result = {"status": "received", "message": received}
 
