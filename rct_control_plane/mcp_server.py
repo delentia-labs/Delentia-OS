@@ -14,7 +14,7 @@ inspection of the installed package, not assumed from older docs).
 """
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from mcp.server.mcpserver import MCPServer
 
@@ -66,7 +66,7 @@ def _hash_embed_query(text: str, dim: int = 384):
 # invokes. This is a security boundary (MCP tool args are untrusted
 # JSON, never arbitrary Python callables) - extend deliberately per
 # reviewed node, not open-ended.
-_ALLOWED_ASSEMBLY_NODES = {
+_ALLOWED_ASSEMBLY_NODES: Dict[str, Callable[[Any, str], Tuple[Callable, tuple, Dict[str, Any]]]] = {
     "algo_05_graphrag": lambda k, q: (k.algo_05_graphrag, (q,), {}),
     "algo_17_graph_traversal": lambda k, q: (k.algo_17_graph_traversal, ([], []), {"operation": "stats"}),
     "algo_16_vector_search": lambda k, q: (k.algo_16_vector_search, (_hash_embed_query(q),), {"k": 5}),
@@ -103,7 +103,7 @@ async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
     concurrently, merge their real results into one synthesized answer.
     node_names must be from the real allowlist (not arbitrary method
     names) - this is a security boundary, not a convenience shortcut."""
-    nodes = []
+    nodes: List[Tuple[str, Callable, tuple, dict]] = []
     for name in node_names:
         if name not in _ALLOWED_ASSEMBLY_NODES:
             return {"error": f"'{name}' is not an allowed assembly node"}
@@ -341,7 +341,7 @@ async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_re
         regex = re.compile(pattern)
     except re.error as e:
         return {"error": f"invalid regex: {e}"}
-    matches = []
+    matches: List[Dict[str, Any]] = []
     for path in REPO_ROOT.glob(glob):
         if len(matches) >= max_results:
             break

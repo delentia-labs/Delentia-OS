@@ -253,7 +253,7 @@ class PromptEngine:
             return None
 
         best_template = None
-        best_score = -1
+        best_score = -1.0
 
         for template in candidates:
             metrics_key = f"{template.template_id}_v{template.version}"

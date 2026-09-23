@@ -233,6 +233,7 @@ class GraphRAGEngine:
         session_id = self._generate_session_id()
         top_k = top_k or self.top_k
 
+        graph_results: List[SearchResult]
         if mode == SearchMode.KEYWORD:
             results = await self._keyword_search(query, top_k)
             vector_results, keyword_results, graph_results = [], results, []

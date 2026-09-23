@@ -62,8 +62,21 @@ def _apply_resource_limits(memory_limit_mb: int, cpu_limit_s: int) -> None:
         return
     try:
         memory_bytes = memory_limit_mb * 1024 * 1024
-        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
-        resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit_s, cpu_limit_s))
+        # resource is POSIX-only (the whole module fails to import on
+        # Windows - see this file's own try/except around the import
+        # above, which is the real runtime guard HAS_RESOURCE_LIMITS
+        # checks). getattr keeps real POSIX behavior identical while
+        # staying typeable when mypy analyzes this against a stub set
+        # that doesn't define these attributes; the getattr fallbacks are
+        # never actually hit at runtime since HAS_RESOURCE_LIMITS already
+        # gates this whole function to real POSIX with a real resource
+        # module.
+        setrlimit = getattr(resource, "setrlimit", None)
+        rlimit_as = getattr(resource, "RLIMIT_AS", None)
+        rlimit_cpu = getattr(resource, "RLIMIT_CPU", None)
+        if setrlimit and rlimit_as is not None and rlimit_cpu is not None:
+            setrlimit(rlimit_as, (memory_bytes, memory_bytes))
+            setrlimit(rlimit_cpu, (cpu_limit_s, cpu_limit_s))
     except Exception:
         # Some platforms/containers restrict setrlimit itself (e.g. already
         # running under a stricter cgroup) - fall back to relying on the

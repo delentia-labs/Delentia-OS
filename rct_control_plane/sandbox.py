@@ -232,8 +232,21 @@ def _kill_process_tree(proc: subprocess.Popen) -> None:
         )
     else:
         import signal
+        # Same real class of issue as _run_local's own CREATE_NEW_PROCESS_GROUP
+        # comment, mirrored for the POSIX side: os.killpg/os.getpgid/
+        # signal.SIGKILL are absent from Windows' stub (this repo's CI runs
+        # mypy on linux-targeted stubs, but this exact branch only ever
+        # executes on real POSIX - it's unreachable on Windows since it's
+        # the `else` of `if os.name == "nt"`). getattr keeps the real POSIX
+        # behavior identical while staying typeable everywhere; the getattr
+        # defaults are never actually used at runtime on POSIX since these
+        # real attributes are always present there.
+        killpg = getattr(os, "killpg", None)
+        getpgid = getattr(os, "getpgid", None)
+        sigkill = getattr(signal, "SIGKILL", None)
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            if killpg and getpgid and sigkill is not None:
+                killpg(getpgid(proc.pid), sigkill)
         except ProcessLookupError:
             pass
     try:
@@ -289,7 +302,11 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
         # mypy something it can type on every platform.
         popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
-        popen_kwargs["preexec_fn"] = os.setsid
+        # os.setsid: same real class of Windows-stub-absent-on-POSIX-only-
+        # branch issue as CREATE_NEW_PROCESS_GROUP above, mirrored - see
+        # that comment. getattr's None fallback is never actually used at
+        # runtime since this branch only executes on real POSIX.
+        popen_kwargs["preexec_fn"] = getattr(os, "setsid", None)
 
     # Bandit B602 (subprocess with shell=True) flags this - correctly
     # identifying that shell=True is in use, but this is this module's
@@ -361,7 +378,11 @@ def run_sandboxed_docker(command: str, image: str = "python:3.11-slim", timeout_
         # behavior while staying typeable on CI's linux-targeted mypy run.
         popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
-        popen_kwargs["preexec_fn"] = os.setsid
+        # os.setsid: same real class of Windows-stub-absent-on-POSIX-only-
+        # branch issue as CREATE_NEW_PROCESS_GROUP above, mirrored - see
+        # that comment. getattr's None fallback is never actually used at
+        # runtime since this branch only executes on real POSIX.
+        popen_kwargs["preexec_fn"] = getattr(os, "setsid", None)
 
     proc = subprocess.Popen(docker_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, **popen_kwargs)
     try:
