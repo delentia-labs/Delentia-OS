@@ -2037,12 +2037,27 @@
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│  • Cluster 2: [Logic &amp; Safety Guard Cluster]      ──▶ 20 Microservices / 15 Algorithms   │
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│  • Cluster 3: [Optimized Nodal Assembler Cluster]  ──▶ 27 Microservices / 16 Algorithms   │
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│                                                                                        │
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│  Proof of Scale &amp; Complexity Metrics:                                                  │
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│   - Verified by 4,849 Enterprise Tests | 100% Pass Rate                                │
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│   - 0.3% Hallucination Rate Target                                                      │
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│   - 0.00% System Crash Rate Guarantee                                                  │
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│   - 74.2% VRAM Optimization via Dynamic LoRA Swapping (&lt;12ms)                           │
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│  Proof of Scale &amp; Complexity Metrics (self-reported enterprise snapshot,                │
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│  not independently verified — see note below):                                          │
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│   - 4,849 enterprise test cases (private runtime, separate from the public              │
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│     SDK's own verified suite — see the Public Core's own test count instead             │
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│     for an independently reproducible number)                                           │
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│   - &lt;0.3% hallucination rate target (internal methodology; see                          │
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│     docs/benchmark/hallucination-methodology.md for the full protocol and               │
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│     its own disclosed limitations)                                                      │
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│   - Crash-rate and VRAM-optimization figures for this private tier are not              │
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│     yet published with a reproducible methodology and are omitted here                  │
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│     pending one — see CLAIM_REGISTRY.md §2 for what "not yet qualified"                 │
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>│     means in practice                                                                    │
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>!!! warning "On the Enterprise metrics above"
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>    These describe `Delentia-Private-OS`'s runtime, a separate private codebase this
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>    document does not have access to audit. They are reproduced here as self-reported
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>    context, not as claims this repository can verify. The Public Core's own numbers
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>    (this repo, this SDK) are independently reproducible by anyone who clones it and
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>    runs the test suite themselves — that is the standard this page holds itself to for
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>    everything it presents as "public."
 </span></code></pre></div>
 <hr />
 <h2 id="public-core-components">Public Core Components<a class="headerlink" href="#public-core-components" title="Permanent link">&para;</a></h2>
@@ -2068,11 +2083,17 @@
 - <code>vector-search</code>: Basic vector search backend.</p>
 <hr />
 <h2 id="proof-of-scale-enterprise-metrics">Proof of Scale &amp; Enterprise Metrics<a class="headerlink" href="#proof-of-scale-enterprise-metrics" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Scope of this section</p>
+<p>The figures below describe <code>Delentia-Private-OS</code>'s enterprise runtime — a separate,
+non-public codebase. They are self-reported and not independently verifiable from
+this repository. For an independently reproducible number, use the Public Core's own
+verified test count (this repo's own <code>docs/testing/TESTING_CANONICAL.md</code>) instead.</p>
+</div>
 <ul>
-<li><strong>Enterprise Test Suite:</strong> 4,849 property-based and integration test cases across Python 3.10–3.12.</li>
-<li><strong>Hallucination Protection:</strong> Target <span class="arithmatex">\(&lt;0.3\%\)</span> hallucination rate via SignedAI multi-model consensus.</li>
-<li><strong>System Stability:</strong> <span class="arithmatex">\(0.00\%\)</span> crash rate across production test suites.</li>
-<li><strong>Memory Compression:</strong> <span class="arithmatex">\(74.2\%\)</span> memory state compression ratio (Delta Engine internal benchmark).</li>
+<li><strong>Enterprise Test Suite:</strong> 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).</li>
+<li><strong>Hallucination Protection:</strong> Target <span class="arithmatex">\(&lt;0.3\%\)</span> hallucination rate via SignedAI multi-model consensus — internal methodology, see <code>docs/benchmark/hallucination-methodology.md</code> for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).</li>
+<li><strong>Memory Compression:</strong> Delta Engine's public, independently reproducible measurement is 91.5% (design floor ≥74%) — run <code>python scripts/benchmark_fdia_delta.py --json</code> yourself to verify.</li>
 </ul>
 
 
