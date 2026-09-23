@@ -1584,14 +1584,14 @@ class ABVEngine:
         if not responses:
             return {"total": 0}
 
-        level_counts = {}
+        level_counts: Dict[str, int] = {}
         for response in responses:
             level = response.confidence_level.value
             level_counts[level] = level_counts.get(level, 0) + 1
 
         avg_confidence = sum(r.confidence_score for r in responses) / len(responses)
 
-        decision_counts = {}
+        decision_counts: Dict[str, int] = {}
         for response in responses:
             decision = response.decision.value
             decision_counts[decision] = decision_counts.get(decision, 0) + 1
@@ -1670,7 +1670,7 @@ class ABVEngine:
     def get_performance_metrics(self) -> Dict[str, Any]:
         avg_time = self.total_time / self.total_validations if self.total_validations > 0 else 0
 
-        metrics = {
+        metrics: Dict[str, Any] = {
             "total_validations": self.total_validations,
             "total_time_seconds": self.total_time,
             "avg_time_seconds": avg_time,
@@ -1794,7 +1794,9 @@ if __name__ == "__main__":
     )
     updated_score = engine.update_belief_with_evidence(response.belief_id, new_ev)
     print(f"After update_belief_with_evidence: score={updated_score.score:.4f} decision={updated_score.decision.value}")
-    assert engine.get_belief(response.belief_id).evidence_count == 4
+    updated_belief = engine.get_belief(response.belief_id)
+    assert updated_belief is not None
+    assert updated_belief.evidence_count == 4
 
     # Exercise validate_batch with a second, weak-evidence belief
     weak_request = ValidateBeliefRequest(

@@ -294,6 +294,7 @@ if __name__ == "__main__":
     # weight-10 shortcut — proving real weighted shortest-path math, not
     # a hop-count shortcut.
     path = engine.shortest_path("A", "D")
+    assert path is not None, "a path exists between A and D via B/C or the SHORTCUT edge"
     print(f"Shortest path A->D: nodes={path.nodes} total_weight={path.total_weight}")
     assert path.nodes == ["A", "B", "C", "D"], "real Dijkstra must prefer the real lower-weight path"
     assert path.total_weight == 3.0, f"expected real total_weight=3.0, got {path.total_weight}"
