@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 _DENYLISTED_PREFIXES = [
     "rm -rf", "del /f", "format ", "dd if=", "mkfs", ":(){:|:&};:",
@@ -279,9 +279,15 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
             return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
                                   blocked_reason=f"command prefix '{prefix}' is denylisted")
 
-    popen_kwargs = {"cwd": _sandbox_cwd()}
+    popen_kwargs: Dict[str, Any] = {"cwd": _sandbox_cwd()}
     if os.name == "nt":
-        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        # typeshed only declares subprocess.CREATE_NEW_PROCESS_GROUP under
+        # its win32 platform stub, so a linux-targeted mypy run (this
+        # repo's CI runs on ubuntu-latest) sees no such attribute even
+        # though this branch only executes on real Windows. getattr with a
+        # fallback keeps the real Windows behavior identical while giving
+        # mypy something it can type on every platform.
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
         popen_kwargs["preexec_fn"] = os.setsid
 
@@ -349,9 +355,11 @@ def run_sandboxed_docker(command: str, image: str = "python:3.11-slim", timeout_
                                   blocked_reason=f"command prefix '{prefix}' is denylisted")
 
     docker_command = ["docker", "run", "--rm", image, "sh", "-c", command]
-    popen_kwargs = {}
+    popen_kwargs: Dict[str, Any] = {}
     if os.name == "nt":
-        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        # See _run_local's identical comment: getattr keeps real Windows
+        # behavior while staying typeable on CI's linux-targeted mypy run.
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
         popen_kwargs["preexec_fn"] = os.setsid
 
