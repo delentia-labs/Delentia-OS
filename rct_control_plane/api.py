@@ -262,11 +262,16 @@ class DetailedHealthResponse(BaseModel):
 # below, read by GET /v1/daemon/status. Module-level (not an instance
 # attribute) so the status endpoint can report on it without needing a
 # reference threaded through ControlPlaneAPI's own construction.
-_DAEMON_SCHEDULER = None
+# Optional[Any]: AutonomousScheduler/TelegramGateway/DiscordGateway/
+# SlackGateway are only imported lazily inside the lifespan handler
+# below (real per-gateway optional-dependency isolation), so there is
+# no real type name importable here at module scope without also
+# eagerly importing them.
+_DAEMON_SCHEDULER: Optional[Any] = None
 _DAEMON_STARTED_AT: Optional[float] = None
-_DAEMON_TELEGRAM_GATEWAY = None
-_DAEMON_DISCORD_GATEWAY = None
-_DAEMON_SLACK_GATEWAY = None
+_DAEMON_TELEGRAM_GATEWAY: Optional[Any] = None
+_DAEMON_DISCORD_GATEWAY: Optional[Any] = None
+_DAEMON_SLACK_GATEWAY: Optional[Any] = None
 
 
 @asynccontextmanager
