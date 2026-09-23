@@ -52,7 +52,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -181,7 +181,7 @@ class HallucinationDetector:
         self.model = model
         self.detection_patterns = self._initialize_patterns()
         self.detection_history: List[HallucinationDetectionResult] = []
-        self.stats = {
+        self.stats: Dict[str, Any] = {
             "total_detections": 0,
             "hallucinations_found": 0,
             "patterns_detected": {},
@@ -426,9 +426,9 @@ class HallucinationDetector:
             checks.append(self._check_impossible_scenarios)
 
         for check in checks:
-            result = check(text)
-            if result:
-                detected_patterns.append(result)
+            check_result = check(text)
+            if check_result:
+                detected_patterns.append(check_result)
 
         used_llm = False
         if not detected_patterns:
