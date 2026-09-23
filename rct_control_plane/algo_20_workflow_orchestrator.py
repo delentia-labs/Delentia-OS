@@ -181,7 +181,7 @@ class ResourceManager:
         self, task_id: str, requirements: ResourceRequirements
     ) -> ResourceAllocation:
         """Allocate resources for a task."""
-        if self.use_hrm:
+        if self.use_hrm and self.hrm_scheduler is not None:
             hrm_task_id = f"resalloc_{task_id}"
             hrm_task = HRMTask(
                 task_id=hrm_task_id,
@@ -231,7 +231,7 @@ class ResourceManager:
         if not allocation:
             return False
 
-        if self.use_hrm and allocation.allocation_id:
+        if self.use_hrm and self.hrm_scheduler is not None and allocation.allocation_id:
             # Real analog of "releasing a worker": complete the admitted
             # HRM task so its assigned worker goes back to idle.
             await self.hrm_scheduler.complete_task(allocation.allocation_id, result={"released": True})
@@ -275,7 +275,7 @@ class DataFusionIntegration:
         weights: Optional[Dict[str, float]] = None
     ) -> Dict[str, Any]:
         """Fuse multi-modal data via a real, direct FusionEngine.fuse() call."""
-        if not self.use_fusion:
+        if not self.use_fusion or self.fusion_engine is None:
             return {"error": "Fusion engine not configured"}
 
         try:
@@ -832,7 +832,7 @@ class WorkflowEngine:
             if te.status == TaskStatus.RUNNING
         ]
 
-        elapsed_seconds = 0
+        elapsed_seconds = 0.0
         if execution.started_at:
             end_time = execution.completed_at or datetime.utcnow()
             elapsed_seconds = (end_time - execution.started_at).total_seconds()
@@ -868,7 +868,7 @@ class WorkflowEngine:
 
         history = []
         for execution in workflow_executions[:limit]:
-            duration_seconds = 0
+            duration_seconds = 0.0
             if execution.started_at and execution.completed_at:
                 duration_seconds = (execution.completed_at - execution.started_at).total_seconds()
 
