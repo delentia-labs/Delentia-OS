@@ -79,8 +79,20 @@ jobs:
           # the first real test's own timeout budget - the same technique
           # real Ollama deployments use before serving traffic.
           curl -sf -X POST http://127.0.0.1:11434/api/generate -d '{"model": "qwen2.5:7b", "prompt": "hi", "stream": false, "keep_alive": "30m"}' --max-time 300 > /dev/null
+          # Real follow-up finding (2026-09-23, same day): the warm-up call
+          # above did NOT fix the 4 ReadTimeout failures - a second real CI
+          # run with the model already warm still hit the same
+          # httpx.ReadTimeout on the same tests. That means it's genuine
+          # per-call GENERATION time (not cold-start/model-load time) that
+          # exceeds llm_provider.py's hardcoded 90s httpx client timeout on
+          # CPU-only (no GPU) runners. llm_provider.py now reads
+          # DELENTIA_OLLAMA_TIMEOUT_S for OllamaProvider's own timeout
+          # (OpenRouterProvider is unaffected - it's a cloud API, not
+          # CPU-bound local inference, and keeps its own literal 90.0).
 
       - name: Run tests
+        env:
+          DELENTIA_OLLAMA_TIMEOUT_S: "240"
         # Real, measured coverage as of 2026-09-23. Two different numbers,
         # for a real, understood reason, not measurement noise:
         #   - Locally (this same command, an environment with a reachable

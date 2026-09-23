@@ -20,6 +20,18 @@ import httpx
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
+# Real, confirmed need (2026-09-23): GitHub Actions' hosted CI runners are
+# CPU-only (no GPU), and a 7B model's real inference time for these tests'
+# actual prompts genuinely exceeds a 90s budget there even with the model
+# already warmed/resident in memory - confirmed by two separate real CI
+# runs both failing with httpx.ReadTimeout, not ConnectError, after a
+# real Ollama service container was already reachable and warmed. 90.0
+# stays the default for real production/local use (unchanged - a real
+# user's machine, or a GPU-backed deployment, doesn't need this widened);
+# CI sets DELENTIA_OLLAMA_TIMEOUT_S in .github/workflows/ci.yml instead of
+# this default being silently loosened for everyone.
+OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "90.0"))
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,7 +71,7 @@ class OllamaProvider(LLMProvider):
                    "options": {"temperature": temperature}}
         if json_mode:
             payload["format"] = "json"
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
             return response.json()["response"]
@@ -73,7 +85,7 @@ class OllamaProvider(LLMProvider):
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         payload = {"model": self.model, "prompt": full_prompt, "stream": True,
                    "options": {"temperature": temperature}}
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
