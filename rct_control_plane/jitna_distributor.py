@@ -99,7 +99,7 @@ async def distribute_to_subagents(
     for agent_id, goal, worktree_info, dispatch_result in zip(
         agent_ids, goals, worktree_infos, dispatch_results, strict=True,
     ):
-        if isinstance(dispatch_result, Exception):
+        if isinstance(dispatch_result, BaseException):
             outcome = {"agent_id": agent_id, "goal": goal, "success": False, "error": str(dispatch_result)}
         else:
             outcome = {"agent_id": agent_id, "goal": goal, "success": True, **dispatch_result}
