@@ -17,6 +17,23 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
+    # Real Ollama backend, not a mock - matching this codebase's own "real,
+    # not mocked" testing philosophy for the ~13 tests that exercise
+    # rct_control_plane/llm_provider.py's OllamaProvider directly. Added
+    # 2026-09-23 after confirming (two real CI runs) these tests were the
+    # only remaining "Run tests" failures once every dependency/coverage
+    # gap was already closed - httpx.ConnectError because no Ollama was
+    # ever reachable on the stock runner. GitHub Actions service containers
+    # run as sidecars for the whole job and are reachable at localhost from
+    # the runner, matching DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
+    # in llm_provider.py exactly - no code or test changes needed, only
+    # standing the real service up and pulling the real default model.
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+
     steps:
       - uses: actions/checkout@v5
 
@@ -31,6 +48,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov cryptography hypothesis
+
+      - name: Wait for Ollama and pull the real default model
+        # llm_provider.py's OllamaProvider defaults to "qwen2.5:7b" - pull
+        # that exact model, not a smaller stand-in, so these tests exercise
+        # the same real model behavior a local developer would see. First
+        # wait for the service container's own HTTP API to actually be up
+        # (it can take a few seconds after the container starts) before
+        # attempting the pull.
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+              echo "Ollama is up"
+              break
+            fi
+            echo "Waiting for Ollama... ($i/30)"
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:11434/api/tags > /dev/null || { echo "Ollama never became reachable"; exit 1; }
+          curl -sf -X POST http://127.0.0.1:11434/api/pull -d '{"name": "qwen2.5:7b", "stream": false}' --max-time 600
 
       - name: Run tests
         # Real, measured coverage as of 2026-09-23. Two different numbers,
