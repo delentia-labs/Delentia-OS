@@ -163,7 +163,7 @@ neo4j==5.25.0
 networkx==3.6.1
 newspaper3k==0.2.8
 nh3==0.3.5
-nltk==3.9.3
+nltk==3.10.3
 numba==0.67.0
 numpy==2.4.3
 nvidia-ml-py==13.610.43
