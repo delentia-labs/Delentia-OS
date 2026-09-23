@@ -285,7 +285,20 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
     else:
         popen_kwargs["preexec_fn"] = os.setsid
 
-    proc = subprocess.Popen(
+    # Bandit B602 (subprocess with shell=True) flags this - correctly
+    # identifying that shell=True is in use, but this is this module's
+    # actual, deliberate purpose: _run_local is the sandbox's own command
+    # executor, called only after classify_command_risk() has already
+    # gated the command (denylisted prefixes refused above; risky
+    # patterns routed to the approval flow before ever reaching this
+    # function - see this module's own docstring and the Round 37-41
+    # escape-class fixes for that real security boundary). shell=True is
+    # required to support the shell syntax (pipes, redirects, chaining)
+    # this sandbox is specifically built to classify and gate - switching
+    # to shell=False + an argv list would not add safety here, it would
+    # just break the feature, since the actual control is the
+    # classification gate upstream, not shell-string avoidance.
+    proc = subprocess.Popen(  # nosec B602 - see comment above
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, **popen_kwargs,
     )
