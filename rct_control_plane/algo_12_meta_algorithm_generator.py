@@ -261,7 +261,7 @@ class MetaAlgorithmEngine:
         component_ids: List[str],
         mode: CompositionMode,
         goal: str,
-        constraints: List[str] = None
+        constraints: Optional[List[str]] = None
     ) -> str:
         """
         Compose algorithms into meta-algorithm
@@ -635,19 +635,25 @@ Respond with just the name, nothing else."""
         suggestions = []
 
         # Get component algorithms
-        components = [
+        components_opt = [
             self.get_algorithm(comp_id)
             for comp_id in composed.components
         ]
 
         # Check all components exist
-        if None in components:
+        if any(c is None for c in components_opt):
             errors.append("One or more component algorithms not found")
             return ValidationResult(
                 status=ValidationStatus.INVALID,
                 is_valid=False,
                 errors=errors
             )
+
+        # Every element is confirmed non-None above; a plain list
+        # comprehension (rather than a cast/assert) keeps this real and
+        # gives mypy a concrete List[BaseAlgorithm] for the rest of this
+        # method.
+        components: List[BaseAlgorithm] = [c for c in components_opt if c is not None]
 
         # Type compatibility for sequential composition
         if composed.composition_mode == CompositionMode.SEQUENTIAL:
