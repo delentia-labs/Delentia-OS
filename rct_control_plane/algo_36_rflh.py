@@ -205,7 +205,7 @@ class RFLHEngine:
             else:
                 support_examples = support_set
 
-            query_examples = None
+            query_examples: Optional[List[LearningExample]] = None
             if query_set:
                 query_examples = []
                 for q in query_set:
@@ -372,7 +372,7 @@ class RFLHEngine:
                     dist = np.linalg.norm(query_emb - prototype)
                     distances[label] = dist
 
-                predicted_label = min(distances, key=distances.get)
+                predicted_label = min(distances, key=lambda k: distances[k])
 
                 if predicted_label == true_label:
                     correct += 1
