@@ -51,6 +51,7 @@ get_final_result()) is an unmodified straight port of the real logic.
 
 from __future__ import annotations
 
+import os
 import time
 import json
 import logging
@@ -72,6 +73,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen2.5:7b"
+
+# Same real, confirmed need as rct_control_plane/llm_provider.py's
+# OLLAMA_TIMEOUT_S (2026-09-23): this module has its own independent
+# httpx calls straight to Ollama (ported as-is from Delentia-Private-OS's
+# source, see module docstring) rather than going through llm_provider.py,
+# so it needs the same CPU-only-CI widening, via the same env var so CI
+# only has to set one value for every Ollama call path.
+OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "90.0"))
 
 
 class ReflexionStatus(Enum):
@@ -535,7 +544,7 @@ class ReflexionEngine:
 
         prompt = "\n".join(prompt_parts)
 
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(
                 f"{self.llm_url}/api/generate",
                 json={
@@ -581,7 +590,7 @@ Provide evaluation in JSON format:
 Be critical and constructive. Score of 0.85+ means excellent quality.
 """
 
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(
                 f"{self.llm_url}/api/generate",
                 json={
@@ -653,7 +662,7 @@ Reflect deeply:
 Provide actionable insights (2-3 sentences).
 """
 
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(
                 f"{self.llm_url}/api/generate",
                 json={

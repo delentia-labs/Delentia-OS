@@ -8,6 +8,20 @@ import asyncio
 
 from rct_control_plane.autonomous_loop import decide_next_action
 
+# Real, confirmed need (2026-09-23): AutonomousLoop's own default
+# max_seconds=120.0 (autonomous_loop.py) is a wall-clock budget for the
+# WHOLE multi-iteration loop, separate from llm_provider.py's per-call
+# OLLAMA_TIMEOUT_S. On GitHub's CPU-only CI runners, a single real
+# qwen2.5:7b call can legitimately take close to the widened per-call
+# timeout, so 3 iterations can exceed a 120s total budget even when no
+# single call actually times out - confirmed by a real CI run where
+# these tests stopped with "max_seconds_exceeded"/"max_iterations_
+# reached" instead of ReadTimeout once the per-call timeout was
+# widened. 120.0 stays the default for local/production use (a real
+# user's machine, or GPU-backed deployment, doesn't need this widened);
+# CI sets DELENTIA_TEST_LOOP_MAX_SECONDS in .github/workflows/ci.yml.
+_TEST_LOOP_MAX_SECONDS = float(os.getenv("DELENTIA_TEST_LOOP_MAX_SECONDS", "120.0"))
+
 _TOOLS = [
     {"name": "delentia_run_sandboxed_command", "description": "Run a shell command",
      "input_schema": {"properties": {"command": {"type": "string"}}}},
@@ -30,7 +44,15 @@ def test_autonomous_loop_real_tool_call_end_to_end():
     from rct_control_plane.mcp_server import mcp
 
     persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
-    loop = AutonomousLoop(mcp_server=mcp, persistence=persistence, max_iterations=3, namespace="test_loop")
+    # max_iterations=6, not 3: two real runs (local and CI, 2026-09-23)
+    # both showed the real qwen2.5:7b model spending its first 1-2
+    # iterations on genuine exploratory tool calls (delentia_list_
+    # capabilities, delentia_list_worktrees) before acting on the actual
+    # request - real small-model tool-selection behavior, not a bug in
+    # the loop or a timeout. 3 iterations left no room for that
+    # exploration plus the actual target call; 6 does.
+    loop = AutonomousLoop(mcp_server=mcp, persistence=persistence, max_iterations=6,
+                           max_seconds=_TEST_LOOP_MAX_SECONDS, namespace="test_loop")
 
     result = asyncio.run(loop.run(
         "Run the shell command 'echo delentia-loop-test' using the sandboxed command tool, "
@@ -53,7 +75,10 @@ def test_autonomous_loop_pauses_for_approval_on_medium_risk_command():
     from rct_control_plane.mcp_server import mcp
 
     persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
-    loop = AutonomousLoop(mcp_server=mcp, persistence=persistence, max_iterations=3, namespace="test_approval_loop")
+    # max_iterations=6: same real exploratory-tool-call behavior as
+    # test_autonomous_loop_real_tool_call_end_to_end above.
+    loop = AutonomousLoop(mcp_server=mcp, persistence=persistence, max_iterations=6,
+                           max_seconds=_TEST_LOOP_MAX_SECONDS, namespace="test_approval_loop")
 
     result = asyncio.run(loop.run(
         "Run the exact shell command 'git push origin main' using the sandboxed command tool."

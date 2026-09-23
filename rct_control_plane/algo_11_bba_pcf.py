@@ -38,6 +38,7 @@ weight. No other change.
 
 from __future__ import annotations
 
+import os
 import time
 import json
 import logging
@@ -51,6 +52,13 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen2.5:7b"
+
+# Same real, confirmed need as rct_control_plane/llm_provider.py's
+# OLLAMA_TIMEOUT_S (2026-09-23): this module has its own independent
+# httpx calls straight to Ollama, so it needs the same CPU-only-CI
+# widening, via the same env var so CI only has to set one value for
+# every Ollama call path.
+OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "60.0"))
 
 
 class AnalysisStatus(Enum):
@@ -467,7 +475,7 @@ Be specific and actionable.
 """
 
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
                 response = await client.post(
                     f"{self.llm_url}/api/generate",
                     json={
@@ -562,7 +570,7 @@ Be specific and actionable.
 """
 
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
                 response = await client.post(
                     f"{self.llm_url}/api/generate",
                     json={
@@ -614,7 +622,7 @@ Be realistic and specific.
 """
 
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
                 response = await client.post(
                     f"{self.llm_url}/api/generate",
                     json={
