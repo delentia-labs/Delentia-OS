@@ -120,3 +120,4 @@ gql[aiohttp]>=3.5.0           # `integrations` extra; algo_29_uia.py imports gql
 torch>=2.0.0                 # `ml` extra; algo_36_rflh.py (real MAML/Prototypical gradients) AND algo_14_rct_diffusion.py both import unconditionally - genuinely mandatory for kernel import despite pyproject.toml's "optional" framing, not just algo_36
 scikit-learn>=1.3.0          # `ml` extra; algo_36_rflh.py imports unconditionally alongside torch
 opencv-python>=4.8.0         # NOT declared in ANY pyproject.toml extras group anywhere - algo_27_tvra.py imports cv2 unconditionally at module level regardless
+loguru>=0.7.0                # `integrations` extra; algo_36_rflh.py imports it unconditionally alongside torch/scikit-learn - also missed in the first pass, also caught by the real CI run
