@@ -370,7 +370,7 @@ class HaltingAnalyzer:
         """Analyze computational complexity"""
         nested_loops = 0
         recursive_calls = 0
-        dependencies = []
+        dependencies: List[str] = []
 
         if language == "python":
             try:
@@ -587,7 +587,7 @@ class HaltingAnalyzer:
                 args = node.iter.args
                 if len(args) == 1:
                     # range(n)
-                    if isinstance(args[0], ast.Constant):
+                    if isinstance(args[0], ast.Constant) and isinstance(args[0].value, int):
                         return args[0].value
 
         return None
