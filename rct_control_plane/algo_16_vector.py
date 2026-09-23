@@ -386,8 +386,8 @@ class FAISSBackend(VectorBackendInterface):
         self.metric = metric
         self.nlist = nlist
         self.m = m
-        self.faiss_index = None  # Renamed from 'index' to avoid conflict with method
-        self.dimension = None
+        self.faiss_index: Optional[Any] = None  # Renamed from 'index' to avoid conflict with method
+        self.dimension: Optional[int] = None
         self.id_to_idx: Dict[str, int] = {}
         self.idx_to_id: Dict[int, str] = {}
         self.metadata_store: Dict[str, Dict[str, Any]] = {}
@@ -423,6 +423,15 @@ class FAISSBackend(VectorBackendInterface):
 
         logger.info(f"FAISS index created: dimension={dimension}, type={self.index_type}")
 
+    def _require_index(self) -> Any:
+        """Real bug fix: index()/search() dereferenced self.faiss_index
+        (only set by initialize()) directly. Calling either before
+        initialize() used to crash with an opaque "'NoneType' object has
+        no attribute 'train'/'add'/'search'" instead of a clear error."""
+        if self.faiss_index is None:
+            raise RuntimeError("FAISSBackend.initialize() must be called before indexing or searching")
+        return self.faiss_index
+
     def _normalize_vectors(self, vectors: np.ndarray) -> np.ndarray:
         """Normalize vectors for cosine similarity (no-op for other metrics)."""
         if self.metric != "cosine":
@@ -435,19 +444,20 @@ class FAISSBackend(VectorBackendInterface):
     def index(self, vectors: List[List[float]], ids: List[str],
               metadata: Optional[List[Dict[str, Any]]] = None) -> int:
         """Index vectors into the real FAISS index (training IVF if needed)."""
+        faiss_index = self._require_index()
         vectors_np = np.array(vectors, dtype=np.float32)
         vectors_np = self._normalize_vectors(vectors_np)
 
         if self.index_type == "ivf" and not hasattr(self, "index_trained"):
             if len(vectors) >= self.nlist:
                 logger.info("Training IVF index...")
-                self.faiss_index.train(vectors_np)
+                faiss_index.train(vectors_np)
                 self.index_trained = True
             else:
                 logger.warning(f"Not enough vectors to train IVF (need {self.nlist})")
 
         start_idx = self.next_idx
-        self.faiss_index.add(vectors_np)
+        faiss_index.add(vectors_np)
 
         for i, (vec_id, vec) in enumerate(zip(ids, vectors, strict=True)):
             idx = start_idx + i
@@ -460,17 +470,18 @@ class FAISSBackend(VectorBackendInterface):
 
         self.next_idx += len(vectors)
 
-        logger.info(f"Indexed {len(vectors)} vectors, total={self.faiss_index.ntotal}")
+        logger.info(f"Indexed {len(vectors)} vectors, total={faiss_index.ntotal}")
 
         return len(vectors)
 
     def search(self, query_vector: List[float], k: int = 10,
                filter_dict: Optional[Dict[str, Any]] = None) -> List[SearchResult]:
         """Real FAISS nearest-neighbor search with metric-correct score conversion."""
+        faiss_index = self._require_index()
         query_np = np.array([query_vector], dtype=np.float32)
         query_np = self._normalize_vectors(query_np)
 
-        distances, indices = self.faiss_index.search(query_np, k)
+        distances, indices = faiss_index.search(query_np, k)
 
         results = []
         for dist, idx in zip(distances[0], indices[0], strict=True):
@@ -575,7 +586,7 @@ class FAISSBackend(VectorBackendInterface):
 
     def get_stats(self) -> Dict[str, Any]:
         """Backend statistics, including approximate memory usage."""
-        vector_memory = self.dimension * self.count() * 4  # 4 bytes per float32
+        vector_memory = (self.dimension or 0) * self.count() * 4  # 4 bytes per float32
         metadata_memory = sum(
             len(str(m)) for m in self.metadata_store.values()
         )
