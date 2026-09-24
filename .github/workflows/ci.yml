@@ -102,7 +102,16 @@ jobs:
           # 120.0) covers the WHOLE multi-iteration loop, not one call -
           # widened separately here since a wider per-call timeout alone
           # doesn't help once 2-3 real slow calls in one loop exceed it.
-          DELENTIA_OLLAMA_TIMEOUT_S: "240"
+          # 240s->360s (2026-09-24): test_compare_experiment_runs_reflects_
+          # real_benchmark_score_delta hit httpx.ReadTimeout at 240s on 4
+          # separate real CI runs (mixed Python 3.10/3.11/3.12 runners, one
+          # with the model already warm from a prior job) - genuine
+          # per-call CPU-only generation time variance on shared runners,
+          # not a code regression (each occurrence individually confirmed
+          # via job logs, cleared every time via a rerun). 360s gives
+          # headroom without masking an actual hang (the loop-level budget
+          # below still bounds total wall time regardless).
+          DELENTIA_OLLAMA_TIMEOUT_S: "360"
           DELENTIA_TEST_LOOP_MAX_SECONDS: "600"
         # Real, measured coverage as of 2026-09-23. Two different numbers,
         # for a real, understood reason, not measurement noise:
