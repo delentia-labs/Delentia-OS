@@ -192,75 +192,92 @@ class RFLHEngine:
         num_steps: int = 5,
         learning_rate: float = 0.001
     ) -> Dict[str, Any]:
+        async with self._lock:
+            return await self._meta_learn_locked(
+                task_id, support_set, query_set, algorithm, num_steps, learning_rate
+            )
+
+    async def _meta_learn_locked(
+        self,
+        task_id: str,
+        support_set: Union[SupportSet, List[LearningExample]],
+        query_set: Optional[Union[List[QueryExample], List[LearningExample]]] = None,
+        algorithm: MetaLearningAlgorithm = MetaLearningAlgorithm.MAML,
+        num_steps: int = 5,
+        learning_rate: float = 0.001
+    ) -> Dict[str, Any]:
+        # Caller must already hold self._lock. Split out from meta_learn()
+        # so predict()'s lazy-train path (which itself holds self._lock) can
+        # run this body directly instead of re-entering meta_learn() and
+        # deadlocking on asyncio.Lock, which is not reentrant.
         start_time = time.time()
 
-        async with self._lock:
-            logger.debug(
-                f"Meta-learning: task={task_id}, algorithm={algorithm.value}, "
-                f"steps={num_steps}, lr={learning_rate}"
+        logger.debug(
+            f"Meta-learning: task={task_id}, algorithm={algorithm.value}, "
+            f"steps={num_steps}, lr={learning_rate}"
+        )
+
+        if isinstance(support_set, SupportSet):
+            support_examples = support_set.examples
+        else:
+            support_examples = support_set
+
+        query_examples: Optional[List[LearningExample]] = None
+        if query_set:
+            query_examples = []
+            for q in query_set:
+                if isinstance(q, QueryExample):
+                    ex = LearningExample(
+                        example_id=q.query_id or f"query_{len(query_examples)}",
+                        input=q.input,
+                        output=q.expected_output if q.expected_output is not None else "",
+                        metadata=q.context or {}
+                    )
+                    query_examples.append(ex)
+                else:
+                    query_examples.append(q)
+
+        self.task_examples[task_id].extend(support_examples)
+
+        if algorithm == MetaLearningAlgorithm.MAML:
+            adapted_params, loss, accuracy = await self._maml_adapt(
+                task_id, support_examples, query_examples, num_steps, learning_rate
+            )
+        elif algorithm == MetaLearningAlgorithm.PROTOTYPICAL:
+            adapted_params, loss, accuracy = await self._prototypical_learn(
+                task_id, support_examples, query_examples
+            )
+        else:
+            adapted_params, loss, accuracy = await self._maml_adapt(
+                task_id, support_examples, query_examples, num_steps, learning_rate
             )
 
-            if isinstance(support_set, SupportSet):
-                support_examples = support_set.examples
-            else:
-                support_examples = support_set
+        self.task_models[task_id] = {
+            "params": adapted_params,
+            "algorithm": algorithm.value,
+            "num_examples": len(support_examples),
+            "created_at": datetime.now(),
+            "accuracy": accuracy
+        }
 
-            query_examples: Optional[List[LearningExample]] = None
-            if query_set:
-                query_examples = []
-                for q in query_set:
-                    if isinstance(q, QueryExample):
-                        ex = LearningExample(
-                            example_id=q.query_id or f"query_{len(query_examples)}",
-                            input=q.input,
-                            output=q.expected_output if q.expected_output is not None else "",
-                            metadata=q.context or {}
-                        )
-                        query_examples.append(ex)
-                    else:
-                        query_examples.append(q)
+        self.total_adaptations += 1
+        training_time = time.time() - start_time
 
-            self.task_examples[task_id].extend(support_examples)
+        logger.info(
+            f"Meta-learning complete: task={task_id}, "
+            f"accuracy={accuracy:.3f}, loss={loss:.4f}, time={training_time:.2f}s"
+        )
 
-            if algorithm == MetaLearningAlgorithm.MAML:
-                adapted_params, loss, accuracy = await self._maml_adapt(
-                    task_id, support_examples, query_examples, num_steps, learning_rate
-                )
-            elif algorithm == MetaLearningAlgorithm.PROTOTYPICAL:
-                adapted_params, loss, accuracy = await self._prototypical_learn(
-                    task_id, support_examples, query_examples
-                )
-            else:
-                adapted_params, loss, accuracy = await self._maml_adapt(
-                    task_id, support_examples, query_examples, num_steps, learning_rate
-                )
-
-            self.task_models[task_id] = {
-                "params": adapted_params,
-                "algorithm": algorithm.value,
-                "num_examples": len(support_examples),
-                "created_at": datetime.now(),
-                "accuracy": accuracy
-            }
-
-            self.total_adaptations += 1
-            training_time = time.time() - start_time
-
-            logger.info(
-                f"Meta-learning complete: task={task_id}, "
-                f"accuracy={accuracy:.3f}, loss={loss:.4f}, time={training_time:.2f}s"
-            )
-
-            return {
-                "task_id": task_id,
-                "accuracy": accuracy,
-                "loss": loss,
-                "num_examples": len(support_examples),
-                "adaptation_steps": num_steps,
-                "training_time_s": training_time,
-                "algorithm_used": algorithm.value,
-                "adapted_params": adapted_params
-            }
+        return {
+            "task_id": task_id,
+            "accuracy": accuracy,
+            "loss": loss,
+            "num_examples": len(support_examples),
+            "adaptation_steps": num_steps,
+            "training_time_s": training_time,
+            "algorithm_used": algorithm.value,
+            "adapted_params": adapted_params
+        }
 
     async def _maml_adapt(
         self,
@@ -420,7 +437,7 @@ class RFLHEngine:
             query_embedding = self._embed_text(str(query))
 
             if task_id not in self.task_models:
-                await self.meta_learn(task_id, support_examples, None, algorithm, num_steps=3)
+                await self._meta_learn_locked(task_id, support_examples, None, algorithm, num_steps=3)
 
             task_model = self.task_models[task_id]
 
