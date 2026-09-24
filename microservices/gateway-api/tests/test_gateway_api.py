@@ -2,6 +2,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -272,11 +273,16 @@ class TestGatewayKernelStreamWebSocket:
             assert "fdia_score" in done_data and "trace_id" in done_data
 
     def test_stream_rejects_wrong_api_key_when_configured(self, monkeypatch):
+        # Real bug caught while fixing an unrelated lint issue: the original
+        # form of this test caught `Exception` broadly around its own
+        # `assert False` fallback, which meant the fallback could never
+        # actually fail the test either (AssertionError is an Exception).
+        # WebSocketDisconnect is the specific, real exception starlette's
+        # TestClient raises for a server-side close - asserting on that
+        # exact type is what actually proves rejection happened.
+        from starlette.websockets import WebSocketDisconnect
         monkeypatch.setenv("DELENTIA_API_KEY", "real-secret-key")
         client = _get_client()
-        try:
+        with pytest.raises(WebSocketDisconnect):
             with client.websocket_connect("/v1/kernel/stream?token=wrong-key"):
                 pass
-            assert False, "expected the connection to be closed with code 1008"
-        except Exception:
-            pass  # starlette's test client raises on a server-side close - the real, expected outcome here

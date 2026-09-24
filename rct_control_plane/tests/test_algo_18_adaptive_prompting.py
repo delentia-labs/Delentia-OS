@@ -242,7 +242,7 @@ class TestTrackPerformanceAndStats:
 
 @pytest.fixture
 def rag_engine():
-    faiss = pytest.importorskip("faiss")
+    pytest.importorskip("faiss")
     dim = 8
     backend = FAISSBackend(index_type="flat", metric="cosine")
     backend.initialize(dimension=dim)
