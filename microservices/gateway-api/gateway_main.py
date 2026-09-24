@@ -88,16 +88,30 @@ app.add_middleware(
 
 # ---------------------------------------------------------------------------
 # Stats cache — loaded once at startup; refreshed by CI/CD write to this file
-# Format: { "testCount": int, "microserviceCount": int, "algorithmCount": int }
+# Format: { "testCount": int, "microserviceCount": int }
+#
+# Per docs/release/PUBLIC_RELEASE_PROVENANCE.md: this endpoint must only
+# report numbers that belong to THIS public repo (or its documented
+# TESTING_CANONICAL.md checkpoint), never the private enterprise runtime's
+# test/service counts. algorithmCount is introspected live from
+# AlgorithmKernel41 instead of hardcoded, so it can never silently drift
+# from what actually executes.
 # ---------------------------------------------------------------------------
 _STATS_CACHE_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(current_dir))),
     ".stats_cache.json"
 )
 _BASELINE_STATS = {
-    "testCount": 4849,
-    "microserviceCount": 62,
-    "algorithmCount": 41,
+    # Matches the authoritative checkpoint in docs/testing/TESTING_CANONICAL.md.
+    # Update both together; that file is the single source of truth for this
+    # number. Updated 2026-09-24 to match a fresh real full-suite run
+    # (2,369 passed) - the previous 1,791 had itself gone stale relative to
+    # this session's own real test-writing work (8 new test files).
+    "testCount": 2369,
+    # Count of microservices/* in THIS public repo (gateway-api, intent-loop,
+    # analysearch-intent, vector-search, crystallizer) — not the private
+    # enterprise service count, which must not be quoted here.
+    "microserviceCount": 5,
 }
 
 
@@ -116,31 +130,63 @@ def _load_stats_cache() -> dict:
     return {**_BASELINE_STATS, "source": "baseline"}
 
 
-@app.get("/delentia/system/stats", tags=["Delentia Labs"])
-async def delentia_system_stats():
+def _live_algorithm_counts() -> dict:
+    """Introspects AlgorithmKernel41 for the real implemented-vs-designed
+    algorithm count instead of hardcoding a number that can drift from
+    what the kernel actually executes."""
+    try:
+        from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+        return {
+            "algorithmCount": len(ALGORITHM_KERNEL.IMPLEMENTED_ALGO_IDS),
+            "algorithmsDesigned": len(ALGORITHM_KERNEL.IMPLEMENTED_ALGO_IDS) + len(ALGORITHM_KERNEL.NOT_IMPLEMENTED_ALGO_IDS),
+        }
+    except Exception:
+        # Kernel unavailable (e.g. import path issue) — report unknown rather
+        # than guessing a number.
+        return {"algorithmCount": None, "algorithmsDesigned": None}
+
+
+async def _delentia_system_stats_impl():
     """Live system stats consumed by delentia-website /api/stats.
     Returns the same field names as the website FALLBACK constant so the
     frontend can merge: { ...FALLBACK, ...data, source: 'live' }.
 
-    Stats are served from a pre-computed cache file written by CI/CD.
-    This prevents blocking the request thread with a subprocess pytest run.
-    To refresh manually: python scripts/update_stats_cache.py
+    Stats are served from a pre-computed cache file written by CI/CD, plus a
+    live introspection of the algorithm kernel. This endpoint intentionally
+    does NOT return uptime/hallucinationRate/consensusModels — those are not
+    measured anywhere in this codebase, so they are left to the website's own
+    (clearly-labeled) fallback constants rather than being fabricated here.
+    To refresh the test/microservice cache manually: python scripts/update_stats_cache.py
     """
     stats = _load_stats_cache()
+    algo = _live_algorithm_counts()
 
     return {
         "testCount": stats["testCount"],
         "microserviceCount": stats["microserviceCount"],
-        "algorithmCount": stats["algorithmCount"],
+        **algo,
         "layerCount": 10,
-        "hexaCoreCount": 7,
-        "consensusModels": 7,
-        "uptime": "99.98% SLA",
-        "hallucinationRate": "0.3% benchmark",
         "version": app.version,
         "source": stats.get("source", "baseline"),
         "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
+
+
+@app.get("/delentia/system/stats", tags=["Delentia Labs"])
+async def delentia_system_stats():
+    return await _delentia_system_stats_impl()
+
+
+@app.get("/rctlabs/system/stats", tags=["Delentia Labs"])
+async def rctlabs_system_stats():
+    """Alias for /delentia/system/stats.
+
+    delentia-website's app/api/stats/route.ts fetches this exact path; without
+    this alias every request 404s and the site silently always falls back to
+    its static constants, even though this endpoint was written to serve live
+    data. Keep both routes in sync — this one simply delegates.
+    """
+    return await _delentia_system_stats_impl()
 
 
 @app.get("/delentia/benchmark/summary", tags=["Delentia Labs"])
