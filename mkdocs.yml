@@ -1,9 +1,9 @@
-site_name: RCT Platform
+site_name: Delentia OS
 site_description: Intent-Centric AI Operating System — Constitutional Architecture SDK
 site_author: Ittirit Saengow (Delentia Labs)
-site_url: https://rctlabs.github.io/delentia-os/
+site_url: https://delentia-labs.github.io/
 repo_url: https://github.com/delentia-labs/delentia-os
-repo_name: rctlabs/delentia-os
+repo_name: delentia-labs/delentia-os
 edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2026 Delentia Labs — Apache 2.0
 

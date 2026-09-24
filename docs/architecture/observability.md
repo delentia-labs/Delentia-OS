@@ -63,13 +63,13 @@ Any component with `"error"` status causes the overall `status` to become `"degr
 
 ---
 
-## CLI Metrics — `rct metrics`
+## CLI Metrics — `delentia metrics`
 
 The CLI exposes runtime metrics from the in-memory control plane:
 
 ```bash
-rct metrics
-rct metrics --output json
+delentia metrics
+delentia metrics --output json
 ```
 
 **Table output:**
@@ -106,14 +106,19 @@ Uptime                        14d 06h 23m
 
 ## Prometheus Integration
 
-The Control Plane exposes a Prometheus-compatible metrics endpoint when the
-`ENABLE_PROMETHEUS=1` environment variable is set.
-
-```bash
-ENABLE_PROMETHEUS=1 rct serve --port 8000
-```
-
-Metrics are available at `GET /metrics` in Prometheus text format.
+!!! warning "Corrected 2026-09-24: not actually wired to an HTTP endpoint"
+    `rct_control_plane/observability.py` does define real `prometheus_client`
+    Counter/Gauge/Histogram instances (with graceful degradation when
+    `prometheus_client` isn't installed) and a real `get_prometheus_metrics()`
+    formatter function - but that function is never called from anywhere in
+    the real server code (confirmed by grepping the whole package). There is
+    no `ENABLE_PROMETHEUS` environment variable anywhere in the source, and
+    no `GET /metrics` route registered on the real FastAPI app (the only
+    real metrics route is `GET /v1/metrics`, which returns JSON, not
+    Prometheus text format - see the CLI Metrics section above). The
+    building blocks below are real; the HTTP exposure this section
+    describes is not - wiring `get_prometheus_metrics()` into a real
+    `/metrics` route would be new feature work, not a documentation fix.
 
 ### Key metrics
 
@@ -183,8 +188,8 @@ readinessProbe:
 Every intent generates a signed audit chain accessible via:
 
 ```bash
-rct audit INTENT_ID
-rct audit INTENT_ID --output json
+delentia audit INTENT_ID
+delentia audit INTENT_ID --output json
 ```
 
 The audit record contains:
@@ -227,15 +232,13 @@ The Control Plane emits structured JSON logs by default:
 }
 ```
 
-**Log level configuration:**
-
-```bash
-# Environment variable
-RCT_LOG_LEVEL=DEBUG rct serve
-
-# CLI flag
-rct serve --verbose
-```
+!!! warning "Corrected 2026-09-24: neither example below is real"
+    `RCT_LOG_LEVEL` is not read anywhere in the source, and `delentia serve`
+    has no `--verbose` flag - confirmed against `delentia serve --help`'s
+    real output (`--host`, `--port`, `--reload`, `--workers`, `--help`
+    only). Standard Python `logging` configuration (e.g. `import logging;
+    logging.basicConfig(level=logging.DEBUG)` before starting the server)
+    is the real way to control log verbosity today.
 
 | Level | When to use |
 |-------|-------------|
@@ -258,4 +261,4 @@ docker compose -f docker-compose.dev.yml -f docker-compose.monitoring.yml up
 
 !!! note
     `docker-compose.monitoring.yml` is planned for v1.1.0. For v1.0.2a0,
-    use `rct metrics` and the REST endpoints for observability.
+    use `delentia metrics` and the REST endpoints for observability.

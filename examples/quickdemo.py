@@ -19,6 +19,19 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Real, confirmed need (2026-09-24): this exact script crashes with
+# UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f52c'
+# on Windows when the console codepage isn't UTF-8 (e.g. cp874, a Thai
+# locale) - the same real bug rct_control_plane/cli.py's own
+# _configure_encoding() already exists to prevent for the `delentia` CLI
+# (see its docstring/history there), just never applied to this
+# standalone script since it doesn't go through cli.py's command group.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from core.fdia.fdia import FDIAScorer, FDIAWeights, NPCAction, NPCIntentType
 from core.delta_engine.memory_delta import MemoryDeltaEngine
 from rich.console import Console
@@ -309,8 +322,8 @@ def main() -> None:
             "  [magenta]3 · RCT-7 Intent Loop[/magenta]   — 7 kernel stages (T1–T9) processed one query\n"
             "  [green]4 · Delta Engine[/green]        — 4 memory deltas replayed across 5 ticks\n\n"
             "Next steps:\n"
-            "  → [bold]rct compile 'Protect resources from hostile agents'[/bold]\n"
-            "  → [bold]rct status[/bold]  /  [bold]rct governance[/bold]  /  [bold]rct timeline[/bold]\n"
+            "  → [bold]delentia compile 'Protect resources from hostile agents'[/bold]\n"
+            "  → [bold]delentia status[/bold]  /  [bold]delentia governance[/bold]  /  [bold]delentia timeline[/bold]\n"
             "  → Docs:   https://rctlabs.github.io/delentia-os\n"
             "  → GitHub: https://github.com/delentia-labs/delentia-os",
             title="[bold]Summary[/bold]",

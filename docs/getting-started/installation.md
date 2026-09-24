@@ -48,13 +48,13 @@ pip install -r requirements-dev.txt
 After installation, validate the CLI before adding secrets:
 
 ```bash
-rct version
-rct start --ui-test
-rct init
-rct doctor
+delentia version
+delentia start --ui-test
+delentia init
+delentia doctor
 ```
 
-`rct init` now creates `.env` from the local project template when available and falls back to a built-in template in clean-room installs.
+`delentia init` now creates `.env` from the local project template when available and falls back to a built-in template in clean-room installs.
 
 ---
 
@@ -80,13 +80,13 @@ delentia-os/
 The `rct` CLI entry point is registered automatically after installation:
 
 ```bash
-rct --help
-rct version
-rct start --ui-test
-rct init
-rct doctor
-rct compile intent.json
-rct graph build --policy default
+delentia --help
+delentia version
+delentia start --ui-test
+delentia init
+delentia doctor
+delentia compile intent.json
+delentia graph build --policy default
 ```
 
 ---

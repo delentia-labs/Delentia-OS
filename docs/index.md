@@ -70,7 +70,7 @@ $$F = D^I \times A$$
 | Regional Language Adapter | `core/regional_adapter/` |
 | RCT Control Plane DSL | `rct_control_plane/` (22 modules) |
 | 5 Reference Microservices | `microservices/` (297 tests) |
-| CLI entry point | `rct` via editable install or built wheel |
+| CLI entry point | `delentia` via editable install or built wheel |
 
 ---
 

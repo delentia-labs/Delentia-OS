@@ -328,10 +328,13 @@ pip install -r requirements-dev.txt
 
 # Run tests
 pytest --tb=short -q
-# → 765 passed
+# → passing count changes as tests are added; see the CI badge for the
+#   current, real result rather than a hardcoded number here (a stale
+#   "765 passed" claim - real count is 2000+ as of 2026-09 - is exactly
+#   the kind of drift this note exists to avoid repeating)
 
 # Start Control Plane API
-rct serve --port 8000 --reload
+delentia serve --port 8000 --reload
 ```
 
 ### Option B — Docker dev stack
@@ -340,11 +343,14 @@ rct serve --port 8000 --reload
 # Start all 5 microservices
 docker compose -f docker-compose.dev.yml up --build
 
-# Services available at:
+# Services available at (ports corrected 2026-09-24 to match each
+# service's own real, internally-consistent port - the old 8002/8003
+# listing here didn't match anything actually listening inside those
+# containers):
 # http://localhost:8000  — Gateway API
 # http://localhost:8001  — Intent Loop
-# http://localhost:8002  — Analysearch
-# http://localhost:8003  — Vector Search
+# http://localhost:8020  — Analysearch
+# http://localhost:8016  — Vector Search
 # http://localhost:8004  — Crystallizer
 ```
 

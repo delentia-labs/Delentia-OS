@@ -48,7 +48,13 @@ services:
       context: .
       dockerfile: microservices/analysearch-intent/Dockerfile
     ports:
-      - "8002:8002"
+      # Real, confirmed need (2026-09-24): this service's own Dockerfile/
+      # README consistently document port 8020 as its real, internal port
+      # (CMD binds --port 8020) - the previous "8002:8002" mapping forwarded
+      # a host port nothing inside the container was ever listening on,
+      # so http://localhost:8002 would have been unreachable even with a
+      # fully healthy container.
+      - "8020:8020"
     environment:
       - RCT_LOG_LEVEL=DEBUG
       - RCT_ENV=development
@@ -56,7 +62,7 @@ services:
       - ./microservices/analysearch-intent:/app/microservices/analysearch-intent:ro
       - ./core:/app/core:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8020/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -68,7 +74,10 @@ services:
       context: .
       dockerfile: microservices/vector-search/Dockerfile
     ports:
-      - "8003:8003"
+      # Real, confirmed need (2026-09-24): same class of fix as analysearch
+      # above - this service's own Dockerfile/README consistently document
+      # port 8016 as its real, internal port.
+      - "8016:8016"
     environment:
       - RCT_LOG_LEVEL=DEBUG
       - RCT_ENV=development
@@ -76,7 +85,11 @@ services:
       - ./microservices/vector-search:/app/microservices/vector-search:ro
       - ./core:/app/core:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      # /vector/health, not /health: this service's real router is mounted
+      # with prefix="/vector" (see app/api/routes.py) - confirmed matches
+      # this Dockerfile's own healthcheck, which already used the correct
+      # path.
+      test: ["CMD", "curl", "-f", "http://localhost:8016/vector/health"]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -42,17 +42,17 @@ Or install globally for the `rct` command:
 
 ```bash
 npm install -g @delentia/delentia-os
-rct --help
+delentia --help
 ```
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `rct compile "<intent>"` | Compile intent → FDIA + JITNA + policy evaluation |
-| `rct status` | Show control plane metrics (requires running server) |
-| `rct init` | Interactive wizard → writes `.rct.json` config |
-| `rct fdia <d> <i> <a>` | Offline constitutional gate check |
+| `delentia compile "<intent>"` | Compile intent → FDIA + JITNA + policy evaluation |
+| `delentia status` | Show control plane metrics (requires running server) |
+| `delentia init` | Interactive wizard → writes `.rct.json` config |
+| `delentia fdia <d> <i> <a>` | Offline constitutional gate check |
 
 ### Examples
 
@@ -73,10 +73,10 @@ npx @delentia/delentia-os init
 npx @delentia/delentia-os status
 ```
 
-### `rct fdia` — Offline Mode
+### `delentia fdia` — Offline Mode
 
 ```bash
-rct fdia <d> <i> <a> [--gate <threshold>] [--no-banner]
+delentia fdia <d> <i> <a> [--gate <threshold>] [--no-banner]
 ```
 
 | Arg | Range | Description |

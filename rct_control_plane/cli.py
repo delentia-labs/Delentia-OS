@@ -7,14 +7,14 @@ Provides commands for intent compilation, graph building, policy evaluation,
 state management, audit trails, and metrics access.
 
 Usage:
-    rct compile "Refactor authentication module" --user-id user-123
-    rct build --dsl-file workflow.dsl --intent-id abc-123
-    rct evaluate --intent-id abc-123
-    rct status abc-123
-    rct list --limit 20
-    rct audit abc-123
-    rct metrics
-    rct reset --force
+    delentia compile "Refactor authentication module" --user-id user-123
+    delentia build --dsl-file workflow.dsl --intent-id abc-123
+    delentia evaluate --intent-id abc-123
+    delentia status abc-123
+    delentia list --limit 20
+    delentia audit abc-123
+    delentia metrics
+    delentia reset --force
 
 Output Formats:
     --output json   : JSON output
@@ -261,11 +261,11 @@ def cli():
     # _configure_encoding() already existed, already had 3 passing unit tests
     # (TestConfigureEncoding in tests/test_cli_coverage_gaps.py), but was never
     # actually called from anywhere in the real program — found by running
-    # `rct compile` end-to-end on this machine (Windows, Thai-locale cp874
+    # `delentia compile` end-to-end on this machine (Windows, Thai-locale cp874
     # console codepage) and hitting `UnicodeEncodeError: 'charmap' codec can't
     # encode character '❌'` inside render_error(), which this function
     # exists specifically to prevent. Wiring it into the group callback (runs
-    # before every subcommand, via both `rct ...` and CliRunner-based tests)
+    # before every subcommand, via both `delentia ...` and CliRunner-based tests)
     # makes the existing fix actually take effect instead of being dead code.
     _configure_encoding()
 
@@ -282,7 +282,7 @@ def compile(natural_language: str, user_id: str, user_tier: str, organization_id
     Compile natural language intent.
     
     Example:
-        rct compile "Refactor authentication module" --user-id user-123
+        delentia compile "Refactor authentication module" --user-id user-123
     """
     try:
         ctx = get_context()
@@ -308,7 +308,7 @@ def compile(natural_language: str, user_id: str, user_tier: str, organization_id
         # missing the corresponding check and crashed with an unhandled
         # `AttributeError: 'NoneType' object has no attribute 'id'` on any
         # such input instead of surfacing the real reason. Found by actually
-        # running `rct compile` against varied real intents, not by reading
+        # running `delentia compile` against varied real intents, not by reading
         # the code or unit tests alone.
         if intent_obj is None:
             error_detail = "; ".join(result.errors) if result.errors else "Could not determine intent type"
@@ -382,7 +382,7 @@ def build(dsl_text: Optional[str], dsl_file: Optional[str], intent_id: str, outp
     Build execution graph from DSL.
     
     Example:
-        rct build --dsl-file workflow.dsl --intent-id abc-123 --save
+        delentia build --dsl-file workflow.dsl --intent-id abc-123 --save
     """
     try:
         ctx = get_context()
@@ -464,7 +464,7 @@ def evaluate(intent_id: str, use_default_policies: bool, output: str, save: bool
     Evaluate policies against intent and graph.
     
     Example:
-        rct evaluate --intent-id abc-123 --save
+        delentia evaluate --intent-id abc-123 --save
     """
     try:
         ctx = get_context()
@@ -562,8 +562,8 @@ def status(
     Get current state of an intent, or show system overview when called without arguments.
 
     Example:
-        rct status abc-123
-        rct status
+        delentia status abc-123
+        delentia status
     """
     try:
         ctx = get_context()
@@ -619,8 +619,8 @@ def status(
                     raise SystemExit(130) from None
                 _print_next_steps(
                     [
-                        "Run [bold cyan]rct doctor[/] for dependency and port diagnostics",
-                        f"Run [bold cyan]rct start --host {host} --port {port}[/] to bring the API online",
+                        "Run [bold cyan]delentia doctor[/] for dependency and port diagnostics",
+                        f"Run [bold cyan]delentia start --host {host} --port {port}[/] to bring the API online",
                     ]
                 )
                 return
@@ -678,7 +678,7 @@ def list(limit: int, offset: int, output: str):
     List all intents.
     
     Example:
-        rct list --limit 20
+        delentia list --limit 20
     """
     try:
         ctx = get_context()
@@ -754,7 +754,7 @@ def audit(intent_id: str, output: str):
     Get audit trail for an intent.
     
     Example:
-        rct audit abc-123
+        delentia audit abc-123
     """
     try:
         ctx = get_context()
@@ -832,7 +832,7 @@ def metrics(output: str):
     Get metrics summary.
     
     Example:
-        rct metrics
+        delentia metrics
     """
     try:
         ctx = get_context()
@@ -874,7 +874,7 @@ def reset(force: bool):
     WARNING: This will delete all intents, graphs, states, and metrics.
     
     Example:
-        rct reset --force
+        delentia reset --force
     """
     try:
         if not force:
@@ -919,8 +919,8 @@ def adapter():
     OS Adapter management commands.
     
     Examples:
-        rct adapter status
-        rct adapter list
+        delentia adapter status
+        delentia adapter list
     """
     pass
 
@@ -1022,7 +1022,7 @@ def governance(last: int, output: str):
     Show governance violations from the codex security layer.
     
     Example:
-        rct governance --last 20
+        delentia governance --last 20
     """
     try:
         from core.adapters.base_os_adapter import THE_9_CODEX_FORBIDDEN_PATTERNS
@@ -1090,7 +1090,7 @@ def timeline(agent: str, from_tick: int, limit: int, output: str):
     changes for a given agent.
     
     Example:
-        rct timeline --agent agent-001 --from-tick 10 --limit 50
+        delentia timeline --agent agent-001 --from-tick 10 --limit 50
     """
     try:
         from core.kernel.memory_delta import MemoryDeltaEngine
@@ -1144,7 +1144,7 @@ def replay(packet_hash: str, verify: bool, output: str):
     consistency with the original run.
     
     Example:
-        rct replay --hash abc123def456 --verify
+        delentia replay --hash abc123def456 --verify
     """
     try:
         from core.adapters.determinism_controller import DeterminismController
@@ -1233,8 +1233,8 @@ def _run_doctor_checks() -> List[Dict[str, Any]]:
         )
 
     for file_name, hint in [
-        (".env", "Run rct init to generate the environment file."),
-        (".env.example", "Commit or regenerate the template with rct init --force."),
+        (".env", "Run delentia init to generate the environment file."),
+        (".env.example", "Commit or regenerate the template with delentia init --force."),
         ("pyproject.toml", "Run from the project root or restore pyproject.toml."),
     ]:
         path = Path(file_name)
@@ -1267,7 +1267,7 @@ def _run_doctor_checks() -> List[Dict[str, Any]]:
                 "name": f"127.0.0.1:{port}",
                 "ok": is_online,
                 "detail": detail,
-                "hint": f"Run rct start --port {port} if this service should be available.",
+                "hint": f"Run delentia start --port {port} if this service should be available.",
             }
         )
 
@@ -1300,8 +1300,8 @@ def init(force: bool):
     """Initialize environment — create .env from .env.example template.
 
     Example:
-        rct init
-        rct init --force   # Overwrite existing .env
+        delentia init
+        delentia init --force   # Overwrite existing .env
     """
     env_path = Path(".env")
     example_path = Path(".env.example")
@@ -1357,13 +1357,13 @@ def init(force: bool):
         console.print("       [dim]RCTDB_URL=postgresql://localhost:5432/rctdb_dev[/]")
         console.print()
         console.print(
-            "  [dim]2.[/]  Run [bold cyan]rct doctor[/] to verify the environment"
+            "  [dim]2.[/]  Run [bold cyan]delentia doctor[/] to verify the environment"
         )
-        console.print("  [dim]3.[/]  Run [bold cyan]rct start[/] to launch the system")
+        console.print("  [dim]3.[/]  Run [bold cyan]delentia start[/] to launch the system")
         console.print()
     else:
         click.echo(
-            ".env created. Fill in your API keys, then run: rct doctor, then rct start"
+            ".env created. Fill in your API keys, then run: delentia doctor, then delentia start"
         )
 
 
@@ -1412,21 +1412,21 @@ def doctor_cmd(output: str):
     next_steps: List[str] = []
     if any(check["name"] == ".env" and not check["ok"] for check in checks):
         next_steps.append(
-            "Run [bold cyan]rct init[/] to create .env"
+            "Run [bold cyan]delentia init[/] to create .env"
             if _HAS_RICH
-            else "Run rct init to create .env"
+            else "Run delentia init to create .env"
         )
     if any(check["category"] == "connectivity" and not check["ok"] for check in checks):
         next_steps.append(
-            "Run [bold cyan]rct start[/] to bring the local API online"
+            "Run [bold cyan]delentia start[/] to bring the local API online"
             if _HAS_RICH
-            else "Run rct start to bring the local API online"
+            else "Run delentia start to bring the local API online"
         )
     if not next_steps:
         next_steps.append(
-            "Run [bold cyan]rct benchmark --suite fdia[/] to validate constitutional behavior"
+            "Run [bold cyan]delentia benchmark --suite fdia[/] to validate constitutional behavior"
             if _HAS_RICH
-            else "Run rct benchmark --suite fdia to validate constitutional behavior"
+            else "Run delentia benchmark --suite fdia to validate constitutional behavior"
         )
     _print_next_steps(next_steps)
 
@@ -1450,7 +1450,7 @@ def logs(
     View adapter execution logs.
 
     Example:
-        rct logs --adapter openclaw --tail 50
+        delentia logs --adapter openclaw --tail 50
     """
     try:
         ctx = get_context()
@@ -1778,7 +1778,7 @@ def _build_launch_preview_state(
     ui_test: bool,
     version: str,
 ) -> Dict[str, Any]:
-    """Build a truthful pre-launch preview state for `rct start` surfaces."""
+    """Build a truthful pre-launch preview state for `delentia start` surfaces."""
     preview_status = "preview" if ui_test else "starting"
     services = [
         {"name": "gateway-api", "port": port, "online": False, "status": preview_status},
@@ -1897,10 +1897,10 @@ def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool
     then starts the Control Plane API server.
 
     Example:
-        rct start                  # Full launch
-        rct start --ui-test        # Test UI without starting server
-        rct start --verbose        # Debug mode (raw logs)
-        rct start --port 8080      # Custom port
+        delentia start                  # Full launch
+        delentia start --ui-test        # Test UI without starting server
+        delentia start --verbose        # Debug mode (raw logs)
+        delentia start --port 8080      # Custom port
     """
     try:
         ver = get_package_version()
@@ -1934,12 +1934,12 @@ def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool
             click.echo("UI test complete.")
         _print_next_steps(
             [
-                "Run [bold cyan]rct doctor[/] to verify the local environment"
+                "Run [bold cyan]delentia doctor[/] to verify the local environment"
                 if _HAS_RICH
-                else "Run rct doctor to verify the local environment",
-                f"Run [bold cyan]rct start --port {port}[/] for a real launch"
+                else "Run delentia doctor to verify the local environment",
+                f"Run [bold cyan]delentia start --port {port}[/] for a real launch"
                 if _HAS_RICH
-                else f"Run rct start --port {port} for a real launch",
+                else f"Run delentia start --port {port} for a real launch",
             ]
         )
         return

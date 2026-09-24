@@ -1,16 +1,21 @@
 # CLI Reference
 
-The `rct` command-line tool is the primary interface to the RCT Control Plane SDK.
+The `delentia` command-line tool is the primary interface to the Delentia OS
+Control Plane SDK. (Corrected 2026-09-24: this page previously called the
+command `rct` throughout - the real entry point registered in
+`pyproject.toml` is `delentia = "rct_control_plane.cli:main"`, confirmed
+against `pyproject.toml` and `python -m rct_control_plane.cli --help`'s
+real output. `rct` is not an installed command.)
 
 **Install the CLI:**
 
 ```bash
 pip install -e .
-rct version
-rct start --ui-test
-rct init
-rct doctor
-rct --help
+delentia version
+delentia start --ui-test
+delentia init
+delentia doctor
+delentia --help
 ```
 
 ---
@@ -30,43 +35,50 @@ rct --help
 
 ## Commands
 
-### `rct version`
+### `delentia version`
 
 Print SDK version, Python version, and component status.
 
 ```bash
-rct version
+delentia version
 ```
 
-**Output:**
+**Output** (real, verified 2026-09-24 against `python -m rct_control_plane.cli version`):
 
 ```
-RCT Platform SDK v1.0.4b0
-Python 3.11.x
-  ✓ core.fdia          — FDIA Scorer + equation engine
-  ✓ core.delta_engine  — Memory Delta Engine (74% compression)
-  ✓ signedai.core      — SignedAI consensus registry
-  ✓ rct_control_plane  — DSL compiler, graph builder, API server
+                  Delentia OS — Version Info
+┌─────────────┬──────────────────────────────────────────────┐
+│ Field       │ Value                                        │
+├─────────────┼──────────────────────────────────────────────┤
+│ version     │ 2.2.6                                        │
+│ package     │ delentia-os                                  │
+│ name        │ delentia-os                                  │
+│ description │ Constitutional AI Operating System SDK       │
+│ python      │ 3.13.14                                      │
+│ license     │ Apache-2.0                                   │
+│ homepage    │ https://delentia.com                         │
+│ repository  │ https://github.com/delentia-labs/delentia-os │
+└─────────────┴──────────────────────────────────────────────┘
 ```
 
 Recommended first-run order for a fresh install:
 
 ```bash
-rct version
-rct start --ui-test
-rct init
-rct doctor
-rct start
+delentia version
+delentia start --ui-test
+delentia init
+delentia doctor
+delentia start
 ```
 
 ---
 
-### `rct serve`
+### `delentia serve`
 
 Start the Control Plane REST API server.
 
 ```bash
-rct serve [--port PORT] [--reload] [--workers N]
+delentia serve [--port PORT] [--reload] [--workers N]
 ```
 
 | Option | Default | Description |
@@ -78,19 +90,19 @@ rct serve [--port PORT] [--reload] [--workers N]
 **Example:**
 
 ```bash
-rct serve --port 8000 --reload
+delentia serve --port 8000 --reload
 # → http://localhost:8000
 # → Docs: http://localhost:8000/docs
 ```
 
 ---
 
-### `rct compile`
+### `delentia compile`
 
 Compile a natural language intent into an intent record.
 
 ```bash
-rct compile TEXT [--user-id USER_ID] [--context JSON]
+delentia compile TEXT [--user-id USER_ID] [--context JSON]
 ```
 
 | Option | Default | Description |
@@ -102,7 +114,7 @@ rct compile TEXT [--user-id USER_ID] [--context JSON]
 **Example:**
 
 ```bash
-rct compile "Refactor authentication module" --user-id alice
+delentia compile "Refactor authentication module" --user-id alice
 ```
 
 **Output (table):**
@@ -120,35 +132,35 @@ rct compile "Refactor authentication module" --user-id alice
 
 ---
 
-### `rct build`
+### `delentia build`
 
 Build a DSL execution graph from a compiled intent.
 
 ```bash
-rct build --intent-id ID [--dsl-file FILE] [--output FILE]
+delentia build --intent-id ID [--dsl-file FILE] [--output FILE]
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--intent-id` | required | Intent ID from `rct compile` |
+| `--intent-id` | required | Intent ID from `delentia compile` |
 | `--dsl-file` | auto | Path to a `.dsl` file (optional) |
 | `--output` | stdout | Write graph JSON to file |
 
 **Example:**
 
 ```bash
-rct compile "Deploy microservice to staging" --user-id devops | rct build --intent-id -
-rct build --intent-id a1b2c3d4 --output graph.json
+delentia compile "Deploy microservice to staging" --user-id devops | delentia build --intent-id -
+delentia build --intent-id a1b2c3d4 --output graph.json
 ```
 
 ---
 
-### `rct evaluate`
+### `delentia evaluate`
 
 Evaluate a compiled + built intent through policy and governance checks.
 
 ```bash
-rct evaluate --intent-id ID [--architect-score FLOAT]
+delentia evaluate --intent-id ID [--architect-score FLOAT]
 ```
 
 | Option | Default | Description |
@@ -163,23 +175,23 @@ rct evaluate --intent-id ID [--architect-score FLOAT]
 **Example:**
 
 ```bash
-rct evaluate --intent-id a1b2c3d4 --architect-score 0.9
+delentia evaluate --intent-id a1b2c3d4 --architect-score 0.9
 ```
 
 ---
 
-### `rct status`
+### `delentia status`
 
 Show current state of a compiled intent.
 
 ```bash
-rct status INTENT_ID
+delentia status INTENT_ID
 ```
 
 **Example:**
 
 ```bash
-rct status a1b2c3d4-5678-...
+delentia status a1b2c3d4-5678-...
 ```
 
 **Output:**
@@ -194,12 +206,12 @@ Policy   : COMPLIANT
 
 ---
 
-### `rct list`
+### `delentia list`
 
 List recent intents.
 
 ```bash
-rct list [--limit N] [--status STATUS] [--user-id USER_ID]
+delentia list [--limit N] [--status STATUS] [--user-id USER_ID]
 ```
 
 | Option | Default | Description |
@@ -210,18 +222,18 @@ rct list [--limit N] [--status STATUS] [--user-id USER_ID]
 
 ---
 
-### `rct audit`
+### `delentia audit`
 
 Display full audit trail for an intent.
 
 ```bash
-rct audit INTENT_ID [--output json]
+delentia audit INTENT_ID [--output json]
 ```
 
 **Example:**
 
 ```bash
-rct audit a1b2c3d4 --output json
+delentia audit a1b2c3d4 --output json
 ```
 
 Outputs the complete signed audit chain including FDIA score, SignedAI consensus
@@ -229,12 +241,12 @@ tier, and policy decisions.
 
 ---
 
-### `rct metrics`
+### `delentia metrics`
 
 Display runtime metrics for the Control Plane.
 
 ```bash
-rct metrics [--output json]
+delentia metrics [--output json]
 ```
 
 **Sample output:**
@@ -252,92 +264,56 @@ Uptime                   14d 06h
 
 ---
 
-### `rct reset`
+### `delentia reset`
 
 Reset in-memory state (development/testing only).
 
 ```bash
-rct reset [--force]
+delentia reset [--force]
 ```
 
 !!! danger "Destructive Action"
-    `rct reset` clears all in-memory intent state. Use `--force` to skip confirmation.
+    `delentia reset` clears all in-memory intent state. Use `--force` to skip confirmation.
     Persisted audit logs are **not** deleted.
 
 ---
 
-### `rct intent submit`
-
-Submit an intent directly via JSON (low-level).
-
-```bash
-rct intent submit --intent TEXT --context JSON
-```
-
-**Example:**
-
-```bash
-rct intent submit \
-  --intent "Analyze security posture of auth module" \
-  --context '{"repo": "delentia-os", "branch": "main"}'
-```
-
----
-
-### `rct health`
-
-Check Control Plane and component health.
-
-```bash
-rct health [--detailed]
-```
-
-| Flag | Description |
-|------|-------------|
-| *(none)* | Lightweight liveness check |
-| `--detailed` | Full subsystem health (FDIA, Delta, SignedAI, compiler) |
-
-**Example:**
-
-```bash
-rct health --detailed
-```
-
-```
-Component               Status
-────────────────────────────────
-fdia_engine             ✓ ok
-delta_engine            ✓ ok
-signedai_registry       ✓ ok
-intent_compiler         ✓ ok
-dsl_parser              ✓ ok
-policy_engine           ✓ ok
-```
+!!! warning "Removed 2026-09-24: `delentia intent submit` and `delentia health` do not exist"
+    Both sections used to appear here but describe commands that are not
+    registered by the real CLI - confirmed against `python -m
+    rct_control_plane.cli --help`'s real output (`Error: No such command
+    'intent'`/`'health'`). `delentia status` (with no argument) and
+    `delentia doctor` cover overlapping ground for now; if a real
+    equivalent to either removed command is wanted, that is new feature
+    work, not a documentation fix.
 
 ---
 
 ## Shell Completion
 
-Enable tab-completion for `bash`, `zsh`, or `fish`:
+Enable tab-completion for `bash`, `zsh`, or `fish` (Click derives the
+completion env var name from the real program name, `delentia`, not `rct`):
 
 ```bash
 # bash
-eval "$(_RCT_COMPLETE=bash_source rct)"
+eval "$(_DELENTIA_COMPLETE=bash_source delentia)"
 
 # zsh
-eval "$(_RCT_COMPLETE=zsh_source rct)"
+eval "$(_DELENTIA_COMPLETE=zsh_source delentia)"
 
 # fish
-eval (env _RCT_COMPLETE=fish_source rct)
+eval (env _DELENTIA_COMPLETE=fish_source delentia)
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RCT_PORT` | `8000` | Default port for `rct serve` |
-| `RCT_LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`) |
-| `RCT_STATE_DIR` | `.rct_state/` | Directory for persisted intent state |
-| `RCT_ARCHITECT_SCORE` | `1.0` | Default Architect gate value |
+!!! warning "Removed 2026-09-24: this table was fabricated"
+    None of `RCT_PORT`, `RCT_LOG_LEVEL`, `RCT_STATE_DIR`, or
+    `RCT_ARCHITECT_SCORE` are read anywhere in `rct_control_plane/cli.py`
+    (confirmed by grepping the real source for `os.environ`/`os.getenv` -
+    the only real env var touched there is `DELENTIA_DAEMON_ENABLED`,
+    which the `start` command *sets*, not reads as user configuration).
+    Every option shown elsewhere on this page (`--port`, `--reload`, etc.)
+    is a real CLI flag, not an environment variable - use those instead.
