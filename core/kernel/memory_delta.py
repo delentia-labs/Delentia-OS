@@ -221,9 +221,19 @@ class MemoryDeltaEngine:
         agent_deltas = self.deltas[agent_id]
         remove = min(n_ticks, len(agent_deltas))
         self.deltas[agent_id] = agent_deltas[: len(agent_deltas) - remove]
-        # Invalidate checkpoints that are now ahead of the rolled-back tick
+        # Invalidate checkpoints that are now ahead of the rolled-back tick.
+        # Real bug fixed here (found by core/tests/test_kernel_memory_delta.py,
+        # 2026-09-24): `agent_deltas` still refers to the PRE-rollback list
+        # (slicing on line above creates a new list and only rebinds
+        # self.deltas[agent_id], not this local variable) - reading
+        # agent_deltas[-1].tick always returned the OLD last tick, so this
+        # invalidation never actually fired for the checkpoints it exists to
+        # invalidate. A later get_state_at_tick() could then silently
+        # reconstruct from a checkpoint that still includes effects the
+        # rollback was supposed to remove. Must read the NEW (post-slice)
+        # list instead.
         if agent_deltas and remove < len(agent_deltas):
-            new_last_tick = agent_deltas[-1].tick if self.deltas[agent_id] else 0
+            new_last_tick = self.deltas[agent_id][-1].tick if self.deltas[agent_id] else 0
             stale = [t for t in self._checkpoints.get(agent_id, {}) if t > new_last_tick]
             for t in stale:
                 del self._checkpoints[agent_id][t]
