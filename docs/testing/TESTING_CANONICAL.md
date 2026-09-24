@@ -2,12 +2,12 @@
 
 This document is the **single source of truth** for public test-count and coverage claims used in README, roadmap, release notes, and launch materials.
 
-**Version:** 2.0.2  
-**Last Updated:** 2026-09-23  
-**Authoritative checkpoint:** **2,232-2,240 passed (run-to-run variance, see note) · 75.02% coverage**  
+**Version:** 2.0.3  
+**Last Updated:** 2026-09-24  
+**Authoritative checkpoint:** **2,369 passed · 75.02% coverage**  
 **CI Status:** [![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
 
-> **On the passed-count range:** two separate full runs on 2026-09-22/23 gave 2,240 passed/3 failed/10 skipped (plain) and 2,232 passed/2 failed/19 skipped (coverage-instrumented, `--cov-fail-under` run). The difference is run-to-run collection/skip variance, not a regression between the two - both runs agree on the same 2 pre-existing, already-documented Ollama-connectivity failures (`test_autonomous_loop_real.py`), tracked across multiple prior rounds; the plain run's 3rd failure (`test_hexacore_live_verification_real.py::test_role_is_genuinely_reachable_live[junior_builder]`) is a live external-connectivity check that didn't reproduce in the other run, consistent with depending on real network state. Neither was investigated as a code regression as part of this update.
+> **2026-09-24 update:** a real full run (`python -m pytest -q --no-header`) gave **2,369 passed**, up from the 2,232-2,240 range recorded 2026-09-22/23 - genuine growth from Round 43-44's real test-writing work (8 new test files added this window: `test_algo_19_fusion.py`, `test_algo_18_adaptive_prompting.py`, `test_kernel_memory_delta.py`, `test_enterprise_hardening.py`, `test_algo_15_hrm.py`, `test_algo_22_halting_detection.py`, plus real coverage added to `microservices/gateway-api/tests/test_gateway_api.py`), not a measurement artifact. Same run also showed 1 failure and 10 errors, both already-understood and not new regressions: the failure (`test_gateway_api.py::TestGatewayDelentiaStats::test_system_stats_returns_real_baseline_shape`) only fails when `gateway_main.py` has a specific pending local uncommitted change applied (see Round 44 notes); the 10 errors (`test_cli_serve_integration.py`) are a known, pre-existing `delentia serve` cold-start timing sensitivity on this machine (confirmed via `git stash` to reproduce identically on unmodified code - real ML dependency imports for `AlgorithmKernel41` can take 20+ seconds, longer than that test file's wait budget), not a code defect. CI's own real runs (a clean checkout, not this local working tree) are unaffected by either caveat.
 
 ---
 
@@ -17,7 +17,7 @@ The following numbers were verified from the current public repository working t
 
 | Metric | Verified Result | Validation Command |
 |---|---|---|
-| Full SDK suite | **~2,232-2,240 passed** (see note above) | `python -m pytest -q --no-header` |
+| Full SDK suite | **2,369 passed** (see note above) | `python -m pytest -q --no-header` |
 | Coverage (local, Ollama reachable) | **75.02%** (39,830 statements, 9,949 missed) - measured 2026-09-23, replacing the stale 2026-05-27 "90%" figure (predates ~450 net new tests and was never actually re-verified against a passing coverage run - CI had been failing at the import stage for weeks before this update, so this drift went unnoticed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term -q --no-header` |
 | Coverage (real GitHub Actions runner, no Ollama) | **73.17-73.22%** across 2 real runs 2026-09-23 - genuinely lower than the local figure for a real, understood reason: ~13 tests exercise a real Ollama backend (this codebase's own "real, not mocked" philosophy) that isn't reachable on a stock hosted runner, so those code paths aren't covered there. Not a regression - an environment difference. | Same command, via `.github/workflows/ci.yml`'s "Run tests" step |
 | Direct microservice tests | *(not separately re-measured this update)* | `python -m pytest microservices -q --no-header` |

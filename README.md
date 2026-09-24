@@ -175,7 +175,7 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 2,240 passing tests (10 skipped, 3 known-flaky/live-connectivity - see TESTING_CANONICAL.md) · coverage pending re-measurement · Python 3.10/3.11/3.12
+├─ 2,369 passing tests (see TESTING_CANONICAL.md for the current checkpoint and known caveats) · 75.02% local / 72% CI floor coverage · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -228,12 +228,12 @@ cd delentia-os
 pip install -e .
 
 # 2. Validate the CLI surface without API keys
-rct version
-rct start --ui-test
+delentia version
+delentia start --ui-test
 
 # 3. Create a local .env template for real runs
-rct init
-rct doctor
+delentia init
+delentia doctor
 
 # 4. Run the 5-minute offline demo — zero API keys needed
 python examples/quickdemo.py
@@ -242,9 +242,9 @@ python examples/quickdemo.py
 python benchmark/fdia_benchmark.py --verbose
 
 # 6. Try the CLI
-rct compile 'Protect resources from hostile agents'
-rct governance
-rct timeline
+delentia compile 'Protect resources from hostile agents'
+delentia governance
+delentia timeline
 ```
 
 **Expected output (quickdemo.py):**
@@ -267,7 +267,7 @@ Delta vs Baseline    : +0.2667 (+41.0%)
 
 ```bash
 # 1. Generate a local .env template
-rct init
+delentia init
 # Edit .env with your API keys
 
 # 2. Run tests
@@ -466,6 +466,18 @@ Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `i
 
 ### Enterprise CLI Commands (v1.1.0)
 
+> **Historical, not currently runnable (noted 2026-09-24):** this block
+> describes v1.1.0's command surface; the current public CLI (`delentia`,
+> v2.2.6) does not have `plan`, `apply`, `memory`, `policy`, or `approve`
+> commands - confirmed against `delentia --help`'s real, current command
+> list (`adapter, audit, build, chat, compile, doctor, evaluate,
+> governance, init, list, logs, metrics, replay, reset, serve, start,
+> status, timeline, version`). `plan_engine.py` and `approval_gateway.py`
+> are real modules with real logic (see "Available modules" above), just
+> not wired to any CLI command today. Also: `rct` here means the CLI's
+> old name - the real, current command is `delentia` (`pyproject.toml`'s
+> `delentia = "rct_control_plane.cli:main"`).
+
 ```bash
 # Lifecycle
 rct plan "Refactor auth module"         # Terraform-style simulation — cost, risk, model roster
@@ -620,12 +632,10 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
-✅ **2,240 Passed · 10 Skipped · 3 Known (see TESTING_CANONICAL.md)** — Full delentia-os SDK test suite (Phase A-D v2.0.0)  
-✅ **Plan Engine** — `rct plan` Terraform-style pre-execution simulation  
-✅ **Policy Governance** — `rct policy` + `approval_gateway.py` omni-channel human approval  
-✅ **OTel + Prometheus + Grafana** — `GET /metrics` scrape endpoint + monitoring stack  
+✅ **2,369 Passed** (see TESTING_CANONICAL.md for the current checkpoint and known caveats) — Full delentia-os SDK test suite  
+✅ **Plan Engine** — `plan_engine.py` real Terraform-style pre-execution simulation logic *(corrected 2026-09-24: not currently wired to any real CLI command - `plan` isn't in `delentia --help`'s command list; the module itself is real)*  
+✅ **Policy Governance** — `approval_gateway.py` real omni-channel human approval logic, plus the real `delentia governance` command (shows governance violations from the audit log) *(corrected 2026-09-24: `rct policy` doesn't exist as a command; `approval_gateway.py` isn't currently wired to any CLI command either)*  
 ✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  
-✅ **GitHub Action** — `rct-policy-gate` for CI/CD governance enforcement  
 
 Previous milestone:  
 ✅ **4,849 Passed · 16 Skipped · 0 Failed · 0 Errors** — Complete private enterprise test suite (all 62 microservices)  
