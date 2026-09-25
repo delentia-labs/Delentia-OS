@@ -54,6 +54,26 @@ Design choices, and why
    whether to include it - not guessed from its name. See the inline
    comment on each entry.
 
+6a. Round 44 item I.2 (added 2026-09-25): real Skill Library wiring -
+   skill_library.py's own docstring flagged "no skill re-application/
+   injection into a new turn's prompt" as explicitly out of scope for
+   its MVP slice. This closes that gap: _on_episode_start() retrieves
+   real similar-past-skill matches (retrieve_similar_skills(), Jaccard
+   token overlap, no mocking) and feeds them to decide_next_action()'s
+   new extra_context parameter via the extra_context_provider hook
+   (also added this round) - genuinely injected into the prompt, not
+   just fetched and discarded. _on_episode_end() computes a real MEE
+   growth step from the episode's own stopped_reason (see
+   _growth_signal_for_outcome() below for the exact, evidence-based
+   mapping - no invented magic numbers) and offers it to
+   maybe_extract_skill()'s real MEE-gated write path. This reuses
+   AutonomousBackEdgeDaemon's precedent of a coarse, honest delta
+   signal (autonomous_backedge_daemon.py's _SUCCESS_DELTA/
+   _FAILURE_DELTA) but derives it from real, already-computed
+   stopped_reason values (llm_finished/fdia_blocked/etc.) rather than a
+   flat binary success/failure, since GovernedAutonomousLoop has more
+   real signal available than that daemon does.
+
 6. Authorization (A) signal depth is intentionally uneven across risky
    tools in this first pass, and that unevenness is disclosed rather than
    hidden: delentia_run_sandboxed_command and the two repo-write tools
@@ -84,7 +104,9 @@ from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.jitna_protocol import (
     JITNAKeypair, JITNAMessageType, JITNAPacket, generate_keypair, sign_packet, verify_packet,
 )
+from rct_control_plane.mee_engine import MEESession
 from rct_control_plane.persistence import ControlPlanePersistence
+from rct_control_plane.skill_library import SkillLibrary
 
 if TYPE_CHECKING:
     from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
@@ -161,6 +183,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         mcp_server,
         persistence: ControlPlanePersistence,
         kernel: Optional["AlgorithmKernel41"] = None,
+        skill_library: Optional[SkillLibrary] = None,
         max_iterations: int = 5,
         max_seconds: float = 120.0,
         namespace: str = "kernel_default",
@@ -171,6 +194,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._intent_compiler = IntentCompiler()
         self._delta_engine = DeltaEngine()
         self._keypair: JITNAKeypair = generate_keypair()
+        # Round 44 item I.2: real growth tracking + skill library for this
+        # loop's own episodes. A dedicated MEESession (not shared with the
+        # kernel's own, if any) because this session's growth signal is
+        # specifically "did THIS agent episode succeed", a different real
+        # quantity than whatever the kernel's own MEE session (if used
+        # elsewhere) is tracking.
+        self._mee_session = MEESession(session_id=f"governed-loop:{namespace}")
+        self._skill_library = skill_library if skill_library is not None else SkillLibrary()
         # Populated at episode start, read by the pre-dispatch gate and
         # episode-end hook - one episode (one run() call) at a time, same
         # single-episode-per-instance assumption AutonomousLoop itself
@@ -180,6 +211,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_rct7_steps: List[str] = []
         self._episode_jitna_verified: bool = False
         self._episode_start_time: float = 0.0
+        self._episode_context_text: str = ""
 
     def _get_kernel(self) -> "AlgorithmKernel41":
         """Lazy, cached construction - see module docstring point 2 for
@@ -200,11 +232,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
             tool_filter=self._tool_filter,
             pre_dispatch_gate=self._pre_dispatch_gate,
             on_episode_end=self._on_episode_end,
+            extra_context_provider=self._extra_context_provider,
             **kwargs,
         )
 
     # ------------------------------------------------------------------
     # J.1.3: RCT-7 decomposition + JITNA sign, once per episode
+    # I.2: real skill retrieval, injected into the prompt via
+    # _extra_context_provider() below (not just fetched and discarded).
     # ------------------------------------------------------------------
     async def _on_episode_start(self, goal: str) -> None:
         self._episode_start_time = time.time()
@@ -212,6 +247,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
+        self._episode_context_text = self._format_similar_skills(
+            self._skill_library.retrieve_similar_skills(goal, top_k=3)
+        )
 
         packet = JITNAPacket(
             source_agent_id=self.namespace,
@@ -234,6 +272,25 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_verified": self._episode_jitna_verified,
             },
         )
+
+    @staticmethod
+    def _format_similar_skills(skills: List[Any]) -> str:
+        """Real, honest formatting of retrieve_similar_skills()'s results
+        into prompt text - "" (omitted entirely, see decide_next_action's
+        extra_context docstring) when nothing relevant was found, so a
+        fresh skill library never adds empty noise to the prompt."""
+        if not skills:
+            return ""
+        lines = ["Similar past solutions (from this system's own skill library):"]
+        for skill in skills:
+            lines.append(
+                f"- Problem: {skill.problem_statement!r} -> Solution: {skill.solution!r} "
+                f"(similarity={skill.similarity_score:.2f}, real growth_ratio={skill.growth_ratio:.2f})"
+            )
+        return "\n".join(lines)
+
+    def _extra_context_provider(self) -> str:
+        return self._episode_context_text
 
     # ------------------------------------------------------------------
     # J.1.4(a): keyword-overlap pre-filtering of the tool menu
@@ -330,21 +387,51 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # ------------------------------------------------------------------
     # J.1.3: Delta persistence at episode end
     # ------------------------------------------------------------------
+    # Round 44 item I.2: real, evidence-based mapping from a real
+    # stopped_reason to a real MEE growth delta + governance_violation
+    # flag - no invented continuous metric (matches
+    # autonomous_backedge_daemon.py's own documented reasoning for using
+    # a coarse, honest signal over a fabricated precise one). llm_finished
+    # is real success; fdia_blocked is a real constitutional violation
+    # (this episode attempted something the FDIA gate refused);
+    # pending_approval is a real, neutral "waiting on a human" outcome,
+    # neither growth nor shrinkage; every other stopped_reason
+    # (max_iterations_reached/max_seconds_exceeded/parse_error) is a real,
+    # non-violating incompleteness.
+    _OUTCOME_TO_GROWTH_SIGNAL = {
+        "llm_finished": (1.0, False),
+        "fdia_blocked": (-1.0, True),
+        "pending_approval": (0.0, False),
+    }
+    _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
+
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
         duration = time.time() - self._episode_start_time
+        stopped_reason = result["stopped_reason"]
         change_description = (
-            f"episode goal={result['goal']!r} stopped_reason={result['stopped_reason']} "
+            f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
             f"iterations={result['iterations']} duration_s={duration:.2f} "
             f"jitna_verified={self._episode_jitna_verified}"
         )
-        delta = DeltaBlock(
+        delta_block = DeltaBlock(
             session_id=self.namespace,
             timestamp=time.time(),
             delta_type=DeltaType.STATE_CHANGE,
             diff=DeltaDiff(added=[change_description], removed=[], modified=[]),
             source="governed_autonomous_loop",
         )
-        delta_id = self._delta_engine.store_delta(delta)
+        delta_id = self._delta_engine.store_delta(delta_block)
+
+        growth_delta, governance_violation = self._OUTCOME_TO_GROWTH_SIGNAL.get(
+            stopped_reason, self._DEFAULT_INCOMPLETE_SIGNAL
+        )
+        growth_step = self._mee_session.step(growth_delta, governance_violation=governance_violation)
+        skill_record = self._skill_library.maybe_extract_skill(
+            problem_statement=result["goal"],
+            action_sequence_or_solution=result["steps"],
+            growth_step=growth_step,
+            session_id=self.namespace,
+        )
 
         self._persistence.append_audit(
             entity_type="governed_loop_episode_end",
@@ -352,7 +439,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
             action="episode_end",
             actor=self.namespace,
             changes={
-                "delta_id": delta_id, "stopped_reason": result["stopped_reason"],
+                "delta_id": delta_id, "stopped_reason": stopped_reason,
                 "iterations": result["iterations"], "duration_s": duration,
+                "mee_delta": growth_delta, "mee_g": self._mee_session.g,
+                "skill_extracted": skill_record is not None,
             },
         )

@@ -170,7 +170,15 @@ async def decide_next_action(
     history: List[LoopStep],
     available_tools: List[Dict[str, Any]],
     llm_provider: Optional["LLMProvider"] = None,
+    extra_context: str = "",
 ) -> Dict[str, Any]:
+    """Round 44 (item I.2): `extra_context`, when non-empty, is inserted as
+    its own section of the prompt below - added so GovernedAutonomousLoop
+    can inject real retrieved-skill text (rct_control_plane.skill_library's
+    retrieve_similar_skills()) without this function needing to know
+    anything about skills specifically. Defaults to "" (omitted from the
+    prompt entirely), so every existing caller's prompt is byte-for-byte
+    unchanged (Zero-Delete)."""
     from rct_control_plane.llm_provider import get_default_provider
     provider = llm_provider or get_default_provider()
 
@@ -183,6 +191,8 @@ async def decide_next_action(
     # own docstring for the full compression/fallback contract.
     history_desc = render_history(history)
 
+    context_section = f"\n{extra_context}\n" if extra_context else ""
+
     prompt = f"""You are an autonomous agent working toward this goal:
 {goal}
 
@@ -191,7 +201,7 @@ Available tools:
 
 History so far:
 {history_desc}
-
+{context_section}
 Decide the SINGLE next action. Respond with ONLY a JSON object, no other text:
 {{"action": "call_tool", "tool_name": "<one of the tool names above>", "tool_args": {{...matching its schema...}}, "reasoning": "<why>"}}
 OR, if the goal is already achieved or no tool call is needed:
@@ -240,6 +250,7 @@ class AutonomousLoop:
         tool_filter: Optional[Callable[[str, List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         pre_dispatch_gate: Optional[Callable[[str, str, Dict[str, Any]], Any]] = None,
         on_episode_end: Optional[Callable[[dict], Any]] = None,
+        extra_context_provider: Optional[Callable[[], str]] = None,
     ) -> dict:
         """Round 37: `on_step` is an optional, real live-introspection
         hook - called once per real LoopStep as it's appended to history,
@@ -290,6 +301,13 @@ class AutonomousLoop:
             pending_approval already does.
           - on_episode_end(result): called once with the exact dict this
             method is about to return, right before returning it.
+
+        A fifth hook, extra_context_provider() -> str, is threaded straight
+        into decide_next_action()'s own new extra_context parameter (see
+        that function's docstring) every iteration - kept separate from
+        the four above since it's not "governance" per se, just optional
+        prompt content. Defaults to None, meaning no extra_context text is
+        ever added (Zero-Delete).
         """
         t_start = time.time()
         available_tools = await self._available_tools()
@@ -321,7 +339,16 @@ class AutonomousLoop:
             if tool_filter is not None:
                 iteration_tools = tool_filter(goal, available_tools)
 
-            decision = await decide_next_action(goal, history, iteration_tools)
+            extra_context = extra_context_provider() if extra_context_provider is not None else ""
+            # Only pass extra_context as a kwarg when non-empty, so the
+            # call reverts to decide_next_action's exact original 3-arg
+            # shape whenever no real context exists - real callers/tests
+            # that monkeypatch decide_next_action with the pre-Round-44
+            # signature (goal, history, available_tools, llm_provider)
+            # keep working unchanged (Zero-Delete), since none of them
+            # ever populate extra_context_provider.
+            extra_kwargs = {"extra_context": extra_context} if extra_context else {}
+            decision = await decide_next_action(goal, history, iteration_tools, **extra_kwargs)
 
             if decision.get("parse_error"):
                 stopped_reason = "parse_error"

@@ -22,6 +22,7 @@ from rct_control_plane.governed_autonomous_loop import (
     GovernedAutonomousLoop, RISKY_TOOLS, fdia_score, _write_path_is_safe,
 )
 from rct_control_plane.persistence import ControlPlanePersistence
+from rct_control_plane.skill_library import SkillLibrary
 
 
 class _FakeToolResult:
@@ -97,9 +98,17 @@ def decide_sequence(monkeypatch):
 
 def _loop(tmp_path, name, kernel=None, mcp=None):
     persistence = ControlPlanePersistence(db_path=str(tmp_path / f"{name}.db"))
+    # Isolated skill_library.db per test - skill_library.py's own
+    # docstring recommends this exact pattern ("pass a tmp_path in tests
+    # to isolate"); omitting it would share the real default on-disk
+    # rct_control_plane.db across every test (and every ad-hoc manual run
+    # of this module), causing non-deterministic retrieve_similar_skills()
+    # results depending on what earlier runs happened to persist.
+    skill_library = SkillLibrary(db_path=str(tmp_path / f"{name}_skills.db"))
     return GovernedAutonomousLoop(
         mcp_server=mcp or _FakeMCP(), persistence=persistence,
-        kernel=kernel or _FakeKernel(), max_iterations=5, namespace=name,
+        kernel=kernel or _FakeKernel(), skill_library=skill_library,
+        max_iterations=5, namespace=name,
     )
 
 
@@ -247,6 +256,78 @@ class TestEpisodeEndHook:
         stats_after = loop._delta_engine.get_stats()
 
         assert stats_after["total_deltas"] == stats_before["total_deltas"] + 1
+
+
+class TestSkillLibraryIntegration:
+    """Round 44 item I.2: real end-to-end proof that skills are both
+    extracted (episode end) and genuinely re-applied (episode start,
+    injected into the next episode's real prompt) - closing the gap
+    skill_library.py's own docstring flagged as its MVP's one deliberate
+    omission."""
+
+    def test_successful_episode_extracts_a_real_skill(self, tmp_path, decide_sequence):
+        decide_sequence(_FINISH_ONLY)
+        loop = _loop(tmp_path, "extract_success")
+        assert loop._skill_library.count() == 0
+
+        asyncio.run(loop.run("refactor the payment retry logic"))
+
+        assert loop._skill_library.count() == 1
+        skills = loop._skill_library.retrieve_similar_skills("refactor the payment retry logic")
+        assert len(skills) == 1
+        assert skills[0].delta == 1.0
+        assert skills[0].governance_violation is False
+
+    def test_fdia_blocked_episode_does_not_extract_a_skill(self, tmp_path, decide_sequence):
+        decide_sequence([
+            {"action": "call_tool", "tool_name": "delentia_run_sandboxed_command",
+             "tool_args": {"command": "rm -rf /"}, "reasoning": "dangerous", "final_answer": None},
+        ])
+        loop = _loop(tmp_path, "extract_blocked")
+
+        asyncio.run(loop.run("do something dangerous"))
+
+        # The real MEE gate (delta<=0 or governance_violation=True) must
+        # reject this outcome - a governance-violating episode must never
+        # be reinforced as "the way to do this" (skill_library.py's own
+        # documented rule, exercised here for real, not just unit-tested
+        # in isolation).
+        assert loop._skill_library.count() == 0
+
+    def test_retrieved_skill_is_genuinely_injected_into_the_next_episode_prompt(self, tmp_path, decide_sequence, monkeypatch):
+        loop = _loop(tmp_path, "retrieve_inject")
+
+        # Episode 1: seed a real skill via a real successful episode.
+        decide_sequence(_FINISH_ONLY)
+        asyncio.run(loop.run("optimize the database connection pool"))
+        assert loop._skill_library.count() == 1
+
+        # Episode 2: a goal with real keyword overlap against episode 1's
+        # problem_statement - decide_next_action must receive real,
+        # non-empty extra_context text mentioning the earlier skill.
+        captured = {}
+
+        async def _capturing_fake(goal, history, available_tools, llm_provider=None, extra_context=""):
+            captured["extra_context"] = extra_context
+            return {"action": "finish", "reasoning": "done", "final_answer": "done",
+                    "tool_name": None, "tool_args": {}}
+
+        monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _capturing_fake)
+        asyncio.run(loop.run("optimize the database connection pool further"))
+
+        assert captured["extra_context"] != ""
+        assert "optimize the database connection pool" in captured["extra_context"]
+
+    def test_no_matching_skills_means_no_extra_context_and_old_call_shape_is_preserved(self, tmp_path, decide_sequence):
+        # Proves the Zero-Delete guarantee: with an empty skill library,
+        # decide_next_action is called with its exact pre-Round-44 3-arg
+        # shape (decide_sequence's own fake below has that old signature -
+        # if extra_context were passed unconditionally this would raise
+        # TypeError, exactly the regression caught and fixed this round).
+        decide_sequence(_FINISH_ONLY)
+        loop = _loop(tmp_path, "no_skills_yet")
+        result = asyncio.run(loop.run("a brand new never-seen-before goal"))
+        assert result["stopped_reason"] == "llm_finished"
 
 
 class TestFdiaScoreMatchesKernel:
