@@ -200,6 +200,40 @@ def _detect_repeated_call(history: List[LoopStep]) -> str:
     return ""
 
 
+# Round 44 (item K.1.1): see decide_next_action()'s docstring for the
+# real scenario-battery findings this text exists to address. Kept as a
+# module-level constant (not a function) since it is genuinely fixed
+# text, unlike _detect_repeated_call()'s history-dependent output.
+#
+# Point 4 was added after a live re-test of the original 3-point version
+# (2026-09-25) found it did NOT stop the model from fabricating a curl
+# command to a made-up pizza-ordering URL for a goal no real tool could
+# address (3/3 re-test runs still did this). Root cause: a shell-command
+# tool is broadly "relevant" by construction (it can run any command),
+# so point 3's "if no tool is relevant, finish honestly" never actually
+# triggered from the model's perspective - the failure was narrower than
+# first diagnosed. Point 4 targets the real, specific pattern instead:
+# fabricating a URL/endpoint never given in the goal or found via a real
+# tool result - the same "never guess a URL" principle this project's
+# own operator harness already enforces on itself.
+_SCOPE_AND_GROUNDING_GUIDANCE = (
+    "Before deciding, check all of these:\n"
+    "1. If a tool above is directly relevant to this goal and using it would give a "
+    "grounded, verified answer instead of a guess, use it - never answer from a guess "
+    "when a listed tool could give you the real answer.\n"
+    "2. Only call a tool that is directly necessary for THIS goal - never call an "
+    "unrelated tool just in case it might help.\n"
+    "3. If NONE of the tools above are actually relevant to this goal, avoid forcing "
+    "an unrelated or made-up tool call to work around that. Finish honestly instead, "
+    "explaining plainly that this goal is outside what these tools can do.\n"
+    "4. NEVER invent or guess a URL, API endpoint, or external address that was not "
+    "explicitly given in the goal or returned by a real tool result above - not even "
+    "a plausible-looking one. A shell-command tool being available does not make up "
+    "for a real endpoint you do not actually have; if completing the goal would "
+    "require one you don't have, finish honestly and say so instead of guessing one."
+)
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
@@ -219,7 +253,23 @@ async def decide_next_action(
     _detect_repeated_call() - is computed unconditionally from `history`
     (not opt-in like extra_context) and prepended when non-empty, since
     the failure mode it targets is a real, confirmed core-loop reliability
-    bug (see that function's own docstring), not an optional feature."""
+    bug (see that function's own docstring), not an optional feature.
+
+    Round 44 (item K.1.1, 2026-09-25): a third, always-on, fixed
+    instruction block - _SCOPE_AND_GROUNDING_GUIDANCE below - added after
+    J.4.6's real scenario battery (scripts/real_agent_scenario_battery.py)
+    found 3 distinct real failure modes this prompt gave the model no
+    guidance against: (1) answering from a guess ("The answer is 42")
+    for a goal a listed tool could directly answer, instead of using it;
+    (2) calling a tool structurally unrelated to the goal (e.g.
+    delentia_create_worktree for a goal about searching code) rather
+    than staying scoped to what the goal actually needs; (3) for a goal
+    no listed tool can address at all, fabricating a plausible-looking
+    but bogus tool call (a curl to a made-up URL) instead of finishing
+    with an honest refusal. Unlike _detect_repeated_call, this text does
+    not depend on `history` - it is constant across every call, so it is
+    injected directly into the prompt template rather than through
+    context_parts."""
     from rct_control_plane.llm_provider import get_default_provider
     provider = llm_provider or get_default_provider()
 
@@ -244,6 +294,7 @@ Available tools:
 History so far:
 {history_desc}
 {context_section}
+{_SCOPE_AND_GROUNDING_GUIDANCE}
 Decide the SINGLE next action. Respond with ONLY a JSON object, no other text:
 {{"action": "call_tool", "tool_name": "<one of the tool names above>", "tool_args": {{...matching its schema...}}, "reasoning": "<why>"}}
 OR, if the goal is already achieved or no tool call is needed:
