@@ -53,7 +53,7 @@ confection==1.3.3
 contourpy==1.3.3
 coverage==7.13.5
 cramjam==2.11.0
-cryptography==47.0.0
+cryptography==50.0.0  # Round 44 item E (2026-09-25): 47.0.0 was stale/vulnerable per 3 real, current Dependabot high-severity alerts needing 48.0.1/49.0.0/50.0.0 - pyproject.toml's own floor (>=48.0.1, Round 29) had also fallen behind the newest advisory
 cssselect==1.4.0
 ctransformers==0.2.27
 cycler==0.12.1
@@ -133,8 +133,8 @@ lightning-utilities==0.15.3
 limits==5.8.0
 llvmlite==0.49.0
 loguru==0.7.3
-lxml==6.0.2
-lxml_html_clean==0.4.4
+lxml==6.1.1  # Round 44 item E: satisfies requirements.txt's floor (>=6.1.0) and the real Dependabot fix (>=6.1.0) - bumped one patch further than the bare minimum because lxml-html-clean 0.4.5 itself requires lxml>=6.1.1 (real pip dependency-resolution conflict hit installing 6.1.0)
+lxml_html_clean==0.4.5  # Round 44 item E: matches requirements.txt's own already-correct floor
 Mako==1.4.1
 Markdown==3.10.2
 markdown-it-py==4.0.0
@@ -186,7 +186,7 @@ paginate==0.5.7
 pandas==3.0.3
 pathspec==1.0.4
 peft==0.19.1
-pillow==12.1.1
+pillow==12.3.0  # Round 44 item E: real Dependabot fix version (was 12.1.1, vulnerable)
 pip-api==0.0.34
 pip-requirements-parser==32.0.1
 pip_audit==2.10.0
@@ -231,7 +231,7 @@ pytest-timeout==2.4.0
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.2.2
-python-multipart==0.0.22
+python-multipart==0.0.31  # Round 44 item E: matches requirements.txt's own already-correct floor (exceeds Dependabot's flagged fix versions up to 0.0.30)
 python-slugify==8.0.4
 pytorch-lightning==2.6.6
 pytorch-metric-learning==2.9.0
@@ -275,7 +275,7 @@ spacy-loggers==1.0.5
 SQLAlchemy==2.0.54
 srsly==2.5.3
 sse-starlette==3.4.11
-starlette==0.52.1
+starlette==1.7.0  # Round 44 item E: 0.52.1 was stale/vulnerable (Dependabot high, fix>=1.3.1) - 1.7.0 already confirmed real and working (this exact version installed cleanly in this session's own real docker builds of gateway-api/intent-loop/analysearch-intent/vector-search/crystallizer)
 stevedore==5.7.0
 storage3==2.30.0
 StrEnum==0.4.15

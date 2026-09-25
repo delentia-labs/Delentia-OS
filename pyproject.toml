@@ -38,7 +38,7 @@ dependencies = [
     "slack-bolt>=1.30.0", # Round 38: real Slack gateway via Socket Mode - no public URL needed, same profile as Discord/Telegram
     "zstandard>=0.25.0",  # Round 38: real dependency for ALGO-03's and the redesigned ALGO-25's zstd compression - was already installed/imported but never declared in any manifest until now
     "tiktoken>=0.14.0",   # Round 38: real (approximate, cl100k_base) token-count measurement for the redesigned Delta Engine
-    "cryptography>=48.0.1",  # Round 29 Task 60: floor raised past real PYSEC-2026 advisories (fixed 48.0.1); only real usages are stable hazmat primitives (Ed25519/RSA/serialization), verified via full suite
+    "cryptography>=50.0.0",  # Round 44 item E (2026-09-25): the >=48.0.1 floor (Round 29) had itself fallen behind 2 newer real Dependabot high-severity advisories (fixed at 49.0.0 and 50.0.0); only real usages remain the same stable hazmat primitives (Ed25519/RSA/serialization), verified via full suite
     "PyJWT>=2.13.0",  # Round 20+: Layer 10 real RS256 JWT issuing (enterprise_hardening.py); floor raised Round 28 Task 53 past real CVEs PYSEC-2026-175/176/177/178/179 (fixed 2.13.0)
     "mcp>=2.0.0",  # Round 21 Phase 2: real MCP tool registry (mcp_server.py) - note: mcp 2.x renamed FastMCP to MCPServer
     # Round 19: already importable in this environment (transitive deps of
