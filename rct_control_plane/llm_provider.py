@@ -14,7 +14,10 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator, Optional
+
+if TYPE_CHECKING:
+    from rct_control_plane.topic_cache import TopicCache
 
 import httpx
 
@@ -59,14 +62,34 @@ class LLMProvider(ABC):
 
 
 class OllamaProvider(LLMProvider):
-    def __init__(self, llm_url: str = DEFAULT_OLLAMA_URL, model: str = "qwen2.5:7b"):
+    # Round 44 item I.3: only calls at or below this temperature are
+    # cached. 0.3 is not an arbitrary new number - it's the real
+    # temperature autonomous_loop.py's decide_next_action() already uses
+    # for its JSON-mode tool-selection call (the one real low-temperature,
+    # deterministic-ish call site that exists in this codebase today).
+    # Calls above this threshold are intentionally left uncached - a
+    # high-temperature call is asking for real sampling diversity, and
+    # caching it would silently defeat that.
+    _CACHEABLE_TEMPERATURE_MAX = 0.3
+    _CACHE_TTL_SECONDS = 3600.0
+
+    def __init__(self, llm_url: str = DEFAULT_OLLAMA_URL, model: str = "qwen2.5:7b",
+                 cache: Optional["TopicCache"] = None):
         self.llm_url = llm_url
         self.model = model
+        self.cache = cache
 
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        cacheable = self.cache is not None and temperature <= self._CACHEABLE_TEMPERATURE_MAX
+
+        if cacheable:
+            cached = self.cache.get(full_prompt, full_prompt)
+            if cached is not None:
+                return cached
+
         payload = {"model": self.model, "prompt": full_prompt, "stream": False,
                    "options": {"temperature": temperature}}
         if json_mode:
@@ -74,7 +97,11 @@ class OllamaProvider(LLMProvider):
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
-            return response.json()["response"]
+            result = response.json()["response"]
+
+        if cacheable:
+            self.cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
+        return result
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
