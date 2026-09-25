@@ -165,6 +165,41 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _detect_repeated_call(history: List[LoopStep]) -> str:
+    """Round 44 item J.1.4(c): real, evidence-based fix for a confirmed
+    failure mode - J.4.2's real Ollama integration testing (qwen2.5:7b)
+    hit this on 5/5 runs of the simplest possible safe task: the model
+    correctly chose the right tool and got a real, sufficient result, then
+    re-issued the EXACT SAME tool call again instead of recognizing the
+    goal was already answered, repeating until max_iterations_reached.
+    This is a completion-recognition failure, not a tool-selection
+    failure (tool_name/tool_args were correct every single time) - so
+    J.1.4(a)'s existing keyword-overlap pre-filtering (which narrows WHICH
+    tool to pick) does not address it, and neither would a generic "be
+    more directive" prompt tweak. This targets the exact observed
+    mechanism: when the most recent step used the identical
+    (tool_name, tool_args) as an earlier step in the same episode, name
+    that specific repeated call and its real prior result directly in the
+    prompt, and instruct the model explicitly not to repeat it. Returns
+    "" when no repeat is detected, so this is a no-op for every episode
+    that doesn't hit the failure mode (the common case)."""
+    if not history:
+        return ""
+    last = history[-1]
+    if last.tool_name is None:
+        return ""
+    for prior in history[:-1]:
+        if prior.tool_name == last.tool_name and prior.tool_args == last.tool_args:
+            return (
+                f"IMPORTANT: You already called {last.tool_name}({last.tool_args}) and "
+                f"received this result: {last.tool_result}. Calling it again with the same "
+                f"arguments will not produce new information. If this result already answers "
+                f"the goal, respond with action: finish now, using this result as your answer. "
+                f"Do not call {last.tool_name} with these exact arguments again."
+            )
+    return ""
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
@@ -177,8 +212,14 @@ async def decide_next_action(
     can inject real retrieved-skill text (rct_control_plane.skill_library's
     retrieve_similar_skills()) without this function needing to know
     anything about skills specifically. Defaults to "" (omitted from the
-    prompt entirely), so every existing caller's prompt is byte-for-byte
-    unchanged (Zero-Delete)."""
+    prompt entirely), so a caller supplying no extra_context sees an
+    unchanged prompt in that respect.
+
+    Round 44 (item J.1.4c): a second, always-on context section -
+    _detect_repeated_call() - is computed unconditionally from `history`
+    (not opt-in like extra_context) and prepended when non-empty, since
+    the failure mode it targets is a real, confirmed core-loop reliability
+    bug (see that function's own docstring), not an optional feature."""
     from rct_control_plane.llm_provider import get_default_provider
     provider = llm_provider or get_default_provider()
 
@@ -191,7 +232,8 @@ async def decide_next_action(
     # own docstring for the full compression/fallback contract.
     history_desc = render_history(history)
 
-    context_section = f"\n{extra_context}\n" if extra_context else ""
+    context_parts = [p for p in (_detect_repeated_call(history), extra_context) if p]
+    context_section = ("\n" + "\n\n".join(context_parts) + "\n") if context_parts else ""
 
     prompt = f"""You are an autonomous agent working toward this goal:
 {goal}
