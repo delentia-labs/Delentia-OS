@@ -236,6 +236,10 @@ class AutonomousLoop:
         goal: str,
         on_step: Optional[Callable[[LoopStep], Any]] = None,
         on_answer_token: Optional[Callable[[str], Any]] = None,
+        on_episode_start: Optional[Callable[[str], Any]] = None,
+        tool_filter: Optional[Callable[[str, List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        pre_dispatch_gate: Optional[Callable[[str, str, Dict[str, Any]], Any]] = None,
+        on_episode_end: Optional[Callable[[dict], Any]] = None,
     ) -> dict:
         """Round 37: `on_step` is an optional, real live-introspection
         hook - called once per real LoopStep as it's appended to history,
@@ -259,7 +263,34 @@ class AutonomousLoop:
         a real, disclosed cost/latency tradeoff (one extra LLM call only
         on the finish step, only when a caller actually wants streamed
         output) - defaults to None, so every existing caller's behavior
-        and cost profile is completely unchanged (Zero-Delete)."""
+        and cost profile is completely unchanged (Zero-Delete).
+
+        Round 44 (item J): four more optional hooks, added the same way
+        as on_step/on_answer_token above - every one defaults to None
+        and changes NOTHING for an existing caller. These exist so
+        GovernedAutonomousLoop (governed_autonomous_loop.py) can layer
+        real constitutional governance (FDIA/JITNA/RCT-7/Delta) on top
+        of this exact loop body instead of duplicating it in a
+        subclass override, which would drift from this method over
+        time. Each accepts a sync or async callable (same
+        awaited-if-awaitable pattern as on_step):
+          - on_episode_start(goal): called once, before the first
+            iteration.
+          - tool_filter(goal, available_tools) -> filtered_tools: called
+            every iteration, right before decide_next_action() - lets a
+            caller narrow the tool menu instead of always exposing the
+            full registry.
+          - pre_dispatch_gate(goal, tool_name, tool_args) -> Optional[dict]:
+            called right before a tool is actually dispatched (after the
+            existing pending_approval check above, which is unchanged).
+            Returning None means proceed as normal; returning a dict
+            means "block this call" and that dict MUST contain
+            "stopped_reason" (str) and "tool_result" (dict) - the loop
+            stops immediately with those values, the same way
+            pending_approval already does.
+          - on_episode_end(result): called once with the exact dict this
+            method is about to return, right before returning it.
+        """
         t_start = time.time()
         available_tools = await self._available_tools()
         history: list = []
@@ -273,12 +304,24 @@ class AutonomousLoop:
             if inspect.isawaitable(result):
                 await result
 
+        async def _maybe_await(value: Any) -> Any:
+            if inspect.isawaitable(value):
+                return await value
+            return value
+
+        if on_episode_start is not None:
+            await _maybe_await(on_episode_start(goal))
+
         for i in range(1, self.max_iterations + 1):
             if time.time() - t_start > self.max_seconds:
                 stopped_reason = "max_seconds_exceeded"
                 break
 
-            decision = await decide_next_action(goal, history, available_tools)
+            iteration_tools = available_tools
+            if tool_filter is not None:
+                iteration_tools = tool_filter(goal, available_tools)
+
+            decision = await decide_next_action(goal, history, iteration_tools)
 
             if decision.get("parse_error"):
                 stopped_reason = "parse_error"
@@ -321,6 +364,17 @@ class AutonomousLoop:
                     stopped_reason = "pending_approval"
                     break
 
+            if pre_dispatch_gate is not None:
+                gate_result = await _maybe_await(pre_dispatch_gate(goal, tool_name, tool_args))
+                if gate_result is not None:
+                    step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args,
+                                     tool_result=gate_result["tool_result"], llm_reasoning=decision["reasoning"])
+                    history.append(step)
+                    self._persist_step(step)
+                    await _notify(step)
+                    stopped_reason = gate_result["stopped_reason"]
+                    break
+
             try:
                 raw_result = await self._mcp.call_tool(tool_name, tool_args)
                 tool_result = json.loads(raw_result.content[0].text)
@@ -333,13 +387,16 @@ class AutonomousLoop:
             self._persist_step(step)
             await _notify(step)
 
-        return {
+        result = {
             "goal": goal,
             "steps": [vars(s) for s in history],
             "final_answer": final_answer,
             "iterations": len(history),
             "stopped_reason": stopped_reason,
         }
+        if on_episode_end is not None:
+            await _maybe_await(on_episode_end(result))
+        return result
 
     async def _stream_final_answer(
         self, goal: str, history: List[LoopStep], on_answer_token: Callable[[str], Any],
