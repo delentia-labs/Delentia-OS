@@ -213,7 +213,7 @@ pyannoteai-sdk==0.4.0
 pyarrow==24.0.0
 pycparser==3.0
 pydantic==2.12.5
-pydantic-settings==2.14.0
+pydantic-settings==2.14.2
 pydantic_core==2.41.5
 Pygments==2.21.0
 pyiceberg==0.11.1
