@@ -278,6 +278,57 @@ delentia reset [--force]
 
 ---
 
+### `delentia workflow run`
+
+Run a DAG workflow defined in a `.yaml` file through the real ALGO-20
+`WorkflowEngine` (real `networkx` DAG scheduling, real dependency-respecting
+sequential/parallel/hybrid execution) - added 2026-09-25 (Round 44 item I.1).
+This command builds `WorkflowEngine` directly rather than through the full
+41-algorithm kernel, so it starts immediately (no torch/FAISS import cost).
+
+```bash
+delentia workflow run path/to/workflow.yaml [--poll-interval SECONDS]
+```
+
+Schema (maps 1:1 onto the engine's existing `TaskConfig`/`WorkflowDefinition`
+- no new semantics invented):
+
+```yaml
+name: demo-workflow
+mode: sequential   # sequential | parallel | hybrid
+tasks:
+  - id: fuse1
+    type: fusion    # the only task type with a real executor today - see below
+    depends_on: []
+    config:
+      fusion_config:
+        modalities: {text: [0.1, 0.2, 0.3]}
+        fusion_strategy: hybrid
+  - id: fuse2
+    type: fusion
+    depends_on: [fuse1]
+    config:
+      fusion_config:
+        modalities: {text: [0.7, 0.8, 0.9]}
+```
+
+!!! warning "Only `type: fusion` has a real executor today"
+    `WorkflowEngine._run_task_type()` has a real executor for exactly one
+    task type (`"fusion"` - real ALGO-19 Data Fusion). Any other `type`
+    value is refused **at load time** by this command rather than silently
+    accepted and run as a no-op that the engine would otherwise still mark
+    `COMPLETED` (with an honest `"simulated": true` flag in its raw output,
+    but the scheduler does not distinguish it from real completion when
+    resolving downstream dependencies). Widen the allowlist in
+    `rct_control_plane/workflow_yaml_loader.py` only once a real executor
+    exists for a new type.
+
+The command exits `0` only if every task in the workflow reaches a real
+`completed` status; it exits `1` on a YAML/validation error or if any task
+fails.
+
+---
+
 !!! warning "Removed 2026-09-24: `delentia intent submit` and `delentia health` do not exist"
     Both sections used to appear here but describe commands that are not
     registered by the real CLI - confirmed against `python -m

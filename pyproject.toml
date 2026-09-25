@@ -47,6 +47,8 @@ dependencies = [
     # declaring explicitly rather than relying on them staying transitive.
     "httpx>=0.27.0",
     "structlog>=24.1.0",
+    "PyYAML>=6.0",  # Round 44 item I.1: DAG-workflow-YAML front-end (workflow_yaml_loader.py) -
+                    # was already importable as a transitive dep (fastapi/uvicorn), now used directly
 ]
 
 [project.optional-dependencies]

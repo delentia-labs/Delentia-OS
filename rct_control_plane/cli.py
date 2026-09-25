@@ -1999,6 +1999,65 @@ def start(verbose: bool, ui_test: bool, port: int, host: str, no_animation: bool
         signal.signal(signal.SIGINT, cast(signal.Handlers, original_sigint))
 
 
+@cli.group()
+def workflow():
+    """DAG-workflow-YAML commands (Round 44 item I.1) - run a workflow
+    defined in a .yaml file through the real ALGO-20 WorkflowEngine
+    (real networkx DAG scheduling), without touching the heavier
+    41-algorithm kernel (no torch/FAISS import cost for this command)."""
+
+
+@workflow.command("run")
+@click.argument("yaml_path", type=click.Path(exists=True))
+@click.option("--poll-interval", default=0.2, show_default=True, help="Seconds between execution-status polls.")
+def workflow_run(yaml_path: str, poll_interval: float) -> None:
+    """Run the DAG workflow defined in YAML_PATH."""
+    import asyncio
+
+    from rct_control_plane.algo_19_fusion import FusionEngine
+    from rct_control_plane.algo_20_workflow_orchestrator import (
+        ExecutionMode, IntegrationManager, WorkflowEngine, WorkflowStatus,
+    )
+    from rct_control_plane.workflow_yaml_loader import WorkflowYamlError, load_workflow_yaml
+
+    try:
+        name, tasks, mode = load_workflow_yaml(yaml_path)
+    except WorkflowYamlError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        raise SystemExit(1) from exc
+
+    async def _run() -> bool:
+        # Real WorkflowEngine + real FusionEngine, built directly rather
+        # than through AlgorithmKernel41 - the kernel's own capability
+        # registry wires WorkflowEngine the same way (hrm_scheduler=None,
+        # real FusionEngine), but importing the full kernel here would
+        # pull in torch/FAISS/diffusion/Whisper for algorithms this
+        # command never touches, turning a YAML-workflow run into a
+        # 20+ second cold start for no reason.
+        engine = WorkflowEngine(integration_manager=IntegrationManager(fusion_engine=FusionEngine()))
+        workflow_def = await engine.create_workflow(name=name, description=name, tasks=tasks)
+        execution = await engine.start_execution(workflow_def.id, mode=ExecutionMode(mode))
+
+        terminal = (WorkflowStatus.COMPLETED, WorkflowStatus.FAILED, WorkflowStatus.CANCELLED)
+        while execution.status not in terminal:
+            await asyncio.sleep(poll_interval)
+
+        click.echo(f"Workflow '{name}' ({execution.execution_id}): {execution.status.value}")
+        for task_id, task_exec in execution.task_executions.items():
+            output = task_exec.output or {}
+            suffix = " [simulated]" if output.get("simulated") else ""
+            line = f"  - {task_id}: {task_exec.status.value}{suffix}"
+            if task_exec.error:
+                line += f"  error={task_exec.error}"
+            click.echo(line)
+
+        return execution.status == WorkflowStatus.COMPLETED
+
+    succeeded = asyncio.run(_run())
+    if not succeeded:
+        raise SystemExit(1)
+
+
 def main():
     """Main entry point for CLI."""
     cli()
