@@ -15,6 +15,7 @@ test_cli_agent.py.
 """
 import json
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -129,6 +130,21 @@ class TestAgentRunEndpoint:
         ])
         resp = api_client.post("/v1/agent/run", json={"goal": "a goal", "namespace": "my-ns"})
         assert resp.json()["namespace"] == "my-ns"
+
+    def test_real_ollama_timeout_returns_a_clean_504_not_a_bare_500(self, api_client, patched_kernel_and_mcp, monkeypatch):
+        # Real, confirmed failure mode found running this endpoint's own
+        # J.4.3 real e2e script (scripts/real_agent_e2e_manual_check.py)
+        # against a real local Ollama instance under load - a real
+        # httpx.TimeoutException must surface as a clean 504 with an
+        # honest message, not an unhandled 500 exposing a full internal
+        # stack trace to the HTTP caller.
+        async def _raise_timeout(goal, history, available_tools, llm_provider=None, extra_context=""):
+            raise httpx.ReadTimeout("real simulated timeout")
+
+        monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _raise_timeout)
+        resp = api_client.post("/v1/agent/run", json={"goal": "a goal"})
+        assert resp.status_code == 504
+        assert "timed out" in resp.json()["detail"]
 
     def test_max_iterations_is_respected(self, api_client, patched_kernel_and_mcp, monkeypatch):
         fake_mcp, _ = patched_kernel_and_mcp

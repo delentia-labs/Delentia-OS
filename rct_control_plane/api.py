@@ -1703,6 +1703,8 @@ class ControlPlaneAPI:
         async def run_governed_agent(payload: Dict[str, Any]):
             import uuid
 
+            import httpx
+
             from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
             from rct_control_plane.mcp_server import _kernel as shared_kernel
             from rct_control_plane.mcp_server import mcp as shared_mcp
@@ -1719,7 +1721,26 @@ class ControlPlaneAPI:
                 mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
                 max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace,
             )
-            result = await loop.run(goal)
+            try:
+                result = await loop.run(goal)
+            except httpx.TimeoutException as e:
+                # Real, confirmed failure mode (found running this
+                # endpoint's own J.4.3 real e2e check, scripts/
+                # real_agent_e2e_manual_check.py): a real local Ollama
+                # call can genuinely time out under CPU load - this
+                # session documented the same httpx.ReadTimeout pattern
+                # recurring in CI multiple times (unrelated to this
+                # endpoint, same root cause: real CPU-only inference
+                # time variance, not a code bug). Previously this
+                # propagated as an unhandled exception -> a bare 500
+                # with a full internal stack trace exposed to the HTTP
+                # caller. A real, understood, sometimes-recurring
+                # timeout deserves an honest 504 with a clear message,
+                # not a stack trace.
+                raise HTTPException(
+                    status_code=504,
+                    detail=f"the local LLM backend timed out mid-episode (namespace={namespace}): {e}",
+                ) from e
             result["namespace"] = namespace
             return result
 
