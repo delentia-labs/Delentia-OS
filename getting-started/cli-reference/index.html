@@ -829,6 +829,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#delentia-workflow-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delentia workflow run
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2393,6 +2404,49 @@ tier, and policy decisions.</p>
 Persisted audit logs are <strong>not</strong> deleted.</p>
 </div>
 <hr />
+<h3 id="delentia-workflow-run"><code>delentia workflow run</code><a class="headerlink" href="#delentia-workflow-run" title="Permanent link">&para;</a></h3>
+<p>Run a DAG workflow defined in a <code>.yaml</code> file through the real ALGO-20
+<code>WorkflowEngine</code> (real <code>networkx</code> DAG scheduling, real dependency-respecting
+sequential/parallel/hybrid execution) - added 2026-09-25 (Round 44 item I.1).
+This command builds <code>WorkflowEngine</code> directly rather than through the full
+41-algorithm kernel, so it starts immediately (no torch/FAISS import cost).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>delentia<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>path/to/workflow.yaml<span class="w"> </span><span class="o">[</span>--poll-interval<span class="w"> </span>SECONDS<span class="o">]</span>
+</span></code></pre></div>
+<p>Schema (maps 1:1 onto the engine's existing <code>TaskConfig</code>/<code>WorkflowDefinition</code>
+- no new semantics invented):</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">demo-workflow</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span><span class="w">   </span><span class="c1"># sequential | parallel | hybrid</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="nt">tasks</span><span class="p">:</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fuse1</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fusion</span><span class="w">    </span><span class="c1"># the only task type with a real executor today - see below</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">      </span><span class="nt">fusion_config</span><span class="p">:</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">        </span><span class="nt">modalities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">text</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.3</span><span class="p p-Indicator">]}</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">        </span><span class="nt">fusion_strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hybrid</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fuse2</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fusion</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fuse1</span><span class="p p-Indicator">]</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="w">      </span><span class="nt">fusion_config</span><span class="p">:</span>
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="w">        </span><span class="nt">modalities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">text</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.7</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.8</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.9</span><span class="p p-Indicator">]}</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Only <code>type: fusion</code> has a real executor today</p>
+<p><code>WorkflowEngine._run_task_type()</code> has a real executor for exactly one
+task type (<code>"fusion"</code> - real ALGO-19 Data Fusion). Any other <code>type</code>
+value is refused <strong>at load time</strong> by this command rather than silently
+accepted and run as a no-op that the engine would otherwise still mark
+<code>COMPLETED</code> (with an honest <code>"simulated": true</code> flag in its raw output,
+but the scheduler does not distinguish it from real completion when
+resolving downstream dependencies). Widen the allowlist in
+<code>rct_control_plane/workflow_yaml_loader.py</code> only once a real executor
+exists for a new type.</p>
+</div>
+<p>The command exits <code>0</code> only if every task in the workflow reaches a real
+<code>completed</code> status; it exits <code>1</code> on a YAML/validation error or if any task
+fails.</p>
+<hr />
 <div class="admonition warning">
 <p class="admonition-title">Removed 2026-09-24: <code>delentia intent submit</code> and <code>delentia health</code> do not exist</p>
 <p>Both sections used to appear here but describe commands that are not
@@ -2407,14 +2461,14 @@ work, not a documentation fix.</p>
 <h2 id="shell-completion">Shell Completion<a class="headerlink" href="#shell-completion" title="Permanent link">&para;</a></h2>
 <p>Enable tab-completion for <code>bash</code>, <code>zsh</code>, or <code>fish</code> (Click derives the
 completion env var name from the real program name, <code>delentia</code>, not <code>rct</code>):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># bash</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>bash_source<span class="w"> </span>delentia<span class="k">)</span><span class="s2">"</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="c1"># zsh</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>zsh_source<span class="w"> </span>delentia<span class="k">)</span><span class="s2">"</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="c1"># fish</span>
-</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="nb">eval</span><span class="w"> </span><span class="o">(</span>env<span class="w"> </span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>fish_source<span class="w"> </span>delentia<span class="o">)</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># bash</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>bash_source<span class="w"> </span>delentia<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># zsh</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>zsh_source<span class="w"> </span>delentia<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="c1"># fish</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="nb">eval</span><span class="w"> </span><span class="o">(</span>env<span class="w"> </span><span class="nv">_DELENTIA_COMPLETE</span><span class="o">=</span>fish_source<span class="w"> </span>delentia<span class="o">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
