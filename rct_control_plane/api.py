@@ -1338,23 +1338,22 @@ class ControlPlaneAPI:
                 "simulated": mux.mock_mode,
             }
 
-        @self.app.get("/delentia/system/stats")
-        async def get_delentia_system_stats():
-            """Retrieve real-time system stats, FDIA history, and algorithm health."""
-            return {
-                "status": "ONLINE",
-                "version": "2.2.6",
-                "uptime_seconds": 3600,
-                "fdia_history": [0.95, 0.96, 0.98, 0.97, 0.98, 0.99, 0.98, 0.97, 0.98, 0.99],
-                "active_adapters": ["executor", "guardian", "scribe", "router"],
-                "total_algorithms": 41,
-                "algorithms_healthy": 41,
-                "total_microservices": 62,
-                "microservices_healthy": 62,
-                "vram_usage_mb": 4380,
-                "vram_limit_mb": 6144,
-                "device_target": "ROG Ally X / AMD Ryzen Z1 Extreme"
-            }
+        # Round 44 item G (2026-09-25): a SECOND @app.get("/delentia/system/
+        # stats") route used to be registered here, entirely hardcoded/
+        # fabricated (fake uptime_seconds=3600 always, a fake static
+        # fdia_history array, fake vram_usage_mb/device_target strings, and
+        # the same already-flagged-elsewhere inflated microserviceCount=62)
+        # - found while bumping the version string this round (it had its
+        # own separate hardcoded "2.2.6"). Confirmed dead code, not just bad
+        # code: get_system_stats_endpoint() above registers the SAME path
+        # earlier in this method, and Starlette/FastAPI's router matches
+        # the first-registered route for a given path+method, so this
+        # second block could never actually execute on any real request.
+        # Removed rather than "fixed" - fixing fabricated data in
+        # unreachable code has no real effect, and a live, confusing,
+        # never-executing duplicate is worse than no duplicate at all. The
+        # real, tested, already-correct implementation is
+        # get_system_stats_endpoint() above (Round 35).
 
         @self.app.get("/v1/memory/history")
         async def get_memory_delta_history(limit: int = Query(20, ge=1, le=100)):
