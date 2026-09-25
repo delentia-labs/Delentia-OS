@@ -251,20 +251,24 @@ async def health_check():
         "services": {}
     }
     
-    # Check Genome API
+    # Check Genome API. Real, confirmed bug fixed 2026-09-25 (found via an
+    # actual `docker run` + `curl /health` verification, not guessed):
+    # this used to `from genome_api import get_manager; get_manager()` -
+    # genome_api.py has never defined a get_manager function (it's a
+    # deliberate, honest public-SDK 501-stub - see its own module
+    # docstring - whose only real state is the _ENTERPRISE_AVAILABLE
+    # constant). That always raised ImportError, caught below and
+    # misreported as "degraded" with a stale-looking traceback string,
+    # when the real, accurate status is "unavailable" - genome_api.py's
+    # own /api/genome/health route already reports exactly that. This now
+    # reports the same real status genome_api.py's own health endpoint
+    # does, instead of probing a function that was never real.
     if genome_available:
-        try:
-            from genome_api import get_manager
-            get_manager()
-            health_status["services"]["genome"] = {
-                "status": "healthy",
-                "genome_version": "4.0"
-            }
-        except Exception as e:
-            health_status["services"]["genome"] = {
-                "status": "degraded",
-                "error": str(e)
-            }
+        health_status["services"]["genome"] = (
+            {"status": "healthy", "genome_version": "4.0"}
+            if genome_api._ENTERPRISE_AVAILABLE
+            else {"status": "unavailable", "detail": genome_api._ENTERPRISE_UNAVAILABLE_DETAIL}
+        )
     else:
         health_status["services"]["genome"] = {"status": "unavailable"}
     

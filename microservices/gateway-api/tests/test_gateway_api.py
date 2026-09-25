@@ -115,13 +115,19 @@ class TestGatewayHealthCheck:
         assert "services" in data
 
     def test_health_reports_genome_service_status(self):
+        # Round 44 (2026-09-25): tightened after a real docker-run
+        # verification surfaced that gateway_main.py's old genome health
+        # probe called a get_manager() function that never existed in
+        # genome_api.py, always raising ImportError and being reported as
+        # "degraded" - fixed to check genome_api._ENTERPRISE_AVAILABLE
+        # (the real, honest flag genome_api.py's own /api/genome/health
+        # route already uses), which is permanently False in this public
+        # repo - so "degraded" can no longer occur at all.
         import gateway_main
         client = _get_client()
         data = client.get("/health").json()
-        expected = "healthy" if gateway_main.genome_available else "unavailable"
-        # "healthy" also covers the "degraded" branch honestly - either real
-        # outcome of an actually-available genome service is acceptable here.
-        assert data["services"]["genome"]["status"] in (expected, "degraded")
+        expected = "healthy" if gateway_main.genome_available and gateway_main.genome_api._ENTERPRISE_AVAILABLE else "unavailable"
+        assert data["services"]["genome"]["status"] == expected
 
     def test_health_reports_signedai_service_status(self):
         import gateway_main
