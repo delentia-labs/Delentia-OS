@@ -1684,6 +1684,45 @@ class ControlPlaneAPI:
                 "source": "python_kernel_real_computation",
             }
 
+        # Round 44 Phase J.3: the real HTTP entry point for
+        # GovernedAutonomousLoop (items J.1/J.2/I.2 - FDIA gate, JITNA
+        # signing, RCT-7 decomposition, Delta persistence, Skill Library
+        # retrieval/extraction), following the exact same real-bridge
+        # pattern /v1/kernel/fdia/evaluate above already proved works
+        # (delentia-mcp-ecosystem/tests/real_bridge_e2e_manual_check.mjs).
+        # Deliberately reuses mcp_server.py's real `_kernel`/`mcp` objects
+        # (the same pair `delentia agent`'s CLI command and
+        # delegate_to_profile() already share) rather than this file's own
+        # separate ALGORITHM_KERNEL singleton - mcp.call_tool() internally
+        # reads/writes state through mcp_server._kernel for several real
+        # tools (e.g. delentia_query_audit_log), so using a different
+        # kernel instance here for FDIA/RCT-7 while tool dispatch used
+        # mcp_server's would split state across two independent kernels
+        # for the same request.
+        @self.app.post("/v1/agent/run", tags=["Kernel"])
+        async def run_governed_agent(payload: Dict[str, Any]):
+            import uuid
+
+            from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.mcp_server import mcp as shared_mcp
+
+            goal = payload.get("goal")
+            if not goal:
+                raise HTTPException(status_code=400, detail="'goal' is required")
+
+            namespace = payload.get("namespace") or f"http-agent-{uuid.uuid4().hex[:8]}"
+            max_iterations = int(payload.get("max_iterations", 5))
+            max_seconds = float(payload.get("max_seconds", 120.0))
+
+            loop = GovernedAutonomousLoop(
+                mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
+                max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace,
+            )
+            result = await loop.run(goal)
+            result["namespace"] = namespace
+            return result
+
         # ---------------------------------------------------------------------
         # LoRA Forge Universal Multimodal Training Service
         # ---------------------------------------------------------------------

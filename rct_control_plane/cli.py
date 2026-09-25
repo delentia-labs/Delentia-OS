@@ -2058,6 +2058,54 @@ def workflow_run(yaml_path: str, poll_interval: float) -> None:
         raise SystemExit(1)
 
 
+@cli.command("agent")
+@click.argument("goal")
+@click.option("--max-iterations", default=5, show_default=True, help="Episode iteration cap.")
+@click.option("--max-seconds", default=120.0, show_default=True, help="Episode wall-clock budget in seconds.")
+@click.option("--namespace", default=None, help="Persistence/JITNA namespace (defaults to a fresh id per run).")
+def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str]) -> None:
+    """Run GOAL through the real, governed autonomous agent loop (Round 44
+    Phase J.3) - FDIA gate, JITNA signing, RCT-7 decomposition, Delta
+    persistence, and Skill Library retrieval/extraction all wired in
+    (GovernedAutonomousLoop, items J.1/J.2/I.2). Reuses the same real
+    kernel and MCP tool registry mcp_server.py's own delentia_autonomous_loop/
+    delentia_delegate tools already share (agent_profile.py's
+    delegate_to_profile established this exact reuse pattern first) -
+    not a second, independent kernel instance."""
+    import asyncio
+    import uuid
+
+    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+    from rct_control_plane.mcp_server import _kernel, mcp
+
+    ns = namespace or f"cli-agent-{uuid.uuid4().hex[:8]}"
+
+    async def _run() -> dict:
+        loop = GovernedAutonomousLoop(
+            mcp_server=mcp, persistence=_kernel._persistence, kernel=_kernel,
+            max_iterations=max_iterations, max_seconds=max_seconds, namespace=ns,
+        )
+        return await loop.run(goal)
+
+    result = asyncio.run(_run())
+
+    click.echo(f"namespace: {ns}")
+    click.echo(f"stopped_reason: {result['stopped_reason']}")
+    click.echo(f"iterations: {result['iterations']}")
+    for step in result["steps"]:
+        if step.get("tool_name"):
+            suffix = ""
+            tool_result = step.get("tool_result") or {}
+            if isinstance(tool_result, dict) and tool_result.get("fdia_blocked"):
+                suffix = "  [FDIA BLOCKED]"
+            click.echo(f"  - {step['tool_name']}({step['tool_args']}) -> {tool_result}{suffix}")
+    if result.get("final_answer"):
+        click.echo(f"\nfinal_answer:\n{result['final_answer']}")
+
+    if result["stopped_reason"] == "fdia_blocked":
+        raise SystemExit(1)
+
+
 def main():
     """Main entry point for CLI."""
     cli()
