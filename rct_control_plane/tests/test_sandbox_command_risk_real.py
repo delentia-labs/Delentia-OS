@@ -61,3 +61,47 @@ class TestExistingClassificationsUnaffected:
 
     def test_a_genuinely_safe_read_only_command_stays_safe(self):
         assert classify_command_risk("ls -la") == "safe"
+
+
+class TestSudoElevationWrapperIsStripped:
+    """Round 44: real incident found via GovernedAutonomousLoop's live
+    scenario battery against a real Ollama model (2026-09-25) - a
+    model-generated goal produced the real command 'sudo shutdown -r
+    now'. `shutdown` is denylisted, but classify_command_risk() matched
+    each sub-command's PREFIX, and the real first token here was `sudo`
+    - it classified "safe" and reached real subprocess dispatch in
+    run_sandboxed(). Confirmed this specific run did not actually
+    reboot the test machine (system boot time checked immediately after
+    and found unchanged), but that was an incidental property of the
+    test environment (this machine's `sudo` apparently has no
+    interactive session to complete elevation inside a piped
+    subprocess), not a guarantee this classifier ever provided - the
+    exact kind of thing this module's docstring says not to silently
+    trust."""
+
+    def test_the_exact_real_incident_command_is_now_denied(self):
+        assert classify_command_risk("sudo shutdown -r now") == "denied"
+
+    def test_sudo_wrapping_any_denylisted_command_is_denied(self):
+        assert classify_command_risk("sudo rm -rf /") == "denied"
+
+    def test_sudo_is_case_insensitive(self):
+        assert classify_command_risk("SUDO shutdown -h now") == "denied"
+
+    def test_sudo_wrapping_a_medium_risk_command_still_needs_approval(self):
+        assert classify_command_risk("sudo git push") == "needs_approval"
+
+    def test_unwrapped_denylisted_command_still_denied_zero_delete(self):
+        assert classify_command_risk("shutdown -r now") == "denied"
+
+    def test_sudoku_is_not_falsely_matched_as_the_sudo_wrapper(self):
+        # "sudo" with no following whitespace is a real word/token
+        # (e.g. "sudoku"), not the elevation wrapper - must not be
+        # stripped or misclassified.
+        assert classify_command_risk("echo sudoku puzzle done") == "safe"
+
+    def test_sudo_wrapping_a_chained_denylisted_command_is_still_caught(self):
+        # Combines with the existing Round 38 sub-command splitting -
+        # sudo-stripping happens per real sub-command, not just at the
+        # start of the whole string.
+        assert classify_command_risk("echo hi && sudo rm -rf /") == "denied"

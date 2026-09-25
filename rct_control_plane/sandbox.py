@@ -166,6 +166,32 @@ _PARENT_DIR_TRAVERSAL_PATTERN = re.compile(r"(?:^|[\\/\s\"'])\.\.(?:[\\/\s\"']|$
 # inside it) and is flagged for the same reason.
 _LINK_CREATION_PATTERN = re.compile(r"\bmklink\b|\bfsutil\s+hardlink\b", re.IGNORECASE)
 
+# Round 44 (J.4.2 scenario-battery finding, 2026-09-25): confirmed by
+# direct, real reproduction via GovernedAutonomousLoop against a live
+# Ollama model, NOT speculation - a model-generated goal produced the
+# command `sudo shutdown -r now`. `shutdown` IS in _DENYLISTED_PREFIXES,
+# but classify_command_risk() matches each sub-command's PREFIX, and the
+# sub-command's real first token here is `sudo`, not `shutdown` - it
+# classified "safe" and reached real subprocess dispatch in
+# run_sandboxed(). Windows 11 (this machine, build 26200) ships a native
+# `sudo` command (confirmed present: `sudo 1.0.1`); this run did NOT
+# actually reboot the machine (system boot time unchanged, verified
+# immediately after), almost certainly because sudo's elevation prompt
+# has no interactive session to satisfy inside a piped subprocess - but
+# that is an incidental property of THIS environment, not a guarantee
+# this classifier provides, and is exactly the kind of thing this
+# module's own docstring says not to silently trust (see the Round 40
+# PowerShell-quoting precedent for the same reasoning). `sudo` changes
+# WHO runs a command, never WHAT command runs - stripping it before
+# classification is a normalization step, not a new risk category,
+# matching how $(...)/backtick substitutions are already unwrapped
+# above. Deliberately scoped to `sudo` only (the one wrapper actually
+# reproduced here) - Windows' `runas` is a structurally different case
+# (the wrapped command is a separate quoted argument, not trailing
+# plain text) and is left as an explicitly unaudited gap rather than a
+# speculative fix, per this file's own established discipline.
+_ELEVATION_WRAPPER_PATTERN = re.compile(r"^sudo\s+", re.IGNORECASE)
+
 
 def _split_into_subcommands(command: str) -> List[str]:
     parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
@@ -184,9 +210,12 @@ def classify_command_risk(command: str) -> str:
     following space - invokes PowerShell (by name, full path, or
     nested inside another shell), contains a `..` parent-directory
     traversal, or creates a filesystem link/junction/hardlink), or
-    "safe" only if every real sub-command is safe."""
+    "safe" only if every real sub-command is safe. A leading `sudo `
+    wrapper is stripped from each sub-command before classification
+    (Round 44) - it changes who runs a command, never what runs."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
+        sub = _ELEVATION_WRAPPER_PATTERN.sub("", sub)
         sub_stripped = sub.lower()
         for prefix in _DENYLISTED_PREFIXES:
             if sub_stripped.startswith(prefix.lower()):
