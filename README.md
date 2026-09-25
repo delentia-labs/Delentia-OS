@@ -3,12 +3,12 @@
 [![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
-[![Version](https://img.shields.io/badge/version-2.2.6-blue)](CHANGELOG.md)
-[![PyPI](https://img.shields.io/badge/PyPI-v2.2.6-gold)](https://pypi.org/project/delentia-os/)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue)](CHANGELOG.md)
+[![PyPI](https://img.shields.io/badge/PyPI-v2.3.0-gold)](https://pypi.org/project/delentia-os/)
 [![npm](https://img.shields.io/badge/npm-%40delentia%2Fdelentia--os-cb3837?logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Docs](https://img.shields.io/badge/docs-rctlabs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/Delentia-OS/)
+[![Docs](https://img.shields.io/badge/docs-delentia--labs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/Delentia-OS/)
 [![Status](https://img.shields.io/badge/status-STABLE%20SDK-brightgreen)](CHANGELOG.md)
 [![Website](https://img.shields.io/badge/website-delentia.com-brightgreen)](https://delentia.com)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/Delentia-OS/blob/main/notebooks/rct_playground.ipynb)
@@ -103,7 +103,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | rct-edge (TypeScript Edge Package) | ✅ `sdk-typescript/packages/rct-edge/` | — |
 | fdia-wasm (TypeScript WebAssembly Package) | ✅ `sdk-typescript/packages/fdia-wasm/` | — |
 | 5 Reference Microservices | ✅ `microservices/` (297 passing tests) | — |
-| CLI (`rct` entry point) | ✅ editable install or built wheel | — |
+| CLI (`delentia` entry point) | ✅ editable install or built wheel | — |
 | Genome / Creator Profile API | ❌ 501 stub (`genome_api.py`) | ✅ Full implementation |
 | Full Production Microservice Stack | ❌ | ✅ 62 microservices |
 | Enterprise Dashboard | ❌ | ✅ |
@@ -169,13 +169,13 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│               RCT PLATFORM SDK v2.0.0                    │
+│               DELENTIA OS SDK v2.3.0                     │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
 Layer 11: CI/CD & Quality Gates
 ├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ 2,369 passing tests (see TESTING_CANONICAL.md for the current checkpoint and known caveats) · 75.02% local / 72% CI floor coverage · Python 3.10/3.11/3.12
+├─ See docs/testing/TESTING_CANONICAL.md for the current, live test/coverage checkpoint (this number moves every round - do not hardcode it in two places that can drift apart, see Round 44's own audit) · Python 3.10/3.11/3.12
 └─ E2E integration tests (no Docker required)
 
 Layer 10: Enterprise Hardening
@@ -466,9 +466,9 @@ Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `i
 
 ### Enterprise CLI Commands (v1.1.0)
 
-> **Historical, not currently runnable (noted 2026-09-24):** this block
-> describes v1.1.0's command surface; the current public CLI (`delentia`,
-> v2.2.6) does not have `plan`, `apply`, `memory`, `policy`, or `approve`
+> **Historical, not currently runnable (noted 2026-09-24, version note updated 2026-09-25):** this block
+> describes v1.1.0's command surface; the current public CLI (`delentia`)
+> does not have `plan`, `apply`, `memory`, `policy`, or `approve`
 > commands - confirmed against `delentia --help`'s real, current command
 > list (`adapter, audit, build, chat, compile, doctor, evaluate,
 > governance, init, list, logs, metrics, replay, reset, serve, start,
@@ -476,7 +476,10 @@ Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `i
 > are real modules with real logic (see "Available modules" above), just
 > not wired to any CLI command today. Also: `rct` here means the CLI's
 > old name - the real, current command is `delentia` (`pyproject.toml`'s
-> `delentia = "rct_control_plane.cli:main"`).
+> `delentia = "rct_control_plane.cli:main"`). The `rct serve` line's own
+> `(GET /metrics for Prometheus)` sub-claim is also fabricated - see the
+> API Contract table's own correction below; no route in this repo has
+> ever exposed `/metrics`, in v1.1.0 or since.
 
 ```bash
 # Lifecycle
@@ -593,12 +596,12 @@ Five reference microservices demonstrating production patterns:
 | Service | Port | Description |
 |---------|------|-------------|
 | `intent-loop` | 8001 | Core FDIA execution loop |
-| `analysearch-intent` | 8002 | Semantic search + intent analysis |
-| `vector-search` | 8003 | Vector similarity search over RCTDB |
+| `analysearch-intent` | 8020 | Semantic search + intent analysis |
+| `vector-search` | 8016 | Vector similarity search over RCTDB |
 | `crystallizer` | 8004 | Output crystallization + fact verification |
 | `gateway-api` | 8000 | Unified entry point + rate limiting |
 
-Each service includes a `Dockerfile` and follows the OpenAPI contract in `contracts/openapi.yaml`.
+Each service includes a `Dockerfile` and follows the OpenAPI contract in `contracts/openapi.yaml`. All 5 build, run, and report `healthy` under `docker compose up --build` (verified for real 2026-09-25, see `microservices/docker-compose.yml`'s own port mapping, which these match).
 
 ---
 
@@ -622,9 +625,10 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Service health |
-| `/metrics` | GET | Prometheus metrics |
 | `/v1/kernel/execute` | POST | Execute RCT Kernel with intent |
 | `/v1/rctdb/query` | POST | Query RCTDB knowledge vault |
+
+> **Corrected 2026-09-24/25:** `GET /metrics` for Prometheus does not exist in this repo's real routes (`rct_control_plane/api.py`, `microservices/*/gateway_main.py`/`main.py`) - confirmed via grep, no route registers that path. This same fabricated claim was found and fixed twice already this session in `docs/architecture/observability.md` and `docs/getting-started/cli-reference.md`; this was the third occurrence, in this README. `config/prometheus.yml` exists as a scrape-target config file, but nothing in this repo currently exposes a `/metrics` endpoint for it to scrape.
 
 ---
 
@@ -657,7 +661,7 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
-│  ├─ delta_engine/             # Memory Delta Engine (74% compression)
+│  ├─ delta_engine/             # Memory Delta Engine (91.5% measured, ≥74% design floor)
 │  └─ regional_adapter/         # 8-market language routing
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
@@ -673,8 +677,8 @@ delentia-os/
 ├─ github-action/               # rct-policy-gate GitHub Action (Node 20)
 ├─ microservices/               # 5 reference microservices
 │  ├─ intent-loop/              # Core FDIA execution loop (port 8001)
-│  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8002)
-│  ├─ vector-search/            # RCTDB semantic search (port 8003)
+│  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8020)
+│  ├─ vector-search/            # RCTDB semantic search (port 8016)
 │  ├─ crystallizer/             # Output crystallization (port 8004)
 │  └─ gateway-api/              # Unified entry + rate limiting (port 8000)
 ├─ config/                      # Configuration files
@@ -760,7 +764,7 @@ This is not a research paper. It runs in production at [delentia.com](https://de
 | **X / Twitter** | [@ittirit_rct](https://x.com/ittirit_rct) |
 | **Reddit** | [u/WindLate5307](https://www.reddit.com/user/WindLate5307/) |
 | **BIO** | [ittiritsaengow.link](https://ittiritsaengow.link) |
-| **Docs** | [rctlabs.github.io/delentia-os](https://delentia-labs.github.io/delentia-os/) |
+| **Docs** | [delentia-labs.github.io/Delentia-OS](https://delentia-labs.github.io/Delentia-OS/) |
 | **Location** | Klong Toei, Bangkok, Thailand 🇹🇭 |
 | **Started** | June 2025 |
 | **Turning Point** | August 11, 2025 |
@@ -777,7 +781,8 @@ This is not a research paper. It runs in production at [delentia.com](https://de
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
 | May 2026 | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, PyPI v1.0.4b0 live |
-| June 2026 (current) | Enterprise Platform v1.1.0 — Plan/Apply/Memory/Policy/Approve CLI, TypeScript SDK, GitHub Action, OTel + Prometheus + Grafana, 800 tests 0 failed |
+| June 2026 | Enterprise Platform v1.1.0 — Plan/Apply/Memory/Policy/Approve CLI, TypeScript SDK, GitHub Action, OTel + Prometheus + Grafana, 800 tests 0 failed |
+| Sep 2026 (current) | Round 41-44 engineering pass — CI fully green (was red ~4 weeks), all 41/41 algorithms confirmed real, GovernedAutonomousLoop wires FDIA/JITNA/RCT-7/Delta into the agent loop for the first time, DAG-workflow-YAML + Skill Library re-application shipped, all 5 reference microservices verified via real `docker compose up`, dozens of fabricated numbers found and corrected across docs/CLI/README - see [CHANGELOG.md](CHANGELOG.md) for the itemized commit history |
 
 > See [ROADMAP.md](ROADMAP.md) for what comes next.
 

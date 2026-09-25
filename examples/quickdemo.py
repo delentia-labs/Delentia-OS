@@ -324,7 +324,7 @@ def main() -> None:
             "Next steps:\n"
             "  → [bold]delentia compile 'Protect resources from hostile agents'[/bold]\n"
             "  → [bold]delentia status[/bold]  /  [bold]delentia governance[/bold]  /  [bold]delentia timeline[/bold]\n"
-            "  → Docs:   https://rctlabs.github.io/delentia-os\n"
+            "  → Docs:   https://delentia-labs.github.io/Delentia-OS\n"
             "  → GitHub: https://github.com/delentia-labs/delentia-os",
             title="[bold]Summary[/bold]",
             border_style="green",
