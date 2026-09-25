@@ -83,10 +83,18 @@ class OllamaProvider(LLMProvider):
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-        cacheable = self.cache is not None and temperature <= self._CACHEABLE_TEMPERATURE_MAX
+        # A local `cache` binding (rather than repeated `self.cache` checks)
+        # so mypy can actually narrow Optional[TopicCache] -> TopicCache at
+        # each real call site below - `self.cache` is a mutable attribute,
+        # so mypy never trusts a narrowing derived from it to still hold a
+        # few lines later, even behind an `if cacheable:` guard computed
+        # from the exact same check (a real error CI caught: "Item None of
+        # TopicCache | None has no attribute get/put").
+        cache = self.cache
+        cacheable = cache is not None and temperature <= self._CACHEABLE_TEMPERATURE_MAX
 
-        if cacheable:
-            cached = self.cache.get(full_prompt, full_prompt)
+        if cacheable and cache is not None:
+            cached = cache.get(full_prompt, full_prompt)
             if cached is not None:
                 return cached
 
@@ -99,8 +107,8 @@ class OllamaProvider(LLMProvider):
             response.raise_for_status()
             result = response.json()["response"]
 
-        if cacheable:
-            self.cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
+        if cacheable and cache is not None:
+            cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
         return result
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,

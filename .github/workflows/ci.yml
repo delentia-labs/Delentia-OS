@@ -168,8 +168,21 @@ jobs:
           cache: "pip"
 
       - name: Install tools
+        # Real, confirmed bug fixed 2026-09-25: this used to install
+        # mypy/bandit/ruff with no version pins at all, unlike every other
+        # dependency in this repo. CI silently picked up ruff 0.16.9 (this
+        # repo's own pin, requirements.lock.txt, says 0.15.21) - ruff's
+        # formatter changed its default output between those versions,
+        # so `ruff format --check` suddenly wanted to reformat 302 files
+        # that were never touched by whatever commit happened to be the
+        # first one CI ran against after ruff released 0.16. That specific
+        # step already has continue-on-error: true so it didn't block CI,
+        # but the exact same unpinned-install pattern also silently moved
+        # mypy from this repo's pinned 2.3.0 to 2.3.1 - a real, if minor,
+        # source of "works on my machine, fails on CI" confusion this
+        # round hit directly. Pinned to match requirements.lock.txt.
         run: |
-          pip install mypy bandit ruff
+          pip install "mypy==2.3.0" "bandit==1.9.4" "ruff==0.15.21"
 
       - name: Ruff lint
         run: |
