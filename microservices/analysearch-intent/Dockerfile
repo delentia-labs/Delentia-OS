@@ -2,6 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Needed by the HEALTHCHECK below - python:3.11-slim doesn't include curl
+# by default. Real, confirmed bug fixed 2026-09-25 (found seconds after
+# adding the HEALTHCHECK directive: `docker compose up` reported this
+# service "unhealthy" despite the app itself responding fine to an
+# external curl from the host - `docker exec ... which curl` proved curl
+# genuinely didn't exist inside the container at all, so the internal
+# healthcheck command failed with exit 127 every time, not a real app
+# problem).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
