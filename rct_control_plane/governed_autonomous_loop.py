@@ -96,10 +96,10 @@ from __future__ import annotations
 import math
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from rct_control_plane.algo_25_delta_block import DeltaBlock, DeltaDiff, DeltaEngine, DeltaType
-from rct_control_plane.autonomous_loop import AutonomousLoop
+from rct_control_plane.autonomous_loop import AutonomousLoop, LoopStep
 from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.jitna_protocol import (
     JITNAKeypair, JITNAMessageType, JITNAPacket, generate_keypair, sign_packet, verify_packet,
@@ -221,19 +221,47 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._kernel = AlgorithmKernel41()
         return self._kernel
 
-    async def run(self, goal: str, **kwargs: Any) -> dict:
-        """Same signature/return shape as AutonomousLoop.run() - governance
-        hooks are wired in here so a caller invokes this exactly like the
-        base class. Any of the base hooks (on_step, on_answer_token) a
-        caller also wants still work normally via **kwargs."""
+    async def run(
+        self,
+        goal: str,
+        on_step: Optional[Callable[[LoopStep], Any]] = None,
+        on_answer_token: Optional[Callable[[str], Any]] = None,
+        on_episode_start: Optional[Callable[[str], Any]] = None,
+        tool_filter: Optional[Callable[[str, List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        pre_dispatch_gate: Optional[Callable[[str, str, Dict[str, Any]], Any]] = None,
+        on_episode_end: Optional[Callable[[dict], Any]] = None,
+        extra_context_provider: Optional[Callable[[], str]] = None,
+    ) -> dict:
+        """Mirrors AutonomousLoop.run()'s real signature exactly (mypy
+        checks override compatibility structurally - a **kwargs: Any
+        override doesn't satisfy it) rather than the previous `**kwargs`
+        version. That version had a latent bug this signature also fixes:
+        a caller who passed on_episode_start=... (or any of the other 4
+        governance hooks) through **kwargs would have collided with this
+        method's own explicit on_episode_start=self._on_episode_start
+        below, crashing with "got multiple values for keyword argument"
+        at runtime. GovernedAutonomousLoop always supplies its own five
+        governance hooks, so passing any of them here is rejected
+        outright instead of silently colliding or being silently
+        overridden - on_step/on_answer_token still pass through normally,
+        matching every other real AutonomousLoop caller."""
+        for name, value in (
+            ("on_episode_start", on_episode_start), ("tool_filter", tool_filter),
+            ("pre_dispatch_gate", pre_dispatch_gate), ("on_episode_end", on_episode_end),
+            ("extra_context_provider", extra_context_provider),
+        ):
+            if value is not None:
+                raise TypeError(f"GovernedAutonomousLoop.run() supplies its own {name!r} - do not pass one")
+
         return await super().run(
             goal,
+            on_step=on_step,
+            on_answer_token=on_answer_token,
             on_episode_start=self._on_episode_start,
             tool_filter=self._tool_filter,
             pre_dispatch_gate=self._pre_dispatch_gate,
             on_episode_end=self._on_episode_end,
             extra_context_provider=self._extra_context_provider,
-            **kwargs,
         )
 
     # ------------------------------------------------------------------

@@ -347,6 +347,31 @@ class TestFdiaScoreMatchesKernel:
         assert fdia_score(D, I, A) == kernel.algo_01_fdia(D, I, A)
 
 
+class TestRunRejectsGovernanceHookOverrides:
+    """run()'s explicit-signature rewrite (mypy override-compatibility fix,
+    2026-09-25) also fixed a latent runtime bug the old **kwargs version
+    had: a caller passing on_episode_start=... (or any of the other 4
+    governance hooks) would have silently collided with this method's own
+    explicit on_episode_start=self._on_episode_start, crashing with "got
+    multiple values for keyword argument" instead of a clear error."""
+
+    @pytest.mark.parametrize("hook_name", [
+        "on_episode_start", "tool_filter", "pre_dispatch_gate", "on_episode_end", "extra_context_provider",
+    ])
+    def test_passing_a_governance_hook_is_rejected_with_a_clear_error(self, tmp_path, hook_name):
+        loop = _loop(tmp_path, f"reject_{hook_name}")
+        with pytest.raises(TypeError, match=hook_name):
+            asyncio.run(loop.run("a goal", **{hook_name: lambda *a, **kw: None}))
+
+    def test_on_step_and_on_answer_token_still_pass_through_normally(self, tmp_path, decide_sequence):
+        decide_sequence(_FINISH_ONLY)
+        loop = _loop(tmp_path, "passthrough_hooks")
+        seen = []
+        result = asyncio.run(loop.run("a goal", on_step=lambda step: seen.append(step.tool_name)))
+        assert result["stopped_reason"] == "llm_finished"
+        assert seen == [None]  # the single finish step
+
+
 class TestRiskyToolAllowlist:
     def test_sandboxed_command_and_repo_writes_are_risky(self):
         assert "delentia_run_sandboxed_command" in RISKY_TOOLS

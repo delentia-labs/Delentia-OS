@@ -347,8 +347,16 @@ class AutonomousLoop:
             # signature (goal, history, available_tools, llm_provider)
             # keep working unchanged (Zero-Delete), since none of them
             # ever populate extra_context_provider.
-            extra_kwargs = {"extra_context": extra_context} if extra_context else {}
-            decision = await decide_next_action(goal, history, iteration_tools, **extra_kwargs)
+            # Explicit if/else rather than **kwargs unpacking - mypy cannot
+            # verify a plain dict[str, str] unpacks into the right keyword
+            # slot, and flags it as a positional-argument type mismatch
+            # against decide_next_action's real 4th parameter
+            # (llm_provider). Both branches are real, direct calls against
+            # the real signature.
+            if extra_context:
+                decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
+            else:
+                decision = await decide_next_action(goal, history, iteration_tools)
 
             if decision.get("parse_error"):
                 stopped_reason = "parse_error"
