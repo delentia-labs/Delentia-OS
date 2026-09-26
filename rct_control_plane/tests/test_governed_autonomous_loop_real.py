@@ -167,19 +167,26 @@ class TestFdiaGate:
         assert mcp.dispatched == [], "the denied command must never actually be dispatched"
         assert result["steps"][-1]["tool_result"]["fdia_blocked"] is True
 
-    def test_safe_repo_write_path_is_not_blocked(self, tmp_path, decide_sequence):
+    def test_safe_repo_write_path_still_pauses_for_explicit_approval(self, tmp_path, decide_sequence):
+        # Round 45 (K.1.8): a real live-Ollama scenario battery found a
+        # model autonomously patching production source from nothing
+        # more than a vague goal, using a technically-safe path - path
+        # safety alone was never a proxy for "a human authorized this
+        # specific change". These tools now ALWAYS pause for approval
+        # once they clear the FDIA path-safety check, never dispatching
+        # silently just because the path is safe.
         decide_sequence([
             {"action": "call_tool", "tool_name": "delentia_write_repo_file",
              "tool_args": {"relative_path": "workspace_output/note.txt", "content_text": "hi"},
              "reasoning": "write a note", "final_answer": None},
-            {"action": "finish", "reasoning": "done", "final_answer": "done", "tool_name": None, "tool_args": {}},
         ])
         mcp = _FakeMCP()
         loop = _loop(tmp_path, "safe_write", mcp=mcp)
         result = asyncio.run(loop.run("write a scratch note"))
 
-        assert result["stopped_reason"] == "llm_finished"
-        assert len(mcp.dispatched) == 1
+        assert result["stopped_reason"] == "pending_approval"
+        assert mcp.dispatched == [], "a safe-path write must still never dispatch without explicit approval"
+        assert result["steps"][-1]["tool_result"]["pending_approval"] is True
 
     def test_blocked_repo_write_path_is_blocked_by_fdia(self, tmp_path, decide_sequence):
         decide_sequence([
@@ -191,7 +198,24 @@ class TestFdiaGate:
         loop = _loop(tmp_path, "blocked_write", mcp=mcp)
         result = asyncio.run(loop.run("overwrite the env file"))
 
+        # An unsafe path is a stronger, unconditional block - it must
+        # still be the real fdia_blocked outcome, not merely
+        # pending_approval, even though pending_approval is now also
+        # possible for this tool on a safe path (Round 45 K.1.8).
         assert result["stopped_reason"] == "fdia_blocked"
+        assert mcp.dispatched == []
+
+    def test_safe_repo_patch_path_also_pauses_for_explicit_approval(self, tmp_path, decide_sequence):
+        decide_sequence([
+            {"action": "call_tool", "tool_name": "delentia_patch_repo_file",
+             "tool_args": {"relative_path": "workspace_output/note.txt", "old_text": "a", "new_text": "b"},
+             "reasoning": "patch a note", "final_answer": None},
+        ])
+        mcp = _FakeMCP()
+        loop = _loop(tmp_path, "safe_patch", mcp=mcp)
+        result = asyncio.run(loop.run("patch a scratch note"))
+
+        assert result["stopped_reason"] == "pending_approval"
         assert mcp.dispatched == []
 
     def test_non_risky_tool_bypasses_the_gate_entirely(self, tmp_path, decide_sequence):

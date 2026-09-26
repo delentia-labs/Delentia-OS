@@ -172,6 +172,26 @@ RISKY_TOOLS = frozenset({
     "delentia_import_session_state",    # merges external/untrusted JITNA state
 })
 
+# Round 45 (K.1.8): real finding from a live-Ollama scenario battery
+# (2026-09-26) - a model given nothing more than the goal "Make things
+# better" autonomously found a real TODO stub in this repo
+# (control_plane_state.py) and attempted to patch production source to
+# wire it to its real implementation, unprompted. _authorization_signal()
+# below only ever checked PATH safety for these two tools (traversal +
+# blocklist) - a technically-safe patch to a real path passed the FDIA
+# gate (F>0) regardless of whether any human actually authorized that
+# specific change. Path-safety and intent-authorization are different
+# questions; this set names the tools where "the path is safe" must
+# never be treated as "a human wanted this change" - Architect-confirmed
+# decision, not something decided unilaterally here. These tools now
+# ALWAYS pause for pending_approval once they pass the FDIA path-safety
+# check below (an unsafe path is still a stronger, unconditional
+# fdia_blocked - this is an additional, later gate, not a replacement).
+_ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
+    "delentia_write_repo_file",
+    "delentia_patch_repo_file",
+})
+
 
 class GovernedAutonomousLoop(AutonomousLoop):
     """AutonomousLoop + real constitutional governance, wired through the
@@ -383,6 +403,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "tool_result": {
                     "fdia_blocked": True, "tool_name": tool_name, "F": F,
                     "D": self._episode_D, "I": self._episode_I, "A": A, "reason": a_reason,
+                },
+            }
+
+        if tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS:
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {
+                    "pending_approval": True, "tool_name": tool_name, "tool_args": tool_args,
+                    "reason": "real repo source writes always require explicit human approval, "
+                              "regardless of path safety (Round 45 K.1.8)",
                 },
             }
         return None
