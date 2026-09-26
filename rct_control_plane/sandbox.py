@@ -190,7 +190,29 @@ _LINK_CREATION_PATTERN = re.compile(r"\bmklink\b|\bfsutil\s+hardlink\b", re.IGNO
 # (the wrapped command is a separate quoted argument, not trailing
 # plain text) and is left as an explicitly unaudited gap rather than a
 # speculative fix, per this file's own established discipline.
-_ELEVATION_WRAPPER_PATTERN = re.compile(r"^sudo\s+", re.IGNORECASE)
+_ELEVATION_WRAPPER_PATTERN = re.compile(r"^(sudo|doas)\s+", re.IGNORECASE)
+
+# Round 45 (item L): a second real gap found via a dedicated re-audit
+# of the fix above, confirmed by direct testing (not speculation) -
+# `classify_command_risk('sudo -u root rm -rf /')` still returned
+# "safe" even after the sudo fix, because _ELEVATION_WRAPPER_PATTERN
+# only strips a bare `sudo `/`doas ` prefix with no flags; a real flag
+# like `-u root` (sudo/doas both support `-u user`) leaves `-u root
+# rm -rf /` behind, which no longer starts with a denylisted prefix.
+# `doas` (OpenBSD's sudo alternative, also packaged as `opendoas` on
+# several Linux distros - relevant if this sandbox's backend="docker"
+# ever runs a Linux image) shares sudo's basic invocation shape closely
+# enough that it was folded into the same wrapper-strip pattern above
+# rather than treated as a third, separate case - but its exact flag
+# grammar has not been independently verified here any more than
+# sudo's has. Rather than trying to enumerate and skip every real flag
+# permutation (a parsing task this classifier has never taken on for
+# anything else), this closes the gap the same way runas/PowerShell
+# already are handled: ANY sudo/doas invocation is needs_approval at
+# an unconditional floor, on top of (not instead of) the existing
+# strip-and-recheck above, which still correctly denies the simple,
+# no-flags case outright.
+_SUDO_DOAS_INVOCATION_PATTERN = re.compile(r"(?:^|[\\/\s\"'])(sudo|doas)(?:[\s\"']|$)", re.IGNORECASE)
 
 # Round 45 (2026-09-26): the `runas` gap flagged above as unaudited was
 # reproduced directly - classify_command_risk('runas /user:Administrator
@@ -239,6 +261,7 @@ def classify_command_risk(command: str) -> str:
     denies the whole thing."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
+        original_sub = sub
         sub = _ELEVATION_WRAPPER_PATTERN.sub("", sub)
         sub_stripped = sub.lower()
         for prefix in _DENYLISTED_PREFIXES:
@@ -263,6 +286,8 @@ def classify_command_risk(command: str) -> str:
                 inner_stripped = inner_match.group(1).lower()
                 if any(inner_stripped.startswith(p.lower()) for p in _DENYLISTED_PREFIXES):
                     return "denied"
+            worst = "needs_approval"
+        if _SUDO_DOAS_INVOCATION_PATTERN.search(original_sub):
             worst = "needs_approval"
     return worst
 

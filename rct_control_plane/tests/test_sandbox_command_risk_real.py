@@ -139,3 +139,40 @@ class TestRunasElevationIsHandled:
 
     def test_the_word_runas_mentioned_in_unrelated_text_is_not_falsely_matched(self):
         assert classify_command_risk("echo my runascript.txt is done") == "safe"
+
+
+class TestSudoDoasFlagBypassIsClosed:
+    """Round 45 item L: a second real gap found via a dedicated
+    re-audit of the Round 44 sudo fix, confirmed by direct testing -
+    classify_command_risk('sudo -u root rm -rf /') still returned
+    "safe" even after that fix, because _ELEVATION_WRAPPER_PATTERN only
+    ever stripped a bare 'sudo '/'doas ' with no flags. `doas`
+    (OpenBSD's sudo alternative) is folded into the same handling since
+    its basic invocation shape matches sudo's closely enough, though its
+    exact flag grammar is equally unverified here."""
+
+    def test_sudo_with_a_user_flag_is_now_at_least_needs_approval(self):
+        assert classify_command_risk("sudo -u root rm -rf /") == "needs_approval"
+
+    def test_sudo_with_a_noninteractive_flag_is_now_at_least_needs_approval(self):
+        assert classify_command_risk("sudo -n rm -rf /") == "needs_approval"
+
+    def test_the_simple_no_flags_case_is_still_denied_outright_not_merely_paused(self):
+        # The original Round 44 strip-and-recheck still gives the
+        # stronger "denied" verdict for the common, simple case.
+        assert classify_command_risk("sudo rm -rf /") == "denied"
+
+    def test_doas_wrapping_a_denylisted_command_is_denied(self):
+        assert classify_command_risk("doas rm -rf /") == "denied"
+
+    def test_doas_with_a_user_flag_is_at_least_needs_approval(self):
+        assert classify_command_risk("doas -u root rm -rf /") == "needs_approval"
+
+    def test_doas_wrapping_a_safe_looking_command_still_needs_approval(self):
+        assert classify_command_risk("sudo echo hello") == "needs_approval"
+
+    def test_sudoku_is_still_not_falsely_matched(self):
+        assert classify_command_risk("echo sudoku puzzle done") == "safe"
+
+    def test_doassignment_is_not_falsely_matched_as_doas(self):
+        assert classify_command_risk("echo my doassignment is due") == "safe"
