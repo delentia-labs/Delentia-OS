@@ -192,6 +192,27 @@ _LINK_CREATION_PATTERN = re.compile(r"\bmklink\b|\bfsutil\s+hardlink\b", re.IGNO
 # speculative fix, per this file's own established discipline.
 _ELEVATION_WRAPPER_PATTERN = re.compile(r"^sudo\s+", re.IGNORECASE)
 
+# Round 45 (2026-09-26): the `runas` gap flagged above as unaudited was
+# reproduced directly - classify_command_risk('runas /user:Administrator
+# "shutdown -r now"') returns "safe" today, confirmed by direct testing
+# against 4 realistic runas invocations (all classified "safe" despite
+# wrapping denylisted commands). Unlike sudo, runas's real command is a
+# separate quoted argument preceded by variable flags (/user:, /savecred,
+# /trustlevel:, /netonly, /noprofile, /env, /machine:, ...) - its exact
+# quoting rules are not independently verified here the way this file's
+# own cmd.exe-splitting assumptions are elsewhere, so this deliberately
+# does NOT try to precisely parse out and separately classify the inner
+# command. Instead it follows the same honest-uncertainty precedent
+# Round 40 already set for PowerShell invocations ("this classifier's
+# guarantees are honestly unverified... refusing by default is the
+# honest choice, not silently trusting it"): ANY runas invocation is
+# flagged needs_approval outright, and if a quoted inner command IS
+# extractable and itself matches the hard denylist, that takes priority
+# and denies the whole thing - elevation to run something already
+# denylisted should never be merely "needs approval".
+_RUNAS_INVOCATION_PATTERN = re.compile(r"(?:^|[\\/\s\"'])runas(?:\.exe)?(?:[\s\"']|$)", re.IGNORECASE)
+_RUNAS_QUOTED_COMMAND_PATTERN = re.compile(r"runas\b.*?[\"']([^\"']+)[\"']", re.IGNORECASE)
+
 
 def _split_into_subcommands(command: str) -> List[str]:
     parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
@@ -212,7 +233,10 @@ def classify_command_risk(command: str) -> str:
     traversal, or creates a filesystem link/junction/hardlink), or
     "safe" only if every real sub-command is safe. A leading `sudo `
     wrapper is stripped from each sub-command before classification
-    (Round 44) - it changes who runs a command, never what runs."""
+    (Round 44) - it changes who runs a command, never what runs. A
+    `runas` invocation always needs_approval at minimum (Round 45); if
+    its wrapped command is extractable and itself denylisted, that
+    denies the whole thing."""
     worst = "safe"
     for sub in _split_into_subcommands(command):
         sub = _ELEVATION_WRAPPER_PATTERN.sub("", sub)
@@ -232,6 +256,13 @@ def classify_command_risk(command: str) -> str:
         if _PARENT_DIR_TRAVERSAL_PATTERN.search(sub):
             worst = "needs_approval"
         if _LINK_CREATION_PATTERN.search(sub_stripped):
+            worst = "needs_approval"
+        if _RUNAS_INVOCATION_PATTERN.search(sub):
+            inner_match = _RUNAS_QUOTED_COMMAND_PATTERN.search(sub)
+            if inner_match:
+                inner_stripped = inner_match.group(1).lower()
+                if any(inner_stripped.startswith(p.lower()) for p in _DENYLISTED_PREFIXES):
+                    return "denied"
             worst = "needs_approval"
     return worst
 

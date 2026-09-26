@@ -105,3 +105,37 @@ class TestSudoElevationWrapperIsStripped:
         # sudo-stripping happens per real sub-command, not just at the
         # start of the whole string.
         assert classify_command_risk("echo hi && sudo rm -rf /") == "denied"
+
+
+class TestRunasElevationIsHandled:
+    """Round 45: the `runas` gap flagged (but not fixed) when the sudo
+    fix landed was reproduced directly - classify_command_risk('runas
+    /user:Administrator "shutdown -r now"') returned "safe" before this
+    fix, despite wrapping a denylisted command. Unlike sudo, runas's
+    quoting rules for its wrapped command are not independently verified
+    here, so this deliberately follows the same honest-uncertainty
+    precedent as the PowerShell handling above: any runas invocation
+    needs_approval at minimum, and denies outright only when a quoted
+    inner command is extractable and itself denylisted."""
+
+    def test_the_exact_real_incident_command_is_now_denied(self):
+        assert classify_command_risk('runas /user:Administrator "shutdown -r now"') == "denied"
+
+    def test_runas_wrapping_rm_rf_is_denied(self):
+        assert classify_command_risk('runas /user:Administrator "rm -rf /"') == "denied"
+
+    def test_runas_wrapping_format_is_denied_even_with_extra_flags(self):
+        assert classify_command_risk('runas /user:Administrator /savecred "format D:"') == "denied"
+
+    def test_runas_wrapping_a_safe_looking_command_still_needs_approval(self):
+        # Elevation itself is a real risk category, not just what it wraps.
+        assert classify_command_risk('runas /user:Administrator "echo hello"') == "needs_approval"
+
+    def test_runas_with_no_extractable_quoted_command_still_needs_approval(self):
+        assert classify_command_risk("runas /user:Administrator notepad.exe") == "needs_approval"
+
+    def test_runasomething_is_not_falsely_matched_as_runas(self):
+        assert classify_command_risk("runasomething /foo") == "safe"
+
+    def test_the_word_runas_mentioned_in_unrelated_text_is_not_falsely_matched(self):
+        assert classify_command_risk("echo my runascript.txt is done") == "safe"
