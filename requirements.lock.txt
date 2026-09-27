@@ -213,7 +213,7 @@ pyannoteai-sdk==0.4.0
 pyarrow==24.0.0
 pycparser==3.0
 pydantic==2.12.5
-pydantic-settings==2.14.0
+pydantic-settings==2.15.0  # hand-patched 2026-09-27, NOT a fresh pip-freeze snapshot (see this round's own Dependabot audit): the prior 2.14.0 pin was flagged by a real, current Dependabot medium-severity alert (NestedSecretsSettingsSource symlink-following, fixed 2.14.2) - `pip show` confirms 2.15.0 is what is ACTUALLY installed in this environment already, so this just corrects the stale snapshot to match reality rather than changing anything live
 pydantic_core==2.41.5
 Pygments==2.21.0
 pyiceberg==0.11.1

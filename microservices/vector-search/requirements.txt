@@ -6,7 +6,12 @@ uvicorn[standard]==0.40.0
 pydantic==2.12.5
 # CVE fix: >=0.0.24 resolves GHSA-jxdc-fh5p-qg7m (Arbitrary File Write, HIGH)
 #          and GHSA-c3h9-896r-86jm (DoS via large multipart preamble, Moderate)
-python-multipart>=0.0.24
+# Round 45 item E (2026-09-27): that floor is now stale - 3 newer Dependabot
+# alerts (2 high: quadratic-time DoS via semicolon separators fixed 0.0.30,
+# unbounded multipart part headers fixed 0.0.27; 2 low: parameter smuggling
+# fixed 0.0.30) need >=0.0.31, which also covers the negative-Content-Length
+# memory-buffering advisory (first_patched 0.0.31)
+python-multipart>=0.0.31
 
 # Vector backends
 faiss-cpu==1.9.0
@@ -15,9 +20,11 @@ numpy==2.2.1
 
 # Testing
 # CVE fix: >=8.1.0 resolves GHSA-cmfg-87vq-g5g4 (vulnerable tmpdir handling, Moderate)
-pytest>=8.1.0
+# Round 45 item E (2026-09-27): a newer, separate tmpdir-handling advisory
+# needs >=9.0.3 (the 8.1.0 floor above no longer covers the current alert)
+pytest>=9.0.3
 pytest-asyncio==1.3.0
 httpx==0.28.1
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.2.2  # Round 45 item E (2026-09-27): 1.0.0 flagged by a real Dependabot alert (set_key follows symlinks outside the target dir via cross-device rename fallback, allowing arbitrary file overwrite), fixed 1.2.2
