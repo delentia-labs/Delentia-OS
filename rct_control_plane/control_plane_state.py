@@ -336,8 +336,7 @@ class ControlPlaneState:
             state.intent_snapshot = IntentObject.model_validate(data["intent_snapshot"])
         
         if data.get("graph_snapshot"):
-            # ExecutionGraph.from_dict would need to be implemented
-            pass  # TODO: Implement ExecutionGraph.from_dict
+            state.graph_snapshot = ExecutionGraph.from_dict(data["graph_snapshot"])
         
         # Restore transitions
         for t_data in data.get("transitions", []):
