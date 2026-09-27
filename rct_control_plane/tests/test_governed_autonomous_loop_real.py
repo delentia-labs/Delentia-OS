@@ -69,18 +69,25 @@ def _scripted_decide(sequence):
     sequence in order, then repeats 'finish' forever (safety net)."""
     calls = {"n": 0}
 
-    async def _fake(goal, history, available_tools, llm_provider=None):
+    async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
+        # Round 48: extra_context is now always present (the RCT-7 plan is
+        # injected every episode), so the fake accepts it.
         i = calls["n"]
         calls["n"] += 1
-        if i < len(sequence):
-            return sequence[i]
-        return {"action": "finish", "reasoning": "done", "final_answer": "done",
-                "tool_name": None, "tool_args": {}}
+        calls.setdefault("extra_contexts", []).append(extra_context)
+        decision = dict(sequence[i]) if i < len(sequence) else dict(_FINISH_ONLY[0])
+        if decision.get("final_answer") == _ECHO_GOAL:
+            # A finished answer that actually addresses the goal, so the
+            # Round 48 intent-verification step (RCT-7 step 7) passes.
+            decision["final_answer"] = f"Completed the goal: {goal}"
+        return decision
     return _fake, calls
 
 
+_ECHO_GOAL = "<answer that restates the goal>"
+
 _FINISH_ONLY = [
-    {"action": "finish", "reasoning": "done", "final_answer": "done", "tool_name": None, "tool_args": {}},
+    {"action": "finish", "reasoning": "done", "final_answer": _ECHO_GOAL, "tool_name": None, "tool_args": {}},
 ]
 
 
@@ -96,7 +103,7 @@ def decide_sequence(monkeypatch):
     return _apply
 
 
-def _loop(tmp_path, name, kernel=None, mcp=None):
+def _loop(tmp_path, name, kernel=None, mcp=None, **loop_kwargs):
     persistence = ControlPlanePersistence(db_path=str(tmp_path / f"{name}.db"))
     # Isolated skill_library.db per test - skill_library.py's own
     # docstring recommends this exact pattern ("pass a tmp_path in tests
@@ -108,7 +115,7 @@ def _loop(tmp_path, name, kernel=None, mcp=None):
     return GovernedAutonomousLoop(
         mcp_server=mcp or _FakeMCP(), persistence=persistence,
         kernel=kernel or _FakeKernel(), skill_library=skill_library,
-        max_iterations=5, namespace=name,
+        max_iterations=5, namespace=name, **loop_kwargs,
     )
 
 
@@ -333,7 +340,7 @@ class TestSkillLibraryIntegration:
 
         async def _capturing_fake(goal, history, available_tools, llm_provider=None, extra_context=""):
             captured["extra_context"] = extra_context
-            return {"action": "finish", "reasoning": "done", "final_answer": "done",
+            return {"action": "finish", "reasoning": "done", "final_answer": f"Completed the goal: {goal}",
                     "tool_name": None, "tool_args": {}}
 
         monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _capturing_fake)
@@ -342,14 +349,16 @@ class TestSkillLibraryIntegration:
         assert captured["extra_context"] != ""
         assert "optimize the database connection pool" in captured["extra_context"]
 
-    def test_no_matching_skills_means_no_extra_context_and_old_call_shape_is_preserved(self, tmp_path, decide_sequence):
-        # Proves the Zero-Delete guarantee: with an empty skill library,
-        # decide_next_action is called with its exact pre-Round-44 3-arg
-        # shape (decide_sequence's own fake below has that old signature -
-        # if extra_context were passed unconditionally this would raise
-        # TypeError, exactly the regression caught and fixed this round).
-        decide_sequence(_FINISH_ONLY)
-        loop = _loop(tmp_path, "no_skills_yet")
+    def test_no_matching_skills_means_no_extra_context_and_old_call_shape_is_preserved(self, tmp_path, monkeypatch):
+        # Proves the Zero-Delete guarantee: with an empty skill library and
+        # the Round 48 RCT-7/memory sections switched off, decide_next_action
+        # is called with its exact pre-Round-44 3-arg shape (this fake has
+        # that old signature - passing extra_context would raise TypeError).
+        async def _old_shape(goal, history, available_tools, llm_provider=None):
+            return {"action": "finish", "reasoning": "done", "final_answer": f"Completed the goal: {goal}",
+                    "tool_name": None, "tool_args": {}}
+        monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _old_shape)
+        loop = _loop(tmp_path, "no_skills_yet", rct7_in_prompt=False, memory_in_prompt=False)
         result = asyncio.run(loop.run("a brand new never-seen-before goal"))
         assert result["stopped_reason"] == "llm_finished"
 
