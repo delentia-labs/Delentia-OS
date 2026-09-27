@@ -19,7 +19,7 @@ import httpx
 import pytest
 
 from rct_control_plane.algo_28_cio import (
-    ConnectionPool, PoolConfig, PoolType, HealthStatus,
+    ConnectionPool, PoolConfig, HealthStatus,
     RequestBatcher, HTTPRequest, Priority,
 )
 
@@ -172,8 +172,6 @@ class TestConnectionPoolAcquire:
 
 class TestConnectionExpiryChecks:
     def test_ttl_zero_means_never_expires(self):
-        pool = ConnectionPool(PoolConfig(name="p", min_size=0, max_size=1))
-        conn = pool._pool  # unused, just to construct; real Connection built below
         from rct_control_plane.algo_28_cio import Connection
         c = Connection(client=None, pool_name="p")
         c.created_at = time.time() - 999999

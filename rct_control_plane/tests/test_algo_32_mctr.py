@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from rct_control_plane.algo_32_mctr import (
     ReasoningStrategy, ChainStatus, ConflictStrategy, MergeStrategy, ValidationLevel,
@@ -53,11 +54,11 @@ def no_real_api_key(monkeypatch):
 
 class TestSchemaValidators:
     def test_confidence_out_of_range_is_rejected(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             _step(confidence=1.5)
 
     def test_chain_rejects_more_than_twenty_steps(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             _chain(steps=[_step(i) for i in range(1, 22)])
 
 
@@ -375,6 +376,7 @@ class TestChainValidator:
         assert strict.is_valid is False
         # steps_connected already false, so lenient is also invalid here -
         # the real distinguishing case is exercised by the errors list itself.
+        assert lenient.is_valid is False
         assert len(strict.errors) > 0
 
     def test_weakest_step_is_the_lowest_confidence_one(self, validator):

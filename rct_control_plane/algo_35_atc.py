@@ -291,11 +291,18 @@ class TimeoutController:
             return self.config.base_timeout
 
         sorted_times = sorted(self.response_times)
-        percentile_value = statistics.quantiles(
-            sorted_times,
-            n=100,
-            method='inclusive'
-        )[int(self.config.percentile * 100) - 1]
+        if len(sorted_times) < 2:
+            # statistics.quantiles() needs >= 2 points on Python < 3.13
+            # (raises StatisticsError there); with one sample, every
+            # percentile of the data is that sample. Reached via
+            # adjust_timeout(force=True) on a single recorded response.
+            percentile_value = sorted_times[0]
+        else:
+            percentile_value = statistics.quantiles(
+                sorted_times,
+                n=100,
+                method='inclusive'
+            )[int(self.config.percentile * 100) - 1]
 
         buffered_timeout = percentile_value * self.config.buffer_factor
 

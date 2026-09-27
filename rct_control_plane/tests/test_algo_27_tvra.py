@@ -17,7 +17,6 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import subprocess
-import tempfile
 from types import SimpleNamespace
 
 import cv2
@@ -50,7 +49,9 @@ def tiny_video(tmp_path):
 
 @pytest.fixture
 def tiny_wav(tmp_path):
-    import soundfile as sf
+    # soundfile / imageio-ffmpeg are ALGO-27's optional audio extras
+    # (pyproject "full"), not installed by CI's base requirements.
+    sf = pytest.importorskip("soundfile")
     path = str(tmp_path / "tiny.wav")
     sf.write(path, np.zeros(16000, dtype=np.float32), 16000)
     return path
@@ -243,6 +244,7 @@ class TestAudioProcessorRealParts:
 
     @pytest.mark.asyncio
     async def test_extract_audio_raises_on_a_real_ffmpeg_failure(self, monkeypatch, tmp_path):
+        pytest.importorskip("imageio_ffmpeg")
         def _fake_run(cmd, capture_output, text):
             return SimpleNamespace(returncode=1, stderr="simulated real ffmpeg error")
         monkeypatch.setattr(subprocess, "run", _fake_run)
@@ -253,6 +255,7 @@ class TestAudioProcessorRealParts:
 
     @pytest.mark.asyncio
     async def test_extract_audio_returns_the_real_output_path_on_success(self, monkeypatch, tmp_path):
+        pytest.importorskip("imageio_ffmpeg")
         def _fake_run(cmd, capture_output, text):
             return SimpleNamespace(returncode=0, stderr="")
         monkeypatch.setattr(subprocess, "run", _fake_run)
