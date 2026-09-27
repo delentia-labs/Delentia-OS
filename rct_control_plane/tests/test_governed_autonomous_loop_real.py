@@ -430,3 +430,131 @@ class TestWritePathSafety:
 
     def test_empty_path_is_blocked(self):
         assert _write_path_is_safe("") is False
+
+
+class TestToolFilterAtScale:
+    """Round 45 item K.1.4: the existing TestToolFilter tests above only
+    exercise _tool_filter with 1-3 candidate tools. The real production
+    tool menu (mcp_server.py) has ~30+ tools - this confirms keyword
+    overlap filtering still narrows correctly (not just "falls back to
+    everything") at that realistic scale, and that the fallback-when-
+    under-2-survive rule still holds even when the full menu is large."""
+
+    def _big_menu(self):
+        tools = [
+            {"name": "delentia_write_repo_file", "description": "write a file to the repository"},
+            {"name": "delentia_run_sandboxed_command", "description": "run a shell command in a sandbox"},
+            {"name": "delentia_recall", "description": "recall a stored memory"},
+        ]
+        # Pad with 30 synthetic, deliberately irrelevant tools so the
+        # real menu size matches production order-of-magnitude.
+        for i in range(30):
+            tools.append({
+                "name": f"delentia_synthetic_tool_{i}",
+                "description": f"perform synthetic unrelated operation number {i} on widget {i}",
+            })
+        return tools
+
+    def test_narrows_to_the_relevant_tools_out_of_thirty_plus_candidates(self, tmp_path):
+        loop = _loop(tmp_path, "filter_scale_narrow")
+        # Deliberately overlaps 2 of the 3 real tools (>=2 survivors is
+        # required for _tool_filter to narrow at all - see its own
+        # docstring; a goal matching only 1 tool falls back to the full,
+        # unfiltered menu by design, which the test below covers instead).
+        filtered = loop._tool_filter(
+            "write a file to the repository and then recall a stored memory to confirm it",
+            self._big_menu(),
+        )
+        names = {t["name"] for t in filtered}
+        assert "delentia_write_repo_file" in names
+        assert "delentia_recall" in names
+        # Real narrowing, not just "returned everything because the menu is big".
+        assert len(filtered) < len(self._big_menu())
+        assert not any(n.startswith("delentia_synthetic_tool_") for n in names)
+
+    def test_falls_back_to_full_large_menu_when_only_one_tool_would_survive(self, tmp_path):
+        """A goal that only clearly overlaps ONE real tool out of 33
+        candidates hits the same <2-survivors fallback as the small-menu
+        case, but at production scale - confirms the safety fallback
+        (never narrow the model down to a single option) still holds
+        rather than being an artifact of the tiny 1-3 tool menus the
+        pre-existing tests used."""
+        loop = _loop(tmp_path, "filter_scale_single_survivor")
+        menu = self._big_menu()
+        filtered = loop._tool_filter(
+            "write a file called notes.txt to the repository", menu,
+        )
+        assert filtered == menu
+
+    def test_falls_back_to_full_large_menu_when_goal_has_no_real_overlap(self, tmp_path):
+        loop = _loop(tmp_path, "filter_scale_fallback")
+        menu = self._big_menu()
+        filtered = loop._tool_filter("zzz qqq xyzzy plugh", menu)
+        assert filtered == menu
+
+
+class TestConcurrentEpisodeIsolation:
+    """Round 45 item K.1.4: GovernedAutonomousLoop's `namespace` parameter
+    is documented as scoping an episode's state, but this was never
+    verified against two REAL concurrent episodes sharing the same
+    persistence/skill_library/kernel instances (only delegate_to_profile
+    had a separate, already-flaky concurrency test before this). Runs two
+    loops with distinct namespaces concurrently via asyncio.gather against
+    shared backing stores and confirms neither episode's tool dispatch or
+    final answer leaks into the other."""
+
+    def test_two_concurrent_namespaces_do_not_bleed_state(self, tmp_path, monkeypatch):
+        persistence = ControlPlanePersistence(db_path=str(tmp_path / "shared.db"))
+        skill_library = SkillLibrary(db_path=str(tmp_path / "shared_skills.db"))
+        kernel = _FakeKernel()
+        mcp_a, mcp_b = _FakeMCP(), _FakeMCP()
+
+        async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
+            if "alpha" in goal:
+                if not history:
+                    return {"action": "call_tool", "tool_name": "delentia_recall",
+                             "tool_args": {"query": "alpha-only"}, "reasoning": "r",
+                             "final_answer": None}
+                return {"action": "finish", "reasoning": "done",
+                        "final_answer": "alpha done", "tool_name": None, "tool_args": {}}
+            if not history:
+                return {"action": "call_tool", "tool_name": "delentia_recall",
+                         "tool_args": {"query": "beta-only"}, "reasoning": "r",
+                         "final_answer": None}
+            return {"action": "finish", "reasoning": "done",
+                    "final_answer": "beta done", "tool_name": None, "tool_args": {}}
+
+        monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _fake)
+
+        loop_a = GovernedAutonomousLoop(
+            mcp_server=mcp_a, persistence=persistence, kernel=kernel,
+            skill_library=skill_library, max_iterations=5, namespace="episode-alpha",
+        )
+        loop_b = GovernedAutonomousLoop(
+            mcp_server=mcp_b, persistence=persistence, kernel=kernel,
+            skill_library=skill_library, max_iterations=5, namespace="episode-beta",
+        )
+
+        async def _run_both():
+            return await asyncio.gather(
+                loop_a.run("do the alpha task"), loop_b.run("do the beta task"),
+            )
+
+        result_a, result_b = asyncio.run(_run_both())
+
+        assert result_a["final_answer"] == "alpha done"
+        assert result_b["final_answer"] == "beta done"
+        # Each MCP instance (one per episode) saw only its own episode's
+        # dispatch - never the other episode's tool call.
+        assert mcp_a.dispatched == [("delentia_recall", {"query": "alpha-only"})]
+        assert mcp_b.dispatched == [("delentia_recall", {"query": "beta-only"})]
+
+        all_audit = persistence.recent_audit(limit=200)
+        audit_a = [e for e in all_audit if e.get("actor") == "episode-alpha"]
+        audit_b = [e for e in all_audit if e.get("actor") == "episode-beta"]
+        assert audit_a, "episode-alpha produced no audit entries at all"
+        assert audit_b, "episode-beta produced no audit entries at all"
+        # Every real audit row is scoped to exactly the namespace that
+        # produced it - the check below is redundant with the filter
+        # above by construction, but documents the invariant explicitly.
+        assert all(e["actor"] in ("episode-alpha", "episode-beta") for e in all_audit)
