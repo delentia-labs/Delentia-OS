@@ -1744,6 +1744,50 @@ class ControlPlaneAPI:
             result["namespace"] = namespace
             return result
 
+        # Round 48 R1.4: signed human approval for paused agent actions.
+        # A decision is only accepted with a trusted approver's Ed25519
+        # signature over the exact action (see approvals.py), so the signer
+        # never has to send a private key - `delentia approvals sign` runs
+        # wherever the key lives and only the signature travels here.
+        @self.app.get("/v1/agent/approvals", tags=["Kernel"])
+        async def list_agent_approvals(status: str = "PENDING", limit: int = 50):
+            from rct_control_plane.approvals import PendingActionStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            store = PendingActionStore(shared_kernel._persistence)
+            wanted = None if status.upper() == "ALL" else status
+            return [a.to_dict() for a in store.list(status=wanted, limit=limit)]
+
+        @self.app.post("/v1/agent/approvals/{approval_id}/decision", tags=["Kernel"])
+        async def decide_agent_approval(approval_id: str, payload: Dict[str, Any]):
+            from rct_control_plane.approvals import ApprovalError, PendingActionStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            try:
+                decided = PendingActionStore(shared_kernel._persistence).decide(
+                    approval_id, str(payload.get("decision", "")),
+                    str(payload.get("public_key_hex", "")), str(payload.get("signature_hex", "")),
+                )
+            except ApprovalError as e:
+                raise HTTPException(status_code=403, detail=str(e)) from e
+            return decided.to_dict()
+
+        @self.app.post("/v1/agent/approvals/{approval_id}/resume", tags=["Kernel"])
+        async def resume_agent_approval(approval_id: str, payload: Optional[Dict[str, Any]] = None):
+            from rct_control_plane.agent_factory import build_governed_loop
+            from rct_control_plane.approvals import ApprovalError, PendingActionStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.mcp_server import mcp as shared_mcp
+
+            pending = PendingActionStore(shared_kernel._persistence).get(approval_id)
+            if pending is None:
+                raise HTTPException(status_code=404, detail=f"no pending action {approval_id!r}")
+            loop = build_governed_loop(shared_kernel, namespace=pending.namespace, mcp_server=shared_mcp)
+            try:
+                return await loop.resume(approval_id, continue_episode=bool((payload or {}).get("continue", True)))
+            except ApprovalError as e:
+                raise HTTPException(status_code=403, detail=str(e)) from e
+
         # ---------------------------------------------------------------------
         # LoRA Forge Universal Multimodal Training Service
         # ---------------------------------------------------------------------

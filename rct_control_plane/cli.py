@@ -1675,6 +1675,126 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
                                "precedence over this config", fg="yellow"))
 
 
+@cli.group("approvals")
+def approvals_group():
+    """
+    Human approval for paused agent actions (Round 48).
+
+    The agent pauses repo writes and medium-risk commands. A trusted
+    approver signs the exact action with an Ed25519 key that lives outside
+    the repository, where the agent's own tools cannot read it.
+
+    Examples:
+        delentia approvals keygen --out ~/.delentia/keys/architect.pem --trust Architect
+        delentia approvals list
+        delentia approvals approve <id> --key ~/.delentia/keys/architect.pem
+        delentia approvals sign <id> --digest <sha256> --key <pem>   (offline, for a remote host)
+    """
+    pass
+
+
+def _approval_store(db: Optional[str]):
+    from rct_control_plane.approvals import PendingActionStore
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return PendingActionStore(ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence())
+
+
+@approvals_group.command("keygen")
+@click.option("--out", "out_path", required=True, help="Where to write the private key (outside the repo).")
+@click.option("--trust", "trust_name", default=None,
+              help="Also add the public key to ~/.delentia/approvers.json under this name.")
+def approvals_keygen(out_path: str, trust_name: Optional[str]) -> None:
+    """Create an approver key pair."""
+    from rct_control_plane.approvals import ApprovalError, _approvers_file, generate_approver_key
+    try:
+        public_hex = generate_approver_key(out_path)
+    except ApprovalError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"private key : {Path(out_path).expanduser()}  (keep it off the agent host if you can)")
+    click.echo(f"public key  : {public_hex}")
+    if trust_name:
+        path = _approvers_file()
+        entries = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        entries.append({"name": trust_name, "public_key_hex": public_hex})
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8")
+        click.echo(f"trusted as '{trust_name}' in {path}")
+    else:
+        click.echo("To trust it on the agent host, add it to DELENTIA_APPROVER_PUBKEYS or ~/.delentia/approvers.json")
+
+
+@approvals_group.command("list")
+@click.option("--status", default="PENDING", show_default=True,
+              type=click.Choice(["PENDING", "APPROVED", "REJECTED", "EXECUTING", "EXECUTED", "ALL"],
+                                case_sensitive=False))
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+def approvals_list(status: str, db: Optional[str], output: str) -> None:
+    """List paused actions."""
+    store = _approval_store(db)
+    actions = store.list(status=None if status.upper() == "ALL" else status)
+    if output == "json":
+        click.echo(json.dumps([a.to_dict() for a in actions], indent=2, default=str))
+        return
+    if not actions:
+        click.echo(f"No {status.lower()} actions.")
+        return
+    for a in actions:
+        click.echo(f"{a.approval_id}  {a.status:<9} {a.namespace}  {a.tool_name} {json.dumps(a.tool_args)[:80]}")
+        click.echo(f"    goal   : {a.goal[:100]}")
+        click.echo(f"    digest : {a.action_sha256}")
+
+
+@approvals_group.command("sign")
+@click.argument("approval_id")
+@click.option("--digest", required=True, help="The action_sha256 shown by `list` or the API.")
+@click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
+@click.option("--decision", type=click.Choice(["approve", "reject"]), default="approve", show_default=True)
+def approvals_sign(approval_id: str, digest: str, key_path: str, decision: str) -> None:
+    """Sign a decision offline; prints the JSON body for the decision API."""
+    from rct_control_plane.approvals import sign_decision
+    signed = sign_decision(key_path, approval_id, digest, "APPROVED" if decision == "approve" else "REJECTED")
+    click.echo(json.dumps(signed, indent=2))
+
+
+def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional[str]) -> None:
+    from rct_control_plane.approvals import ApprovalError, sign_decision
+    store = _approval_store(db)
+    action = store.get(approval_id)
+    if action is None:
+        click.echo(click.style(f"Error: no pending action {approval_id!r}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{decision.lower()}: {action.tool_name} {json.dumps(action.tool_args)[:200]}")
+    try:
+        signed = sign_decision(key_path, approval_id, action.action_sha256, decision)
+        decided = store.decide(approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
+    except ApprovalError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{approval_id} is now {decided.status}")
+    if decided.status == "APPROVED":
+        click.echo(f"Resume it with: POST /v1/agent/approvals/{approval_id}/resume")
+
+
+@approvals_group.command("approve")
+@click.argument("approval_id")
+@click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def approvals_approve(approval_id: str, key_path: str, db: Optional[str]) -> None:
+    """Sign and record approval of one paused action (local DB)."""
+    _decide_locally(approval_id, key_path, "APPROVED", db)
+
+
+@approvals_group.command("reject")
+@click.argument("approval_id")
+@click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def approvals_reject(approval_id: str, key_path: str, db: Optional[str]) -> None:
+    """Sign and record rejection of one paused action (local DB)."""
+    _decide_locally(approval_id, key_path, "REJECTED", db)
+
+
 @cli.command("serve")
 @click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
 @click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")

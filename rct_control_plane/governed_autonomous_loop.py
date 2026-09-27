@@ -93,6 +93,7 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from pathlib import Path
@@ -247,6 +248,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._rct7_in_prompt = rct7_in_prompt
         self._memory_in_prompt = memory_in_prompt
         self._intent_verify_threshold = intent_verify_threshold
+        # Round 48 R1.4: paused actions are persisted with a digest so a
+        # human can approve them (Ed25519, see approvals.py) and resume()
+        # can run exactly that action once and continue the episode.
+        self._pending_store: Optional[Any] = None
+        self._resume_note: str = ""
 
     def _get_kernel(self) -> "AlgorithmKernel41":
         """Lazy, cached construction - see module docstring point 2 for
@@ -310,7 +316,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
+        resume_note, self._resume_note = self._resume_note, ""
         sections = [
+            resume_note,
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             await self._recalled_memories_text(goal) if self._memory_in_prompt else "",
             self._format_similar_skills(self._skill_library.retrieve_similar_skills(goal, top_k=3)),
@@ -550,6 +558,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
         )
         result["intent_verification"] = verification
+        pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
         change_description = (
             f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
             f"iterations={result['iterations']} duration_s={duration:.2f} "
@@ -590,5 +599,102 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "mee_delta": growth_delta, "mee_g": self._mee_session.g,
                 "skill_extracted": skill_record is not None,
                 "intent_verification": verification,
+                "approval_id": pending_record.approval_id if pending_record else None,
             },
         )
+
+
+    # ------------------------------------------------------------------
+    # Round 48 R1.4: pause -> signed human approval -> resume
+    # ------------------------------------------------------------------
+    def _pending_actions(self) -> Any:
+        if self._pending_store is None:
+            from rct_control_plane.approvals import PendingActionStore
+            self._pending_store = PendingActionStore(self._persistence)
+        return self._pending_store
+
+    def _record_pending_action(self, result: Dict[str, Any]) -> Optional[Any]:
+        """Persists the exact action the episode paused on (both the K.1.8
+        write/patch gate and the base loop's medium-risk sandbox gate end
+        here) and returns it; result gains approval_id/action_sha256."""
+        steps = result.get("steps") or []
+        last = steps[-1] if steps else {}
+        tool_name = last.get("tool_name")
+        if not tool_name:
+            return None
+        reason = (last.get("tool_result") or {}).get("reason") or "needs human approval"
+        record = self._pending_actions().create(
+            namespace=self.namespace, goal=result["goal"], tool_name=tool_name,
+            tool_args=last.get("tool_args") or {}, reason=reason,
+        )
+        result["approval_id"] = record.approval_id
+        result["action_sha256"] = record.action_sha256
+        return record
+
+    async def resume(
+        self,
+        approval_id: str,
+        continue_episode: bool = True,
+        on_step: Optional[Callable[[LoopStep], Any]] = None,
+    ) -> Dict[str, Any]:
+        """Runs one human-approved action exactly once, then (by default)
+        continues the original goal in a new governed episode that is told
+        the action already happened. Refuses unless approvals.py verifies a
+        trusted approver's Ed25519 signature over this exact action - a
+        database status of APPROVED alone is not enough. Path safety is
+        re-checked, so an approval cannot authorise a blocked path."""
+        from rct_control_plane.approvals import ApprovalError
+
+        store = self._pending_actions()
+        existing = store.get(approval_id)
+        if existing is None:
+            raise ApprovalError(f"no pending action {approval_id!r}")
+        if existing.namespace != self.namespace:
+            raise ApprovalError(
+                f"action {approval_id} belongs to namespace {existing.namespace!r}, not {self.namespace!r}"
+            )
+        action = store.claim_for_execution(approval_id)
+
+        A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)
+        if A <= 0.0:
+            tool_result: Dict[str, Any] = {"fdia_blocked": True, "reason": a_reason}
+        elif action.tool_name == "delentia_run_sandboxed_command":
+            # Called directly with approved=True: the MCP tool deliberately
+            # has no such flag, so the model can never approve itself.
+            from rct_control_plane.sandbox import run_sandboxed
+            sandboxed = run_sandboxed(
+                action.tool_args.get("command", ""),
+                timeout_seconds=float(action.tool_args.get("timeout_seconds", 10.0)),
+                approved=True,
+            )
+            tool_result = {"stdout": sandboxed.stdout, "stderr": sandboxed.stderr,
+                           "exit_code": sandboxed.exit_code, "timed_out": sandboxed.timed_out,
+                           "blocked_reason": sandboxed.blocked_reason}
+        else:
+            try:
+                raw = await self._mcp.call_tool(action.tool_name, action.tool_args)
+                tool_result = json.loads(raw.content[0].text)
+            except Exception as exc:
+                tool_result = {"error": str(exc)}
+
+        store.mark_executed(approval_id, tool_result)
+        self._persistence.append_audit(
+            entity_type="pending_action_executed", entity_id=approval_id, action="execute",
+            actor=self.namespace,
+            changes={"tool_name": action.tool_name, "action_sha256": action.action_sha256,
+                     "approver_public_key": action.approver_public_key, "A": A, "A_reason": a_reason,
+                     "result": tool_result},
+        )
+
+        outcome: Dict[str, Any] = {"approval_id": approval_id, "tool_name": action.tool_name,
+                                   "executed_result": tool_result, "continuation": None}
+        if continue_episode:
+            summary = json.dumps(tool_result, default=str)[:500]
+            self._resume_note = (
+                "A human approved and the system has now executed, exactly once, an action you requested "
+                f"earlier: {action.tool_name} with arguments {json.dumps(action.tool_args, default=str)[:300]}. "
+                f"Result: {summary}. Do not request that action again; continue toward the goal from here."
+            )
+            outcome["continuation"] = await self.run(action.goal, on_step=on_step)
+        return outcome
+
