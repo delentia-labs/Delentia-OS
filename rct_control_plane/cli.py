@@ -1562,6 +1562,119 @@ def version_command(output: str) -> None:
 # ─── serve command ────────────────────────────────────────────────────────────
 
 
+@cli.group("model")
+def model_group():
+    """
+    Choose which LLM drives the agent (Round 48, bring-your-own-model).
+
+    Provider/model resolve from: env DELENTIA_LLM_PROVIDER / DELENTIA_LLM_MODEL,
+    then ~/.delentia/model.json (profile entry, then default), then built-ins.
+    API keys are never stored in the config - set OPENROUTER_API_KEY in env.
+
+    Examples:
+        delentia model show
+        delentia model list --provider openrouter --search claude
+        delentia model set anthropic/claude-sonnet-5 --provider openrouter
+        delentia model set qwen2.5:7b --provider ollama --profile researcher
+    """
+    pass
+
+
+@model_group.command("show")
+@click.option("--profile", default=None, help="Show the selection for this agent profile.")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+def model_show(profile: Optional[str], output: str) -> None:
+    """Show the active provider/model and where each value came from."""
+    from rct_control_plane.model_config import ModelConfigError, config_path, resolve_model_selection
+    try:
+        sel = resolve_model_selection(profile=profile)
+    except ModelConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    data = {**sel.to_dict(), "config_file": str(config_path()),
+            "openrouter_key_set": bool(os.getenv("OPENROUTER_API_KEY"))}
+    if output == "json":
+        click.echo(json.dumps(data, indent=2))
+        return
+    click.echo(f"provider : {sel.provider}  ({sel.provider_source})")
+    click.echo(f"model    : {sel.model}  ({sel.model_source})")
+    click.echo(f"config   : {data['config_file']}")
+    if sel.provider == "openrouter" and not data["openrouter_key_set"]:
+        click.echo(click.style("warning  : OPENROUTER_API_KEY is not set - the agent will fall back to Ollama",
+                               fg="yellow"))
+
+
+@model_group.command("list")
+@click.option("--provider", type=click.Choice(["openrouter", "ollama"]), default="openrouter", show_default=True)
+@click.option("--search", default=None, help="Only models whose id contains this text.")
+@click.option("--all", "show_all", is_flag=True, default=False,
+              help="Include models without JSON-mode support (they cannot drive the agent loop).")
+@click.option("--limit", default=50, show_default=True, type=int)
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+def model_list(provider: str, search: Optional[str], show_all: bool, limit: int, output: str) -> None:
+    """List models the agent can use. OpenRouter's catalog needs no API key."""
+    from rct_control_plane.model_config import filter_models, list_ollama_models, list_openrouter_models
+    try:
+        models = list_openrouter_models() if provider == "openrouter" else list_ollama_models()
+    except Exception as exc:  # network/HTTP errors are reported, not raised
+        click.echo(click.style(f"Error: could not list {provider} models: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    shown = filter_models(models, agent_capable_only=not show_all, search=search)[: max(limit, 0)]
+    if output == "json":
+        click.echo(json.dumps([m.to_dict() for m in shown], indent=2))
+        return
+    if not shown:
+        click.echo("No matching models.")
+        return
+    click.echo(f"{'model':<52} {'context':>9} {'$/Mtok in':>10} {'$/Mtok out':>11} tools")
+    for m in shown:
+        ctx = f"{m.context_length:,}" if m.context_length else "-"
+        pin = f"{m.prompt_price_per_mtok:g}" if m.prompt_price_per_mtok is not None else "-"
+        pout = f"{m.completion_price_per_mtok:g}" if m.completion_price_per_mtok is not None else "-"
+        click.echo(f"{m.id:<52} {ctx:>9} {pin:>10} {pout:>11} {'yes' if m.supports_tools else 'no'}")
+    click.echo(f"\n{len(shown)} shown. Selecting a model changes how capable the agent is, not how safe:"
+               " FDIA gating and approvals are enforced in code.")
+
+
+@model_group.command("set")
+@click.argument("model_id")
+@click.option("--provider", type=click.Choice(["openrouter", "ollama"]), required=True)
+@click.option("--profile", default=None, help="Set the model for one agent profile only.")
+@click.option("--verify/--no-verify", default=True, show_default=True,
+              help="Check the model exists in the provider's catalog before saving.")
+def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool) -> None:
+    """Save the model the agent uses (writes ~/.delentia/model.json)."""
+    from rct_control_plane.model_config import (
+        ModelConfigError, list_ollama_models, list_openrouter_models, save_model_selection,
+    )
+    if verify:
+        try:
+            catalog = list_openrouter_models() if provider == "openrouter" else list_ollama_models()
+        except Exception as exc:
+            click.echo(click.style(f"Error: could not verify against the {provider} catalog ({exc}); "
+                                   "retry, or pass --no-verify", fg="red"), err=True)
+            sys.exit(1)
+        match = next((m for m in catalog if m.id == model_id), None)
+        if match is None:
+            click.echo(click.style(f"Error: '{model_id}' is not in the {provider} catalog "
+                                   f"(see `delentia model list --provider {provider}`)", fg="red"), err=True)
+            sys.exit(1)
+        if not match.supports_json_mode:
+            click.echo(click.style(f"Error: '{model_id}' does not support JSON mode, which the agent loop "
+                                   "needs to choose tools", fg="red"), err=True)
+            sys.exit(1)
+    try:
+        path = save_model_selection(provider, model_id, profile=profile)
+    except ModelConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    scope = f"profile '{profile}'" if profile else "default"
+    click.echo(f"Saved {provider}:{model_id} as the {scope} model in {path}")
+    if os.getenv("DELENTIA_LLM_MODEL") or os.getenv("DELENTIA_LLM_PROVIDER"):
+        click.echo(click.style("note: DELENTIA_LLM_PROVIDER/DELENTIA_LLM_MODEL env vars are set and take "
+                               "precedence over this config", fg="yellow"))
+
+
 @cli.command("serve")
 @click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
 @click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")

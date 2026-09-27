@@ -220,13 +220,24 @@ class OpenRouterProvider(LLMProvider):
                         yield text
 
 
-def get_default_provider() -> LLMProvider:
-    choice = os.getenv("DELENTIA_LLM_PROVIDER", "ollama").lower()
-    if choice == "openrouter":
+def get_default_provider(profile: Optional[str] = None) -> LLMProvider:
+    """Round 48: provider AND model now come from model_config's
+    resolution chain (args > env DELENTIA_LLM_PROVIDER/DELENTIA_LLM_MODEL
+    > profile config > config default > builtin), so a user can pick any
+    model without code changes. With no env and no config file this
+    resolves to exactly the pre-Round-48 behaviour (Ollama qwen2.5:7b)."""
+    from rct_control_plane.model_config import BUILTIN_DEFAULT_MODELS, resolve_model_selection
+
+    selection = resolve_model_selection(profile=profile)
+    if selection.provider == "openrouter":
         if os.getenv("OPENROUTER_API_KEY"):
-            return OpenRouterProvider()
-        logger.warning("DELENTIA_LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is unset; falling back to Ollama")
-    return OllamaProvider()
+            return OpenRouterProvider(model=selection.model)
+        logger.warning(
+            "model selection is openrouter:%s but OPENROUTER_API_KEY is unset; falling back to Ollama %s",
+            selection.model, BUILTIN_DEFAULT_MODELS["ollama"],
+        )
+        return OllamaProvider(model=BUILTIN_DEFAULT_MODELS["ollama"])
+    return OllamaProvider(model=selection.model)
 
 
 class QuotaExceededError(Exception):

@@ -323,12 +323,18 @@ class AutonomousLoop:
 
     def __init__(self, mcp_server, persistence: ControlPlanePersistence,
                  max_iterations: int = 5, max_seconds: float = 120.0,
-                 namespace: str = "kernel_default"):
+                 namespace: str = "kernel_default",
+                 llm_provider: Optional["LLMProvider"] = None):
         self._mcp = mcp_server
         self._persistence = persistence
         self.max_iterations = max_iterations
         self.max_seconds = max_seconds
         self.namespace = namespace
+        # Round 48: optional per-loop provider (e.g. from
+        # get_default_provider(profile=...)), so different profiles/
+        # gateways can run different user-selected models. None keeps the
+        # pre-Round-48 behaviour: resolve the default provider per call.
+        self._llm_provider = llm_provider
 
     async def _available_tools(self) -> list:
         tools = await self._mcp.list_tools()
@@ -446,7 +452,10 @@ class AutonomousLoop:
             # against decide_next_action's real 4th parameter
             # (llm_provider). Both branches are real, direct calls against
             # the real signature.
-            if extra_context:
+            if self._llm_provider is not None:
+                decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider,
+                                                    extra_context=extra_context)
+            elif extra_context:
                 decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
             else:
                 decision = await decide_next_action(goal, history, iteration_tools)
@@ -535,7 +544,7 @@ class AutonomousLoop:
         through LLMProvider.stream_complete() so the caller genuinely
         sees the answer as it's generated, not after the fact."""
         from rct_control_plane.llm_provider import get_default_provider
-        provider = get_default_provider()
+        provider = self._llm_provider or get_default_provider()
 
         # Round 41: same real compression as decide_next_action()'s prompt.
         history_desc = render_history(history)

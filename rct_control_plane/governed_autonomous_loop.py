@@ -110,6 +110,7 @@ from rct_control_plane.skill_library import SkillLibrary
 
 if TYPE_CHECKING:
     from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
+    from rct_control_plane.llm_provider import LLMProvider
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -207,9 +208,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         max_iterations: int = 5,
         max_seconds: float = 120.0,
         namespace: str = "kernel_default",
+        llm_provider: Optional["LLMProvider"] = None,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
-                          max_seconds=max_seconds, namespace=namespace)
+                          max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
         self._kernel = kernel
         self._intent_compiler = IntentCompiler()
         self._delta_engine = DeltaEngine()
