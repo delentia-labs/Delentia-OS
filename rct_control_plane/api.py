@@ -373,6 +373,12 @@ class ControlPlaneAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+        # Round 48: API authentication (the API had none). Added last, so it
+        # is the outermost layer and runs before routing, CORS and /mcp.
+        # See api_auth.py for the token / loopback / proxy-header rules.
+        from .api_auth import ApiTokenMiddleware
+        self.app.add_middleware(ApiTokenMiddleware)
         
         # Track uptime
         self._start_time: float = time.time()

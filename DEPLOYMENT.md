@@ -38,8 +38,24 @@ developer's own machine.
 
 ```bash
 docker build -t delentia-os-kernel .
-docker run -p 8000:8000 delentia-os-kernel
+# Round 48: the API requires a token for anything but local loopback
+# clients (see rct_control_plane/api_auth.py). Generate a long random value
+# and keep it out of git:
+export DELENTIA_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+docker run -p 127.0.0.1:8000:8000 -e DELENTIA_API_TOKEN delentia-os-kernel
 ```
+
+**Authentication (Round 48).** Until Round 48 this API had no
+authentication at all, including `POST /v1/agent/run`. Now:
+- with `DELENTIA_API_TOKEN` set, every endpoint except `/` and `/health`
+  needs `Authorization: Bearer <token>`;
+- without it, only loopback clients that did not come through a proxy or
+  tunnel are served. A request carrying Cloudflare/proxy headers, or from
+  any other address (including the Docker bridge), gets `401`;
+- `delentia serve --host 0.0.0.0` refuses to start without the token.
+
+Publish the port on `127.0.0.1` only (as above) and let Cloudflare Tunnel
+reach it; do not open 8000 in the VM's firewall/security list.
 
 **Verified working (Round 35)**: real build succeeds (~3 min once
 Docker's layer cache is warm), real container starts cleanly, and a
@@ -47,11 +63,11 @@ real end-to-end test confirmed genuinely varying, correctly-computed
 scores:
 
 ```
-curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":1.0}'
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -H "Authorization: Bearer $DELENTIA_API_TOKEN" -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":1.0}'
 # -> {"future_score":0.95,"authorized":true,...,"source":"python_kernel_real_computation"}
-curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.1,"intent_precision":2.0,"authorized":1.0}'
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -H "Authorization: Bearer $DELENTIA_API_TOKEN" -d '{"data_quality":0.1,"intent_precision":2.0,"authorized":1.0}'
 # -> {"future_score":0.01,...}  (genuinely different, not hardcoded)
-curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":0.0}'
+curl -X POST http://localhost:8000/v1/kernel/fdia/evaluate -H "Authorization: Bearer $DELENTIA_API_TOKEN" -d '{"data_quality":0.95,"intent_precision":1.0,"authorized":0.0}'
 # -> {"future_score":0.0,"authorized":false,...}  (real veto)
 ```
 
@@ -84,10 +100,17 @@ to the existing `vars` block (this is not a secret — it's just a URL, so
 }
 ```
 
-Then deploy the Worker for real:
+Store the same token as a Worker secret (never in `vars`; the bridge
+sends it as `Authorization: Bearer`, Round 48):
 
 ```bash
 cd delentia-mcp-ecosystem/packages/fdia
+npx wrangler secret put PYTHON_KERNEL_TOKEN
+```
+
+Then deploy the Worker for real:
+
+```bash
 npx wrangler deploy
 ```
 
@@ -101,6 +124,7 @@ reachable host — do the same here.
 ```bash
 curl -X POST https://<your-real-host>/v1/kernel/fdia/evaluate \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DELENTIA_API_TOKEN" \
   -d '{"data_quality":0.98,"intent_precision":1.0,"authorized":1.0}'
 ```
 

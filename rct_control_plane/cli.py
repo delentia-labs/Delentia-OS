@@ -1800,8 +1800,17 @@ def approvals_reject(approval_id: str, key_path: str, db: Optional[str]) -> None
 @click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")
 @click.option("--reload", is_flag=True, default=False, help="Enable auto-reload (dev mode).")
 @click.option("--workers", default=1, show_default=True, type=int, help="Number of worker processes.")
-def serve_command(host: str, port: int, reload: bool, workers: int) -> None:
+@click.option("--allow-no-auth", is_flag=True, default=False,
+              help="Bind a non-loopback host without DELENTIA_API_TOKEN (not recommended).")
+def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_auth: bool = False) -> None:
     """Start the Delentia OS API server (requires uvicorn)."""
+    from rct_control_plane.api_auth import TOKEN_ENV, bind_is_loopback
+    if not bind_is_loopback(host) and not os.getenv(TOKEN_ENV) and not allow_no_auth:
+        click.echo(click.style(
+            f"Error: refusing to serve the agent API on {host} without {TOKEN_ENV}. "
+            f"Set {TOKEN_ENV} to a long random value (clients send it as 'Authorization: Bearer ...'), "
+            "or bind 127.0.0.1.", fg="red"), err=True)
+        sys.exit(1)
     try:
         import uvicorn  # type: ignore
     except ImportError:
