@@ -35,11 +35,12 @@ def get_or_create_profile(kernel, profile_name: str) -> AgentProfile:
 
 
 async def delegate_to_profile(kernel, profile_name: str, sub_goal: str, max_iterations: int = 3) -> dict:
-    from rct_control_plane.autonomous_loop import AutonomousLoop
-    from rct_control_plane.mcp_server import mcp
+    # Round 48: governed (R0.1), and runs the profile's own model when
+    # ~/.delentia/model.json configures one for it.
+    from rct_control_plane.agent_factory import build_governed_loop
 
     profile = get_or_create_profile(kernel, profile_name)
-    loop = AutonomousLoop(mcp_server=mcp, persistence=kernel._persistence,
-                           max_iterations=max_iterations, namespace=profile.persistence_namespace)
+    loop = build_governed_loop(kernel, namespace=profile.persistence_namespace,
+                               max_iterations=max_iterations, profile=profile_name)
     result = await loop.run(sub_goal)
     return {"profile_name": profile_name, **result}

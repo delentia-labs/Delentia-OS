@@ -16,6 +16,14 @@ import pytest
 from rct_control_plane.gateways.telegram_gateway import TelegramGateway
 
 
+
+@pytest.fixture(autouse=True)
+def _allow_all_telegram_senders(monkeypatch):
+    """Round 48 R0.1: gateways are fail-closed (no allowlist = nobody).
+    These tests exercise dispatch/namespacing, so they opt in explicitly;
+    the allowlist itself is covered by test_agent_factory_governance_real.py."""
+    monkeypatch.setenv("DELENTIA_TELEGRAM_ALLOWED_SENDERS", "*")
+
 class _FakeKernel:
     class _FakePersistence:
         pass

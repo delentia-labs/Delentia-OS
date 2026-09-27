@@ -264,10 +264,11 @@ class DelentiaChatApp(App):
         status - AutonomousLoop.run() still returns once at the end (it
         isn't a generator), but the caller now sees each real step as it
         happens rather than only the final answer."""
-        from rct_control_plane.autonomous_loop import AutonomousLoop
+        # Round 48 R0.1: governed like every other entry point.
+        from rct_control_plane.agent_factory import build_governed_loop
         from rct_control_plane.mcp_server import mcp
 
-        loop = AutonomousLoop(mcp_server=mcp, persistence=self.kernel._persistence, namespace=namespace)
+        loop = build_governed_loop(self.kernel, namespace=namespace, mcp_server=mcp)
         return await loop.run(goal, on_step=self._on_loop_step, on_answer_token=self._on_answer_token)
 
     def _on_answer_token(self, chunk: str) -> None:

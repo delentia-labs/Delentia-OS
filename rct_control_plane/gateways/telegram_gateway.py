@@ -77,10 +77,11 @@ class TelegramGateway:
         """Real dispatch - split into its own method so tests can
         monkeypatch just this seam (avoiding a real LLM call) while
         exercising handle_update()'s real parsing/namespacing logic."""
-        from rct_control_plane.autonomous_loop import AutonomousLoop
-        from rct_control_plane.mcp_server import mcp
+        # Round 48 R0.1: governed (FDIA gate, write/patch approval, JITNA
+        # signing, episode audit) - was a plain AutonomousLoop.
+        from rct_control_plane.agent_factory import build_governed_loop
 
-        loop = AutonomousLoop(mcp_server=mcp, persistence=self._kernel._persistence, namespace=namespace)
+        loop = build_governed_loop(self._kernel, namespace=namespace)
         return await loop.run(goal)
 
     async def handle_update(self, update: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -97,6 +98,19 @@ class TelegramGateway:
         chat_id = message["chat"]["id"]
         text = message["text"]
         namespace = f"telegram-{chat_id}"
+
+        # Round 48 R0.1: fail-closed sender allowlist (Telegram user id,
+        # falling back to chat id for messages without a "from").
+        from rct_control_plane.agent_factory import (
+            REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+        )
+        sender_id = (message.get("from") or {}).get("id", chat_id)
+        if not sender_allowed("telegram", sender_id):
+            record_rejected_sender(self._kernel, "telegram", sender_id, namespace)
+            if self.is_configured():
+                await self.send_message(chat_id, REJECTED_SENDER_REPLY)
+            return {"chat_id": chat_id, "namespace": namespace, "goal": text, "rejected": True,
+                    "sender_id": sender_id}
 
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")

@@ -145,12 +145,14 @@ async def test_enter_inserts_a_newline_instead_of_submitting():
 @pytest.mark.asyncio
 async def test_real_dispatch_wires_on_step_into_the_conversation_log(monkeypatch):
     """Proves the DEFAULT (non-monkeypatched) _dispatch_to_autonomous_loop
-    really passes self._on_loop_step through to AutonomousLoop.run(), by
-    faking AutonomousLoop itself at the point chat_app.py imports it."""
+    really passes self._on_loop_step through to the governed loop's run(), by
+    faking GovernedAutonomousLoop where agent_factory imports it."""
     import rct_control_plane.autonomous_loop as autonomous_loop_module
 
     class _FakeLoop:
-        def __init__(self, mcp_server, persistence, namespace):
+        # Round 48 R0.1: the TUI now builds a GovernedAutonomousLoop via
+        # agent_factory.build_governed_loop (kernel, limits, provider kwargs).
+        def __init__(self, mcp_server, persistence, namespace, **kwargs):
             self.namespace = namespace
 
         async def run(self, goal, on_step=None, on_answer_token=None):
@@ -164,7 +166,8 @@ async def test_real_dispatch_wires_on_step_into_the_conversation_log(monkeypatch
                     await result
             return {"final_answer": "done", "iterations": 1}
 
-    monkeypatch.setattr(autonomous_loop_module, "AutonomousLoop", _FakeLoop)
+    import rct_control_plane.governed_autonomous_loop as governed_module
+    monkeypatch.setattr(governed_module, "GovernedAutonomousLoop", _FakeLoop)
 
     app = DelentiaChatApp(kernel=_FakeKernel())
     async with app.run_test() as pilot:
@@ -183,10 +186,11 @@ async def test_real_dispatch_wires_on_answer_token_into_the_streaming_preview(mo
     passes self._on_answer_token through to AutonomousLoop.run(), and
     that the streaming preview widget shows the accumulated text live,
     then hides once the exchange finishes."""
-    import rct_control_plane.autonomous_loop as autonomous_loop_module
 
     class _FakeLoop:
-        def __init__(self, mcp_server, persistence, namespace):
+        # Round 48 R0.1: the TUI now builds a GovernedAutonomousLoop via
+        # agent_factory.build_governed_loop (kernel, limits, provider kwargs).
+        def __init__(self, mcp_server, persistence, namespace, **kwargs):
             self.namespace = namespace
 
         async def run(self, goal, on_step=None, on_answer_token=None):
@@ -199,7 +203,8 @@ async def test_real_dispatch_wires_on_answer_token_into_the_streaming_preview(mo
                         await result
             return {"final_answer": "".join(chunks) or "done", "iterations": 1}
 
-    monkeypatch.setattr(autonomous_loop_module, "AutonomousLoop", _FakeLoop)
+    import rct_control_plane.governed_autonomous_loop as governed_module
+    monkeypatch.setattr(governed_module, "GovernedAutonomousLoop", _FakeLoop)
 
     app = DelentiaChatApp(kernel=_FakeKernel())
     async with app.run_test() as pilot:

@@ -30,14 +30,17 @@ async def _main() -> None:
     parser.add_argument("--max-iterations", type=int, default=3)
     args = parser.parse_args()
 
-    from rct_control_plane.autonomous_loop import AutonomousLoop
+    from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.persistence import ControlPlanePersistence
-    from rct_control_plane.mcp_server import mcp
+    from rct_control_plane.mcp_server import _kernel, mcp
 
     persistence = ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
-    loop = AutonomousLoop(
-        mcp_server=mcp, persistence=persistence,
-        namespace=f"jitna-subagent-{args.agent_id}", max_iterations=args.max_iterations,
+    # Round 48 R0.1: sub-agents are governed too (they previously ran a
+    # plain AutonomousLoop). mcp_server's module-level kernel is already
+    # built by the import above, so this adds no second cold start.
+    loop = build_governed_loop(
+        _kernel, namespace=f"jitna-subagent-{args.agent_id}",
+        max_iterations=args.max_iterations, persistence=persistence, mcp_server=mcp,
     )
     result = await loop.run(args.goal)
     print(json.dumps({

@@ -22,7 +22,6 @@ from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.sandbox import run_sandboxed
 from rct_control_plane.nodal_assembly import assemble
 from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
-from rct_control_plane.autonomous_loop import AutonomousLoop
 from rct_control_plane.agent_profile import delegate_to_profile
 from rct_control_plane.agent_memory import MemoryType
 from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders, schedule_self_evolution
@@ -118,8 +117,9 @@ async def delentia_autonomous_loop(goal: str, max_iterations: int = 5) -> dict:
     """Real autonomous decide/act/observe loop over this kernel's MCP
     tools. Bounded by max_iterations and a 120s wall-clock cap. Only has
     access to this server's own already safety-reviewed tools."""
-    loop = AutonomousLoop(mcp_server=mcp, persistence=_kernel._persistence,
-                           max_iterations=max_iterations, namespace="mcp_loop")
+    # Round 48 R0.1: governed like every other entry point.
+    from rct_control_plane.agent_factory import build_governed_loop
+    loop = build_governed_loop(_kernel, namespace="mcp_loop", max_iterations=max_iterations, mcp_server=mcp)
     return await loop.run(goal)
 
 

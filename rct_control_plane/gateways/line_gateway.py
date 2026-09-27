@@ -70,10 +70,11 @@ class LineGateway:
     async def _dispatch_to_autonomous_loop(self, goal: str, namespace: str) -> Dict[str, Any]:
         """Real dispatch - same testable-seam pattern as
         TelegramGateway._dispatch_to_autonomous_loop."""
-        from rct_control_plane.autonomous_loop import AutonomousLoop
-        from rct_control_plane.mcp_server import mcp
+        # Round 48 R0.1: governed (FDIA gate, write/patch approval, JITNA
+        # signing, episode audit) - was a plain AutonomousLoop.
+        from rct_control_plane.agent_factory import build_governed_loop
 
-        loop = AutonomousLoop(mcp_server=mcp, persistence=self._kernel._persistence, namespace=namespace)
+        loop = build_governed_loop(self._kernel, namespace=namespace)
         return await loop.run(goal)
 
     async def reply_message(self, reply_token: str, text: str) -> None:
@@ -103,6 +104,17 @@ class LineGateway:
             text = event["message"]["text"]
             reply_token = event.get("replyToken")
             namespace = f"line-{user_id}"
+
+            # Round 48 R0.1: fail-closed sender allowlist.
+            from rct_control_plane.agent_factory import (
+                REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+            )
+            if not sender_allowed("line", user_id):
+                record_rejected_sender(self._kernel, "line", user_id, namespace)
+                if reply_token and self._channel_access_token:
+                    await self.reply_message(reply_token, REJECTED_SENDER_REPLY)
+                results.append({"user_id": user_id, "namespace": namespace, "goal": text, "rejected": True})
+                continue
 
             result = await self._dispatch_to_autonomous_loop(text, namespace)
             reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")

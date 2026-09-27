@@ -9,6 +9,8 @@ import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import asyncio
+
+import pytest
 import base64
 import hashlib
 import hmac
@@ -16,6 +18,14 @@ import hmac
 
 from rct_control_plane.gateways.line_gateway import LineGateway
 
+
+
+@pytest.fixture(autouse=True)
+def _allow_all_line_senders(monkeypatch):
+    """Round 48 R0.1: gateways are fail-closed (no allowlist = nobody).
+    These tests exercise dispatch/namespacing, so they opt in explicitly;
+    the allowlist itself is covered by test_agent_factory_governance_real.py."""
+    monkeypatch.setenv("DELENTIA_LINE_ALLOWED_SENDERS", "*")
 
 class _FakeKernel:
     class _FakePersistence:

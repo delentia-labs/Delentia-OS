@@ -58,10 +58,11 @@ class DiscordGateway:
     async def _dispatch_to_autonomous_loop(self, goal: str, namespace: str) -> Dict[str, Any]:
         """Real dispatch - deliberate testable seam, same pattern as
         telegram_gateway.py/line_gateway.py."""
-        from rct_control_plane.autonomous_loop import AutonomousLoop
-        from rct_control_plane.mcp_server import mcp
+        # Round 48 R0.1: governed (FDIA gate, write/patch approval, JITNA
+        # signing, episode audit) - was a plain AutonomousLoop.
+        from rct_control_plane.agent_factory import build_governed_loop
 
-        loop = AutonomousLoop(mcp_server=mcp, persistence=self._kernel._persistence, namespace=namespace)
+        loop = build_governed_loop(self._kernel, namespace=namespace)
         return await loop.run(goal)
 
     async def handle_message(
@@ -76,6 +77,14 @@ class DiscordGateway:
             return None
 
         namespace = f"discord-{channel_id}-{author_id}"
+        # Round 48 R0.1: fail-closed sender allowlist.
+        from rct_control_plane.agent_factory import (
+            REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+        )
+        if not sender_allowed("discord", author_id):
+            record_rejected_sender(self._kernel, "discord", author_id, namespace)
+            return {"channel_id": channel_id, "namespace": namespace, "goal": content,
+                    "rejected": True, "reply_text": REJECTED_SENDER_REPLY}
         result = await self._dispatch_to_autonomous_loop(content, namespace)
         reply_text = str(result.get("final_answer") or result.get("stopped_reason", "(no response)"))
         return {

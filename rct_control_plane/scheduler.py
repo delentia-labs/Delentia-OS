@@ -28,7 +28,6 @@ async def check_and_fire_due_reminders(kernel: "AlgorithmKernel41", namespace: O
     one's goal through a real AutonomousLoop, marking it fired only
     after a real result is produced. The real self-evolution sentinel
     goal is dispatched directly instead (see SELF_EVOLVE_SENTINEL_GOAL)."""
-    from rct_control_plane.autonomous_loop import AutonomousLoop
     from rct_control_plane.mcp_server import mcp
 
     due = kernel._persistence.get_due_reminders(now=time.time(), namespace=namespace)
@@ -40,8 +39,10 @@ async def check_and_fire_due_reminders(kernel: "AlgorithmKernel41", namespace: O
             results.append({"reminder_id": reminder["id"], "self_evolution_result": result})
             continue
 
-        loop = AutonomousLoop(mcp_server=mcp, persistence=kernel._persistence,
-                               max_iterations=3, namespace=reminder["namespace"])
+        # Round 48 R0.1: reminders run unattended, so they are exactly
+        # where governance matters most - was a plain AutonomousLoop.
+        from rct_control_plane.agent_factory import build_governed_loop
+        loop = build_governed_loop(kernel, namespace=reminder["namespace"], max_iterations=3, mcp_server=mcp)
         result = await loop.run(reminder["goal"])
         kernel._persistence.mark_reminder_fired(reminder["id"])
         results.append({"reminder_id": reminder["id"], **result})
