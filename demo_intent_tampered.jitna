@@ -1,0 +1,26 @@
+{
+  "packet": {
+    "intent": "deploy the payment service to PRODUCTION-HACKED",
+    "data": {
+      "service": "payment-api",
+      "version": "2.4.1"
+    },
+    "delta": {
+      "config_changed": [
+        "timeout_ms"
+      ]
+    },
+    "authorization": 1.0,
+    "resource": {
+      "cpu_budget_ms": 800
+    },
+    "memory": {
+      "session_id": "demo-session"
+    },
+    "timestamp": 1789545291.113147,
+    "nonce": "cda8e2fc805225ce55c1c6bb7c3d5abc"
+  },
+  "signature": "1cae2914f2e9b8b2b64f46de7b97db45319bd486cbfd26db52b938ab5d2662353fc8412041d8132863e47a3a91f5ef17c9413d11d4a7bd78e7c501f0b7a5e302",
+  "sender_fingerprint": "12253c0bc1ac6b3fdf1c3a2e778576362e6c12084752f1f1b8676b2c63177ba9",
+  "sender_public_key_hex": "f6bead13ded8af905561c8a5575201e6de33bf10aacf41482de8b63810404e2a"
+}
