@@ -19,8 +19,8 @@ def test_ollama_provider_real_completion():
 
 
 def test_openrouter_provider_real_completion_or_honest_skip():
-    if not os.getenv("OPENROUTER_API_KEY"):
-        pytest.skip("OPENROUTER_API_KEY not set for this test run - real call cannot be made")
+    if not (os.getenv("OPENROUTER_API_KEY") and os.getenv("DELENTIA_RUN_LIVE_TESTS") == "1"):
+        pytest.skip("paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1")
     from rct_control_plane.llm_provider import OpenRouterProvider
     provider = OpenRouterProvider()
     result = asyncio.run(provider.complete("Reply with exactly the word: PONG"))

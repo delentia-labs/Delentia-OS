@@ -117,8 +117,8 @@ class TestCallHexacoreRoleResolvesRealModelId(unittest.TestCase):
 
 
 @pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"),
-    reason="no live OPENROUTER_API_KEY in this environment - real live call skipped honestly",
+    not (os.getenv("OPENROUTER_API_KEY") and os.getenv("DELENTIA_RUN_LIVE_TESTS") == "1"),
+    reason="paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1",
 )
 class TestOpenRouterAdapterLiveCall:
     """Real, live network test - only runs when a real key is present in

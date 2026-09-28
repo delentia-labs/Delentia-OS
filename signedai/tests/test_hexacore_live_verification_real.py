@@ -23,9 +23,10 @@ import pytest
 from signedai.core.openrouter_adapter import call_hexacore_role
 from signedai.core.registry import HexaCoreRole
 
+# Paid calls: a key alone is not enough (modules load it from .env), the run must opt in.
 pytestmark = pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"),
-    reason="no live OPENROUTER_API_KEY in this environment - real live verification skipped honestly",
+    not (os.getenv("OPENROUTER_API_KEY") and os.getenv("DELENTIA_RUN_LIVE_TESTS") == "1"),
+    reason="paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1",
 )
 
 _REACHABLE_ROLES = [
