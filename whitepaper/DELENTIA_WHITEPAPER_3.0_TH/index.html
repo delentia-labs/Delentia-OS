@@ -1,0 +1,2937 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Intent-Centric AI Operating System — Constitutional Architecture SDK">
+      
+      
+        <meta name="author" content="Ittirit Saengow (Delentia Labs)">
+      
+      
+        <link rel="canonical" href="https://delentia-labs.github.io/Delentia-OS/whitepaper/DELENTIA_WHITEPAPER_3.0_TH/">
+      
+      
+        <link rel="prev" href="../DELENTIA_WHITEPAPER_3.0_EN/">
+      
+      
+        <link rel="next" href="../../getting-started/installation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/RCTicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ภาษาไทย - Delentia OS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CSpace+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Space Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/rct-brand.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#delentia-whitepaper-30-constitutional-agent-runtime" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Delentia OS" class="md-header__button md-logo" aria-label="Delentia OS" data-md-component="logo">
+      
+  <img src="../../assets/RCTicon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delentia OS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ภาษาไทย
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/delentia-labs/delentia-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    delentia-labs/delentia-os
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DELENTIA_WHITEPAPER_3.0_EN/" class="md-tabs__link">
+          
+  
+  
+  Whitepaper 3.0
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../concepts/jitna/" class="md-tabs__link">
+          
+  
+  
+  Core Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../algorithms/overview/" class="md-tabs__link">
+          
+  
+  
+  Algorithms & Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../benchmark/methodology/" class="md-tabs__link">
+          
+  
+  
+  Benchmark
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../use-cases/devops/" class="md-tabs__link">
+          
+  
+  
+  Use Cases
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/control-plane/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Testing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Delentia OS" class="md-nav__button md-logo" aria-label="Delentia OS" data-md-component="logo">
+      
+  <img src="../../assets/RCTicon.svg" alt="logo">
+
+    </a>
+    Delentia OS
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/delentia-labs/delentia-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    delentia-labs/delentia-os
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whitepaper 3.0
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Whitepaper 3.0
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DELENTIA_WHITEPAPER_3.0_EN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    English
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ภาษาไทย
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ภาษาไทย
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. ปัญหา
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-fdia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. FDIA: สมการรัฐธรรมนูญ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. FDIA: สมการรัฐธรรมนูญ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 กฎ 4 ข้อ (บังคับในโค้ด ทดสอบทั้งสองภาษา)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-architect-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Architect token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 เกณฑ์ของ gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-rct-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. RCT-7: วิธีคิดของเอเจนต์
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-constitutional-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Constitutional Cycle (วงจรรัฐธรรมนูญ)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. ผลิตภัณฑ์ 3 ตัว
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. สถาปัตยกรรม: 10 ชั้น ตามที่สร้างจริง
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-delta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. ความจำและ Delta ทั้งสาม
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Audit และการดูแลกุญแจ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. หลักฐาน
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. หลักฐาน">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 ที่วัดได้จริง (ทำซ้ำได้)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 ข้อความที่ถอนออก
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Roadmap (ยังไม่สร้าง)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-v2x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. เปลี่ยนอะไรจาก v2.x
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ภาคผนวก A. รายการวัตถุของระบบ
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/jitna/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JITNA Protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/fdia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FDIA Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/rct-7-thinking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RCT-7 Thinking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/signedai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SignedAI Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/intent-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intent Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithms & Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithms & Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open-Core Architecture Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/moip/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOIP — Multi-Objective Intent Planning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/mee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MEE — Meta-Evolution Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/tier9-autonomy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Autonomous Pipeline Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-001 JITNA Protocol Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_002_PROCESS_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-002 Agent Process Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_003_SCHEDULER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-003 Tick Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_004_IPC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-004 IPC Message Bus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_005_SYSCALL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-005 Syscall & Capabilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_006_FAULT_ISOLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-006 Fault Isolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmark/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmark/hallucination-methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hallucination Rate Methodology (withdrawn)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use Cases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Use Cases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/devops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DevOps & CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/finance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance & Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/game-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game AI & NPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/healthcare/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Healthcare
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/supply-chain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supply Chain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/control-plane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/microservices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microservices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="delentia-whitepaper-30-constitutional-agent-runtime">Delentia Whitepaper 3.0: รันไทม์เอเจนต์ภายใต้รัฐธรรมนูญ (Constitutional Agent Runtime)<a class="headerlink" href="#delentia-whitepaper-30-constitutional-agent-runtime" title="Permanent link">&para;</a></h1>
+<p><strong>ฉบับ:</strong> 3.0 (2026-09-28) · <strong>ผู้เขียน:</strong> อิทธิฤทธิ์ แซ่โง้ว (The Architect), Delentia Labs
+<strong>ฉบับภาษาอังกฤษ:</strong> <a href="../DELENTIA_WHITEPAPER_3.0_EN/">DELENTIA_WHITEPAPER_3.0_EN.md</a></p>
+<blockquote>
+<p><strong>วิธีอ่านเอกสารนี้</strong> ตัวเลขทุกตัวมาจาก §9 (หลักฐาน) ซึ่งระบุคำสั่งที่ใช้วัดและวันที่วัด สิ่งที่ยังไม่ได้สร้าง
+จะเขียนกำกับว่า <strong>ยังไม่สร้าง</strong> และอยู่ใน §10 (Roadmap) whitepaper ฉบับก่อน (v2.x, "RCT Ecosystem", บทที่ 01–08)
+เก็บไว้เป็นประวัติเท่านั้น ถ้าเนื้อหาขัดกับฉบับนี้ ให้ถือฉบับนี้ §11 สรุปว่าเปลี่ยนอะไรบ้าง</p>
+</blockquote>
+<hr />
+<h2 id="1">1. ปัญหา<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>เอเจนต์ AI ทุกวันนี้ "ลงมือทำ" ได้แล้ว: อ่าน/เขียนไฟล์ รันคำสั่ง shell เรียก API ส่งข้อความ ผ่าน tool (เช่น MCP server)
+ชั้นความปลอดภัยที่ใช้กันทั่วไปเป็นแค่ข้อความ: system prompt ที่ขอให้โมเดลระวัง หรือโมเดลตัวที่สองมาตัดสินตัวแรก
+ทั้งสองแบบเป็นความน่าจะเป็น และอยู่ข้างในสิ่งที่มันควรจะควบคุม เอเจนต์ที่โดน prompt injection หรือแค่เข้าใจผิดก็ข้ามได้</p>
+<p>จุดยืนของ Delentia คือ การตัดสินว่า <em>action นี้รันได้หรือไม่</em> ต้อง:</p>
+<ol>
+<li><strong>แน่นอน (deterministic)</strong>: คำขอเดิม นโยบายเดิม ได้คำตัดสินเดิมเสมอ</li>
+<li><strong>อยู่นอกโมเดล</strong>: บังคับด้วยโค้ด ณ จุดที่ tool call ถูกรันจริง ไม่ใช่ขอร้องใน prompt</li>
+<li><strong>ยึดกับมนุษย์</strong>: อำนาจสุดท้ายของ action เสี่ยงสูงคือคนที่การอนุมัติของเขาตรวจสอบด้วยการเข้ารหัสได้ ไม่ใช่ตัวเอเจนต์เอง</li>
+<li><strong>บันทึกให้ตรวจย้อนได้</strong>: โดยบุคคลอื่นที่ไม่ใช่เอเจนต์ที่ถูกตรวจ</li>
+</ol>
+<h2 id="2-fdia">2. FDIA: สมการรัฐธรรมนูญ<a class="headerlink" href="#2-fdia" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>F = D^I × A
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>สัญลักษณ์</th>
+<th>ชื่อ</th>
+<th>ความหมายใน gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F</strong></td>
+<td>Future (อนาคต)</td>
+<td>ความชอบธรรมของ action: อนาคตนี้ควรเกิดขึ้นหรือไม่</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>Data (ข้อมูล)</td>
+<td>คุณภาพและความพอเพียงของข้อมูลเบื้องหลังคำขอ ปรับให้อยู่ใน [0, 1]</td>
+</tr>
+<tr>
+<td><strong>I</strong></td>
+<td>Intent (เจตนา)</td>
+<td>ความแม่นยำของเจตนาที่ระบุ เพราะ D ≤ 1 ค่า I ที่สูงขึ้นทำให้ gate <em>เข้มขึ้น</em>: ข้อมูลคลุมเครือจะถูกลงโทษหนักขึ้นเมื่อเจตนาอ้างว่าแม่นยำ</td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>Architect (สถาปนิก)</td>
+<td>อำนาจของมนุษย์ <strong>A = 0 คือไม่มีอนาคต</strong> ไม่ว่า D และ I จะเป็นเท่าไร A ไม่ใช่ผลลัพธ์ของโมเดล แต่เป็นการตัดสินใจของมนุษย์ที่ตรวจสอบได้</td>
+</tr>
+</tbody>
+</table>
+<h3 id="21-4">2.1 กฎ 4 ข้อ (บังคับในโค้ด ทดสอบทั้งสองภาษา)<a class="headerlink" href="#21-4" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>A = 0 ⇒ F = 0</strong> ไม่มี Architect ก็ไม่มี action เสี่ยงสูงใดผ่าน</li>
+<li><strong>I ≤ 0 ⇒ F = 0</strong> ไม่มีเจตนา ไม่มีอนาคต (ทางคณิตศาสตร์ <code>D^0 = 1</code> ซึ่งจะทำให้คำขอที่ไม่มีเจตนาผ่านเต็มที่ โค้ดปฏิเสธการตีความนี้)</li>
+<li><strong>D ≤ 0 ⇒ F = 0</strong> ไม่มีข้อมูล ไม่มีอนาคต</li>
+<li><strong>A ต้องเป็นมนุษย์และตรวจสอบได้</strong> token ของ Architect คือลายเซ็น Ed25519 ตรวจกับกุญแจสาธารณะที่ <em>ระบบที่ deploy</em> เชื่อถือ ไม่ใช่กุญแจที่ผู้เรียกส่งมาเอง</li>
+</ol>
+<p>ค่าที่อยู่นอกโดเมนจะถูกปฏิเสธ (fail closed) เอนจินฝั่ง TypeScript (MCP tools และ Guard) กับฝั่ง Python (agent runtime)
+ใช้ไฟล์สัญญาร่วมกัน 425 test vector (<code>contracts/fdia_vectors.v1.json</code> ตรึงด้วย SHA-256 ในทั้งสอง repo)
+ตรงกัน 422 อีก 3 ตัวบันทึกความต่างที่รู้แล้วเรื่องการ clamp ค่าที่เกินช่วง</p>
+<h3 id="22-architect-token">2.2 Architect token<a class="headerlink" href="#22-architect-token" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dat1.&lt;key_id&gt;.&lt;expires&gt;.&lt;signature&gt;
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>ข้อความที่ลงลายเซ็น: delentia-architect-token:v1|key_id|action|sha256(payload)|expires
+</span></code></pre></div>
+<ul>
+<li>ผูกกับ <strong>action เดียว</strong> และ <strong>payload ที่ตรงกันทุกตัวอักษร</strong> (ผ่าน hash) อายุไม่เกิน 24 ชั่วโมง</li>
+<li>กุญแจที่เชื่อถือมาจากการตั้งค่าของระบบเท่านั้น (<code>FDIA_ARCHITECT_KEYS_JSON</code> บน Workers, <code>~/.delentia/approvers.json</code> สำหรับ runtime)
+  ถ้าไม่ได้ตั้งไว้เลย = ไม่มีอะไรได้รับอนุญาต</li>
+<li>action ที่ต้อง <strong>ลงนามคู่ (dual sign-off)</strong> ต้องใช้กุญแจที่เชื่อถือ 2 ดอกที่ต่างกัน</li>
+<li>กุญแจ Ed25519 ดอกเดียวลงนามได้ทั้งการอนุมัติใน runtime และ token นี้</li>
+</ul>
+<h3 id="23-gate">2.3 เกณฑ์ของ gate<a class="headerlink" href="#23-gate" title="Permanent link">&para;</a></h3>
+<p>agent runtime จะบล็อก action เมื่อ F ต่ำกว่า <code>FDIA_GATE_THRESHOLD</code> (ค่าเริ่มต้น 0.5) และบอกโมเดลว่าเพราะอะไร
+tool ที่เขียน แก้ไข หรือมีผลข้างเคียง จะรอมนุษย์อนุมัติเสมอ ไม่ว่า F จะเป็นเท่าไร</p>
+<h2 id="3-rct-7">3. RCT-7: วิธีคิดของเอเจนต์<a class="headerlink" href="#3-rct-7" title="Permanent link">&para;</a></h2>
+<p>Reverse Component Thinking คิดย้อนจากผลลัพธ์ที่ต้องการ 7 ขั้น:
+<strong>สังเกต → วิเคราะห์ → แยกส่วน → คิดย้อนกลับ → ระบุเจตนาหลัก → ประกอบใหม่ → เทียบกับเจตนา</strong></p>
+<ul>
+<li>ใน agent runtime ขั้น 1–6 ถูกคำนวณสำหรับทุกเป้าหมายและใส่ใน prompt เป็นแผน ขั้นที่ 7 รันหลังจบ episode:
+  semantic matcher เทียบสิ่งที่ทำไปกับเจตนาเดิม และบันทึกผล</li>
+<li>MCP tool สาธารณะ <code>rct_think</code> คืนโครงสร้าง 7 ขั้นเดียวกัน พร้อมคะแนนความสอดคล้องแบบ heuristic ที่คำนวณจากความครบถ้วนของคำขอ
+  (spec: <code>RCT7_SCORING_SPEC.md</code> ใน MCP repo) <strong>เป็น checklist ไม่ใช่ตัวตรวจจับ hallucination</strong></li>
+</ul>
+<h2 id="4-constitutional-cycle">4. Constitutional Cycle (วงจรรัฐธรรมนูญ)<a class="headerlink" href="#4-constitutional-cycle" title="Permanent link">&para;</a></h2>
+<p>ทุก episode ของเอเจนต์ผ่าน 8 ขั้นโดยอัตโนมัติ ไม่ใช่เฉพาะตอนที่โมเดลเลือกเรียก tool</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>ขั้น</th>
+<th>เกิดอะไรขึ้น</th>
+<th>สถานะ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>GUARD</strong></td>
+<td>ตรวจ pattern ด้วย CORD แล้วผ่าน FDIA gate กับเป้าหมาย</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>THINK</strong></td>
+<td>RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง)</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>ROUTE</strong></td>
+<td>ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน loop</td>
+<td>❌ <strong>ยังไม่สร้าง</strong> (อัลกอริทึมมีแล้ว แต่ loop ยังไม่เรียก)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>ACT</strong></td>
+<td>FDIA gate ทุกขั้น; tool ที่มีผลข้างเคียงรอการอนุมัติที่ลงลายเซ็นโดยมนุษย์ แล้ว episode ทำต่อได้</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>COMPRESS</strong></td>
+<td>ผลลัพธ์ tool ที่เกิน ~2k token ถูกบีบด้วย Delta-Context และขยายกลับได้</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>VERIFY</strong></td>
+<td>RCT-7 ขั้นที่ 7 เทียบกับเจตนาเดิม</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>RECORD</strong></td>
+<td>audit แบบ hash chain (ลงลายเซ็นเมื่อตั้งกุญแจ) และ RCTDB <code>experiment_runs</code></td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>LEARN</strong></td>
+<td>เฉพาะ episode ที่ผ่านการตรวจเท่านั้นที่สร้าง skill ได้ และต้องผ่าน MEE gate</td>
+<td>✅ สร้างแล้ว</td>
+</tr>
+</tbody>
+</table>
+<p>ทุกประตูเข้า (API, gateway ข้อความ 4 ช่องทาง, scheduler, MCP tool, profile และ subagent, terminal UI) สร้าง loop ผ่าน factory เดียวที่ควบคุมการกำกับ
+มี test ที่จะล้มถ้ามีโมดูลใดสร้าง loop ที่ไม่ผ่านการกำกับ</p>
+<h2 id="5-3">5. ผลิตภัณฑ์ 3 ตัว<a class="headerlink" href="#5-3" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ผลิตภัณฑ์</th>
+<th>คืออะไร</th>
+<th>ใครเป็นคนคิด</th>
+<th>บังคับใช้จริง?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Delentia Guard</strong> (<code>delentia-guard</code>)</td>
+<td>proxy แบบ stdio คั่นหน้า MCP server ใดก็ได้ ทุก <code>tools/call</code> ถูกตรวจกับนโยบาย FDIA ก่อนถึง server; บีบ output ได้; ขออนุมัติมนุษย์สำหรับกฎ "ต้องให้คนตัดสิน"; audit log แบบ hash chain ลงลายเซ็น Ed25519</td>
+<td>เอเจนต์ของลูกค้าเอง</td>
+<td><strong>ใช่</strong></td>
+</tr>
+<tr>
+<td><strong>Delentia MCP tools</strong> (<code>delentia-mcp</code>, Cloudflare Workers)</td>
+<td>6 tools: <code>evaluate_fdia</code>, <code>rct_think</code>, <code>compress_context</code>, <code>expand_context</code>, <code>orchestrate_swarm</code>, <code>configure_policy</code></td>
+<td>เอเจนต์ของลูกค้าเอง</td>
+<td>ไม่ เป็นคำแนะนำ: เอเจนต์ต้องเลือกเรียกเอง</td>
+</tr>
+<tr>
+<td><strong>Delentia-OS agent runtime</strong> (Python)</td>
+<td>เอเจนต์อัตโนมัติของ Delentia เอง: governed loop, daemon, scheduler, gateway, skill, ความจำ, sandbox, subagent, เลือกโมเดลได้ (Ollama หรือโมเดลใดก็ได้บน OpenRouter)</td>
+<td>loop ของ Delentia กับโมเดลที่ผู้ดูแลเลือก</td>
+<td><strong>ใช่</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Guard ออกก่อน เพราะบังคับนโยบายกับเอเจนต์ที่คนใช้อยู่แล้วได้ทันที</p>
+<h2 id="6-10">6. สถาปัตยกรรม: 10 ชั้น ตามที่สร้างจริง<a class="headerlink" href="#6-10" title="Permanent link">&para;</a></h2>
+<p>whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยังเป็นแผนที่ที่มีประโยชน์ แต่หลายชั้นถูกเขียนเหมือนสร้างเสร็จแล้วทั้งที่เป็นแผน ตารางนี้คือบันทึกที่แก้แล้ว</p>
+<table>
+<thead>
+<tr>
+<th>ชั้น</th>
+<th>คำอธิบายเดิม</th>
+<th>ที่สร้างจริง (2026-09-28)</th>
+<th>การตัดสินใจ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 OS primitives</td>
+<td>เข้าถึงฮาร์ดแวร์ตรง แยก process ระดับ OS</td>
+<td>sandbox ระดับ process (<code>local</code> และ <code>docker</code>) พร้อมจัดระดับความเสี่ยงคำสั่ง</td>
+<td>แก้เอกสาร: Delentia เป็น runtime บน OS ไม่ใช่ OS</td>
+</tr>
+<tr>
+<td>L2 Kernel services</td>
+<td>จัดการ VRAM, สลับ LoRA &lt; 12 ms</td>
+<td><code>lora_multiplexer.py</code> จัดการ slot ของ adapter (มี mock สำรอง); SLM ไม่ได้ต่อกับ runtime; 12 ms ไม่เคยวัด</td>
+<td>แก้เอกสาร; SLM เป็นส่วนเสริมนอกเส้นทางหลัก</td>
+</tr>
+<tr>
+<td>L3 Algorithm kernel</td>
+<td>41 อัลกอริทึม + FDIA</td>
+<td>✅ 41/41 มี logic จริง; 24 ตัวรันอัตโนมัติจาก kernel ที่เหลือเรียกผ่าน tool หรือ router</td>
+<td>คงไว้</td>
+</tr>
+<tr>
+<td>L4 RCTDB</td>
+<td>8 มิติ บน Qdrant + Neo4j + PostgreSQL</td>
+<td>ค่าเริ่มต้นคือ SQLite (ตาราง RCTDB, audit แบบ hash chain, experiment runs); มี backend PostgreSQL + pgvector; Qdrant ใช้ใน vector search (ALGO-16); Neo4j ใช้ใน graph traversal (ALGO-17) เมื่อตั้ง server ไว้</td>
+<td>แก้เอกสารเป็น "SQLite เป็นค่าเริ่มต้น มี backend เสริม" ช่องว่างในโค้ด: audit hash chain มีแค่บน SQLite ต้องทำให้ PostgreSQL เท่ากันก่อน deploy หลายเครื่อง</td>
+</tr>
+<tr>
+<td>L5 SignedAI</td>
+<td>ฉันทามติหลายโมเดล ≥ 75%</td>
+<td>logic ฉันทามติและการเลือก tier อยู่ใน <code>signedai/core</code>; ยังไม่มี HTTP API; รายชื่อโมเดลในเอกสารเก่าล้าสมัย</td>
+<td>แก้เอกสาร; API wrapper อยู่ใน backlog</td>
+</tr>
+<tr>
+<td>L6 JITNA</td>
+<td>แพ็กเก็ต I, D, Δ, A, R, M</td>
+<td>✅ แพ็กเก็ตลงลายเซ็น Ed25519 (v2), streaming (v3)</td>
+<td>คงไว้</td>
+</tr>
+<tr>
+<td>L7 FloatingAI &amp; Delta</td>
+<td>บีบความจำ 91.5%</td>
+<td>"Delta" 3 ชิ้นที่ต่างกัน (ดู §7)</td>
+<td>ตั้งชื่อใหม่และแยกกัน</td>
+</tr>
+<tr>
+<td>L8 Regional language adapter</td>
+<td>เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR)</td>
+<td>มี endpoint ตรวจความเสี่ยง PDPA และรายการ adapter กฎหมายไทย; ไม่มีชั้นที่เลือกโมเดลตาม locale หรือที่ตั้งข้อมูล</td>
+<td>แก้เอกสาร; สร้างเมื่อมีลูกค้าต้องการ</td>
+</tr>
+<tr>
+<td>L9 Universal adapter</td>
+<td>REST / GraphQL / WebSocket / gRPC</td>
+<td>MCP คือพื้นผิวเชื่อมต่อ (6 remote tools, 34 runtime tools, Guard สำหรับ MCP server ใดก็ได้); มี adapter SDK แต่เงียบ</td>
+<td>นิยาม L9 ใหม่เป็น "MCP + Guard"</td>
+</tr>
+<tr>
+<td>L10 Enterprise hardening</td>
+<td>JWT RS256, RBAC, circuit breaker</td>
+<td>✅ <code>enterprise_hardening.py</code>, API auth ด้วย bearer token, allowlist ผู้ส่งแบบ fail-closed บน gateway</td>
+<td>คงไว้</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ตอบคำถามที่ถามซ้ำบ่อย: ต้องแก้ whitepaper หรือแก้โค้ด?</strong> ส่วนใหญ่แก้ whitepaper
+โค้ดทำสิ่งที่ agent runtime ต้องมีในระยะนี้ครบแล้ว ข้อความเดิมอธิบายโครงสร้างที่ใหญ่กว่าที่ผู้ใช้ปัจจุบันต้องการ (ฐานข้อมูล 3 ตัว, ชั้น OS, การเลือกเส้นทางตามภูมิภาค)
+การแก้โค้ดมีเหตุผลเฉพาะจุดที่ปิดช่องว่างจริง: audit chain บน PostgreSQL (ก่อนรันมากกว่า 1 เครื่อง), HTTP API ของ SignedAI,
+และการเลือกโมเดลตามภูมิภาคเมื่อมีลูกค้าขอ</p>
+<h2 id="7-delta">7. ความจำและ Delta ทั้งสาม<a class="headerlink" href="#7-delta" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ชื่อในเอกสารนี้</th>
+<th>โค้ด</th>
+<th>ทำอะไร</th>
+<th>วัดได้</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Delta-Context</strong></td>
+<td>TS <code>compress_context</code> / <code>expand_context</code>; Python <code>delta_v2.py</code> (port ที่ได้ผลตรงกันทุก byte); Guard <code>--compress</code></td>
+<td>ย่อ output ขนาดใหญ่ของ tool โดยเก็บบรรทัดที่เป็นความล้มเหลวไว้ และขยายส่วนที่เหลือกลับได้</td>
+<td>ลด token ~70–75% บนโค้ดและ log จริง (โหมด aggressive); Guard: ~66% บน log build + test จริง</td>
+</tr>
+<tr>
+<td><strong>Delta-Memory</strong></td>
+<td><code>core/delta_engine/memory_delta.py</code></td>
+<td>เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม</td>
+<td>91.5% บนการจำลอง 20 เอเจนต์ × 100 tick (ขนาด byte แบบประมาณ)</td>
+</tr>
+<tr>
+<td><strong>DeltaBlock</strong></td>
+<td><code>algo_25_delta_block.py</code></td>
+<td>log ส่วนต่าง และบีบประวัติบทสนทนา</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>ความจำอัตโนมัติ: ความจำที่เกี่ยวข้องถูกดึงเข้า prompt ตอนเริ่มทุก episode โดยติดป้ายว่าเป็นข้อมูล
+skill เรียนรู้ได้เฉพาะจาก episode ที่ผ่านการตรวจ ผ่าน MEE gate</p>
+<h2 id="8-audit">8. Audit และการดูแลกุญแจ<a class="headerlink" href="#8-audit" title="Permanent link">&para;</a></h2>
+<p>ลายเซ็นพิสูจน์ว่าใครเขียนบันทึกและบันทึกไม่ถูกแก้ แต่ไม่ได้พิสูจน์ว่าบันทึกเป็นความจริง และไม่พิสูจน์อะไรเลยถ้าเอเจนต์ที่ถูกตรวจถือกุญแจเอง
+Delentia จึงอธิบาย audit trail ตามผู้โจมตีที่แต่ละระดับป้องกันได้</p>
+<table>
+<thead>
+<tr>
+<th>ระดับ</th>
+<th>เพิ่มอะไร</th>
+<th>สถานะ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A0</td>
+<td>ลงลายเซ็นตัวเองในโปรเซสด้วยกุญแจชั่วคราว</td>
+<td>เลิกใช้แล้ว</td>
+</tr>
+<tr>
+<td>A1</td>
+<td>กุญแจระยะยาวอยู่นอกเส้นทางที่ tool เข้าถึง; ทุกแถวถูก chain และลงลายเซ็น; <code>delentia audit verify</code></td>
+<td>✅ Runtime (เมื่อตั้ง <code>DELENTIA_AUDIT_SIGNING_KEY</code>)</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>ลงลายเซ็นในโปรเซสแยก ณ จุดคอขวดที่เห็น tool call จริง</td>
+<td>✅ <strong>Guard สำหรับเส้นทาง MCP</strong>: กุญแจอยู่ในโปรเซส Guard; call ที่อ้างถึงกุญแจหรือ log ถูกปฏิเสธ</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>เผยแพร่ head ของ chain ไปยังพยานภายนอก</td>
+<td>🟡 <code>delentia-guard --head</code> ส่งออก head ได้; การฝากอัตโนมัติ <strong>ยังไม่สร้าง</strong></td>
+</tr>
+<tr>
+<td>A4</td>
+<td>กุญแจใน HSM/KMS, หมุนกุญแจ, WORM storage, ตรวจสอบโดยบุคคลภายนอก</td>
+<td><strong>ยังไม่สร้าง</strong>; ทำเมื่อลูกค้าต้องการ</td>
+</tr>
+</tbody>
+</table>
+<p>จนกว่า A3 จะเสร็จ Delentia จะไม่เรียก log ของตัวเองว่า "tamper-proof" หรือ "immutable"
+ข้อมูลส่วนบุคคลไม่อยู่บน chain (chain เก็บแค่ hash) จึงลบข้อมูลตามสิทธิ PDPA ได้โดยไม่ทำให้ chain เสีย</p>
+<h2 id="9">9. หลักฐาน<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<h3 id="91">9.1 ที่วัดได้จริง (ทำซ้ำได้)<a class="headerlink" href="#91" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ข้อความ</th>
+<th>ค่า</th>
+<th>วิธีทำซ้ำ</th>
+<th>วันที่</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ชุดทดสอบ runtime</td>
+<td>ผ่าน 3,922; ไม่ผ่าน 1 (test แบบ live ของ OpenRouter ที่ต้องใช้ key เครือข่าย)</td>
+<td><code>pytest</code> ใน Delentia-OS</td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>ชุดทดสอบ MCP + Guard</td>
+<td>ผ่าน 288 ไม่ผ่าน 0 (295 เมื่อต่อ private services)</td>
+<td><code>npm ci &amp;&amp; npm run build &amp;&amp; npm run test:all</code> ใน <code>delentia-mcp/ecosystem</code></td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>สัญญา FDIA</td>
+<td>422 จาก 425 vector ตรงกันระหว่าง TypeScript กับ Python; อีก 3 เป็นความต่างเรื่อง clamp ที่บันทึกไว้</td>
+<td>contract test ในทั้งสอง repo</td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>Delta-Context</td>
+<td>token ลดลง ~70–75% (aggressive); เก็บบรรทัดคำตอบได้ 100% เมื่อถามด้วยคำเดียวกับต้นฉบับ และ ~60% เมื่อถามแบบถอดความ; โหมดปกติ ~6–12%</td>
+<td><code>benchmarks/compression-real/</code> ใน <code>delentia-mcp/ecosystem</code></td>
+<td>Round 46</td>
+</tr>
+<tr>
+<td>การบีบของ Guard</td>
+<td>เล็กลง ~66% บน log build + test จริง โดยยังเก็บ test ที่ล้มไว้</td>
+<td><code>delentia-mcp/ecosystem/docs/GUARD.md</code></td>
+<td>2026-09</td>
+</tr>
+<tr>
+<td>Delta-Memory</td>
+<td>91.5% บนการจำลอง 20 × 100</td>
+<td><code>python scripts/benchmark_fdia_delta.py --json</code></td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>การประเมิน FDIA (Python)</td>
+<td>2.37 µs ต่อครั้ง บน CPU โน้ตบุ๊ก 1 เครื่อง</td>
+<td>สคริปต์เดียวกัน</td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>การดึงความจำ (SQLite ในหน่วยความจำ)</td>
+<td>p95 0.021 ms</td>
+<td>สคริปต์เดียวกัน</td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>การคัดกรอง CORD</td>
+<td>100 pattern ~48 µs ต่อครั้ง; ชุดตัวอย่างของสคริปต์เองได้อัตราตรวจจับ 50% จึงไม่อ้างอัตราตรวจจับ</td>
+<td>สคริปต์เดียวกัน</td>
+<td>2026-09-28</td>
+</tr>
+<tr>
+<td>การเลือก tool ของโมเดล (K.1.5)</td>
+<td>qwen2.5:7b บน CPU: เลือก tool ถูก 0/17; พฤติกรรมการกำกับและการปฏิเสธ 100%</td>
+<td><code>scripts/k1_5_formal_acceptance.py</code></td>
+<td>Round 45</td>
+</tr>
+</tbody>
+</table>
+<p>ผล K.1.5 คือเหตุผลที่ runtime ให้ผู้ดูแลเลือกโมเดลได้: การกำกับบังคับด้วยโค้ด และยังได้ผลแม้โมเดลจะเลือก tool ไม่ได้</p>
+<h3 id="92">9.2 ข้อความที่ถอนออก<a class="headerlink" href="#92" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ข้อความเดิม</th>
+<th>เหตุผลที่ถอน</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"hallucination 0%", "hallucination drift 0.00%"</td>
+<td>ไม่เคยวัด</td>
+</tr>
+<tr>
+<td>"hallucination 0.3% เทียบอุตสาหกรรม 12–15%"</td>
+<td>dataset และชุด benchmark ที่อ้างถึงไม่มีอยู่ใน repo ใด ทำซ้ำไม่ได้</td>
+</tr>
+<tr>
+<td>ความเสถียร 99.98%, 259.2 ล้าน request</td>
+<td>ไม่มี load test</td>
+</tr>
+<tr>
+<td>4,849 tests</td>
+<td>แทนที่ด้วยตัวเลขใน §9.1</td>
+</tr>
+<tr>
+<td>"Zero-knowledge proof ของคะแนน FDIA"</td>
+<td><code>zk_fdia.py</code> เป็น hash commitment; ผู้ตรวจยืนยันไม่ได้ว่า F ที่ปิดผนึกเท่ากับ D^I × A ให้เรียกว่า commitment</td>
+</tr>
+<tr>
+<td>audit "tamper-proof" / "immutable"</td>
+<td>ดู §8; ยังไม่ได้จนกว่าจะถึง A3</td>
+</tr>
+<tr>
+<td>baseline "LLM ไม่มีการป้องกัน" หลุด 94.7%</td>
+<td>ไม่ได้รัน LLM จริง ค่าถูก hardcode</td>
+</tr>
+<tr>
+<td>บีบ 74.2% / 85%</td>
+<td>74% เป็นเป้าขั้นต่ำตอนออกแบบ 85% ไม่มีที่มา; ดู Delta-Context ใน §9.1</td>
+</tr>
+<tr>
+<td>สลับ LoRA &lt; 12 ms</td>
+<td>ไม่เคยวัด</td>
+</tr>
+<tr>
+<td>"AI OS ที่ยึดเจตนาเป็นแห่งแรกของโลก"</td>
+<td>พิสูจน์ไม่ได้; Delentia เป็น runtime ไม่ใช่ OS</td>
+</tr>
+<tr>
+<td>SignedAI บน GPT-4 Turbo / Claude 3.5</td>
+<td>ชื่อโมเดลล้าสมัย; ตอนนี้ผู้ดูแลเป็นคนเลือกโมเดล</td>
+</tr>
+</tbody>
+</table>
+<h2 id="10-roadmap">10. Roadmap (ยังไม่สร้าง)<a class="headerlink" href="#10-roadmap" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>ROUTE</strong>: เรียก ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน governed loop</li>
+<li><strong>ฝาก head แบบ A3</strong>: เผยแพร่ head ของ chain ทั้ง Guard และ runtime ไปยังพยานภายนอกตามรอบเวลา</li>
+<li><strong>Host</strong>: รัน runtime แบบสาธารณะ (แผน: Oracle Always Free + Cloudflare Tunnel, บังคับ token) แล้วเปิดสะพาน FDIA จาก Workers ไป Python</li>
+<li><strong>โมเดลที่ขับ loop ได้</strong>: เผยแพร่ชุดโมเดลอ้างอิงเล็ก ๆ ที่ผ่าน K.1.5</li>
+<li><strong>audit chain บน PostgreSQL</strong> และ <strong>HTTP API ของ SignedAI</strong></li>
+<li><strong>Design partner</strong> ของ Guard ก่อนเพิ่มอัลกอริทึม sandbox backend หรือช่องทางใหม่</li>
+</ol>
+<h2 id="11-v2x">11. เปลี่ยนอะไรจาก v2.x<a class="headerlink" href="#11-v2x" title="Permanent link">&para;</a></h2>
+<ul>
+<li>ใหม่: Constitutional Cycle, governed runtime, Delentia Guard, Architect token แบบ Ed25519, กฎ FDIA 4 ข้อ, สัญญา FDIA ข้ามภาษา, ระดับ audit A0–A4</li>
+<li>แก้ไข: ความหมายของแต่ละตัวใน FDIA, สถานะ 10 ชั้น, Delta ทั้งสาม, และตัวเลขทุกตัว (§9)</li>
+<li>แหล่งเดียว: ไฟล์นี้และฉบับภาษาอังกฤษ เอกสารเก่ายังอยู่ใน <code>docs/whitepapers/</code> และ <code>whitepapers/</code> เพื่อเป็นประวัติ</li>
+</ul>
+<h2 id="a">ภาคผนวก A. รายการวัตถุของระบบ<a class="headerlink" href="#a" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>กลุ่ม</th>
+<th>วัตถุ</th>
+<th>สถานะ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ปรัชญา</td>
+<td>FDIA, RCT-7, The Architect, Architect veto</td>
+<td>ใช้ในโค้ด</td>
+</tr>
+<tr>
+<td>โปรโตคอล</td>
+<td>JITNA (RFC-001), TOON</td>
+<td>JITNA อยู่ในโค้ด; TOON อยู่แค่ใน dataset</td>
+</tr>
+<tr>
+<td>ความจำ</td>
+<td>RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client</td>
+<td>อยู่ในโค้ด (class ของ Vault client ชื่อ <code>RCTDBClient</code> ชวนสับสน)</td>
+</tr>
+<tr>
+<td>ความปลอดภัย</td>
+<td>CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard</td>
+<td>อยู่ในโค้ด</td>
+</tr>
+<tr>
+<td>การคิด</td>
+<td>41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE</td>
+<td>อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ยังไม่อยู่ใน loop</td>
+</tr>
+<tr>
+<td>ฉันทามติ</td>
+<td>SignedAI, HexaCore (9 บทบาท)</td>
+<td>logic อยู่ในโค้ด ยังไม่มี API</td>
+</tr>
+<tr>
+<td>โมเดล</td>
+<td>1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm</td>
+<td>อยู่บน Hugging Face; ไม่ได้ต่อกับ runtime</td>
+</tr>
+<tr>
+<td>ผลิตภัณฑ์</td>
+<td>Guard, 6 MCP tools, runtime (34 MCP tools), เว็บไซต์</td>
+<td>ใช้งานจริงหรืออยู่ในโค้ด</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../DELENTIA_WHITEPAPER_3.0_EN/" class="md-footer__link md-footer__link--prev" aria-label="Previous: English">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                English
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../getting-started/installation/" class="md-footer__link md-footer__link--next" aria-label="Next: Installation">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Installation
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Delentia Labs — Apache 2.0
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/delentia-labs" target="_blank" rel="noopener" title="GitHub — rctlabs" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://delentia.com" target="_blank" rel="noopener" title="delentia.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M351.9 280H161c2.9 64.5 17.2 123.9 37.5 167.4 11.4 24.5 23.7 41.8 35.1 52.4 11.2 10.5 18.9 12.2 22.9 12.2s11.7-1.7 22.9-12.2c11.4-10.6 23.7-28 35.1-52.4 20.3-43.5 34.6-102.9 37.5-167.4zm-191-48h190.9c-2.8-64.5-17.1-123.9-37.4-167.4-11.4-24.4-23.7-41.8-35.1-52.4C268.1 1.7 260.4 0 256.4 0s-11.7 1.7-22.9 12.2c-11.4 10.6-23.7 28-35.1 52.4-20.3 43.5-34.6 102.9-37.5 167.4m-48 0c3.5-85.6 25.6-165.1 57.9-217.3C78.7 47.3 10.9 131.2 1.5 232zM1.5 280c9.4 100.8 77.2 184.7 169.3 217.3-32.3-52.2-54.4-131.7-57.9-217.3zm398.4 0c-3.5 85.6-25.6 165.1-57.9 217.3 92.1-32.7 159.9-116.5 169.3-217.3zm111.4-48C501.9 131.2 434.1 47.3 342 14.7c32.3 52.2 54.4 131.7 57.9 217.3z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://www.linkedin.com/in/ittirit-saengow/" target="_blank" rel="noopener" title="LinkedIn — Ittirit Saengow" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://x.com/ittirit_rct" target="_blank" rel="noopener" title="X — @ittirit_rct" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M357.2 48h70.6L273.6 224.2 455 464H313L201.7 318.6 74.5 464H3.8l164.9-188.5L-5.2 48h145.6l100.5 132.9zm-24.8 373.8h39.1L119.1 88h-42z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "none"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
