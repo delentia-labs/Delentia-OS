@@ -1,5 +1,9 @@
 # Hallucination Rate — Measurement Methodology
 
+> [!WARNING]
+> **Withdrawn 2026-09-28.** The 0.3% figure below cannot be reproduced: `benchmark/run_benchmark.py` has no `signedai` suite and the 100-prompt subset is not in this repository. The page is kept as the historical record of what was claimed. See [Whitepaper 3.0 §9.2](../whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md).
+
+
 **Defending the 0.3% claim: transparent protocol, reproducible numbers.**
 
 ---

@@ -13,7 +13,7 @@ SignedAI is RCT's hallucination prevention framework. Before any AI output is co
 3. Consensus is checked — outputs with low agreement are rejected
 4. The final decision is **signed with ED25519** and stored with a full audit trail
 
-**Result:** 0.3% hallucination rate vs industry 12–15% — **97% reduction**.
+**Result:** no hallucination rate is claimed. An earlier 0.3% figure was withdrawn on 2026-09-28 because its dataset and benchmark suite are not reproducible from this repository (see [Whitepaper 3.0 §9.2](../whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md)).
 
 ---
 

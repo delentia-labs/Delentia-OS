@@ -12,6 +12,7 @@ ROADMAP_PATH = REPO_ROOT / "ROADMAP.md"
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 CI_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 CODECOV_PATH = REPO_ROOT / "codecov.yml"
+REGISTRY_PATH = REPO_ROOT / "docs" / "distribution" / "CLAIM_REGISTRY.md"
 
 
 def read_text(path: Path) -> str:
@@ -32,7 +33,7 @@ def extract_canonical_metrics(text: str) -> tuple[str, str, str]:
         r"\*\*Authoritative checkpoint:\*\* \*\*(?P<passed>[\d,]+) passed"
         r"(?: · (?P<skipped>[\d,]+) skipped)?"
         r"(?: · (?P<failed>[\d,]+) failed)?"
-        r"(?: · (?P<coverage>[\d]+)% coverage| · coverage pending re-measurement)?\*\*"
+        r"(?: · (?P<coverage>[\d.]+)% coverage| · coverage pending re-measurement)?\*\*"
     )
     match = pattern.search(text)
     if not match:
@@ -52,8 +53,6 @@ def require(pattern: str, text: str, label: str, errors: list[str]) -> None:
 def main() -> int:
     canonical_text = read_text(CANONICAL_PATH)
     readme_text = read_text(README_PATH)
-    roadmap_text = read_text(ROADMAP_PATH)
-    changelog_text = read_text(CHANGELOG_PATH)
     ci_text = read_text(CI_PATH)
     codecov_text = read_text(CODECOV_PATH)
 
@@ -75,12 +74,20 @@ def main() -> int:
     # ci.yml/codecov.yml (which describe CURRENT enforcement, not history)
     # match what TESTING_CANONICAL.md's own coverage-floor row says is
     # actually enforced.
-    require(
-        r"--cov-fail-under=80",
-        ci_text,
-        ".github/workflows/ci.yml's real coverage floor (--cov-fail-under) has changed from 80% - update TESTING_CANONICAL.md and CLAIM_REGISTRY.md's 'as actually enforced' rows to match",
-        errors,
-    )
+    # The floor is read from TESTING_CANONICAL.md rather than hardcoded: a
+    # hardcoded 80 kept "passing" in review while CI had moved to 72.
+    floor = re.search(r"--cov-fail-under=(\d+)", canonical_text)
+    if not floor:
+        errors.append("TESTING_CANONICAL.md does not state the enforced --cov-fail-under floor")
+    else:
+        require(
+            rf"--cov-fail-under={floor.group(1)}\b",
+            ci_text,
+            f".github/workflows/ci.yml's coverage floor differs from the documented {floor.group(1)}% - update TESTING_CANONICAL.md and CLAIM_REGISTRY.md",
+            errors,
+        )
+    if passed not in read_text(REGISTRY_PATH):
+        errors.append(f"CLAIM_REGISTRY.md does not mention the canonical passed count ({passed})")
     require(
         r"target: 90%",
         codecov_text,

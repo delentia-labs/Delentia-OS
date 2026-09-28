@@ -1230,7 +1230,7 @@ def boot_sequence_animation(
         ("intent-loop", 8001, "JITNA Protocol · <50ms warm recall"),
         ("analysearch-intent", 8002, "GIGO Protection active"),
         ("vector-search", 8003, "RCTDB mounted"),
-        ("crystallizer", 8004, "0.3% hallucination guard"),
+        ("crystallizer", 8004, "consensus check"),
         ("delta-engine", None, "74% memory compression"),
     ]
 
@@ -1352,8 +1352,7 @@ def render_hexacore_table(
     sla_color = "bright_green" if online_count == total else "yellow"
     console.print(
         f"  [{sla_color}]CONSENSUS: {online_count}/{total} LLMs active[/]"
-        f"  [dim]|[/]  [bright_green]SLA: 99.98%[/]"
-        f"  [dim]|[/]  [bright_cyan]WARM RECALL: <50ms[/]"
+                f"  [dim]|[/]  [bright_cyan]WARM RECALL: p95 0.021ms (local benchmark)[/]"
         f"  [dim]|[/]  [bright_magenta]SignedAI: ED25519 ✓[/]"
     )
     console.print()

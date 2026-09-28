@@ -104,6 +104,9 @@ extra:
 
 nav:
   - Home: index.md
+  - Whitepaper 3.0:
+    - English: whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md
+    - ภาษาไทย: whitepaper/DELENTIA_WHITEPAPER_3.0_TH.md
   - Getting Started:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quickstart.md
@@ -131,7 +134,7 @@ nav:
     - Observability Guide: architecture/observability.md
   - Benchmark:
     - Methodology & Reproducibility: benchmark/methodology.md
-    - Hallucination Rate Methodology: benchmark/hallucination-methodology.md
+    - Hallucination Rate Methodology (withdrawn): benchmark/hallucination-methodology.md
   - Use Cases:
     - DevOps & CI/CD: use-cases/devops.md
     - Finance & Risk: use-cases/finance.md

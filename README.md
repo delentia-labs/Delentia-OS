@@ -105,12 +105,12 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | 5 Reference Microservices | ✅ `microservices/` (297 passing tests) | — |
 | CLI (`delentia` entry point) | ✅ editable install or built wheel | — |
 | Genome / Creator Profile API | ❌ 501 stub (`genome_api.py`) | ✅ Full implementation |
-| Full Production Microservice Stack | ❌ | ✅ 62 microservices |
+| Full Production Microservice Stack | ❌ | ✅ private |
 | Enterprise Dashboard | ❌ | ✅ |
 | Docker Compose + full infra | ❌ | ✅ |
-| 8-level test pyramid (4,849 tests) | ❌ | ✅ private |
+| Private test suite (count not published) | ❌ | ✅ private |
 
-> **Stable SDK** means: API is stable, CI enforces an 80% coverage floor (`--cov-fail-under=80`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
+> **Stable SDK** means: API is stable, the full suite is **3,922 passed** (2026-09-28, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
 > **Enterprise** means: runs at [delentia.com](https://delentia.com) — contact for licensing.
 
 ---
@@ -642,7 +642,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 ✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  
 
 Previous milestone:  
-✅ **4,849 Passed · 16 Skipped · 0 Failed · 0 Errors** — Complete private enterprise test suite (all 62 microservices)  
+Private enterprise test suite: count not published (not independently verifiable from this repository)  
 
 Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 
@@ -777,7 +777,7 @@ This is not a research paper. It runs in production at [delentia.com](https://de
 | Aug 11, 2025 | Commitment to build RCT OS |
 | Oct 2025 | JITNA Protocol RFC-001 drafted |
 | Dec 2025 | Foundation whitepaper (~100 pages) |
-| Jan 2026 | 41 algorithms complete, 4,849 enterprise tests |
+| Jan 2026 | 41 algorithms complete |
 | Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
 | Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
 | May 2026 | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, PyPI v1.0.4b0 live |
@@ -800,7 +800,7 @@ Delentia OS is the open-source core. The full ecosystem extends across:
 | [Delentia-Ecosystem](https://github.com/delentia-labs/Delentia-Ecosystem) | Plugin registry — LINE, Slack, skill manifests | ✅ Apache 2.0 |
 | [Delentia-Infra-Public](https://github.com/delentia-labs/Delentia-Infra-Public) | Community deployment — Docker, K8s, Helm, Terraform | ✅ Apache 2.0 |
 | [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault, PDPA/GDPR compliance | 🔒 Proprietary |
-| [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform — 62 microservices, 4,849 tests | 🔒 Proprietary |
+| [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform (private) | 🔒 Proprietary |
 | [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |
 
 ---
