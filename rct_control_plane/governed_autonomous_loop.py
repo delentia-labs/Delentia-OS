@@ -82,11 +82,12 @@ Design choices, and why
    yet) - the FDIA gate still computes and audits a real F for every
    risky-tool call using the episode's real D/I (derived from the goal
    text's own IntentCompiler validation), so a vague/unvalidated goal
-   attempting ANY risky tool still produces a low, honestly-computed F -
-   but F cannot go to exactly 0 from D/I alone given their documented
-   floors, so today only tools with a real A signal can actually trigger
-   a block. Building real A signals for the rest is real follow-up work,
-   not simulated here.
+   attempting ANY risky tool still produces a low, honestly-computed F.
+   Round 48: that low F now blocks - risky tools need F >= FDIA_GATE_THRESHOLD
+   (0.5, the TypeScript default), and D <= 0 or I <= 0 gives F = 0. Before,
+   the gate only fired at F <= 0, which D/I (with their floors) could never
+   reach, so only tools with a real A signal could block. Real per-tool A
+   signals for the remaining tools are still follow-up work.
 
 Apache 2.0 — Delentia Labs (https://delentia.com)
 """
@@ -144,7 +145,11 @@ def _write_path_is_safe(relative_path: str) -> bool:
 
 
 def fdia_score(D: float, I: float, A: float) -> float:
-    """F = (D^I) * A with overflow guard - see module docstring point 4."""
+    """F = (D^I) * A with overflow guard - see module docstring point 4.
+    Round 48: D <= 0 or I <= 0 -> 0.0 (no data / no intent = no future),
+    identical to AlgorithmKernel41.algo_01_fdia."""
+    if not (D > 0) or not (I > 0):
+        return 0.0
     d_clamped = max(0.01, min(100.0, D))
     i_clamped = max(0.01, min(10.0, I))
     a_clamped = max(0.0, min(1.0, A))
@@ -189,6 +194,15 @@ RISKY_TOOLS = frozenset({
 # ALWAYS pause for pending_approval once they pass the FDIA path-safety
 # check below (an unsafe path is still a stronger, unconditional
 # fdia_blocked - this is an additional, later gate, not a replacement).
+# Round 48 (Architect decision 2026-09-28): a risky tool needs F >= this,
+# not merely F > 0. Before, the gate blocked only at F <= 0, and D/I have
+# floors, so only A could ever block - D and I were recorded but never
+# enforced. 0.5 is the TypeScript engine's default custom_safety_threshold.
+# With the kernel's real ranges (D 0.1-1.2, I 0.5-2.0) a clear low-risk goal
+# scores ~1.0, while a high-risk intent over weak data (D 0.5, I 1.5 ->
+# 0.35) is blocked: the more demanding the intent, the better the data must be.
+FDIA_GATE_THRESHOLD = 0.5
+
 # Round 48 COMPRESS: tool results longer than this (~1.7k tokens at the
 # 3.5 chars/token estimate Delta uses) are compressed; Round 46 P2 proposed
 # ~2k tokens. Below it, compression costs more context than it saves.
@@ -228,6 +242,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         intent_verify_threshold: float = INTENT_VERIFY_THRESHOLD,
         compress_tool_outputs: bool = True,
         compress_threshold_chars: int = COMPRESS_THRESHOLD_CHARS,
+        fdia_threshold: float = FDIA_GATE_THRESHOLD,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -274,6 +289,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_skills_injected: int = 0
         # Round 48 COMPRESS: large tool results are Delta-v2 compressed.
         self._compress_tool_outputs = compress_tool_outputs
+        self._fdia_threshold = fdia_threshold
         self._compress_threshold_chars = compress_threshold_chars
         self._tool_output_store: Optional[Any] = None
         self._episode_compressions: List[Dict[str, Any]] = []
@@ -495,16 +511,19 @@ class GovernedAutonomousLoop(AutonomousLoop):
             actor=self.namespace,
             changes={
                 "tool_name": tool_name, "D": self._episode_D, "I": self._episode_I,
-                "A": A, "A_reason": a_reason, "F": F, "blocked": F <= 0.0,
+                "A": A, "A_reason": a_reason, "F": F, "threshold": self._fdia_threshold,
+                "blocked": F <= 0.0 or F < self._fdia_threshold,
             },
         )
 
-        if F <= 0.0:
+        if F <= 0.0 or F < self._fdia_threshold:
             return {
                 "stopped_reason": "fdia_blocked",
                 "tool_result": {
-                    "fdia_blocked": True, "tool_name": tool_name, "F": F,
-                    "D": self._episode_D, "I": self._episode_I, "A": A, "reason": a_reason,
+                    "fdia_blocked": True, "tool_name": tool_name, "F": F, "threshold": self._fdia_threshold,
+                    "D": self._episode_D, "I": self._episode_I, "A": A,
+                    "reason": a_reason if A <= 0.0 else
+                              f"F = {F} is below the FDIA threshold {self._fdia_threshold} (D={self._episode_D}, I={self._episode_I})",
                 },
             }
 

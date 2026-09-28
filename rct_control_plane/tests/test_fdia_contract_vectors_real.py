@@ -9,9 +9,10 @@ documented edge divergences must stay exactly as recorded - changing the
 formula on either side fails that side's CI until the contract is
 regenerated for both.
 
-Open decision recorded in the contract (not changed here): for D = 0 the
-Python side floors D at 0.01, so F = 0.01^I > 0 and the governed loop's
-`F <= 0` block does not fire, while TypeScript returns 0 (blocks).
+Round 48 (Architect decision 2026-09-28): D <= 0 or I <= 0 -> F = 0 on both
+sides ("no data / no intent = no future"); contract version 2. The only
+remaining divergences are clamping of out-of-range values (D > 100,
+I > 10, A > 1), which the TypeScript request schema never lets through.
 """
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -25,7 +26,7 @@ from types import SimpleNamespace
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.governed_autonomous_loop import fdia_score
 
-FDIA_VECTORS_SHA256 = "98f2a7f72ceaefe5d13e1ba7a797a1cd8c78c5ec3c2253f939825cebad3ec475"
+FDIA_VECTORS_SHA256 = "9bf3a660b5cfc8546cc329bd48c4660312fc636920763bc591033aa10700a496"
 RAW = (Path(__file__).resolve().parents[2] / "contracts" / "fdia_vectors.v1.json").read_bytes().replace(b"\r\n", b"\n")
 VECTORS = json.loads(RAW)
 

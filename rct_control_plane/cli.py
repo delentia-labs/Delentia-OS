@@ -1796,6 +1796,28 @@ def approvals_reject(approval_id: str, key_path: str, db: Optional[str]) -> None
     _decide_locally(approval_id, key_path, "REJECTED", db)
 
 
+@approvals_group.command("architect-token")
+@click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
+@click.option("--key-id", required=True, help="The key_id listed in the Worker's FDIA_ARCHITECT_KEYS_JSON.")
+@click.option("--action", "action_name", required=True, help="Exact action_name the caller will evaluate.")
+@click.option("--payload", default="", help="Exact target_payload (or caller_context) the caller will send.")
+@click.option("--ttl", default=900, show_default=True, type=int, help="Seconds until it expires (max 86400).")
+def approvals_architect_token(key_path: str, key_id: str, action_name: str, payload: str, ttl: int) -> None:
+    """Sign an Architect token for evaluate_fdia (delentia-mcp-ecosystem)."""
+    from rct_control_plane.approvals import sign_architect_token
+    click.echo(sign_architect_token(key_path, key_id, action_name, payload, ttl))
+
+
+@approvals_group.command("architect-key-entry")
+@click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
+@click.option("--key-id", required=True)
+@click.option("--role", default="Chief_Architect", show_default=True)
+def approvals_architect_key_entry(key_path: str, key_id: str, role: str) -> None:
+    """Print the public-key entry for the Worker's FDIA_ARCHITECT_KEYS_JSON."""
+    from rct_control_plane.approvals import architect_key_entry
+    click.echo(json.dumps(architect_key_entry(key_path, key_id, role)))
+
+
 @cli.group("experiments")
 def experiments_group():
     """

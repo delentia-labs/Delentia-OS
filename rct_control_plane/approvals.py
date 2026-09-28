@@ -326,3 +326,47 @@ class PendingActionStore:
                 "WHERE approval_id = ? AND status = 'EXECUTING'",
                 (time.time(), json.dumps(result, default=str), approval_id),
             )
+
+
+# --------------------------------------------------------- Architect tokens
+# Round 48: the same Ed25519 approver key also signs delentia-mcp-ecosystem
+# Architect tokens (the A in FDIA for evaluate_fdia's REQUIRE_HUMAN_SIGNATURE
+# rules). Format and message must stay byte-identical to
+# packages/shared/src/architect-token.ts; test_architect_token_real.py pins a
+# deterministic cross-language vector.
+
+ARCHITECT_TOKEN_VERSION = "dat1"
+ARCHITECT_TOKEN_MAX_TTL_SECONDS = 24 * 60 * 60
+
+
+def _b64url(raw: bytes) -> str:
+    import base64
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def architect_token_message(key_id: str, action_name: str, target_payload: str, expires: int) -> str:
+    payload_hash = hashlib.sha256(target_payload.encode("utf-8")).hexdigest()
+    return f"delentia-architect-token:v1|{key_id}|{action_name}|{payload_hash}|{expires}"
+
+
+def sign_architect_token(private_key_path: str, key_id: str, action_name: str, target_payload: str = "",
+                         ttl_seconds: int = 900, now_seconds: Optional[int] = None) -> str:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import load_pem_private_key
+    if "." in key_id:
+        raise ApprovalError("key_id must not contain '.'")
+    key = load_pem_private_key(Path(private_key_path).expanduser().read_bytes(), password=None)
+    if not isinstance(key, Ed25519PrivateKey):
+        raise ApprovalError("Architect key must be an Ed25519 private key")
+    now = int(time.time()) if now_seconds is None else now_seconds
+    expires = now + min(max(1, int(ttl_seconds)), ARCHITECT_TOKEN_MAX_TTL_SECONDS)
+    signature = key.sign(architect_token_message(key_id, action_name, target_payload, expires).encode("utf-8"))
+    return f"{ARCHITECT_TOKEN_VERSION}.{key_id}.{expires}.{_b64url(signature)}"
+
+
+def architect_key_entry(private_key_path: str, key_id: str, role: str) -> Dict[str, str]:
+    """The FDIA_ARCHITECT_KEYS_JSON entry (public key only) for a private key file."""
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_private_key
+    key = load_pem_private_key(Path(private_key_path).expanduser().read_bytes(), password=None)
+    public_hex = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()  # type: ignore[union-attr]
+    return {"key_id": key_id, "role": role, "public_key_hex": public_hex}

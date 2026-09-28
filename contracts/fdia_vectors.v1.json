@@ -1,8 +1,13 @@
 {
  "contract": "FDIA F = (D^I) x A",
- "version": 1,
+ "version": 2,
  "tolerance": 0.0001,
- "agreed_domain": "D in [0.01, 100], I in [0.01, 10], A in [0, 1]",
+ "agreed_domain": "D in [0.01, 100], I in [0.01, 10], A in [0, 1]; plus D <= 0 or I <= 0 -> F = 0 on both sides (Round 48)",
+ "invariants": [
+  "A = 0 -> F = 0",
+  "I <= 0 -> F = 0 (no intent = no future)",
+  "D <= 0 -> F = 0 (no data = no future)"
+ ],
  "implementations": {
   "typescript": "delentia-mcp-ecosystem packages/shared/src/fdia-core.ts FDIAEngine.calculateF",
   "python": "Delentia-OS rct_control_plane/algorithm_kernel_41.py AlgorithmKernel41.algo_01_fdia (and its copy governed_autonomous_loop.fdia_score)"
@@ -2503,41 +2508,45 @@
    "I": 10.0,
    "A": 1.0,
    "F": 1e+20
-  }
- ],
- "known_divergences": [
+  },
   {
    "D": 0.0,
    "I": 1.0,
    "A": 1.0,
-   "ts": 0,
-   "py": 0.01,
-   "why": "D=0: TS gives 0 (blocks); Python floors D at 0.01 so F=0.01^I > 0 (does not block)"
+   "F": 0.0
   },
   {
    "D": 0.0,
    "I": 2.0,
    "A": 1.0,
-   "ts": 0,
-   "py": 0.0001,
-   "why": "D=0: TS gives 0 (blocks); Python floors D at 0.01 so F=0.01^I > 0 (does not block)"
+   "F": 0.0
   },
   {
    "D": 0.5,
    "I": 0.0,
    "A": 1.0,
-   "ts": 1,
-   "py": 0.9931,
-   "why": "I=0: TS gives D^0 = 1; Python floors I at 0.01"
+   "F": 0.0
   },
   {
    "D": 0.0,
    "I": 0.0,
    "A": 1.0,
-   "ts": 1,
-   "py": 0.955,
-   "why": "D=0 and I=0: TS gives 0^0 = 1 (full score); Python gives 0.01^0.01"
+   "F": 0.0
   },
+  {
+   "D": -0.5,
+   "I": 1.0,
+   "A": 1.0,
+   "F": 0.0
+  },
+  {
+   "D": 0.9,
+   "I": -1.0,
+   "A": 1.0,
+   "F": 0.0
+  }
+ ],
+ "known_divergences": [
   {
    "D": 200.0,
    "I": 1.0,
@@ -2561,14 +2570,6 @@
    "ts": 1.8,
    "py": 0.9,
    "why": "A>1: TS multiplies by A; Python clamps A to 1"
-  },
-  {
-   "D": -0.5,
-   "I": 1.0,
-   "A": 1.0,
-   "ts": 0,
-   "py": 0.01,
-   "why": "D<0: TS fails closed (0); Python floors D at 0.01"
   }
  ]
 }

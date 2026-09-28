@@ -529,8 +529,18 @@ class AlgorithmKernel41:
     # Tier 1: Meta Tier (ALGO-01 to ALGO-03)
     # =========================================================================
     def algo_01_fdia(self, D: float, I: float, A: float) -> float:
-        """ALGO-01: FDIA Invariant Equation F = (D^I) * A with overflow guard."""
+        """ALGO-01: FDIA Invariant Equation F = (D^I) * A with overflow guard.
+
+        Round 48 (Architect decision 2026-09-28): no data or no intent means
+        no future. D <= 0 or I <= 0 returns 0.0 - the whitepaper's "when
+        I = 0 ... no intent = no outcome" - instead of flooring them to 0.01
+        (which turned "no data" into F = 0.01^I > 0 and "no intent" into
+        F = D^0.01, close to full score). The 0.01 floor now only keeps log()
+        defined for tiny positive values. Matches the TypeScript core, pinned
+        by contracts/fdia_vectors.v1.json."""
         self.executed_counts["ALGO-01"] += 1
+        if not (D > 0) or not (I > 0):  # also catches NaN
+            return 0.0
         d_clamped = max(0.01, min(100.0, D))
         i_clamped = max(0.01, min(10.0, I))
         a_clamped = max(0.0, min(1.0, A))
