@@ -350,6 +350,7 @@ class AutonomousLoop:
         pre_dispatch_gate: Optional[Callable[[str, str, Dict[str, Any]], Any]] = None,
         on_episode_end: Optional[Callable[[dict], Any]] = None,
         extra_context_provider: Optional[Callable[[], str]] = None,
+        post_dispatch_transform: Optional[Callable[[str, str, Dict[str, Any], Any], Any]] = None,
     ) -> dict:
         """Round 37: `on_step` is an optional, real live-introspection
         hook - called once per real LoopStep as it's appended to history,
@@ -517,6 +518,12 @@ class AutonomousLoop:
                 tool_result = json.loads(raw_result.content[0].text)
             except Exception as e:
                 tool_result = {"error": str(e)}
+
+            # Round 48: optional sixth hook - lets GovernedAutonomousLoop
+            # compress a large tool result (Delta v2, original kept for
+            # delentia_expand_tool_output) before it enters the history.
+            if post_dispatch_transform is not None:
+                tool_result = await _maybe_await(post_dispatch_transform(goal, tool_name, tool_args, tool_result))
 
             step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args,
                              tool_result=tool_result, llm_reasoning=decision["reasoning"])

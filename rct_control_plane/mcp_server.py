@@ -149,6 +149,19 @@ async def delentia_recall(query: str, limit: int = 5) -> dict:
 
 
 @mcp.tool()
+async def delentia_expand_tool_output(original_id: str, start_line: Optional[int] = None,
+                                      end_line: Optional[int] = None, query: Optional[str] = None) -> dict:
+    """Read the full text behind a tool result that was shortened
+    ("delta_compressed": true). Pass the original_id from that result and
+    either a 1-based start_line/end_line range (the outline lists line
+    numbers of left-out sections) or a query (lines containing every word,
+    with one line of context). Read-only."""
+    from rct_control_plane.tool_output_store import ToolOutputStore
+    return ToolOutputStore(_kernel._persistence).expand(original_id, start_line=start_line,
+                                                         end_line=end_line, query=query)
+
+
+@mcp.tool()
 async def delentia_schedule_reminder(goal: str, fire_in_seconds: float) -> dict:
     """Schedule a real, session-scoped reminder that runs a real
     AutonomousLoop for `goal` once it becomes due. Session-local, not a

@@ -189,6 +189,14 @@ RISKY_TOOLS = frozenset({
 # ALWAYS pause for pending_approval once they pass the FDIA path-safety
 # check below (an unsafe path is still a stronger, unconditional
 # fdia_blocked - this is an additional, later gate, not a replacement).
+# Round 48 COMPRESS: tool results longer than this (~1.7k tokens at the
+# 3.5 chars/token estimate Delta uses) are compressed; Round 46 P2 proposed
+# ~2k tokens. Below it, compression costs more context than it saves.
+COMPRESS_THRESHOLD_CHARS = 6000
+# A compression that saves less than this is not worth losing detail for.
+COMPRESS_MIN_REDUCTION_PCT = 20.0
+_NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
+
 # Round 48 R1.2: same threshold as AlgorithmKernel41._rct7_step7_benchmark
 # ("aligned_with_intent": similarity >= 0.15) so the loop and the deep
 # pipeline judge intent fidelity identically.
@@ -218,6 +226,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         rct7_in_prompt: bool = True,
         memory_in_prompt: bool = True,
         intent_verify_threshold: float = INTENT_VERIFY_THRESHOLD,
+        compress_tool_outputs: bool = True,
+        compress_threshold_chars: int = COMPRESS_THRESHOLD_CHARS,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -262,6 +272,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # can run exactly that action once and continue the episode.
         self._pending_store: Optional[Any] = None
         self._episode_skills_injected: int = 0
+        # Round 48 COMPRESS: large tool results are Delta-v2 compressed.
+        self._compress_tool_outputs = compress_tool_outputs
+        self._compress_threshold_chars = compress_threshold_chars
+        self._tool_output_store: Optional[Any] = None
+        self._episode_compressions: List[Dict[str, Any]] = []
         self._resume_note: str = ""
 
     def _get_kernel(self) -> "AlgorithmKernel41":
@@ -282,6 +297,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         pre_dispatch_gate: Optional[Callable[[str, str, Dict[str, Any]], Any]] = None,
         on_episode_end: Optional[Callable[[dict], Any]] = None,
         extra_context_provider: Optional[Callable[[], str]] = None,
+        post_dispatch_transform: Optional[Callable[[str, str, Dict[str, Any], Any], Any]] = None,
     ) -> dict:
         """Mirrors AutonomousLoop.run()'s real signature exactly (mypy
         checks override compatibility structurally - a **kwargs: Any
@@ -300,6 +316,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             ("on_episode_start", on_episode_start), ("tool_filter", tool_filter),
             ("pre_dispatch_gate", pre_dispatch_gate), ("on_episode_end", on_episode_end),
             ("extra_context_provider", extra_context_provider),
+            ("post_dispatch_transform", post_dispatch_transform),
         ):
             if value is not None:
                 raise TypeError(f"GovernedAutonomousLoop.run() supplies its own {name!r} - do not pass one")
@@ -313,6 +330,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             pre_dispatch_gate=self._pre_dispatch_gate,
             on_episode_end=self._on_episode_end,
             extra_context_provider=self._extra_context_provider,
+            post_dispatch_transform=self._compress_tool_output if self._compress_tool_outputs else None,
         )
 
     # ------------------------------------------------------------------
@@ -322,6 +340,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # ------------------------------------------------------------------
     async def _on_episode_start(self, goal: str) -> None:
         self._episode_start_time = time.time()
+        self._episode_compressions = []
         kernel = self._get_kernel()
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
@@ -666,6 +685,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "skills_injected": self._episode_skills_injected,
                 "rct7_in_prompt": int(self._rct7_in_prompt),
                 "memory_in_prompt": int(self._memory_in_prompt),
+                "tool_outputs_compressed": len(self._episode_compressions),
+                "tool_output_chars_saved": sum(c["chars_saved"] for c in self._episode_compressions),
                 "stopped_reason": result["stopped_reason"],
             }
             run_id = f"run-{uuid.uuid4().hex[:12]}"
@@ -771,4 +792,52 @@ class GovernedAutonomousLoop(AutonomousLoop):
             )
             outcome["continuation"] = await self.run(action.goal, on_step=on_step)
         return outcome
+
+
+    # ------------------------------------------------------------------
+    # Round 48 COMPRESS: Delta v2 on large tool output, recoverable
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _render_tool_result(tool_result: Any) -> str:
+        """Line-oriented text for Delta (it works line by line, so a JSON
+        dump with escaped newlines would be one unfilterable line)."""
+        if isinstance(tool_result, dict):
+            parts = []
+            for key, value in tool_result.items():
+                if isinstance(value, str):
+                    parts.append(f"{key}:\n{value}")
+                else:
+                    parts.append(f"{key}: {json.dumps(value, ensure_ascii=False, default=str)}")
+            return "\n".join(parts)
+        if isinstance(tool_result, str):
+            return tool_result
+        return json.dumps(tool_result, ensure_ascii=False, indent=1, default=str)
+
+    def _compress_tool_output(self, goal: str, tool_name: str, tool_args: Dict[str, Any], tool_result: Any) -> Any:
+        if tool_name in _NEVER_COMPRESS_TOOLS:
+            return tool_result
+        text = self._render_tool_result(tool_result)
+        if len(text) < self._compress_threshold_chars:
+            return tool_result
+        from rct_control_plane.delta_v2 import compress_context
+        compressed = compress_context(text, intent_focus=goal, aggressive_mode=True, outline=True)
+        if compressed.reduction_percentage < COMPRESS_MIN_REDUCTION_PCT:
+            return tool_result
+        if self._tool_output_store is None:
+            from rct_control_plane.tool_output_store import ToolOutputStore
+            self._tool_output_store = ToolOutputStore(self._persistence)
+        original_id = self._tool_output_store.save(self.namespace, tool_name, text)
+        chars_saved = len(text) - len(compressed.compressed_delta_text)
+        self._episode_compressions.append({"tool_name": tool_name, "original_id": original_id,
+                                           "chars_saved": chars_saved})
+        return {
+            "delta_compressed": True,
+            "original_id": original_id,
+            "original_chars": len(text),
+            "reduction_percentage": compressed.reduction_percentage,
+            "how_to_expand": ("This output was shortened to the lines relevant to the goal. If something is "
+                              "missing, call delentia_expand_tool_output with this original_id and either "
+                              "start_line/end_line (see the line numbers in the outline) or a query."),
+            "content": compressed.compressed_delta_text,
+        }
 

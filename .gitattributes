@@ -1,0 +1,4 @@
+
+# Round 48: byte-exact fixtures for the Delta v2 port and FDIA contract (hashes must not change on checkout)
+rct_control_plane/tests/fixtures/delta_v2/** -text
+contracts/** -text

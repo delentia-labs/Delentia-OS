@@ -1,0 +1,728 @@
+/**
+ * DELENTIA INTENT LOOP — Consolidated, hardened TypeScript port
+ *
+ * Source of truth this was ported from: Delentia-OS/microservices/intent-loop/loop_engine.py
+ * (the most-developed of 4-5 diverged Python copies found across the ecosystem on 2026-09-11,
+ * per the audit that also found its two most safety-critical stages — SpecialistExecutor.execute
+ * and SignedAIVerifier.verify — were hardcoded-success stubs, not real logic).
+ *
+ * This port keeps the same 5-pillar pipeline (FDIA Gate -> Memory Recall -> Specialist
+ * Execute -> Consensus Verify -> Evolution Commit) but changes three things on purpose:
+ *
+ * 1. The FDIA gate is NOT re-implemented here. It calls the already-hardened
+ *    `evaluateFDIA` from `@delentia/shared` directly — the same engine this session found
+ *    and fixed two real rule-matching bugs in (severity-ranked resolution, whitespace
+ *    trimming). Re-porting a second FDIA implementation would recreate the exact
+ *    cross-repo-duplication problem already flagged in ROADMAP.md.
+ * 2. `execute()` makes a REAL HTTP call to a real model via OpenRouter — no
+ *    `await sleep(0.1)` placeholder. Model IDs are restricted to OpenRouter's free tier
+ *    (verified reachable on 2026-09-12) per explicit instruction for this pass.
+ * 3. `verify()` asks 3 DIFFERENT real free models a structured judge question and takes
+ *    a majority vote — no hardcoded `votes = [true, true, true]`. A model call failure
+ *    is recorded as a real "no vote", never silently counted as agreement.
+ *
+ * Known, disclosed limitation carried over from the Python original (not fixed here):
+ * `MemoryLayer`'s cache is an in-process Map, not a Durable-Object-backed store — state
+ * does not survive a Cloudflare Workers isolate recycle or span multiple isolates. This
+ * mirrors the exact "global session" gap already documented in ROADMAP.md for the other
+ * 4 pillar workers; wiring this into a properly-scoped (per-caller, not global) Durable
+ * Object is real follow-up work, not done in this pass.
+ *
+ * 2026-09-12 addition — the missing conveyor belt: FDIAGatekeeper.validate() now
+ * derives `intent_precision` (FDIA's I) from a real call to `executeRCT7()`
+ * (`@delentia/mcp-rct7`) instead of a standalone word-count/context-presence
+ * heuristic. This is the first place anywhere in the whole Delentia ecosystem
+ * where RCT-7's actual decomposition output feeds FDIA's I parameter as a real,
+ * synthesized value rather than a caller-supplied constant or an unrelated
+ * heuristic — see FDIAGatekeeper.validate()'s comment for the exact mapping and
+ * why. `data_quality` (D) is intentionally left as a separate, simpler heuristic:
+ * RCT-7 measures how well-specified the INTENT is, not how sufficient the DATA
+ * backing the action is — conflating the two would blur what each FDIA parameter
+ * means, so they stay independently derived.
+ */
+
+import { createHash } from "node:crypto";
+import { evaluateFDIA, type FDIARequest, MEEGrowthTracker, confidenceToGrowthDelta, type MEEStepRecord } from "@delentia/shared";
+import { executeRCT7, type RCT7ExecutionResult } from "@delentia/mcp-rct7";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type IntentState =
+  | "received"
+  | "validated"
+  | "memory_check"
+  | "computing"
+  | "verifying"
+  | "committing"
+  | "completed"
+  | "failed";
+
+export interface IntentPacket {
+  intent: string;
+  context?: Record<string, unknown>;
+  user_id?: string;
+  session_id?: string;
+  priority?: number;
+}
+
+export interface MemoryHit {
+  intent_hash: string;
+  result: { original_intent: string; output: Record<string, unknown> };
+  confidence: number;
+  created_at: string;
+  access_count: number;
+  last_accessed: string;
+  delta_size: number;
+}
+
+export interface SpecialistResult {
+  intent: string;
+  processed_at: string;
+  specialist_model: string;
+  specialist_role: string;
+  output: string;
+  model_error?: string;
+}
+
+export interface VerificationResult {
+  passed: boolean;
+  confidence: number;
+  votes: Array<{ model: string; agree: boolean | null; reasoning?: string; error?: string }>;
+}
+
+export interface IntentResult {
+  intent_hash: string;
+  state: IntentState;
+  output?: Record<string, unknown> | null;
+  error?: string;
+  latency_ms: number;
+  cache_hit: boolean;
+  verification?: VerificationResult;
+  fdia_score?: number;
+  /** The full RCT-7 decomposition that produced this run's intent_precision (I) — present whenever the FDIA gate ran (even on rejection), absent only on a cache hit (no gate re-run needed). */
+  rct7?: RCT7ExecutionResult;
+  /** The real MEE growth step this run produced — present whenever execution was actually attempted (model call and/or verification ran), absent on a cache hit (no new evidence of quality) or a gate rejection (a pure security block, not an execution-quality signal). */
+  mee_step?: MEEStepRecord;
+  /** The same growth step, ALSO recorded to a Durable-Object-persisted session (survives isolate recycling, unlike mee_step's in-memory `this.growth`) — present only when a `persistentStep` callback was supplied to process() and it succeeded. See ProcessOptions.persistentStep. */
+  mee_growth?: { step: unknown; summary: unknown };
+  metadata: Record<string, unknown>;
+}
+
+/** Optional per-call hooks for process(). */
+export interface ProcessOptions {
+  /**
+   * Steps a Durable-Object-backed MEE growth session with the exact same
+   * (delta, governanceViolation) pair that was just fed to the in-memory
+   * `this.growth.step()` — the delta-derivation logic itself stays in this
+   * file (the one place it's tested), the caller (worker.ts) only decides
+   * *whether* persistence is available (i.e. whether MEE_SESSION_DO is
+   * bound) and *which* session to scope it to. Best-effort: a rejected
+   * promise or a callback that returns undefined simply omits mee_growth
+   * from the result, exactly like the sibling fdia/sovereign workers'
+   * stepMeeGrowth().
+   */
+  persistentStep?: (delta: number, governanceViolation: boolean) => Promise<{ step: unknown; summary: unknown } | undefined>;
+}
+
+export class SecurityViolation extends Error {}
+
+/** Computes the same semantic hash the Python JITNAPacket.compute_hash() used: sha256(normalized_intent:sorted_context_json). */
+export function computeIntentHash(packet: IntentPacket): string {
+  const normalized = packet.intent.toLowerCase().trim();
+  const sortedContext = JSON.stringify(packet.context ?? {}, Object.keys(packet.context ?? {}).sort());
+  return createHash("sha256").update(`${normalized}:${sortedContext}`).digest("hex");
+}
+
+// ============================================================================
+// Pillar 1 — FDIA Gatekeeper (reuses the hardened shared engine, does not re-implement it)
+// ============================================================================
+
+export interface GatekeeperConfig {
+  maxIntentLength: number;
+  forbiddenKeywords: string[];
+  fdiaThreshold: number;
+}
+
+export const DEFAULT_GATEKEEPER_CONFIG: GatekeeperConfig = {
+  maxIntentLength: 1000,
+  forbiddenKeywords: ["hack", "exploit", "bypass"],
+  fdiaThreshold: 0.25,
+};
+
+export class FDIAGatekeeper {
+  constructor(private config: GatekeeperConfig = DEFAULT_GATEKEEPER_CONFIG) {}
+
+  /**
+   * Validates intent against the same 3-step pipeline as the Python original:
+   * length guard -> forbidden-keyword guard -> real FDIA quality-gate call.
+   * Throws SecurityViolation on any failure; returns the real FDIA score and
+   * the RCT-7 trail that produced its intent_precision (I) on success.
+   */
+  validate(packet: IntentPacket): { passed: true; fdia_score: number; rct7: RCT7ExecutionResult } {
+    if (packet.intent.length > this.config.maxIntentLength) {
+      throw new SecurityViolation(`Intent exceeds maximum length (${packet.intent.length} > ${this.config.maxIntentLength})`);
+    }
+
+    const lower = packet.intent.toLowerCase();
+    for (const keyword of this.config.forbiddenKeywords) {
+      if (lower.includes(keyword)) {
+        throw new SecurityViolation(`Intent contains forbidden keyword: ${keyword}`);
+      }
+    }
+
+    // The conveyor belt: run the intent through RCT-7's real 7-stage
+    // decomposition (the same hardened, data-driven engine from
+    // @delentia/mcp-rct7 — sentence splitting, sub-task extraction, failure-
+    // category detection, core-term extraction, and a real 0-1 alignment
+    // score combining grounding completeness + problem specificity + lexical
+    // overlap with the stated target). Its verified_alignment_score becomes
+    // FDIA's intent_precision (I) via a documented linear mapping:
+    //   I = 0.5 + alignment_score * 1.5   =>   range [0.5, 2.0]
+    // 0.5 is FDIA's own schema floor (FDIARequestSchema.intent_precision.min);
+    // 2.0 is a deliberate design ceiling, not derived from anything else.
+    // Semantics: a vague, ungrounded intent (alignment~0) gets the most
+    // LENIENT exponent (I=0.5) — F=D^I shrinks slower for imprecise D,
+    // matching "we don't understand this well enough to be strict about
+    // data quality either." A precisely-grounded intent (alignment~1) gets
+    // I=2.0 — F=D^I punishes D<1 harder, matching "we understand exactly
+    // what's being asked, so weak supporting data is less excusable." This
+    // is the first place in the whole Delentia ecosystem where RCT-7's
+    // actual decomposition output is synthesized into FDIA's I, rather than
+    // I being a caller-supplied constant or an unrelated heuristic.
+    const rct7 = executeRCT7({
+      problem_statement: packet.intent,
+      environment_context: packet.context && Object.keys(packet.context).length > 0 ? JSON.stringify(packet.context) : undefined,
+    });
+    const intent_precision = Math.round((0.5 + rct7.verified_alignment_score * 1.5) * 10000) / 10000;
+
+    // data_quality (D) stays a separate, simpler heuristic on purpose — see
+    // this file's top-of-file comment on why D and I are not conflated.
+    const wordCount = packet.intent.trim().split(/\s+/).filter(Boolean).length;
+    const data_quality = Math.min(1, 0.4 + wordCount / 40);
+
+    const request: FDIARequest = {
+      data_quality,
+      intent_precision,
+      authorized: true,
+      action_name: this.actionNameFor(packet.intent),
+      caller_context: packet.intent,
+      caller_role: "developer",
+      dual_signoff_confirmed: false,
+    };
+
+    const result = evaluateFDIA(request);
+    if (result.future_score < this.config.fdiaThreshold || !result.authorized) {
+      throw new SecurityViolation(
+        `FDIA gate rejected intent: score=${result.future_score.toFixed(4)} verdict=${result.verdict} (${result.reason}) [RCT-7 alignment=${rct7.verified_alignment_score}, derived I=${intent_precision}]`
+      );
+    }
+
+    return { passed: true, fdia_score: result.future_score, rct7 };
+  }
+
+  /**
+   * Maps free-text intent to an action_name FDIA's bundled policy can
+   * classify. Bug found and fixed while testing this: an earlier version of
+   * this method prefixed ANY destructive-keyword intent with "write_" (e.g.
+   * "drop the production database table" -> "write_drop the production...")
+   * to route it toward the CONDITIONAL file-write rule — but FDIA's actual
+   * DATABASE-DESTRUCTIVE-BLOCK rule only matches action names that literally
+   * START WITH "drop_"/"delete_"/"purge_"/"truncate_"/"exec_"/"chmod_" (its
+   * patterns are anchored, not substring-unanchored — see fdia-core.ts). A
+   * "write_"-prefixed name never matched that rule, fell through to the
+   * CONDITIONAL rule's path check (which passed, since no target_payload is
+   * set here), and the destructive intent was silently AUTHORIZED. Fixed by
+   * detecting the actual destructive keyword and using IT as the action_name
+   * prefix, so it lands on the real block rule instead of a mismatched one.
+   */
+  private actionNameFor(intent: string): string {
+    const lower = intent.toLowerCase();
+    const destructiveVerbs = ["drop", "delete", "purge", "truncate", "exec", "chmod", "eval"];
+    for (const verb of destructiveVerbs) {
+      if (lower.includes(verb)) return `${verb}_${lower.slice(0, 40)}`;
+    }
+    if (/(hack|exploit|bypass)/.test(lower)) return `system_exec_${lower.slice(0, 40)}`; // still anchored to a real BLOCK pattern
+    if (/(analy[sz]e|research|explain|understand|read|check|find|search)/.test(lower)) return `read_${lower.slice(0, 40)}`;
+    return `evaluate_${lower.slice(0, 40)}`;
+  }
+}
+
+// ============================================================================
+// Pillar 2 — Memory Layer (real Jaccard similarity + real compression accounting)
+// ============================================================================
+
+export class MemoryLayer {
+  private cache = new Map<string, MemoryHit>();
+  private totalOriginalBytes = 0;
+  private totalStoredBytes = 0;
+
+  /** Live compression ratio computed from real accumulated byte counts, no fallback constant. */
+  get compressionRatio(): number {
+    if (this.totalStoredBytes === 0 || this.totalOriginalBytes === 0) return 1;
+    return Math.round((this.totalOriginalBytes / this.totalStoredBytes) * 100) / 100;
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+
+  recall(packet: IntentPacket): MemoryHit | null {
+    const hash = computeIntentHash(packet);
+    const exact = this.cache.get(hash);
+    if (exact) {
+      exact.access_count += 1;
+      exact.last_accessed = new Date().toISOString();
+      return exact;
+    }
+
+    // Semantic similarity search: real Jaccard similarity over word sets,
+    // same algorithm as the Python original's MVP _calculate_similarity (not
+    // embeddings — this is an honest, disclosed, cheap approximation).
+    let best: MemoryHit | null = null;
+    let bestScore = 0;
+    for (const hit of this.cache.values()) {
+      const score = jaccardSimilarity(packet.intent, hit.result.original_intent);
+      if (score > 0.95 && score > bestScore) {
+        best = hit;
+        bestScore = score;
+      }
+    }
+    if (best) {
+      best.confidence = bestScore;
+      best.access_count += 1;
+      best.last_accessed = new Date().toISOString();
+    }
+    return best;
+  }
+
+  store(packet: IntentPacket, result: Record<string, unknown>): void {
+    const hash = computeIntentHash(packet);
+    const originalSize = JSON.stringify(result).length;
+    // First-class storage: full result kept, but the "compression" accounting
+    // tracks what a delta-against-cache representation WOULD cost (the size
+    // of just the new fields relative to any existing entry for this hash) —
+    // real bytes counted, not a fabricated ratio.
+    const existing = this.cache.get(hash);
+    const storedSize = existing ? Math.max(1, originalSize - JSON.stringify(existing.result.output).length) : originalSize;
+
+    this.totalOriginalBytes += originalSize;
+    this.totalStoredBytes += storedSize;
+
+    this.cache.set(hash, {
+      intent_hash: hash,
+      result: { original_intent: packet.intent, output: result },
+      confidence: 1,
+      created_at: existing?.created_at ?? new Date().toISOString(),
+      access_count: existing?.access_count ?? 0,
+      last_accessed: new Date().toISOString(),
+      delta_size: storedSize,
+    });
+  }
+}
+
+export function jaccardSimilarity(a: string, b: string): number {
+  const words1 = new Set(a.toLowerCase().split(/\s+/).filter(Boolean));
+  const words2 = new Set(b.toLowerCase().split(/\s+/).filter(Boolean));
+  if (words1.size === 0 || words2.size === 0) return 0;
+  let intersectionSize = 0;
+  for (const w of words1) if (words2.has(w)) intersectionSize++;
+  const unionSize = words1.size + words2.size - intersectionSize;
+  return intersectionSize / unionSize;
+}
+
+// ============================================================================
+// OpenRouter client — shared HTTP plumbing for both the executor and verifier
+// ============================================================================
+
+export interface OpenRouterConfig {
+  apiKey: string;
+  /** Injectable for tests; defaults to the global fetch (works in Node 18+ and Cloudflare Workers). */
+  fetchImpl?: typeof fetch;
+  baseUrl?: string;
+}
+
+export interface OpenRouterCallResult {
+  ok: boolean;
+  content?: string;
+  model?: string;
+  error?: string;
+}
+
+/** Real HTTP call to OpenRouter's chat completions endpoint. No simulated/hardcoded response. */
+export async function callOpenRouter(
+  config: OpenRouterConfig,
+  model: string,
+  messages: Array<{ role: "system" | "user"; content: string }>,
+  maxTokens = 400
+): Promise<OpenRouterCallResult> {
+  const doFetch = config.fetchImpl ?? fetch;
+  const baseUrl = config.baseUrl ?? "https://openrouter.ai/api/v1";
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const response = await doFetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const body: any = await response.json();
+    if (!response.ok || body.error) {
+      return { ok: false, model, error: body.error?.message ?? `HTTP ${response.status}` };
+    }
+    const content: string | undefined = body.choices?.[0]?.message?.content ?? undefined;
+    if (!content) {
+      return { ok: false, model, error: `empty response (finish_reason=${body.choices?.[0]?.finish_reason})` };
+    }
+    return { ok: true, content, model };
+  } catch (err: any) {
+    return { ok: false, model, error: err?.message ?? "network error" };
+  }
+}
+
+// ============================================================================
+// Pillar 3 — Specialist Executor (REAL model call, real keyword-based routing)
+// ============================================================================
+
+/**
+ * Role -> real, verified-reachable OpenRouter free-tier model ID (checked
+ * 2026-09-12 via OpenRouter's public /models endpoint and a live test call
+ * to each). The Python original's HexaCoreRegistry pointed at model ID
+ * strings like "anthropic/claude-opus-4.6" — those DO exist on OpenRouter,
+ * but are paid; this port only uses confirmed-free models per this pass's
+ * explicit "free tier only" constraint. A fallback is listed per role since
+ * free-tier models are occasionally rate-limited upstream (observed directly
+ * this session: google/gemma-4-31b-it:free returned 429 on first test).
+ */
+export const ROLE_MODEL_MAP: Record<string, string[]> = {
+  code: ["cohere/north-mini-code:free", "nex-agi/nex-n2.5-pro:free"],
+  vision: ["inclusionai/ling-3.0-flash-vl:free", "nex-agi/nex-n2.5-pro:free"],
+  fast: ["liquid/lfm-2.5-2.6b:free", "nex-agi/nex-n2.5-mini:free"],
+  general: ["nex-agi/nex-n2.5-pro:free", "liquid/lfm-2.5-2.6b:free"],
+};
+
+const ROLE_KEYWORD_MAP: Array<[RegExp, keyof typeof ROLE_MODEL_MAP]> = [
+  [/\b(code|program|debug|function|bug|script)\b/i, "code"],
+  [/\b(image|photo|picture|visual|diagram|screenshot)\b/i, "vision"],
+  [/\b(quick|brief|short|fast|simple)\b/i, "fast"],
+];
+
+export function selectRole(intent: string): keyof typeof ROLE_MODEL_MAP {
+  for (const [pattern, role] of ROLE_KEYWORD_MAP) {
+    if (pattern.test(intent)) return role;
+  }
+  return "general";
+}
+
+export class SpecialistExecutor {
+  constructor(private openRouter: OpenRouterConfig) {}
+
+  async execute(packet: IntentPacket): Promise<SpecialistResult> {
+    const role = selectRole(packet.intent);
+    const candidates = ROLE_MODEL_MAP[role];
+
+    let lastError = "";
+    for (const model of candidates) {
+      const call = await callOpenRouter(
+        this.openRouter,
+        model,
+        [
+          {
+            role: "system",
+            content: "You are a specialist assistant. Answer the user's request concisely (under 120 words).",
+          },
+          { role: "user", content: packet.intent },
+        ],
+        400
+      );
+
+      if (call.ok && call.content) {
+        return {
+          intent: packet.intent,
+          processed_at: new Date().toISOString(),
+          specialist_model: model,
+          specialist_role: role,
+          output: call.content,
+        };
+      }
+      lastError = call.error ?? "unknown error";
+    }
+
+    // Every candidate model failed — return a real failure, never a fabricated success.
+    return {
+      intent: packet.intent,
+      processed_at: new Date().toISOString(),
+      specialist_model: candidates[candidates.length - 1],
+      specialist_role: role,
+      output: "",
+      model_error: `all candidate models failed for role "${role}": ${lastError}`,
+    };
+  }
+}
+
+// ============================================================================
+// Pillar 4 — Consensus Verifier (REAL multi-model vote, not a hardcoded true[])
+// ============================================================================
+
+const VERIFIER_MODELS = ["liquid/lfm-2.5-2.6b:free", "inclusionai/ling-3.0-flash-vl:free", "cohere/north-mini-code:free"];
+
+export class ConsensusVerifier {
+  constructor(
+    private openRouter: OpenRouterConfig,
+    private consensusThreshold = 0.5, // >50% of models that actually responded must agree
+    private models: string[] = VERIFIER_MODELS
+  ) {}
+
+  /**
+   * Asks each of N distinct real models an independent yes/no judgment:
+   * "does this output plausibly address this intent?" A model that errors
+   * out contributes NO vote (neither counted as agree nor disagree) — this
+   * matters: the Python original's `votes = [True, True, True]` counted
+   * unreachable models as automatic agreement, which is the opposite of a
+   * safe failure mode for a verification gate.
+   */
+  async verify(intent: string, output: string): Promise<VerificationResult> {
+    const calls = await Promise.all(
+      this.models.map(async (model) => {
+        const call = await callOpenRouter(
+          this.openRouter,
+          model,
+          [
+            {
+              role: "system",
+              content:
+                'You are a strict verifier. Does the OUTPUT plausibly and safely address the INTENT? Reply NO if the output is empty, off-topic, or nonsensical. End your reply with a final line containing ONLY the single word YES or NO.',
+            },
+            { role: "user", content: `INTENT: ${intent}\n\nOUTPUT: ${output || "(empty)"}` },
+          ],
+          // Several free-tier models are reasoning models that spend their
+          // token budget on an invisible "thinking" pass before the visible
+          // answer (confirmed directly: a 20-token budget hit finish_reason
+          // "length" with zero visible content on 2/3 verifier models during
+          // the first live run of this loop on 2026-09-12, which made every
+          // verification vote fail with "empty response" instead of a real
+          // yes/no). 250 gives room for both the reasoning and the answer.
+          250
+        );
+        if (!call.ok || !call.content) {
+          return { model, agree: null as boolean | null, error: call.error };
+        }
+        // Reasoning models often restate both words while thinking (e.g. "the
+        // user wants X, this is not a NO, so..."); take the LAST standalone
+        // yes/no token in the reply, not "does the text merely contain yes".
+        const matches = [...call.content.matchAll(/\b(yes|no)\b/gi)];
+        const lastAnswer = matches.length > 0 ? matches[matches.length - 1][1].toLowerCase() : null;
+        if (!lastAnswer) {
+          return { model, agree: null as boolean | null, error: "no yes/no answer found in response", reasoning: call.content.trim().slice(0, 200) };
+        }
+        const agree = lastAnswer === "yes";
+        return { model, agree, reasoning: call.content.trim().slice(0, 200) };
+      })
+    );
+
+    const answered = calls.filter((c) => c.agree !== null);
+    const agreeCount = answered.filter((c) => c.agree === true).length;
+    const confidence = answered.length > 0 ? agreeCount / answered.length : 0;
+    // Require at least one real answer — if every model failed, verification
+    // cannot pass regardless of threshold math (0/0 must not read as "0 >= 0").
+    const passed = answered.length > 0 && confidence >= this.consensusThreshold;
+
+    return { passed, confidence, votes: calls };
+  }
+}
+
+// ============================================================================
+// Pillar 5 — Evolution Committer
+// ============================================================================
+
+export class EvolutionCommitter {
+  constructor(private memory: MemoryLayer) {}
+
+  commit(packet: IntentPacket, result: Record<string, unknown>, verificationScore: number): void {
+    this.memory.store(packet, { ...result, verification_score: verificationScore, committed_at: new Date().toISOString() });
+  }
+}
+
+// ============================================================================
+// Pillar 5.5 — MEE Growth Tracker
+//
+// MEEGrowthTracker/confidenceToGrowthDelta now live in @delentia/shared
+// (moved there 2026-09-13 so sovereign/fdia can share the exact same growth
+// math via a Durable Object instead of each reimplementing the formula) —
+// re-imported above. Original context preserved: this is a from-scratch TS
+// port of Delentia-OS/rct_control_plane/mee_engine.py's real, tested growth
+// formula (G(t+1) = G(t) x (1+MΔ) x R_t), necessary because this package
+// (and sovereign/fdia) deploy to Cloudflare Workers, which has no Python
+// runtime and no network path to the Python engine. Here specifically, it's
+// driven by the ConsensusVerifier's real post-execution confidence rather
+// than the pre-execution FDIA score: FDIA's I answers "how well do we
+// understand the intent going in"; this growth tracker answers "how often
+// does what we produced actually hold up to independent scrutiny" — the
+// two are different moments in the pipeline and were never meant to be the
+// same signal. See @delentia/shared/src/mee-growth.ts for the formula.
+// ============================================================================
+
+// ============================================================================
+// The orchestrating engine
+// ============================================================================
+
+export interface IntentLoopMetrics {
+  total_requests: number;
+  cache_hits: number;
+  cache_misses: number;
+  verification_failures: number;
+  cache_hit_rate: number;
+  compression_ratio: number;
+  memory_size: number;
+  mee_growth: ReturnType<MEEGrowthTracker["summary"]>;
+}
+
+export class IntentLoopEngine {
+  private gatekeeper: FDIAGatekeeper;
+  private memory = new MemoryLayer();
+  private executor: SpecialistExecutor;
+  private verifier: ConsensusVerifier;
+  private committer: EvolutionCommitter;
+  private growth = new MEEGrowthTracker();
+  private metrics = { total_requests: 0, cache_hits: 0, cache_misses: 0, verification_failures: 0 };
+
+  constructor(openRouter: OpenRouterConfig, gatekeeperConfig?: GatekeeperConfig) {
+    this.gatekeeper = new FDIAGatekeeper(gatekeeperConfig);
+    this.executor = new SpecialistExecutor(openRouter);
+    this.verifier = new ConsensusVerifier(openRouter);
+    this.committer = new EvolutionCommitter(this.memory);
+  }
+
+  async process(packet: IntentPacket, options?: ProcessOptions): Promise<IntentResult> {
+    const start = Date.now();
+    this.metrics.total_requests += 1;
+    const intentHash = computeIntentHash(packet);
+
+    // Step 1: FDIA validation (real, hardened gate — throws on rejection).
+    // rct7 is computed inside validate() even when it rejects, but a thrown
+    // SecurityViolation can't carry a return value out — the alignment
+    // score and derived I are still visible in the error message itself
+    // (see validate()'s throw), just not as the full structured trail below.
+    let fdiaScore: number;
+    let rct7Result: RCT7ExecutionResult;
+    try {
+      const gate = this.gatekeeper.validate(packet);
+      fdiaScore = gate.fdia_score;
+      rct7Result = gate.rct7;
+    } catch (err) {
+      const error = err instanceof SecurityViolation ? err.message : String(err);
+      return {
+        intent_hash: intentHash,
+        state: "failed",
+        error,
+        latency_ms: Date.now() - start,
+        cache_hit: false,
+        metadata: {},
+      };
+    }
+
+    // Step 2: Memory recall (fast path)
+    const cached = this.memory.recall(packet);
+    if (cached && cached.confidence > 0.95) {
+      this.metrics.cache_hits += 1;
+      return {
+        intent_hash: intentHash,
+        state: "completed",
+        output: cached.result.output,
+        latency_ms: Date.now() - start,
+        cache_hit: true,
+        fdia_score: fdiaScore,
+        rct7: rct7Result,
+        metadata: { access_count: cached.access_count, original_created: cached.created_at },
+      };
+    }
+    this.metrics.cache_misses += 1;
+
+    // Step 3: Specialist execution (real model call)
+    const specialistResult = await this.executor.execute(packet);
+    if (specialistResult.model_error) {
+      // A real infrastructure-quality signal worth tracking: every candidate
+      // model failed. Fixed delta (not confidence-derived, since no
+      // verification ever ran) — still a real, non-zero step, and still
+      // counts as a governance_violation so resilience genuinely degrades.
+      const meeStep = this.growth.step(-1, true);
+      const meeGrowth = await options?.persistentStep?.(-1, true);
+      return {
+        intent_hash: intentHash,
+        state: "failed",
+        error: specialistResult.model_error,
+        latency_ms: Date.now() - start,
+        cache_hit: false,
+        fdia_score: fdiaScore,
+        rct7: rct7Result,
+        mee_step: meeStep,
+        ...(meeGrowth ? { mee_growth: meeGrowth } : {}),
+        metadata: { specialist_role: specialistResult.specialist_role },
+      };
+    }
+
+    // Step 4: Consensus verification (real multi-model vote)
+    const verification = await this.verifier.verify(packet.intent, specialistResult.output);
+    // The real growth signal this pass adds: confidence from the actual
+    // post-execution multi-model consensus, not the pre-execution FDIA
+    // score again. A failed consensus counts as a governance_violation
+    // (resilience degrades), same semantics as mee_engine.py.
+    const growthDelta = confidenceToGrowthDelta(verification.confidence);
+    const meeStep = this.growth.step(growthDelta, !verification.passed);
+    const meeGrowth = await options?.persistentStep?.(growthDelta, !verification.passed);
+
+    if (!verification.passed) {
+      this.metrics.verification_failures += 1;
+      return {
+        intent_hash: intentHash,
+        state: "failed",
+        error: "Failed verification consensus",
+        latency_ms: Date.now() - start,
+        cache_hit: false,
+        verification,
+        fdia_score: fdiaScore,
+        rct7: rct7Result,
+        mee_step: meeStep,
+        ...(meeGrowth ? { mee_growth: meeGrowth } : {}),
+        metadata: { specialist_role: specialistResult.specialist_role },
+      };
+    }
+
+    // Step 5: Commit to memory
+    const resultRecord = { ...specialistResult } as unknown as Record<string, unknown>;
+    this.committer.commit(packet, resultRecord, verification.confidence);
+
+    return {
+      intent_hash: intentHash,
+      state: "completed",
+      output: resultRecord,
+      latency_ms: Date.now() - start,
+      cache_hit: false,
+      verification,
+      fdia_score: fdiaScore,
+      rct7: rct7Result,
+      mee_step: meeStep,
+      ...(meeGrowth ? { mee_growth: meeGrowth } : {}),
+      metadata: { specialist_role: specialistResult.specialist_role },
+    };
+  }
+
+  getMetrics(): IntentLoopMetrics {
+    const total = this.metrics.total_requests;
+    return {
+      ...this.metrics,
+      cache_hit_rate: total > 0 ? Math.round((this.metrics.cache_hits / total) * 1000) / 1000 : 0,
+      compression_ratio: this.memory.compressionRatio,
+      memory_size: this.memory.size,
+      mee_growth: this.growth.summary(),
+    };
+  }
+}
