@@ -245,6 +245,22 @@ def _split_into_subcommands(command: str) -> List[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
+# Round 48: this local sandbox is NOT a jail - it runs as the same OS user as
+# the agent, so it can read files outside the repo, including approver and
+# audit signing keys kept on the same machine. Commands that name key or
+# secret material are denied outright. This is a speed bump, not a boundary:
+# an obfuscated path (string building, base64, globbing) can get past a
+# pattern. The real protection is keeping approver keys on another device
+# (`delentia approvals sign` works offline) or under a different OS user.
+_KEY_MATERIAL_PATTERN = re.compile(
+    r"(\.delentia\b|\.pem\b|\.key\b|approvers\.json|\.ssh\b|id_rsa|id_ed25519|credentials\.json"
+    r"|\.claude-mem\b|delentia_api_token|delentia_audit_signing_key|delentia_approver_pubkeys"
+    r"|openrouter_api_key|python_kernel_token|zuplo_shared_secret|_secret\b)",
+    re.IGNORECASE,
+)
+_ENV_DUMP_PATTERN = re.compile(r"^\s*(printenv|env|set)\s*$|^\s*printenv\b", re.IGNORECASE)
+
+
 def classify_command_risk(command: str) -> str:
     """Returns "denied" (any real sub-command matches
     _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
@@ -259,8 +275,12 @@ def classify_command_risk(command: str) -> str:
     `runas` invocation always needs_approval at minimum (Round 45); if
     its wrapped command is extractable and itself denylisted, that
     denies the whole thing."""
+    if _KEY_MATERIAL_PATTERN.search(command):
+        return "denied"
     worst = "safe"
     for sub in _split_into_subcommands(command):
+        if _ENV_DUMP_PATTERN.search(sub):
+            return "denied"
         original_sub = sub
         sub = _ELEVATION_WRAPPER_PATTERN.sub("", sub)
         sub_stripped = sub.lower()

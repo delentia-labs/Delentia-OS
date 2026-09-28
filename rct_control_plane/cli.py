@@ -1681,8 +1681,9 @@ def approvals_group():
     Human approval for paused agent actions (Round 48).
 
     The agent pauses repo writes and medium-risk commands. A trusted
-    approver signs the exact action with an Ed25519 key that lives outside
-    the repository, where the agent's own tools cannot read it.
+    approver signs the exact action with an Ed25519 key kept outside the
+    repository - ideally on another device, since the agent's shell sandbox
+    runs as the same OS user and is not a jail (`sign` works offline).
 
     Examples:
         delentia approvals keygen --out ~/.delentia/keys/architect.pem --trust Architect
@@ -1793,6 +1794,78 @@ def approvals_approve(approval_id: str, key_path: str, db: Optional[str]) -> Non
 def approvals_reject(approval_id: str, key_path: str, db: Optional[str]) -> None:
     """Sign and record rejection of one paused action (local DB)."""
     _decide_locally(approval_id, key_path, "REJECTED", db)
+
+
+@cli.group("audit-chain")
+def audit_chain_group():
+    """
+    Tamper-evident audit trail (Round 48, tier A1).
+
+    Every audit_trail row is hash-chained; with DELENTIA_AUDIT_SIGNING_KEY set
+    each link is also Ed25519-signed. `verify` recomputes the whole chain.
+    (`delentia audit <intent_id>` is the older per-intent audit viewer.)
+
+    Examples:
+        delentia audit-chain verify
+        delentia audit-chain verify --pubkey <hex>
+        delentia audit-chain head          (value to publish outside the host)
+        delentia audit-chain keygen --out ~/.delentia/keys/audit-signer.pem
+    """
+    pass
+
+
+def _audit_db(db: Optional[str]):
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence()
+
+
+@audit_chain_group.command("verify")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--pubkey", default=None, help="Expected signer public key hex (or DELENTIA_AUDIT_PUBKEY).")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
+def audit_chain_verify(db: Optional[str], pubkey: Optional[str], output: str) -> None:
+    """Recompute every link; exit 1 on the first break."""
+    from rct_control_plane import audit_chain
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        report = audit_chain.verify_audit_chain(conn, public_key_hex=pubkey)
+    if output == "json":
+        click.echo(json.dumps(report.to_dict(), indent=2))
+    else:
+        status = click.style("OK", fg="green") if report.ok else click.style("BROKEN", fg="red")
+        click.echo(f"chain      : {status}")
+        click.echo(f"rows       : {report.chained_rows} chained, {report.signed_rows} signed, "
+                   f"{report.legacy_unchained_rows} legacy (written before the chain existed)")
+        click.echo(f"head       : seq={report.head_seq} hash={report.head_hash}")
+        if not report.ok:
+            click.echo(f"first break: seq={report.first_bad_seq} - {report.reason}")
+    if not report.ok:
+        sys.exit(1)
+
+
+@audit_chain_group.command("head")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def audit_chain_head(db: Optional[str]) -> None:
+    """Print the latest chain position and hash (JSON)."""
+    from rct_control_plane import audit_chain
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        click.echo(json.dumps(audit_chain.chain_head(conn)))
+
+
+@audit_chain_group.command("keygen")
+@click.option("--out", "out_path", required=True, help="Where to write the signing key (outside the repo).")
+def audit_chain_keygen(out_path: str) -> None:
+    """Create the audit signing key; then set DELENTIA_AUDIT_SIGNING_KEY to its path."""
+    from rct_control_plane import audit_chain
+    try:
+        public_hex = audit_chain.generate_signing_key(out_path)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"private key : {Path(out_path).expanduser()}")
+    click.echo(f"public key  : {public_hex}  (publish this; verifiers pass it as --pubkey)")
+    click.echo(f"then set {audit_chain.SIGNING_KEY_ENV}={Path(out_path).expanduser()} for the API process")
 
 
 @cli.command("serve")

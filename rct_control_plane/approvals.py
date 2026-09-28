@@ -17,9 +17,13 @@ Here:
     (DELENTIA_APPROVER_PUBKEYS env var, or ~/.delentia/approvers.json) and is
     fail-closed: with no trusted approver configured, nothing can be approved;
   - the approver's private key is generated to a path outside the repository
-    (generate_approver_key refuses paths inside it), so the agent's own file
-    and shell tools, which are confined to the repo, cannot read it and sign
-    for themselves;
+    (generate_approver_key refuses paths inside it), out of reach of the
+    agent's repo-confined file tools. The local shell sandbox is NOT a jail,
+    though: it runs as the same OS user and could read a key on the same
+    machine (sandbox.py denies commands naming key material, but that is a
+    speed bump). The real protection is keeping the approver key on another
+    device - `delentia approvals sign` works offline and only the signature
+    is sent to the agent host - or under a different OS user;
   - approval is bound to one exact action: changing any argument changes the
     digest and invalidates the signature, and an action executes at most once.
 

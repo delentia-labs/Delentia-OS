@@ -33,6 +33,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
+from rct_control_plane import audit_chain
+
 # ---------------------------------------------------------------------------
 # Optional async backend
 # ---------------------------------------------------------------------------
@@ -244,6 +246,8 @@ class ControlPlanePersistence:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.executescript(_SCHEMA_SQL)
+            # Round 48 A1: tamper-evident chain over audit_trail.
+            audit_chain.ensure_schema(conn)
 
     # ------------------------------------------------------------------
     # Intents
@@ -394,12 +398,17 @@ class ControlPlanePersistence:
         changes: Dict[str, Any],
     ) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        conn.execute(
+        changes_json = json.dumps(changes)
+        cursor = conn.execute(
             """INSERT INTO audit_trail
                (entity_type, entity_id, action, actor, changes, created_at)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (entity_type, entity_id, action, actor, json.dumps(changes), now),
+            (entity_type, entity_id, action, actor, changes_json, now),
         )
+        # Round 48 A1: link the row into the hash chain in the same
+        # transaction (see audit_chain.append for why this cannot fork).
+        audit_chain.append(conn, int(cursor.lastrowid or 0), entity_type, entity_id, action, actor,
+                           changes_json, now)
 
     def recent_audit(self, limit: int = 100) -> List[Dict[str, Any]]:
         with self._connect() as conn:

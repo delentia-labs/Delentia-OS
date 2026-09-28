@@ -14,6 +14,8 @@ its prefix. Recovered via `git checkout` (working-tree-only loss).
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+import pytest
+
 from rct_control_plane.sandbox import classify_command_risk
 
 
@@ -176,3 +178,28 @@ class TestSudoDoasFlagBypassIsClosed:
 
     def test_doassignment_is_not_falsely_matched_as_doas(self):
         assert classify_command_risk("echo my doassignment is due") == "safe"
+
+
+class TestKeyMaterialSpeedBump:
+    """Round 48: the local sandbox is not a jail, so commands that name key
+    or secret material are denied (a speed bump, not a boundary)."""
+
+    @pytest.mark.parametrize("command", [
+        "cat ~/.delentia/keys/architect.pem",
+        r"type C:\Users\me\.ssh\id_ed25519",
+        "cat approvers.json",
+        "echo $DELENTIA_API_TOKEN",
+        "echo %OPENROUTER_API_KEY%",
+        "python -c \"print(open('/home/u/.delentia/approvers.json').read())\"",
+        "ls && cat ~/.claude-mem/settings.json",
+        "printenv", "env", "set", "printenv DELENTIA_AUDIT_SIGNING_KEY",
+    ])
+    def test_key_or_secret_material_is_denied(self, command):
+        assert classify_command_risk(command) == "denied"
+
+    @pytest.mark.parametrize("command", [
+        "ls -la", "git status", "python -m venv .venv", "pip list", "echo keyboard",
+        "grep -r monkey src", "python keygen.py", "env_check --verbose",
+    ])
+    def test_ordinary_commands_are_not_caught(self, command):
+        assert classify_command_risk(command) != "denied"

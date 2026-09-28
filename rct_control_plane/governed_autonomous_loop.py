@@ -224,7 +224,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._kernel = kernel
         self._intent_compiler = IntentCompiler()
         self._delta_engine = DeltaEngine()
-        self._keypair: JITNAKeypair = generate_keypair()
+        # Round 48 A1: sign episodes with the host's persistent audit key
+        # when DELENTIA_AUDIT_SIGNING_KEY is set; otherwise a per-instance
+        # key (recorded as ephemeral). Either way the signature, content
+        # hash and public key are stored, so the record can be re-verified
+        # after this process exits - before, only `jitna_verified: true`
+        # was kept, which nobody could check.
+        from rct_control_plane.audit_chain import load_signing_key
+        persistent_key = load_signing_key()
+        self._keypair: JITNAKeypair = JITNAKeypair(persistent_key) if persistent_key else generate_keypair()
+        self._keypair_is_persistent = persistent_key is not None
         # Round 44 item I.2: real growth tracking + skill library for this
         # loop's own episodes. A dedicated MEESession (not shared with the
         # kernel's own, if any) because this session's growth signal is
@@ -344,6 +353,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "rct7_steps": self._episode_rct7_steps,
                 "jitna_packet_id": signed.packet_id,
                 "jitna_verified": self._episode_jitna_verified,
+                "jitna_content_hash": signed.compute_hash(),
+                "jitna_signature": signed.signature,
+                "jitna_public_key": self._keypair.public_key_raw().hex(),
+                "jitna_key_persistent": self._keypair_is_persistent,
             },
         )
 
