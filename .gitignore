@@ -211,3 +211,21 @@ test_script.ps1
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Round 49 (Architect-approved 2026-09-28): never commit dependency folders or
+# runtime output. These were tracked by mistake (6,992 node_modules files =
+# 88% of the repo). `git rm --cached` removed them from the index only; the
+# files stay on disk and in history.
+node_modules/
+workspace_output/
+rct_control_plane.db
+rct_control_plane_agentic.db
+*.db-wal
+*.db-shm
+# rct_platform/ duplicated microservices/ (the same 5 public reference
+# services); the private platform layer lives in Delentia-Private-OS.
+rct_platform/
+ground_truth_store.db
+# downloaded model weights (ultralytics)
+yolov8n.pt
+.claude/worktrees/

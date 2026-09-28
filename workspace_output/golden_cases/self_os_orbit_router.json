@@ -1,9 +1,0 @@
-{
-  "agent_id": "orbit_core",
-  "connected_mcps": [
-    "filesystem",
-    "git",
-    "terminal"
-  ],
-  "status": "ACTIVE"
-}
