@@ -1,0 +1,369 @@
+
+> delentia-mcp-ecosystem@2.2.0 build
+> npm run build:shared && npm run build:rct7 && npm run build:fdia && npm run build:delta && npm run build:jitna && npm run build:intent-loop && npm run build:sovereign
+
+
+> delentia-mcp-ecosystem@2.2.0 build:shared
+> npm run --workspace=@delentia/shared build
+
+
+> @delentia/shared@1.2.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:rct7
+> npm run --workspace=@delentia/mcp-rct7 build
+
+
+> @delentia/mcp-rct7@1.1.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:fdia
+> npm run --workspace=@delentia/mcp-fdia build
+
+
+> @delentia/mcp-fdia@1.2.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:delta
+> npm run --workspace=@delentia/mcp-delta build
+
+
+> @delentia/mcp-delta@1.1.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:jitna
+> npm run --workspace=@delentia/mcp-jitna build
+
+
+> @delentia/mcp-jitna@1.1.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:intent-loop
+> npm run --workspace=@delentia/mcp-intent-loop build
+
+
+> @delentia/mcp-intent-loop@0.1.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 build:sovereign
+> npm run --workspace=@delentia/mcp-sovereign build
+
+
+> @delentia/mcp-sovereign@2.2.0 build
+> tsc
+
+
+> delentia-mcp-ecosystem@2.2.0 test:all
+> node tests/ecosystem.test.mjs && node tests/deep-ecosystem.test.mjs && node tests/test_fdia_policy_engine.mjs && node tests/fdia_deep_hypothesis.test.mjs && node tests/intent_loop.test.mjs && node tests/intent_loop_mee_persistence.test.mjs && node tests/sovereign_rct7_synthesis.test.mjs && node tests/fdia_worker_rct7_synthesis.test.mjs && node tests/jitna_file_format.test.mjs && node tests/rctdb_log.test.mjs && node tests/intent_loop_rctdb_wiring.test.mjs && node tests/cord_security.test.mjs && node tests/ed25519_signing.test.mjs && node tests/production_path_integration.test.mjs && node tests/python_kernel_bridge.test.mjs
+
+✔ FDIA Security Gate - Mathematical Preemption Proof (5.3154ms)
+✔ FDIA Security Gate - fails closed on malformed numeric input (regression) (0.5578ms)
+✔ RCT-7 Mental OS - Authentic 7-Stage Pipeline Verification (2.0697ms)
+✔ RCT-7 Alignment Score - varies with input and is deterministic (0.7713ms)
+✔ RCT-7 - all 7 stages are data-driven, not fixed templates (regression) (1.0551ms)
+✔ Delta Engine - State Differential Context Compression (0.5127ms)
+✔ Delta Engine - reduction_percentage is not clamped to a fixed range (regression) (0.7437ms)
+✔ JITNA Orchestrator - 1+4 LoRA Swarm Dispatch (1.1063ms)
+✔ JITNA Orchestrator - assigned_pillars reflects the real routing decision (regression) (0.7846ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37.1527
+✔ FDIA - Wildcard Pattern Matching Utility (4.2242ms)
+✔ FDIA - Base Zero-Auth Cutoff: A = 0 => F = 0.0000 Immediately (3.0185ms)
+✔ FDIA Enterprise Policy - Action Blacklist (Forbidden Action Patterns) (1.2391ms)
+✔ FDIA Enterprise Policy - Role-Based Access Control (RBAC) (1.0982ms)
+✔ FDIA Enterprise Policy - Custom Safety Threshold Override (0.558ms)
+✔ FDIA Enterprise Policy - Dual Human Architect Sign-off Verification (0.6122ms)
+✔ OAuth Direct Flow - GitHub Authorization URL Generation (0.622ms)
+✔ OAuth Direct Flow - Cryptographic Session Token Issuance & Verification (1.1948ms)
+✔ Resilience Telemetry - Error Capture & Sentry Boundary Handling (0.7171ms)
+✔ Resilience Telemetry - Sub-millisecond Execution Latency Measuring (2.0992ms)
+✔ RCT-7 - Strict 7-Stage Sequential Cognition & Alignment Verification (2.4326ms)
+✔ Delta Engine - Deep Token Reduction Benchmark (real computed value, no fixed cap) (1.5272ms)
+✔ JITNA Protocol - RFC-001 Packet [I, D, Delta, A, R, M] Integrity (0.7843ms)
+✔ JITNA 1+N Swarm - 4 Pillars LoRA & Extensible Multi-Agent Dispatch (0.3169ms)
+✔ JITNA 1+N Scalability - Extensible Swarm Support (0.2659ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 45.4706
+✔ Scenario 1: Low-Risk Safe Read Operations automatically receive A = 1 (Zero Friction) (6.8737ms)
+✔ Scenario 2A: Medium-Risk file write to a permitted path receives A = 1 (1.9496ms)
+✔ Scenario 2B: Medium-Risk file write to sensitive paths triggers CONDITIONAL VETO (A = 0 => F = 0) (1.9677ms)
+✔ Scenario 3A: Destructive database / OS operations WITHOUT Architect Signature are strictly blocked (A = 0 => F = 0) (2.3115ms)
+✔ Scenario 3B: Destructive operations WITH valid Human Architect Cryptographic Token are authorized (A = 1) (2.5576ms)
+✔ Scenario 4A: Dynamically inject Fintech Wire Transfer Governance Rule (1.7056ms)
+✔ Scenario 4B: Dynamically inject Healthcare / HIPAA Medical Data Governance Rule (1.3135ms)
+✔ Scenario 4C: Dynamically inject Kubernetes Production Cluster Rollout Rule (1.0967ms)
+✔ Scenario 5: Completely unregistered / alien intents fall back to A = 0 (Zero-Trust Gate) (2.4233ms)
+✔ Scenario 6: Mathematical Proof — When A = 0, F unconditionally equals 0.0000 regardless of D or I (1.5144ms)
+✔ Scenario 7: Full live policy replacement and rule removal at runtime (1.0903ms)
+✔ Scenario 8: Cloudflare Workers KV Loading & Zero-Deploy Live Sync (1.4972ms)
+✔ Scenario 9: Zod Schema Validation catches corrupted syntax & recovers safely (1.6708ms)
+✔ Scenario 10: Environment Variable Policy Injection (FDIA_POLICY_RULES_JSON) (0.4285ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 43.0464
+✔ H1a: D=1 forces F=A regardless of I, for any I >= 0 (1^I = 1 identically) (2.4963ms)
+✔ H1b: D=0, I>0 forces F=0 (0^I = 0 for I>0); D=0, I=0 is the documented 0^0=1 edge case (2.3421ms)
+✔ H1c: Monotonicity — for fixed I>0 and A=1, F is non-decreasing as D increases over [0,1] (1.9057ms)
+✔ H1d: Monotonicity — for fixed 0<D<1 and A=1, F is non-increasing as I increases (D^I shrinks toward 0) (1.4242ms)
+✔ H1e: Physical cutoff holds under extreme/malformed D,I too — A=0 always wins, even over Infinity/NaN inputs (1.2914ms)
+✔ H1f: calculateF fails closed (returns 0, never NaN/Infinity) on its own malformed input, independent of evaluate()'s guard (0.993ms)
+✔ H1g: Underflow (very small D, large I) legitimately rounds to 0.0000 — not a fail-closed case, a real low score (0.8725ms)
+✔ H1h: Rounding is to exactly 4 decimal places, and threshold comparison uses the rounded value (3.3224ms)
+✔ H2: Identical requests always produce identical future_score, verdict, effective_A (audit_digest/timestamp may differ) (1.2324ms)
+✔ H2b: audit_digest is a 64-char hex SHA-256 and differs across distinguishable inputs (no collision on these fixtures) (0.8114ms)
+✔ H3a: [BUG FOUND + FIXED] genuine multi-pattern overlap now resolves to the MOST restrictive matching rule, not the first array match (2.4532ms)
+✔ H3b: severity ranking is order-independent — same result whether the ALLOW or BLOCK rule is declared first in a custom policy (2.8964ms)
+✔ H3c: [DOCUMENTED LIMITATION, not fixed] action_name is a caller-self-reported label — FDIA pattern-matches the label, it cannot verify the label matches what will actually execute (1.0368ms)
+✔ H3d: wildcard matching is case-insensitive both directions (evades neither over- nor under-blocking via case) (0.144ms)
+✔ H3e: whitespace padding does not bypass a substring-based unanchored block pattern (indexOf still finds the substring) (0.7216ms)
+✔ H3f: zero-width space injected mid-keyword breaks substring matching (a real, disclosed evasion of the *pattern* match) but the zero-trust fallback still denies by default (0.7611ms)
+✔ H3g: an unmatched action under a permissive custom fallback (default_fallback_A=1) is genuinely NOT protected by pattern evasion — confirms H3f's caveat (0.2757ms)
+✔ H4a: a custom_policy JSON payload containing __proto__ does not pollute Object.prototype (0.3246ms)
+✔ H4b: evaluate() does not throw on pathological string inputs (very long, null-byte, control characters) (2.115ms)
+✔ H4c: matchesWildcard never throws on adversarial pattern inputs (empty, only stars, regex-special characters) (0.3496ms)
+✔ H5: a per-request custom_policy does not mutate the engine's persisted base policy (1.2751ms)
+✔ H5b: malformed inline custom_policy in a request falls back to the safe default policy, not a crash or a silent permissive pass (2.302ms)
+✔ H6: RBAC role-check applies to whichever rule wins by severity, not just to whatever would have been the first array match (0.862ms)
+✔ H7: createDefaultPolicy() output is itself schema-valid and its rules are ordered most-restrictive-first for human readability (severity ranking makes this non-load-bearing, but it should stay true) (1.2059ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 45.9509
+✔ FDIAGatekeeper: legitimate read/research intents pass with a real, non-fixed FDIA score (6.289ms)
+✔ FDIAGatekeeper: forbidden-keyword intents are rejected before ever reaching the FDIA scorer (0.6829ms)
+✔ FDIAGatekeeper: destructive intents are rejected by the real FDIA block rule (regression for the action-name mapping bug found 2026-09-12) (1.0452ms)
+✔ FDIAGatekeeper: an overlong intent is rejected on the length guard alone (no FDIA call needed) (0.1839ms)
+✔ FDIAGatekeeper: intent_precision (I) is now synthesized from a REAL RCT-7 call, not a caller-supplied constant — structured context raises RCT-7's alignment score (grounding_completeness), which raises I, which correctly LOWERS F for data_quality < 1 (matches the FDIA monotonicity invariant verified in fdia_deep_hypothesis.test.mjs) (0.9045ms)
+✔ FDIAGatekeeper: the RCT-7-derived intent_precision stays within FDIA's documented [0.5, 2.0] mapping range across vague and highly-specific intents, and is deterministic for the same input (0.821ms)
+✔ MemoryLayer: exact-hash recall works and increments access_count (0.4273ms)
+✔ MemoryLayer: near-duplicate intents (Jaccard > 0.95) hit via semantic recall; moderately different intents (< 0.95) do not (0.2721ms)
+✔ jaccardSimilarity: identical strings score 1.0, disjoint strings score 0.0, empty strings score 0.0 (0.1711ms)
+✔ computeIntentHash: same intent+context always hashes identically; different context changes the hash (0.6127ms)
+✔ selectRole: keyword-based routing picks the expected role for each category, and falls back to general (2.9384ms)
+✔ IntentLoopEngine: a destructive intent never reaches memory/execute/verify — fails at the gate with zero network calls (2.0737ms)
+✔ IntentLoopEngine: full happy path — gate passes, cache misses, executes, verifies (real majority-vote math), commits, then a repeat hits cache (6.6465ms)
+✔ IntentLoopEngine: a real minority/split vote (1 YES, 2 NO) correctly FAILS verification — not silently passed (0.9953ms)
+✔ IntentLoopEngine: if every candidate specialist model fails, the loop returns a real failure — never a fabricated success (1.0681ms)
+✔ IntentLoopEngine: if every verifier model errors after a successful execute, verification fails closed (0 answered votes never reads as passing) (1.3373ms)
+✔ MEEGrowthTracker: formula matches mee_engine.py exactly — G(t+1) = G(t) x (1+MΔ) x R_t, verified against known Python output for this exact step sequence (0.4713ms)
+✔ MEEGrowthTracker: G never drops below G_FLOOR (0.1) even under many consecutive violations (0.4096ms)
+✔ MEEGrowthTracker: resilience never drops below its own floor (0.5) or exceeds 1.0 (1.0025ms)
+✔ confidenceToGrowthDelta: maps [0,1] confidence to [-1,1] delta linearly, 0.5 -> exactly 0 (0.3757ms)
+✔ IntentLoopEngine: a successful completion steps real MEE growth with a positive delta derived from real verifier confidence (not the FDIA score) (1.3992ms)
+✔ IntentLoopEngine: a failed verification steps real MEE growth with a negative delta AND counts as a governance_violation (resilience degrades) (1.4068ms)
+✔ IntentLoopEngine: when every candidate specialist model fails (no verification ever ran), growth still steps with a fixed negative delta and a real governance_violation (1.0455ms)
+✔ IntentLoopEngine: a cache hit does NOT step MEE growth (no new execution/verification evidence was produced) — a gate rejection also does not step it (pure security block, not an execution-quality signal) (2.2834ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.5118
+✔ IntentLoopEngine.process: without a persistentStep option, mee_growth is simply absent — backward compatible, mee_step (in-memory) still present (9.096ms)
+✔ IntentLoopEngine.process: persistentStep's own error handling is entirely the caller's responsibility — process() does not swallow it (2.7699ms)
+✔ IntentLoopEngine.process: with a real MEEGrowthSessionDO-backed persistentStep, mee_growth is returned and reflects this call's own step (35.3549ms)
+✔ IntentLoopEngine.process: growth genuinely PERSISTS across two separate process() calls to the same session — the actual gap this change closes (4.7745ms)
+✔ IntentLoopEngine.process: a distinct session id gets a genuinely ISOLATED growth trajectory from another session (3.1491ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.9777
+✔ sovereign evaluate_fdia: backward compatible — no problem_statement, explicit intent_precision behaves exactly as before this change (59.7747ms)
+✔ sovereign evaluate_fdia: backward compatible — no problem_statement, no intent_precision defaults to 1.0 exactly as before (6.1005ms)
+✔ sovereign evaluate_fdia: supplying problem_statement triggers real RCT-7 synthesis and surfaces it in the response (4.8373ms)
+✔ sovereign evaluate_fdia: a destructive action_name is still blocked by the independent action_name gate, regardless of RCT-7 synthesis (3.3467ms)
+✔ sovereign evaluate_fdia: an empty/whitespace-only problem_statement does NOT trigger synthesis (falls back to legacy default) (2.8397ms)
+✔ sovereign evaluate_fdia: without a MEE_SESSION_DO binding, mee_growth is simply absent (graceful, backward compatible) (2.1992ms)
+✔ sovereign evaluate_fdia: with a real MEE_SESSION_DO binding, a real growth step is returned and reflects this call's own future_score (4.0135ms)
+✔ sovereign evaluate_fdia: growth genuinely PERSISTS across calls to the same default session — G compounds, it's not reset per request (5.8417ms)
+✔ sovereign evaluate_fdia: an unauthorized result is a real governance_violation and genuinely degrades resilience (2.7033ms)
+✔ sovereign evaluate_fdia: a distinct session_id gets a genuinely ISOLATED growth trajectory from the shared default (3.8393ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.1007
+✔ fdia worker evaluate_fdia: backward compatible — no problem_statement, explicit intent_precision behaves exactly as before this change (32.4238ms)
+✔ fdia worker evaluate_fdia: backward compatible — no problem_statement, no intent_precision defaults to 1.0 exactly as before (5.5947ms)
+✔ fdia worker evaluate_fdia: supplying problem_statement triggers real RCT-7 synthesis and surfaces it in the response (5.4177ms)
+✔ fdia worker evaluate_fdia: a destructive action_name is still blocked by the independent action_name gate, regardless of RCT-7 synthesis (3.494ms)
+✔ fdia worker evaluate_fdia: an empty/whitespace-only problem_statement does NOT trigger synthesis (falls back to legacy default) (3.3754ms)
+✔ fdia worker evaluate_fdia: no Durable Object binding present (fresh deployment) does not crash — try/catch fallback is exercised for real, not just in principle (4.8965ms)
+✔ fdia worker evaluate_fdia: without a MEE_SESSION_DO binding, mee_growth is simply absent (graceful, backward compatible) (3.6935ms)
+✔ fdia worker evaluate_fdia: with a real MEE_SESSION_DO binding, a real growth step is returned and reflects this call's own future_score (4.7959ms)
+✔ fdia worker evaluate_fdia: growth genuinely PERSISTS across calls to the same default session (7.1504ms)
+✔ fdia worker evaluate_fdia: a destructive action is a real governance_violation and genuinely degrades resilience (3.2785ms)
+✔ fdia worker evaluate_fdia: a distinct session_id gets a genuinely ISOLATED growth trajectory from the shared default (5.6331ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.0345
+✔ serializeJitnaPacket -> parseJitnaPacket: real round trip on a packet produced by the real orchestrateSwarm() tool (6.6202ms)
+✔ serializeJitnaPacket: rejects a packet that fails the real JITNAPacketSchema (e.g. an invalid pillar) before ever writing anything (1.7417ms)
+✔ the file format carries an explicit $jitna_format marker distinguishing it from the unrelated pre-existing .jitna agent-template files elsewhere in the repo (1.1039ms)
+✔ parseJitnaPacket: detects tampering via checksum mismatch — a hand-edited field is caught, not silently trusted (0.9675ms)
+✔ parseJitnaPacket: rejects malformed JSON with a clear JitnaFileFormatError, not a bare SyntaxError (0.3741ms)
+✔ writeJitnaFile / readJitnaFile: REAL disk round trip — simulates one agent writing a packet and a separate agent reading it back (16.1077ms)
+✔ writeJitnaFile: rejects an invalid packet before touching the filesystem at all (no partial/corrupt file left behind) (2.0033ms)
+✔ full realistic scenario: two different swarm objectives produce two different real .jitna files, each round-trips independently without cross-contamination (6.1596ms)
+✔ toonSerialize/toonDeserialize: round trip on a realistic nested packet-shaped object, including Thai text, matches the documented format exactly (1.8661ms)
+✔ toonSerialize: null/negative-number/newline-in-string edge cases round-trip correctly (0.961ms)
+✔ serializeJitnaPacketCompact -> parseJitnaPacketCompact: real round trip on a packet from the real orchestrateSwarm() tool (2.6199ms)
+✔ jitnaCompactSizeComparison: HONEST, real measured size difference — small packets barely benefit (compression+base64 overhead), larger packets with richer M fields genuinely shrink (1.3823ms)
+✔ parseJitnaPacketCompact: rejects the plain v1 JSON format with a clear error (the two formats are not interchangeable) (0.5796ms)
+✔ parseJitnaPacketCompact: detects tampering via checksum mismatch, same guarantee as the v1 format (0.7714ms)
+✔ writeJitnaFileCompact / readJitnaFileCompact: REAL disk round trip (4.435ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 56.7764
+✔ buildRctdbEntryFromFdia: captures a REAL evaluate_fdia() result, trimmed to exactly the documented 3 fields (not a leak of the full internal result) (5.4944ms)
+✔ buildRctdbEntryFromDelta: captures a REAL compress_context() result — delta_chain reflects the tool's actual computed reduction, not a placeholder (1.18ms)
+✔ buildRctdbEntryFromJitna: captures a REAL orchestrateSwarm() packet — model_chain reflects the actually-routed pillar, delta_chain the packet's real D/delta (1.0002ms)
+✔ buildRctdbEntryFromIntentLoop: consensus_result is trimmed to {passed, confidence} even when handed the full real VerificationResult (which also carries a votes array) (0.4857ms)
+✔ RCTDBLog: query filters by subject_uuid and query_hash independently and combined (0.4694ms)
+✔ RCTDBLog: is a bounded rolling log — oldest entries are dropped, not grown without limit (0.5848ms)
+✔ RCTDBLogSessionDO: real append + real persistence across separate calls to the same session (30.6528ms)
+✔ RCTDBLogSessionDO: a different session id gets a genuinely isolated log (1.2459ms)
+✔ RCTDBLogSessionDO: real query endpoint filters real persisted entries by subject_uuid (2.9294ms)
+✔ RCTDBLogSessionDO: rejects a malformed entry (missing required fields) with 400, never silently accepting garbage (0.7299ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.1868
+✔ logToRctdb: a completed run_intent_loop result is logged with all 8 real dimensions (37.7504ms)
+✔ logToRctdb: a rejected (gate-failed) result — no fdia_score, no verification, no mee_step — logs a minimal-but-real entry, not a crash (1.1882ms)
+✔ logToRctdb: missing RCTDB_LOG_DO binding is a silent no-op, never throws (0.6279ms)
+✔ logToRctdb: different session ids get genuinely isolated RCTDB logs, matching the same explicit-scoping design as MEE growth (2.9659ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 58.6443
+CORD security scanner tests completed.
+✔ CORD - clean text returns clean verdict with no findings (13.2783ms)
+✔ CORD - clean text produces a fingerprint (3.9615ms)
+✔ CORD - classic jailbreak phrase is rejected (hard finding) (0.7639ms)
+✔ CORD - DAN jailbreak keyword is rejected (0.5703ms)
+✔ CORD - soft-only finding yields suspicious, not rejected (0.5268ms)
+✔ CORD - high Shannon entropy (random base64 blob) is flagged (0.9207ms)
+✔ CORD - short high-entropy-looking string below min length is not entropy-checked (0.4552ms)
+✔ CORD - oversized payload (>1MB) is rejected on size (176.8777ms)
+✔ CORD - Thai injection phrase is detected (5.5429ms)
+✔ CORD - Thai clean text is not flagged (0.8196ms)
+✔ CORD - Chinese ignore-instructions injection is detected (0.4676ms)
+✔ CORD - Japanese ignore-instructions injection is detected (0.3337ms)
+✔ CORD - ChatML token injection is rejected (0.3573ms)
+✔ CORD - zero-width character token smuggling is flagged (soft) (0.3067ms)
+✔ CORD - shannonEntropy of empty string is zero (0.0755ms)
+✔ CORD - shannonEntropy of a single repeated character is zero (0.0582ms)
+✔ CORD - shannonEntropy handles multi-byte Unicode (Thai) without throwing (0.0695ms)
+✔ extractCordText - flattens nested MCP tool arguments into one string (0.202ms)
+✔ CORD - jailbreak buried inside nested tool arguments is still caught end-to-end (0.8109ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 219.1003
+Ed25519 JITNA packet signing tests completed.
+✔ Ed25519 - signJitnaPacket produces a real signature and 64-char fingerprint (14.0702ms)
+✔ Ed25519 - a genuinely signed packet verifies true against the matching public key (7.6544ms)
+✔ Ed25519 - a tampered packet (payload mutated after signing) fails verification (1.7039ms)
+✔ Ed25519 - a signature verified against the WRONG public key fails (1.5618ms)
+✔ Ed25519 - verifyJitnaPacket never throws on a malformed signature, just returns false (0.6054ms)
+✔ Ed25519 - two calls within the same isolate reuse the cached ephemeral keypair (stable fingerprint) (0.9469ms)
+✔ Ed25519 - a configured JWK secret pair yields key_source configured_secret and a real signature (2.3417ms)
+✔ Ed25519 - malformed configured secrets fall back to ephemeral generation rather than crashing (0.7421ms)
+✔ canonicalJson - key order does not affect the serialized form (stable signing input) (0.2579ms)
+✔ signPayload / verifyPayloadSignature - generic round trip works independent of the JITNA-specific wrapper (1.1782ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 40.0896
+Round 11 production-path integration tests completed.
+✔ production path: a clean evaluate_fdia request passes CORD and reaches the real FDIA gate (52.9575ms)
+✔ production path: an injection payload inside evaluate_fdia's problem_statement is rejected by CORD BEFORE the FDIA gate runs (5.9931ms)
+✔ production path: a clean orchestrate_swarm request passes CORD, executes, and returns a genuinely verifiable Ed25519-signed packet (6.8779ms)
+✔ production path: an injection payload inside orchestrate_swarm's objective is rejected by CORD, proving Layer 2 applies uniformly across tools, not just evaluate_fdia (4.9902ms)
+✔ production path: a tampered signed_packet (payload mutated after signing) fails real verification, not a rubber-stamp check (3.8906ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 86.6267
+✔ callPythonKernelFdia: returns undefined when no URL is configured (never attempts a network call) (0.9971ms)
+✔ callPythonKernelFdia: returns undefined when the server is unreachable (8.417ms)
+✔ callPythonKernelFdia: returns undefined on a non-200 response (64.7741ms)
+✔ callPythonKernelFdia: returns undefined on a malformed JSON body missing future_score (16.3289ms)
+✔ callPythonKernelFdia: returns the real parsed result on a genuine successful round-trip (7.3867ms)
+✔ evaluate_fdia worker handler: python_kernel_cross_check is absent when PYTHON_KERNEL_URL is not configured (byte-identical backward compat) (7.9819ms)
+✔ evaluate_fdia worker handler: python_kernel_cross_check is present and real when PYTHON_KERNEL_URL points at a genuinely reachable kernel (12.053ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 125.0122

@@ -30,13 +30,20 @@ def test_delegate_to_two_profiles_concurrently_stays_independent(monkeypatch):
     from rct_control_plane import llm_provider
     from rct_control_plane.agent_profile import delegate_to_profile
 
-    # Round 48: delegation now runs the governed loop, whose prompt also
-    # carries the RCT-7 plan, recalled memories and skills. Two concurrent
-    # episodes queue on one CPU-only Ollama (it serves one request at a
-    # time), so the second can exceed the 90 s default read timeout under a
-    # loaded full-suite run. Same budget CI already uses
-    # (DELENTIA_OLLAMA_TIMEOUT_S in ci.yml); this tests isolation, not speed.
-    monkeypatch.setattr(llm_provider, "OLLAMA_TIMEOUT_S", max(llm_provider.OLLAMA_TIMEOUT_S, 360.0))
+    # This test is about profile isolation under real concurrency, not the
+    # model. Round 48's governed prompt (RCT-7 plan, memories, skills) made
+    # two episodes queued on CI's CPU-only Ollama exceed even the 360 s read
+    # timeout (CI run 36389744100), so the model is scripted here: it sleeps
+    # (forcing the two episodes to interleave) and then finishes. The
+    # governed loop, the FDIA gate, persistence and the audit trail are all
+    # real. Real-model agent behaviour is measured by
+    # scripts/k1_5_formal_acceptance.py and scripts/real_agent_scenario_battery.py.
+    class _ScriptedFinish(llm_provider.LLMProvider):
+        async def complete(self, prompt, system_prompt=None, temperature=0.7, max_tokens=2048, json_mode=False):
+            await asyncio.sleep(0.05)
+            return '{"action": "finish", "reasoning": "no tool needed", "final_answer": "done"}'
+
+    monkeypatch.setattr(llm_provider, "get_default_provider", lambda *a, **k: _ScriptedFinish())
 
     kernel = AlgorithmKernel41()
 

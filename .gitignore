@@ -59,6 +59,7 @@ cover/
 
 # Django stuff:
 *.log
+!rct_control_plane/tests/fixtures/**/*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
