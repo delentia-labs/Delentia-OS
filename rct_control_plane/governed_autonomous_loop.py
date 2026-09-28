@@ -261,6 +261,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # human can approve them (Ed25519, see approvals.py) and resume()
         # can run exactly that action once and continue the episode.
         self._pending_store: Optional[Any] = None
+        self._episode_skills_injected: int = 0
         self._resume_note: str = ""
 
     def _get_kernel(self) -> "AlgorithmKernel41":
@@ -330,7 +331,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             resume_note,
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             await self._recalled_memories_text(goal) if self._memory_in_prompt else "",
-            self._format_similar_skills(self._skill_library.retrieve_similar_skills(goal, top_k=3)),
+            self._format_similar_skills(self._retrieve_skills_counted(goal)),
         ]
         self._episode_context_text = "\n\n".join(section for section in sections if section)
 
@@ -359,6 +360,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_key_persistent": self._keypair_is_persistent,
             },
         )
+
+    def _retrieve_skills_counted(self, goal: str) -> List[Any]:
+        skills = self._skill_library.retrieve_similar_skills(goal, top_k=3)
+        self._episode_skills_injected = len(skills)
+        return skills
 
     @staticmethod
     def _format_rct7_plan(steps: List[str]) -> str:
@@ -615,6 +621,61 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "approval_id": pending_record.approval_id if pending_record else None,
             },
         )
+        result["experiment"] = self._record_experiment_run(result, verification, duration)
+
+    # ------------------------------------------------------------------
+    # Round 48 R3.4: every episode is an RCTDB experiment_run
+    # ------------------------------------------------------------------
+    @staticmethod
+    def experiment_id_for_goal(goal: str) -> str:
+        """Same goal (case/whitespace-insensitive) -> same experiment, so
+        repeated attempts line up and compare_experiment_runs() can show
+        whether later runs (with learned skills) do better."""
+        import hashlib
+        normalized = " ".join(goal.lower().split())
+        return "governed-loop:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+
+    def _model_label(self) -> str:
+        provider = self._llm_provider
+        if provider is not None:
+            return f"{type(provider).__name__}:{getattr(provider, 'model', '?')}"
+        try:
+            from rct_control_plane.model_config import resolve_model_selection
+            selection = resolve_model_selection()
+            return f"{selection.provider}:{selection.model}"
+        except Exception:
+            return "unknown"
+
+    def _record_experiment_run(self, result: Dict[str, Any], verification: Dict[str, Any],
+                               duration: float) -> Optional[Dict[str, str]]:
+        """Best-effort: a persistence problem here must never change the
+        episode's outcome, so failures are reported, not raised."""
+        import uuid
+        try:
+            experiment_id = self.experiment_id_for_goal(result["goal"])
+            self._persistence.save_experiment(experiment_id, name=result["goal"][:200],
+                                              description="GovernedAutonomousLoop episodes for this goal")
+            aligned = verification.get("aligned_with_intent") if verification.get("applicable") else None
+            metrics = {
+                "iterations": result["iterations"],
+                "duration_s": round(duration, 3),
+                "finished": 1 if result["stopped_reason"] == "llm_finished" else 0,
+                "aligned_with_intent": None if aligned is None else int(bool(aligned)),
+                "similarity_score": verification.get("similarity_score"),
+                "tool_calls": sum(1 for step in result.get("steps", []) if step.get("tool_name")),
+                "skills_injected": self._episode_skills_injected,
+                "rct7_in_prompt": int(self._rct7_in_prompt),
+                "memory_in_prompt": int(self._memory_in_prompt),
+                "stopped_reason": result["stopped_reason"],
+            }
+            run_id = f"run-{uuid.uuid4().hex[:12]}"
+            self._persistence.save_experiment_run(
+                run_id, experiment_id, algorithm_id=f"governed_loop/{self._model_label()}", metrics=metrics,
+                jitna_state={"namespace": self.namespace, "jitna_verified": self._episode_jitna_verified},
+            )
+            return {"experiment_id": experiment_id, "run_id": run_id}
+        except Exception as exc:
+            return {"error": f"experiment run not recorded: {exc}"}
 
 
     # ------------------------------------------------------------------

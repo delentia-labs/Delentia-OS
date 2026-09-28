@@ -1796,6 +1796,49 @@ def approvals_reject(approval_id: str, key_path: str, db: Optional[str]) -> None
     _decide_locally(approval_id, key_path, "REJECTED", db)
 
 
+@cli.group("experiments")
+def experiments_group():
+    """
+    RCTDB experiments: every governed agent episode is recorded as a run
+    (Round 48), grouped by goal, so repeated attempts can be compared.
+
+    Examples:
+        delentia experiments list
+        delentia experiments compare governed-loop:<hash>
+    """
+    pass
+
+
+@experiments_group.command("list")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--limit", default=20, show_default=True, type=int)
+def experiments_list(db: Optional[str], limit: int) -> None:
+    """Experiments with their run counts, most recent first."""
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        rows = conn.execute(
+            "SELECT e.id, e.name, COUNT(r.id), MAX(r.timestamp) FROM experiments e "
+            "LEFT JOIN experiment_runs r ON r.experiment_id = e.id GROUP BY e.id "
+            "ORDER BY MAX(r.timestamp) DESC LIMIT ?", (limit,),
+        ).fetchall()
+    if not rows:
+        click.echo("No experiments recorded yet.")
+        return
+    for exp_id, name, runs, last in rows:
+        click.echo(f"{exp_id}  runs={runs}  last={last}  {name[:70]}")
+
+
+@experiments_group.command("compare")
+@click.argument("experiment_id")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def experiments_compare(experiment_id: str, db: Optional[str]) -> None:
+    """First run vs latest run for every numeric metric (JSON)."""
+    persistence = _audit_db(db)
+    runs = persistence.get_experiment_runs(experiment_id)
+    click.echo(json.dumps({"experiment_id": experiment_id, "runs": len(runs),
+                           "first_vs_last": persistence.compare_experiment_runs(experiment_id)}, indent=2))
+
+
 @cli.group("audit-chain")
 def audit_chain_group():
     """
