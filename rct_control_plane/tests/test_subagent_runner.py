@@ -31,8 +31,11 @@ class _FakeLoop:
 
 @pytest.fixture
 def patched_loop(monkeypatch):
-    import rct_control_plane.autonomous_loop as autonomous_loop_module
-    monkeypatch.setattr(autonomous_loop_module, "AutonomousLoop", _FakeLoop)
+    # Round 48 R0.1: subagent_runner builds its loop via
+    # agent_factory.build_governed_loop (keyword arguments), so the fake
+    # replaces GovernedAutonomousLoop where the factory imports it.
+    import rct_control_plane.governed_autonomous_loop as governed_module
+    monkeypatch.setattr(governed_module, "GovernedAutonomousLoop", _FakeLoop)
     yield
 
 

@@ -190,6 +190,11 @@ class TestServeCommand:
         """The startup banner must include the host:port URL."""
         mock_uv = MagicMock()
         monkeypatch.setitem(sys.modules, "uvicorn", mock_uv)
+        # Round 48: a non-loopback bind now refuses to start without an API
+        # token (see test_api_auth_real.py); give it one. setenv also makes
+        # monkeypatch restore DELENTIA_DAEMON_ENABLED, which serve sets.
+        monkeypatch.setenv("DELENTIA_API_TOKEN", "test-token")
+        monkeypatch.setenv("DELENTIA_DAEMON_ENABLED", "0")
 
         result = runner.invoke(cli, ["serve", "--host", "0.0.0.0", "--port", "8080"])
 

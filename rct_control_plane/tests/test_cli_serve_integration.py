@@ -73,6 +73,13 @@ def rct_server():
     # characters like \u2192 cannot be encoded and raise UnicodeEncodeError
     # before the server even binds to its port.
     _env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    # Round 48: output goes to a temp file, not an undrained PIPE - the
+    # kernel logs enough at startup to fill a pipe buffer, which blocks the
+    # server before it binds. Startup (AlgorithmKernel41 construction) takes
+    # ~12 s on this machine even when idle, so the old 12 s budget was
+    # right at the edge; 60 s leaves room for a loaded full-suite run.
+    import tempfile
+    log_file = tempfile.TemporaryFile()
     proc = subprocess.Popen(
         [
             sys.executable, "-m", "rct_control_plane.cli",
@@ -80,20 +87,18 @@ def rct_server():
             "--host", TEST_HOST,
             "--port", str(TEST_PORT),
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
         env=_env,
     )
 
-    # Wait up to 12 s for the server to accept connections
-    if not _wait_for_port(TEST_HOST, TEST_PORT, timeout=12.0):
-        stdout, stderr = proc.communicate(timeout=3)
-        proc.terminate()
-        pytest.skip(
-            f"rct serve did not start within 12 s — skipping.\n"
-            f"stdout: {stdout.decode(errors='replace')[:400]}\n"
-            f"stderr: {stderr.decode(errors='replace')[:400]}"
-        )
+    if not _wait_for_port(TEST_HOST, TEST_PORT, timeout=60.0):
+        proc.kill()
+        proc.wait(timeout=10)
+        log_file.seek(0)
+        output = log_file.read().decode(errors="replace")
+        log_file.close()
+        pytest.skip(f"delentia serve did not start within 60 s - skipping.\noutput tail: {output[-600:]}")
 
     yield (TEST_HOST, TEST_PORT)
 

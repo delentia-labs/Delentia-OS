@@ -20,6 +20,7 @@ import time
 
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.autonomous_scheduler import AutonomousScheduler
+from rct_control_plane.persistence import ControlPlanePersistence
 from rct_control_plane.scheduler import schedule_reminder, SELF_EVOLVE_SENTINEL_GOAL
 
 
@@ -32,11 +33,17 @@ async def _wait_until(predicate, timeout=40.0, interval=0.1):
     return False
 
 
-def test_start_fires_a_real_due_reminder_without_any_manual_check_call():
+def test_start_fires_a_real_due_reminder_without_any_manual_check_call(tmp_path):
     """Proves the TIMER itself works - not just the underlying
     check_and_fire_due_reminders mechanism Round 27 already tested."""
-    async def run():
+    async def run(tmp_db):
         kernel = AlgorithmKernel41()
+        # Round 48: the daemon fires EVERY due reminder in the kernel's DB,
+        # and every real-kernel test shares rct_control_plane_agentic.db, so a
+        # due reminder another test left behind (one with a real LLM goal)
+        # could run first and use up this test's budget. A private DB keeps
+        # this a test of the timer only.
+        kernel._persistence = ControlPlanePersistence(db_path=tmp_db)
         namespace = "daemon_test_fire"
         reminder_id = schedule_reminder(kernel, SELF_EVOLVE_SENTINEL_GOAL, fire_in_seconds=0, namespace=namespace)
 
@@ -51,7 +58,7 @@ def test_start_fires_a_real_due_reminder_without_any_manual_check_call():
         finally:
             await scheduler.stop()
 
-    asyncio.run(run())
+    asyncio.run(run(str(tmp_path / "daemon_fire.db")))
 
 
 def test_stop_cancels_the_background_task_cleanly():

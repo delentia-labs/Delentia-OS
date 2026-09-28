@@ -25,9 +25,18 @@ def test_two_profiles_have_independent_mee_growth_state():
     assert session_b.g == 1.0, "profile B's G must be untouched by profile A's real step"
 
 
-def test_delegate_to_two_profiles_concurrently_stays_independent():
+def test_delegate_to_two_profiles_concurrently_stays_independent(monkeypatch):
     import asyncio
+    from rct_control_plane import llm_provider
     from rct_control_plane.agent_profile import delegate_to_profile
+
+    # Round 48: delegation now runs the governed loop, whose prompt also
+    # carries the RCT-7 plan, recalled memories and skills. Two concurrent
+    # episodes queue on one CPU-only Ollama (it serves one request at a
+    # time), so the second can exceed the 90 s default read timeout under a
+    # loaded full-suite run. Same budget CI already uses
+    # (DELENTIA_OLLAMA_TIMEOUT_S in ci.yml); this tests isolation, not speed.
+    monkeypatch.setattr(llm_provider, "OLLAMA_TIMEOUT_S", max(llm_provider.OLLAMA_TIMEOUT_S, 360.0))
 
     kernel = AlgorithmKernel41()
 
