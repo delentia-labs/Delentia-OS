@@ -37,7 +37,8 @@ jobs:
         run: pip install jsonschema fastapi uvicorn httpx pytest
 
       - name: Registry API tests
-        run: python -m pytest -q tests
+        # --noconftest: the repo-root conftest.py needs the full runtime deps (hypothesis, ...)
+        run: python -m pytest -q --noconftest tests
 
       - name: Validate all adapter manifests
         run: |
