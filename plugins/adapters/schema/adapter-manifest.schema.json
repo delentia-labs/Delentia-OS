@@ -95,6 +95,15 @@
       "type": "boolean",
       "description": "Set by the registry CI — do not set manually."
     },
+    "security_scan_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Set by the registry CI with security_scan_passed — do not set manually."
+    },
+    "security_scan_sha": {
+      "type": "string",
+      "description": "Commit the scan ran on. Set by the registry CI — do not set manually."
+    },
     "repository": {
       "type": "string",
       "format": "uri"

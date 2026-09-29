@@ -272,7 +272,7 @@ export default function EnterpriseVaultPage() {
                         <div className="font-bold text-red-300">[{f.level}] {f.title}</div>
                         <div className="text-[10px] text-slate-400">ข้อกฎหมาย: {f.article}</div>
                         <div className="p-2 rounded bg-purple-950/30 border border-purple-800/40 text-[11px] text-purple-200">
-                          <strong>✍️ คำแนะนำการแก้สัญญา:</strong> "{f.rewrite}"
+                          <strong>✍️ คำแนะนำการแก้สัญญา:</strong> &quot;{f.rewrite}&quot;
                         </div>
                       </div>
                     ))}

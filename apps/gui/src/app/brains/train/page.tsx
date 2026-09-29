@@ -192,7 +192,7 @@ export default function LoRAForgeStudioPage() {
               {isCompleted && (
                 <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between text-xs">
                   <span className="text-emerald-300 font-mono">
-                    ✓ Adapter "{adapterName}" ถูกบันทึกและซิงค์เข้าสู่สล็อต 1+N เรียบร้อยแล้ว!
+                    ✓ Adapter &quot;{adapterName}&quot; ถูกบันทึกและซิงค์เข้าสู่สล็อต 1+N เรียบร้อยแล้ว!
                   </span>
                   <Link
                     href="/brains"
