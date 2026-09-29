@@ -2371,8 +2371,8 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 <tr>
 <td>3</td>
 <td><strong>ROUTE</strong></td>
-<td>ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน loop</td>
-<td>❌ <strong>ยังไม่สร้าง</strong> (อัลกอริทึมมีแล้ว แต่ loop ยังไม่เรียก)</td>
+<td>ALGO-21 ตัดสินว่า FAST (ความเสี่ยงต่ำ ขอบเขตแคบ: จำกัดจำนวนขั้น ตอบตรง) หรือ SLOW (ขั้นเต็ม คิดทีละขั้น); router ผิดพลาดให้ไป SLOW; ไม่ข้ามขั้นกำกับใดเลย</td>
+<td>✅ สร้างแล้ว (2026-09-29)</td>
 </tr>
 <tr>
 <td>4</td>
@@ -2724,7 +2724,6 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 </table>
 <h2 id="10-roadmap">10. Roadmap (ยังไม่สร้าง)<a class="headerlink" href="#10-roadmap" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>ROUTE</strong>: เรียก ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน governed loop</li>
 <li><strong>ฝาก head แบบ A3</strong>: เผยแพร่ head ของ chain ทั้ง Guard และ runtime ไปยังพยานภายนอกตามรอบเวลา</li>
 <li><strong>Host</strong>: รัน runtime แบบสาธารณะ (แผน: Oracle Always Free + Cloudflare Tunnel, บังคับ token) แล้วเปิดสะพาน FDIA จาก Workers ไป Python</li>
 <li><strong>โมเดลที่ขับ loop ได้</strong>: เผยแพร่ชุดโมเดลอ้างอิงเล็ก ๆ ที่ผ่าน K.1.5</li>
@@ -2770,7 +2769,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 <tr>
 <td>การคิด</td>
 <td>41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE</td>
-<td>อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ยังไม่อยู่ใน loop</td>
+<td>อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ทำงานใน loop แล้ว (ROUTE)</td>
 </tr>
 <tr>
 <td>ฉันทามติ</td>

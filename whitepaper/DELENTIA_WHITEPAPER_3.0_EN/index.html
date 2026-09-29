@@ -2385,8 +2385,8 @@ call a tool.</p>
 <tr>
 <td>3</td>
 <td><strong>ROUTE</strong></td>
-<td>ALGO-21 fast/slow routing inside the loop</td>
-<td>❌ <strong>not built</strong> (the algorithm exists; it is not yet called by the loop)</td>
+<td>ALGO-21 decides FAST (low risk, narrow scope: smaller step budget, answer directly) or SLOW (full budget, step by step); a router error routes SLOW. Never skips a governance step</td>
+<td>✅ built (2026-09-29)</td>
 </tr>
 <tr>
 <td>4</td>
@@ -2744,7 +2744,6 @@ code and held even when the model could not select tools.</p>
 </table>
 <h2 id="10-roadmap-not-built-yet">10. Roadmap (not built yet)<a class="headerlink" href="#10-roadmap-not-built-yet" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>ROUTE</strong>: call ALGO-21 fast/slow routing inside the governed loop.</li>
 <li><strong>A3 anchoring</strong>: publish Guard and runtime chain heads to an outside witness on a schedule.</li>
 <li><strong>Host</strong>: run the runtime publicly (planned: Oracle Always Free + Cloudflare Tunnel, token
    required), then enable the Workers → Python FDIA bridge.</li>
@@ -2794,7 +2793,7 @@ code and held even when the model could not select tools.</p>
 <tr>
 <td>Reasoning</td>
 <td>41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE</td>
-<td>In code; two Intent Loop implementations not yet unified; ALGO-21 not in the loop</td>
+<td>In code; two Intent Loop implementations not yet unified; ALGO-21 runs inside the loop (ROUTE)</td>
 </tr>
 <tr>
 <td>Consensus</td>
