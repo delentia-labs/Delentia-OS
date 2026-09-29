@@ -216,6 +216,12 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 # pipeline judge intent fidelity identically.
 INTENT_VERIFY_THRESHOLD = 0.15
 
+# Round 50 ROUTE: ALGO-21 decides FAST (low risk, narrow scope) or SLOW for
+# every goal. FAST episodes get a smaller step budget and are told to answer
+# directly; SLOW episodes are told to work step by step. ROUTE never skips a
+# governance step: the FDIA gate, approvals and verification run either way.
+FAST_ROUTE_MAX_ITERATIONS = 3
+
 _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_write_repo_file",
     "delentia_patch_repo_file",
@@ -243,6 +249,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         compress_tool_outputs: bool = True,
         compress_threshold_chars: int = COMPRESS_THRESHOLD_CHARS,
         fdia_threshold: float = FDIA_GATE_THRESHOLD,
+        route: bool = True,
+        fast_max_iterations: int = FAST_ROUTE_MAX_ITERATIONS,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -294,6 +302,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._tool_output_store: Optional[Any] = None
         self._episode_compressions: List[Dict[str, Any]] = []
         self._resume_note: str = ""
+        # Round 50 ROUTE (ALGO-21). The configured budget is kept so a FAST
+        # episode's smaller cap never leaks into the next episode.
+        self._route_enabled = route
+        self._fast_max_iterations = fast_max_iterations
+        self._configured_max_iterations = self.max_iterations
+        self._applied_max_iterations = self.max_iterations
+        self._router: Optional[Any] = None
+        self._episode_route: Dict[str, Any] = {}
 
     def _get_kernel(self) -> "AlgorithmKernel41":
         """Lazy, cached construction - see module docstring point 2 for
@@ -361,9 +377,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
+        if self.max_iterations != self._applied_max_iterations:
+            self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
+        self.max_iterations = self._configured_max_iterations
+        self._episode_route = self._route_goal(goal) if self._route_enabled else {"enabled": False}
+        if self._episode_route.get("path") == "fast":
+            self.max_iterations = min(self._configured_max_iterations, self._fast_max_iterations)
+        self._episode_route["max_iterations"] = self.max_iterations
+        self._applied_max_iterations = self.max_iterations
         resume_note, self._resume_note = self._resume_note, ""
         sections = [
             resume_note,
+            self._format_route(self._episode_route),
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             await self._recalled_memories_text(goal) if self._memory_in_prompt else "",
             self._format_similar_skills(self._retrieve_skills_counted(goal)),
@@ -393,8 +418,41 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_signature": signed.signature,
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
+                "route": self._episode_route,
             },
         )
+
+    def _route_goal(self, goal: str) -> Dict[str, Any]:
+        """Round 50 ROUTE: ALGO-21's deterministic decision (no LLM call).
+        Uses the kernel's router when it has one (it also carries the
+        ALGO-26 classifier), else a router over this loop's own
+        IntentCompiler. Any failure routes SLOW: safety first, the same
+        direction ALGO-21's own tie-break takes."""
+        try:
+            router = getattr(self._get_kernel(), "_fast_slow_router", None)
+            if router is None:
+                if self._router is None:
+                    from rct_control_plane.algo_21_fast_slow_router import FastSlowRouter
+                    self._router = FastSlowRouter(self._intent_compiler)
+                router = self._router
+            decision = router.decide(goal)
+            strategy = decision.slow_strategy.value if decision.slow_strategy is not None else None
+            return {"enabled": True, "path": decision.path.value, "reason": decision.reason,
+                    "risk_profile": decision.risk_profile, "scope_type": decision.scope_type,
+                    "slow_strategy": strategy}
+        except Exception as exc:
+            return {"enabled": True, "path": "slow", "reason": f"router error, defaulting to SLOW: {exc}",
+                    "slow_strategy": None}
+
+    @staticmethod
+    def _format_route(route: Dict[str, Any]) -> str:
+        if not route.get("enabled"):
+            return ""
+        if route.get("path") == "fast":
+            return (f"Routing (ALGO-21): FAST - {route['reason']}. Answer directly with the fewest steps; "
+                    f"you have at most {route['max_iterations']} steps.")
+        return (f"Routing (ALGO-21): SLOW - {route['reason']}. Work step by step and check each tool "
+                f"result before choosing the next action.")
 
     def _retrieve_skills_counted(self, goal: str) -> List[Any]:
         skills = self._skill_library.retrieve_similar_skills(goal, top_k=3)
@@ -615,6 +673,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
         )
         result["intent_verification"] = verification
+        result["route"] = self._episode_route
         pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
         change_description = (
             f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
@@ -704,6 +763,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "skills_injected": self._episode_skills_injected,
                 "rct7_in_prompt": int(self._rct7_in_prompt),
                 "memory_in_prompt": int(self._memory_in_prompt),
+                "route_path": self._episode_route.get("path"),
+                "route_max_iterations": self._episode_route.get("max_iterations"),
                 "tool_outputs_compressed": len(self._episode_compressions),
                 "tool_output_chars_saved": sum(c["chars_saved"] for c in self._episode_compressions),
                 "stopped_reason": result["stopped_reason"],

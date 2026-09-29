@@ -96,7 +96,7 @@ call a tool.
 |---|---|---|---|
 | 1 | **GUARD** | CORD pattern screening, then the FDIA gate on the goal | ✅ built |
 | 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions) | ✅ built |
-| 3 | **ROUTE** | ALGO-21 fast/slow routing inside the loop | ❌ **not built** (the algorithm exists; it is not yet called by the loop) |
+| 3 | **ROUTE** | ALGO-21 decides FAST (low risk, narrow scope: smaller step budget, answer directly) or SLOW (full budget, step by step); a router error routes SLOW. Never skips a governance step | ✅ built (2026-09-29) |
 | 4 | **ACT** | Per-step FDIA gate; side-effecting tools wait for a signed human approval, then the episode resumes | ✅ built |
 | 5 | **COMPRESS** | Tool outputs over ~2k tokens are compressed with Delta-Context and can be expanded again | ✅ built |
 | 6 | **VERIFY** | RCT-7 step 7 against the original intent | ✅ built |
@@ -208,13 +208,12 @@ code and held even when the model could not select tools.
 
 ## 10. Roadmap (not built yet)
 
-1. **ROUTE**: call ALGO-21 fast/slow routing inside the governed loop.
-2. **A3 anchoring**: publish Guard and runtime chain heads to an outside witness on a schedule.
-3. **Host**: run the runtime publicly (planned: Oracle Always Free + Cloudflare Tunnel, token
+1. **A3 anchoring**: publish Guard and runtime chain heads to an outside witness on a schedule.
+2. **Host**: run the runtime publicly (planned: Oracle Always Free + Cloudflare Tunnel, token
    required), then enable the Workers → Python FDIA bridge.
-4. **A model that drives the loop**: publish a small set of reference models that pass K.1.5.
-5. **PostgreSQL parity** for the audit chain; **SignedAI HTTP API**.
-6. **Design partners** for Guard, before any new algorithms, sandbox backends or channels.
+3. **A model that drives the loop**: publish a small set of reference models that pass K.1.5.
+4. **PostgreSQL parity** for the audit chain; **SignedAI HTTP API**.
+5. **Design partners** for Guard, before any new algorithms, sandbox backends or channels.
 
 ## 11. What changed from v2.x
 
@@ -233,7 +232,7 @@ code and held even when the model could not select tools.
 | Protocols | JITNA (RFC-001), TOON | JITNA in code; TOON in the dataset only |
 | Memory | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | In code (the Vault client's class is misleadingly named `RCTDBClient`) |
 | Security | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | In code |
-| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; two Intent Loop implementations not yet unified; ALGO-21 not in the loop |
+| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; two Intent Loop implementations not yet unified; ALGO-21 runs inside the loop (ROUTE) |
 | Consensus | SignedAI, HexaCore (9 roles) | Logic in code, no API |
 | Models | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | On Hugging Face; not connected to the runtime |
 | Products | Guard, 6 MCP tools, the runtime (34 MCP tools), website | Live or in code |

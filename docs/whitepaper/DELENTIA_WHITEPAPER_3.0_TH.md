@@ -82,7 +82,7 @@ Reverse Component Thinking คิดย้อนจากผลลัพธ์�
 |---|---|---|---|
 | 1 | **GUARD** | ตรวจ pattern ด้วย CORD แล้วผ่าน FDIA gate กับเป้าหมาย | ✅ สร้างแล้ว |
 | 2 | **THINK** | RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง) | ✅ สร้างแล้ว |
-| 3 | **ROUTE** | ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน loop | ❌ **ยังไม่สร้าง** (อัลกอริทึมมีแล้ว แต่ loop ยังไม่เรียก) |
+| 3 | **ROUTE** | ALGO-21 ตัดสินว่า FAST (ความเสี่ยงต่ำ ขอบเขตแคบ: จำกัดจำนวนขั้น ตอบตรง) หรือ SLOW (ขั้นเต็ม คิดทีละขั้น); router ผิดพลาดให้ไป SLOW; ไม่ข้ามขั้นกำกับใดเลย | ✅ สร้างแล้ว (2026-09-29) |
 | 4 | **ACT** | FDIA gate ทุกขั้น; tool ที่มีผลข้างเคียงรอการอนุมัติที่ลงลายเซ็นโดยมนุษย์ แล้ว episode ทำต่อได้ | ✅ สร้างแล้ว |
 | 5 | **COMPRESS** | ผลลัพธ์ tool ที่เกิน ~2k token ถูกบีบด้วย Delta-Context และขยายกลับได้ | ✅ สร้างแล้ว |
 | 6 | **VERIFY** | RCT-7 ขั้นที่ 7 เทียบกับเจตนาเดิม | ✅ สร้างแล้ว |
@@ -188,12 +188,11 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 
 ## 10. Roadmap (ยังไม่สร้าง)
 
-1. **ROUTE**: เรียก ALGO-21 เลือกเส้นทางเร็ว/ช้าภายใน governed loop
-2. **ฝาก head แบบ A3**: เผยแพร่ head ของ chain ทั้ง Guard และ runtime ไปยังพยานภายนอกตามรอบเวลา
-3. **Host**: รัน runtime แบบสาธารณะ (แผน: Oracle Always Free + Cloudflare Tunnel, บังคับ token) แล้วเปิดสะพาน FDIA จาก Workers ไป Python
-4. **โมเดลที่ขับ loop ได้**: เผยแพร่ชุดโมเดลอ้างอิงเล็ก ๆ ที่ผ่าน K.1.5
-5. **audit chain บน PostgreSQL** และ **HTTP API ของ SignedAI**
-6. **Design partner** ของ Guard ก่อนเพิ่มอัลกอริทึม sandbox backend หรือช่องทางใหม่
+1. **ฝาก head แบบ A3**: เผยแพร่ head ของ chain ทั้ง Guard และ runtime ไปยังพยานภายนอกตามรอบเวลา
+2. **Host**: รัน runtime แบบสาธารณะ (แผน: Oracle Always Free + Cloudflare Tunnel, บังคับ token) แล้วเปิดสะพาน FDIA จาก Workers ไป Python
+3. **โมเดลที่ขับ loop ได้**: เผยแพร่ชุดโมเดลอ้างอิงเล็ก ๆ ที่ผ่าน K.1.5
+4. **audit chain บน PostgreSQL** และ **HTTP API ของ SignedAI**
+5. **Design partner** ของ Guard ก่อนเพิ่มอัลกอริทึม sandbox backend หรือช่องทางใหม่
 
 ## 11. เปลี่ยนอะไรจาก v2.x
 
@@ -209,7 +208,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | โปรโตคอล | JITNA (RFC-001), TOON | JITNA อยู่ในโค้ด; TOON อยู่แค่ใน dataset |
 | ความจำ | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | อยู่ในโค้ด (class ของ Vault client ชื่อ `RCTDBClient` ชวนสับสน) |
 | ความปลอดภัย | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | อยู่ในโค้ด |
-| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ยังไม่อยู่ใน loop |
+| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ทำงานใน loop แล้ว (ROUTE) |
 | ฉันทามติ | SignedAI, HexaCore (9 บทบาท) | logic อยู่ในโค้ด ยังไม่มี API |
 | โมเดล | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | อยู่บน Hugging Face; ไม่ได้ต่อกับ runtime |
 | ผลิตภัณฑ์ | Guard, 6 MCP tools, runtime (34 MCP tools), เว็บไซต์ | ใช้งานจริงหรืออยู่ในโค้ด |
