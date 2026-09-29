@@ -72,23 +72,60 @@ import time
 from collections import Counter
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from pydantic import BaseModel, Field
 from robotexclusionrulesparser import RobotExclusionRulesParser
 
-try:
-    import spacy
-    SPACY_AVAILABLE = True
-except Exception:
-    SPACY_AVAILABLE = False
+# Round 50: spacy (which pulls in thinc and torch), textblob and nltk (which
+# pulls in scipy) are imported where they are used, not at module level. They
+# made up ~3.0 s of the kernel's ~4.5 s import, and every importer paid it,
+# including mcp_server.py which only needs WebCrawler.
+_spacy_available: Optional[bool] = None
 
-from textblob import TextBlob
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+
+def spacy_available() -> bool:
+    """Whether spacy can be imported (checked once, on first use)."""
+    global _spacy_available
+    if _spacy_available is None:
+        try:
+            import spacy  # noqa: F401
+            _spacy_available = True
+        except Exception:
+            _spacy_available = False
+    return _spacy_available
+
+_UNLOADED = object()
+
+
+def _load_nltk_stopwords() -> Set[str]:
+    """Real bug found and fixed 2026-09-16: on a fresh environment where this
+    data isn't already cached, every download() call makes a real synchronous
+    network round trip, and on one dev machine such a call triggered a native
+    Windows socket access violation that crashed the whole process. Every
+    download attempt is wrapped so a slow/blocked network cannot propagate; the
+    permanent fix is to have the data cached beforehand (see pyproject.toml's
+    `web-intelligence` extra). Round 50: this now runs on first use instead of
+    inside SemanticAnalyzer.__init__."""
+    import nltk
+    from nltk.corpus import stopwords
+
+    for resource, name in (("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt"),
+                           ("tokenizers/punkt_tab", "punkt_tab")):
+        try:
+            nltk.data.find(resource)
+        except LookupError:
+            try:
+                nltk.download(name, quiet=True)
+            except Exception:
+                pass  # network unavailable, or not needed by this NLTK version
+    try:
+        return set(stopwords.words("english"))
+    except LookupError:
+        return set()  # honest, real empty fallback rather than crashing
+
 
 
 # ============================================================================
@@ -507,61 +544,44 @@ class SemanticAnalyzer:
     ):
         self.min_confidence = min_confidence
         self.analysis_count = 0
+        # Round 50: spacy and nltk are loaded on first use, not here.
+        # AlgorithmKernel41 builds a SemanticAnalyzer in its constructor, and
+        # the module builds ALGORITHM_KERNEL at import time, so loading them
+        # here cost every `import algorithm_kernel_41` (and every process that
+        # never analyses a page) several seconds.
+        self._spacy_model = spacy_model
+        self._nlp: Any = _UNLOADED
+        self._stop_words: Optional[Set[str]] = None
 
-        if SPACY_AVAILABLE:
-            try:
-                self.nlp = spacy.load(spacy_model)
-            except OSError:
-                # Model not installed, use blank pipeline (graceful fallback)
-                self.nlp = spacy.blank("en")
-        else:
-            self.nlp = None
+    @property
+    def nlp(self) -> Any:
+        """spaCy pipeline, loaded on first use; None when spaCy is not installed."""
+        if self._nlp is _UNLOADED:
+            if spacy_available():
+                import spacy
+                try:
+                    self._nlp = spacy.load(self._spacy_model)
+                except OSError:
+                    # Model not installed, use blank pipeline (graceful fallback)
+                    self._nlp = spacy.blank("en")
+            else:
+                self._nlp = None
+        return self._nlp
 
-        # Real bug found and fixed 2026-09-16: on a fresh environment
-        # where this data isn't already cached, every one of these
-        # download() calls makes a real synchronous network round trip
-        # INSIDE this constructor - meaning every single kernel
-        # instantiation (this class is built once per AlgorithmKernel41)
-        # silently depended on network access, and on this session's dev
-        # machine one such call triggered a native Windows socket access
-        # violation that crashed the whole process (a segfault a Python
-        # try/except cannot catch). Wrapping every download attempt in
-        # try/except at least prevents the more common failure mode (a
-        # slow/blocked network raising a normal Python exception) from
-        # ever propagating out of this constructor; nothing here can
-        # protect against a genuine native crash, which is why the real,
-        # permanent fix is to have this data already cached before the
-        # kernel is ever instantiated — see pyproject.toml's
-        # `web-intelligence` extra for the setup command a fresh
-        # environment (including this session's own Hostinger VPS
-        # deployment target) must run once, offline of this constructor.
-        try:
-            nltk.data.find('corpora/stopwords')
-        except LookupError:
-            try:
-                nltk.download('stopwords', quiet=True)
-            except Exception:
-                pass  # network unavailable - self.stop_words falls back to empty below
+    @nlp.setter
+    def nlp(self, value: Any) -> None:
+        self._nlp = value
 
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except LookupError:
-            try:
-                nltk.download('punkt', quiet=True)
-            except Exception:
-                pass
-        try:
-            nltk.data.find('tokenizers/punkt_tab')
-        except LookupError:
-            try:
-                nltk.download('punkt_tab', quiet=True)
-            except Exception:
-                pass  # older/newer NLTK versions may not need or have this resource
+    @property
+    def stop_words(self) -> Set[str]:
+        """NLTK English stopwords, loaded (and fetched if missing) on first use."""
+        if self._stop_words is None:
+            self._stop_words = _load_nltk_stopwords()
+        return self._stop_words
 
-        try:
-            self.stop_words = set(stopwords.words('english'))
-        except LookupError:
-            self.stop_words = set()  # honest, real empty fallback rather than crashing __init__
+    @stop_words.setter
+    def stop_words(self, value: Set[str]) -> None:
+        self._stop_words = value
 
     def analyze(
         self,
@@ -714,6 +734,8 @@ class SemanticAnalyzer:
 
     def extract_topics(self, text: str, top_n: int = 10) -> List[Topic]:
         """Real NLTK tokenize + stopword/length/alpha filter + frequency ranking."""
+        from nltk.tokenize import word_tokenize
+
         tokens = word_tokenize(text.lower())
 
         filtered_tokens = [
@@ -747,6 +769,8 @@ class SemanticAnalyzer:
     def analyze_sentiment(self, text: str) -> Sentiment:
         """Real TextBlob sentiment (polarity + subjectivity)."""
         sample = text[:5000]
+
+        from textblob import TextBlob
 
         blob = TextBlob(sample)
 
@@ -889,7 +913,7 @@ class SemanticAnalyzer:
 if __name__ == "__main__":
     print("=== ALGO-34 SWCAR smoke test ===")
 
-    print(f"spaCy importable in this environment: {SPACY_AVAILABLE}")
+    print(f"spaCy importable in this environment: {spacy_available()}")
 
     # --- SemanticAnalyzer: real NLTK/TextBlob/Flesch logic ---
     analyzer = SemanticAnalyzer()
@@ -923,7 +947,7 @@ if __name__ == "__main__":
     assert -1.0 <= result.sentiment.score <= 1.0
     assert 0.0 <= result.readability_score <= 100.0
     assert 0.0 <= result.quality_score <= 1.0
-    if not SPACY_AVAILABLE:
+    if not spacy_available():
         assert result.entities == [], "graceful fallback: no spaCy -> nlp=None -> extract_entities() == []"
 
     # Readability sanity check: a simple short-sentence text should score
