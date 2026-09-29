@@ -228,6 +228,26 @@ def list_openrouter_models(client: Optional[httpx.Client] = None, timeout: float
             c.close()
 
 
+_OPENROUTER_PRICE_CACHE: Dict[str, ModelInfo] = {}
+
+
+def lookup_openrouter_prices(model_id: str, client: Optional[httpx.Client] = None) -> Optional[tuple]:
+    """Round 50: (prompt, completion) USD per million tokens for an
+    OpenRouter model, from the live catalog, cached for the process.
+    None when the model or its price is unknown (a failed fetch is not
+    cached, so a later episode can try again)."""
+    if model_id not in _OPENROUTER_PRICE_CACHE:
+        try:
+            for info in list_openrouter_models(client=client):
+                _OPENROUTER_PRICE_CACHE[info.id] = info
+        except Exception:
+            return None
+    found = _OPENROUTER_PRICE_CACHE.get(model_id)
+    if found is None or found.prompt_price_per_mtok is None or found.completion_price_per_mtok is None:
+        return None
+    return (found.prompt_price_per_mtok, found.completion_price_per_mtok)
+
+
 def list_ollama_models(llm_url: Optional[str] = None, client: Optional[httpx.Client] = None,
                        timeout: float = 5.0) -> List[ModelInfo]:
     from rct_control_plane.llm_provider import DEFAULT_OLLAMA_URL

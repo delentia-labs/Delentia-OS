@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from rct_control_plane.algo_25_delta_block import DeltaEngine
+from rct_control_plane.llm_provider import BudgetExceededError
 from rct_control_plane.persistence import ControlPlanePersistence
 
 if TYPE_CHECKING:
@@ -453,13 +454,27 @@ class AutonomousLoop:
             # against decide_next_action's real 4th parameter
             # (llm_provider). Both branches are real, direct calls against
             # the real signature.
-            if self._llm_provider is not None:
-                decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider,
-                                                    extra_context=extra_context)
-            elif extra_context:
-                decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
-            else:
-                decision = await decide_next_action(goal, history, iteration_tools)
+            # Round 50: a provider-wide budget (MeteredProvider) refuses a
+            # call before it is made; the episode then ends cleanly with
+            # stopped_reason "budget_exceeded" instead of raising.
+            try:
+                if self._llm_provider is not None and extra_context:
+                    decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider,
+                                                        extra_context=extra_context)
+                elif self._llm_provider is not None:
+                    decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider)
+                elif extra_context:
+                    decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
+                else:
+                    decision = await decide_next_action(goal, history, iteration_tools)
+            except BudgetExceededError as exc:
+                stopped_reason = "budget_exceeded"
+                step = LoopStep(iteration=i, tool_name=None, tool_args={},
+                                 tool_result={"budget_exceeded": str(exc)}, llm_reasoning=f"budget exceeded: {exc}")
+                history.append(step)
+                self._persist_step(step)
+                await _notify(step)
+                break
 
             if decision.get("parse_error"):
                 stopped_reason = "parse_error"
@@ -475,7 +490,10 @@ class AutonomousLoop:
                 stopped_reason = "llm_finished"
                 final_answer = decision.get("final_answer")
                 if on_answer_token is not None:
-                    final_answer = await self._stream_final_answer(goal, history, on_answer_token)
+                    try:
+                        final_answer = await self._stream_final_answer(goal, history, on_answer_token)
+                    except BudgetExceededError:
+                        pass  # keep the answer from the decision call rather than spend past the budget
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)
