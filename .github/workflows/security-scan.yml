@@ -98,9 +98,21 @@ jobs:
         # This does NOT mean the full-extras/production ML path is
         # vulnerability-free; that gap is real and tracked as a Round 30
         # candidate (extending this scan's scope to the optional extras).
+        # Round 50 accepted risk (the only ignore): PYSEC-2026-3740
+        # (CVE-2026-81726 / GHSA-8mgp-746c-j5xp) in nltk, which has no
+        # upstream fix (3.10.3 is the newest release). It only affects
+        # TransitionParser.train/parse, AveragedPerceptron.save/load,
+        # PerceptronTagger.save_to_json and save_maxent_params called with a
+        # caller-controlled model path. This codebase uses nltk only for
+        # stopwords and word_tokenize (algo_34_swcar.py), textblob does not
+        # call those APIs, and test_nltk_vulnerable_api_unused.py fails if
+        # any of them is ever referenced. Remove the ignore once nltk ships
+        # a fix (Dependabot will open the bump). The ML-extras scan below
+        # still reports it.
         run: |
           mkdir -p artifacts/security
           pip-audit \
+            --ignore-vuln PYSEC-2026-3740 \
             --desc on \
             --format json \
             --output artifacts/security/pip-audit.json \
