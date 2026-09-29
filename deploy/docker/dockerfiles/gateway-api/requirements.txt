@@ -1,0 +1,13 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+httpx>=0.27.0
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+asyncpg>=0.30.0
+sqlalchemy[asyncio]>=2.0.36
+redis>=5.0.0
+prometheus-fastapi-instrumentator>=7.0.0
+opentelemetry-sdk>=1.28.0
+opentelemetry-instrumentation-fastapi>=0.49b0
+python-jose[cryptography]>=3.3.0
+websockets>=13.0

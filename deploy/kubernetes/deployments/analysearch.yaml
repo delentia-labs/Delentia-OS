@@ -1,0 +1,49 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysearch-intent
+  namespace: delentia
+  labels:
+    app: analysearch-intent
+    tier: community
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysearch-intent
+  template:
+    metadata:
+      labels:
+        app: analysearch-intent
+    spec:
+      containers:
+        - name: analysearch-intent
+          image: ghcr.io/delentia-labs/analysearch-intent:2.0
+          ports:
+            - containerPort: 8002
+          env:
+            - name: DELENTIA_ENV
+              value: production
+            - name: QDRANT_URL
+              value: "http://vector-search:6333"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+

@@ -650,8 +650,8 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 
 ## Whitepapers
 
-- [Foundation (01)](docs/whitepapers/01_foundation/) — The FDIA equation, Hexagonal Core architecture, constitutional AI theory
-- [Architecture (02)](docs/whitepapers/02_architecture/) — JITNA Protocol, SignedAI tier system, production deployment patterns
+- **[Whitepaper 3.0](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md)** ([ภาษาไทย](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_TH.md)) — the current single source: FDIA and its four invariants, RCT-7, the Constitutional Cycle, the 10 layers as built, measured evidence and withdrawn claims
+- Earlier papers (historical): [Foundation (01)](docs/whitepapers/01_foundation/), [Architecture (02)](docs/whitepapers/02_architecture/)
 
 ---
 
@@ -661,11 +661,11 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
-│  ├─ delta_engine/             # Memory Delta Engine (91.5% measured, ≥74% design floor)
+│  ├─ delta_engine/             # Delta-Memory (91.5% on a synthetic 20-agent simulation)
 │  └─ regional_adapter/         # 8-market language routing
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
-│     ├─ registry.py            # HexaCoreRegistry (7 models) + SignedAIRegistry
+│     ├─ registry.py            # HexaCoreRegistry (9 roles) + SignedAIRegistry
 │     ├─ router.py              # TierRouter (risk → tier selection)
 │     └─ models.py              # JITNAPacket, AnalysisJob
 ├─ rct_control_plane/           # 19-module DSL + intent schema + enterprise platform
@@ -688,7 +688,10 @@ delentia-os/
 ├─ docker-compose.monitoring.yml # Prometheus + Grafana + OTel Collector stack
 ├─ examples/                    # Working code demos + pipeline.yaml
 ├─ contracts/openapi.yaml       # OpenAPI 3.1.0 spec
-└─ docs/                        # Architecture docs + whitepapers
+├─ apps/gui/                    # Desktop GUI, Next.js + Tauri (was Delentia-OS-Gui)
+├─ plugins/adapters/            # Adapter SDK, manifest schema and registry (was Delentia-Ecosystem)
+├─ deploy/                      # Docker, Kubernetes, Helm, Terraform (was Delentia-Infra-Public)
+└─ docs/                        # Architecture docs + whitepaper/ (3.0) + whitepapers/ (historical)
    └─ assets/grafana-dashboard.json  # Pre-built Control Plane dashboard
 ```
 
@@ -794,11 +797,9 @@ Delentia OS is the open-source core. The full ecosystem extends across:
 
 | Repository | Purpose | Status |
 |---|---|---|
-| [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Core SDK — JITNA v3, FDIA, HexaCore, IntentKernel | ✅ Apache 2.0 |
-| [Delentia-OS-Gui](https://github.com/delentia-labs/Delentia-OS-Gui) | Tauri desktop app — Delentia Desk (Win/Mac/Linux) | ✅ Apache 2.0 |
-| [Delentia-AI-SLM](https://github.com/delentia-labs/Delentia-AI-SLM) | SLM fine-tuning factory — Llama 3.1 8B + QLoRA | ✅ Apache 2.0 |
-| [Delentia-Ecosystem](https://github.com/delentia-labs/Delentia-Ecosystem) | Plugin registry — LINE, Slack, skill manifests | ✅ Apache 2.0 |
-| [Delentia-Infra-Public](https://github.com/delentia-labs/Delentia-Infra-Public) | Community deployment — Docker, K8s, Helm, Terraform | ✅ Apache 2.0 |
+| [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Agent runtime and core SDK — plus the GUI (`apps/gui`), adapter registry (`plugins/adapters`) and public deployment files (`deploy/`), merged here in 2026-09 | ✅ Apache 2.0 |
+| [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) | MCP server (6 tools on Cloudflare Workers) and Delentia Guard, source in `ecosystem/` | ✅ Apache 2.0 |
+| [Delentia-AI-SLM](https://github.com/delentia-labs/Delentia-AI-SLM) | SLM fine-tuning experiments | 🗄️ Archived |
 | [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault, PDPA/GDPR compliance | 🔒 Proprietary |
 | [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform (private) | 🔒 Proprietary |
 | [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |

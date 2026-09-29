@@ -1,0 +1,52 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crystallizer
+  namespace: delentia
+  labels:
+    app: crystallizer
+    tier: community
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crystallizer
+  template:
+    metadata:
+      labels:
+        app: crystallizer
+    spec:
+      containers:
+        - name: crystallizer
+          image: ghcr.io/delentia-labs/crystallizer:2.0
+          ports:
+            - containerPort: 8004
+          env:
+            - name: DELENTIA_ENV
+              value: production
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: delentia-secrets
+                  key: postgres-url
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+
