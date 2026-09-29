@@ -21,8 +21,9 @@ row inserted without going through the chain, or a bad signature.
 What this does NOT defend against (see CLAUDE.md "Audit trail and key
 custody"): someone who can write the database AND recompute hashes can
 rewrite history from any point to the end; truncating the newest rows is
-invisible. That needs the chain head published outside the host (tier A3,
-chain_head() is the value to publish) and a signer the agent cannot reach
+invisible. That needs the chain head published outside the host (tier A3:
+sign_anchor() / check_anchors() below, sent to the fdia Worker's
+/v1/audit/anchor witness by `delentia audit-chain anchor`) and a signer the agent cannot reach
 (tier A2). A signing key on the agent's own host is readable by the
 agent's shell tool, which is not a jail - so it proves "written by this
 host", not "not written by the agent".
@@ -224,3 +225,54 @@ def chain_head(conn: sqlite3.Connection) -> Optional[Dict[str, Any]]:
     ensure_schema(conn)
     row = conn.execute("SELECT seq, row_hash FROM audit_chain ORDER BY seq DESC LIMIT 1").fetchone()
     return {"seq": row[0], "row_hash": row[1]} if row else None
+
+
+# ---------------------------------------------------------------------------
+# Round 50, tier A3: anchor the chain head at an outside witness.
+# Same protocol as delentia-guard (packages/shared/src/audit-anchor.ts):
+#   message = "delentia-audit-anchor:v1|<key_id>|<entries>|<head>|<signed_at>"
+# where entries = audit_chain.seq of the head row (seq starts at 1).
+# ---------------------------------------------------------------------------
+ANCHOR_MESSAGE_PREFIX = "delentia-audit-anchor:v1"
+
+
+def anchor_message(key_id: str, entries: int, head: str, signed_at: str) -> str:
+    return f"{ANCHOR_MESSAGE_PREFIX}|{key_id}|{entries}|{head}|{signed_at}"
+
+
+def sign_anchor(conn: sqlite3.Connection, key_id: str, private_key: Optional[Any] = None,
+                signed_at: Optional[str] = None) -> Dict[str, Any]:
+    """The current chain head, signed for POST <witness>/v1/audit/anchor.
+    Uses DELENTIA_AUDIT_SIGNING_KEY unless a key is passed."""
+    from datetime import datetime, timezone
+    signer = private_key if private_key is not None else load_signing_key()
+    if signer is None:
+        raise ValueError(f"no signing key: set {SIGNING_KEY_ENV} (see `delentia audit-chain keygen`)")
+    head = chain_head(conn)
+    if head is None:
+        raise ValueError("the audit chain is empty; nothing to anchor")
+    when = signed_at or datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    message = anchor_message(key_id, int(head["seq"]), head["row_hash"], when)
+    return {"key_id": key_id, "entries": int(head["seq"]), "head": head["row_hash"], "signed_at": when,
+            "signature": signer.sign(message.encode("utf-8")).hex()}
+
+
+def check_anchors(conn: sqlite3.Connection, witness: Dict[str, Any]) -> Dict[str, Any]:
+    """Every anchored (entries, head) from GET <witness>/v1/audit/anchor/<key_id>
+    must match this database's chain; conflicts the witness recorded
+    (rollback/fork) are reported too."""
+    ensure_schema(conn)
+    problems = []
+    anchors = witness.get("anchors") or []
+    for a in anchors:
+        row = conn.execute("SELECT row_hash FROM audit_chain WHERE seq = ?", (int(a["entries"]),)).fetchone()
+        if row is None:
+            problems.append(f"chain has no row {a['entries']}, but it was anchored at {a.get('received_at')} (truncated)")
+        elif row[0] != a["head"]:
+            problems.append(f"row {a['entries']} hashes to {row[0][:12]}..., anchored {a['head'][:12]}... "
+                            f"at {a.get('received_at')} (rewritten)")
+    conflicts = witness.get("conflicts") or []
+    if conflicts:
+        problems.append(f"the witness recorded {len(conflicts)} conflicting anchor(s) (rollback/fork) for this key")
+    return {"ok": not problems, "checked": len(anchors), "problems": problems}
+

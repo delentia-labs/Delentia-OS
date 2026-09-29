@@ -1875,6 +1875,8 @@ def audit_chain_group():
         delentia audit-chain verify --pubkey <hex>
         delentia audit-chain head          (value to publish outside the host)
         delentia audit-chain keygen --out ~/.delentia/keys/audit-signer.pem
+        delentia audit-chain anchor --url <witness> --key-id <id>         (tier A3)
+        delentia audit-chain check-anchors --url <witness> --key-id <id>
     """
     pass
 
@@ -1931,6 +1933,47 @@ def audit_chain_keygen(out_path: str) -> None:
     click.echo(f"private key : {Path(out_path).expanduser()}")
     click.echo(f"public key  : {public_hex}  (publish this; verifiers pass it as --pubkey)")
     click.echo(f"then set {audit_chain.SIGNING_KEY_ENV}={Path(out_path).expanduser()} for the API process")
+
+
+@audit_chain_group.command("anchor")
+@click.option("--url", required=True, help="Witness base URL (the fdia Worker), e.g. https://delentia-fdia-mcp.<account>.workers.dev")
+@click.option("--key-id", required=True, help="Key id the witness knows the public key under (AUDIT_ANCHOR_KEYS_JSON).")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def audit_chain_anchor(url: str, key_id: str, db: Optional[str]) -> None:
+    """Sign the current chain head and publish it to the outside witness (tier A3)."""
+    import httpx
+    from rct_control_plane import audit_chain
+    persistence = _audit_db(db)
+    try:
+        with persistence._connect() as conn:
+            body = audit_chain.sign_anchor(conn, key_id)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    resp = httpx.post(f"{url.rstrip('/')}/v1/audit/anchor", json=body, timeout=20.0)
+    click.echo(json.dumps({"status": resp.status_code, **resp.json()}))
+    if resp.status_code not in (200, 201):
+        sys.exit(1)
+
+
+@audit_chain_group.command("check-anchors")
+@click.option("--url", required=True, help="Witness base URL.")
+@click.option("--key-id", required=True, help="Key id to check.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def audit_chain_check_anchors(url: str, key_id: str, db: Optional[str]) -> None:
+    """Check every head anchored at the witness against this chain; exit 1 on any mismatch."""
+    import httpx
+    from rct_control_plane import audit_chain
+    resp = httpx.get(f"{url.rstrip('/')}/v1/audit/anchor/{key_id}", params={"limit": 1000}, timeout=20.0)
+    if resp.status_code != 200:
+        click.echo(json.dumps({"ok": False, "status": resp.status_code, **resp.json()}))
+        sys.exit(1)
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        report = audit_chain.check_anchors(conn, resp.json())
+    click.echo(json.dumps(report))
+    if not report["ok"]:
+        sys.exit(1)
 
 
 @cli.command("serve")
