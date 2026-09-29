@@ -162,9 +162,9 @@ describes its audit trail by the attacker each tier defeats.
 | Tier | Adds | Status |
 |---|---|---|
 | A0 | In-process, ephemeral self-signing | Superseded |
-| A1 | Long-lived key outside tool-reachable paths; every row chained and signed; `delentia audit verify` | ✅ Runtime (when `DELENTIA_AUDIT_SIGNING_KEY` is set) |
-| A2 | Signing in a separate process at the chokepoint that observes the real tool call | ✅ **Guard, for the MCP path**: the key lives in the Guard process; calls naming the key or the log are refused |
-| A3 | Chain head published to an outside witness | 🟡 `delentia-guard --head` exports the head; automatic anchoring is **not built** |
+| A1 | Long-lived key outside tool-reachable paths; every row chained and signed; `delentia audit-chain verify` | ✅ Runtime (when `DELENTIA_AUDIT_SIGNING_KEY` is set) |
+| A2 | Signing in a separate process at the chokepoint that observes the real tool call | ✅ **Guard, for the MCP path**: the key lives in the Guard process; calls naming the key or the log are refused. ✅ **Runtime (Round 50)**: `delentia notary serve` holds the key in its own process; the governed loop records every tool call (argument, result and FDIA-decision hashes) before it runs and refuses the call if the notary cannot record it (when `DELENTIA_NOTARY_URL` is set). Run the notary as another OS user; the gate itself still runs in the agent's process |
+| A3 | Chain head published to an outside witness | 🟡 Witness live (fdia Worker `/v1/audit/anchor`, append-only; rollback/fork kept as evidence). `delentia-guard anchor`, `delentia audit-chain anchor` and `delentia notary anchor` publish on demand; **no schedule yet** |
 | A4 | HSM/KMS keys, rotation, WORM storage, external audit | **Not built**; only on customer demand |
 
 Until A3 ships, Delentia does not call its logs "tamper-proof" or "immutable". Personal data stays

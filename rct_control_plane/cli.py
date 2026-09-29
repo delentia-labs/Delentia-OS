@@ -1976,6 +1976,140 @@ def audit_chain_check_anchors(url: str, key_id: str, db: Optional[str]) -> None:
         sys.exit(1)
 
 
+@cli.group("notary")
+def notary_group():
+    """
+    Audit notary: a separate process that holds the signing key (Round 50, tier A2).
+
+    Run it as a different OS user from the agent (or on another machine) so
+    the agent can append records but never read the key or rewrite the log.
+    The agent's API process finds it through DELENTIA_NOTARY_URL (and
+    DELENTIA_NOTARY_TOKEN); every tool call is then recorded before it runs,
+    and refused if the notary cannot record it.
+
+    Examples:
+        delentia notary keygen --out ~/.delentia-notary/notary.pem
+        DELENTIA_NOTARY_KEY=... delentia notary serve --port 8765
+        delentia notary verify --pubkey <hex>
+        delentia notary head
+        delentia notary anchor --url <witness> --key-id delentia-notary-1   (tier A3)
+    """
+    pass
+
+
+_DEFAULT_NOTARY_DB = "~/.delentia-notary/notary.db"
+
+
+def _notary_key(key_path: Optional[str]):
+    from rct_control_plane import notary
+    path = key_path or os.getenv(notary.NOTARY_KEY_ENV)
+    if not path:
+        click.echo(click.style(f"Error: pass --key or set {notary.NOTARY_KEY_ENV}", fg="red"), err=True)
+        sys.exit(1)
+    try:
+        return notary.load_key(path)
+    except (ValueError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@notary_group.command("keygen")
+@click.option("--out", "out_path", required=True, help="Where to write the notary key (outside the repo).")
+def notary_keygen(out_path: str) -> None:
+    """Create the notary's Ed25519 key."""
+    from rct_control_plane import notary
+    try:
+        public_hex = notary.generate_key(out_path)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"private key : {Path(out_path).expanduser()}  (restrict it to the notary's OS user; on Windows use icacls)")
+    click.echo(f"public key  : {public_hex}  (publish this; verifiers pass it as --pubkey)")
+
+
+@notary_group.command("serve")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's own log.")
+@click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
+@click.option("--key-id", default="delentia-notary-1", show_default=True, help="Key id written into receipts.")
+@click.option("--port", default=8765, show_default=True, type=int, help="Loopback port.")
+def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int) -> None:
+    """Serve POST /append and GET /head on 127.0.0.1 (token: DELENTIA_NOTARY_TOKEN)."""
+    from rct_control_plane import notary
+    key = _notary_key(key_path)
+    store = notary.NotaryStore(db, key, key_id)
+    server = notary.make_server(store, port=port, token=os.getenv(notary.NOTARY_TOKEN_ENV))
+    click.echo(f"notary      : http://127.0.0.1:{port}  key_id={key_id}  pubkey={notary.public_hex(key)}")
+    click.echo(f"log         : {store.db_path}")
+    click.echo(f"agent side  : set {notary.NOTARY_URL_ENV}=http://127.0.0.1:{port} "
+               f"(and {notary.NOTARY_TOKEN_ENV} if set here)")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+@notary_group.command("verify")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+@click.option("--pubkey", required=True, help="The notary's public key hex.")
+def notary_verify(db: str, pubkey: str) -> None:
+    """Recompute every entry and signature; exit 1 on the first break."""
+    from rct_control_plane import notary
+    report = notary.verify_log(db, pubkey)
+    click.echo(json.dumps(report.to_dict(), indent=2))
+    if not report.ok:
+        sys.exit(1)
+
+
+@notary_group.command("head")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+def notary_head(db: str) -> None:
+    """Print the latest entry position and hash (JSON)."""
+    import sqlite3
+    with sqlite3.connect(str(Path(db).expanduser())) as conn:
+        row = conn.execute("SELECT seq, hash FROM notary_log ORDER BY seq DESC LIMIT 1").fetchone()
+    click.echo(json.dumps({"seq": row[0], "row_hash": row[1]} if row else None))
+
+
+@notary_group.command("anchor")
+@click.option("--url", required=True, help="Witness base URL (the fdia Worker).")
+@click.option("--key-id", required=True, help="Key id the witness knows the notary's public key under.")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+@click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
+def notary_anchor(url: str, key_id: str, db: str, key_path: Optional[str]) -> None:
+    """Sign the notary log's head and publish it to the outside witness (tier A3)."""
+    import httpx
+    from rct_control_plane import notary
+    try:
+        body = notary.sign_anchor(db, key_id, _notary_key(key_path))
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    resp = httpx.post(f"{url.rstrip('/')}/v1/audit/anchor", json=body, timeout=20.0)
+    click.echo(json.dumps({"status": resp.status_code, **resp.json()}))
+    if resp.status_code not in (200, 201):
+        sys.exit(1)
+
+
+@notary_group.command("check-anchors")
+@click.option("--url", required=True, help="Witness base URL.")
+@click.option("--key-id", required=True, help="Key id to check.")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+def notary_check_anchors(url: str, key_id: str, db: str) -> None:
+    """Check every head anchored at the witness against the notary log; exit 1 on any mismatch."""
+    import httpx
+    from rct_control_plane import notary
+    resp = httpx.get(f"{url.rstrip('/')}/v1/audit/anchor/{key_id}", params={"limit": 1000}, timeout=20.0)
+    if resp.status_code != 200:
+        click.echo(json.dumps({"ok": False, "status": resp.status_code, **resp.json()}))
+        sys.exit(1)
+    report = notary.check_anchors(db, resp.json())
+    click.echo(json.dumps(report))
+    if not report["ok"]:
+        sys.exit(1)
+
+
 @cli.command("serve")
 @click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
 @click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")

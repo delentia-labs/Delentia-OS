@@ -255,7 +255,9 @@ def _split_into_subcommands(command: str) -> List[str]:
 _KEY_MATERIAL_PATTERN = re.compile(
     r"(\.delentia\b|\.pem\b|\.key\b|approvers\.json|\.ssh\b|id_rsa|id_ed25519|credentials\.json"
     r"|\.claude-mem\b|delentia_api_token|delentia_audit_signing_key|delentia_approver_pubkeys"
-    r"|openrouter_api_key|python_kernel_token|zuplo_shared_secret|_secret\b)",
+    r"|openrouter_api_key|python_kernel_token|zuplo_shared_secret|_secret\b"
+    # Round 50 (A2): the notary's key, log and token belong to another process.
+    r"|notary)",
     re.IGNORECASE,
 )
 _ENV_DUMP_PATTERN = re.compile(r"^\s*(printenv|env|set)\s*$|^\s*printenv\b", re.IGNORECASE)

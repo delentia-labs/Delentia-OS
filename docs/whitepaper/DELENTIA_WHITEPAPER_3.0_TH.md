@@ -143,9 +143,9 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | ระดับ | เพิ่มอะไร | สถานะ |
 |---|---|---|
 | A0 | ลงลายเซ็นตัวเองในโปรเซสด้วยกุญแจชั่วคราว | เลิกใช้แล้ว |
-| A1 | กุญแจระยะยาวอยู่นอกเส้นทางที่ tool เข้าถึง; ทุกแถวถูก chain และลงลายเซ็น; `delentia audit verify` | ✅ Runtime (เมื่อตั้ง `DELENTIA_AUDIT_SIGNING_KEY`) |
-| A2 | ลงลายเซ็นในโปรเซสแยก ณ จุดคอขวดที่เห็น tool call จริง | ✅ **Guard สำหรับเส้นทาง MCP**: กุญแจอยู่ในโปรเซส Guard; call ที่อ้างถึงกุญแจหรือ log ถูกปฏิเสธ |
-| A3 | เผยแพร่ head ของ chain ไปยังพยานภายนอก | 🟡 `delentia-guard --head` ส่งออก head ได้; การฝากอัตโนมัติ **ยังไม่สร้าง** |
+| A1 | กุญแจระยะยาวอยู่นอกเส้นทางที่ tool เข้าถึง; ทุกแถวถูก chain และลงลายเซ็น; `delentia audit-chain verify` | ✅ Runtime (เมื่อตั้ง `DELENTIA_AUDIT_SIGNING_KEY`) |
+| A2 | ลงลายเซ็นในโปรเซสแยก ณ จุดคอขวดที่เห็น tool call จริง | ✅ **Guard สำหรับเส้นทาง MCP**: กุญแจอยู่ในโปรเซส Guard; call ที่อ้างถึงกุญแจหรือ log ถูกปฏิเสธ ✅ **Runtime (Round 50)**: `delentia notary serve` ถือกุญแจในโปรเซสของตัวเอง; governed loop บันทึกทุก tool call (hash ของ argument, ผลลัพธ์ และการตัดสินของ FDIA) ก่อนรัน และปฏิเสธ call ถ้า notary บันทึกไม่ได้ (เมื่อตั้ง `DELENTIA_NOTARY_URL`) ควรรัน notary ด้วย OS user อื่น; ตัว gate ยังรันในโปรเซสของ agent |
+| A3 | เผยแพร่ head ของ chain ไปยังพยานภายนอก | 🟡 พยานออนไลน์แล้ว (fdia Worker `/v1/audit/anchor` แบบเพิ่มได้อย่างเดียว; rollback/fork ถูกเก็บเป็นหลักฐาน) `delentia-guard anchor`, `delentia audit-chain anchor` และ `delentia notary anchor` ฝากได้เมื่อสั่ง; **ยังไม่มีการตั้งเวลาอัตโนมัติ** |
 | A4 | กุญแจใน HSM/KMS, หมุนกุญแจ, WORM storage, ตรวจสอบโดยบุคคลภายนอก | **ยังไม่สร้าง**; ทำเมื่อลูกค้าต้องการ |
 
 จนกว่า A3 จะเสร็จ Delentia จะไม่เรียก log ของตัวเองว่า "tamper-proof" หรือ "immutable"
