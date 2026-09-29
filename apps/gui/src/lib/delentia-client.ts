@@ -33,11 +33,30 @@ const getGateway = (): string => {
   );
 };
 
+// The API key is kept in memory for this app session only. Versions before
+// 2026-09 saved it in localStorage, in clear text on disk, readable by any
+// script on the origin (CodeQL js/clear-text-storage-of-sensitive-data).
+let sessionApiKey: string | null = null;
+let legacyKeyForgotten = false;
+
+/** Remove an API key an older version saved in clear text. */
+export function forgetStoredApiKey(): void {
+  if (legacyKeyForgotten || typeof window === "undefined") return;
+  window.localStorage.removeItem("delentia_api_key");
+  legacyKeyForgotten = true;
+}
+
+export function setSessionApiKey(key: string): void {
+  sessionApiKey = key || null;
+}
+
+export function getSessionApiKey(): string | null {
+  return sessionApiKey;
+}
+
 const getApiKey = (): string => {
-  if (typeof window !== "undefined") {
-    const saved = window.localStorage.getItem("delentia_api_key");
-    if (saved) return saved;
-  }
+  forgetStoredApiKey();
+  if (sessionApiKey) return sessionApiKey;
   return (
     (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_KEY) || ""
   );

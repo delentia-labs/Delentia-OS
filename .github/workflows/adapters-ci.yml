@@ -34,7 +34,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install jsonschema fastapi uvicorn
+        run: pip install jsonschema fastapi uvicorn httpx pytest
+
+      - name: Registry API tests
+        run: python -m pytest -q tests
 
       - name: Validate all adapter manifests
         run: |

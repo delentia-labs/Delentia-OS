@@ -17,6 +17,7 @@ Run:
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -57,10 +58,25 @@ def _load_all(kind: str) -> list[dict]:
     return manifests
 
 
+_PKG_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+
+
 def _load_one(kind: str, pkg_id: str) -> dict:
-    manifest_file = REGISTRY_ROOT / kind / pkg_id / "manifest.json"
+    # The requested id is never joined into a path. It is matched against the
+    # directory names that actually exist under registry/<kind>/, and only the
+    # matching on-disk path is read (CodeQL py/path-injection: an id such as
+    # "../../etc" used to be joined straight into the path).
+    not_found = HTTPException(status_code=404, detail=f"{kind[:-1]} '{pkg_id}' not found")
+    if not _PKG_ID.match(pkg_id):
+        raise not_found
+    base = REGISTRY_ROOT / kind
+    known = {d.name: d for d in base.iterdir() if d.is_dir()} if base.exists() else {}
+    package_dir = known.get(pkg_id)
+    if package_dir is None:
+        raise not_found
+    manifest_file = package_dir / "manifest.json"
     if not manifest_file.exists():
-        raise HTTPException(status_code=404, detail=f"{kind[:-1]} '{pkg_id}' not found")
+        raise not_found
     try:
         return json.loads(manifest_file.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as e:

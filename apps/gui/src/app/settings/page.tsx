@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getHealthStatus } from "@/lib/delentia-client";
+import { forgetStoredApiKey, getHealthStatus, getSessionApiKey, setSessionApiKey } from "@/lib/delentia-client";
 import { HEXACORE_REGISTRY } from "@/lib/types";
 import type { HexaCoreRole } from "@/lib/types";
 import { useThemeStore, type ThemeName, type ColorMode } from "@/hooks/useTheme";
@@ -65,7 +65,8 @@ export default function SettingsPage() {
     setMounted(true);
     if (typeof window !== "undefined") {
       const savedGateway = window.localStorage.getItem("delentia_gateway");
-      const savedApiKey = window.localStorage.getItem("delentia_api_key");
+      forgetStoredApiKey();
+      const savedApiKey = getSessionApiKey();
       const savedRole = window.localStorage.getItem("delentia_default_role");
       
       if (savedGateway) setGateway(savedGateway);
@@ -81,7 +82,7 @@ export default function SettingsPage() {
   const saveSettings = () => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("delentia_gateway", gateway);
-      window.localStorage.setItem("delentia_api_key", apiKey);
+      setSessionApiKey(apiKey);
       window.localStorage.setItem("delentia_default_role", defaultRole);
       
       setSaveSuccess(true);
@@ -94,6 +95,7 @@ export default function SettingsPage() {
     const defaultApi = process.env.NEXT_PUBLIC_API_KEY ?? "";
     setGateway(defaultGateway);
     setApiKey(defaultApi);
+    setSessionApiKey("");
     setDefaultRole("SUPREME_ARCHITECT");
     setTheme("dark-modern-default");
     
@@ -275,7 +277,8 @@ export default function SettingsPage() {
         </h2>
         <p className="text-xs text-gray-400">
           ใช้เพื่อเรียกใช้บริการ endpoints ภายใต้เส้นทาง <code className="text-gray-300 font-mono bg-surface px-1 py-0.5 rounded">/v1/*</code>. 
-          สร้างกุญแจนี้โดยตรงผ่าน CLI ของ Delentia OS โดยใช้คำสั่ง <code className="text-gray-300 font-mono bg-surface px-1 py-0.5 rounded">rct init</code>.
+          ใช้ค่าเดียวกับ <code className="text-gray-300 font-mono bg-surface px-1 py-0.5 rounded">DELENTIA_API_TOKEN</code> ที่ตั้งไว้บนเครื่องที่รัน <code className="text-gray-300 font-mono bg-surface px-1 py-0.5 rounded">delentia serve</code>.
+          กุญแจเก็บไว้ในหน่วยความจำเฉพาะรอบการใช้งานนี้ ไม่บันทึกลงดิสก์ ต้องใส่ใหม่เมื่อเปิดแอปอีกครั้ง
         </p>
         <div className="flex gap-2">
           <div className="relative flex-1">
