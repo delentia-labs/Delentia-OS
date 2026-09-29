@@ -1,0 +1,41 @@
+{
+  "name": "delentia-gui",
+  "version": "1.0.4",
+  "private": true,
+  "description": "Delentia Desk — Desktop GUI for Delentia OS (Intent-Centric AI)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@delentia/fdia-wasm": "file:../delentia-os/sdk-typescript/packages/fdia-wasm",
+    "@delentia/rct-edge": "file:../delentia-os/sdk-typescript/packages/rct-edge",
+    "@tauri-apps/api": "^2.0.0",
+    "@thesvg/react": "^3.0.10",
+    "@xyflow/react": "^12.0.0",
+    "lucide-react": "^0.441.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.12.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "^15.0.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
+  }
+}

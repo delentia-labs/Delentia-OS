@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend (Node.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Checkout delentia-os SDK (needed for file: package refs)"
+        run: |
+          cd ..
+          git clone --depth=1 https://github.com/delentia-labs/delentia-os.git
+          # Build fdia-wasm
+          cd delentia-os/sdk-typescript/packages/fdia-wasm
+          npm ci --ignore-scripts
+          npm run build 2>/dev/null || true  # Best-effort: types still available
+          # Build rct-edge
+          cd ../rct-edge
+          npm ci --ignore-scripts
+          npm run build 2>/dev/null || true
+          cd $GITHUB_WORKSPACE
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (static export)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_GATEWAY: http://localhost:8000
+          NEXT_PUBLIC_API_KEY: ci-placeholder-key
+
+  rust:
+    name: Rust (Tauri backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install system dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check
+
+      - name: Cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy -- -D warnings
+
+      - name: Cargo test
+        working-directory: src-tauri
+        run: cargo test
