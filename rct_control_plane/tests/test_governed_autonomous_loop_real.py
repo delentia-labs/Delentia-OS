@@ -351,14 +351,14 @@ class TestSkillLibraryIntegration:
 
     def test_no_matching_skills_means_no_extra_context_and_old_call_shape_is_preserved(self, tmp_path, monkeypatch):
         # Proves the Zero-Delete guarantee: with an empty skill library and
-        # the Round 48 RCT-7/memory sections switched off, decide_next_action
+        # the Round 48 RCT-7/memory and Round 50 ROUTE sections switched off, decide_next_action
         # is called with its exact pre-Round-44 3-arg shape (this fake has
         # that old signature - passing extra_context would raise TypeError).
         async def _old_shape(goal, history, available_tools, llm_provider=None):
             return {"action": "finish", "reasoning": "done", "final_answer": f"Completed the goal: {goal}",
                     "tool_name": None, "tool_args": {}}
         monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _old_shape)
-        loop = _loop(tmp_path, "no_skills_yet", rct7_in_prompt=False, memory_in_prompt=False)
+        loop = _loop(tmp_path, "no_skills_yet", rct7_in_prompt=False, memory_in_prompt=False, route=False)
         result = asyncio.run(loop.run("a brand new never-seen-before goal"))
         assert result["stopped_reason"] == "llm_finished"
 
