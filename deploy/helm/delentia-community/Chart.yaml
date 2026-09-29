@@ -1,0 +1,18 @@
+apiVersion: v2
+name: delentia-community
+description: Delentia OS community Helm chart — 5 services + PostgreSQL + Qdrant
+type: application
+version: 2.0.0
+appVersion: "2.2.6"
+keywords:
+  - delentia
+  - constitutional-ai
+  - jitna
+  - rct
+  - llm
+home: https://github.com/delentia-labs/delentia-infra-public
+sources:
+  - https://github.com/delentia-labs/delentia-os
+maintainers:
+  - name: Delentia Labs
+    email: infra@delentia.com

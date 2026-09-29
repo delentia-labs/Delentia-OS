@@ -1,14 +1,12 @@
 name: Trigger Ecosystem Release
 
-# When a version tag is pushed to delentia-os, dispatch release events
-# to dependent repos so they can build + release in sync.
+# When a version tag is pushed, create the GitHub Release for delentia-os.
 #
-# Dependent repos that respond to repository_dispatch:
-#   - delentia-gui      (builds Tauri .msi/.dmg/.AppImage/.deb)
-#   - delentia-infra-public (updates install scripts, docker-compose pin)
-#
-# Setup: each target repo needs a Personal Access Token (PAT) with
-# `repo` scope stored as secret RELEASE_DISPATCH_TOKEN in delentia-os.
+# Round 49 P2: the GUI (apps/gui), public infrastructure (deploy/) and the
+# adapter registry (plugins/adapters) now live in this repository, so the
+# repository_dispatch jobs that notified their old repos were removed. Their
+# release workflows are kept, inactive, under apps/gui/.github and
+# deploy/.github; wire them up as root workflows when those releases resume.
 
 on:
   push:
@@ -38,65 +36,6 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Releasing version $VERSION (tag: $TAG)"
-
-  dispatch-gui-release:
-    name: Dispatch → delentia-gui
-    runs-on: ubuntu-latest
-    needs: extract-version
-    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
-    steps:
-      - name: Send repository_dispatch to delentia-gui
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
-          repository: delentia-labs/delentia-gui
-          event-type: new-os-release
-          client-payload: |
-            {
-              "version": "${{ needs.extract-version.outputs.version }}",
-              "tag": "${{ github.ref_name }}",
-              "is_prerelease": ${{ needs.extract-version.outputs.is_prerelease }},
-              "commit_sha": "${{ github.sha }}",
-              "release_url": "https://github.com/delentia-labs/delentia-os/releases/tag/${{ github.ref_name }}"
-            }
-
-  dispatch-infra-release:
-    name: Dispatch → delentia-infra-public
-    runs-on: ubuntu-latest
-    needs: extract-version
-    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
-    steps:
-      - name: Send repository_dispatch to delentia-infra-public
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
-          repository: delentia-labs/delentia-infra-public
-          event-type: new-os-release
-          client-payload: |
-            {
-              "version": "${{ needs.extract-version.outputs.version }}",
-              "tag": "${{ github.ref_name }}",
-              "is_prerelease": ${{ needs.extract-version.outputs.is_prerelease }},
-              "commit_sha": "${{ github.sha }}"
-            }
-
-  dispatch-ecosystem-validate:
-    name: Dispatch → delentia-ecosystem
-    runs-on: ubuntu-latest
-    needs: extract-version
-    continue-on-error: true  # Non-blocking: token may lack cross-repo write permission
-    steps:
-      - name: Send repository_dispatch to delentia-ecosystem
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
-          repository: delentia-labs/delentia-ecosystem
-          event-type: new-os-release
-          client-payload: |
-            {
-              "version": "${{ needs.extract-version.outputs.version }}",
-              "tag": "${{ github.ref_name }}"
-            }
 
   create-github-release:
     name: Create GitHub Release for delentia-os

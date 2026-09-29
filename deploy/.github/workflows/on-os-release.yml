@@ -1,0 +1,86 @@
+name: On New OS Release
+
+# Triggered by delentia-os via repository_dispatch when a new version tag is pushed.
+# Updates image pinning in docker-compose.yml to the new version.
+
+on:
+  repository_dispatch:
+    types: [new-os-release]
+  push:
+    tags:
+      - "infra-v*"  # also allow direct infra releases
+
+permissions:
+  contents: write
+
+jobs:
+  update-image-pins:
+    name: Update Docker image version pins
+    runs-on: ubuntu-latest
+    # Only update on non-prerelease OS releases
+    if: github.event.client_payload.is_prerelease != true || github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Extract version
+        id: ver
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#infra-v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Updating image pins to version $VERSION"
+
+      - name: Update docker-compose.yml image tags
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          sed -i "s|ghcr.io/delentia-labs/gateway-api:[^\"]*|ghcr.io/delentia-labs/gateway-api:${VERSION}|g" docker/docker-compose.yml
+          sed -i "s|ghcr.io/delentia-labs/intent-loop:[^\"]*|ghcr.io/delentia-labs/intent-loop:${VERSION}|g" docker/docker-compose.yml
+          sed -i "s|ghcr.io/delentia-labs/analysearch-intent:[^\"]*|ghcr.io/delentia-labs/analysearch-intent:${VERSION}|g" docker/docker-compose.yml
+          sed -i "s|ghcr.io/delentia-labs/crystallizer:[^\"]*|ghcr.io/delentia-labs/crystallizer:${VERSION}|g" docker/docker-compose.yml
+
+      - name: Update Helm chart appVersion
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" helm/delentia-community/Chart.yaml
+
+      - name: Commit and push version update
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docker/docker-compose.yml helm/delentia-community/Chart.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: pin images to v${{ steps.ver.outputs.version }} [skip ci]"
+            git push
+          fi
+
+  trigger-image-build:
+    name: Build Docker images for new OS version
+    runs-on: ubuntu-latest
+    needs: update-image-pins
+    if: github.event.client_payload.is_prerelease != true || github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger image build workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-images.yml',
+              ref: 'main',
+              inputs: {
+                tag: '${{ github.event.client_payload.version }}'
+              }
+            });
+            console.log('Triggered build-images.yml for version ${{ github.event.client_payload.version }}');
