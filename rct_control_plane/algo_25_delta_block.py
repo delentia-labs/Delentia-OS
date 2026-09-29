@@ -525,14 +525,23 @@ class DeltaEngine:
         old_tokens: Optional[int]
         new_tokens: Optional[int]
         patch_tokens: Optional[int]
+        texts = (json.dumps(old_state, sort_keys=True), json.dumps(new_state, sort_keys=True),
+                 json.dumps(structural["ops"], sort_keys=True))
         try:
             import tiktoken
             encoding = tiktoken.get_encoding("cl100k_base")
-            old_tokens = len(encoding.encode(json.dumps(old_state, sort_keys=True)))
-            new_tokens = len(encoding.encode(json.dumps(new_state, sort_keys=True)))
-            patch_tokens = len(encoding.encode(json.dumps(structural["ops"], sort_keys=True)))
+            old_tokens, new_tokens, patch_tokens = (len(encoding.encode(t)) for t in texts)
+            token_count_method = "tiktoken_cl100k"
         except ImportError:
-            old_tokens = new_tokens = patch_tokens = None
+            # Round 50: without tiktoken (not installed, or its DLL blocked -
+            # Windows Application Control does this on the Architect's
+            # machine) the counts used to be None, which silently switched
+            # the token safety valve below OFF and let a patch larger than
+            # the full state through. A ~4 chars/token estimate keeps the
+            # valve working; the method is reported so nobody quotes it as
+            # a tokenizer measurement.
+            old_tokens, new_tokens, patch_tokens = (max(1, -(-len(t) // 4)) for t in texts)
+            token_count_method = "chars_div_4_estimate"
 
         # Round 40: a real safety valve, added after direct measurement
         # (a 12-turn realistic mixed conversation - refinements, topic
@@ -584,6 +593,7 @@ class DeltaEngine:
             "old_state_tokens_approx": old_tokens,
             "new_state_tokens_approx": new_tokens,
             "patch_tokens_approx": reported_tokens,
+            "token_count_method": token_count_method,
             "token_reduction_pct_approx": (
                 round((1 - reported_tokens / new_tokens) * 100, 2) if new_tokens else None
             ) if reported_tokens is not None else None,
