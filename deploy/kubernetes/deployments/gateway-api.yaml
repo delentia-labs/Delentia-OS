@@ -1,0 +1,52 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-api
+  namespace: delentia
+  labels:
+    app: gateway-api
+    tier: community
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-api
+  template:
+    metadata:
+      labels:
+        app: gateway-api
+    spec:
+      containers:
+        - name: gateway-api
+          image: ghcr.io/delentia-labs/gateway-api:2.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DELENTIA_ENV
+              value: production
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: delentia-secrets
+                  key: postgres-url
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+
