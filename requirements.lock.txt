@@ -258,7 +258,7 @@ ruff==0.15.21
 safetensors==0.8.0
 scikit-learn==1.8.0
 scipy==1.17.1
-setuptools==81.0.0
+setuptools==83.0.0
 sgmllib3k==1.0.0
 shellingham==1.5.4
 six==1.17.0
