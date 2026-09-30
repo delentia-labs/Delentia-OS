@@ -95,6 +95,7 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 from __future__ import annotations
 
 import json
+import re
 import math
 import time
 from pathlib import Path
@@ -234,6 +235,23 @@ def _sha(value: Any) -> Optional[str]:
         return None
     from rct_control_plane.notary import sha256_hex
     return sha256_hex(value)
+
+
+_DECLINE_PATTERNS = re.compile(
+    r"\b(i am|i'm|we are|i was)\s+(unable|not able)\b|\bunable to\b|\b(can ?not|can't|couldn't|could not)\s+"
+    r"(do|help|complete|perform|access|read|write|create|find|fulfil|fulfill|carry out)\b|"
+    r"\bnone of the (provided |available )?tools\b|\bnone of them (are|is|can)\b|"
+    r"\bno (suitable|available|relevant) tools?\b|\b(is|are) outside (what|the scope)\b|\bnot possible (to|with)\b|"
+    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ",
+    re.IGNORECASE,
+)
+
+
+def answer_declines_goal(answer: str) -> bool:
+    """True when the final answer says the agent did not do the task
+    (a refusal or "no tool can do this"). Used by VERIFY so declined work is
+    never learned as a skill; it does not change what the user is shown."""
+    return bool(_DECLINE_PATTERNS.search(answer or ""))
 
 
 class GovernedAutonomousLoop(AutonomousLoop):
@@ -736,12 +754,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
             from rct_control_plane.semantic_matcher import SemanticMatcher
             matcher = SemanticMatcher()
         score = float(matcher.semantic_similarity(goal, str(final_answer)))
-        return {
+        declined = answer_declines_goal(str(final_answer))
+        out = {
             "applicable": True,
             "similarity_score": round(score, 4),
             "threshold": self._intent_verify_threshold,
-            "aligned_with_intent": score >= self._intent_verify_threshold,
+            # Round 50: a refusal repeats the goal's words, so it can clear the
+            # similarity threshold (two real qwen2.5:7b runs did, and were then
+            # learned as skills). An answer that declines the goal is not
+            # aligned with it, whatever its similarity.
+            "aligned_with_intent": score >= self._intent_verify_threshold and not declined,
         }
+        if declined:
+            out["declined"] = True
+        return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
         duration = time.time() - self._episode_start_time

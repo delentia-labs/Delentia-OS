@@ -124,7 +124,10 @@ class TestCLICompile:
         `exit_code in (0, 1)`, which a CliRunner-caught unhandled exception
         also satisfies — it did not actually prove there was no crash.
         """
-        result = cli_runner.invoke(cli, ["compile", "drop the production database table"])
+        # Round 50: destructive verbs ("drop the production database table")
+        # now classify on purpose (TRANSFORM, SYSTEMIC risk), so an input with
+        # no known verb at all stands in for "unclassifiable".
+        result = cli_runner.invoke(cli, ["compile", "purple umbrella seventeen quietly"])
         assert result.exit_code == 1
         # click's own sys.exit(1) surfaces through CliRunner as a SystemExit
         # in result.exception even on a clean, intentional exit — that is

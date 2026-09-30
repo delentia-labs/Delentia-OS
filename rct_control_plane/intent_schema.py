@@ -39,6 +39,7 @@ class IntentType(str, Enum):
     TRANSFORM = "TRANSFORM"                 # Data/code transformation
     DEBUG = "DEBUG"                         # Debugging assistance
     TEST = "TEST"                           # Test generation/execution
+    QUERY = "QUERY"                         # Read, search, summarise, answer (read-only) - Round 50
 
 
 class IntentPriority(str, Enum):
