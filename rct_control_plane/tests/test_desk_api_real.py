@@ -241,3 +241,14 @@ def test_memories_can_be_added_and_listed_per_namespace(desk):
     assert [m["content"] for m in listed["memories"]] == ["The staging database is called stg-db-1"]
     assert {"namespace": "me", "n": 1} in listed["namespaces"]
     assert client.get("/v1/desk/memories?namespace=other").json()["memories"] == []
+
+
+def test_session_detail_carries_the_data_evidence_and_the_five_pillars(desk, monkeypatch):
+    client, persistence, tmp_path = desk
+    _run_episode(tmp_path, persistence, monkeypatch, "find my release notes", [RECALL], "pillars-ns")
+    sid = next(s["id"] for s in client.get("/v1/desk/sessions").json()["sessions"] if s["namespace"] == "pillars-ns")
+    detail = client.get(f"/v1/desk/sessions/{sid}").json()
+    assert set(detail["data_evidence"]["parts"]) == {"clarity", "grounding", "memory", "skills", "record"}
+    assert list(detail["pillars"]) == ["gatekeeper", "memory", "executor", "verifier", "committer"]
+    assert detail["growth"]["G"] > 1.0
+    assert all(e["type"] != "intent_loop_pillars" for e in detail["events"])

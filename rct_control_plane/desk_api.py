@@ -24,7 +24,7 @@ CHANNELS = ("telegram", "discord", "slack", "line")
 _TOKEN_ENV = {"telegram": "TELEGRAM_BOT_TOKEN", "discord": "DISCORD_BOT_TOKEN",
               "slack": "SLACK_BOT_TOKEN", "line": "LINE_CHANNEL_ACCESS_TOKEN"}
 _EPISODE_EVENT_TYPES = ("autonomous_loop_step", "governed_loop_fdia_gate", "governed_loop_guard",
-                        "notary_receipt", "notary_gap")
+                        "notary_receipt", "notary_gap", "intent_loop_pillars")
 
 
 def _loads(value: Any) -> Any:
@@ -118,7 +118,7 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
     if start is None:
         return None
     end = _episode_end(conn, start)
-    upper = end["id"] if end is not None else (_next_start_id(conn, start) or 2**62)
+    upper = _next_start_id(conn, start) or 2**62      # the pillar report is written just after the end row
     placeholders = ",".join("?" for _ in _EPISODE_EVENT_TYPES)
     rows = conn.execute(
         f"SELECT id, entity_type, action, changes, created_at FROM audit_trail WHERE actor = ? "
@@ -134,10 +134,12 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
                   "public_key": s.get("jitna_public_key"), "key_persistent": s.get("jitna_key_persistent")},
         "verification": ((_loads(end["changes"]) or {}).get("intent_verification") if end is not None else None),
         "data_evidence": s.get("data_evidence"),
+        "pillars": next((_loads(r["changes"]) for r in rows if r["entity_type"] == "intent_loop_pillars"), None),
+        "warm_recall": s.get("warm_recall"),
         "growth": ({"delta": (_loads(end["changes"]) or {}).get("mee_delta"), "G": (_loads(end["changes"]) or {}).get("mee_g")}
                    if end is not None else None),
         "events": [{"id": r["id"], "type": r["entity_type"], "action": r["action"],
-                    "at": r["created_at"], "data": _loads(r["changes"])} for r in rows],
+                    "at": r["created_at"], "data": _loads(r["changes"])} for r in rows if r["entity_type"] != "intent_loop_pillars"],
     })
     return summary
 

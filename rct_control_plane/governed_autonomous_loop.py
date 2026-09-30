@@ -1013,6 +1013,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         try:
             from rct_control_plane.intent_loop import pillar_report
             result["intent_loop"] = pillar_report(result, self)
+            self._persistence.append_audit(
+                entity_type="intent_loop_pillars", entity_id=f"{self.namespace}-{self._episode_id}", action="pillars",
+                actor=self.namespace, changes=result["intent_loop"],
+            )
         except Exception:
             pass
 
