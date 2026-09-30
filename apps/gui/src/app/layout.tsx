@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ThemeProvider from "@/components/ThemeProvider";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { DeskShell } from "@/components/desk/Shell";
 import { IBM_Plex_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
@@ -31,10 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="th" suppressHydrationWarning>
       <body className={`${plexMono.variable} ${plexThai.variable} antialiased`} style={{ background: "var(--dl-ink)" }}>
-        <ThemeProvider>
-          <DeskShell>{children}</DeskShell>
-          <CommandPalette />
-        </ThemeProvider>
+        <DeskShell>{children}</DeskShell>
+        <CommandPalette />
       </body>
     </html>
   );

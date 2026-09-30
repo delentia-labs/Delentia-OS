@@ -77,6 +77,51 @@ function Detail({ id }: { id: number }) {
         </Panel>
       </div>
 
+      {d.data_evidence ? (
+        <Panel title="D · the data behind this goal" aside={d.warm_recall?.hit ? <Badge tone="leaf">answered from warm recall</Badge> : undefined}>
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            {(["clarity", "grounding", "memory", "skills", "record"] as const).map((k) => (
+              <Row key={k} label={{ clarity: "Request clarity", grounding: "Files / targets found", memory: "Relevant memory", skills: "Verified skills", record: "Track record" }[k]}>
+                {fmtNum(d.data_evidence!.parts[k])}
+              </Row>
+            ))}
+          </div>
+          {d.data_evidence.missing.length ? (
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-[13px] leading-relaxed text-dl-muted">
+              {d.data_evidence.missing.map((m, i) => <li key={i}>{m}</li>)}
+            </ul>
+          ) : <p className="mt-3 text-[13px] text-dl-muted">Every kind of data was present.</p>}
+        </Panel>
+      ) : null}
+
+      {d.pillars ? (
+        <Panel title="Intent Loop · the five pillars" aside={d.growth ? <Badge tone="leaf">Δ {fmtNum(d.growth.delta)} → G {fmtNum(d.growth.G)}</Badge> : undefined}>
+          <div className="grid gap-x-8 lg:grid-cols-2">
+            <div>
+              <p className="desk-mono mb-1 text-[12px] text-dl-leaf">1 · FDIA gatekeeper</p>
+              <Row label="CORD">{d.pillars.gatekeeper.guard ?? "-"}</Row>
+              <Row label="D / I">{fmtNum(d.pillars.gatekeeper.D)} / {fmtNum(d.pillars.gatekeeper.I)}</Row>
+              <p className="desk-mono mb-1 mt-3 text-[12px] text-dl-leaf">2 · Memory</p>
+              <Row label="Memories recalled / skills injected">{d.pillars.memory.memories_recalled} / {d.pillars.memory.skills_injected}</Row>
+              <Row label="Retrieval algorithms that ran">{d.pillars.memory.retrieval_algorithms_ok}</Row>
+              <p className="desk-mono mb-1 mt-3 text-[12px] text-dl-leaf">3 · Specialist executor</p>
+              <Row label="Route / steps / tool calls">{d.pillars.executor.route ?? "-"} / {d.pillars.executor.iterations ?? "-"} / {d.pillars.executor.tool_calls}</Row>
+              <Row label="Model calls / cost">{d.pillars.executor.model_calls ?? "-"} / {d.pillars.executor.cost_usd != null ? `$${d.pillars.executor.cost_usd}` : "-"}</Row>
+            </div>
+            <div>
+              <p className="desk-mono mb-1 text-[12px] text-dl-leaf">4 · Verifier</p>
+              <Row label="Aligned with the intent">{d.pillars.verifier.intent_aligned === null ? "n/a" : d.pillars.verifier.intent_aligned ? "yes" : "no"}</Row>
+              <Row label="Belief confidence (ALGO-30)">{fmtNum(d.pillars.verifier.belief_confidence)}</Row>
+              <Row label="Hallucination probability (ALGO-33)">{fmtNum(d.pillars.verifier.hallucination_probability)}</Row>
+              <p className="mt-1 text-[12px] text-dl-muted">{d.pillars.verifier.multi_model_consensus}</p>
+              <p className="desk-mono mb-1 mt-3 text-[12px] text-dl-leaf">5 · Evolution committer</p>
+              <Row label="Verified / skill kept">{d.pillars.committer.verified ? "yes" : "no"} / {d.pillars.committer.skill_extracted ? "yes" : "no"}</Row>
+              <Row label="Algorithms recorded">{d.pillars.committer.audit_algorithms_recorded ?? "pipeline off"}</Row>
+            </div>
+          </div>
+        </Panel>
+      ) : null}
+
       {d.rct7_steps.length ? (
         <Panel title={`RCT-7 plan (${d.rct7_steps.length} steps)`}>
           <ol className="space-y-1 text-sm leading-relaxed text-dl-text">

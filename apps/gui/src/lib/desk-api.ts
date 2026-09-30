@@ -54,7 +54,24 @@ export interface SessionSummary {
   verified: boolean | null; similarity: number | null; approval_id: string | null; skill_extracted: boolean | null;
 }
 export interface SessionEvent { id: number; type: string; action: string; at: string; data: Record<string, unknown> }
+export interface DataEvidence {
+  D: number;
+  parts: { clarity: number; grounding: number; memory: number; skills: number; record: number };
+  missing: string[];
+  detail?: Record<string, unknown>;
+}
+export interface Pillars {
+  gatekeeper: { guard: string | null; D: number | null; I: number | null; missing_data: string[] | null; stopped_here: boolean };
+  memory: { memories_recalled: number; skills_injected: number; retrieval_algorithms_ok: number; warm_recall: boolean; tool_outputs_compressed: number };
+  executor: { route: string | null; iterations: number | null; tool_calls: number; algorithms_ok: number; cost_usd: number | null; model_calls: number | null };
+  verifier: { intent_aligned: boolean | null; similarity: number | null; belief_confidence: number | null; hallucination_probability: number | null; multi_model_consensus: string };
+  committer: { growth_delta: number | null; G: number | null; verified: boolean; skill_extracted: boolean | null; experiment_run: string | null; audit_algorithms_recorded: number | null };
+}
 export interface SessionDetail extends SessionSummary {
+  data_evidence: DataEvidence | null;
+  pillars: Pillars | null;
+  growth: { delta: number | null; G: number | null } | null;
+  warm_recall: { hit: boolean; reason?: string } | null;
   rct7_steps: string[];
   route_detail: Record<string, unknown>;
   guard_detail: { cord_verdict?: string; cord_findings?: { check: string; severity: string; pattern_id: string }[] };
@@ -66,7 +83,36 @@ export interface Tool { name: string; description: string; gate: "approval" | "f
 export interface Skill {
   id: string; problem_statement: string; solution: unknown; growth_ratio: number; delta: number;
   g_before: number; g_after: number; governance_violation: boolean; session_id: string | null; created_at: string;
+  uses: number; successes: number; failures: number; reinforced: number; archived: boolean; reliability: number;
 }
+export interface GrowthLedger {
+  namespace: string; G: number | null; resilience: number | null; growth_ratio: number | null;
+  episodes: number; verified_episodes: number; updated_at: string;
+}
+export interface GrowthRun {
+  run_id: string; experiment_id: string; at: string; namespace: string | null; D: number | null; growth_delta: number | null;
+  G: number | null; iterations: number | null; finished: number | null; aligned: number | null; skills_injected: number | null;
+  cost_usd: number | null; duration_s: number | null;
+}
+export interface EvolutionSnapshot { steps: number | null; seconds: number | null; cost_usd: number | null; D: number | null; skills_injected: number | null; warm: boolean }
+export interface Evolution {
+  namespace: string; goals_repeated: number; note: string;
+  clusters: { goal: string; verified_runs: number; first: EvolutionSnapshot; last: EvolutionSnapshot;
+              fewer_steps: boolean | null; faster: boolean | null; cheaper: boolean | null; better_informed: boolean }[];
+  summary: { fewer_steps: number; faster: number; cheaper: number; better_informed: number; median_D_change: number | null };
+}
+export interface Growth {
+  ledgers: GrowthLedger[]; recent: GrowthRun[]; evolution: Evolution[];
+  skills: { total: number; archived: number; reused: number; merged_repeats: number;
+            most_reliable: { id: string; problem_statement: string; uses: number; successes: number; failures: number; reinforced: number; reliability: number }[] };
+}
+export interface PipelineAdapter { algo_id: string; name: string; stage: string; phase: string; needs_llm: boolean; needs_network: boolean; writes_files: boolean }
+export interface PipelineAggregate { algo_id: string; stage: string; ok: number; not_triggered: number; error: number; mean_ms: number | null; effect?: string }
+export interface Pipeline {
+  enabled: boolean; algorithms: number; adapters: PipelineAdapter[]; by_algorithm: PipelineAggregate[];
+  runs: { id: number; namespace: string; at: string; algorithms: number; ok: number; not_triggered: number; errors: number; total_ms: number; advice_lines: number }[];
+}
+export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number }
 export interface ChainReport {
   ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number;
   head_seq: number | null; head_hash: string | null; first_bad_seq: number | null; reason: string | null;
@@ -127,6 +173,12 @@ export const desk = {
   subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
   runSubagents: (goals: string[], timeoutSeconds = 240) =>
     call<{ runs: SubagentRun[] }>("/v1/desk/subagents/run", { method: "POST", body: JSON.stringify({ goals, timeout_seconds: timeoutSeconds }), signal: AbortSignal.timeout((timeoutSeconds + 60) * 1000) }),
+  growth: () => call<Growth>("/v1/desk/growth"),
+  pipeline: () => call<Pipeline>("/v1/desk/pipeline"),
+  memories: (namespace?: string) =>
+    call<{ memories: MemoryItem[]; namespaces: { namespace: string; n: number }[] }>(`/v1/desk/memories${namespace ? `?namespace=${encodeURIComponent(namespace)}` : ""}`),
+  remember: (content: string, memoryType = "fact", namespace?: string) =>
+    call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
   approvals: (status = "PENDING") => call<PendingAction[]>(`/v1/agent/approvals?status=${status}`),
   decide: (approvalId: string, body: { decision: string; public_key_hex: string; signature_hex: string }) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),

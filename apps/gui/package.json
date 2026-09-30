@@ -14,17 +14,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@delentia/fdia-wasm": "file:../../sdk-typescript/packages/fdia-wasm",
-    "@delentia/rct-edge": "file:../../sdk-typescript/packages/rct-edge",
     "@tauri-apps/api": "^2.0.0",
-    "@thesvg/react": "^3.0.10",
-    "@xyflow/react": "^12.0.0",
     "lucide-react": "^0.441.0",
     "next": "^15.5.26",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "recharts": "^2.12.0",
-    "zustand": "^4.5.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

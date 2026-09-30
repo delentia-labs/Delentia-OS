@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  Activity, BookOpen, ChevronDown, Clock, Cpu, FlaskConical, GitBranch, History, Link2, Menu, Radio,
-  Settings, ShieldCheck, SquareTerminal, Wrench, X,
+  Activity, BookOpen, Brain, Clock, Cpu, FlaskConical, GitBranch, History, Layers, Link2, Menu, Radio,
+  Settings, ShieldCheck, SquareTerminal, TrendingUp, Wrench, X,
 } from "lucide-react";
 import { DelentiaMark } from "./mark";
 import { LangProvider, useLang, type DictKey } from "./i18n";
-import { LegacyNotice } from "./LegacyNotice";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
 
@@ -20,6 +19,9 @@ const PRIMARY: { href: string; key: DictKey; icon: typeof Activity }[] = [
   { href: "/chat", key: "chat", icon: SquareTerminal },
   { href: "/sessions", key: "sessions", icon: History },
   { href: "/subagents", key: "subagents", icon: GitBranch },
+  { href: "/growth", key: "growth", icon: TrendingUp },
+  { href: "/memory", key: "memory", icon: Brain },
+  { href: "/algorithms", key: "algorithms", icon: Layers },
   { href: "/approvals", key: "approvals", icon: ShieldCheck },
   { href: "/audit", key: "audit", icon: Link2 },
   { href: "/llm", key: "models", icon: Cpu },
@@ -28,21 +30,6 @@ const PRIMARY: { href: string; key: DictKey; icon: typeof Activity }[] = [
   { href: "/cron", key: "cron", icon: Clock },
   { href: "/channels", key: "channels", icon: Radio },
   { href: "/experiments", key: "experiments", icon: FlaskConical },
-];
-
-// Earlier Desk pages, kept reachable while they are reworked.
-const LABS: { href: string; label: string }[] = [
-  { href: "/memory", label: "Memory timeline" },
-  { href: "/brains", label: "Brain slots" },
-  { href: "/models", label: "Local SLM" },
-  { href: "/workflow", label: "JITNA workflows" },
-  { href: "/ecosystem", label: "Ecosystem" },
-  { href: "/monitor", label: "Monitor" },
-  { href: "/discovery", label: "Discovery" },
-  { href: "/sandbox", label: "Living sandbox" },
-  { href: "/profiler", label: "Deep profiler" },
-  { href: "/enterprise", label: "Enterprise vault" },
-  { href: "/billing", label: "Billing" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -110,7 +97,6 @@ function SystemPanel() {
 function Nav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname() || "/";
   const { t } = useLang();
-  const [labsOpen, setLabsOpen] = useState(LABS.some((l) => isActive(pathname, l.href)));
 
   return (
     <nav aria-label="Desk" className="min-h-0 flex-1 overflow-y-auto py-3">
@@ -124,23 +110,6 @@ function Nav({ onNavigate }: { onNavigate?: () => void }) {
           </li>
         ))}
       </ul>
-      <button onClick={() => setLabsOpen((v) => !v)} aria-expanded={labsOpen}
-        className="desk-nav-link desk-focus mt-3 w-full justify-between">
-        <span>{t("labs")}</span>
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${labsOpen ? "rotate-180" : ""}`} aria-hidden />
-      </button>
-      {labsOpen ? (
-        <ul className="pb-2">
-          {LABS.map((item) => (
-            <li key={item.href}>
-              <Link href={item.href} onClick={onNavigate} aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className="desk-focus block border-l-2 border-transparent py-1.5 pl-12 pr-4 text-[13px] text-dl-muted hover:text-dl-text aria-[current=page]:border-dl-leaf aria-[current=page]:text-dl-text">
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </nav>
   );
 }
@@ -190,7 +159,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <DelentiaMark size={22} />
           <span className="desk-mono text-sm tracking-[0.14em]">DELENTIA</span>
         </div>
-        <LegacyNotice />
         <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       </div>
     </div>
