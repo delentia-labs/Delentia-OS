@@ -50,7 +50,6 @@ _MAX_GOAL_CHARS = 4000
 _MAX_PATH_CHARS = 260
 _URL_RE = re.compile(r"https?://\S+")
 _QUOTED_RE = re.compile(r"[\"'`“”‘’]([^\"'`“”‘’]{2,80})[\"'`“”‘’]")
-_NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)?(?![\w.])")
 _CREATE_VERBS = re.compile(r"\b(create|write|add|make|generate|scaffold|new)\b|สร้าง|เขียน|เพิ่ม", re.IGNORECASE)
 
 # Intent types that act on something that must already exist / be named.
@@ -76,12 +75,24 @@ def extract_paths(goal: str) -> List[str]:
 def extract_values(goal: str) -> List[str]:
     """Explicit literal data the user typed into the goal: quoted strings,
     numbers and URLs. Data given inline is data the user really has."""
-    text = goal
+    text = goal[:_MAX_GOAL_CHARS]
     values: List[str] = list(_URL_RE.findall(text))
     text = _URL_RE.sub(" ", text)
     values += [m for m in _QUOTED_RE.findall(text)]
-    values += _NUMBER_RE.findall(_QUOTED_RE.sub(" ", text))
+    for token in _TOKEN_SPLIT.split(_QUOTED_RE.sub(" ", text)):
+        if _is_number(token.strip(".,:;!?")):
+            values.append(token.strip(".,:;!?"))
     return values
+
+
+def _is_number(token: str) -> bool:
+    """"42", "3.14", "1,5": digits with at most one "." or "," between them.
+    Plain str methods, so the cost is linear in the length of the token."""
+    if not token or not token[0].isdigit() or not token[-1].isdigit():
+        return False
+    if token.count(".") + token.count(",") > 1:
+        return False
+    return all(c.isdigit() or c in ".," for c in token)
 
 
 @dataclass
@@ -95,22 +106,26 @@ class DataEvidence:
         return {"D": self.D, "parts": self.parts, "missing": self.missing, "detail": self.detail}
 
 
-def _resolve_inside(root: Path, raw: str) -> Optional[Path]:
-    """The path under the workspace root, or None when it is not a plain relative
-    path that stays inside it (absolute paths, drive letters, NUL bytes and ".."
-    that escape are rejected before anything touches the filesystem)."""
+def classify_path(root: Path, raw: str, creating: bool) -> str:
+    """What the workspace holds for a path named in a goal: "exists",
+    "new (parent exists)", "new (parent missing)", "missing" or
+    "outside the workspace". Anything that is not a plain relative path that
+    stays inside the workspace (absolute paths, drive letters, NUL bytes, an
+    escaping "..") is "outside the workspace" and the filesystem is not asked
+    about it: the containment check and the lookups live in this one function."""
     if not raw or len(raw) > _MAX_PATH_CHARS or "\x00" in raw:
-        return None
+        return "outside the workspace"
     if os.path.isabs(raw) or raw.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", raw):
-        return None
+        return "outside the workspace"
     base = os.path.realpath(root)
     full = os.path.realpath(os.path.join(base, raw))
-    try:
-        if os.path.commonpath([base, full]) != base:
-            return None
-    except ValueError:          # different drives
-        return None
-    return Path(full)
+    if full != base and not full.startswith(base + os.sep):
+        return "outside the workspace"
+    if os.path.exists(full):
+        return "exists"
+    if creating:
+        return "new (parent exists)" if os.path.isdir(os.path.dirname(full)) else "new (parent missing)"
+    return "missing"
 
 
 def grounding_score(goal: str, intent_type: str, workspace_root: Path) -> Dict[str, Any]:
@@ -121,18 +136,15 @@ def grounding_score(goal: str, intent_type: str, workspace_root: Path) -> Dict[s
     if paths:
         scores = []
         for raw in paths:
-            full = _resolve_inside(workspace_root, raw)
-            if full is not None and full.exists():
-                detail["paths"][raw] = "exists"
+            state = classify_path(workspace_root, raw, creating)
+            detail["paths"][raw] = state
+            if state == "exists":
                 scores.append(1.0)
-            elif full is not None and creating and full.parent.exists():
-                detail["paths"][raw] = "new (parent exists)"
+            elif state == "new (parent exists)":
                 scores.append(0.9)
-            elif full is not None and creating:
-                detail["paths"][raw] = "new (parent missing)"
+            elif state == "new (parent missing)":
                 scores.append(0.4)
             else:
-                detail["paths"][raw] = "missing" if full is not None else "outside the workspace"
                 scores.append(0.0)
         score = sum(scores) / len(scores)
     elif intent_type in _NEEDS_TARGET:

@@ -360,7 +360,17 @@ class TestPathHandlingIsSafe:
         "/etc/passwd.txt", "\\windows\\x.ini", "C:/Users/x.txt", "../../x.md", "a/../../x.md", "x\x00.md", "a" * 400 + ".md",
     ])
     def test_anything_that_is_not_a_plain_path_inside_the_workspace_is_never_looked_up(self, raw):
-        assert de._resolve_inside(REPO, raw) is None
+        assert de.classify_path(REPO, raw, creating=False) == "outside the workspace"
+        assert de.classify_path(REPO, raw, creating=True) == "outside the workspace"
 
-    def test_a_plain_relative_path_resolves_inside_the_workspace(self):
-        assert de._resolve_inside(REPO, "pyproject.toml") == (REPO / "pyproject.toml").resolve()
+    def test_a_plain_relative_path_is_classified_inside_the_workspace(self):
+        assert de.classify_path(REPO, "pyproject.toml", creating=False) == "exists"
+        assert de.classify_path(REPO, "no_such_file_xyz.toml", creating=False) == "missing"
+        assert de.classify_path(REPO, "docs/brand_new.md", creating=True) == "new (parent exists)"
+        assert de.classify_path(REPO, "nonexistent_dir_q/x.md", creating=True) == "new (parent missing)"
+
+    def test_numbers_are_found_without_a_regex(self):
+        values = de.extract_values('spend 42 or 3.14 on "release 3" but not v2.1, 1.2.3 or e.g.')
+        assert "42" in values and "3.14" in values and "release 3" in values
+        assert "v2.1" not in values and "1.2.3" not in values
+        assert de._is_number("0" * 100000 + "a") is False       # long digit runs are linear, not quadratic
