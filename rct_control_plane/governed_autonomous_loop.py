@@ -207,6 +207,21 @@ RISKY_TOOLS = frozenset({
 # 0.35) is blocked: the more demanding the intent, the better the data must be.
 FDIA_GATE_THRESHOLD = 0.5
 
+# Round 51 warm recall ("the more it is used, the faster and cheaper it gets"):
+# a goal answered and verified before is answered again without a model call -
+# but only when the evidence the old answer rested on is unchanged. The evidence
+# is the read-only tool calls of that episode; they are replayed and their results
+# compared by hash. Anything that changed, or any tool that could change something,
+# means a normal (cold) episode.
+WARM_RECALL_ENV = "DELENTIA_WARM_RECALL"
+WARM_TTL_ENV = "DELENTIA_WARM_TTL_S"
+WARM_DEFAULT_TTL_S = 7 * 24 * 3600.0
+WARM_STATE_NAMESPACE = "warm_recall"
+WARM_READ_ONLY_TOOLS = frozenset({
+    "delentia_read_repo_file", "delentia_search_repo_files", "delentia_recall",
+    "delentia_list_exchange_files", "delentia_read_exchange_file", "delentia_list_capabilities",
+})
+
 # Round 48 COMPRESS: tool results longer than this (~1.7k tokens at the
 # 3.5 chars/token estimate Delta uses) are compressed; Round 46 P2 proposed
 # ~2k tokens. Below it, compression costs more context than it saves.
@@ -302,6 +317,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         max_episode_cost_usd: Optional[float] = None,
         max_episode_tokens: Optional[int] = None,
         algorithm_pipeline: Optional[Any] = None,
+        warm_recall: Optional[bool] = None,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -356,6 +372,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # Round 51: the 41 algorithms as pipeline stages around the episode
         # (algorithm_pipeline.py). Off unless passed in or DELENTIA_ALGORITHM_PIPELINE=1.
         self._algorithm_pipeline = algorithm_pipeline
+        self._warm_recall = warm_recall if warm_recall is not None else os.environ.get(WARM_RECALL_ENV, "").strip() in ("1", "true", "yes")
+        self._episode_evidence: List[Dict[str, Any]] = []
+        self._warm_info: Dict[str, Any] = {}
         self._pipeline_ctx: Optional[Any] = None
         self._pipeline_traces: List[Any] = []
         # Round 48 COMPRESS: large tool results are Delta-v2 compressed.
@@ -448,7 +467,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             on_episode_end=self._on_episode_end,
             extra_context_provider=self._extra_context_provider,
             post_dispatch_transform=(self._notarised_post_dispatch
-                                     if (self._compress_tool_outputs or self._notary is not None) else None),
+                                     if (self._compress_tool_outputs or self._notary is not None or self._warm_recall) else None),
         )
 
     # ------------------------------------------------------------------
@@ -464,6 +483,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
         self._episode_guard = {}
+        self._episode_evidence = []
+        self._warm_info = {}
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
 
         blocked = await self._guard_goal(goal)
@@ -480,12 +501,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         D = evidence.D
         self._episode_data = evidence.to_dict()
         self._episode_D, self._episode_I = D, I
-        pipeline_advice = await self._pipeline_before(goal, clarity, compile_result)
+        warm_hit = await self._warm_lookup(goal) if self._warm_recall else None
+        pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self.max_iterations != self._applied_max_iterations:
             self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
         self.max_iterations = self._configured_max_iterations
-        self._episode_route = self._route_goal(goal) if self._route_enabled else {"enabled": False}
+        self._episode_route = ({"path": "warm", "reason": "verified answer reused after its evidence was replayed unchanged"}
+                               if warm_hit else self._route_goal(goal) if self._route_enabled else {"enabled": False})
         if self._episode_route.get("path") == "fast":
             self.max_iterations = min(self._configured_max_iterations, self._fast_max_iterations)
         self._episode_route["max_iterations"] = self.max_iterations
@@ -532,8 +555,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 # enforced: the gate applies F to each risky action, where A
                 # is known (see _pre_dispatch_gate).
                 "goal_F": fdia_score(D, I, 1.0),
+                "warm_recall": self._warm_info or None,
             },
         )
+        if warm_hit:
+            return {"stopped_reason": "warm_recall", "final_answer": warm_hit["answer"]}
         return None
 
     async def _guard_goal(self, goal: str) -> Optional[Dict[str, Any]]:
@@ -907,11 +933,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
         duration = time.time() - self._episode_start_time
         stopped_reason = result["stopped_reason"]
-        verification = (
-            self._verify_against_intent(result["goal"], result.get("final_answer"))
-            if stopped_reason == "llm_finished"
-            else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
-        )
+        warm = stopped_reason == "warm_recall"
+        if warm:
+            verification = {"applicable": True, "aligned_with_intent": True,
+                            "similarity_score": self._warm_info.get("similarity"),
+                            "reason": "a verified answer, reused after its evidence was replayed unchanged"}
+            result["warm_recall"] = self._warm_info
+        else:
+            verification = (
+                self._verify_against_intent(result["goal"], result.get("final_answer"))
+                if stopped_reason == "llm_finished"
+                else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
+            )
         result["intent_verification"] = verification
         result["route"] = self._episode_route
         result["guard"] = self._episode_guard
@@ -937,7 +970,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         delta_id = self._delta_engine.store_delta(delta_block)
 
         signal = episode_delta(
-            stopped_reason=stopped_reason, verification=verification, iterations=result["iterations"],
+            stopped_reason="llm_finished" if warm else stopped_reason, verification=verification, iterations=result["iterations"],
             cost_usd=(result.get("cost") or {}).get("cost_usd"), duration_s=duration,
             baseline=self._efficiency_baseline(result["goal"]), threshold=self._intent_verify_threshold,
         )
@@ -945,17 +978,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
         growth_step = self._ledger().record(signal)
         result["growth"] = {**signal, "G": round(self._mee_session.g, 4), "data": self._episode_data}
         verified_success = bool(signal["parts"].get("verified"))
-        if self._episode_skill_ids and (verified_success or growth_delta < 0.0):
+        if self._episode_skill_ids and not warm and (verified_success or growth_delta < 0.0):
             try:
                 self._skill_library.record_outcome(self._episode_skill_ids, success=verified_success)
             except Exception:
                 pass
-        skill_record = self._skill_library.maybe_extract_skill(
+        skill_record = None if warm else self._skill_library.maybe_extract_skill(
             problem_statement=result["goal"],
             action_sequence_or_solution=result["steps"],
             growth_step=growth_step,
             session_id=self.namespace,
         )
+        result["skill_extracted"] = skill_record is not None
 
         self._persistence.append_audit(
             entity_type="governed_loop_episode_end",
@@ -973,7 +1007,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
             },
         )
         result["experiment"] = self._record_experiment_run(result, verification, duration)
+        if self._warm_recall and verified_success and stopped_reason == "llm_finished":
+            self._warm_store(result, verification)
         await self._pipeline_after(result, duration)
+        try:
+            from rct_control_plane.intent_loop import pillar_report
+            result["intent_loop"] = pillar_report(result, self)
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Round 48 R3.4: every episode is an RCTDB experiment_run
@@ -1068,6 +1109,82 @@ class GovernedAutonomousLoop(AutonomousLoop):
             pass
         self._pipeline_ctx = None
 
+    # ------------------------------------------------------------------
+    # Round 51 warm recall
+    # ------------------------------------------------------------------
+    def _warm_key(self, goal: str) -> str:
+        return f"{self.namespace}:{self.experiment_id_for_goal(goal)}"
+
+    async def _warm_lookup(self, goal: str) -> Optional[Dict[str, Any]]:
+        """The stored, verified answer for this goal - if replaying the read-only
+        calls it rested on gives byte-identical results. Returns None (and says
+        why in self._warm_info) otherwise."""
+        try:
+            row = self._persistence.get_state(namespace=WARM_STATE_NAMESPACE, key=self._warm_key(goal))
+        except Exception:
+            return None
+        if not row or not isinstance(row.get("value"), dict):
+            return None
+        value = row["value"]
+        ttl = float(os.environ.get(WARM_TTL_ENV, WARM_DEFAULT_TTL_S))
+        age = time.time() - float(value.get("stored_at", 0.0))
+        if age > ttl:
+            self._warm_info = {"hit": False, "reason": f"stored {age / 3600:.0f} h ago, older than the {ttl / 3600:.0f} h limit"}
+            return None
+        evidence = value.get("evidence") or []
+        if not evidence or not value.get("answer"):
+            return None
+        for item in evidence:
+            tool, args = str(item.get("tool")), item.get("args") or {}
+            if tool not in WARM_READ_ONLY_TOOLS:
+                self._warm_info = {"hit": False, "reason": f"{tool} is not a read-only tool"}
+                return None
+            if self._notary is not None:
+                from rct_control_plane.notary import NotaryUnavailable
+                try:
+                    await self._notarise("tool_call", tool_name=tool, arguments_sha256=_sha(args), goal_sha256=_sha(goal),
+                                         gate_decision="warm_replay", fdia=None)
+                except NotaryUnavailable:
+                    self._warm_info = {"hit": False, "reason": "the audit notary is unreachable"}
+                    return None
+            try:
+                raw = await self._mcp.call_tool(tool, args)
+                current = json.loads(raw.content[0].text)
+            except Exception as exc:
+                self._warm_info = {"hit": False, "reason": f"replaying {tool} failed: {type(exc).__name__}"}
+                return None
+            if _sha(current) != item.get("sha256"):
+                self._warm_info = {"hit": False, "reason": f"{tool} now returns something different"}
+                return None
+        hits = int(value.get("hits", 0)) + 1
+        value["hits"], value["last_hit_at"] = hits, time.time()
+        try:
+            self._persistence.save_state(state_id=f"{WARM_STATE_NAMESPACE}:{self._warm_key(goal)}",
+                                         namespace=WARM_STATE_NAMESPACE, key=self._warm_key(goal), value=value)
+        except Exception:
+            pass
+        self._warm_info = {"hit": True, "evidence_replayed": len(evidence), "age_s": round(age, 1), "hits": hits,
+                           "similarity": value.get("similarity")}
+        return {"answer": value["answer"]}
+
+    def _warm_store(self, result: Dict[str, Any], verification: Dict[str, Any]) -> None:
+        """Keep a verified answer together with the read-only evidence it rested
+        on. Not stored when the episode used a tool that could change anything,
+        or used no tool at all (then there is nothing to re-check)."""
+        evidence = self._episode_evidence
+        answer = result.get("final_answer")
+        if not answer or not evidence or any(e["tool"] not in WARM_READ_ONLY_TOOLS for e in evidence):
+            return
+        try:
+            self._persistence.save_state(
+                state_id=f"{WARM_STATE_NAMESPACE}:{self._warm_key(result['goal'])}", namespace=WARM_STATE_NAMESPACE,
+                key=self._warm_key(result["goal"]),
+                value={"goal": result["goal"], "answer": answer, "evidence": evidence, "stored_at": time.time(), "hits": 0,
+                       "similarity": verification.get("similarity_score")},
+            )
+        except Exception:
+            pass
+
     def _ledger(self) -> GrowthLedger:
         """The growth ledger on whichever persistence the loop currently writes
         to (callers that swap `_persistence` after construction still get a
@@ -1113,6 +1230,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "similarity_score": verification.get("similarity_score"),
                 "tool_calls": sum(1 for step in result.get("steps", []) if step.get("tool_name")),
                 "skills_injected": self._episode_skills_injected,
+                "warm_recall": 1 if result["stopped_reason"] == "warm_recall" else 0,
                 "data_D": self._episode_D,
                 "growth_delta": (result.get("growth") or {}).get("delta"),
                 "growth_G": (result.get("growth") or {}).get("G"),
@@ -1324,6 +1442,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self, goal: str, tool_name: str, tool_args: Dict[str, Any], tool_result: Any,
     ) -> Any:
         """Result hash of what the tool actually returned (before compression)."""
+        self._episode_evidence.append({"tool": tool_name, "args": tool_args, "sha256": _sha(tool_result)})
         if self._notary is not None:
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
