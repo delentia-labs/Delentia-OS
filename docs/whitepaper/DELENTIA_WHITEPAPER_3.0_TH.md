@@ -110,7 +110,7 @@ whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยัง�
 |---|---|---|---|
 | L1 OS primitives | เข้าถึงฮาร์ดแวร์ตรง แยก process ระดับ OS | sandbox ระดับ process (`local` และ `docker`) พร้อมจัดระดับความเสี่ยงคำสั่ง | แก้เอกสาร: Delentia เป็น runtime บน OS ไม่ใช่ OS |
 | L2 Kernel services | จัดการ VRAM, สลับ LoRA < 12 ms | `lora_multiplexer.py` จัดการ slot ของ adapter (มี mock สำรอง); SLM ไม่ได้ต่อกับ runtime; 12 ms ไม่เคยวัด | แก้เอกสาร; SLM เป็นส่วนเสริมนอกเส้นทางหลัก |
-| L3 Algorithm kernel | 41 อัลกอริทึม + FDIA | ✅ 41/41 มี logic จริง; 24 ตัวรันอัตโนมัติจาก kernel ที่เหลือเรียกผ่าน tool หรือ router | คงไว้ |
+| L3 Algorithm kernel | 41 อัลกอริทึม + FDIA | ✅ 41/41 มี logic จริง; วัดเมื่อ 2026-09-30: 14 ตัวรันใน deep pipeline, อีก 12 ตัวเรียกได้เป็น MCP tool ที่เหลือถูกสร้างไว้แต่ไม่มี pipeline ใดเรียก | คงไว้ |
 | L4 RCTDB | 8 มิติ บน Qdrant + Neo4j + PostgreSQL | ค่าเริ่มต้นคือ SQLite (ตาราง RCTDB, audit แบบ hash chain, experiment runs); มี backend PostgreSQL + pgvector; Qdrant ใช้ใน vector search (ALGO-16); Neo4j ใช้ใน graph traversal (ALGO-17) เมื่อตั้ง server ไว้ | แก้เอกสารเป็น "SQLite เป็นค่าเริ่มต้น มี backend เสริม" ช่องว่างในโค้ด: audit hash chain มีแค่บน SQLite ต้องทำให้ PostgreSQL เท่ากันก่อน deploy หลายเครื่อง |
 | L5 SignedAI | ฉันทามติหลายโมเดล ≥ 75% | logic ฉันทามติและการเลือก tier อยู่ใน `signedai/core`; ยังไม่มี HTTP API; รายชื่อโมเดลในเอกสารเก่าล้าสมัย | แก้เอกสาร; API wrapper อยู่ใน backlog |
 | L6 JITNA | แพ็กเก็ต I, D, Δ, A, R, M | ✅ แพ็กเก็ตลงลายเซ็น Ed25519 (v2), streaming (v3) | คงไว้ |
@@ -208,7 +208,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | โปรโตคอล | JITNA (RFC-001), TOON | JITNA อยู่ในโค้ด; TOON อยู่แค่ใน dataset |
 | ความจำ | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | อยู่ในโค้ด (class ของ Vault client ชื่อ `RCTDBClient` ชวนสับสน) |
 | ความปลอดภัย | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | อยู่ในโค้ด |
-| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ทำงานใน loop แล้ว (ROUTE) |
+| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop เป็นโค้ดอ้างอิงที่การรันและการตรวจสอบเป็นการจำลอง และยังไม่ต่อเข้ากับ agent loop; ALGO-21 ทำงานใน loop แล้ว (ROUTE) |
 | ฉันทามติ | SignedAI, HexaCore (9 บทบาท) | logic อยู่ในโค้ด ยังไม่มี API |
 | โมเดล | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | อยู่บน Hugging Face; ไม่ได้ต่อกับ runtime |
 | ผลิตภัณฑ์ | Guard, 6 MCP tools, runtime (34 MCP tools), เว็บไซต์ | ใช้งานจริงหรืออยู่ในโค้ด |

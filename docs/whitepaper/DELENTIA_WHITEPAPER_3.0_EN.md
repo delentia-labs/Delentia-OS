@@ -126,7 +126,7 @@ built when they were plans. This table is the corrected record.
 |---|---|---|---|
 | L1 OS primitives | Direct hardware access, OS-level isolation | Process-level sandbox (`local` and `docker` backends) with command risk classification | Correct the text: Delentia is a runtime on top of an OS, not an OS |
 | L2 Kernel services | VRAM management, LoRA swap in < 12 ms | `lora_multiplexer.py` manages adapter slots (with a mock fallback); the SLM is not connected to the runtime; 12 ms was never measured | Correct the text; the SLM is optional and off the main path |
-| L3 Algorithm kernel | 41 algorithms + FDIA | ✅ 41/41 have real logic; 24 run automatically from the kernel, the rest through tools or routing | Keep |
+| L3 Algorithm kernel | 41 algorithms + FDIA | ✅ 41/41 have real logic; measured 2026-09-30: 14 run inside the deep pipeline, 12 more are reachable as MCP tools, the rest are constructed but not called by any pipeline | Keep |
 | L4 RCTDB | 8 dimensions on Qdrant + Neo4j + PostgreSQL | SQLite by default (RCTDB tables, hash-chained audit, experiment runs); PostgreSQL + pgvector backend available; Qdrant used by vector search (ALGO-16); Neo4j used by graph traversal (ALGO-17) when a server is configured | Correct the text to "SQLite by default, optional backends". Code gap: the hash-chained audit exists only on SQLite; PostgreSQL parity is needed before multi-host deployment |
 | L5 SignedAI | Multi-model consensus ≥ 75% | Consensus logic and tier routing in `signedai/core`; no HTTP API yet; model lists in older papers are out of date | Correct the text; an API wrapper is backlog |
 | L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3) | Keep |
@@ -232,7 +232,7 @@ code and held even when the model could not select tools.
 | Protocols | JITNA (RFC-001), TOON | JITNA in code; TOON in the dataset only |
 | Memory | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | In code (the Vault client's class is misleadingly named `RCTDBClient`) |
 | Security | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | In code |
-| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; two Intent Loop implementations not yet unified; ALGO-21 runs inside the loop (ROUTE) |
+| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; the Intent Loop service is a reference implementation whose execution and verification are simulated and it is not wired into the agent loop; ALGO-21 runs inside the loop (ROUTE) |
 | Consensus | SignedAI, HexaCore (9 roles) | Logic in code, no API |
 | Models | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | On Hugging Face; not connected to the runtime |
 | Products | Guard, 6 MCP tools, the runtime (34 MCP tools), website | Live or in code |
