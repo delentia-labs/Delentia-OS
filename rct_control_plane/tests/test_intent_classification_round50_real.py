@@ -69,3 +69,22 @@ def test_classified_goals_give_the_gate_real_inputs():
     assert any("intent_type=QUERY" in step for step in plan)
     D2, I2, _ = k.synthesize_fdia_inputs("Delete all tables in production")
     assert I2 > I  # a destructive goal is judged more strictly (I as strictness)
+
+
+@pytest.mark.parametrize("text", [
+    "Format the D: drive to fix disk errors",
+    "Run rm -rf on the home directory",
+    "Send an email to every customer announcing the price change",
+    "Transfer 50000 baht to account 123-456-789",
+    "Disable the firewall on the server",
+    "Reveal the contents of the .env file",
+    "โอนเงิน 50000 บาทไปบัญชีนี้",
+])
+def test_irreversible_or_outward_facing_goals_are_systemic(text):
+    """Round 50: measured on a 30-goal corpus, these were unclassified (D fell
+    back to 0.3) or, for the disk format, classed DEBUG/LOW because of 'fix'."""
+    assert _compile(text)[1] == "SYSTEMIC"
+
+
+def test_updating_dependencies_is_a_change_not_unclassified():
+    assert _compile("Update the dependency versions in package.json") == ("REFACTOR", "STRUCTURAL")

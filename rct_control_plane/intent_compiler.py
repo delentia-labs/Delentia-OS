@@ -200,7 +200,7 @@ class IntentCompiler:
     # everyday goals (read, search, summarise, write a file, any Thai goal)
     # matched nothing, so D fell back to 0.3 and the RCT-7 plan was empty.
     INTENT_TYPE_KEYWORDS = {
-        IntentType.REFACTOR: ["refactor", "restructure", "reorganize", "clean up", "improve code", "รีแฟคเตอร์", "จัดโครงสร้าง"],
+        IntentType.REFACTOR: ["refactor", "restructure", "reorganize", "clean up", "improve code", "update", "upgrade", "bump", "รีแฟคเตอร์", "จัดโครงสร้าง"],
         IntentType.BUILD_APP: ["build", "create", "scaffold", "generate app", "new application",
                                "write", "writing", "new file", "add a file", "สร้าง", "เขียน"],
         IntentType.ANALYZE_RISK: ["analyze", "analyse", "assess", "evaluate risk", "security check", "audit",
@@ -213,7 +213,10 @@ class IntentCompiler:
         # Destructive verbs classify here so they are never "unclassified":
         # HIGH_RISK_KEYWORDS then makes them SYSTEMIC, the strictest I.
         IntentType.TRANSFORM: ["transform", "convert", "migrate", "port", "translate", "แปลง", "ย้ายระบบ",
-                               "delete", "remove", "drop", "wipe", "truncate", "ลบ"],
+                               # irreversible or outward-facing operations
+                               "delete", "remove", "drop", "wipe", "truncate", "erase", "destroy", "format",
+                               "transfer", "withdraw", "pay", "send", "email", "disable", "shutdown", "kill",
+                               "reveal", "leak", "rm -rf", "sudo", "ลบ", "โอน", "จ่ายเงิน", "ส่งอีเมล", "ปิดระบบ"],
         IntentType.DEBUG: ["debug", "fix", "troubleshoot", "diagnose", "find bug", "แก้บั๊ก", "แก้ไข"],
         IntentType.TEST: ["test", "verify", "validate", "check", "generate tests", "ทดสอบ"],
         IntentType.QUERY: ["read", "show", "list", "search", "find", "look up", "lookup", "summarise", "summarize",
@@ -222,7 +225,10 @@ class IntentCompiler:
     }
     
     # Risk indicators
-    HIGH_RISK_KEYWORDS = ["deploy", "delete", "drop", "remove", "migrate", "system-wide"]
+    HIGH_RISK_KEYWORDS = ["deploy", "delete", "drop", "remove", "migrate", "system-wide",
+                          "wipe", "truncate", "erase", "destroy", "format", "transfer", "withdraw", "pay",
+                          "send", "email", "disable", "shutdown", "kill", "reveal", "leak", "rm -rf", "sudo",
+                          "ลบ", "โอน", "จ่ายเงิน", "ส่งอีเมล", "ปิดระบบ"]
     MEDIUM_RISK_KEYWORDS = ["refactor", "modify", "change", "update", "transform"]
     
     # Priority indicators
