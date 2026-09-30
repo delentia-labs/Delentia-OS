@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type ThemeName =
+  | "delentia-green"
   | "delentia-brand"
   | "dark-modern-default"
   | "powershell-ise"
@@ -38,7 +39,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: "delentia-brand",
+      theme: "delentia-green",
       colorMode: "dark",
       setTheme: (theme) => {
         // Automatically determine default mode based on the theme selection
@@ -56,6 +57,10 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: "delentia-theme-storage",
+      // Round 50 redesign: move stored choices from before the redesign onto
+      // the Desk palette once; later choices are kept.
+      version: 2,
+      migrate: () => ({ theme: "delentia-green" as ThemeName, colorMode: "dark" as ColorMode }),
     }
   )
 );

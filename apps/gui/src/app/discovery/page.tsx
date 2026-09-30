@@ -13,7 +13,6 @@ import {
   Award,
   Zap,
 } from "lucide-react";
-import { FDIABadge } from "@/components/fdia-visualizer/score-card";
 
 interface Paper {
   id: string;
@@ -22,12 +21,13 @@ interface Paper {
   summary: string;
   citations: number;
   tags: string[];
-  fdia: { D: number; I: number; A: number; F: number; signed: boolean; signature_hash: string };
   gradient: string;
   publishDate: string;
 }
 
-const MOCK_PAPERS: Paper[] = [
+// A static, hand-picked reading list (not fetched, not scored). Round 50
+// removed the per-paper FDIA scores and signatures it used to show.
+const READING_LIST: Paper[] = [
   {
     id: "paper-1",
     title: "Constitutional AI: Harmlessness from AI Feedback",
@@ -35,7 +35,6 @@ const MOCK_PAPERS: Paper[] = [
     summary: "เอกสารนำเสนอแนวทางการฝึกสอนโมเดลภาษาขนาดใหญ่ให้ปลอดภัยตามกติกาและหลักรัฐธรรมนูญผ่านข้อมูลป้อนกลับของตัวระบบ AI เอง หลีกเลี่ยงอคติทางความคิดและการสร้างคำตอบที่เป็นอันตรายโดยตรง",
     citations: 1842,
     tags: ["Constitutional AI", "Reinforcement Learning", "AI Safety"],
-    fdia: { D: 0.96, I: 0.92, A: 0.95, F: 0.879, signed: true, signature_hash: "a9f8e7d6c5b4a3f2e1d0c9b8" },
     gradient: "from-indigo-600 to-purple-600",
     publishDate: "Dec 2022",
   },
@@ -46,7 +45,6 @@ const MOCK_PAPERS: Paper[] = [
     summary: "นำเสนอสถาปัตยกรรม DPO สำหรับจัดแนวทางคำสั่งความชอบของผู้ใช้โดยตรง ปฏิรูปการฝึกสอนรางวัลแบบเดิม ๆ ให้มีความมั่นคง เสถียร และประหยัดทรัพยากรการประมวลผลซีพียูเป็นอย่างมาก",
     citations: 1420,
     tags: ["Alignment", "DPO Optimization", "RLHF Alternative"],
-    fdia: { D: 0.94, I: 0.88, A: 0.92, F: 0.816, signed: true, signature_hash: "8f7e6d5c4b3a2f1e0d9c8b7a" },
     gradient: "from-blue-600 to-cyan-600",
     publishDate: "May 2023",
   },
@@ -57,7 +55,6 @@ const MOCK_PAPERS: Paper[] = [
     summary: "รายงานการพัฒนาและทดสอบโครงสร้างโมเดลรากฐานขนาดใหญ่ Llama 3 ครอบคลุมคุณสมบัติประสิทธิภาพการตอบรับเชิงบริบท ความเร็วของโทเค็นต่อวินาที และการบีบอัดข้อมูลแบบก้าวหน้าเชิงลึก",
     citations: 3491,
     tags: ["Open Models", "Pre-training", "Token Efficiency"],
-    fdia: { D: 0.98, I: 0.95, A: 0.96, F: 0.893, signed: true, signature_hash: "7e6d5c4b3a2f1e0d9c8b7a6f" },
     gradient: "from-emerald-600 to-teal-600",
     publishDate: "Apr 2024",
   },
@@ -68,7 +65,6 @@ const MOCK_PAPERS: Paper[] = [
     summary: "บทความวิจัยเชิงทดลองแสดงการเชื่อมต่อโมเดลข้ามพอร์ตและระบบตรวจรับคะแนนเสถียรภาพความมั่นคงแบบ JIT สำหรับระบบปฏิบัติการ AI ผ่านโปรโตคอลสตรีมมิ่งความหน่วงต่ำกว่า 50ms",
     citations: 88,
     tags: ["JITNA Protocol", "AI OS Architecture", "Low Latency"],
-    fdia: { D: 0.99, I: 0.98, A: 0.99, F: 0.961, signed: true, signature_hash: "6e5d4c3b2a1f0e9d8c7b6a5f" },
     gradient: "from-rose-600 to-orange-600",
     publishDate: "Jan 2026",
   },
@@ -78,9 +74,9 @@ export default function DiscoveryPage() {
   const [query, setQuery] = useState("");
   const [filterTag, setFilterTag] = useState("");
 
-  const allTags = Array.from(new Set(MOCK_PAPERS.flatMap((p) => p.tags)));
+  const allTags = Array.from(new Set(READING_LIST.flatMap((p) => p.tags)));
 
-  const filtered = MOCK_PAPERS.filter((p) => {
+  const filtered = READING_LIST.filter((p) => {
     const matchesQuery =
       p.title.toLowerCase().includes(query.toLowerCase()) ||
       p.summary.toLowerCase().includes(query.toLowerCase()) ||
@@ -180,7 +176,6 @@ export default function DiscoveryPage() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     <Award className="w-3.5 h-3.5 text-delentia-500" />
-                    <FDIABadge score={paper.fdia} />
                   </div>
                 </div>
 

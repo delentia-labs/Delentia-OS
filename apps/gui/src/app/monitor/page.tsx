@@ -179,7 +179,6 @@ function ServiceRow({ svc }: { svc: ServiceHealth }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-const MOCK_FDIA_HISTORY = [0.82, 0.85, 0.88, 0.87, 0.91, 0.89, 0.93, 0.87, 0.90, 0.88, 0.92, 0.87];
 const DEFAULT_SERVICES: ServiceHealth[] = [
   { name: "delentia-gateway", port: 8000, status: "offline", latency_ms: undefined },
   { name: "intent-loop", port: 8001, status: "offline" },
@@ -193,7 +192,7 @@ export default function MonitorPage() {
   const [gateway, setGateway] = useState("http://localhost:8000");
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [services, setServices] = useState<ServiceHealth[]>(DEFAULT_SERVICES);
-  const [fdiaHistory, setFdiaHistory] = useState<number[]>(MOCK_FDIA_HISTORY);
+  const [fdiaHistory, setFdiaHistory] = useState<number[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -264,12 +263,8 @@ export default function MonitorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gateway]);
 
-  const mockDrift: HelixDrift = stats?.helix_drift ?? {
-    score: 0.042,
-    dimensions: [0.03, 0.05, 0.04, 0.06, 0.02, 0.08, 0.03, 0.05],
-    status: "nominal",
-    last_check: new Date().toISOString(),
-  };
+  // Round 50: only what the API reports; no invented drift values.
+  const drift: HelixDrift | null = stats?.helix_drift ?? null;
 
   const onlineCount = services.filter((s) => s.status === "ok").length;
 
@@ -349,7 +344,9 @@ export default function MonitorPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Helix-TTD Drift */}
-        <DriftGauge drift={mockDrift} />
+        {drift ? <DriftGauge drift={drift} /> : (
+          <p className="text-xs text-gray-500">The API does not report drift, so none is shown.</p>
+        )}
 
         {/* FDIA history */}
         <div className="glass-card rounded-xl p-5 space-y-4 border border-surface-border/60">
@@ -363,12 +360,13 @@ export default function MonitorPage() {
             </span>
           </div>
 
+          {fdiaHistory.length === 0 ? <p className="text-xs text-gray-500">No FDIA history reported by the API yet.</p> : null}
           <SparkBar values={fdiaHistory} color="bg-delentia-500" />
           
           <div className="flex justify-between text-[10px] text-gray-500 font-mono bg-surface/50 px-3 py-1.5 rounded-lg border border-surface-border/40">
-            <span>min: {Math.min(...fdiaHistory).toFixed(3)}</span>
-            <span>avg: {(fdiaHistory.reduce((a, b) => a + b, 0) / fdiaHistory.length).toFixed(3)}</span>
-            <span>max: {Math.max(...fdiaHistory).toFixed(3)}</span>
+            <span>min: {fdiaHistory.length ? Math.min(...fdiaHistory).toFixed(3) : "-"}</span>
+            <span>avg: {fdiaHistory.length ? (fdiaHistory.reduce((a, b) => a + b, 0) / fdiaHistory.length).toFixed(3) : "-"}</span>
+            <span>max: {fdiaHistory.length ? Math.max(...fdiaHistory).toFixed(3) : "-"}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-surface-border/40 text-[10px]">

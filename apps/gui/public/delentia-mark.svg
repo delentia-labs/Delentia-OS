@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <title>Delentia</title>
+  <rect x="6" y="6" width="488" height="488" rx="44" fill="#ffffff" stroke="#000000" stroke-width="12"/>
+  <rect x="75" y="104" width="350" height="94" rx="14" fill="#80C961"/>
+  <circle cx="172" cy="120.5" r="60.5" fill="#80C961"/>
+  <circle cx="327" cy="120.5" r="60.5" fill="#80C961"/>
+  <circle cx="172" cy="120.5" r="46" fill="#2C2525"/>
+  <circle cx="327" cy="120.5" r="46" fill="#2C2525"/>
+  <rect x="75" y="222" width="350" height="97" rx="14" fill="#519037"/>
+  <rect x="75" y="343" width="350" height="97" rx="14" fill="#315721"/>
+</svg>

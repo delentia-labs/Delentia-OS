@@ -19,10 +19,13 @@ export default function LoRAForgeStudioPage() {
   const [progressPct, setProgressPct] = useState<number>(0);
   const [trainingLoss, setTrainingLoss] = useState<number>(2.45);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  // Round 50: failures are shown, never replaced by simulated progress.
+  const [trainError, setTrainError] = useState<string | null>(null);
 
   const handleStartTraining = async () => {
     setIsTraining(true);
     setIsCompleted(false);
+    setTrainError(null);
     setProgressPct(0);
     setTrainingLoss(2.45);
 
@@ -62,32 +65,14 @@ export default function LoRAForgeStudioPage() {
             }
           }
         } catch {
-          // Client simulation fallback
-          setProgressPct((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              setIsTraining(false);
-              setIsCompleted(true);
-              return 100;
-            }
-            setTrainingLoss((l) => Math.max(0.12, l * 0.88));
-            return prev + 15;
-          });
+          clearInterval(interval);
+          setIsTraining(false);
+          setTrainError("Lost contact with the API while training; the job's state is unknown.");
         }
       }, 500);
     } catch {
-      // Local fallback loop
-      let step = 0;
-      const interval = setInterval(() => {
-        step += 1;
-        setProgressPct(step * 20);
-        setTrainingLoss((l) => Math.max(0.12, l * 0.85));
-        if (step >= 5) {
-          clearInterval(interval);
-          setIsTraining(false);
-          setIsCompleted(true);
-        }
-      }, 600);
+      setIsTraining(false);
+      setTrainError("The API at 127.0.0.1:8000 is not reachable, so nothing was trained.");
     }
   };
 
@@ -188,6 +173,10 @@ export default function LoRAForgeStudioPage() {
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
+
+              {trainError ? (
+                <p role="alert" className="p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-xs text-red-300">{trainError}</p>
+              ) : null}
 
               {isCompleted && (
                 <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between text-xs">

@@ -22,7 +22,7 @@ import type {
   SystemStats,
 } from "./types";
 
-const getGateway = (): string => {
+export const getGateway = (): string => {
   if (typeof window !== "undefined") {
     const saved = window.localStorage.getItem("delentia_gateway");
     if (saved) return saved;
@@ -54,7 +54,7 @@ export function getSessionApiKey(): string | null {
   return sessionApiKey;
 }
 
-const getApiKey = (): string => {
+export const getApiKey = (): string => {
   forgetStoredApiKey();
   if (sessionApiKey) return sessionApiKey;
   return (

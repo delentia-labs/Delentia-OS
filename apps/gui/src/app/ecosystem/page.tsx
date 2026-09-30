@@ -289,7 +289,7 @@ function OfflineBanner() {
       <AlertCircle size={15} className="text-amber-400 shrink-0" />
       <div className="flex-1">
         <p className="text-xs font-semibold text-amber-300">Registry Offline</p>
-        <p className="text-[10px] text-amber-400/70">Ecosystem registry at port 8090 is unreachable. Displaying cached offline manifest data.</p>
+        <p className="text-[10px] text-amber-400/70">Ecosystem registry at port 8090 is unreachable, so no adapters or skills are listed.</p>
       </div>
       <span className="text-[9px] px-2 py-1 rounded-full bg-amber-900/30 text-amber-400 border border-amber-700/30 font-mono shrink-0">
         OFFLINE MODE
@@ -298,25 +298,6 @@ function OfflineBanner() {
   );
 }
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const MOCK_ADAPTERS: AdapterManifest[] = [
-  { id: "line-adapter",     name: "LINE Messaging",           version: "1.0.0", description: "Connects LINE Messaging API to Delentia OS for Thai user engagement", jitna_channel: "line", regional_support: ["TH","JP","TW"], tags: ["messaging","line","th"], security_scan_passed: false, permissions: ["intent:read","intent:execute"] },
-  { id: "slack-adapter",    name: "Slack Workspace",          version: "1.0.0", description: "Full Slack integration via JITNA v3 with slash commands and events", jitna_channel: "slack", regional_support: ["GLOBAL"], tags: ["messaging","slack","enterprise"], security_scan_passed: false, permissions: ["intent:read","intent:execute"] },
-  { id: "whatsapp-adapter", name: "WhatsApp Business",        version: "1.0.0", description: "WhatsApp Business Cloud API — media, template, and live chat support", jitna_channel: "whatsapp", regional_support: ["TH","BR","IN","US"], tags: ["messaging","whatsapp","business"], security_scan_passed: true, permissions: ["intent:read","intent:execute","media:read"] },
-  { id: "telegram-adapter", name: "Telegram Bot",             version: "1.0.0", description: "Telegram Bot API — inline buttons, webhooks, and group management", jitna_channel: "telegram", regional_support: ["GLOBAL"], tags: ["messaging","telegram","bot"], security_scan_passed: true, permissions: ["intent:read","intent:execute"] },
-  { id: "discord-adapter",  name: "Discord Bot",              version: "1.0.0", description: "Discord slash commands and thread-based intent routing", jitna_channel: "discord", regional_support: ["GLOBAL"], tags: ["discord","developer","gaming"], security_scan_passed: true, permissions: ["intent:read","intent:execute"] },
-  { id: "github-adapter",   name: "GitHub App",               version: "1.0.0", description: "GitHub webhook events → JITNA pipeline for CI/CD automation", jitna_channel: "github", regional_support: ["GLOBAL"], tags: ["github","ci-cd","devops"], security_scan_passed: true, permissions: ["intent:read","intent:execute","data:write"] },
-  { id: "notion-adapter",   name: "Notion Integration",       version: "1.0.0", description: "Notion workspace read/write with database and page synchronization", jitna_channel: "notion", regional_support: ["GLOBAL"], tags: ["notion","enterprise","productivity"], security_scan_passed: true, permissions: ["intent:read","intent:execute","data:read","data:write"] },
-];
-
-const MOCK_SKILLS: SkillManifest[] = [
-  { id: "thai-language-skill",    name: "Thai Constitutional Language", version: "1.0.0", description: "PDPA compliance checking and Thai legal document parsing with constitutional AI", jitna_channel: "thai-language", tags: ["thai","pdpa","legal","constitutional"], security_scan_passed: false },
-  { id: "legal-pdpa-skill",       name: "Legal PDPA Engine",           version: "1.0.0", description: "Full Thai PDPA legal compliance engine with article-level citation", jitna_channel: "legal-pdpa", tags: ["legal","pdpa","compliance"], security_scan_passed: false },
-  { id: "thai-nlp-skill",         name: "Thai NLP Advanced",           version: "1.0.0", description: "PyThaiNLP + Typhoon v2 ML-powered Thai text analysis and generation", jitna_channel: "thai-nlp", tags: ["thai","nlp","ml","typhoon"], security_scan_passed: true },
-  { id: "web-search-skill",       name: "Web Search & RAG",            version: "1.0.0", description: "Real-time web search via Tavily API with RAG-grounded retrieval", jitna_channel: "web-search", tags: ["search","retrieval","rag","tavily"], security_scan_passed: true },
-  { id: "document-summary-skill", name: "Document Summarizer",         version: "1.0.0", description: "PDF/DOCX intelligent summarization with EN/TH bilingual output", jitna_channel: "document-summary", tags: ["documents","summary","pdf","bilingual"], security_scan_passed: true },
-  { id: "financial-analysis-skill", name: "Thai Financial Analyst",    version: "1.0.0", description: "Thai GAAP financial analysis, SET compliance, and risk assessment", jitna_channel: "financial-analysis", tags: ["financial","thai-gaap","set","risk"], security_scan_passed: true },
-];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function EcosystemPage() {
@@ -344,8 +325,9 @@ export default function EcosystemPage() {
         setOffline(false);
       } catch {
         setOffline(true);
-        setAdapters(MOCK_ADAPTERS);
-        setSkills(MOCK_SKILLS);
+        // Round 50: no mock manifests; the banner says the registry is offline.
+        setAdapters([]);
+        setSkills([]);
       } finally {
         setLoading(false);
       }
