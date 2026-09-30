@@ -18,8 +18,8 @@ action yet; each risky action is gated separately and shows up as a step), and
 from __future__ import annotations
 
 import asyncio
+import os
 import json
-import uuid
 from typing import Any, AsyncGenerator, Callable, Dict, Optional
 
 _RESULT_PREVIEW_CHARS = 400
@@ -113,7 +113,10 @@ async def agent_events(
     from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.governed_autonomous_loop import fdia_score
 
-    namespace = namespace or f"desk-agent-{uuid.uuid4().hex[:8]}"
+    # Round 51: one stable identity for the Desk user. A fresh namespace per
+    # chat meant nothing learned in one chat (growth, skills, track record)
+    # could ever help the next.
+    namespace = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
     factory = loop_factory or build_governed_loop
     loop = factory(kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds,
                    mcp_server=mcp_server)

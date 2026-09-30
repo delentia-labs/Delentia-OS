@@ -649,18 +649,30 @@ class GovernedAutonomousLoop(AutonomousLoop):
         carries its raw relevance, anything below the relevance floor is
         dropped (it is noise, not memory), and the scores feed D."""
         self._episode_memory_scores = []
-        memory = getattr(self._get_kernel(), "_agent_memory", None)
-        if memory is None:
-            return []
-        try:
-            recall = getattr(memory, "recall_scored", None)
-            if recall is not None:
-                recalled = await recall(goal, limit=limit)
-            else:
-                recalled = [{**item, "relevance": 1.0} for item in await memory.recall(goal, limit=limit)]
-        except Exception:
-            return []
-        relevant = [item for item in recalled if float(item.get("relevance", 0.0)) >= data_evidence.MEMORY_RELEVANCE_FLOOR]
+        stores = []
+        default_memory = getattr(self._get_kernel(), "_agent_memory", None)
+        if default_memory is not None:
+            stores.append(default_memory)
+        # This namespace's own memories too (a gateway sender, the Desk user),
+        # not only the kernel's default namespace that delentia_remember writes.
+        if default_memory is not None and getattr(default_memory, "namespace", self.namespace) != self.namespace:
+            try:
+                from rct_control_plane.agent_memory import AgentMemory
+                stores.append(AgentMemory(self.namespace, self._persistence))
+            except Exception:
+                pass
+        recalled: List[Dict[str, Any]] = []
+        for memory in stores:
+            try:
+                recall = getattr(memory, "recall_scored", None)
+                if recall is not None:
+                    recalled += await recall(goal, limit=limit)
+                else:
+                    recalled += [{**item, "relevance": 1.0} for item in await memory.recall(goal, limit=limit)]
+            except Exception:
+                continue
+        recalled.sort(key=lambda item: float(item.get("relevance", 0.0)), reverse=True)
+        relevant = [item for item in recalled if float(item.get("relevance", 0.0)) >= data_evidence.MEMORY_RELEVANCE_FLOOR][:limit]
         self._episode_memory_scores = [float(item["relevance"]) for item in relevant]
         return relevant
 
@@ -930,7 +942,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             baseline=self._efficiency_baseline(result["goal"]), threshold=self._intent_verify_threshold,
         )
         growth_delta = signal["delta"]
-        growth_step = self._growth.record(signal)
+        growth_step = self._ledger().record(signal)
         result["growth"] = {**signal, "G": round(self._mee_session.g, 4), "data": self._episode_data}
         verified_success = bool(signal["parts"].get("verified"))
         if self._episode_skill_ids and (verified_success or growth_delta < 0.0):
@@ -1055,6 +1067,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         except Exception:
             pass
         self._pipeline_ctx = None
+
+    def _ledger(self) -> GrowthLedger:
+        """The growth ledger on whichever persistence the loop currently writes
+        to (callers that swap `_persistence` after construction still get a
+        ledger in the same database as the rest of the episode)."""
+        if self._growth._persistence is not self._persistence:
+            self._growth = GrowthLedger(self._persistence, self.namespace)
+            self._mee_session = self._growth.session
+        return self._growth
 
     def _efficiency_baseline(self, goal: str) -> Any:
         try:

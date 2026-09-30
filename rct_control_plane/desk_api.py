@@ -133,6 +133,9 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
         "jitna": {"packet_id": s.get("jitna_packet_id"), "content_hash": s.get("jitna_content_hash"),
                   "public_key": s.get("jitna_public_key"), "key_persistent": s.get("jitna_key_persistent")},
         "verification": ((_loads(end["changes"]) or {}).get("intent_verification") if end is not None else None),
+        "data_evidence": s.get("data_evidence"),
+        "growth": ({"delta": (_loads(end["changes"]) or {}).get("mee_delta"), "G": (_loads(end["changes"]) or {}).get("mee_g")}
+                   if end is not None else None),
         "events": [{"id": r["id"], "type": r["entity_type"], "action": r["action"],
                     "at": r["created_at"], "data": _loads(r["changes"])} for r in rows],
     })
@@ -214,11 +217,18 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT id, problem_statement, solution, growth_ratio, delta, g_before, g_after, "
-                "governance_violation, session_id, created_at FROM skills ORDER BY created_at DESC LIMIT ?",
+                "governance_violation, session_id, created_at, uses, successes, failures, reinforced, archived "
+                "FROM skills ORDER BY created_at DESC LIMIT ?",
                 (limit,)).fetchall()
-        return {"count": lib.count(), "skills": [
-            {**{k: r[k] for k in r.keys() if k != "solution"}, "solution": _loads(r["solution"]),
-             "governance_violation": bool(r["governance_violation"])} for r in rows]}
+        out = []
+        for r in rows:
+            item = {k: r[k] for k in r.keys() if k != "solution"}
+            item["solution"] = _loads(r["solution"])
+            item["governance_violation"] = bool(r["governance_violation"])
+            item["archived"] = bool(r["archived"])
+            item["reliability"] = round((r["successes"] + 1) / (r["uses"] + 2), 4)
+            out.append(item)
+        return {"count": lib.count(), "skills": out}
 
     @router.get("/models")
     async def models(catalog: Optional[str] = Query(None, pattern="^(openrouter|ollama)$"),
@@ -349,6 +359,114 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         outcomes = await distribute_to_subagents([g.strip() for g in goals], _kernel()._persistence, timeout_seconds=timeout)
         return {"runs": [_subagent_run(str(o.get("agent_id")), None, {"agent_id": o.get("agent_id"), "goal": o.get("goal")}, o)
                          for o in outcomes]}
+
+    @router.get("/growth")
+    async def growth(limit: int = Query(60, ge=1, le=300)) -> Dict[str, Any]:
+        """MEE growth per namespace (G, episodes), the recent episodes with the
+        D that gated them and the growth step they earned, and how the skill
+        library is doing (reuse, reliability, archived)."""
+        with _connect() as conn:
+            conn.row_factory = sqlite3.Row
+            ledgers = []
+            for row in conn.execute("SELECT key, value, updated_at FROM states WHERE namespace = 'mee_growth' ORDER BY updated_at DESC").fetchall():
+                value = _loads(row["value"]) or {}
+                session = value.get("session") or {}
+                ledgers.append({
+                    "namespace": row["key"], "G": session.get("g_current"), "resilience": session.get("resilience"),
+                    "growth_ratio": session.get("total_growth_ratio"), "episodes": value.get("episodes", 0),
+                    "verified_episodes": value.get("verified_episodes", 0), "updated_at": row["updated_at"],
+                })
+            runs = conn.execute(
+                "SELECT id, experiment_id, timestamp, metrics, jitna_state FROM experiment_runs "
+                "WHERE algorithm_id LIKE 'governed_loop/%' ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
+            recent = []
+            for r in runs:
+                m = _loads(r["metrics"]) or {}
+                ns = (_loads(r["jitna_state"]) or {}).get("namespace")
+                recent.append({
+                    "run_id": r["id"], "experiment_id": r["experiment_id"], "at": r["timestamp"], "namespace": ns,
+                    "D": m.get("data_D"), "growth_delta": m.get("growth_delta"), "G": m.get("growth_G"),
+                    "iterations": m.get("iterations"), "finished": m.get("finished"), "aligned": m.get("aligned_with_intent"),
+                    "skills_injected": m.get("skills_injected"), "cost_usd": m.get("cost_usd"), "duration_s": m.get("duration_s"),
+                })
+        lib = _skills()
+        with sqlite3.connect(lib.db_path) as sk:
+            sk.row_factory = sqlite3.Row
+            stats = sk.execute("SELECT COUNT(*) n, SUM(archived) archived, SUM(uses > 0) reused, SUM(reinforced - 1) repeats "
+                               "FROM skills").fetchone()
+            best = sk.execute("SELECT id, problem_statement, uses, successes, failures, reinforced FROM skills WHERE archived = 0 "
+                              "AND uses > 0 ORDER BY (successes + 1.0) / (uses + 2.0) DESC, uses DESC LIMIT 5").fetchall()
+        return {
+            "ledgers": ledgers, "recent": recent,
+            "skills": {"total": stats["n"] or 0, "archived": stats["archived"] or 0, "reused": stats["reused"] or 0,
+                       "merged_repeats": stats["repeats"] or 0,
+                       "most_reliable": [{**dict(b), "reliability": round((b["successes"] + 1) / (b["uses"] + 2), 4)} for b in best]},
+        }
+
+    @router.get("/pipeline")
+    async def pipeline(limit: int = Query(40, ge=1, le=300)) -> Dict[str, Any]:
+        """The 41 algorithms as pipeline stages: what each one is, whether the
+        pipeline is on, and what the last episodes recorded for each."""
+        from rct_control_plane import algorithm_pipeline as ap
+        adapters = [{"algo_id": a.algo_id, "name": a.name, "stage": a.stage, "phase": a.phase,
+                     "needs_llm": a.llm, "needs_network": a.network, "writes_files": a.writes} for a in ap.ADAPTERS]
+        with _connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT id, actor, changes, created_at FROM audit_trail WHERE entity_type = 'algorithm_pipeline' "
+                                "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        runs = []
+        aggregate: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            changes = _loads(row["changes"]) or {}
+            runs.append({"id": row["id"], "namespace": row["actor"], "at": row["created_at"],
+                         **{k: changes.get(k) for k in ("algorithms", "ok", "not_triggered", "errors", "total_ms", "advice_lines")}})
+            for key, info in (changes.get("by_algorithm") or {}).items():
+                algo_id, stage = key.split(":", 1)
+                agg = aggregate.setdefault(f"{algo_id}:{stage}", {"algo_id": algo_id, "stage": stage, "ok": 0, "not_triggered": 0, "error": 0, "ms": []})
+                agg[info.get("status", "error")] = agg.get(info.get("status", "error"), 0) + 1
+                if info.get("status") == "ok":
+                    agg["ms"].append(float(info.get("ms") or 0.0))
+                agg["effect"] = info.get("effect")
+        table = []
+        for agg in aggregate.values():
+            ms = agg.pop("ms")
+            agg["mean_ms"] = round(sum(ms) / len(ms), 2) if ms else None
+            table.append(agg)
+        table.sort(key=lambda a: (ap.STAGES.index(a["stage"]) if a["stage"] in ap.STAGES else 99, a["algo_id"]))
+        return {
+            "enabled": os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes"),
+            "algorithms": len({a["algo_id"] for a in adapters}), "adapters": adapters, "runs": runs, "by_algorithm": table,
+        }
+
+    @router.get("/memories")
+    async def memories(namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500)) -> Dict[str, Any]:
+        with _connect() as conn:
+            conn.row_factory = sqlite3.Row
+            if namespace:
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
+                                    "FROM memories WHERE namespace = ? ORDER BY created_at DESC LIMIT ?", (namespace, limit)).fetchall()
+            else:
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
+                                    "FROM memories ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+            spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories GROUP BY namespace ORDER BY n DESC").fetchall()]
+        return {"memories": [dict(r) for r in rows], "namespaces": spaces}
+
+    @router.post("/memories")
+    async def remember(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Give the agent a fact about the user's world. This is data the user
+        owns: it feeds recall, the retrieval algorithms and D."""
+        from rct_control_plane.agent_memory import AgentMemory, MemoryType
+        content = str(payload.get("content", "")).strip()
+        if not content or len(content) > 4000:
+            raise HTTPException(status_code=400, detail="'content' must be 1-4000 characters")
+        try:
+            kind = MemoryType(str(payload.get("memory_type", "fact")))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="unknown memory_type") from None
+        namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        importance = max(0.0, min(1.0, float(payload.get("importance", 0.7))))
+        memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
+        return {"memory_id": memory_id, "namespace": namespace}
 
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:

@@ -62,7 +62,7 @@ class TestEveryAlgorithmHasAnAdapter:
 
     def test_model_network_and_file_writing_algorithms_are_flagged(self):
         flagged = {a.algo_id for a in ap.ADAPTERS if a.llm or a.network or a.writes}
-        assert {"ALGO-09", "ALGO-11", "ALGO-32", "ALGO-28", "ALGO-29", "ALGO-34", "ALGO-39", "ALGO-23"} <= flagged
+        assert {"ALGO-09", "ALGO-11", "ALGO-12", "ALGO-33", "ALGO-32", "ALGO-28", "ALGO-29", "ALGO-34", "ALGO-39", "ALGO-23"} <= flagged
 
 
 class TestPreEpisodeStages:
@@ -80,7 +80,7 @@ class TestPreEpisodeStages:
         traces = [t for ts, _ in stages for t in ts]
         assert [t for t in traces if t.status == "error"] == [], [(t.algo_id, t.reason) for t in traces if t.status == "error"]
         ran = {t.algo_id for t in traces if t.status == "ok"}
-        assert {"ALGO-04", "ALGO-37", "ALGO-02", "ALGO-01", "ALGO-16", "ALGO-18", "ALGO-13", "ALGO-05", "ALGO-21", "ALGO-15", "ALGO-20", "ALGO-12"} <= ran
+        assert {"ALGO-04", "ALGO-37", "ALGO-02", "ALGO-01", "ALGO-16", "ALGO-18", "ALGO-13", "ALGO-05", "ALGO-21", "ALGO-15", "ALGO-20"} <= ran
         for t in traces:
             if t.status == "not_triggered":
                 assert t.reason, t.algo_id            # never silent about why
@@ -110,6 +110,7 @@ class TestPreEpisodeStages:
         by_id = {t.algo_id: t for t in traces}
         assert by_id["ALGO-32"].status == "not_triggered" and "allow_llm" in by_id["ALGO-32"].reason
         assert by_id["ALGO-11"].status == "not_triggered"
+        assert by_id["ALGO-12"].status == "not_triggered" and "allow_llm" in by_id["ALGO-12"].reason
 
     def test_a_failing_algorithm_is_reported_and_does_not_stop_the_others(self, kernel, tmp_path, monkeypatch):
         pipeline, ctx, _ = _ctx(kernel, tmp_path)
@@ -200,3 +201,33 @@ class TestInTheLoop:
         loop = _loop(tmp_path, kernel, db="on.db")
         loop._algorithm_pipeline = None
         assert loop._get_pipeline() is not None
+
+
+class TestNoHiddenModelCalls:
+    def test_hallucination_filter_runs_its_patterns_without_calling_a_model(self, kernel, tmp_path, monkeypatch):
+        """ALGO-33 used to ask the local model about every answer that matched no pattern."""
+        called = []
+
+        async def boom(self, text):
+            called.append(text)
+            return None
+        from rct_control_plane.algo_33_fghf import HallucinationDetector
+        monkeypatch.setattr(HallucinationDetector, "_check_via_llm", boom)
+        pipeline, ctx, _ = _ctx(kernel, tmp_path, enabled={"ALGO-33"})
+        ctx.result = {"final_answer": "The project is called delentia-os.", "steps": []}
+        traces, _ = asyncio.run(pipeline.run_stage("verify", ctx, phase="post"))
+        assert traces[0].status == "ok" and called == []
+        assert traces[0].summary["model_second_opinion"] is False
+
+    def test_the_model_second_opinion_is_used_only_when_allowed(self, kernel, tmp_path, monkeypatch):
+        called = []
+
+        async def fake(self, text):
+            called.append(text)
+            return None
+        from rct_control_plane.algo_33_fghf import HallucinationDetector
+        monkeypatch.setattr(HallucinationDetector, "_check_via_llm", fake)
+        pipeline, ctx, _ = _ctx(kernel, tmp_path, enabled={"ALGO-33"}, allow_llm=True)
+        ctx.result = {"final_answer": "The project is called delentia-os.", "steps": []}
+        asyncio.run(pipeline.run_stage("verify", ctx, phase="post"))
+        assert len(called) == 1

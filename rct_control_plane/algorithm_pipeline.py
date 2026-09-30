@@ -173,9 +173,11 @@ async def _algo26(ctx: PipelineContext) -> Outcome:
     r = ctx.kernel.algo_26_intent_classification(ctx.goal)
     primary = str(r.get("primary_intent", "unknown"))
     ctx.scratch["entities"] = [e.get("entity") for e in r.get("entities", []) if isinstance(e, dict)]
+    social = primary in ("greeting", "farewell", "thanks")
+    advice = ["This message is conversational (greeting / thanks / goodbye): answer briefly and do not call tools."] if social else []
     return Outcome({"primary_intent": primary, "intents": len(r.get("intents", [])), "entities": len(ctx.scratch["entities"]),
-                    "compiler_type": ctx.intent_type, "classified": primary != "unknown"},
-                   "second opinion on the intent type next to the IntentCompiler; entities feed the recall queries")
+                    "compiler_type": ctx.intent_type, "classified": primary != "unknown", "conversational": social},
+                   "conversational messages get a brief-answer instruction; other goals fall outside its chat taxonomy" , advice)
 
 
 @adapter("ALGO-41", "Crystallizer (golden keywords)", "understand")
@@ -204,13 +206,13 @@ async def _algo37(ctx: PipelineContext) -> Outcome:
 @adapter("ALGO-38", "Constraint solver", "understand")
 async def _algo38(ctx: PipelineContext) -> Outcome:
     intent = getattr(ctx.compile_result, "intent", None)
-    constraints = [str(getattr(c, "description", c)) for c in (getattr(intent, "constraints", None) or [])]
+    constraints = list(getattr(intent, "constraints", None) or [])
     if not constraints:
         raise NotTriggered("the goal states no constraints to check")
-    ok = bool(ctx.kernel.algo_38_constraint_solver(constraints))
-    advice = [] if ok else ["The goal's constraints appear to conflict with each other; ask before acting."]
-    return Outcome({"constraints": len(constraints), "satisfiable": ok},
-                   "a conflict is added to the prompt as a warning" if not ok else "no conflict found", advice)
+    solved = ctx.kernel.algo_38_solve(constraints)
+    advice = [f"Constraint conflict in the request: {c}. Ask before acting." for c in solved["conflicts"]]
+    return Outcome({"constraints": len(constraints), "satisfiable": solved["satisfiable"], "bounds": solved["bounds"]},
+                   "conflicts are added to the prompt as warnings" if advice else "no conflict found", advice)
 
 
 @adapter("ALGO-02", "MOIP multi-objective planner", "understand")
@@ -219,8 +221,8 @@ async def _algo02(ctx: PipelineContext) -> Outcome:
     r = ctx.kernel.algo_02_moip(heads)
     matrix = r.get("priority_matrix", {})
     ctx.scratch["priorities"] = matrix
-    return Outcome({"objectives": len(heads), "top": max(matrix, key=matrix.get) if matrix else None},
-                   "priority weights stored with the episode")
+    return Outcome({"objectives": len(heads), "pareto_front": len(r.get("pareto_front", [])), "first": (r.get("planned_goals") or [None])[0]},
+                   "plan steps ordered by Pareto rank; stored with the episode")
 
 
 @adapter("ALGO-40", "ITSR tech-stack recommender", "understand")
@@ -242,14 +244,25 @@ async def _algo01(ctx: PipelineContext) -> Outcome:
 # =============================================================================
 # recall - the user's own data through the retrieval algorithms
 # =============================================================================
+def _namespaces(ctx: PipelineContext) -> List[str]:
+    """The namespaces whose data belongs to this user: the loop's own, and the
+    kernel's default one that `delentia_remember` writes to."""
+    names = [ctx.namespace]
+    default = getattr(ctx.memory, "namespace", None)
+    if default and default not in names:
+        names.append(str(default))
+    return names
+
+
 def _user_documents(ctx: PipelineContext) -> Dict[str, str]:
     """{id: text} for this namespace's memories and active skills."""
     docs: Dict[str, str] = {}
-    try:
-        for m in ctx.persistence.list_memories(namespace=ctx.namespace):
-            docs[f"{ctx.namespace}:mem:{m['id']}"] = str(m.get("content", ""))
-    except Exception:
-        pass
+    for ns in _namespaces(ctx):
+        try:
+            for m in ctx.persistence.list_memories(namespace=ns):
+                docs[f"{ns}:mem:{m['id']}"] = str(m.get("content", ""))
+        except Exception:
+            pass
     if ctx.skills is not None and hasattr(ctx.skills, "list_active"):
         try:
             for s in ctx.skills.list_active(limit=200):
@@ -272,7 +285,7 @@ def _index_user_data(ctx: PipelineContext) -> int:
 
 
 def _own(ctx: PipelineContext, item_id: str) -> bool:
-    return str(item_id).startswith(f"{ctx.namespace}:")
+    return any(str(item_id).startswith(f"{ns}:") for ns in _namespaces(ctx))
 
 
 @adapter("ALGO-16", "Vector search", "recall")
@@ -351,9 +364,15 @@ async def _algo19(ctx: PipelineContext) -> Outcome:
 # =============================================================================
 @adapter("ALGO-21", "Fast/Slow router", "plan")
 async def _algo21(ctx: PipelineContext) -> Outcome:
-    r = await ctx.kernel.algo_21_fast_slow_route(ctx.goal)
-    ctx.scratch["route"] = r.get("path")
-    return Outcome({"path": r.get("path"), "reason": r.get("reason")}, "decides the step budget in the loop (FAST = 3 steps)")
+    decision = ctx.kernel._fast_slow_router.decide(ctx.goal)        # the decision only: the loop itself does the work
+    ctx.scratch["route"] = decision.path.value
+    summary: Dict[str, Any] = {"path": decision.path.value, "reason": decision.reason}
+    effect = "decides the step budget in the loop (FAST = 3 steps)"
+    if ctx.options.allow_llm and decision.path.value == "slow":
+        full = await ctx.kernel.algo_21_fast_slow_route(ctx.goal)   # dispatches ALGO-09/11/32: model calls
+        summary["dispatched_to"] = full.get("slow_strategy")
+        effect += "; the slow strategy was also dispatched"
+    return Outcome(summary, effect)
 
 
 @adapter("ALGO-15", "HRM scheduler", "plan")
@@ -377,13 +396,16 @@ async def _algo15(ctx: PipelineContext) -> Outcome:
 @adapter("ALGO-20", "Workflow orchestrator", "plan")
 async def _algo20(ctx: PipelineContext) -> Outcome:
     steps = (ctx.plan_steps or ctx.kernel.algo_04_rct7(ctx.goal))[:4]
-    tasks = [{"id": f"s{i}", "name": s[:30], "type": "data_fusion", "dependencies": ([f"s{i - 1}"] if i else [])} for i, s in enumerate(steps)]
+    run = f"{int(time.time() * 1000)}"
+    tasks = [{"id": f"s{run}-{i}", "name": s[:30], "type": "data_fusion", "dependencies": ([f"s{run}-{i - 1}"] if i else [])} for i, s in enumerate(steps)]
     r = await ctx.kernel.algo_20_workflow_orchestrator(f"plan-{ctx.namespace}", tasks, "sequential")
     return Outcome({"tasks": len(tasks), "status": r.get("status"), "workflow_id": r.get("workflow_id")}, "plan registered as a DAG workflow (scheduled, not executed)")
 
 
-@adapter("ALGO-12", "Meta-algorithm generator", "plan")
+@adapter("ALGO-12", "Meta-algorithm generator", "plan", llm=True)
 async def _algo12(ctx: PipelineContext) -> Outcome:
+    if not ctx.options.allow_llm:
+        raise NotTriggered("names and validates compositions with a model (allow_llm is off)")
     r = await ctx.kernel.algo_12_meta_algorithm_generator(["analyze", "optimize", "generate"], "sequential", ctx.goal)
     return Outcome({"status": r.get("status"), "error": r.get("error")}, "composed analyze->optimize->generate chain recorded")
 
@@ -548,13 +570,16 @@ async def _algo30(ctx: PipelineContext) -> Outcome:
                    "belief confidence in the answer, given the tool results, recorded with the episode")
 
 
-@adapter("ALGO-33", "FGHF hallucination filter", "verify")
+@adapter("ALGO-33", "FGHF hallucination filter", "verify", llm=True)
 async def _algo33(ctx: PipelineContext) -> Outcome:
+    """Pattern checks always run; when none match FGHF asks a model (local
+    Ollama) for a second opinion - that part only with allow_llm."""
     if not ctx.final_answer:
         raise NotTriggered("no final answer")
-    r = await ctx.kernel.algo_33_fghf(ctx.final_answer[:1000])
-    return Outcome({"hallucination_probability": r.get("hallucination_probability"), "flagged": bool(r.get("has_hallucination"))},
-                   "hallucination probability recorded with the episode")
+    r = await ctx.kernel.algo_33_fghf(ctx.final_answer[:1000], llm_fallback=ctx.options.allow_llm)
+    return Outcome({"hallucination_probability": r.get("hallucination_probability"), "flagged": bool(r.get("has_hallucination")),
+                    "model_second_opinion": ctx.options.allow_llm},
+                   "hallucination probability recorded with the episode" + ("" if ctx.options.allow_llm else " (patterns only, no model call)"))
 
 
 @adapter("ALGO-34", "SWCAR semantic analysis", "verify")

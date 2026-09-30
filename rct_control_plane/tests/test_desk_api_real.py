@@ -202,3 +202,42 @@ def test_starting_subagents_validates_input_and_uses_the_distributor(desk, monke
     body = client.post("/v1/desk/subagents/run", json={"goals": ["  summarise  "], "timeout_seconds": 5}).json()
     assert seen == {"goals": ["summarise"], "timeout": 30.0}     # trimmed; timeout clamped to the 30 s floor
     assert body["runs"][0]["success"] is True and body["runs"][0]["jitna"]["response_verified"] is True
+
+
+# ------------------------------------------------------------- Round 51: growth, pipeline, memory
+def test_growth_shows_the_namespace_ledger_the_D_that_gated_each_episode_and_skill_stats(desk, monkeypatch):
+    client, persistence, tmp_path = desk
+    _run_episode(tmp_path, persistence, monkeypatch, "find my release notes", [RECALL], "growth-ns")
+    body = client.get("/v1/desk/growth").json()
+    ledger = next(item for item in body["ledgers"] if item["namespace"] == "growth-ns")
+    assert ledger["episodes"] == 1 and ledger["G"] > 1.0
+    run = next(r for r in body["recent"] if r["namespace"] == "growth-ns")
+    assert run["D"] is not None and run["growth_delta"] > 0.5 and run["finished"] == 1
+    assert body["skills"]["total"] >= 0 and "most_reliable" in body["skills"]
+
+
+def test_pipeline_lists_all_41_algorithms_and_aggregates_recorded_runs(desk):
+    client, persistence, _ = desk
+    persistence.append_audit(
+        entity_type="algorithm_pipeline", entity_id="ns-e1", action="pipeline_run", actor="ns",
+        changes={"algorithms": 41, "ok": 30, "not_triggered": 11, "errors": 0, "total_ms": 12.5, "advice_lines": 2,
+                 "by_algorithm": {"ALGO-04:understand": {"status": "ok", "ms": 1.5, "effect": "plan"},
+                                  "ALGO-14:act": {"status": "not_triggered", "ms": 0.0, "effect": "not triggered"}}})
+    body = client.get("/v1/desk/pipeline").json()
+    assert body["algorithms"] == 41 and len(body["adapters"]) >= 41
+    assert body["runs"][0]["ok"] == 30
+    by = {(a["algo_id"], a["stage"]): a for a in body["by_algorithm"]}
+    assert by[("ALGO-04", "understand")]["ok"] == 1 and by[("ALGO-04", "understand")]["mean_ms"] == 1.5
+    assert by[("ALGO-14", "act")]["not_triggered"] == 1
+
+
+def test_memories_can_be_added_and_listed_per_namespace(desk):
+    client, _, _ = desk
+    assert client.post("/v1/desk/memories", json={"content": ""}).status_code == 400
+    assert client.post("/v1/desk/memories", json={"content": "x", "memory_type": "nonsense"}).status_code == 400
+    made = client.post("/v1/desk/memories", json={"content": "The staging database is called stg-db-1", "namespace": "me"}).json()
+    assert made["namespace"] == "me"
+    listed = client.get("/v1/desk/memories?namespace=me").json()
+    assert [m["content"] for m in listed["memories"]] == ["The staging database is called stg-db-1"]
+    assert {"namespace": "me", "n": 1} in listed["namespaces"]
+    assert client.get("/v1/desk/memories?namespace=other").json()["memories"] == []
