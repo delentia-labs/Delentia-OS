@@ -496,6 +496,15 @@ class SkillLibrary:
     # Misc read helpers (no delete/prune API in this slice — Zero-Delete)
     # ------------------------------------------------------------------
 
+    def list_active(self, limit: int = 200) -> List[SkillRecord]:
+        """Skills that are still offered (not archived), newest first."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT * FROM skills WHERE archived = 0 ORDER BY created_at DESC LIMIT ?", (limit,)
+            ).fetchall()
+        return [_record_from_row(row) for row in rows]
+
     def count(self) -> int:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute("SELECT COUNT(*) FROM skills").fetchone()
