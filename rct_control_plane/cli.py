@@ -2166,6 +2166,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
     click.echo("  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+    click.echo("  Intent Loop: 41-algorithm pipeline and warm recall on (DELENTIA_ALGORITHM_PIPELINE=0 / DELENTIA_WARM_RECALL=0 to turn off)")
 
     # Round 36: real uvicorn serving is the only path that enables the
     # background AutonomousScheduler daemon (see api.py's _lifespan) -
@@ -2178,6 +2179,13 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (avoiding duplicate fires across workers) is a real, honestly
     # undeferred limitation, not solved this round.
     os.environ["DELENTIA_DAEMON_ENABLED"] = "1"
+
+    # Round 51: a served runtime is the real system, so it runs the full
+    # Intent Loop: the 41-algorithm pipeline around every episode and warm
+    # recall of verified answers. Tests and one-off CLI runs keep both off
+    # (set either variable to 0 to turn it off here too).
+    os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
+    os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
 
     uvicorn.run(
         "rct_control_plane.api:app",

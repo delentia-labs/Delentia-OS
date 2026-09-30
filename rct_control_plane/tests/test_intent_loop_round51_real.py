@@ -13,7 +13,7 @@ import pytest
 from rct_control_plane.agent_memory import AgentMemory, MemoryType
 from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
 from rct_control_plane.algorithm_pipeline import AlgorithmPipeline, PipelineOptions
-from rct_control_plane.intent_loop import PILLARS, evolution_report, pillar_report
+from rct_control_plane.intent_loop import PILLARS, evolution_report
 from rct_control_plane.persistence import ControlPlanePersistence
 from rct_control_plane.tests.test_intent_growth_round51_real import FINISH, LS, _loop, _script
 
