@@ -105,6 +105,21 @@ class TestTokenConfigured:
         ) as ws:
             assert ws.receive_text() == "hello"
 
+    def test_websocket_query_token_works(self):
+        """Round 50: browsers cannot set WebSocket headers (the Desk chat)."""
+        with TestClient(_app()).websocket_connect("/ws?token=correct-horse-battery-staple") as ws:
+            assert ws.receive_text() == "hello"
+
+    def test_websocket_wrong_query_token_is_closed(self):
+        with pytest.raises(WebSocketDisconnect) as exc:
+            with TestClient(_app()).websocket_connect("/ws?token=nope") as ws:
+                ws.receive_text()
+        assert exc.value.code == 4401
+
+    def test_query_token_is_not_accepted_for_http(self):
+        r = TestClient(_app()).post("/v1/agent/run?token=correct-horse-battery-staple")
+        assert r.status_code == 401
+
 
 class TestServeGuard:
     @pytest.fixture(autouse=True)

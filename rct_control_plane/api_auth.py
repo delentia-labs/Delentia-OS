@@ -10,7 +10,10 @@ protection.
 
 Rules (pure ASGI middleware, so HTTP and WebSocket are both covered):
   - DELENTIA_API_TOKEN set: every request needs `Authorization: Bearer <t>`
-    (or `X-Delentia-Token: <t>`), compared in constant time.
+    (or `X-Delentia-Token: <t>`), compared in constant time. WebSocket
+    connections may send it as `?token=<t>` instead (Round 50: browsers
+    cannot set headers on a WebSocket, so the Desk chat had no way to
+    authenticate). Only WebSockets accept the query form.
   - DELENTIA_API_TOKEN unset: only loopback clients with no proxy/tunnel
     headers pass (developer use, tests). Anything carrying cf-ray,
     cf-connecting-ip, x-forwarded-for, forwarded or x-real-ip, or coming
@@ -25,6 +28,7 @@ import hmac
 import json
 import os
 from typing import Any, Awaitable, Callable, Dict
+from urllib.parse import parse_qs
 
 TOKEN_ENV = "DELENTIA_API_TOKEN"
 PUBLIC_PATHS = frozenset({"/", "/health"})
@@ -50,6 +54,12 @@ def _supplied_token(headers: Dict[str, str]) -> str:
     return headers.get("x-delentia-token", "").strip()
 
 
+def _query_token(scope: Scope) -> str:
+    raw = scope.get("query_string") or b""
+    values = parse_qs(raw.decode("latin-1")).get("token") or [""]
+    return values[0].strip()
+
+
 def check_request(scope: Scope) -> str:
     """Returns "" when the request may proceed, else the refusal reason."""
     path = scope.get("path") or ""
@@ -61,6 +71,8 @@ def check_request(scope: Scope) -> str:
     expected = os.getenv(TOKEN_ENV, "")
     if expected:
         supplied = _supplied_token(headers)
+        if not supplied and scope.get("type") == "websocket":
+            supplied = _query_token(scope)
         if supplied and hmac.compare_digest(supplied.encode(), expected.encode()):
             return ""
         return "missing or invalid API token"

@@ -689,6 +689,14 @@ class ControlPlaneAPI:
                 },
             }
 
+        # Round 50: the redesigned Desk GUI's endpoints (desk_api.py).
+        from rct_control_plane.desk_api import build_desk_router
+        self.app.include_router(build_desk_router(lambda: {
+            "scheduler": _DAEMON_SCHEDULER,
+            "gateways": {"telegram": _DAEMON_TELEGRAM_GATEWAY, "discord": _DAEMON_DISCORD_GATEWAY,
+                         "slack": _DAEMON_SLACK_GATEWAY, "line": None},
+        }))
+
         @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
         async def line_webhook_endpoint(request: Request):
             """Round 36: real LINE Messaging API webhook - verifies the
@@ -1228,7 +1236,13 @@ class ControlPlaneAPI:
                         from rct_control_plane.desk_agent_stream import agent_events
                         from rct_control_plane.mcp_server import _kernel as shared_kernel
                         from rct_control_plane.mcp_server import mcp as shared_mcp
-                        async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp):
+                        try:
+                            max_iterations = max(1, min(int(payload.get("max_iterations", 5)), 12))
+                        except (TypeError, ValueError):
+                            max_iterations = 5
+                        async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp,
+                                                        max_iterations=max_iterations,
+                                                        structured=bool(payload.get("structured"))):
                             await websocket.send_text(json.dumps(event, default=str))
                         continue
 
