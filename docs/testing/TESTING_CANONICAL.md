@@ -28,11 +28,13 @@ The following numbers were verified from the current public repository working t
 
 These are the only public numbers that should be copied into README, roadmap, launch copy, or release notes.
 
+**Independent re-run (2026-09-30, commit `0183778`, Linux, Python 3.11.15, fresh venv from `requirements.txt` + `requirements-dev.txt`, no internet beyond a proxy, no Ollama):** 3,890 passed, 40 failed, 13 skipped, 1 xfailed in 146 s. Every failing test traced to a network dependency (tiktoken `cl100k_base` download, a local Ollama server, a crawl of example.com). The private suite (CONTRIBUTING.md mentions 4,849 tests) is not part of any public number.
+
 ---
 
 ## 2. Suite Composition
 
-The 1,791 passing tests come from the public SDK surface:
+The suites below make up the public SDK surface. (The 1,791 total in the phase table is the v2.0.0 historical count; the current count is in section 1.)
 
 | Suite | Scope | Current Status |
 |---|---|---|
@@ -113,7 +115,7 @@ python -m pytest tests/hypothesis/ --hypothesis-profile=ci -v
 | Gate | Tool | Current Rule |
 |---|---|---|
 | Full test suite | pytest | Must stay green on the public SDK surface |
-| Coverage floor | pytest-cov | **90% minimum** in CI |
+| Coverage floor | pytest-cov | **72% minimum** in CI (`--cov-fail-under=72`); Codecov targets 90% separately |
 | Project coverage status | Codecov | **90% target** |
 | Patch coverage status | Codecov | **90% target** |
 | Lint | ruff | Fail on lint errors |

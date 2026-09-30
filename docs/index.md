@@ -52,7 +52,7 @@ $$F = D^I \times A$$
 | SDK Validation | See `docs/testing/TESTING_CANONICAL.md` for the current verified checkpoint |
 | Algorithms | 41 (Tier 1–9 reference implementations) |
 | LLM Models | 9 HexaCore roles (+ Ollama LOCAL + Groq LPU) — v2.3 |
-| Hallucination Rate | **0.3%** (vs industry 12–15%) — 97% reduction |
+| Hallucination Rate | Not claimed (earlier 0.3% figure withdrawn 2026-09-28: not reproducible) |
 | Memory Compression | **91.5% measured** (design floor ≥74%) via Delta Engine |
 | Intent Recall Speed | Cold start 3–5s → Warm recall **<50ms** |
 | Languages | 8 regional pairs (TH, JP, KR, CN, VN, ID, TW, US) |
