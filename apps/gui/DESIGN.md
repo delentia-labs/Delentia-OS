@@ -57,7 +57,7 @@ menu, as in Hermes.
 | Channels | `/channels` (allowlist counts, never sender ids) | `/v1/desk/channels` |
 | Analytics | `/experiments` (RCTDB runs, first vs last) | `/v1/desk/experiments` |
 
-Older pages stay under "Labs" in the menu.
+Round 51 pages: `/growth` (`/v1/desk/growth`: MEE G per user, the evolution and intent profile), `/memory` (`/v1/desk/memories`), `/algorithms` (`/v1/desk/pipeline`), `/subagents` (`/v1/desk/subagents`). The earlier "Labs" pages, the multi-theme system and the intent-chat window were deleted on 2026-10-01; git history has them.
 
 ## Rules
 
