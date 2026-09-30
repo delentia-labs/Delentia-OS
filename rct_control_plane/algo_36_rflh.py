@@ -62,8 +62,10 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import torch
 from loguru import logger
+
+# Round 50: torch (~1.4 s to import) is imported inside _maml_adapt, the only
+# place that needs it, so importing this module (and the kernel) stays cheap.
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
@@ -289,6 +291,8 @@ class RFLHEngine:
     ) -> Tuple[Dict[str, Any], float, float]:
         """MAML adaptation using REAL PyTorch autograd gradients (not
         random noise — see module docstring)."""
+        import torch
+
         support_embeddings = [self._embed_example(ex) for ex in support_set]
         support_labels = [self._extract_label(ex) for ex in support_set]
 

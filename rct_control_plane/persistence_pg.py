@@ -166,10 +166,13 @@ class PostgresPersistence:
     # ------------------------------------------------------------------
 
     def _init_schema(self) -> None:
+        from rct_control_plane.audit_chain_pg import PG_CHAIN_SCHEMA
         with self._connect() as conn:
             with conn.cursor() as cur:
                 for stmt in [s.strip() for s in _PG_SCHEMA_SQL.split(";") if s.strip()]:
                     cur.execute(stmt)
+                # Round 50: tamper-evident chain over audit_trail (parity with SQLite, tier A1).
+                cur.execute(PG_CHAIN_SCHEMA)
 
     def enable_pgvector(self) -> None:
         """Add pgvector extension + embedding column (optional feature)."""
@@ -352,17 +355,23 @@ class PostgresPersistence:
         actor: Optional[str],
         changes: Dict[str, Any],
     ) -> None:
-        now = datetime.now(timezone.utc)
-        cur.execute(
-            """INSERT INTO audit_trail
-               (entity_type, entity_id, action, actor, changes, created_at)
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (
-                entity_type, entity_id, action, actor,
-                psycopg2.extras.Json(changes),  # type: ignore[name-defined]
-                now,
-            ),
-        )
+        # Round 50: every row is linked into the hash chain in the same
+        # transaction, under an advisory lock (see audit_chain_pg.py).
+        from rct_control_plane.audit_chain_pg import append_pg
+        append_pg(cur, entity_type, entity_id, action, actor, changes,
+                  psycopg2.extras.Json)  # type: ignore[name-defined]
+
+    def verify_audit_chain(self, public_key_hex: Optional[str] = None) -> Any:
+        """Recompute every link of the audit chain (audit_chain_pg.verify_pg)."""
+        from rct_control_plane.audit_chain_pg import verify_pg
+        with self._connect() as conn:
+            return verify_pg(conn, public_key_hex)
+
+    def chain_head(self) -> Optional[Dict[str, Any]]:
+        """Latest chain position and hash, the value to anchor outside the host (A3)."""
+        from rct_control_plane.audit_chain_pg import head_pg
+        with self._connect() as conn:
+            return head_pg(conn)
 
     def recent_audit(self, limit: int = 100) -> List[Dict[str, Any]]:
         with self._connect() as conn:
