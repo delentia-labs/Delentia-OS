@@ -118,13 +118,21 @@ def classify_path(root: Path, raw: str, creating: bool) -> str:
     if os.path.isabs(raw) or raw.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", raw):
         return "outside the workspace"
     base = os.path.realpath(root)
-    full = os.path.realpath(os.path.join(base, raw))
-    if full != base and not full.startswith(base + os.sep):
+    # Normalise lexically, then require the result to sit under the base: only a
+    # path that passed this check is ever handed to the filesystem below.
+    full = os.path.normpath(os.path.join(base, raw))
+    if not full.startswith(base + os.sep):
+        return "outside the workspace"
+    # A symlink inside the workspace must not lead out of it either.
+    resolved = os.path.realpath(full)
+    if resolved != base and not resolved.startswith(base + os.sep):
         return "outside the workspace"
     if os.path.exists(full):
         return "exists"
     if creating:
-        return "new (parent exists)" if os.path.isdir(os.path.dirname(full)) else "new (parent missing)"
+        parent = os.path.dirname(full)
+        if parent == base or parent.startswith(base + os.sep):
+            return "new (parent exists)" if os.path.isdir(parent) else "new (parent missing)"
     return "missing"
 
 
