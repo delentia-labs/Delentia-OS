@@ -306,7 +306,7 @@ class TestSkillLibraryIntegration:
         assert loop._skill_library.count() == 1
         skills = loop._skill_library.retrieve_similar_skills("refactor the payment retry logic")
         assert len(skills) == 1
-        assert skills[0].delta == 1.0
+        assert 0.5 < skills[0].delta <= 1.0   # Round 51: graded (0.5 verified + alignment), not a flat 1.0
         assert skills[0].governance_violation is False
 
     def test_fdia_blocked_episode_does_not_extract_a_skill(self, tmp_path, decide_sequence):

@@ -495,6 +495,25 @@ class ControlPlanePersistence:
             ).fetchall()
         return [_row_to_dict(r) for r in rows]
 
+    def recent_governed_runs(self, namespace: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Newest governed-loop episodes recorded for one namespace (a user /
+        agent identity), newest first. Feeds D's track-record part and the
+        growth signal's baseline."""
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT * FROM experiment_runs WHERE algorithm_id LIKE 'governed_loop/%' "
+                "ORDER BY timestamp DESC LIMIT ?", (max(limit, 1) * 10,),
+            ).fetchall()
+        out = []
+        for row in rows:
+            record = _row_to_dict(row)
+            if (record.get("jitna_state") or {}).get("namespace") == namespace:
+                out.append(record)
+                if len(out) >= limit:
+                    break
+        return out
+
     def compare_experiment_runs(self, experiment_id: str) -> Dict[str, Any]:
         runs = self.get_experiment_runs(experiment_id)
         if len(runs) < 2:

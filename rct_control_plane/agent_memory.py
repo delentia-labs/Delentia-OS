@@ -46,6 +46,29 @@ class AgentMemory:
         )
         return memory_id
 
+    async def recall_scored(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Like recall(), but each item carries `relevance` (the raw semantic
+        similarity to the query, 0..1, not boosted by type or importance) so a
+        caller can tell "relevant" from "the least irrelevant thing stored"."""
+        candidates = self._persistence.list_memories(namespace=self.namespace)
+        if not candidates:
+            return []
+        matches = self._matcher.match(query, [c["content"] for c in candidates], top_k=limit * 3, threshold=0.0)
+        by_text = {c["content"]: c for c in candidates}
+        scored = []
+        for m in matches:
+            candidate = by_text.get(m["text"])
+            if candidate is None:
+                continue
+            boost = _TYPE_BOOST.get(MemoryType(candidate["memory_type"]), 1.0)
+            scored.append((m["score"] * candidate["importance"] * boost, m["score"], candidate))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        results = []
+        for _final, similarity, candidate in scored[:limit]:
+            self._persistence.touch_memory(candidate["id"])
+            results.append({**candidate, "relevance": round(similarity, 4)})
+        return results
+
     async def recall(self, query: str, memory_type: Optional[MemoryType] = None, limit: int = 5) -> List[Dict[str, Any]]:
         candidates = self._persistence.list_memories(
             namespace=self.namespace, memory_type=memory_type.value if memory_type else None,

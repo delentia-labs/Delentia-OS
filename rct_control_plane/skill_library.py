@@ -181,6 +181,19 @@ class SkillRecord:
     # None for freshly-extracted records that haven't been scored against
     # a query yet.
     similarity_score: Optional[float] = field(default=None, compare=False)
+    # Round 51 (MEE growth): a skill earns or loses trust from what happens
+    # when it is actually reused, and near-duplicates reinforce one row.
+    uses: int = 0
+    successes: int = 0
+    failures: int = 0
+    reinforced: int = 1
+    archived: bool = False
+
+    @property
+    def reliability(self) -> float:
+        """Laplace-smoothed success rate of this skill when reused: an unused
+        skill is 0.5, so it is neither trusted nor distrusted yet."""
+        return (self.successes + 1) / (self.uses + 2)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -197,7 +210,56 @@ class SkillRecord:
             "session_id": self.session_id,
             "created_at": self.created_at,
             "similarity_score": self.similarity_score,
+            "uses": self.uses,
+            "successes": self.successes,
+            "failures": self.failures,
+            "reinforced": self.reinforced,
+            "archived": self.archived,
+            "reliability": round(self.reliability, 4),
         }
+
+
+# A skill that failed this many times while being reused, and whose
+# reliability has fallen below the floor, stops being offered (archived, never
+# deleted - Zero-Delete).
+ARCHIVE_AFTER_FAILURES = 3
+ARCHIVE_RELIABILITY_FLOOR = 0.34
+# Two problem statements this similar are the same problem: reinforce the
+# stored skill instead of adding a duplicate row.
+DUPLICATE_SIMILARITY = 0.8
+
+_ADDED_COLUMNS = (
+    ("uses", "INTEGER NOT NULL DEFAULT 0"),
+    ("successes", "INTEGER NOT NULL DEFAULT 0"),
+    ("failures", "INTEGER NOT NULL DEFAULT 0"),
+    ("reinforced", "INTEGER NOT NULL DEFAULT 1"),
+    ("archived", "INTEGER NOT NULL DEFAULT 0"),
+    ("last_used_at", "TEXT"),
+)
+
+
+def _record_from_row(row: Any, similarity: Optional[float] = None) -> "SkillRecord":
+    keys = set(row.keys())
+    return SkillRecord(
+        id=row["id"],
+        problem_statement=row["problem_statement"],
+        solution=json.loads(row["solution"]),
+        keywords=json.loads(row["keywords"]),
+        delta=row["delta"],
+        resilience=row["resilience"],
+        g_before=row["g_before"],
+        g_after=row["g_after"],
+        growth_ratio=row["growth_ratio"],
+        governance_violation=bool(row["governance_violation"]),
+        created_at=row["created_at"],
+        session_id=row["session_id"],
+        similarity_score=similarity,
+        uses=int(row["uses"]) if "uses" in keys else 0,
+        successes=int(row["successes"]) if "successes" in keys else 0,
+        failures=int(row["failures"]) if "failures" in keys else 0,
+        reinforced=int(row["reinforced"]) if "reinforced" in keys else 1,
+        archived=bool(row["archived"]) if "archived" in keys else False,
+    )
 
 
 class SkillLibrary:
@@ -234,6 +296,11 @@ class SkillLibrary:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
             conn.executescript(_SKILLS_SCHEMA_SQL)
+            # Additive migration for databases created before Round 51.
+            existing = {row[1] for row in conn.execute("PRAGMA table_info(skills)")}
+            for name, ddl in _ADDED_COLUMNS:
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE skills ADD COLUMN {name} {ddl}")
 
     # ------------------------------------------------------------------
     # Write path — the growth-gated extraction
@@ -282,6 +349,11 @@ class SkillLibrary:
         growth_ratio = g_after / g_before if g_before else 1.0
 
         keywords = _tokenize(problem_statement)
+
+        duplicate = self._find_duplicate(set(keywords))
+        if duplicate is not None:
+            return self._reinforce(duplicate, action_sequence_or_solution, delta)
+
         record = SkillRecord(
             id=str(uuid.uuid4()),
             problem_statement=problem_statement,
@@ -322,6 +394,60 @@ class SkillLibrary:
 
         return record
 
+    def _find_duplicate(self, keywords: set) -> Optional[SkillRecord]:
+        if not keywords:
+            return None
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM skills WHERE archived = 0").fetchall()
+        best: Optional[SkillRecord] = None
+        best_score = 0.0
+        for row in rows:
+            score = _jaccard(keywords, set(json.loads(row["keywords"])))
+            if score >= DUPLICATE_SIMILARITY and score > best_score:
+                best, best_score = _record_from_row(row, score), score
+        return best
+
+    def _reinforce(self, existing: SkillRecord, new_solution: Any, delta: float) -> SkillRecord:
+        """The same problem solved again: keep one row, count the repeat, and
+        keep whichever solution took fewer steps (the one that got faster)."""
+        def size(solution: Any) -> int:
+            return len(solution) if isinstance(solution, (list, tuple)) else len(json.dumps(solution))
+        keep_new = size(new_solution) < size(existing.solution)
+        with sqlite3.connect(self.db_path) as conn:
+            if keep_new:
+                conn.execute(
+                    "UPDATE skills SET reinforced = reinforced + 1, solution = ?, delta = MAX(delta, ?) WHERE id = ?",
+                    (json.dumps(new_solution), delta, existing.id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE skills SET reinforced = reinforced + 1, delta = MAX(delta, ?) WHERE id = ?",
+                    (delta, existing.id),
+                )
+        refreshed = self.get_skill(existing.id)
+        return refreshed if refreshed is not None else existing
+
+    def record_outcome(self, skill_ids: List[str], success: bool) -> None:
+        """Feedback from reuse: the skills that were offered to an episode are
+        credited when it ended verified and debited when it did not. A skill
+        that keeps failing is archived (still stored, no longer offered)."""
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            for skill_id in skill_ids:
+                column = "successes" if success else "failures"
+                conn.execute(
+                    f"UPDATE skills SET uses = uses + 1, {column} = {column} + 1, last_used_at = ? WHERE id = ?",
+                    (now, skill_id),
+                )
+                row = conn.execute("SELECT * FROM skills WHERE id = ?", (skill_id,)).fetchone()
+                if row is None:
+                    continue
+                record = _record_from_row(row)
+                if record.failures >= ARCHIVE_AFTER_FAILURES and record.reliability < ARCHIVE_RELIABILITY_FLOOR:
+                    conn.execute("UPDATE skills SET archived = 1 WHERE id = ?", (skill_id,))
+
     # ------------------------------------------------------------------
     # Read path — token-overlap similarity retrieval
     # ------------------------------------------------------------------
@@ -350,7 +476,7 @@ class SkillLibrary:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
-                "SELECT * FROM skills ORDER BY created_at DESC"
+                "SELECT * FROM skills WHERE archived = 0 ORDER BY created_at DESC"
             ).fetchall()
 
         scored: List[SkillRecord] = []
@@ -359,24 +485,11 @@ class SkillLibrary:
             score = _jaccard(query_tokens, stored_tokens)
             if score <= 0.0:
                 continue
-            record = SkillRecord(
-                id=row["id"],
-                problem_statement=row["problem_statement"],
-                solution=json.loads(row["solution"]),
-                keywords=json.loads(row["keywords"]),
-                delta=row["delta"],
-                resilience=row["resilience"],
-                g_before=row["g_before"],
-                g_after=row["g_after"],
-                growth_ratio=row["growth_ratio"],
-                governance_violation=bool(row["governance_violation"]),
-                created_at=row["created_at"],
-                session_id=row["session_id"],
-                similarity_score=score,
-            )
-            scored.append(record)
+            scored.append(_record_from_row(row, score))
 
-        scored.sort(key=lambda r: (r.similarity_score, r.created_at), reverse=True)
+        # Relevance first, then how well the skill has served when reused
+        # (an unused skill is neutral at 0.5), then recency.
+        scored.sort(key=lambda r: ((r.similarity_score or 0.0) * (0.5 + r.reliability), r.created_at), reverse=True)
         return scored[:top_k]
 
     # ------------------------------------------------------------------
@@ -396,17 +509,4 @@ class SkillLibrary:
             ).fetchone()
         if row is None:
             return None
-        return SkillRecord(
-            id=row["id"],
-            problem_statement=row["problem_statement"],
-            solution=json.loads(row["solution"]),
-            keywords=json.loads(row["keywords"]),
-            delta=row["delta"],
-            resilience=row["resilience"],
-            g_before=row["g_before"],
-            g_after=row["g_after"],
-            growth_ratio=row["growth_ratio"],
-            governance_violation=bool(row["governance_violation"]),
-            created_at=row["created_at"],
-            session_id=row["session_id"],
-        )
+        return _record_from_row(row)
