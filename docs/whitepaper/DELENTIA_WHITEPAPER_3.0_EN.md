@@ -94,7 +94,7 @@ call a tool.
 
 | # | Step | What happens | Status |
 |---|---|---|---|
-| 1 | **GUARD** | CORD pattern screening, then the FDIA gate on the goal | ✅ built |
+| 1 | **GUARD** | CORD screens every goal before any model call; a hard finding (prompt injection, encoded payload, oversized input) ends the episode with no model or tool call. FDIA D and I are computed from the goal and F of the goal is recorded; the FDIA gate itself applies to each risky action (step 4), where A is known | ✅ built (CORD in the loop since 2026-09-30; before that only two API endpoints screened goals) |
 | 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions) | ✅ built |
 | 3 | **ROUTE** | ALGO-21 decides FAST (low risk, narrow scope: smaller step budget, answer directly) or SLOW (full budget, step by step); a router error routes SLOW. Never skips a governance step | ✅ built (2026-09-29) |
 | 4 | **ACT** | Per-step FDIA gate; side-effecting tools wait for a signed human approval, then the episode resumes | ✅ built |
