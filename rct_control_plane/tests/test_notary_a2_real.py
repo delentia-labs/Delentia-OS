@@ -327,3 +327,53 @@ class TestResumeWithNotary:
 ])
 def test_sandbox_denies_commands_naming_the_notary(command):
     assert classify_command_risk(command) == "denied"
+
+
+# ------------------------------------------------------------- A3 schedule
+
+def test_anchor_once_publishes_only_when_the_head_moves(tmp_path):
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from rct_control_plane.audit_chain import anchor_message
+    key = Ed25519PrivateKey.generate()
+    db = str(tmp_path / "n.db")
+    store = NotaryStore(db, key, "k1")
+    received = []
+
+    class Witness(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            msg = anchor_message(body["key_id"], body["entries"], body["head"], body["signed_at"])
+            key.public_key().verify(bytes.fromhex(body["signature"]), msg.encode())
+            received.append(body)
+            self.send_response(201)
+            self.end_headers()
+            self.wfile.write(b"{}")
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Witness)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        assert notary.anchor_once(db, "delentia-notary-1", key, url)["anchored"] is False  # empty log
+        store.append({"kind": "a"})
+        first = notary.anchor_once(db, "delentia-notary-1", key, url)
+        assert first["anchored"] and first["entries"] == 1
+        again = notary.anchor_once(db, "delentia-notary-1", key, url, last_entries=1)
+        assert again["anchored"] is False and "unchanged" in again["reason"]
+        store.append({"kind": "b"})
+        assert notary.anchor_once(db, "delentia-notary-1", key, url, last_entries=1)["entries"] == 2
+        assert [r["entries"] for r in received] == [1, 2]
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_anchor_once_survives_a_witness_outage(tmp_path):
+    key = Ed25519PrivateKey.generate()
+    db = str(tmp_path / "n.db")
+    NotaryStore(db, key, "k1").append({"kind": "a"})
+    result = notary.anchor_once(db, "k", key, f"http://127.0.0.1:{_free_port()}")
+    assert result["anchored"] is False and "unreachable" in result["reason"]
+

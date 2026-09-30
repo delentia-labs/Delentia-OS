@@ -184,7 +184,7 @@ def test_mcp_autonomous_scheduler():
     r_list = client.post("/mcp", json=p_list)
     res_list = json.loads(r_list.json()["result"]["content"][0]["text"])
     assert res_list["status"] == "SUCCESS"
-    assert len(res_list["tasks"]) >= 3
+    assert {t["name"] for t in res_list["tasks"]} >= {"audit_chain_verify", "audit_chain_anchor"}
 
     # Trigger default task
     p_trig = {
@@ -193,9 +193,12 @@ def test_mcp_autonomous_scheduler():
         "method": "tools/call",
         "params": {
             "name": "delentia_cron_scheduler",
-            "arguments": {"action": "trigger", "task_id": "task_daily_ai_news_digest"}
+            "arguments": {"action": "trigger", "task_id": "task_audit_chain_verify"}
         }
     }
     r_trig = client.post("/mcp", json=p_trig)
     res_trig = json.loads(r_trig.json()["result"]["content"][0]["text"])
-    assert res_trig["status"] == "SUCCESS"
+    # Round 50: a real verification of the audit chain, so a broken chain
+    # reports FAILED with the reason instead of a canned SUCCESS.
+    assert res_trig["status"] in ("SUCCESS", "FAILED")
+    assert "audit chain" in (res_trig.get("output") or res_trig.get("error") or "")

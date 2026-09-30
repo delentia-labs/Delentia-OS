@@ -112,7 +112,9 @@ def test_a_failing_task_does_not_kill_the_poll_loop():
             )
             assert fired, "the reminder poller must keep firing real due reminders even though a sibling task fails every cycle"
             failing_task = scheduler.tasks["task_always_fails"]
-            assert failing_task.last_status == "FAILED"
+            # Round 50: tasks run concurrently now, so the failing one may
+            # finish just after the reminder fired.
+            assert await _wait_until(lambda: failing_task.last_status == "FAILED", timeout=20.0)
             assert failing_task.run_count == 0  # run_count only increments on success, by design
         finally:
             await scheduler.stop()

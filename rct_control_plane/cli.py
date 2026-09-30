@@ -2032,7 +2032,11 @@ def notary_keygen(out_path: str) -> None:
 @click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
 @click.option("--key-id", default="delentia-notary-1", show_default=True, help="Key id written into receipts.")
 @click.option("--port", default=8765, show_default=True, type=int, help="Loopback port.")
-def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int) -> None:
+@click.option("--anchor-url", default=None, help="Witness base URL: anchor the log head on a schedule (tier A3).")
+@click.option("--anchor-key-id", default=None, help="Key id the witness knows this notary's public key under.")
+@click.option("--anchor-every", default=3600.0, show_default=True, type=float, help="Seconds between anchors.")
+def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, anchor_url: Optional[str] = None,
+                 anchor_key_id: Optional[str] = None, anchor_every: float = 3600.0) -> None:
     """Serve POST /append and GET /head on 127.0.0.1 (token: DELENTIA_NOTARY_TOKEN)."""
     from rct_control_plane import notary
     key = _notary_key(key_path)
@@ -2042,11 +2046,23 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int) -> No
     click.echo(f"log         : {store.db_path}")
     click.echo(f"agent side  : set {notary.NOTARY_URL_ENV}=http://127.0.0.1:{port} "
                f"(and {notary.NOTARY_TOKEN_ENV} if set here)")
+    stop_anchoring = None
+    if anchor_url:
+        if not anchor_key_id:
+            click.echo(click.style("Error: --anchor-url needs --anchor-key-id", fg="red"), err=True)
+            sys.exit(1)
+        click.echo(f"anchoring   : every {anchor_every:.0f}s to {anchor_url} as {anchor_key_id}")
+        stop_anchoring = notary.start_anchor_loop(
+            store.db_path, anchor_key_id, key, anchor_url, anchor_every,
+            on_result=lambda r: click.echo(f"anchor      : {json.dumps(r)}"),
+        )
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
+        if stop_anchoring is not None:
+            stop_anchoring.set()
         server.server_close()
 
 
