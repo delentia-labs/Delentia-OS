@@ -97,6 +97,12 @@ export interface PendingAction {
   approver_public_key: string | null; executed_at: string | null;
 }
 export interface Health { status: string; version?: string }
+export interface SubagentRun {
+  id: string; created_at: string; agent_id: string; goal: string; success: boolean;
+  stopped_reason: string | null; iterations: number | null; final_answer: string | null;
+  jitna: { request_packet_id?: string; request_hash?: string; response_verified: boolean; reason: string | null } | null;
+  timed_out: boolean; error: string | null;
+}
 
 // ---- calls --------------------------------------------------------------------
 
@@ -118,6 +124,9 @@ export const desk = {
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),
   daemon: () => call<DaemonStatus>("/v1/daemon/status"),
   runTask: (taskId: string) => call<{ status: string; output?: string; error?: string }>(`/v1/desk/cron/${encodeURIComponent(taskId)}/run`, { method: "POST" }),
+  subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
+  runSubagents: (goals: string[], timeoutSeconds = 240) =>
+    call<{ runs: SubagentRun[] }>("/v1/desk/subagents/run", { method: "POST", body: JSON.stringify({ goals, timeout_seconds: timeoutSeconds }), signal: AbortSignal.timeout((timeoutSeconds + 60) * 1000) }),
   approvals: (status = "PENDING") => call<PendingAction[]>(`/v1/agent/approvals?status=${status}`),
   decide: (approvalId: string, body: { decision: string; public_key_hex: string; signature_hex: string }) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),

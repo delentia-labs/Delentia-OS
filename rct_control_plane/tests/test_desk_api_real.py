@@ -167,3 +167,38 @@ def test_structured_stream_emits_step_cards_and_a_summary(tmp_path, monkeypatch)
     summary = next(e["data"] for e in events if e["type"] == "summary")
     assert summary["stopped_reason"] == "llm_finished" and summary["rct7_steps"]
     assert next(e for e in events if e["type"] == "answer")["data"]["text"].startswith("Completed")
+
+
+# ------------------------------------------------------------- subagents (Round 50)
+def test_subagent_runs_are_listed_from_rctdb_with_their_jitna_verification(desk):
+    client, persistence, _ = desk
+    persistence.save_architect_decision(
+        decision_id="jitna-subagent-ab12", decision_type="jitna_subagent_result", description="d",
+        jitna_before={"goal": "summarise notes", "agent_id": "ab12"},
+        jitna_after={"agent_id": "ab12", "goal": "summarise notes", "success": True, "final_answer": "done",
+                     "stopped_reason": "llm_finished", "iterations": 2,
+                     "jitna": {"request_packet_id": "p-1", "request_hash": "h" * 64, "response_verified": True, "reason": None}})
+    persistence.save_architect_decision(decision_id="other", decision_type="something_else", description="x",
+                                        jitna_before={}, jitna_after={})
+    runs = client.get("/v1/desk/subagents").json()["runs"]
+    assert len(runs) == 1 and runs[0]["goal"] == "summarise notes" and runs[0]["agent_id"] == "ab12"
+    assert runs[0]["jitna"]["response_verified"] is True and runs[0]["stopped_reason"] == "llm_finished"
+
+
+def test_starting_subagents_validates_input_and_uses_the_distributor(desk, monkeypatch):
+    client, _, _ = desk
+    assert client.post("/v1/desk/subagents/run", json={"goals": []}).status_code == 400
+    assert client.post("/v1/desk/subagents/run", json={"goals": ["a", "b", "c", "d"]}).status_code == 400
+    assert client.post("/v1/desk/subagents/run", json={"goals": ["ok", 5]}).status_code == 400
+
+    import rct_control_plane.jitna_distributor as dist
+    seen = {}
+
+    async def fake(goals, persistence, timeout_seconds=60.0, **kw):
+        seen["goals"], seen["timeout"] = goals, timeout_seconds
+        return [{"agent_id": "zz", "goal": goals[0], "success": True, "final_answer": "ok", "stopped_reason": "llm_finished",
+                 "iterations": 1, "jitna": {"response_verified": True, "reason": None}}]
+    monkeypatch.setattr(dist, "distribute_to_subagents", fake)
+    body = client.post("/v1/desk/subagents/run", json={"goals": ["  summarise  "], "timeout_seconds": 5}).json()
+    assert seen == {"goals": ["summarise"], "timeout": 30.0}     # trimmed; timeout clamped to the 30 s floor
+    assert body["runs"][0]["success"] is True and body["runs"][0]["jitna"]["response_verified"] is True

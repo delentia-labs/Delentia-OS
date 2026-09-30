@@ -18,6 +18,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
+from rct_control_plane import data_home
+
 CHANNELS = ("telegram", "discord", "slack", "line")
 _TOKEN_ENV = {"telegram": "TELEGRAM_BOT_TOKEN", "discord": "DISCORD_BOT_TOKEN",
               "slack": "SLACK_BOT_TOKEN", "line": "LINE_CHANNEL_ACCESS_TOKEN"}
@@ -135,6 +137,39 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
                     "at": r["created_at"], "data": _loads(r["changes"])} for r in rows],
     })
     return summary
+
+
+# ---------------------------------------------------------------------------
+# Subagents (JITNA-distributed, see jitna_distributor.py)
+# ---------------------------------------------------------------------------
+
+def _subagent_run(row_id: str, created_at: Optional[str], before: Dict[str, Any], after: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": row_id,
+        "created_at": created_at,
+        "agent_id": before.get("agent_id") or after.get("agent_id"),
+        "goal": before.get("goal") or after.get("goal"),
+        "success": bool(after.get("success")),
+        "stopped_reason": after.get("stopped_reason"),
+        "iterations": after.get("iterations"),
+        "final_answer": after.get("final_answer"),
+        "jitna": after.get("jitna"),
+        "timed_out": bool(after.get("timed_out")),
+        "error": after.get("error") or after.get("rejected"),
+    }
+
+
+def list_subagent_runs(limit: int = 50) -> List[Dict[str, Any]]:
+    rows = _kernel()._persistence.list_architect_decisions(limit=limit * 4)
+    out = []
+    for r in rows:
+        if r.get("decision_type") != "jitna_subagent_result":
+            continue
+        out.append(_subagent_run(str(r.get("id")), r.get("created_at"),
+                                 _loads(r.get("jitna_before")) or {}, _loads(r.get("jitna_after")) or {}))
+        if len(out) >= limit:
+            break
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +327,29 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         result: Dict[str, Any] = await scheduler.trigger_task_async(task_id)
         return result
 
+    @router.get("/subagents")
+    async def subagents(limit: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+        return {"runs": list_subagent_runs(limit)}
+
+    @router.post("/subagents/run")
+    async def run_subagents(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Fork-join over up to 3 goals through jitna_distributor: each goal goes
+        to its own process in its own git worktree inside a signed JITNA request."""
+        goals = payload.get("goals")
+        if not isinstance(goals, list) or not goals or not all(isinstance(g, str) and g.strip() for g in goals):
+            raise HTTPException(status_code=400, detail="'goals' must be a non-empty list of non-empty strings")
+        if len(goals) > 3:
+            raise HTTPException(status_code=400, detail="at most 3 subagents at a time")
+        try:
+            timeout = float(payload.get("timeout_seconds", 240))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="timeout_seconds must be a number") from None
+        timeout = max(30.0, min(timeout, 900.0))
+        from rct_control_plane.jitna_distributor import distribute_to_subagents
+        outcomes = await distribute_to_subagents([g.strip() for g in goals], _kernel()._persistence, timeout_seconds=timeout)
+        return {"runs": [_subagent_run(str(o.get("agent_id")), None, {"agent_id": o.get("agent_id"), "goal": o.get("goal")}, o)
+                         for o in outcomes]}
+
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:
         from rct_control_plane import model_config
@@ -311,6 +369,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             "sessions_total": sessions_total,
             "approvals_pending": len(pending),
             "skills": _skills().count(),
+            "storage": data_home.describe(),
         }
 
     return router

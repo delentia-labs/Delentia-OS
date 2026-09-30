@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  Activity, BookOpen, ChevronDown, Clock, Cpu, FlaskConical, History, Link2, Menu, Radio,
+  Activity, BookOpen, ChevronDown, Clock, Cpu, FlaskConical, GitBranch, History, Link2, Menu, Radio,
   Settings, ShieldCheck, SquareTerminal, Wrench, X,
 } from "lucide-react";
 import { DelentiaMark } from "./mark";
 import { LangProvider, useLang, type DictKey } from "./i18n";
+import { LegacyNotice } from "./LegacyNotice";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
 
@@ -18,6 +19,7 @@ const PRIMARY: { href: string; key: DictKey; icon: typeof Activity }[] = [
   { href: "/", key: "status", icon: Activity },
   { href: "/chat", key: "chat", icon: SquareTerminal },
   { href: "/sessions", key: "sessions", icon: History },
+  { href: "/subagents", key: "subagents", icon: GitBranch },
   { href: "/approvals", key: "approvals", icon: ShieldCheck },
   { href: "/audit", key: "audit", icon: Link2 },
   { href: "/llm", key: "models", icon: Cpu },
@@ -188,6 +190,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <DelentiaMark size={22} />
           <span className="desk-mono text-sm tracking-[0.14em]">DELENTIA</span>
         </div>
+        <LegacyNotice />
         <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       </div>
     </div>

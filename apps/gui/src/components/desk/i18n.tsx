@@ -10,6 +10,7 @@ const DICT = {
   status: { en: "Status", th: "สถานะ" },
   chat: { en: "Chat", th: "แชท" },
   sessions: { en: "Sessions", th: "เซสชัน" },
+  subagents: { en: "Subagents", th: "Subagent" },
   approvals: { en: "Approvals", th: "อนุมัติ" },
   audit: { en: "Audit", th: "Audit" },
   models: { en: "Models", th: "โมเดล" },

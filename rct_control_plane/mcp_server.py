@@ -12,6 +12,7 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+import os
 import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -31,7 +32,10 @@ from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
 
 # Round 32: real repo root for the read-only file-access tools (Task 73) -
 # mcp_server.py lives at <repo_root>/rct_control_plane/mcp_server.py.
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# Round 50: DELENTIA_REPO_ROOT points a subagent's file tools at its own git
+# worktree. Before, REPO_ROOT was always this checkout, so the "isolated"
+# worktree created for every subagent was never the place it read or wrote.
+REPO_ROOT = Path(os.environ.get("DELENTIA_REPO_ROOT") or Path(__file__).resolve().parent.parent).resolve()
 _SKIP_DIR_NAMES = {".git", "__pycache__", "node_modules", ".delentia_worktrees", ".venv", "venv"}
 
 mcp = MCPServer("delentia-kernel")
