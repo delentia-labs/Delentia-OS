@@ -72,7 +72,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
-import torch
+# Round 50: torch (~1.4 s to import) is imported where it is used. The kernel
+# builds a DiffusionEngine in its constructor and the kernel module builds
+# ALGORITHM_KERNEL at import time, so a module-level `import torch` here was
+# paid by every process that imports the kernel, image generation or not.
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +98,7 @@ class DiffusionConfig:
     """
     model_name: str = "segmind/tiny-sd"
     device: str = "cpu"
-    dtype: torch.dtype = torch.float32
+    dtype: Any = None  # torch dtype; None means torch.float32 (resolved when the pipeline loads)
 
     # Generation settings — low step count / modest resolution, tuned for
     # real CPU wall-clock time (measured below, not guessed).
@@ -152,7 +155,7 @@ class DiffusionEngine:
 
     def __init__(self, config: Optional[DiffusionConfig] = None):
         self.config = config or DiffusionConfig()
-        self.device = torch.device(self.config.device)
+        self._device: Any = None
 
         # Statistics (real, ported verbatim from the source's bookkeeping)
         self.total_generations = 0
@@ -162,7 +165,15 @@ class DiffusionEngine:
 
         self._pipeline = None  # lazy-loaded real diffusers pipeline
 
-        logger.info(f"DiffusionEngine initialized on {self.device} (model={self.config.model_name})")
+        logger.info(f"DiffusionEngine initialized on {self.config.device} (model={self.config.model_name})")
+
+    @property
+    def device(self) -> Any:
+        """torch.device for the configured device, created on first use."""
+        if self._device is None:
+            import torch
+            self._device = torch.device(self.config.device)
+        return self._device
 
     def _ensure_pipeline(self):
         """Lazily load the real diffusers pipeline once, on first use —
@@ -171,12 +182,13 @@ class DiffusionEngine:
         if self._pipeline is not None:
             return
 
+        import torch
         from diffusers import DiffusionPipeline
 
         logger.info(f"Loading real diffusers pipeline '{self.config.model_name}' — first use only")
         pipe = DiffusionPipeline.from_pretrained(
             self.config.model_name,
-            torch_dtype=self.config.dtype,
+            torch_dtype=self.config.dtype if self.config.dtype is not None else torch.float32,
         )
         pipe.to(self.config.device)
         # Skip the safety-checker pass (adds a second real CLIP forward
@@ -209,6 +221,8 @@ class DiffusionEngine:
 
         try:
             self._ensure_pipeline()
+
+            import torch
 
             generator = torch.Generator(device="cpu")
             if request.seed is not None:
