@@ -31,6 +31,17 @@ class _CrawlMCP(_FakeMCP):
         return tools + [type("T", (), {"name": "delentia_crawl_url", "description": "crawl a url", "input_schema": {}})()]
 
 
+@pytest.fixture(autouse=True)
+def _d_is_the_kernels_value(monkeypatch):
+    """These tests are about the gate's threshold arithmetic, so D is taken as the
+    fake kernel reports it; how D is measured from the user's data is tested in
+    test_intent_growth_round51_real.py."""
+    from rct_control_plane import data_evidence
+    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+    monkeypatch.setattr(GovernedAutonomousLoop, "_assess_data",
+                        lambda self, goal, clarity, compile_result: data_evidence.DataEvidence(D=clarity, parts={}, missing=[]))
+
+
 def _script(monkeypatch, first):
     async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
         if not history:

@@ -208,7 +208,7 @@ class IntentCompiler:
         IntentType.DEPLOY: ["deploy", "release to", "cut a release", "ship it", "publish", "launch",
                             "ดีพลอย", "ขึ้นระบบจริง"],
         IntentType.OPTIMIZE: ["optimize", "optimise", "improve performance", "speed up", "reduce cost", "เพิ่มประสิทธิภาพ"],
-        IntentType.DOCUMENT: ["document", "generate docs", "write documentation", "explain", "เอกสาร", "อธิบาย"],
+        IntentType.DOCUMENT: ["document", "generate docs", "write documentation", "เอกสาร"],
         IntentType.STRATEGY: ["plan", "strategize", "roadmap", "design", "architect", "วางแผน"],
         # Destructive verbs classify here so they are never "unclassified":
         # HIGH_RISK_KEYWORDS then makes them SYSTEMIC, the strictest I.
@@ -221,9 +221,12 @@ class IntentCompiler:
         IntentType.TEST: ["test", "verify", "validate", "check", "generate tests", "ทดสอบ"],
         IntentType.QUERY: ["read", "show", "list", "search", "find", "look up", "lookup", "summarise", "summarize",
                            "summary", "tell me", "what is", "what are", "which", "how many", "describe",
-                           "อ่าน", "ค้นหา", "สรุป", "แสดง", "บอก"],
+                           "explain", "recall", "remember", "how does", "how do", "why", "who", "where",
+                           "อ่าน", "ค้นหา", "สรุป", "แสดง", "บอก", "อธิบาย", "จำได้"],
     }
     
+    _STRONG_QUERY_WORDS = frozenset({"explain", "recall", "remember", "why", "how does", "how do", "อธิบาย", "จำได้"})
+
     # Risk indicators
     HIGH_RISK_KEYWORDS = ["deploy", "delete", "drop", "remove", "migrate", "system-wide",
                           "wipe", "truncate", "erase", "destroy", "format", "transfer", "withdraw", "pay",
@@ -514,13 +517,15 @@ class IntentCompiler:
             score = 0
             for keyword in type_keywords:
                 if keyword in lexical.keywords:
-                    score += 1
+                    # Question words are a strong signal that the user wants an answer,
+                    # not a job ("Explain how the audit chain works" is not an audit).
+                    score += 2 if (intent_type == IntentType.QUERY and keyword in self._STRONG_QUERY_WORDS) else 1
             if score > 0:
                 scores[intent_type] = score
         
         if not scores:
             return None
-        
+
         # Return type with highest score
         return max(scores, key=lambda k: scores[k])
     

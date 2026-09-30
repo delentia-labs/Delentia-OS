@@ -56,3 +56,22 @@ if sys.platform == "win32":
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
+# ── Keep the Intent Loop switches out of unrelated tests (Round 51) ─────────
+# `delentia serve` turns the algorithm pipeline and warm recall on with
+# os.environ.setdefault; a test that calls serve in-process would otherwise
+# leave them on for every test after it.
+import pytest  # noqa: E402
+
+_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM")
+
+
+@pytest.fixture(autouse=True)
+def _round51_switches_start_and_end_off():
+    saved = {name: os.environ.pop(name, None) for name in _ROUND51_SWITCHES}
+    yield
+    for name, value in saved.items():
+        os.environ.pop(name, None)
+    # values present before the test are not restored on purpose: a developer's
+    # shell setting must not change what the test suite exercises.

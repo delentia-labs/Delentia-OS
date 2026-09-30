@@ -88,3 +88,18 @@ def test_irreversible_or_outward_facing_goals_are_systemic(text):
 
 def test_updating_dependencies_is_a_change_not_unclassified():
     assert _compile("Update the dependency versions in package.json") == ("REFACTOR", "STRUCTURAL")
+
+
+@pytest.mark.parametrize("text, intent, risk", [
+    ("Recall what you remember about the formal acceptance test marker", "QUERY", "LOW"),
+    ("Explain how the audit chain works", "QUERY", "LOW"),
+    ("Why is the sky blue", "QUERY", "LOW"),
+    ("Show me the file and then delete all of it", "TRANSFORM", "SYSTEMIC"),   # a destructive verb is never downgraded by a read verb
+])
+def test_questions_are_queries_but_a_destructive_verb_still_wins(text, intent, risk):
+    got_intent, got_risk = _compile(text)
+    assert got_risk == risk
+    if risk == "LOW":
+        assert got_intent == intent
+    else:
+        assert got_risk == "SYSTEMIC"
