@@ -256,3 +256,10 @@ def test_warm_up_loads_the_language_models_once_and_never_raises(kernel):
         def algo_34_semantic_analysis(self, text):
             raise RuntimeError("no models")
     assert ap.warm_up(Broken()) >= 0.0
+
+
+def test_without_psutil_the_load_algorithm_says_so_instead_of_failing(kernel, tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "psutil", None)          # makes `import psutil` raise ImportError
+    pipeline, ctx, _ = _ctx(kernel, tmp_path, enabled={"ALGO-31"})
+    traces, _ = asyncio.run(pipeline.run_stage("act", ctx, phase="pre"))
+    assert traces[0].status == "not_triggered" and "psutil" in traces[0].reason

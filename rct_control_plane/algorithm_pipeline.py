@@ -464,7 +464,10 @@ async def _algo22(ctx: PipelineContext) -> Outcome:
 
 @adapter("ALGO-31", "ALBAS adaptive load balancing", "act")
 async def _algo31(ctx: PipelineContext) -> Outcome:
-    import psutil
+    try:
+        import psutil
+    except ImportError:
+        raise NotTriggered("psutil is not installed, so host load cannot be read") from None
     cpu = psutil.cpu_percent(interval=None) / 100.0
     mem = psutil.virtual_memory().percent / 100.0
     r = ctx.kernel.algo_31_albas(cpu, mem)
