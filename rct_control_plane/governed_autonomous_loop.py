@@ -95,6 +95,7 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 from __future__ import annotations
 
 import json
+import os
 import math
 import time
 from pathlib import Path
@@ -222,6 +223,24 @@ INTENT_VERIFY_THRESHOLD = 0.15
 # governance step: the FDIA gate, approvals and verification run either way.
 FAST_ROUTE_MAX_ITERATIONS = 3
 
+# Round 50 (end-point criterion 7): optional per-episode budgets. Unset =
+# no limit, but every episode still reports its tokens and cost.
+EPISODE_BUDGET_USD_ENV = "DELENTIA_EPISODE_BUDGET_USD"
+EPISODE_MAX_TOKENS_ENV = "DELENTIA_EPISODE_MAX_TOKENS"
+
+
+def _budget_from_env(name: str, kind: type) -> Optional[Any]:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return None
+    try:
+        value = kind(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name}={raw!r} is not a valid {kind.__name__}") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be greater than 0 (got {raw!r})")
+    return value
+
 _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_write_repo_file",
     "delentia_patch_repo_file",
@@ -260,6 +279,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         route: bool = True,
         fast_max_iterations: int = FAST_ROUTE_MAX_ITERATIONS,
         notary: Optional[Any] = None,
+        max_episode_cost_usd: Optional[float] = None,
+        max_episode_tokens: Optional[int] = None,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -333,6 +354,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._last_gate_fdia: Optional[Dict[str, Any]] = None
         self._episode_guard: Dict[str, Any] = {}
         self._episode_jitna_hash: str = ""
+        # Round 50 budget: each episode runs through a fresh MeteredProvider
+        # around the configured (or default) provider.
+        self._configured_llm_provider = llm_provider
+        self._max_episode_cost_usd = (max_episode_cost_usd if max_episode_cost_usd is not None
+                                      else _budget_from_env(EPISODE_BUDGET_USD_ENV, float))
+        self._max_episode_tokens = (max_episode_tokens if max_episode_tokens is not None
+                                    else _budget_from_env(EPISODE_MAX_TOKENS_ENV, int))
+        self._meter: Optional[Any] = None
 
     def _get_kernel(self) -> "AlgorithmKernel41":
         """Lazy, cached construction - see module docstring point 2 for
@@ -408,6 +437,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if blocked is not None:
             return blocked
 
+        self._meter = self._new_meter()
+        self._llm_provider = self._meter
         kernel = self._get_kernel()
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
@@ -494,6 +525,22 @@ class GovernedAutonomousLoop(AutonomousLoop):
         reasons = ", ".join(sorted({f.pattern_id for f in cord.hard_findings}))
         return {"stopped_reason": "guard_blocked",
                 "final_answer": f"This request was not processed: the CORD screen flagged it ({reasons})."}
+
+    def _new_meter(self) -> Any:
+        """Round 50: fresh per-episode meter. Prices are looked up only when
+        a cost budget is set (the catalog is a network call); without one
+        the cost of a non-local model is reported as unknown."""
+        from rct_control_plane.llm_provider import MeteredProvider, OpenRouterProvider, get_default_provider
+        inner = self._configured_llm_provider or get_default_provider()
+        prices = None
+        if self._max_episode_cost_usd is not None and isinstance(inner, OpenRouterProvider):
+            from rct_control_plane.model_config import lookup_openrouter_prices
+            prices = lookup_openrouter_prices(inner.model)
+        return MeteredProvider(
+            inner, max_cost_usd=self._max_episode_cost_usd, max_tokens_total=self._max_episode_tokens,
+            prompt_price_per_mtok=prices[0] if prices else None,
+            completion_price_per_mtok=prices[1] if prices else None,
+        )
 
     def _route_goal(self, goal: str) -> Dict[str, Any]:
         """Round 50 ROUTE: ALGO-21's deterministic decision (no LLM call).
@@ -759,6 +806,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             iterations=result["iterations"], final_answer_sha256=_sha(result.get("final_answer")),
         )
         result["notary"] = self._notary_summary()
+        result["cost"] = self._meter.summary() if self._meter is not None else None
         pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
         change_description = (
             f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
@@ -801,6 +849,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "skill_extracted": skill_record is not None,
                 "intent_verification": verification,
                 "approval_id": pending_record.approval_id if pending_record else None,
+                "cost": result["cost"],
             },
         )
         result["experiment"] = self._record_experiment_run(result, verification, duration)
@@ -819,6 +868,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
     def _model_label(self) -> str:
         provider = self._llm_provider
+        provider = getattr(provider, "inner", provider)  # report the model, not the meter
         if provider is not None:
             return f"{type(provider).__name__}:{getattr(provider, 'model', '?')}"
         try:
@@ -850,6 +900,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "memory_in_prompt": int(self._memory_in_prompt),
                 "route_path": self._episode_route.get("path"),
                 "route_max_iterations": self._episode_route.get("max_iterations"),
+                "llm_calls": (result.get("cost") or {}).get("calls"),
+                "prompt_tokens": (result.get("cost") or {}).get("prompt_tokens"),
+                "completion_tokens": (result.get("cost") or {}).get("completion_tokens"),
+                "cost_usd": (result.get("cost") or {}).get("cost_usd"),
                 "tool_outputs_compressed": len(self._episode_compressions),
                 "tool_output_chars_saved": sum(c["chars_saved"] for c in self._episode_compressions),
                 "stopped_reason": result["stopped_reason"],

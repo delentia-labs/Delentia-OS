@@ -38,7 +38,18 @@ OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "90.0"))
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class LLMUsage:
+    """Round 50: what one model call used. cost_usd None = not known."""
+    prompt_tokens: int
+    completion_tokens: int
+    cost_usd: Optional[float]
+
+
 class LLMProvider(ABC):
+    # Round 50: set by complete() when the backend reports usage.
+    last_usage: Optional[LLMUsage] = None
+
     @abstractmethod
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
@@ -96,6 +107,7 @@ class OllamaProvider(LLMProvider):
         if cacheable and cache is not None:
             cached = cache.get(full_prompt, full_prompt)
             if cached is not None:
+                self.last_usage = LLMUsage(0, 0, 0.0)
                 return cached
 
         payload = {"model": self.model, "prompt": full_prompt, "stream": False,
@@ -105,7 +117,10 @@ class OllamaProvider(LLMProvider):
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
-            result = response.json()["response"]
+            data = response.json()
+            result = data["response"]
+        # Ollama reports prompt_eval_count / eval_count; a local model costs nothing per call.
+        self.last_usage = LLMUsage(int(data.get("prompt_eval_count") or 0), int(data.get("eval_count") or 0), 0.0)
 
         if cacheable and cache is not None:
             cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
@@ -186,7 +201,12 @@ class OpenRouterProvider(LLMProvider):
                 json=payload,
             )
             response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
+            data = response.json()
+        usage = data.get("usage") or {}
+        cost = usage.get("cost")
+        self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0),
+                                   float(cost) if isinstance(cost, (int, float)) else None)
+        return data["choices"][0]["message"]["content"]
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
@@ -294,3 +314,126 @@ class QuotaCheckedProvider(LLMProvider):
         self._quota.record_call(self._provider_name)
         async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
             yield chunk
+
+
+class BudgetExceededError(Exception):
+    """Round 50: raised BEFORE a model call that could take an episode over
+    its token or cost budget, so the call is never made."""
+
+
+def _count_tokens(text: str) -> int:
+    try:
+        import tiktoken
+        return len(tiktoken.get_encoding("cl100k_base").encode(text))
+    except ImportError:
+        return max(1, -(-len(text) // 4))
+
+
+class MeteredProvider(LLMProvider):
+    """Round 50 (Round 48 end-point criterion 7, "know the cost in
+    advance"): wraps one episode's provider, adds up what each call used,
+    and refuses a call whose worst case (prompt tokens + max_tokens) would
+    exceed the remaining budget.
+
+    Prices are USD per million tokens. A local Ollama model costs 0. When a
+    cost budget is set but the model's price is unknown, calls are refused:
+    a budget that cannot be checked is not a budget (fail closed)."""
+
+    def __init__(self, inner: LLMProvider, max_cost_usd: Optional[float] = None,
+                 max_tokens_total: Optional[int] = None,
+                 prompt_price_per_mtok: Optional[float] = None,
+                 completion_price_per_mtok: Optional[float] = None):
+        self._inner = inner
+        self.max_cost_usd = max_cost_usd
+        self.max_tokens_total = max_tokens_total
+        if isinstance(inner, OllamaProvider) and prompt_price_per_mtok is None and completion_price_per_mtok is None:
+            prompt_price_per_mtok = completion_price_per_mtok = 0.0
+        self.prompt_price_per_mtok = prompt_price_per_mtok
+        self.completion_price_per_mtok = completion_price_per_mtok
+        self.calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+        self.cost_usd = 0.0
+        self.cost_known = True
+        self.refused: Optional[str] = None
+
+    @property
+    def inner(self) -> LLMProvider:
+        return self._inner
+
+    @property
+    def model(self) -> str:
+        return str(getattr(self._inner, "model", "?"))
+
+    def _price(self, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+        if self.prompt_price_per_mtok is None or self.completion_price_per_mtok is None:
+            return None
+        return (prompt_tokens * self.prompt_price_per_mtok
+                + completion_tokens * self.completion_price_per_mtok) / 1_000_000
+
+    def _check_budget(self, prompt_text: str, max_tokens: int) -> None:
+        worst_prompt = _count_tokens(prompt_text)
+        if self.max_tokens_total is not None:
+            used = self.prompt_tokens + self.completion_tokens
+            if used + worst_prompt + max_tokens > self.max_tokens_total:
+                self.refused = (f"token budget: {used} used + up to {worst_prompt + max_tokens} for this call "
+                                f"> {self.max_tokens_total}")
+                raise BudgetExceededError(self.refused)
+        if self.max_cost_usd is not None:
+            worst = self._price(worst_prompt, max_tokens)
+            if worst is None or not self.cost_known:
+                self.refused = f"cost budget ${self.max_cost_usd} is set but the price of {self.model} is unknown"
+                raise BudgetExceededError(self.refused)
+            if self.cost_usd + worst > self.max_cost_usd:
+                self.refused = (f"cost budget: ${self.cost_usd:.6f} spent + up to ${worst:.6f} for this call "
+                                f"> ${self.max_cost_usd}")
+                raise BudgetExceededError(self.refused)
+
+    def _record(self, prompt_text: str, completion_text: str) -> None:
+        usage = self._inner.last_usage
+        self._inner.last_usage = None
+        if usage is None or (usage.prompt_tokens == 0 and usage.completion_tokens == 0 and usage.cost_usd is None):
+            usage = LLMUsage(_count_tokens(prompt_text), _count_tokens(completion_text), None)
+        cost = usage.cost_usd if usage.cost_usd is not None else self._price(usage.prompt_tokens,
+                                                                               usage.completion_tokens)
+        self.calls += 1
+        self.prompt_tokens += usage.prompt_tokens
+        self.completion_tokens += usage.completion_tokens
+        if cost is None:
+            self.cost_known = False
+        else:
+            self.cost_usd += cost
+        self.last_usage = LLMUsage(usage.prompt_tokens, usage.completion_tokens, cost)
+
+    async def complete(self, prompt: str, system_prompt: Optional[str] = None,
+                        temperature: float = 0.7, max_tokens: int = 2048,
+                        json_mode: bool = False) -> str:
+        full = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        self._check_budget(full, max_tokens)
+        result = await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
+        self._record(full, result)
+        return result
+
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        full = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        self._check_budget(full, max_tokens)
+        chunks = []
+        async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
+            chunks.append(chunk)
+            yield chunk
+        self._inner.last_usage = None  # streamed responses carry no usage here; estimate instead
+        self._record(full, "".join(chunks))
+
+    def summary(self) -> dict:
+        return {
+            "model": self.model,
+            "calls": self.calls,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "cost_usd": round(self.cost_usd, 6) if self.cost_known else None,
+            "cost_known": self.cost_known,
+            "max_cost_usd": self.max_cost_usd,
+            "max_tokens_total": self.max_tokens_total,
+            "refused": self.refused,
+        }

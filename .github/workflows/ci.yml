@@ -33,6 +33,20 @@ jobs:
         image: ollama/ollama:latest
         ports:
           - 11434:11434
+      # Round 50: a real PostgreSQL for the audit hash chain on the Postgres
+      # backend (test_audit_chain_pg_real.py); those tests skip without it.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: delentia_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v5
@@ -47,7 +61,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov cryptography hypothesis
+          pip install pytest pytest-cov cryptography hypothesis psycopg2-binary
 
       - name: Wait for Ollama and pull the real default model
         # llm_provider.py's OllamaProvider defaults to "qwen2.5:7b" - pull
@@ -113,6 +127,7 @@ jobs:
           # below still bounds total wall time regardless).
           DELENTIA_OLLAMA_TIMEOUT_S: "360"
           DELENTIA_TEST_LOOP_MAX_SECONDS: "600"
+          DELENTIA_TEST_PG_DSN: "host=127.0.0.1 port=5432 dbname=delentia_test user=postgres password=ci"
         # Real, measured coverage as of 2026-09-23. Two different numbers,
         # for a real, understood reason, not measurement noise:
         #   - Locally (this same command, an environment with a reachable

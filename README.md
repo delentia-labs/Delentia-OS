@@ -153,13 +153,13 @@ $$F = D^I \times A$$
 | **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
 | **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) - v2.3 |
-| **Hallucination Rate** | 0.3% (measured under SignedAI consensus simulation vs industry 12–15%) |
+| **Hallucination Rate** | Not currently claimed. The earlier 0.3% figure was withdrawn 2026-09-28 because it could not be reproduced (see `docs/benchmark/hallucination-methodology.md`) |
 | **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
 | **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
 | **Uptime SLA** | N/A (Experimental Hobby Platform, no enterprise SLA guaranteed) |
 | **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
 | **Universal Adapters** | 13 (Home Assistant, Terraform, n8n, Obsidian, Playwright, ...) |
-| **FDIA Accuracy** | 0.9167 (measured on adversarial dataset; baseline: ~0.65) |
+| **FDIA Accuracy** | 0.9167 rank accuracy (11 of 12 hand-written cases; classification accuracy on the same set is 0.5833, 7 of 12). Tiny set: treat as a smoke test, not a benchmark. Baseline 0.65 is a design reference. |
 
 For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md).
 
@@ -202,7 +202,7 @@ Layer 6: JITNA Protocol (RFC-001 v2.0)
 
 Layer 5: SignedAI — Multi-LLM Consensus
 ├─ TIER_S (1) · TIER_4 (4) · TIER_6 (6) · TIER_8 (8 + veto)
-└─ Hallucination rate: 0.3% vs industry 12–15%
+└─ Hallucination rate: not measured (earlier 0.3% claim withdrawn, see docs/benchmark)
 
 Layer 4: RCTDB v2.0 — 8-Dimensional Universal Memory
 └─ Registry Zone · Vault Zone · Governance Zone
@@ -226,6 +226,12 @@ SDK Modules: signedai/ · core/ · rct_control_plane/
 git clone https://github.com/delentia-labs/delentia-os.git
 cd delentia-os
 pip install -e .
+
+# 1b. (Only if you want to run the test suite) install the full dependency set.
+#     `pip install -e .` is enough for the CLI and demos, but tests import torch,
+#     numpy, opencv, faiss and others that pyproject.toml lists as optional extras.
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q --no-header   # needs internet + Ollama for ~40 network-dependent tests
 
 # 2. Validate the CLI surface without API keys
 delentia version
