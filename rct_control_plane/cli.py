@@ -1861,6 +1861,91 @@ def experiments_compare(experiment_id: str, db: Optional[str]) -> None:
                            "first_vs_last": persistence.compare_experiment_runs(experiment_id)}, indent=2))
 
 
+@cli.group("growth")
+def growth_group():
+    """
+    MEE growth and the Intent Loop's "smarter, faster, cheaper with use" (Round 51).
+
+    Examples:
+        delentia growth show
+        delentia growth evolution --namespace desk
+    """
+    pass
+
+
+@growth_group.command("show")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def growth_show(db: Optional[str]) -> None:
+    """G, resilience and episodes for every user/agent namespace."""
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        rows = conn.execute("SELECT key, value FROM states WHERE namespace = 'mee_growth' ORDER BY updated_at DESC").fetchall()
+    if not rows:
+        click.echo("No growth recorded yet (run a governed episode first).")
+        return
+    for key, value in rows:
+        data = json.loads(value)
+        session = data.get("session", {})
+        click.echo(f"{key}  G={session.get('g_current')}  R={session.get('resilience')}  "
+                   f"episodes={data.get('episodes')}  verified={data.get('verified_episodes')}")
+
+
+@growth_group.command("evolution")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def growth_evolution(namespace: str, db: Optional[str]) -> None:
+    """For each goal verified at least twice: first run vs latest (JSON)."""
+    from rct_control_plane.intent_loop import evolution_report
+    click.echo(json.dumps(evolution_report(_audit_db(db), namespace), indent=2, ensure_ascii=False))
+
+
+@cli.group("memory")
+def memory_group():
+    """
+    What the agent knows about you. This is D in F = D^I x A.
+
+    Examples:
+        delentia memory add "The staging database is stg-db-1"
+        delentia memory list --namespace desk
+    """
+    pass
+
+
+@memory_group.command("add")
+@click.argument("content")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--type", "memory_type", default="fact", show_default=True,
+              type=click.Choice(["fact", "preference", "goal", "event", "skill", "conversation"]))
+@click.option("--importance", default=0.7, show_default=True, type=float)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_add(content: str, namespace: str, memory_type: str, importance: float, db: Optional[str]) -> None:
+    """Store a fact. Do not store secrets: recalled text is placed in the model's prompt."""
+    import asyncio
+    from rct_control_plane.agent_memory import AgentMemory, MemoryType
+    memory_id = asyncio.run(AgentMemory(namespace, _audit_db(db)).store(content, MemoryType(memory_type), importance=importance))
+    click.echo(f"stored {memory_id} in namespace {namespace}")
+
+
+@memory_group.command("list")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_list(namespace: str, db: Optional[str]) -> None:
+    for item in _audit_db(db).list_memories(namespace):
+        click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
+
+
+@cli.command("algorithms")
+def algorithms_command() -> None:
+    """The 41 algorithms as pipeline stages, and what each one needs."""
+    from rct_control_plane import algorithm_pipeline as ap
+    click.echo(f"{len(ap.AlgorithmPipeline.algorithm_ids())} algorithms, "
+               f"pipeline {'ON' if os.environ.get('DELENTIA_ALGORITHM_PIPELINE') in ('1', 'true', 'yes') else 'off'} in this shell")
+    for stage in ap.STAGES:
+        for a in (x for x in ap.ADAPTERS if x.stage == stage):
+            needs = ",".join(n for n, on in (("model", a.llm), ("network", a.network), ("files", a.writes)) if on) or "-"
+            click.echo(f"{stage:10} {a.algo_id:8} {a.name:40} needs={needs}")
+
+
 @cli.group("audit-chain")
 def audit_chain_group():
     """

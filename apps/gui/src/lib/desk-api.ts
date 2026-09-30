@@ -101,8 +101,13 @@ export interface Evolution {
               fewer_steps: boolean | null; faster: boolean | null; cheaper: boolean | null; better_informed: boolean }[];
   summary: { fewer_steps: number; faster: number; cheaper: number; better_informed: number; median_D_change: number | null };
 }
+export interface IntentProfile {
+  namespace: string; episodes: number;
+  kinds: { type: string; episodes: number; verified: number; blocked: number; risk: Record<string, number>; avg_D: number | null; avg_steps: number | null }[];
+  recurring: { goal: string; runs: number; verified: number }[];
+}
 export interface Growth {
-  ledgers: GrowthLedger[]; recent: GrowthRun[]; evolution: Evolution[];
+  ledgers: GrowthLedger[]; recent: GrowthRun[]; evolution: Evolution[]; profiles: IntentProfile[];
   skills: { total: number; archived: number; reused: number; merged_repeats: number;
             most_reliable: { id: string; problem_statement: string; uses: number; successes: number; failures: number; reinforced: number; reliability: number }[] };
 }

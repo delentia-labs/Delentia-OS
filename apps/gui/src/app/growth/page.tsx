@@ -2,7 +2,7 @@
 
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
-import { desk, type Evolution } from "@/lib/desk-api";
+import { desk, type Evolution, type IntentProfile } from "@/lib/desk-api";
 
 function Mark({ value }: { value: boolean | null }) {
   if (value === null) return <span className="text-dl-muted">n/a</span>;
@@ -53,6 +53,41 @@ function EvolutionPanel({ e }: { e: Evolution }) {
   );
 }
 
+function ProfilePanel({ p }: { p: IntentProfile }) {
+  return (
+    <Panel title={`Your intents · ${p.namespace}`} aside={<span className="desk-mono text-[11px] text-dl-muted">{p.episodes} episodes</span>}>
+      {!p.episodes ? <p className="text-sm text-dl-muted">No episodes recorded for this user yet.</p> : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="overflow-x-auto">
+            <table className="desk-mono w-full text-left text-[12px]">
+              <thead className="text-dl-muted"><tr>
+                <th className="py-1 pr-3 font-normal">kind</th><th className="pr-3 font-normal">episodes</th><th className="pr-3 font-normal">verified</th>
+                <th className="pr-3 font-normal">blocked</th><th className="pr-3 font-normal">avg D</th><th className="font-normal">avg steps</th>
+              </tr></thead>
+              <tbody>
+                {p.kinds.map((k) => (
+                  <tr key={k.type} className="border-t border-dl-rule/60">
+                    <td className="py-1.5 pr-3 text-dl-text">{k.type}</td><td className="pr-3">{k.episodes}</td><td className="pr-3">{k.verified}</td>
+                    <td className={`pr-3 ${k.blocked ? "text-dl-rust" : ""}`}>{k.blocked}</td><td className="pr-3">{fmtNum(k.avg_D)}</td><td>{fmtNum(k.avg_steps, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p className="desk-mono mb-2 text-[12px] text-dl-muted">goals that keep coming back</p>
+            {p.recurring.length ? p.recurring.map((r) => (
+              <p key={r.goal} className="border-t border-dl-rule/60 py-1.5 text-sm text-dl-text first:border-0">
+                {r.goal} <span className="desk-mono text-[11px] text-dl-muted">· {r.runs} runs, {r.verified} verified</span>
+              </p>
+            )) : <p className="text-sm text-dl-muted">No goal has been asked twice yet.</p>}
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 export default function GrowthPage() {
   const { lang } = useLang();
   const g = useDeskData(() => desk.growth(), [], 20000);
@@ -77,6 +112,7 @@ export default function GrowthPage() {
             ))}
           </div>
 
+          {g.data?.profiles.map((p) => <ProfilePanel key={p.namespace} p={p} />)}
           {g.data?.evolution.map((e) => <EvolutionPanel key={e.namespace} e={e} />)}
 
           <div className="grid gap-6 xl:grid-cols-2">

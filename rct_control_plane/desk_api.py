@@ -398,11 +398,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
                                "FROM skills").fetchone()
             best = sk.execute("SELECT id, problem_statement, uses, successes, failures, reinforced FROM skills WHERE archived = 0 "
                               "AND uses > 0 ORDER BY (successes + 1.0) / (uses + 2.0) DESC, uses DESC LIMIT 5").fetchall()
-        from rct_control_plane.intent_loop import evolution_report
+        from rct_control_plane.intent_loop import evolution_report, intent_profile
         persistence = _kernel()._persistence
         evolution = [evolution_report(persistence, item["namespace"]) for item in ledgers[:5]]
+        profiles = [intent_profile(persistence, item["namespace"]) for item in ledgers[:5]]
         return {
-            "ledgers": ledgers, "recent": recent, "evolution": evolution,
+            "ledgers": ledgers, "recent": recent, "evolution": evolution, "profiles": profiles,
             "skills": {"total": stats["n"] or 0, "archived": stats["archived"] or 0, "reused": stats["reused"] or 0,
                        "merged_repeats": stats["repeats"] or 0,
                        "most_reliable": [{**dict(b), "reliability": round((b["successes"] + 1) / (b["uses"] + 2), 4)} for b in best]},

@@ -36,7 +36,7 @@ F = D^I × A
 | Symbol | Name | Meaning in the gate |
 |---|---|---|
 | **F** | Future | The admissibility of the action: whether this future may be brought about. |
-| **D** | Data | Quality and sufficiency of the data behind the request, normalised to [0, 1]. |
+| **D** | Data | The data this user really has for the request, normalised to [0, 1]: the files the goal names exist, relevant stored memory, verified skills, the user's own track record, and how clearly the request is worded (`data_evidence.py`). A risky action over data the user does not have is blocked and the answer lists what is missing. |
 | **I** | Intent | Precision of the stated intent. Because D ≤ 1, a higher I makes the gate *stricter*: vague data is punished harder when the intent claims to be precise. |
 | **A** | Architect | Human authority. **A = 0 means no future**, whatever D and I are. A is not a model output; it is a verifiable human decision. |
 
@@ -95,7 +95,7 @@ call a tool.
 | # | Step | What happens | Status |
 |---|---|---|---|
 | 1 | **GUARD** | CORD screens every goal before any model call; a hard finding (prompt injection, encoded payload, oversized input) ends the episode with no model or tool call. FDIA D and I are computed from the goal and F of the goal is recorded; the FDIA gate itself applies to each risky action (step 4), where A is known | ✅ built (CORD in the loop since 2026-09-30; before that only two API endpoints screened goals) |
-| 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions) | ✅ built |
+| 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions); with the pipeline on, the 41 algorithms add advice from the user's own data (§4.1) | ✅ built |
 | 3 | **ROUTE** | ALGO-21 decides FAST (low risk, narrow scope: smaller step budget, answer directly) or SLOW (full budget, step by step); a router error routes SLOW. Never skips a governance step | ✅ built (2026-09-29) |
 | 4 | **ACT** | Per-step FDIA gate; side-effecting tools wait for a signed human approval, then the episode resumes | ✅ built |
 | 5 | **COMPRESS** | Tool outputs over ~2k tokens are compressed with Delta-Context and can be expanded again | ✅ built |
@@ -106,6 +106,26 @@ call a tool.
 All entry points (API, the four messaging gateways, the scheduler, the MCP tool, profiles and
 subagents, the terminal UI) build the loop through one governed factory; a test fails if any module
 constructs an ungoverned loop.
+
+### 4.1 The Intent Loop
+
+The Intent Loop is self-development by running every component of the system in one ordered
+sequence to a result that is really recorded. Its original design has five pillars, and each episode
+now reports them from measured values (`intent_loop.py`):
+
+| Pillar | What it is in the runtime |
+|---|---|
+| 1 FDIA gatekeeper | CORD screen, D from the user's data, I, the per-action gate |
+| 2 Memory | relevant memories and skills recalled; retrieval algorithms ALGO-16/18/13 over the user's data; **warm recall**: a verified answer is re-used without a model call if the read-only evidence it rested on replays byte-identical |
+| 3 Specialist executor | routed fast or slow, tools, the planning algorithms (ALGO-02/37/38/15/20) |
+| 4 Verifier | RCT-7 step 7, belief confidence (ALGO-30), hallucination patterns (ALGO-33). Multi-model consensus is **not** in this process; SignedAI runs as a separate service |
+| 5 Evolution committer | graded MEE growth per user, skill kept (near-duplicates merged, reliability from reuse), RCTDB run, audit |
+
+The motto "the more it is used, the smarter, faster and cheaper" is measured, not claimed: for each
+goal a user has had verified at least twice, the Growth page compares the first and latest run
+(steps, seconds, cost, D). The 41 algorithms are opt-in pipeline stages (`DELENTIA_ALGORITHM_PIPELINE=1`,
+on under `delentia serve`); algorithms that call a model, open the network or write files need an
+explicit switch and otherwise report why they did not run.
 
 ## 5. Three products
 
@@ -126,7 +146,7 @@ built when they were plans. This table is the corrected record.
 |---|---|---|---|
 | L1 OS primitives | Direct hardware access, OS-level isolation | Process-level sandbox (`local` and `docker` backends) with command risk classification | Correct the text: Delentia is a runtime on top of an OS, not an OS |
 | L2 Kernel services | VRAM management, LoRA swap in < 12 ms | `lora_multiplexer.py` manages adapter slots (with a mock fallback); the SLM is not connected to the runtime; 12 ms was never measured | Correct the text; the SLM is optional and off the main path |
-| L3 Algorithm kernel | 41 algorithms + FDIA | ✅ 41/41 have real logic; measured 2026-09-30: 14 run inside the deep pipeline, 12 more are reachable as MCP tools, the rest are constructed but not called by any pipeline | Keep |
+| L3 Algorithm kernel | 41 algorithms + FDIA | 41/41 have logic; ALGO-02, 37 and 38 were stand-ins until 2026-10-01 and are now real (Pareto planner, plan depth from the intent, interval constraint solver). Measured 2026-10-01: with the pipeline on, 37 of 41 execute on real inputs with a rule policy; ALGO-09/11/32 need a model call, ALGO-14 an image request | Keep; see §4.1 |
 | L4 RCTDB | 8 dimensions on Qdrant + Neo4j + PostgreSQL | SQLite by default (RCTDB tables, hash-chained audit, experiment runs); PostgreSQL + pgvector backend available; Qdrant used by vector search (ALGO-16); Neo4j used by graph traversal (ALGO-17) when a server is configured | Correct the text to "SQLite by default, optional backends". Code gap: the hash-chained audit exists only on SQLite; PostgreSQL parity is needed before multi-host deployment |
 | L5 SignedAI | Multi-model consensus ≥ 75% | Consensus logic and tier routing in `signedai/core`; no HTTP API yet; model lists in older papers are out of date | Correct the text; an API wrapper is backlog |
 | L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3) | Keep |

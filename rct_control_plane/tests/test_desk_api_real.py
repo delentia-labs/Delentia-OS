@@ -214,6 +214,8 @@ def test_growth_shows_the_namespace_ledger_the_D_that_gated_each_episode_and_ski
     run = next(r for r in body["recent"] if r["namespace"] == "growth-ns")
     assert run["D"] is not None and run["growth_delta"] > 0.5 and run["finished"] == 1
     assert body["skills"]["total"] >= 0 and "most_reliable" in body["skills"]
+    profile = next(p for p in body["profiles"] if p["namespace"] == "growth-ns")
+    assert profile["episodes"] == 1 and profile["kinds"][0]["type"] != ""
 
 
 def test_pipeline_lists_all_41_algorithms_and_aggregates_recorded_runs(desk):

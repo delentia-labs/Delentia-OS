@@ -151,3 +151,44 @@ def evolution_report(persistence: Any, namespace: str, *, min_runs: int = 2, lim
         },
         "note": "Computed only from this namespace's verified, recorded runs of the same goal; 'cheaper' needs runs that report cost.",
     }
+
+
+def intent_profile(persistence: Any, namespace: str, *, limit: int = 300, top: int = 8) -> Dict[str, Any]:
+    """Everything here revolves around the user's intent, so this is the view of it:
+    what kinds of intent this user brings, how well each has gone, and which goals
+    come back again and again. Computed only from recorded episodes."""
+    runs = persistence.recent_governed_runs(namespace, limit)
+    kinds: Dict[str, Dict[str, Any]] = {}
+    goals: Dict[str, Dict[str, Any]] = {}
+    for run in runs:
+        m = run.get("metrics") or {}
+        kind = m.get("intent_type") or "UNKNOWN"
+        k = kinds.setdefault(kind, {"episodes": 0, "verified": 0, "blocked": 0, "D": [], "steps": [], "risk": {}})
+        k["episodes"] += 1
+        k["verified"] += 1 if _verified(run) else 0
+        k["blocked"] += 1 if m.get("stopped_reason") == "fdia_blocked" else 0
+        if isinstance(m.get("data_D"), (int, float)):
+            k["D"].append(m["data_D"])
+        if isinstance(m.get("iterations"), (int, float)):
+            k["steps"].append(m["iterations"])
+        risk = m.get("intent_risk") or "-"
+        k["risk"][risk] = k["risk"].get(risk, 0) + 1
+        g = goals.setdefault(run["experiment_id"], {"runs": 0, "verified": 0, "last": run.get("timestamp")})
+        g["runs"] += 1
+        g["verified"] += 1 if _verified(run) else 0
+    names = {}
+    try:
+        with persistence._connect() as conn:
+            for eid, name in conn.execute("SELECT id, name FROM experiments").fetchall():
+                names[eid] = name
+    except Exception:
+        pass
+    return {
+        "namespace": namespace, "episodes": len(runs),
+        "kinds": sorted(({"type": t, "episodes": v["episodes"], "verified": v["verified"], "blocked": v["blocked"], "risk": v["risk"],
+                          "avg_D": round(statistics.mean(v["D"]), 3) if v["D"] else None,
+                          "avg_steps": round(statistics.mean(v["steps"]), 2) if v["steps"] else None} for t, v in kinds.items()),
+                        key=lambda x: -x["episodes"]),
+        "recurring": sorted(({"goal": names.get(eid, eid), "runs": v["runs"], "verified": v["verified"]} for eid, v in goals.items() if v["runs"] >= 2),
+                            key=lambda x: -x["runs"])[:top],
+    }

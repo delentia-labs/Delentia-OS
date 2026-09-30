@@ -114,3 +114,31 @@ def test_the_desk_growth_endpoint_carries_the_evolution_report(tmp_path, monkeyp
     with TestClient(create_app()) as client:
         body = client.get("/v1/desk/growth").json()
     assert body["evolution"][0]["goals_repeated"] == 1 and body["evolution"][0]["summary"]["fewer_steps"] == 1
+
+
+def test_the_intent_profile_shows_what_kinds_of_intent_a_user_brings_and_which_recur(tmp_path):
+    from rct_control_plane.intent_loop import intent_profile
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "p.db"))
+    _seed(persistence, "u", "read the config", [
+        {"iterations": 2, "data_D": 0.7, "intent_type": "QUERY", "intent_risk": "LOW"},
+        {"iterations": 1, "data_D": 0.9, "intent_type": "QUERY", "intent_risk": "LOW"},
+    ])
+    _seed(persistence, "u", "deploy to production", [
+        {"iterations": 1, "data_D": 0.4, "intent_type": "DEPLOY", "intent_risk": "SYSTEMIC", "stopped_reason": "fdia_blocked", "aligned_with_intent": 0},
+    ])
+    profile = intent_profile(persistence, "u")
+    kinds = {k["type"]: k for k in profile["kinds"]}
+    assert kinds["QUERY"]["episodes"] == 2 and kinds["QUERY"]["verified"] == 2 and kinds["QUERY"]["avg_D"] == 0.8
+    assert kinds["DEPLOY"]["blocked"] == 1 and kinds["DEPLOY"]["risk"] == {"SYSTEMIC": 1}
+    assert [r["goal"] for r in profile["recurring"]] == ["read the config"]
+    assert intent_profile(persistence, "someone-else")["episodes"] == 0
+
+
+def test_a_real_episode_records_its_intent_type_and_risk(tmp_path, kernel, monkeypatch):
+    _script(monkeypatch, [[FINISH]])
+    loop = _loop(tmp_path, kernel, namespace="kinds", db="kinds.db")
+    result = asyncio.run(loop.run("Read the file pyproject.toml and tell me the project name"))
+    run = loop._persistence.get_experiment_runs(result["experiment"]["experiment_id"])[-1]["metrics"]
+    assert run["intent_type"] == "QUERY" and run["intent_risk"] == "LOW"
+    start = [r for r in loop._persistence.recent_audit(50) if r["entity_type"] == "governed_loop_episode_start"][0]
+    assert start["changes"]["intent"]["type"] == "QUERY"

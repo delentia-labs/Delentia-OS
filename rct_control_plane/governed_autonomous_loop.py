@@ -370,6 +370,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_skill_scores: List[float] = []
         self._episode_memory_scores: List[float] = []
         self._episode_data: Dict[str, Any] = {}
+        self._episode_intent: Dict[str, Any] = {}
         # Round 51: the 41 algorithms as pipeline stages around the episode
         # (algorithm_pipeline.py). Off unless passed in or DELENTIA_ALGORITHM_PIPELINE=1.
         self._algorithm_pipeline = algorithm_pipeline
@@ -499,6 +500,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         memories = await self._recall_for_goal(goal) if self._memory_in_prompt else []
         skills = self._retrieve_skills_counted(goal)
         evidence = self._assess_data(goal, clarity, compile_result)
+        self._episode_intent = self._describe_intent(compile_result)
         D = evidence.D
         self._episode_data = evidence.to_dict()
         self._episode_D, self._episode_I = D, I
@@ -543,6 +545,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             changes={
                 "goal": goal, "D": D, "I": I,
                 "data_evidence": self._episode_data,
+                "intent": self._episode_intent,
                 "rct7_steps": self._episode_rct7_steps,
                 "jitna_packet_id": signed.packet_id,
                 "jitna_verified": self._episode_jitna_verified,
@@ -715,6 +718,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
             content = str(item.get("content", "")).replace("\n", " ")[:300]
             lines.append(f"- [{item.get('memory_type', 'memory')}] {content}")
         return "\n".join(lines)
+
+    @staticmethod
+    def _describe_intent(compile_result: Any) -> Dict[str, Any]:
+        """What kind of intent this was (type, risk, scope), kept with the episode so
+        the user's intents can be profiled later."""
+        intent = getattr(compile_result, "intent", None)
+        if intent is None:
+            return {"type": "UNKNOWN", "risk": None, "scope": None}
+
+        def value(x: Any) -> Any:
+            return getattr(x, "value", x)
+        return {"type": value(intent.intent_type), "risk": value(intent.risk_profile), "scope": value(intent.scope.scope_type)}
 
     def _assess_data(self, goal: str, clarity: float, compile_result: Any) -> "data_evidence.DataEvidence":
         """Round 51: D from the data this user actually has (see
@@ -1242,6 +1257,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "skills_injected": self._episode_skills_injected,
                 "warm_recall": 1 if result["stopped_reason"] == "warm_recall" else 0,
                 "data_D": self._episode_D,
+                "intent_type": self._episode_intent.get("type"),
+                "intent_risk": self._episode_intent.get("risk"),
                 "growth_delta": (result.get("growth") or {}).get("delta"),
                 "growth_G": (result.get("growth") or {}).get("G"),
                 "rct7_in_prompt": int(self._rct7_in_prompt),
