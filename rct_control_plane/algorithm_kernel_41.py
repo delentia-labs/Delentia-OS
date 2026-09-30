@@ -241,8 +241,9 @@ class AlgorithmKernel41:
         # matches Phase 1 Task 3's choice — a separate real file from the
         # LIVE rct_control_plane.db this session must never write to.
         from rct_control_plane.persistence import ControlPlanePersistence
+        from rct_control_plane.data_home import agentic_db_path
         self._capability_registry.register(
-            "persistence", lambda: ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+            "persistence", lambda: ControlPlanePersistence(db_path=agentic_db_path())
         )
 
         # Round 22 Phase 9 Task 19: general-purpose memory, kernel-default

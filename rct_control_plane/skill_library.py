@@ -74,7 +74,6 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 from __future__ import annotations
 
 import json
-import os
 import re
 import sqlite3
 import uuid
@@ -90,10 +89,9 @@ SKILL_LIBRARY_VERSION = "0.1"
 # var, same default file) so skills live in the same on-disk database as
 # the rest of the control plane's local-dev state.
 # ---------------------------------------------------------------------------
-_DEFAULT_DB_PATH = os.environ.get(
-    "RCT_DB_PATH",
-    str(Path(__file__).parent.parent / "rct_control_plane.db"),
-)
+from rct_control_plane.data_home import control_plane_db_path  # noqa: E402
+
+_DEFAULT_DB_PATH = control_plane_db_path()
 
 _SKILLS_SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;

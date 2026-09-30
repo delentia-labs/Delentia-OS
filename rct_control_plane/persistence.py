@@ -26,7 +26,6 @@ Note: This is a local-dev bridge. Production deployments connect to RCTDB
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -48,10 +47,9 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Default DB path — can be overridden with RCT_DB_PATH env var
 # ---------------------------------------------------------------------------
-_DEFAULT_DB_PATH = os.environ.get(
-    "RCT_DB_PATH",
-    str(Path(__file__).parent.parent / "rct_control_plane.db"),
-)
+from rct_control_plane.data_home import control_plane_db_path  # noqa: E402
+
+_DEFAULT_DB_PATH = control_plane_db_path()
 
 # ---------------------------------------------------------------------------
 # DDL — schema mirrors RCTDB 8-dimensional structure

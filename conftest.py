@@ -13,8 +13,19 @@ Usage:
 """
 import sys
 import os
+import tempfile
 
 from hypothesis import HealthCheck, settings
+
+# ── Isolate runtime data (Round 50) ────────────────────────────────────────
+# Before this, tests wrote to the same skills/audit databases a real runtime
+# uses (a Desk run showed "271 skills learned", all "Say hello and finish"
+# from tests). Point DELENTIA_HOME at a fresh temp directory before anything
+# imports rct_control_plane. Set DELENTIA_TEST_KEEP_HOME=1 to opt out.
+if not os.environ.get("DELENTIA_TEST_KEEP_HOME"):
+    os.environ["DELENTIA_HOME"] = tempfile.mkdtemp(prefix="delentia-test-home-")
+    os.environ.pop("RCT_DB_PATH", None)
+    os.environ.pop("RCT_AGENTIC_DB_PATH", None)
 
 # ── Hypothesis profiles ────────────────────────────────────────────────────
 
