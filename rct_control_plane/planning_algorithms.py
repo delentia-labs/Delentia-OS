@@ -87,7 +87,7 @@ def expand_plan(task: str, intent_type: Optional[str] = None, scope: Optional[st
     """Plan stages for `task`. Depth grows with what is at stake."""
     stages = list(_STAGES.get((intent_type or "").upper(), _DEFAULT_STAGES))
     if (scope or "").upper() in ("PACKAGE", "REPOSITORY", "SYSTEM", "INFRASTRUCTURE"):
-        stages.insert(1, ("Map impact", f"list the modules affected across the {scope.lower()}"))
+        stages.insert(1, ("Map impact", f"list the modules affected across the {(scope or '').lower()}"))
     if (risk or "").upper() in ("STRUCTURAL", "SYSTEMIC"):
         stages.insert(len(stages) - 1, ("Dry run", "rehearse the change without applying it"))
     if (risk or "").upper() == "SYSTEMIC":

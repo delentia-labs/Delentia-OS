@@ -245,3 +245,14 @@ class TestEmbeddingIsNotFooledByStopwords:
         related = cos(ctx.embed("Recall what you remember about the release checklist."), ctx.embed(memory))
         unrelated = cos(ctx.embed("Read the file pyproject.toml in the repository and tell me the project name."), ctx.embed(memory))
         assert related > 0.25 and unrelated < 0.1
+
+
+def test_warm_up_loads_the_language_models_once_and_never_raises(kernel):
+    first = ap.warm_up(kernel)
+    second = ap.warm_up(kernel)
+    assert second < 2.0 and second <= first + 0.5
+
+    class Broken:
+        def algo_34_semantic_analysis(self, text):
+            raise RuntimeError("no models")
+    assert ap.warm_up(Broken()) >= 0.0

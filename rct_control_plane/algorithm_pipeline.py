@@ -718,3 +718,16 @@ class AlgorithmPipeline:
 
 def adapter_source_sanity() -> bool:     # used by tests: every adapter is an async function
     return all(inspect.iscoroutinefunction(a.fn) for a in ADAPTERS)
+
+
+def warm_up(kernel: Any) -> float:
+    """Load the language models ALGO-34 needs (spaCy, NLTK, TextBlob: 15-40 s the
+    first time, milliseconds after, shared by every kernel in the process) so the
+    first episode on a fresh `delentia serve` does not wait for them. Returns the
+    seconds it took; never raises."""
+    started = time.perf_counter()
+    try:
+        kernel.algo_34_semantic_analysis("warming up the language models")
+    except Exception:
+        pass
+    return time.perf_counter() - started

@@ -117,7 +117,7 @@ def evolution_report(persistence: Any, namespace: str, *, min_runs: int = 2, lim
             return None
         return bool(last < first - tolerance)
 
-    clusters = []
+    clusters: List[Dict[str, Any]] = []
     for experiment_id, group in by_goal.items():
         if len(group) < min_runs:
             continue

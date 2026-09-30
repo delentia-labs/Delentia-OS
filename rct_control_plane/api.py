@@ -305,6 +305,11 @@ async def _lifespan(app: FastAPI):
     from rct_control_plane.gateways.discord_gateway import DiscordGateway
     from rct_control_plane.gateways.slack_gateway import SlackGateway
 
+    if os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes"):
+        import threading
+        from rct_control_plane.algorithm_pipeline import warm_up
+        threading.Thread(target=warm_up, args=(ALGORITHM_KERNEL,), daemon=True, name="pipeline-warmup").start()
+
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
     _DAEMON_STARTED_AT = time.time()
