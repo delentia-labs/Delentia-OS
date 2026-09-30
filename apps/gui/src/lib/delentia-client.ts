@@ -62,6 +62,19 @@ export const getApiKey = (): string => {
   );
 };
 
+/**
+ * fetch() against the configured gateway with the session API token, for
+ * pages that call the API directly. Round 50: these pages used a hardcoded
+ * http://127.0.0.1:8000 and sent no token, so they ignored the Settings
+ * gateway and failed with 401 whenever DELENTIA_API_TOKEN was set.
+ */
+export function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const key = getApiKey();
+  const headers: Record<string, string> = { ...(init.headers as Record<string, string> | undefined) };
+  if (key && !headers.Authorization) headers.Authorization = `Bearer ${key}`;
+  return fetch(`${getGateway()}${path}`, { ...init, headers });
+}
+
 /** Build auth headers for /v1/* endpoints */
 const authHeaders = (apiKey: string): Record<string, string> => ({
   "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from "@/lib/delentia-client";
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
@@ -159,7 +160,7 @@ export default function DeepProfilerPage() {
   const handleStartSession = async () => {
     setIsStarting(true);
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/profiler/session/start', {
+      const resp = await apiFetch('/v1/profiler/session/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goal, target_revenue: targetRevenue })
@@ -183,7 +184,7 @@ export default function DeepProfilerPage() {
     setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
 
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/profiler/step', {
+      const resp = await apiFetch('/v1/profiler/step', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: session.session_id, user_reply: text })

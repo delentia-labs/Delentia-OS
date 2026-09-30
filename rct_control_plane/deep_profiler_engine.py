@@ -401,7 +401,7 @@ class RCT7DeepProfilerEngine:
             "market_wedge": wedge,
             "user_strengths_summary": session.delta_memory,
             "execution_steps": steps,
-            "signedai_attestation": f"ED25519-{hashlib.sha256(f'{session.session_id}_{product_name}'.encode()).hexdigest()[:24]}",
+            "signedai_attestation": f"SHA256-{hashlib.sha256(f'{session.session_id}_{product_name}'.encode()).hexdigest()[:24]}",
             "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
         }
 

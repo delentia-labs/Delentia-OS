@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from "@/lib/delentia-client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -52,7 +53,7 @@ export default function BillingPage() {
     setSelectedTierForPayment(tierName);
     setIsCreatingInvoice(true);
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/billing/create-invoice', {
+      const resp = await apiFetch('/v1/billing/create-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

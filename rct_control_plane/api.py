@@ -600,17 +600,11 @@ class ControlPlaneAPI:
 
         @self.app.get("/delentia/benchmark/summary", tags=["Ecosystem"])
         async def get_benchmark_summary_endpoint():
-            """Returns live performance benchmark metrics for Delentia Desk GUI"""
-            return {
-                "success": True,
-                "data": [
-                    {"metric": "Data Quality", "value": 94},
-                    {"metric": "Intent Clarity", "value": 92},
-                    {"metric": "Action Speed", "value": 98},
-                    {"metric": "Security Alignment", "value": 99},
-                    {"metric": "Resource Efficiency", "value": 95},
-                ]
-            }
+            """Round 50: this returned five fixed scores (Data Quality 94, Intent Clarity 92,
+            ...) that no benchmark produced. Measured results live in
+            docs/testing/TESTING_CANONICAL.md and `scripts/endpoint_bench.py`."""
+            return {"success": False, "data": [],
+                    "note": "No live benchmark is wired to this endpoint. Run scripts/endpoint_bench.py or read /v1/desk/experiments."}
 
         @self.app.post("/v1/kernel/execute", tags=["Kernel"])
         async def kernel_execute_endpoint(request: Dict[str, Any]):
@@ -644,18 +638,22 @@ class ControlPlaneAPI:
             from rct_control_plane.dynamic_reasoner import DELENTIA_CONSTITUTIONAL_PROMPT
             ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(DELENTIA_CONSTITUTIONAL_PROMPT, intent_text, max_tokens=1024)
             if not ai_reply:
-                ai_reply = f"สวัสดีครับ! ผมคือ Delentia OS ระบบ AI ที่พัฒนาโดยคุณอิทธิฤทธิ์ แซ่โง้ว (Whale) และทีมวิจัย Delentia Labs ครับ ได้รับข้อความ '{intent_text}' เรียบร้อยแล้ว ระบบกำลังประมวลผลผ่าน 41 Algorithms Master Kernel และ FDIA Gate ({fdia_score:.4f}) มีเรื่องอะไรให้ผมช่วยคิด วิเคราะห์ หรือสร้างทีม AI เพิ่มเติมไหมครับ?"
+                ai_reply = ("ต่อโมเดลภาษาไม่ได้ จึงตอบข้อความนี้ไม่ได้ (ตรวจว่า Ollama รันอยู่ หรือเลือกโมเดลที่หน้า Models) / "
+                            "The language model could not be reached, so this message was not answered.")
 
             intent_id = f"intent_{int(time.time()*1000)}"
-            sig_hash = f"ED25519-{os.urandom(8).hex()}"
+            fdia_inputs = algo_res.get("fdia_inputs", {})
 
             return {
                 "output": {
                     "result": ai_reply,
                     "summary": f"Intent: {intent_id} (Mode: {mode})",
-                    "fdia_score": {"D": 0.98, "I": 0.96, "A": 1.0, "F": fdia_score, "signed": True, "signature_hash": sig_hash},
-                    "hexa_role": "EXECUTOR",
-                    "signed": True
+                    # Round 50: D and I are the kernel's own inputs (they were fixed 0.98/0.96),
+                    # and nothing is signed here (the signature was random hex).
+                    "fdia_score": {"D": fdia_inputs.get("data_quality"), "I": fdia_inputs.get("intent_precision"), "A": 1.0,
+                                   "F": fdia_score, "signed": False, "signature_hash": ""},
+                    "hexa_role": "CHAT",
+                    "signed": False
                 },
                 "trace_id": f"trace-{int(time.time()*1000)}"
             }
@@ -1454,6 +1452,10 @@ class ControlPlaneAPI:
         async def get_lora_slot_matrix():
             """Returns 1 Base model, 3 Active Hot Slots, and N Disk Adapters."""
             return {
+                # Round 50: these figures are fixed placeholders, not read from a GPU or
+                # a loaded model (no LoRA multiplexer is attached to the runtime).
+                "simulated": True,
+                "note": "static placeholder data; no GPU or adapter is being read",
                 "base_model": "Qwen/Qwen3.6-27B-Instruct (1-bit GGUF)",
                 "base_vram_gb": 3.90,
                 "vram_ceiling_gb": 4.90,
@@ -1565,17 +1567,14 @@ class ControlPlaneAPI:
 
         @self.app.post("/v1/enterprise/audit")
         async def enterprise_legal_and_security_audit(payload: Dict[str, Any]):
-            """Executes an enterprise PDPA legal risk audit and seals it with SignedAI."""
-            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
-            text = payload.get("contract_text", "")
-            algo_res = ALGORITHM_KERNEL.process_intent_full_pipeline(f"Enterprise Audit: {text[:100]}")
-            
+            """Round 50: NOT IMPLEMENTED. This used to return compliance_score 92 and a
+            random 'ED25519-...' seal for any text. Nothing reads a contract against PDPA
+            yet, so it says so instead of inventing a rating or a signature."""
             return {
-                "status": "SUCCESS",
-                "compliance_score": 92,
-                "fdia_score": algo_res["fdia_score"],
-                "signedai_seal": f"ED25519-{os.urandom(8).hex()}",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                "status": "NOT_IMPLEMENTED",
+                "compliance_score": None,
+                "signedai_seal": None,
+                "note": "No PDPA contract review exists yet; no score or seal is produced.",
             }
 
         # ---------------------------------------------------------------------

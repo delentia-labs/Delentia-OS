@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from "@/lib/delentia-client";
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
@@ -176,7 +177,7 @@ export default function LivingWorldSandboxPage() {
 
     try {
       // Connect to Delentia Real AI Engine
-      const resp = await fetch('http://127.0.0.1:8000/v1/game/stardew/interact', {
+      const resp = await apiFetch('/v1/game/stardew/interact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -537,7 +538,7 @@ export default function LivingWorldSandboxPage() {
               <button
                 onClick={async () => {
                   try {
-                    const resp = await fetch('http://127.0.0.1:8000/v1/game/bdi/experience', {
+                    const resp = await apiFetch('/v1/game/bdi/experience', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -559,7 +560,7 @@ export default function LivingWorldSandboxPage() {
               <button
                 onClick={async () => {
                   try {
-                    const resp = await fetch('http://127.0.0.1:8000/v1/game/bdi/experience', {
+                    const resp = await apiFetch('/v1/game/bdi/experience', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

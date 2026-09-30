@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from "@/lib/delentia-client";
 import React, { useState } from 'react';
 import Link from 'next/link';
 
@@ -30,7 +31,7 @@ export default function LoRAForgeStudioPage() {
     setTrainingLoss(2.45);
 
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/lora/train', {
+      const resp = await apiFetch('/v1/lora/train', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,7 +52,7 @@ export default function LoRAForgeStudioPage() {
       // Poll status
       const interval = setInterval(async () => {
         try {
-          const statusResp = await fetch(`http://127.0.0.1:8000/v1/lora/train/status/${jobId}`);
+          const statusResp = await apiFetch(`/v1/lora/train/status/${jobId}`);
           if (statusResp.ok) {
             const statusData = await statusResp.json();
             setProgressPct(statusData.progress_pct);
@@ -72,7 +73,7 @@ export default function LoRAForgeStudioPage() {
       }, 500);
     } catch {
       setIsTraining(false);
-      setTrainError("The API at 127.0.0.1:8000 is not reachable, so nothing was trained.");
+      setTrainError("The Delentia API is not reachable, so nothing was trained.");
     }
   };
 

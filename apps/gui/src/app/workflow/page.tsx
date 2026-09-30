@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from "@/lib/delentia-client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -37,7 +38,7 @@ export default function WorkflowPage() {
   const handleSelectTemplate = async (templateKey: string) => {
     setIsProvisioning(true);
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/swarm/templates');
+      const resp = await apiFetch('/v1/swarm/templates');
       const data = await resp.json();
       if (data.templates && data.templates[templateKey]) {
         setActiveTeam(data.templates[templateKey]);
@@ -53,7 +54,7 @@ export default function WorkflowPage() {
   const handleConversationalProvision = async () => {
     setIsProvisioning(true);
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/swarm/provision', {
+      const resp = await apiFetch('/v1/swarm/provision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brief: briefInput })
@@ -72,7 +73,7 @@ export default function WorkflowPage() {
     if (!activeTeam) return;
     setIsRunningTask(true);
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/swarm/run-team', {
+      const resp = await apiFetch('/v1/swarm/run-team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +94,7 @@ export default function WorkflowPage() {
   const handleApproveAction = async () => {
     if (!activeTeam || !pendingApproval) return;
     try {
-      const resp = await fetch('http://127.0.0.1:8000/v1/swarm/approve-action', {
+      const resp = await apiFetch('/v1/swarm/approve-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

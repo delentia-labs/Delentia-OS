@@ -70,7 +70,7 @@ class InvoiceRecord:
         self.status = "PAID" # Default active in sandbox/real test
         self.created_at = time.strftime("%Y-%m-%d %H:%M:%S")
         self.qr_payload = generate_promptpay_emvco(promptpay_id, amount_thb)
-        self.signedai_seal = f"ED25519-{hashlib.sha256(f'{invoice_id}_{amount_thb}'.encode()).hexdigest()[:20]}"
+        self.signedai_seal = f"SHA256-{hashlib.sha256(f'{invoice_id}_{amount_thb}'.encode()).hexdigest()[:20]}"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
