@@ -193,6 +193,10 @@ class TestMissingPsycopg2:
 def _setup_mock_psycopg2(mock_pg: MagicMock) -> tuple:
     """Return (mock_conn, mock_cur) with context-manager support wired up."""
     mock_cur = MagicMock()
+    # Round 50: audit writes now INSERT ... RETURNING id, changes, created_at and
+    # read the chain head (audit_chain_pg.append_pg); give fetchone() a row of
+    # that shape by default. Tests that need another row still set it.
+    mock_cur.fetchone.return_value = (1, {}, datetime(2026, 1, 1, tzinfo=timezone.utc))
     mock_conn = MagicMock()
     mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cur)
     mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -345,3 +349,26 @@ class TestPolicyAndAudit:
         db.recent_audit(limit=42)
         sql, params = mock_cur.execute.call_args[0]
         assert params == (42,)
+
+
+@patch("rct_control_plane.persistence_pg._HAS_PSYCOPG2", True)
+@patch("rct_control_plane.persistence_pg.psycopg2")
+class TestAuditChainWiring:
+    """Round 50: every Postgres audit write goes through the hash chain."""
+
+    def test_append_audit_takes_the_chain_lock_and_writes_a_link(self, mock_pg):
+        _, mock_cur = _setup_mock_psycopg2(mock_pg)
+        with patch.object(PostgresPersistence, "_init_schema"):
+            db = PostgresPersistence(dsn="postgresql://test/test")
+        db.append_audit("intent", "id-1", "REVIEW", actor="admin")
+        sqls = [c[0][0] for c in mock_cur.execute.call_args_list]
+        assert "pg_advisory_xact_lock" in sqls[0]
+        assert any("INSERT INTO audit_trail" in s and "RETURNING" in s for s in sqls)
+        assert any("INSERT INTO audit_chain" in s for s in sqls)
+
+    def test_save_intent_audits_through_the_chain_too(self, mock_pg):
+        _, mock_cur = _setup_mock_psycopg2(mock_pg)
+        with patch.object(PostgresPersistence, "_init_schema"):
+            db = PostgresPersistence(dsn="postgresql://test/test")
+        db.save_intent("id-9", "u", "T", "goal")
+        assert any("INSERT INTO audit_chain" in c[0][0] for c in mock_cur.execute.call_args_list)
