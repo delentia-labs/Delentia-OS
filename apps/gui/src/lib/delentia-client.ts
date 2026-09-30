@@ -80,72 +80,14 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ─────────────────────────────────────────────
-// MOCK DATA FOR OFFLINE SIMULATION MODE
-// ─────────────────────────────────────────────
-
-const MOCK_MEMORY_DELTAS: MemoryDelta[] = [
-  {
-    agent_id: "agent-hexa-librarian-01",
-    tick: 524,
-    intent_type: "QUERY_LEGAL_ARCHIVE",
-    action_type: "ZSTD_DECOMPRESS_COMPLETED",
-    outcome: "success",
-    changes: { "decompressed_bytes": 1048576, "compression_ratio": "4.2x" },
-    relationship_change: { "agent-hexa-regional-thai-01": 0.05 },
-    governance_violation: false,
-    resources_delta: { "cpu_seconds": 0.02, "ram_mb": 4.5 },
-    sha256_hash: "a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8",
-  },
-  {
-    agent_id: "agent-hexa-regional-thai-01",
-    tick: 523,
-    intent_type: "TRANSLATE_LEGAL_TERMS",
-    action_type: "RCT_TRANSLATION_EXECUTED",
-    outcome: "success",
-    changes: { "target_language": "TH", "translated_tokens": 420 },
-    relationship_change: { "user-client-main": 0.08 },
-    governance_violation: false,
-    resources_delta: { "cpu_seconds": 0.08, "ram_mb": 12.8 },
-    sha256_hash: "8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e",
-  },
-  {
-    agent_id: "agent-hexa-supreme-architect-01",
-    tick: 522,
-    intent_type: "COMPILE_SYSTEM_PLANS",
-    action_type: "RCT_POLICY_ALIGNMENT_BLOCKED",
-    outcome: "blocked",
-    changes: { "violation_reason": "Insecure file reference in postcss.config.mjs" },
-    relationship_change: { "agent-hexa-junior-builder-01": -0.15 },
-    governance_violation: true,
-    resources_delta: { "cpu_seconds": 0.12, "ram_mb": 34.2 },
-    sha256_hash: "7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d",
-  },
-  {
-    agent_id: "agent-hexa-lead-builder-01",
-    tick: 521,
-    intent_type: "RECOMPILE_POSTCSS_CONFIG",
-    action_type: "ESM_SYNTAX_RESOLVED",
-    outcome: "success",
-    changes: { "modified_files": ["postcss.config.mjs"] },
-    relationship_change: { "agent-hexa-supreme-architect-01": 0.25 },
-    governance_violation: false,
-    resources_delta: { "cpu_seconds": 0.05, "ram_mb": 8.4 },
-    sha256_hash: "6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d",
-  },
-  {
-    agent_id: "agent-hexa-groq-adapter-01",
-    tick: 520,
-    intent_type: "OPTIMIZE_STREAMING_SPEED",
-    action_type: "LPU_PERSISTENT_CHANNEL_OPENED",
-    outcome: "partial",
-    changes: { "throughput_tokens_per_sec": 142.5 },
-    relationship_change: { "user-client-main": 0.12 },
-    governance_violation: false,
-    resources_delta: { "cpu_seconds": 0.01, "ram_mb": 2.1 },
-    sha256_hash: "5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c",
-  }
-];
+// Round 50: no offline simulation. When the API cannot be reached the GUI says
+// so (offlineError) instead of showing invented results, scores or signatures.
+function offlineError(gateway: string, what: string): Error {
+  return new Error(
+    `เชื่อมต่อ Delentia API ที่ ${gateway} ไม่ได้ จึงไม่ได้${what} ` +
+      "(เริ่ม API ด้วย `delentia serve` แล้วลองใหม่)",
+  );
+}
 
 // ─────────────────────────────────────────────
 // PUBLIC — no auth
@@ -162,28 +104,21 @@ export async function getHealthStatus(
     return {
       status: "degraded",
       timestamp: new Date().toISOString(),
-      version: "2.4.1 [Offline Simulator Mode]",
-      service: "Delentia OS Gateway",
+      version: "offline",
+      service: "Delentia OS API (unreachable)",
     };
   }
 }
 
 /** GET /delentia/system/stats — live ecosystem stats */
-export async function getSystemStats(gateway = getGateway()): Promise<SystemStats> {
+export async function getSystemStats(gateway = getGateway()): Promise<SystemStats | null> {
+  // Round 50: offline means no numbers. The old fallback showed withdrawn
+  // claims (4,849 tests, 62 microservices, 99.98% SLA) as if they were live.
   try {
     const res = await fetch(`${gateway}/delentia/system/stats`);
     return await handleResponse<SystemStats>(res);
   } catch {
-    return {
-      testCount: 4849,
-      microserviceCount: 62,
-      algorithmCount: 144,
-      layerCount: 9,
-      hexaCoreCount: 9,
-      consensusModels: 12,
-      sla: "99.98%",
-      version: "2.4.1 [Offline Simulator Mode]",
-    };
+    return null;
   }
 }
 
@@ -193,16 +128,7 @@ export async function getBenchmarkSummary(gateway = getGateway()): Promise<unkno
     const res = await fetch(`${gateway}/delentia/benchmark/summary`);
     return await handleResponse<unknown>(res);
   } catch {
-    return {
-      success: true,
-      data: [
-        { metric: "Data Quality", value: 92 },
-        { metric: "Intent Clarity", value: 89 },
-        { metric: "Action Speed", value: 95 },
-        { metric: "Security Alignment", value: 98 },
-        { metric: "Resource Efficiency", value: 90 },
-      ]
-    };
+    return { success: false, data: [] };
   }
 }
 
@@ -216,7 +142,7 @@ export async function executeIntent(
   options: {
     apiKey?: string;
     gateway?: string;
-    mode?: "quick" | "standard" | "deep" | "mirror";
+    mode?: "quick" | "standard" | "deep" | "mirror" | "agent";
     userId?: string;
   } = {}
 ): Promise<IntentExecuteResponse> {
@@ -229,18 +155,9 @@ export async function executeIntent(
       body: JSON.stringify({ intent, mode, context: { user_id: userId } }),
     });
     return await handleResponse<IntentExecuteResponse>(res);
-  } catch {
-    // Elegant Offline Fallback
-    return {
-      output: {
-        result: `[โหมดจำลองออฟไลน์] ทำการประมวลผลคำสั่งสำเร็จโดยอิงกับแบบจำลองโมเดล HexaCore "REGIONAL_THAI" (Typhoon v2) ร่วมกับความคุ้มครองความปลอดภัยระดับระดับสูง (FDIA F-Score = 0.94) บล็อกช่องโหว่การเรียกใช้งานแบบ CJS ในไฟล์ postcss.config.mjs เรียบร้อยแล้ว สภาพระบบการบิวด์ Next.js บน Tauri v2 มีความสมบูรณ์ 100% สัญญาณตอบสนองอยู่ในระดับยอดเยี่ยม`,
-        summary: "Simulated response for: " + intent,
-        fdia_score: { D: 0.98, I: 0.96, A: 0.95, F: 0.94, signed: true, signature_hash: "a9f8e7d6c5b4a3f2e1d0c9b8" },
-        hexa_role: "REGIONAL_THAI",
-        signed: true,
-      },
-      trace_id: `trace-${Math.floor(Math.random() * 1000000)}-mock`,
-    };
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("[Delentia API]")) throw err;
+    throw offlineError(gateway, "ประมวลผลคำสั่งนี้");
   }
 }
 
@@ -259,15 +176,9 @@ export async function queryRCTDB(
       body: JSON.stringify({ query, query_type: queryType, top_k: topK }),
     });
     return await handleResponse<QueryResponse>(res);
-  } catch {
-    return {
-      results: [
-        { id: "doc-01", score: 0.94, payload: { content: "Mock Document 1: Delentia OS v2 deployment guidelines." } },
-        { id: "doc-02", score: 0.88, payload: { content: "Mock Document 2: PostCSS CommonJS vs ESM transition directives." } },
-      ],
-      query_type: queryType,
-      total: 2,
-    };
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("[Delentia API]")) throw err;
+    throw offlineError(gateway, "ค้นหาใน RCTDB");
   }
 }
 
@@ -282,8 +193,9 @@ export async function getMemoryHistory(
       headers: authHeaders(apiKey),
     });
     return await handleResponse<MemoryDelta[]>(res);
-  } catch {
-    return MOCK_MEMORY_DELTAS.slice(0, limit);
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("[Delentia API]")) throw err;
+    throw offlineError(gateway, "โหลดประวัติ memory");
   }
 }
 
@@ -301,25 +213,68 @@ export async function rollbackMemory(
       body: JSON.stringify({ ticks }),
     });
     return await handleResponse(res);
-  } catch {
-    return {
-      success: true,
-      rolledback_to_tick: 524 - ticks,
-    };
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("[Delentia API]")) throw err;
+    throw offlineError(gateway, "ย้อน memory (ไม่มีอะไรถูกเปลี่ยน)");
   }
 }
 
 /** Compute FDIA score locally (offline, no API call needed) */
 export function computeFDIALocal(D: number, I: number, A: number): FDIAScore {
-  const F = Math.pow(D, I) * A;
+  // FDIA invariants (CLAUDE.md "FDIA"): A = 0, I <= 0 or D <= 0 means F = 0.
+  // Plain Math.pow(0, 0) is 1, which would score "no intent" as a full pass.
+  // I is an exponent, not a [0, 1] value, so it is not clamped to 1.
+  const d = Math.max(0, Math.min(1, D));
+  const a = Math.max(0, Math.min(1, A));
+  const i = Math.max(0, I);
+  const F = d <= 0 || i <= 0 || a <= 0 ? 0 : Math.pow(d, i) * a;
   return {
-    D: Math.max(0, Math.min(1, D)),
-    I: Math.max(0, Math.min(1, I)),
-    A: Math.max(0, Math.min(1, A)),
+    D: d,
+    I: i,
+    A: a,
     F: Math.max(0, Math.min(1, F)),
     signed: false,
     signature_hash: "",
   };
+}
+
+// ─── Runtime status (Round 50: real values for the status bar) ───────────────
+export interface RuntimeTask {
+  name: string;
+  is_enabled: boolean;
+  last_status: string;
+  last_output: string | null;
+  last_run_at: string | null;
+}
+
+export interface RuntimeStatus {
+  apiUp: boolean;
+  version?: string;
+  daemonRunning?: boolean;
+  uptimeSeconds?: number;
+  tasks: RuntimeTask[];
+}
+
+/** GET /health and /v1/daemon/status. Anything unreachable is reported as such, never simulated. */
+export async function fetchRuntimeStatus(gateway = getGateway()): Promise<RuntimeStatus> {
+  const apiKey = getApiKey();
+  const headers: Record<string, string> = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+  try {
+    const health = await fetch(`${gateway}/health`, { signal: AbortSignal.timeout(4000) });
+    if (!health.ok) return { apiUp: false, tasks: [] };
+    const h = await health.json();
+    const status: RuntimeStatus = { apiUp: true, version: h?.version, tasks: [] };
+    const daemon = await fetch(`${gateway}/v1/daemon/status`, { headers, signal: AbortSignal.timeout(4000) });
+    if (daemon.ok) {
+      const d = await daemon.json();
+      status.daemonRunning = Boolean(d?.running);
+      status.uptimeSeconds = typeof d?.uptime_seconds === "number" ? d.uptime_seconds : undefined;
+      status.tasks = Array.isArray(d?.tasks) ? d.tasks : [];
+    }
+    return status;
+  } catch {
+    return { apiUp: false, tasks: [] };
+  }
 }
 
 // ─── Stream event types ───────────────────────────────────────────────────────
@@ -337,7 +292,7 @@ export async function* streamIntent(
   options: {
     apiKey?: string;
     gateway?: string;
-    mode?: "quick" | "standard" | "deep" | "mirror";
+    mode?: "quick" | "standard" | "deep" | "mirror" | "agent";
   } = {}
 ): AsyncGenerator<StreamEvent, void, unknown> {
   const gateway = options.gateway ?? getGateway();
@@ -410,23 +365,12 @@ export async function* streamIntent(
   });
 
   if (simulatedStream) {
-    const mockTokens = [
-      "[โหมดจำลองออฟไลน์] ", "ทำการประมวลผล", "วิเคราะห์คำสั่ง: ", `"${intent}"\n\n`,
-      "โครงสร้างระบบ ", "Delentia Desk ", "มีความพร้อม", "ในการทำงานอย่างเต็มที่ ",
-      "โดยระบบได้จำลองโมเดล ", "HexaCore ", "และระบบความปลอดภัย ", "FDIA F-Score = 0.94 ",
-      "(SignedAI Verified ✔) เรียบร้อยแล้วครับ."
-    ];
-    for (const token of mockTokens) {
-      yield { type: "token", data: token };
-      await new Promise(r => setTimeout(r, 60));
-    }
+    // Round 50: no simulated answer and no invented FDIA score or signature.
+    // Say plainly that the API was not reached.
     yield {
-      type: "done",
-      data: {
-        hexa_role: "REGIONAL_THAI",
-        trace_id: "trace-mock-streaming-tick",
-        fdia_score: { D: 0.98, I: 0.96, A: 0.95, F: 0.94, signed: true, signature_hash: "hash-0x98f23" }
-      }
+      type: "error",
+      data: `เชื่อมต่อ Delentia API ที่ ${gateway} ไม่ได้ จึงไม่มีการประมวลผลใดๆ ` +
+        "เริ่ม API ด้วย `delentia serve` (หรือ `python -m rct_control_plane.cli serve`) แล้วลองใหม่",
     };
     return;
   }

@@ -32,11 +32,13 @@ interface Message {
   timestamp: Date;
 }
 
+// Round 50: quick/standard/deep/mirror are chat modes (no tools); "agent" runs the governed loop.
 const MODES = [
   { value: "quick", label: "Quick", desc: "การตอบสนองที่รวดเร็ว ประมวลผลขั้นพื้นฐาน", icon: Zap, color: "text-amber-400" },
   { value: "standard", label: "Standard", desc: "โหมดมาตรฐาน มีความสมดุลด้านความถูกต้อง", icon: Circle, color: "text-blue-400" },
   { value: "deep", label: "Deep Reasoning", desc: "วิเคราะห์เชิงลึก ผ่านระบบ RCT 9-Tier", icon: ScanSearch, color: "text-purple-400" },
   { value: "mirror", label: "Mirror Execution", desc: "จำลองขั้นตอนการตอบกลับแบบคู่ขนาน", icon: GitMerge, color: "text-emerald-400" },
+  { value: "agent", label: "Agent (governed)", desc: "ลงมือทำงานจริงด้วย tool: ผ่าน FDIA gate, action เสี่ยงรอมนุษย์ลงลายเซ็น, บันทึก audit (ช้ากว่าโหมดสนทนา)", icon: Bot, color: "text-rose-400" },
 ] as const;
 
 const SUGGESTIONS = [
@@ -49,7 +51,7 @@ const SUGGESTIONS = [
 export function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [activeMode, setActiveMode] = useState<"quick" | "standard" | "deep" | "mirror">("standard");
+  const [activeMode, setActiveMode] = useState<"quick" | "standard" | "deep" | "mirror" | "agent">("standard");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);

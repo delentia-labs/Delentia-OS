@@ -18,7 +18,7 @@ export type IntentState =
 export interface UseIntentOptions {
   apiKey?: string;
   gateway?: string;
-  mode?: "quick" | "standard" | "deep" | "mirror";
+  mode?: "quick" | "standard" | "deep" | "mirror" | "agent";
 }
 
 export interface UseIntentReturn {
@@ -178,5 +178,5 @@ export function useStreamIntent(
 export interface UseStreamIntentOptions {
   apiKey?: string;
   gateway?: string;
-  mode?: "quick" | "standard" | "deep" | "mirror";
+  mode?: "quick" | "standard" | "deep" | "mirror" | "agent";
 }

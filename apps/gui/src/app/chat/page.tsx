@@ -8,7 +8,7 @@ export default function ChatPage() {
       <div className="mb-4">
         <h1 className="text-xl font-bold">Intent Chat</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          All messages are routed through RCT v5 HexaCore with FDIA scoring and SignedAI verification.
+          Chat modes are a conversation with a local model (no tools). Agent (governed) runs real tools: FDIA gate per action, signed human approval for risky ones, hash-chained audit.
         </p>
       </div>
       <div className="flex-1 min-h-0">

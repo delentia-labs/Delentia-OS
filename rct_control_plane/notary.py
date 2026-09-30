@@ -205,15 +205,21 @@ def make_server(store: NotaryStore, host: str = "127.0.0.1", port: int = 8765,
             return self._reply(404, {"error": "not_found"})
 
         def do_POST(self) -> None:  # noqa: N802
+            # Read the body (bounded) before any reply: answering with an
+            # unread body makes some clients (Windows) see a connection reset
+            # instead of the 401/404/413.
+            length = int(self.headers.get("Content-Length") or 0)
+            raw = self.rfile.read(min(max(length, 0), 1024 * 1024))
+            if length > len(raw):
+                self.close_connection = True
             if self.path != "/append":
                 return self._reply(404, {"error": "not_found"})
             if not self._authorised():
                 return self._reply(401, {"error": "unauthorised"})
-            length = int(self.headers.get("Content-Length") or 0)
             if length <= 0 or length > MAX_RECORD_BYTES:
                 return self._reply(413, {"error": "record missing or too large; send hashes, not content"})
             try:
-                record = json.loads(self.rfile.read(length))
+                record = json.loads(raw)
             except json.JSONDecodeError:
                 return self._reply(400, {"error": "invalid_json"})
             if not isinstance(record, dict) or not isinstance(record.get("kind"), str):
@@ -307,3 +313,45 @@ def check_anchors(db_path: str, witness: Dict[str, Any]) -> Dict[str, Any]:
     if conflicts:
         problems.append(f"the witness recorded {len(conflicts)} conflicting anchor(s) (rollback/fork) for this key")
     return {"ok": not problems, "checked": len(anchors), "problems": problems}
+
+
+def anchor_once(db_path: str, key_id: str, private_key: Any, url: str,
+                last_entries: Optional[int] = None) -> Dict[str, Any]:
+    """Publishes the head if it moved since last_entries. Never raises: the
+    result says what happened, so a witness outage cannot stop the notary."""
+    import httpx
+    try:
+        body = sign_anchor(db_path, key_id, private_key)
+    except ValueError as exc:
+        return {"anchored": False, "entries": last_entries, "reason": str(exc)}
+    if last_entries is not None and body["entries"] <= last_entries:
+        return {"anchored": False, "entries": last_entries, "reason": "head unchanged since the last anchor"}
+    try:
+        resp = httpx.post(f"{url.rstrip('/')}/v1/audit/anchor", json=body, timeout=20.0)
+    except Exception as exc:
+        return {"anchored": False, "entries": last_entries, "reason": f"witness unreachable: {exc}"}
+    if resp.status_code not in (200, 201):
+        return {"anchored": False, "entries": last_entries,
+                "reason": f"witness refused ({resp.status_code}): {resp.text[:200]}"}
+    return {"anchored": True, "entries": body["entries"], "head": body["head"]}
+
+
+def start_anchor_loop(db_path: str, key_id: str, private_key: Any, url: str, every_seconds: float,
+                      on_result: Optional[Any] = None) -> threading.Event:
+    """Tier A3 on a schedule, run by the notary itself (it holds the key).
+    Returns an Event; set it to stop the loop."""
+    stop = threading.Event()
+
+    def _loop() -> None:
+        last: Optional[int] = None
+        while not stop.is_set():
+            result = anchor_once(db_path, key_id, private_key, url, last)
+            if result.get("anchored"):
+                last = result["entries"]
+            if on_result is not None:
+                on_result(result)
+            stop.wait(every_seconds)
+
+    threading.Thread(target=_loop, name="notary-anchor", daemon=True).start()
+    return stop
+

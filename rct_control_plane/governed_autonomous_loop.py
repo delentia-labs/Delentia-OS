@@ -331,6 +331,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_notary_receipts: List[Dict[str, Any]] = []
         self._episode_notary_gaps: List[Dict[str, Any]] = []
         self._last_gate_fdia: Optional[Dict[str, Any]] = None
+        self._episode_guard: Dict[str, Any] = {}
+        self._episode_jitna_hash: str = ""
 
     def _get_kernel(self) -> "AlgorithmKernel41":
         """Lazy, cached construction - see module docstring point 2 for
@@ -392,14 +394,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # I.2: real skill retrieval, injected into the prompt via
     # _extra_context_provider() below (not just fetched and discarded).
     # ------------------------------------------------------------------
-    async def _on_episode_start(self, goal: str) -> None:
+    async def _on_episode_start(self, goal: str) -> Optional[Dict[str, Any]]:
         import uuid
         self._episode_start_time = time.time()
         self._episode_compressions = []
         self._episode_id = uuid.uuid4().hex
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
+        self._episode_guard = {}
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
+
+        blocked = await self._guard_goal(goal)
+        if blocked is not None:
+            return blocked
+
         kernel = self._get_kernel()
         D, I, _compile_result = kernel.synthesize_fdia_inputs(goal)
         self._episode_D, self._episode_I = D, I
@@ -430,6 +438,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         signed = sign_packet(packet, self._keypair)
         self._episode_jitna_verified = verify_packet(signed, self._keypair.public_key_raw())
+        self._episode_jitna_hash = signed.compute_hash()
 
         self._persistence.append_audit(
             entity_type="governed_loop_episode_start",
@@ -446,8 +455,45 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
                 "route": self._episode_route,
+                "guard": self._episode_guard,
+                # F of the goal itself (A = 1: no action yet). Recorded, not
+                # enforced: the gate applies F to each risky action, where A
+                # is known (see _pre_dispatch_gate).
+                "goal_F": fdia_score(D, I, 1.0),
             },
         )
+        return None
+
+    async def _guard_goal(self, goal: str) -> Optional[Dict[str, Any]]:
+        """Round 50 GUARD (step 1 of the Constitutional Cycle): CORD screens
+        the goal before any model call. A hard finding (prompt injection,
+        encoded payload, oversized input) ends the episode: no model call,
+        no tool call. A soft finding is recorded and the episode continues.
+        Before this, CORD ran only in two API endpoints, so goals arriving
+        through the gateways, the scheduler, the MCP tool or subagents were
+        never screened."""
+        from rct_control_plane.cord_security import CORDVerdict, cord_check
+        cord = cord_check(goal)
+        self._episode_guard = {
+            "cord_verdict": cord.verdict.value,
+            "cord_findings": [{"check": f.check_type.value, "severity": f.severity, "pattern_id": f.pattern_id}
+                              for f in cord.findings],
+        }
+        if cord.verdict != CORDVerdict.REJECTED:
+            return None
+        self._episode_rct7_steps = []
+        self._episode_context_text = ""
+        self._episode_route = {"enabled": self._route_enabled, "skipped": "guard_blocked"}
+        self._persistence.append_audit(
+            entity_type="governed_loop_guard", entity_id=f"{self.namespace}-{self._episode_id}",
+            action="goal_blocked", actor=self.namespace,
+            changes={"goal_sha256": _sha(goal), **self._episode_guard, **cord.to_dict()},
+        )
+        await self._notarise_best_effort("guard_blocked", goal_sha256=_sha(goal),
+                                         cord_findings=self._episode_guard["cord_findings"])
+        reasons = ", ".join(sorted({f.pattern_id for f in cord.hard_findings}))
+        return {"stopped_reason": "guard_blocked",
+                "final_answer": f"This request was not processed: the CORD screen flagged it ({reasons})."}
 
     def _route_goal(self, goal: str) -> Dict[str, Any]:
         """Round 50 ROUTE: ALGO-21's deterministic decision (no LLM call).
@@ -669,6 +715,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         "llm_finished": (1.0, False),
         "fdia_blocked": (-1.0, True),
         "pending_approval": (0.0, False),
+        # The goal was refused before the agent acted: neither growth nor an
+        # agent violation (the input, not the agent, tripped the screen).
+        "guard_blocked": (0.0, False),
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
@@ -704,6 +753,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         result["intent_verification"] = verification
         result["route"] = self._episode_route
+        result["guard"] = self._episode_guard
         await self._notarise_best_effort(
             "episode_end", goal_sha256=_sha(result["goal"]), stopped_reason=stopped_reason,
             iterations=result["iterations"], final_answer_sha256=_sha(result.get("final_answer")),
