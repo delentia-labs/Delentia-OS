@@ -10,7 +10,9 @@ export function useDeskData<T>(load: () => Promise<T>, deps: unknown[] = [], int
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const loadRef = useRef(load);
-  loadRef.current = load;
+  useEffect(() => {
+    loadRef.current = load;
+  });
 
   const reload = useCallback(async () => {
     try {
@@ -25,7 +27,6 @@ export function useDeskData<T>(load: () => Promise<T>, deps: unknown[] = [], int
   }, []);
 
   useEffect(() => {
-    setLoading(true);
     reload();
     if (!intervalMs) return;
     const id = window.setInterval(reload, intervalMs);

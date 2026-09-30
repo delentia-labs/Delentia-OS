@@ -431,7 +431,10 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
                 agg[info.get("status", "error")] = agg.get(info.get("status", "error"), 0) + 1
                 if info.get("status") == "ok":
                     agg["ms"].append(float(info.get("ms") or 0.0))
-                agg["effect"] = info.get("effect")
+                if info.get("status") == "ok":
+                    agg["effect"] = info.get("effect")
+                else:
+                    agg.setdefault("effect", info.get("effect"))
         table = []
         for agg in aggregate.values():
             ms = agg.pop("ms")

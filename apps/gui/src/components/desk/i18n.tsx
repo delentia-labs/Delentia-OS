@@ -53,6 +53,8 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
+      // Read after hydration on purpose: reading storage during render would differ from the static HTML.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved === "en" || saved === "th") setLangState(saved);
     } catch {
       /* storage blocked: keep Thai */

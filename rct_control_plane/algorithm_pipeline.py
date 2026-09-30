@@ -117,8 +117,11 @@ class PipelineContext:
         return int(self.kernel._vector_engine.dimension)
 
     def embed(self, text: str) -> List[float]:
+        """Hashed bag-of-words vector with stopwords removed first: without that,
+        "the", "in", "and" alone made unrelated sentences look 0.3-0.5 alike."""
         from rct_control_plane.mcp_server import _hash_embed_query
-        return list(_hash_embed_query(text, dim=self.dimension))
+        from rct_control_plane.skill_library import _tokenize
+        return list(_hash_embed_query(" ".join(_tokenize(text)) or text, dim=self.dimension))
 
 
 def _goal_url(ctx: "PipelineContext") -> Optional[str]:

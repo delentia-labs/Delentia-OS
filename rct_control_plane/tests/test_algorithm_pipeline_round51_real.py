@@ -231,3 +231,17 @@ class TestNoHiddenModelCalls:
         ctx.result = {"final_answer": "The project is called delentia-os.", "steps": []}
         asyncio.run(pipeline.run_stage("verify", ctx, phase="post"))
         assert len(called) == 1
+
+
+class TestEmbeddingIsNotFooledByStopwords:
+    def test_unrelated_sentences_sharing_only_common_words_do_not_look_alike(self, kernel, tmp_path):
+        import numpy as np
+        _, ctx, _ = _ctx(kernel, tmp_path)
+
+        def cos(a, b):
+            a, b = np.array(a), np.array(b)
+            return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9))
+        memory = "The release checklist is: run the full test suite, update the changelog, tag the release, publish to npm last."
+        related = cos(ctx.embed("Recall what you remember about the release checklist."), ctx.embed(memory))
+        unrelated = cos(ctx.embed("Read the file pyproject.toml in the repository and tell me the project name."), ctx.embed(memory))
+        assert related > 0.25 and unrelated < 0.1

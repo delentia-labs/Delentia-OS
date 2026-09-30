@@ -18,8 +18,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     forgetStoredApiKey();
+    // Browser-only values, read after hydration so the static HTML and the first render agree.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setGateway(getGateway());
     setToken(getSessionApiKey() ?? "");
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const save = () => {

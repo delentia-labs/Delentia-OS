@@ -217,6 +217,7 @@ WARM_RECALL_ENV = "DELENTIA_WARM_RECALL"
 WARM_TTL_ENV = "DELENTIA_WARM_TTL_S"
 WARM_DEFAULT_TTL_S = 7 * 24 * 3600.0
 WARM_STATE_NAMESPACE = "warm_recall"
+WARM_GROWTH_DELTA = 0.05          # a cache hit is a success, not learning
 WARM_READ_ONLY_TOOLS = frozenset({
     "delentia_read_repo_file", "delentia_search_repo_files", "delentia_recall",
     "delentia_list_exchange_files", "delentia_read_exchange_file", "delentia_list_capabilities",
@@ -974,6 +975,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             cost_usd=(result.get("cost") or {}).get("cost_usd"), duration_s=duration,
             baseline=self._efficiency_baseline(result["goal"]), threshold=self._intent_verify_threshold,
         )
+        if warm:
+            # Re-using a verified answer saves time and money but teaches nothing,
+            # so it must not be a way to inflate G by repeating a cached request.
+            signal = {**signal, "delta": min(signal["delta"], WARM_GROWTH_DELTA),
+                      "parts": {**signal["parts"], "warm_recall": True}}
         growth_delta = signal["delta"]
         growth_step = self._ledger().record(signal)
         result["growth"] = {**signal, "G": round(self._mee_session.g, 4), "data": self._episode_data}
@@ -1229,7 +1235,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             metrics = {
                 "iterations": result["iterations"],
                 "duration_s": round(duration, 3),
-                "finished": 1 if result["stopped_reason"] == "llm_finished" else 0,
+                "finished": 1 if result["stopped_reason"] in ("llm_finished", "warm_recall") else 0,
                 "aligned_with_intent": None if aligned is None else int(bool(aligned)),
                 "similarity_score": verification.get("similarity_score"),
                 "tool_calls": sum(1 for step in result.get("steps", []) if step.get("tool_name")),
