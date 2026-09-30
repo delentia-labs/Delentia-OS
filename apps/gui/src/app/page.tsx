@@ -156,7 +156,7 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gateway]);
 
-  const isOfflineMode = health?.version?.includes("Offline") || healthStatus === "offline";
+  const isOfflineMode = health?.version === "offline" || healthStatus === "offline";
 
   return (
     <div className="w-full h-full overflow-y-auto p-6 md:p-8 space-y-6 min-h-0 flex-1">
@@ -179,7 +179,7 @@ export default function DashboardPage() {
           <HealthDot status={healthStatus} />
           <span className="text-xs font-semibold">
             {isOfflineMode
-              ? "จำลองโหมดออฟไลน์ (Offline Simulator)"
+              ? "ยังไม่ได้เชื่อมต่อ API (ไม่แสดงข้อมูลจำลอง)"
               : `เชื่อมต่อ Gateway สำเร็จ — ${health?.service ?? "Delentia OS"}`}
           </span>
         </div>
@@ -188,17 +188,17 @@ export default function DashboardPage() {
       {/* Stats grids */}
       <div className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="การทดสอบผ่านเกณฑ์" value={stats?.testCount?.toLocaleString() ?? "4,849"} icon={CheckCircle2} color="text-green-400" />
-          <StatCard label="จำนวนไมโครเซอร์วิส" value={stats?.microserviceCount ?? "62"} icon={Server} color="text-indigo-400" />
-          <StatCard label="โมเดล HexaCore" value={stats?.hexaCoreCount ?? "9"} icon={Brain} color="text-purple-400" />
-          <StatCard label="รับประกัน SLA" value={stats?.sla ?? "99.98%"} icon={ShieldCheck} color="text-emerald-400" />
+          <StatCard label="การทดสอบผ่านเกณฑ์" value={stats?.testCount?.toLocaleString() ?? "-"} icon={CheckCircle2} color="text-green-400" />
+          <StatCard label="จำนวนไมโครเซอร์วิส" value={stats?.microserviceCount ?? "-"} icon={Server} color="text-indigo-400" />
+          <StatCard label="โมเดล HexaCore" value={stats?.hexaCoreCount ?? "-"} icon={Brain} color="text-purple-400" />
+          <StatCard label="รับประกัน SLA" value={stats?.sla ?? "-"} icon={ShieldCheck} color="text-emerald-400" />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="อัลกอริทึมแกนหลัก" value={stats?.algorithmCount ?? "144"} icon={Cpu} color="text-amber-400" />
-          <StatCard label="เลเยอร์สถาปัตยกรรม" value={stats?.layerCount ?? "9"} icon={Layers} color="text-cyan-400" />
-          <StatCard label="เวอร์ชันระบบปฏิบัติการ" value={stats?.version ? stats.version.split(" ")[0] : "v2.4.1"} icon={Info} color="text-gray-400" />
-          <StatCard label="โมเดลมติพหุภาคี" value={stats?.consensusModels ?? "12"} icon={Users} color="text-rose-400" />
+          <StatCard label="อัลกอริทึมแกนหลัก" value={stats?.algorithmCount ?? "-"} icon={Cpu} color="text-amber-400" />
+          <StatCard label="เลเยอร์สถาปัตยกรรม" value={stats?.layerCount ?? "-"} icon={Layers} color="text-cyan-400" />
+          <StatCard label="เวอร์ชันระบบปฏิบัติการ" value={stats?.version ? stats.version.split(" ")[0] : "-"} icon={Info} color="text-gray-400" />
+          <StatCard label="โมเดลมติพหุภาคี" value={stats?.consensusModels ?? "-"} icon={Users} color="text-rose-400" />
         </div>
       </div>
 

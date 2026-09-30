@@ -22,7 +22,9 @@ import rct_control_plane.dynamic_reasoner as dynamic_reasoner
 
 class _FakeKernel:
     def process_intent_full_pipeline(self, intent):
-        return {"fdia_score": 1.0, "genesis": {"project": intent}}
+        return {"fdia_score": 1.0, "genesis": {"project": intent},
+                "fdia_inputs": {"data_quality": 1.0, "intent_precision": 0.6, "intent_type": "query"},
+                "rct7_steps": ["Step 1 (Observe): x", "Step 7 (Compare): y"]}
 
 
 @pytest.fixture(autouse=True)
@@ -136,7 +138,8 @@ class TestSuccessfulStreaming:
         assert events[-2]["type"] == "fdia"
         assert events[-2]["data"]["F"] == 1.0
         assert events[-1]["type"] == "done"
-        assert events[-1]["data"]["hexa_role"] == "EXECUTOR"
+        # Round 50: chat mode says what it is (it runs no tools).
+        assert events[-1]["data"]["hexa_role"] == "CHAT"
 
     @pytest.mark.asyncio
     async def test_deep_mode_prepends_a_trace_header_token(self, monkeypatch):
@@ -144,8 +147,8 @@ class TestSuccessfulStreaming:
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("test intent", mode="deep"))
 
         first_token = next(e for e in events if e["type"] == "token")
-        assert "41 Algorithms" in first_token["data"]
-        assert "FDIA" in first_token["data"]
+        assert "RCT-7" in first_token["data"]
+        assert "FDIA" in first_token["data"] and "D = 1.0" in first_token["data"]
 
     @pytest.mark.asyncio
     async def test_standard_mode_has_no_trace_header(self, monkeypatch):
@@ -153,7 +156,7 @@ class TestSuccessfulStreaming:
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("test intent", mode="standard"))
 
         token_events = [e for e in events if e["type"] == "token"]
-        assert "41 Algorithms" not in token_events[0]["data"]
+        assert "RCT-7" not in token_events[0]["data"]
 
     @pytest.mark.asyncio
     async def test_malformed_json_lines_are_skipped_without_crashing(self, monkeypatch):
@@ -211,21 +214,26 @@ class TestFallbackWhenOllamaProducesNoTokens:
         _patch_ollama_unreachable(monkeypatch)
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("เชื่อมต่อเว็บได้ไหม"))
         full_text = "".join(e["data"] for e in events if e["type"] == "token")
-        assert "Web Scraping" in full_text
+        assert "Web Scraping" not in full_text and "100%" not in full_text
+        assert "Ollama" in full_text  # says the model could not be reached
 
     @pytest.mark.asyncio
     async def test_architecture_question_gets_the_architecture_fallback_branch(self, monkeypatch):
         _patch_ollama_unreachable(monkeypatch)
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("โครงสร้างสถาปัตยกรรมเป็นอย่างไร"))
         full_text = "".join(e["data"] for e in events if e["type"] == "token")
-        assert "1+4 Model Architecture" in full_text
+        assert "1+4 Model Architecture" not in full_text and "62" not in full_text
+        assert "Ollama" in full_text
 
     @pytest.mark.asyncio
     async def test_unmatched_intent_gets_the_generic_fallback_branch(self, monkeypatch):
         _patch_ollama_unreachable(monkeypatch)
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("xyz123 completely unrelated text"))
         full_text = "".join(e["data"] for e in events if e["type"] == "token")
-        assert "ผมได้รับข้อความของคุณแล้วครับ" in full_text
+        # Round 50: no "I received your message and will act on it" reply
+        # when nothing was processed.
+        assert "ผมได้รับข้อความของคุณแล้วครับ" not in full_text
+        assert "ไม่ได้" in full_text
 
 
 class TestWebIngestionPipeline:
@@ -265,15 +273,17 @@ class TestWebIngestionPipeline:
 
 class TestFdiaAndDoneEventShape:
     @pytest.mark.asyncio
-    async def test_fdia_event_carries_real_kernel_score_and_fixed_dia_values(self, monkeypatch):
+    async def test_fdia_event_carries_the_real_kernel_inputs_and_no_fake_signature(self, monkeypatch):
         _patch_ollama(monkeypatch, lines=[json.dumps({"message": {"content": "x"}}).encode()])
         events = await _collect(dynamic_reasoner.stream_dynamic_cognition("test"))
         fdia_event = next(e for e in events if e["type"] == "fdia")
-        assert fdia_event["data"]["D"] == 0.98
-        assert fdia_event["data"]["I"] == 0.96
+        # Round 50: D and I come from the kernel (they were fixed 0.98/0.96),
+        # and nothing is signed in chat mode (a throwaway key signed nothing).
+        assert fdia_event["data"]["D"] == 1.0
+        assert fdia_event["data"]["I"] == 0.6
         assert fdia_event["data"]["A"] == 1.0
-        assert fdia_event["data"]["signed"] is True
-        assert fdia_event["data"]["signature_hash"].startswith("ED25519-")
+        assert fdia_event["data"]["signed"] is False
+        assert fdia_event["data"]["signature_hash"] == ""
 
     @pytest.mark.asyncio
     async def test_done_event_has_a_trace_id(self, monkeypatch):

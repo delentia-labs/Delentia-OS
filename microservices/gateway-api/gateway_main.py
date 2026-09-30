@@ -104,10 +104,8 @@ _STATS_CACHE_PATH = os.path.join(
 _BASELINE_STATS = {
     # Matches the authoritative checkpoint in docs/testing/TESTING_CANONICAL.md.
     # Update both together; that file is the single source of truth for this
-    # number. Updated 2026-09-24 to match a fresh real full-suite run
-    # (2,369 passed) - the previous 1,791 had itself gone stale relative to
-    # this session's own real test-writing work (8 new test files).
-    "testCount": 2369,
+    # number. Updated 2026-09-30 to the 2026-09-28 checkpoint (3,922 passed).
+    "testCount": 3922,
     # Count of microservices/* in THIS public repo (gateway-api, intent-loop,
     # analysearch-intent, vector-search, crystallizer) — not the private
     # enterprise service count, which must not be quoted here.

@@ -16,6 +16,7 @@ CI/CD Integration:
 import json
 import os
 import subprocess
+import sys
 import time
 import argparse
 
@@ -78,13 +79,17 @@ def main():
         test_count = args.test_count
         print(f"[+] Using provided test count: {test_count}")
     elif args.skip_pytest:
-        test_count = existing.get("testCount", 4849)
+        test_count = existing.get("testCount")
+        if test_count is None:
+            sys.exit("[!] no cached testCount and --skip-pytest given; pass --test-count")
         print(f"[*] Skipping pytest, keeping: {test_count}")
     else:
         print("[*] Counting tests via pytest (this may take a moment)...")
         test_count = count_tests_from_pytest()
         if test_count is None:
-            test_count = existing.get("testCount", 4849)
+            test_count = existing.get("testCount")
+            if test_count is None:
+                sys.exit("[!] pytest count failed and no cached testCount; pass --test-count")
             print(f"[!] Fallback to existing: {test_count}")
         else:
             print(f"[+] Pytest count: {test_count}")

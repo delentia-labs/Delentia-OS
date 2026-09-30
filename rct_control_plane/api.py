@@ -581,11 +581,12 @@ class ControlPlaneAPI:
             never fabricated a number to fill the field."""
             from signedai.core.registry import HexaCoreRole
             return {
-                # Real, dated snapshot (verified 2026-09-21) - not a live
-                # count (would require actually running the full suite on
-                # every request), but a real, evidence-based number rather
-                # than the prior fabricated 4849.
-                "testCount": 1462 + 106 + 35,  # Delentia-OS rct_control_plane + signedai + Delentia-Private-OS RCT-7
+                # Real, dated snapshot, not a live count: the authoritative
+                # checkpoint in docs/testing/TESTING_CANONICAL.md (update both
+                # together). Round 50 replaced an older 2026-09-21 sum that
+                # also counted a private repo.
+                "testCount": 3922,
+                "testCountSource": "docs/testing/TESTING_CANONICAL.md checkpoint, 2026-09-28",
                 "microserviceCount": 5,  # Delentia-OS's real public reference microservices (not the 62-count, which belongs to Delentia-Private-OS)
                 "algorithmCount": 41,  # real, verified count in algorithm_kernel_41.py
                 "layerCount": 10,
@@ -1220,7 +1221,19 @@ class ControlPlaneAPI:
                         }))
                         continue
 
-                    # 2. Dynamic Cognition with HexaCore Multi-Model Jury & Autonomous MCP Tool Calling
+                    # 2a. Round 50: "agent" mode runs a real governed episode
+                    # (agent_factory, like every other entry point) and streams
+                    # its steps; tools, FDIA gate and approvals are real.
+                    if mode == "agent":
+                        from rct_control_plane.desk_agent_stream import agent_events
+                        from rct_control_plane.mcp_server import _kernel as shared_kernel
+                        from rct_control_plane.mcp_server import mcp as shared_mcp
+                        async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp):
+                            await websocket.send_text(json.dumps(event, default=str))
+                        continue
+
+                    # 2b. Chat modes: a plain conversation with a small local
+                    # model; it runs no tools (see dynamic_reasoner.py).
                     from rct_control_plane.dynamic_reasoner import stream_dynamic_cognition
                     async for event in stream_dynamic_cognition(intent_text, mode=mode):
                         await websocket.send_text(json.dumps(event))

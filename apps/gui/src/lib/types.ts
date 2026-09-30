@@ -229,13 +229,13 @@ export interface HealthResponse {
 
 /** Live ecosystem stats from GET /delentia/system/stats */
 export interface SystemStats {
-  testCount: number;         // 4849
-  microserviceCount: number; // 62
+  testCount: number;         // from the API, never hardcoded
+  microserviceCount: number;
   algorithmCount: number;    // 41
   layerCount: number;        // 10
   hexaCoreCount: number;     // 9
   consensusModels: number;
-  sla: string;               // "99.9%"
+  sla: string;               // "not measured" until an SLA is measured
   version: string;
 }
 
