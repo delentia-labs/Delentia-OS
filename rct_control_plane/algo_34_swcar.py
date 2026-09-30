@@ -736,12 +736,16 @@ class SemanticAnalyzer:
         """Real NLTK tokenize + stopword/length/alpha filter + frequency ranking."""
         from nltk.tokenize import word_tokenize
 
+        # Read stop_words first: its first use fetches the NLTK data
+        # (stopwords, punkt, punkt_tab) that word_tokenize needs. On a fresh
+        # machine (CI) tokenizing first raised LookupError('punkt_tab').
+        stop_words = self.stop_words
         tokens = word_tokenize(text.lower())
 
         filtered_tokens = [
             token for token in tokens
             if (
-                token not in self.stop_words and
+                token not in stop_words and
                 len(token) > 3 and
                 token.isalpha()
             )
