@@ -46,12 +46,23 @@ async def process_intent(req: ProcessRequest):
         "latency_ms": result.latency_ms,
         "cache_hit": result.cache_hit,
         "verification_passed": result.verification_passed,
-        "metadata": result.metadata
+        "metadata": {**result.metadata, "simulated_execution": True, "simulated_verification": True}
     }
+
+# Round 51: what this service is. Its specialist executor and its verifier are
+# simulated (a sleep and a fixed vote); the real Intent Loop - five pillars over
+# the governed agent loop and the 41-algorithm pipeline - is rct_control_plane/intent_loop.py.
+IMPLEMENTATION = {
+    "implementation": "reference",
+    "executor": "simulated",
+    "verifier": "simulated",
+    "runtime_intent_loop": "rct_control_plane/intent_loop.py",
+}
+
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    return {"status": "healthy", **IMPLEMENTATION}
 
 @app.get("/metrics")
 async def metrics():
