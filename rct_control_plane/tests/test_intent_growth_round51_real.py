@@ -341,3 +341,26 @@ class TestGrowthInTheLoop:
         result = asyncio.run(loop.run("Read the file pyproject.toml and tell me the project name"))
         runs = loop._persistence.get_experiment_runs(result["experiment"]["experiment_id"])
         assert runs[-1]["metrics"]["data_D"] > 0 and runs[-1]["metrics"]["growth_delta"] > 0.5
+
+
+class TestPathHandlingIsSafe:
+    def test_a_goal_made_of_repetitions_is_handled_in_linear_time(self):
+        import time
+        nasty = "0" * 200000 + "." + "0/" * 50000 + "a" * 100000
+        started = time.perf_counter()
+        de.extract_paths(nasty)
+        de.extract_values(nasty)
+        assert time.perf_counter() - started < 1.0
+
+    def test_tokens_are_found_with_punctuation_and_windows_separators(self):
+        goal = 'Open (docs\\a.md), then "src/b.py"; ignore v2.1 and e.g. and https://x.org/y.html.'
+        assert de.extract_paths(goal) == ["docs\\a.md", "src/b.py"]
+
+    @pytest.mark.parametrize("raw", [
+        "/etc/passwd.txt", "\\windows\\x.ini", "C:/Users/x.txt", "../../x.md", "a/../../x.md", "x\x00.md", "a" * 400 + ".md",
+    ])
+    def test_anything_that_is_not_a_plain_path_inside_the_workspace_is_never_looked_up(self, raw):
+        assert de._resolve_inside(REPO, raw) is None
+
+    def test_a_plain_relative_path_resolves_inside_the_workspace(self):
+        assert de._resolve_inside(REPO, "pyproject.toml") == (REPO / "pyproject.toml").resolve()

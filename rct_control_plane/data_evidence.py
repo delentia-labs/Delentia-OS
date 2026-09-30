@@ -41,10 +41,13 @@ _FILE_EXTENSIONS = (
     "py|md|txt|json|toml|yaml|yml|csv|tsv|ts|tsx|js|jsx|mjs|html|css|ini|cfg|conf|log|sql|db|pdf|"
     "docx|xlsx|pptx|sh|bat|ps1|xml|rs|go|java|c|cpp|h|lock|env|ipynb|tf"
 )
-_PATH_RE = re.compile(
-    r"(?<![\w@:/\\.-])((?:[A-Za-z]:[\\/])?(?:[\w.\-]+[\\/])*[\w.\-]+\.(?:" + _FILE_EXTENSIONS + r"))(?![\w-])",
-    re.IGNORECASE,
-)
+_FILE_EXTENSION_SET = frozenset(_FILE_EXTENSIONS.split("|"))
+# One flat character class, no nested quantifiers: a path-looking token is checked
+# with str methods, not a backtracking pattern (CodeQL py/polynomial-redos).
+_PATH_CHARS = re.compile(r"[\w.\-/\\:]+")
+_TOKEN_SPLIT = re.compile(r"[\s\"'`“”‘’(),;<>\[\]{}]+")
+_MAX_GOAL_CHARS = 4000
+_MAX_PATH_CHARS = 260
 _URL_RE = re.compile(r"https?://\S+")
 _QUOTED_RE = re.compile(r"[\"'`“”‘’]([^\"'`“”‘’]{2,80})[\"'`“”‘’]")
 _NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)?(?![\w.])")
@@ -57,11 +60,16 @@ _NEEDS_TARGET = {"DEBUG", "REFACTOR", "TRANSFORM", "DEPLOY", "TEST", "OPTIMIZE",
 def extract_paths(goal: str) -> List[str]:
     """File-looking tokens in the goal ("pyproject.toml", "docs/a.md"). URLs
     are removed first so a domain is never mistaken for a file."""
-    text = _URL_RE.sub(" ", goal)
+    text = _URL_RE.sub(" ", goal[:_MAX_GOAL_CHARS])
     seen: List[str] = []
-    for match in _PATH_RE.findall(text):
-        if match not in seen:
-            seen.append(match)
+    for token in _TOKEN_SPLIT.split(text):
+        token = token.rstrip(".:!?")
+        if not token or len(token) > _MAX_PATH_CHARS or not _PATH_CHARS.fullmatch(token):
+            continue
+        name = token.replace("\\", "/").rsplit("/", 1)[-1]
+        stem, dot, ext = name.rpartition(".")
+        if dot and stem and ext.lower() in _FILE_EXTENSION_SET and token not in seen:
+            seen.append(token)
     return seen
 
 
@@ -88,16 +96,21 @@ class DataEvidence:
 
 
 def _resolve_inside(root: Path, raw: str) -> Optional[Path]:
-    """The path under the workspace root, or None when it escapes it (a goal
-    that names ../../secret is not grounded in the workspace)."""
-    try:
-        candidate = Path(raw)
-        full = candidate if candidate.is_absolute() else root / candidate
-        full = full.resolve()
-        full.relative_to(root.resolve())
-        return full
-    except (ValueError, OSError):
+    """The path under the workspace root, or None when it is not a plain relative
+    path that stays inside it (absolute paths, drive letters, NUL bytes and ".."
+    that escape are rejected before anything touches the filesystem)."""
+    if not raw or len(raw) > _MAX_PATH_CHARS or "\x00" in raw:
         return None
+    if os.path.isabs(raw) or raw.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", raw):
+        return None
+    base = os.path.realpath(root)
+    full = os.path.realpath(os.path.join(base, raw))
+    try:
+        if os.path.commonpath([base, full]) != base:
+            return None
+    except ValueError:          # different drives
+        return None
+    return Path(full)
 
 
 def grounding_score(goal: str, intent_type: str, workspace_root: Path) -> Dict[str, Any]:
