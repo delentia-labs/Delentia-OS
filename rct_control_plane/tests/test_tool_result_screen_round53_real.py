@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.dirname(__file__))
 import asyncio
 import json
 
-import pytest
 
 import rct_control_plane.autonomous_loop as autonomous_loop_module
 from rct_control_plane.governed_autonomous_loop import (
