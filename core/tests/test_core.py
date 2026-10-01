@@ -425,15 +425,15 @@ class TestRegionalModelRouter:
 
     def test_route_filipino(self):
         model_id = self.router.route(language="fil", region="PH")
-        assert model_id == "alibaba/qwen-2.5-7b"
+        assert model_id == "qwen/qwen-2.5-7b-instruct"
 
     def test_route_malay(self):
         model_id = self.router.route(language="ms", region="MY")
-        assert model_id == "alibaba/qwen-2.5-7b"
+        assert model_id == "qwen/qwen-2.5-7b-instruct"
 
     def test_route_singapore_english(self):
         model_id = self.router.route(language="en", region="SG")
-        assert model_id == "anthropic/claude-3.5-sonnet"
+        assert model_id == "anthropic/claude-sonnet-5"
 
     def test_register_regional_llm(self):
         from core.regional_adapter.regional_adapter import register_regional_llm, resolve_model_for_text

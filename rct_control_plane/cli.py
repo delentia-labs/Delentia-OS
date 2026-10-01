@@ -1638,15 +1638,46 @@ def model_list(provider: str, search: Optional[str], show_all: bool, limit: int,
 
 @model_group.command("set")
 @click.argument("model_id")
-@click.option("--provider", type=click.Choice(["openrouter", "ollama"]), required=True)
+@click.option("--provider", type=click.Choice(["openrouter", "ollama", "openai-compat"]), required=True)
 @click.option("--profile", default=None, help="Set the model for one agent profile only.")
 @click.option("--verify/--no-verify", default=True, show_default=True,
               help="Check the model exists in the provider's catalog before saving.")
-def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool) -> None:
-    """Save the model the agent uses (writes ~/.delentia/model.json)."""
+@click.option("--base-url", default=None, help="openai-compat: the endpoint, e.g. http://localhost:8000/v1")
+@click.option("--kind", type=click.Choice(["local", "in_region", "cross_border"]), default=None,
+              help="openai-compat: where the endpoint processes data (local = this machine/network).")
+@click.option("--region", default="", help="openai-compat, kind in_region: two-letter country code, e.g. TH")
+@click.option("--operator", default="", help="openai-compat: who runs the endpoint (recorded in the audit trail).")
+@click.option("--credential-env", default=None,
+              help="openai-compat: NAME of the environment variable that holds the API key (never the key).")
+def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool, base_url: Optional[str],
+              kind: Optional[str], region: str, operator: str, credential_env: Optional[str]) -> None:
+    """Save the model the agent uses (writes ~/.delentia/model.json).
+
+    Plug in your own AI (any OpenAI-compatible endpoint: a national provider, vLLM,
+    llama.cpp, a gateway in your country) and say where it runs, so the data-residency
+    policy can tell whether a prompt may go there:
+
+        delentia model set typhoon-v2-70b-instruct --provider openai-compat \
+            --base-url https://llm.example.th/v1 --kind in_region --region TH --credential-env TYPHOON_TOKEN
+    """
     from rct_control_plane.model_config import (
         ModelConfigError, list_ollama_models, list_openrouter_models, save_model_selection,
     )
+    if provider == "openai-compat":
+        if not base_url or not kind:
+            click.echo(click.style("Error: openai-compat needs --base-url and --kind", fg="red"), err=True)
+            sys.exit(1)
+        try:
+            path = save_model_selection(provider, model_id, profile=profile, endpoint={
+                "base_url": base_url, "kind": kind, "region": region, "operator": operator,
+                "credential_env": credential_env or ""})
+        except ModelConfigError as exc:
+            click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+            sys.exit(1)
+        click.echo(f"Saved {provider}:{model_id} at {base_url} ({kind}{' ' + region.upper() if region else ''}) to {path}")
+        click.echo("The endpoint was not contacted. Set a sovereignty policy with `delentia sovereignty set` "
+                   "so prompts are only sent where you allow.")
+        return
     if verify:
         try:
             catalog = list_openrouter_models() if provider == "openrouter" else list_ollama_models()
@@ -1859,6 +1890,90 @@ def experiments_compare(experiment_id: str, db: Optional[str]) -> None:
     runs = persistence.get_experiment_runs(experiment_id)
     click.echo(json.dumps({"experiment_id": experiment_id, "runs": len(runs),
                            "first_vs_last": persistence.compare_experiment_runs(experiment_id)}, indent=2))
+
+
+@cli.group("sovereignty")
+def sovereignty_group():
+    """
+    Data residency: which model endpoints a prompt may be sent to (Round 52).
+
+    A policy turns enforcement on. Every model call the agent makes is then checked
+    before it is sent: a call to an endpoint outside the allowed regions is blocked
+    (the episode ends with stopped_reason residency_blocked and nothing leaves), and
+    personal data in a permitted cross-border call is blocked or replaced.
+
+    Examples:
+        delentia sovereignty set --region TH
+        delentia sovereignty set --region TH --allow-cross-border --pii redact --legal-basis "PDPA s.28 consent"
+        delentia sovereignty show
+        delentia sovereignty check "Call 081-234-5678 about invoice 42"
+    """
+    pass
+
+
+@sovereignty_group.command("show")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def sovereignty_show(output: str) -> None:
+    """The active policy and where the selected model would send data."""
+    from rct_control_plane import residency
+    info = residency.describe()
+    if output == "json":
+        click.echo(json.dumps(info, indent=2, ensure_ascii=False))
+        return
+    policy = info["policy"]
+    click.echo(f"model     {info['model']}  ->  {info['hosting']['operator']} ({info['hosting']['kind']}, {info['hosting']['region']})")
+    if policy is None:
+        click.echo(click.style("policy    NONE: " + info["warning"], fg="yellow"))
+        return
+    click.echo(f"policy    home={policy['home_region']} allowed={policy['allowed_regions']} cross-border="
+               f"{'allowed' if policy['allow_cross_border'] else 'not allowed'} pii={policy['pii_policy']}")
+    if policy["legal_basis"]:
+        click.echo(f"basis     {policy['legal_basis']}")
+    verdict = "ALLOWED" if info["would_be_allowed"] else "BLOCKED"
+    click.echo(click.style(f"selected model would be {verdict}: {info['reason']}", fg="green" if info["would_be_allowed"] else "red"))
+
+
+@sovereignty_group.command("set")
+@click.option("--region", required=True, help="Home region, two-letter country code (e.g. TH).")
+@click.option("--allow-region", "allow_regions", multiple=True, help="Another region calls may reach (repeatable).")
+@click.option("--allow-cross-border/--no-cross-border", default=False, show_default=True,
+              help="Allow calls to endpoints outside the allowed regions (e.g. OpenRouter).")
+@click.option("--pii", "pii_policy", type=click.Choice(["block", "redact", "allow"]), default="block", show_default=True,
+              help="What to do with personal data in a permitted cross-border call.")
+@click.option("--legal-basis", default="", help="Recorded with every decision, e.g. 'PDPA s.28: consent + safeguards'.")
+@click.option("--tenant", "tenant_id", default="default")
+def sovereignty_set(region: str, allow_regions: tuple, allow_cross_border: bool, pii_policy: str, legal_basis: str,
+                    tenant_id: str) -> None:
+    """Write ~/.delentia/sovereignty.json (environment variables override it)."""
+    from core.regional_adapter.sovereignty import SovereigntyPolicy, validate_region
+    from rct_control_plane import residency
+    try:
+        policy = SovereigntyPolicy(
+            home_region=validate_region(region), allowed_regions=[validate_region(region), *[validate_region(r) for r in allow_regions]],
+            allow_cross_border=allow_cross_border, pii_policy=pii_policy, legal_basis=legal_basis, tenant_id=tenant_id)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    path = residency.save_policy(policy)
+    click.echo(f"Saved policy to {path}. Enforcement is on: " + ("cross-border calls are allowed" if allow_cross_border
+                                                                  else "no call may leave the allowed regions"))
+
+
+@sovereignty_group.command("check")
+@click.argument("text")
+def sovereignty_check(text: str) -> None:
+    """Would this text be sent to the selected model under the active policy? (Nothing is sent.)"""
+    from core.regional_adapter.sovereignty import evaluate_call, scan_text
+    from rct_control_plane import residency
+    from rct_control_plane.llm_provider import get_default_provider
+    policy = residency.load_policy()
+    found = scan_text(text)
+    click.echo(f"personal data found: {found or 'none'}")
+    if policy is None:
+        click.echo(click.style("No policy is set: this text would be sent as it is.", fg="yellow"))
+        return
+    decision = evaluate_call(policy, residency.hosting_for_provider(get_default_provider()), text)
+    click.echo(f"{decision.action.upper()}: {decision.reason}")
 
 
 @cli.group("growth")

@@ -494,7 +494,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return blocked
 
         self._meter = self._new_meter()
-        self._llm_provider = self._meter
+        # Round 52: every model call is checked against the tenant's sovereignty policy
+        # (no policy configured = unchanged behaviour). The meter stays inside, so
+        # budgets are still checked, and result["cost"] still reads from it.
+        from rct_control_plane.residency import guard_provider
+        self._llm_provider = guard_provider(self._meter, self._persistence, self.namespace)
         kernel = self._get_kernel()
         clarity, I, compile_result = kernel.synthesize_fdia_inputs(goal)
         memories = await self._recall_for_goal(goal) if self._memory_in_prompt else []
@@ -970,6 +974,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         result["notary"] = self._notary_summary()
         result["cost"] = self._meter.summary() if self._meter is not None else None
+        residency_summary = getattr(self._llm_provider, "summary", None)
+        if self._llm_provider is not self._meter and callable(residency_summary):
+            result["residency"] = residency_summary()
         pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
         change_description = (
             f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
@@ -1227,7 +1234,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
     def _model_label(self) -> str:
         provider = self._llm_provider
-        provider = getattr(provider, "inner", provider)  # report the model, not the meter
+        for _ in range(4):                                # report the model, not the meter or the guard
+            provider = getattr(provider, "inner", provider)
         if provider is not None:
             return f"{type(provider).__name__}:{getattr(provider, 'model', '?')}"
         try:

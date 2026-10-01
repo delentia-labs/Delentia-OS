@@ -240,6 +240,69 @@ class OpenRouterProvider(LLMProvider):
                         yield text
 
 
+class OpenAICompatibleProvider(LLMProvider):
+    """Round 52, plug-and-play national AI: any endpoint that speaks the OpenAI chat
+    completions protocol - a national provider's API, vLLM, llama.cpp server, LM Studio,
+    a self-hosted gateway - declared with where it processes data.
+
+    `kind`/`region` are the operator's declaration (see core/regional_adapter/
+    sovereignty.py): "local" for the tenant's own machine or network, "in_region" with
+    an ISO country code for a provider hosted in that country, "cross_border"
+    otherwise. The residency guard trusts the declaration, so it belongs in the
+    contract with the provider, not in a guess. The key is read from the environment
+    variable NAMED by `credential_env`; it is never stored."""
+
+    def __init__(self, base_url: str, model: str, credential_env: Optional[str] = None, kind: str = "cross_border",
+                 region: str = "", operator: str = "", compat: Optional[CompatProfile] = None, timeout: float = 90.0):
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.credential_env = credential_env
+        self.kind = kind
+        self.region = region.upper()
+        self.operator = operator
+        self.compat = compat or CompatProfile()
+        self.timeout = timeout
+
+    def _headers(self) -> dict:
+        headers = {"Content-Type": "application/json"}
+        key = os.getenv(self.credential_env) if self.credential_env else None
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+        return headers
+
+    async def complete(self, prompt: str, system_prompt: Optional[str] = None,
+                        temperature: float = 0.7, max_tokens: int = 2048,
+                        json_mode: bool = False) -> str:
+        payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, json_mode, self.compat)
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
+            response.raise_for_status()
+            data = response.json()
+        usage = data.get("usage") or {}
+        # A self-hosted or national endpoint reports no price; unknown cost stays None.
+        self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), None)
+        return data["choices"][0]["message"]["content"]
+
+    async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
+                               temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
+        payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, False, self.compat)
+        payload["stream"] = True
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with client.stream("POST", f"{self.base_url}/chat/completions", headers=self._headers(), json=payload) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[len("data:"):].strip()
+                    if data == "[DONE]":
+                        break
+                    if not data:
+                        continue
+                    text = json.loads(data).get("choices", [{}])[0].get("delta", {}).get("content")
+                    if text:
+                        yield text
+
+
 def get_default_provider(profile: Optional[str] = None) -> LLMProvider:
     """Round 48: provider AND model now come from model_config's
     resolution chain (args > env DELENTIA_LLM_PROVIDER/DELENTIA_LLM_MODEL
@@ -249,6 +312,13 @@ def get_default_provider(profile: Optional[str] = None) -> LLMProvider:
     from rct_control_plane.model_config import BUILTIN_DEFAULT_MODELS, resolve_model_selection
 
     selection = resolve_model_selection(profile=profile)
+    if selection.provider == "openai-compat":
+        from rct_control_plane.model_config import openai_compat_settings
+        endpoint = openai_compat_settings()
+        return OpenAICompatibleProvider(
+            base_url=endpoint["base_url"], model=selection.model, credential_env=endpoint.get("credential_env"),
+            kind=endpoint.get("kind", "cross_border"), region=endpoint.get("region", ""), operator=endpoint.get("operator", ""),
+        )
     if selection.provider == "openrouter":
         if os.getenv("OPENROUTER_API_KEY"):
             return OpenRouterProvider(model=selection.model)
@@ -319,6 +389,11 @@ class QuotaCheckedProvider(LLMProvider):
 class BudgetExceededError(Exception):
     """Round 50: raised BEFORE a model call that could take an episode over
     its token or cost budget, so the call is never made."""
+
+
+class ResidencyViolation(Exception):
+    """Round 52: raised BEFORE a model call whose data the tenant's sovereignty
+    policy does not allow to go where the call would send it. Nothing was sent."""
 
 
 def _count_tokens(text: str) -> int:

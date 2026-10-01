@@ -34,11 +34,12 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-SUPPORTED_PROVIDERS = ("ollama", "openrouter")
+SUPPORTED_PROVIDERS = ("ollama", "openrouter", "openai-compat")
 
 BUILTIN_DEFAULT_MODELS: Dict[str, str] = {
     "ollama": "qwen2.5:7b",
     "openrouter": "anthropic/claude-sonnet-5",
+    "openai-compat": "default",
 }
 BUILTIN_DEFAULT_PROVIDER = "ollama"
 
@@ -146,17 +147,59 @@ def resolve_model_selection(
     return ModelSelection(chosen_provider, str(chosen_model), provider_source, model_source)
 
 
+_ENDPOINT_KINDS = ("local", "in_region", "cross_border")
+_ENV_NAME_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+
+
+def validate_endpoint(endpoint: Dict[str, str]) -> Dict[str, str]:
+    """Round 52: an OpenAI-compatible endpoint a country plugs in. The credential is
+    only ever the NAME of an environment variable (upper case letters, digits,
+    underscores), so a pasted key is refused rather than stored."""
+    base_url = str(endpoint.get("base_url", "")).strip().rstrip("/")
+    if not base_url.startswith(("http://", "https://")) or " " in base_url:
+        raise ModelConfigError("base_url must be an http(s) URL, e.g. http://localhost:8000/v1")
+    kind = str(endpoint.get("kind", "cross_border")).strip().lower()
+    if kind not in _ENDPOINT_KINDS:
+        raise ModelConfigError(f"kind must be one of {', '.join(_ENDPOINT_KINDS)}")
+    region = str(endpoint.get("region", "")).strip().upper()
+    if kind == "in_region" and (len(region) != 2 or not region.isalpha()):
+        raise ModelConfigError("an in_region endpoint needs region as a two-letter country code, e.g. TH")
+    out = {"base_url": base_url, "kind": kind, "region": region, "operator": str(endpoint.get("operator", "")).strip()}
+    credential_env = str(endpoint.get("credential_env", "") or "").strip()
+    if credential_env:
+        if not set(credential_env) <= _ENV_NAME_CHARS or len(credential_env) > 64 or credential_env[0].isdigit():
+            raise ModelConfigError("credential_env must be the NAME of an environment variable (like TYPHOON_API_TOKEN), "
+                                   "not the credential itself")
+        out["credential_env"] = credential_env
+    return out
+
+
+def openai_compat_settings(config: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    cfg = config if config is not None else load_model_config()
+    endpoint = cfg.get("openai_compat")
+    if not isinstance(endpoint, dict) or not endpoint.get("base_url"):
+        raise ModelConfigError("provider openai-compat needs an endpoint: run `delentia model set <model> "
+                               "--provider openai-compat --base-url <url> --kind local|in_region|cross_border`")
+    return validate_endpoint(endpoint)
+
+
 def save_model_selection(
     provider: str,
     model: str,
     profile: Optional[str] = None,
     path: Optional[Path] = None,
+    endpoint: Optional[Dict[str, str]] = None,
 ) -> Path:
     provider = _validate_provider(provider)
     if not model or not model.strip():
         raise ModelConfigError("model must be a non-empty string")
     p = path or config_path()
     cfg = load_model_config(p)
+    if provider == "openai-compat":
+        if endpoint is None and not cfg.get("openai_compat"):
+            raise ModelConfigError("provider openai-compat needs an endpoint (base_url, kind, region)")
+        if endpoint is not None:
+            cfg["openai_compat"] = validate_endpoint(endpoint)
     if profile:
         cfg.setdefault("profiles", {})[profile] = {"provider": provider, "model": model.strip()}
     else:

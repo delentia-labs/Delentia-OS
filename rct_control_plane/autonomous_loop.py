@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from rct_control_plane.algo_25_delta_block import DeltaEngine
-from rct_control_plane.llm_provider import BudgetExceededError
+from rct_control_plane.llm_provider import BudgetExceededError, ResidencyViolation
 from rct_control_plane.persistence import ControlPlanePersistence
 
 if TYPE_CHECKING:
@@ -499,10 +499,14 @@ class AutonomousLoop:
                     decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
                 else:
                     decision = await decide_next_action(goal, history, iteration_tools)
-            except BudgetExceededError as exc:
-                stopped_reason = "budget_exceeded"
+            except (BudgetExceededError, ResidencyViolation) as exc:
+                # Round 52: a residency block ends the episode the same way a budget
+                # refusal does: before the call, so nothing was sent.
+                residency = isinstance(exc, ResidencyViolation)
+                stopped_reason = "residency_blocked" if residency else "budget_exceeded"
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
-                                 tool_result={"budget_exceeded": str(exc)}, llm_reasoning=f"budget exceeded: {exc}")
+                                 tool_result={("residency_blocked" if residency else "budget_exceeded"): str(exc)},
+                                 llm_reasoning=f"{'residency blocked' if residency else 'budget exceeded'}: {exc}")
                 history.append(step)
                 self._persist_step(step)
                 await _notify(step)
@@ -524,7 +528,7 @@ class AutonomousLoop:
                 if on_answer_token is not None:
                     try:
                         final_answer = await self._stream_final_answer(goal, history, on_answer_token)
-                    except BudgetExceededError:
+                    except (BudgetExceededError, ResidencyViolation):
                         pass  # keep the answer from the decision call rather than spend past the budget
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
                                  tool_result=None, llm_reasoning=decision["reasoning"])

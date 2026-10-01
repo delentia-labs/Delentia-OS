@@ -180,7 +180,7 @@ class TestSpecialistExecutorRegistry:
         se = SpecialistExecutor()
         pkt = JITNAPacket(intent="translate japanese document to english")
         result = await se.execute(pkt)
-        assert result["specialist"] == "anthropic/claude-3.5-sonnet"
+        assert result["specialist"] == "anthropic/claude-sonnet-5"
         assert result["specialist_role"] == HexaCoreRole.REGIONAL_CORE.value
 
     @pytest.mark.asyncio

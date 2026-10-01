@@ -9,6 +9,14 @@ Provides language-aware model routing for multi-region deployments:
 
 Implements RFC-001 v2.0 §8-12 (Language-Region Negotiation Extension).
 
+Round 52: the adapter now also enforces data sovereignty (see sovereignty.py).
+Every routing-table entry says where its endpoint processes data (`hosting_kind`,
+`hosting_region`); `resolve(..., policy=SovereigntyPolicy(...))` only returns models
+a tenant's policy permits and raises RegionalPolicyViolation otherwise; a country
+plugs in its own AI with `register_regional_llm(..., hosting_kind="in_region",
+hosting_region="TH", base_url=...)`. Without a policy the behaviour is the earlier
+one (language/region only), so existing callers are unchanged.
+
 Layer: OS Primitive (depends on syscall, HexaCoreRegistry)
 """
 
@@ -18,6 +26,16 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+from core.regional_adapter.sovereignty import (
+    GLOBAL,
+    KIND_CROSS_BORDER,
+    KIND_IN_REGION,
+    KIND_LOCAL,
+    HostingProfile,
+    SovereigntyPolicy,
+    hosting_is_allowed,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +222,22 @@ class LanguageDetector:
 # Regional Model Router
 # ---------------------------------------------------------------------------
 
+class RegionalPolicyViolation(Exception):
+    """Raised when models exist for a language-region pair but none is hosted where the
+    tenant's sovereignty policy allows data to go. The router never falls back to a
+    model outside the policy: it says what to register instead."""
+    def __init__(self, language: str, region: str, policy: SovereigntyPolicy):
+        self.language = language
+        self.region = region
+        self.policy = policy
+        super().__init__(
+            f"no model for language={language}, region={region} is hosted where policy "
+            f"{policy.tenant_id!r} allows data to go (regions {policy.allowed_regions}, cross-border "
+            f"{'allowed' if policy.allow_cross_border else 'not allowed'}); register one with "
+            f"register_regional_llm(..., hosting_kind='in_region' or 'local', hosting_region=...)"
+        )
+
+
 class RegionalModelNotFound(Exception):
     """Raised when no model can be resolved for a language-region pair."""
     def __init__(self, language: str, region: str):
@@ -224,6 +258,20 @@ class RegionalModelEntry:
     cost_output: float      # USD per 1M output tokens
     specialties: List[str] = field(default_factory=list)
     compliance_tags: List[str] = field(default_factory=list)  # ["APPI", "PDPA", etc.]
+    # Round 52: where the endpoint processes data. The default table reaches every
+    # model through OpenRouter, which routes to many providers and cannot pin a
+    # country, so those entries are cross-border / GLOBAL. A country that plugs in its
+    # own AI declares its own hosting with register_regional_llm().
+    hosting_kind: str = KIND_CROSS_BORDER
+    hosting_region: str = GLOBAL
+    operator: str = "OpenRouter"
+    base_url: Optional[str] = None           # OpenAI-compatible endpoint for models that are not on OpenRouter
+    api_key_env: Optional[str] = None        # name of the environment variable that holds the key (never the key)
+    on_openrouter: bool = True               # False: the model_id does not exist in OpenRouter's catalog
+
+    @property
+    def hosting(self) -> HostingProfile:
+        return HostingProfile(self.hosting_kind, self.hosting_region, self.operator)
 
 
 # Default regional model routing table
@@ -246,12 +294,16 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
         cost_input=0.40, cost_output=1.20,
         specialties=["Thai NLP", "Thai culture", "Thai legal", "Thai finance", "Translation TH"],
         compliance_tags=["PDPA"],
+        # Not in OpenRouter's catalog (a live query on 2026-10-01 and in Round 35 found no
+        # such model): it needs SCB 10X's own API or a self-hosted copy. Hosting is therefore
+        # not declared here; the tenant registers where it runs.
+        operator="SCB 10X (not reachable through OpenRouter)", on_openrouter=False,
     ),
     # --- Japanese (JP) ---
     RegionalModelEntry(
         language="ja", region="JP",
-        model_id="anthropic/claude-3.5-sonnet",
-        model_name="Claude 3.5 Sonnet",
+        model_id="anthropic/claude-sonnet-5",
+        model_name="Claude Sonnet 5",
         proficiency=0.95,
         cost_input=3.0, cost_output=15.0,
         specialties=["JLPT-level Japanese", "Technical translation"],
@@ -270,7 +322,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Chinese Simplified (CN) ---
     RegionalModelEntry(
         language="zh", region="CN",
-        model_id="alibaba/qwen-2.5-72b",
+        model_id="qwen/qwen-2.5-72b-instruct",
         model_name="Qwen 2.5 72B",
         proficiency=0.96,
         cost_input=0.90, cost_output=0.90,
@@ -280,7 +332,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Chinese Traditional (TW) ---
     RegionalModelEntry(
         language="zh", region="TW",
-        model_id="alibaba/qwen-2.5-72b",
+        model_id="qwen/qwen-2.5-72b-instruct",
         model_name="Qwen 2.5 72B",
         proficiency=0.93,
         cost_input=0.90, cost_output=0.90,
@@ -289,7 +341,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Vietnamese (VN) ---
     RegionalModelEntry(
         language="vi", region="VN",
-        model_id="alibaba/qwen-2.5-7b",
+        model_id="qwen/qwen-2.5-7b-instruct",
         model_name="Qwen 2.5 7B",
         proficiency=0.82,
         cost_input=0.15, cost_output=0.15,
@@ -298,7 +350,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Indonesian (ID) ---
     RegionalModelEntry(
         language="id", region="ID",
-        model_id="alibaba/qwen-2.5-7b",
+        model_id="qwen/qwen-2.5-7b-instruct",
         model_name="Qwen 2.5 7B",
         proficiency=0.80,
         cost_input=0.15, cost_output=0.15,
@@ -307,7 +359,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Filipino (PH) ---
     RegionalModelEntry(
         language="fil", region="PH",
-        model_id="alibaba/qwen-2.5-7b",
+        model_id="qwen/qwen-2.5-7b-instruct",
         model_name="Qwen 2.5 7B",
         proficiency=0.80,
         cost_input=0.15, cost_output=0.15,
@@ -316,7 +368,7 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- Malay (MY) ---
     RegionalModelEntry(
         language="ms", region="MY",
-        model_id="alibaba/qwen-2.5-7b",
+        model_id="qwen/qwen-2.5-7b-instruct",
         model_name="Qwen 2.5 7B",
         proficiency=0.81,
         cost_input=0.15, cost_output=0.15,
@@ -325,8 +377,8 @@ _REGIONAL_MODELS: List[RegionalModelEntry] = [
     # --- English (SG) ---
     RegionalModelEntry(
         language="en", region="SG",
-        model_id="anthropic/claude-3.5-sonnet",
-        model_name="Claude 3.5 Sonnet",
+        model_id="anthropic/claude-sonnet-5",
+        model_name="Claude Sonnet 5",
         proficiency=0.98,
         cost_input=3.0, cost_output=15.0,
         specialties=["Singapore English", "Sovereign deployment"],
@@ -366,9 +418,14 @@ class RegionalModelRouter:
         region: str,
         preferred_models: Optional[List[str]] = None,
         fallback_language: str = "en",
+        policy: Optional[SovereigntyPolicy] = None,
     ) -> RegionalModelEntry:
         """
         Resolve the best model for a language-region pair.
+
+        With `policy`, only models hosted where the policy allows data to go are
+        considered (RegionalPolicyViolation if none is). Without it, the earlier
+        behaviour: language and region only.
 
         Args:
             language: ISO 639-1 code (e.g., "ja")
@@ -382,6 +439,9 @@ class RegionalModelRouter:
         Raises:
             RegionalModelNotFound if no model can be resolved
         """
+        if policy is not None:
+            return self._resolve_under_policy(language, region, preferred_models, fallback_language, policy)
+
         t0 = time.perf_counter_ns()
         self._metrics.total_resolutions += 1
 
@@ -427,6 +487,36 @@ class RegionalModelRouter:
                 return best
 
         self._record_latency(t0)
+        raise RegionalModelNotFound(language, region)
+
+    def _permitted(self, policy: SovereigntyPolicy) -> List[RegionalModelEntry]:
+        if policy.allow_cross_border:
+            return list(self._models)
+        return [e for e in self._models if hosting_is_allowed(policy, e.hosting)]
+
+    def _resolve_under_policy(
+        self, language: str, region: str, preferred_models: Optional[List[str]], fallback_language: str,
+        policy: SovereigntyPolicy,
+    ) -> RegionalModelEntry:
+        self._metrics.total_resolutions += 1
+        permitted = self._permitted(policy)
+        exact = [e for e in permitted if e.language == language and e.region == region]
+        if exact:
+            return max(exact, key=lambda e: e.proficiency)
+        same_language = [e for e in permitted if e.language == language]
+        if same_language:
+            return max(same_language, key=lambda e: e.proficiency)
+        for model_id in preferred_models or []:
+            for entry in permitted:
+                if entry.model_id == model_id:
+                    return entry
+        if fallback_language != language:
+            fallback = [e for e in permitted if e.language == fallback_language]
+            if fallback:
+                self._metrics.fallback_resolutions += 1
+                return max(fallback, key=lambda e: e.proficiency)
+        if any(e.language == language for e in self._models):
+            raise RegionalPolicyViolation(language, region, policy)
         raise RegionalModelNotFound(language, region)
 
     def route(self, language: str, region: str) -> str:
@@ -549,6 +639,21 @@ class TenantRegionalConfig:
     data_residency: str = "US"
     compliance_tags: List[str] = field(default_factory=list)
     max_cost_per_1m_tokens: Optional[float] = None
+    # Round 52: what `data_residency` means in practice. By default nothing leaves
+    # the residency region; a tenant that has a legal basis for cross-border calls
+    # sets allow_cross_border and chooses what happens to personal data in them.
+    allow_cross_border: bool = False
+    pii_policy: str = "block"
+    legal_basis: str = ""
+    extra_allowed_regions: List[str] = field(default_factory=list)
+
+    def sovereignty_policy(self) -> SovereigntyPolicy:
+        return SovereigntyPolicy(
+            home_region=self.data_residency,
+            allowed_regions=[self.data_residency, *self.extra_allowed_regions],
+            allow_cross_border=self.allow_cross_border, pii_policy=self.pii_policy,
+            legal_basis=self.legal_basis, tenant_id=self.tenant_id,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -561,6 +666,10 @@ class TenantRegionalConfig:
             "data_residency": self.data_residency,
             "compliance_tags": self.compliance_tags,
             "max_cost_per_1m_tokens": self.max_cost_per_1m_tokens,
+            "allow_cross_border": self.allow_cross_border,
+            "pii_policy": self.pii_policy,
+            "legal_basis": self.legal_basis,
+            "extra_allowed_regions": self.extra_allowed_regions,
         }
 
 
@@ -571,7 +680,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="JapaneseTechCorp",
         default_language="ja",
         default_region="JP",
-        preferred_models=["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"],
+        preferred_models=["anthropic/claude-sonnet-5", "openai/gpt-4-turbo"],
         fallback_chain=["ja", "en"],
         data_residency="JP",
         compliance_tags=["APPI"],
@@ -593,7 +702,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="ChinaEnterprise",
         default_language="zh",
         default_region="CN",
-        preferred_models=["alibaba/qwen-2.5-72b"],
+        preferred_models=["qwen/qwen-2.5-72b-instruct"],
         fallback_chain=["zh", "en"],
         data_residency="CN",
         compliance_tags=["PIPL"],
@@ -615,7 +724,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="VietnamStartup",
         default_language="vi",
         default_region="VN",
-        preferred_models=["alibaba/qwen-2.5-7b"],
+        preferred_models=["qwen/qwen-2.5-7b-instruct"],
         fallback_chain=["vi", "en"],
         data_residency="VN",
         compliance_tags=[],
@@ -626,7 +735,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="IndonesiaAI",
         default_language="id",
         default_region="ID",
-        preferred_models=["alibaba/qwen-2.5-7b"],
+        preferred_models=["qwen/qwen-2.5-7b-instruct"],
         fallback_chain=["id", "en"],
         data_residency="ID",
         compliance_tags=[],
@@ -637,7 +746,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="PhilippinesRetail",
         default_language="fil",
         default_region="PH",
-        preferred_models=["alibaba/qwen-2.5-7b"],
+        preferred_models=["qwen/qwen-2.5-7b-instruct"],
         fallback_chain=["fil", "en"],
         data_residency="PH",
         compliance_tags=[],
@@ -648,7 +757,7 @@ PILOT_TENANTS: Dict[str, TenantRegionalConfig] = {
         tenant_name="SingaporeFintech",
         default_language="en",
         default_region="SG",
-        preferred_models=["anthropic/claude-3.5-sonnet"],
+        preferred_models=["anthropic/claude-sonnet-5"],
         fallback_chain=["en"],
         data_residency="SG",
         compliance_tags=["IMDA"],
@@ -750,6 +859,20 @@ def resolve_model_for_text(
     return _DEFAULT_ROUTER.resolve(language, region, preferred_models)
 
 
+def resolve_for_tenant(text: str, tenant_id: str, region: Optional[str] = None) -> RegionalModelEntry:
+    """Like resolve_model_for_text, but the tenant's sovereignty policy is enforced:
+    the returned model is one the tenant's data may be sent to, or
+    RegionalPolicyViolation says why there is none. Unknown tenant -> KeyError."""
+    tenant = PILOT_TENANTS.get(tenant_id)
+    if tenant is None:
+        raise KeyError(f"unknown tenant {tenant_id!r}")
+    detected = detect_language(text)
+    language = detected.code
+    _lang_to_region = {"en": "US", "th": "TH", "ja": "JP", "ko": "KR", "zh": "CN", "vi": "VN", "id": "ID", "fil": "PH", "ms": "MY"}
+    region = region or (tenant.default_region if language == tenant.default_language else _lang_to_region.get(language, "US"))
+    return _DEFAULT_ROUTER.resolve(language, region, tenant.preferred_models, policy=tenant.sovereignty_policy())
+
+
 def get_regional_router() -> RegionalModelRouter:
     """Get the default regional model router instance."""
     return _DEFAULT_ROUTER
@@ -765,8 +888,25 @@ def register_regional_llm(
     cost_output: float,
     specialties: Optional[List[str]] = None,
     compliance_tags: Optional[List[str]] = None,
+    hosting_kind: str = KIND_CROSS_BORDER,
+    hosting_region: Optional[str] = None,
+    operator: Optional[str] = None,
+    base_url: Optional[str] = None,
+    api_key_env: Optional[str] = None,
 ) -> None:
-    """Convenience module-level function to register a pluggable regional model."""
+    """Plug a regional model into the adapter.
+
+    For a model that runs in the tenant's own country (or on its own machine),
+    declare where: hosting_kind="in_region" with hosting_region="TH", or
+    hosting_kind="local". Give base_url for an OpenAI-compatible endpoint (a
+    national provider's API, vLLM, llama.cpp server, Ollama) and api_key_env, the
+    NAME of the environment variable that holds its key. A model declared in_region
+    or local is not assumed to be on OpenRouter."""
+    if hosting_kind not in (KIND_LOCAL, KIND_IN_REGION, KIND_CROSS_BORDER):
+        raise ValueError(f"hosting_kind must be local, in_region or cross_border, not {hosting_kind!r}")
+    if hosting_kind == KIND_IN_REGION and not hosting_region:
+        raise ValueError("an in_region model needs hosting_region (e.g. 'TH')")
+    own = hosting_kind in (KIND_LOCAL, KIND_IN_REGION)
     entry = RegionalModelEntry(
         language=language,
         region=region,
@@ -777,5 +917,11 @@ def register_regional_llm(
         cost_output=cost_output,
         specialties=specialties or [],
         compliance_tags=compliance_tags or [],
+        hosting_kind=hosting_kind,
+        hosting_region=(hosting_region or (region if hosting_kind == KIND_LOCAL else GLOBAL)).upper(),
+        operator=operator or ("the tenant" if own else "OpenRouter"),
+        base_url=base_url,
+        api_key_env=api_key_env,
+        on_openrouter=not own,
     )
     _DEFAULT_ROUTER.add_model(entry)

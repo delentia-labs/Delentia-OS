@@ -40,6 +40,7 @@ _OTHER_OUTCOMES = {
     "fdia_blocked": (-1.0, True),
     "pending_approval": (0.0, False),
     "guard_blocked": (0.0, False),
+    "residency_blocked": (0.0, False),      # the policy refused the call: neither growth nor an agent violation
     "notary_unavailable": (0.0, False),
 }
 _INCOMPLETE = (-0.5, False)
