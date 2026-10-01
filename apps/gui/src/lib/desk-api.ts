@@ -117,6 +117,15 @@ export interface Pipeline {
   enabled: boolean; algorithms: number; adapters: PipelineAdapter[]; by_algorithm: PipelineAggregate[];
   runs: { id: number; namespace: string; at: string; algorithms: number; ok: number; not_triggered: number; errors: number; total_ms: number; advice_lines: number }[];
 }
+export interface SovereigntyInfo {
+  enforced: boolean;
+  policy: { tenant_id: string; home_region: string; allowed_regions: string[]; allow_cross_border: boolean; pii_policy: string; legal_basis: string } | null;
+  model: string;
+  hosting: { kind: string; region: string; operator: string; note: string };
+  config_path: string; pii_policies: string[]; warning?: string; would_be_allowed: boolean | null; reason?: string;
+  decisions: { id: number; namespace: string; action: string; at: string; reason: string | null; hosting: { kind: string; region: string; operator?: string } | null; pii: Record<string, number> | null; cross_border: boolean | null; text_chars: number | null }[];
+  counts: { allow: number; redact: number; block: number };
+}
 export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number }
 export interface ChainReport {
   ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number;
@@ -178,6 +187,7 @@ export const desk = {
   subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
   runSubagents: (goals: string[], timeoutSeconds = 240) =>
     call<{ runs: SubagentRun[] }>("/v1/desk/subagents/run", { method: "POST", body: JSON.stringify({ goals, timeout_seconds: timeoutSeconds }), signal: AbortSignal.timeout((timeoutSeconds + 60) * 1000) }),
+  sovereignty: () => call<SovereigntyInfo>("/v1/desk/sovereignty"),
   growth: () => call<Growth>("/v1/desk/growth"),
   pipeline: () => call<Pipeline>("/v1/desk/pipeline"),
   memories: (namespace?: string) =>

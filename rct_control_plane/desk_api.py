@@ -477,6 +477,19 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
         return {"memory_id": memory_id, "namespace": namespace}
 
+    @router.get("/sovereignty")
+    async def sovereignty(limit: int = Query(50, ge=1, le=300)) -> Dict[str, Any]:
+        """The data-residency policy (or its absence), where the selected model would
+        send data, and the recent decisions from the audit trail. Read-only: the policy
+        is a security setting, changed with `delentia sovereignty set`, not from here."""
+        from rct_control_plane import residency
+        info = residency.describe()
+        with _connect() as conn:
+            decisions = residency.recent_decisions(conn, limit)
+        info["decisions"] = decisions
+        info["counts"] = {a: sum(1 for d in decisions if d["action"] == a) for a in ("allow", "redact", "block")}
+        return info
+
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:
         from rct_control_plane import model_config

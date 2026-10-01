@@ -254,3 +254,19 @@ def test_session_detail_carries_the_data_evidence_and_the_five_pillars(desk, mon
     assert list(detail["pillars"]) == ["gatekeeper", "memory", "executor", "verifier", "committer"]
     assert detail["growth"]["G"] > 1.0
     assert all(e["type"] != "intent_loop_pillars" for e in detail["events"])
+
+
+def test_sovereignty_shows_the_policy_the_hosting_and_the_recorded_decisions(desk, monkeypatch):
+    from rct_control_plane import residency
+    client, persistence, _ = desk
+    monkeypatch.setenv(residency.HOME_REGION_ENV, "TH")
+    persistence.append_audit(entity_type="residency_decision", entity_id="ns-1", action="block", actor="ns",
+                             changes={"reason": "cross-border", "hosting": {"kind": "cross_border", "region": "GLOBAL"},
+                                      "pii": {"th_national_id": 1}, "cross_border": True, "text_chars": 40})
+    body = client.get("/v1/desk/sovereignty").json()
+    assert body["enforced"] is True and body["policy"]["home_region"] == "TH"
+    assert body["counts"]["block"] == 1 and body["decisions"][0]["pii"] == {"th_national_id": 1}
+    assert "kind" in body["hosting"] and body["pii_policies"] == ["allow", "redact", "block"]
+    monkeypatch.delenv(residency.HOME_REGION_ENV)
+    monkeypatch.setenv(residency.CONFIG_ENV, "/nonexistent/none.json")
+    assert client.get("/v1/desk/sovereignty").json()["enforced"] is False

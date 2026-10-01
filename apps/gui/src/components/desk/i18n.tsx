@@ -14,6 +14,7 @@ const DICT = {
   memory: { en: "Memory", th: "ความจำ" },
   growth: { en: "Growth", th: "การเติบโต" },
   algorithms: { en: "Algorithms", th: "อัลกอริทึม" },
+  sovereignty: { en: "Sovereignty", th: "อธิปไตยข้อมูล" },
   approvals: { en: "Approvals", th: "อนุมัติ" },
   audit: { en: "Audit", th: "Audit" },
   models: { en: "Models", th: "โมเดล" },
