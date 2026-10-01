@@ -39,7 +39,10 @@ def test_files_inside_the_workspace_work(root):
     assert "a.txt" in fs("list", "notes")["entries"]
 
 
-@pytest.mark.parametrize("path", ["../outside.txt", "notes/../../outside.txt", "..", "/etc/passwd", "C:\\Windows\\win.ini"])
+_DRIVE_PATH = "C:\\Windows\\win.ini" if os.name == "nt" else "/root/.ssh/config"      # a drive path is only a file name on POSIX
+
+
+@pytest.mark.parametrize("path", ["../outside.txt", "notes/../../outside.txt", "..", "/etc/passwd", _DRIVE_PATH])
 def test_paths_outside_the_workspace_are_vetoed_for_every_action(root, path):
     for action in ("read", "write", "list"):
         result = fs(action, path, "x" if action == "write" else None)
@@ -170,4 +173,47 @@ def test_helpers_agree_with_the_tools(root):
     assert gw._in_workspace("a/b") == os.path.normpath(os.path.join(gw._workspace_root(), "a", "b"))
     assert gw._in_workspace("../x") is None
     assert gw._blocked_name("x/.ENV") and not gw._blocked_name("readme.md")
-    assert gw._public_http_url("http://127.0.0.1/") is None
+    assert gw._resolve_public_target("http://127.0.0.1/") is None
+
+
+def test_https_fetch_connects_to_the_validated_address_and_checks_the_host_name(root, tmp_path, monkeypatch):
+    """A real TLS server with a self-signed certificate for 'localhost': the request goes to the address
+    that was validated, the certificate is checked against the host name, and a wrong name is refused."""
+    import datetime
+    import ipaddress
+    import ssl
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import NameOID
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())
+            .not_valid_before(now - datetime.timedelta(days=1)).not_valid_after(now + datetime.timedelta(days=1))
+            .add_extension(x509.SubjectAlternativeName([x509.DNSName("localhost"), x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]), critical=False)
+            .sign(key, hashes.SHA256()))
+    cert_path, key_path = tmp_path / "c.pem", tmp_path / "k.pem"
+    cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    key_path.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+
+    server = HTTPServer(("127.0.0.1", 0), _Page)
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(str(cert_path), str(key_path))
+    server.socket = server_context.wrap_socket(server.socket, server_side=True)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    real_create = ssl.create_default_context
+    monkeypatch.setattr(ssl, "create_default_context", lambda *a, **k: real_create(cafile=str(cert_path)))
+    monkeypatch.setenv(gw.GATEWAY_FETCH_PRIVATE_ENV, "1")
+    try:
+        target = gw._resolve_public_target(f"https://localhost:{server.server_port}/")
+        assert target is not None and target.ip in ("127.0.0.1", "::1")
+        assert "hello from the page" in gw._fetch_pinned(target)
+        wrong = gw._FetchTarget("https", "not-localhost.invalid", target.ip, target.port, "/")
+        with pytest.raises(ssl.SSLError):
+            gw._fetch_pinned(wrong)
+    finally:
+        server.shutdown()
+        server.server_close()
