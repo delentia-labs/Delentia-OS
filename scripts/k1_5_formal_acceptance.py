@@ -109,11 +109,16 @@ def _check_destructive_blocked(result: dict) -> tuple:
     return False, f"FAIL: destructive command was not blocked (stopped_reason={result.get('stopped_reason')!r})"
 
 
+DELAY_SECONDS = 0.0  # set by --delay; free OpenRouter models have per-minute limits
+
+
 async def _run_category(name: str, goal: str, n_runs: int, checker, max_iterations=4, max_seconds=90.0):
     print(f"\n{'=' * 78}\n{name}: {n_runs} real runs\ngoal: {goal!r}\n{'=' * 78}")
     outcomes = []
     infra_errors = 0
     for i in range(1, n_runs + 1):
+        if DELAY_SECONDS and i > 1:
+            await asyncio.sleep(DELAY_SECONDS)
         result, wall = await _run_once(goal, max_iterations, max_seconds, i, name.lower().replace(" ", "-"))
         if "infra_error" in result:
             infra_errors += 1
@@ -130,17 +135,20 @@ async def _run_category(name: str, goal: str, n_runs: int, checker, max_iteratio
     return {"name": name, "passed": sum(outcomes), "valid_n": valid_n, "pass_rate": pass_rate, "infra_errors": infra_errors}
 
 
-async def main() -> int:
-    print("Round 45 K.1.5: FORMAL acceptance-criteria measurement (real Ollama, no shortcuts)")
+async def main(tool_runs: int = 20, refusal_runs: int = 10, governance_runs: int = 5) -> int:
+    from rct_control_plane.model_config import resolve_model_selection
+    sel = resolve_model_selection()
+    print("Round 45 K.1.5: FORMAL acceptance-criteria measurement (real model calls, no shortcuts)")
+    print(f"model: {sel.model} ({sel.provider}, chosen by {sel.model_source})")
 
     tool_selection = await _run_category(
-        "Tool-selection accuracy", TOOL_SELECTION_GOAL, 20, _check_tool_selection,
+        "Tool-selection accuracy", TOOL_SELECTION_GOAL, tool_runs, _check_tool_selection,
     )
     refusal = await _run_category(
-        "Refusal accuracy", REFUSAL_GOAL, 10, _check_refusal,
+        "Refusal accuracy", REFUSAL_GOAL, refusal_runs, _check_refusal,
     )
     governance = await _run_category(
-        "Governance regression spot-check", DESTRUCTIVE_GOAL, 5, _check_destructive_blocked,
+        "Governance regression spot-check", DESTRUCTIVE_GOAL, governance_runs, _check_destructive_blocked,
     )
 
     print(f"\n{'=' * 78}\nFORMAL J.4.5 ACCEPTANCE CRITERIA - FINAL VERDICT\n{'=' * 78}")
@@ -158,4 +166,12 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    import argparse
+    ap = argparse.ArgumentParser(description="K.1.5 acceptance test (defaults: the formal 20 / 10 / 5 runs)")
+    ap.add_argument("--tool-runs", type=int, default=20)
+    ap.add_argument("--refusal-runs", type=int, default=10)
+    ap.add_argument("--governance-runs", type=int, default=5)
+    ap.add_argument("--delay", type=float, default=0.0, help="seconds between runs (free-tier rate limits)")
+    args = ap.parse_args()
+    DELAY_SECONDS = args.delay
+    sys.exit(asyncio.run(main(args.tool_runs, args.refusal_runs, args.governance_runs)))

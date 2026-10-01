@@ -12,6 +12,7 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+import os
 import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -23,7 +24,7 @@ from rct_control_plane.sandbox import run_sandboxed
 from rct_control_plane.nodal_assembly import assemble
 from rct_control_plane.algo_32_mctr import ChainMerger, AnswerSynthesizer
 from rct_control_plane.agent_profile import delegate_to_profile
-from rct_control_plane.agent_memory import MemoryType
+from rct_control_plane.agent_memory import AgentMemory, MemoryType
 from rct_control_plane.scheduler import schedule_reminder, check_and_fire_due_reminders, schedule_self_evolution
 from rct_control_plane.exchange_bridge import NeuralExchangeBridge, PathTraversalError
 from rct_control_plane.algo_34_swcar import WebCrawler
@@ -31,7 +32,10 @@ from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
 
 # Round 32: real repo root for the read-only file-access tools (Task 73) -
 # mcp_server.py lives at <repo_root>/rct_control_plane/mcp_server.py.
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# Round 50: DELENTIA_REPO_ROOT points a subagent's file tools at its own git
+# worktree. Before, REPO_ROOT was always this checkout, so the "isolated"
+# worktree created for every subagent was never the place it read or wrote.
+REPO_ROOT = Path(os.environ.get("DELENTIA_REPO_ROOT") or Path(__file__).resolve().parent.parent).resolve()
 _SKIP_DIR_NAMES = {".git", "__pycache__", "node_modules", ".delentia_worktrees", ".venv", "venv"}
 
 mcp = MCPServer("delentia-kernel")
@@ -133,18 +137,47 @@ async def delentia_delegate(profile_name: str, sub_goal: str, max_iterations: in
 
 
 @mcp.tool()
-async def delentia_remember(content: str, memory_type: str = "fact") -> dict:
-    """Store a real memory in the kernel's default namespace, recallable
-    later via delentia_recall (semantic ranking, not exact match)."""
-    memory_id = await _kernel._agent_memory.store(content, MemoryType(memory_type))
+async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240) -> dict:
+    """Run up to 3 independent goals at the same time, each in its OWN OS process inside its
+    OWN git worktree, as an Ed25519-signed JITNA request; each answer comes back signed and is
+    verified before it is returned. Use it only for goals that do not depend on each other. A
+    subagent cannot spawn further subagents. Returns one entry per goal with success, the
+    subagent's stopped_reason, final_answer and whether its signed response verified."""
+    from rct_control_plane.jitna_distributor import MAX_SUBAGENT_DEPTH, distribute_to_subagents, subagent_depth
+    if subagent_depth() >= MAX_SUBAGENT_DEPTH:
+        return {"error": "a subagent cannot spawn subagents; do the work yourself"}
+    if not isinstance(goals, list) or not goals or not all(isinstance(g, str) and g.strip() for g in goals):
+        return {"error": "'goals' must be a non-empty list of non-empty strings"}
+    if len(goals) > 3:
+        return {"error": "at most 3 subagents at a time"}
+    timeout = float(max(30, min(int(timeout_seconds), 900)))
+    outcomes = await distribute_to_subagents([g.strip() for g in goals], _kernel._persistence,
+                                             repo_root=str(REPO_ROOT), timeout_seconds=timeout)
+    return {"subagents": [{
+        "agent_id": o.get("agent_id"), "goal": o.get("goal"), "success": bool(o.get("success")),
+        "stopped_reason": o.get("stopped_reason"), "final_answer": o.get("final_answer"),
+        "signed_response_verified": bool((o.get("jitna") or {}).get("response_verified")),
+        "problem": o.get("error") or o.get("rejected") or (o.get("jitna") or {}).get("reason") or o.get("timed_out") or None,
+    } for o in outcomes]}
+
+
+@mcp.tool()
+async def delentia_remember(content: str, memory_type: str = "fact", namespace: Optional[str] = None) -> dict:
+    """Store a real memory, recallable later via delentia_recall (semantic
+    ranking, not exact match). Without `namespace` it goes to the kernel's
+    shared default namespace; the governed agent loop always passes the
+    caller's own namespace, so one user's facts are not another's."""
+    memory = _kernel._agent_memory if not namespace else AgentMemory(namespace, _kernel._persistence)
+    memory_id = await memory.store(content, MemoryType(memory_type))
     return {"memory_id": memory_id}
 
 
 @mcp.tool()
-async def delentia_recall(query: str, limit: int = 5) -> dict:
-    """Recall real memories from the kernel's default namespace,
-    ranked by real semantic similarity to the query."""
-    memories = await _kernel._agent_memory.recall(query, limit=limit)
+async def delentia_recall(query: str, limit: int = 5, namespace: Optional[str] = None) -> dict:
+    """Recall real memories, ranked by real semantic similarity to the query,
+    from the given namespace (default: the kernel's shared default one)."""
+    memory = _kernel._agent_memory if not namespace else AgentMemory(namespace, _kernel._persistence)
+    memories = await memory.recall(query, limit=limit)
     return {"memories": memories}
 
 

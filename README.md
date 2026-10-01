@@ -88,7 +88,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
 | SignedAI multi-LLM consensus | ✅ `signedai/core/` | — |
 | HexaCoreRole registry (10 roles v2.3) | ✅ `signedai/core/registry.py` | — |
-| Delta Engine (91.5% measured compression, design floor ≥74%) | ✅ `core/delta_engine/` | — |
+| Delta Engine (memory deltas: ~39% smaller after 20 ticks, ~90% after 500, measured in bytes; see Round 52) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
 | JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_protocol_v3.py` | — |
@@ -154,7 +154,7 @@ $$F = D^I \times A$$
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
 | **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) - v2.3 |
 | **Hallucination Rate** | Not currently claimed. The earlier 0.3% figure was withdrawn 2026-09-28 because it could not be reproduced (see `docs/benchmark/hallucination-methodology.md`) |
-| **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
+| **Memory Compression** | stores state diffs, not full state: 39% (20 ticks) to 90% (500 ticks) smaller than a full snapshot per tick, measured in bytes (`scripts/measure_delta_engine_real.py`). The earlier 91.5% was a formula estimate, not a measurement |
 | **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
 | **Uptime SLA** | N/A (Experimental Hobby Platform, no enterprise SLA guaranteed) |
 | **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
@@ -190,7 +190,7 @@ Layer 9: Control Plane
 ├─ Replay Engine (SHA-256 checkpoints)
 └─ rct_control_plane: 15-module DSL + intent schema
 
-Layer 8: Regional Language (8 markets)
+Layer 8: Regional Language + data residency (routing and call-time enforcement)
 ├─ LanguageDetector (EN, TH, JA, KO, ZH, VI, ID)
 └─ RegionalModelRouter (LRU cache, 4-level resolution)
 
@@ -302,6 +302,11 @@ Use these paths when you need evidence, not marketing copy:
   ```bash
   pytest tests/hypothesis/test_fdia_properties.py -v
   ```
+- **The whole system against a scripted model (Round 52)** - 15 cases, 76 checks: guard, a real tool call, warm recall, signed approvals, memory, model failures, budget, data residency, delegation, three subagents in three OS processes and git worktrees, a forged subagent answer, audit tampering and the `.jitna` handoff. The model is a real HTTP endpoint that follows a script, so a result is about the system, not about a model:
+  ```bash
+  python scripts/full_pipeline_cases.py            # add --no-subagents for the 30-second version
+  python scripts/real_model_tool_probe.py qwen2.5:7b   # the other question: is this MODEL good enough to drive it?
+  ```
 - **Current test and coverage checkpoint** - [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md)
 - **Release gate checklist** - [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
 - **Public export and provenance policy** - [`docs/release/PUBLIC_RELEASE_PROVENANCE.md`](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
@@ -372,7 +377,7 @@ Stores agent memory as compressed delta sequences — only what changed, not ful
 
 | Property | Value |
 |----------|-------|
-| **Compression** | 91.5% measured (design floor ≥74%) — stores DIFF, not full state |
+| **Compression** | 39% (20 ticks) to 90% (500 ticks) measured in bytes — stores DIFF, not full state; the gain grows with history length, and plain zstd over full snapshots does as well or better |
 | **Deduplication** | SHA-256 content hash per record |
 | **Rollback** | Replay any agent to any past tick via delta chain |
 
@@ -421,7 +426,7 @@ Full documentation: [docs/concepts/jitna.md](docs/concepts/jitna.md) | [RFC-001 
 
 JITNA is a three-layer system:
 - **Layer 1 — Protocol** (`rct_control_plane/jitna_protocol.py`): RFC-001 wire format, Ed25519 signed packets, The 9 Codex
-- **Layer 2 — Language** (6-field I/D/Δ/A/R/M templates): 50+ workflow templates for structured intent expression
+- **Layer 2 — Language** (6-field I/D/Δ/A/R/M): a parser and formatter for the text form (`rct_control_plane/jitna_file.py`, Round 52) and the `.jitna` signed file; no template library ships in this repository, and earlier text that cited "50+ workflow templates" is withdrawn
 - **Layer 3 — Intake** (`microservices/intent-loop/loop_engine.py`): user-facing JITNAPacket + LoopMetrics
 
 ```python
@@ -441,20 +446,63 @@ packet = JITNAPacket(
 
 The canonical 6-field JITNA Language schema uses I=Intent, D=**Data**, Δ=Delta, A=**Approach**, R=**Reflection**, M=**Memory** — the SignedAI variant above uses different field semantics for verification context. See [docs/concepts/jitna.md](docs/concepts/jitna.md) for the full disambiguation.
 
-### Regional Adapter (`core/regional_adapter/regional_adapter.py`)
+#### The `.jitna` file (Round 52)
 
-Context adaptation for multi-region deployments:
+A JITNA packet can be written as a signed file and sent over any network or medium; the receiver needs only the sender's public key. The 6-field language is plain text:
 
-| Region | Languages | Compliance |
-|--------|-----------|------------|
-| Thailand | TH, EN | PDPA |
-| Japan | JA, EN | — |
-| South Korea | KO, EN | PIPA |
-| China | ZH, EN | PIPL |
-| Vietnam | VI, EN | — |
-| Indonesia | ID, EN | — |
-| Taiwan | ZH-TW, EN | — |
-| US/Global | EN | GDPR-ready |
+```text
+I: Refactor the authentication module
+D: 800-line monolith, no tests
+Δ: separate domain logic from infrastructure
+A: hexagonal architecture
+M: all tests must pass
+```
+
+```bash
+delentia jitna keygen --out ~/.delentia/keys/jitna.pem        # prints the public key to publish
+delentia jitna pack --language intent.txt --source planner --target worker --key ~/.delentia/keys/jitna.pem -o task.jitna
+delentia jitna verify task.jitna --trust <sender public key>   # exit 0 valid+trusted, 3 valid but not trusted, 1 invalid
+delentia jitna unpack task.jitna --trust <sender public key>   # prints the language, only from a file that verifies
+```
+
+Each packet carries its own Ed25519 signature, and the file carries a **seal** over the whole body. The seal matters because a packet's own hash leaves `priority`, `correlation_id`, `metadata` and `status` outside what is signed. "Valid" (nothing changed after signing) and "trusted" (you pinned the signer's key) are reported separately: anyone can generate a key and sign anything. A `.jitna` file is signed, not encrypted. Receivers can also `POST /v1/jitna/verify`. Code: `rct_control_plane/jitna_file.py`.
+
+### Regional Adapter and data sovereignty (`core/regional_adapter/`, `rct_control_plane/residency.py`)
+
+You can do all of the following from the Desk (**Models** and **Sovereignty** pages) without the command line: pick a country, provider and model (or Other), declare where the endpoint processes data, test the connection (no prompt is sent, and an endpoint the policy would block is not contacted), and set the policy. A key typed there stays in the server's memory; only the name of its environment variable is saved.
+
+The idea: any country or organisation plugs in its own AI, and personal data does not leave the boundary it sets.
+
+Two parts, both real and tested:
+
+1. **Routing** (`regional_adapter.py`): picks a model and prompt style per region and language, with compliance tags (TH PDPA, KR PIPA, CN PIPL, JP APPI, GDPR-ready for the US/EU entries) and a registry of pilot tenants.
+2. **Enforcement** (`sovereignty.py`, `residency.py`, Round 52): a `SovereigntyPolicy` states the home region, the regions a call may reach, whether cross-border calls are allowed and what happens to personal data in one (`block`, `redact`, `allow`). Every model call is checked **before it is sent**:
+   - an endpoint outside the allowed regions is refused (`stopped_reason=residency_blocked`, nothing leaves);
+   - a permitted cross-border call that carries personal data is blocked or the data is replaced by placeholders; the scanner knows Thai national ID, Japanese My Number, Chinese resident ID and Korean RRN checksums, plus e-mail, phone and card numbers;
+   - an endpoint whose location is unknown counts as cross-border (fail closed); a broken policy file raises instead of silently allowing;
+   - the audit chain records the decision (kinds, counts, a hash), never the personal data.
+
+```bash
+# plug in your own AI: any OpenAI-compatible endpoint (a national provider, vLLM, llama.cpp, a gateway in your country)
+delentia model set typhoon-v2-70b-instruct --provider openai-compat     --base-url https://llm.example.th/v1 --kind in_region --region TH --credential-env TYPHOON_TOKEN
+delentia sovereignty set --region TH            # nothing may leave Thailand
+delentia sovereignty check "Call 081-234-5678"  # would this text be sent? (nothing is sent)
+```
+
+This resembles data-localisation duties but is **not legal compliance by itself**. Thailand's PDPA does not require data to stay in Thailand; it restricts transfers abroad unless the destination has adequate protection or a basis such as consent or contract safeguards applies (s.28-29), and requires a lawful basis, purpose limits and data-subject rights. The policy therefore lets an owner choose "stay in-region" (strict) or "cross-border with redaction and a recorded legal basis". China's PIPL and Korea's PIPA are stricter about transfers. Have counsel confirm the setting for your case.
+
+Not covered yet: egress by the crawl tool and the TypeScript MCP bridge are not checked by the policy, and the entry-point filter sees only text that goes through the model provider.
+
+| Entry | Languages |
+|-------|-----------|
+| Thailand | TH, EN |
+| Japan | JA, EN |
+| South Korea | KO, EN |
+| China | ZH, EN |
+| Taiwan | ZH-TW, EN |
+| Vietnam | VI, EN |
+| Indonesia | ID, EN |
+| US/Global | EN |
 
 ### rct_control_plane
 
@@ -593,6 +641,21 @@ model_id = HexaCoreRegistry.get_model_id(
 # → 'alibaba/qwen-2.5-7b' (or any custom registered model)
 ```
 
+### SignedAI jury (`signedai/runner.py`, `delentia jury`)
+
+Several different models vote on a proposal and the verdict is signed. Give each tier role an endpoint in a JSON file (a key is never in the file; `credential_env` names a variable), then:
+
+```bash
+delentia jury run --config jury.json --tier tier_4 --question "Is this migration safe?" --proposal-file plan.md --sign-key jury-key.pem --out verdict.json
+delentia jury verify verdict.json --pubkey <hex>
+```
+
+What it guarantees: members are asked independently and at the same time; a reply that is not a clear vote, a timeout, an error or a member the sovereignty policy forbids is an abstention (it never counts as agreement and cannot lift the ratio); a jury whose answering members are one model is not a consensus (opt out with `--allow-shared-model`, recorded in the verdict); in tier 8 the chairman can veto but cannot force a pass; the verdict carries a SHA-256 digest and an optional Ed25519 signature that `verify` re-checks together with the vote counts and the tier rules. What it does not do yet: the governed loop does not call it by itself, and no multi-vendor vote has been run with real keys.
+
+### API hardening (Round 53)
+
+`delentia serve` rate-limits per caller (`DELENTIA_RATE_LIMIT`, default 600/60 s; an agent run costs 20 requests, a subagent fan-out 30). Model endpoints that keep failing are paused by a circuit breaker shared across episodes. Without `DELENTIA_API_TOKEN` the API answers only loopback clients; since Round 53 it also refuses a request whose `Origin` is a web page from another site or whose `Host` is not a loopback name (CORS used to be `*`, so any page the user opened could drive a local agent), and CORS answers only the local Desk and origins listed in `DELENTIA_CORS_ORIGINS`.
+
 ---
 
 ## Microservices
@@ -667,8 +730,8 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
-│  ├─ delta_engine/             # Delta-Memory (91.5% on a synthetic 20-agent simulation)
-│  └─ regional_adapter/         # 8-market language routing
+│  ├─ delta_engine/             # Delta-Memory (39-90% in measured bytes on a synthetic simulation, grows with run length)
+│  └─ regional_adapter/         # regional routing + sovereignty policy (data residency)
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
 │     ├─ registry.py            # HexaCoreRegistry (9 roles) + SignedAIRegistry

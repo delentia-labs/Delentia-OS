@@ -27,8 +27,12 @@ def test_openrouter_provider_real_completion_or_honest_skip():
     assert isinstance(result, str) and len(result) > 0
 
 
-def test_get_default_provider_defaults_to_ollama(monkeypatch):
+def test_get_default_provider_defaults_to_ollama(monkeypatch, tmp_path):
     monkeypatch.delenv("DELENTIA_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("DELENTIA_LLM_MODEL", raising=False)
+    # The builtin default, not whatever this machine's ~/.delentia/model.json
+    # says (an operator who ran `delentia model set` must not fail the test).
+    monkeypatch.setenv("DELENTIA_MODEL_CONFIG", str(tmp_path / "absent-model.json"))
     from rct_control_plane.llm_provider import get_default_provider, OllamaProvider
     provider = get_default_provider()
     assert isinstance(provider, OllamaProvider)

@@ -5,12 +5,17 @@ Provides standard JSON-RPC 2.0 MCP endpoints (/mcp) for external AI clients
 Governed by Layer 2 CORD Shannon Entropy & Layer 3 FDIA Veto Gate (F = D^I * A)
 """
 
+import ipaddress
+import logging
 import os
+import shlex
+import socket
+import sys
 import json
 import subprocess
-import urllib.request
+from urllib.parse import urlsplit
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Request, HTTPException
 
 from .intent_compiler import IntentCompiler
@@ -19,6 +24,8 @@ from .policy_language import PolicyEvaluator
 from .default_policies import get_default_policies
 from .exchange_bridge import NeuralExchangeBridge
 from .autonomous_scheduler import AutonomousScheduler
+
+logger = logging.getLogger(__name__)
 
 # MCP Specification Constants
 MCP_PROTOCOL_VERSION = "2024-11-05"
@@ -163,6 +170,122 @@ DELENTIA_MCP_TOOLS = [
 # TOOL EXECUTION HANDLERS (Governed by FDIA & CORD)
 # ============================================================================
 
+# Round 52: the gateway's three powerful tools (shell, filesystem, fetch) were bounded only by a
+# pattern denylist. They now have real boundaries, each a constant the operator can widen
+# deliberately with an environment variable and nothing a caller can widen.
+GATEWAY_ROOT_ENV = "DELENTIA_GATEWAY_ROOT"
+GATEWAY_SHELL_ALLOW_ENV = "DELENTIA_GATEWAY_SHELL_ALLOW"          # extra executable names, comma separated
+GATEWAY_FETCH_PRIVATE_ENV = "DELENTIA_GATEWAY_ALLOW_PRIVATE_FETCH"  # "1" lets fetch reach private/loopback addresses
+_BLOCKED_NAME_PARTS = (".env", "_secret", "credentials.json", "vault_master.key", ".pem", "id_rsa")
+# Executables the shell tool will start (no shell is involved: the command is split into
+# arguments and run directly, so pipes, redirects and `&&` are not interpreted).
+_SHELL_ALLOWED = {
+    "git": "git", "python": sys.executable, "python3": sys.executable, "pytest": "pytest", "ruff": "ruff",
+    "mypy": "mypy", "node": "node", "npm": "npm", "npx": "npx", "pip": "pip",
+}
+
+
+def _split_command(cmd: str) -> list:
+    """Arguments of a command line. POSIX rules everywhere except Windows, where shlex keeps the
+    quotes in a token, so one enclosing pair of matching quotes is removed to give the program
+    what a Windows shell would have given it."""
+    if os.name != "nt":
+        return shlex.split(cmd)
+    return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t for t in shlex.split(cmd, posix=False)]
+
+
+def _workspace_root() -> str:
+    configured = os.environ.get(GATEWAY_ROOT_ENV)
+    return os.path.abspath(configured) if configured else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _in_workspace(path: str) -> Optional[str]:
+    """The absolute path if it is inside the gateway workspace (lexically AND after following
+    symlinks), else None. Relative paths are taken from the workspace root."""
+    root = _workspace_root()
+    candidate = os.path.normpath(os.path.join(root, path))
+    if candidate != root and not candidate.startswith(root + os.sep):
+        return None
+    real_root = os.path.realpath(root)
+    real = os.path.realpath(candidate)
+    if real != real_root and not real.startswith(real_root + os.sep):
+        return None
+    return candidate
+
+
+def _blocked_name(path: str) -> bool:
+    lowered = path.lower()
+    return any(part in lowered for part in _BLOCKED_NAME_PARTS)
+
+
+class _FetchTarget:
+    """A validated destination: the exact IP address that was checked, plus the name to present."""
+
+    def __init__(self, scheme: str, hostname: str, ip: str, port: int, path: str, ips: Optional[list] = None):
+        self.scheme, self.hostname, self.ip, self.port, self.path = scheme, hostname, ip, port, path
+        self.ips = ips or [ip]           # every address that passed the check, IPv4 first
+
+
+def _resolve_public_target(url: str) -> Optional[_FetchTarget]:
+    """The destination for an http(s) URL if every address its host resolves to is public (or the operator
+    allowed private ones), else None. The connection is made to the address checked here, so a second DNS
+    answer (rebinding) cannot send the request somewhere else."""
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    port = parts.port or (443 if parts.scheme == "https" else 80)
+    try:
+        infos = socket.getaddrinfo(parts.hostname, port, type=socket.SOCK_STREAM)
+    except OSError:
+        return None
+    checked = []
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if os.environ.get(GATEWAY_FETCH_PRIVATE_ENV) != "1" and (
+                ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            return None
+        if str(ip) not in checked:
+            checked.append(str(ip))
+    if not checked:
+        return None
+    checked.sort(key=lambda text: ":" in text)          # IPv4 first
+    path = parts.path or "/"
+    return _FetchTarget(parts.scheme, parts.hostname, checked[0], port, path + (f"?{parts.query}" if parts.query else ""), checked)
+
+
+def _fetch_pinned(target: _FetchTarget, limit: int = 50000) -> str:
+    """GET the target over a connection to its validated IP. HTTPS presents the host name for SNI and
+    certificate checks. Redirects are not followed (a redirect could point at a private address)."""
+    import http.client
+    import ssl
+    raw = None
+    last_error: Optional[OSError] = None
+    for ip in target.ips:                                  # only addresses that passed the check
+        try:
+            raw = socket.create_connection((ip, target.port), timeout=10)
+            break
+        except OSError as exc:
+            last_error = exc
+    if raw is None:
+        raise last_error or OSError("no address to connect to")
+    if target.scheme == "https":
+        conn: http.client.HTTPConnection = http.client.HTTPSConnection(target.ip, target.port, timeout=10)
+        tls = ssl.create_default_context()
+        tls.minimum_version = ssl.TLSVersion.TLSv1_2          # never TLS 1.0/1.1
+        conn.sock = tls.wrap_socket(raw, server_hostname=target.hostname)
+    else:
+        conn = http.client.HTTPConnection(target.ip, target.port, timeout=10)
+        conn.sock = raw
+    try:
+        conn.request("GET", target.path, headers={"Host": target.hostname, "User-Agent": "DelentiaOS-Agent/2.0"})
+        response = conn.getresponse()
+        if 300 <= response.status < 400:
+            raise ValueError("the server answered with a redirect, which is not followed")
+        return response.read(limit).decode("utf-8", errors="replace")
+    finally:
+        conn.close()
+
+
 def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     # 1. delentia_compile_intent
     if tool_name == "delentia_compile_intent":
@@ -244,10 +367,30 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                 "error": f"Command contains suspicious patterns: {cord_res.verdict}"
             }
         try:
-            res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=15)  # nosec B602
+            argv = _split_command(cmd)
+        except ValueError:
+            return {"status": "ERROR", "error": "the command could not be split into arguments (unbalanced quote?)"}
+        allowed = dict(_SHELL_ALLOWED)
+        allowed.update({n.strip(): n.strip() for n in os.environ.get(GATEWAY_SHELL_ALLOW_ENV, "").split(",") if n.strip()})
+        executable = allowed.get(os.path.basename(argv[0]).lower().removesuffix(".exe")) if argv else None
+        if executable is None:
+            return {"status": "VETOED_BY_SHELL_ALLOWLIST",
+                    "error": f"only these programs can be started here: {', '.join(sorted(allowed))}. "
+                             f"The operator can add more with {GATEWAY_SHELL_ALLOW_ENV}."}
+        ws_root = _workspace_root()
+        work_dir = os.path.normpath(os.path.join(ws_root, str(cwd)))
+        if not (work_dir + os.sep).startswith(ws_root + os.sep):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
+        real_ws_root = os.path.realpath(ws_root)
+        work_dir = os.path.realpath(work_dir)
+        if not (work_dir + os.sep).startswith(real_ws_root + os.sep):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
+        try:           # a cwd that is not a directory makes the start fail, which is reported below
+            res = subprocess.run([executable, *argv[1:]], cwd=work_dir, capture_output=True, text=True, timeout=15)  # nosec B603
             return {"status": "SUCCESS", "exit_code": res.returncode, "stdout": res.stdout[:2000], "stderr": res.stderr[:2000]}
-        except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+        except Exception:
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": "the tool failed; the details are in the server log"}
 
     # 5. delentia_system_health
     elif tool_name == "delentia_system_health":
@@ -264,41 +407,56 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
     # 6. delentia_workspace_fs (Zero-Delete Protection)
     elif tool_name == "delentia_workspace_fs":
         action = args.get("action", "list")
-        target_path = args.get("path", ".")
-        
+        target_path = str(args.get("path", "."))
+
         if action == "delete":
             return {
                 "status": "VETOED_BY_FDIA_GATE",
                 "error": f"Delete action on '{target_path}' blocked by Zero-Delete Safety Policy (F = 0). Manual Architect Veto required."
             }
-        elif action == "read":
-            if not os.path.exists(target_path):
+        if action not in ("read", "write", "list"):
+            return {"status": "ERROR", "error": f"Unknown FS action: {action}"}
+
+        # Round 52: one boundary for all three actions. The path is resolved (`..` and symlinks) from
+        # the workspace root and must still start with the root, before any file is touched.
+        fs_real_root = os.path.realpath(_workspace_root())
+        fs_prefix = os.path.join(fs_real_root, "")                    # ends with a separator
+        safe_path = os.path.realpath(os.path.join(fs_real_root, target_path))
+        if safe_path == fs_real_root:                                  # the workspace itself: only listing makes sense
+            if action != "list":
+                return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is the workspace root itself"}
+            return {"status": "SUCCESS", "directory": target_path, "entries": os.listdir(fs_real_root)[:50]}
+        if not safe_path.startswith(fs_prefix):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is outside the gateway workspace"}
+        if action != "list" and _blocked_name(target_path):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path names secret material"}
+
+        if action == "read":
+            if not os.path.exists(safe_path):
                 return {"status": "ERROR", "error": f"File not found: {target_path}"}
             try:
-                with open(target_path, "r", encoding="utf-8", errors="replace") as f:
+                with open(safe_path, "r", encoding="utf-8", errors="replace") as f:
                     content = f.read(50000)
                 return {"status": "SUCCESS", "path": target_path, "content": content}
-            except Exception as e:
-                return {"status": "ERROR", "error": str(e)}
-        elif action == "write":
+            except Exception:
+                logger.exception("delentia tool failed")
+                return {"status": "ERROR", "error": "the tool failed; the details are in the server log"}
+        if action == "write":
             content = args.get("content", "")
             cord_res = cord_engine.check(content)
             if not cord_res.is_clean:
                 return {"status": "VETOED_BY_CORD", "error": f"File content rejected by CORD scan: {cord_res.verdict}"}
             try:
-                os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
-                with open(target_path, "w", encoding="utf-8") as f:
+                os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+                with open(safe_path, "w", encoding="utf-8") as f:
                     f.write(content)
                 return {"status": "SUCCESS", "path": target_path, "bytes_written": len(content.encode("utf-8"))}
-            except Exception as e:
-                return {"status": "ERROR", "error": str(e)}
-        elif action == "list":
-            if not os.path.exists(target_path):
-                return {"status": "ERROR", "error": f"Directory not found: {target_path}"}
-            entries = os.listdir(target_path)[:50]
-            return {"status": "SUCCESS", "directory": target_path, "entries": entries}
-        else:
-            return {"status": "ERROR", "error": f"Unknown FS action: {action}"}
+            except Exception:
+                logger.exception("delentia tool failed")
+                return {"status": "ERROR", "error": "the tool failed; the details are in the server log"}
+        if not os.path.isdir(safe_path):
+            return {"status": "ERROR", "error": f"Directory not found: {target_path}"}
+        return {"status": "SUCCESS", "directory": target_path, "entries": os.listdir(safe_path)[:50]}
 
     # 7. delentia_git_ops
     elif tool_name == "delentia_git_ops":
@@ -320,21 +478,25 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                 return {"status": "SUCCESS", "output": res.stdout}
             else:
                 return {"status": "ERROR", "error": f"Unknown Git action: {action}"}
-        except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+        except Exception:
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": "the tool failed; the details are in the server log"}
 
     # 8. delentia_web_fetch
     elif tool_name == "delentia_web_fetch":
-        url = args.get("url", "").strip()
+        url = str(args.get("url", "")).strip()
         if not url.startswith(("http://", "https://")):
             return {"status": "ERROR", "error": "URL must start with http:// or https://"}
+        target = _resolve_public_target(url)
+        if target is None:
+            return {"status": "VETOED_BY_NETWORK_BOUNDARY",
+                    "error": "the address does not resolve, or resolves to a private, loopback or link-local address"}
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "DelentiaOS-Agent/2.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                raw_data = resp.read(50000).decode("utf-8", errors="replace")
+            raw_data = _fetch_pinned(target)
             return {"status": "SUCCESS", "url": url, "content_length": len(raw_data), "preview": raw_data[:1000]}
-        except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+        except Exception:
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": "the tool failed; the details are in the server log"}
 
     # 9. delentia_cron_scheduler
     elif tool_name == "delentia_cron_scheduler":
@@ -343,7 +505,11 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
             return {"status": "SUCCESS", "tasks": scheduler.list_tasks()}
         elif action == "trigger":
             task_id = args.get("task_id", "")
-            return scheduler.trigger_task(task_id)
+            outcome = scheduler.trigger_task(task_id)
+            if outcome.get("status") != "SUCCESS":
+                logger.warning("scheduled task %r did not run: %s", task_id, outcome.get("error"))
+                return {"status": "ERROR", "task_id": task_id, "error": "the task did not run; see the server log"}
+            return {key: outcome[key] for key in ("status", "task_id", "name", "executed_at", "output") if key in outcome}
         else:
             return {"status": "ERROR", "error": f"Unknown scheduler action: {action}"}
 

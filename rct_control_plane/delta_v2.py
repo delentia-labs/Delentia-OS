@@ -30,7 +30,6 @@ STOPWORDS = frozenset(
 )
 
 _SPLIT_RE = re.compile(r"[^\w@./-]+")
-_EDGE_PUNCT_RE = re.compile(r"^[./-]+|[./-]+$")
 _STEM_RE = re.compile(r"(ing|ed|es|s)$")
 _LETTER_DIGIT_RUN_RE = re.compile(r"[^\W_]{3,}")
 _CODE_OR_STATE_RE = re.compile(r"error|verdict", re.IGNORECASE)
@@ -55,7 +54,7 @@ class CompressionResult:
 def focus_keywords(intent: str) -> List[str]:
     """Meaningful, lightly stemmed keywords (stopwords and <=2-char words dropped), in first-seen order."""
     seen: List[str] = []
-    words = [_EDGE_PUNCT_RE.sub("", w) for w in _SPLIT_RE.split(intent.lower())]
+    words = [w.strip("./-") for w in _SPLIT_RE.split(intent.lower())]
     for w in words:
         if len(w) <= 2 or w in STOPWORDS:
             continue

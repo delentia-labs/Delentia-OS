@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 sys.path.insert(0, os.path.dirname(__file__))
 
 import asyncio
+
+import pytest
 import json
 
 import rct_control_plane.autonomous_loop as autonomous_loop_module
@@ -102,3 +104,32 @@ def test_base_loop_hook_contract(tmp_path, monkeypatch):
     assert calls["n"] == 0
     normal = asyncio.run(loop.run("g", on_episode_start=lambda g: None))
     assert normal["stopped_reason"] == "llm_finished"
+
+
+# ------------------------------------------------------------- VERIFY vs refusals
+REFUSALS = [
+    "I am unable to read the content of the 'pyproject.toml' file in the repository using the available tools.",
+    "The goal is outside what these tools can do, as none of them are designed to create new files in the repository.",
+]
+
+
+@pytest.mark.parametrize("refusal", REFUSALS)
+def test_a_declined_goal_is_not_verified_or_learned(tmp_path, monkeypatch, refusal):
+    """Round 50: both texts are real qwen2.5:7b answers that cleared the 0.15
+    similarity threshold and were then saved as skills."""
+    async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
+        return {"action": "finish", "reasoning": "r", "final_answer": refusal, "tool_name": None, "tool_args": {}}
+    monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _fake)
+    loop = _loop(tmp_path, "refusal")
+    result = asyncio.run(loop.run("Read the file pyproject.toml in the repository and create a new file docs/x.md"))
+    v = result["intent_verification"]
+    assert v["applicable"] and v["declined"] is True and v["aligned_with_intent"] is False
+    assert _audit(loop, "governed_loop_episode_end")[0]["skill_extracted"] is False
+    assert result["final_answer"] == refusal  # the user still sees the answer
+
+
+def test_a_real_answer_is_not_mistaken_for_a_refusal():
+    from rct_control_plane.governed_autonomous_loop import answer_declines_goal
+    assert not answer_declines_goal("The project name is delentia-os and the version is 2.3.0.")
+    assert not answer_declines_goal("Unable-to-parse errors were fixed; all tests pass.")
+    assert answer_declines_goal("ไม่สามารถอ่านไฟล์ได้")

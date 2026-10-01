@@ -77,8 +77,8 @@ class TestInvoiceRecord:
 
     def test_signedai_seal_has_the_expected_shape(self):
         inv = InvoiceRecord("INV-1", "PRO", 590.0, "a@example.com")
-        assert inv.signedai_seal.startswith("ED25519-")
-        assert len(inv.signedai_seal) == len("ED25519-") + 20
+        assert inv.signedai_seal.startswith("SHA256-")
+        assert len(inv.signedai_seal) == len("SHA256-") + 20
 
     def test_seal_is_deterministic_for_the_same_invoice_id_and_amount(self):
         inv1 = InvoiceRecord("INV-1", "PRO", 590.0, "a@example.com")

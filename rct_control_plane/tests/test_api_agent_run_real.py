@@ -107,7 +107,9 @@ class TestAgentRunEndpoint:
         ])
         resp = api_client.post("/v1/agent/run", json={"goal": "recall something"})
         assert resp.status_code == 200
-        assert fake_mcp.dispatched == [("delentia_recall", {"query": "x"})]
+        # Round 52: memory tools are pinned to the caller's namespace before they run
+        assert [(n, {k: v for k, v in a.items() if k != "namespace"}) for n, a in fake_mcp.dispatched] == [("delentia_recall", {"query": "x"})]
+        assert fake_mcp.dispatched[0][1]["namespace"].startswith("http-agent-")
 
     def test_fdia_blocked_returns_200_with_the_real_block_reported(self, api_client, patched_kernel_and_mcp, monkeypatch):
         # A blocked episode is not an HTTP-level error - it's a real,
@@ -142,6 +144,7 @@ class TestAgentRunEndpoint:
             raise httpx.ReadTimeout("real simulated timeout")
 
         monkeypatch.setattr(autonomous_loop_module, "decide_next_action", _raise_timeout)
+        monkeypatch.setenv("DELENTIA_LLM_RETRY_BACKOFF", "0")        # the retries are covered elsewhere; do not wait here
         resp = api_client.post("/v1/agent/run", json={"goal": "a goal"})
         assert resp.status_code == 504
         assert "timed out" in resp.json()["detail"]

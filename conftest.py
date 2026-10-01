@@ -13,8 +13,19 @@ Usage:
 """
 import sys
 import os
+import tempfile
 
 from hypothesis import HealthCheck, settings
+
+# ── Isolate runtime data (Round 50) ────────────────────────────────────────
+# Before this, tests wrote to the same skills/audit databases a real runtime
+# uses (a Desk run showed "271 skills learned", all "Say hello and finish"
+# from tests). Point DELENTIA_HOME at a fresh temp directory before anything
+# imports rct_control_plane. Set DELENTIA_TEST_KEEP_HOME=1 to opt out.
+if not os.environ.get("DELENTIA_TEST_KEEP_HOME"):
+    os.environ["DELENTIA_HOME"] = tempfile.mkdtemp(prefix="delentia-test-home-")
+    os.environ.pop("RCT_DB_PATH", None)
+    os.environ.pop("RCT_AGENTIC_DB_PATH", None)
 
 # ── Hypothesis profiles ────────────────────────────────────────────────────
 
@@ -45,3 +56,35 @@ if sys.platform == "win32":
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
+# ── Keep the Intent Loop switches out of unrelated tests (Round 51) ─────────
+# `delentia serve` turns the algorithm pipeline and warm recall on with
+# os.environ.setdefault; a test that calls serve in-process would otherwise
+# leave them on for every test after it.
+import pytest  # noqa: E402
+
+_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT")
+
+
+@pytest.fixture(autouse=True)
+def _model_circuit_breakers_start_closed():
+    """The provider circuit breakers are shared per endpoint and process (that is their job); a test that simulates an
+    outage must not leave the next test facing an open circuit."""
+    module = sys.modules.get("rct_control_plane.provider_breaker")
+    if module is not None:
+        module.reset_all()
+    yield
+    module = sys.modules.get("rct_control_plane.provider_breaker")
+    if module is not None:
+        module.reset_all()
+
+
+@pytest.fixture(autouse=True)
+def _round51_switches_start_and_end_off():
+    saved = {name: os.environ.pop(name, None) for name in _ROUND51_SWITCHES}
+    yield
+    for name, value in saved.items():
+        os.environ.pop(name, None)
+    # values present before the test are not restored on purpose: a developer's
+    # shell setting must not change what the test suite exercises.

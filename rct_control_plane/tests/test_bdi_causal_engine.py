@@ -121,7 +121,7 @@ class TestStepExperiencePipeline:
         assert entry["entity_name"] == "Mayor Lewis"
         assert entry["fdia_score"] == 1.0
         assert entry["gate_10_6_status"] == "CLOSED_COMPLETE ✅"
-        assert entry["signedai_seal"].startswith("ED25519-")
+        assert entry["signedai_seal"].startswith("SHA256-")
         assert entry["dialogue"]  # a real, non-empty fallback dialogue string
 
     def test_trace_is_recorded_on_both_the_npc_and_the_engine_audit_log(self, engine):

@@ -2,328 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+/* Round 51: the earlier multi-theme system, glass cards and its web-font import
+   were only used by the pages that were removed. The Desk has one palette. */
+html, body { background: #0e1611; color: #e4eedd; color-scheme: dark; }
 
-:root, .theme-delentia-brand {
-  --background: 30 8% 10%;
-  --surface-card: 30 8% 7%;
-  --surface-border: 30 6% 16%;
-  --primary: 40 67% 65%;
-  --text-primary: 35 17% 89%;
-  --text-secondary: 0 0% 67%;
-  --cyber-turquoise: 190 95% 60%;
-  color-scheme: dark;
-}
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
-.theme-dark-modern-default {
-  --background: 224 71% 4%;
-  --surface-card: 224 71% 6%;
-  --surface-border: 224 20% 15%;
-  --primary: 250 95% 70%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-  --cyber-turquoise: 190 95% 60%;
-  color-scheme: dark;
-}
-
-.theme-powershell-ise {
-  --background: 210 100% 98%;
-  --surface-card: 210 50% 95%;
-  --surface-border: 210 30% 85%;
-  --primary: 200 90% 30%;
-  --text-primary: 220 10% 10%;
-  --text-secondary: 220 10% 40%;
-}
-
-.theme-quiet-light {
-  --background: 40 30% 96%;
-  --surface-card: 40 20% 92%;
-  --surface-border: 40 20% 85%;
-  --primary: 30 10% 40%;
-  --text-primary: 220 10% 10%;
-  --text-secondary: 220 10% 40%;
-}
-
-.theme-solarized-light {
-  --background: 44 87% 94%;
-  --surface-card: 44 50% 90%;
-  --surface-border: 44 20% 80%;
-  --primary: 175 59% 40%;
-  --text-primary: 220 10% 10%;
-  --text-secondary: 220 10% 40%;
+/* ==========================================================================
+   Delentia Desk design system (Round 50 redesign, after Hermes Agent's
+   dashboard). Colours come from the Delentia mark: the three database layers
+   (leaf, fern, pine) form the hierarchy; amber = waiting for a human,
+   rust = blocked or broken.
+   ========================================================================== */
+:root {
+  --dl-ink: #0e1611;
+  --dl-panel: #142019;
+  --dl-panel-2: #1b2a21;
+  --dl-rule: #2b3f31;
+  --dl-text: #e4eedd;
+  --dl-muted: #93a88f;
+  --dl-leaf: #80c961;
+  --dl-fern: #519037;
+  --dl-pine: #315721;
+  --dl-eye: #2c2525;
+  --dl-amber: #e4b54a;
+  --dl-rust: #e2694c;
+  /* RGB channels for Tailwind opacity modifiers (bg-dl-leaf/20). */
+  --dl-ink-rgb: 14 22 17;
+  --dl-panel-rgb: 20 32 25;
+  --dl-panel-2-rgb: 27 42 33;
+  --dl-rule-rgb: 43 63 49;
+  --dl-text-rgb: 228 238 221;
+  --dl-muted-rgb: 147 168 143;
+  --dl-leaf-rgb: 128 201 97;
+  --dl-fern-rgb: 81 144 55;
+  --dl-pine-rgb: 49 87 33;
+  --dl-eye-rgb: 44 37 37;
+  --dl-amber-rgb: 228 181 74;
+  --dl-rust-rgb: 226 105 76;
 }
 
-.theme-tokyo-night-light {
-  --background: 230 25% 96%;
-  --surface-card: 230 20% 91%;
-  --surface-border: 230 20% 85%;
-  --primary: 260 60% 45%;
-  --text-primary: 220 10% 10%;
-  --text-secondary: 220 10% 40%;
+.desk-root {
+  background: var(--dl-ink);
+  color: var(--dl-text);
+  font-family: var(--font-plex-thai), var(--font-plex-mono), system-ui, sans-serif;
+}
+.desk-mono { font-family: var(--font-plex-mono), ui-monospace, monospace; }
+
+.desk-pixelmark {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0;
+  margin: 0;
+  user-select: none;
 }
 
-.theme-abyss {
-  --background: 215 80% 8%;
-  --surface-card: 215 60% 12%;
-  --surface-border: 215 40% 20%;
-  --primary: 210 100% 75%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
+.desk-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.25rem;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dl-muted);
+  border-left: 2px solid transparent;
+}
+.desk-nav-link:hover { color: var(--dl-text); background: color-mix(in srgb, var(--dl-pine) 22%, transparent); }
+.desk-nav-link[aria-current="page"] {
+  color: var(--dl-text);
+  border-left-color: var(--dl-leaf);
+  background: color-mix(in srgb, var(--dl-pine) 38%, transparent);
+}
+.desk-nav-link:focus-visible,
+.desk-focus:focus-visible {
+  outline: 2px solid var(--dl-leaf);
+  outline-offset: 2px;
 }
 
-.theme-dark-visual-studio {
-  --background: 220 15% 13%;
-  --surface-card: 220 15% 18%;
-  --surface-border: 220 15% 25%;
-  --primary: 205 85% 65%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
+.desk-cursor {
+  display: inline-block;
+  width: 0.6ch;
+  height: 1.05em;
+  background: var(--dl-leaf);
+  vertical-align: text-bottom;
+  animation: desk-cursor 1.1s steps(1) infinite;
 }
-
-.theme-dark-modern {
-  --background: 225 12% 10%;
-  --surface-card: 225 12% 14%;
-  --surface-border: 225 12% 20%;
-  --primary: 205 90% 65%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-default-dark-plus {
-  --background: 220 10% 12%;
-  --surface-card: 220 10% 16%;
-  --surface-border: 220 10% 22%;
-  --primary: 38 95% 60%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-kimbie-dark {
-  --background: 30 25% 15%;
-  --surface-card: 30 20% 20%;
-  --surface-border: 30 20% 28%;
-  --primary: 35 60% 50%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-monokai {
-  --background: 70 5% 15%;
-  --surface-card: 70 5% 19%;
-  --surface-border: 70 5% 25%;
-  --primary: 70 70% 55%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-monokai-dimmed {
-  --background: 70 4% 18%;
-  --surface-card: 70 4% 22%;
-  --surface-border: 70 4% 28%;
-  --primary: 70 30% 50%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-red {
-  --background: 350 60% 8%;
-  --surface-card: 350 50% 12%;
-  --surface-border: 350 40% 20%;
-  --primary: 0 90% 65%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-solarized-dark {
-  --background: 192 100% 6%;
-  --surface-card: 192 50% 10%;
-  --surface-border: 192 40% 18%;
-  --primary: 175 59% 40%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-synthwave-84 {
-  --background: 263 43% 11%;
-  --surface-card: 263 43% 15%;
-  --surface-border: 263 30% 25%;
-  --primary: 326 100% 60%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-tokyo-night {
-  --background: 234 44% 11%;
-  --surface-card: 234 44% 15%;
-  --surface-border: 234 30% 25%;
-  --primary: 250 95% 75%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-tokyo-night-storm {
-  --background: 234 30% 15%;
-  --surface-card: 234 30% 19%;
-  --surface-border: 234 20% 28%;
-  --primary: 250 95% 75%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-tomorrow-night-blue {
-  --background: 225 60% 11%;
-  --surface-card: 225 60% 15%;
-  --surface-border: 225 40% 25%;
-  --primary: 205 90% 70%;
-  --text-primary: 220 10% 95%;
-  --text-secondary: 220 10% 65%;
-}
-
-.theme-dark-high-contrast {
-  --background: 0 0% 0%;
-  --surface-card: 0 0% 5%;
-  --surface-border: 0 0% 30%;
-  --primary: 200 100% 50%;
-  --text-primary: 0 0% 100%;
-  --text-secondary: 0 0% 80%;
-}
-
-.theme-light-high-contrast {
-  --background: 0 0% 100%;
-  --surface-card: 0 0% 95%;
-  --surface-border: 0 0% 10%;
-  --primary: 240 100% 50%;
-  --text-primary: 0 0% 0%;
-  --text-secondary: 0 0% 25%;
-}
-
-/* Light Mode Overrides */
-.light.theme-delentia-brand, .light[class*="theme-delentia-brand"] {
-  --background: 30 27% 94.5%;
-  --surface-card: 33 27% 95%;
-  --surface-border: 35 22% 86%;
-  --primary: 40 57% 58%;
-  --text-primary: 0 0% 10%;
-  --text-secondary: 0 0% 29%;
-  color-scheme: light;
-}
-
-.light body {
-  background-color: hsl(var(--background)) !important;
-  color: hsl(var(--text-primary)) !important;
-}
-.light .text-gray-100, .light .text-gray-200, .light .text-gray-300, .light .text-white, .light .text-slate-100, .light .text-slate-200 {
-  color: hsl(var(--text-primary)) !important;
-}
-.light .text-gray-400, .light .text-gray-500, .light .text-slate-400, .light .text-slate-500 {
-  color: hsl(var(--text-secondary)) !important;
-}
-.light .border-white\/5, .light .border-white\/10, .light .border-surface-border, .light .border-gray-800, .light .border-slate-800 {
-  border-color: hsl(var(--surface-border)) !important;
-}
-.light .bg-white\/5, .light .bg-slate-900\/50, .light .bg-slate-950\/50 {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-}
-.light .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.08) !important;
-}
-.light .bg-surface-card {
-  background-color: hsl(var(--surface-card)) !important;
-}
-.light .bg-surface {
-  background-color: hsl(var(--background)) !important;
-}
-.light .glass-card {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: hsl(var(--surface-border)) !important;
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05) !important;
-}
-.light .glass-card:hover {
-  background: rgba(0, 0, 0, 0.04) !important;
-  border-color: hsla(var(--primary), 0.3) !important;
-}
-.light .glass-nav {
-  background: rgba(255, 255, 255, 0.8) !important;
-  border-bottom: 1px solid hsl(var(--surface-border)) !important;
-}
-
-html {
-  background: transparent !important;
-}
-
-body {
-  background-color: hsl(var(--background) / 0.88) !important;
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
-  color: hsl(var(--text-primary));
-  font-family: var(--font-space-grotesk), var(--font-kanit), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-space-grotesk), var(--font-kanit), 'Outfit', sans-serif;
-  letter-spacing: -0.02em;
-}
-
-/* Premium Glassmorphism */
-.glass-card {
-  background: rgba(8, 10, 18, 0.45);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card:hover {
-  background: rgba(12, 15, 26, 0.55);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.15);
-  transform: translateY(-2px);
-}
-
-.glass-nav {
-  background: rgba(6, 8, 15, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Glowing Neon Status Dots */
-.glow-ok {
-  background-color: #10b981;
-  box-shadow: 0 0 16px #10b981, 0 0 4px #10b981;
-}
-
-.glow-degraded {
-  background-color: #f59e0b;
-  box-shadow: 0 0 16px #f59e0b, 0 0 4px #f59e0b;
-}
-
-.glow-offline {
-  background-color: #ef4444;
-  box-shadow: 0 0 16px #ef4444, 0 0 4px #ef4444;
-}
-
-.glow-simulator {
-  background-color: #a855f7;
-  box-shadow: 0 0 16px #a855f7, 0 0 4px #a855f7;
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 99px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+@keyframes desk-cursor { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .desk-cursor { animation: none; }
 }

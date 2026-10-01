@@ -409,7 +409,8 @@ class HallucinationDetector:
         text: str,
         context: Optional[str] = None,
         detection_level: DetectionLevel = DetectionLevel.STANDARD,
-        return_corrections: bool = True
+        return_corrections: bool = True,
+        llm_fallback: bool = True,
     ) -> HallucinationDetectionResult:
         start_time = datetime.now()
 
@@ -431,7 +432,7 @@ class HallucinationDetector:
                 detected_patterns.append(check_result)
 
         used_llm = False
-        if not detected_patterns:
+        if not detected_patterns and llm_fallback:
             llm_pattern = await self._check_via_llm(text)
             if llm_pattern:
                 detected_patterns.append(llm_pattern)

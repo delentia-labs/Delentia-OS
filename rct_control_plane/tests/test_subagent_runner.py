@@ -45,10 +45,12 @@ class TestArgumentParsing:
         with pytest.raises(SystemExit):
             asyncio.run(subagent_runner._main())
 
-    def test_missing_required_goal_exits(self, monkeypatch):
+    def test_missing_goal_is_rejected_cleanly(self, monkeypatch, capsys):
+        """Round 50: --goal is optional (a signed --request can carry it), so a
+        run with neither is refused with a JSON reason and exit code 2."""
         monkeypatch.setattr(sys, "argv", ["subagent_runner.py", "--agent-id", "a1", "--worktree", "w"])
-        with pytest.raises(SystemExit):
-            asyncio.run(subagent_runner._main())
+        assert asyncio.run(subagent_runner._main()) == 2
+        assert "no goal" in json.loads(capsys.readouterr().out.strip().splitlines()[-1])["rejected"]
 
     def test_missing_required_worktree_exits(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["subagent_runner.py", "--agent-id", "a1", "--goal", "g"])

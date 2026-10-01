@@ -36,7 +36,7 @@ F = D^I × A
 | Symbol | Name | Meaning in the gate |
 |---|---|---|
 | **F** | Future | The admissibility of the action: whether this future may be brought about. |
-| **D** | Data | Quality and sufficiency of the data behind the request, normalised to [0, 1]. |
+| **D** | Data | The data this user really has for the request, normalised to [0, 1]: the files the goal names exist, relevant stored memory, verified skills, the user's own track record, and how clearly the request is worded (`data_evidence.py`). A risky action over data the user does not have is blocked and the answer lists what is missing. |
 | **I** | Intent | Precision of the stated intent. Because D ≤ 1, a higher I makes the gate *stricter*: vague data is punished harder when the intent claims to be precise. |
 | **A** | Architect | Human authority. **A = 0 means no future**, whatever D and I are. A is not a model output; it is a verifiable human decision. |
 
@@ -95,7 +95,7 @@ call a tool.
 | # | Step | What happens | Status |
 |---|---|---|---|
 | 1 | **GUARD** | CORD screens every goal before any model call; a hard finding (prompt injection, encoded payload, oversized input) ends the episode with no model or tool call. FDIA D and I are computed from the goal and F of the goal is recorded; the FDIA gate itself applies to each risky action (step 4), where A is known | ✅ built (CORD in the loop since 2026-09-30; before that only two API endpoints screened goals) |
-| 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions) | ✅ built |
+| 2 | **THINK** | RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions); with the pipeline on, the 41 algorithms add advice from the user's own data (§4.1) | ✅ built |
 | 3 | **ROUTE** | ALGO-21 decides FAST (low risk, narrow scope: smaller step budget, answer directly) or SLOW (full budget, step by step); a router error routes SLOW. Never skips a governance step | ✅ built (2026-09-29) |
 | 4 | **ACT** | Per-step FDIA gate; side-effecting tools wait for a signed human approval, then the episode resumes | ✅ built |
 | 5 | **COMPRESS** | Tool outputs over ~2k tokens are compressed with Delta-Context and can be expanded again | ✅ built |
@@ -106,6 +106,26 @@ call a tool.
 All entry points (API, the four messaging gateways, the scheduler, the MCP tool, profiles and
 subagents, the terminal UI) build the loop through one governed factory; a test fails if any module
 constructs an ungoverned loop.
+
+### 4.1 The Intent Loop
+
+The Intent Loop is self-development by running every component of the system in one ordered
+sequence to a result that is really recorded. Its original design has five pillars, and each episode
+now reports them from measured values (`intent_loop.py`):
+
+| Pillar | What it is in the runtime |
+|---|---|
+| 1 FDIA gatekeeper | CORD screen, D from the user's data, I, the per-action gate |
+| 2 Memory | relevant memories and skills recalled; retrieval algorithms ALGO-16/18/13 over the user's data; **warm recall**: a verified answer is re-used without a model call if the read-only evidence it rested on replays byte-identical |
+| 3 Specialist executor | routed fast or slow, tools, the planning algorithms (ALGO-02/37/38/15/20) |
+| 4 Verifier | RCT-7 step 7, belief confidence (ALGO-30), hallucination patterns (ALGO-33). Multi-model consensus is **not** in this process; SignedAI runs as a separate service |
+| 5 Evolution committer | graded MEE growth per user, skill kept (near-duplicates merged, reliability from reuse), RCTDB run, audit |
+
+The motto "the more it is used, the smarter, faster and cheaper" is measured, not claimed: for each
+goal a user has had verified at least twice, the Growth page compares the first and latest run
+(steps, seconds, cost, D). The 41 algorithms are opt-in pipeline stages (`DELENTIA_ALGORITHM_PIPELINE=1`,
+on under `delentia serve`); algorithms that call a model, open the network or write files need an
+explicit switch and otherwise report why they did not run.
 
 ## 5. Three products
 
@@ -126,12 +146,12 @@ built when they were plans. This table is the corrected record.
 |---|---|---|---|
 | L1 OS primitives | Direct hardware access, OS-level isolation | Process-level sandbox (`local` and `docker` backends) with command risk classification | Correct the text: Delentia is a runtime on top of an OS, not an OS |
 | L2 Kernel services | VRAM management, LoRA swap in < 12 ms | `lora_multiplexer.py` manages adapter slots (with a mock fallback); the SLM is not connected to the runtime; 12 ms was never measured | Correct the text; the SLM is optional and off the main path |
-| L3 Algorithm kernel | 41 algorithms + FDIA | ✅ 41/41 have real logic; 24 run automatically from the kernel, the rest through tools or routing | Keep |
+| L3 Algorithm kernel | 41 algorithms + FDIA | 41/41 have logic; ALGO-02, 37 and 38 were stand-ins until 2026-10-01 and are now real (Pareto planner, plan depth from the intent, interval constraint solver). Measured 2026-10-01: with the pipeline on, 37 of 41 execute on real inputs with a rule policy; ALGO-09/11/32 need a model call, ALGO-14 an image request | Keep; see §4.1 |
 | L4 RCTDB | 8 dimensions on Qdrant + Neo4j + PostgreSQL | SQLite by default (RCTDB tables, hash-chained audit, experiment runs); PostgreSQL + pgvector backend available; Qdrant used by vector search (ALGO-16); Neo4j used by graph traversal (ALGO-17) when a server is configured | Correct the text to "SQLite by default, optional backends". Code gap: the hash-chained audit exists only on SQLite; PostgreSQL parity is needed before multi-host deployment |
 | L5 SignedAI | Multi-model consensus ≥ 75% | Consensus logic and tier routing in `signedai/core`; no HTTP API yet; model lists in older papers are out of date | Correct the text; an API wrapper is backlog |
-| L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3) | Keep |
-| L7 FloatingAI & Delta | 91.5% memory compression | Three different "Delta" components (see §7) | Rename and separate |
-| L8 Regional language adapter | Route by locale and data residency (PDPA/GDPR) | A PDPA risk-audit endpoint and a Thai-law adapter entry exist; no layer chooses models by locale or residency | Correct the text; build only when a customer needs it |
+| L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3); Round 52: the `.jitna` signed file (6-field language, a seal over the whole body, `delentia jitna`) | Keep |
+| L7 FloatingAI & Delta | 91.5% memory compression (a formula, not a measurement; withdrawn) | Three different "Delta" components (see §7) | Rename and separate |
+| L8 Regional language adapter | Route by locale and data residency (PDPA/GDPR) | Round 52: routing by region and language with compliance tags, plus **call-time enforcement**: a sovereignty policy (`core/regional_adapter/sovereignty.py`, `residency.py`) blocks a model call to an endpoint outside the allowed regions, blocks or redacts personal data (national-ID checksums) in a permitted cross-border call, and records each decision in the audit chain without the data. Any OpenAI-compatible endpoint (a national or self-hosted model) can be plugged in. Not covered: the crawl tool and the TypeScript bridge | Keep; this is data-location control, not legal compliance |
 | L9 Universal adapter | REST / GraphQL / WebSocket / gRPC | MCP is the integration surface (6 remote tools, 34 runtime tools, Guard for any MCP server); an adapter SDK exists but is idle | Reframe L9 as "MCP + Guard" |
 | L10 Enterprise hardening | JWT RS256, RBAC, circuit breaker | ✅ `enterprise_hardening.py`, bearer-token API auth, fail-closed sender allowlists on gateways | Keep |
 
@@ -147,7 +167,7 @@ routing once a customer asks for it.
 | Name in this paper | Code | What it does | Measured |
 |---|---|---|---|
 | **Delta-Context** | TS `compress_context` / `expand_context`; Python `delta_v2.py` (byte-identical port); Guard `--compress` | Shrinks large tool output while keeping failure lines and a way to expand the rest | ~70–75% token reduction on real code and logs (aggressive mode); Guard: ~66% on a real build + test log |
-| **Delta-Memory** | `core/delta_engine/memory_delta.py` | Stores agent state as deltas instead of full snapshots | 91.5% on a synthetic 20-agent × 100-tick simulation (estimated bytes) |
+| **Delta-Memory** | `core/delta_engine/memory_delta.py` | Stores agent state as deltas instead of full snapshots | 39% (20 ticks) to 90% (500 ticks) smaller than full snapshots in measured bytes; generic zstd over full snapshots does better, so the value is cheap reconstruction and rollback |
 | **DeltaBlock** | `algo_25_delta_block.py` | Diff log and turn-history compression | – |
 
 Automatic memory: relevant memories are recalled into the prompt at the start of every episode,
@@ -181,7 +201,7 @@ off the chain (only hashes are chained), so erasure requests can be honoured wit
 | FDIA contract | 422 of 425 vectors agree across TypeScript and Python; 3 documented clamping differences | contract tests in both repositories | 2026-09-28 |
 | Delta-Context | ~70–75% fewer tokens (aggressive); keeps the answer line for 100% of same-wording questions and ~60% of paraphrased ones; default mode ~6–12% | `benchmarks/compression-real/` in `delentia-mcp/ecosystem` | Round 46 |
 | Guard compression | ~66% smaller on a real build + test log, failing test kept | `delentia-mcp/ecosystem/docs/GUARD.md` | 2026-09 |
-| Delta-Memory | 91.5% on a synthetic 20 × 100 simulation | `python scripts/benchmark_fdia_delta.py --json` | 2026-09-28 |
+| Delta-Memory | Delta log 39% (20 ticks) to 90% (500 ticks) smaller than full snapshots, real bytes, synthetic simulation | `python scripts/measure_delta_engine_real.py` | 2026-10-01 |
 | FDIA evaluation (Python) | 2.37 µs per evaluation on one laptop CPU | same script | 2026-09-28 |
 | Warm recall (in-memory SQLite) | p95 0.021 ms | same script | 2026-09-28 |
 | CORD screening | 100 patterns, ~48 µs per check; the script's own sample set shows a 50% detection rate, so no detection-rate claim is made | same script | 2026-09-28 |
@@ -232,7 +252,7 @@ code and held even when the model could not select tools.
 | Protocols | JITNA (RFC-001), TOON | JITNA in code; TOON in the dataset only |
 | Memory | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | In code (the Vault client's class is misleadingly named `RCTDBClient`) |
 | Security | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | In code |
-| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; two Intent Loop implementations not yet unified; ALGO-21 runs inside the loop (ROUTE) |
+| Reasoning | 41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | In code; the Intent Loop service is a reference implementation whose execution and verification are simulated and it is not wired into the agent loop; ALGO-21 runs inside the loop (ROUTE) |
 | Consensus | SignedAI, HexaCore (9 roles) | Logic in code, no API |
 | Models | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | On Hugging Face; not connected to the runtime |
 | Products | Guard, 6 MCP tools, the runtime (34 MCP tools), website | Live or in code |

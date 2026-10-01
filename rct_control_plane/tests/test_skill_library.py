@@ -175,9 +175,12 @@ class TestRetrieveSimilarSkills:
 
     def test_respects_top_k(self, library):
         session = MEESession(session_id="topk")
-        for i in range(5):
+        # Distinct problems (Round 51: near-duplicates are merged, see the
+        # dedup tests in test_skill_growth_round51_real.py).
+        topics = ["login flow", "session cache", "password reset", "token refresh", "audit export"]
+        for i, topic in enumerate(topics):
             library.maybe_extract_skill(
-                problem_statement=f"Refactor the authentication module part {i}",
+                problem_statement=f"Refactor the authentication module {topic}",
                 action_sequence_or_solution={"n": i},
                 growth_step=_step(session, delta=0.05),
             )

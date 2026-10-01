@@ -28,6 +28,8 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
+from rct_control_plane.safe_text import filename_matches, path_matches, token_counts
+
 from .intent_schema import (
     BudgetSpec,
     ConstraintType,
@@ -193,21 +195,45 @@ class IntentCompiler:
     """
     
     # Intent type keywords mapping
+    # Round 50: English keywords match whole words (with -s/-es/-ed/-d/-ing),
+    # Thai keywords match as substrings (Thai has no spaces). Plain substring
+    # matching sent "report"/"support" to TRANSFORM ("port", SYSTEMIC risk),
+    # "latest" to TEST, "prefix" to DEBUG and "release notes" to DEPLOY; and
+    # everyday goals (read, search, summarise, write a file, any Thai goal)
+    # matched nothing, so D fell back to 0.3 and the RCT-7 plan was empty.
     INTENT_TYPE_KEYWORDS = {
-        IntentType.REFACTOR: ["refactor", "restructure", "reorganize", "clean up", "improve code"],
-        IntentType.BUILD_APP: ["build", "create", "scaffold", "generate app", "new application"],
-        IntentType.ANALYZE_RISK: ["analyze", "assess", "evaluate risk", "security check", "audit"],
-        IntentType.DEPLOY: ["deploy", "release", "ship", "publish", "launch"],
-        IntentType.OPTIMIZE: ["optimize", "improve performance", "speed up", "reduce cost"],
-        IntentType.DOCUMENT: ["document", "generate docs", "write documentation", "explain"],
-        IntentType.STRATEGY: ["plan", "strategize", "roadmap", "design", "architect"],
-        IntentType.TRANSFORM: ["transform", "convert", "migrate", "port", "translate"],
-        IntentType.DEBUG: ["debug", "fix", "troubleshoot", "diagnose", "find bug"],
-        IntentType.TEST: ["test", "verify", "validate", "check", "generate tests"],
+        IntentType.REFACTOR: ["refactor", "restructure", "reorganize", "clean up", "improve code", "update", "upgrade", "bump", "รีแฟคเตอร์", "จัดโครงสร้าง"],
+        IntentType.BUILD_APP: ["build", "create", "scaffold", "generate app", "new application",
+                               "write", "writing", "new file", "add a file", "สร้าง", "เขียน"],
+        IntentType.ANALYZE_RISK: ["analyze", "analyse", "assess", "evaluate risk", "security check", "audit",
+                                  "วิเคราะห์", "ประเมิน"],
+        IntentType.DEPLOY: ["deploy", "release to", "cut a release", "ship it", "publish", "launch",
+                            "ดีพลอย", "ขึ้นระบบจริง"],
+        IntentType.OPTIMIZE: ["optimize", "optimise", "improve performance", "speed up", "reduce cost", "เพิ่มประสิทธิภาพ"],
+        IntentType.DOCUMENT: ["document", "generate docs", "write documentation", "เอกสาร"],
+        IntentType.STRATEGY: ["plan", "strategize", "roadmap", "design", "architect", "วางแผน"],
+        # Destructive verbs classify here so they are never "unclassified":
+        # HIGH_RISK_KEYWORDS then makes them SYSTEMIC, the strictest I.
+        IntentType.TRANSFORM: ["transform", "convert", "migrate", "port", "translate", "แปลง", "ย้ายระบบ",
+                               # irreversible or outward-facing operations
+                               "delete", "remove", "drop", "wipe", "truncate", "erase", "destroy", "format",
+                               "transfer", "withdraw", "pay", "send", "email", "disable", "shutdown", "kill",
+                               "reveal", "leak", "rm -rf", "sudo", "ลบ", "โอน", "จ่ายเงิน", "ส่งอีเมล", "ปิดระบบ"],
+        IntentType.DEBUG: ["debug", "fix", "troubleshoot", "diagnose", "find bug", "แก้บั๊ก", "แก้ไข"],
+        IntentType.TEST: ["test", "verify", "validate", "check", "generate tests", "ทดสอบ"],
+        IntentType.QUERY: ["read", "show", "list", "search", "find", "look up", "lookup", "summarise", "summarize",
+                           "summary", "tell me", "what is", "what are", "which", "how many", "describe",
+                           "explain", "recall", "remember", "how does", "how do", "why", "who", "where",
+                           "อ่าน", "ค้นหา", "สรุป", "แสดง", "บอก", "อธิบาย", "จำได้"],
     }
     
+    _STRONG_QUERY_WORDS = frozenset({"explain", "recall", "remember", "why", "how does", "how do", "อธิบาย", "จำได้"})
+
     # Risk indicators
-    HIGH_RISK_KEYWORDS = ["deploy", "delete", "drop", "remove", "migrate", "system-wide"]
+    HIGH_RISK_KEYWORDS = ["deploy", "delete", "drop", "remove", "migrate", "system-wide",
+                          "wipe", "truncate", "erase", "destroy", "format", "transfer", "withdraw", "pay",
+                          "send", "email", "disable", "shutdown", "kill", "reveal", "leak", "rm -rf", "sudo",
+                          "ลบ", "โอน", "จ่ายเงิน", "ส่งอีเมล", "ปิดระบบ"]
     MEDIUM_RISK_KEYWORDS = ["refactor", "modify", "change", "update", "transform"]
     
     # Priority indicators
@@ -390,23 +416,32 @@ class IntentCompiler:
         
         return result
     
+    @staticmethod
+    def _has_keyword(text: str, keyword: str) -> bool:
+        """Whole-word match for English keywords (allowing -s/-es/-ed/-d/-ing),
+        substring match for Thai (written without spaces between words)."""
+        if not keyword.isascii():
+            return keyword in text
+        pattern = r"(?<![a-z0-9])" + re.escape(keyword) + r"(?:s|es|ed|d|ing)?(?![a-z0-9])"
+        return re.search(pattern, text) is not None
+
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract action keywords from text"""
         keywords = []
         
         for _intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             for keyword in type_keywords:
-                if keyword in text:
+                if self._has_keyword(text, keyword):
                     keywords.append(keyword)
         
         # Add risk keywords
         for keyword in self.HIGH_RISK_KEYWORDS + self.MEDIUM_RISK_KEYWORDS:
-            if keyword in text:
+            if self._has_keyword(text, keyword):
                 keywords.append(keyword)
         
         # Add priority keywords
         for keyword in self.CRITICAL_PRIORITY_KEYWORDS + self.HIGH_PRIORITY_KEYWORDS + self.LOW_PRIORITY_KEYWORDS:
-            if keyword in text:
+            if self._has_keyword(text, keyword):
                 keywords.append(keyword)
         
         return keywords
@@ -421,12 +456,10 @@ class IntentCompiler:
         }
         
         # File patterns: *.py, *.js, *.ts, specific filenames
-        file_pattern = r'([a-z_][a-z0-9_]*\.(py|js|ts|java|cpp|go|rs|rb))'
-        entities["files"] = re.findall(file_pattern, text_lower)
+        entities["files"] = filename_matches(text_lower)
         
         # Path patterns
-        path_pattern = r'([a-z_./][a-z0-9_./]*[a-z0-9_])'
-        entities["paths"] = re.findall(path_pattern, text_lower)
+        entities["paths"] = path_matches(text_lower)
         
         # Module patterns (Python/JS-style)
         if "module" in text_lower:
@@ -465,8 +498,7 @@ class IntentCompiler:
                 break
         
         # Token limits
-        token_pattern = r'(\d+)\s*tokens?'
-        token_matches = re.findall(token_pattern, text)
+        token_matches = token_counts(text)
         if token_matches:
             constraints["max_tokens"] = int(token_matches[0])
         
@@ -484,13 +516,15 @@ class IntentCompiler:
             score = 0
             for keyword in type_keywords:
                 if keyword in lexical.keywords:
-                    score += 1
+                    # Question words are a strong signal that the user wants an answer,
+                    # not a job ("Explain how the audit chain works" is not an audit).
+                    score += 2 if (intent_type == IntentType.QUERY and keyword in self._STRONG_QUERY_WORDS) else 1
             if score > 0:
                 scores[intent_type] = score
         
         if not scores:
             return None
-        
+
         # Return type with highest score
         return max(scores, key=lambda k: scores[k])
     
@@ -500,7 +534,7 @@ class IntentCompiler:
         scope_type = ScopeType.MODULE  # Default
         
         for stype, keywords in self.SCOPE_KEYWORDS.items():
-            if any(kw in lexical.keywords or kw in full_text.lower() for kw in keywords):
+            if any(kw in lexical.keywords or self._has_keyword(full_text.lower(), kw) for kw in keywords):
                 scope_type = stype
                 break
         

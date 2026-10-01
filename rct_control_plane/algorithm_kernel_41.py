@@ -241,8 +241,9 @@ class AlgorithmKernel41:
         # matches Phase 1 Task 3's choice — a separate real file from the
         # LIVE rct_control_plane.db this session must never write to.
         from rct_control_plane.persistence import ControlPlanePersistence
+        from rct_control_plane.data_home import agentic_db_path
         self._capability_registry.register(
-            "persistence", lambda: ControlPlanePersistence(db_path="rct_control_plane_agentic.db")
+            "persistence", lambda: ControlPlanePersistence(db_path=agentic_db_path())
         )
 
         # Round 22 Phase 9 Task 19: general-purpose memory, kernel-default
@@ -624,9 +625,20 @@ class AlgorithmKernel41:
         return round(data_quality, 4), round(intent_precision, 4), result
 
     def algo_02_moip(self, goals: List[str]) -> Dict[str, Any]:
-        """ALGO-02: MOIP Multi-Objective Intent Planner."""
+        """ALGO-02: MOIP Multi-Objective Intent Planner (Round 51: real).
+        Each goal is scored on impact, risk and effort; goals are ordered by
+        Pareto rank then weighted priority (planning_algorithms.prioritize_goals).
+        Before Round 51 this returned 1/(rank+1) for whatever order it was given."""
+        from rct_control_plane.planning_algorithms import prioritize_goals
         self.executed_counts["ALGO-02"] += 1
-        return {"planned_goals": goals, "priority_matrix": {g: 1.0 / (idx + 1) for idx, g in enumerate(goals)}}
+        scores = prioritize_goals(goals)
+        ordered = sorted(scores, key=lambda g: (g.pareto_rank, -g.priority))
+        return {
+            "planned_goals": [g.goal for g in ordered],
+            "priority_matrix": {g.goal: g.priority for g in scores},
+            "pareto_front": [g.goal for g in scores if g.pareto_rank == 1],
+            "scores": [{"goal": g.goal, "impact": g.impact, "risk": g.risk, "effort": g.effort, "pareto_rank": g.pareto_rank} for g in scores],
+        }
 
     def algo_03_delta_engine(self, state_dict: Dict[str, Any]) -> Dict[str, Any]:
         """ALGO-03: Delta Engine Tick Compressor. Real zstd compression of
@@ -857,14 +869,35 @@ class AlgorithmKernel41:
     # Tier 9: Extended Master Tier (ALGO-37 to ALGO-41)
     # =========================================================================
     def algo_37_planning_depth_expander(self, task: str) -> List[str]:
-        """ALGO-37: Planning Depth Expander."""
+        """ALGO-37: Planning Depth Expander (Round 51: real). The stages come
+        from the compiled intent - its type picks them, its scope and risk add
+        stages (planning_algorithms.expand_plan). Before Round 51 it returned
+        the same three strings for every task."""
+        from rct_control_plane.planning_algorithms import expand_plan
         self.executed_counts["ALGO-37"] += 1
-        return [f"{task} -> Stage 1: Setup", f"{task} -> Stage 2: Parallel Code Gen", f"{task} -> Stage 3: Verification"]
+        intent_type = scope = risk = None
+        try:
+            compiled = self._intent_compiler.compile(natural_language=task, user_id="kernel", user_tier="PRO")
+            if compiled.success and compiled.intent is not None:
+                intent = compiled.intent
+                intent_type = str(getattr(intent.intent_type, "value", intent.intent_type))
+                scope = str(getattr(intent.scope.scope_type, "value", intent.scope.scope_type))
+                risk = str(getattr(intent.risk_profile, "value", intent.risk_profile))
+        except Exception:
+            pass
+        return expand_plan(task, intent_type, scope, risk)
 
     def algo_38_constraint_solver(self, constraints: List[str]) -> bool:
-        """ALGO-38: Constraint Satisfaction Solver."""
+        """ALGO-38: Constraint Satisfaction Solver (Round 51: real). True when
+        there is at least one constraint and they can all hold together
+        (planning_algorithms.solve_constraints); `algo_38_solve` returns the
+        conflicts. Before Round 51 this returned `len(constraints) > 0`."""
+        return bool(constraints) and self.algo_38_solve(constraints)["satisfiable"]
+
+    def algo_38_solve(self, constraints: List[Any]) -> Dict[str, Any]:
+        from rct_control_plane.planning_algorithms import solve_constraints
         self.executed_counts["ALGO-38"] += 1
-        return len(constraints) > 0
+        return solve_constraints(constraints).to_dict()
 
     def algo_39_genesis_engine(self, project_name: str) -> Dict[str, Any]:
         """ALGO-39: Genesis Project Generator. Real file scaffolding under
@@ -880,7 +913,10 @@ class AlgorithmKernel41:
         import re
 
         safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", project_name)[:50] or "unnamed_project"
-        project_dir = os.path.join("./workspace_output/genesis", f"{safe_name}_{int(time.time())}")
+        genesis_root = os.path.abspath("./workspace_output/genesis")
+        project_dir = os.path.abspath(os.path.join(genesis_root, f"{safe_name}_{int(time.time())}"))
+        if not project_dir.startswith(genesis_root + os.sep):          # defence in depth: the name is already reduced to [A-Za-z0-9_-]
+            raise ValueError("project directory escapes the genesis workspace")
         os.makedirs(project_dir, exist_ok=True)
 
         files_created = []
@@ -1332,12 +1368,12 @@ class AlgorithmKernel41:
         await self._scaling_engine.execute_scaling_action(action)
         return action.__dict__ if hasattr(action, "__dict__") else action
 
-    async def algo_33_fghf(self, text: str) -> Dict[str, Any]:
+    async def algo_33_fghf(self, text: str, llm_fallback: bool = True) -> Dict[str, Any]:
         """ALGO-33: FGHF — real hardcoded fact-pattern check, falling back
         to a real local-Ollama call (not OpenRouter — no key configured
         in this environment) for anything not matching a known pattern."""
         self.executed_counts["ALGO-33"] += 1
-        result = await self._hallucination_detector.detect(text)
+        result = await self._hallucination_detector.detect(text, llm_fallback=llm_fallback)
         return result.__dict__ if hasattr(result, "__dict__") else result
 
     def algo_33_fghf_verify_against_ground_truth(self, subject: str, predicate: str, claimed_value: str) -> Dict[str, Any]:
@@ -1591,7 +1627,10 @@ class AlgorithmKernel41:
         # during a gap-analysis audit of the original 12 Tier 1/2/9
         # algorithms).
         depth_stages = self.algo_37_planning_depth_expander(intent)
-        constraints_ok = self.algo_38_constraint_solver(["No Negative Tax", "Atomic Stock Deduction"])
+        # The intent's own constraints (cost / time limits the user stated).
+        # Before Round 51 this checked two hardcoded tax-app strings for every intent.
+        compiled_constraints = list(getattr(getattr(self._intent_compiler.compile(natural_language=intent, user_id="kernel", user_tier="PRO"), "intent", None), "constraints", None) or [])
+        constraints_ok = self.algo_38_solve(compiled_constraints)["satisfiable"] if compiled_constraints else True
         genesis = self.algo_39_genesis_engine(intent[:60] if intent else "Delentia_Autonomous_Project")
         tech_stack = self.algo_40_itsr_recommender(intent)
         crystal = self.algo_41_crystallizer({"fdia": fdia_score, "intent": intent})

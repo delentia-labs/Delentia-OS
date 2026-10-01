@@ -175,7 +175,7 @@ class BDICausalRevisionEngine:
             "dialogue": dialogue_text,
             "fdia_score": fdia_score,
             "gate_10_6_status": "CLOSED_COMPLETE ✅",
-            "signedai_seal": f"ED25519-{hashlib.sha256(f'{entity_id}_{self.world_tick}_{action_after}'.encode()).hexdigest()[:20]}"
+            "signedai_seal": f"SHA256-{hashlib.sha256(f'{entity_id}_{self.world_tick}_{action_after}'.encode()).hexdigest()[:20]}"
         }
 
         npc.causal_trace.append(trace_entry)

@@ -35,7 +35,7 @@ JITNA is not a single class or file. It is a three-layer system where each layer
 │  Role: Structured intent communication format                   │
 │  Fields: I / D / Δ / A / R / M                                  │
 │  Used for: prompts, memory tagging, vault metadata, RCTDB        │
-│  Templates: 50+ workflow templates available                    │
+│  Parser/formatter: jitna_file.py (no template library ships)     │
 ├──────────────────────────────────────────────────────────────────┤
 │  Layer 3 — JITNA INTAKE (user-facing)                           │
 │  Role: Simplified front-door for user intent                    │

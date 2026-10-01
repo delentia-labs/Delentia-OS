@@ -305,6 +305,11 @@ async def _lifespan(app: FastAPI):
     from rct_control_plane.gateways.discord_gateway import DiscordGateway
     from rct_control_plane.gateways.slack_gateway import SlackGateway
 
+    if os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes"):
+        import threading
+        from rct_control_plane.algorithm_pipeline import warm_up
+        threading.Thread(target=warm_up, args=(ALGORITHM_KERNEL,), daemon=True, name="pipeline-warmup").start()
+
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
     _DAEMON_STARTED_AT = time.time()
@@ -366,18 +371,23 @@ class ControlPlaneAPI:
         
         # Enable CORS for Delentia Desk GUI and Browser clients
         from fastapi.middleware.cors import CORSMiddleware
+        from .api_auth import cors_settings
+        # Round 53: was allow_origins=["*"] with credentials, which let any web page call a local, token-less agent.
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            **cors_settings(),
         )
 
         # Round 48: API authentication (the API had none). Added last, so it
         # is the outermost layer and runs before routing, CORS and /mcp.
         # See api_auth.py for the token / loopback / proxy-header rules.
         from .api_auth import ApiTokenMiddleware
+        from .api_ratelimit import RateLimitMiddleware
+        # Round 53: rate limiting sits just inside authentication (added first = inner), so a caller is limited by the
+        # token it proved it holds. Off unless DELENTIA_RATE_LIMIT is set (`delentia serve` sets it).
+        self.app.add_middleware(RateLimitMiddleware)
         self.app.add_middleware(ApiTokenMiddleware)
         
         # Track uptime
@@ -600,17 +610,11 @@ class ControlPlaneAPI:
 
         @self.app.get("/delentia/benchmark/summary", tags=["Ecosystem"])
         async def get_benchmark_summary_endpoint():
-            """Returns live performance benchmark metrics for Delentia Desk GUI"""
-            return {
-                "success": True,
-                "data": [
-                    {"metric": "Data Quality", "value": 94},
-                    {"metric": "Intent Clarity", "value": 92},
-                    {"metric": "Action Speed", "value": 98},
-                    {"metric": "Security Alignment", "value": 99},
-                    {"metric": "Resource Efficiency", "value": 95},
-                ]
-            }
+            """Round 50: this returned five fixed scores (Data Quality 94, Intent Clarity 92,
+            ...) that no benchmark produced. Measured results live in
+            docs/testing/TESTING_CANONICAL.md and `scripts/endpoint_bench.py`."""
+            return {"success": False, "data": [],
+                    "note": "No live benchmark is wired to this endpoint. Run scripts/endpoint_bench.py or read /v1/desk/experiments."}
 
         @self.app.post("/v1/kernel/execute", tags=["Kernel"])
         async def kernel_execute_endpoint(request: Dict[str, Any]):
@@ -644,18 +648,22 @@ class ControlPlaneAPI:
             from rct_control_plane.dynamic_reasoner import DELENTIA_CONSTITUTIONAL_PROMPT
             ai_reply = DEEP_PROFILER_ENGINE._call_real_generative_ai(DELENTIA_CONSTITUTIONAL_PROMPT, intent_text, max_tokens=1024)
             if not ai_reply:
-                ai_reply = f"สวัสดีครับ! ผมคือ Delentia OS ระบบ AI ที่พัฒนาโดยคุณอิทธิฤทธิ์ แซ่โง้ว (Whale) และทีมวิจัย Delentia Labs ครับ ได้รับข้อความ '{intent_text}' เรียบร้อยแล้ว ระบบกำลังประมวลผลผ่าน 41 Algorithms Master Kernel และ FDIA Gate ({fdia_score:.4f}) มีเรื่องอะไรให้ผมช่วยคิด วิเคราะห์ หรือสร้างทีม AI เพิ่มเติมไหมครับ?"
+                ai_reply = ("ต่อโมเดลภาษาไม่ได้ จึงตอบข้อความนี้ไม่ได้ (ตรวจว่า Ollama รันอยู่ หรือเลือกโมเดลที่หน้า Models) / "
+                            "The language model could not be reached, so this message was not answered.")
 
             intent_id = f"intent_{int(time.time()*1000)}"
-            sig_hash = f"ED25519-{os.urandom(8).hex()}"
+            fdia_inputs = algo_res.get("fdia_inputs", {})
 
             return {
                 "output": {
                     "result": ai_reply,
                     "summary": f"Intent: {intent_id} (Mode: {mode})",
-                    "fdia_score": {"D": 0.98, "I": 0.96, "A": 1.0, "F": fdia_score, "signed": True, "signature_hash": sig_hash},
-                    "hexa_role": "EXECUTOR",
-                    "signed": True
+                    # Round 50: D and I are the kernel's own inputs (they were fixed 0.98/0.96),
+                    # and nothing is signed here (the signature was random hex).
+                    "fdia_score": {"D": fdia_inputs.get("data_quality"), "I": fdia_inputs.get("intent_precision"), "A": 1.0,
+                                   "F": fdia_score, "signed": False, "signature_hash": ""},
+                    "hexa_role": "CHAT",
+                    "signed": False
                 },
                 "trace_id": f"trace-{int(time.time()*1000)}"
             }
@@ -688,6 +696,14 @@ class ControlPlaneAPI:
                     },
                 },
             }
+
+        # Round 50: the redesigned Desk GUI's endpoints (desk_api.py).
+        from rct_control_plane.desk_api import build_desk_router
+        self.app.include_router(build_desk_router(lambda: {
+            "scheduler": _DAEMON_SCHEDULER,
+            "gateways": {"telegram": _DAEMON_TELEGRAM_GATEWAY, "discord": _DAEMON_DISCORD_GATEWAY,
+                         "slack": _DAEMON_SLACK_GATEWAY, "line": None},
+        }))
 
         @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
         async def line_webhook_endpoint(request: Request):
@@ -1228,7 +1244,13 @@ class ControlPlaneAPI:
                         from rct_control_plane.desk_agent_stream import agent_events
                         from rct_control_plane.mcp_server import _kernel as shared_kernel
                         from rct_control_plane.mcp_server import mcp as shared_mcp
-                        async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp):
+                        try:
+                            max_iterations = max(1, min(int(payload.get("max_iterations", 5)), 12))
+                        except (TypeError, ValueError):
+                            max_iterations = 5
+                        async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp,
+                                                        max_iterations=max_iterations,
+                                                        structured=bool(payload.get("structured"))):
                             await websocket.send_text(json.dumps(event, default=str))
                         continue
 
@@ -1440,6 +1462,10 @@ class ControlPlaneAPI:
         async def get_lora_slot_matrix():
             """Returns 1 Base model, 3 Active Hot Slots, and N Disk Adapters."""
             return {
+                # Round 50: these figures are fixed placeholders, not read from a GPU or
+                # a loaded model (no LoRA multiplexer is attached to the runtime).
+                "simulated": True,
+                "note": "static placeholder data; no GPU or adapter is being read",
                 "base_model": "Qwen/Qwen3.6-27B-Instruct (1-bit GGUF)",
                 "base_vram_gb": 3.90,
                 "vram_ceiling_gb": 4.90,
@@ -1551,17 +1577,14 @@ class ControlPlaneAPI:
 
         @self.app.post("/v1/enterprise/audit")
         async def enterprise_legal_and_security_audit(payload: Dict[str, Any]):
-            """Executes an enterprise PDPA legal risk audit and seals it with SignedAI."""
-            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
-            text = payload.get("contract_text", "")
-            algo_res = ALGORITHM_KERNEL.process_intent_full_pipeline(f"Enterprise Audit: {text[:100]}")
-            
+            """Round 50: NOT IMPLEMENTED. This used to return compliance_score 92 and a
+            random 'ED25519-...' seal for any text. Nothing reads a contract against PDPA
+            yet, so it says so instead of inventing a rating or a signature."""
             return {
-                "status": "SUCCESS",
-                "compliance_score": 92,
-                "fdia_score": algo_res["fdia_score"],
-                "signedai_seal": f"ED25519-{os.urandom(8).hex()}",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                "status": "NOT_IMPLEMENTED",
+                "compliance_score": None,
+                "signedai_seal": None,
+                "note": "No PDPA contract review exists yet; no score or seal is produced.",
             }
 
         # ---------------------------------------------------------------------
@@ -1703,6 +1726,22 @@ class ControlPlaneAPI:
                 "source": "python_kernel_real_computation",
             }
 
+        # Round 52: a receiving node checks a .jitna file (see jitna_file.py). The body is
+        # the file's JSON; trust comes from public keys the CALLER names, never from the
+        # file. Nothing is stored or executed: this only reports what verifies.
+        @self.app.post("/v1/jitna/verify", tags=["JITNA"])
+        async def verify_jitna_file(payload: Dict[str, Any]):
+            from rct_control_plane import jitna_file
+            envelope = payload.get("file")
+            trusted = payload.get("trusted_keys") or []
+            if not isinstance(envelope, dict) or not isinstance(trusted, list):
+                raise HTTPException(status_code=400, detail="body must be {'file': <the .jitna JSON>, 'trusted_keys': [public key hex, ...]}")
+            try:
+                checked = jitna_file.loads(json.dumps(envelope))
+            except jitna_file.JitnaFileError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return jitna_file.verify(checked, [str(k) for k in trusted]).to_dict()
+
         # Round 44 Phase J.3: the real HTTP entry point for
         # GovernedAutonomousLoop (items J.1/J.2/I.2 - FDIA gate, JITNA
         # signing, RCT-7 decomposition, Delta persistence, Skill Library
@@ -1760,6 +1799,16 @@ class ControlPlaneAPI:
                     status_code=504,
                     detail=f"the local LLM backend timed out mid-episode (namespace={namespace}): {e}",
                 ) from e
+            if result.get("stopped_reason") == "llm_error":
+                # Round 52: a model that stays unreachable ends the episode with llm_error
+                # (after retries) instead of raising; the caller still gets an honest gateway status.
+                note = next((str((st.get("tool_result") or {}).get("llm_error")) for st in reversed(result.get("steps") or [])
+                             if isinstance(st.get("tool_result"), dict) and st["tool_result"].get("llm_error")), "unknown error")
+                timed_out = "timeout" in note.lower() or "HTTP 504" in note or "HTTP 408" in note
+                raise HTTPException(
+                    status_code=504 if timed_out else 502,
+                    detail=f"the LLM backend timed out or was unreachable mid-episode (namespace={namespace}): {note}",
+                )
             result["namespace"] = namespace
             return result
 

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import os
 import re
+
+from rct_control_plane.safe_text import substitutions
 import subprocess
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -238,8 +240,7 @@ _RUNAS_QUOTED_COMMAND_PATTERN = re.compile(r"runas\b.*?[\"']([^\"']+)[\"']", re.
 
 def _split_into_subcommands(command: str) -> List[str]:
     parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
-    for match in _SUBSTITUTION_PATTERN.finditer(command):
-        inner = match.group(1) if match.group(1) is not None else match.group(2)
+    for inner in substitutions(command):
         if inner:
             parts.append(inner)
     return [p.strip() for p in parts if p.strip()]
@@ -392,6 +393,18 @@ def _sandbox_cwd() -> str:
     return os.path.abspath(_SANDBOX_SCRATCH_DIR)
 
 
+# Round 52: the shell a sandboxed command runs in no longer inherits credentials. Keys the
+# operator (or the Desk's model page) put in the server's environment - OPENROUTER_API_KEY,
+# a national provider's token, the audit signing key's path - were readable by any command the
+# agent was approved to run (`python -c "import os; print(os.environ)"` passes the env-dump
+# classifier). The local sandbox is still not a jail, but it should not hand out the keys.
+_SECRET_ENV_NAME = re.compile(r"(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|SIGNING|PRIVATE|APPROVER)", re.IGNORECASE)
+
+
+def scrubbed_environment() -> Dict[str, str]:
+    return {k: v for k, v in os.environ.items() if not _SECRET_ENV_NAME.search(k)}
+
+
 def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
     stripped = command.strip().lower()
     for prefix in _DENYLISTED_PREFIXES:
@@ -399,7 +412,7 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
             return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
                                   blocked_reason=f"command prefix '{prefix}' is denylisted")
 
-    popen_kwargs: Dict[str, Any] = {"cwd": _sandbox_cwd()}
+    popen_kwargs: Dict[str, Any] = {"cwd": _sandbox_cwd(), "env": scrubbed_environment()}
     if os.name == "nt":
         # typeshed only declares subprocess.CREATE_NEW_PROCESS_GROUP under
         # its win32 platform stub, so a linux-targeted mypy run (this

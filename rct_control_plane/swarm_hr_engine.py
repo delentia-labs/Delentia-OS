@@ -224,6 +224,7 @@ class SwarmHREngine:
         fdia_score = fdia_check["fdia_score"]
 
         # 2. Simulate parallel subagent execution
+        # (Round 50: scripted strings, no model call; the result carries simulated=True.)
         for agent_id, agent in team.subagents.items():
             agent.status = "RUNNING"
             if "chat" in agent_id or "persona" in agent_id or "pdpa" in agent_id:
@@ -258,7 +259,8 @@ class SwarmHREngine:
             "requires_human_sign": True,
             "fdia_score": fdia_score,
             "status": "PENDING_APPROVAL",
-            "signedai_seal": f"ED25519-{hashlib.sha256(f'{team_id}_{task_input}'.encode()).hexdigest()[:20]}"
+            "simulated": True,
+            "signedai_seal": f"SHA256-{hashlib.sha256(f'{team_id}_{task_input}'.encode()).hexdigest()[:20]}"
         }
         team.pending_approvals.append(pending_item)
 

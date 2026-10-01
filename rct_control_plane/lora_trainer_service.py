@@ -53,7 +53,8 @@ class LoRATrainingJob:
             "current_epoch": self.current_epoch,
             "loss_history": self.loss_history[-10:],
             "elapsed_seconds": round(time.time() - self.start_time, 2),
-            "output_path": self.output_path
+            "output_path": self.output_path,
+            "simulated": True,  # Round 50: the loss curve is a formula; no weights are trained
         }
 
 
@@ -119,7 +120,10 @@ class LoRATrainerService:
             "target_modules": ["q_proj", "v_proj", "k_proj", "o_proj"],
             "trained_at": time.strftime("%Y-%m-%d %H:%M:%S"),
             "dataset_samples": len(dataset),
-            "final_loss": job.loss_history[-1]["loss"] if job.loss_history else 0.15
+            "final_loss": job.loss_history[-1]["loss"] if job.loss_history else 0.15,
+            # Round 50: the loss values come from a formula; nothing was trained.
+            "simulated": True,
+            "note": "simulated job: no training ran and no adapter weights exist in this directory",
         }
         with open(adapter_out_dir / "adapter_config.json", "w", encoding="utf-8") as f:
             json.dump(adapter_config, f, indent=2, ensure_ascii=False)
@@ -160,7 +164,10 @@ class LoRATrainerService:
             "target_modules": ["q_proj", "v_proj", "k_proj", "o_proj"],
             "trained_at": time.strftime("%Y-%m-%d %H:%M:%S"),
             "dataset_samples": len(dataset),
-            "final_loss": job.loss_history[-1]["loss"] if job.loss_history else 0.15
+            "final_loss": job.loss_history[-1]["loss"] if job.loss_history else 0.15,
+            # Round 50: the loss values come from a formula; nothing was trained.
+            "simulated": True,
+            "note": "simulated job: no training ran and no adapter weights exist in this directory",
         }
         with open(adapter_out_dir / "adapter_config.json", "w", encoding="utf-8") as f:
             json.dump(adapter_config, f, indent=2, ensure_ascii=False)

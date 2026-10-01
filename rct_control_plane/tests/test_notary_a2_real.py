@@ -207,11 +207,13 @@ class TestGovernedLoopWithNotary:
         result = asyncio.run(loop.run("find the release notes"))
 
         assert result["stopped_reason"] == "llm_finished"
-        assert mcp.dispatched == [("delentia_recall", RECALL["tool_args"])]
+        # Round 52: the notary records the arguments that actually ran, including the pinned namespace
+        ran_args = mcp.dispatched[0][1]
+        assert mcp.dispatched == [("delentia_recall", ran_args)] and ran_args["query"] == RECALL["tool_args"]["query"] and "namespace" in ran_args
         records = notary.records_for_episode(notary_server["store"].db_path, "notarised")
         assert [r["kind"] for r in records] == ["episode_start", "tool_call", "tool_result", "episode_end"]
         call, res = records[1], records[2]
-        assert call["gate_decision"] == "allowed" and call["arguments_sha256"] == sha256_hex(RECALL["tool_args"])
+        assert call["gate_decision"] == "allowed" and call["arguments_sha256"] == sha256_hex(ran_args)
         assert res["result_sha256"] == sha256_hex({"ok": True})
         assert records[3]["stopped_reason"] == "llm_finished"
         assert "release notes" not in json.dumps(records)  # hashes only, never content

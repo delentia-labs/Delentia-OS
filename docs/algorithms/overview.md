@@ -96,4 +96,4 @@ Shipped in `microservices/` with 142 dedicated integration tests:
 
 - **Enterprise Test Suite:** 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).
 - **Hallucination Protection:** Target $<0.3\%$ hallucination rate via SignedAI multi-model consensus — internal methodology, see `docs/benchmark/hallucination-methodology.md` for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).
-- **Memory Compression:** Delta Engine's public, independently reproducible measurement is 91.5% (design floor ≥74%) — run `python scripts/benchmark_fdia_delta.py --json` yourself to verify.
+- **Memory Compression:** Delta Engine's measured saving is 39% (20 ticks) to 90% (500 ticks) against storing a full snapshot every tick — run `python scripts/measure_delta_engine_real.py` yourself to verify. The older 91.5% was a formula estimate and is withdrawn.

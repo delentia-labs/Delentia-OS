@@ -31,7 +31,7 @@ F = D^I × A
 | สัญลักษณ์ | ชื่อ | ความหมายใน gate |
 |---|---|---|
 | **F** | Future (อนาคต) | ความชอบธรรมของ action: อนาคตนี้ควรเกิดขึ้นหรือไม่ |
-| **D** | Data (ข้อมูล) | คุณภาพและความพอเพียงของข้อมูลเบื้องหลังคำขอ ปรับให้อยู่ใน [0, 1] |
+| **D** | Data (ข้อมูล) | ข้อมูลที่ผู้ใช้คนนั้นมีจริงสำหรับคำขอ ปรับให้อยู่ใน [0, 1]: ไฟล์ที่เป้าหมายอ้างถึงมีอยู่จริง, ความจำที่เกี่ยวข้อง, skill ที่ผ่านการตรวจ, ประวัติของผู้ใช้เอง และความชัดเจนของคำขอ (`data_evidence.py`) การกระทำเสี่ยงบนข้อมูลที่ผู้ใช้ไม่มีจะถูกบล็อกพร้อมรายการสิ่งที่ขาด |
 | **I** | Intent (เจตนา) | ความแม่นยำของเจตนาที่ระบุ เพราะ D ≤ 1 ค่า I ที่สูงขึ้นทำให้ gate *เข้มขึ้น*: ข้อมูลคลุมเครือจะถูกลงโทษหนักขึ้นเมื่อเจตนาอ้างว่าแม่นยำ |
 | **A** | Architect (สถาปนิก) | อำนาจของมนุษย์ **A = 0 คือไม่มีอนาคต** ไม่ว่า D และ I จะเป็นเท่าไร A ไม่ใช่ผลลัพธ์ของโมเดล แต่เป็นการตัดสินใจของมนุษย์ที่ตรวจสอบได้ |
 
@@ -81,7 +81,7 @@ Reverse Component Thinking คิดย้อนจากผลลัพธ์�
 | # | ขั้น | เกิดอะไรขึ้น | สถานะ |
 |---|---|---|---|
 | 1 | **GUARD** | CORD ตรวจทุกเป้าหมายก่อนเรียกโมเดล ถ้าพบสัญญาณร้ายแรง (prompt injection, payload ที่เข้ารหัส, ข้อความยาวเกิน) episode จบทันทีโดยไม่เรียกโมเดลและไม่รัน tool; D และ I ของ FDIA คำนวณจากเป้าหมายและบันทึก F ของเป้าหมายไว้ ส่วน FDIA gate ใช้กับทุก action ที่เสี่ยงในขั้นที่ 4 ซึ่งรู้ค่า A แล้ว | ✅ สร้างแล้ว (CORD อยู่ใน loop ตั้งแต่ 2026-09-30; ก่อนหน้านั้นมีแค่ 2 endpoint ของ API ที่ตรวจ) |
-| 2 | **THINK** | RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง) | ✅ สร้างแล้ว |
+| 2 | **THINK** | RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง); เมื่อเปิด pipeline อัลกอริทึม 41 ตัวเพิ่มคำแนะนำจากข้อมูลของผู้ใช้เอง (§4.1) | ✅ สร้างแล้ว |
 | 3 | **ROUTE** | ALGO-21 ตัดสินว่า FAST (ความเสี่ยงต่ำ ขอบเขตแคบ: จำกัดจำนวนขั้น ตอบตรง) หรือ SLOW (ขั้นเต็ม คิดทีละขั้น); router ผิดพลาดให้ไป SLOW; ไม่ข้ามขั้นกำกับใดเลย | ✅ สร้างแล้ว (2026-09-29) |
 | 4 | **ACT** | FDIA gate ทุกขั้น; tool ที่มีผลข้างเคียงรอการอนุมัติที่ลงลายเซ็นโดยมนุษย์ แล้ว episode ทำต่อได้ | ✅ สร้างแล้ว |
 | 5 | **COMPRESS** | ผลลัพธ์ tool ที่เกิน ~2k token ถูกบีบด้วย Delta-Context และขยายกลับได้ | ✅ สร้างแล้ว |
@@ -91,6 +91,24 @@ Reverse Component Thinking คิดย้อนจากผลลัพธ์�
 
 ทุกประตูเข้า (API, gateway ข้อความ 4 ช่องทาง, scheduler, MCP tool, profile และ subagent, terminal UI) สร้าง loop ผ่าน factory เดียวที่ควบคุมการกำกับ
 มี test ที่จะล้มถ้ามีโมดูลใดสร้าง loop ที่ไม่ผ่านการกำกับ
+
+### 4.1 Intent Loop
+
+Intent Loop คือการพัฒนาตัวเองด้วยการรวมทุกองค์ประกอบของระบบเข้าเป็นลำดับเดียว จนได้ผลลัพธ์ที่บันทึกได้จริง
+ตามแบบเดิมมี 5 เสาหลัก และทุก episode รายงานทั้ง 5 เสาจากค่าที่วัดได้ (`intent_loop.py`):
+
+| เสา | ในระบบที่รันจริง |
+|---|---|
+| 1 FDIA gatekeeper | CORD, D จากข้อมูลของผู้ใช้, I, เกตต่อการกระทำ |
+| 2 Memory | ดึงความจำและ skill; อัลกอริทึม retrieval ALGO-16/18/13 บนข้อมูลของผู้ใช้; **warm recall**: คำตอบที่ตรวจผ่านแล้วถูกใช้ซ้ำโดยไม่เรียกโมเดล ถ้าหลักฐานแบบอ่านอย่างเดียวที่คำตอบนั้นอิงยังเหมือนเดิมทุกไบต์ |
+| 3 Specialist executor | route แบบ fast/slow, tools, อัลกอริทึมวางแผน (ALGO-02/37/38/15/20) |
+| 4 Verifier | RCT-7 ขั้น 7, ความเชื่อมั่น (ALGO-30), รูปแบบ hallucination (ALGO-33) การทำ consensus หลายโมเดล**ไม่ได้อยู่ใน process นี้** SignedAI เป็นอีกบริการหนึ่ง |
+| 5 Evolution committer | การเติบโตของ MEE แบบไล่ระดับต่อผู้ใช้, skill ที่เก็บ (รวมของซ้ำ, ความน่าเชื่อถือจากการใช้ซ้ำ), run ใน RCTDB, audit |
+
+คำขวัญ "ยิ่งใช้ ยิ่งฉลาด ยิ่งเร็ว ยิ่งถูก" ถูกวัดแทนที่จะอ้าง: สำหรับเป้าหมายที่ผู้ใช้ทำสำเร็จและตรวจผ่านอย่างน้อยสองครั้ง
+หน้า Growth เทียบรอบแรกกับรอบล่าสุด (จำนวนขั้น เวลา ค่าใช้จ่าย D) อัลกอริทึม 41 ตัวเป็นขั้นตอนของ pipeline แบบเลือกเปิด
+(`DELENTIA_ALGORITHM_PIPELINE=1` เปิดอยู่ใน `delentia serve`) ตัวที่เรียกโมเดล เปิดเครือข่าย หรือเขียนไฟล์ ต้องเปิดสวิตช์เอง
+ไม่เช่นนั้นจะรายงานเหตุผลที่ไม่ได้รัน
 
 ## 5. ผลิตภัณฑ์ 3 ตัว
 
@@ -110,12 +128,12 @@ whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยัง�
 |---|---|---|---|
 | L1 OS primitives | เข้าถึงฮาร์ดแวร์ตรง แยก process ระดับ OS | sandbox ระดับ process (`local` และ `docker`) พร้อมจัดระดับความเสี่ยงคำสั่ง | แก้เอกสาร: Delentia เป็น runtime บน OS ไม่ใช่ OS |
 | L2 Kernel services | จัดการ VRAM, สลับ LoRA < 12 ms | `lora_multiplexer.py` จัดการ slot ของ adapter (มี mock สำรอง); SLM ไม่ได้ต่อกับ runtime; 12 ms ไม่เคยวัด | แก้เอกสาร; SLM เป็นส่วนเสริมนอกเส้นทางหลัก |
-| L3 Algorithm kernel | 41 อัลกอริทึม + FDIA | ✅ 41/41 มี logic จริง; 24 ตัวรันอัตโนมัติจาก kernel ที่เหลือเรียกผ่าน tool หรือ router | คงไว้ |
+| L3 Algorithm kernel | 41 อัลกอริทึม + FDIA | 41/41 มี logic; ALGO-02, 37 และ 38 เป็นของจำลองจนถึง 2026-10-01 ตอนนี้เป็นของจริง (planner แบบ Pareto, ความลึกของแผนตามเจตนา, ตัวแก้ข้อจำกัดแบบช่วงค่า) วัดเมื่อ 2026-10-01: เมื่อเปิด pipeline รันจริงบน input จริง 37 จาก 41 ตัว (ใช้ rule policy แทนโมเดล); ALGO-09/11/32 ต้องเรียกโมเดล ALGO-14 ต้องมีคำขอสร้างภาพ | คงไว้; ดู §4.1 |
 | L4 RCTDB | 8 มิติ บน Qdrant + Neo4j + PostgreSQL | ค่าเริ่มต้นคือ SQLite (ตาราง RCTDB, audit แบบ hash chain, experiment runs); มี backend PostgreSQL + pgvector; Qdrant ใช้ใน vector search (ALGO-16); Neo4j ใช้ใน graph traversal (ALGO-17) เมื่อตั้ง server ไว้ | แก้เอกสารเป็น "SQLite เป็นค่าเริ่มต้น มี backend เสริม" ช่องว่างในโค้ด: audit hash chain มีแค่บน SQLite ต้องทำให้ PostgreSQL เท่ากันก่อน deploy หลายเครื่อง |
 | L5 SignedAI | ฉันทามติหลายโมเดล ≥ 75% | logic ฉันทามติและการเลือก tier อยู่ใน `signedai/core`; ยังไม่มี HTTP API; รายชื่อโมเดลในเอกสารเก่าล้าสมัย | แก้เอกสาร; API wrapper อยู่ใน backlog |
 | L6 JITNA | แพ็กเก็ต I, D, Δ, A, R, M | ✅ แพ็กเก็ตลงลายเซ็น Ed25519 (v2), streaming (v3) | คงไว้ |
-| L7 FloatingAI & Delta | บีบความจำ 91.5% | "Delta" 3 ชิ้นที่ต่างกัน (ดู §7) | ตั้งชื่อใหม่และแยกกัน |
-| L8 Regional language adapter | เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR) | มี endpoint ตรวจความเสี่ยง PDPA และรายการ adapter กฎหมายไทย; ไม่มีชั้นที่เลือกโมเดลตาม locale หรือที่ตั้งข้อมูล | แก้เอกสาร; สร้างเมื่อมีลูกค้าต้องการ |
+| L7 FloatingAI & Delta | บีบความจำ 91.5% (มาจากสูตร ไม่ใช่การวัด; ถอนแล้ว) | "Delta" 3 ชิ้นที่ต่างกัน (ดู §7) | ตั้งชื่อใหม่และแยกกัน |
+| L8 Regional language adapter | เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR) | Round 52: เลือกตามภูมิภาคและภาษาพร้อมแท็กกฎหมาย และ **บังคับใช้ตอนเรียกจริง**: นโยบายอธิปไตยข้อมูล (`core/regional_adapter/sovereignty.py`, `residency.py`) บล็อกการเรียกโมเดลที่ปลายทางนอกภูมิภาคที่อนุญาต บล็อกหรือปิดบังข้อมูลส่วนบุคคล (ตรวจ checksum เลขประจำตัวประชาชน) ในการเรียกข้ามพรมแดนที่อนุญาต และบันทึกทุกการตัดสินใจใน audit chain โดยไม่เก็บตัวข้อมูล เสียบ endpoint แบบ OpenAI-compatible ของประเทศหรือองค์กรเองได้ ยังไม่ครอบคลุม: เครื่องมือ crawl และสะพาน TypeScript | คงไว้; นี่คือการควบคุมที่ตั้งข้อมูล ไม่ใช่การปฏิบัติตามกฎหมายด้วยตัวมันเอง |
 | L9 Universal adapter | REST / GraphQL / WebSocket / gRPC | MCP คือพื้นผิวเชื่อมต่อ (6 remote tools, 34 runtime tools, Guard สำหรับ MCP server ใดก็ได้); มี adapter SDK แต่เงียบ | นิยาม L9 ใหม่เป็น "MCP + Guard" |
 | L10 Enterprise hardening | JWT RS256, RBAC, circuit breaker | ✅ `enterprise_hardening.py`, API auth ด้วย bearer token, allowlist ผู้ส่งแบบ fail-closed บน gateway | คงไว้ |
 
@@ -129,7 +147,7 @@ whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยัง�
 | ชื่อในเอกสารนี้ | โค้ด | ทำอะไร | วัดได้ |
 |---|---|---|---|
 | **Delta-Context** | TS `compress_context` / `expand_context`; Python `delta_v2.py` (port ที่ได้ผลตรงกันทุก byte); Guard `--compress` | ย่อ output ขนาดใหญ่ของ tool โดยเก็บบรรทัดที่เป็นความล้มเหลวไว้ และขยายส่วนที่เหลือกลับได้ | ลด token ~70–75% บนโค้ดและ log จริง (โหมด aggressive); Guard: ~66% บน log build + test จริง |
-| **Delta-Memory** | `core/delta_engine/memory_delta.py` | เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม | 91.5% บนการจำลอง 20 เอเจนต์ × 100 tick (ขนาด byte แบบประมาณ) |
+| **Delta-Memory** | `core/delta_engine/memory_delta.py` | เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม | log เล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัดจาก byte จริง; zstd ทั่วไปบน snapshot เต็มบีบได้มากกว่า คุณค่าจึงอยู่ที่การสร้างสถานะย้อนหลังและ rollback ที่ถูก |
 | **DeltaBlock** | `algo_25_delta_block.py` | log ส่วนต่าง และบีบประวัติบทสนทนา | – |
 
 ความจำอัตโนมัติ: ความจำที่เกี่ยวข้องถูกดึงเข้า prompt ตอนเริ่มทุก episode โดยติดป้ายว่าเป็นข้อมูล
@@ -162,7 +180,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | สัญญา FDIA | 422 จาก 425 vector ตรงกันระหว่าง TypeScript กับ Python; อีก 3 เป็นความต่างเรื่อง clamp ที่บันทึกไว้ | contract test ในทั้งสอง repo | 2026-09-28 |
 | Delta-Context | token ลดลง ~70–75% (aggressive); เก็บบรรทัดคำตอบได้ 100% เมื่อถามด้วยคำเดียวกับต้นฉบับ และ ~60% เมื่อถามแบบถอดความ; โหมดปกติ ~6–12% | `benchmarks/compression-real/` ใน `delentia-mcp/ecosystem` | Round 46 |
 | การบีบของ Guard | เล็กลง ~66% บน log build + test จริง โดยยังเก็บ test ที่ล้มไว้ | `delentia-mcp/ecosystem/docs/GUARD.md` | 2026-09 |
-| Delta-Memory | 91.5% บนการจำลอง 20 × 100 | `python scripts/benchmark_fdia_delta.py --json` | 2026-09-28 |
+| Delta-Memory | log ส่วนต่างเล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัด byte จริง บนการจำลองสังเคราะห์ | `python scripts/measure_delta_engine_real.py` | 2026-10-01 |
 | การประเมิน FDIA (Python) | 2.37 µs ต่อครั้ง บน CPU โน้ตบุ๊ก 1 เครื่อง | สคริปต์เดียวกัน | 2026-09-28 |
 | การดึงความจำ (SQLite ในหน่วยความจำ) | p95 0.021 ms | สคริปต์เดียวกัน | 2026-09-28 |
 | การคัดกรอง CORD | 100 pattern ~48 µs ต่อครั้ง; ชุดตัวอย่างของสคริปต์เองได้อัตราตรวจจับ 50% จึงไม่อ้างอัตราตรวจจับ | สคริปต์เดียวกัน | 2026-09-28 |
@@ -208,7 +226,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | โปรโตคอล | JITNA (RFC-001), TOON | JITNA อยู่ในโค้ด; TOON อยู่แค่ใน dataset |
 | ความจำ | RCTDB, AgentMemory, SkillLibrary, experiment runs, Vault-1068 client | อยู่ในโค้ด (class ของ Vault client ชื่อ `RCTDBClient` ชวนสับสน) |
 | ความปลอดภัย | CORD, FDIA gate, ZK-FDIA commitment, approvals, Architect token, API auth, audit chain, Guard | อยู่ในโค้ด |
-| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ทำงานใน loop แล้ว (ROUTE) |
+| การคิด | 41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE | อยู่ในโค้ด; Intent Loop เป็นโค้ดอ้างอิงที่การรันและการตรวจสอบเป็นการจำลอง และยังไม่ต่อเข้ากับ agent loop; ALGO-21 ทำงานใน loop แล้ว (ROUTE) |
 | ฉันทามติ | SignedAI, HexaCore (9 บทบาท) | logic อยู่ในโค้ด ยังไม่มี API |
 | โมเดล | 1+4 pillars (Router, Guardian, Executor, Scribe), delentia-slm | อยู่บน Hugging Face; ไม่ได้ต่อกับ runtime |
 | ผลิตภัณฑ์ | Guard, 6 MCP tools, runtime (34 MCP tools), เว็บไซต์ | ใช้งานจริงหรืออยู่ในโค้ด |

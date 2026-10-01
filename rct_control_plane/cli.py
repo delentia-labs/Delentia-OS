@@ -1638,15 +1638,46 @@ def model_list(provider: str, search: Optional[str], show_all: bool, limit: int,
 
 @model_group.command("set")
 @click.argument("model_id")
-@click.option("--provider", type=click.Choice(["openrouter", "ollama"]), required=True)
+@click.option("--provider", type=click.Choice(["openrouter", "ollama", "openai-compat"]), required=True)
 @click.option("--profile", default=None, help="Set the model for one agent profile only.")
 @click.option("--verify/--no-verify", default=True, show_default=True,
               help="Check the model exists in the provider's catalog before saving.")
-def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool) -> None:
-    """Save the model the agent uses (writes ~/.delentia/model.json)."""
+@click.option("--base-url", default=None, help="openai-compat: the endpoint, e.g. http://localhost:8000/v1")
+@click.option("--kind", type=click.Choice(["local", "in_region", "cross_border"]), default=None,
+              help="openai-compat: where the endpoint processes data (local = this machine/network).")
+@click.option("--region", default="", help="openai-compat, kind in_region: two-letter country code, e.g. TH")
+@click.option("--operator", default="", help="openai-compat: who runs the endpoint (recorded in the audit trail).")
+@click.option("--credential-env", default=None,
+              help="openai-compat: NAME of the environment variable that holds the API key (never the key).")
+def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool, base_url: Optional[str],
+              kind: Optional[str], region: str, operator: str, credential_env: Optional[str]) -> None:
+    """Save the model the agent uses (writes ~/.delentia/model.json).
+
+    Plug in your own AI (any OpenAI-compatible endpoint: a national provider, vLLM,
+    llama.cpp, a gateway in your country) and say where it runs, so the data-residency
+    policy can tell whether a prompt may go there:
+
+        delentia model set typhoon-v2-70b-instruct --provider openai-compat \
+            --base-url https://llm.example.th/v1 --kind in_region --region TH --credential-env TYPHOON_TOKEN
+    """
     from rct_control_plane.model_config import (
         ModelConfigError, list_ollama_models, list_openrouter_models, save_model_selection,
     )
+    if provider == "openai-compat":
+        if not base_url or not kind:
+            click.echo(click.style("Error: openai-compat needs --base-url and --kind", fg="red"), err=True)
+            sys.exit(1)
+        try:
+            path = save_model_selection(provider, model_id, profile=profile, endpoint={
+                "base_url": base_url, "kind": kind, "region": region, "operator": operator,
+                "credential_env": credential_env or ""})
+        except ModelConfigError as exc:
+            click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+            sys.exit(1)
+        click.echo(f"Saved {provider}:{model_id} at {base_url} ({kind}{' ' + region.upper() if region else ''}) to {path}")
+        click.echo("The endpoint was not contacted. Set a sovereignty policy with `delentia sovereignty set` "
+                   "so prompts are only sent where you allow.")
+        return
     if verify:
         try:
             catalog = list_openrouter_models() if provider == "openrouter" else list_ollama_models()
@@ -1859,6 +1890,289 @@ def experiments_compare(experiment_id: str, db: Optional[str]) -> None:
     runs = persistence.get_experiment_runs(experiment_id)
     click.echo(json.dumps({"experiment_id": experiment_id, "runs": len(runs),
                            "first_vs_last": persistence.compare_experiment_runs(experiment_id)}, indent=2))
+
+
+@cli.group("sovereignty")
+def sovereignty_group():
+    """
+    Data residency: which model endpoints a prompt may be sent to (Round 52).
+
+    A policy turns enforcement on. Every model call the agent makes is then checked
+    before it is sent: a call to an endpoint outside the allowed regions is blocked
+    (the episode ends with stopped_reason residency_blocked and nothing leaves), and
+    personal data in a permitted cross-border call is blocked or replaced.
+
+    Examples:
+        delentia sovereignty set --region TH
+        delentia sovereignty set --region TH --allow-cross-border --pii redact --legal-basis "PDPA s.28 consent"
+        delentia sovereignty show
+        delentia sovereignty check "Call 081-234-5678 about invoice 42"
+    """
+    pass
+
+
+@sovereignty_group.command("show")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def sovereignty_show(output: str) -> None:
+    """The active policy and where the selected model would send data."""
+    from rct_control_plane import residency
+    info = residency.describe()
+    if output == "json":
+        click.echo(json.dumps(info, indent=2, ensure_ascii=False))
+        return
+    policy = info["policy"]
+    click.echo(f"model     {info['model']}  ->  {info['hosting']['operator']} ({info['hosting']['kind']}, {info['hosting']['region']})")
+    if policy is None:
+        click.echo(click.style("policy    NONE: " + info["warning"], fg="yellow"))
+        return
+    click.echo(f"policy    home={policy['home_region']} allowed={policy['allowed_regions']} cross-border="
+               f"{'allowed' if policy['allow_cross_border'] else 'not allowed'} pii={policy['pii_policy']}")
+    if policy["legal_basis"]:
+        click.echo(f"basis     {policy['legal_basis']}")
+    verdict = "ALLOWED" if info["would_be_allowed"] else "BLOCKED"
+    click.echo(click.style(f"selected model would be {verdict}: {info['reason']}", fg="green" if info["would_be_allowed"] else "red"))
+
+
+@sovereignty_group.command("set")
+@click.option("--region", required=True, help="Home region, two-letter country code (e.g. TH).")
+@click.option("--allow-region", "allow_regions", multiple=True, help="Another region calls may reach (repeatable).")
+@click.option("--allow-cross-border/--no-cross-border", default=False, show_default=True,
+              help="Allow calls to endpoints outside the allowed regions (e.g. OpenRouter).")
+@click.option("--pii", "pii_policy", type=click.Choice(["block", "redact", "allow"]), default="block", show_default=True,
+              help="What to do with personal data in a permitted cross-border call.")
+@click.option("--legal-basis", default="", help="Recorded with every decision, e.g. 'PDPA s.28: consent + safeguards'.")
+@click.option("--tenant", "tenant_id", default="default")
+def sovereignty_set(region: str, allow_regions: tuple, allow_cross_border: bool, pii_policy: str, legal_basis: str,
+                    tenant_id: str) -> None:
+    """Write ~/.delentia/sovereignty.json (environment variables override it)."""
+    from core.regional_adapter.sovereignty import SovereigntyPolicy, validate_region
+    from rct_control_plane import residency
+    try:
+        policy = SovereigntyPolicy(
+            home_region=validate_region(region), allowed_regions=[validate_region(region), *[validate_region(r) for r in allow_regions]],
+            allow_cross_border=allow_cross_border, pii_policy=pii_policy, legal_basis=legal_basis, tenant_id=tenant_id)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    path = residency.save_policy(policy)
+    click.echo(f"Saved policy to {path}. Enforcement is on: " + ("cross-border calls are allowed" if allow_cross_border
+                                                                  else "no call may leave the allowed regions"))
+
+
+@sovereignty_group.command("check")
+@click.argument("text")
+def sovereignty_check(text: str) -> None:
+    """Would this text be sent to the selected model under the active policy? (Nothing is sent.)"""
+    from core.regional_adapter.sovereignty import evaluate_call, scan_text
+    from rct_control_plane import residency
+    from rct_control_plane.llm_provider import get_default_provider
+    policy = residency.load_policy()
+    found = scan_text(text)
+    click.echo(f"personal data found: {found or 'none'}")
+    if policy is None:
+        click.echo(click.style("No policy is set: this text would be sent as it is.", fg="yellow"))
+        return
+    decision = evaluate_call(policy, residency.hosting_for_provider(get_default_provider()), text)
+    click.echo(f"{decision.action.upper()}: {decision.reason}")
+
+
+@cli.group("jitna")
+def jitna_group():
+    """
+    .jitna files: JITNA packets and the 6-field language as a signed file (Round 52).
+
+    A .jitna file can be sent over any network or carried on any medium; the receiver
+    needs only the sender's public key to check it. Signed is not encrypted: anyone
+    holding the file can read it.
+
+    Examples:
+        delentia jitna keygen --out ~/.delentia/keys/jitna.pem
+        delentia jitna pack --language intent.txt --source planner --target worker --key ~/.delentia/keys/jitna.pem -o task.jitna
+        delentia jitna verify task.jitna --trust <sender public key hex>
+        delentia jitna unpack task.jitna
+    """
+    pass
+
+
+@jitna_group.command("keygen")
+@click.option("--out", "out_path", required=True, help="Where to write the signing key (outside the repo).")
+def jitna_keygen(out_path: str) -> None:
+    """Create an Ed25519 key for signing .jitna files; publish the public key."""
+    from rct_control_plane import jitna_file
+    try:
+        public_hex = jitna_file.generate_key_file(out_path)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"private key : {Path(out_path).expanduser()}")
+    click.echo(f"public key  : {public_hex}  (give this to receivers; they pass it as --trust)")
+
+
+@jitna_group.command("pack")
+@click.option("--language", "language_path", type=click.Path(exists=True, dir_okay=False), required=True,
+              help="Text file with I:, D:, Δ:, A:, R:, M: lines (I is required).")
+@click.option("--source", required=True, help="Sending agent id.")
+@click.option("--target", required=True, help="Receiving agent id.")
+@click.option("--key", "key_path", type=click.Path(exists=True, dir_okay=False), required=True, help="Signing key from `jitna keygen`.")
+@click.option("--correlation-id", default=None)
+@click.option("--priority", type=click.IntRange(1, 5), default=3, show_default=True)
+@click.option("-o", "--out", "out_path", required=True, help="Output file; must end in .jitna")
+def jitna_pack(language_path: str, source: str, target: str, key_path: str, correlation_id: Optional[str],
+               priority: int, out_path: str) -> None:
+    """Sign a JITNA-language intent and write it as a .jitna file."""
+    from rct_control_plane import jitna_file
+    try:
+        language = jitna_file.parse_language(Path(language_path).read_text(encoding="utf-8"))
+        key = jitna_file.load_key_file(key_path)
+        envelope = jitna_file.pack_language(language, source, target, key, correlation_id=correlation_id, priority=priority)
+        written = jitna_file.write_file(envelope, out_path)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {written} ({written.stat().st_size} bytes), signed by {envelope['sender']['fingerprint'][:16]}")
+
+
+@jitna_group.command("verify")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--trust", "trusted", multiple=True, help="Public key hex (or fingerprint) you trust; repeatable.")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def jitna_verify(path: str, trusted: tuple, output: str) -> None:
+    """Check a .jitna file. Exit 0 only if it is valid AND every signer is trusted; exit 1 if invalid; exit 3 if valid but a signer is not one you trust."""
+    from rct_control_plane import jitna_file
+    try:
+        report = jitna_file.verify(jitna_file.read_file(path), trusted)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if output == "json":
+        click.echo(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        click.echo(f"sender   {report.sender_fingerprint[:16]}   created {report.created}")
+        for pk in report.packets:
+            click.echo(f"  packet {pk.packet_id[:8]}  {pk.source} -> {pk.target}  {pk.message_type}  signature {'ok' if pk.signature_valid else 'BAD'}")
+        for problem in report.problems:
+            click.echo(click.style(f"  problem: {problem}", fg="red"))
+        if report.valid and report.trusted:
+            click.echo(click.style("VALID and TRUSTED", fg="green"))
+        elif report.valid:
+            click.echo(click.style("VALID but NOT TRUSTED: the signatures are intact, but you have not said you trust "
+                                   f"{', '.join(k[:16] for k in report.untrusted_keys)} (use --trust)", fg="yellow"))
+        else:
+            click.echo(click.style("INVALID", fg="red"))
+    if not report.valid:
+        sys.exit(1)
+    if not report.trusted:
+        sys.exit(3)
+
+
+@jitna_group.command("unpack")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--trust", "trusted", multiple=True, help="Public key hex (or fingerprint) you trust; repeatable.")
+@click.option("--allow-untrusted", is_flag=True, help="Print the content even if no signer is trusted (the signatures must still be valid).")
+def jitna_unpack(path: str, trusted: tuple, allow_untrusted: bool) -> None:
+    """Print the JITNA language each packet carries, but only from a file that verifies."""
+    from rct_control_plane import jitna_file
+    try:
+        envelope = jitna_file.read_file(path)
+        report = jitna_file.verify(envelope, trusted)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if not report.valid:
+        click.echo(click.style("Refusing to unpack: " + "; ".join(report.problems), fg="red"), err=True)
+        sys.exit(1)
+    if not report.trusted and not allow_untrusted:
+        click.echo(click.style("Refusing to unpack: no trusted signer (pass --trust <public key>, or --allow-untrusted to read it anyway)",
+                               fg="yellow"), err=True)
+        sys.exit(3)
+    for packet_id, language in jitna_file.languages(envelope):
+        click.echo(f"# packet {packet_id}")
+        click.echo(jitna_file.format_language(language))
+
+
+@cli.group("growth")
+def growth_group():
+    """
+    MEE growth and the Intent Loop's "smarter, faster, cheaper with use" (Round 51).
+
+    Examples:
+        delentia growth show
+        delentia growth evolution --namespace desk
+    """
+    pass
+
+
+@growth_group.command("show")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def growth_show(db: Optional[str]) -> None:
+    """G, resilience and episodes for every user/agent namespace."""
+    persistence = _audit_db(db)
+    with persistence._connect() as conn:
+        rows = conn.execute("SELECT key, value FROM states WHERE namespace = 'mee_growth' ORDER BY updated_at DESC").fetchall()
+    if not rows:
+        click.echo("No growth recorded yet (run a governed episode first).")
+        return
+    for key, value in rows:
+        data = json.loads(value)
+        session = data.get("session", {})
+        click.echo(f"{key}  G={session.get('g_current')}  R={session.get('resilience')}  "
+                   f"episodes={data.get('episodes')}  verified={data.get('verified_episodes')}")
+
+
+@growth_group.command("evolution")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def growth_evolution(namespace: str, db: Optional[str]) -> None:
+    """For each goal verified at least twice: first run vs latest (JSON)."""
+    from rct_control_plane.intent_loop import evolution_report
+    click.echo(json.dumps(evolution_report(_audit_db(db), namespace), indent=2, ensure_ascii=False))
+
+
+@cli.group("memory")
+def memory_group():
+    """
+    What the agent knows about you. This is D in F = D^I x A.
+
+    Examples:
+        delentia memory add "The staging database is stg-db-1"
+        delentia memory list --namespace desk
+    """
+    pass
+
+
+@memory_group.command("add")
+@click.argument("content")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--type", "memory_type", default="fact", show_default=True,
+              type=click.Choice(["fact", "preference", "goal", "event", "skill", "conversation"]))
+@click.option("--importance", default=0.7, show_default=True, type=float)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_add(content: str, namespace: str, memory_type: str, importance: float, db: Optional[str]) -> None:
+    """Store a fact. Do not store secrets: recalled text is placed in the model's prompt."""
+    import asyncio
+    from rct_control_plane.agent_memory import AgentMemory, MemoryType
+    memory_id = asyncio.run(AgentMemory(namespace, _audit_db(db)).store(content, MemoryType(memory_type), importance=importance))
+    click.echo(f"stored {memory_id} in namespace {namespace}")
+
+
+@memory_group.command("list")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_list(namespace: str, db: Optional[str]) -> None:
+    for item in _audit_db(db).list_memories(namespace):
+        click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
+
+
+@cli.command("algorithms")
+def algorithms_command() -> None:
+    """The 41 algorithms as pipeline stages, and what each one needs."""
+    from rct_control_plane import algorithm_pipeline as ap
+    click.echo(f"{len(ap.AlgorithmPipeline.algorithm_ids())} algorithms, "
+               f"pipeline {'ON' if os.environ.get('DELENTIA_ALGORITHM_PIPELINE') in ('1', 'true', 'yes') else 'off'} in this shell")
+    for stage in ap.STAGES:
+        for a in (x for x in ap.ADAPTERS if x.stage == stage):
+            needs = ",".join(n for n, on in (("model", a.llm), ("network", a.network), ("files", a.writes)) if on) or "-"
+            click.echo(f"{stage:10} {a.algo_id:8} {a.name:40} needs={needs}")
 
 
 @cli.group("audit-chain")
@@ -2166,6 +2480,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
     click.echo("  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+    click.echo("  Intent Loop: 41-algorithm pipeline and warm recall on (DELENTIA_ALGORITHM_PIPELINE=0 / DELENTIA_WARM_RECALL=0 to turn off)")
 
     # Round 36: real uvicorn serving is the only path that enables the
     # background AutonomousScheduler daemon (see api.py's _lifespan) -
@@ -2178,6 +2493,15 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (avoiding duplicate fires across workers) is a real, honestly
     # undeferred limitation, not solved this round.
     os.environ["DELENTIA_DAEMON_ENABLED"] = "1"
+
+    # Round 51: a served runtime is the real system, so it runs the full
+    # Intent Loop: the 41-algorithm pipeline around every episode and warm
+    # recall of verified answers. Tests and one-off CLI runs keep both off
+    # (set either variable to 0 to turn it off here too).
+    os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
+    os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
+    os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
     uvicorn.run(
         "rct_control_plane.api:app",
@@ -2677,6 +3001,76 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
 
     if result["stopped_reason"] == "fdia_blocked":
         raise SystemExit(1)
+
+
+@cli.group("jury")
+def jury_group():
+    """
+    SignedAI jury: several different models vote on a proposal (Round 53).
+
+    Each tier role is given its own endpoint in a JSON file (keys are never in the file: credential_env names a
+    variable). Replies that cannot be parsed, timeouts and sovereignty blocks are abstentions; a jury whose
+    answering members are one model is not a consensus.
+
+    Examples:
+        delentia jury run --config jury.json --tier tier_4 --question "Is this migration safe?" --proposal-file plan.md
+        delentia jury verify verdict.json --pubkey <hex>
+    """
+    pass
+
+
+@jury_group.command("run")
+@click.option("--config", "config_path", required=True, type=click.Path(exists=True, dir_okay=False), help="Jury file (roles -> endpoint).")
+@click.option("--tier", default="tier_4", show_default=True, type=click.Choice(["tier_s", "tier_4", "tier_6", "tier_7_regional", "tier_8"]))
+@click.option("--question", required=True)
+@click.option("--proposal", default=None, help="The text to judge (or --proposal-file).")
+@click.option("--proposal-file", type=click.Path(exists=True, dir_okay=False), default=None)
+@click.option("--sign-key", type=click.Path(exists=True, dir_okay=False), default=None, help="Ed25519 PEM to sign the verdict with.")
+@click.option("--timeout", default=60.0, show_default=True, type=float)
+@click.option("--allow-shared-model", is_flag=True, help="Count a jury whose members are one model (recorded in the verdict).")
+@click.option("--out", type=click.Path(dir_okay=False), default=None, help="Write the verdict JSON here.")
+def jury_run(config_path: str, tier: str, question: str, proposal: Optional[str], proposal_file: Optional[str],
+             sign_key: Optional[str], timeout: float, allow_shared_model: bool, out: Optional[str]) -> None:
+    """Ask the tier's signers and print the verdict."""
+    import asyncio
+    from rct_control_plane import signedai_jury
+    if (proposal is None) == (proposal_file is None):
+        click.echo(click.style("Error: give exactly one of --proposal and --proposal-file", fg="red"), err=True)
+        sys.exit(1)
+    text = proposal if proposal is not None else Path(proposal_file or "").read_text(encoding="utf-8")
+    key = None
+    try:
+        if sign_key:
+            from cryptography.hazmat.primitives import serialization
+            key = serialization.load_pem_private_key(Path(sign_key).read_bytes(), password=None)
+        config = signedai_jury.load_config(Path(config_path))
+        verdict = asyncio.run(signedai_jury.run_jury(config, tier, question, text, signing_key=key, timeout_s=timeout,
+                                                     allow_shared_model=allow_shared_model))
+    except (ValueError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    data = verdict.to_dict()
+    if out:
+        Path(out).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+    if not verdict.consensus_reached:
+        sys.exit(2)
+
+
+@jury_group.command("verify")
+@click.argument("verdict_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--pubkey", default=None, help="The public key (hex) the verdict must be signed by.")
+def jury_verify(verdict_file: str, pubkey: Optional[str]) -> None:
+    """Re-check a verdict file: digest, vote counts, tier rules and signature."""
+    from signedai.runner import verify_verdict
+    try:
+        result = verify_verdict(json.loads(Path(verdict_file).read_text(encoding="utf-8")), pubkey)
+    except (ValueError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(result, indent=2))
+    if not result["ok"]:
+        sys.exit(1)
 
 
 def main():

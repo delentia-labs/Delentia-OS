@@ -15,6 +15,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import json
 
+import re
+
 import pytest
 
 import rct_control_plane.dynamic_reasoner as dynamic_reasoner
@@ -253,7 +255,7 @@ class TestWebIngestionPipeline:
         assert "Example Title" in token_text
         sent_prompt = _FakeSession.last_payload["messages"][1]["content"]
         assert "real scraped content here" in sent_prompt
-        assert "https://example.com" in sent_prompt
+        assert re.search(r"https://example\.com", sent_prompt)
 
     @pytest.mark.asyncio
     async def test_scrape_failure_notes_the_error_in_the_prompt_but_still_continues(self, monkeypatch):

@@ -18,8 +18,8 @@ action yet; each risky action is gated separately and shows up as a step), and
 from __future__ import annotations
 
 import asyncio
+import os
 import json
-import uuid
 from typing import Any, AsyncGenerator, Callable, Dict, Optional
 
 _RESULT_PREVIEW_CHARS = 400
@@ -52,6 +52,34 @@ def format_step(step: Any) -> str:
     return f"🔧 ขั้นที่ {n}: {tool} ({args})\n> {_preview(result).replace(chr(10), ' ')}\n\n"
 
 
+def step_payload(step: Any) -> Dict[str, Any]:
+    """One loop step as a structured event for the redesigned Desk chat
+    (Round 50): the model's reasoning ("thinking"), the tool call and what
+    the governance layer did with it."""
+    tool = getattr(step, "tool_name", None)
+    result = getattr(step, "tool_result", None)
+    kind = "finish" if not tool else "tool"
+    extra: Dict[str, Any] = {}
+    if isinstance(result, dict):
+        if result.get("fdia_blocked"):
+            kind, extra = "blocked", {"F": result.get("F"), "reason": result.get("reason")}
+        elif result.get("pending_approval"):
+            kind, extra = "pending", {"reason": result.get("reason")}
+        elif result.get("notary_unavailable"):
+            kind, extra = "notary_down", {"reason": result.get("reason")}
+        elif "did_you_mean" in result:
+            kind, extra = "unknown_tool", {"did_you_mean": result.get("did_you_mean")}
+    return {
+        "iteration": getattr(step, "iteration", None),
+        "kind": kind,
+        "tool": tool,
+        "args": getattr(step, "tool_args", {}) or {},
+        "thinking": (getattr(step, "llm_reasoning", "") or "")[:600],
+        "result": _preview(result, 1200) if (tool and kind == "tool") else None,
+        **extra,
+    }
+
+
 def _footer(result: Dict[str, Any]) -> str:
     route = result.get("route") or {}
     verify = result.get("intent_verification") or {}
@@ -78,19 +106,31 @@ async def agent_events(
     max_iterations: int = 5,
     max_seconds: float = 600.0,
     loop_factory: Optional[Callable[..., Any]] = None,
+    structured: bool = False,
 ) -> AsyncGenerator[Dict[str, Any], None]:
+    """structured=False: the original token/fdia/done events. structured=True
+    (the redesigned Desk): start, step, answer, summary, fdia, done."""
     from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.governed_autonomous_loop import fdia_score
 
-    namespace = namespace or f"desk-agent-{uuid.uuid4().hex[:8]}"
+    # Round 51: one stable identity for the Desk user. A fresh namespace per
+    # chat meant nothing learned in one chat (growth, skills, track record)
+    # could ever help the next.
+    namespace = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
     factory = loop_factory or build_governed_loop
     loop = factory(kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds,
                    mcp_server=mcp_server)
 
     queue: "asyncio.Queue[Optional[Dict[str, Any]]]" = asyncio.Queue()
-    yield {"type": "token", "data": f"🛡️ Agent (governed) · namespace {namespace}\n\n"}
+    if structured:
+        yield {"type": "start", "data": {"namespace": namespace, "max_iterations": max_iterations}}
+    else:
+        yield {"type": "token", "data": f"🛡️ Agent (governed) · namespace {namespace}\n\n"}
 
     async def _on_step(step: Any) -> None:
+        if structured:
+            await queue.put({"type": "step", "data": step_payload(step)})
+            return
         text = format_step(step)
         if text:
             await queue.put({"type": "token", "data": text})
@@ -113,13 +153,28 @@ async def agent_events(
         yield {"type": "error", "data": f"agent episode failed: {exc}"}
         return
 
-    answer = result.get("final_answer") or "(ไม่มีคำตอบสุดท้าย)"
-    yield {"type": "token", "data": f"คำตอบ: {answer}{_footer(result)}"}
-
     D = getattr(loop, "_episode_D", None)
     I = getattr(loop, "_episode_I", None)
     blocked = result.get("stopped_reason") == "guard_blocked"
     jitna_hash = getattr(loop, "_episode_jitna_hash", "") or ""
+
+    if structured:
+        yield {"type": "answer", "data": {"text": result.get("final_answer")}}
+        yield {"type": "summary", "data": {
+            "namespace": namespace,
+            "stopped_reason": result.get("stopped_reason"),
+            "iterations": result.get("iterations"),
+            "route": result.get("route") or {},
+            "verification": result.get("intent_verification") or {},
+            "guard": result.get("guard") or {},
+            "notary": result.get("notary") or {},
+            "approval_id": result.get("approval_id"),
+            "rct7_steps": [] if blocked else list(getattr(loop, "_episode_rct7_steps", []) or []),
+            "experiment": result.get("experiment"),
+        }}
+    else:
+        answer = result.get("final_answer") or "(ไม่มีคำตอบสุดท้าย)"
+        yield {"type": "token", "data": f"คำตอบ: {answer}{_footer(result)}"}
     yield {"type": "fdia", "data": {
         "D": D if not blocked else 0.0, "I": I if not blocked else 0.0, "A": 0.0 if blocked else 1.0,
         "F": 0.0 if blocked or D is None or I is None else fdia_score(D, I, 1.0),

@@ -273,7 +273,7 @@ class TestSynthesizeBlueprint:
     def test_blueprint_has_a_real_signedai_attestation(self, engine):
         session = engine.start_session("build an app")
         blueprint = engine.synthesize_blueprint(session.session_id)
-        assert blueprint["signedai_attestation"].startswith("ED25519-")
+        assert blueprint["signedai_attestation"].startswith("SHA256-")
 
 
 class TestProcessUserTurn:
