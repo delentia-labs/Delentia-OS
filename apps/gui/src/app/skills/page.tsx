@@ -4,6 +4,14 @@ import { useLang } from "@/components/desk/i18n";
 import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 
+/** "read_repo_file → finish": what the skill does, before the raw record. */
+function stepChain(solution: unknown): string | null {
+  if (!Array.isArray(solution)) return null;
+  const names = solution.map((st) => (st && typeof st === "object" && "tool_name" in st ? String((st as { tool_name?: unknown }).tool_name ?? "finish") : null))
+    .filter((n): n is string => n !== null).map((n) => n.replace(/^delentia_/, ""));
+  return names.length ? names.join(" → ") : null;
+}
+
 export default function SkillsPage() {
   const { t, lang } = useLang();
   const skills = useDeskData(() => desk.skills(), []);
@@ -22,6 +30,7 @@ export default function SkillsPage() {
           {skills.data?.skills.map((s) => (
             <Panel key={s.id} title={s.problem_statement}
               aside={s.archived ? <Badge tone="rust">archived</Badge> : s.governance_violation ? <Badge tone="rust">violation</Badge> : <Badge tone="leaf">growth {fmtNum(s.growth_ratio)}</Badge>}>
+              {stepChain(s.solution) ? <p className="desk-mono mb-2 text-[12px] text-dl-text">{stepChain(s.solution)}</p> : null}
               <pre className="desk-mono max-h-40 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">
                 {typeof s.solution === "string" ? s.solution : JSON.stringify(s.solution, null, 2)}
               </pre>

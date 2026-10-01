@@ -258,14 +258,41 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
                 raise HTTPException(status_code=502, detail=f"Ollama unreachable: {exc}") from exc
         return out
 
+    @router.get("/models/setup")
+    async def model_setup() -> Dict[str, Any]:
+        """Everything the model-setup page draws in one call: the current choice (never a secret,
+        only whether a key is present), the data-location verdict for the saved endpoint, and the
+        country -> provider -> model starting points."""
+        from rct_control_plane import model_setup, provider_presets
+        return {**model_setup.current_view(), "presets": provider_presets.catalog()}
+
+    @router.post("/models/test")
+    async def test_model_endpoint(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Ask an OpenAI-compatible endpoint which models it serves. No prompt is sent. The
+        data-location policy is checked first and a blocked endpoint is not contacted. The key
+        in the body (if any) is used for this one request and never stored or returned."""
+        from rct_control_plane import model_setup
+        endpoint = payload.get("endpoint")
+        if not isinstance(endpoint, dict):
+            raise HTTPException(status_code=400, detail="'endpoint' must be an object with base_url, kind, region")
+        api_key = payload.get("api_key")
+        if api_key is not None and not isinstance(api_key, str):
+            raise HTTPException(status_code=400, detail="'api_key' must be a string")
+        return await model_setup.probe_endpoint(endpoint, api_key or None)
+
     @router.post("/models")
     async def set_model(payload: Dict[str, Any]) -> Dict[str, Any]:
-        from rct_control_plane import model_config
+        from rct_control_plane import model_config, model_setup
+        endpoint = payload.get("endpoint")
+        if endpoint is not None and not isinstance(endpoint, dict):
+            raise HTTPException(status_code=400, detail="'endpoint' must be an object")
         try:
-            path = model_config.save_model_selection(str(payload.get("provider", "")), str(payload.get("model", "")))
-        except model_config.ModelConfigError as exc:
+            return model_setup.apply_selection(
+                str(payload.get("provider", "")), str(payload.get("model", "")), endpoint=endpoint,
+                profile=(str(payload["profile"]).strip() if payload.get("profile") else None),
+                api_key=(str(payload["api_key"]) if payload.get("api_key") else None))
+        except (model_config.ModelConfigError, model_setup.SetupError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return {"saved": str(path), "selection": model_config.resolve_model_selection().to_dict()}
 
     @router.get("/audit")
     async def audit(limit: int = Query(40, ge=1, le=500)) -> Dict[str, Any]:
@@ -489,6 +516,29 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         info["decisions"] = decisions
         info["counts"] = {a: sum(1 for d in decisions if d["action"] == a) for a in ("allow", "redact", "block")}
         return info
+
+    @router.post("/sovereignty")
+    async def set_sovereignty(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Write the data-residency policy (what `delentia sovereignty set` writes). Refused while the
+        policy comes from DELENTIA_HOME_REGION in the environment, because the environment wins and a
+        saved file would silently do nothing."""
+        from core.regional_adapter.sovereignty import SovereigntyPolicy, validate_region
+        from rct_control_plane import residency
+        if (os.environ.get(residency.HOME_REGION_ENV) or "").strip():
+            raise HTTPException(status_code=409, detail=f"The policy is set by {residency.HOME_REGION_ENV} in the server's "
+                                "environment, which overrides the saved file. Change it there.")
+        try:
+            home = validate_region(str(payload.get("home_region", "")))
+            extra = [validate_region(str(r)) for r in (payload.get("allowed_regions") or [])]
+            policy = SovereigntyPolicy(
+                home_region=home, allowed_regions=[home, *[r for r in extra if r != home]],
+                allow_cross_border=bool(payload.get("allow_cross_border", False)),
+                pii_policy=str(payload.get("pii_policy", "block")), legal_basis=str(payload.get("legal_basis", ""))[:300],
+                tenant_id=str(payload.get("tenant_id", "default"))[:64] or "default")
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        path = residency.save_policy(policy)
+        return {"saved": str(path), **residency.describe()}
 
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:

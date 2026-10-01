@@ -39,6 +39,24 @@ export interface ModelInfo {
   id: string; context_length: number | null; prompt_price_per_mtok: number | null;
   completion_price_per_mtok: number | null; supports_json_mode: boolean; supports_tools: boolean;
 }
+export interface EndpointDecl { base_url: string; kind: "local" | "in_region" | "cross_border"; region: string; operator: string; credential_env?: string }
+export interface PolicyVerdict { enforced: boolean; allowed: boolean | null; reason: string }
+export interface ProviderPreset {
+  id: string; name: string; country: string; base_url: string; credential_env: string; models: string[]; docs: string; note: string;
+  suggested_data_location: "local" | "cross_border"; needs_key: boolean; company_country: string | null;
+}
+export interface ModelSetup {
+  selection: ModelSelection; config_path: string; endpoint: EndpointDecl | null; credential_env: string | null; credential_present: boolean;
+  openrouter_key_present: boolean; profiles: Record<string, { provider: string; model: string }>; endpoint_verdict: PolicyVerdict | null;
+  presets: { countries: { code: string; name: string }[]; providers: ProviderPreset[]; notice: string };
+  saved?: string; key_kept_in_memory?: boolean; key_note?: string | null;
+}
+export interface ProbeResult {
+  contacted: boolean; reachable: boolean; status?: number; models: string[]; error: string | null; key_sent?: boolean; verdict: PolicyVerdict | null;
+}
+export interface SovereigntyPolicyInput {
+  home_region: string; allowed_regions: string[]; allow_cross_border: boolean; pii_policy: "block" | "redact" | "allow"; legal_basis: string;
+}
 export interface Overview {
   model: ModelSelection;
   daemon: { running: boolean; tasks: number };
@@ -176,6 +194,13 @@ export const desk = {
   models: (catalog?: "openrouter" | "ollama", free = false) =>
     call<{ selection: ModelSelection; config_path: string; openrouter_key_present: boolean; catalog?: ModelInfo[] }>(
       `/v1/desk/models${catalog ? `?catalog=${catalog}${free ? "&free=true" : ""}` : ""}`),
+  modelSetup: () => call<ModelSetup>("/v1/desk/models/setup"),
+  testEndpoint: (endpoint: EndpointDecl, apiKey?: string) =>
+    call<ProbeResult>("/v1/desk/models/test", { method: "POST", body: JSON.stringify({ endpoint, api_key: apiKey || undefined }) }),
+  saveModel: (body: { provider: string; model: string; endpoint?: EndpointDecl; profile?: string; api_key?: string }) =>
+    call<ModelSetup>("/v1/desk/models", { method: "POST", body: JSON.stringify(body) }),
+  setSovereignty: (policy: SovereigntyPolicyInput) =>
+    call<{ saved: string; enforced: boolean }>("/v1/desk/sovereignty", { method: "POST", body: JSON.stringify(policy) }),
   setModel: (provider: string, model: string) =>
     call<{ saved: string; selection: ModelSelection }>("/v1/desk/models", { method: "POST", body: JSON.stringify({ provider, model }) }),
   audit: () => call<AuditView>("/v1/desk/audit"),

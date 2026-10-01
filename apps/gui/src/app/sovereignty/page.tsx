@@ -1,10 +1,70 @@
 "use client";
 
+import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
-import { Badge, Code, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
-import { desk } from "@/lib/desk-api";
+import { Badge, Button, Code, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
+import { desk, type SovereigntyInfo } from "@/lib/desk-api";
 
 const TONE = { allow: "leaf", redact: "amber", block: "rust" } as const;
+const field = "desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50";
+
+function PolicyForm({ info, onSaved, lang }: { info: SovereigntyInfo; onSaved: () => void; lang: string }) {
+  const p = info.policy;
+  const [home, setHome] = useState(p?.home_region ?? "");
+  const [extra, setExtra] = useState((p?.allowed_regions ?? []).filter((r) => r !== p?.home_region).join(", "));
+  const [cross, setCross] = useState(p?.allow_cross_border ?? false);
+  const [pii, setPii] = useState<"block" | "redact" | "allow">((p?.pii_policy as "block" | "redact" | "allow") ?? "block");
+  const [basis, setBasis] = useState(p?.legal_basis ?? "");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ tone: "leaf" | "rust"; text: string } | null>(null);
+  const T = (en: string, th: string) => (lang === "th" ? th : en);
+  const save = async () => {
+    setBusy(true); setMessage(null);
+    try {
+      await desk.setSovereignty({ home_region: home.trim(), allowed_regions: extra.split(/[ ,]+/).filter(Boolean), allow_cross_border: cross, pii_policy: pii, legal_basis: basis });
+      setMessage({ tone: "leaf", text: T("Policy saved. It applies to the next model call.", "บันทึกนโยบายแล้ว มีผลกับการเรียกโมเดลครั้งถัดไป") });
+      onSaved();
+    } catch (err) {
+      setMessage({ tone: "rust", text: err instanceof Error ? err.message : String(err) });
+    } finally { setBusy(false); }
+  };
+  return (
+    <Panel title={T("Set the policy", "ตั้งนโยบาย")}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="block">
+          <span className="text-[13px] text-dl-muted">{T("Home country (two letters)", "ประเทศหลัก (2 ตัวอักษร)")}</span>
+          <input value={home} onChange={(e) => setHome(e.target.value.toUpperCase().slice(0, 2))} placeholder="TH" maxLength={2} className={field} aria-label="Home country" />
+        </label>
+        <label className="block">
+          <span className="text-[13px] text-dl-muted">{T("Other countries a call may reach", "ประเทศอื่นที่อนุญาตให้ส่งไปถึง")}</span>
+          <input value={extra} onChange={(e) => setExtra(e.target.value.toUpperCase())} placeholder="JP, SG" className={field} aria-label="Other countries" />
+        </label>
+        <label className="flex items-start gap-2 text-[13px] text-dl-text md:col-span-2">
+          <input type="checkbox" checked={cross} onChange={(e) => setCross(e.target.checked)} className="mt-1 accent-[var(--dl-leaf)]" />
+          <span>{T("Allow calls to endpoints outside those countries (cross-border).", "อนุญาตให้เรียก endpoint นอกประเทศเหล่านี้ (ข้ามพรมแดน)")}
+            <span className="block text-[12px] text-dl-muted">{T("Off is the strict choice: nothing leaves. On needs a rule for personal data below and a legal basis.", "ปิดคือเข้มที่สุด: ไม่มีอะไรออก เปิดต้องกำหนดการจัดการข้อมูลส่วนบุคคลและฐานทางกฎหมาย")}</span></span>
+        </label>
+        <label className="block">
+          <span className="text-[13px] text-dl-muted">{T("Personal data in a cross-border call", "ข้อมูลส่วนบุคคลในการเรียกข้ามพรมแดน")}</span>
+          <select value={pii} onChange={(e) => setPii(e.target.value as "block" | "redact" | "allow")} disabled={!cross} className={field} aria-label="Personal data rule">
+            <option value="block">{T("block the call", "บล็อกการเรียก")}</option>
+            <option value="redact">{T("replace it with placeholders", "แทนที่ด้วย placeholder")}</option>
+            <option value="allow">{T("allow it (recorded)", "อนุญาต (บันทึกไว้)")}</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-[13px] text-dl-muted">{T("Legal basis recorded with each decision", "ฐานทางกฎหมายที่บันทึกกับทุกการตัดสินใจ")}</span>
+          <input value={basis} onChange={(e) => setBasis(e.target.value)} placeholder="PDPA s.28: consent + safeguards" className={field} aria-label="Legal basis" />
+        </label>
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <Button onClick={save} disabled={busy || home.trim().length !== 2}>{busy ? "Saving…" : T("Save policy", "บันทึกนโยบาย")}</Button>
+        <span className="text-[12px] text-dl-muted">{T("This writes the same file as ", "เขียนไฟล์เดียวกับ ")}<Code>delentia sovereignty set</Code>. {T("It is not legal advice.", "ไม่ใช่คำปรึกษาทางกฎหมาย")}</span>
+      </div>
+      {message ? <p role="status" className={`mt-3 text-[13px] ${message.tone === "leaf" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
+    </Panel>
+  );
+}
 
 export default function SovereigntyPage() {
   const { lang } = useLang();
@@ -49,6 +109,7 @@ export default function SovereigntyPage() {
                 </p>
               </Panel>
             </div>
+            <PolicyForm key={JSON.stringify(d.policy)} info={d} onSaved={s.reload} lang={lang} />
             <Panel title="Decisions" aside={<span className="desk-mono text-[11px] text-dl-muted">allowed {d.counts.allow} · redacted {d.counts.redact} · blocked {d.counts.block}</span>}>
               {d.decisions.length ? (
                 <div className="overflow-x-auto">
