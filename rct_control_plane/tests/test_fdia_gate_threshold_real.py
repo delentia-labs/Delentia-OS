@@ -93,7 +93,7 @@ def test_non_risky_tools_are_not_gated_by_d_and_i(tmp_path, monkeypatch):
     loop = _loop(tmp_path, "gate_readonly", kernel=_FakeKernel(D=0.1, I=2.0), mcp=mcp)
     result = asyncio.run(loop.run("recall notes"))
     assert result["stopped_reason"] == "llm_finished"
-    assert mcp.dispatched == [("delentia_recall", {"query": "x"})]
+    assert [(n, {k: v for k, v in a.items() if k != "namespace"}) for n, a in mcp.dispatched] == [("delentia_recall", {"query": "x"})]
 
 
 def test_threshold_is_configurable(tmp_path, monkeypatch):

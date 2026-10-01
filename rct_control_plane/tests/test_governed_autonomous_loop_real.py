@@ -236,7 +236,7 @@ class TestFdiaGate:
         result = asyncio.run(loop.run("recall something"))
 
         assert result["stopped_reason"] == "llm_finished"
-        assert ("delentia_recall", {"query": "x"}) in mcp.dispatched
+        assert ("delentia_recall", {"query": "x", "namespace": "non_risky"}) in mcp.dispatched    # Round 52: pinned to the caller's namespace
 
     def test_low_D_I_can_block_a_risky_tool_even_with_full_authorization(self, tmp_path, decide_sequence):
         # A defaults to 1.0 for tools without a per-tool signal, but F is
@@ -555,8 +555,8 @@ class TestConcurrentEpisodeIsolation:
         assert result_b["final_answer"] == "beta done"
         # Each MCP instance (one per episode) saw only its own episode's
         # dispatch - never the other episode's tool call.
-        assert mcp_a.dispatched == [("delentia_recall", {"query": "alpha-only"})]
-        assert mcp_b.dispatched == [("delentia_recall", {"query": "beta-only"})]
+        assert mcp_a.dispatched == [("delentia_recall", {"query": "alpha-only", "namespace": "episode-alpha"})]
+        assert mcp_b.dispatched == [("delentia_recall", {"query": "beta-only", "namespace": "episode-beta"})]
 
         all_audit = persistence.recent_audit(limit=200)
         audit_a = [e for e in all_audit if e.get("actor") == "episode-alpha"]

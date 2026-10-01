@@ -1794,6 +1794,16 @@ class ControlPlaneAPI:
                     status_code=504,
                     detail=f"the local LLM backend timed out mid-episode (namespace={namespace}): {e}",
                 ) from e
+            if result.get("stopped_reason") == "llm_error":
+                # Round 52: a model that stays unreachable ends the episode with llm_error
+                # (after retries) instead of raising; the caller still gets an honest gateway status.
+                note = next((str((st.get("tool_result") or {}).get("llm_error")) for st in reversed(result.get("steps") or [])
+                             if isinstance(st.get("tool_result"), dict) and st["tool_result"].get("llm_error")), "unknown error")
+                timed_out = "timeout" in note.lower() or "HTTP 504" in note or "HTTP 408" in note
+                raise HTTPException(
+                    status_code=504 if timed_out else 502,
+                    detail=f"the LLM backend timed out or was unreachable mid-episode (namespace={namespace}): {note}",
+                )
             result["namespace"] = namespace
             return result
 

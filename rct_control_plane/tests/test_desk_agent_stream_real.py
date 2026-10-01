@@ -48,7 +48,7 @@ def test_agent_mode_streams_real_steps_then_answer_badge_and_done(tmp_path, monk
     assert kinds[0] == "token" and kinds[-2:] == ["fdia", "done"]
     text = "".join(e["data"] for e in events if e["type"] == "token")
     assert "delentia_recall" in text and "คำตอบ:" in text and "llm_finished" in text
-    assert mcp.dispatched == [("delentia_recall", {"query": "notes"})]
+    assert mcp.dispatched == [("delentia_recall", {"query": "notes", "namespace": "desk"})]    # Round 52: memory tools are pinned to the user's namespace
     badge = events[-2]["data"]
     assert 0 < badge["D"] <= 1 and badge["I"] >= 0.5 and 0 <= badge["F"] <= 1 and badge["A"] == 1.0
     assert badge["signed"] is True and badge["signature_hash"].startswith("JITNA-")
@@ -94,7 +94,7 @@ def test_unknown_tool_is_not_dispatched_and_the_model_gets_close_names(tmp_path,
     result = asyncio.run(loop.run("recall a"))
     first = result["steps"][0]["tool_result"]
     assert "Unknown tool" in first["error"] and first["did_you_mean"]
-    assert mcp.dispatched == [("delentia_recall", {"query": "a"})]
+    assert [(n, {k: v for k, v in a.items() if k != "namespace"}) for n, a in mcp.dispatched] == [("delentia_recall", {"query": "a"})]
     assert result["stopped_reason"] == "llm_finished"
 
 

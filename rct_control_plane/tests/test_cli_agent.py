@@ -112,7 +112,7 @@ class TestAgentCommand:
         result = cli_runner.invoke(cli, ["agent", "recall something"])
         assert result.exit_code == 0
         assert "delentia_recall" in result.output
-        assert fake_mcp.dispatched == [("delentia_recall", {"query": "x"})]
+        assert [(n, {k: v for k, v in a.items() if k != "namespace"}) for n, a in fake_mcp.dispatched] == [("delentia_recall", {"query": "x"})]    # Round 52: plus the pinned namespace
 
     def test_fdia_blocked_exits_nonzero(self, cli_runner, cli, patched_kernel_and_mcp, monkeypatch):
         _script_decide(monkeypatch, [

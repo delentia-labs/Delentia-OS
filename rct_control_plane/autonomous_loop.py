@@ -21,8 +21,10 @@ decompression counterpart for whenever full context needs to be
 recovered."""
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -31,6 +33,36 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 from rct_control_plane.algo_25_delta_block import DeltaEngine
 from rct_control_plane.llm_provider import BudgetExceededError, ResidencyViolation
 from rct_control_plane.persistence import ControlPlanePersistence
+
+# Round 52: a model that is briefly unavailable (overloaded, rate limited, a dropped
+# connection) is retried; one that stays down ends the episode with
+# stopped_reason "llm_error" instead of raising out of run() into whatever called it
+# (an API request, a chat gateway, the daemon).
+LLM_RETRIES_ENV = "DELENTIA_LLM_RETRIES"
+LLM_RETRY_BACKOFF_ENV = "DELENTIA_LLM_RETRY_BACKOFF"
+_TRANSIENT_HTTP_STATUS = (408, 409, 425, 429, 500, 502, 503, 504)
+
+
+def _is_transient_llm_error(exc: BaseException) -> bool:
+    try:
+        import httpx
+    except ImportError:     # pragma: no cover
+        return False
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code in _TRANSIENT_HTTP_STATUS
+    return isinstance(exc, (httpx.TransportError, asyncio.TimeoutError, ConnectionError))
+
+
+def _describe_llm_error(exc: BaseException) -> str:
+    """One line for the step record; never includes request bodies or headers (the prompt
+    and the API key must not end up in the audit trail through an error message)."""
+    try:
+        import httpx
+        if isinstance(exc, httpx.HTTPStatusError):
+            return f"model endpoint answered HTTP {exc.response.status_code}"
+    except ImportError:     # pragma: no cover
+        pass
+    return f"{type(exc).__name__}: {str(exc)[:200]}"
 
 if TYPE_CHECKING:
     from rct_control_plane.llm_provider import LLMProvider
@@ -489,16 +521,42 @@ class AutonomousLoop:
             # Round 50: a provider-wide budget (MeteredProvider) refuses a
             # call before it is made; the episode then ends cleanly with
             # stopped_reason "budget_exceeded" instead of raising.
-            try:
+            async def _decide() -> Dict[str, Any]:
                 if self._llm_provider is not None and extra_context:
-                    decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider,
-                                                        extra_context=extra_context)
-                elif self._llm_provider is not None:
-                    decision = await decide_next_action(goal, history, iteration_tools, self._llm_provider)
-                elif extra_context:
-                    decision = await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
-                else:
-                    decision = await decide_next_action(goal, history, iteration_tools)
+                    return await decide_next_action(goal, history, iteration_tools, self._llm_provider,
+                                                    extra_context=extra_context)
+                if self._llm_provider is not None:
+                    return await decide_next_action(goal, history, iteration_tools, self._llm_provider)
+                if extra_context:
+                    return await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
+                return await decide_next_action(goal, history, iteration_tools)
+
+            try:
+                retries = max(0, int(os.environ.get(LLM_RETRIES_ENV, "2")))
+                backoff = max(0.0, float(os.environ.get(LLM_RETRY_BACKOFF_ENV, "1.0")))
+                attempt = 0
+                while True:
+                    try:
+                        decision = await _decide()
+                        break
+                    except (BudgetExceededError, ResidencyViolation):
+                        raise
+                    except Exception as exc:    # noqa: BLE001 - any provider failure ends the episode, not the caller
+                        if attempt < retries and _is_transient_llm_error(exc):
+                            attempt += 1
+                            await asyncio.sleep(backoff * attempt)
+                            continue
+                        llm_error = _describe_llm_error(exc)
+                        stopped_reason = "llm_error"
+                        step = LoopStep(iteration=i, tool_name=None, tool_args={}, tool_result={"llm_error": llm_error},
+                                        llm_reasoning=f"the model could not be reached: {llm_error} (after {attempt + 1} attempt(s))")
+                        history.append(step)
+                        self._persist_step(step)
+                        await _notify(step)
+                        decision = None
+                        break
+                if decision is None:
+                    break
             except (BudgetExceededError, ResidencyViolation) as exc:
                 # Round 52: a residency block ends the episode the same way a budget
                 # refusal does: before the call, so nothing was sent.
@@ -538,7 +596,9 @@ class AutonomousLoop:
                 break
 
             tool_name = decision["tool_name"]
-            tool_args = decision.get("tool_args") or {}
+            # Scoped before the governance gate, so the gate, the notary and the step record all
+            # see the arguments that will actually run.
+            tool_args = self._scope_tool_args(tool_name, decision.get("tool_args") or {})
 
             # Round 23 Phase 12 Task 26: real approval-gate for
             # medium-risk sandboxed commands - halt BEFORE dispatch,
@@ -640,6 +700,11 @@ Write your final answer to the goal, in natural language. Do not use JSON - plai
             if inspect.isawaitable(result):
                 await result
         return "".join(chunks)
+
+    def _scope_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
+        """Hook: the arguments actually dispatched. The base loop passes them through;
+        GovernedAutonomousLoop pins memory tools to the caller's own namespace."""
+        return tool_args
 
     def _persist_step(self, step: LoopStep) -> None:
         self._persistence.append_audit(

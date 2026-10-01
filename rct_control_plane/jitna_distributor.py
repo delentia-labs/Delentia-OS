@@ -37,6 +37,17 @@ from typing import Any, Callable, Dict, List, Optional
 from rct_control_plane.git_worktree_isolator import GitWorktreeIsolator
 
 
+SUBAGENT_DEPTH_ENV = "DELENTIA_SUBAGENT_DEPTH"
+MAX_SUBAGENT_DEPTH = 1       # a subagent is a leaf: it works on its goal, it does not spawn more processes
+
+
+def subagent_depth() -> int:
+    try:
+        return max(0, int(os.environ.get(SUBAGENT_DEPTH_ENV, "0")))
+    except ValueError:
+        return 0
+
+
 async def _dispatch_subagent(agent_id: str, goal: str, worktree_path: str, timeout_seconds: float,
                              request_json: Optional[str] = None,
                              parent_public_key_hex: Optional[str] = None) -> Dict[str, Any]:
@@ -54,7 +65,8 @@ async def _dispatch_subagent(agent_id: str, goal: str, worktree_path: str, timeo
     else:
         cmd += ["--goal", goal]
     proc = await asyncio.create_subprocess_exec(
-        *cmd, env={**os.environ, "DELENTIA_REPO_ROOT": worktree_path},
+        *cmd, env={**os.environ, "DELENTIA_REPO_ROOT": worktree_path,
+                   "DELENTIA_SUBAGENT_DEPTH": str(subagent_depth() + 1)},
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
     )
     try:

@@ -180,6 +180,7 @@ RISKY_TOOLS = frozenset({
     "delentia_crawl_url",               # real outbound HTTP GET to an arbitrary URL
     "delentia_schedule_self_evolution", # schedules a real recurring self-modifying cycle
     "delentia_delegate",                # spawns a new, separately-acting AutonomousLoop
+    "delentia_spawn_subagents",         # starts separate OS processes in git worktrees (Round 52)
     "delentia_import_session_state",    # merges external/untrusted JITNA state
 })
 
@@ -675,6 +676,28 @@ class GovernedAutonomousLoop(AutonomousLoop):
                      "so answer the goal itself, not a neighbouring question.")
         return "\n".join(lines)
 
+    # Round 52: the memory tools write to, and read from, the kernel's one shared default
+    # namespace unless told otherwise, so a fact one user asked the agent to remember was
+    # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
+    # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
+    MEMORY_TOOLS = ("delentia_remember", "delentia_recall")
+    # Channel namespaces belong to outside senders; the shared default store (what the
+    # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
+    CHANNEL_NAMESPACE_PREFIXES = ("telegram-", "discord-", "slack-", "line-", "http-agent-")
+
+    def _scope_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
+        if tool_name in self.MEMORY_TOOLS:
+            return {**tool_args, "namespace": self.namespace}
+        return tool_args
+
+    def _reads_shared_memory(self) -> bool:
+        setting = (os.environ.get("DELENTIA_SHARED_MEMORY") or "").strip().lower()
+        if setting in ("1", "true", "yes"):
+            return True
+        if setting in ("0", "false", "no"):
+            return False
+        return not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES)
+
     async def _recall_for_goal(self, goal: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Round 48 R1.3: memories relevant to the goal are recalled
         automatically. K.1.5 showed the current local model never calls
@@ -685,7 +708,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_memory_scores = []
         stores = []
         default_memory = getattr(self._get_kernel(), "_agent_memory", None)
-        if default_memory is not None:
+        if default_memory is not None and self._reads_shared_memory():
             stores.append(default_memory)
         # This namespace's own memories too (a gateway sender, the Desk user),
         # not only the kernel's default namespace that delentia_remember writes.
