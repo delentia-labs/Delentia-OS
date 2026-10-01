@@ -3003,6 +3003,76 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
         raise SystemExit(1)
 
 
+@cli.group("jury")
+def jury_group():
+    """
+    SignedAI jury: several different models vote on a proposal (Round 53).
+
+    Each tier role is given its own endpoint in a JSON file (keys are never in the file: credential_env names a
+    variable). Replies that cannot be parsed, timeouts and sovereignty blocks are abstentions; a jury whose
+    answering members are one model is not a consensus.
+
+    Examples:
+        delentia jury run --config jury.json --tier tier_4 --question "Is this migration safe?" --proposal-file plan.md
+        delentia jury verify verdict.json --pubkey <hex>
+    """
+    pass
+
+
+@jury_group.command("run")
+@click.option("--config", "config_path", required=True, type=click.Path(exists=True, dir_okay=False), help="Jury file (roles -> endpoint).")
+@click.option("--tier", default="tier_4", show_default=True, type=click.Choice(["tier_s", "tier_4", "tier_6", "tier_7_regional", "tier_8"]))
+@click.option("--question", required=True)
+@click.option("--proposal", default=None, help="The text to judge (or --proposal-file).")
+@click.option("--proposal-file", type=click.Path(exists=True, dir_okay=False), default=None)
+@click.option("--sign-key", type=click.Path(exists=True, dir_okay=False), default=None, help="Ed25519 PEM to sign the verdict with.")
+@click.option("--timeout", default=60.0, show_default=True, type=float)
+@click.option("--allow-shared-model", is_flag=True, help="Count a jury whose members are one model (recorded in the verdict).")
+@click.option("--out", type=click.Path(dir_okay=False), default=None, help="Write the verdict JSON here.")
+def jury_run(config_path: str, tier: str, question: str, proposal: Optional[str], proposal_file: Optional[str],
+             sign_key: Optional[str], timeout: float, allow_shared_model: bool, out: Optional[str]) -> None:
+    """Ask the tier's signers and print the verdict."""
+    import asyncio
+    from rct_control_plane import signedai_jury
+    if (proposal is None) == (proposal_file is None):
+        click.echo(click.style("Error: give exactly one of --proposal and --proposal-file", fg="red"), err=True)
+        sys.exit(1)
+    text = proposal if proposal is not None else Path(proposal_file or "").read_text(encoding="utf-8")
+    key = None
+    try:
+        if sign_key:
+            from cryptography.hazmat.primitives import serialization
+            key = serialization.load_pem_private_key(Path(sign_key).read_bytes(), password=None)
+        config = signedai_jury.load_config(Path(config_path))
+        verdict = asyncio.run(signedai_jury.run_jury(config, tier, question, text, signing_key=key, timeout_s=timeout,
+                                                     allow_shared_model=allow_shared_model))
+    except (ValueError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    data = verdict.to_dict()
+    if out:
+        Path(out).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+    if not verdict.consensus_reached:
+        sys.exit(2)
+
+
+@jury_group.command("verify")
+@click.argument("verdict_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--pubkey", default=None, help="The public key (hex) the verdict must be signed by.")
+def jury_verify(verdict_file: str, pubkey: Optional[str]) -> None:
+    """Re-check a verdict file: digest, vote counts, tier rules and signature."""
+    from signedai.runner import verify_verdict
+    try:
+        result = verify_verdict(json.loads(Path(verdict_file).read_text(encoding="utf-8")), pubkey)
+    except (ValueError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(result, indent=2))
+    if not result["ok"]:
+        sys.exit(1)
+
+
 def main():
     """Main entry point for CLI."""
     cli()

@@ -52,6 +52,9 @@ This file is the **single approved wording source** for every public-facing clai
 | CORD check latency | **33.6µs per check** | `benchmark/MEASURED_BASELINE_v1.3.0.md` |
 | Language coverage | Multi-language: TH, CN, JA, KO injection patterns | `cord_security.py` (I051–I061) |
 | GovernanceGate | **4 outcomes: ALLOWED / WARNING / DENIED / SUSPENDED** | `rct_control_plane/governance_gate.py` |
+| CORD intent-level screen (Round 53) | **Rules CORD-S001..S021 screen goals and tool results. On hand-written test sets the regex list alone blocked 22% (development) and 7% (first hold-out) of attacks; with the screen, text it had not seen was detected 35-90% of the time (first look) with 3-10% of harmless requests blocked, and 95-100% on sets it was then tuned on.** Quote the first-look range, never the tuned figure; the sets are small and written by the system's author | `scripts/measure_cord_screening.py`, `rct_control_plane/tests/fixtures/cord_corpus*.json` | Not a guarantee against prompt injection. The 33.6µs latency above predates the screen. "Blocks injection before the model sees it" is accurate only for the patterns it matches |
+| SignedAI jury (Round 53) | **A jury runner asks each tier's members independently, treats an unclear reply, timeout or error as abstention, refuses to count one model as a jury, lets the tier-8 chairman veto, and signs the verdict (Ed25519).** Do not say "7-model consensus" or "multi-vendor consensus" until a recorded vote with real keys exists | `signedai/runner.py`, `delentia jury` | Tier 6 passes at 4 of 6 (66.7%), not 75% |
+| API origin protection (Round 53) | **Without an API token, the local API refuses requests from web pages of other sites and from non-loopback Host names; per-caller rate limiting is on in `delentia serve`.** | `rct_control_plane/api_auth.py`, `api_ratelimit.py` | Local protection; no host is deployed |
 
 ### Constitutional Security (Phase C)
 | Claim | Approved Wording | Source |

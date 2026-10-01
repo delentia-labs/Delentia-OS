@@ -371,12 +371,13 @@ class ControlPlaneAPI:
         
         # Enable CORS for Delentia Desk GUI and Browser clients
         from fastapi.middleware.cors import CORSMiddleware
+        from .api_auth import cors_settings
+        # Round 53: was allow_origins=["*"] with credentials, which let any web page call a local, token-less agent.
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            **cors_settings(),
         )
 
         # Round 48: API authentication (the API had none). Added last, so it

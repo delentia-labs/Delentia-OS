@@ -641,6 +641,21 @@ model_id = HexaCoreRegistry.get_model_id(
 # → 'alibaba/qwen-2.5-7b' (or any custom registered model)
 ```
 
+### SignedAI jury (`signedai/runner.py`, `delentia jury`)
+
+Several different models vote on a proposal and the verdict is signed. Give each tier role an endpoint in a JSON file (a key is never in the file; `credential_env` names a variable), then:
+
+```bash
+delentia jury run --config jury.json --tier tier_4 --question "Is this migration safe?" --proposal-file plan.md --sign-key jury-key.pem --out verdict.json
+delentia jury verify verdict.json --pubkey <hex>
+```
+
+What it guarantees: members are asked independently and at the same time; a reply that is not a clear vote, a timeout, an error or a member the sovereignty policy forbids is an abstention (it never counts as agreement and cannot lift the ratio); a jury whose answering members are one model is not a consensus (opt out with `--allow-shared-model`, recorded in the verdict); in tier 8 the chairman can veto but cannot force a pass; the verdict carries a SHA-256 digest and an optional Ed25519 signature that `verify` re-checks together with the vote counts and the tier rules. What it does not do yet: the governed loop does not call it by itself, and no multi-vendor vote has been run with real keys.
+
+### API hardening (Round 53)
+
+`delentia serve` rate-limits per caller (`DELENTIA_RATE_LIMIT`, default 600/60 s; an agent run costs 20 requests, a subagent fan-out 30). Model endpoints that keep failing are paused by a circuit breaker shared across episodes. Without `DELENTIA_API_TOKEN` the API answers only loopback clients; since Round 53 it also refuses a request whose `Origin` is a web page from another site or whose `Host` is not a loopback name (CORS used to be `*`, so any page the user opened could drive a local agent), and CORS answers only the local Desk and origins listed in `DELENTIA_CORS_ORIGINS`.
+
 ---
 
 ## Microservices

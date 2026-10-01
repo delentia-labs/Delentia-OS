@@ -21,12 +21,20 @@ Rules (pure ASGI middleware, so HTTP and WebSocket are both covered):
     refused, so an accidentally published server fails closed.
   - Always public: "/" and "/health" (liveness only), CORS preflight, and
     the LINE webhook, which verifies LINE's own HMAC signature instead.
+  - Round 53: with no token, a request that carries an Origin header from
+    a site that is not the local GUI is refused, and so is a Host header that
+    is not a loopback name. Without this, any web page the user happened to
+    open could drive the local agent (CORS was "*"), and DNS rebinding could
+    make a hostile name resolve to 127.0.0.1. CORS itself now answers only
+    loopback, the Tauri app and DELENTIA_CORS_ORIGINS (comma list; "*" is an
+    explicit opt-in and then credentials are not allowed).
 """
 from __future__ import annotations
 
 import hmac
 import json
 import os
+import re
 from typing import Any, Awaitable, Callable, Dict
 from urllib.parse import parse_qs
 
@@ -37,6 +45,11 @@ PROXY_HEADERS = ("cf-ray", "cf-connecting-ip", "x-forwarded-for", "forwarded", "
 # "testclient" is the fixed client host Starlette's in-process TestClient
 # reports; a real socket peer is always an IP address, never that string.
 LOCAL_CLIENTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
+
+CORS_ENV = "DELENTIA_CORS_ORIGINS"
+# The Desk GUI in dev (any localhost port), and the Tauri shell (tauri://localhost, http(s)://tauri.localhost).
+LOOPBACK_ORIGIN = re.compile(r"^(https?://(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?|tauri://localhost|https?://tauri\.localhost)$")
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "[::1]", "::1", "testserver", "tauri.localhost"})
 
 Scope = Dict[str, Any]
 Receive = Callable[[], Awaitable[Dict[str, Any]]]
@@ -58,6 +71,31 @@ def _query_token(scope: Scope) -> str:
     raw = scope.get("query_string") or b""
     values = parse_qs(raw.decode("latin-1")).get("token") or [""]
     return values[0].strip()
+
+
+def configured_origins() -> list:
+    return [o.strip().rstrip("/") for o in (os.getenv(CORS_ENV) or "").split(",") if o.strip()]
+
+
+def origin_allowed(origin: str) -> bool:
+    origin = origin.strip().rstrip("/")
+    extra = configured_origins()
+    return bool(LOOPBACK_ORIGIN.match(origin)) or "*" in extra or origin in extra
+
+
+def cors_settings() -> Dict[str, Any]:
+    """Arguments for CORSMiddleware. Credentials are never combined with a wildcard."""
+    extra = configured_origins()
+    if "*" in extra:
+        return {"allow_origins": ["*"], "allow_credentials": False}
+    return {"allow_origins": extra, "allow_origin_regex": LOOPBACK_ORIGIN.pattern, "allow_credentials": True}
+
+
+def _host_name(host_header: str) -> str:
+    host = host_header.strip().lower()
+    if host.startswith("["):
+        return host.split("]")[0] + "]"
+    return host.rsplit(":", 1)[0] if host.count(":") == 1 else host
 
 
 def check_request(scope: Scope) -> str:
@@ -83,6 +121,14 @@ def check_request(scope: Scope) -> str:
     if client_host not in LOCAL_CLIENTS:
         return (f"{TOKEN_ENV} is not set, so only local (loopback) clients are accepted; "
                 f"set {TOKEN_ENV} to serve other hosts")
+    origin = headers.get("origin")
+    if origin is not None and not origin_allowed(origin):
+        return (f"{TOKEN_ENV} is not set and this request was made by a web page from {origin[:80]!r}; "
+                f"only the local Desk may drive an unauthenticated agent (set {TOKEN_ENV} or list the origin in {CORS_ENV})")
+    host_header = headers.get("host")
+    if host_header is not None and _host_name(host_header) not in LOOPBACK_HOSTS and "*" not in configured_origins():
+        return (f"{TOKEN_ENV} is not set and the Host header {host_header[:80]!r} is not a loopback name "
+                "(DNS rebinding protection)")
     return ""
 
 
