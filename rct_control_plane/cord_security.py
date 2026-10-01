@@ -51,6 +51,7 @@ class CORDCheckType(str, Enum):
     """Which CORD sub-check fired."""
     ENTROPY = "entropy"
     INJECTION = "injection"
+    SCREEN = "screen"          # Round 53: injection_screen.py (rule ids CORD-S###), kept apart from the regex list (CORD-I###)
     METRIC_GAMING = "metric_gaming"
     PAYLOAD_SIZE = "payload_size"
 
@@ -232,7 +233,7 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
         re.IGNORECASE
     ), "hard", "Role-reassignment attack: 'you are now a [role]'."),
     _InjectionPattern("CORD-I003", re.compile(
-        r"\bact\s+as\s+(a|an)\s+\w+(\s+without\s+(restrictions?|filters?|limits?))?",
+        r"\bact\s+as\s+(?:a|an)\s+\w+\s+without\s+(?:restrictions?|filters?|limits?)",
         re.IGNORECASE
     ), "hard", "Role-play injection: 'act as [X] without restrictions'."),
     _InjectionPattern("CORD-I004", re.compile(
@@ -246,7 +247,7 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
 
     # ── DAN / jailbreak keywords ─────────────────────────────────────────
     _InjectionPattern("CORD-I006", re.compile(
-        r"\bDAN\b|\bdo\s+anything\s+now\b",
+        r"\b(?-i:DAN)\b|\bdo\s+anything\s+now\b",
         re.IGNORECASE
     ), "hard", "DAN (Do Anything Now) jailbreak keyword detected."),
     _InjectionPattern("CORD-I007", re.compile(
@@ -517,7 +518,7 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
         r"\$\{.{0,60}\}|\$\(.{0,60}\)",
     ), "soft", "Shell variable or command substitution; SSTI/injection risk."),
     _InjectionPattern("CORD-I069", re.compile(
-        r"(?:--|;)\s*(?:DROP|SELECT|INSERT|UPDATE|DELETE|UNION)\b",
+        r"(?:--|;)\s*(?:drop\s+(?:table|database|schema)|delete\s+from|union\s+select|insert\s+into|update\s+\w+\s+set|select\s+\*\s+from)\b",
         re.IGNORECASE
     ), "hard", "SQL injection attempt in natural-language payload."),
 
@@ -838,6 +839,8 @@ class CORDEngine:
     def __init__(self) -> None:
         self._entropy = EntropyValidator()
         self._injection = InjectionDetector()
+        from rct_control_plane.injection_screen import InjectionScreen      # Round 53 (imports this module, so imported here)
+        self._screen = InjectionScreen()
         self._governance = GovernanceViolationDetector()
         self._size = PayloadSizeValidator()
 
@@ -854,6 +857,7 @@ class CORDEngine:
         findings.extend(self._size.check(text))
         findings.extend(self._entropy.check(text))
         findings.extend(self._injection.check(text))
+        findings.extend(self._screen.check(text))
 
         verdict = _determine_verdict(findings)
 
