@@ -623,12 +623,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
         """Round 50: fresh per-episode meter. Prices are looked up only when
         a cost budget is set (the catalog is a network call); without one
         the cost of a non-local model is reported as unknown."""
-        from rct_control_plane.llm_provider import MeteredProvider, OpenRouterProvider, get_default_provider
-        inner = self._configured_llm_provider or get_default_provider()
+        from rct_control_plane.llm_provider import MeteredProvider, OllamaProvider, OpenRouterProvider, get_default_provider
+        from rct_control_plane.provider_breaker import wrap as with_circuit_breaker
+        base = self._configured_llm_provider or get_default_provider()
         prices = None
-        if self._max_episode_cost_usd is not None and isinstance(inner, OpenRouterProvider):
+        if self._max_episode_cost_usd is not None and isinstance(base, OpenRouterProvider):
             from rct_control_plane.model_config import lookup_openrouter_prices
-            prices = lookup_openrouter_prices(inner.model)
+            prices = lookup_openrouter_prices(base.model)
+        elif isinstance(base, OllamaProvider):
+            prices = (0.0, 0.0)               # the wrapper below hides the type MeteredProvider would have recognised
+        inner = with_circuit_breaker(base)    # Round 53: an endpoint that keeps failing is paused for everyone, not rediscovered per episode
         return MeteredProvider(
             inner, max_cost_usd=self._max_episode_cost_usd, max_tokens_total=self._max_episode_tokens,
             prompt_price_per_mtok=prices[0] if prices else None,

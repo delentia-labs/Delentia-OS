@@ -64,7 +64,20 @@ if sys.platform == "win32":
 # leave them on for every test after it.
 import pytest  # noqa: E402
 
-_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM")
+_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT")
+
+
+@pytest.fixture(autouse=True)
+def _model_circuit_breakers_start_closed():
+    """The provider circuit breakers are shared per endpoint and process (that is their job); a test that simulates an
+    outage must not leave the next test facing an open circuit."""
+    module = sys.modules.get("rct_control_plane.provider_breaker")
+    if module is not None:
+        module.reset_all()
+    yield
+    module = sys.modules.get("rct_control_plane.provider_breaker")
+    if module is not None:
+        module.reset_all()
 
 
 @pytest.fixture(autouse=True)

@@ -2500,6 +2500,8 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (set either variable to 0 to turn it off here too).
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
+    os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
     uvicorn.run(
         "rct_control_plane.api:app",

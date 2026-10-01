@@ -383,6 +383,10 @@ class ControlPlaneAPI:
         # is the outermost layer and runs before routing, CORS and /mcp.
         # See api_auth.py for the token / loopback / proxy-header rules.
         from .api_auth import ApiTokenMiddleware
+        from .api_ratelimit import RateLimitMiddleware
+        # Round 53: rate limiting sits just inside authentication (added first = inner), so a caller is limited by the
+        # token it proved it holds. Off unless DELENTIA_RATE_LIMIT is set (`delentia serve` sets it).
+        self.app.add_middleware(RateLimitMiddleware)
         self.app.add_middleware(ApiTokenMiddleware)
         
         # Track uptime
