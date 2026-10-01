@@ -385,9 +385,7 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
         work_dir = os.path.realpath(work_dir)
         if not (work_dir + os.sep).startswith(real_ws_root + os.sep):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
-        if not os.path.isdir(work_dir):
-            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
-        try:
+        try:           # a cwd that is not a directory makes the start fail, which is reported below
             res = subprocess.run([executable, *argv[1:]], cwd=work_dir, capture_output=True, text=True, timeout=15)  # nosec B603
             return {"status": "SUCCESS", "exit_code": res.returncode, "stdout": res.stdout[:2000], "stderr": res.stderr[:2000]}
         except Exception:
