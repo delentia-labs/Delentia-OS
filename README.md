@@ -190,7 +190,7 @@ Layer 9: Control Plane
 ├─ Replay Engine (SHA-256 checkpoints)
 └─ rct_control_plane: 15-module DSL + intent schema
 
-Layer 8: Regional Language (8 markets)
+Layer 8: Regional Language + data residency (routing and call-time enforcement)
 ├─ LanguageDetector (EN, TH, JA, KO, ZH, VI, ID)
 └─ RegionalModelRouter (LRU cache, 4-level resolution)
 
@@ -441,20 +441,40 @@ packet = JITNAPacket(
 
 The canonical 6-field JITNA Language schema uses I=Intent, D=**Data**, Δ=Delta, A=**Approach**, R=**Reflection**, M=**Memory** — the SignedAI variant above uses different field semantics for verification context. See [docs/concepts/jitna.md](docs/concepts/jitna.md) for the full disambiguation.
 
-### Regional Adapter (`core/regional_adapter/regional_adapter.py`)
+### Regional Adapter and data sovereignty (`core/regional_adapter/`, `rct_control_plane/residency.py`)
 
-Context adaptation for multi-region deployments:
+The idea: any country or organisation plugs in its own AI, and personal data does not leave the boundary it sets.
 
-| Region | Languages | Compliance |
-|--------|-----------|------------|
-| Thailand | TH, EN | PDPA |
-| Japan | JA, EN | — |
-| South Korea | KO, EN | PIPA |
-| China | ZH, EN | PIPL |
-| Vietnam | VI, EN | — |
-| Indonesia | ID, EN | — |
-| Taiwan | ZH-TW, EN | — |
-| US/Global | EN | GDPR-ready |
+Two parts, both real and tested:
+
+1. **Routing** (`regional_adapter.py`): picks a model and prompt style per region and language, with compliance tags (TH PDPA, KR PIPA, CN PIPL, JP APPI, GDPR-ready for the US/EU entries) and a registry of pilot tenants.
+2. **Enforcement** (`sovereignty.py`, `residency.py`, Round 52): a `SovereigntyPolicy` states the home region, the regions a call may reach, whether cross-border calls are allowed and what happens to personal data in one (`block`, `redact`, `allow`). Every model call is checked **before it is sent**:
+   - an endpoint outside the allowed regions is refused (`stopped_reason=residency_blocked`, nothing leaves);
+   - a permitted cross-border call that carries personal data is blocked or the data is replaced by placeholders; the scanner knows Thai national ID, Japanese My Number, Chinese resident ID and Korean RRN checksums, plus e-mail, phone and card numbers;
+   - an endpoint whose location is unknown counts as cross-border (fail closed); a broken policy file raises instead of silently allowing;
+   - the audit chain records the decision (kinds, counts, a hash), never the personal data.
+
+```bash
+# plug in your own AI: any OpenAI-compatible endpoint (a national provider, vLLM, llama.cpp, a gateway in your country)
+delentia model set typhoon-v2-70b-instruct --provider openai-compat     --base-url https://llm.example.th/v1 --kind in_region --region TH --credential-env TYPHOON_TOKEN
+delentia sovereignty set --region TH            # nothing may leave Thailand
+delentia sovereignty check "Call 081-234-5678"  # would this text be sent? (nothing is sent)
+```
+
+This resembles data-localisation duties but is **not legal compliance by itself**. Thailand's PDPA does not require data to stay in Thailand; it restricts transfers abroad unless the destination has adequate protection or a basis such as consent or contract safeguards applies (s.28-29), and requires a lawful basis, purpose limits and data-subject rights. The policy therefore lets an owner choose "stay in-region" (strict) or "cross-border with redaction and a recorded legal basis". China's PIPL and Korea's PIPA are stricter about transfers. Have counsel confirm the setting for your case.
+
+Not covered yet: egress by the crawl tool and the TypeScript MCP bridge are not checked by the policy, and the entry-point filter sees only text that goes through the model provider.
+
+| Entry | Languages |
+|-------|-----------|
+| Thailand | TH, EN |
+| Japan | JA, EN |
+| South Korea | KO, EN |
+| China | ZH, EN |
+| Taiwan | ZH-TW, EN |
+| Vietnam | VI, EN |
+| Indonesia | ID, EN |
+| US/Global | EN |
 
 ### rct_control_plane
 
@@ -668,7 +688,7 @@ delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
 │  ├─ delta_engine/             # Delta-Memory (39-90% in measured bytes on a synthetic simulation, grows with run length)
-│  └─ regional_adapter/         # 8-market language routing
+│  └─ regional_adapter/         # regional routing + sovereignty policy (data residency)
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
 │     ├─ registry.py            # HexaCoreRegistry (9 roles) + SignedAIRegistry
