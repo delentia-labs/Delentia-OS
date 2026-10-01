@@ -338,6 +338,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         max_episode_tokens: Optional[int] = None,
         algorithm_pipeline: Optional[Any] = None,
         warm_recall: Optional[bool] = None,
+        policy: Optional[Any] = None,
+        jury_config: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
@@ -401,6 +403,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # Round 48 COMPRESS: large tool results are Delta-v2 compressed.
         self._compress_tool_outputs = compress_tool_outputs
         self._fdia_threshold = fdia_threshold
+        # Round 54: the owner's policy for A (fdia_policy.py) and the optional SignedAI jury it can require. A policy
+        # can be passed in (tests, an embedding application); otherwise the file is read on every gate decision, so a
+        # change made in the Desk applies to the next tool call without restarting anything.
+        self._policy_override = policy
+        self._jury_config_override = jury_config
+        self._episode_policy: Dict[str, Any] = {}
         self._compress_threshold_chars = compress_threshold_chars
         self._tool_output_store: Optional[Any] = None
         self._episode_compressions: List[Dict[str, Any]] = []
@@ -538,6 +546,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self.max_iterations = min(self._configured_max_iterations, self._fast_max_iterations)
         self._episode_route["max_iterations"] = self.max_iterations
         self._applied_max_iterations = self.max_iterations
+        refused = None if warm_hit else await self._jury_for_goal(goal)
+        if refused is not None:
+            self._episode_rct7_steps, self._episode_context_text = [], ""
+            return refused
         resume_note, self._resume_note = self._resume_note, ""
         sections = [
             resume_note,
@@ -866,17 +878,50 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # ------------------------------------------------------------------
     # J.1.3: FDIA gate before any risky tool dispatch
     # ------------------------------------------------------------------
+    def _active_policy(self) -> Any:
+        """(policy, error). No policy file = (None, ""). A file that cannot be read or fails validation is an error,
+        and the gate then refuses every call: a broken policy must never quietly become no policy."""
+        if self._policy_override is not None:
+            return self._policy_override, ""
+        from rct_control_plane import fdia_policy
+        try:
+            return fdia_policy.load_policy(), ""
+        except ValueError as exc:
+            return None, str(exc)
+
     async def _pre_dispatch_gate(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
         self._last_gate_fdia = None
-        if tool_name not in RISKY_TOOLS:
+        policy, policy_error = self._active_policy()
+        if policy_error:
+            return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
+                                      policy_info={"error": True})
+        if tool_name not in RISKY_TOOLS and policy is None:
             return None
 
         A, a_reason = self._authorization_signal(tool_name, tool_args)
+        policy_eval = None
+        threshold = self._fdia_threshold
+        if policy is not None:
+            from rct_control_plane import fdia_policy
+            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace)
+            threshold = max(threshold, float(policy.custom_safety_threshold))
+            if policy_eval.needs_signature:
+                # The signature will supply A = 1; D and I must still hold, so F is judged as if it were given.
+                if A > 0.0:
+                    a_reason = f"{a_reason}; owner policy {policy_eval.rule_id}: {policy_eval.reason}"
+            elif policy_eval.A < A:
+                A, a_reason = policy_eval.A, f"owner policy {policy_eval.rule_id}: {policy_eval.reason}"
+            elif policy_eval.A > 0.0:
+                a_reason = f"{a_reason}; owner policy {policy_eval.rule_id}"
         F = fdia_score(self._episode_D, self._episode_I, A)
-        self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F,
-                                "threshold": self._fdia_threshold}
+        self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F, "threshold": threshold}
+        # Reads that the owner allows are not held to the D/I threshold (they never were); everything riskier is.
+        judged = tool_name in RISKY_TOOLS or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
+        blocked = A <= 0.0 or (judged and F < threshold)
+        info = policy_eval.to_dict() if policy_eval is not None else None
+        self._episode_policy = {"policy_digest": policy.digest(), "last": info} if policy is not None else {}
 
         self._persistence.append_audit(
             entity_type="governed_loop_fdia_gate",
@@ -885,25 +930,33 @@ class GovernedAutonomousLoop(AutonomousLoop):
             actor=self.namespace,
             changes={
                 "tool_name": tool_name, "D": self._episode_D, "I": self._episode_I,
-                "A": A, "A_reason": a_reason, "F": F, "threshold": self._fdia_threshold,
+                "A": A, "A_reason": a_reason, "F": F, "threshold": threshold,
                 "data_parts": (self._episode_data or {}).get("parts"),
-                "blocked": F <= 0.0 or F < self._fdia_threshold,
+                "blocked": blocked, "policy": info,
             },
         )
 
-        if F <= 0.0 or F < self._fdia_threshold:
+        if blocked:
+            return self._gate_refusal(tool_name, A, a_reason if A <= 0.0 else
+                                      f"F = {F} is below the FDIA threshold {threshold} (D={self._episode_D}, I={self._episode_I})",
+                                      F=F, threshold=threshold, policy_info=info,
+                                      missing=(self._episode_data or {}).get("missing", []) if A > 0.0 else [])
+
+        if policy_eval is not None and policy_eval.jury_tier:
+            refusal = await self._jury_gate(goal, tool_name, tool_args, policy_eval.jury_tier, policy_eval.rule_id)
+            if refusal is not None:
+                return refusal
+
+        if policy_eval is not None and policy_eval.needs_signature:
             return {
-                "stopped_reason": "fdia_blocked",
+                "stopped_reason": "pending_approval",
                 "tool_result": {
-                    "fdia_blocked": True, "tool_name": tool_name, "F": F, "threshold": self._fdia_threshold,
-                    "D": self._episode_D, "I": self._episode_I, "A": A,
-                    "reason": a_reason if A <= 0.0 else
-                              f"F = {F} is below the FDIA threshold {self._fdia_threshold} (D={self._episode_D}, I={self._episode_I})",
-                    "data_parts": (self._episode_data or {}).get("parts"),
-                    "missing_data": (self._episode_data or {}).get("missing", []) if A > 0.0 else [],
+                    "pending_approval": True, "tool_name": tool_name, "tool_args": tool_args,
+                    "reason": policy_eval.reason,
+                    "approval_policy": {"rule_id": policy_eval.rule_id, "required_signatures": policy_eval.required_signatures,
+                                        "approver_roles": policy_eval.approver_roles, "policy_digest": policy_eval.policy_digest},
                 },
             }
-
         if tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS:
             return {
                 "stopped_reason": "pending_approval",
@@ -914,6 +967,94 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 },
             }
         return None
+
+    def _gate_refusal(self, tool_name: str, A: float, reason: str, *, F: float = 0.0, threshold: Optional[float] = None,
+                      policy_info: Optional[Dict[str, Any]] = None, missing: Optional[List[Any]] = None) -> Dict[str, Any]:
+        return {
+            "stopped_reason": "fdia_blocked",
+            "tool_result": {
+                "fdia_blocked": True, "tool_name": tool_name, "F": F,
+                "threshold": self._fdia_threshold if threshold is None else threshold,
+                "D": self._episode_D, "I": self._episode_I, "A": A, "reason": reason,
+                "data_parts": (self._episode_data or {}).get("parts"),
+                "missing_data": missing or [], "policy": policy_info,
+            },
+        }
+
+    # ------------------------------------------------------------------
+    # Round 54: SignedAI jury before an action the owner's policy marks
+    # ------------------------------------------------------------------
+    def _jury_settings(self) -> Any:
+        if self._jury_config_override is not None:
+            return self._jury_config_override, ""
+        from rct_control_plane import signedai_jury
+        path = signedai_jury.config_path()
+        if not path.exists():
+            return None, f"no jury configuration at {path} (DELENTIA_JURY_CONFIG)"
+        try:
+            return signedai_jury.load_config(path), ""
+        except (OSError, ValueError) as exc:
+            return None, f"the jury configuration {path} cannot be read: {exc}"
+
+    async def _jury_gate(self, goal: str, tool_name: str, tool_args: Dict[str, Any], tier: str, rule_id: str,
+                         subject: str = "action") -> Optional[Dict[str, Any]]:
+        """None when the jury agrees. A jury that is required but cannot sit (no configuration, too few distinct
+        models, members unreachable) is a refusal, never a pass: the owner asked for independent opinions."""
+        from rct_control_plane import signedai_jury
+        config, problem = self._jury_settings()
+        if config is None:
+            return self._jury_refusal(tool_name, tier, rule_id, problem, None)
+        proposal = json.dumps({"goal": goal[:1000], "tool": tool_name, "arguments": tool_args, "rule": rule_id},
+                              default=str, ensure_ascii=False)[:4000]
+        question = ("An autonomous agent wants to run the action below on the owner's machine. Is it consistent with its goal, "
+                    "safe to run, and not something the owner's rules would forbid?" if subject == "action" else
+                    "An autonomous agent was given the goal below. Is it a legitimate, safe request to carry out?")
+        try:
+            verdict = await signedai_jury.run_jury(config, tier, question, proposal, persistence=self._persistence)
+        except Exception as exc:
+            return self._jury_refusal(tool_name, tier, rule_id, f"the jury could not sit: {type(exc).__name__}", None)
+        record = verdict.to_dict()
+        self._persistence.append_audit(
+            entity_type="governed_loop_jury", entity_id=f"{self.namespace}-{tool_name}-{verdict.digest[:12]}",
+            action="jury_agreed" if verdict.consensus_reached else "jury_refused", actor=self.namespace,
+            changes={"tool_name": tool_name, "rule_id": rule_id, "subject": subject, "verdict": record})
+        await self._notarise_best_effort("jury_verdict", tool_name=tool_name, verdict_digest=verdict.digest,
+                                        consensus=verdict.consensus_reached, tier=tier)
+        self._episode_policy.setdefault("juries", []).append({"tool": tool_name, "tier": tier, "digest": verdict.digest,
+                                                              "consensus": verdict.consensus_reached})
+        if verdict.consensus_reached:
+            return None
+        return self._jury_refusal(tool_name, tier, rule_id, "; ".join(verdict.reasons_not_reached) or "no consensus", record)
+
+    async def _jury_for_goal(self, goal: str) -> Optional[Dict[str, Any]]:
+        """Owner policy `jury_by_risk`: a goal whose risk (the intent compiler's LOW / STRUCTURAL / SYSTEMIC) has a tier
+        assigned needs that jury to agree before the episode starts. Recorded in the audit trail like any jury."""
+        policy, _ = self._active_policy()
+        risk = str((self._episode_route or {}).get("risk_profile") or "")
+        tier = (policy.jury_by_risk.get(risk) if policy is not None else None)
+        if not tier:
+            return None
+        refusal = await self._jury_gate(goal, "episode", {}, tier, f"jury_by_risk:{risk}", subject="goal")
+        if refusal is None:
+            return None
+        self._persistence.append_audit(
+            entity_type="governed_loop_guard", entity_id=f"{self.namespace}-{self._episode_id}", action="goal_refused_by_jury",
+            actor=self.namespace, changes={"goal_sha256": _sha(goal), "risk": risk, "tier": tier,
+                                           "verdict_digest": refusal["tool_result"].get("verdict_digest")})
+        return {"stopped_reason": "jury_rejected",
+                "final_answer": f"This request was not carried out: the {tier} jury required for {risk}-risk goals did not agree "
+                                f"({refusal['tool_result']['reason']})."}
+
+    def _jury_refusal(self, tool_name: str, tier: str, rule_id: str, why: str, verdict: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        return {
+            "stopped_reason": "jury_rejected",
+            "tool_result": {
+                "jury_rejected": True, "tool_name": tool_name, "tier": tier, "rule_id": rule_id,
+                "reason": f"the {tier} jury required by rule {rule_id} did not agree: {why}",
+                "verdict_digest": (verdict or {}).get("digest"),
+                "votes": [{"role": v["role"], "model": v["model"], "vote": v["vote"]} for v in (verdict or {}).get("votes", [])],
+            },
+        }
 
     def _authorization_signal(self, tool_name: str, tool_args: Dict[str, Any]) -> tuple:
         """Returns (A, reason). See module docstring point 6 for why this
@@ -961,6 +1102,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # The goal was refused before the agent acted: neither growth nor an
         # agent violation (the input, not the agent, tripped the screen).
         "guard_blocked": (0.0, False),
+        # Round 54: the owner's jury declined an action: neither growth nor an agent violation.
+        "jury_rejected": (0.0, False),
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
@@ -1356,9 +1499,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if not tool_name:
             return None
         reason = (last.get("tool_result") or {}).get("reason") or "needs human approval"
+        wanted = (last.get("tool_result") or {}).get("approval_policy") or {}
         record = self._pending_actions().create(
             namespace=self.namespace, goal=result["goal"], tool_name=tool_name,
             tool_args=last.get("tool_args") or {}, reason=reason,
+            required_signatures=int(wanted.get("required_signatures") or 1),
+            approver_roles=wanted.get("approver_roles") or None, policy_rule=wanted.get("rule_id"),
+            policy_digest=wanted.get("policy_digest"),
         )
         result["approval_id"] = record.approval_id
         result["action_sha256"] = record.action_sha256
@@ -1403,6 +1550,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         action = store.claim_for_execution(approval_id)
 
         A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)
+        policy, policy_error = self._active_policy()
+        if policy_error:
+            A, a_reason = 0.0, f"the owner policy could not be loaded (fail closed): {policy_error}"
+        elif policy is not None and A > 0.0:
+            # A signature satisfies "needs a human"; it does not lift a blocked pattern, a denied path or a refused role.
+            from rct_control_plane import fdia_policy
+            again = fdia_policy.evaluate(policy, action.tool_name, action.tool_args, principal=self.namespace, approved=True)
+            if again.A <= 0.0:
+                A, a_reason = 0.0, f"owner policy {again.rule_id}: {again.reason}"
         if A <= 0.0:
             tool_result: Dict[str, Any] = {"fdia_blocked": True, "reason": a_reason}
         elif action.tool_name == "delentia_run_sandboxed_command":

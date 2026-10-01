@@ -1735,7 +1735,9 @@ def _approval_store(db: Optional[str]):
 @click.option("--out", "out_path", required=True, help="Where to write the private key (outside the repo).")
 @click.option("--trust", "trust_name", default=None,
               help="Also add the public key to ~/.delentia/approvers.json under this name.")
-def approvals_keygen(out_path: str, trust_name: Optional[str]) -> None:
+@click.option("--role", "role", default=None,
+              help="The approver's role (e.g. Security_Admin), checked against `human_approver_role` in the FDIA policy.")
+def approvals_keygen(out_path: str, trust_name: Optional[str], role: Optional[str]) -> None:
     """Create an approver key pair."""
     from rct_control_plane.approvals import ApprovalError, _approvers_file, generate_approver_key
     try:
@@ -1748,7 +1750,7 @@ def approvals_keygen(out_path: str, trust_name: Optional[str]) -> None:
     if trust_name:
         path = _approvers_file()
         entries = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
-        entries.append({"name": trust_name, "public_key_hex": public_hex})
+        entries.append({"name": trust_name, "public_key_hex": public_hex, **({"role": role} if role else {})})
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8")
         click.echo(f"trusted as '{trust_name}' in {path}")
@@ -3071,6 +3073,114 @@ def jury_verify(verdict_file: str, pubkey: Optional[str]) -> None:
     click.echo(json.dumps(result, indent=2))
     if not result["ok"]:
         sys.exit(1)
+
+
+@cli.group("fdia")
+def fdia_group():
+    """
+    The owner's policy for A in F = D^I x A (Round 54).
+
+    A is the accountable human. The policy writes that responsibility down: which actions are allowed, which need a
+    signature (from which role, how many), which paths are off limits, which roles may ask, and when a SignedAI jury
+    must agree first. No policy file = the built-in behaviour. With one, every tool call is judged.
+
+    Examples:
+        delentia fdia template balanced --out ~/.delentia/fdia_policy.json
+        delentia fdia show
+        delentia fdia test delentia_write_repo_file --args '{"relative_path": ".env"}' --approved
+    """
+    pass
+
+
+def _fdia_tool_names() -> list:
+    import asyncio
+    from rct_control_plane.mcp_server import mcp
+    return [t.name for t in asyncio.run(mcp.list_tools())]
+
+
+@fdia_group.command("show")
+@click.option("--file", "file_path", type=click.Path(dir_okay=False), default=None, help="Policy file (default: DELENTIA_FDIA_POLICY or ~/.delentia/fdia_policy.json).")
+def fdia_show(file_path: Optional[str]) -> None:
+    """Print the active policy, or say that there is none."""
+    from rct_control_plane import fdia_policy
+    target = Path(file_path) if file_path else fdia_policy.policy_path()
+    try:
+        policy = fdia_policy.load_policy(target)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if policy is None:
+        click.echo(f"No policy at {target}: built-in behaviour (12 risky tools gated, repo writes always need a signature).")
+        return
+    click.echo(f"{target}  digest {policy.digest()[:16]}")
+    click.echo(json.dumps(policy.to_dict(), indent=2, ensure_ascii=False))
+
+
+@fdia_group.command("validate")
+@click.argument("policy_file", type=click.Path(exists=True, dir_okay=False))
+def fdia_validate(policy_file: str) -> None:
+    """Check a policy file and list every problem."""
+    from rct_control_plane import fdia_policy
+    try:
+        data = json.loads(Path(policy_file).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    policy, errors = fdia_policy.validate_policy(data)
+    if policy is None:
+        for error in errors:
+            click.echo(click.style(f"  - {error}", fg="red"))
+        sys.exit(1)
+    click.echo(f"valid: {len(policy.rules)} rule(s), digest {policy.digest()[:16]}")
+
+
+@fdia_group.command("template")
+@click.argument("name", type=click.Choice(["balanced", "strict"]))
+@click.option("--out", "out_path", type=click.Path(dir_okay=False), default=None, help="Write the starter here instead of printing it.")
+def fdia_template(name: str, out_path: Optional[str]) -> None:
+    """A starter policy that classifies every real tool."""
+    from rct_control_plane import fdia_policy
+    data = fdia_policy.template(name, _fdia_tool_names())
+    text = json.dumps(data, indent=2, ensure_ascii=False)
+    if out_path:
+        target = Path(out_path).expanduser()
+        if target.exists():
+            click.echo(click.style(f"Error: {target} already exists; refusing to overwrite a policy", fg="red"), err=True)
+            sys.exit(1)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text + "\n", encoding="utf-8")
+        click.echo(f"wrote {target}")
+    else:
+        click.echo(text)
+
+
+@fdia_group.command("test")
+@click.argument("tool_name")
+@click.option("--args", "args_json", default="{}", help="Tool arguments as JSON.")
+@click.option("--as", "principal", default="", help="The identity (namespace) the call comes from.")
+@click.option("--approved", is_flag=True, help="Evaluate as if the required signatures were already given.")
+@click.option("--D", "data_quality", type=float, default=1.0, show_default=True)
+@click.option("--I", "intent", type=float, default=1.0, show_default=True)
+def fdia_test(tool_name: str, args_json: str, principal: str, approved: bool, data_quality: float, intent: float) -> None:
+    """What would the policy do with this call, and what is F?"""
+    from rct_control_plane import fdia_policy
+    from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD, fdia_score
+    try:
+        args = json.loads(args_json)
+        policy = fdia_policy.load_policy()
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if policy is None:
+        click.echo("No policy file: the built-in gate applies (see `delentia fdia show`).")
+        return
+    result = fdia_policy.evaluate(policy, tool_name, args, principal=principal, approved=approved)
+    threshold = max(FDIA_GATE_THRESHOLD, policy.custom_safety_threshold)
+    f_value = fdia_score(data_quality, intent, 1.0 if result.needs_signature else result.A)
+    click.echo(json.dumps({**result.to_dict(), "F": f_value, "threshold": threshold,
+                           "outcome": "blocked" if result.A <= 0 and not result.needs_signature
+                           else "waits for signature" if result.needs_signature
+                           else "allowed" if f_value >= threshold else "blocked (F below threshold)"}, indent=2))
 
 
 def main():

@@ -540,6 +540,136 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         path = residency.save_policy(policy)
         return {"saved": str(path), **residency.describe()}
 
+    # ------------------------------------------------------------------
+    # Round 54: the owner's policy for A in F = D^I x A
+    # ------------------------------------------------------------------
+    async def _tool_gate_labels() -> List[Dict[str, Any]]:
+        from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS, RISKY_TOOLS
+        from rct_control_plane.mcp_server import mcp
+        listed = await mcp.list_tools()
+        return [{"name": t.name, "description": (t.description or "").strip()[:160],
+                 "built_in": ("always a signature" if t.name in _ALWAYS_NEEDS_APPROVAL_TOOLS
+                              else "FDIA gate" if t.name in RISKY_TOOLS else "open")} for t in sorted(listed, key=lambda t: t.name)]
+
+    def _approver_summary() -> List[Dict[str, Any]]:
+        from rct_control_plane.approvals import trusted_approver_keys, trusted_approver_roles
+        roles = trusted_approver_roles()
+        return [{"name": name, "role": roles.get(key), "key_prefix": key[:12]} for key, name in trusted_approver_keys().items()]
+
+    @router.get("/fdia")
+    async def fdia_state() -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy, signedai_jury
+        from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD
+        path = fdia_policy.policy_path()
+        policy, error = None, ""
+        try:
+            policy = fdia_policy.load_policy()
+        except ValueError as exc:
+            error = str(exc)
+        jury_path = signedai_jury.config_path()
+        return {
+            "path": str(path), "exists": path.exists(), "error": error,
+            "policy": policy.to_dict() if policy is not None else None,
+            "digest": policy.digest() if policy is not None else None,
+            "built_in": {"threshold": FDIA_GATE_THRESHOLD,
+                         "rules": ["a risky tool needs F >= the threshold", "repo writes always need a human signature",
+                                   "a denied shell command or an unsafe write path is A = 0",
+                                   "the policy can tighten these, never loosen them"]},
+            "tools": await _tool_gate_labels(),
+            "approvers": _approver_summary(),
+            "jury": {"configured": jury_path.exists(), "path": str(jury_path)},
+            "limits": {"max_rules": fdia_policy.MAX_RULES, "action_types": list(fdia_policy.ACTION_TYPES),
+                       "jury_tiers": list(fdia_policy.JURY_TIERS), "risk_levels": list(fdia_policy.RISK_LEVELS)},
+        }
+
+    @router.get("/fdia/template/{name}")
+    async def fdia_template(name: str) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        if name not in ("balanced", "strict"):
+            raise HTTPException(status_code=404, detail="templates: balanced, strict")
+        return {"policy": fdia_policy.template(name, [t["name"] for t in await _tool_gate_labels()])}
+
+    @router.post("/fdia/validate")
+    async def fdia_validate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        policy, errors = fdia_policy.validate_policy(payload.get("policy"))
+        return {"valid": policy is not None, "errors": errors, "digest": policy.digest() if policy is not None else None}
+
+    @router.post("/fdia/evaluate")
+    async def fdia_evaluate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """What the policy does with one call, and F. `policy` (a draft not saved yet) takes precedence over the file."""
+        from rct_control_plane import fdia_policy
+        from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD, fdia_score
+        tool = str(payload.get("tool_name", "")).strip()
+        if not tool:
+            raise HTTPException(status_code=400, detail="tool_name is required")
+        args = payload.get("tool_args") or {}
+        if not isinstance(args, dict):
+            raise HTTPException(status_code=400, detail="tool_args must be an object")
+        try:
+            D = min(1.0, max(0.0, float(payload.get("D", 1.0))))
+            I = min(10.0, max(0.0, float(payload.get("I", 1.0))))        # noqa: E741
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="D and I must be numbers") from exc
+        if payload.get("policy") is not None:
+            policy, errors = fdia_policy.validate_policy(payload["policy"])
+            if policy is None:
+                raise HTTPException(status_code=400, detail="the draft policy is invalid: " + "; ".join(errors[:5]))
+        else:
+            try:
+                policy = fdia_policy.load_policy()
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if policy is None:
+            F = fdia_score(D, I, 1.0)
+            return {"policy": None, "A": 1.0, "F": F, "threshold": FDIA_GATE_THRESHOLD, "outcome": "no policy: the built-in gate applies",
+                    "reason": "no policy file; only the built-in rules apply (see built_in)"}
+        result = fdia_policy.evaluate(policy, tool, args, principal=str(payload.get("principal", ""))[:128],
+                                      approved=bool(payload.get("approved", False)))
+        threshold = max(FDIA_GATE_THRESHOLD, policy.custom_safety_threshold)
+        F = fdia_score(D, I, 1.0 if result.needs_signature else result.A)
+        if result.A <= 0 and not result.needs_signature:
+            outcome = "blocked"
+        elif result.needs_signature:
+            outcome = "waits for signature" if F >= threshold else "blocked (F below threshold)"
+        else:
+            from rct_control_plane.governed_autonomous_loop import RISKY_TOOLS
+            judged = tool in RISKY_TOOLS or result.action_type != "ALLOW"
+            outcome = "allowed" if (F >= threshold or not judged) else "blocked (F below threshold)"
+        return {**result.to_dict(), "F": F, "threshold": threshold, "outcome": outcome, "D": D, "I": I}
+
+    @router.put("/fdia/policy")
+    async def fdia_save(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        policy, errors = fdia_policy.validate_policy(payload.get("policy"))
+        if policy is None:
+            raise HTTPException(status_code=400, detail="the policy is invalid: " + "; ".join(errors[:8]))
+        before = None
+        try:
+            existing = fdia_policy.load_policy()
+            before = existing.digest() if existing is not None else None
+        except ValueError:
+            before = "unreadable"
+        path = fdia_policy.save_policy(policy)
+        _kernel()._persistence.append_audit(
+            entity_type="fdia_policy", entity_id=policy.policy_id, action="policy_saved", actor="desk",
+            changes={"digest_before": before, "digest_after": policy.digest(), "rules": len(policy.rules), "path": str(path)})
+        return {"saved": str(path), "digest": policy.digest(), "rules": len(policy.rules)}
+
+    @router.post("/fdia/policy/disable")
+    async def fdia_disable() -> Dict[str, Any]:
+        """Stop using the policy without deleting it: the file is renamed, never removed (Zero-Delete)."""
+        import time as _time
+        from rct_control_plane import fdia_policy
+        path = fdia_policy.policy_path()
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="there is no policy file")
+        archived = path.with_name(f"{path.name}.disabled-{int(_time.time())}")
+        path.rename(archived)
+        _kernel()._persistence.append_audit(entity_type="fdia_policy", entity_id=path.name, action="policy_disabled", actor="desk",
+                                            changes={"archived_as": str(archived)})
+        return {"archived_as": str(archived)}
+
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:
         from rct_control_plane import model_config

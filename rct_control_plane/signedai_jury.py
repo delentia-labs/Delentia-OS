@@ -18,6 +18,7 @@ Roles without an entry abstain ("no endpoint configured"), they are never silent
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -27,6 +28,12 @@ from signedai.runner import JuryRunner, JuryVerdict, SignerEndpoint
 from rct_control_plane.llm_provider import LLMProvider, OllamaProvider, OpenAICompatibleProvider, OpenRouterProvider
 
 MAX_TOKENS = 400
+CONFIG_ENV = "DELENTIA_JURY_CONFIG"
+
+
+def config_path() -> Path:
+    override = os.environ.get(CONFIG_ENV)
+    return Path(override) if override else Path.home() / ".delentia" / "jury.json"
 
 
 def provider_from_entry(entry: Dict[str, Any]) -> LLMProvider:

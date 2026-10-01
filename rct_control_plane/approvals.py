@@ -67,7 +67,21 @@ CREATE TABLE IF NOT EXISTS pending_actions (
     result_json          TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_pending_actions_status ON pending_actions(status, created_at);
+CREATE TABLE IF NOT EXISTS pending_action_signatures (
+    approval_id          TEXT NOT NULL,
+    public_key           TEXT NOT NULL,
+    signature_hex        TEXT NOT NULL,
+    decided_at           REAL NOT NULL,
+    PRIMARY KEY (approval_id, public_key)
+);
 """
+# Round 54: columns added to pending_actions after the first release (owner policy: how many signatures, from which roles).
+_EXTRA_COLUMNS = (
+    ("required_signatures", "INTEGER NOT NULL DEFAULT 1"),
+    ("approver_roles_json", "TEXT"),
+    ("policy_rule", "TEXT"),
+    ("policy_digest", "TEXT"),
+)
 
 
 class ApprovalError(ValueError):
@@ -90,6 +104,11 @@ class PendingAction:
     signature_hex: Optional[str] = None
     executed_at: Optional[float] = None
     result: Optional[Dict[str, Any]] = None
+    required_signatures: int = 1
+    approver_roles: Optional[List[str]] = None
+    policy_rule: Optional[str] = None
+    policy_digest: Optional[str] = None
+    signatures_collected: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -135,6 +154,22 @@ def trusted_approver_keys() -> Dict[str, str]:
             if isinstance(entry, dict) and entry.get("public_key_hex"):
                 keys[str(entry["public_key_hex"]).strip().lower()] = str(entry.get("name") or "approver")
     return keys
+
+
+def trusted_approver_roles() -> Dict[str, str]:
+    """public_key_hex -> role, from the approvers file (`{"name", "public_key_hex", "role"}`). Keys given through the
+    environment variable carry no role: they can sign anything that does not ask for a role."""
+    roles: Dict[str, str] = {}
+    path = _approvers_file()
+    if path.exists():
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return roles
+        for entry in entries if isinstance(entries, list) else []:
+            if isinstance(entry, dict) and entry.get("public_key_hex") and entry.get("role"):
+                roles[str(entry["public_key_hex"]).strip().lower()] = str(entry["role"]).strip()
+    return roles
 
 
 def _verify(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
@@ -199,40 +234,58 @@ def sign_decision(private_key_path: str, approval_id: str, action_sha256: str, d
 
 # ------------------------------------------------------------------- store
 
+_SELECT = ("SELECT approval_id, namespace, goal, tool_name, tool_args_json, action_sha256, reason, status, "
+           "created_at, decided_at, approver_public_key, signature_hex, executed_at, result_json, "
+           "required_signatures, approver_roles_json, policy_rule, policy_digest FROM pending_actions")
+
+
 class PendingActionStore:
     def __init__(self, persistence: ControlPlanePersistence):
         self._persistence = persistence
         with self._persistence._connect() as conn:
             conn.executescript(_SCHEMA)
+            have = {row[1] for row in conn.execute("PRAGMA table_info(pending_actions)").fetchall()}
+            for column, ddl in _EXTRA_COLUMNS:
+                if column not in have:
+                    conn.execute(f"ALTER TABLE pending_actions ADD COLUMN {column} {ddl}")
 
     def create(self, namespace: str, goal: str, tool_name: str, tool_args: Dict[str, Any],
-               reason: Optional[str] = None) -> PendingAction:
+               reason: Optional[str] = None, *, required_signatures: int = 1,
+               approver_roles: Optional[List[str]] = None, policy_rule: Optional[str] = None,
+               policy_digest: Optional[str] = None) -> PendingAction:
         approval_id = uuid.uuid4().hex[:12]
         digest = action_digest(approval_id, namespace, goal, tool_name, tool_args)
+        required_signatures = max(1, min(3, int(required_signatures)))
         action = PendingAction(approval_id, namespace, goal, tool_name, dict(tool_args), digest,
-                               reason, "PENDING", time.time())
+                               reason, "PENDING", time.time(), required_signatures=required_signatures,
+                               approver_roles=list(approver_roles) if approver_roles else None,
+                               policy_rule=policy_rule, policy_digest=policy_digest)
         with self._persistence._connect() as conn:
             conn.execute(
                 "INSERT INTO pending_actions (approval_id, namespace, goal, tool_name, tool_args_json, "
-                "action_sha256, reason, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "action_sha256, reason, status, created_at, required_signatures, approver_roles_json, "
+                "policy_rule, policy_digest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (approval_id, namespace, goal, tool_name, json.dumps(tool_args, sort_keys=True),
-                 digest, reason, "PENDING", action.created_at),
+                 digest, reason, "PENDING", action.created_at, required_signatures,
+                 json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest),
             )
         return action
 
     def get(self, approval_id: str) -> Optional[PendingAction]:
         with self._persistence._connect() as conn:
             row = conn.execute(
-                "SELECT approval_id, namespace, goal, tool_name, tool_args_json, action_sha256, reason, status, "
-                "created_at, decided_at, approver_public_key, signature_hex, executed_at, result_json "
-                "FROM pending_actions WHERE approval_id = ?", (approval_id,),
+                _SELECT + " WHERE approval_id = ?", (approval_id,),
             ).fetchone()
-        return self._from_row(row) if row else None
+            count = conn.execute("SELECT COUNT(*) FROM pending_action_signatures WHERE approval_id = ?",
+                                 (approval_id,)).fetchone()[0] if row else 0
+        if not row:
+            return None
+        found = self._from_row(row)
+        found.signatures_collected = int(count)
+        return found
 
     def list(self, status: Optional[str] = "PENDING", limit: int = 50) -> List[PendingAction]:
-        query = ("SELECT approval_id, namespace, goal, tool_name, tool_args_json, action_sha256, reason, status, "
-                 "created_at, decided_at, approver_public_key, signature_hex, executed_at, result_json "
-                 "FROM pending_actions")
+        query = _SELECT
         params: tuple = ()
         if status:
             query += " WHERE status = ?"
@@ -249,6 +302,8 @@ class PendingActionStore:
             tool_args=json.loads(row[4]), action_sha256=row[5], reason=row[6], status=row[7],
             created_at=row[8], decided_at=row[9], approver_public_key=row[10], signature_hex=row[11],
             executed_at=row[12], result=json.loads(row[13]) if row[13] else None,
+            required_signatures=int(row[14] or 1), approver_roles=json.loads(row[15]) if row[15] else None,
+            policy_rule=row[16], policy_digest=row[17],
         )
 
     def decide(self, approval_id: str, decision: str, public_key_hex: str, signature_hex: str) -> PendingAction:
@@ -260,22 +315,54 @@ class PendingActionStore:
         decision = decision.strip().upper()
         public_key_hex = public_key_hex.strip().lower()
         self._check_signature(action, decision, public_key_hex, signature_hex)
+        if decision == "APPROVED":
+            self._check_role(action, public_key_hex)
         now = time.time()
         with self._persistence._connect() as conn:
-            conn.execute(
-                "UPDATE pending_actions SET status = ?, decided_at = ?, approver_public_key = ?, signature_hex = ? "
-                "WHERE approval_id = ? AND status = 'PENDING'",
-                (decision, now, public_key_hex, signature_hex, approval_id),
-            )
+            if decision == "REJECTED":
+                # Any trusted approver can stop an action; a refusal needs no role and no second signature.
+                conn.execute(
+                    "UPDATE pending_actions SET status = ?, decided_at = ?, approver_public_key = ?, signature_hex = ? "
+                    "WHERE approval_id = ? AND status = 'PENDING'",
+                    (decision, now, public_key_hex, signature_hex, approval_id),
+                )
+            else:
+                taken = conn.execute("SELECT 1 FROM pending_action_signatures WHERE approval_id = ? AND public_key = ?",
+                                     (approval_id, public_key_hex)).fetchone()
+                if taken:
+                    raise ApprovalError("this approver key has already signed this action; "
+                                        f"{action.required_signatures} distinct keys are required")
+                conn.execute("INSERT INTO pending_action_signatures (approval_id, public_key, signature_hex, decided_at) "
+                             "VALUES (?, ?, ?, ?)", (approval_id, public_key_hex, signature_hex, now))
+                collected = conn.execute("SELECT COUNT(*) FROM pending_action_signatures WHERE approval_id = ?",
+                                         (approval_id,)).fetchone()[0]
+                if collected >= action.required_signatures:
+                    first = conn.execute("SELECT public_key, signature_hex FROM pending_action_signatures "
+                                         "WHERE approval_id = ? ORDER BY decided_at, public_key LIMIT 1", (approval_id,)).fetchone()
+                    conn.execute(
+                        "UPDATE pending_actions SET status = 'APPROVED', decided_at = ?, approver_public_key = ?, signature_hex = ? "
+                        "WHERE approval_id = ? AND status = 'PENDING'", (now, first[0], first[1], approval_id))
         self._persistence.append_audit(
             entity_type="pending_action_decided", entity_id=approval_id, action=decision.lower(),
             actor=f"approver:{trusted_approver_keys().get(public_key_hex, '?')}:{public_key_hex[:16]}",
             changes={"action_sha256": action.action_sha256, "tool_name": action.tool_name,
-                     "signature_hex": signature_hex, "approver_public_key": public_key_hex},
+                     "signature_hex": signature_hex, "approver_public_key": public_key_hex,
+                     "approver_role": trusted_approver_roles().get(public_key_hex),
+                     "required_signatures": action.required_signatures, "policy_rule": action.policy_rule},
         )
         decided = self.get(approval_id)
         assert decided is not None
         return decided
+
+    @staticmethod
+    def _check_role(action: PendingAction, public_key_hex: str) -> None:
+        if not action.approver_roles:
+            return
+        role = trusted_approver_roles().get(public_key_hex)
+        if role not in action.approver_roles:
+            held = f"role {role!r}" if role else "no role"
+            raise ApprovalError(f"this action needs an approver with the role {' or '.join(action.approver_roles)}; "
+                                f"the signing key has {held}")
 
     def _check_signature(self, action: PendingAction, decision: str, public_key_hex: str, signature_hex: str) -> None:
         trusted = trusted_approver_keys()
@@ -298,7 +385,9 @@ class PendingActionStore:
         """Re-verifies everything at execution time (status alone is not
         trusted, because a database row can be edited), then atomically
         moves APPROVED -> EXECUTING so two concurrent resumes can never
-        both run the action."""
+        both run the action. Round 54: with an owner policy every required
+        signature is re-verified, from distinct trusted keys that hold the
+        required role."""
         action = self.get(approval_id)
         if action is None:
             raise ApprovalError(f"no pending action {approval_id!r}")
@@ -308,7 +397,18 @@ class PendingActionStore:
             raise ApprovalError(f"action {approval_id} is {action.status}, not APPROVED")
         if not action.approver_public_key or not action.signature_hex:
             raise ApprovalError(f"action {approval_id} has no approver signature")
-        self._check_signature(action, "APPROVED", action.approver_public_key, action.signature_hex)
+        with self._persistence._connect() as conn:
+            stored = conn.execute("SELECT public_key, signature_hex FROM pending_action_signatures WHERE approval_id = ?",
+                                  (approval_id,)).fetchall()
+        signers = {key: sig for key, sig in stored}
+        if not signers:                                          # approved before multi-signature existed
+            signers = {action.approver_public_key: action.signature_hex}
+        if len(signers) < action.required_signatures:
+            raise ApprovalError(f"action {approval_id} needs {action.required_signatures} signatures, "
+                                f"{len(signers)} are on record")
+        for key, signature in signers.items():
+            self._check_signature(action, "APPROVED", key, signature)
+            self._check_role(action, key)
         with self._persistence._connect() as conn:
             claimed = conn.execute(
                 "UPDATE pending_actions SET status = 'EXECUTING' WHERE approval_id = ? AND status = 'APPROVED'",

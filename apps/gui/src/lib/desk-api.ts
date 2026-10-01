@@ -192,6 +192,34 @@ export interface SubagentRun {
 
 // ---- calls --------------------------------------------------------------------
 
+// ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
+export type FdiaActionType = "ALLOW" | "CONDITIONAL" | "REQUIRE_HUMAN_SIGNATURE";
+export interface FdiaRule {
+  rule_id: string; intent_patterns: string[]; action_type: FdiaActionType; description: string; assigned_A: number;
+  require_human_confirmation: boolean; denied_paths: string[]; allowed_roles: string[]; human_approver_role: string[];
+  required_signatures: number; jury_tier: string;
+}
+export interface FdiaPolicy {
+  version: string; policy_id: string; policy_name: string; default_fallback_A: number; custom_safety_threshold: number;
+  rules: FdiaRule[]; blocked_action_patterns: string[]; require_human_dual_signoff: string[];
+  roles: { default_role: string; principals: Record<string, string> }; jury_by_risk: Record<string, string>;
+}
+export interface FdiaToolInfo { name: string; description: string; built_in: "always a signature" | "FDIA gate" | "open" }
+export interface FdiaState {
+  path: string; exists: boolean; error: string; policy: FdiaPolicy | null; digest: string | null;
+  built_in: { threshold: number; rules: string[] }; tools: FdiaToolInfo[];
+  approvers: { name: string; role: string | null; key_prefix: string }[]; jury: { configured: boolean; path: string };
+  limits: { max_rules: number; action_types: FdiaActionType[]; jury_tiers: string[]; risk_levels: string[] };
+}
+export interface FdiaEvaluation {
+  policy?: null; A: number; F: number; threshold: number; outcome: string; reason: string; rule_id?: string; action_type?: string;
+  needs_signature?: boolean; required_signatures?: number; approver_roles?: string[]; jury_tier?: string; role?: string;
+  matched_rules?: string[]; D?: number; I?: number;
+}
+export interface FdiaEvaluateInput {
+  tool_name: string; tool_args: Record<string, unknown>; principal?: string; approved?: boolean; D: number; I: number; policy?: FdiaPolicy;
+}
+
 export const desk = {
   health: () => call<Health>("/health"),
   overview: () => call<Overview>("/v1/desk/overview"),
@@ -229,6 +257,15 @@ export const desk = {
     call<{ memories: MemoryItem[]; namespaces: { namespace: string; n: number }[] }>(`/v1/desk/memories${namespace ? `?namespace=${encodeURIComponent(namespace)}` : ""}`),
   remember: (content: string, memoryType = "fact", namespace?: string) =>
     call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
+  fdia: () => call<FdiaState>("/v1/desk/fdia"),
+  fdiaTemplate: (name: "balanced" | "strict") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
+  fdiaValidate: (policy: FdiaPolicy) =>
+    call<{ valid: boolean; errors: string[]; digest: string | null }>("/v1/desk/fdia/validate", { method: "POST", body: JSON.stringify({ policy }) }),
+  fdiaEvaluate: (body: FdiaEvaluateInput) =>
+    call<FdiaEvaluation>("/v1/desk/fdia/evaluate", { method: "POST", body: JSON.stringify(body) }),
+  fdiaSave: (policy: FdiaPolicy) =>
+    call<{ saved: string; digest: string; rules: number }>("/v1/desk/fdia/policy", { method: "PUT", body: JSON.stringify({ policy }) }),
+  fdiaDisable: () => call<{ archived_as: string }>("/v1/desk/fdia/policy/disable", { method: "POST" }),
   approvals: (status = "PENDING") => call<PendingAction[]>(`/v1/agent/approvals?status=${status}`),
   decide: (approvalId: string, body: { decision: string; public_key_hex: string; signature_hex: string }) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
