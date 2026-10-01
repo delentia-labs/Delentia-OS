@@ -15,6 +15,7 @@ const DICT = {
   growth: { en: "Growth", th: "การเติบโต" },
   algorithms: { en: "Algorithms", th: "อัลกอริทึม" },
   sovereignty: { en: "Sovereignty", th: "อธิปไตยข้อมูล" },
+  jitna: { en: "JITNA", th: "JITNA" },
   approvals: { en: "Approvals", th: "อนุมัติ" },
   audit: { en: "Audit", th: "Audit" },
   models: { en: "Models", th: "โมเดล" },

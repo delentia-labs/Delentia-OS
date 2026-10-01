@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import os
 import re
+
+from rct_control_plane.safe_text import substitutions
 import subprocess
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -238,8 +240,7 @@ _RUNAS_QUOTED_COMMAND_PATTERN = re.compile(r"runas\b.*?[\"']([^\"']+)[\"']", re.
 
 def _split_into_subcommands(command: str) -> List[str]:
     parts = [p for p in _COMMAND_SEPARATOR_PATTERN.split(command)]
-    for match in _SUBSTITUTION_PATTERN.finditer(command):
-        inner = match.group(1) if match.group(1) is not None else match.group(2)
+    for inner in substitutions(command):
         if inner:
             parts.append(inner)
     return [p.strip() for p in parts if p.strip()]

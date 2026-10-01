@@ -11,6 +11,8 @@ Services integrated:
 Port: 8000
 """
 
+import logging
+
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import FastAPI
@@ -437,8 +439,9 @@ async def execute_intent(request: ExecuteRequest):
                     zk_status = "verified"
                 else:
                     zk_status = "failed_verification"
-            except Exception as e:
-                zk_status = f"error_during_verification: {str(e)}"
+            except Exception:
+                zk_status = "error_during_verification"
+                logging.getLogger(__name__).exception("zk verification failed")
         else:
             zk_status = "verifier_unavailable"
 

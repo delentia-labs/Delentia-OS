@@ -913,7 +913,10 @@ class AlgorithmKernel41:
         import re
 
         safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", project_name)[:50] or "unnamed_project"
-        project_dir = os.path.join("./workspace_output/genesis", f"{safe_name}_{int(time.time())}")
+        genesis_root = os.path.abspath("./workspace_output/genesis")
+        project_dir = os.path.abspath(os.path.join(genesis_root, f"{safe_name}_{int(time.time())}"))
+        if not project_dir.startswith(genesis_root + os.sep):          # defence in depth: the name is already reduced to [A-Za-z0-9_-]
+            raise ValueError("project directory escapes the genesis workspace")
         os.makedirs(project_dir, exist_ok=True)
 
         files_created = []

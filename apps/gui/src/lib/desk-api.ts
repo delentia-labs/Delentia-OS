@@ -54,6 +54,14 @@ export interface ModelSetup {
 export interface ProbeResult {
   contacted: boolean; reachable: boolean; status?: number; models: string[]; error: string | null; key_sent?: boolean; verdict: PolicyVerdict | null;
 }
+export interface JitnaPacketReport {
+  packet_id: string; source: string; target: string; message_type: string; signature_valid: boolean; signer: string | null;
+  language: Record<string, string> | null; problems: string[];
+}
+export interface JitnaReport {
+  valid: boolean; trusted: boolean; sender_fingerprint: string; created: string | null; problems: string[]; untrusted_keys: string[];
+  packets: JitnaPacketReport[];
+}
 export interface SovereigntyPolicyInput {
   home_region: string; allowed_regions: string[]; allow_cross_border: boolean; pii_policy: "block" | "redact" | "allow"; legal_basis: string;
 }
@@ -194,6 +202,8 @@ export const desk = {
   models: (catalog?: "openrouter" | "ollama", free = false) =>
     call<{ selection: ModelSelection; config_path: string; openrouter_key_present: boolean; catalog?: ModelInfo[] }>(
       `/v1/desk/models${catalog ? `?catalog=${catalog}${free ? "&free=true" : ""}` : ""}`),
+  verifyJitna: (file: unknown, trustedKeys: string[]) =>
+    call<JitnaReport>("/v1/jitna/verify", { method: "POST", body: JSON.stringify({ file, trusted_keys: trustedKeys }) }),
   modelSetup: () => call<ModelSetup>("/v1/desk/models/setup"),
   testEndpoint: (endpoint: EndpointDecl, apiKey?: string) =>
     call<ProbeResult>("/v1/desk/models/test", { method: "POST", body: JSON.stringify({ endpoint, api_key: apiKey || undefined }) }),

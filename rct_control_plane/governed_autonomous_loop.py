@@ -141,8 +141,14 @@ def _write_path_is_safe(relative_path: str) -> bool:
         return False
     if ".git" in Path(relative_path).parts:
         return False
+    # Lexical containment first (normpath removes `..`), then the real path, which also follows
+    # symlinks: either one failing refuses the write.
+    root = os.path.normpath(str(_REPO_ROOT))
+    candidate = os.path.normpath(os.path.join(root, relative_path))
+    if candidate != root and not candidate.startswith(root + os.sep):
+        return False
     try:
-        resolved = (_REPO_ROOT / relative_path).resolve()
+        resolved = Path(candidate).resolve()
     except (OSError, ValueError):
         return False
     return resolved.is_relative_to(_REPO_ROOT)

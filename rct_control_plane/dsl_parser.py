@@ -43,6 +43,8 @@ Example:
 
 import re
 from decimal import Decimal
+
+from rct_control_plane.safe_text import assignment, parameters_block
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -233,9 +235,8 @@ class DSLParser:
             node_data["metadata"]["phase"] = phase_name
         
         # Check for parameters block
-        params_match = re.search(r'parameters\s*\{([^}]*)\}', body, re.DOTALL)
-        if params_match:
-            params_body = params_match.group(1)
+        params_body = parameters_block(body)
+        if params_body is not None:
             node_data["parameters"] = self._parse_parameters_block(params_body)
         
         # Parse other parameters
@@ -244,10 +245,10 @@ class DSLParser:
             if not line or line.startswith('//') or 'parameters' in line:
                 continue
             
-            param_match = re.match(r'(\w+)\s*=\s*(.+)', line)
+            param_match = assignment(line)
             if param_match:
-                key = param_match.group(1)
-                value_str = param_match.group(2).rstrip(',').strip()
+                key = param_match[0]
+                value_str = param_match[1].rstrip(',').strip()
                 
                 self._parse_node_parameter(key, value_str, node_data)
         
@@ -375,10 +376,10 @@ class DSLParser:
             if not line or line.startswith('//'):
                 continue
             
-            param_match = re.match(r'(\w+)\s*=\s*(.+)', line)
+            param_match = assignment(line)
             if param_match:
-                key = param_match.group(1)
-                value_str = param_match.group(2).rstrip(',').strip()
+                key = param_match[0]
+                value_str = param_match[1].rstrip(',').strip()
                 
                 # Try to parse as different types
                 if value_str.startswith('"'):

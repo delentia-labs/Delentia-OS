@@ -5,6 +5,7 @@ Provides standard JSON-RPC 2.0 MCP endpoints (/mcp) for external AI clients
 Governed by Layer 2 CORD Shannon Entropy & Layer 3 FDIA Veto Gate (F = D^I * A)
 """
 
+import logging
 import os
 import json
 import subprocess
@@ -19,6 +20,8 @@ from .policy_language import PolicyEvaluator
 from .default_policies import get_default_policies
 from .exchange_bridge import NeuralExchangeBridge
 from .autonomous_scheduler import AutonomousScheduler
+
+logger = logging.getLogger(__name__)
 
 # MCP Specification Constants
 MCP_PROTOCOL_VERSION = "2024-11-05"
@@ -247,7 +250,8 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
             res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=15)  # nosec B602
             return {"status": "SUCCESS", "exit_code": res.returncode, "stdout": res.stdout[:2000], "stderr": res.stderr[:2000]}
         except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
 
     # 5. delentia_system_health
     elif tool_name == "delentia_system_health":
@@ -279,7 +283,8 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                     content = f.read(50000)
                 return {"status": "SUCCESS", "path": target_path, "content": content}
             except Exception as e:
-                return {"status": "ERROR", "error": str(e)}
+                logger.exception("delentia tool failed")
+                return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
         elif action == "write":
             content = args.get("content", "")
             cord_res = cord_engine.check(content)
@@ -291,7 +296,8 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                     f.write(content)
                 return {"status": "SUCCESS", "path": target_path, "bytes_written": len(content.encode("utf-8"))}
             except Exception as e:
-                return {"status": "ERROR", "error": str(e)}
+                logger.exception("delentia tool failed")
+                return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
         elif action == "list":
             if not os.path.exists(target_path):
                 return {"status": "ERROR", "error": f"Directory not found: {target_path}"}
@@ -321,7 +327,8 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
             else:
                 return {"status": "ERROR", "error": f"Unknown Git action: {action}"}
         except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
 
     # 8. delentia_web_fetch
     elif tool_name == "delentia_web_fetch":
@@ -334,7 +341,8 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                 raw_data = resp.read(50000).decode("utf-8", errors="replace")
             return {"status": "SUCCESS", "url": url, "content_length": len(raw_data), "preview": raw_data[:1000]}
         except Exception as e:
-            return {"status": "ERROR", "error": str(e)}
+            logger.exception("delentia tool failed")
+            return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
 
     # 9. delentia_cron_scheduler
     elif tool_name == "delentia_cron_scheduler":

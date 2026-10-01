@@ -28,6 +28,8 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
+from rct_control_plane.safe_text import filename_matches, path_matches, token_counts
+
 from .intent_schema import (
     BudgetSpec,
     ConstraintType,
@@ -454,12 +456,10 @@ class IntentCompiler:
         }
         
         # File patterns: *.py, *.js, *.ts, specific filenames
-        file_pattern = r'([a-z_][a-z0-9_]*\.(py|js|ts|java|cpp|go|rs|rb))'
-        entities["files"] = re.findall(file_pattern, text_lower)
+        entities["files"] = filename_matches(text_lower)
         
         # Path patterns
-        path_pattern = r'([a-z_./][a-z0-9_./]*[a-z0-9_])'
-        entities["paths"] = re.findall(path_pattern, text_lower)
+        entities["paths"] = path_matches(text_lower)
         
         # Module patterns (Python/JS-style)
         if "module" in text_lower:
@@ -498,8 +498,7 @@ class IntentCompiler:
                 break
         
         # Token limits
-        token_pattern = r'(\d+)\s*tokens?'
-        token_matches = re.findall(token_pattern, text)
+        token_matches = token_counts(text)
         if token_matches:
             constraints["max_tokens"] = int(token_matches[0])
         

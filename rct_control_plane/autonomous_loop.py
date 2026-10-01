@@ -33,6 +33,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 from rct_control_plane.algo_25_delta_block import DeltaEngine
 from rct_control_plane.llm_provider import BudgetExceededError, ResidencyViolation
 from rct_control_plane.persistence import ControlPlanePersistence
+from rct_control_plane.safe_text import json_object_span
 
 # Round 52: a model that is briefly unavailable (overloaded, rate limited, a dropped
 # connection) is retried; one that stays down ends the episode with
@@ -189,10 +190,10 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
+    span = json_object_span(text)
+    if span is not None:
         try:
-            return json.loads(match.group(0))
+            return json.loads(span)
         except json.JSONDecodeError:
             return None
     return None

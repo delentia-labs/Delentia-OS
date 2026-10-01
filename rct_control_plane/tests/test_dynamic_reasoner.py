@@ -253,7 +253,7 @@ class TestWebIngestionPipeline:
         assert "Example Title" in token_text
         sent_prompt = _FakeSession.last_payload["messages"][1]["content"]
         assert "real scraped content here" in sent_prompt
-        assert "https://example.com" in sent_prompt
+        assert any(word.startswith("https://example.com") for word in sent_prompt.split())
 
     @pytest.mark.asyncio
     async def test_scrape_failure_notes_the_error_in_the_prompt_but_still_continues(self, monkeypatch):

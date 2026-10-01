@@ -14,6 +14,7 @@ const ROUTES: { href: string; name: string; desc: string }[] = [
   { href: "/algorithms", name: "Algorithms", desc: "The 41 algorithms as pipeline stages, measured" },
   { href: "/approvals", name: "Approvals", desc: "Signed human approvals that resume paused work" },
   { href: "/sovereignty", name: "Sovereignty", desc: "Where prompts may go: the data-residency policy and every decision" },
+  { href: "/jitna", name: "JITNA", desc: "Check a signed .jitna file and read the intent it carries" },
   { href: "/audit", name: "Audit", desc: "Hash chain, notary, anchoring" },
   { href: "/llm", name: "Models", desc: "Choose the provider and model" },
   { href: "/skills", name: "Skills", desc: "What was learned, how reliable it has been" },
