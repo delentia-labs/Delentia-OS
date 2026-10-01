@@ -270,7 +270,9 @@ def _fetch_pinned(target: _FetchTarget, limit: int = 50000) -> str:
         raise last_error or OSError("no address to connect to")
     if target.scheme == "https":
         conn: http.client.HTTPConnection = http.client.HTTPSConnection(target.ip, target.port, timeout=10)
-        conn.sock = ssl.create_default_context().wrap_socket(raw, server_hostname=target.hostname)
+        tls = ssl.create_default_context()
+        tls.minimum_version = ssl.TLSVersion.TLSv1_2          # never TLS 1.0/1.1
+        conn.sock = tls.wrap_socket(raw, server_hostname=target.hostname)
     else:
         conn = http.client.HTTPConnection(target.ip, target.port, timeout=10)
         conn.sock = raw
@@ -377,11 +379,13 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                              f"The operator can add more with {GATEWAY_SHELL_ALLOW_ENV}."}
         ws_root = _workspace_root()
         work_dir = os.path.normpath(os.path.join(ws_root, str(cwd)))
-        if work_dir != ws_root and not work_dir.startswith(ws_root + os.sep):
+        if not (work_dir + os.sep).startswith(ws_root + os.sep):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
         real_ws_root = os.path.realpath(ws_root)
         work_dir = os.path.realpath(work_dir)
-        if (work_dir != real_ws_root and not work_dir.startswith(real_ws_root + os.sep)) or not os.path.isdir(work_dir):
+        if not (work_dir + os.sep).startswith(real_ws_root + os.sep):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
+        if not os.path.isdir(work_dir):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
         try:
             res = subprocess.run([executable, *argv[1:]], cwd=work_dir, capture_output=True, text=True, timeout=15)  # nosec B603
@@ -419,11 +423,11 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
         # inside the workspace (lexically, then after following symlinks) before any file is touched.
         fs_root = _workspace_root()
         safe_path = os.path.normpath(os.path.join(fs_root, target_path))
-        if safe_path != fs_root and not safe_path.startswith(fs_root + os.sep):
+        if not (safe_path + os.sep).startswith(fs_root + os.sep):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is outside the gateway workspace"}
         fs_real_root = os.path.realpath(fs_root)
         safe_path = os.path.realpath(safe_path)
-        if safe_path != fs_real_root and not safe_path.startswith(fs_real_root + os.sep):
+        if not (safe_path + os.sep).startswith(fs_real_root + os.sep):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is outside the gateway workspace"}
         if action != "list" and _blocked_name(target_path):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path names secret material"}

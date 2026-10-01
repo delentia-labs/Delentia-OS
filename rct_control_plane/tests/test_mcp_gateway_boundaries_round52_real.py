@@ -200,7 +200,8 @@ def test_https_fetch_connects_to_the_validated_address_and_checks_the_host_name(
     key_path.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
 
     server = HTTPServer(("127.0.0.1", 0), _Page)
-    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    server_context.minimum_version = ssl.TLSVersion.TLSv1_2
     server_context.load_cert_chain(str(cert_path), str(key_path))
     server.socket = server_context.wrap_socket(server.socket, server_side=True)
     threading.Thread(target=server.serve_forever, daemon=True).start()
