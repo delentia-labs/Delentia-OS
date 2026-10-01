@@ -741,6 +741,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="4. The Constitutional Cycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-the-intent-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 The Intent Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2302,7 +2319,7 @@ ignore them.</p>
 <tr>
 <td><strong>D</strong></td>
 <td>Data</td>
-<td>Quality and sufficiency of the data behind the request, normalised to [0, 1].</td>
+<td>The data this user really has for the request, normalised to [0, 1]: the files the goal names exist, relevant stored memory, verified skills, the user's own track record, and how clearly the request is worded (<code>data_evidence.py</code>). A risky action over data the user does not have is blocked and the answer lists what is missing.</td>
 </tr>
 <tr>
 <td><strong>I</strong></td>
@@ -2379,7 +2396,7 @@ call a tool.</p>
 <tr>
 <td>2</td>
 <td><strong>THINK</strong></td>
-<td>RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions)</td>
+<td>RCT-7 steps 1–6 become the plan in the prompt; relevant memories and MEE-approved skills are recalled automatically (as data, never as instructions); with the pipeline on, the 41 algorithms add advice from the user's own data (§4.1)</td>
 <td>✅ built</td>
 </tr>
 <tr>
@@ -2423,6 +2440,45 @@ call a tool.</p>
 <p>All entry points (API, the four messaging gateways, the scheduler, the MCP tool, profiles and
 subagents, the terminal UI) build the loop through one governed factory; a test fails if any module
 constructs an ungoverned loop.</p>
+<h3 id="41-the-intent-loop">4.1 The Intent Loop<a class="headerlink" href="#41-the-intent-loop" title="Permanent link">&para;</a></h3>
+<p>The Intent Loop is self-development by running every component of the system in one ordered
+sequence to a result that is really recorded. Its original design has five pillars, and each episode
+now reports them from measured values (<code>intent_loop.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>What it is in the runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 FDIA gatekeeper</td>
+<td>CORD screen, D from the user's data, I, the per-action gate</td>
+</tr>
+<tr>
+<td>2 Memory</td>
+<td>relevant memories and skills recalled; retrieval algorithms ALGO-16/18/13 over the user's data; <strong>warm recall</strong>: a verified answer is re-used without a model call if the read-only evidence it rested on replays byte-identical</td>
+</tr>
+<tr>
+<td>3 Specialist executor</td>
+<td>routed fast or slow, tools, the planning algorithms (ALGO-02/37/38/15/20)</td>
+</tr>
+<tr>
+<td>4 Verifier</td>
+<td>RCT-7 step 7, belief confidence (ALGO-30), hallucination patterns (ALGO-33). Multi-model consensus is <strong>not</strong> in this process; SignedAI runs as a separate service</td>
+</tr>
+<tr>
+<td>5 Evolution committer</td>
+<td>graded MEE growth per user, skill kept (near-duplicates merged, reliability from reuse), RCTDB run, audit</td>
+</tr>
+</tbody>
+</table>
+<p>The motto "the more it is used, the smarter, faster and cheaper" is measured, not claimed: for each
+goal a user has had verified at least twice, the Growth page compares the first and latest run
+(steps, seconds, cost, D). The 41 algorithms are opt-in pipeline stages (<code>DELENTIA_ALGORITHM_PIPELINE=1</code>,
+on under <code>delentia serve</code>); algorithms that call a model, open the network or write files need an
+explicit switch and otherwise report why they did not run.</p>
 <h2 id="5-three-products">5. Three products<a class="headerlink" href="#5-three-products" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2483,8 +2539,8 @@ built when they were plans. This table is the corrected record.</p>
 <tr>
 <td>L3 Algorithm kernel</td>
 <td>41 algorithms + FDIA</td>
-<td>✅ 41/41 have real logic; 24 run automatically from the kernel, the rest through tools or routing</td>
-<td>Keep</td>
+<td>41/41 have logic; ALGO-02, 37 and 38 were stand-ins until 2026-10-01 and are now real (Pareto planner, plan depth from the intent, interval constraint solver). Measured 2026-10-01: with the pipeline on, 37 of 41 execute on real inputs with a rule policy; ALGO-09/11/32 need a model call, ALGO-14 an image request</td>
+<td>Keep; see §4.1</td>
 </tr>
 <tr>
 <td>L4 RCTDB</td>
@@ -2501,20 +2557,20 @@ built when they were plans. This table is the corrected record.</p>
 <tr>
 <td>L6 JITNA</td>
 <td>Packets I, D, Δ, A, R, M</td>
-<td>✅ Ed25519-signed packets (v2), streaming (v3)</td>
+<td>✅ Ed25519-signed packets (v2), streaming (v3); Round 52: the <code>.jitna</code> signed file (6-field language, a seal over the whole body, <code>delentia jitna</code>)</td>
 <td>Keep</td>
 </tr>
 <tr>
 <td>L7 FloatingAI &amp; Delta</td>
-<td>91.5% memory compression</td>
+<td>91.5% memory compression (a formula, not a measurement; withdrawn)</td>
 <td>Three different "Delta" components (see §7)</td>
 <td>Rename and separate</td>
 </tr>
 <tr>
 <td>L8 Regional language adapter</td>
 <td>Route by locale and data residency (PDPA/GDPR)</td>
-<td>A PDPA risk-audit endpoint and a Thai-law adapter entry exist; no layer chooses models by locale or residency</td>
-<td>Correct the text; build only when a customer needs it</td>
+<td>Round 52: routing by region and language with compliance tags, plus <strong>call-time enforcement</strong>: a sovereignty policy (<code>core/regional_adapter/sovereignty.py</code>, <code>residency.py</code>) blocks a model call to an endpoint outside the allowed regions, blocks or redacts personal data (national-ID checksums) in a permitted cross-border call, and records each decision in the audit chain without the data. Any OpenAI-compatible endpoint (a national or self-hosted model) can be plugged in. Not covered: the crawl tool and the TypeScript bridge</td>
+<td>Keep; this is data-location control, not legal compliance</td>
 </tr>
 <tr>
 <td>L9 Universal adapter</td>
@@ -2557,7 +2613,7 @@ routing once a customer asks for it.</p>
 <td><strong>Delta-Memory</strong></td>
 <td><code>core/delta_engine/memory_delta.py</code></td>
 <td>Stores agent state as deltas instead of full snapshots</td>
-<td>91.5% on a synthetic 20-agent × 100-tick simulation (estimated bytes)</td>
+<td>39% (20 ticks) to 90% (500 ticks) smaller than full snapshots in measured bytes; generic zstd over full snapshots does better, so the value is cheap reconstruction and rollback</td>
 </tr>
 <tr>
 <td><strong>DeltaBlock</strong></td>
@@ -2655,9 +2711,9 @@ off the chain (only hashes are chained), so erasure requests can be honoured wit
 </tr>
 <tr>
 <td>Delta-Memory</td>
-<td>91.5% on a synthetic 20 × 100 simulation</td>
-<td><code>python scripts/benchmark_fdia_delta.py --json</code></td>
-<td>2026-09-28</td>
+<td>Delta log 39% (20 ticks) to 90% (500 ticks) smaller than full snapshots, real bytes, synthetic simulation</td>
+<td><code>python scripts/measure_delta_engine_real.py</code></td>
+<td>2026-10-01</td>
 </tr>
 <tr>
 <td>FDIA evaluation (Python)</td>
@@ -2793,7 +2849,7 @@ code and held even when the model could not select tools.</p>
 <tr>
 <td>Reasoning</td>
 <td>41 algorithms, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE</td>
-<td>In code; two Intent Loop implementations not yet unified; ALGO-21 runs inside the loop (ROUTE)</td>
+<td>In code; the Intent Loop service is a reference implementation whose execution and verification are simulated and it is not wired into the agent loop; ALGO-21 runs inside the loop (ROUTE)</td>
 </tr>
 <tr>
 <td>Consensus</td>

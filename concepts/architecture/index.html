@@ -2174,7 +2174,7 @@
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>└─ signedai/core/
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>Layer 5: Delta Engine
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>├─ 91.5% measured compression (design floor ≥74%)
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>├─ 39–90% smaller than full snapshots in measured bytes (grows with history)
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>├─ SHA-256 per-record deduplication
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>├─ Full rollback to any past tick
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>└─ core/delta_engine/
@@ -2227,7 +2227,7 @@
 <h3 id="why-the-fdia-equation-is-not-a-config-option">Why the FDIA equation is not a config option<a class="headerlink" href="#why-the-fdia-equation-is-not-a-config-option" title="Permanent link">&para;</a></h3>
 <p>The equation <code>F = D^I × A</code> is enforced at the <strong>mathematics level</strong>. Governance is not a switch — when A=0, F=0 by arithmetic, not by condition check. This makes the guarantee <strong>unforgeable</strong>.</p>
 <h3 id="why-deltas-instead-of-state-snapshots">Why deltas instead of state snapshots<a class="headerlink" href="#why-deltas-instead-of-state-snapshots" title="Permanent link">&para;</a></h3>
-<p>Storing full agent state at every tick is O(n×t). Delta Engine stores only <code>changed_fields</code> with SHA-256 content hashing, achieving 91.5% measured compression (design floor ≥74%) on typical agent trajectories. Full rollback is still possible by replaying the delta chain.</p>
+<p>Storing full agent state at every tick is O(n×t). Delta Engine stores only <code>changed_fields</code> with SHA-256 content hashing, reducing the stored log by 39% (20 ticks) to 90% (500 ticks) in measured bytes (<code>scripts/measure_delta_engine_real.py</code>; the gain grows with history, and plain zstd over full snapshots compresses further). Full rollback is still possible by replaying the delta chain.</p>
 <h3 id="why-ed25519-over-rsa">Why ED25519 over RSA<a class="headerlink" href="#why-ed25519-over-rsa" title="Permanent link">&para;</a></h3>
 <p>ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Critical for high-throughput multi-LLM consensus where thousands of decisions need attestation per second.</p>
 

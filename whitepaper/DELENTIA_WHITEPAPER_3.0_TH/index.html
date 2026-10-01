@@ -769,6 +769,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="4. Constitutional Cycle (วงจรรัฐธรรมนูญ)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-intent-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Intent Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2297,7 +2314,7 @@
 <tr>
 <td><strong>D</strong></td>
 <td>Data (ข้อมูล)</td>
-<td>คุณภาพและความพอเพียงของข้อมูลเบื้องหลังคำขอ ปรับให้อยู่ใน [0, 1]</td>
+<td>ข้อมูลที่ผู้ใช้คนนั้นมีจริงสำหรับคำขอ ปรับให้อยู่ใน [0, 1]: ไฟล์ที่เป้าหมายอ้างถึงมีอยู่จริง, ความจำที่เกี่ยวข้อง, skill ที่ผ่านการตรวจ, ประวัติของผู้ใช้เอง และความชัดเจนของคำขอ (<code>data_evidence.py</code>) การกระทำเสี่ยงบนข้อมูลที่ผู้ใช้ไม่มีจะถูกบล็อกพร้อมรายการสิ่งที่ขาด</td>
 </tr>
 <tr>
 <td><strong>I</strong></td>
@@ -2365,7 +2382,7 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 <tr>
 <td>2</td>
 <td><strong>THINK</strong></td>
-<td>RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง)</td>
+<td>RCT-7 ขั้น 1–6 เป็นแผนใน prompt; ดึงความจำและ skill ที่ผ่าน MEE มาให้อัตโนมัติ (ในฐานะข้อมูล ไม่ใช่คำสั่ง); เมื่อเปิด pipeline อัลกอริทึม 41 ตัวเพิ่มคำแนะนำจากข้อมูลของผู้ใช้เอง (§4.1)</td>
 <td>✅ สร้างแล้ว</td>
 </tr>
 <tr>
@@ -2408,6 +2425,43 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 </table>
 <p>ทุกประตูเข้า (API, gateway ข้อความ 4 ช่องทาง, scheduler, MCP tool, profile และ subagent, terminal UI) สร้าง loop ผ่าน factory เดียวที่ควบคุมการกำกับ
 มี test ที่จะล้มถ้ามีโมดูลใดสร้าง loop ที่ไม่ผ่านการกำกับ</p>
+<h3 id="41-intent-loop">4.1 Intent Loop<a class="headerlink" href="#41-intent-loop" title="Permanent link">&para;</a></h3>
+<p>Intent Loop คือการพัฒนาตัวเองด้วยการรวมทุกองค์ประกอบของระบบเข้าเป็นลำดับเดียว จนได้ผลลัพธ์ที่บันทึกได้จริง
+ตามแบบเดิมมี 5 เสาหลัก และทุก episode รายงานทั้ง 5 เสาจากค่าที่วัดได้ (<code>intent_loop.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>เสา</th>
+<th>ในระบบที่รันจริง</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 FDIA gatekeeper</td>
+<td>CORD, D จากข้อมูลของผู้ใช้, I, เกตต่อการกระทำ</td>
+</tr>
+<tr>
+<td>2 Memory</td>
+<td>ดึงความจำและ skill; อัลกอริทึม retrieval ALGO-16/18/13 บนข้อมูลของผู้ใช้; <strong>warm recall</strong>: คำตอบที่ตรวจผ่านแล้วถูกใช้ซ้ำโดยไม่เรียกโมเดล ถ้าหลักฐานแบบอ่านอย่างเดียวที่คำตอบนั้นอิงยังเหมือนเดิมทุกไบต์</td>
+</tr>
+<tr>
+<td>3 Specialist executor</td>
+<td>route แบบ fast/slow, tools, อัลกอริทึมวางแผน (ALGO-02/37/38/15/20)</td>
+</tr>
+<tr>
+<td>4 Verifier</td>
+<td>RCT-7 ขั้น 7, ความเชื่อมั่น (ALGO-30), รูปแบบ hallucination (ALGO-33) การทำ consensus หลายโมเดล<strong>ไม่ได้อยู่ใน process นี้</strong> SignedAI เป็นอีกบริการหนึ่ง</td>
+</tr>
+<tr>
+<td>5 Evolution committer</td>
+<td>การเติบโตของ MEE แบบไล่ระดับต่อผู้ใช้, skill ที่เก็บ (รวมของซ้ำ, ความน่าเชื่อถือจากการใช้ซ้ำ), run ใน RCTDB, audit</td>
+</tr>
+</tbody>
+</table>
+<p>คำขวัญ "ยิ่งใช้ ยิ่งฉลาด ยิ่งเร็ว ยิ่งถูก" ถูกวัดแทนที่จะอ้าง: สำหรับเป้าหมายที่ผู้ใช้ทำสำเร็จและตรวจผ่านอย่างน้อยสองครั้ง
+หน้า Growth เทียบรอบแรกกับรอบล่าสุด (จำนวนขั้น เวลา ค่าใช้จ่าย D) อัลกอริทึม 41 ตัวเป็นขั้นตอนของ pipeline แบบเลือกเปิด
+(<code>DELENTIA_ALGORITHM_PIPELINE=1</code> เปิดอยู่ใน <code>delentia serve</code>) ตัวที่เรียกโมเดล เปิดเครือข่าย หรือเขียนไฟล์ ต้องเปิดสวิตช์เอง
+ไม่เช่นนั้นจะรายงานเหตุผลที่ไม่ได้รัน</p>
 <h2 id="5-3">5. ผลิตภัณฑ์ 3 ตัว<a class="headerlink" href="#5-3" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2467,8 +2521,8 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 <tr>
 <td>L3 Algorithm kernel</td>
 <td>41 อัลกอริทึม + FDIA</td>
-<td>✅ 41/41 มี logic จริง; 24 ตัวรันอัตโนมัติจาก kernel ที่เหลือเรียกผ่าน tool หรือ router</td>
-<td>คงไว้</td>
+<td>41/41 มี logic; ALGO-02, 37 และ 38 เป็นของจำลองจนถึง 2026-10-01 ตอนนี้เป็นของจริง (planner แบบ Pareto, ความลึกของแผนตามเจตนา, ตัวแก้ข้อจำกัดแบบช่วงค่า) วัดเมื่อ 2026-10-01: เมื่อเปิด pipeline รันจริงบน input จริง 37 จาก 41 ตัว (ใช้ rule policy แทนโมเดล); ALGO-09/11/32 ต้องเรียกโมเดล ALGO-14 ต้องมีคำขอสร้างภาพ</td>
+<td>คงไว้; ดู §4.1</td>
 </tr>
 <tr>
 <td>L4 RCTDB</td>
@@ -2490,15 +2544,15 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 </tr>
 <tr>
 <td>L7 FloatingAI &amp; Delta</td>
-<td>บีบความจำ 91.5%</td>
+<td>บีบความจำ 91.5% (มาจากสูตร ไม่ใช่การวัด; ถอนแล้ว)</td>
 <td>"Delta" 3 ชิ้นที่ต่างกัน (ดู §7)</td>
 <td>ตั้งชื่อใหม่และแยกกัน</td>
 </tr>
 <tr>
 <td>L8 Regional language adapter</td>
 <td>เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR)</td>
-<td>มี endpoint ตรวจความเสี่ยง PDPA และรายการ adapter กฎหมายไทย; ไม่มีชั้นที่เลือกโมเดลตาม locale หรือที่ตั้งข้อมูล</td>
-<td>แก้เอกสาร; สร้างเมื่อมีลูกค้าต้องการ</td>
+<td>Round 52: เลือกตามภูมิภาคและภาษาพร้อมแท็กกฎหมาย และ <strong>บังคับใช้ตอนเรียกจริง</strong>: นโยบายอธิปไตยข้อมูล (<code>core/regional_adapter/sovereignty.py</code>, <code>residency.py</code>) บล็อกการเรียกโมเดลที่ปลายทางนอกภูมิภาคที่อนุญาต บล็อกหรือปิดบังข้อมูลส่วนบุคคล (ตรวจ checksum เลขประจำตัวประชาชน) ในการเรียกข้ามพรมแดนที่อนุญาต และบันทึกทุกการตัดสินใจใน audit chain โดยไม่เก็บตัวข้อมูล เสียบ endpoint แบบ OpenAI-compatible ของประเทศหรือองค์กรเองได้ ยังไม่ครอบคลุม: เครื่องมือ crawl และสะพาน TypeScript</td>
+<td>คงไว้; นี่คือการควบคุมที่ตั้งข้อมูล ไม่ใช่การปฏิบัติตามกฎหมายด้วยตัวมันเอง</td>
 </tr>
 <tr>
 <td>L9 Universal adapter</td>
@@ -2539,7 +2593,7 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 <td><strong>Delta-Memory</strong></td>
 <td><code>core/delta_engine/memory_delta.py</code></td>
 <td>เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม</td>
-<td>91.5% บนการจำลอง 20 เอเจนต์ × 100 tick (ขนาด byte แบบประมาณ)</td>
+<td>log เล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัดจาก byte จริง; zstd ทั่วไปบน snapshot เต็มบีบได้มากกว่า คุณค่าจึงอยู่ที่การสร้างสถานะย้อนหลังและ rollback ที่ถูก</td>
 </tr>
 <tr>
 <td><strong>DeltaBlock</strong></td>
@@ -2636,9 +2690,9 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 </tr>
 <tr>
 <td>Delta-Memory</td>
-<td>91.5% บนการจำลอง 20 × 100</td>
-<td><code>python scripts/benchmark_fdia_delta.py --json</code></td>
-<td>2026-09-28</td>
+<td>log ส่วนต่างเล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัด byte จริง บนการจำลองสังเคราะห์</td>
+<td><code>python scripts/measure_delta_engine_real.py</code></td>
+<td>2026-10-01</td>
 </tr>
 <tr>
 <td>การประเมิน FDIA (Python)</td>
@@ -2769,7 +2823,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 <tr>
 <td>การคิด</td>
 <td>41 อัลกอริทึม, Kernel 9 Tiers, Intent Loop, ALGO-21 router, MEE</td>
-<td>อยู่ในโค้ด; Intent Loop 2 ตัวยังไม่รวมกัน; ALGO-21 ทำงานใน loop แล้ว (ROUTE)</td>
+<td>อยู่ในโค้ด; Intent Loop เป็นโค้ดอ้างอิงที่การรันและการตรวจสอบเป็นการจำลอง และยังไม่ต่อเข้ากับ agent loop; ALGO-21 ทำงานใน loop แล้ว (ROUTE)</td>
 </tr>
 <tr>
 <td>ฉันทามติ</td>

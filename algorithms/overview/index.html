@@ -2228,7 +2228,7 @@ verified test count (this repo's own <code>docs/testing/TESTING_CANONICAL.md</co
 <ul>
 <li><strong>Enterprise Test Suite:</strong> 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).</li>
 <li><strong>Hallucination Protection:</strong> Target <span class="arithmatex">\(&lt;0.3\%\)</span> hallucination rate via SignedAI multi-model consensus — internal methodology, see <code>docs/benchmark/hallucination-methodology.md</code> for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).</li>
-<li><strong>Memory Compression:</strong> Delta Engine's public, independently reproducible measurement is 91.5% (design floor ≥74%) — run <code>python scripts/benchmark_fdia_delta.py --json</code> yourself to verify.</li>
+<li><strong>Memory Compression:</strong> Delta Engine's measured saving is 39% (20 ticks) to 90% (500 ticks) against storing a full snapshot every tick — run <code>python scripts/measure_delta_engine_real.py</code> yourself to verify. The older 91.5% was a formula estimate and is withdrawn.</li>
 </ul>
 
 
