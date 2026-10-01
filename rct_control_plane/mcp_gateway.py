@@ -417,15 +417,16 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
         if action not in ("read", "write", "list"):
             return {"status": "ERROR", "error": f"Unknown FS action: {action}"}
 
-        # Round 52: one boundary for all three actions. The path is normalised and must still be
-        # inside the workspace (lexically, then after following symlinks) before any file is touched.
-        fs_root = _workspace_root()
-        safe_path = os.path.normpath(os.path.join(fs_root, target_path))
-        if not (safe_path + os.sep).startswith(fs_root + os.sep):
-            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is outside the gateway workspace"}
-        fs_real_root = os.path.realpath(fs_root)
-        safe_path = os.path.realpath(safe_path)
-        if not (safe_path + os.sep).startswith(fs_real_root + os.sep):
+        # Round 52: one boundary for all three actions. The path is resolved (`..` and symlinks) from
+        # the workspace root and must still start with the root, before any file is touched.
+        fs_real_root = os.path.realpath(_workspace_root())
+        fs_prefix = os.path.join(fs_real_root, "")                    # ends with a separator
+        safe_path = os.path.realpath(os.path.join(fs_real_root, target_path))
+        if safe_path == fs_real_root:                                  # the workspace itself: only listing makes sense
+            if action != "list":
+                return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is the workspace root itself"}
+            return {"status": "SUCCESS", "directory": target_path, "entries": os.listdir(fs_real_root)[:50]}
+        if not safe_path.startswith(fs_prefix):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path is outside the gateway workspace"}
         if action != "list" and _blocked_name(target_path):
             return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "the path names secret material"}
@@ -504,7 +505,11 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
             return {"status": "SUCCESS", "tasks": scheduler.list_tasks()}
         elif action == "trigger":
             task_id = args.get("task_id", "")
-            return scheduler.trigger_task(task_id)
+            outcome = scheduler.trigger_task(task_id)
+            if outcome.get("status") != "SUCCESS":
+                logger.warning("scheduled task %r did not run: %s", task_id, outcome.get("error"))
+                return {"status": "ERROR", "task_id": task_id, "error": "the task did not run; see the server log"}
+            return {key: outcome[key] for key in ("status", "task_id", "name", "executed_at", "output") if key in outcome}
         else:
             return {"status": "ERROR", "error": f"Unknown scheduler action: {action}"}
 

@@ -218,3 +218,23 @@ def test_https_fetch_connects_to_the_validated_address_and_checks_the_host_name(
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_the_workspace_root_can_be_listed_but_not_read_or_written(root):
+    (root / "ws" / "a.txt").write_text("x", encoding="utf-8")
+    for path in (".", "", "notes/.."):
+        assert "a.txt" in fs("list", path)["entries"], path
+        assert fs("read", path)["status"] == "VETOED_BY_WORKSPACE_BOUNDARY"
+        assert fs("write", path, "x")["status"] == "VETOED_BY_WORKSPACE_BOUNDARY"
+
+
+def test_a_failing_scheduled_task_does_not_leak_its_exception_text(root):
+    secret = "internal path C:/private/db.sqlite is locked"
+
+    def boom():
+        raise RuntimeError(secret)
+
+    gw.scheduler.register_task(name="boom_task", description="fails", interval_seconds=3600, handler=boom)
+    task_id = next(t["task_id"] for t in gw.scheduler.list_tasks() if t["name"] == "boom_task")
+    result = gw.execute_delentia_tool("delentia_cron_scheduler", {"action": "trigger", "task_id": task_id})
+    assert result["status"] == "ERROR" and secret not in json.dumps(result) and "private" not in json.dumps(result)
