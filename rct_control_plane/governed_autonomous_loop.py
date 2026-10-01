@@ -148,10 +148,11 @@ def _write_path_is_safe(relative_path: str) -> bool:
     if candidate != root and not candidate.startswith(root + os.sep):
         return False
     try:
-        resolved = Path(candidate).resolve()
+        real_root = os.path.realpath(root)
+        real = os.path.realpath(candidate)
     except (OSError, ValueError):
         return False
-    return resolved.is_relative_to(_REPO_ROOT)
+    return real == real_root or real.startswith(real_root + os.sep)
 
 
 def fdia_score(D: float, I: float, A: float) -> float:

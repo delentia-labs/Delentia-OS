@@ -53,9 +53,22 @@ class NeuralExchangeBridge:
         for sub in ["projects", "audio", "video", "logs", "datasets", "podcasts"]:
             os.makedirs(os.path.join(self.root_dir, sub), exist_ok=True)
 
-    @staticmethod
-    def compute_sha256(filepath: str) -> str:
+    def _inside(self, *parts: str) -> str:
+        """The path root_dir/parts, normalised, and only if it is still inside root_dir. The
+        components were already validated by _safe_path_component; this is the check on the
+        final path (what a file is actually opened with)."""
+        root = os.path.normpath(self.root_dir)
+        candidate = os.path.normpath(os.path.join(root, *parts))
+        if candidate != root and not candidate.startswith(root + os.sep):
+            raise PathTraversalError(f"path escapes the exchange root: {parts!r}")
+        return candidate
+
+    def compute_sha256(self, filepath: str) -> str:
         """Compute SHA-256 hash of a file for cryptographic attestation"""
+        root = os.path.normpath(self.root_dir)
+        filepath = os.path.normpath(filepath)
+        if not filepath.startswith(root + os.sep):
+            raise PathTraversalError("only files inside the exchange root can be hashed")
         if not os.path.exists(filepath):
             return ""
         sha256 = hashlib.sha256()
@@ -74,13 +87,13 @@ class NeuralExchangeBridge:
         )
 
         for cat in categories:
-            cat_path = os.path.join(self.root_dir, cat)
+            cat_path = self._inside(cat)
             if not os.path.exists(cat_path):
                 continue
             for fname in os.listdir(cat_path):
                 if fname == ".gitkeep":
                     continue
-                fpath = os.path.join(cat_path, fname)
+                fpath = self._inside(cat, fname)
                 if os.path.isfile(fpath):
                     st = os.stat(fpath)
                     results.append({
@@ -96,9 +109,9 @@ class NeuralExchangeBridge:
         """Save a file into the exchange bridge with SHA-256 verification"""
         category = _safe_path_component(category, "category")
         filename = _safe_path_component(filename, "filename")
-        cat_path = os.path.join(self.root_dir, category)
+        cat_path = self._inside(category)
         os.makedirs(cat_path, exist_ok=True)
-        fpath = os.path.join(cat_path, filename)
+        fpath = self._inside(category, filename)
 
         with open(fpath, "wb") as f:
             f.write(content)
@@ -118,7 +131,7 @@ class NeuralExchangeBridge:
         """Read a file and its integrity hash from the exchange bridge"""
         category = _safe_path_component(category, "category")
         filename = _safe_path_component(filename, "filename")
-        fpath = os.path.join(self.root_dir, category, filename)
+        fpath = self._inside(category, filename)
         if not os.path.exists(fpath):
             return None
         with open(fpath, "rb") as f:

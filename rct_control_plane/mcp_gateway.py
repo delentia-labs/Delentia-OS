@@ -5,13 +5,18 @@ Provides standard JSON-RPC 2.0 MCP endpoints (/mcp) for external AI clients
 Governed by Layer 2 CORD Shannon Entropy & Layer 3 FDIA Veto Gate (F = D^I * A)
 """
 
+import ipaddress
 import logging
 import os
+import shlex
+import socket
+import sys
 import json
 import subprocess
 import urllib.request
+from urllib.parse import urlsplit
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Request, HTTPException
 
 from .intent_compiler import IntentCompiler
@@ -166,6 +171,76 @@ DELENTIA_MCP_TOOLS = [
 # TOOL EXECUTION HANDLERS (Governed by FDIA & CORD)
 # ============================================================================
 
+# Round 52: the gateway's three powerful tools (shell, filesystem, fetch) were bounded only by a
+# pattern denylist. They now have real boundaries, each a constant the operator can widen
+# deliberately with an environment variable and nothing a caller can widen.
+GATEWAY_ROOT_ENV = "DELENTIA_GATEWAY_ROOT"
+GATEWAY_SHELL_ALLOW_ENV = "DELENTIA_GATEWAY_SHELL_ALLOW"          # extra executable names, comma separated
+GATEWAY_FETCH_PRIVATE_ENV = "DELENTIA_GATEWAY_ALLOW_PRIVATE_FETCH"  # "1" lets fetch reach private/loopback addresses
+_BLOCKED_NAME_PARTS = (".env", "_secret", "credentials.json", "vault_master.key", ".pem", "id_rsa")
+# Executables the shell tool will start (no shell is involved: the command is split into
+# arguments and run directly, so pipes, redirects and `&&` are not interpreted).
+_SHELL_ALLOWED = {
+    "git": "git", "python": sys.executable, "python3": sys.executable, "pytest": "pytest", "ruff": "ruff",
+    "mypy": "mypy", "node": "node", "npm": "npm", "npx": "npx", "pip": "pip",
+}
+
+
+def _split_command(cmd: str) -> list:
+    """Arguments of a command line. POSIX rules everywhere except Windows, where shlex keeps the
+    quotes in a token, so one enclosing pair of matching quotes is removed to give the program
+    what a Windows shell would have given it."""
+    if os.name != "nt":
+        return shlex.split(cmd)
+    return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t for t in shlex.split(cmd, posix=False)]
+
+
+def _workspace_root() -> str:
+    configured = os.environ.get(GATEWAY_ROOT_ENV)
+    return os.path.abspath(configured) if configured else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _in_workspace(path: str) -> Optional[str]:
+    """The absolute path if it is inside the gateway workspace (lexically AND after following
+    symlinks), else None. Relative paths are taken from the workspace root."""
+    root = _workspace_root()
+    candidate = os.path.normpath(os.path.join(root, path))
+    if candidate != root and not candidate.startswith(root + os.sep):
+        return None
+    real_root = os.path.realpath(root)
+    real = os.path.realpath(candidate)
+    if real != real_root and not real.startswith(real_root + os.sep):
+        return None
+    return candidate
+
+
+def _blocked_name(path: str) -> bool:
+    lowered = path.lower()
+    return any(part in lowered for part in _BLOCKED_NAME_PARTS)
+
+
+def _public_http_url(url: str) -> Optional[str]:
+    """The URL if it is http(s) and its host resolves only to public addresses, else None."""
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    if os.environ.get(GATEWAY_FETCH_PRIVATE_ENV) != "1":
+        try:
+            infos = socket.getaddrinfo(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80), type=socket.SOCK_STREAM)
+        except OSError:
+            return None
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+                return None
+    return url
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:     # a redirect could point at a private address
+        return None
+
+
 def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     # 1. delentia_compile_intent
     if tool_name == "delentia_compile_intent":
@@ -247,7 +322,21 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                 "error": f"Command contains suspicious patterns: {cord_res.verdict}"
             }
         try:
-            res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=15)  # nosec B602
+            argv = _split_command(cmd)
+        except ValueError:
+            return {"status": "ERROR", "error": "the command could not be split into arguments (unbalanced quote?)"}
+        allowed = dict(_SHELL_ALLOWED)
+        allowed.update({n.strip(): n.strip() for n in os.environ.get(GATEWAY_SHELL_ALLOW_ENV, "").split(",") if n.strip()})
+        executable = allowed.get(os.path.basename(argv[0]).lower().removesuffix(".exe")) if argv else None
+        if executable is None:
+            return {"status": "VETOED_BY_SHELL_ALLOWLIST",
+                    "error": f"only these programs can be started here: {', '.join(sorted(allowed))}. "
+                             f"The operator can add more with {GATEWAY_SHELL_ALLOW_ENV}."}
+        work_dir = _in_workspace(cwd)
+        if work_dir is None or not os.path.isdir(work_dir):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY", "error": "cwd must be a directory inside the gateway workspace"}
+        try:
+            res = subprocess.run([executable, *argv[1:]], cwd=work_dir, capture_output=True, text=True, timeout=15)  # nosec B603
             return {"status": "SUCCESS", "exit_code": res.returncode, "stdout": res.stdout[:2000], "stderr": res.stderr[:2000]}
         except Exception as e:
             logger.exception("delentia tool failed")
@@ -275,11 +364,16 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
                 "status": "VETOED_BY_FDIA_GATE",
                 "error": f"Delete action on '{target_path}' blocked by Zero-Delete Safety Policy (F = 0). Manual Architect Veto required."
             }
+        elif action in ("read", "write", "list") and (_in_workspace(str(target_path)) is None
+                                                       or (action != "list" and _blocked_name(str(target_path)))):
+            return {"status": "VETOED_BY_WORKSPACE_BOUNDARY",
+                    "error": "the path is outside the gateway workspace or names secret material"}
         elif action == "read":
-            if not os.path.exists(target_path):
+            safe_path = _in_workspace(str(target_path)) or ""
+            if not os.path.exists(safe_path):
                 return {"status": "ERROR", "error": f"File not found: {target_path}"}
             try:
-                with open(target_path, "r", encoding="utf-8", errors="replace") as f:
+                with open(safe_path, "r", encoding="utf-8", errors="replace") as f:
                     content = f.read(50000)
                 return {"status": "SUCCESS", "path": target_path, "content": content}
             except Exception as e:
@@ -290,18 +384,20 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
             cord_res = cord_engine.check(content)
             if not cord_res.is_clean:
                 return {"status": "VETOED_BY_CORD", "error": f"File content rejected by CORD scan: {cord_res.verdict}"}
+            safe_path = _in_workspace(str(target_path)) or ""
             try:
-                os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
-                with open(target_path, "w", encoding="utf-8") as f:
+                os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+                with open(safe_path, "w", encoding="utf-8") as f:
                     f.write(content)
                 return {"status": "SUCCESS", "path": target_path, "bytes_written": len(content.encode("utf-8"))}
             except Exception as e:
                 logger.exception("delentia tool failed")
                 return {"status": "ERROR", "error": f"{type(e).__name__} (details are in the server log)"}
         elif action == "list":
-            if not os.path.exists(target_path):
+            safe_path = _in_workspace(str(target_path)) or ""
+            if not os.path.isdir(safe_path):
                 return {"status": "ERROR", "error": f"Directory not found: {target_path}"}
-            entries = os.listdir(target_path)[:50]
+            entries = os.listdir(safe_path)[:50]
             return {"status": "SUCCESS", "directory": target_path, "entries": entries}
         else:
             return {"status": "ERROR", "error": f"Unknown FS action: {action}"}
@@ -335,9 +431,13 @@ def execute_delentia_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any
         url = args.get("url", "").strip()
         if not url.startswith(("http://", "https://")):
             return {"status": "ERROR", "error": "URL must start with http:// or https://"}
+        checked_url = _public_http_url(url)
+        if checked_url is None:
+            return {"status": "VETOED_BY_NETWORK_BOUNDARY",
+                    "error": "the address does not resolve, or resolves to a private, loopback or link-local address"}
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "DelentiaOS-Agent/2.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            req = urllib.request.Request(checked_url, headers={"User-Agent": "DelentiaOS-Agent/2.0"})
+            with urllib.request.build_opener(_NoRedirect).open(req, timeout=10) as resp:
                 raw_data = resp.read(50000).decode("utf-8", errors="replace")
             return {"status": "SUCCESS", "url": url, "content_length": len(raw_data), "preview": raw_data[:1000]}
         except Exception as e:
