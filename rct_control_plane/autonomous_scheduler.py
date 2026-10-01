@@ -1,7 +1,13 @@
 """
 Delentia OS - Autonomous Background Task Scheduler
 Provides cron-based and interval-based background job execution for the Control Plane.
-Manages automated pipelines: Daily AI Digest, Nightly Stress Benchmark, and Audit Compaction.
+Default tasks (Round 50): audit_chain_verify and audit_chain_anchor (tier A3).
+
+Round 50: the three earlier default tasks ("daily AI news digest", "nightly
+Hypothesis stress benchmark", "exchange SHA-256 integrity audit") returned fixed
+strings ("Aggregated 5 AI research papers", "verified 207,000 invariants...
+Zero violations", "Cryptographic attestation intact") and reported SUCCESS
+without doing any of it. They were replaced by tasks that do real work.
 
 Round 36: this class declared `_is_running`/`_bg_task` fields since it was
 first written, but no method ever set them - there was no real start()/
@@ -19,6 +25,7 @@ tasks and the AutonomousLoop reminder queue.
 import asyncio
 import inspect
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass
@@ -56,6 +63,9 @@ class AutonomousScheduler:
         self._handlers: Dict[str, Callable[[], Any]] = {}
         self._is_running = False
         self._bg_task: Optional[asyncio.Task] = None
+        # Round 50: each due task runs as its own asyncio task, so a slow one
+        # (verifying a large audit chain) never delays the reminder poller.
+        self._running: Dict[str, asyncio.Task] = {}
         self._kernel = kernel
         self._register_default_tasks()
         if kernel is not None:
@@ -101,6 +111,14 @@ class AutonomousScheduler:
             except asyncio.CancelledError:
                 pass
             self._bg_task = None
+        for task in list(self._running.values()):
+            task.cancel()
+        for task in list(self._running.values()):
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._running.clear()
 
     async def _run_loop(self, poll_interval_seconds: float) -> None:
         while self._is_running:
@@ -109,15 +127,17 @@ class AutonomousScheduler:
                 if not task.is_enabled:
                     continue
                 due = task.next_run_at is None or datetime.fromisoformat(task.next_run_at) <= now
-                if due:
-                    try:
-                        await self.trigger_task_async(task_id)
-                    except Exception:
-                        # A single bad task must never kill the whole poll
-                        # loop - the next due task, and the next poll cycle,
-                        # still run.
-                        logger.exception("autonomous_scheduler: task %s raised during scheduled run", task_id)
+                running = self._running.get(task_id)
+                if due and (running is None or running.done()):
+                    self._running[task_id] = asyncio.create_task(self._run_one(task_id))
             await asyncio.sleep(poll_interval_seconds)
+
+    async def _run_one(self, task_id: str) -> None:
+        try:
+            await self.trigger_task_async(task_id)
+        except Exception:
+            # A single bad task must never kill the poll loop or its siblings.
+            logger.exception("autonomous_scheduler: task %s raised during scheduled run", task_id)
 
     async def trigger_task_async(self, task_id: str) -> Dict[str, Any]:
         """Real async-aware trigger - awaits async handlers (like the
@@ -135,11 +155,13 @@ class AutonomousScheduler:
 
         try:
             if handler is None:
-                output = "Task executed successfully (default mock handler)."
+                output = "No handler registered for this task; nothing ran."
             elif inspect.iscoroutinefunction(handler):
                 output = await handler()
             else:
-                output = handler()
+                # Sync handlers (e.g. audit_chain_verify) run in a worker
+                # thread so they never block the event loop.
+                output = await asyncio.to_thread(handler)
             task.last_status = "SUCCESS"
             task.last_output = str(output)
             task.last_run_at = now_str
@@ -156,25 +178,23 @@ class AutonomousScheduler:
             return {"status": "FAILED", "task_id": task.task_id, "error": str(e)}
 
     def _register_default_tasks(self):
-        """Register system default autonomous pipelines"""
+        """Default tasks that do real work (Round 50)."""
         self.register_task(
-            name="daily_ai_news_digest",
-            description="Autonomous morning AI news fetcher & executive digest pipeline",
-            interval_seconds=86400,
-            handler=self._default_news_digest
-        )
-        self.register_task(
-            name="nightly_stress_benchmark",
-            description="Nightly property-based Hypothesis stress test runner",
-            interval_seconds=86400,
-            handler=self._default_nightly_benchmark
-        )
-        self.register_task(
-            name="exchange_integrity_audit",
-            description="Periodic SHA-256 cryptographic attestation scan of /exchange assets",
+            name="audit_chain_verify",
+            description="Recompute every link (and signature) of the runtime audit hash chain",
             interval_seconds=21600,
-            handler=self._default_integrity_audit
+            handler=self._verify_audit_chain,
         )
+        anchor = self.register_task(
+            name="audit_chain_anchor",
+            description=(f"Tier A3: sign the audit chain head and publish it to the outside witness "
+                         f"(needs {ANCHOR_URL_ENV}, {ANCHOR_KEY_ID_ENV} and DELENTIA_AUDIT_SIGNING_KEY)"),
+            interval_seconds=int(os.getenv(ANCHOR_INTERVAL_ENV, "3600")),
+            handler=self._anchor_audit_chain,
+        )
+        # Off until the host is configured, so a dev machine never anchors a
+        # throwaway database (the witness keeps every rollback as evidence).
+        anchor.is_enabled = anchor_configured()
 
     def register_task(
         self,
@@ -223,7 +243,12 @@ class AutonomousScheduler:
         now_str = datetime.now(timezone.utc).isoformat()
         
         try:
-            output = handler() if handler else "Task executed successfully (default mock handler)."
+            if handler is None:
+                output = "No handler registered for this task; nothing ran."
+            elif inspect.iscoroutinefunction(handler):
+                raise RuntimeError("async task: use trigger_task_async")
+            else:
+                output = handler()
             task.last_status = "SUCCESS"
             task.last_output = str(output)
             task.last_run_at = now_str
@@ -240,12 +265,43 @@ class AutonomousScheduler:
             task.last_output = str(e)
             return {"status": "FAILED", "task_id": task.task_id, "error": str(e)}
 
-    # Default Pipeline Handlers
-    def _default_news_digest(self) -> str:
-        return "Aggregated 5 AI research papers & geopolitical AI balance brief for Delentia Digest."
+    # Default task handlers (Round 50): real work, honest failures.
+    def _persistence(self) -> Any:
+        if self._kernel is not None and getattr(self._kernel, "_persistence", None) is not None:
+            return self._kernel._persistence
+        from rct_control_plane.persistence import ControlPlanePersistence
+        return ControlPlanePersistence()
 
-    def _default_nightly_benchmark(self) -> str:
-        return "Hypothesis engine verified 207,000 invariants across Delentia 10 layers. Zero violations."
+    def _verify_audit_chain(self) -> str:
+        from rct_control_plane import audit_chain
+        with self._persistence()._connect() as conn:
+            report = audit_chain.verify_audit_chain(conn, public_key_hex=os.getenv(audit_chain.PUBKEY_ENV))
+        if not report.ok:
+            raise RuntimeError(f"audit chain broken at seq {report.first_bad_seq}: {report.reason}")
+        return (f"audit chain OK: {report.chained_rows} chained rows ({report.signed_rows} signed), "
+                f"head seq {report.head_seq}")
 
-    def _default_integrity_audit(self) -> str:
-        return "All assets in /exchange verified against SHA-256 ledger. Cryptographic attestation intact."
+    async def _anchor_audit_chain(self) -> str:
+        if not anchor_configured():
+            return f"not configured ({ANCHOR_URL_ENV} / {ANCHOR_KEY_ID_ENV} unset); nothing anchored"
+        import httpx
+
+        from rct_control_plane import audit_chain
+        with self._persistence()._connect() as conn:
+            body = audit_chain.sign_anchor(conn, os.environ[ANCHOR_KEY_ID_ENV])
+        url = os.environ[ANCHOR_URL_ENV].rstrip("/") + "/v1/audit/anchor"
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(url, json=body)
+        if resp.status_code not in (200, 201):
+            raise RuntimeError(f"witness refused the anchor ({resp.status_code}): {resp.text[:200]}")
+        return f"anchored entries={body['entries']} head={body['head'][:16]}... at the witness"
+
+
+ANCHOR_URL_ENV = "DELENTIA_AUDIT_ANCHOR_URL"
+ANCHOR_KEY_ID_ENV = "DELENTIA_AUDIT_ANCHOR_KEY_ID"
+ANCHOR_INTERVAL_ENV = "DELENTIA_AUDIT_ANCHOR_INTERVAL_S"
+
+
+def anchor_configured() -> bool:
+    from rct_control_plane.audit_chain import SIGNING_KEY_ENV
+    return bool(os.getenv(ANCHOR_URL_ENV) and os.getenv(ANCHOR_KEY_ID_ENV) and os.getenv(SIGNING_KEY_ENV))

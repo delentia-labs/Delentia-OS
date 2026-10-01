@@ -166,6 +166,27 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def unknown_tool_result(tool_name: Any, known_names: List[str], limit: int = 3) -> Dict[str, Any]:
+    """The tool result for a tool name that does not exist: nothing is run,
+    and the closest real names are offered (spelling similarity first, then
+    shared name parts such as read/file/repo)."""
+    import difflib
+    name = str(tool_name or "")
+    close = difflib.get_close_matches(name, known_names, n=limit, cutoff=0.5)
+    if len(close) < limit:
+        parts = {p for p in re.split(r"[_\W]+", name.lower()) if p and p != "delentia"}
+        by_overlap = sorted(
+            (n for n in known_names if n not in close),
+            key=lambda n: -len(parts & set(n.lower().split("_"))),
+        )
+        close += [n for n in by_overlap if parts & set(n.lower().split("_"))][: limit - len(close)]
+    return {
+        "error": f"Unknown tool: {name!r}. Nothing was run.",
+        "did_you_mean": close,
+        "hint": "Use one of the exact tool names from the tool list" + (f", for example {close[0]}." if close else "."),
+    }
+
+
 def _detect_repeated_call(history: List[LoopStep]) -> str:
     """Round 44 item J.1.4(c): real, evidence-based fix for a confirmed
     failure mode - J.4.2's real Ollama integration testing (qwen2.5:7b)
@@ -387,7 +408,9 @@ class AutonomousLoop:
         time. Each accepts a sync or async callable (same
         awaited-if-awaitable pattern as on_step):
           - on_episode_start(goal): called once, before the first
-            iteration.
+            iteration. Returning a dict with "stopped_reason" (and
+            optionally "final_answer") ends the episode there, with no
+            model call and no tool call.
           - tool_filter(goal, available_tools) -> filtered_tools: called
             every iteration, right before decide_next_action() - lets a
             caller narrow the tool menu instead of always exposing the
@@ -428,10 +451,19 @@ class AutonomousLoop:
                 return await value
             return value
 
+        guard_stopped = False
         if on_episode_start is not None:
-            await _maybe_await(on_episode_start(goal))
+            # Round 50 GUARD: on_episode_start may end the episode before the
+            # first model call by returning {"stopped_reason": ...}.
+            start_verdict = await _maybe_await(on_episode_start(goal))
+            if isinstance(start_verdict, dict) and start_verdict.get("stopped_reason"):
+                stopped_reason = start_verdict["stopped_reason"]
+                final_answer = start_verdict.get("final_answer")
+                guard_stopped = True
+        # Read after on_episode_start: ROUTE may lower the step budget there.
+        iterations_allowed = 0 if guard_stopped else self.max_iterations
 
-        for i in range(1, self.max_iterations + 1):
+        for i in range(1, iterations_allowed + 1):
             if time.time() - t_start > self.max_seconds:
                 stopped_reason = "max_seconds_exceeded"
                 break
@@ -530,6 +562,21 @@ class AutonomousLoop:
                     await _notify(step)
                     stopped_reason = gate_result["stopped_reason"]
                     break
+
+            # After the governance gate (which judges every attempted call):
+            # Round 50: small models invent tool names (a real qwen2.5:7b run
+            # asked for delentia_read_file instead of delentia_read_repo_file,
+            # got "Unknown tool" and gave up). Nothing is dispatched; the model
+            # is told the closest real names so the next step can recover.
+            known_names = [t["name"] for t in available_tools]
+            if tool_name not in known_names:
+                step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args,
+                                 tool_result=unknown_tool_result(tool_name, known_names),
+                                 llm_reasoning=decision["reasoning"])
+                history.append(step)
+                self._persist_step(step)
+                await _notify(step)
+                continue
 
             try:
                 raw_result = await self._mcp.call_tool(tool_name, tool_args)

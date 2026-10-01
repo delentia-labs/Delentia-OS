@@ -247,6 +247,14 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
 })
 
 
+def _sha(value: Any) -> Optional[str]:
+    """Hash for notary records (hashes only, never content); None stays None."""
+    if value is None:
+        return None
+    from rct_control_plane.notary import sha256_hex
+    return sha256_hex(value)
+
+
 class GovernedAutonomousLoop(AutonomousLoop):
     """AutonomousLoop + real constitutional governance, wired through the
     four hook points AutonomousLoop.run() now exposes. See module
@@ -270,6 +278,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         fdia_threshold: float = FDIA_GATE_THRESHOLD,
         route: bool = True,
         fast_max_iterations: int = FAST_ROUTE_MAX_ITERATIONS,
+        notary: Optional[Any] = None,
         max_episode_cost_usd: Optional[float] = None,
         max_episode_tokens: Optional[int] = None,
     ):
@@ -331,6 +340,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._applied_max_iterations = self.max_iterations
         self._router: Optional[Any] = None
         self._episode_route: Dict[str, Any] = {}
+        # Round 50, tier A2: an out-of-process notary (notary.py) holds the
+        # signing key and records every tool call at this chokepoint. Taken
+        # from DELENTIA_NOTARY_URL when not passed, so every entry point built
+        # by agent_factory gets it. Configured but unreachable = fail closed.
+        if notary is None:
+            from rct_control_plane.notary import NotaryClient
+            notary = NotaryClient.from_env()
+        self._notary = notary
+        self._episode_id: str = ""
+        self._episode_notary_receipts: List[Dict[str, Any]] = []
+        self._episode_notary_gaps: List[Dict[str, Any]] = []
+        self._last_gate_fdia: Optional[Dict[str, Any]] = None
+        self._episode_guard: Dict[str, Any] = {}
+        self._episode_jitna_hash: str = ""
         # Round 50 budget: each episode runs through a fresh MeteredProvider
         # around the configured (or default) provider.
         self._configured_llm_provider = llm_provider
@@ -388,10 +411,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             on_answer_token=on_answer_token,
             on_episode_start=self._on_episode_start,
             tool_filter=self._tool_filter,
-            pre_dispatch_gate=self._pre_dispatch_gate,
+            pre_dispatch_gate=self._notarised_pre_dispatch,
             on_episode_end=self._on_episode_end,
             extra_context_provider=self._extra_context_provider,
-            post_dispatch_transform=self._compress_tool_output if self._compress_tool_outputs else None,
+            post_dispatch_transform=(self._notarised_post_dispatch
+                                     if (self._compress_tool_outputs or self._notary is not None) else None),
         )
 
     # ------------------------------------------------------------------
@@ -399,9 +423,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # I.2: real skill retrieval, injected into the prompt via
     # _extra_context_provider() below (not just fetched and discarded).
     # ------------------------------------------------------------------
-    async def _on_episode_start(self, goal: str) -> None:
+    async def _on_episode_start(self, goal: str) -> Optional[Dict[str, Any]]:
+        import uuid
         self._episode_start_time = time.time()
         self._episode_compressions = []
+        self._episode_id = uuid.uuid4().hex
+        self._episode_notary_receipts = []
+        self._episode_notary_gaps = []
+        self._episode_guard = {}
+        await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
+
+        blocked = await self._guard_goal(goal)
+        if blocked is not None:
+            return blocked
+
         self._meter = self._new_meter()
         self._llm_provider = self._meter
         kernel = self._get_kernel()
@@ -434,6 +469,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         signed = sign_packet(packet, self._keypair)
         self._episode_jitna_verified = verify_packet(signed, self._keypair.public_key_raw())
+        self._episode_jitna_hash = signed.compute_hash()
 
         self._persistence.append_audit(
             entity_type="governed_loop_episode_start",
@@ -450,8 +486,45 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
                 "route": self._episode_route,
+                "guard": self._episode_guard,
+                # F of the goal itself (A = 1: no action yet). Recorded, not
+                # enforced: the gate applies F to each risky action, where A
+                # is known (see _pre_dispatch_gate).
+                "goal_F": fdia_score(D, I, 1.0),
             },
         )
+        return None
+
+    async def _guard_goal(self, goal: str) -> Optional[Dict[str, Any]]:
+        """Round 50 GUARD (step 1 of the Constitutional Cycle): CORD screens
+        the goal before any model call. A hard finding (prompt injection,
+        encoded payload, oversized input) ends the episode: no model call,
+        no tool call. A soft finding is recorded and the episode continues.
+        Before this, CORD ran only in two API endpoints, so goals arriving
+        through the gateways, the scheduler, the MCP tool or subagents were
+        never screened."""
+        from rct_control_plane.cord_security import CORDVerdict, cord_check
+        cord = cord_check(goal)
+        self._episode_guard = {
+            "cord_verdict": cord.verdict.value,
+            "cord_findings": [{"check": f.check_type.value, "severity": f.severity, "pattern_id": f.pattern_id}
+                              for f in cord.findings],
+        }
+        if cord.verdict != CORDVerdict.REJECTED:
+            return None
+        self._episode_rct7_steps = []
+        self._episode_context_text = ""
+        self._episode_route = {"enabled": self._route_enabled, "skipped": "guard_blocked"}
+        self._persistence.append_audit(
+            entity_type="governed_loop_guard", entity_id=f"{self.namespace}-{self._episode_id}",
+            action="goal_blocked", actor=self.namespace,
+            changes={"goal_sha256": _sha(goal), **self._episode_guard, **cord.to_dict()},
+        )
+        await self._notarise_best_effort("guard_blocked", goal_sha256=_sha(goal),
+                                         cord_findings=self._episode_guard["cord_findings"])
+        reasons = ", ".join(sorted({f.pattern_id for f in cord.hard_findings}))
+        return {"stopped_reason": "guard_blocked",
+                "final_answer": f"This request was not processed: the CORD screen flagged it ({reasons})."}
 
     def _new_meter(self) -> Any:
         """Round 50: fresh per-episode meter. Prices are looked up only when
@@ -603,11 +676,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
     async def _pre_dispatch_gate(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
+        self._last_gate_fdia = None
         if tool_name not in RISKY_TOOLS:
             return None
 
         A, a_reason = self._authorization_signal(tool_name, tool_args)
         F = fdia_score(self._episode_D, self._episode_I, A)
+        self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F,
+                                "threshold": self._fdia_threshold}
 
         self._persistence.append_audit(
             entity_type="governed_loop_fdia_gate",
@@ -686,6 +762,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         "llm_finished": (1.0, False),
         "fdia_blocked": (-1.0, True),
         "pending_approval": (0.0, False),
+        # The goal was refused before the agent acted: neither growth nor an
+        # agent violation (the input, not the agent, tripped the screen).
+        "guard_blocked": (0.0, False),
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
@@ -721,6 +800,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         result["intent_verification"] = verification
         result["route"] = self._episode_route
+        result["guard"] = self._episode_guard
+        await self._notarise_best_effort(
+            "episode_end", goal_sha256=_sha(result["goal"]), stopped_reason=stopped_reason,
+            iterations=result["iterations"], final_answer_sha256=_sha(result.get("final_answer")),
+        )
+        result["notary"] = self._notary_summary()
         result["cost"] = self._meter.summary() if self._meter is not None else None
         pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
         change_description = (
@@ -822,6 +907,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "tool_outputs_compressed": len(self._episode_compressions),
                 "tool_output_chars_saved": sum(c["chars_saved"] for c in self._episode_compressions),
                 "stopped_reason": result["stopped_reason"],
+                "notary_receipts": len(self._episode_notary_receipts),
+                "notary_gaps": len(self._episode_notary_gaps),
             }
             run_id = f"run-{uuid.uuid4().hex[:12]}"
             self._persistence.save_experiment_run(
@@ -882,6 +969,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
             raise ApprovalError(
                 f"action {approval_id} belongs to namespace {existing.namespace!r}, not {self.namespace!r}"
             )
+        if self._notary is not None and existing.status == "APPROVED":
+            from rct_control_plane.notary import NotaryUnavailable
+            if not self._episode_id:
+                import uuid
+                self._episode_id = uuid.uuid4().hex
+            try:
+                # The signature itself is re-verified by claim_for_execution
+                # right below; this records the attempt before anything runs.
+                await self._notarise("approved_action_claim", approval_id=approval_id,
+                                     tool_name=existing.tool_name, action_sha256=existing.action_sha256)
+            except NotaryUnavailable as exc:
+                # Checked before claim_for_execution, so the approval is not
+                # used up and can be resumed once the notary is back.
+                raise ApprovalError(f"notary unavailable, the approved action was not run: {exc}") from exc
         action = store.claim_for_execution(approval_id)
 
         A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)
@@ -907,6 +1008,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 tool_result = {"error": str(exc)}
 
         store.mark_executed(approval_id, tool_result)
+        await self._notarise_best_effort("approved_action_result", approval_id=approval_id,
+                                         tool_name=action.tool_name, result_sha256=_sha(tool_result))
         self._persistence.append_audit(
             entity_type="pending_action_executed", entity_id=approval_id, action="execute",
             actor=self.namespace,
@@ -927,6 +1030,86 @@ class GovernedAutonomousLoop(AutonomousLoop):
             outcome["continuation"] = await self.run(action.goal, on_step=on_step)
         return outcome
 
+
+    # ------------------------------------------------------------------
+    # Round 50, tier A2: notarise at the dispatch chokepoint
+    # ------------------------------------------------------------------
+    async def _notarise(self, kind: str, **fields: Any) -> Optional[Dict[str, Any]]:
+        """Sends one hashes-only record to the notary and keeps its receipt
+        (seq, hash, signature) in the local audit trail too, so the two logs
+        can be cross-checked. Raises NotaryUnavailable; None without a notary."""
+        if self._notary is None:
+            return None
+        record = {"kind": kind, "namespace": self.namespace, "episode_id": self._episode_id, **fields}
+        receipt: Dict[str, Any] = await self._notary.append(record)
+        self._episode_notary_receipts.append({"kind": kind, "seq": receipt.get("seq"), "hash": receipt.get("hash")})
+        self._persistence.append_audit(
+            entity_type="notary_receipt", entity_id=f"{self.namespace}-{receipt.get('seq')}", action=kind,
+            actor=self.namespace, changes={"record_sha256": _sha(record), "receipt": receipt},
+        )
+        return receipt
+
+    async def _notarise_best_effort(self, kind: str, **fields: Any) -> None:
+        """For records whose loss must not change the outcome (the tool has
+        already run, or nothing runs): a failure is kept as a visible gap."""
+        from rct_control_plane.notary import NotaryUnavailable
+        try:
+            await self._notarise(kind, **fields)
+        except NotaryUnavailable as exc:
+            self._record_notary_gap(kind, str(exc))
+
+    def _record_notary_gap(self, kind: str, error: str) -> None:
+        gap = {"kind": kind, "error": error[:300]}
+        self._episode_notary_gaps.append(gap)
+        self._persistence.append_audit(
+            entity_type="notary_gap", entity_id=f"{self.namespace}-{self._episode_id}", action=kind,
+            actor=self.namespace, changes=gap,
+        )
+
+    def _notary_summary(self) -> Dict[str, Any]:
+        if self._notary is None:
+            return {"enabled": False}
+        return {"enabled": True, "url": getattr(self._notary, "url", None), "episode_id": self._episode_id,
+                "receipts": len(self._episode_notary_receipts),
+                "last": self._episode_notary_receipts[-1] if self._episode_notary_receipts else None,
+                "gaps": list(self._episode_notary_gaps)}
+
+    async def _notarised_pre_dispatch(
+        self, goal: str, tool_name: str, tool_args: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """FDIA gate, then the notary: no receipt, no tool call."""
+        gate = await self._pre_dispatch_gate(goal, tool_name, tool_args)
+        if self._notary is None:
+            return gate
+        from rct_control_plane.notary import NotaryUnavailable
+        try:
+            await self._notarise(
+                "tool_call", tool_name=tool_name, arguments_sha256=_sha(tool_args), goal_sha256=_sha(goal),
+                gate_decision="allowed" if gate is None else gate["stopped_reason"], fdia=self._last_gate_fdia,
+            )
+        except NotaryUnavailable as exc:
+            self._record_notary_gap("tool_call", str(exc))
+            if gate is not None:
+                return gate
+            return {
+                "stopped_reason": "notary_unavailable",
+                "tool_result": {
+                    "notary_unavailable": True, "tool_name": tool_name,
+                    "reason": f"the audit notary could not record this call, so it was not run (fail closed): {exc}",
+                },
+            }
+        return gate
+
+    async def _notarised_post_dispatch(
+        self, goal: str, tool_name: str, tool_args: Dict[str, Any], tool_result: Any,
+    ) -> Any:
+        """Result hash of what the tool actually returned (before compression)."""
+        if self._notary is not None:
+            await self._notarise_best_effort("tool_result", tool_name=tool_name,
+                                             arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
+        if self._compress_tool_outputs:
+            return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
+        return tool_result
 
     # ------------------------------------------------------------------
     # Round 48 COMPRESS: Delta v2 on large tool output, recoverable
