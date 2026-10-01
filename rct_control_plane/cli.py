@@ -1976,6 +1976,120 @@ def sovereignty_check(text: str) -> None:
     click.echo(f"{decision.action.upper()}: {decision.reason}")
 
 
+@cli.group("jitna")
+def jitna_group():
+    """
+    .jitna files: JITNA packets and the 6-field language as a signed file (Round 52).
+
+    A .jitna file can be sent over any network or carried on any medium; the receiver
+    needs only the sender's public key to check it. Signed is not encrypted: anyone
+    holding the file can read it.
+
+    Examples:
+        delentia jitna keygen --out ~/.delentia/keys/jitna.pem
+        delentia jitna pack --language intent.txt --source planner --target worker --key ~/.delentia/keys/jitna.pem -o task.jitna
+        delentia jitna verify task.jitna --trust <sender public key hex>
+        delentia jitna unpack task.jitna
+    """
+    pass
+
+
+@jitna_group.command("keygen")
+@click.option("--out", "out_path", required=True, help="Where to write the signing key (outside the repo).")
+def jitna_keygen(out_path: str) -> None:
+    """Create an Ed25519 key for signing .jitna files; publish the public key."""
+    from rct_control_plane import jitna_file
+    try:
+        public_hex = jitna_file.generate_key_file(out_path)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"private key : {Path(out_path).expanduser()}")
+    click.echo(f"public key  : {public_hex}  (give this to receivers; they pass it as --trust)")
+
+
+@jitna_group.command("pack")
+@click.option("--language", "language_path", type=click.Path(exists=True, dir_okay=False), required=True,
+              help="Text file with I:, D:, Δ:, A:, R:, M: lines (I is required).")
+@click.option("--source", required=True, help="Sending agent id.")
+@click.option("--target", required=True, help="Receiving agent id.")
+@click.option("--key", "key_path", type=click.Path(exists=True, dir_okay=False), required=True, help="Signing key from `jitna keygen`.")
+@click.option("--correlation-id", default=None)
+@click.option("--priority", type=click.IntRange(1, 5), default=3, show_default=True)
+@click.option("-o", "--out", "out_path", required=True, help="Output file; must end in .jitna")
+def jitna_pack(language_path: str, source: str, target: str, key_path: str, correlation_id: Optional[str],
+               priority: int, out_path: str) -> None:
+    """Sign a JITNA-language intent and write it as a .jitna file."""
+    from rct_control_plane import jitna_file
+    try:
+        language = jitna_file.parse_language(Path(language_path).read_text(encoding="utf-8"))
+        key = jitna_file.load_key_file(key_path)
+        envelope = jitna_file.pack_language(language, source, target, key, correlation_id=correlation_id, priority=priority)
+        written = jitna_file.write_file(envelope, out_path)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {written} ({written.stat().st_size} bytes), signed by {envelope['sender']['fingerprint'][:16]}")
+
+
+@jitna_group.command("verify")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--trust", "trusted", multiple=True, help="Public key hex (or fingerprint) you trust; repeatable.")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def jitna_verify(path: str, trusted: tuple, output: str) -> None:
+    """Check a .jitna file. Exit 0 only if it is valid AND every signer is trusted; exit 1 if invalid; exit 3 if valid but a signer is not one you trust."""
+    from rct_control_plane import jitna_file
+    try:
+        report = jitna_file.verify(jitna_file.read_file(path), trusted)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if output == "json":
+        click.echo(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        click.echo(f"sender   {report.sender_fingerprint[:16]}   created {report.created}")
+        for pk in report.packets:
+            click.echo(f"  packet {pk.packet_id[:8]}  {pk.source} -> {pk.target}  {pk.message_type}  signature {'ok' if pk.signature_valid else 'BAD'}")
+        for problem in report.problems:
+            click.echo(click.style(f"  problem: {problem}", fg="red"))
+        if report.valid and report.trusted:
+            click.echo(click.style("VALID and TRUSTED", fg="green"))
+        elif report.valid:
+            click.echo(click.style("VALID but NOT TRUSTED: the signatures are intact, but you have not said you trust "
+                                   f"{', '.join(k[:16] for k in report.untrusted_keys)} (use --trust)", fg="yellow"))
+        else:
+            click.echo(click.style("INVALID", fg="red"))
+    if not report.valid:
+        sys.exit(1)
+    if not report.trusted:
+        sys.exit(3)
+
+
+@jitna_group.command("unpack")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--trust", "trusted", multiple=True, help="Public key hex (or fingerprint) you trust; repeatable.")
+@click.option("--allow-untrusted", is_flag=True, help="Print the content even if no signer is trusted (the signatures must still be valid).")
+def jitna_unpack(path: str, trusted: tuple, allow_untrusted: bool) -> None:
+    """Print the JITNA language each packet carries, but only from a file that verifies."""
+    from rct_control_plane import jitna_file
+    try:
+        envelope = jitna_file.read_file(path)
+        report = jitna_file.verify(envelope, trusted)
+    except jitna_file.JitnaFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if not report.valid:
+        click.echo(click.style("Refusing to unpack: " + "; ".join(report.problems), fg="red"), err=True)
+        sys.exit(1)
+    if not report.trusted and not allow_untrusted:
+        click.echo(click.style("Refusing to unpack: no trusted signer (pass --trust <public key>, or --allow-untrusted to read it anyway)",
+                               fg="yellow"), err=True)
+        sys.exit(3)
+    for packet_id, language in jitna_file.languages(envelope):
+        click.echo(f"# packet {packet_id}")
+        click.echo(jitna_file.format_language(language))
+
+
 @cli.group("growth")
 def growth_group():
     """

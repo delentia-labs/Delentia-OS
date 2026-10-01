@@ -1721,6 +1721,22 @@ class ControlPlaneAPI:
                 "source": "python_kernel_real_computation",
             }
 
+        # Round 52: a receiving node checks a .jitna file (see jitna_file.py). The body is
+        # the file's JSON; trust comes from public keys the CALLER names, never from the
+        # file. Nothing is stored or executed: this only reports what verifies.
+        @self.app.post("/v1/jitna/verify", tags=["JITNA"])
+        async def verify_jitna_file(payload: Dict[str, Any]):
+            from rct_control_plane import jitna_file
+            envelope = payload.get("file")
+            trusted = payload.get("trusted_keys") or []
+            if not isinstance(envelope, dict) or not isinstance(trusted, list):
+                raise HTTPException(status_code=400, detail="body must be {'file': <the .jitna JSON>, 'trusted_keys': [public key hex, ...]}")
+            try:
+                checked = jitna_file.loads(json.dumps(envelope))
+            except jitna_file.JitnaFileError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return jitna_file.verify(checked, [str(k) for k in trusted]).to_dict()
+
         # Round 44 Phase J.3: the real HTTP entry point for
         # GovernedAutonomousLoop (items J.1/J.2/I.2 - FDIA gate, JITNA
         # signing, RCT-7 decomposition, Delta persistence, Skill Library
