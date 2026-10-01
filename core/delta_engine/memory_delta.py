@@ -300,6 +300,13 @@ class MemoryDeltaEngine:
         Ratio: 1 - (delta_bytes / naive_bytes)
         0.74 means delta storage uses 26% of naïve storage → 74% compression.
         Returns 0.0 if no data recorded yet.
+
+        THIS IS A MODEL, NOT A MEASUREMENT (Round 52). Both byte counts are formulas
+        (naive: 150 + 12 x deltas-so-far per tick; delta: 40 + len(str(changed fields))
+        per record), so the figure rises with the length of a run whatever the data are.
+        Measured on real serialised bytes (scripts/measure_delta_engine_real.py) the delta
+        log is 39% smaller after 20 ticks and about 90% after 500, and generic zstd over a
+        full-snapshot log reaches 96-99% with no Delta Engine at all.
         """
         if self._naive_byte_count == 0:
             return 0.0

@@ -88,7 +88,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
 | SignedAI multi-LLM consensus | ✅ `signedai/core/` | — |
 | HexaCoreRole registry (10 roles v2.3) | ✅ `signedai/core/registry.py` | — |
-| Delta Engine (91.5% measured compression, design floor ≥74%) | ✅ `core/delta_engine/` | — |
+| Delta Engine (memory deltas: ~39% smaller after 20 ticks, ~90% after 500, measured in bytes; see Round 52) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
 | JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_protocol_v3.py` | — |
@@ -154,7 +154,7 @@ $$F = D^I \times A$$
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
 | **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) - v2.3 |
 | **Hallucination Rate** | Not currently claimed. The earlier 0.3% figure was withdrawn 2026-09-28 because it could not be reproduced (see `docs/benchmark/hallucination-methodology.md`) |
-| **Memory Compression** | 91.5% measured (design floor ≥74%) via Delta Engine (stores state diffs, not full state) |
+| **Memory Compression** | stores state diffs, not full state: 39% (20 ticks) to 90% (500 ticks) smaller than a full snapshot per tick, measured in bytes (`scripts/measure_delta_engine_real.py`). The earlier 91.5% was a formula estimate, not a measurement |
 | **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
 | **Uptime SLA** | N/A (Experimental Hobby Platform, no enterprise SLA guaranteed) |
 | **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
@@ -372,7 +372,7 @@ Stores agent memory as compressed delta sequences — only what changed, not ful
 
 | Property | Value |
 |----------|-------|
-| **Compression** | 91.5% measured (design floor ≥74%) — stores DIFF, not full state |
+| **Compression** | 39% (20 ticks) to 90% (500 ticks) measured in bytes — stores DIFF, not full state; the gain grows with history length, and plain zstd over full snapshots does as well or better |
 | **Deduplication** | SHA-256 content hash per record |
 | **Rollback** | Replay any agent to any past tick via delta chain |
 
@@ -667,7 +667,7 @@ Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
 delentia-os/
 ├─ core/                        # Core algorithms + AI engine
 │  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
-│  ├─ delta_engine/             # Delta-Memory (91.5% on a synthetic 20-agent simulation)
+│  ├─ delta_engine/             # Delta-Memory (39-90% in measured bytes on a synthetic simulation, grows with run length)
 │  └─ regional_adapter/         # 8-market language routing
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
