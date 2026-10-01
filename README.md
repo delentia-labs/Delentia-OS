@@ -302,6 +302,11 @@ Use these paths when you need evidence, not marketing copy:
   ```bash
   pytest tests/hypothesis/test_fdia_properties.py -v
   ```
+- **The whole system against a scripted model (Round 52)** - 15 cases, 76 checks: guard, a real tool call, warm recall, signed approvals, memory, model failures, budget, data residency, delegation, three subagents in three OS processes and git worktrees, a forged subagent answer, audit tampering and the `.jitna` handoff. The model is a real HTTP endpoint that follows a script, so a result is about the system, not about a model:
+  ```bash
+  python scripts/full_pipeline_cases.py            # add --no-subagents for the 30-second version
+  python scripts/real_model_tool_probe.py qwen2.5:7b   # the other question: is this MODEL good enough to drive it?
+  ```
 - **Current test and coverage checkpoint** - [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md)
 - **Release gate checklist** - [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
 - **Public export and provenance policy** - [`docs/release/PUBLIC_RELEASE_PROVENANCE.md`](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
@@ -421,7 +426,7 @@ Full documentation: [docs/concepts/jitna.md](docs/concepts/jitna.md) | [RFC-001 
 
 JITNA is a three-layer system:
 - **Layer 1 — Protocol** (`rct_control_plane/jitna_protocol.py`): RFC-001 wire format, Ed25519 signed packets, The 9 Codex
-- **Layer 2 — Language** (6-field I/D/Δ/A/R/M templates): 50+ workflow templates for structured intent expression
+- **Layer 2 — Language** (6-field I/D/Δ/A/R/M): a parser and formatter for the text form (`rct_control_plane/jitna_file.py`, Round 52) and the `.jitna` signed file; no template library ships in this repository, and earlier text that cited "50+ workflow templates" is withdrawn
 - **Layer 3 — Intake** (`microservices/intent-loop/loop_engine.py`): user-facing JITNAPacket + LoopMetrics
 
 ```python
@@ -441,7 +446,30 @@ packet = JITNAPacket(
 
 The canonical 6-field JITNA Language schema uses I=Intent, D=**Data**, Δ=Delta, A=**Approach**, R=**Reflection**, M=**Memory** — the SignedAI variant above uses different field semantics for verification context. See [docs/concepts/jitna.md](docs/concepts/jitna.md) for the full disambiguation.
 
+#### The `.jitna` file (Round 52)
+
+A JITNA packet can be written as a signed file and sent over any network or medium; the receiver needs only the sender's public key. The 6-field language is plain text:
+
+```text
+I: Refactor the authentication module
+D: 800-line monolith, no tests
+Δ: separate domain logic from infrastructure
+A: hexagonal architecture
+M: all tests must pass
+```
+
+```bash
+delentia jitna keygen --out ~/.delentia/keys/jitna.pem        # prints the public key to publish
+delentia jitna pack --language intent.txt --source planner --target worker --key ~/.delentia/keys/jitna.pem -o task.jitna
+delentia jitna verify task.jitna --trust <sender public key>   # exit 0 valid+trusted, 3 valid but not trusted, 1 invalid
+delentia jitna unpack task.jitna --trust <sender public key>   # prints the language, only from a file that verifies
+```
+
+Each packet carries its own Ed25519 signature, and the file carries a **seal** over the whole body. The seal matters because a packet's own hash leaves `priority`, `correlation_id`, `metadata` and `status` outside what is signed. "Valid" (nothing changed after signing) and "trusted" (you pinned the signer's key) are reported separately: anyone can generate a key and sign anything. A `.jitna` file is signed, not encrypted. Receivers can also `POST /v1/jitna/verify`. Code: `rct_control_plane/jitna_file.py`.
+
 ### Regional Adapter and data sovereignty (`core/regional_adapter/`, `rct_control_plane/residency.py`)
+
+You can do all of the following from the Desk (**Models** and **Sovereignty** pages) without the command line: pick a country, provider and model (or Other), declare where the endpoint processes data, test the connection (no prompt is sent, and an endpoint the policy would block is not contacted), and set the policy. A key typed there stays in the server's memory; only the name of its environment variable is saved.
 
 The idea: any country or organisation plugs in its own AI, and personal data does not leave the boundary it sets.
 

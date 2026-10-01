@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from rct_control_plane.persistence import ControlPlanePersistence
-from rct_control_plane.semantic_matcher import SemanticMatcher
+from rct_control_plane.semantic_matcher import ContentMatcher
 
 
 class MemoryType(str, Enum):
@@ -35,7 +35,7 @@ class AgentMemory:
     def __init__(self, namespace: str, persistence: ControlPlanePersistence):
         self.namespace = namespace
         self._persistence = persistence
-        self._matcher = SemanticMatcher()
+        self._matcher = ContentMatcher()
 
     async def store(self, content: str, memory_type: MemoryType,
                      context: Optional[Dict[str, Any]] = None, importance: float = 0.5) -> str:

@@ -132,8 +132,8 @@ whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยัง�
 | L4 RCTDB | 8 มิติ บน Qdrant + Neo4j + PostgreSQL | ค่าเริ่มต้นคือ SQLite (ตาราง RCTDB, audit แบบ hash chain, experiment runs); มี backend PostgreSQL + pgvector; Qdrant ใช้ใน vector search (ALGO-16); Neo4j ใช้ใน graph traversal (ALGO-17) เมื่อตั้ง server ไว้ | แก้เอกสารเป็น "SQLite เป็นค่าเริ่มต้น มี backend เสริม" ช่องว่างในโค้ด: audit hash chain มีแค่บน SQLite ต้องทำให้ PostgreSQL เท่ากันก่อน deploy หลายเครื่อง |
 | L5 SignedAI | ฉันทามติหลายโมเดล ≥ 75% | logic ฉันทามติและการเลือก tier อยู่ใน `signedai/core`; ยังไม่มี HTTP API; รายชื่อโมเดลในเอกสารเก่าล้าสมัย | แก้เอกสาร; API wrapper อยู่ใน backlog |
 | L6 JITNA | แพ็กเก็ต I, D, Δ, A, R, M | ✅ แพ็กเก็ตลงลายเซ็น Ed25519 (v2), streaming (v3) | คงไว้ |
-| L7 FloatingAI & Delta | บีบความจำ 91.5% | "Delta" 3 ชิ้นที่ต่างกัน (ดู §7) | ตั้งชื่อใหม่และแยกกัน |
-| L8 Regional language adapter | เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR) | มี endpoint ตรวจความเสี่ยง PDPA และรายการ adapter กฎหมายไทย; ไม่มีชั้นที่เลือกโมเดลตาม locale หรือที่ตั้งข้อมูล | แก้เอกสาร; สร้างเมื่อมีลูกค้าต้องการ |
+| L7 FloatingAI & Delta | บีบความจำ 91.5% (มาจากสูตร ไม่ใช่การวัด; ถอนแล้ว) | "Delta" 3 ชิ้นที่ต่างกัน (ดู §7) | ตั้งชื่อใหม่และแยกกัน |
+| L8 Regional language adapter | เลือกโมเดลตาม locale และที่ตั้งข้อมูล (PDPA/GDPR) | Round 52: เลือกตามภูมิภาคและภาษาพร้อมแท็กกฎหมาย และ **บังคับใช้ตอนเรียกจริง**: นโยบายอธิปไตยข้อมูล (`core/regional_adapter/sovereignty.py`, `residency.py`) บล็อกการเรียกโมเดลที่ปลายทางนอกภูมิภาคที่อนุญาต บล็อกหรือปิดบังข้อมูลส่วนบุคคล (ตรวจ checksum เลขประจำตัวประชาชน) ในการเรียกข้ามพรมแดนที่อนุญาต และบันทึกทุกการตัดสินใจใน audit chain โดยไม่เก็บตัวข้อมูล เสียบ endpoint แบบ OpenAI-compatible ของประเทศหรือองค์กรเองได้ ยังไม่ครอบคลุม: เครื่องมือ crawl และสะพาน TypeScript | คงไว้; นี่คือการควบคุมที่ตั้งข้อมูล ไม่ใช่การปฏิบัติตามกฎหมายด้วยตัวมันเอง |
 | L9 Universal adapter | REST / GraphQL / WebSocket / gRPC | MCP คือพื้นผิวเชื่อมต่อ (6 remote tools, 34 runtime tools, Guard สำหรับ MCP server ใดก็ได้); มี adapter SDK แต่เงียบ | นิยาม L9 ใหม่เป็น "MCP + Guard" |
 | L10 Enterprise hardening | JWT RS256, RBAC, circuit breaker | ✅ `enterprise_hardening.py`, API auth ด้วย bearer token, allowlist ผู้ส่งแบบ fail-closed บน gateway | คงไว้ |
 
@@ -147,7 +147,7 @@ whitepaper ฉบับก่อนอธิบาย 10 ชั้น ยัง�
 | ชื่อในเอกสารนี้ | โค้ด | ทำอะไร | วัดได้ |
 |---|---|---|---|
 | **Delta-Context** | TS `compress_context` / `expand_context`; Python `delta_v2.py` (port ที่ได้ผลตรงกันทุก byte); Guard `--compress` | ย่อ output ขนาดใหญ่ของ tool โดยเก็บบรรทัดที่เป็นความล้มเหลวไว้ และขยายส่วนที่เหลือกลับได้ | ลด token ~70–75% บนโค้ดและ log จริง (โหมด aggressive); Guard: ~66% บน log build + test จริง |
-| **Delta-Memory** | `core/delta_engine/memory_delta.py` | เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม | 91.5% บนการจำลอง 20 เอเจนต์ × 100 tick (ขนาด byte แบบประมาณ) |
+| **Delta-Memory** | `core/delta_engine/memory_delta.py` | เก็บสถานะเอเจนต์เป็นส่วนต่างแทน snapshot เต็ม | log เล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัดจาก byte จริง; zstd ทั่วไปบน snapshot เต็มบีบได้มากกว่า คุณค่าจึงอยู่ที่การสร้างสถานะย้อนหลังและ rollback ที่ถูก |
 | **DeltaBlock** | `algo_25_delta_block.py` | log ส่วนต่าง และบีบประวัติบทสนทนา | – |
 
 ความจำอัตโนมัติ: ความจำที่เกี่ยวข้องถูกดึงเข้า prompt ตอนเริ่มทุก episode โดยติดป้ายว่าเป็นข้อมูล
@@ -180,7 +180,7 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 | สัญญา FDIA | 422 จาก 425 vector ตรงกันระหว่าง TypeScript กับ Python; อีก 3 เป็นความต่างเรื่อง clamp ที่บันทึกไว้ | contract test ในทั้งสอง repo | 2026-09-28 |
 | Delta-Context | token ลดลง ~70–75% (aggressive); เก็บบรรทัดคำตอบได้ 100% เมื่อถามด้วยคำเดียวกับต้นฉบับ และ ~60% เมื่อถามแบบถอดความ; โหมดปกติ ~6–12% | `benchmarks/compression-real/` ใน `delentia-mcp/ecosystem` | Round 46 |
 | การบีบของ Guard | เล็กลง ~66% บน log build + test จริง โดยยังเก็บ test ที่ล้มไว้ | `delentia-mcp/ecosystem/docs/GUARD.md` | 2026-09 |
-| Delta-Memory | 91.5% บนการจำลอง 20 × 100 | `python scripts/benchmark_fdia_delta.py --json` | 2026-09-28 |
+| Delta-Memory | log ส่วนต่างเล็กกว่า snapshot เต็ม 39% (20 tick) ถึง 90% (500 tick) วัด byte จริง บนการจำลองสังเคราะห์ | `python scripts/measure_delta_engine_real.py` | 2026-10-01 |
 | การประเมิน FDIA (Python) | 2.37 µs ต่อครั้ง บน CPU โน้ตบุ๊ก 1 เครื่อง | สคริปต์เดียวกัน | 2026-09-28 |
 | การดึงความจำ (SQLite ในหน่วยความจำ) | p95 0.021 ms | สคริปต์เดียวกัน | 2026-09-28 |
 | การคัดกรอง CORD | 100 pattern ~48 µs ต่อครั้ง; ชุดตัวอย่างของสคริปต์เองได้อัตราตรวจจับ 50% จึงไม่อ้างอัตราตรวจจับ | สคริปต์เดียวกัน | 2026-09-28 |

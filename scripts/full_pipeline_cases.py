@@ -88,10 +88,10 @@ class Env:
         save_model_selection("openai-compat", self.model.model_id, path=self.model_config, endpoint={
             "base_url": self.model.base_url, "kind": kind, "region": region, "operator": "scripted-test-model"})
 
-    def loop(self, namespace: Optional[str] = None, max_iterations: int = 5, **kwargs: Any) -> Any:
+    def loop(self, namespace: Optional[str] = None, max_iterations: int = 5, max_seconds: float = 120.0, **kwargs: Any) -> Any:
         from rct_control_plane.agent_factory import build_governed_loop
         self.counter += 1
-        loop = build_governed_loop(self.kernel, namespace or f"case-{self.counter}", max_iterations=max_iterations,
+        loop = build_governed_loop(self.kernel, namespace or f"case-{self.counter}", max_iterations=max_iterations, max_seconds=max_seconds,
                                    persistence=self.kernel._persistence, mcp_server=self.mcp)
         for name, value in kwargs.items():
             setattr(loop, name, value)
@@ -469,6 +469,66 @@ async def c15(env: Env, ok: Check) -> Dict[str, Any]:
     return {"bytes": path.stat().st_size}
 
 
+@case("C16", "RECORD (tier A2): a notary in another OS process signs what the agent did, and a dead notary stops the agent")
+async def c16(env: Env, ok: Check) -> Dict[str, Any]:
+    import socket
+    import sqlite3
+    from rct_control_plane import notary
+    key_path = env.work / "keys" / "notary.pem"
+    notary_pub = notary.generate_key(str(key_path))
+    db = env.work / "notary.db"
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    server = subprocess.Popen([sys.executable, "-m", "rct_control_plane.cli", "notary", "serve", "--db", str(db), "--key", str(key_path),
+                               "--port", str(port)], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                              env={**os.environ, "PYTHONPATH": str(ROOT)})
+    url = f"http://127.0.0.1:{port}"
+    import httpx
+    try:
+        for _ in range(120):
+            try:
+                if httpx.get(f"{url}/health", timeout=1).status_code < 500:
+                    break
+            except httpx.HTTPError:
+                pass
+            await asyncio.sleep(0.5)
+        else:
+            ok("the notary process started", False, "no answer on /health")
+            return {}
+        ok("the notary runs as its own OS process", server.pid != os.getpid())
+        os.environ[notary.NOTARY_URL_ENV] = url
+        env.model.reset()
+        result = await env.loop("c16").run("Read the file README.md and tell me its title")
+        ok("the episode finished normally with the notary in the path", result["stopped_reason"] == "llm_finished", result["stopped_reason"])
+        with sqlite3.connect(str(db)) as conn:
+            kinds = [json.loads(r[0]).get("kind") for r in conn.execute("SELECT record FROM notary_log ORDER BY seq").fetchall()]
+        ok("the notary logged the episode start, the tool call before it ran, its result and the end",
+           {"episode_start", "tool_call", "tool_result", "episode_end"} <= set(kinds), kinds)
+        report = notary.verify_log(str(db), notary_pub)
+        ok("the notary's own log verifies with its public key", report.ok, report.to_dict())
+        entries = report.to_dict().get("entries") or report.to_dict().get("checked") or 0
+        with sqlite3.connect(str(db)) as conn:
+            row = conn.execute("SELECT seq, record FROM notary_log WHERE seq = 2").fetchone()
+        ok("the agent's process has no way to see or alter that log (it only holds the URL)", "NOTARY_KEY" not in os.environ and bool(row))
+        with sqlite3.connect(str(db)) as conn:
+            conn.execute("UPDATE notary_log SET record = ? WHERE seq = 2", (json.dumps({"kind": "forged"}),))
+        ok("an edit to the notary's log is detected", not notary.verify_log(str(db), notary_pub).ok)
+    finally:
+        server.terminate()
+        try:
+            server.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server.kill()
+    env.model.reset()
+    down = await env.loop("c16-down").run("Read the file README.md and tell me its title")
+    ok("with the notary gone the agent fails closed", down["stopped_reason"] == "notary_unavailable", down["stopped_reason"])
+    ran = "Sample service" in json.dumps(down["steps"], default=str)
+    ok("no receipt, no call: the tool did not run", not ran, down["steps"])
+    os.environ.pop(notary.NOTARY_URL_ENV, None)
+    return {"entries": entries}
+
+
 @case("C12", "RECORD: the audit trail detects an edit made after the fact")
 async def c12(env: Env, ok: Check) -> Dict[str, Any]:
     from rct_control_plane import audit_chain
@@ -505,7 +565,7 @@ async def main_async(args: argparse.Namespace) -> int:
         "DELENTIA_ALGORITHM_PIPELINE": "1", "DELENTIA_WARM_RECALL": "1", "DELENTIA_APPROVERS_FILE": str(work / "approvers.json"),
         "DELENTIA_LLM_PROVIDER": "openai-compat", "DELENTIA_LLM_MODEL": "scripted-1", "DELENTIA_LLM_RETRY_BACKOFF": "0.01",
     })
-    for name in ("DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL"):
+    for name in ("DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN"):
         os.environ.pop(name, None)
     env.build_repo()
 

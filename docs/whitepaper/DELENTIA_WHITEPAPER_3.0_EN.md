@@ -149,9 +149,9 @@ built when they were plans. This table is the corrected record.
 | L3 Algorithm kernel | 41 algorithms + FDIA | 41/41 have logic; ALGO-02, 37 and 38 were stand-ins until 2026-10-01 and are now real (Pareto planner, plan depth from the intent, interval constraint solver). Measured 2026-10-01: with the pipeline on, 37 of 41 execute on real inputs with a rule policy; ALGO-09/11/32 need a model call, ALGO-14 an image request | Keep; see §4.1 |
 | L4 RCTDB | 8 dimensions on Qdrant + Neo4j + PostgreSQL | SQLite by default (RCTDB tables, hash-chained audit, experiment runs); PostgreSQL + pgvector backend available; Qdrant used by vector search (ALGO-16); Neo4j used by graph traversal (ALGO-17) when a server is configured | Correct the text to "SQLite by default, optional backends". Code gap: the hash-chained audit exists only on SQLite; PostgreSQL parity is needed before multi-host deployment |
 | L5 SignedAI | Multi-model consensus ≥ 75% | Consensus logic and tier routing in `signedai/core`; no HTTP API yet; model lists in older papers are out of date | Correct the text; an API wrapper is backlog |
-| L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3) | Keep |
-| L7 FloatingAI & Delta | 91.5% memory compression | Three different "Delta" components (see §7) | Rename and separate |
-| L8 Regional language adapter | Route by locale and data residency (PDPA/GDPR) | A PDPA risk-audit endpoint and a Thai-law adapter entry exist; no layer chooses models by locale or residency | Correct the text; build only when a customer needs it |
+| L6 JITNA | Packets I, D, Δ, A, R, M | ✅ Ed25519-signed packets (v2), streaming (v3); Round 52: the `.jitna` signed file (6-field language, a seal over the whole body, `delentia jitna`) | Keep |
+| L7 FloatingAI & Delta | 91.5% memory compression (a formula, not a measurement; withdrawn) | Three different "Delta" components (see §7) | Rename and separate |
+| L8 Regional language adapter | Route by locale and data residency (PDPA/GDPR) | Round 52: routing by region and language with compliance tags, plus **call-time enforcement**: a sovereignty policy (`core/regional_adapter/sovereignty.py`, `residency.py`) blocks a model call to an endpoint outside the allowed regions, blocks or redacts personal data (national-ID checksums) in a permitted cross-border call, and records each decision in the audit chain without the data. Any OpenAI-compatible endpoint (a national or self-hosted model) can be plugged in. Not covered: the crawl tool and the TypeScript bridge | Keep; this is data-location control, not legal compliance |
 | L9 Universal adapter | REST / GraphQL / WebSocket / gRPC | MCP is the integration surface (6 remote tools, 34 runtime tools, Guard for any MCP server); an adapter SDK exists but is idle | Reframe L9 as "MCP + Guard" |
 | L10 Enterprise hardening | JWT RS256, RBAC, circuit breaker | ✅ `enterprise_hardening.py`, bearer-token API auth, fail-closed sender allowlists on gateways | Keep |
 
@@ -167,7 +167,7 @@ routing once a customer asks for it.
 | Name in this paper | Code | What it does | Measured |
 |---|---|---|---|
 | **Delta-Context** | TS `compress_context` / `expand_context`; Python `delta_v2.py` (byte-identical port); Guard `--compress` | Shrinks large tool output while keeping failure lines and a way to expand the rest | ~70–75% token reduction on real code and logs (aggressive mode); Guard: ~66% on a real build + test log |
-| **Delta-Memory** | `core/delta_engine/memory_delta.py` | Stores agent state as deltas instead of full snapshots | 91.5% on a synthetic 20-agent × 100-tick simulation (estimated bytes) |
+| **Delta-Memory** | `core/delta_engine/memory_delta.py` | Stores agent state as deltas instead of full snapshots | 39% (20 ticks) to 90% (500 ticks) smaller than full snapshots in measured bytes; generic zstd over full snapshots does better, so the value is cheap reconstruction and rollback |
 | **DeltaBlock** | `algo_25_delta_block.py` | Diff log and turn-history compression | – |
 
 Automatic memory: relevant memories are recalled into the prompt at the start of every episode,
@@ -201,7 +201,7 @@ off the chain (only hashes are chained), so erasure requests can be honoured wit
 | FDIA contract | 422 of 425 vectors agree across TypeScript and Python; 3 documented clamping differences | contract tests in both repositories | 2026-09-28 |
 | Delta-Context | ~70–75% fewer tokens (aggressive); keeps the answer line for 100% of same-wording questions and ~60% of paraphrased ones; default mode ~6–12% | `benchmarks/compression-real/` in `delentia-mcp/ecosystem` | Round 46 |
 | Guard compression | ~66% smaller on a real build + test log, failing test kept | `delentia-mcp/ecosystem/docs/GUARD.md` | 2026-09 |
-| Delta-Memory | 91.5% on a synthetic 20 × 100 simulation | `python scripts/benchmark_fdia_delta.py --json` | 2026-09-28 |
+| Delta-Memory | Delta log 39% (20 ticks) to 90% (500 ticks) smaller than full snapshots, real bytes, synthetic simulation | `python scripts/measure_delta_engine_real.py` | 2026-10-01 |
 | FDIA evaluation (Python) | 2.37 µs per evaluation on one laptop CPU | same script | 2026-09-28 |
 | Warm recall (in-memory SQLite) | p95 0.021 ms | same script | 2026-09-28 |
 | CORD screening | 100 patterns, ~48 µs per check; the script's own sample set shows a 50% detection rate, so no detection-rate claim is made | same script | 2026-09-28 |

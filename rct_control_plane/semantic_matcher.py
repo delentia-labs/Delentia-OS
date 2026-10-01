@@ -151,3 +151,61 @@ class SemanticMatcher:
             {"text": text, "score": score, "rank": rank + 1}
             for rank, (score, _idx, text) in enumerate(scored[:top_k])
         ]
+
+
+# ---------------------------------------------------------------------------------------------
+# Round 52: memory recall compares what a text is ABOUT, not every word in it.
+#
+# The plain word-set matcher above counts "the", "is", "my" as evidence and treats "releases",
+# "release" and "manages"/"manager" as unrelated words, so a fact stored in one wording was
+# missed (or ranked behind noise) when asked in another (scripts/measure_memory_retrieval.py).
+# ContentMatcher drops function words and folds a few English endings; Thai tokens (character
+# n-grams) pass through untouched. It is used by AgentMemory only: the intent check and the other
+# users of SemanticMatcher keep their tuned thresholds.
+# ---------------------------------------------------------------------------------------------
+
+_STOPWORDS = frozenset("""
+a an the and or but if then than so as at by for from in into of on onto to up with without about over under
+is are was were be been being am do does did done have has had having can could will would shall should may might must
+i me my mine we us our ours you your yours he him his she her hers it its they them their theirs this that these those
+what which who whom whose when where why how whether there here not no nor
+tell give show name find list please just also very any some each every all more most other such own same too
+""".split())
+_ENDINGS = ("ations", "ation", "ingly", "ments", "ment", "ness", "ings", "ing", "ers", "ies", "ed", "er", "es", "s")
+
+
+def _stem(word: str) -> str:
+    if len(word) <= 3 or not word.isascii():
+        return word
+    for ending in _ENDINGS:
+        if word.endswith(ending) and len(word) - len(ending) >= 3:
+            word = word[: -len(ending)] + ("y" if ending == "ies" else "")
+            break
+    # release / releases / released, manage / manager / manages, invoice / invoices: one stem each
+    if len(word) > 4 and word.endswith("e"):
+        word = word[:-1]
+    return word
+
+
+def content_terms(text: str) -> set[str]:
+    terms: set[str] = set()
+    for token in _tokenize(text):
+        if token in _STOPWORDS:
+            continue
+        terms.add(_stem(token))
+    return terms
+
+
+class ContentMatcher(SemanticMatcher):
+    """SemanticMatcher whose fallback score compares stemmed content words only."""
+
+    def _jaccard_composite(self, text_a: str, text_b: str) -> float:
+        a, b = content_terms(text_a), content_terms(text_b)
+        if not a and not b:
+            return 1.0 if text_a.strip() == text_b.strip() else 0.0
+        if not a or not b:
+            return 0.0
+        shared = len(a & b)
+        jaccard = shared / len(a | b)
+        soft = (shared / len(a) + shared / len(b)) / 2
+        return round(min(max(0.6 * jaccard + 0.4 * soft, 0.0), 1.0), 4)

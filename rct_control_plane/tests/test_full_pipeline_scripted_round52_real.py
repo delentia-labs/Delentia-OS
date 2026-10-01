@@ -19,7 +19,7 @@ from rct_control_plane.autonomous_loop import _describe_llm_error, _is_transient
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
-CASE_CODES = ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15"]
+CASE_CODES = ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16"]
 
 
 @pytest.fixture(scope="module")
