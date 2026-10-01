@@ -22,6 +22,15 @@ CRAWL = {"action": "call_tool", "tool_name": "delentia_crawl_url",
 RECALL = {"action": "call_tool", "tool_name": "delentia_recall", "tool_args": {"query": "x"}, "reasoning": "read"}
 
 
+class _CrawlMCP(_FakeMCP):
+    """The shared fake lists only three tools; since Round 50 the loop does not
+    dispatch a tool the server does not list, so list the one used here."""
+
+    async def list_tools(self):
+        tools = await super().list_tools()
+        return tools + [type("T", (), {"name": "delentia_crawl_url", "description": "crawl a url", "input_schema": {}})()]
+
+
 def _script(monkeypatch, first):
     async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
         if not history:
@@ -56,7 +65,7 @@ def test_no_data_or_no_intent_is_no_future(D, I):
 ])
 def test_risky_tool_needs_f_at_or_above_threshold(tmp_path, monkeypatch, D, I, blocked):
     _script(monkeypatch, CRAWL)
-    mcp = _FakeMCP()
+    mcp = _CrawlMCP()
     loop = _loop(tmp_path, f"gate_{D}_{I}", kernel=_FakeKernel(D=D, I=I), mcp=mcp)
     result = asyncio.run(loop.run("crawl the example page"))
     assert (result["stopped_reason"] == "fdia_blocked") is blocked
