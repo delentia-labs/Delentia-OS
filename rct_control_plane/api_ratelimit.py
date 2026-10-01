@@ -75,13 +75,13 @@ class TokenBuckets:
         now = self._clock()
         tokens, last = self._buckets.pop(caller, (self.capacity, now))
         tokens = min(self.capacity, tokens + (now - last) * self.rate)
-        cost = min(float(cost), self.capacity)                    # a request dearer than the bucket still needs a full bucket
-        if tokens >= cost:
-            self._buckets[caller] = (tokens - cost, now)
+        needed = min(float(cost), self.capacity)                  # a request dearer than the bucket still needs a full bucket
+        if tokens >= needed:
+            self._buckets[caller] = (tokens - needed, now)
             wait = 0.0
         else:
             self._buckets[caller] = (tokens, now)
-            wait = (cost - tokens) / self.rate
+            wait = (needed - tokens) / self.rate
         while len(self._buckets) > MAX_CALLERS:
             self._buckets.popitem(last=False)
         return wait
