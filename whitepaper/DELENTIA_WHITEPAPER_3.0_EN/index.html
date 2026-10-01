@@ -2373,8 +2373,8 @@ call a tool.</p>
 <tr>
 <td>1</td>
 <td><strong>GUARD</strong></td>
-<td>CORD pattern screening, then the FDIA gate on the goal</td>
-<td>✅ built</td>
+<td>CORD screens every goal before any model call; a hard finding (prompt injection, encoded payload, oversized input) ends the episode with no model or tool call. FDIA D and I are computed from the goal and F of the goal is recorded; the FDIA gate itself applies to each risky action (step 4), where A is known</td>
+<td>✅ built (CORD in the loop since 2026-09-30; before that only two API endpoints screened goals)</td>
 </tr>
 <tr>
 <td>2</td>
@@ -2589,18 +2589,18 @@ describes its audit trail by the attacker each tier defeats.</p>
 </tr>
 <tr>
 <td>A1</td>
-<td>Long-lived key outside tool-reachable paths; every row chained and signed; <code>delentia audit verify</code></td>
+<td>Long-lived key outside tool-reachable paths; every row chained and signed; <code>delentia audit-chain verify</code></td>
 <td>✅ Runtime (when <code>DELENTIA_AUDIT_SIGNING_KEY</code> is set)</td>
 </tr>
 <tr>
 <td>A2</td>
 <td>Signing in a separate process at the chokepoint that observes the real tool call</td>
-<td>✅ <strong>Guard, for the MCP path</strong>: the key lives in the Guard process; calls naming the key or the log are refused</td>
+<td>✅ <strong>Guard, for the MCP path</strong>: the key lives in the Guard process; calls naming the key or the log are refused. ✅ <strong>Runtime (Round 50)</strong>: <code>delentia notary serve</code> holds the key in its own process; the governed loop records every tool call (argument, result and FDIA-decision hashes) before it runs and refuses the call if the notary cannot record it (when <code>DELENTIA_NOTARY_URL</code> is set). Run the notary as another OS user; the gate itself still runs in the agent's process</td>
 </tr>
 <tr>
 <td>A3</td>
 <td>Chain head published to an outside witness</td>
-<td>🟡 <code>delentia-guard --head</code> exports the head; automatic anchoring is <strong>not built</strong></td>
+<td>🟡 Witness live (fdia Worker <code>/v1/audit/anchor</code>, append-only; rollback/fork kept as evidence). <code>delentia-guard anchor</code>, <code>delentia audit-chain anchor</code> and <code>delentia notary anchor</code> publish on demand; <strong>no schedule yet</strong></td>
 </tr>
 <tr>
 <td>A4</td>

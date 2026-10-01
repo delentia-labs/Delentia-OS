@@ -2359,8 +2359,8 @@ tool ที่เขียน แก้ไข หรือมีผลข้า�
 <tr>
 <td>1</td>
 <td><strong>GUARD</strong></td>
-<td>ตรวจ pattern ด้วย CORD แล้วผ่าน FDIA gate กับเป้าหมาย</td>
-<td>✅ สร้างแล้ว</td>
+<td>CORD ตรวจทุกเป้าหมายก่อนเรียกโมเดล ถ้าพบสัญญาณร้ายแรง (prompt injection, payload ที่เข้ารหัส, ข้อความยาวเกิน) episode จบทันทีโดยไม่เรียกโมเดลและไม่รัน tool; D และ I ของ FDIA คำนวณจากเป้าหมายและบันทึก F ของเป้าหมายไว้ ส่วน FDIA gate ใช้กับทุก action ที่เสี่ยงในขั้นที่ 4 ซึ่งรู้ค่า A แล้ว</td>
+<td>✅ สร้างแล้ว (CORD อยู่ใน loop ตั้งแต่ 2026-09-30; ก่อนหน้านั้นมีแค่ 2 endpoint ของ API ที่ตรวจ)</td>
 </tr>
 <tr>
 <td>2</td>
@@ -2570,18 +2570,18 @@ Delentia จึงอธิบาย audit trail ตามผู้โจมต�
 </tr>
 <tr>
 <td>A1</td>
-<td>กุญแจระยะยาวอยู่นอกเส้นทางที่ tool เข้าถึง; ทุกแถวถูก chain และลงลายเซ็น; <code>delentia audit verify</code></td>
+<td>กุญแจระยะยาวอยู่นอกเส้นทางที่ tool เข้าถึง; ทุกแถวถูก chain และลงลายเซ็น; <code>delentia audit-chain verify</code></td>
 <td>✅ Runtime (เมื่อตั้ง <code>DELENTIA_AUDIT_SIGNING_KEY</code>)</td>
 </tr>
 <tr>
 <td>A2</td>
 <td>ลงลายเซ็นในโปรเซสแยก ณ จุดคอขวดที่เห็น tool call จริง</td>
-<td>✅ <strong>Guard สำหรับเส้นทาง MCP</strong>: กุญแจอยู่ในโปรเซส Guard; call ที่อ้างถึงกุญแจหรือ log ถูกปฏิเสธ</td>
+<td>✅ <strong>Guard สำหรับเส้นทาง MCP</strong>: กุญแจอยู่ในโปรเซส Guard; call ที่อ้างถึงกุญแจหรือ log ถูกปฏิเสธ ✅ <strong>Runtime (Round 50)</strong>: <code>delentia notary serve</code> ถือกุญแจในโปรเซสของตัวเอง; governed loop บันทึกทุก tool call (hash ของ argument, ผลลัพธ์ และการตัดสินของ FDIA) ก่อนรัน และปฏิเสธ call ถ้า notary บันทึกไม่ได้ (เมื่อตั้ง <code>DELENTIA_NOTARY_URL</code>) ควรรัน notary ด้วย OS user อื่น; ตัว gate ยังรันในโปรเซสของ agent</td>
 </tr>
 <tr>
 <td>A3</td>
 <td>เผยแพร่ head ของ chain ไปยังพยานภายนอก</td>
-<td>🟡 <code>delentia-guard --head</code> ส่งออก head ได้; การฝากอัตโนมัติ <strong>ยังไม่สร้าง</strong></td>
+<td>🟡 พยานออนไลน์แล้ว (fdia Worker <code>/v1/audit/anchor</code> แบบเพิ่มได้อย่างเดียว; rollback/fork ถูกเก็บเป็นหลักฐาน) <code>delentia-guard anchor</code>, <code>delentia audit-chain anchor</code> และ <code>delentia notary anchor</code> ฝากได้เมื่อสั่ง; <strong>ยังไม่มีการตั้งเวลาอัตโนมัติ</strong></td>
 </tr>
 <tr>
 <td>A4</td>
