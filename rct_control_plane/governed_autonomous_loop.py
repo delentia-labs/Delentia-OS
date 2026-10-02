@@ -189,6 +189,7 @@ RISKY_TOOLS = frozenset({
     "delentia_delegate",                # spawns a new, separately-acting AutonomousLoop
     "delentia_spawn_subagents",         # starts separate OS processes in git worktrees (Round 52)
     "delentia_import_session_state",    # merges external/untrusted JITNA state
+    "delentia_run_forged_tool",         # runs code the system wrote for itself (a human signed its hash)
 })
 
 # Round 45 (K.1.8): real finding from a live-Ollama scenario battery

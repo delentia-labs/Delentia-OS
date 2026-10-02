@@ -3183,6 +3183,141 @@ def fdia_test(tool_name: str, args_json: str, principal: str, approved: bool, da
                            else "allowed" if f_value >= threshold else "blocked (F below threshold)"}, indent=2))
 
 
+@cli.group("forge")
+def forge_group():
+    """
+    Tool Forge (Round 54): the system proposes a new pure-function tool when the same kind of goal keeps failing, a human
+    signs the exact code, and only then can the agent use it.
+
+    Examples:
+        delentia forge gaps
+        delentia forge propose slugify "turn a title into a url slug" --test-file slugify_test.py
+        delentia forge show fp-1a2b3c4d5e
+        delentia forge request fp-1a2b3c4d5e          # then: delentia approvals approve <id> --key ...
+        delentia forge activate <approval_id>
+        delentia forge run slugify --args '{"title": "Hello World"}'
+    """
+    pass
+
+
+def _forge():
+    from rct_control_plane.mcp_server import _kernel
+    from rct_control_plane.tool_forge import ToolForge
+    return ToolForge(_kernel._persistence), _kernel._persistence
+
+
+@forge_group.command("gaps")
+@click.option("--min-count", default=2, show_default=True, type=int, help="How many times the goal must have gone unmet.")
+def forge_gaps(min_count: int) -> None:
+    """Goals the agent finished without satisfying, seen more than once."""
+    from rct_control_plane.tool_forge import find_gaps
+    _, persistence = _forge()
+    gaps = find_gaps(persistence, min_count=min_count)
+    if not gaps:
+        click.echo("No repeated unmet goals.")
+        return
+    for gap in gaps:
+        click.echo(f"{gap['gap_id']}  x{gap['count']}  {gap['users']} user(s)  {', '.join(gap['keywords'])}")
+        for goal in gap["goals"]:
+            click.echo(f"    - {goal[:110]}")
+
+
+@forge_group.command("propose")
+@click.argument("name")
+@click.argument("spec")
+@click.option("--test-file", type=click.Path(exists=True, dir_okay=False), required=True, help="Python file of assert statements that call the function.")
+@click.option("--code-file", type=click.Path(exists=True, dir_okay=False), default=None, help="Supply the code yourself instead of asking the model.")
+def forge_propose(name: str, spec: str, test_file: str, code_file: Optional[str]) -> None:
+    """Write (or take) a tool, check it, run its smoke test in a separate process, and keep the result."""
+    import asyncio
+    from rct_control_plane.tool_forge import ForgeError
+    forge, _ = _forge()
+    try:
+        proposal = asyncio.run(forge.propose(name, spec, Path(test_file).read_text(encoding="utf-8"),
+                                             code=Path(code_file).read_text(encoding="utf-8") if code_file else None))
+    except ForgeError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(proposal.to_dict(with_code=False), indent=2, default=str))
+    if proposal.status != "VERIFIED":
+        sys.exit(2)
+
+
+@forge_group.command("list")
+def forge_list() -> None:
+    """Proposals and active tools."""
+    forge, _ = _forge()
+    for p in forge.list_proposals():
+        click.echo(f"{p.id}  {p.status:<28} {p.name:<24} {p.spec[:60]}")
+    click.echo("-- active tools --")
+    for t in forge.list_tools(include_disabled=True):
+        click.echo(f"{t['name']:<24} {'active' if t['active'] else 'off':<7} calls={t['calls']}  {t['spec'][:60]}")
+
+
+@forge_group.command("show")
+@click.argument("proposal_id")
+def forge_show(proposal_id: str) -> None:
+    """The code, the test and the checks, as the signer will see them."""
+    forge, _ = _forge()
+    proposal = forge.get(proposal_id)
+    if proposal is None:
+        click.echo(click.style("no such proposal", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{proposal.id}  {proposal.status}  sha256 {proposal.code_sha256}\n\n--- code ---\n{proposal.code}\n\n--- smoke test ---\n{proposal.smoke_test}")
+    click.echo("\n--- checks ---\n" + json.dumps(proposal.verification, indent=2))
+
+
+@forge_group.command("request")
+@click.argument("proposal_id")
+def forge_request(proposal_id: str) -> None:
+    """Ask for the human signature that activates a VERIFIED proposal."""
+    from rct_control_plane.tool_forge import ForgeError
+    forge, _ = _forge()
+    try:
+        record = forge.request_activation(proposal_id)
+    except ForgeError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"approval {record.approval_id}  digest {record.action_sha256}\nsign it with: delentia approvals approve {record.approval_id} --key <your key>")
+
+
+@forge_group.command("activate")
+@click.argument("approval_id")
+def forge_activate(approval_id: str) -> None:
+    """Install the tool once its approval is signed (every signature is re-verified)."""
+    from rct_control_plane.approvals import ApprovalError
+    forge, _ = _forge()
+    try:
+        click.echo(json.dumps(forge.activate(approval_id), indent=2))
+    except ApprovalError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@forge_group.command("run")
+@click.argument("name")
+@click.option("--args", "args_json", default="{}")
+def forge_run(name: str, args_json: str) -> None:
+    """Run an active forged tool."""
+    forge, _ = _forge()
+    try:
+        outcome = forge.run(name, json.loads(args_json))
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(outcome, indent=2, ensure_ascii=False))
+    if not outcome.get("ok"):
+        sys.exit(1)
+
+
+@forge_group.command("off")
+@click.argument("name")
+def forge_off(name: str) -> None:
+    """Turn a tool off (kept on record)."""
+    forge, _ = _forge()
+    click.echo("turned off" if forge.deactivate(name) else "no such active tool")
+
+
 def main():
     """Main entry point for CLI."""
     cli()

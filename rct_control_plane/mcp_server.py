@@ -137,6 +137,22 @@ async def delentia_delegate(profile_name: str, sub_goal: str, max_iterations: in
 
 
 @mcp.tool()
+async def delentia_list_forged_tools() -> dict:
+    """List the tools this system wrote for itself AND a human signed for (Tool Forge, Round 54): name, what each does,
+    how often it was used. Call one with delentia_run_forged_tool. Pure functions only (text, numbers, dates)."""
+    from rct_control_plane.tool_forge import ToolForge
+    return {"tools": ToolForge(_kernel._persistence).list_tools()}
+
+
+@mcp.tool()
+async def delentia_run_forged_tool(tool_name: str, tool_args: dict | None = None) -> dict:
+    """Run one activated forged tool: a single pure function, in its own process with a time limit, arguments and
+    result as JSON. The code on disk is checked against the hash a human signed on every call."""
+    from rct_control_plane.tool_forge import ToolForge
+    return ToolForge(_kernel._persistence).run(tool_name, tool_args or {})
+
+
+@mcp.tool()
 async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240) -> dict:
     """Run up to 3 independent goals at the same time, each in its OWN OS process inside its
     OWN git worktree, as an Ed25519-signed JITNA request; each answer comes back signed and is

@@ -43,10 +43,23 @@ from __future__ import annotations
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from rct_control_plane.mee_engine import MEESession
 from rct_control_plane.algo_10_delta_memory import RCTDBClient, VaultDocument, DocumentType, DocumentStatus
+
+
+# Round 54: the G scale. The whitepaper scores growth on 65-100 and ALGO-08 required G >= 70. The runtime's G
+# (growth.py / MEE) is a RATIO that starts at 1.0, so "G >= 70" there means grown seventy-fold: about 70 consecutive
+# verified episodes at the usual +0.6 per episode, in practice never, and ALGO-08 reported no_evolution forever. What
+# 70 meant on the 65 scale is "7.7% above the baseline", so the rule is now stated as that ratio, which is the same
+# number on either scale (a session started at 65 needs G >= 70, a session started at 1.0 needs G >= 1.0769).
+SPAWN_GROWTH_RATIO = 70.0 / 65.0
+MIN_HISTORY_STEPS = 5
+MIN_AVERAGE_DELTA = 0.3
+MAX_DELTA_VARIANCE = 0.1
+COOLDOWN_SECONDS = 3600.0
+_NEVER = datetime.fromtimestamp(0, timezone.utc)
 
 
 @dataclass
@@ -56,7 +69,7 @@ class EvolutionState:
     algorithms_count: int
     evolution_rate: float
     growth_factor: float
-    last_evolution: datetime
+    last_evolution: datetime            # _NEVER (the epoch) until something has evolved: a fresh process must not wait an hour
     safety_locked: bool = False
 
 
@@ -81,16 +94,18 @@ class SelfEvolvingOrchestrator:
     (ALGO-10's RCTDBClient) for feedback signals.
     """
 
-    def __init__(self, mee_session: MEESession, rctdb_client: RCTDBClient):
+    def __init__(self, mee_session: MEESession, rctdb_client: RCTDBClient,
+                 gap_finder: Optional[Callable[[], List[Dict[str, Any]]]] = None):
         self._mee_session = mee_session
         self._rctdb = rctdb_client
+        self._gap_finder = gap_finder
 
         self.state = EvolutionState(
             g_level=mee_session.g,
             algorithms_count=41,
             evolution_rate=0.0,
             growth_factor=1.0,
-            last_evolution=datetime.now(timezone.utc),
+            last_evolution=_NEVER,
         )
 
         self.algorithm_registry: Dict[str, AlgorithmGenome] = {}
@@ -132,33 +147,40 @@ class SelfEvolvingOrchestrator:
             self.state.g_level = record.g_after
             self.state.evolution_rate = record.delta
 
-            if self._should_spawn_algorithm():
-                new_algo = self._spawn_algorithm()
-                if new_algo:
-                    new_algo.verified = True
-                    self.algorithm_registry[new_algo.id] = new_algo
-                    self.state.algorithms_count += 1
-                    self.state.last_evolution = datetime.now(timezone.utc)
-                    self._update_growth_metrics()
-
-                    return {
-                        "status": "evolved",
-                        "new_algorithm": {"id": new_algo.id, "name": new_algo.name, "generation": new_algo.generation},
-                        "g_level": self.state.g_level,
-                        "growth_factor": self.state.growth_factor,
-                        "total_algorithms": self.state.algorithms_count,
-                        "feedback_source": feedback["source"],
-                    }
+            readiness = self.readiness()
+            if readiness["ready"]:
+                # Round 54: what used to happen here was a label ("Auto-Optimization-GenN", marked verified with no code
+                # behind it). Being ready now means: here is the evidence of what is missing. A capability is only added
+                # through the Tool Forge, which checks it, runs it and waits for a human signature.
+                self.state.last_evolution = datetime.now(timezone.utc)
+                return {
+                    "status": "evolution_ready",
+                    "g_level": self.state.g_level,
+                    "evolution_rate": self.state.evolution_rate,
+                    "readiness": readiness,
+                    "gaps": self._find_gaps(),
+                    "next_step": "delentia forge propose <name> <spec> --test-file <asserts.py>, then request, sign, activate",
+                    "feedback_source": feedback["source"],
+                }
 
             return {
                 "status": "no_evolution",
                 "g_level": self.state.g_level,
                 "evolution_rate": self.state.evolution_rate,
-                "reason": "Spawn conditions not met",
+                "reason": "Spawn conditions not met: " + "; ".join(readiness["reasons"]),
+                "readiness": readiness,
                 "feedback_source": feedback["source"],
             }
         except Exception as e:
             return {"status": "error", "error": str(e)}
+
+    def _find_gaps(self) -> List[Dict[str, Any]]:
+        if self._gap_finder is None:
+            return []
+        try:
+            return self._gap_finder()
+        except Exception:
+            return []
 
     async def _gather_feedback(self) -> Dict[str, Any]:
         """Real feedback from RCTDB's real vault stats — honestly sparse
@@ -180,34 +202,40 @@ class SelfEvolvingOrchestrator:
             "source": "RCTDBClient.get_vault_stats() (real query, ALGO-10)",
         }
 
-    def _should_spawn_algorithm(self) -> bool:
-        """Real spawn-condition check against MEESession's real step
-        history — same formula as Delentia-Private-OS's mee-engine
-        microservice's EvolutionEngine.should_spawn_algorithm(), adapted
-        to read the growth session this kernel already maintains."""
+    def readiness(self) -> Dict[str, Any]:
+        """Whether evolution may be considered now, with the measured value behind every condition (so a refusal says
+        which one failed and by how much)."""
+        session = self._mee_session
+        history = session.history
+        recent = [r.delta for r in history[-5:]]
+        ratio = session.total_growth_ratio
+        seconds_since = (datetime.now(timezone.utc) - self.state.last_evolution).total_seconds()
+        measured: Dict[str, Any] = {
+            "growth_ratio": round(ratio, 4), "needs_growth_ratio": round(SPAWN_GROWTH_RATIO, 4),
+            "steps": len(history), "needs_steps": MIN_HISTORY_STEPS,
+            "average_delta": round(statistics.mean(recent), 4) if recent else None, "needs_average_delta": MIN_AVERAGE_DELTA,
+            "delta_variance": round(statistics.variance(recent), 4) if len(recent) >= 2 else None, "max_delta_variance": MAX_DELTA_VARIANCE,
+            "seconds_since_last_evolution": None if self.state.last_evolution == _NEVER else round(seconds_since), "cooldown_seconds": COOLDOWN_SECONDS,
+            "safety_locked": self.state.safety_locked,
+        }
+        reasons: List[str] = []
         if self.state.safety_locked:
-            return False
-        if self._mee_session.g < 70:
-            return False
+            reasons.append("safety lock is on")
+        if ratio < SPAWN_GROWTH_RATIO:
+            reasons.append(f"growth ratio {ratio:.3f} is below {SPAWN_GROWTH_RATIO:.3f}")
+        if len(history) < MIN_HISTORY_STEPS:
+            reasons.append(f"only {len(history)} of {MIN_HISTORY_STEPS} growth steps recorded")
+        else:
+            if statistics.mean(recent) < MIN_AVERAGE_DELTA:
+                reasons.append(f"recent average growth {statistics.mean(recent):.3f} is below {MIN_AVERAGE_DELTA}")
+            if statistics.variance(recent) > MAX_DELTA_VARIANCE:
+                reasons.append(f"recent growth is too uneven (variance {statistics.variance(recent):.3f} > {MAX_DELTA_VARIANCE})")
+        if self.state.last_evolution != _NEVER and seconds_since < COOLDOWN_SECONDS:
+            reasons.append(f"evolved {round(seconds_since)} s ago, cooldown is {round(COOLDOWN_SECONDS)} s")
+        return {"ready": not reasons, "reasons": reasons, "measured": measured}
 
-        history = self._mee_session.history
-        if len(history) < 5:
-            return False
-
-        recent_deltas = [r.delta for r in history[-5:]]
-        avg_rate = statistics.mean(recent_deltas)
-        variance = statistics.variance(recent_deltas)
-
-        if avg_rate < 0.3:
-            return False
-        if variance > 0.1:
-            return False
-
-        time_since = (datetime.now(timezone.utc) - self.state.last_evolution).total_seconds()
-        if time_since < 3600:
-            return False
-
-        return True
+    def _should_spawn_algorithm(self) -> bool:
+        return bool(self.readiness()["ready"])
 
     def _spawn_algorithm(self) -> Optional[AlgorithmGenome]:
         """Real spawn, sourced from the real MEESession's current G —
@@ -251,7 +279,7 @@ class SelfEvolvingOrchestrator:
             "algorithms_count": self.state.algorithms_count,
             "evolution_rate": self.state.evolution_rate,
             "growth_factor": self.state.growth_factor,
-            "last_evolution": self.state.last_evolution.isoformat(),
+            "last_evolution": None if self.state.last_evolution == _NEVER else self.state.last_evolution.isoformat(),
             "safety_locked": self.state.safety_locked,
             "mee_session_step_count": self._mee_session.step_count,
         }
