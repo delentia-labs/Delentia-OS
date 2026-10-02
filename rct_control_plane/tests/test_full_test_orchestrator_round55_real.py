@@ -142,6 +142,9 @@ def fake_runner(k15=K15_OK, extra_output="", probe=None, calls=None):
         if "real_model_round54_probe" in " ".join(cmd):
             path = cmd[cmd.index("--json") + 1]
             Path(path).write_text(json.dumps({"cheap/model": probe or probe_report()}), encoding="utf-8")
+        if "measure_repeat_goal" in " ".join(cmd):
+            import measure_repeat_goal as mrg
+            Path(cmd[cmd.index("--json") + 1]).write_text(json.dumps({"cheap/model": {"summary": mrg.summarise(repeat_rows([2, 2, 2], [0, 1, 0]))}}), encoding="utf-8")
         return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
     return runner
 
@@ -196,3 +199,97 @@ def test_spending_more_than_one_and_a_half_times_a_stage_estimate_stops_the_run(
 def test_unmeasured_criteria_are_never_shown_as_passes():
     report = {"models": ["cheap/model"], "results": {"cheap/model": {}}, "estimate": {"total_usd": 0.3}, "spent_usd": None}
     assert orch.table(report).count("NOT RUN") == 9
+
+
+# ------------------------------------------------------------------ the rehearsal against a fake OpenRouter
+
+@pytest.mark.parametrize("override, expected_default", [
+    ("", True), ("https://evil.example/api/v1", True), ("http://evil.example/api/v1", True), ("https://openrouter.ai.evil.example/api/v1", True),
+    ("ftp://127.0.0.1/", True), ("http://127.0.0.1:9999/api/v1", False), ("http://localhost:1/api/v1/", False), ("https://openrouter.ai/api/custom", False),
+])
+def test_the_openrouter_base_url_override_is_accepted_only_for_loopback_or_openrouter(override, expected_default, monkeypatch):
+    """The API key is sent to whatever this returns, so anything else is ignored and the real address is used."""
+    from rct_control_plane import llm_provider
+    monkeypatch.setenv(llm_provider.OPENROUTER_BASE_ENV, override)
+    url = llm_provider.openrouter_base_url()
+    assert (url == llm_provider.OPENROUTER_DEFAULT_BASE) is expected_default
+    assert not url.endswith("/")
+
+
+def test_the_fake_openrouter_charges_by_the_price_list_and_refuses_a_wrong_key():
+    import fake_openrouter
+    import httpx
+    with fake_openrouter.start({"m/x": {"in": 1.0, "out": 2.0}}) as fake:
+        ok = {"Authorization": f"Bearer {fake.key}"}
+        body = {"model": "m/x", "messages": [{"role": "user", "content": "working toward this goal:\nRecall what you remember about the topic 'formal acceptance test marker'.\n\nAvailable tools:\n- delentia_recall: x\n(no actions taken yet)"}]}
+        reply = httpx.post(f"{fake.base_url}/chat/completions", json=body, headers=ok).json()
+        usage = reply["usage"]
+        assert usage["cost"] == pytest.approx(usage["prompt_tokens"] * 1.0 / 1e6 + usage["completion_tokens"] * 2.0 / 1e6)
+        assert httpx.get(f"{fake.base_url}/auth/key", headers=ok).json()["data"]["usage"] == pytest.approx(usage["cost"], abs=1e-8)
+        assert httpx.post(f"{fake.base_url}/chat/completions", json=body, headers={"Authorization": "Bearer wrong"}).status_code == 401
+        assert httpx.post(f"{fake.base_url}/chat/completions", json={**body, "model": "other/model"}, headers=ok).status_code == 404
+        assert httpx.get(f"{fake.base_url}/models").json()["data"][0]["pricing"]["prompt"] == str(1.0 / 1e6)     # the price list is public
+
+
+def test_the_whole_paid_path_runs_end_to_end_against_the_fake_and_the_money_adds_up():
+    """scripts/rehearse_full_test.py: K.1.5 + the Round 54 probe + the spend meter + the table, as the Architect will run it, for $0.
+    The first rehearsal found a real bug in the paid path (the per-episode budget looked prices up at the real catalog, so any model the
+    catalog did not list was refused)."""
+    import subprocess
+    result = subprocess.run([sys.executable, str(Path(__file__).resolve().parent.parent.parent / "scripts" / "rehearse_full_test.py")],
+                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+    out = result.stdout
+    assert result.returncode == 0, out[-1500:]
+    assert "REHEARSAL PASSED" in out and "| T1 |" in out and "100.0% -> PASS" in out
+    assert "10/10 -> PASS" in out and "batched 100%" in out and "NOT RUN" in out          # unmeasured criteria stay NOT RUN even when the rest passes
+
+
+def test_a_model_that_rejects_json_mode_is_asked_again_without_it_and_remembered(monkeypatch):
+    """Some upstream providers behind OpenRouter answer 400 to `response_format`. The call must not fail for that, and the next call must
+    not waste a request finding out again."""
+    import asyncio
+    import fake_openrouter
+    from rct_control_plane import llm_provider
+    llm_provider._NO_JSON_MODE.clear()
+    with fake_openrouter.start({"m/x": {"in": 1.0, "out": 1.0}}) as fake:
+        fake.reject_json_mode = True
+        monkeypatch.setenv(llm_provider.OPENROUTER_BASE_ENV, fake.base_url)
+        provider = llm_provider.OpenRouterProvider(api_key=fake.key, model="m/x")
+        prompt = "working toward this goal:" + chr(10) + "Read the file pyproject.toml and tell me the project name" + chr(10) + chr(10) + "Available tools:" + chr(10) + "- delentia_read_repo_file: x" + chr(10) + "(no actions taken yet)"
+        first = asyncio.run(provider.complete(prompt, json_mode=True))
+        assert "delentia_read_repo_file" in first and fake.json_mode_requests == 1 and "m/x" in llm_provider._NO_JSON_MODE
+        asyncio.run(provider.complete(prompt, json_mode=True))
+        assert fake.json_mode_requests == 1                                  # the second call did not send response_format at all
+    llm_provider._NO_JSON_MODE.clear()
+
+
+# ------------------------------------------------------------------ T7: the same goal again
+
+def repeat_rows(first, second, correct2=True):
+    row = lambda calls, ok: {"calls": calls, "prompt_tokens": calls * 1000, "completion_tokens": calls * 50, "correct": ok, "stopped": "llm_finished", "error": None}
+    return [{"goal": f"g{i}", "first": row(f, True), "second": row(s, correct2)} for i, (f, s) in enumerate(zip(first, second, strict=True))]
+
+
+def test_the_repeat_goal_summary_is_the_median_drop_over_goals_the_first_run_got_right():
+    import measure_repeat_goal as mrg
+    summary = mrg.summarise(repeat_rows([2, 2, 4], [0, 1, 4]))
+    assert summary["usable"] == 3 and summary["median_call_reduction"] == 0.5 and summary["median_token_reduction"] == 0.5
+    wrong_first = repeat_rows([2, 2], [0, 0])
+    wrong_first[0]["first"]["correct"] = False
+    assert mrg.summarise(wrong_first)["usable"] == 1                           # a goal the model failed the first time proves nothing about learning
+
+
+def test_t7_passes_only_with_enough_goals_a_real_drop_and_answers_that_stay_right():
+    import measure_repeat_goal as mrg
+    good = {"summary": mrg.summarise(repeat_rows([2, 2, 2], [0, 0, 1]))}
+    assert orch.judge_repeat(good)["T7"]["pass"] is True
+    assert orch.judge_repeat({"summary": mrg.summarise(repeat_rows([2, 2, 2], [2, 2, 2]))})["T7"]["pass"] is False          # nothing got cheaper
+    assert orch.judge_repeat({"summary": mrg.summarise(repeat_rows([2, 2, 2], [0, 0, 0], correct2=False))})["T7"]["pass"] is False   # cheaper but wrong
+    assert orch.judge_repeat({"summary": mrg.summarise(repeat_rows([2], [0]))})["T7"]["pass"] is False                       # one goal is an anecdote
+    assert orch.judge_repeat({"summary": {"usable": 0}}) == {}
+
+
+def test_the_orchestrator_runs_the_repeat_stage_and_fills_t7(tmp_path):
+    a, est = plan()
+    report = orch.run_plan(a, PRICES, est, runner=fake_runner(), spend_probe=Meter(0.001), env=GOOD_ENV)
+    assert "repeat" in report["results"]["cheap/model"] and "T7" in orch.table(report)

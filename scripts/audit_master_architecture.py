@@ -138,10 +138,16 @@ def layer4() -> Finding:
 
 def layer5() -> Finding:
     gate = mentions("rct_control_plane/mcp_gateway.py", r"_resolve_public_target") and mentions("rct_control_plane/mcp_gateway.py", r"_SHELL_ALLOWED")
+    crawler_guard = (CP / "url_safety.py").exists() and mentions("rct_control_plane/mcp_server.py", r"block_private=True")
+    external = (CP / "external_mcp.py").exists() and mentions("rct_control_plane/governed_autonomous_loop.py", r"external_mcp\.maybe_wrap")
+    search = (CP / "web_search.py").exists() and mentions("rct_control_plane/mcp_server.py", r"delentia_web_search")
     return Finding("§2 Layer 5", "MCP gateway with a least-privilege sandbox for filesystem, shell, network",
-                   "REAL" if gate else "PARTIAL",
-                   f"workspace boundary, shell allow-list and pinned public-address fetch present: {gate}. The shell sandbox is "
-                   "not a jail (same OS user).", "Docker/jail backend for untrusted tasks.")
+                   "REAL" if gate and crawler_guard else "PARTIAL",
+                   f"workspace boundary, shell allow-list and pinned public-address fetch present: {gate}. Round 55: the agent's own web fetch "
+                   f"(delentia_crawl_url) refuses loopback/private/metadata addresses on every hop (before it, it refused nothing): {crawler_guard}; "
+                   f"tools of OTHER MCP servers go through the same FDIA/approval/screening gate: {external}; web search with sovereignty check: {search}. "
+                   "The shell sandbox is not a jail (same OS user); DNS rebinding is not covered by the crawler's check; no third-party MCP server has "
+                   "been tried (only servers written with the same SDK).", "Docker/jail backend for untrusted tasks; pin the resolved address in the crawler.")
 
 
 def layer6() -> Finding:
@@ -215,8 +221,10 @@ def layer10() -> List[Finding]:
     cors_wild = mentions("rct_control_plane/api.py", r'^\s*allow_origins=\["\*"\]', re.M)
     out.append(Finding("§2 Layer 10", "Zero-trust delivery", "PARTIAL" if not cors_wild else "DOC_WRONG",
                        f"CORS wildcard still present: {cors_wild}. Round 53 limits origins to the local GUI and refuses foreign "
-                       "Origin/Host on a token-less API. No host exists, so Cloudflare/Zuplo delivery is not exercised.",
-                       "Pick a host; then set DELENTIA_API_TOKEN and the Worker secret."))
+                       "Origin/Host on a token-less API. A token per person exists (Round 54), `delentia host-check` lists what a host still needs (Round 55) "
+                       f"and a host kit exists in deploy/host (compose with TLS proxy, separate notary): {(REPO / 'deploy' / 'host' / 'docker-compose.yml').exists()}, "
+                       "but it has never been built or run: no host exists, so Cloudflare/Zuplo delivery is not exercised.",
+                       "Pick a host; run `delentia host-check`; follow deploy/host/HOST_RUNBOOK.md; then set the Worker secret."))
     return out
 
 

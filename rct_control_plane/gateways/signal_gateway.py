@@ -24,7 +24,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-import httpx
+from rct_control_plane import http_client
 
 from rct_control_plane.gateways.common import dispatch_governed, handle_incoming, split_for_channel
 
@@ -49,14 +49,14 @@ class SignalGateway:
         return await dispatch_governed(self._kernel, goal, namespace)
 
     async def receive(self) -> List[Dict[str, Any]]:
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with http_client.async_client(timeout=20) as client:
             resp = await client.get(f"{self._base_url}/v1/receive/{self._number}")
             resp.raise_for_status()
             data = resp.json()
         return data if isinstance(data, list) else []
 
     async def send_text(self, recipient: str, text: str) -> None:
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with http_client.async_client(timeout=20) as client:
             for part in split_for_channel(text, MAX_MESSAGE_CHARS):
                 resp = await client.post(f"{self._base_url}/v2/send",
                                          json={"message": part, "number": self._number, "recipients": [recipient]})

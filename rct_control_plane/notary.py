@@ -236,6 +236,19 @@ class NotaryUnavailable(RuntimeError):
     """The notary could not be reached or refused the record."""
 
 
+def token_from_env() -> Optional[str]:
+    """The notary token from DELENTIA_NOTARY_TOKEN, or from the file named by DELENTIA_NOTARY_TOKEN_FILE (a Docker/Kubernetes secret is
+    a file, and a secret in an environment variable shows up in `docker inspect`)."""
+    value = os.getenv(NOTARY_TOKEN_ENV)
+    if value:
+        return value
+    path = os.getenv(NOTARY_TOKEN_ENV + "_FILE")
+    if path:
+        text = Path(path).read_text(encoding="utf-8").strip()
+        return text or None
+    return None
+
+
 class NotaryClient:
     """What the agent process holds: a URL (and optional token), never a key."""
 
@@ -247,13 +260,13 @@ class NotaryClient:
     @classmethod
     def from_env(cls) -> Optional["NotaryClient"]:
         url = os.getenv(NOTARY_URL_ENV)
-        return cls(url, os.getenv(NOTARY_TOKEN_ENV)) if url else None
+        return cls(url, token_from_env()) if url else None
 
     async def append(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        import httpx
+        from rct_control_plane import http_client
         headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with http_client.async_client(timeout=self.timeout) as client:
                 resp = await client.post(f"{self.url}/append", json=record, headers=headers)
         except Exception as exc:
             raise NotaryUnavailable(f"notary unreachable at {self.url}: {exc}") from exc

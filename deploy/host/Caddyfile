@@ -1,0 +1,16 @@
+# TLS and a few headers in front of the runtime. Certificates are obtained automatically for $DELENTIA_DOMAIN
+# (the name must already point at this host, and ports 80 and 443 must be reachable).
+{$DELENTIA_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	# The runtime authenticates every request except /health and the signed webhooks (LINE, WhatsApp), which verify their own signature.
+	reverse_proxy net:8000 {
+		health_uri /health
+		health_interval 30s
+	}
+}

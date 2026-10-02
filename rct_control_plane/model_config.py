@@ -263,7 +263,10 @@ def list_openrouter_models(client: Optional[httpx.Client] = None, timeout: float
     own_client = client is None
     c = client or httpx.Client(timeout=timeout)
     try:
-        resp = c.get(OPENROUTER_MODELS_URL)
+        from rct_control_plane.llm_provider import OPENROUTER_BASE_ENV, openrouter_base_url
+        # The catalog follows the same (guarded) base URL as the calls, so a rehearsal against a fake finds the fake's prices.
+        url = f"{openrouter_base_url()}/models" if os.environ.get(OPENROUTER_BASE_ENV) else OPENROUTER_MODELS_URL
+        resp = c.get(url)
         resp.raise_for_status()
         return parse_openrouter_models(resp.json())
     finally:

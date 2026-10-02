@@ -124,7 +124,7 @@ async def web_search(query: str, max_results: int = 5) -> Dict[str, Any]:
     if not allowed:
         return {"error": f"the sovereignty policy does not allow sending this query to {config['provider']}: {reason}",
                 "refused_by": "sovereignty_policy", "configured": True}
-    import httpx
+    from rct_control_plane import http_client
     headers = {"Accept": "application/json", "User-Agent": "delentia-agent/1.0"}
     if config["provider"] == "brave":
         key = os.environ.get(config["credential_env"], "")
@@ -137,7 +137,7 @@ async def web_search(query: str, max_results: int = 5) -> Dict[str, Any]:
             headers["Authorization"] = f"Bearer {os.environ[config['credential_env']]}"
         url, params = f"{config['base_url']}/search", {"q": send_query, "format": "json"}
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT_S, follow_redirects=False) as client:
+        async with http_client.async_client(timeout=TIMEOUT_S, follow_redirects=False) as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
             return {"error": f"{config['provider']} answered HTTP {response.status_code}", "configured": True}

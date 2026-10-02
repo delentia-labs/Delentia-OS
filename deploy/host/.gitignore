@@ -1,0 +1,3 @@
+# Never commit the host's secrets or its environment file.
+secrets/
+.env

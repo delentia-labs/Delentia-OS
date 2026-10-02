@@ -1,0 +1,100 @@
+# Delentia on one small host (Round 55). Three containers, only 80/443 published:
+#
+#   caddy    TLS (automatic certificates) in front of the runtime
+#   delentia the runtime (`delentia serve`), as an unprivileged user
+#   notary   tier A2: signs what the agent did, in ANOTHER container with ANOTHER uid and its own volume, so code running inside the agent
+#            cannot rewrite the record. The notary listens on loopback only (by design), so the three share one network namespace
+#            through the `net` anchor container; caddy reaches the runtime at net:8000.
+#
+# Status: NOT RUN here (Docker Desktop was not running). `docker compose config` validates the syntax; the first real run is on the host.
+# Read HOST_RUNBOOK.md first. Secrets are Docker secrets (files under ./secrets, never in the image, never in git).
+
+name: delentia-host
+
+services:
+  net:
+    image: alpine:3.20
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+    networks: [edge]
+
+  notary:
+    build: {context: ../.., dockerfile: deploy/host/Dockerfile}
+    network_mode: "service:net"
+    user: "10002:10002"                         # a different OS user from the agent (10001)
+    command: ["delentia", "notary", "serve", "--db", "/notary/notary.db", "--key", "/run/secrets/notary_key", "--port", "8765",
+              "--key-id", "${NOTARY_KEY_ID:-delentia-notary-1}"]
+    environment:
+      DELENTIA_NOTARY_TOKEN_FILE: /run/secrets/notary_token
+    secrets: [notary_key, notary_token]
+    volumes: ["notary-data:/notary"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    depends_on: [net]
+
+  delentia:
+    build: {context: ../.., dockerfile: deploy/host/Dockerfile}
+    network_mode: "service:net"
+    user: "10001:10001"
+    environment:
+      # Everything the runtime keeps lives on the data volume: DELENTIA_HOME for databases, and HOME=/data/home so that ~/.delentia
+      # (api_tokens.json = one token per person via `delentia tokens create <name>`; approvers.json = PUBLIC keys of the people who may
+      # sign, their private keys stay on their own devices; fdia_policy.json; model.json; mcp_servers.json; search.json) survives restarts.
+      DELENTIA_HOME: /data
+      HOME: /data/home
+      # The folder the agent's file tools read and write (and where subagent git worktrees go). A workspace of YOUR files, on the volume;
+      # `git init` it once. It is deliberately not /app (the runtime's own code).
+      DELENTIA_REPO_ROOT: /data/workspace
+      DELENTIA_AUDIT_SIGNING_KEY: /run/secrets/audit_key
+      DELENTIA_NOTARY_URL: http://127.0.0.1:8765
+      DELENTIA_NOTARY_TOKEN_FILE: /run/secrets/notary_token
+      DELENTIA_EPISODE_BUDGET_USD: "${EPISODE_BUDGET_USD:-0.20}"
+      DELENTIA_EPISODE_MAX_TOKENS: "${EPISODE_MAX_TOKENS:-60000}"
+      # Channels stay closed until you list who may talk to the agent (an empty list = nobody). Examples, uncomment as you need:
+      # DELENTIA_TELEGRAM_ALLOWED_SENDERS: "123456789"
+      # DELENTIA_EMAIL_ALLOWED_SENDERS: "you@example.com"
+    env_file:
+      - path: ./secrets/runtime.env      # OPENROUTER_API_KEY=..., TELEGRAM_BOT_TOKEN=...  (optional file; never commit it)
+        required: false
+    secrets: [audit_key, notary_token]
+    volumes: ["delentia-data:/data"]
+    # Not read_only yet: the runtime also writes a few scratch folders (exchange bridge, workspace_output) whose paths have not been
+    # observed on a real run. Once they are known, move them onto /data and turn read_only on.
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    depends_on: [net, notary]
+
+  caddy:
+    image: caddy:2
+    ports: ["80:80", "443:443"]
+    environment:
+      DELENTIA_DOMAIN: "${DELENTIA_DOMAIN:?set DELENTIA_DOMAIN in .env (the public name that points at this host)}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    restart: unless-stopped
+    depends_on: [net]
+
+networks:
+  edge: {}
+
+volumes:
+  delentia-data: {}
+  notary-data: {}
+  caddy-data: {}
+  caddy-config: {}
+
+secrets:
+  audit_key:
+    file: ./secrets/audit.pem           # `delentia audit-chain keygen --out ./secrets/audit.pem`
+  notary_key:
+    file: ./secrets/notary.pem          # `delentia notary keygen --out ./secrets/notary.pem`
+  notary_token:
+    file: ./secrets/notary_token        # a long random string, read by both the notary and the runtime through *_TOKEN_FILE

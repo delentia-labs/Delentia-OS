@@ -410,3 +410,76 @@ def test_the_thai_sets_are_original_thai_text_not_a_translation_of_a_public_set(
         thai = lambda t: sum("฀" <= c <= "๿" for c in t) > len(t) * 0.2
         assert sum(thai(i["text"]) for i in data["attack"] + data["benign"]) >= 0.85 * (len(data["attack"]) + len(data["benign"]))
         assert "BEFORE" in data["about"] or "AFTER" in data["about"]
+
+
+# ================================================================== Thai goals and skills
+
+THAI_GOALS = [
+    ("ช่วยอ่านไฟล์ README.md แล้วสรุปให้หน่อย", "bundled-read-and-summarize-file"),
+    ("ฟังก์ชัน build_loop ถูกเรียกใช้ที่ไหนบ้างในโปรเจกต์", "bundled-find-where-defined"),
+    ("มีงานค้างที่เขียนว่า TODO อยู่ตรงไหนบ้าง", "bundled-find-todo-comments"),
+    ("จำไว้ว่าฉันชอบใช้ vim", "bundled-remember-a-fact"),
+    ("เปิดลิงก์นี้ให้หน่อยแล้วบอกว่าเขาเขียนอะไร https://example.org", "bundled-summarize-web-page"),
+    ("ช่วยค้นข้อมูลล่าสุดเรื่องฐานข้อมูลเวกเตอร์ในอินเทอร์เน็ต", "bundled-research-topic-on-the-web"),
+    ("รันเทสต์ทั้งหมดแล้วบอกว่าข้อไหนล้มเหลว", "bundled-run-tests-or-command"),
+    ("โปรแกรมพังตอนรับค่าว่าง ช่วยแก้โค้ดให้หน่อย", "bundled-fix-a-bug-in-a-file"),
+    ("พรุ่งนี้เช้าเตือนฉันให้โทรหาธนาคาร", "bundled-schedule-a-reminder"),
+    ("คุณทำอะไรให้ฉันได้บ้าง", "bundled-say-what-you-can-do"),
+]
+
+
+def test_thai_text_now_has_keywords_so_a_skill_learned_from_a_thai_goal_can_be_found_and_merged(tmp_path):
+    """Before Round 55 a Thai problem statement tokenised to nothing: the skill could never be retrieved or merged."""
+    from rct_control_plane.skill_library import _tokenize
+    assert _tokenize("อ่านไฟล์แล้วสรุป") and _tokenize("read the file") == ["read", "file"]
+    lib = SkillLibrary(db_path=str(tmp_path / "s.db"))
+    growth = {"delta": 0.2, "resilience": 1.0, "g_before": 1.0, "g_after": 1.2, "governance_violation": False}
+    first = lib.maybe_extract_skill("ตั้งเตือนให้โทรหาลูกค้าตอนบ่ายสอง", {"steps": ["a", "b", "c"]}, growth)
+    again = lib.maybe_extract_skill("ตั้งเตือนให้โทรหาลูกค้าตอนบ่ายสอง", {"steps": ["a"]}, growth)
+    assert first is not None and again is not None and lib.count() == 1 and again.reinforced == 2
+    assert [s.id for s in lib.retrieve_similar_skills("ตั้งเตือนโทรหาลูกค้าตอนบ่าย", top_k=1)] == [first.id]
+
+
+def test_thai_goals_find_the_starter_playbooks(tmp_path):
+    """First set measured before the Thai aliases existed: 1 of 10. After: 9 first, 10 in the top three; a second, fresh set of ten
+    measured once gave the same 9 and 10. Floors, not a coverage claim."""
+    lib = SkillLibrary(db_path=str(tmp_path / "s.db"))
+    ss.install_starter_skills(lib)
+    hits = [expected in [s.id for s in lib.retrieve_similar_skills(goal, top_k=3)] for goal, expected in THAI_GOALS]
+    assert sum(hits) >= 9, [g for (g, _), ok in zip(THAI_GOALS, hits, strict=True) if not ok]
+    assert ss.validate(known_tools=[t for sk in ss.STARTER_SKILLS for t in sk["tools"]]) == []
+
+
+# ================================================================== the shared TLS context
+
+def test_the_tls_context_is_built_once_and_every_runtime_client_reuses_it(monkeypatch):
+    """Building the context costs ~200-300 ms of blocking CPU; the runtime built one per model call. Measured with scripts/host_sizing.py:
+    a governed episode 0.99 s -> 0.31 s median with an instant model, six at once 6.0 s -> 1.9 s."""
+    import httpx
+    from rct_control_plane import http_client, llm_provider
+    http_client.shared_ssl_context.cache_clear()
+    built = []
+    real = httpx.create_ssl_context
+    monkeypatch.setattr(httpx, "create_ssl_context", lambda *a, **k: built.append(1) or real(*a, **k))
+    first = http_client.async_client(timeout=5)
+    second = http_client.async_client(timeout=5)
+    third = llm_provider.http_client.async_client(timeout=5)
+    assert len(built) == 1 and http_client.shared_ssl_context() is http_client.shared_ssl_context()
+    assert first is not second and second is not third                  # still one client per call: a client belongs to one event loop
+
+
+def test_a_caller_can_still_choose_its_own_verification():
+    from rct_control_plane import http_client
+    client = http_client.async_client(verify=False)
+    assert client._transport is not None                                  # built without touching the shared context
+
+
+def test_every_http_call_site_of_the_runtime_goes_through_the_helper():
+    import re
+    root = Path(__file__).resolve().parent.parent
+    offenders = []
+    for name in ("llm_provider.py", "notary.py", "web_search.py", "autonomous_scheduler.py", "gateways/line_gateway.py", "gateways/signal_gateway.py",
+                 "gateways/telegram_gateway.py", "gateways/whatsapp_gateway.py"):
+        if re.search(r"httpx\.AsyncClient\(", (root / name).read_text(encoding="utf-8")):
+            offenders.append(name)
+    assert offenders == []

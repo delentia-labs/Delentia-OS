@@ -284,13 +284,13 @@ class AutonomousScheduler:
     async def _anchor_audit_chain(self) -> str:
         if not anchor_configured():
             return f"not configured ({ANCHOR_URL_ENV} / {ANCHOR_KEY_ID_ENV} unset); nothing anchored"
-        import httpx
+        from rct_control_plane import http_client
 
         from rct_control_plane import audit_chain
         with self._persistence()._connect() as conn:
             body = audit_chain.sign_anchor(conn, os.environ[ANCHOR_KEY_ID_ENV])
         url = os.environ[ANCHOR_URL_ENV].rstrip("/") + "/v1/audit/anchor"
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with http_client.async_client(timeout=20.0) as client:
             resp = await client.post(url, json=body)
         if resp.status_code not in (200, 201):
             raise RuntimeError(f"witness refused the anchor ({resp.status_code}): {resp.text[:200]}")

@@ -24,7 +24,7 @@ import os
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
-import httpx
+from rct_control_plane import http_client
 
 from rct_control_plane.gateways.common import dispatch_governed, handle_incoming, split_for_channel
 
@@ -71,7 +71,7 @@ class WhatsAppGateway:
     async def send_text(self, to: str, text: str) -> None:
         if not (self._access_token and self._phone_number_id):
             raise RuntimeError("WhatsAppGateway: WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID not configured")
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with http_client.async_client(timeout=15) as client:
             for part in split_for_channel(text, MAX_MESSAGE_CHARS):
                 resp = await client.post(
                     f"{self._api_base}/{self._phone_number_id}/messages",

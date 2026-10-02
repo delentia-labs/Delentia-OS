@@ -125,6 +125,10 @@ _STOPWORDS = {
 }
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+")
+# Round 55: Thai is written without spaces between words, so a word tokenizer sees nothing. Before this, a skill learned from a Thai goal
+# had an EMPTY keyword set: it could never be retrieved and could never be merged with a repeat of the same goal. Thai runs are cut into
+# character trigrams instead (the same idea semantic_matcher.py already uses for memory), which needs no word segmenter.
+_THAI_RUN_RE = re.compile(r"[\u0e01-\u0e3a\u0e40-\u0e4e]{3,}")
 
 
 def _tokenize(text: str) -> List[str]:
@@ -134,7 +138,10 @@ def _tokenize(text: str) -> List[str]:
     docstring "Similarity" section.
     """
     tokens = _TOKEN_RE.findall(text.lower())
-    return [t for t in tokens if len(t) > 2 and t not in _STOPWORDS]
+    out = [t for t in tokens if len(t) > 2 and t not in _STOPWORDS]
+    for run in _THAI_RUN_RE.findall(text):
+        out.extend(run[i:i + 3] for i in range(len(run) - 2))
+    return out
 
 
 def _jaccard(a: set, b: set) -> float:

@@ -170,28 +170,29 @@ STARTER_SKILLS: List[Dict[str, Any]] = [
 
 # Words people use for the same job. The skill library matches by token overlap, so a goal that says "gist" will not find a playbook
 # that says "summarize" unless the playbook also carries the other word. These are matching words only: they are never shown to the
-# model. Added after the first paraphrase test (4 of 10 found) and re-measured on a fresh set (see the Round 55 document).
+# model. Added after the first paraphrase test (4 of 10 found) and re-measured on a fresh set (see the Round 55 document). The Thai words let a
+# Thai goal find the same playbooks (the library cuts Thai into character trigrams).
 ALIASES: Dict[str, str] = {
-    "read-and-summarize-file": "gist overview contents describe look open show tell about what is in document text notes",
-    "find-where-defined": "locate used usage call called references grep occurrences who uses where class method symbol across project",
-    "explain-how-module-works": "understand walk through explain code architecture works flow feature module",
-    "find-todo-comments": "fixme markers leftover unfinished notes hack pending show",
-    "compare-two-files": "diff differences versus changed between compare contrast",
-    "remember-a-fact": "keep mind note store save memorize preference favourite favorite prefer",
-    "recall-what-was-said": "remember earlier previously told mentioned said what did",
-    "summarize-web-page": "url link site blog article page says read fetch open website",
-    "research-topic-on-the-web": "look search news latest recent find online internet sources research",
-    "check-a-claim": "verify true false fact confirm correct accurate number",
-    "run-tests-or-command": "execute pytest unittest npm shell terminal build lint check fails passing",
-    "fix-a-bug-in-a-file": "crash crashes error exception broken repair bug fix patch wrong failing empty input",
-    "write-a-new-file": "create add make generate file write save new script document",
-    "schedule-a-reminder": "ping notify alert later tomorrow morning evening timer schedule remind wake",
-    "split-into-parallel-subtasks": "parallel concurrently simultaneously subagents several independent tasks batch delegate",
-    "review-the-audit-log": "history log what did you do actions recent activity trail record",
-    "convert-a-document": "convert transform change format markdown json export",
-    "say-what-you-can-do": "able abilities capabilities features help tools skills list what can",
-    "use-a-forged-tool": "forged custom tool built signed earlier created",
-    "read-compressed-output": "compressed truncated expand full output original omitted",
+    "read-and-summarize-file": "gist overview contents describe look open show tell about what is in document text notes อ่านไฟล์ สรุปไฟล์ เปิดไฟล์ ดูไฟล์ เนื้อหาในไฟล์ บอกว่าไฟล์ทำอะไร",
+    "find-where-defined": "locate used usage call called references grep occurrences who uses where class method symbol across project หาว่าอยู่ตรงไหน ค้นหาฟังก์ชัน ใช้ที่ไหนบ้าง ถูกเรียกใช้ นิยามอยู่ที่ไหน ค้นหาในโค้ด",
+    "explain-how-module-works": "understand walk through explain code architecture works flow feature module อธิบายโค้ด โมดูลทำงานอย่างไร ฟีเจอร์ทำงานยังไง",
+    "find-todo-comments": "fixme markers leftover unfinished notes hack pending show หา TODO งานค้าง งานที่ยังไม่เสร็จ เครื่องหมายที่ยังไม่เสร็จ",
+    "compare-two-files": "diff differences versus changed between compare contrast เปรียบเทียบไฟล์ ต่างกันตรงไหน เทียบสองไฟล์",
+    "remember-a-fact": "keep mind note store save memorize preference favourite favorite prefer จำไว้ว่า บันทึกไว้ จดไว้ เก็บไว้ ความชอบของฉัน",
+    "recall-what-was-said": "remember earlier previously told mentioned said what did ฉันเคยบอกอะไร จำได้ไหม ที่เคยพูดไว้ ก่อนหน้านี้",
+    "summarize-web-page": "url link site blog article page says read fetch open website สรุปหน้าเว็บ เปิดลิงก์ อ่านบทความ เว็บไซต์ บอกว่าเขาเขียนอะไร",
+    "research-topic-on-the-web": "look search news latest recent find online internet sources research ค้นหาข้อมูลในเว็บ หาข่าว ค้นคว้า ข้อมูลล่าสุด อินเทอร์เน็ต อ้างอิงแหล่งที่มา",
+    "check-a-claim": "verify true false fact confirm correct accurate number ตรวจสอบข้ออ้าง จริงไหม ยืนยันข้อเท็จจริง ตัวเลขถูกไหม",
+    "run-tests-or-command": "execute pytest unittest npm shell terminal build lint check fails passing รันเทสต์ รันคำสั่ง ทดสอบ ผ่านไหม ล้มเหลว",
+    "fix-a-bug-in-a-file": "crash crashes error exception broken repair bug fix patch wrong failing empty input แก้บั๊ก แก้ข้อผิดพลาด โปรแกรมพัง แก้โค้ด ซ่อมโค้ด",
+    "write-a-new-file": "create add make generate file write save new script document สร้างไฟล์ใหม่ เขียนไฟล์ บันทึกเป็นไฟล์",
+    "schedule-a-reminder": "ping notify alert later tomorrow morning evening timer schedule remind wake เตือนฉัน แจ้งเตือน ตั้งเวลา พรุ่งนี้ อีกหนึ่งชั่วโมง",
+    "split-into-parallel-subtasks": "parallel concurrently simultaneously subagents several independent tasks batch delegate แบ่งงานย่อย ทำพร้อมกัน ขนาน หลายงานพร้อมกัน",
+    "review-the-audit-log": "history log what did you do actions recent activity trail record ดูบันทึกการทำงาน ประวัติ เมื่อกี้ทำอะไร บันทึกตรวจสอบ",
+    "convert-a-document": "convert transform change format markdown json export แปลงเอกสาร แปลงรูปแบบ เป็นมาร์กดาวน์ เป็นเจสัน",
+    "say-what-you-can-do": "able abilities capabilities features help tools skills list what can ทำอะไรได้บ้าง ความสามารถ เครื่องมือ ช่วยอะไรได้",
+    "use-a-forged-tool": "forged custom tool built signed earlier created เครื่องมือที่สร้างเอง เครื่องมือที่เซ็นแล้ว",
+    "read-compressed-output": "compressed truncated expand full output original omitted ผลลัพธ์ถูกบีบอัด ขยายผล ดูฉบับเต็ม",
 }
 
 

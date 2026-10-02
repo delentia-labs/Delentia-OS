@@ -2357,7 +2357,7 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, ancho
     from rct_control_plane import notary
     key = _notary_key(key_path)
     store = notary.NotaryStore(db, key, key_id)
-    server = notary.make_server(store, port=port, token=os.getenv(notary.NOTARY_TOKEN_ENV))
+    server = notary.make_server(store, port=port, token=notary.token_from_env())
     click.echo(f"notary      : http://127.0.0.1:{port}  key_id={key_id}  pubkey={notary.public_hex(key)}")
     click.echo(f"log         : {store.db_path}")
     click.echo(f"agent side  : set {notary.NOTARY_URL_ENV}=http://127.0.0.1:{port} "
@@ -3478,6 +3478,28 @@ def mcp_inspect(name: str) -> None:
     click.echo(f"digest: {report['digest'] or '(no tools)'}")
     if report["pinned"]:
         click.echo("the configured pin " + ("matches" if report["pin_matches"] else click.style("DOES NOT MATCH", fg="red")))
+
+
+@cli.command("host-check")
+@click.option("--local", "local", is_flag=True, help="this machine is not a public host: a missing API token is a warning, not a failure")
+@click.option("--probe", is_flag=True, help="also make one GET to the notary's /health")
+@click.option("--json", "as_json", is_flag=True, help="machine-readable output")
+@click.option("--strict", is_flag=True, help="exit 1 on warnings too")
+def host_check(local: bool, probe: bool, as_json: bool, strict: bool) -> None:
+    """
+    Is this machine ready to be a host? Reads the configuration the way the server would and lists what is wrong and how to fix it.
+    Changes nothing, sends nothing (except one GET with --probe). Run it BEFORE renting a host.
+
+    Examples:
+        delentia host-check --local
+        delentia host-check --json
+    """
+    from rct_control_plane import host_check as hc
+    checks = hc.run_checks(public=not local, probe=probe)
+    click.echo(hc.as_json(checks) if as_json else hc.render(checks))
+    summary = hc.summarise(checks)
+    if summary["counts"][hc.FAIL] or (strict and summary["counts"][hc.WARN]):
+        sys.exit(1)
 
 
 @cli.command("search-status")
