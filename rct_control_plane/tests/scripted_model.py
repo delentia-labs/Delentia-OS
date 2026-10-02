@@ -110,6 +110,29 @@ def batcher(req: Request) -> str:
     return _finish(f"I read {', '.join(files)} in one go; the project is sample-service.")
 
 
+SLUG_CODE = (
+    "import re\n\ndef slugify(title):\n"
+    "    words = re.findall(r\"[a-z0-9]+\", title.lower())\n"
+    "    return \"-\".join(words)\n"
+)
+
+
+def forger(req: Request) -> str:
+    """Round 54: writes the code when the Tool Forge asks for a function, and uses the forged tool when a goal needs a slug."""
+    wanted = re.search(r"named exactly `(\w+)`", req.prompt)
+    if wanted:
+        return SLUG_CODE.replace("slugify", wanted.group(1))
+    if "slug" in req.goal.lower():
+        title = re.search(r"title (.+?) into", req.goal)
+        if req.history_empty:
+            return _call("delentia_run_forged_tool", {"tool_name": "slugify", "tool_args": {"title": title.group(1) if title else ""}}, "a forged tool does this")
+        result = re.search(r"""result['"]?\s*:\s*['"]([^'"]+)['"]""", req.prompt)
+        if result:
+            return _finish(f"The url slug for the title is {result.group(1)}.")
+        return _finish("The forged tool could not be used, so I cannot make the url slug.")
+    return competent(req)
+
+
 def delegator(req: Request) -> str:
     """Always delegates the same goal again: the failure delegation depth limits exist for."""
     return _call("delentia_delegate", {"profile_name": "worker", "sub_goal": req.goal or "delegate again", "max_iterations": 3}, "pass it on")

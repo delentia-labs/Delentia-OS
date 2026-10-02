@@ -1695,7 +1695,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return tool_result
         from rct_control_plane.injection_screen import InjectionScreen
         text = self._render_tool_result(tool_result)[:400_000]
-        findings = InjectionScreen().check(text)
+        findings = InjectionScreen().check(text, trusted=tool_name not in EXTERNAL_CONTENT_TOOLS)
         hard = [f for f in findings if f.severity == "hard"]
         if not hard:
             return tool_result

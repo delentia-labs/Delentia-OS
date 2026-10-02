@@ -161,6 +161,7 @@ class Pair:
     objects: Tuple[str, ...]
     window: int = 70
     severity: str = "hard"
+    untrusted_only: bool = False      # Round 54: rules that would misfire on a user's own wording, applied to third-party content only
 
 
 @dataclass(frozen=True)
@@ -179,7 +180,11 @@ _CANCEL = ("ignor*", "disregard*", "forget*", "overrid*", "bypass*", "skip*", "d
 _RESTRAINT = ("everything you were told", "everything you know", "what you were told", "told before", "before this message", "all prior",
               "prior context", "previous context", "previous messages", "all previous", "everything above", "instruction*", "rules", "guideline*", "directive*", "direction*", "policy", "policies", "restriction*", "safeguard*", "safety",
               "guardrail*", "approval", "sign-off", "signoff", "sign off", "audit", "gate", "verification", "verify", "filter*",
-              "constraint*", "limitation*", "configuration", "programming", "training", "ethic*", "content policy", "safety check*", "no longer matter", "your developer", "prior directions", "being careful", "policies you started")
+              "constraint*", "limitation*", "configuration", "programming", "training", "ethic*", "content policy", "safety check*", "no longer matter", "your developer", "prior directions", "being careful", "policies you started",
+              # Round 54 (first look at an external set: "Ignore all preceding orders", "Forget everything before that"):
+              "everything before", "before that", "all preceding", "preceding order*", "preceding instruction*", "previous task*",
+              "previous assignment*", "previous information", "all the previous", "everything we discussed", "all the assignment*", "all assignment*",
+              "all the task*", "previous order*", "earlier instruction*", "earlier order*")
 
 _REVEAL = ("quote*", "what did", "what exactly did", "reveal*", "show*", "print*", "repeat*", "output*", "display*", "paste*", "tell me", "leak*", "expose*", "dump*", "disclose*",
            "recite*", "list", "give me", "what were", "what are", "what is your", "write out", "copy*", "send", "email*", "upload*", "post",
@@ -268,6 +273,14 @@ _CJK_CANCEL = ("送って", "发给我", "发送", "보내", "忽略", "无视",
 _CJK_RESTRAINT = ("命令", "機密", "机密", "指令", "规则", "規則", "规矩", "提示词", "提示詞", "系统提示", "系統提示", "システムプロンプト", "指示", "ルール", "지시", "프롬프트", "규칙",
                   "安全", "限制", "限制", "制限", "제한")
 
+_PRAISE_THEN = ("well done", "very good", "excellent", "great job", "congratulations", "fantastic", "simply great", "that is enough", "that is done",
+                "that was ok", "that was okay", "perfect", "good job", "nice work", "outdone yourself", "you did it", "wow", "stop - ", "attention")
+_NEW_TASK = ("new task*", "further task*", "another task", "next task", "new instruction*", "new assignment*", "new challenge", "new job",
+             "more task*", "following task", "following question", "following text*", "concentrate on")
+
+_NOW_NEW = ("now new", "now further", "new tasks follow", "new instructions follow", "further tasks follow", "now concentrate", "now i need",
+            "now write", "now answer", "now forget", "now please", "now help me", "now follow")
+
 PAIRS: Tuple[Pair, ...] = (
     Pair("CORD-S001", "Cancel-the-restraints: a verb that cancels a rule next to the rule (ignore/bypass/skip/disable ... instructions/approval/safeguards).",
          _CANCEL, _RESTRAINT, window=48),
@@ -283,6 +296,13 @@ PAIRS: Tuple[Pair, ...] = (
     Pair("CORD-S020", "Mass disclosure of secrets (every password, all keys, all tokens).", _SECRET_VERB, _MASS_SECRET, window=40),
     Pair("CORD-S021", "Japanese/Chinese/Korean: asks for secrets or the system prompt.", ("送", "发", "显示", "表示", "보내", "출력", "告诉", "见せて", "見せて"),
          ("机密", "機密", "密码", "パスワード", "秘密鍵", "私钥", "비밀번호", "시스템 프롬프트", "系统提示", "システムプロンプト"), window=14),
+    Pair("CORD-S022", "Context switch inside third-party content: praise or an 'that is enough', then 'now' with a new task or new instructions.",
+         _PRAISE_THEN, _NOW_NEW, window=90, untrusted_only=True),
+    Pair("CORD-S023", "Third-party content tells the model to start over or to drop what it was doing.",
+         ("start over", "start from scratch", "start anew", "from the front", "begin anew", "leave behind", "put out of your head", "remove from your head"),
+         _NEW_TASK + ("all the previous", "all previous", "everything before"), window=70, untrusted_only=True),
+    Pair("CORD-S024", "Third-party content assigns the model a new role.", ("you are now", "from now on you", "now you are", "i want you to act as", "act as if you are", "pretend you are", "you will act as"),
+         ("terminal", "translator", "debater", "character", "expert", "persona", "stay in", "answer as", "in the style", "interpreter"), window=90, untrusted_only=True),
     Pair("CORD-S007", "Thai: cancels rules or approvals.", _TH_CANCEL, _TH_RESTRAINT, window=24),
     Pair("CORD-S008", "Thai: asks for secrets or the system prompt.", _TH_REVEAL, _TH_SECRET, window=30),
     Pair("CORD-S009", "Chinese/Japanese/Korean: cancels rules or asks for the system prompt.", _CJK_CANCEL, _CJK_RESTRAINT, window=14),
@@ -327,7 +347,10 @@ def _explanatory(text: str) -> bool:
 class InjectionScreen:
     """Runs every rule on every normalised variant of the text and returns CORD findings."""
 
-    def check(self, text: str, _depth: int = 0) -> List[CORDFinding]:
+    def check(self, text: str, _depth: int = 0, trusted: bool = True) -> List[CORDFinding]:
+        """`trusted=False` is for content that did not come from the user (web pages, stored memory, files from elsewhere): it adds
+        the rules that read like a normal user message when a user says them ('Great, now another task: ...') but are a classic
+        hijack when they appear inside a page or a document the agent was only meant to read."""
         findings: List[CORDFinding] = []
         fired: set = set()
 
@@ -342,6 +365,8 @@ class InjectionScreen:
             explanatory = _explanatory(variant)
             sink = bool(_positions(variant, _SINK))
             for pair in PAIRS:
+                if pair.untrusted_only and trusted:
+                    continue
                 verbs = _positions(variant, pair.verbs)
                 skip: Optional[Callable[[int], bool]] = None
                 if pair.rule_id == "CORD-S003":
@@ -370,7 +395,7 @@ class InjectionScreen:
                     add(rule.rule_id, severity, rule.detail, positions[0][2])
         if _depth == 0:
             for decoded in _decoded_payloads(text):
-                inner = [f for f in self.check(decoded, _depth=1) if f.severity == "hard"]
+                inner = [f for f in self.check(decoded, _depth=1, trusted=trusted) if f.severity == "hard"]
                 if inner:
                     add("CORD-S016", "hard", "An encoded (base64 or hex) payload decodes to an instruction the screen would block.",
                         "decoded: " + decoded[:60])

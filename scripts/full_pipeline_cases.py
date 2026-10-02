@@ -695,6 +695,65 @@ async def c19(env: Env, ok: Check) -> Dict[str, Any]:
     return notes
 
 
+@case("C20", "Genesis: a repeated gap -> the model writes a tool -> a human signs its hash -> the agent uses it")
+async def c20(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    from rct_control_plane import approvals, tool_forge
+    from rct_control_plane.llm_provider import OpenAICompatibleProvider
+    original = env.model.policy
+    notes: Dict[str, Any] = {}
+    goal = "Turn the title Hello Forge World into a url slug"
+    forge = tool_forge.ToolForge(env.kernel._persistence)
+    try:
+        env.model.policy = sm.competent
+        for user in ("c20-a", "c20-b"):
+            env.model.reset()
+            miss = await env.loop(user).run(goal)
+            ok(f"[{user}] with no suitable tool the agent finishes without satisfying the goal", miss["stopped_reason"] == "llm_finished"
+               and "hello-forge-world" not in str(miss.get("final_answer")), miss.get("final_answer"))
+        gaps = tool_forge.find_gaps(env.kernel._persistence)
+        slug_gaps = [g for g in gaps if "slug" in " ".join(g["keywords"])]
+        ok("RCTDB shows the repeated unmet goal as a gap", bool(slug_gaps) and slug_gaps[0]["count"] >= 2 and slug_gaps[0]["users"] >= 2, gaps)
+        env.model.policy = sm.forger
+        env.model.reset()
+        provider = OpenAICompatibleProvider(base_url=env.model.base_url, model=env.model.model_id, kind="local")
+        smoke = 'assert slugify("Hello World") == "hello-world"\nassert slugify("  A  B ") == "a-b"'
+        proposal = await forge.propose("slugify", "turn a title into a url slug", smoke, provider=provider, gap=slug_gaps[0] if slug_gaps else None)
+        ok("the model wrote the function over HTTP and it passed the static check and its smoke test in another process",
+           proposal.status == "VERIFIED" and proposal.verification["code_source"] == "model", proposal.verification)
+        ok("the proposal carries the gap evidence", bool(proposal.gap.get("goals")))
+        record = forge.request_activation(proposal.id)
+        refused = ""
+        try:
+            forge.activate(record.approval_id)
+        except approvals.ApprovalError as exc:
+            refused = str(exc)
+        ok("nothing is installed before a signature", "not APPROVED" in refused and forge.active_tool("slugify") is None, refused)
+        store = approvals.PendingActionStore(env.kernel._persistence)
+        signed = approvals.sign_decision(str(env.approver_key), record.approval_id, record.action_sha256, "APPROVED")
+        store.decide(record.approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"])
+        installed = forge.activate(record.approval_id)
+        ok("after the human signs, the tool is installed", forge.active_tool("slugify") is not None and Path(installed["file"]).exists())
+        env.model.reset()
+        solved = await env.loop("c20-c").run(goal)
+        ok("the agent now solves the goal with the forged tool", solved["stopped_reason"] == "llm_finished" and "hello-forge-world" in str(solved.get("final_answer")),
+           (solved["stopped_reason"], solved.get("final_answer"), solved["steps"][:2]))
+        first = solved["steps"][0] if solved["steps"] else {}
+        ok("through the FDIA gate like any risky tool", first.get("tool_name") == "delentia_run_forged_tool" and any(
+            r["changes"].get("tool_name") == "delentia_run_forged_tool" and r["changes"].get("blocked") is False for r in env.audit_rows("governed_loop_fdia_gate")))
+        with open(installed["file"], "a", encoding="utf-8") as handle:
+            handle.write("\nimport os\n")
+        env.model.reset()
+        tampered = await env.loop("c20-d").run(goal)
+        ok("a file edited after the signature is refused on the next call", "does not match the code a human signed" in json.dumps(tampered["steps"][0]["tool_result"]),
+           tampered["steps"][:1])
+        notes["tool"] = installed["name"]
+        forge.deactivate("slugify")
+    finally:
+        env.model.policy = original
+    return notes
+
+
 @case("C12", "RECORD: the audit trail detects an edit made after the fact")
 async def c12(env: Env, ok: Check) -> Dict[str, Any]:
     from rct_control_plane import audit_chain
