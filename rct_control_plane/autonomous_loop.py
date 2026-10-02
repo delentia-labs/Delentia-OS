@@ -28,7 +28,7 @@ import os
 import re
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, List, Optional
 
 from rct_control_plane.algo_25_delta_block import DeltaEngine
 from rct_control_plane.llm_provider import BudgetExceededError, ResidencyViolation
@@ -289,6 +289,21 @@ _SCOPE_AND_GROUNDING_GUIDANCE = (
 )
 
 
+def _batch_guidance() -> str:
+    """Round 54: the model is told about batches only when the operator enabled them (DELENTIA_PARALLEL_TOOLS=1), so
+    an unchanged server sends an unchanged prompt."""
+    from rct_control_plane import dag_executor
+    if not dag_executor.enabled():
+        return ""
+    return (
+        "OR, when several actions do not depend on each other, ask for them together (at most "
+        f"{dag_executor.MAX_CALLS}; they run at the same time, and every one is checked before any runs):\n"
+        '{"action": "call_tools", "calls": [{"id": "a", "tool_name": "<tool>", "tool_args": {...}}, '
+        '{"id": "b", "tool_name": "<tool>", "tool_args": {...}, "depends_on": ["a"]}], "reasoning": "<why>"}\n'
+        "depends_on only orders calls (b waits for a); it does not hand a's result to b.\n"
+    )
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
@@ -354,7 +369,7 @@ Decide the SINGLE next action. Respond with ONLY a JSON object, no other text:
 {{"action": "call_tool", "tool_name": "<one of the tool names above>", "tool_args": {{...matching its schema...}}, "reasoning": "<why>"}}
 OR, if the goal is already achieved or no tool call is needed:
 {{"action": "finish", "reasoning": "<why>", "final_answer": "<your answer to the goal>"}}
-"""
+{_batch_guidance()}"""
 
     raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
 
@@ -596,6 +611,14 @@ class AutonomousLoop:
                 await _notify(step)
                 break
 
+            if decision["action"] == "call_tools":
+                batch_stop = await self._run_tool_batch(i, goal, decision, history, available_tools, pre_dispatch_gate,
+                                                        post_dispatch_transform, _notify, _maybe_await)
+                if batch_stop:
+                    stopped_reason = batch_stop
+                    break
+                continue
+
             tool_name = decision["tool_name"]
             # Scoped before the governance gate, so the gate, the notary and the step record all
             # see the arguments that will actually run.
@@ -671,6 +694,87 @@ class AutonomousLoop:
         if on_episode_end is not None:
             await _maybe_await(on_episode_end(result))
         return result
+
+    async def _run_tool_batch(
+        self, i: int, goal: str, decision: Dict[str, Any], history: list, available_tools: List[Dict[str, Any]],
+        pre_dispatch_gate: Optional[Callable[..., Any]], post_dispatch_transform: Optional[Callable[..., Any]],
+        notify: Callable[[LoopStep], Awaitable[None]], maybe_await: Callable[[Any], Awaitable[Any]],
+    ) -> Optional[str]:
+        """Round 54: several independent tool calls in one decision, run as waves over the Execution Graph IR
+        (dag_executor.py). Returns a stopped_reason when a call was refused, else None (the loop goes on).
+
+        Governance first, execution second: every call is scoped, checked by the approval rule and the pre-dispatch
+        gate BEFORE any call runs. One refusal (FDIA, owner policy, jury, approval) ends the episode with nothing run,
+        and the refused call is the last step, which is the one the approval store records."""
+        from rct_control_plane import dag_executor as dag
+        reasoning = str(decision.get("reasoning") or "")
+
+        async def record(tool_name: Optional[str], tool_args: Dict[str, Any], tool_result: Any, note: str = "") -> None:
+            step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args, tool_result=tool_result,
+                            llm_reasoning=f"{note} {reasoning}".strip())
+            history.append(step)
+            self._persist_step(step)
+            await notify(step)
+
+        if not dag.enabled():
+            await record(None, {}, {"batch_error": f"parallel tool calls are not enabled on this server ({dag.PARALLEL_ENV}); call one tool at a time"})
+            return None
+        try:
+            calls = dag.parse_calls(decision.get("calls"))
+            graph = dag.compile_batch(calls, intent_id=f"{self.namespace}-{i}")
+        except dag.BatchError as exc:
+            await record(None, {}, {"batch_error": str(exc)})
+            return None
+
+        prepared: Dict[str, Dict[str, Any]] = {}
+        for call in calls:
+            args = self._scope_tool_args(call.tool_name, call.tool_args)
+            note = f"[batch {call.id}]"
+            if call.tool_name == "delentia_run_sandboxed_command":
+                from rct_control_plane.sandbox import classify_command_risk
+                if classify_command_risk(args.get("command", "")) == "needs_approval":
+                    await record(call.tool_name, args, {"pending_approval": True, "command": args.get("command", "")}, note)
+                    return "pending_approval"
+            if pre_dispatch_gate is not None:
+                gate_result = await maybe_await(pre_dispatch_gate(goal, call.tool_name, args))
+                if gate_result is not None:
+                    await record(call.tool_name, args, gate_result["tool_result"], note)
+                    return str(gate_result["stopped_reason"])
+            prepared[call.id] = args
+
+        known = [t["name"] for t in available_tools]
+        unsafe_lock = asyncio.Lock()
+
+        async def invoke(name: str, args: Dict[str, Any]) -> Any:
+            try:
+                raw = await self._mcp.call_tool(name, args)
+                return json.loads(raw.content[0].text)
+            except Exception as exc:  # noqa: BLE001 - reported to the model like a single failing call
+                return {"error": str(exc)}
+
+        async def run_one(call: Any) -> Any:
+            args = prepared[call.id]
+            if call.tool_name not in known:
+                return unknown_tool_result(call.tool_name, known)
+            if call.tool_name in dag.PARALLEL_SAFE_TOOLS:
+                result = await asyncio.to_thread(lambda: asyncio.run(invoke(call.tool_name, args)))
+            else:
+                async with unsafe_lock:
+                    result = await invoke(call.tool_name, args)
+            if post_dispatch_transform is not None:
+                result = await maybe_await(post_dispatch_transform(goal, call.tool_name, args, result))
+            return result
+
+        report = await dag.run_waves(graph, run_one, is_failure=lambda r: isinstance(r, dict) and bool(r.get("error")))
+        for call in calls:
+            outcome = report.outcomes[call.id]
+            tag = f"[batch {call.id}, wave {outcome.wave + 1}, {outcome.status}, {round(outcome.elapsed_ms)} ms]"
+            result = outcome.result if outcome.status != "skipped" else {"skipped": outcome.note}
+            await record(call.tool_name, prepared[call.id], result, tag)
+        self._persistence.append_audit(
+            entity_type="autonomous_loop_batch", entity_id=f"{self.namespace}-{i}", action="batch_run", actor=self.namespace,
+            changes=report.summary())
+        return None
 
     async def _stream_final_answer(
         self, goal: str, history: List[LoopStep], on_answer_token: Callable[[str], Any],
