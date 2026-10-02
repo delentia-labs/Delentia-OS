@@ -2503,6 +2503,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (set either variable to 0 to turn it off here too).
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
@@ -3372,6 +3373,130 @@ def tokens_revoke(name: str) -> None:
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
+
+
+@cli.group("skills")
+def skills_group():
+    """
+    Skills the agent can be reminded of (Round 55: the bundled starter library).
+
+    Examples:
+        delentia skills starter check      # are all bundled playbooks valid against the live tool registry?
+        delentia skills starter install    # add them to the skill library (idempotent)
+        delentia skills list
+    """
+    pass
+
+
+@skills_group.group("starter")
+def skills_starter_group():
+    """The playbooks that ship with the runtime (written by people, not learned)."""
+    pass
+
+
+@skills_starter_group.command("check")
+def skills_starter_check() -> None:
+    """Validate the bundle: every tool exists, no playbook carries an instruction, approvals are stated."""
+    import asyncio
+    from rct_control_plane import starter_skills
+    from rct_control_plane.mcp_server import mcp
+    names = [t.name for t in asyncio.run(mcp.list_tools())]
+    problems = starter_skills.validate(known_tools=names)
+    click.echo(f"{len(starter_skills.STARTER_SKILLS)} bundled playbooks, {len(names)} tools in the registry")
+    for problem in problems:
+        click.echo(click.style(f"  problem: {problem}", fg="red"))
+    if problems:
+        sys.exit(1)
+    click.echo(click.style("  all valid", fg="green"))
+
+
+@skills_starter_group.command("install")
+def skills_starter_install() -> None:
+    """Add the bundled playbooks to the skill library. Safe to run again."""
+    from rct_control_plane import starter_skills
+    from rct_control_plane.skill_library import SkillLibrary
+    counts = starter_skills.install_starter_skills(SkillLibrary())
+    click.echo(f"added {counts['added']}, updated {counts['updated']}, unchanged {counts['unchanged']} (of {counts['total']})")
+
+
+@skills_group.command("list")
+@click.option("--limit", default=50, show_default=True)
+def skills_list(limit: int) -> None:
+    """The skills now offered to the agent, bundled ones marked."""
+    from rct_control_plane.skill_library import SkillLibrary
+    for skill in SkillLibrary().list_active(limit):
+        kind = "bundled" if skill.bundled else "learned"
+        click.echo(f"  [{kind:7}] reliability {skill.reliability:.2f}  uses {skill.uses:3}  {skill.problem_statement[:80]}")
+
+
+@cli.group("mcp")
+def mcp_group():
+    """
+    Tools from other MCP servers (Round 55). The agent uses them only through the same gate as its own tools.
+
+    Examples:
+        delentia mcp list
+        delentia mcp inspect notes        # what the server offers, what was dropped, and the digest to pin
+    """
+    pass
+
+
+@mcp_group.command("list")
+def mcp_list() -> None:
+    """The configured servers and how each of their tools is treated."""
+    from rct_control_plane import external_mcp
+    try:
+        servers = external_mcp.load_servers()
+    except external_mcp.ExternalMCPError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"configuration: {external_mcp.config_path()}")
+    if not servers:
+        click.echo("  no servers configured")
+    for name, spec in servers.items():
+        kind = f"local process ({spec.command})" if spec.command else f"remote ({spec.url})"
+        click.echo(f"  {name}: {kind}, {'on' if spec.enabled else 'OFF'}, pinned: {'yes' if spec.tools_sha256 else 'no'}, "
+                   f"read-only tools declared: {', '.join(sorted(spec.read_only_tools)) or 'none (every call waits for a signature)'}")
+
+
+@mcp_group.command("inspect")
+@click.argument("name")
+def mcp_inspect(name: str) -> None:
+    """Start the server, list its tools and print the digest for `tools_sha256`. Review the descriptions before pinning."""
+    from rct_control_plane import external_mcp
+    try:
+        report = external_mcp.inspect_server(name)
+    except external_mcp.ExternalMCPError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    for tool in report["tools"]:
+        mark = "read-only (declared)" if tool["name"] in report["read_only_declared"] else "waits for a signature"
+        click.echo(f"  {tool['name']}  [{mark}]")
+        click.echo(f"      {tool['description'][:160]}")
+    for problem in report["problems"]:
+        click.echo(click.style(f"  problem: {problem}", fg="yellow"))
+    click.echo(f"digest: {report['digest'] or '(no tools)'}")
+    if report["pinned"]:
+        click.echo("the configured pin " + ("matches" if report["pin_matches"] else click.style("DOES NOT MATCH", fg="red")))
+
+
+@cli.command("search-status")
+def search_status() -> None:
+    """Is web search configured, and with which provider? (Nothing is sent.)"""
+    from rct_control_plane import web_search
+    try:
+        config = web_search.load_config()
+    except web_search.SearchConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if config is None:
+        click.echo("web search is not configured (set DELENTIA_SEARCH_PROVIDER to searxng or brave)")
+        return
+    key_note = ""
+    if config["credential_env"]:
+        key_note = f", key variable {config['credential_env']} is {'set' if os.environ.get(config['credential_env']) else 'NOT set'}"
+    click.echo(f"provider {config['provider']} at {config['base_url']}{key_note}, region {config['region'] or 'not declared'}")
+
 
 
 def main():

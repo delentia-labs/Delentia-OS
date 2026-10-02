@@ -20,9 +20,10 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 
 from rct_control_plane import data_home
 
-CHANNELS = ("telegram", "discord", "slack", "line")
+CHANNELS = ("telegram", "discord", "slack", "line", "whatsapp", "signal", "email")
 _TOKEN_ENV = {"telegram": "TELEGRAM_BOT_TOKEN", "discord": "DISCORD_BOT_TOKEN",
-              "slack": "SLACK_BOT_TOKEN", "line": "LINE_CHANNEL_ACCESS_TOKEN"}
+              "slack": "SLACK_BOT_TOKEN", "line": "LINE_CHANNEL_ACCESS_TOKEN",
+              "whatsapp": "WHATSAPP_ACCESS_TOKEN", "signal": "SIGNAL_NUMBER", "email": "DELENTIA_EMAIL_PASSWORD"}
 _EPISODE_EVENT_TYPES = ("autonomous_loop_step", "governed_loop_fdia_gate", "governed_loop_guard",
                         "notary_receipt", "notary_gap", "intent_loop_pillars")
 
@@ -201,13 +202,14 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
 
     @router.get("/tools")
     async def tools() -> Dict[str, Any]:
-        from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS, RISKY_TOOLS
+        from rct_control_plane import external_mcp
+        from rct_control_plane.governed_autonomous_loop import is_risky_tool, needs_signature_always
         from rct_control_plane.mcp_server import mcp
-        listed = await mcp.list_tools()
+        listed = await external_mcp.maybe_wrap(mcp).list_tools()
         out = []
         for t in listed:
-            gate = ("approval" if t.name in _ALWAYS_NEEDS_APPROVAL_TOOLS
-                    else "fdia" if t.name in RISKY_TOOLS else "open")
+            gate = ("approval" if needs_signature_always(t.name)
+                    else "fdia" if is_risky_tool(t.name) else "open")
             out.append({"name": t.name, "description": (t.description or "").strip(), "gate": gate})
         out.sort(key=lambda x: ({"approval": 0, "fdia": 1, "open": 2}[x["gate"]], x["name"]))
         return {"tools": out, "count": len(out)}
@@ -229,6 +231,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             item["governance_violation"] = bool(r["governance_violation"])
             item["archived"] = bool(r["archived"])
             item["reliability"] = round((r["successes"] + 1) / (r["uses"] + 2), 4)
+            item["bundled"] = bool(r["session_id"] and str(r["session_id"]).startswith("bundled:"))   # Round 55: a starter playbook, not learned
             out.append(item)
         return {"count": lib.count(), "skills": out}
 
@@ -552,12 +555,13 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     # Round 54: the owner's policy for A in F = D^I x A
     # ------------------------------------------------------------------
     async def _tool_gate_labels() -> List[Dict[str, Any]]:
-        from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS, RISKY_TOOLS
+        from rct_control_plane import external_mcp
+        from rct_control_plane.governed_autonomous_loop import is_risky_tool, needs_signature_always
         from rct_control_plane.mcp_server import mcp
-        listed = await mcp.list_tools()
+        listed = await external_mcp.maybe_wrap(mcp).list_tools()
         return [{"name": t.name, "description": (t.description or "").strip()[:160],
-                 "built_in": ("always a signature" if t.name in _ALWAYS_NEEDS_APPROVAL_TOOLS
-                              else "FDIA gate" if t.name in RISKY_TOOLS else "open")} for t in sorted(listed, key=lambda t: t.name)]
+                 "built_in": ("always a signature" if needs_signature_always(t.name)
+                              else "FDIA gate" if is_risky_tool(t.name) else "open")} for t in sorted(listed, key=lambda t: t.name)]
 
     def _approver_summary() -> List[Dict[str, Any]]:
         from rct_control_plane.approvals import trusted_approver_keys, trusted_approver_roles
@@ -641,8 +645,8 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         elif result.needs_signature:
             outcome = "waits for signature" if F >= threshold else "blocked (F below threshold)"
         else:
-            from rct_control_plane.governed_autonomous_loop import RISKY_TOOLS
-            judged = tool in RISKY_TOOLS or result.action_type != "ALLOW"
+            from rct_control_plane.governed_autonomous_loop import is_risky_tool
+            judged = is_risky_tool(tool) or result.action_type != "ALLOW"
             outcome = "allowed" if (F >= threshold or not judged) else "blocked (F below threshold)"
         return {**result.to_dict(), "F": F, "threshold": threshold, "outcome": outcome, "D": D, "I": I}
 

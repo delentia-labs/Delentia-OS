@@ -31,6 +31,9 @@ SENDER_ALLOWLIST_ENV = {
     "discord": "DELENTIA_DISCORD_ALLOWED_SENDERS",
     "slack": "DELENTIA_SLACK_ALLOWED_SENDERS",
     "line": "DELENTIA_LINE_ALLOWED_SENDERS",
+    "whatsapp": "DELENTIA_WHATSAPP_ALLOWED_SENDERS",
+    "signal": "DELENTIA_SIGNAL_ALLOWED_SENDERS",
+    "email": "DELENTIA_EMAIL_ALLOWED_SENDERS",
 }
 
 REJECTED_SENDER_REPLY = "This agent does not accept requests from this account."

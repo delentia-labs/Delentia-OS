@@ -254,8 +254,13 @@ class WebCrawler:
         max_retries: int = 3,
         rate_limit_per_domain: float = 10.0,
         max_concurrent: int = 20,
-        respect_robots_txt: bool = True
+        respect_robots_txt: bool = True,
+        block_private: bool = False
     ):
+        # Round 55: block_private refuses loopback, private, link-local and cloud-metadata addresses on the first request
+        # and on every redirect (url_safety.py). Off by default so existing callers keep their behaviour; the agent's
+        # delentia_crawl_url tool turns it on.
+        self.block_private = block_private
         self.user_agent = user_agent
         self.timeout = timeout
         self.max_retries = max_retries
@@ -290,8 +295,15 @@ class WebCrawler:
 
     async def _init_client(self):
         if self._client is None:
+            hooks: Dict[str, list] = {}
+            if self.block_private:
+                async def _refuse_private(request: httpx.Request) -> None:
+                    from rct_control_plane.url_safety import check_public_url
+                    check_public_url(str(request.url))
+                hooks = {"request": [_refuse_private]}
             self._client = httpx.AsyncClient(
                 timeout=httpx.Timeout(self.timeout),
+                event_hooks=hooks,
                 follow_redirects=True,
                 headers={
                     "User-Agent": self.user_agent,
@@ -395,6 +407,9 @@ class WebCrawler:
         client = self._client
         assert client is not None
 
+        if self.block_private:
+            from rct_control_plane.url_safety import check_public_url
+            check_public_url(url)                      # raises UnsafeURLError with the reason; nothing is requested
         self.total_requests += 1
         domain = self._get_domain(url)
         self.domains_crawled.add(domain)

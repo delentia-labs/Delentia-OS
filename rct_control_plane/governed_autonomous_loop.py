@@ -190,6 +190,7 @@ RISKY_TOOLS = frozenset({
     "delentia_spawn_subagents",         # starts separate OS processes in git worktrees (Round 52)
     "delentia_import_session_state",    # merges external/untrusted JITNA state
     "delentia_run_forged_tool",         # runs code the system wrote for itself (a human signed its hash)
+    "delentia_web_search",              # outbound query to a search provider the owner configured (Round 55)
 })
 
 # Round 45 (K.1.8): real finding from a live-Ollama scenario battery
@@ -246,7 +247,7 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
-                                    "delentia_import_session_state"})
+                                    "delentia_import_session_state", "delentia_web_search"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
 ADDRESSED_TO_THE_AI_RULES = frozenset({"CORD-S006", "CORD-S010", "CORD-S011", "CORD-S016"})
@@ -284,6 +285,24 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_write_repo_file",
     "delentia_patch_repo_file",
 })
+
+
+# Round 55: tools from external MCP servers (mcp__<server>__<tool>, external_mcp.py) are not in the fixed sets above, so the
+# gate asks these helpers instead of the sets. Every external tool is judged by FDIA and its result is third-party content;
+# one the owner did not list as read-only also waits for a human signature on every call.
+def is_risky_tool(tool_name: str) -> bool:
+    from rct_control_plane import external_mcp
+    return tool_name in RISKY_TOOLS or external_mcp.is_external(tool_name)
+
+
+def is_external_content(tool_name: str) -> bool:
+    from rct_control_plane import external_mcp
+    return tool_name in EXTERNAL_CONTENT_TOOLS or external_mcp.is_external(tool_name)
+
+
+def needs_signature_always(tool_name: str) -> bool:
+    from rct_control_plane import external_mcp
+    return tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS or external_mcp.needs_approval(tool_name)
 
 
 def _sha(value: Any) -> Optional[str]:
@@ -342,6 +361,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         policy: Optional[Any] = None,
         jury_config: Optional[Dict[str, Any]] = None,
     ):
+        from rct_control_plane import external_mcp
+        mcp_server = external_mcp.maybe_wrap(mcp_server)     # Round 55: configured external MCP servers join the menu, behind the same gate
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
         self._kernel = kernel
@@ -368,6 +389,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._growth = GrowthLedger(self._persistence, namespace)
         self._mee_session: MEESession = self._growth.session
         self._skill_library = skill_library if skill_library is not None else SkillLibrary()
+        if (os.environ.get("DELENTIA_STARTER_SKILLS") or "").strip() == "1":
+            # Round 55: `delentia serve` sets this; idempotent, so a restart adds nothing twice.
+            try:
+                from rct_control_plane.starter_skills import install_starter_skills
+                install_starter_skills(self._skill_library)
+            except Exception:                              # a library problem must not stop an agent from starting
+                pass
         # Populated at episode start, read by the pre-dispatch gate and
         # episode-end hook - one episode (one run() call) at a time, same
         # single-episode-per-instance assumption AutonomousLoop itself
@@ -860,6 +888,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return ""
         lines = ["Similar past solutions (from this system's own skill library):"]
         for skill in skills:
+            if getattr(skill, "bundled", False):
+                # A starter playbook was written by people, not learned: say so, and do not show a growth ratio it never had.
+                lines.append(
+                    f"- Problem: {skill.problem_statement!r} -> Playbook: {skill.solution!r} "
+                    f"(bundled starter skill, similarity={skill.similarity_score:.2f}; the tools still pass the same gates)"
+                )
+                continue
             lines.append(
                 f"- Problem: {skill.problem_statement!r} -> Solution: {skill.solution!r} "
                 f"(similarity={skill.similarity_score:.2f}, real growth_ratio={skill.growth_ratio:.2f})"
@@ -925,7 +960,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if policy_error:
             return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
                                       policy_info={"error": True})
-        if tool_name not in RISKY_TOOLS and policy is None:
+        if not is_risky_tool(tool_name) and policy is None:
             return None
 
         A, a_reason = self._authorization_signal(tool_name, tool_args)
@@ -946,7 +981,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         F = fdia_score(self._episode_D, self._episode_I, A)
         self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F, "threshold": threshold}
         # Reads that the owner allows are not held to the D/I threshold (they never were); everything riskier is.
-        judged = tool_name in RISKY_TOOLS or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
+        judged = is_risky_tool(tool_name) or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
         blocked = A <= 0.0 or (judged and F < threshold)
         info = policy_eval.to_dict() if policy_eval is not None else None
         self._episode_policy = {"policy_digest": policy.digest(), "last": info} if policy is not None else {}
@@ -985,7 +1020,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                                         "approver_roles": policy_eval.approver_roles, "policy_digest": policy_eval.policy_digest},
                 },
             }
-        if tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS:
+        if needs_signature_always(tool_name):
             return {
                 "stopped_reason": "pending_approval",
                 "tool_result": {
@@ -1710,7 +1745,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
         tool_result = self._screen_tool_result(tool_name, tool_result)
-        if tool_name in EXTERNAL_CONTENT_TOOLS and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
+        if is_external_content(tool_name) and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             tool_result = await self._second_opinion_on_result(tool_name, tool_result)
         if self._compress_tool_outputs and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
@@ -1740,11 +1775,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return tool_result
         from rct_control_plane.injection_screen import InjectionScreen
         text = self._render_tool_result(tool_result)[:400_000]
-        findings = InjectionScreen().check(text, trusted=tool_name not in EXTERNAL_CONTENT_TOOLS)
+        findings = InjectionScreen().check(text, trusted=not is_external_content(tool_name))
         hard = [f for f in findings if f.severity == "hard"]
         if not hard:
             return tool_result
-        external = tool_name in EXTERNAL_CONTENT_TOOLS
+        external = is_external_content(tool_name)
         addressed = [f for f in hard if f.pattern_id in ADDRESSED_TO_THE_AI_RULES]
         withhold = mode == "block" and (external or bool(addressed))
         rules = sorted({f.pattern_id for f in (hard if external else addressed or hard)})

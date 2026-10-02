@@ -272,6 +272,8 @@ _DAEMON_STARTED_AT: Optional[float] = None
 _DAEMON_TELEGRAM_GATEWAY: Optional[Any] = None
 _DAEMON_DISCORD_GATEWAY: Optional[Any] = None
 _DAEMON_SLACK_GATEWAY: Optional[Any] = None
+_DAEMON_SIGNAL_GATEWAY: Optional[Any] = None
+_DAEMON_EMAIL_GATEWAY: Optional[Any] = None
 
 
 @asynccontextmanager
@@ -295,6 +297,7 @@ async def _lifespan(app: FastAPI):
     says to avoid. Real uvicorn serving is the only path that sets the
     env var."""
     global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT, _DAEMON_TELEGRAM_GATEWAY, _DAEMON_DISCORD_GATEWAY, _DAEMON_SLACK_GATEWAY
+    global _DAEMON_SIGNAL_GATEWAY, _DAEMON_EMAIL_GATEWAY
     if os.environ.get("DELENTIA_DAEMON_ENABLED") != "1":
         yield
         return
@@ -329,9 +332,23 @@ async def _lifespan(app: FastAPI):
     _DAEMON_SLACK_GATEWAY = SlackGateway(kernel=ALGORITHM_KERNEL)
     _DAEMON_SLACK_GATEWAY.start()
 
+    # Round 55: Signal (through signal-cli-rest-api) and Email (IMAP/SMTP); both no-op without their settings.
+    from rct_control_plane.gateways.signal_gateway import SignalGateway
+    from rct_control_plane.gateways.email_gateway import EmailGateway
+    _DAEMON_SIGNAL_GATEWAY = SignalGateway(kernel=ALGORITHM_KERNEL)
+    _DAEMON_SIGNAL_GATEWAY.start()
+    _DAEMON_EMAIL_GATEWAY = EmailGateway(kernel=ALGORITHM_KERNEL)
+    _DAEMON_EMAIL_GATEWAY.start()
+
     try:
         yield
     finally:
+        if _DAEMON_EMAIL_GATEWAY is not None:
+            await _DAEMON_EMAIL_GATEWAY.stop()
+        _DAEMON_EMAIL_GATEWAY = None
+        if _DAEMON_SIGNAL_GATEWAY is not None:
+            await _DAEMON_SIGNAL_GATEWAY.stop()
+        _DAEMON_SIGNAL_GATEWAY = None
         if _DAEMON_SLACK_GATEWAY is not None:
             await _DAEMON_SLACK_GATEWAY.stop()
         _DAEMON_SLACK_GATEWAY = None
@@ -694,6 +711,14 @@ class ControlPlaneAPI:
                         "configured": _DAEMON_SLACK_GATEWAY.is_configured() if _DAEMON_SLACK_GATEWAY is not None else False,
                         "running": _DAEMON_SLACK_GATEWAY._is_running if _DAEMON_SLACK_GATEWAY is not None else False,
                     },
+                    "signal": {
+                        "configured": _DAEMON_SIGNAL_GATEWAY.is_configured() if _DAEMON_SIGNAL_GATEWAY is not None else False,
+                        "running": _DAEMON_SIGNAL_GATEWAY._is_running if _DAEMON_SIGNAL_GATEWAY is not None else False,
+                    },
+                    "email": {
+                        "configured": _DAEMON_EMAIL_GATEWAY.is_configured() if _DAEMON_EMAIL_GATEWAY is not None else False,
+                        "running": _DAEMON_EMAIL_GATEWAY._is_running if _DAEMON_EMAIL_GATEWAY is not None else False,
+                    },
                 },
             }
 
@@ -702,7 +727,8 @@ class ControlPlaneAPI:
         self.app.include_router(build_desk_router(lambda: {
             "scheduler": _DAEMON_SCHEDULER,
             "gateways": {"telegram": _DAEMON_TELEGRAM_GATEWAY, "discord": _DAEMON_DISCORD_GATEWAY,
-                         "slack": _DAEMON_SLACK_GATEWAY, "line": None},
+                         "slack": _DAEMON_SLACK_GATEWAY, "line": None, "whatsapp": None,
+                         "signal": _DAEMON_SIGNAL_GATEWAY, "email": _DAEMON_EMAIL_GATEWAY},
         }))
 
         @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
@@ -724,6 +750,32 @@ class ControlPlaneAPI:
             if not gateway.verify_signature(body_bytes, signature):
                 raise HTTPException(status_code=403, detail="invalid or missing X-Line-Signature")
 
+            import json as _json
+            results = await gateway.handle_webhook_body(_json.loads(body_bytes))
+            return {"handled": len(results)}
+
+        @self.app.get("/v1/gateways/whatsapp/webhook", tags=["Gateways"])
+        async def whatsapp_verify_endpoint(request: Request):
+            """Round 55: Meta's one-time subscription check. Echoes hub.challenge only when hub.verify_token matches ours."""
+            from fastapi.responses import PlainTextResponse
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+            from rct_control_plane.gateways.whatsapp_gateway import WhatsAppGateway
+            challenge = WhatsAppGateway(kernel=ALGORITHM_KERNEL).verify_subscription(dict(request.query_params))
+            if challenge is None:
+                raise HTTPException(status_code=403, detail="verification failed")
+            return PlainTextResponse(challenge)
+
+        @self.app.post("/v1/gateways/whatsapp/webhook", tags=["Gateways"])
+        async def whatsapp_webhook_endpoint(request: Request):
+            """Round 55: WhatsApp Cloud API webhook. The raw body must carry a valid X-Hub-Signature-256 (HMAC-SHA256 with the
+            app secret) before anything is parsed. As with LINE, the route existing is not the same as it being reachable:
+            Meta needs a public HTTPS host the Architect has confirmed."""
+            from rct_control_plane.algorithm_kernel_41 import ALGORITHM_KERNEL
+            from rct_control_plane.gateways.whatsapp_gateway import WhatsAppGateway
+            body_bytes = await request.body()
+            gateway = WhatsAppGateway(kernel=ALGORITHM_KERNEL)
+            if not gateway.verify_signature(body_bytes, request.headers.get("X-Hub-Signature-256", "")):
+                raise HTTPException(status_code=403, detail="invalid or missing X-Hub-Signature-256")
             import json as _json
             results = await gateway.handle_webhook_body(_json.loads(body_bytes))
             return {"handled": len(results)}

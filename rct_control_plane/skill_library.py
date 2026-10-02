@@ -190,6 +190,11 @@ class SkillRecord:
     archived: bool = False
 
     @property
+    def bundled(self) -> bool:
+        """True for a starter skill that shipped with the runtime (starter_skills.py), not one it learned."""
+        return bool(self.session_id and self.session_id.startswith("bundled:"))
+
+    @property
     def reliability(self) -> float:
         """Laplace-smoothed success rate of this skill when reused: an unused
         skill is 0.5, so it is neither trusted nor distrusted yet."""
@@ -216,6 +221,7 @@ class SkillRecord:
             "reinforced": self.reinforced,
             "archived": self.archived,
             "reliability": round(self.reliability, 4),
+            "bundled": self.bundled,
         }
 
 
@@ -284,8 +290,10 @@ class SkillLibrary:
         similar = lib.retrieve_similar_skills("payment retry keeps flaking", top_k=3)
     """
 
-    def __init__(self, db_path: str = _DEFAULT_DB_PATH) -> None:
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        # Resolved when the library is built, not when the module is imported, so DELENTIA_HOME set later (a test, a CLI run with
+        # another home) decides where skills live. Before Round 55 the path was frozen at import time.
+        self.db_path = db_path if db_path is not None else control_plane_db_path()
         self._init_schema()
 
     # ------------------------------------------------------------------
@@ -393,6 +401,32 @@ class SkillLibrary:
             )
 
         return record
+
+    def install_bundled(self, *, skill_id: str, problem_statement: str, solution: Any, bundle_id: str, extra_keywords: str = "") -> str:
+        """Round 55: put a bundled starter skill (starter_skills.py) in the library. Not growth-gated, because it was not
+        learned: delta 0, growth_ratio 1.0, reliability neutral until real reuse moves it. Idempotent. Returns "added",
+        "updated" (the bundle text changed; reuse statistics stay) or "unchanged". A bundled skill the library archived
+        for failing is left archived."""
+        # extra_keywords are matching words only (synonyms people use); they widen retrieval and are never shown to the model.
+        keywords = list(dict.fromkeys(_tokenize(problem_statement) + _tokenize(extra_keywords)))
+        encoded = json.dumps(solution)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT problem_statement, solution, keywords FROM skills WHERE id = ?", (skill_id,)).fetchone()
+            if row is None:
+                conn.execute(
+                    """INSERT INTO skills
+                       (id, problem_statement, solution, keywords, delta, resilience, g_before, g_after, growth_ratio,
+                        governance_violation, session_id, created_at)
+                       VALUES (?, ?, ?, ?, 0.0, 1.0, 1.0, 1.0, 1.0, 0, ?, ?)""",
+                    (skill_id, problem_statement, encoded, json.dumps(keywords), bundle_id,
+                     datetime.now(timezone.utc).isoformat()))
+                return "added"
+            if row["problem_statement"] == problem_statement and row["solution"] == encoded and row["keywords"] == json.dumps(keywords):
+                return "unchanged"
+            conn.execute("UPDATE skills SET problem_statement = ?, solution = ?, keywords = ?, session_id = ? WHERE id = ?",
+                         (problem_statement, encoded, json.dumps(keywords), bundle_id, skill_id))
+            return "updated"
 
     def _find_duplicate(self, keywords: set) -> Optional[SkillRecord]:
         if not keywords:

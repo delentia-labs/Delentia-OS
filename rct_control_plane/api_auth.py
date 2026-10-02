@@ -40,7 +40,7 @@ from urllib.parse import parse_qs
 
 TOKEN_ENV = "DELENTIA_API_TOKEN"
 PUBLIC_PATHS = frozenset({"/", "/health"})
-SELF_AUTHENTICATED_PATHS = frozenset({"/v1/gateways/line/webhook"})
+SELF_AUTHENTICATED_PATHS = frozenset({"/v1/gateways/line/webhook", "/v1/gateways/whatsapp/webhook"})
 PROXY_HEADERS = ("cf-ray", "cf-connecting-ip", "x-forwarded-for", "forwarded", "x-real-ip")
 # "testclient" is the fixed client host Starlette's in-process TestClient
 # reports; a real socket peer is always an IP address, never that string.

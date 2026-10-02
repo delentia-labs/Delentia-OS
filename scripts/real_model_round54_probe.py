@@ -61,8 +61,18 @@ BATCH_GOALS: List[Dict[str, Any]] = [
 ]
 
 
+PROVIDER_KIND = "ollama"                       # set by --provider; "openrouter" needs OPENROUTER_API_KEY in the environment
+PRICES = {"in": 0.0, "out": 0.0}               # USD per million tokens, for --provider openrouter
+
+
+def make_provider(model: str) -> Any:
+    from rct_control_plane.llm_provider import MeteredProvider, OllamaProvider, OpenRouterProvider
+    if PROVIDER_KIND == "openrouter":
+        return MeteredProvider(OpenRouterProvider(model=model), prompt_price_per_mtok=PRICES["in"], completion_price_per_mtok=PRICES["out"])
+    return MeteredProvider(OllamaProvider(model=model), prompt_price_per_mtok=0.0, completion_price_per_mtok=0.0)
+
+
 async def forge_part(model: str) -> Dict[str, Any]:
-    from rct_control_plane.llm_provider import MeteredProvider, OllamaProvider
     from rct_control_plane.persistence import ControlPlanePersistence
     from rct_control_plane.tool_forge import ToolForge
     work = Path(tempfile.mkdtemp(prefix="delentia-forge-probe-"))
@@ -70,7 +80,7 @@ async def forge_part(model: str) -> Dict[str, Any]:
     forge = ToolForge(ControlPlanePersistence(db_path=str(work / "forge.db")))
     rows: List[Dict[str, Any]] = []
     for item in FORGE_SPECS:
-        provider = MeteredProvider(OllamaProvider(model=model), prompt_price_per_mtok=0.0, completion_price_per_mtok=0.0)
+        provider = make_provider(model)
         started = time.perf_counter()
         try:
             proposal = await forge.propose(item["name"], item["spec"], item["test"], provider=provider)
@@ -91,7 +101,7 @@ async def batch_part(model: str, max_seconds: float) -> Dict[str, Any]:
     work = Path(tempfile.mkdtemp(prefix="delentia-batch-probe-"))
     env = f.Env(work)
     os.environ.update({"DELENTIA_HOME": str(work / "home"), "DELENTIA_REPO_ROOT": str(env.repo), "DELENTIA_MODEL_CONFIG": str(work / "model.json"),
-                       "DELENTIA_LLM_PROVIDER": "ollama", "DELENTIA_LLM_MODEL": model})
+                       "DELENTIA_LLM_PROVIDER": PROVIDER_KIND, "DELENTIA_LLM_MODEL": model})
     env.build_repo()
     from rct_control_plane.mcp_server import _kernel, mcp
     env.kernel, env.mcp = _kernel, mcp
@@ -137,7 +147,16 @@ def main() -> int:
     parser.add_argument("--part", choices=["forge", "batch", "both"], default="both")
     parser.add_argument("--max-seconds", type=float, default=400.0)
     parser.add_argument("--json", default=None)
+    parser.add_argument("--provider", choices=["ollama", "openrouter"], default="ollama",
+                        help="openrouter spends real money: it needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1, and the prices below")
+    parser.add_argument("--price-in", type=float, default=0.0, help="USD per million prompt tokens (openrouter)")
+    parser.add_argument("--price-out", type=float, default=0.0, help="USD per million completion tokens (openrouter)")
     args = parser.parse_args()
+    global PROVIDER_KIND
+    PROVIDER_KIND = args.provider
+    PRICES.update({"in": args.price_in, "out": args.price_out})
+    if args.provider == "openrouter" and (not os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DELENTIA_RUN_LIVE_TESTS") != "1"):
+        raise SystemExit("--provider openrouter spends money: set OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1 first")
     import logging
     logging.disable(logging.WARNING)
     try:

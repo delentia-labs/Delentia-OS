@@ -110,6 +110,7 @@ export interface Skill {
   id: string; problem_statement: string; solution: unknown; growth_ratio: number; delta: number;
   g_before: number; g_after: number; governance_violation: boolean; session_id: string | null; created_at: string;
   uses: number; successes: number; failures: number; reinforced: number; archived: boolean; reliability: number;
+  bundled?: boolean;
 }
 export interface GrowthLedger {
   namespace: string; G: number | null; resilience: number | null; growth_ratio: number | null;
