@@ -668,6 +668,10 @@ delentia fdia test delentia_write_repo_file --args '{"relative_path": ".env"}' -
 
 The Desk page explains the equation with a live calculator and worked examples, edits the rules, and tests an unsaved draft. Roles come from the identity the server attached to the request, so use one API token per user if roles are to mean anything.
 
+### One token per person, signed policy changes, a second opinion for CORD
+
+`delentia tokens create alice` prints a token once and stores only its SHA-256 in `~/.delentia/api_tokens.json`; with any entry the server is in per-user mode and the identity (namespace, memory, FDIA role) comes from the token, never from the request body. On a server with an API token, changing or turning off the owner's policy waits for an approver signature bound to that exact policy. `DELENTIA_CORD_SECOND_OPINION=flag|block` plus `delentia model set <small-model> --profile classifier` adds a small model's judgment of goals and third-party content on top of the rules (it can only add a finding and fails open); on a public labelled set the rules block 10% of attacks and rules + qwen2.5:7b 23%, with no false blocks. Tool Forge also has a Desk page (`/forge`).
+
 ### Parallel tool calls and the Tool Forge
 
 `DELENTIA_PARALLEL_TOOLS=1` lets the model ask for several independent tool calls in one decision; they run as waves over the Execution Graph IR (`dag_executor.py`), every call is gated before any runs, and one refusal stops the batch. Measured on real tools: four independent 0.5 s waits 3.8x, a diamond 1.3x, a chain 1.0x, CPU-bound Python about 1.1x (`scripts/dag_wave_benchmark.py`).
