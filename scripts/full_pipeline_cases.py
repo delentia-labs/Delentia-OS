@@ -529,6 +529,172 @@ async def c16(env: Env, ok: Check) -> Dict[str, Any]:
     return {"entries": entries}
 
 
+@case("C17", "DAG: independent tool calls in one decision, governed before any of them runs")
+async def c17(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    original = env.model.policy
+    previous = os.environ.get("DELENTIA_PARALLEL_TOOLS")
+    notes: Dict[str, Any] = {}
+    try:
+        env.model.policy = sm.batcher
+        os.environ["DELENTIA_PARALLEL_TOOLS"] = "1"
+        env.model.reset()
+        result = await env.loop("c17a").run("Read pyproject.toml, README.md and src/app.py in one go and tell me the project name")
+        ok("the episode finished", result["stopped_reason"] == "llm_finished", result["stopped_reason"])
+        ok("the prompt told the model it may batch", "call_tools" in env.model.requests[0].prompt)
+        ok("one decision for three reads, one to answer: two model calls", env.model.calls == 2, env.model.calls)
+        reads = [s for s in result["steps"] if s.get("tool_name") == "delentia_read_repo_file"]
+        ok("three real reads came back in call order", [r["tool_args"]["relative_path"] for r in reads] == ["pyproject.toml", "README.md", "src/app.py"], reads)
+        ok("with the real file contents", "sample-service" in json.dumps(reads[0]["tool_result"]) and "FDIA" in json.dumps(reads[2]["tool_result"]))
+        batches = env.audit_rows("autonomous_loop_batch")
+        ok("the batch schedule is in the audit trail", batches and batches[-1]["changes"]["waves"] == [["r0", "r1", "r2"]], batches[-1:])
+        notes["batch"] = batches[-1]["changes"] if batches else None
+        env.model.reset()
+        refused = await env.loop("c17b").run("Read pyproject.toml and README.md in one go and write the summary")
+        ok("a batch holding a write pauses for approval", refused["stopped_reason"] == "pending_approval", refused["stopped_reason"])
+        ok("and the reads in it did not run", not [s for s in refused["steps"] if s.get("tool_name") == "delentia_read_repo_file"], refused["steps"])
+        ok("nor did the write", not (env.repo / "docs" / "batch_note.md").exists())
+        ok("the pending action is the write, with its digest", bool(refused.get("approval_id")) and bool(refused.get("action_sha256")))
+        del os.environ["DELENTIA_PARALLEL_TOOLS"]
+        env.model.reset()
+        off = await env.loop("c17c").run("Read pyproject.toml and README.md in one go")
+        text = json.dumps(off["steps"][0].get("tool_result"), default=str) if off["steps"] else ""
+        ok("with batching off the model is told so and nothing runs", "not enabled" in text and not [s for s in off["steps"] if s.get("tool_name")], text[:200])
+        ok("and the prompt does not mention batching", "call_tools" not in env.model.requests[0].prompt)
+    finally:
+        env.model.policy = original
+        if previous is None:
+            os.environ.pop("DELENTIA_PARALLEL_TOOLS", None)
+        else:
+            os.environ["DELENTIA_PARALLEL_TOOLS"] = previous
+    return notes
+
+
+@case("C18", "A: the owner's policy decides what runs, who signs and how many; a broken policy fails closed")
+async def c18(env: Env, ok: Check) -> Dict[str, Any]:
+    from rct_control_plane import approvals, fdia_policy
+    notes: Dict[str, Any] = {}
+    policy_file = env.work / "fdia_policy.json"
+    approvers_file = Path(os.environ["DELENTIA_APPROVERS_FILE"])
+    old_env = {k: os.environ.get(k) for k in (fdia_policy.POLICY_ENV, approvals.APPROVERS_ENV)}
+    keys = {}
+    for name, role in (("arch", "Chief_Architect"), ("ops", "DevOps_Lead"), ("intern", "Intern")):
+        path = env.work / "keys" / f"{name}.pem"
+        keys[name] = (str(path), approvals.generate_approver_key(str(path)), role)
+    approvers_file.write_text(json.dumps([{"name": n, "public_key_hex": v[1], "role": v[2]} for n, v in keys.items()]), encoding="utf-8")
+    os.environ.pop(approvals.APPROVERS_ENV, None)
+    os.environ[fdia_policy.POLICY_ENV] = str(policy_file)
+    try:
+        policy_file.write_text(json.dumps({"rules": [
+            {"rule_id": "R-READ", "intent_patterns": ["read_*", "search_*", "recall"], "action_type": "ALLOW"},
+            {"rule_id": "R-WRITE", "intent_patterns": ["write_repo_file"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 2,
+             "human_approver_role": ["Chief_Architect", "DevOps_Lead"], "denied_paths": ["docs/secret*", ".env"]}],
+            "roles": {"default_role": "developer", "principals": {"c18-admin": "admin"}}}), encoding="utf-8")
+        store = approvals.PendingActionStore(env.kernel._persistence)
+        env.model.reset()
+        loop = env.loop("c18")
+        paused = await loop.run("Write a note to docs/dual.md")
+        ok("the policy turns the write into a 2-signature pause", paused["stopped_reason"] == "pending_approval", paused["stopped_reason"])
+        pending = store.get(paused["approval_id"])
+        ok("the record names the rule, the count and the roles", pending.policy_rule == "R-WRITE" and pending.required_signatures == 2
+           and pending.approver_roles == ["Chief_Architect", "DevOps_Lead"], pending.to_dict())
+
+        def sign(who: str, decision: str = "APPROVED") -> Any:
+            signed = approvals.sign_decision(keys[who][0], pending.approval_id, pending.action_sha256, decision)
+            return store.decide(pending.approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
+
+        def refused(who: str) -> str:
+            try:
+                sign(who)
+            except approvals.ApprovalError as exc:
+                return str(exc)
+            return ""
+
+        ok("a key without the required role cannot sign", "needs an approver with the role" in refused("intern"), refused("intern"))
+        ok("the first valid signature does not approve", sign("arch").status == "PENDING")
+        ok("the same key twice does not count", "already signed" in refused("arch"))
+        ok("the second distinct key approves", sign("ops").status == "APPROVED")
+        outcome = await loop.resume(pending.approval_id, continue_episode=False)
+        target = env.repo / "docs" / "dual.md"
+        ok("the action ran once after both signatures", target.exists() and outcome["executed_result"] is not None)
+        env.model.reset()
+        secret = await env.loop("c18b").run("Write a note to docs/secret.md")
+        ok("a path the owner forbade is refused outright, no signature can unlock it", secret["stopped_reason"] == "fdia_blocked", secret["stopped_reason"])
+        ok("and it explains which rule", "restricted path" in json.dumps(secret["steps"][-1]["tool_result"]), secret["steps"][-1:])
+        env.model.reset()
+        unregistered = await env.loop("c18c").run("Remember that the gate password is not written down")
+        ok("a tool no rule mentions has A = 0 (zero trust)", unregistered["stopped_reason"] == "fdia_blocked", unregistered["stopped_reason"])
+        env.model.reset()
+        policy_file.write_text("{this is not json", encoding="utf-8")
+        broken = await env.loop("c18d").run("Read the file README.md")
+        ok("a broken policy file refuses even a read (fail closed)", broken["stopped_reason"] == "fdia_blocked" and not any(
+            "sample" in json.dumps(s.get("tool_result"), default=str) for s in broken["steps"]), broken["stopped_reason"])
+        ok("and the model was not asked to try again with the file open", env.model.calls <= 2, env.model.calls)
+        notes["rows"] = [r["changes"].get("policy", {}).get("rule_id") for r in env.audit_rows("governed_loop_fdia_gate") if r["changes"].get("policy")][-4:]
+    finally:
+        for key, value in old_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        approvers_file.write_text("[]", encoding="utf-8")
+        policy_file.unlink(missing_ok=True)
+    return notes
+
+
+@case("C19", "A jury of four separate model servers votes before a risky write; a disagreeing jury stops it")
+async def c19(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    from signedai.core.registry import SignedAIRegistry, SignedAITier
+    from rct_control_plane import fdia_policy
+    notes: Dict[str, Any] = {}
+    agree = json.dumps({"vote": "agree", "reason": "consistent with the goal"})
+    disagree = json.dumps({"vote": "disagree", "reason": "the goal never asked for a file write"})
+    roles = SignedAIRegistry.get_tier(SignedAITier.TIER_4).signers
+    policy_file = env.work / "fdia_policy_jury.json"
+    previous = os.environ.get(fdia_policy.POLICY_ENV)
+    os.environ[fdia_policy.POLICY_ENV] = str(policy_file)
+    policy_file.write_text(json.dumps({"rules": [
+        {"rule_id": "R-READ", "intent_patterns": ["read_*", "search_*", "recall", "remember"], "action_type": "ALLOW"},
+        {"rule_id": "R-WRITE", "intent_patterns": ["write_repo_file"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "jury_tier": "tier_4"}]}), encoding="utf-8")
+    try:
+        for label, votes in (("disagree", [disagree, disagree, disagree, agree]), ("agree", [agree, agree, agree, disagree])):
+            members = [sm.ScriptedModel(lambda req, v=v: v, model_id=f"member-{label}-{i}") for i, v in enumerate(votes)]
+            for member in members:
+                member.__enter__()
+            try:
+                config = {"roles": {role.value: {"provider": "openai-compat", "model": m.model_id, "base_url": m.base_url, "kind": "local",
+                                                 "operator": f"member-{i}"} for i, (role, m) in enumerate(zip(roles, members, strict=False))}}
+                (env.work / "jury.json").write_text(json.dumps(config), encoding="utf-8")
+                os.environ["DELENTIA_JURY_CONFIG"] = str(env.work / "jury.json")
+                env.model.reset()
+                result = await env.loop(f"c19-{label}").run(f"Write a note to docs/jury_{label}.md")
+                rows = [r for r in env.audit_rows("governed_loop_jury") if r["changes"].get("verdict", {}).get("votes_for") is not None]
+                ok(f"[{label}] all four members were asked once, over HTTP", all(m.calls == 1 for m in members), [m.calls for m in members])
+                ok(f"[{label}] the proposal they saw names the file", "docs/jury_" in members[0].requests[0].prompt)
+                ok(f"[{label}] a verdict is in the audit trail with a digest", bool(rows) and len(rows[-1]["changes"]["verdict"]["digest"]) == 64, rows[-1:])
+                if label == "disagree":
+                    ok("[disagree] the jury stopped the action before any human was asked", result["stopped_reason"] == "jury_rejected" and "approval_id" not in result, result["stopped_reason"])
+                else:
+                    ok("[agree] the jury passed it on to the human", result["stopped_reason"] == "pending_approval" and bool(result.get("approval_id")), result["stopped_reason"])
+                notes[label] = rows[-1]["changes"]["verdict"]["consensus_reached"] if rows else None
+            finally:
+                for member in members:
+                    member.__exit__(None, None, None)
+        os.environ["DELENTIA_JURY_CONFIG"] = str(env.work / "no-such-jury.json")
+        env.model.reset()
+        none = await env.loop("c19-none").run("Write a note to docs/jury_none.md")
+        ok("a jury that is required but cannot sit refuses (never passes)", none["stopped_reason"] == "jury_rejected", none["stopped_reason"])
+    finally:
+        os.environ.pop("DELENTIA_JURY_CONFIG", None)
+        if previous is None:
+            os.environ.pop(fdia_policy.POLICY_ENV, None)
+        else:
+            os.environ[fdia_policy.POLICY_ENV] = previous
+        policy_file.unlink(missing_ok=True)
+    return notes
+
+
 @case("C12", "RECORD: the audit trail detects an edit made after the fact")
 async def c12(env: Env, ok: Check) -> Dict[str, Any]:
     from rct_control_plane import audit_chain

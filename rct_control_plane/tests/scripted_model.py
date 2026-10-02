@@ -94,6 +94,22 @@ def spawner(req: Request) -> str:
     return competent(req)
 
 
+def batcher(req: Request) -> str:
+    """Asks for independent reads together (Round 54 `call_tools`), and for one write together with them when the goal says so."""
+    goal = req.goal
+    if "in one go" not in goal.lower():
+        return competent(req)
+    files = re.findall(r"[\w./-]+\.(?:toml|md|py)", goal)
+    if req.history_empty:
+        calls = [{"id": f"r{i}", "tool_name": "delentia_read_repo_file", "tool_args": {"relative_path": f}} for i, f in enumerate(files)]
+        if "and write" in goal.lower():
+            calls.append({"id": "w", "tool_name": "delentia_write_repo_file", "tool_args": {"relative_path": "docs/batch_note.md", "content_text": "batch"}})
+        return json.dumps({"action": "call_tools", "calls": calls, "reasoning": "these reads do not depend on each other"})
+    if "batch_error" in req.prompt:
+        return _finish("The batch was refused; I will not retry it.")
+    return _finish(f"I read {', '.join(files)} in one go; the project is sample-service.")
+
+
 def delegator(req: Request) -> str:
     """Always delegates the same goal again: the failure delegation depth limits exist for."""
     return _call("delentia_delegate", {"profile_name": "worker", "sub_goal": req.goal or "delegate again", "max_iterations": 3}, "pass it on")
