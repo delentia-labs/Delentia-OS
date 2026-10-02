@@ -23,7 +23,7 @@ def by_ref(findings, fragment):
 
 def test_every_finding_has_a_known_verdict_and_evidence():
     findings = audit.run_audit(None)
-    assert len(findings) >= 15
+    assert len(findings) >= 15 and "CUT" in audit.VERDICTS
     for f in findings:
         assert f.verdict in audit.VERDICTS and f.evidence and f.claim and f.ref
 
@@ -33,10 +33,11 @@ def test_the_checks_that_run_real_calls_report_the_fdia_invariants():
     assert layer3.verdict == "REAL" and "F(A=0)=0.0" in layer3.evidence and "F(I=0)=0.0" in layer3.evidence
 
 
-def test_known_gaps_are_reported_as_gaps_until_someone_closes_them():
-    assert audit.layer7().verdict == "NOT_WIRED"                      # toon_formatter is not imported by the runtime
-    assert audit.layer4().verdict == "PARTIAL" and "adapter weights in the repo: 0" in audit.layer4().evidence
-    assert audit.layer6().verdict == "PARTIAL"
+def test_known_gaps_and_decisions_are_reported_until_someone_changes_them():
+    assert audit.layer7().verdict == "CUT" and "MORE tokens than compact JSON" in audit.layer7().evidence     # decided 2026-10-02, measured
+    assert audit.layer4().verdict == "CUT" and "adapter weights in the repo: 0" in audit.layer4().evidence
+    assert audit.layer6().verdict == "PARTIAL" and "opt-in" in audit.layer6().evidence
+    assert audit.genesis().verdict == "PARTIAL" and "pure functions only" in audit.genesis().evidence
     jwt = [f for f in audit.layer10() if "JWT" in f.claim][0]
     assert jwt.verdict == "NOT_WIRED"
 
@@ -44,7 +45,8 @@ def test_known_gaps_are_reported_as_gaps_until_someone_closes_them():
 def test_what_round_53_built_is_reported_as_real():
     layer10 = {f.claim: f for f in audit.layer10()}
     assert layer10["Circuit breaker"].verdict == "REAL" and layer10["Rate limiting"].verdict == "REAL"
-    assert audit.layer2().verdict == "REAL" and audit.layer8().verdict == "PARTIAL"
+    assert audit.layer2().verdict == "REAL" and audit.layer8().verdict == "PARTIAL" and "asks it before an action" in audit.layer8().evidence
+    assert audit.layer3().verdict == "REAL" and "Owner-defined policy for A" in audit.layer3().evidence
     assert "wildcard still present: False" in [f for f in audit.layer10() if f.claim == "Zero-trust delivery"][0].evidence
 
 
