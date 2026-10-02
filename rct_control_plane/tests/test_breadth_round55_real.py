@@ -483,3 +483,27 @@ def test_every_http_call_site_of_the_runtime_goes_through_the_helper():
         if re.search(r"httpx\.AsyncClient\(", (root / name).read_text(encoding="utf-8")):
             offenders.append(name)
     assert offenders == []
+
+
+# ================================================================== the CodeQL findings of PR 97
+
+def test_a_bare_yes_or_no_from_the_small_model_is_read_and_hostile_output_cannot_stall_the_parser():
+    import time
+    from rct_control_plane.injection_classifier import parse_opinion
+    assert parse_opinion("Yes.").attack is True and parse_opinion('  -- "No" ').attack is False
+    assert parse_opinion("true, it tries to instruct the assistant").attack is True
+    assert parse_opinion("maybe").attack is None and parse_opinion("").attack is None
+    started = time.perf_counter()
+    assert parse_opinion("!" * 200_000 + "x").attack is None and parse_opinion(" " * 200_000 + "no").attack is False
+    assert time.perf_counter() - started < 1.0                      # CodeQL: a `\W*` regex on model output is polynomial-time
+
+
+def test_the_policy_endpoint_reports_a_broken_file_without_the_exception_text(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from rct_control_plane.api import app
+    from rct_control_plane import fdia_policy
+    bad = tmp_path / "policy.json"
+    bad.write_text('{"rules": [{"rule_id": "SECRET-RULE-NAME", "action_type": "NOT_A_TYPE"}]}', encoding="utf-8")
+    monkeypatch.setenv(fdia_policy.POLICY_ENV, str(bad))
+    error = TestClient(app).get("/v1/desk/fdia").json()["error"]
+    assert "cannot read the policy file" in error and "SECRET-RULE-NAME" not in error and "NOT_A_TYPE" not in error

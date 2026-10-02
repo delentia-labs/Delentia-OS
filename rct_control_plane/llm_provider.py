@@ -86,9 +86,11 @@ class OllamaProvider(LLMProvider):
     _CACHEABLE_TEMPERATURE_MAX = 0.3
     _CACHE_TTL_SECONDS = 3600.0
 
-    def __init__(self, llm_url: str = DEFAULT_OLLAMA_URL, model: str = "qwen2.5:7b",
+    def __init__(self, llm_url: Optional[str] = None, model: str = "qwen2.5:7b",
                  cache: Optional["TopicCache"] = None):
-        self.llm_url = llm_url
+        # Round 55: DELENTIA_OLLAMA_URL (an Ollama in another container or on another machine) when no address is given; before, the address
+        # was fixed at 127.0.0.1 and a containerised runtime could not reach an Ollama next to it (found by running the host kit).
+        self.llm_url = (llm_url or os.environ.get("DELENTIA_OLLAMA_URL") or DEFAULT_OLLAMA_URL).rstrip("/")
         self.model = model
         self.cache = cache
 

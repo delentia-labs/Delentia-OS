@@ -6,8 +6,8 @@
 #            cannot rewrite the record. The notary listens on loopback only (by design), so the three share one network namespace
 #            through the `net` anchor container; caddy reaches the runtime at net:8000.
 #
-# Status: NOT RUN here (Docker Desktop was not running). `docker compose config` validates the syntax; the first real run is on the host.
-# Read HOST_RUNBOOK.md first. Secrets are Docker secrets (files under ./secrets, never in the image, never in git).
+# Status: run for real on Docker Desktop (see HOST_RUNBOOK.md for what was and was not exercised). Secrets are Docker secrets (files under
+# ./secrets, created by bootstrap.sh; never in the image, never in git).
 
 name: delentia-host
 
@@ -19,6 +19,7 @@ services:
     networks: [edge]
 
   notary:
+    image: delentia-host:latest
     build: {context: ../.., dockerfile: deploy/host/Dockerfile}
     network_mode: "service:net"
     user: "10002:10002"                         # a different OS user from the agent (10001)
@@ -36,6 +37,7 @@ services:
     depends_on: [net]
 
   delentia:
+    image: delentia-host:latest
     build: {context: ../.., dockerfile: deploy/host/Dockerfile}
     network_mode: "service:net"
     user: "10001:10001"

@@ -14,7 +14,7 @@ Replies go only to messages that passed both checks (never to a refused sender: 
 marked ``Auto-Submitted: auto-replied``, and a message that is itself automatic (Auto-Submitted other than "no", Precedence bulk/junk/
 list, a List-Id) is not answered, so two automatic mailboxes cannot talk to each other forever. At most 20 replies per sender per hour.
 
-Configuration (environment only): DELENTIA_EMAIL_ADDRESS (login and From), DELENTIA_EMAIL_PASSWORD, DELENTIA_EMAIL_IMAP_HOST,
+Configuration (environment only): DELENTIA_EMAIL_ADDRESS (From, and the login unless DELENTIA_EMAIL_LOGIN is set), DELENTIA_EMAIL_PASSWORD, DELENTIA_EMAIL_IMAP_HOST,
 DELENTIA_EMAIL_SMTP_HOST, optional DELENTIA_EMAIL_IMAP_PORT (993) and DELENTIA_EMAIL_SMTP_PORT (465, SSL).
 
 A message is marked read BEFORE it runs: a crash must not make the agent run someone's request twice.
@@ -94,13 +94,37 @@ class EmailGateway:
     def __init__(self, kernel: Any, *, imap_factory: Optional[Callable[[], Any]] = None, smtp_factory: Optional[Callable[[], Any]] = None):
         self._kernel = kernel
         self._address = _env("DELENTIA_EMAIL_ADDRESS").strip().lower()
+        self._login = _env("DELENTIA_EMAIL_LOGIN").strip() or self._address        # some providers log in with a name that is not the address
         self._imap_host = _env("DELENTIA_EMAIL_IMAP_HOST")
         self._smtp_host = _env("DELENTIA_EMAIL_SMTP_HOST")
-        self._imap_factory = imap_factory or (lambda: imaplib.IMAP4_SSL(self._imap_host, int(_env("DELENTIA_EMAIL_IMAP_PORT", "993"))))
-        self._smtp_factory = smtp_factory or (lambda: smtplib.SMTP_SSL(self._smtp_host, int(_env("DELENTIA_EMAIL_SMTP_PORT", "465"))))
+        self._imap_factory = imap_factory or self._default_imap
+        self._smtp_factory = smtp_factory or self._default_smtp
         self._replies: Dict[str, Deque[float]] = defaultdict(deque)
         self._is_running = False
         self._bg_task: Optional["asyncio.Task[None]"] = None
+
+    @staticmethod
+    def _loopback(host: str) -> bool:
+        return host in ("localhost", "127.0.0.1", "::1")
+
+    def _plaintext_allowed(self, host: str) -> bool:
+        """Unencrypted IMAP/SMTP only on loopback and only when asked (a local test mail server); never over a network."""
+        return _env("DELENTIA_EMAIL_PLAINTEXT") == "1" and self._loopback(host)
+
+    def _default_imap(self) -> Any:
+        if self._plaintext_allowed(self._imap_host):
+            return imaplib.IMAP4(self._imap_host, int(_env("DELENTIA_EMAIL_IMAP_PORT", "143")))
+        return imaplib.IMAP4_SSL(self._imap_host, int(_env("DELENTIA_EMAIL_IMAP_PORT", "993")))
+
+    def _default_smtp(self) -> Any:
+        """SSL on 465 by default; DELENTIA_EMAIL_SMTP_STARTTLS=1 uses STARTTLS (port 587 is the usual one)."""
+        if self._plaintext_allowed(self._smtp_host):
+            return smtplib.SMTP(self._smtp_host, int(_env("DELENTIA_EMAIL_SMTP_PORT", "25")))
+        if _env("DELENTIA_EMAIL_SMTP_STARTTLS") == "1":
+            server = smtplib.SMTP(self._smtp_host, int(_env("DELENTIA_EMAIL_SMTP_PORT", "587")))
+            server.starttls()
+            return server
+        return smtplib.SMTP_SSL(self._smtp_host, int(_env("DELENTIA_EMAIL_SMTP_PORT", "465")))
 
     def is_configured(self) -> bool:
         return bool(self._address and _env("DELENTIA_EMAIL_PASSWORD") and self._imap_host and self._smtp_host)
@@ -113,7 +137,7 @@ class EmailGateway:
         imap = self._imap_factory()
         raws: List[bytes] = []
         try:
-            imap.login(self._address, _env("DELENTIA_EMAIL_PASSWORD"))
+            imap.login(self._login, _env("DELENTIA_EMAIL_PASSWORD"))
             imap.select("INBOX")
             _typ, data = imap.search(None, "UNSEEN")
             for num in (data[0].split() if data and data[0] else []):
@@ -132,7 +156,7 @@ class EmailGateway:
     def _send(self, message: EmailMessage) -> None:
         smtp = self._smtp_factory()
         try:
-            smtp.login(self._address, _env("DELENTIA_EMAIL_PASSWORD"))
+            smtp.login(self._login, _env("DELENTIA_EMAIL_PASSWORD"))
             smtp.send_message(message)
         finally:
             try:

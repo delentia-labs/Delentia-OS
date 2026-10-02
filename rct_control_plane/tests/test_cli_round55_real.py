@@ -93,3 +93,18 @@ def test_the_desk_marks_bundled_skills_so_nobody_mistakes_them_for_learning():
     skills = TestClient(app).get("/v1/desk/skills", params={"limit": 100}).json()["skills"]
     bundled = [s for s in skills if s["bundled"]]
     assert len(bundled) == 20 and all(s["reliability"] == 0.5 and s["delta"] == 0.0 for s in bundled)
+
+
+def test_cli_commands_that_default_to_a_database_use_the_one_the_agent_writes_to(tmp_path, monkeypatch):
+    """`delentia memory add` and `delentia audit-chain verify` opened control_plane.db while the agent's audit trail, memory and approvals
+    are in agentic.db: a fact added by hand was never recalled, and an empty chain was reported OK."""
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    monkeypatch.delenv("RCT_AGENTIC_DB_PATH", raising=False)
+    added = invoke("memory", "add", "the staging database is orion", "--namespace", "cli-check")
+    assert added.exit_code == 0, added.output
+    kernel_side = ControlPlanePersistence(db_path=agentic_db_path())
+    assert any("orion" in m["content"] for m in kernel_side.list_memories("cli-check"))
+    kernel_side.append_audit(entity_type="x", entity_id="1", action="check", actor="test", changes={})
+    verified = invoke("audit-chain", "verify", "--output", "json")
+    assert verified.exit_code == 0 and json.loads(verified.output)["chained_rows"] >= 1

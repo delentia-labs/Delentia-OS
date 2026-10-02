@@ -102,10 +102,10 @@ def test_the_dockerfile_runs_serve_as_a_non_root_user_with_a_healthcheck():
 
 def test_the_runbook_names_every_file_and_command_it_depends_on():
     runbook = (HOST / "HOST_RUNBOOK.md").read_text(encoding="utf-8")
-    for needle in ("host-check", "host_sizing.py", "delentia tokens create", "approvals keygen --out", "audit-chain keygen", "notary keygen",
+    for needle in ("host-check", "host_sizing.py", "delentia tokens create", "approvals keygen --out", "bootstrap.sh", "tokens create",
                    "docker compose up -d", "Known gaps"):
         assert needle.lower() in runbook.lower(), needle
-    assert "not built or run" in runbook.lower()
+    assert "built and run for real" in runbook.lower() and "not run:" in runbook.lower()      # says what was run AND what was not
 
 
 # ------------------------------------------------------------------ the notary token can be a secret file
@@ -138,3 +138,40 @@ def test_encoded_and_tricky_forms_of_internal_addresses_are_refused(url, monkeyp
     monkeypatch.delenv(url_safety.ALLOW_PRIVATE_ENV, raising=False)
     with pytest.raises(url_safety.UnsafeURLError):
         url_safety.check_public_url(url)
+
+
+# ------------------------------------------------------------------ things found by actually running the kit in containers
+
+def test_the_ffmpeg_copy_at_import_time_survives_an_unwritable_site_packages():
+    """Found in the container: algo_27 copied a binary into site-packages at IMPORT time, so as an unprivileged user the whole kernel died."""
+    source = (ROOT / "rct_control_plane" / "algo_27_tvra.py").read_text(encoding="utf-8")
+    body = source[source.index("import imageio_ffmpeg"):source.index("except ImportError")]
+    assert "except OSError" in body and "gettempdir" in body
+
+
+def test_the_exchange_folder_follows_the_data_home_instead_of_the_filesystem_root(tmp_path, monkeypatch):
+    """Found in the container: the default was two folders above the package, i.e. /exchange at the root of the image."""
+    from rct_control_plane.exchange_bridge import NeuralExchangeBridge
+    monkeypatch.delenv("DELENTIA_EXCHANGE_DIR", raising=False)
+    monkeypatch.setenv("DELENTIA_HOME", str(tmp_path / "home"))
+    assert Path(NeuralExchangeBridge().root_dir) == tmp_path / "home" / "exchange"
+    monkeypatch.setenv("DELENTIA_EXCHANGE_DIR", str(tmp_path / "elsewhere"))
+    assert Path(NeuralExchangeBridge().root_dir) == tmp_path / "elsewhere"
+    assert Path(NeuralExchangeBridge(str(tmp_path / "explicit")).root_dir) == tmp_path / "explicit"
+
+
+def test_the_kit_creates_the_notary_folder_for_the_notary_uid_and_ships_a_bootstrap_script():
+    dockerfile = (HOST / "Dockerfile").read_text(encoding="utf-8")
+    assert "/notary" in dockerfile and "chown 10002:10002 /notary" in dockerfile and "--mount=type=cache" in dockerfile
+    script = (HOST / "bootstrap.sh").read_text(encoding="utf-8")
+    assert "--user 10001:10001" in script and "--user 10002:10002" in script and "tokens create" in script and "MSYS_NO_PATHCONV" in script
+    assert compose()["services"]["delentia"]["image"] == compose()["services"]["notary"]["image"] == "delentia-host:latest"
+
+
+def test_the_ollama_address_can_be_set_by_environment_and_an_explicit_address_still_wins(monkeypatch):
+    from rct_control_plane.llm_provider import DEFAULT_OLLAMA_URL, OllamaProvider
+    monkeypatch.delenv("DELENTIA_OLLAMA_URL", raising=False)
+    assert OllamaProvider().llm_url == DEFAULT_OLLAMA_URL
+    monkeypatch.setenv("DELENTIA_OLLAMA_URL", "http://ollama.internal:11434/")
+    assert OllamaProvider().llm_url == "http://ollama.internal:11434"
+    assert OllamaProvider(llm_url="http://127.0.0.1:9").llm_url == "http://127.0.0.1:9"

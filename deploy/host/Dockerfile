@@ -1,8 +1,8 @@
+# syntax=docker/dockerfile:1
 # Delentia host image (Round 55): the whole runtime, started the way a host starts it (`delentia serve`), as a non-root user.
 #
-# Status: NOT BUILT here. Docker Desktop was not running on the development machine when this was written, so this file is a careful
-# derivation of the repository's own Dockerfile (built and verified in Round 35) and has only been parse-checked. Build it once on the
-# real host or on a machine with Docker, and run `delentia host-check` inside the container before opening any port.
+# Status: built and run on Docker Desktop (Round 55); the first build takes several minutes (torch, the 41 algorithms' dependencies). Run
+# `delentia host-check` inside the container before opening any port.
 #
 # Differences from ../../Dockerfile (the kernel-API image):
 #   * runs `delentia serve`, which turns on the daemon, the 41-algorithm pipeline, warm recall, the starter skills and the rate limit
@@ -12,17 +12,20 @@
 FROM python:3.12-slim
 
 RUN useradd --no-create-home --uid 10001 --shell /usr/sbin/nologin delentia \
-    && mkdir -p /data/home /app && chown -R delentia:delentia /data /app
+    && mkdir -p /data/home /app /notary && chown -R delentia:delentia /data /app && chown 10002:10002 /notary
 
 WORKDIR /app
 COPY --chown=delentia:delentia . .
 
 # Same dependency steps as the repository Dockerfile, for the same reasons (CPU-only torch wheel; the kernel imports every algorithm's
 # dependencies at start-up so the `full` extras are required; headless OpenCV installed last so no GUI libraries are needed).
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir -e ".[full]" \
-    && pip install --no-cache-dir --force-reinstall --no-deps opencv-python-headless
+# The pip cache is a BuildKit cache mount, not an image layer: the first build downloads several GB; later builds (any source change
+# invalidates this layer through the COPY above) reuse the downloaded wheels instead of fetching them again.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install -r requirements.txt \
+    && pip install -e ".[full]" \
+    && pip install --force-reinstall --no-deps opencv-python-headless
 
 USER delentia
 ENV DELENTIA_HOME=/data \

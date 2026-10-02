@@ -507,3 +507,42 @@ def test_a_message_from_a_listed_sender_runs_through_the_real_governed_loop_in_t
     assert json.loads(Recorder.requests[1]["body"])["message"] == "It is a test answer about notes."
     with RealKernel._persistence._connect() as conn:
         assert conn.execute("SELECT COUNT(*) FROM audit_trail WHERE entity_type = 'governed_loop_episode_start'").fetchone()[0] == 1
+
+
+# ================================================================== how the email gateway connects
+
+def test_the_connection_is_encrypted_unless_plaintext_is_asked_for_and_the_host_is_loopback(monkeypatch):
+    import imaplib
+    import smtplib
+    made = []
+    monkeypatch.setattr(imaplib, "IMAP4_SSL", lambda host, port: made.append(("imap-ssl", host, port)) or object())
+    monkeypatch.setattr(imaplib, "IMAP4", lambda host, port: made.append(("imap-plain", host, port)) or object())
+    monkeypatch.setattr(smtplib, "SMTP_SSL", lambda host, port: made.append(("smtp-ssl", host, port)) or object())
+    monkeypatch.setattr(smtplib, "SMTP", lambda host, port: made.append(("smtp-plain", host, port)) or type("S", (), {"starttls": lambda self: made.append(("starttls",))})())
+    for var, value in (("DELENTIA_EMAIL_ADDRESS", ME), ("DELENTIA_EMAIL_PASSWORD", "pw"), ("DELENTIA_EMAIL_IMAP_HOST", "mail.example.org"), ("DELENTIA_EMAIL_SMTP_HOST", "mail.example.org")):
+        monkeypatch.setenv(var, value)
+    gw = EmailGateway(Kernel())
+    gw._imap_factory(), gw._smtp_factory()
+    assert made == [("imap-ssl", "mail.example.org", 993), ("smtp-ssl", "mail.example.org", 465)]
+    made.clear()
+    monkeypatch.setenv("DELENTIA_EMAIL_PLAINTEXT", "1")                         # asked for plaintext, but the host is not loopback: still encrypted
+    gw._imap_factory(), gw._smtp_factory()
+    assert [m[0] for m in made] == ["imap-ssl", "smtp-ssl"]
+    made.clear()
+    monkeypatch.setenv("DELENTIA_EMAIL_SMTP_STARTTLS", "1")
+    monkeypatch.delenv("DELENTIA_EMAIL_PLAINTEXT")
+    gw._smtp_factory()
+    assert made == [("smtp-plain", "mail.example.org", 587), ("starttls",)]
+    made.clear()
+    for var, value in (("DELENTIA_EMAIL_IMAP_HOST", "127.0.0.1"), ("DELENTIA_EMAIL_SMTP_HOST", "127.0.0.1"), ("DELENTIA_EMAIL_PLAINTEXT", "1")):
+        monkeypatch.setenv(var, value)
+    gw2 = EmailGateway(Kernel())
+    gw2._imap_factory(), gw2._smtp_factory()
+    assert made == [("imap-plain", "127.0.0.1", 143), ("smtp-plain", "127.0.0.1", 25)]
+
+
+def test_the_login_name_can_differ_from_the_address(monkeypatch):
+    monkeypatch.setenv("DELENTIA_EMAIL_ADDRESS", ME)
+    assert EmailGateway(Kernel())._login == ME
+    monkeypatch.setenv("DELENTIA_EMAIL_LOGIN", "agent")
+    assert EmailGateway(Kernel())._login == "agent"

@@ -1,8 +1,11 @@
 # Host runbook: from an empty server to the first outside user
 
-Status (2026-10-02): written from the code and from measurements on the development machine. The container files in this folder have been
-syntax-checked (`docker compose config`) but **not built or run**: Docker Desktop was not running when they were written. Treat the first run
-on the host as the test, and fix this file with what you find.
+Status (2026-10-02): **built and run for real** on Docker Desktop (Windows, Docker 29): image built, `bootstrap.sh`, notary + runtime healthy,
+`delentia host-check` inside the container with no FAIL, a real governed episode through the container with a real local model (qwen2.5:7b,
+75 s on CPU), the audit chain (35 rows, all signed) and the notary log (10 receipts) both verify, and Caddy answers over TLS with the
+security headers (401 without a token, 200 with one, HTTP redirected to HTTPS). Not run: a Linux VPS, a public domain with a real certificate,
+Caddy's ACME flow, WhatsApp/LINE webhooks through the proxy. Running it found eight defects, all fixed (see the Round 55 part B document); expect
+the first Linux run to find a ninth and fix this file with it.
 
 What this deploys: the runtime (`delentia serve`), a notary in a separate container with a separate OS user (audit tier A2), and Caddy for
 TLS. Nothing else is published. Not covered: backups off the host, monitoring, multi-host, a database other than SQLite.
@@ -25,20 +28,20 @@ TLS. Nothing else is published. Not covered: backups off the host, monitoring, m
   and 443 must be reachable).
 - A non-root login user in the `docker` group; SSH by key only; the firewall allows 22, 80, 443 and nothing else.
 
-## 2. Secrets (made on the host, once)
+## 2. Secrets and the first token (made on the host, once)
 
 ```bash
 git clone <your fork of delentia-labs/Delentia-OS> && cd Delentia-OS/deploy/host
-mkdir -p secrets && chmod 700 secrets
-docker compose build                                   # first build is slow (torch, the 41 algorithms' dependencies)
-docker compose run --rm --no-deps -v "$PWD/secrets:/out" delentia delentia audit-chain keygen --out /out/audit.pem
-docker compose run --rm --no-deps -v "$PWD/secrets:/out" delentia delentia notary keygen --out /out/notary.pem
-python3 -c "import secrets; print(secrets.token_urlsafe(48))" > secrets/notary_token
-echo 'DELENTIA_DOMAIN=agent.example.org' > .env      # your real name
+echo 'DELENTIA_DOMAIN=agent.example.org' > .env           # your real name
+docker compose build                                       # first build is slow (torch, the 41 algorithms' dependencies); later ones reuse a pip cache
+./bootstrap.sh alice                                       # keys + the notary token + alice's API token (shown once)
 ```
 
-Write down the two public keys the keygen commands print: the audit key's goes to anyone who will verify the audit trail, the notary's
-goes to the witness (`AUDIT_ANCHOR_KEYS_JSON`) when you turn on anchoring.
+`bootstrap.sh` exists because running the kit by hand failed in three ways (Round 55 trial, on Docker Desktop): the notary could not read a key
+created by another uid; the runtime refuses to start on a public address until a token exists; and the notary's data volume was owned by root. It
+creates each key as the uid that will read it (audit key 10001, notary key 10002), makes the shared notary token, and writes alice's token into the
+data volume. Write down the two public keys it prints: the audit key's goes to anyone who will verify the audit trail, the notary's goes to the
+witness (`AUDIT_ANCHOR_KEYS_JSON`) when you turn on anchoring. On Windows Git Bash set `MSYS_NO_PATHCONV=1` (the script does) or `/out` is rewritten.
 
 ## 3. First start
 
@@ -51,8 +54,8 @@ docker compose exec delentia delentia host-check
 `host-check` must show **no FAIL**. Expected WARNs on a first start: no per-person token yet, no approver yet, no owner policy yet, anchoring
 not scheduled. Fix them in order:
 
-1. **People:** `docker compose exec delentia delentia tokens create alice` prints alice's token once (only its hash is stored). Give it to her
-   over a private channel. With any token present the server is in per-person mode: identity, memory and policy role come from the token.
+1. **More people:** `docker compose exec delentia delentia tokens create bob` prints a token once (only its hash is stored). Give it over a private
+   channel. With any token present the server is in per-person mode: identity, memory and policy role come from the token.
 2. **Approvers:** on each approver's own device run `delentia approvals keygen --out ~/approver.pem --role Security_Admin` (it prints the public key), then add the
    **public** key to `/data/home/.delentia/approvers.json` on the host:
    `docker compose exec delentia sh -c 'cat /data/home/.delentia/approvers.json'` to check. Until at least one approver exists, nothing that needs
@@ -84,6 +87,11 @@ Polling channels (Telegram, Signal, Email) need no inbound port. LINE and WhatsA
 and need their signature secrets (`LINE_CHANNEL_SECRET`, `WHATSAPP_APP_SECRET`).
 
 ## 6. Day two
+
+Commands that read the notary's files must run as the notary's uid and, on Windows Git Bash, with `MSYS_NO_PATHCONV=1`:
+`docker compose exec --user 10002 notary delentia notary head --db /notary/notary.db`, and
+`delentia audit-chain verify --db /data/agentic.db` (the runtime's database is `agentic.db`; since Round 55 that is also the CLI default).
+
 
 - **Back up** the `delentia-data` and `notary-data` volumes (SQLite: stop the stack or use `sqlite3 .backup`). The audit trail and memory live
   there. Never delete data: a hash chain with a gap is evidence of tampering, and the repository's Zero-Delete rule applies.

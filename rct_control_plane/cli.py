@@ -2198,8 +2198,12 @@ def audit_chain_group():
 
 
 def _audit_db(db: Optional[str]):
+    """The kernel's persistence by default. Before Round 55 this opened control_plane.db while the agent writes its audit trail, memory,
+    growth ledger and approvals to agentic.db, so `delentia audit-chain verify` reported an empty chain as OK and `delentia memory add`
+    stored facts the agent never recalled (found by verifying a real container's audit trail)."""
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    return ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence()
+    return ControlPlanePersistence(db_path=db or agentic_db_path())
 
 
 @audit_chain_group.command("verify")
