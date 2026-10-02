@@ -656,6 +656,24 @@ What it guarantees: members are asked independently and at the same time; a repl
 
 `delentia serve` rate-limits per caller (`DELENTIA_RATE_LIMIT`, default 600/60 s; an agent run costs 20 requests, a subagent fan-out 30). Model endpoints that keep failing are paused by a circuit breaker shared across episodes. Without `DELENTIA_API_TOKEN` the API answers only loopback clients; since Round 53 it also refuses a request whose `Origin` is a web page from another site or whose `Host` is not a loopback name (CORS used to be `*`, so any page the user opened could drive a local agent), and CORS answers only the local Desk and origins listed in `DELENTIA_CORS_ORIGINS`.
 
+### The owner's policy for A (`rct_control_plane/fdia_policy.py`, Desk page **FDIA**, `delentia fdia`)
+
+`F = D^I x A`: A is the accountable human. You write that responsibility down: which tools run freely, which need a human signature (from which approver role, how many distinct keys), which paths are off limits, which roles may ask, which tools are refused outright, and when a SignedAI jury must agree first (per rule, or per goal risk). Without a file only the built-in gate applies; with one, **every** tool call is judged, the most restrictive matching rule wins, a broken file refuses everything, and the policy can only tighten the built-in floor (path safety, the 0.5 threshold, repository writes always wait for a human). A signature never lifts a path or pattern you forbade.
+
+```bash
+delentia fdia template balanced --out ~/.delentia/fdia_policy.json
+delentia approvals keygen --out ~/keys/sec.pem --trust alice --role Security_Admin
+delentia fdia test delentia_write_repo_file --args '{"relative_path": ".env"}' --approved
+```
+
+The Desk page explains the equation with a live calculator and worked examples, edits the rules, and tests an unsaved draft. Roles come from the identity the server attached to the request, so use one API token per user if roles are to mean anything.
+
+### Parallel tool calls and the Tool Forge
+
+`DELENTIA_PARALLEL_TOOLS=1` lets the model ask for several independent tool calls in one decision; they run as waves over the Execution Graph IR (`dag_executor.py`), every call is gated before any runs, and one refusal stops the batch. Measured on real tools: four independent 0.5 s waits 3.8x, a diamond 1.3x, a chain 1.0x, CPU-bound Python about 1.1x (`scripts/dag_wave_benchmark.py`).
+
+`delentia forge` is Genesis grown into a governed loop: repeated unmet goals (`forge gaps`) lead to a proposed pure-function tool (written by the model or by you; checked statically, smoke-tested in another process), a human signs the exact code hash, and only then can the agent call it (`delentia_run_forged_tool`). Pure functions only; not a jail against someone who can also get a human to sign.
+
 ---
 
 ## Microservices
