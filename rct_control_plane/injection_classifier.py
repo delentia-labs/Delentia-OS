@@ -74,7 +74,12 @@ def parse_opinion(reply: str) -> Opinion:
             continue
         if isinstance(data, dict) and isinstance(data.get("attack"), bool):
             return Opinion(data["attack"], str(data.get("reason", "")))
-    word = re.match(r"\W*(true|false|yes|no)\b", raw, flags=re.I)
+    # A bare answer: skip leading punctuation/whitespace with a plain bounded loop (a `\W*` regex on model output is a polynomial-time
+    # pattern), then look at the first word only.
+    start_at = 0
+    while start_at < len(raw) and start_at < 64 and not raw[start_at].isalnum():
+        start_at += 1
+    word = re.match(r"(true|false|yes|no)\b", raw[start_at:start_at + 8], flags=re.I)
     if word:
         return Opinion(word.group(1).lower() in ("true", "yes"), "bare answer")
     return Opinion(None, error="unreadable answer")

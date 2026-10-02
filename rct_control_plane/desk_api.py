@@ -572,8 +572,9 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         policy, error = None, ""
         try:
             policy = fdia_policy.load_policy()
-        except ValueError as exc:
-            error = str(exc)
+        except ValueError:
+            # The reason is on the host (`delentia fdia show`); the response carries a fixed message, not the exception text.
+            error = "cannot read the policy file, or it is invalid (run `delentia fdia show` on the host for the reason)"
         jury_path = signedai_jury.config_path()
         return {
             "path": str(path), "exists": path.exists(), "error": error,
