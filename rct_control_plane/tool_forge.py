@@ -328,7 +328,7 @@ class ToolForge:
         return [self._from_row(r) for r in rows]
 
     async def propose(self, name: str, spec: str, smoke_test: str, *, code: Optional[str] = None, provider: Any = None,
-                      gap: Optional[Dict[str, Any]] = None) -> Proposal:
+                      gap: Optional[Dict[str, Any]] = None, repair_attempts: int = 1) -> Proposal:
         """A candidate tool. `code` given = a human or another tool wrote it; otherwise the model writes it. Either way it
         is checked and run before it can be approved, and a failure is recorded, not hidden."""
         if not NAME_PATTERN.match(name):
@@ -347,7 +347,24 @@ class ToolForge:
             code = re.sub(r"^```(?:python)?\s*|```\s*$", "", raw.strip(), flags=re.MULTILINE).strip()
             source = "model"
         verification = verify_code(code, smoke_test, name)
+        repairs = 0
+        first_failure = None
+        # A model's first draft often fails for small reasons (a missing import, a wrong keyword). One repair round shows it the
+        # failure and asks for the corrected function; the result is checked exactly as strictly as the first draft, and the record
+        # keeps what the first draft's failure was, so the repair rate is measurable.
+        while source == "model" and not verification["passed"] and repairs < max(0, repair_attempts):
+            first_failure = first_failure or {"stage": verification["stage"], "problems": verification.get("problems", [])[:2]}
+            repairs += 1
+            fix = (f"Your function `{name}` ({spec}) was rejected.\nProblem: {'; '.join(verification.get('problems', []))[-500:]}\n"
+                   f"Previous code:\n{code}\n\nReturn the corrected, complete code for `{name}` only (standard library modules: "
+                   f"{', '.join(sorted(ALLOWED_IMPORTS))}; import everything you use). No explanation, no markdown fences.")
+            raw = await llm.complete(fix, temperature=0.2)
+            code = re.sub(r"^```(?:python)?\s*|```\s*$", "", raw.strip(), flags=re.MULTILINE).strip()
+            verification = verify_code(code, smoke_test, name)
         verification["code_source"] = source
+        if repairs:
+            verification["repairs"] = repairs
+            verification["first_attempt_failure"] = first_failure
         status = "VERIFIED" if verification["passed"] else f"REJECTED_{verification['stage'].upper()}"
         proposal = Proposal(id=f"fp-{uuid.uuid4().hex[:10]}", name=name, spec=spec, code=code, smoke_test=smoke_test, code_sha256=sha256(code + "\n" + smoke_test),
                             status=status, verification=verification, gap=gap or {}, created_at=time.time())

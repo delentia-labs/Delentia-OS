@@ -470,3 +470,66 @@ def test_a_swapped_proposal_that_still_passes_its_test_is_refused_too(forge, app
         conn.execute("UPDATE forge_proposals SET code = ? WHERE id = ?", (quietly_different, first.id))
     with pytest.raises(approvals.ApprovalError, match="no longer matches what was signed"):
         forge.activate(record.approval_id)
+
+
+# ------------------------------------------------------------------ one repair round for a model's first draft
+
+BROKEN = "def slugify(title):\n    words = re.findall(r'[a-z0-9]+', title.lower())\n    return '-'.join(words)\n"      # forgot `import re`
+
+
+def test_a_model_draft_that_fails_gets_one_repair_round_with_the_failure_and_the_record_says_so(forge):
+    replies = []
+
+    def policy(request):
+        replies.append(request.prompt)
+        return BROKEN if len(replies) == 1 else GOOD
+
+    with ScriptedModel(policy) as model:
+        provider = OpenAICompatibleProvider(base_url=model.base_url, model="scripted-1", kind="local")
+        proposal = run(forge.propose("slugify", "turn a title into a url slug", SMOKE, provider=provider))
+    assert proposal.status == "VERIFIED" and proposal.verification["repairs"] == 1 and len(replies) == 2
+    assert "NameError" in replies[1] and "was rejected" in replies[1] and BROKEN.strip() in replies[1]
+    assert "re" in str(proposal.verification["first_attempt_failure"]["problems"])
+
+
+def test_a_repair_is_checked_as_strictly_as_the_first_draft(forge, tmp_path):
+    marker = tmp_path / "x.txt"
+    evil = "import os\ndef slugify(title):\n    open(" + repr(str(marker)) + ", 'w')\n    return title"
+    replies = []
+
+    def policy(request):
+        replies.append(1)
+        return BROKEN if len(replies) == 1 else evil
+
+    with ScriptedModel(policy) as model:
+        provider = OpenAICompatibleProvider(base_url=model.base_url, model="scripted-1", kind="local")
+        proposal = run(forge.propose("slugify", "turn a title into a url slug", SMOKE, provider=provider))
+    assert proposal.status == "REJECTED_STATIC_CHECK" and not marker.exists() and proposal.verification["repairs"] == 1
+
+
+def test_repair_can_be_switched_off_and_never_applies_to_supplied_code(forge):
+    calls = []
+
+    def policy(request):
+        calls.append(1)
+        return BROKEN
+
+    with ScriptedModel(policy) as model:
+        provider = OpenAICompatibleProvider(base_url=model.base_url, model="scripted-1", kind="local")
+        off = run(forge.propose("slugify", "turn a title into a url slug", SMOKE, provider=provider, repair_attempts=0))
+        assert off.status == "REJECTED_SMOKE_RUN" and "repairs" not in off.verification and len(calls) == 1
+    human = run(forge.propose("slugify2", "turn a title into a url slug", SMOKE.replace("slugify", "slugify2"), code=BROKEN.replace("slugify", "slugify2")))
+    assert human.status == "REJECTED_SMOKE_RUN" and "repairs" not in human.verification
+
+
+def test_a_model_that_keeps_failing_stops_after_the_allowed_attempts(forge):
+    calls = []
+
+    def policy(request):
+        calls.append(1)
+        return BROKEN
+
+    with ScriptedModel(policy) as model:
+        provider = OpenAICompatibleProvider(base_url=model.base_url, model="scripted-1", kind="local")
+        proposal = run(forge.propose("slugify", "turn a title into a url slug", SMOKE, provider=provider, repair_attempts=2))
+    assert proposal.status == "REJECTED_SMOKE_RUN" and proposal.verification["repairs"] == 2 and len(calls) == 3
