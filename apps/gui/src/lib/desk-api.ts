@@ -220,6 +220,21 @@ export interface FdiaEvaluateInput {
   tool_name: string; tool_args: Record<string, unknown>; principal?: string; approved?: boolean; D: number; I: number; policy?: FdiaPolicy;
 }
 
+// ---- Tool Forge (tool_forge.py) ---------------------------------------------
+export interface ForgeApproval { approval_id: string; status: string; action_sha256: string; required_signatures: number; signatures_collected: number }
+export interface ForgeProposal {
+  id: string; name: string; spec: string; code_sha256: string; status: string; created_at: number; approval_id: string | null;
+  verification: { passed?: boolean; stage?: string; problems?: string[]; code_source?: string; stdout?: string; stderr?: string };
+  gap: { goals?: string[]; count?: number; gap_id?: string }; approval?: ForgeApproval | null; code?: string; smoke_test?: string;
+}
+export interface ForgeGap { gap_id: string; goals: string[]; count: number; users: number; keywords: string[]; first_seen: string; last_seen: string }
+export interface ForgeTool { name: string; spec: string; active: boolean; activated_at: number; calls: number; code_sha256: string }
+export interface ForgeState {
+  gaps: ForgeGap[]; proposals: ForgeProposal[]; tools: ForgeTool[];
+  limits: { allowed_imports: string[]; min_asserts: number; run_timeout_s: number; max_code_chars: number };
+}
+export interface PolicySavePending { pending_signature: true; approval_id: string; action_sha256: string; how: string }
+
 export const desk = {
   health: () => call<Health>("/health"),
   overview: () => call<Overview>("/v1/desk/overview"),
@@ -263,9 +278,19 @@ export const desk = {
     call<{ valid: boolean; errors: string[]; digest: string | null }>("/v1/desk/fdia/validate", { method: "POST", body: JSON.stringify({ policy }) }),
   fdiaEvaluate: (body: FdiaEvaluateInput) =>
     call<FdiaEvaluation>("/v1/desk/fdia/evaluate", { method: "POST", body: JSON.stringify(body) }),
-  fdiaSave: (policy: FdiaPolicy) =>
-    call<{ saved: string; digest: string; rules: number }>("/v1/desk/fdia/policy", { method: "PUT", body: JSON.stringify({ policy }) }),
-  fdiaDisable: () => call<{ archived_as: string }>("/v1/desk/fdia/policy/disable", { method: "POST" }),
+  fdiaSave: (policy: FdiaPolicy, approvalId?: string) =>
+    call<{ saved: string; digest: string; rules: number } | PolicySavePending>("/v1/desk/fdia/policy", { method: "PUT", body: JSON.stringify({ policy, ...(approvalId ? { approval_id: approvalId } : {}) }) }),
+  fdiaDisable: (approvalId?: string) =>
+    call<{ archived_as: string } | PolicySavePending>("/v1/desk/fdia/policy/disable", { method: "POST", body: JSON.stringify(approvalId ? { approval_id: approvalId } : {}) }),
+  forge: () => call<ForgeState>("/v1/desk/forge"),
+  forgeProposal: (id: string) => call<ForgeProposal>(`/v1/desk/forge/proposals/${encodeURIComponent(id)}`),
+  forgePropose: (body: { name: string; spec: string; smoke_test: string; code?: string; gap?: unknown }) =>
+    call<ForgeProposal>("/v1/desk/forge/propose", { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(300000) }),
+  forgeRequest: (id: string) => call<{ approval_id: string; action_sha256: string; how: string }>(`/v1/desk/forge/proposals/${encodeURIComponent(id)}/request`, { method: "POST" }),
+  forgeActivate: (approvalId: string) => call<{ name: string; file: string }>("/v1/desk/forge/activate", { method: "POST", body: JSON.stringify({ approval_id: approvalId }) }),
+  forgeOff: (name: string) => call<{ turned_off: string }>(`/v1/desk/forge/tools/${encodeURIComponent(name)}/off`, { method: "POST" }),
+  forgeRun: (name: string, args: Record<string, unknown>) =>
+    call<{ ok: boolean; result?: unknown; error?: string }>(`/v1/desk/forge/tools/${encodeURIComponent(name)}/run`, { method: "POST", body: JSON.stringify({ args }) }),
   approvals: (status = "PENDING") => call<PendingAction[]>(`/v1/agent/approvals?status=${status}`),
   decide: (approvalId: string, body: { decision: string; public_key_hex: string; signature_hex: string }) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),

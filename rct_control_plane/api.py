@@ -1250,6 +1250,7 @@ class ControlPlaneAPI:
                             max_iterations = 5
                         async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp,
                                                         max_iterations=max_iterations,
+                                                        namespace=(websocket.scope.get("state") or {}).get("delentia_user"),
                                                         structured=bool(payload.get("structured"))):
                             await websocket.send_text(json.dumps(event, default=str))
                         continue
@@ -1758,7 +1759,7 @@ class ControlPlaneAPI:
         # mcp_server's would split state across two independent kernels
         # for the same request.
         @self.app.post("/v1/agent/run", tags=["Kernel"])
-        async def run_governed_agent(payload: Dict[str, Any]):
+        async def run_governed_agent(payload: Dict[str, Any], request: Request):
             import uuid
 
             import httpx
@@ -1771,7 +1772,9 @@ class ControlPlaneAPI:
             if not goal:
                 raise HTTPException(status_code=400, detail="'goal' is required")
 
-            namespace = payload.get("namespace") or f"http-agent-{uuid.uuid4().hex[:8]}"
+            # Round 54: with a token per person the identity is the token's owner; a namespace in the body would let one person
+            # act (and read memory, and hold roles) as another.
+            namespace = getattr(request.state, "delentia_user", None) or payload.get("namespace") or f"http-agent-{uuid.uuid4().hex[:8]}"
             max_iterations = int(payload.get("max_iterations", 5))
             max_seconds = float(payload.get("max_seconds", 120.0))
 

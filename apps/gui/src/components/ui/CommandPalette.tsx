@@ -12,6 +12,7 @@ const ROUTES: { href: string; name: string; desc: string }[] = [
   { href: "/growth", name: "Growth", desc: "MEE growth, D per episode, what got faster or cheaper" },
   { href: "/memory", name: "Memory", desc: "What the agent knows about you; add facts" },
   { href: "/algorithms", name: "Algorithms", desc: "The 41 algorithms as pipeline stages, measured" },
+  { href: "/forge", name: "Forge", desc: "Repeated gaps, proposed tools, signed activation, forged tools" },
   { href: "/fdia", name: "FDIA", desc: "F = D^I x A explained, and the rules for A that you set" },
   { href: "/approvals", name: "Approvals", desc: "Signed human approvals that resume paused work" },
   { href: "/sovereignty", name: "Sovereignty", desc: "Where prompts may go: the data-residency policy and every decision" },

@@ -35,7 +35,7 @@ import hmac
 import json
 import os
 import re
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, Tuple
 from urllib.parse import parse_qs
 
 TOKEN_ENV = "DELENTIA_API_TOKEN"
@@ -98,38 +98,48 @@ def _host_name(host_header: str) -> str:
     return host.rsplit(":", 1)[0] if host.count(":") == 1 else host
 
 
-def check_request(scope: Scope) -> str:
-    """Returns "" when the request may proceed, else the refusal reason."""
+def authenticate(scope: Scope) -> Tuple[str, str]:
+    """(refusal reason, identity). The reason is "" when the request may proceed; the identity is the person the token
+    belongs to (Round 54: DELENTIA_API_TOKENS_FILE), "shared" for the old single token, "" for the token-less loopback."""
     path = scope.get("path") or ""
     if path in PUBLIC_PATHS or path in SELF_AUTHENTICATED_PATHS:
-        return ""
+        return "", ""
     if scope.get("type") == "http" and scope.get("method") == "OPTIONS":
-        return ""
+        return "", ""
     headers = _headers(scope)
     expected = os.getenv(TOKEN_ENV, "")
-    if expected:
+    from rct_control_plane import api_tokens
+    if expected or api_tokens.per_user_mode():
         supplied = _supplied_token(headers)
         if not supplied and scope.get("type") == "websocket":
             supplied = _query_token(scope)
-        if supplied and hmac.compare_digest(supplied.encode(), expected.encode()):
-            return ""
-        return "missing or invalid API token"
+        person = api_tokens.identify(supplied)
+        if person:
+            return "", person
+        if expected and supplied and hmac.compare_digest(supplied.encode(), expected.encode()):
+            return "", api_tokens.SHARED_IDENTITY
+        return "missing or invalid API token", ""
     if any(h in headers for h in PROXY_HEADERS):
         return (f"this request came through a proxy or tunnel, and {TOKEN_ENV} is not set on the server; "
-                "refusing rather than exposing the agent API without authentication")
+                "refusing rather than exposing the agent API without authentication"), ""
     client_host = (scope.get("client") or ("", 0))[0]
     if client_host not in LOCAL_CLIENTS:
         return (f"{TOKEN_ENV} is not set, so only local (loopback) clients are accepted; "
-                f"set {TOKEN_ENV} to serve other hosts")
+                f"set {TOKEN_ENV} to serve other hosts"), ""
     origin = headers.get("origin")
     if origin is not None and not origin_allowed(origin):
         return (f"{TOKEN_ENV} is not set and this request was made by a web page from {origin[:80]!r}; "
-                f"only the local Desk may drive an unauthenticated agent (set {TOKEN_ENV} or list the origin in {CORS_ENV})")
+                f"only the local Desk may drive an unauthenticated agent (set {TOKEN_ENV} or list the origin in {CORS_ENV})"), ""
     host_header = headers.get("host")
     if host_header is not None and _host_name(host_header) not in LOOPBACK_HOSTS and "*" not in configured_origins():
         return (f"{TOKEN_ENV} is not set and the Host header {host_header[:80]!r} is not a loopback name "
-                "(DNS rebinding protection)")
-    return ""
+                "(DNS rebinding protection)"), ""
+    return "", ""
+
+
+def check_request(scope: Scope) -> str:
+    """Returns "" when the request may proceed, else the refusal reason."""
+    return authenticate(scope)[0]
 
 
 class ApiTokenMiddleware:
@@ -140,8 +150,10 @@ class ApiTokenMiddleware:
         if scope.get("type") not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return
-        reason = check_request(scope)
+        reason, identity = authenticate(scope)
         if not reason:
+            if identity:                                          # request.state.delentia_user: who this is, decided by the server
+                scope.setdefault("state", {})["delentia_user"] = identity
             await self.app(scope, receive, send)
             return
         if scope["type"] == "websocket":

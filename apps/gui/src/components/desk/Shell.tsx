@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  Activity, BookOpen, Brain, FileCheck2, Scale, Globe2, Clock, Cpu, FlaskConical, GitBranch, History, Layers, Link2, Menu, Radio,
+  Activity, BookOpen, Brain, FileCheck2, Hammer, Scale, Globe2, Clock, Cpu, FlaskConical, GitBranch, History, Layers, Link2, Menu, Radio,
   Settings, ShieldCheck, SquareTerminal, TrendingUp, Wrench, X,
 } from "lucide-react";
 import { DelentiaMark } from "./mark";
@@ -23,6 +23,7 @@ const PRIMARY: { href: string; key: DictKey; icon: typeof Activity }[] = [
   { href: "/memory", key: "memory", icon: Brain },
   { href: "/algorithms", key: "algorithms", icon: Layers },
   { href: "/fdia", key: "fdia", icon: Scale },
+  { href: "/forge", key: "forge", icon: Hammer },
   { href: "/approvals", key: "approvals", icon: ShieldCheck },
   { href: "/sovereignty", key: "sovereignty", icon: Globe2 },
   { href: "/jitna", key: "jitna", icon: FileCheck2 },

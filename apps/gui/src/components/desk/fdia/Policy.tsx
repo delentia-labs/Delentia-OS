@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Code, Empty, Panel } from "@/components/desk/ui";
-import { desk, type FdiaActionType, type FdiaPolicy, type FdiaRule, type FdiaState } from "@/lib/desk-api";
+import { desk, type FdiaActionType, type FdiaPolicy, type FdiaRule, type FdiaState, type PolicySavePending } from "@/lib/desk-api";
 import { BUILT_IN_THRESHOLD } from "@/lib/fdia-math";
 
 type T = (en: string, th: string) => string;
@@ -123,6 +123,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
   message: PolicyMessage; setMessage: (m: PolicyMessage) => void; T: T;
 }) {
   const [busy, setBusy] = useState(false);
+  const [waiting, setWaiting] = useState<{ kind: "save" | "disable"; info: PolicySavePending } | null>(null);
   const [understand, setUnderstand] = useState(false);
   const [json, setJson] = useState<string | null>(null);
   const set = (patch: Partial<FdiaPolicy>) => setDraft({ ...draft, ...patch });
@@ -141,7 +142,13 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
     try {
       const checked = await desk.fdiaValidate(draft);
       if (!checked.valid) { setMessage({ tone: "rust", text: T("The policy has problems:", "นโยบายมีปัญหา:"), list: checked.errors }); return; }
-      const saved = await desk.fdiaSave(draft);
+      const saved = await desk.fdiaSave(draft, waiting?.kind === "save" ? waiting.info.approval_id : undefined);
+      if ("pending_signature" in saved) {
+        setWaiting({ kind: "save", info: saved });
+        setMessage({ tone: "amber", text: T("This server asks for a signature before the rules change. Sign the request, then apply it.", "server นี้ต้องมีลายเซ็นก่อนเปลี่ยนกฎ เซ็นคำขอแล้วกดใช้") });
+        return;
+      }
+      setWaiting(null);
       setMessage({ tone: "leaf", text: T(`Saved ${saved.rules} rule(s). It applies to the next tool call; nothing restarts.`, `บันทึก ${saved.rules} กฎแล้ว มีผลกับการเรียกเครื่องมือครั้งถัดไป ไม่ต้องรีสตาร์ต`) });
       reload();
     } catch (err) { setMessage({ tone: "rust", text: err instanceof Error ? err.message : String(err) }); }
@@ -150,7 +157,17 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
 
   const disable = async () => {
     setBusy(true); setMessage(null);
-    try { const r = await desk.fdiaDisable(); setMessage({ tone: "amber", text: T(`Policy turned off. The file was kept as ${r.archived_as}.`, `ปิดนโยบายแล้ว เก็บไฟล์ไว้เป็น ${r.archived_as}`) }); reload(); }
+    try {
+      const r = await desk.fdiaDisable(waiting?.kind === "disable" ? waiting.info.approval_id : undefined);
+      if ("pending_signature" in r) {
+        setWaiting({ kind: "disable", info: r });
+        setMessage({ tone: "amber", text: T("Turning the policy off needs a signature on this server. Sign the request, then apply it.", "การปิดนโยบายต้องมีลายเซ็นบน server นี้ เซ็นคำขอแล้วกดใช้") });
+        return;
+      }
+      setWaiting(null);
+      setMessage({ tone: "amber", text: T(`Policy turned off. The file was kept as ${r.archived_as}.`, `ปิดนโยบายแล้ว เก็บไฟล์ไว้เป็น ${r.archived_as}`) });
+      reload();
+    }
     catch (err) { setMessage({ tone: "rust", text: err instanceof Error ? err.message : String(err) }); }
     finally { setBusy(false); }
   };
@@ -293,6 +310,16 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
           <div role="status" className={`mt-3 text-[13px] ${message.tone === "leaf" ? "text-dl-leaf" : message.tone === "amber" ? "text-dl-amber" : "text-dl-rust"}`}>
             <p>{message.text}</p>
             {message.list ? <ul className="mt-1 list-disc pl-5">{message.list.map((e) => <li key={e}>{e}</li>)}</ul> : null}
+          </div>
+        ) : null}
+        {waiting ? (
+          <div className="mt-4 rounded border border-dl-amber/60 bg-dl-amber/10 p-3 text-[13px] leading-relaxed text-dl-text">
+            <p>{T("Waiting for a signature. Request ", "รอลายเซ็น คำขอ ")}<Code>{waiting.info.approval_id}</Code> {T("is bound to this exact policy.", "ผูกกับนโยบายฉบับนี้เท่านั้น")}</p>
+            <p className="mt-1 text-dl-muted">{T("On the machine that holds the approver key: ", "บนเครื่องที่มีกุญแจผู้อนุมัติ: ")}<Code>delentia approvals approve {waiting.info.approval_id} --key &lt;key&gt;</Code></p>
+            <div className="mt-2 flex gap-2">
+              <Button onClick={waiting.kind === "save" ? save : disable} disabled={busy}>{T("It is signed: apply", "เซ็นแล้ว: ใช้เลย")}</Button>
+              <Button tone="ghost" onClick={() => setWaiting(null)}>{T("Forget this request", "ยกเลิกคำขอนี้")}</Button>
+            </div>
           </div>
         ) : null}
         {json !== null ? (

@@ -2452,7 +2452,8 @@ def notary_check_anchors(url: str, key_id: str, db: str) -> None:
 def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_auth: bool = False) -> None:
     """Start the Delentia OS API server (requires uvicorn)."""
     from rct_control_plane.api_auth import TOKEN_ENV, bind_is_loopback
-    if not bind_is_loopback(host) and not os.getenv(TOKEN_ENV) and not allow_no_auth:
+    from rct_control_plane.api_tokens import per_user_mode
+    if not bind_is_loopback(host) and not os.getenv(TOKEN_ENV) and not per_user_mode() and not allow_no_auth:
         click.echo(click.style(
             f"Error: refusing to serve the agent API on {host} without {TOKEN_ENV}. "
             f"Set {TOKEN_ENV} to a long random value (clients send it as 'Authorization: Bearer ...'), "
@@ -3316,6 +3317,61 @@ def forge_off(name: str) -> None:
     """Turn a tool off (kept on record)."""
     forge, _ = _forge()
     click.echo("turned off" if forge.deactivate(name) else "no such active tool")
+
+
+@cli.group("tokens")
+def tokens_group():
+    """
+    One API token per person (Round 54). The server takes a person's identity (namespace, memory, role in the FDIA policy)
+    from the token, never from a field in the request.
+
+    Examples:
+        delentia tokens create alice
+        delentia tokens list
+        delentia tokens revoke alice
+    """
+    pass
+
+
+@tokens_group.command("create")
+@click.argument("name")
+def tokens_create(name: str) -> None:
+    """Add a person and print their token. It is shown once; only its SHA-256 is stored."""
+    from rct_control_plane import api_tokens
+    try:
+        token = api_tokens.create(name)
+    except api_tokens.TokenFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"token for {name} (copy it now; it cannot be shown again):\n{token}\n"
+               f"send it as 'Authorization: Bearer <token>'. File: {api_tokens.tokens_path()}")
+
+
+@tokens_group.command("list")
+def tokens_list() -> None:
+    """Names and state; never a token."""
+    from rct_control_plane import api_tokens
+    try:
+        entries = api_tokens.load_entries()
+    except api_tokens.TokenFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if not entries:
+        click.echo("No per-person tokens: the single DELENTIA_API_TOKEN (or loopback only) applies.")
+    for user in entries:
+        click.echo(f"{user['name']:<24} {'REVOKED' if user.get('disabled') else 'active':<8} {time.strftime('%Y-%m-%d', time.localtime(user.get('created_at', 0)))}")
+
+
+@tokens_group.command("revoke")
+@click.argument("name")
+def tokens_revoke(name: str) -> None:
+    """Disable a person's token (the entry stays on record)."""
+    from rct_control_plane import api_tokens
+    try:
+        click.echo("revoked" if api_tokens.revoke(name) else "no active token with that name")
+    except api_tokens.TokenFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
 
 
 def main():
