@@ -142,6 +142,8 @@ def fake_runner(k15=K15_OK, extra_output="", probe=None, calls=None):
         if "real_model_round54_probe" in " ".join(cmd):
             path = cmd[cmd.index("--json") + 1]
             Path(path).write_text(json.dumps({"cheap/model": probe or probe_report()}), encoding="utf-8")
+        if "measure_tool_choice" in " ".join(cmd):
+            Path(cmd[cmd.index("--json") + 1]).write_text(json.dumps({"cheap/model": {"judged": {"T10": {"value": "default 20/31, ranked+compact 22/31, median menu 28 -> 7 tools", "pass": True}}}}), encoding="utf-8")
         if "measure_repeat_goal" in " ".join(cmd):
             import measure_repeat_goal as mrg
             Path(cmd[cmd.index("--json") + 1]).write_text(json.dumps({"cheap/model": {"summary": mrg.summarise(repeat_rows([2, 2, 2], [0, 1, 0]))}}), encoding="utf-8")
@@ -198,7 +200,7 @@ def test_spending_more_than_one_and_a_half_times_a_stage_estimate_stops_the_run(
 
 def test_unmeasured_criteria_are_never_shown_as_passes():
     report = {"models": ["cheap/model"], "results": {"cheap/model": {}}, "estimate": {"total_usd": 0.3}, "spent_usd": None}
-    assert orch.table(report).count("NOT RUN") == 9
+    assert orch.table(report).count("NOT RUN") == 10
 
 
 # ------------------------------------------------------------------ the rehearsal against a fake OpenRouter
@@ -302,11 +304,11 @@ SCREEN_PRICES = {**PRICES, "m1/a": {"in": 0.2, "out": 0.8}, "m2/b": {"in": 0.2, 
 
 
 def test_tier_s_runs_only_the_k15_stage_on_up_to_six_models_and_costs_less_than_a_full_pass():
-    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "S")] == ["k15"]
-    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "A")] == ["k15", "probe", "repeat"]
+    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "S")] == ["k15", "toolchoice"]
+    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "A")] == ["k15", "probe", "repeat", "toolchoice"]
     screen = orch.estimate(["m1/a"], SCREEN_PRICES, 1, orch.TOKENS_BY_TIER["S"])["total_usd"]
     full = orch.estimate(["m1/a"], SCREEN_PRICES, 1)["total_usd"]
-    assert 0 < screen < full / 2
+    assert 0 < screen < full * 0.7
     six = args(tier="S", models=[f"m{i}/a" for i in range(6)])
     assert not [p for p in orch.refusals(six, {"unknown_prices": [], "total_with_margin": 1.0}, GOOD_ENV) if "at most" in p]
     seven = args(tier="S", models=[f"m{i}/a" for i in range(7)])
@@ -355,7 +357,7 @@ def test_without_a_jury_t6_stays_not_run_and_a_screen_table_lists_every_model():
         "m2/b": {"k15": {"rates": {"T1": 40.0, "T2": 90.0, "T3": 100.0}, "spent_usd": 0.05}}}}
     table = orch.table(report)
     assert "| T6 | " in table and table.split("| T6 |")[1].split("\n")[0].strip().endswith("NOT RUN |")
-    assert "| m1/a | 95.0% | 100.0% | 100.0% | $0.04 |" in table and "| m2/b | 40.0% | 90.0% | 100.0% | $0.05 |" in table
+    assert "| m1/a | 95.0% | 100.0% | 100.0% | NOT RUN | $0.04 |" in table and "| m2/b | 40.0% | 90.0% | 100.0% | NOT RUN | $0.05 |" in table
 
 
 def test_the_free_preflight_flags_a_model_the_catalogue_says_cannot_take_tools_or_json_or_a_long_prompt(monkeypatch):
@@ -368,3 +370,11 @@ def test_the_free_preflight_flags_a_model_the_catalogue_says_cannot_take_tools_o
     assert any("gone/model" in w and "not in OpenRouter" in w for w in warnings)
     monkeypatch.setattr(orch, "CATALOG", {})
     assert orch.capability_warnings(["anything"]) == []              # no catalogue loaded: nothing to say, not a false alarm
+
+
+def test_the_tool_choice_stage_reports_t10_in_the_table_and_the_per_model_matrix(tmp_path):
+    a, est = plan()
+    report = orch.run_plan(a, PRICES, est, runner=fake_runner(), spend_probe=Meter(0.001), env=GOOD_ENV)
+    assert report["stopped"] is None and "judged" in report["results"]["cheap/model"]["toolchoice"]
+    table = orch.table(report)
+    assert "| T10 |" in table and "default 20/31, ranked+compact 22/31, median menu 28 -> 7 tools -> PASS" in table

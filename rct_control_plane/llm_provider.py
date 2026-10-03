@@ -40,6 +40,24 @@ OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "90.0"))
 logger = logging.getLogger(__name__)
 
 
+def ollama_num_ctx(prompt_chars: int) -> int:
+    """The context window to ask Ollama for. Ollama's default is 4096 tokens and it silently drops whatever does not fit, from the START of the prompt
+    (so the goal and the instructions go first). The loop's prompt carries the tool menu (about 5,200 tokens unfiltered) plus history, so a local
+    model was being handed a prompt cut in the middle. The window is chosen from the prompt's size in a few fixed steps, not exactly, because every
+    change of window makes Ollama reload the model (seconds). DELENTIA_OLLAMA_NUM_CTX overrides; 0 means leave Ollama's default."""
+    override = os.environ.get("DELENTIA_OLLAMA_NUM_CTX")
+    if override is not None and override.strip():
+        try:
+            return int(override)
+        except ValueError:
+            pass
+    estimated = int(prompt_chars / 2.6) + 1200            # ~2.6 chars per token is conservative for mixed English/Thai/JSON; room for the reply
+    for window in (4096, 8192, 16384, 32768):
+        if estimated <= window:
+            return window
+    return 32768
+
+
 @dataclass
 class LLMUsage:
     """Round 50: what one model call used. cost_usd None = not known."""
@@ -114,8 +132,9 @@ class OllamaProvider(LLMProvider):
                 self.last_usage = LLMUsage(0, 0, 0.0)
                 return cached
 
+        num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": False,
-                   "options": {"temperature": temperature}}
+                   "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
         if json_mode:
             payload["format"] = "json"
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
@@ -125,6 +144,9 @@ class OllamaProvider(LLMProvider):
             result = data["response"]
         # Ollama reports prompt_eval_count / eval_count; a local model costs nothing per call.
         self.last_usage = LLMUsage(int(data.get("prompt_eval_count") or 0), int(data.get("eval_count") or 0), 0.0)
+        if num_ctx > 0 and self.last_usage.prompt_tokens >= num_ctx - 8:
+            # The backend filled its whole window: whatever did not fit was cut off, and Ollama does not say so.
+            logger.warning("Ollama prompt reached the context window (%d tokens): the prompt was truncated; raise DELENTIA_OLLAMA_NUM_CTX", num_ctx)
 
         if cacheable and cache is not None:
             cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
@@ -137,8 +159,9 @@ class OllamaProvider(LLMProvider):
         real generated chunk (`{"response": "...", "done": false}`,
         ending with a final `{"done": true, ...}`)."""
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": True,
-                   "options": {"temperature": temperature}}
+                   "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()

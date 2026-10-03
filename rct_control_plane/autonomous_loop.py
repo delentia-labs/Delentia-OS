@@ -343,10 +343,8 @@ async def decide_next_action(
     from rct_control_plane.llm_provider import get_default_provider
     provider = llm_provider or get_default_provider()
 
-    tools_desc = "\n".join(
-        f"- {t['name']}: {t['description']} (args schema: {t.get('input_schema', {})})"
-        for t in available_tools
-    )
+    from rct_control_plane import tool_menu
+    tools_desc = tool_menu.format_menu(available_tools, compact=tool_menu.compact_enabled())
     # Round 41: real intent-delta compression, actually applied to the
     # bytes sent here (not just computed/reported) - see render_history()'s
     # own docstring for the full compression/fallback contract.

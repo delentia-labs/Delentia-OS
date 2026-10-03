@@ -916,6 +916,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         to the full, unfiltered menu whenever fewer than 2 tools would
         otherwise survive, so a goal with no real keyword overlap (e.g.
         a generic "finish now" turn) never starves the model of options."""
+        from rct_control_plane import tool_menu
+        ranked = tool_menu.maybe_ranked(goal, available_tools)        # DELENTIA_TOOL_MENU=ranked (off by default; see tool_menu.py)
+        if ranked is not None:
+            return ranked
         goal_tokens = self._tokenize(goal)
         if not goal_tokens:
             return available_tools
