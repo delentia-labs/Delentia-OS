@@ -2187,6 +2187,36 @@
 <td><code>signedai/runner.py</code>, <code>delentia jury</code></td>
 </tr>
 <tr>
+<td>Owner policy for A (Round 54)</td>
+<td><strong>The owner can write rules for A (per-tool allow / conditional / human signature, forbidden paths, roles, 1-3 signatures from approver keys that hold a role, jury) that the agent loop enforces on every tool call; a signature cannot lift a forbidden path.</strong> Roles are as strong as the identity the server attaches to a request</td>
+<td><code>rct_control_plane/fdia_policy.py</code>, <code>test_fdia_policy_*round54_real.py</code></td>
+</tr>
+<tr>
+<td>Per-person API tokens (Round 54)</td>
+<td><strong>With <code>delentia tokens</code>, the server takes a caller's identity from its token; a namespace in the request body is ignored, a person sees only their own memory, and an unreadable token file locks everyone out.</strong></td>
+<td><code>rct_control_plane/api_tokens.py</code>, <code>test_identity_and_review_round54_real.py</code></td>
+</tr>
+<tr>
+<td>CORD second opinion (Round 54)</td>
+<td><strong>An optional small-model reviewer raised the block rate on a public labelled set from 10% to 23% (qwen2.5:7b, 0 false blocks of 56, ~6 s per text on CPU); 77% of those attacks still pass.</strong> Opt-in; fail open</td>
+<td><code>scripts/measure_cord_classifier.py</code></td>
+</tr>
+<tr>
+<td>Parallel tool calls (Round 54)</td>
+<td><strong>A batch of independent tool calls can run as waves over the Execution Graph IR (opt-in); measured 3.8x for four independent waits, 1.3x for a diamond, 1.0x for a chain.</strong> Do not quote the "&gt;70% time saved" of the architecture document</td>
+<td><code>scripts/dag_wave_benchmark.py</code></td>
+</tr>
+<tr>
+<td>CORD on external text (Round 54)</td>
+<td><strong>On a public labelled set the authors did not write (deepset/prompt-injections), CORD's screen blocked 6.7% of attacks at first look and 10% after generic phrase additions, with 0 false blocks in 532 harmless texts.</strong> Never quote the 95-100% of our own sets as detection of attacks in the wild</td>
+<td><code>scripts/measure_cord_external.py</code></td>
+</tr>
+<tr>
+<td>TOON / LoRA 1+4 (Round 54)</td>
+<td><strong>Not built, by decision.</strong> TOON used 15% more tokens than compact JSON on the runtime's payloads; no adapter weights exist and the development machine has no GPU. Do not claim either</td>
+<td><code>scripts/measure_toon_tokens.py</code>, <code>scripts/audit_master_architecture.py</code></td>
+</tr>
+<tr>
 <td>API origin protection (Round 53)</td>
 <td><strong>Without an API token, the local API refuses requests from web pages of other sites and from non-loopback Host names; per-caller rate limiting is on in <code>delentia serve</code>.</strong></td>
 <td><code>rct_control_plane/api_auth.py</code>, <code>api_ratelimit.py</code></td>
