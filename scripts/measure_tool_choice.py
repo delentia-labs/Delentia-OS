@@ -91,8 +91,15 @@ def adoption(result: Dict[str, Any]) -> Dict[str, Any]:
         return {}
     slack = 1 / max(1, base["of"])
     ok = ranked["accuracy"] >= base["accuracy"] - slack - 1e-9 and ranked["median_menu_tools"] < base["median_menu_tools"]
-    return {"T10": {"value": f"default {base['right']}/{base['of']}, ranked+compact {ranked['right']}/{ranked['of']}, median menu {base['median_menu_tools']} -> {ranked['median_menu_tools']} tools",
-                    "pass": bool(ok)}}
+    value = f"default {base['right']}/{base['of']}, ranked+compact {ranked['right']}/{ranked['of']}, median menu {base['median_menu_tools']} -> {ranked['median_menu_tools']} tools"
+    # A call that timed out or errored did not choose anything, right or wrong. When a fifth or more of an arm's goals errored the comparison says
+    # little about tool choice (it says the arm was too slow or failed), so it is reported as inconclusive and never as a plain pass.
+    errored = {name: arm.get("errors", 0) for name, arm in (("default", base), ("ranked+compact", ranked))}
+    inconclusive = [name for name, n in errored.items() if n * 5 >= max(1, base["of"])]
+    if inconclusive:
+        value += f" [INCONCLUSIVE: {', '.join(f'{n} errored on {errored[n]} of {base['of']} goals' for n in inconclusive)}]"
+        return {"T10": {"value": value, "pass": False, "inconclusive": True}}
+    return {"T10": {"value": value, "pass": bool(ok)}}
 
 
 def main() -> int:

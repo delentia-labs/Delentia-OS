@@ -95,3 +95,14 @@ def test_it_refuses_to_spend_without_the_opt_in():
     env = {k: v for k, v in os.environ.items() if k not in ("OPENROUTER_API_KEY", "DELENTIA_RUN_LIVE_TESTS")}
     done = subprocess.run([sys.executable, mtc.__file__, "some/model", "--provider", "openrouter"], capture_output=True, text=True, env=env)
     assert done.returncode != 0 and "spends money" in (done.stderr + done.stdout)
+
+
+def test_an_arm_that_mostly_errored_is_reported_as_inconclusive_not_as_a_pass_or_a_loss():
+    """Found on the first real local run: the default menu's calls timed out on a CPU (25 of 31), which the plain rule counted as 0/31 and called a PASS."""
+    timed_out = {"default": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 25, "median_menu_tools": 28},
+                 "ranked+compact": {"right": 22, "of": 31, "accuracy": 0.71, "errors": 0, "median_menu_tools": 7}}
+    judged = mtc.adoption(timed_out)["T10"]
+    assert judged["pass"] is False and judged["inconclusive"] is True and "INCONCLUSIVE" in judged["value"] and "errored on 25 of 31" in judged["value"]
+    clean = {"default": {"right": 20, "of": 31, "accuracy": 20 / 31, "errors": 1, "median_menu_tools": 28},
+             "ranked+compact": {"right": 22, "of": 31, "accuracy": 22 / 31, "errors": 0, "median_menu_tools": 7}}
+    assert mtc.adoption(clean)["T10"]["pass"] is True and "inconclusive" not in mtc.adoption(clean)["T10"]
