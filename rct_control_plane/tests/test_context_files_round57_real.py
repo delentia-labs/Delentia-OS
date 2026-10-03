@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.dirname(__file__))
 import asyncio
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
