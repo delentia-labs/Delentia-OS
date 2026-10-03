@@ -264,6 +264,14 @@ export interface WitnessStatus {
 }
 export interface WitnessesChecked { ok: boolean; witnesses: { witness: string; reachable: boolean; ok: boolean; checked: number; problems: string[] }[] }
 
+
+export interface PairingView {
+  enabled: boolean;
+  pending: { code: string; channel: string; sender_id: string; asked_at: number }[];
+  grants: { channel: string; sender_id: string; approval_id: string; granted_at: number; revoked_at: number | null }[];
+  limits: { max_pending_per_channel: number; refusal_cooldown_s: number };
+}
+
 // ---- calls --------------------------------------------------------------------
 
 // ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
@@ -350,6 +358,8 @@ export const desk = {
   experiments: () => call<{ experiments: Experiment[] }>("/v1/desk/experiments"),
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),
+  pairing: () => call<PairingView>("/v1/desk/pairing"),
+  pairingRevoke: (channel: string, sender_id: string) => call<{ revoked: boolean }>("/v1/desk/pairing/revoke", { method: "POST", body: JSON.stringify({ channel, sender_id }) }),
   daemon: () => call<DaemonStatus>("/v1/daemon/status"),
   cronJobs: () => call<CronJobs>("/v1/desk/cron/jobs"),
   cronPreview: (text: string) => call<CronPreview>("/v1/desk/cron/parse", { method: "POST", body: JSON.stringify({ text }) }),
