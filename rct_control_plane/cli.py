@@ -2198,8 +2198,12 @@ def audit_chain_group():
 
 
 def _audit_db(db: Optional[str]):
+    """The kernel's persistence by default. Before Round 55 this opened control_plane.db while the agent writes its audit trail, memory,
+    growth ledger and approvals to agentic.db, so `delentia audit-chain verify` reported an empty chain as OK and `delentia memory add`
+    stored facts the agent never recalled (found by verifying a real container's audit trail)."""
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    return ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence()
+    return ControlPlanePersistence(db_path=db or agentic_db_path())
 
 
 @audit_chain_group.command("verify")
@@ -2270,6 +2274,30 @@ def audit_chain_anchor(url: str, key_id: str, db: Optional[str]) -> None:
     click.echo(json.dumps({"status": resp.status_code, **resp.json()}))
     if resp.status_code not in (200, 201):
         sys.exit(1)
+
+
+def _print_witness_entry(key_id: str, public_hex: str) -> None:
+    entry = {"key_id": key_id, "public_key_hex": public_hex}
+    click.echo("Add this object to the witness's AUDIT_ANCHOR_KEYS_JSON (the fdia Worker's variable; it is a JSON array of such objects):")
+    click.echo(json.dumps(entry))
+    click.echo("A new key must be registered BEFORE its first anchor, or the witness refuses it. Registering is a deploy of the Worker: "
+               "do it yourself (npx wrangler deploy from delentia-mcp/ecosystem/packages/fdia) after editing the variable.")
+
+
+@audit_chain_group.command("witness-entry")
+@click.option("--key-id", required=True, help="The id the runtime will anchor under (DELENTIA_AUDIT_ANCHOR_KEY_ID).")
+@click.option("--pubkey", default=None, help="Public key hex; default: derived from DELENTIA_AUDIT_SIGNING_KEY.")
+def audit_chain_witness_entry(key_id: str, pubkey: Optional[str]) -> None:
+    """Print the JSON entry that registers this host's audit signing key at the witness (tier A3)."""
+    from rct_control_plane import audit_chain
+    public_hex = (pubkey or "").strip().lower()
+    if not public_hex:
+        key = audit_chain.load_signing_key()
+        if key is None:
+            click.echo(click.style(f"Error: pass --pubkey or set {audit_chain.SIGNING_KEY_ENV}", fg="red"), err=True)
+            sys.exit(1)
+        public_hex = audit_chain._public_hex(key)
+    _print_witness_entry(key_id, public_hex)
 
 
 @audit_chain_group.command("check-anchors")
@@ -2348,16 +2376,16 @@ def notary_keygen(out_path: str) -> None:
 @click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
 @click.option("--key-id", default="delentia-notary-1", show_default=True, help="Key id written into receipts.")
 @click.option("--port", default=8765, show_default=True, type=int, help="Loopback port.")
-@click.option("--anchor-url", default=None, help="Witness base URL: anchor the log head on a schedule (tier A3).")
-@click.option("--anchor-key-id", default=None, help="Key id the witness knows this notary's public key under.")
-@click.option("--anchor-every", default=3600.0, show_default=True, type=float, help="Seconds between anchors.")
+@click.option("--anchor-url", default=None, envvar="DELENTIA_NOTARY_ANCHOR_URL", help="Witness base URL: anchor the log head on a schedule (tier A3). Or DELENTIA_NOTARY_ANCHOR_URL.")
+@click.option("--anchor-key-id", default=None, envvar="DELENTIA_NOTARY_ANCHOR_KEY_ID", help="Key id the witness knows this notary's public key under. Or DELENTIA_NOTARY_ANCHOR_KEY_ID.")
+@click.option("--anchor-every", default=3600.0, show_default=True, type=float, envvar="DELENTIA_NOTARY_ANCHOR_EVERY_S", help="Seconds between anchors.")
 def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, anchor_url: Optional[str] = None,
                  anchor_key_id: Optional[str] = None, anchor_every: float = 3600.0) -> None:
     """Serve POST /append and GET /head on 127.0.0.1 (token: DELENTIA_NOTARY_TOKEN)."""
     from rct_control_plane import notary
     key = _notary_key(key_path)
     store = notary.NotaryStore(db, key, key_id)
-    server = notary.make_server(store, port=port, token=os.getenv(notary.NOTARY_TOKEN_ENV))
+    server = notary.make_server(store, port=port, token=notary.token_from_env())
     click.echo(f"notary      : http://127.0.0.1:{port}  key_id={key_id}  pubkey={notary.public_hex(key)}")
     click.echo(f"log         : {store.db_path}")
     click.echo(f"agent side  : set {notary.NOTARY_URL_ENV}=http://127.0.0.1:{port} "
@@ -2380,6 +2408,17 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, ancho
         if stop_anchoring is not None:
             stop_anchoring.set()
         server.server_close()
+
+
+@notary_group.command("witness-entry")
+@click.option("--key-id", required=True, help="The id the notary will anchor under (--anchor-key-id).")
+@click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
+@click.option("--pubkey", default=None, help="Public key hex instead of reading the key (run it where the key is not).")
+def notary_witness_entry(key_id: str, key_path: Optional[str], pubkey: Optional[str]) -> None:
+    """Print the JSON entry that registers the notary's public key at the witness (tier A3 for the notary log)."""
+    from rct_control_plane import notary
+    public_hex = (pubkey or "").strip().lower() or notary.public_hex(_notary_key(key_path))
+    _print_witness_entry(key_id, public_hex)
 
 
 @notary_group.command("verify")
@@ -2503,6 +2542,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (set either variable to 0 to turn it off here too).
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
@@ -3333,6 +3373,14 @@ def tokens_group():
     pass
 
 
+def _audit_identity(action: str, name: str) -> None:
+    """Who was given or lost access is part of the audit trail (the name and the action; never the token or its hash)."""
+    try:
+        _audit_db(None).append_audit(entity_type="identity", entity_id=name, action=action, actor="cli", changes={"name": name})
+    except Exception as exc:        # noqa: BLE001 - the token change itself already happened
+        click.echo(click.style(f"warning: could not write the audit row ({type(exc).__name__})", fg="yellow"), err=True)
+
+
 @tokens_group.command("create")
 @click.argument("name")
 def tokens_create(name: str) -> None:
@@ -3343,6 +3391,7 @@ def tokens_create(name: str) -> None:
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
+    _audit_identity("token_created", name)
     click.echo(f"token for {name} (copy it now; it cannot be shown again):\n{token}\n"
                f"send it as 'Authorization: Bearer <token>'. File: {api_tokens.tokens_path()}")
 
@@ -3368,10 +3417,159 @@ def tokens_revoke(name: str) -> None:
     """Disable a person's token (the entry stays on record)."""
     from rct_control_plane import api_tokens
     try:
-        click.echo("revoked" if api_tokens.revoke(name) else "no active token with that name")
+        changed = api_tokens.revoke(name)
+        if changed:
+            _audit_identity("token_revoked", name)
+        click.echo("revoked" if changed else "no active token with that name")
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
+
+
+@cli.group("skills")
+def skills_group():
+    """
+    Skills the agent can be reminded of (Round 55: the bundled starter library).
+
+    Examples:
+        delentia skills starter check      # are all bundled playbooks valid against the live tool registry?
+        delentia skills starter install    # add them to the skill library (idempotent)
+        delentia skills list
+    """
+    pass
+
+
+@skills_group.group("starter")
+def skills_starter_group():
+    """The playbooks that ship with the runtime (written by people, not learned)."""
+    pass
+
+
+@skills_starter_group.command("check")
+def skills_starter_check() -> None:
+    """Validate the bundle: every tool exists, no playbook carries an instruction, approvals are stated."""
+    import asyncio
+    from rct_control_plane import starter_skills
+    from rct_control_plane.mcp_server import mcp
+    names = [t.name for t in asyncio.run(mcp.list_tools())]
+    problems = starter_skills.validate(known_tools=names)
+    click.echo(f"{len(starter_skills.STARTER_SKILLS)} bundled playbooks, {len(names)} tools in the registry")
+    for problem in problems:
+        click.echo(click.style(f"  problem: {problem}", fg="red"))
+    if problems:
+        sys.exit(1)
+    click.echo(click.style("  all valid", fg="green"))
+
+
+@skills_starter_group.command("install")
+def skills_starter_install() -> None:
+    """Add the bundled playbooks to the skill library. Safe to run again."""
+    from rct_control_plane import starter_skills
+    from rct_control_plane.skill_library import SkillLibrary
+    counts = starter_skills.install_starter_skills(SkillLibrary())
+    click.echo(f"added {counts['added']}, updated {counts['updated']}, unchanged {counts['unchanged']} (of {counts['total']})")
+
+
+@skills_group.command("list")
+@click.option("--limit", default=50, show_default=True)
+def skills_list(limit: int) -> None:
+    """The skills now offered to the agent, bundled ones marked."""
+    from rct_control_plane.skill_library import SkillLibrary
+    for skill in SkillLibrary().list_active(limit):
+        kind = "bundled" if skill.bundled else "learned"
+        click.echo(f"  [{kind:7}] reliability {skill.reliability:.2f}  uses {skill.uses:3}  {skill.problem_statement[:80]}")
+
+
+@cli.group("mcp")
+def mcp_group():
+    """
+    Tools from other MCP servers (Round 55). The agent uses them only through the same gate as its own tools.
+
+    Examples:
+        delentia mcp list
+        delentia mcp inspect notes        # what the server offers, what was dropped, and the digest to pin
+    """
+    pass
+
+
+@mcp_group.command("list")
+def mcp_list() -> None:
+    """The configured servers and how each of their tools is treated."""
+    from rct_control_plane import external_mcp
+    try:
+        servers = external_mcp.load_servers()
+    except external_mcp.ExternalMCPError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"configuration: {external_mcp.config_path()}")
+    if not servers:
+        click.echo("  no servers configured")
+    for name, spec in servers.items():
+        kind = f"local process ({spec.command})" if spec.command else f"remote ({spec.url})"
+        click.echo(f"  {name}: {kind}, {'on' if spec.enabled else 'OFF'}, pinned: {'yes' if spec.tools_sha256 else 'no'}, "
+                   f"read-only tools declared: {', '.join(sorted(spec.read_only_tools)) or 'none (every call waits for a signature)'}")
+
+
+@mcp_group.command("inspect")
+@click.argument("name")
+def mcp_inspect(name: str) -> None:
+    """Start the server, list its tools and print the digest for `tools_sha256`. Review the descriptions before pinning."""
+    from rct_control_plane import external_mcp
+    try:
+        report = external_mcp.inspect_server(name)
+    except external_mcp.ExternalMCPError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    for tool in report["tools"]:
+        mark = "read-only (declared)" if tool["name"] in report["read_only_declared"] else "waits for a signature"
+        click.echo(f"  {tool['name']}  [{mark}]")
+        click.echo(f"      {tool['description'][:160]}")
+    for problem in report["problems"]:
+        click.echo(click.style(f"  problem: {problem}", fg="yellow"))
+    click.echo(f"digest: {report['digest'] or '(no tools)'}")
+    if report["pinned"]:
+        click.echo("the configured pin " + ("matches" if report["pin_matches"] else click.style("DOES NOT MATCH", fg="red")))
+
+
+@cli.command("host-check")
+@click.option("--local", "local", is_flag=True, help="this machine is not a public host: a missing API token is a warning, not a failure")
+@click.option("--probe", is_flag=True, help="also make one GET to the notary's /health")
+@click.option("--json", "as_json", is_flag=True, help="machine-readable output")
+@click.option("--strict", is_flag=True, help="exit 1 on warnings too")
+def host_check(local: bool, probe: bool, as_json: bool, strict: bool) -> None:
+    """
+    Is this machine ready to be a host? Reads the configuration the way the server would and lists what is wrong and how to fix it.
+    Changes nothing, sends nothing (except one GET with --probe). Run it BEFORE renting a host.
+
+    Examples:
+        delentia host-check --local
+        delentia host-check --json
+    """
+    from rct_control_plane import host_check as hc
+    checks = hc.run_checks(public=not local, probe=probe)
+    click.echo(hc.as_json(checks) if as_json else hc.render(checks))
+    summary = hc.summarise(checks)
+    if summary["counts"][hc.FAIL] or (strict and summary["counts"][hc.WARN]):
+        sys.exit(1)
+
+
+@cli.command("search-status")
+def search_status() -> None:
+    """Is web search configured, and with which provider? (Nothing is sent.)"""
+    from rct_control_plane import web_search
+    try:
+        config = web_search.load_config()
+    except web_search.SearchConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if config is None:
+        click.echo("web search is not configured (set DELENTIA_SEARCH_PROVIDER to searxng or brave)")
+        return
+    key_note = ""
+    if config["credential_env"]:
+        key_note = f", key variable {config['credential_env']} is {'set' if os.environ.get(config['credential_env']) else 'NOT set'}"
+    click.echo(f"provider {config['provider']} at {config['base_url']}{key_note}, region {config['region'] or 'not declared'}")
+
 
 
 def main():

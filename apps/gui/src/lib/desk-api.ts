@@ -110,6 +110,7 @@ export interface Skill {
   id: string; problem_statement: string; solution: unknown; growth_ratio: number; delta: number;
   g_before: number; g_after: number; governance_violation: boolean; session_id: string | null; created_at: string;
   uses: number; successes: number; failures: number; reinforced: number; archived: boolean; reliability: number;
+  bundled?: boolean;
 }
 export interface GrowthLedger {
   namespace: string; G: number | null; resilience: number | null; growth_ratio: number | null;
@@ -181,6 +182,7 @@ export interface PendingAction {
   approval_id: string; namespace: string; goal: string; tool_name: string; tool_args: Record<string, unknown>;
   action_sha256: string; reason: string; status: string; created_at: string; decided_at: string | null;
   approver_public_key: string | null; executed_at: string | null;
+  required_signatures?: number; signatures_collected?: number; approver_roles?: string[] | null; policy_rule?: string | null;
 }
 export interface Health { status: string; version?: string }
 export interface SubagentRun {
@@ -189,6 +191,48 @@ export interface SubagentRun {
   jitna: { request_packet_id?: string; request_hash?: string; response_verified: boolean; reason: string | null } | null;
   timed_out: boolean; error: string | null;
 }
+
+
+// ---- governance view (governance_view.py, Round 56) --------------------------------
+export interface GovControl { id: string; name: string; on: boolean; detail: string; how_to_change: string; always_on: boolean; applicable: boolean }
+export interface GovGap { control: string; severity: "bad" | "warn" | "info"; text: string; fix: string }
+export interface GovActivity {
+  goals_blocked: number; goals_refused_by_jury: number; tool_calls_judged: number; tool_calls_blocked: number;
+  tool_results_withheld: number; tool_results_warned: number; second_opinion_attacks: number; jury_agreed: number; jury_refused: number;
+  approvals_by_status: Record<string, number>; policy_changes: number; model_calls_blocked: number; model_calls_redacted: number;
+  model_calls_allowed: number; notary_gaps: number; episodes: number;
+}
+export interface GovOverview {
+  controls: GovControl[]; on: number; total: number; gaps: GovGap[]; activity: GovActivity;
+  last_policy_change: { at: string; by: string; changes: Record<string, unknown> } | null; generated_at: number; reading_this: string;
+}
+export type GovCategory = "attention" | "all" | "blocked" | "screening" | "gate" | "jury" | "approvals" | "policy" | "sovereignty" | "notary" | "identity" | "episodes" | "steps";
+export interface GovEvent {
+  id: number; category: string; entity_type: string; entity_id: string | null; action: string; actor: string | null; at: string;
+  summary: string; chain_seq: number | null; row_hash: string | null; signed: boolean;
+}
+export interface GovEventDetail {
+  id: number; entity_type: string; entity_id: string | null; action: string; actor: string | null; at: string; summary: string;
+  changes: Record<string, unknown>;
+  chain: { seq: number; prev_hash: string; row_hash: string; recomputed_matches: boolean; signed: boolean; signer_fingerprint: string | null; signature_hex: string | null } | null;
+  related: { id: number; entity_type: string; action: string; at: string }[];
+}
+export interface GovSigner { name: string | null; role: string | null; key_fingerprint: string; at: number | null; signature_prefix: string; verifies_now: boolean; key_still_trusted: boolean; decision: string }
+export interface GovApproval {
+  approval_id: string; tool_name: string; goal: string; namespace: string; status: string; reason: string | null; created_at: number;
+  decided_at: number | null; executed_at: number | null; action_sha256: string; policy_rule: string | null; required_signatures: number;
+  signatures_collected: number; roles_required: string[]; roles_missing: string[]; signers: GovSigner[];
+}
+export interface GovApprover { name: string; role: string | null; public_key: string; fingerprint: string; approvals_signed: number; last_signed: number | null; rejections_signed: number }
+export interface GovIdentity { name: string; disabled: boolean; created_at: number | null; disabled_at: number | null; role: string | null; role_is_default: boolean }
+export interface GovDecision { id: string; type: string; description: string; at: string; before: Record<string, unknown>; after: Record<string, unknown> }
+export interface GovVerify {
+  chain: { ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number; head_seq: number | null; first_bad_seq: number | null; reason: string | null };
+  signature_check: string;
+  episodes: { checked: number; signature_ok: number; signature_bad: number; bad_audit_ids: number[]; unsigned: number; signed_with_a_persistent_key: number; note: string };
+  notary: { receipts_in_local_trail: number; gaps: number };
+}
+export interface WitnessCheck { witness: string; key_id: string; ok: boolean; checked: number; problems: string[] }
 
 // ---- calls --------------------------------------------------------------------
 
@@ -257,6 +301,20 @@ export const desk = {
   setModel: (provider: string, model: string) =>
     call<{ saved: string; selection: ModelSelection }>("/v1/desk/models", { method: "POST", body: JSON.stringify({ provider, model }) }),
   audit: () => call<AuditView>("/v1/desk/audit"),
+  governance: () => call<GovOverview>("/v1/desk/governance"),
+  govEvents: (category: GovCategory, query: string, beforeId?: number, limit = 40) => {
+    const q = new URLSearchParams({ category, limit: String(limit) });
+    if (query.trim()) q.set("q", query.trim());
+    if (beforeId) q.set("before_id", String(beforeId));
+    return call<{ category: string; events: GovEvent[]; next_before_id: number | null }>(`/v1/desk/governance/events?${q}`);
+  },
+  govEvent: (id: number) => call<GovEventDetail>(`/v1/desk/governance/events/${id}`),
+  govSignatures: (status?: string) => call<{ approvals: GovApproval[]; all_signatures_verify: boolean }>(`/v1/desk/governance/signatures${status ? `?status=${status}` : ""}`),
+  govApprovers: () => call<{ file: string; problem: string; keys: GovApprover[]; roles_held: string[] }>("/v1/desk/governance/approvers"),
+  govIdentities: () => call<{ mode: string; file: string; shared_token_set: boolean; users: GovIdentity[]; problem: string; default_role: string | null; note: string }>("/v1/desk/governance/identities"),
+  govDecisions: () => call<{ decisions: GovDecision[] }>("/v1/desk/governance/decisions"),
+  govVerify: () => call<GovVerify>("/v1/desk/governance/audit/verify"),
+  govCheckWitness: () => call<WitnessCheck>("/v1/desk/governance/audit/check-witness", { method: "POST", body: "{}" }),
   experiments: () => call<{ experiments: Experiment[] }>("/v1/desk/experiments"),
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),

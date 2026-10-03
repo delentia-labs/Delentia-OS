@@ -4,7 +4,7 @@ import { useLang } from "@/components/desk/i18n";
 import { Badge, Code, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 
-const NAMES: Record<string, string> = { telegram: "Telegram", discord: "Discord", slack: "Slack", line: "LINE" };
+const NAMES: Record<string, string> = { telegram: "Telegram", discord: "Discord", slack: "Slack", line: "LINE", whatsapp: "WhatsApp", signal: "Signal", email: "Email" };
 
 export default function ChannelsPage() {
   const { t, lang } = useLang();

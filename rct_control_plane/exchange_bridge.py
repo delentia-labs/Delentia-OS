@@ -44,8 +44,17 @@ class NeuralExchangeBridge:
 
     def __init__(self, root_dir: Optional[str] = None):
         if root_dir is None:
-            # Default to c:\Users\whale\delentia\exchange
-            self.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "exchange"))
+            # Round 55: DELENTIA_EXCHANGE_DIR, else <DELENTIA_HOME>/exchange, else the old default (two folders above the package, which is
+            # /exchange at the root of a container image: unwritable for an unprivileged user, found by running the host kit).
+            from rct_control_plane import data_home
+            configured = os.environ.get("DELENTIA_EXCHANGE_DIR")
+            home = data_home.data_home()
+            if configured:
+                self.root_dir = os.path.abspath(configured)
+            elif home is not None:
+                self.root_dir = os.path.abspath(os.path.join(str(home), "exchange"))
+            else:
+                self.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "exchange"))
         else:
             self.root_dir = os.path.abspath(root_dir)
 

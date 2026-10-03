@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -19,7 +20,8 @@ from typing import TYPE_CHECKING, AsyncIterator, Optional
 if TYPE_CHECKING:
     from rct_control_plane.topic_cache import TopicCache
 
-import httpx
+import httpx  # noqa: F401 - kept: tests and callers patch llm_provider.httpx
+from rct_control_plane import http_client
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
@@ -36,6 +38,24 @@ DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 OLLAMA_TIMEOUT_S = float(os.getenv("DELENTIA_OLLAMA_TIMEOUT_S", "90.0"))
 
 logger = logging.getLogger(__name__)
+
+
+def ollama_num_ctx(prompt_chars: int) -> int:
+    """The context window to ask Ollama for. Ollama's default is 4096 tokens and it silently drops whatever does not fit, from the START of the prompt
+    (so the goal and the instructions go first). The loop's prompt carries the tool menu (about 5,200 tokens unfiltered) plus history, so a local
+    model was being handed a prompt cut in the middle. The window is chosen from the prompt's size in a few fixed steps, not exactly, because every
+    change of window makes Ollama reload the model (seconds). DELENTIA_OLLAMA_NUM_CTX overrides; 0 means leave Ollama's default."""
+    override = os.environ.get("DELENTIA_OLLAMA_NUM_CTX")
+    if override is not None and override.strip():
+        try:
+            return int(override)
+        except ValueError:
+            pass
+    estimated = int(prompt_chars / 2.6) + 1200            # ~2.6 chars per token is conservative for mixed English/Thai/JSON; room for the reply
+    for window in (4096, 8192, 16384, 32768):
+        if estimated <= window:
+            return window
+    return 32768
 
 
 @dataclass
@@ -84,9 +104,11 @@ class OllamaProvider(LLMProvider):
     _CACHEABLE_TEMPERATURE_MAX = 0.3
     _CACHE_TTL_SECONDS = 3600.0
 
-    def __init__(self, llm_url: str = DEFAULT_OLLAMA_URL, model: str = "qwen2.5:7b",
+    def __init__(self, llm_url: Optional[str] = None, model: str = "qwen2.5:7b",
                  cache: Optional["TopicCache"] = None):
-        self.llm_url = llm_url
+        # Round 55: DELENTIA_OLLAMA_URL (an Ollama in another container or on another machine) when no address is given; before, the address
+        # was fixed at 127.0.0.1 and a containerised runtime could not reach an Ollama next to it (found by running the host kit).
+        self.llm_url = (llm_url or os.environ.get("DELENTIA_OLLAMA_URL") or DEFAULT_OLLAMA_URL).rstrip("/")
         self.model = model
         self.cache = cache
 
@@ -110,17 +132,21 @@ class OllamaProvider(LLMProvider):
                 self.last_usage = LLMUsage(0, 0, 0.0)
                 return cached
 
+        num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": False,
-                   "options": {"temperature": temperature}}
+                   "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
         if json_mode:
             payload["format"] = "json"
-        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
+        async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
             data = response.json()
             result = data["response"]
         # Ollama reports prompt_eval_count / eval_count; a local model costs nothing per call.
         self.last_usage = LLMUsage(int(data.get("prompt_eval_count") or 0), int(data.get("eval_count") or 0), 0.0)
+        if num_ctx > 0 and self.last_usage.prompt_tokens >= num_ctx - 8:
+            # The backend filled its whole window: whatever did not fit was cut off, and Ollama does not say so.
+            logger.warning("Ollama prompt reached the context window (%d tokens): the prompt was truncated; raise DELENTIA_OLLAMA_NUM_CTX", num_ctx)
 
         if cacheable and cache is not None:
             cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
@@ -133,9 +159,10 @@ class OllamaProvider(LLMProvider):
         real generated chunk (`{"response": "...", "done": false}`,
         ending with a final `{"done": true, ...}`)."""
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": True,
-                   "options": {"temperature": temperature}}
-        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_S) as client:
+                   "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
+        async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -179,6 +206,29 @@ def _build_openrouter_payload(
     return payload
 
 
+OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
+OPENROUTER_BASE_ENV = "DELENTIA_OPENROUTER_BASE_URL"
+
+
+def openrouter_base_url() -> str:
+    """Where OpenRouter calls go. The default is OpenRouter itself. DELENTIA_OPENROUTER_BASE_URL may point at a loopback server (a rehearsal
+    of the paid test against a fake: scripts/rehearse_full_test.py) or at another openrouter.ai address; anything else is ignored, because
+    the API key is sent to whatever this returns."""
+    override = (os.environ.get(OPENROUTER_BASE_ENV) or "").strip().rstrip("/")
+    if override:
+        loopback = re.match(r"^http://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)", override)
+        if override.startswith("https://openrouter.ai/") or loopback:
+            return override
+        logging.getLogger(__name__).warning("%s ignored: only https://openrouter.ai/... or a loopback address is accepted", OPENROUTER_BASE_ENV)
+    return OPENROUTER_DEFAULT_BASE
+
+
+# Models (as OpenRouter ids) that answered HTTP 400 to `response_format` in this process: later calls do not send it. OpenRouter routes to
+# many upstream providers and not all of them accept JSON mode; the loop's prompt already asks for JSON, so dropping the parameter costs
+# some reliability, not the call.
+_NO_JSON_MODE: set = set()
+
+
 class OpenRouterProvider(LLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-sonnet-5",
                  compat: Optional[CompatProfile] = None):
@@ -192,14 +242,16 @@ class OpenRouterProvider(LLMProvider):
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         payload = _build_openrouter_payload(
-            self.model, prompt, system_prompt, temperature, max_tokens, json_mode, self.compat,
+            self.model, prompt, system_prompt, temperature, max_tokens, json_mode and self.model not in _NO_JSON_MODE, self.compat,
         )
-        async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
-                json=payload,
-            )
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        async with http_client.async_client(timeout=90.0) as client:
+            response = await client.post(f"{openrouter_base_url()}/chat/completions", headers=headers, json=payload)
+            if getattr(response, "status_code", 200) == 400 and "response_format" in payload:
+                # This model (or the upstream provider it was routed to) does not take JSON mode: remember that and ask again without it.
+                _NO_JSON_MODE.add(self.model)
+                payload.pop("response_format")
+                response = await client.post(f"{openrouter_base_url()}/chat/completions", headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
         usage = data.get("usage") or {}
@@ -218,9 +270,9 @@ class OpenRouterProvider(LLMProvider):
             self.model, prompt, system_prompt, temperature, max_tokens, json_mode=False, compat=self.compat,
         )
         payload["stream"] = True
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with http_client.async_client(timeout=90.0) as client:
             async with client.stream(
-                "POST", "https://openrouter.ai/api/v1/chat/completions",
+                "POST", f"{openrouter_base_url()}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
                 json=payload,
             ) as response:
@@ -274,7 +326,7 @@ class OpenAICompatibleProvider(LLMProvider):
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, json_mode, self.compat)
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with http_client.async_client(timeout=self.timeout) as client:
             response = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
             response.raise_for_status()
             data = response.json()
@@ -287,7 +339,7 @@ class OpenAICompatibleProvider(LLMProvider):
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
         payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, False, self.compat)
         payload["stream"] = True
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with http_client.async_client(timeout=self.timeout) as client:
             async with client.stream("POST", f"{self.base_url}/chat/completions", headers=self._headers(), json=payload) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():

@@ -22,7 +22,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-import httpx
+from rct_control_plane import http_client
 
 logger = logging.getLogger("delentia.gateways.telegram")
 
@@ -57,7 +57,7 @@ class TelegramGateway:
         params: Dict[str, Any] = {"timeout": timeout}
         if self._offset is not None:
             params["offset"] = self._offset
-        async with httpx.AsyncClient(timeout=timeout + 10) as client:
+        async with http_client.async_client(timeout=timeout + 10) as client:
             resp = await client.get(self._url("getUpdates"), params=params)
             resp.raise_for_status()
             data = resp.json()
@@ -69,7 +69,7 @@ class TelegramGateway:
     async def send_message(self, chat_id: int, text: str) -> None:
         if not self.is_configured():
             raise RuntimeError("TelegramGateway: TELEGRAM_BOT_TOKEN not configured")
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with http_client.async_client(timeout=15) as client:
             resp = await client.post(self._url("sendMessage"), json={"chat_id": chat_id, "text": text})
             resp.raise_for_status()
 

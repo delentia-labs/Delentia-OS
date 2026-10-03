@@ -66,6 +66,9 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
       </pre>
       <div className="mt-3">
         <Row label="Why it waits">{a.reason}</Row>
+        {a.required_signatures && a.required_signatures > 1 ? <Row label="Signatures">{a.signatures_collected ?? 0} of {a.required_signatures} (distinct keys)</Row> : null}
+        {a.approver_roles?.length ? <Row label="Roles asked for">{a.approver_roles.join(", ")}</Row> : null}
+        {a.policy_rule ? <Row label="Owner policy rule">{a.policy_rule}</Row> : null}
         <Row label="Action digest (SHA-256)">{`${a.action_sha256.slice(0, 20)}…`}</Row>
         <Row label="Requested">{fmtTime(a.created_at)}</Row>
         {a.approver_public_key ? <Row label="Signed by key">{`${a.approver_public_key.slice(0, 16)}…`}</Row> : null}
@@ -73,6 +76,11 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
 
       {a.status === "PENDING" ? (
         <div className="mt-4 space-y-2">
+          {a.required_signatures && a.required_signatures > 1 ? (
+            <p className="text-[13px] leading-relaxed text-dl-amber">
+              This action needs {a.required_signatures} signatures from distinct keys ({a.signatures_collected ?? 0} collected). Each signer repeats the steps below; it runs only after the last one.
+            </p>
+          ) : null}
           <p className="text-[13px] leading-relaxed text-dl-muted">
             Sign on the device that holds your approver key (it never needs to be on this machine), then paste the printed JSON:
           </p>

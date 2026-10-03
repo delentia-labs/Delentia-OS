@@ -1,0 +1,45 @@
+# Round 55: keep local data, history and secrets out of every image built from this repository.
+# Before this file existed, `COPY . .` in the Dockerfile copied the git history, the local SQLite databases (episodes, memory,
+# approvals, audit trail) and any .env file lying in the directory into the image. An image pushed to a registry would have carried them.
+.git
+.gitignore
+.github
+.claude
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+**/*_secret*
+**/credentials.json
+**/vault_master.key
+
+# local state
+*.db
+*.db-shm
+*.db-wal
+**/*.db
+**/*.db-shm
+**/*.db-wal
+workspace_output
+.delentia_worktrees
+htmlcov
+coverage.xml
+.coverage
+.pytest_cache
+.mypy_cache
+.ruff_cache
+**/__pycache__
+**/*.pyc
+
+# front end build artefacts and dependencies (the GUI is not in the runtime image)
+**/node_modules
+apps/gui/.next
+apps/gui/out
+apps/gui/src-tauri/target
+sdk-typescript/node_modules
+
+# large local-only files
+yolov8n.pt
+*.jitna

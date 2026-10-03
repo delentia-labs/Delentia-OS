@@ -100,7 +100,17 @@ try:
     _ffmpeg_dir = os.path.dirname(_real_ffmpeg_exe)
     _plain_ffmpeg_exe = os.path.join(_ffmpeg_dir, "ffmpeg.exe" if os.name == "nt" else "ffmpeg")
     if not os.path.exists(_plain_ffmpeg_exe):
-        shutil.copy2(_real_ffmpeg_exe, _plain_ffmpeg_exe)
+        try:
+            shutil.copy2(_real_ffmpeg_exe, _plain_ffmpeg_exe)
+        except OSError:
+            # Round 55: site-packages is not writable for an unprivileged user or a read-only container image, and this runs at IMPORT time,
+            # so the whole kernel (and `delentia serve`) died with PermissionError. Put the plain-named copy in a folder we can write.
+            import tempfile
+            _ffmpeg_dir = os.path.join(tempfile.gettempdir(), "delentia-ffmpeg")
+            os.makedirs(_ffmpeg_dir, exist_ok=True)
+            _plain_ffmpeg_exe = os.path.join(_ffmpeg_dir, "ffmpeg.exe" if os.name == "nt" else "ffmpeg")
+            if not os.path.exists(_plain_ffmpeg_exe):
+                shutil.copy2(_real_ffmpeg_exe, _plain_ffmpeg_exe)
     if _ffmpeg_dir not in os.environ.get("PATH", "").split(os.pathsep):
         os.environ["PATH"] = _ffmpeg_dir + os.pathsep + os.environ.get("PATH", "")
 except ImportError:

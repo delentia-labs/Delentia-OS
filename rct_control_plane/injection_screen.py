@@ -119,6 +119,10 @@ def _positions(text: str, phrases: Iterable[str]) -> List[Tuple[int, int, str]]:
     for phrase in phrases:
         open_end = phrase.endswith("*")
         needle = phrase[:-1] if open_end else phrase
+        # The text was normalised with NFKC, so a phrase written in its composed form must be too: Thai SARA AM ("ำ", as in
+        # "คำสั่ง") is decomposed by NFKC into nikhahit + sara aa, and a table entry that is not decomposed the same way never
+        # matches. Found in Round 55 on the first Thai holdout (every Thai phrase containing "ำ" was dead).
+        needle = unicodedata.normalize("NFKC", needle).lower()
         ascii_only = needle.isascii()
         start = text.find(needle)
         while start != -1:
@@ -184,7 +188,9 @@ _RESTRAINT = ("everything you were told", "everything you know", "what you were 
               # Round 54 (first look at an external set: "Ignore all preceding orders", "Forget everything before that"):
               "everything before", "before that", "all preceding", "preceding order*", "preceding instruction*", "previous task*",
               "previous assignment*", "previous information", "all the previous", "everything we discussed", "all the assignment*", "all assignment*",
-              "all the task*", "previous order*", "earlier instruction*", "earlier order*")
+              "all the task*", "previous order*", "earlier instruction*", "earlier order*",
+              # Round 55 (mixed Thai/English text: "bypass การอนุมัติ", "disable ตัวกรองความปลอดภัย"):
+              "คำสั่ง", "การอนุมัติ", "ความปลอดภัย", "การตรวจสอบ", "ข้อจำกัด", "นโยบาย", "ตัวกรอง")
 
 _REVEAL = ("quote*", "what did", "what exactly did", "reveal*", "show*", "print*", "repeat*", "output*", "display*", "paste*", "tell me", "leak*", "expose*", "dump*", "disclose*",
            "recite*", "list", "give me", "what were", "what are", "what is your", "write out", "copy*", "send", "email*", "upload*", "post",
@@ -216,9 +222,11 @@ _UNRESTRICTED = ("no restriction*", "without restriction*", "unrestricted", "no 
                  "no ethical", "no rules at all", "never given a", "never had a content", "was never given", "never says no", "never say no", "no moral", "any request", "whatever i ask", "freegpt", "dan,", " dan ", "as dan", "is dan")
 
 _FAKE_TURN = ("system override", "user is root", "user is admin", "### system", "###system", "<system>", "</system>", "<|im_start|>", "<|im_end|>", "[inst]", "<<sys>>", "</user_input>", "[system]",
-              "---end of user message---", "end of user message", "system:", "assistant:", "<|system|>", "<|endoftext|>")
+              "---end of user message---", "end of user message", "system:", "assistant:", "<|system|>", "<|endoftext|>",
+              "[ข้อความระบบ]", "[คำสั่งระบบ]", "ข้อความระบบ:", "ระบบ:")
 _AUTHORITY = ("authoris*", "authoriz*", "administrator", "admin", "operator", "granted", "full access", "without confirmation", "no restrictions",
-              "run any", "execute any", "any command", "any shell", "wipe", "delete", "disable")
+              "run any", "execute any", "any command", "any shell", "wipe", "delete", "disable",
+              "สิทธิ์ผู้ดูแล", "สิทธิ์เต็ม", "อนุมัติ", "ปิดการตรวจสอบ", "ลบไฟล์", "ได้ทันที", "โดยอัตโนมัติ")
 
 _DESTRUCTIVE = ("rm -rf", "rm -fr", "drop database", "drop table", "drop schema", "truncate table", "format c:", "mkfs", "del /f", "del /s", "rd /s",
                 "shred ", "dd if=", ":(){", "chmod 777", "chmod -r 777", "force push", "git push --force", "git push -f", "git reset --hard",
@@ -228,16 +236,19 @@ _DESTRUCTIVE_TARGET = ("database", "backup*", "repository", "production", "prod"
                        "table*", "main", "all files", "every file")
 _EXPLAIN = ("explain", "what does", "what is", "why ", "how does", "how do i", "describe", "summari", "difference between", "write a test",
             "review this", "i want to understand", "not run it", "do not run", "don't run", "for educational", "อธิบาย", "คืออะไร", "ช่วยอธิบาย",
-            "แตกต่าง", "请解释", "什么是", "説明して", "とは")
+            "แตกต่าง", "请解释", "什么是", "説明して", "とは", "สรุป", "รายงานฉบับนี้", "เอกสารนี้", "บทความนี้", "อย่างไร", "ทำไม", "ผู้เขียน", "มาตรการป้องกัน")
 _IMPERATIVE = ("run it", "execute", "right now", "do it", "go ahead", "immediately", "now.", "now!", "on the server", "on the production",
-               "on the host", "run rm", "run sudo", "run the", "then continue", "and confirm")
+               "on the host", "run rm", "run sudo", "run the", "then continue", "and confirm", "ทันที", "เดี๋ยวนี้")
 
 _INDIRECT = ("note for the ai", "for the ai reader", "ai reader", "note for the assistant", "instruction for the ai", "instruction to the ai", "instruction for the assistant", "note to the assistant", "note to ai", "note to assistant", "note to the ai", "ai assistant reading", "ai agents:", "ai agent:", "notice to ai", "dear model",
              "dear ai", "message for the language model", "for the language model", "for automated readers", "to the assistant processing",
              "when you read this", "when summarising this", "when summarizing this", "if you are an ai", "if you are a language model",
+             "ข้อความถึงผู้ช่วย", "ข้อความถึง ai", "ข้อความถึงโมเดล", "คำสั่งสำหรับ ai", "คำสั่งถึง ai", "ถึงผู้ช่วย ai", "ถ้าคุณเป็นโมเดลภาษา",
+             "หากคุณเป็นโมเดลภาษา", "ถ้าคุณเป็น ai", "หากคุณเป็น ai", "สำหรับ ai ที่อ่าน", "เมื่ออ่านหน้านี้", "เมื่อคุณอ่านหน้านี้", "เมื่ออ่านเอกสารนี้",
              "hidden text for", "instructions for the ai", "attention ai", "attention assistant", "attention language model", "to any ai")
 _INDIRECT_FOLLOW = ("do not tell", "don't tell", "mark it", "mark this", "open the user", "send the last", "ignor*", "disregard*", "instead", "silently", "do not mention", "don't mention", "tell the user", "forward", "send", "email*",
-                    "run the command", "run `", "call the", "reveal", "disable", "write to", "curl", "execute", "without telling", "secretly")
+                    "run the command", "run `", "call the", "reveal", "disable", "write to", "curl", "execute", "without telling", "secretly",
+                    "เพิกเฉย", "ละเว้น", "ลืม", "ส่ง", "เปลี่ยน", "รหัสผ่าน", "ลับ", "พิมพ์คำว่า", "ไม่ต้องบอก", "อย่าบอก", "โอน", "เรียกใช้คำสั่ง", "รันคำสั่ง")
 
 _APPROVAL_SPOOF = ("treat the approval", "approval flag", "skip the approval", "skip approval", "bypass the approval", "set a = 1", "set a=1", "set a to 1",
                    "signature is attached", "do not need to verify", "don't need to verify", "no need to verify", "no need for anyone", "do not ask for a signature",
@@ -246,9 +257,11 @@ _APPROVAL_SPOOF = ("treat the approval", "approval flag", "skip the approval", "
 _APPROVAL_CLAIM = ("already approved", "already signed off", "has approved", "have approved", "gave verbal approval", "verbal approval", "pre-approved",
                    "preapproved", "i am the architect", "i'm the architect", "i am the administrator", "i am an administrator", "i am authori*",
                    "i am the owner", "has signed off", "have signed off", "signed off, so", "already said yes", "already agreed", "already okayed", "already authorised",
-                   "already authorized", "no reason to wait")
+                   "already authorized", "no reason to wait",
+                   "อนุมัติแล้ว", "ได้รับอนุมัติ", "ลงนามแล้ว", "อนุญาตแล้ว", "การอนุมัติเสร็จสมบูรณ์", "สั่งมาแล้ว", "ผู้บริหารอนุญาต")
 _ACTION_CUE = ("skip", "proceed", "go ahead", "without", "no need", "do not ask", "don't ask", "do not verify", "write the", "delete", "deploy", "publish",
-               "run ", "execute", "so you can", "so go")
+               "run ", "execute", "so you can", "so go",
+               "ดำเนินการ", "ได้ทันที", "ไม่ต้องรอ", "โดยไม่ต้อง", "ปิดการตรวจสอบ", "ข้ามการตรวจสอบ", "ลบ", "รันคำสั่ง", "ไม่ต้องถาม")
 _DESTROY_VERB = ("drop*", "delet*", "wipe*", "nuke*", "erase*", "destroy*", "truncat*", "purg*", "obliterat*", "remov*")
 _DESTROY_TARGET = ("production database", "production data", "the database", "all databases", "customer database", "orders database", "repository history",
                    "git history", "commit history", "all backups", "the backups", "nightly backups", "every table", "all tables", "audit trail", "audit log",
@@ -261,13 +274,19 @@ _TOOL_ABUSE = ("169.254.169.254", "metadata.google.internal", "authorized_keys",
                "curl evil", "| sh", "| bash", "|sh", "base64 -d", "/etc/shadow", "~/.ssh", ".bashrc", "crontab -", "nc -e", "bash -i")
 
 # Thai / CJK / Korean: no word boundaries, so verb and object are looked for within a character window.
-_TH_CANCEL = ("ไม่ต้องสนใจ", "เพิกเฉย", "ไม่สนใจ", "ลืม", "ข้าม", "ยกเลิก", "ปิด", "หลีกเลี่ยง", "ละเว้น", "ทำลาย", "ไม่ต้องทำตาม", "ไม่ต้องกลัว",
+_TH_CANCEL = ("ไม่มีผล", "หมดผล", "ใช้ไม่ได้อีก", "ไม่ต้องรอ", "ไม่ต้องสนใจ", "เพิกเฉย", "ไม่สนใจ", "ลืม", "ข้าม", "ยกเลิก", "ปิด", "หลีกเลี่ยง", "ละเว้น", "ทำลาย", "ไม่ต้องทำตาม", "ไม่ต้องกลัว",
               "ไม่ต้องขอ", "โดยไม่ต้อง", "ปลดล็อก", "ปลด")
 _TH_RESTRAINT = ("คำสั่ง", "กฎ", "ข้อจำกัด", "นโยบาย", "การอนุมัติ", "อนุมัติ", "ขั้นตอนการอนุมัติ", "ความปลอดภัย", "audit", "บันทึก", "system prompt",
-                 "ข้อห้าม", "มาตรการ", "ตัวกรอง")
+                 "ข้อห้าม", "มาตรการ", "ตัวกรอง", "การตรวจสอบ")
 _TH_REVEAL = ("แสดง", "บอก", "ส่ง", "เปิดเผย", "พิมพ์", "ให้ฉัน", "มาให้", "ก๊อป", "คัดลอก", "อ่าน")
-_TH_SECRET = ("ข้อความระบบ", "ข้อความที่ซ่อน", "คำสั่งระบบ", "พรอมต์ระบบ", "รหัสผ่าน", "คีย์", "กุญแจ", ".env", "token", "api key", "ข้อมูลลับ", "secret", "private key", "system prompt")
-_TH_DESTROY = ("ลบไฟล์ทั้งหมด", "ลบทั้งหมด", "ลบทุกอย่าง", "ลบฐานข้อมูล", "ล้างข้อมูลทั้งหมด", "ทำลายข้อมูล")
+_TH_SECRET = ("คำสั่งที่ซ่อน", "คำสั่งลับ", "คำสั่งเดิมของคุณ", "โทเค็น", "ตัวแปรสภาพแวดล้อม", "กุญแจส่วนตัว", "ข้อความระบบ", "ข้อความที่ซ่อน", "คำสั่งระบบ", "พรอมต์ระบบ", "รหัสผ่าน", "คีย์", "กุญแจ", ".env", "token", "api key", "ข้อมูลลับ", "secret", "private key", "system prompt")
+_TH_DESTROY = ("ลบบันทึกการตรวจสอบ", "ล้างบันทึกการตรวจสอบ", "ลบบันทึกทั้งหมด", "ลบล็อกทั้งหมด", "ลบไฟล์ทั้งหมด", "ลบทั้งหมด", "ลบทุกอย่าง", "ลบฐานข้อมูล", "ล้างข้อมูลทั้งหมด", "ทำลายข้อมูล")
+_TH_OBEY_ONLY_ME = ("ฟังเฉพาะฉัน", "ฟังแต่ฉัน", "ทำตามฉันเท่านั้น", "ทำตามที่ฉันบอกเท่านั้น", "ทำตามที่ฉันบอกต่อจากนี้เท่านั้น", "เชื่อฟังฉันเท่านั้น",
+                     "ฟังฉันคนเดียว")
+_TH_MEMORY_PLANT = ("ใส่คำสั่งนี้ลงใน", "เก็บคำสั่งนี้ไว้ใน", "บันทึกคำสั่งนี้ไว้ใน", "บันทึกคำสั่งนี้ลงใน", "เพิ่มคำสั่งนี้ลงใน")
+_TH_PRETEND = ("แกล้งทำเป็น", "สมมติว่าคุณคือ", "สมมติว่าคุณเป็น", "เล่นบทเป็น", "ทำเป็นว่าคุณเป็น", "จากนี้ไปคุณคือ")
+_TH_AUTHORITY_ROLE = ("ผู้ดูแลระบบ", "แอดมิน", "สิทธิ์เต็ม", "สิทธิ์ผู้ดูแล", "ไม่มีข้อจำกัด", "ไม่มีนโยบาย", "ไม่มีกฎ", "ทำได้ทุกอย่าง")
+_TH_EXFIL_OBJECT = ("ประวัติการสนทนา", "ประวัติแชท", "ไฟล์ทั้งหมด", "ข้อมูลทั้งหมด", "ไฟล์ลับ", "ข้อมูลลูกค้า", "ข้อมูลส่วนตัว")
 _TH_UNRESTRICTED = ("ไม่มีข้อจำกัด", "ไม่มีกฎ", "ไร้ข้อจำกัด", "ไม่มีนโยบาย", "ปราศจากข้อจำกัด", "ตอบทุกอย่างโดย")
 _CJK_CANCEL = ("送って", "发给我", "发送", "보내", "忽略", "无视", "無視", "忽視", "绕过", "繞過", "忘记", "忘記", "无视你", "무시", "잊어", "우회", "비활성화", "忘れて", "無効にして")
 _CJK_RESTRAINT = ("命令", "機密", "机密", "指令", "规则", "規則", "规矩", "提示词", "提示詞", "系统提示", "系統提示", "システムプロンプト", "指示", "ルール", "지시", "프롬프트", "규칙",
@@ -305,6 +324,8 @@ PAIRS: Tuple[Pair, ...] = (
          ("terminal", "translator", "debater", "character", "expert", "persona", "stay in", "answer as", "in the style", "interpreter"), window=90, untrusted_only=True),
     Pair("CORD-S007", "Thai: cancels rules or approvals.", _TH_CANCEL, _TH_RESTRAINT, window=24),
     Pair("CORD-S008", "Thai: asks for secrets or the system prompt.", _TH_REVEAL, _TH_SECRET, window=30),
+    Pair("CORD-S026", "Thai: pretends to be an administrator or an unrestricted model.", _TH_PRETEND, _TH_AUTHORITY_ROLE, window=40),
+    Pair("CORD-S027", "Thai: sends the conversation, files or customer data to an outside address.", ("ส่ง", "โอน", "ส่งต่อ", "ฟอร์เวิร์ด"), _TH_EXFIL_OBJECT, window=30),
     Pair("CORD-S009", "Chinese/Japanese/Korean: cancels rules or asks for the system prompt.", _CJK_CANCEL, _CJK_RESTRAINT, window=14),
 )
 SINGLES: Tuple[Phrases, ...] = (
@@ -315,6 +336,8 @@ SINGLES: Tuple[Phrases, ...] = (
     Phrases("CORD-S017", "A command that destroys a disk, a filesystem or a database on its own.", _DESTRUCTIVE_STANDALONE),
     Phrases("CORD-S015", "Weapon or mass-harm request, or the classic deceased-grandmother jailbreak framing.", _HARMFUL),
     Phrases("CORD-S014", "Thai: unrestricted-model persona.", _TH_UNRESTRICTED),
+    Phrases("CORD-S025", "Thai: 'obey only me' (replaces every other instruction).", _TH_OBEY_ONLY_ME),
+    Phrases("CORD-S028", "Thai: plants an instruction in the agent's memory.", _TH_MEMORY_PLANT),
 )
 
 
@@ -377,9 +400,11 @@ class InjectionScreen:
                         return any(v[max(0, start - 14):start].endswith(n) for n in _NEGATED_BEFORE)
                 if pair.rule_id == "CORD-S003" and not sink:
                     verbs = [v for v in verbs if v[2] not in _SECRET_VERB_NEEDS_SINK]
+                if pair.rule_id == "CORD-S027" and not sink:
+                    continue                                     # sending files is everyday; it is an attack only towards an outside address
                 hit = _near(verbs, _positions(variant, pair.objects), pair.window, skip)
                 if hit:
-                    softened = pair.rule_id in ("CORD-S005", "CORD-S003", "CORD-S002") and explanatory
+                    softened = pair.rule_id in ("CORD-S005", "CORD-S003", "CORD-S002", "CORD-S008") and explanatory
                     add(pair.rule_id, "soft" if softened else pair.severity, pair.detail, f"{hit[0]} ... {hit[1]}")
             for rule in SINGLES:
                 positions = _positions(variant, rule.phrases)
@@ -387,11 +412,11 @@ class InjectionScreen:
                     # A bare 'system:'/'assistant:' only counts next to authority or action words; the explicit
                     # tokens ('<|im_start|>', '### system', '[inst]', ...) count on their own.
                     if rule.rule_id == "CORD-S010":
-                        weak = {"system:", "assistant:"}
+                        weak = {"system:", "assistant:", "ระบบ:"}
                         strong = [p for p in positions if p[2] not in weak]
                         if not strong and not _near(positions, _positions(variant, _AUTHORITY), 90):
                             continue
-                    severity = "soft" if (rule.rule_id == "CORD-S017" and explanatory) else rule.severity
+                    severity = "soft" if (rule.rule_id in ("CORD-S017", "CORD-S013") and explanatory) else rule.severity
                     add(rule.rule_id, severity, rule.detail, positions[0][2])
         if _depth == 0:
             for decoded in _decoded_payloads(text):

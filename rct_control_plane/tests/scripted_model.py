@@ -138,6 +138,36 @@ def delegator(req: Request) -> str:
     return _call("delentia_delegate", {"profile_name": "worker", "sub_goal": req.goal or "delegate again", "max_iterations": 3}, "pass it on")
 
 
+def externalist(req: Request) -> str:
+    """Round 55: uses tools of an external MCP server (a notes server) and the web search tool, and answers from what came back."""
+    low = req.goal.lower()
+    note = re.search(r"read my note called (\w+)", low)
+    page = re.search(r"summarise the (plain|attack) page", low)
+    save = re.search(r"save a note called (\w+)", low)
+    search = re.search(r"search the web for (.+)", req.goal, flags=re.I)
+    if note:
+        if req.history_empty:
+            return _call("mcp__notes__read_note", {"title": note.group(1)}, "read it with the notes server")
+        text = re.search(r"'text':\s*'([^']*)'", req.prompt)
+        return _finish(f"Your note says: {text.group(1)}" if text else "The note was empty.")
+    if page:
+        if req.history_empty:
+            return _call("mcp__notes__fetch_page", {"which": page.group(1)}, "fetch the page")
+        if "withheld" in req.prompt.lower():
+            return _finish("The page was withheld by the safety screen, so I did not use it.")
+        return _finish("Summary: the quarterly numbers were stable and the team shipped two features.")
+    if save:
+        if req.resumed:
+            return _finish(f"The note {save.group(1)} was saved.")
+        return _call("mcp__notes__write_note", {"title": save.group(1), "text": "written by the agent"}, "save it")
+    if search:
+        if req.history_empty:
+            return _call("delentia_web_search", {"query": search.group(1).strip(), "max_results": 3}, "search")
+        titles = re.findall(r"'title':\s*'([^']+)'", req.prompt)
+        return _finish("Top results: " + "; ".join(titles) if titles else "The search returned nothing usable.")
+    return competent(req)
+
+
 def garbage(req: Request) -> str:
     return "I think the best approach is to consider many options! {not json at all"
 

@@ -32,7 +32,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-import httpx
+from rct_control_plane import http_client
 
 logger = logging.getLogger("delentia.gateways.line")
 
@@ -80,7 +80,7 @@ class LineGateway:
     async def reply_message(self, reply_token: str, text: str) -> None:
         if not self._channel_access_token:
             raise RuntimeError("LineGateway: LINE_CHANNEL_ACCESS_TOKEN not configured")
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with http_client.async_client(timeout=15) as client:
             resp = await client.post(
                 f"{self._api_base}/v2/bot/message/reply",
                 headers={"Authorization": f"Bearer {self._channel_access_token}", "Content-Type": "application/json"},

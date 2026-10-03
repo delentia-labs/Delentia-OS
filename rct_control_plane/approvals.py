@@ -172,6 +172,11 @@ def trusted_approver_roles() -> Dict[str, str]:
     return roles
 
 
+def verify_signature(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
+    """Public form of the check used everywhere a signature is accepted (and by the Desk's signature ledger)."""
+    return _verify(public_key_hex, message, signature_hex)
+
+
 def _verify(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -269,6 +274,13 @@ class PendingActionStore:
                  digest, reason, "PENDING", action.created_at, required_signatures,
                  json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest),
             )
+        try:
+            self._persistence.append_audit(
+                entity_type="pending_action_created", entity_id=approval_id, action="waiting", actor=namespace,
+                changes={"tool_name": tool_name, "action_sha256": digest, "required_signatures": required_signatures,
+                         "approver_roles": action.approver_roles, "policy_rule": policy_rule, "reason": reason})
+        except Exception:           # an audit problem must not decide whether the action can be asked for
+            pass
         return action
 
     def get(self, approval_id: str) -> Optional[PendingAction]:
@@ -293,7 +305,11 @@ class PendingActionStore:
         query += " ORDER BY created_at DESC LIMIT ?"
         with self._persistence._connect() as conn:
             rows = conn.execute(query, params + (limit,)).fetchall()
-        return [self._from_row(r) for r in rows]
+            counts = dict(conn.execute("SELECT approval_id, COUNT(*) FROM pending_action_signatures GROUP BY approval_id").fetchall())
+        listed = [self._from_row(r) for r in rows]
+        for found in listed:                  # list() used to leave this at 0, so the Approvals page showed no progress on a 2-of-3 action
+            found.signatures_collected = int(counts.get(found.approval_id, 0))
+        return listed
 
     @staticmethod
     def _from_row(row: tuple) -> PendingAction:
@@ -352,7 +368,31 @@ class PendingActionStore:
         )
         decided = self.get(approval_id)
         assert decided is not None
+        if decided.status in ("APPROVED", "REJECTED"):
+            self._record_architect_decision(decided, public_key_hex)
         return decided
+
+    def _record_architect_decision(self, action: PendingAction, last_key: str) -> None:
+        """RCTDB's architect_decisions collection is where the human's sign-offs belong (the A in F = D^I x A). Until Round 56
+        nothing wrote a signed approval there. Each row keeps the action's digest, who signed (name, role, key fingerprint) and
+        the outcome; never the signature secret, and the arguments only as a hash."""
+        try:
+            keys, roles = trusted_approver_keys(), trusted_approver_roles()
+            with self._persistence._connect() as conn:
+                rows = conn.execute("SELECT public_key, decided_at FROM pending_action_signatures WHERE approval_id = ? ORDER BY decided_at",
+                                    (action.approval_id,)).fetchall()
+            signers = [{"name": keys.get(pk), "role": roles.get(pk), "key_fingerprint": hashlib.sha256(bytes.fromhex(pk)).hexdigest()[:16], "at": at}
+                       for pk, at in rows] or [{"name": keys.get(last_key), "role": roles.get(last_key),
+                                                "key_fingerprint": hashlib.sha256(bytes.fromhex(last_key)).hexdigest()[:16], "at": action.decided_at}]
+            self._persistence.save_architect_decision(
+                f"approval-{action.approval_id}", "signed_approval" if action.status == "APPROVED" else "signed_rejection",
+                f"{action.tool_name}: {action.status.lower()} by {len(signers)} signature(s)",
+                {"tool_name": action.tool_name, "action_sha256": action.action_sha256, "policy_rule": action.policy_rule,
+                 "required_signatures": action.required_signatures, "roles_required": action.approver_roles,
+                 "args_sha256": hashlib.sha256(json.dumps(action.tool_args, sort_keys=True).encode("utf-8")).hexdigest()},
+                {"status": action.status, "signers": signers}, linked_intent_id=None)
+        except Exception:           # the signed decision itself is already stored and audited; this is its RCTDB copy
+            pass
 
     @staticmethod
     def _check_role(action: PendingAction, public_key_hex: str) -> None:
