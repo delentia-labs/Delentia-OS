@@ -293,3 +293,78 @@ def test_the_orchestrator_runs_the_repeat_stage_and_fills_t7(tmp_path):
     a, est = plan()
     report = orch.run_plan(a, PRICES, est, runner=fake_runner(), spend_probe=Meter(0.001), env=GOOD_ENV)
     assert "repeat" in report["results"]["cheap/model"] and "T7" in orch.table(report)
+
+
+# ------------------------------------------------------------------ Round 56: tier S (screen) and the T6 jury stage
+
+SCREEN_PRICES = {**PRICES, "m1/a": {"in": 0.2, "out": 0.8}, "m2/b": {"in": 0.2, "out": 0.8}, "m3/c": {"in": 0.2, "out": 0.8},
+                 "v1/x": {"in": 0.1, "out": 0.4}, "v2/y": {"in": 0.1, "out": 0.4}, "v3/z": {"in": 0.1, "out": 0.4}, "v1/w": {"in": 0.1, "out": 0.4}}
+
+
+def test_tier_s_runs_only_the_k15_stage_on_up_to_six_models_and_costs_less_than_a_full_pass():
+    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "S")] == ["k15"]
+    assert [s["name"] for s in orch.stages_for("m1/a", SCREEN_PRICES, Path("."), "A")] == ["k15", "probe", "repeat"]
+    screen = orch.estimate(["m1/a"], SCREEN_PRICES, 1, orch.TOKENS_BY_TIER["S"])["total_usd"]
+    full = orch.estimate(["m1/a"], SCREEN_PRICES, 1)["total_usd"]
+    assert 0 < screen < full / 2
+    six = args(tier="S", models=[f"m{i}/a" for i in range(6)])
+    assert not [p for p in orch.refusals(six, {"unknown_prices": [], "total_with_margin": 1.0}, GOOD_ENV) if "at most" in p]
+    seven = args(tier="S", models=[f"m{i}/a" for i in range(7)])
+    assert any("at most 6" in p for p in orch.refusals(seven, {"unknown_prices": [], "total_with_margin": 1.0}, GOOD_ENV))
+
+
+def test_the_jury_must_be_four_models_from_three_vendors_and_belongs_to_tier_b():
+    est = {"unknown_prices": [], "total_with_margin": 1.0}
+    good = args(tier="B", jury_models=["v1/x", "v2/y", "v3/z", "v1/w"])
+    assert orch.refusals(good, est, GOOD_ENV) == []
+    assert any("three vendors" in p for p in orch.refusals(args(tier="B", jury_models=["v1/x", "v1/y", "v1/z", "v1/w"]), est, GOOD_ENV))
+    assert any("exactly four" in p for p in orch.refusals(args(tier="B", jury_models=["v1/x", "v2/y", "v3/z"]), est, GOOD_ENV))
+    assert any("belongs to tier B" in p for p in orch.refusals(args(tier="A", jury_models=["v1/x", "v2/y", "v3/z", "v1/w"]), est, GOOD_ENV))
+
+
+def test_the_jury_cost_is_added_once_and_an_unpriced_jury_member_is_refused():
+    base = orch.estimate(["m1/a"], SCREEN_PRICES, 3)
+    with_jury = orch.estimate(["m1/a"], SCREEN_PRICES, 3, None, ["v1/x", "v2/y", "v3/z", "v1/w"])
+    assert with_jury["jury_usd"] > 0 and with_jury["total_usd"] == pytest.approx(base["total_usd"] + with_jury["jury_usd"], abs=1e-3)
+    missing = orch.estimate(["m1/a"], SCREEN_PRICES, 3, None, ["v1/x", "v2/y", "v3/z", "ghost/q"])
+    assert missing["total_usd"] is None and "ghost/q" in missing["unknown_prices"]
+
+
+def test_a_tier_b_run_with_a_jury_reports_t6_from_the_jury_stage():
+    a = args(tier="B", execute=True, jury_models=["v1/x", "v2/y", "v3/z", "v1/w"])
+    est = orch.estimate(a.models, SCREEN_PRICES, 3, None, a.jury_models)
+    inner = fake_runner()
+    seen = []
+
+    def runner(cmd, env, timeout):
+        if "measure_jury" in " ".join(cmd):
+            seen.append(cmd)
+            Path(cmd[cmd.index("--json") + 1]).write_text(json.dumps({"result": {"accuracy": 0.9, "proposals": 30, "unsafe_passed": 0, "vendors": ["v1", "v2", "v3"], "pass": True}}), encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0, stdout="T6 PASS", stderr="")
+        return inner(cmd, env, timeout)
+
+    report = orch.run_plan(a, SCREEN_PRICES, est, runner=runner, spend_probe=Meter(0.001), env=GOOD_ENV)
+    assert report["stopped"] is None and len(seen) == 1 and "v1/x,v2/y,v3/z,v1/w" in seen[0]
+    table = orch.table(report)
+    assert "| T6 |" in table and "90.0% of 30 right, 0 unsafe passed, vendors 3 -> PASS" in table
+
+
+def test_without_a_jury_t6_stays_not_run_and_a_screen_table_lists_every_model():
+    report = {"models": ["m1/a", "m2/b"], "estimate": {"total_usd": 0.1}, "spent_usd": None, "results": {
+        "m1/a": {"k15": {"rates": {"T1": 95.0, "T2": 100.0, "T3": 100.0}, "spent_usd": 0.04}},
+        "m2/b": {"k15": {"rates": {"T1": 40.0, "T2": 90.0, "T3": 100.0}, "spent_usd": 0.05}}}}
+    table = orch.table(report)
+    assert "| T6 | " in table and table.split("| T6 |")[1].split("\n")[0].strip().endswith("NOT RUN |")
+    assert "| m1/a | 95.0% | 100.0% | 100.0% | $0.04 |" in table and "| m2/b | 40.0% | 90.0% | 100.0% | $0.05 |" in table
+
+
+def test_the_free_preflight_flags_a_model_the_catalogue_says_cannot_take_tools_or_json_or_a_long_prompt(monkeypatch):
+    monkeypatch.setattr(orch, "CATALOG", {
+        "good/model": {"id": "good/model", "supported_parameters": ["tools", "response_format"], "context_length": 128000},
+        "weak/model": {"id": "weak/model", "supported_parameters": ["temperature"], "context_length": 8000}})
+    assert orch.capability_warnings(["good/model"]) == []
+    warnings = orch.capability_warnings(["weak/model", "gone/model"])
+    assert any("tool calling" in w for w in warnings) and any("no JSON mode" in w for w in warnings) and any("short" in w for w in warnings)
+    assert any("gone/model" in w and "not in OpenRouter" in w for w in warnings)
+    monkeypatch.setattr(orch, "CATALOG", {})
+    assert orch.capability_warnings(["anything"]) == []              # no catalogue loaded: nothing to say, not a false alarm

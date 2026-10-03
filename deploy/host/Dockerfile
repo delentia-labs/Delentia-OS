@@ -15,17 +15,23 @@ RUN useradd --no-create-home --uid 10001 --shell /usr/sbin/nologin delentia \
     && mkdir -p /data/home /app /notary && chown -R delentia:delentia /data /app && chown 10002:10002 /notary
 
 WORKDIR /app
-COPY --chown=delentia:delentia . .
 
-# Same dependency steps as the repository Dockerfile, for the same reasons (CPU-only torch wheel; the kernel imports every algorithm's
-# dependencies at start-up so the `full` extras are required; headless OpenCV installed last so no GUI libraries are needed).
-# The pip cache is a BuildKit cache mount, not an image layer: the first build downloads several GB; later builds (any source change
-# invalidates this layer through the COPY above) reuse the downloaded wheels instead of fetching them again.
+# Round 56: dependencies first, source last. Before this the source was copied BEFORE `pip install`, so any edit to any .py file
+# invalidated the dependency layer and the whole 9-10 minute install ran again. Now the dependency layer depends only on
+# pyproject.toml and requirements.txt; an edit to the source rebuilds only the last two layers (seconds). The dependency list is read
+# from pyproject.toml (the same project dependencies plus the `full` extra the old `pip install -e ".[full]"` installed), so there is still one
+# list to maintain. Same reasons as the repository Dockerfile: CPU-only torch wheel; the kernel imports every algorithm's dependencies at
+# start-up so the `full` extras are required; headless OpenCV last so no GUI libraries are needed.
+COPY pyproject.toml requirements.txt deploy/host/export_deps.py ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install -r requirements.txt \
-    && pip install -e ".[full]" \
+    python export_deps.py > /tmp/deps.txt \
+    && pip install torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install -r requirements.txt -r /tmp/deps.txt \
     && pip install --force-reinstall --no-deps opencv-python-headless
+
+COPY --chown=delentia:delentia . .
+# Only the project itself (its dependencies are already there): seconds, and the `delentia` command exists afterwards.
+RUN pip install --no-deps -e .
 
 USER delentia
 ENV DELENTIA_HOME=/data \

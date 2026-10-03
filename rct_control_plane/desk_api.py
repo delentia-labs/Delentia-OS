@@ -689,6 +689,16 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         request.state.claimed_approval = approval_id          # set by the server only, never read from the body
         return None
 
+    def _record_policy_decision(what: str, before: Optional[str], after: Optional[str], who: str, approval_id: Optional[str]) -> None:
+        import time as _time
+        try:
+            _kernel()._persistence.save_architect_decision(
+                f"policy-{what}-{int(_time.time() * 1000)}", "policy_change", f"owner policy {what} by {who}"
+                + (f" (signed approval {approval_id})" if approval_id else " (no signature was required on this host)"),
+                {"digest": before}, {"digest": after, "approval_id": approval_id, "by": who})
+        except Exception:               # the change and its audit row already exist
+            pass
+
     @router.put("/fdia/policy")
     async def fdia_save(payload: Dict[str, Any], request: Request, response: Response) -> Dict[str, Any]:
         from rct_control_plane import fdia_policy
@@ -714,6 +724,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             entity_type="fdia_policy", entity_id=policy.policy_id, action="policy_saved",
             actor=getattr(request.state, "delentia_user", None) or "desk",
             changes={"digest_before": before, "digest_after": policy.digest(), "rules": len(policy.rules), "path": str(path), "approval_id": claimed})
+        _record_policy_decision("saved", before, policy.digest(), getattr(request.state, "delentia_user", None) or "desk", claimed)
         return {"saved": str(path), "digest": policy.digest(), "rules": len(policy.rules)}
 
     @router.post("/fdia/policy/disable")
@@ -738,6 +749,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         _kernel()._persistence.append_audit(entity_type="fdia_policy", entity_id=path.name, action="policy_disabled",
                                             actor=getattr(request.state, "delentia_user", None) or "desk",
                                             changes={"archived_as": str(archived), "approval_id": claimed})
+        _record_policy_decision("disabled", None, None, getattr(request.state, "delentia_user", None) or "desk", claimed)
         return {"archived_as": str(archived)}
 
     # ------------------------------------------------------------------
@@ -821,6 +833,89 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         if not isinstance(args, dict):
             raise HTTPException(status_code=400, detail="args must be an object")
         return _forge().run(name, args)
+
+    # ------------------------------------------------------------------
+    # Round 56: governance in one place (governance_view.py). Read-only: nothing here approves, signs or changes a setting.
+    # ------------------------------------------------------------------
+    @router.get("/governance")
+    async def governance_overview() -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        with _connect() as conn:
+            return governance_view.overview(conn)
+
+    @router.get("/governance/events")
+    async def governance_events(category: str = Query("attention"), q: Optional[str] = Query(None, max_length=80),
+                                limit: int = Query(50, ge=1, le=300), before_id: Optional[int] = Query(None, ge=1)) -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        try:
+            with _connect() as conn:
+                return governance_view.events(conn, category=category, query=q, limit=limit, before_id=before_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @router.get("/governance/events/{audit_id}")
+    async def governance_event(audit_id: int) -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        with _connect() as conn:
+            detail = governance_view.event_detail(conn, audit_id)
+        if detail is None:
+            raise HTTPException(status_code=404, detail="no such audit row")
+        return detail
+
+    @router.get("/governance/signatures")
+    async def governance_signatures(status: Optional[str] = Query(None), limit: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        if status is not None and status not in ("PENDING", "APPROVED", "REJECTED", "EXECUTED"):
+            raise HTTPException(status_code=400, detail="status must be PENDING, APPROVED, REJECTED or EXECUTED")
+        return governance_view.signature_ledger(_kernel()._persistence, status=status, limit=limit)
+
+    @router.get("/governance/approvers")
+    async def governance_approvers() -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        with _connect() as conn:
+            return governance_view.approver_keys(conn)
+
+    @router.get("/governance/identities")
+    async def governance_identities() -> Dict[str, Any]:
+        from rct_control_plane import governance_view
+        return governance_view.identities()
+
+    @router.get("/governance/decisions")
+    async def governance_decisions(limit: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+        """The human sign-offs RCTDB keeps in architect_decisions (signed approvals, signed rejections, policy changes)."""
+        rows = _kernel()._persistence.list_architect_decisions(limit=limit * 4)
+        kinds = ("signed_approval", "signed_rejection", "policy_change")
+        out = [{"id": r.get("id"), "type": r.get("decision_type"), "description": r.get("description"), "at": r.get("created_at"),
+                "before": _loads(r.get("jitna_before")), "after": _loads(r.get("jitna_after"))}
+               for r in rows if r.get("decision_type") in kinds]
+        return {"decisions": out[:limit]}
+
+    @router.get("/governance/audit/verify")
+    async def governance_verify() -> Dict[str, Any]:
+        """Re-verify the whole chain (signatures too when the public key is known) and every episode's signature, now."""
+        from rct_control_plane import governance_view
+        with _connect() as conn:
+            return governance_view.verify_deep(conn)
+
+    @router.post("/governance/audit/check-witness")
+    async def governance_check_witness() -> Dict[str, Any]:
+        """Compare every chain head the outside witness holds with this chain. The witness address is the host's own
+        configuration (never taken from the request, so this cannot be pointed at another server)."""
+        import httpx
+        from rct_control_plane import governance_view
+        from rct_control_plane.autonomous_scheduler import ANCHOR_KEY_ID_ENV, ANCHOR_URL_ENV
+        url, key_id = os.getenv(ANCHOR_URL_ENV), os.getenv(ANCHOR_KEY_ID_ENV)
+        if not url or not key_id:
+            raise HTTPException(status_code=409, detail=f"no witness is configured ({ANCHOR_URL_ENV} and {ANCHOR_KEY_ID_ENV}); tier A3 is off")
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                reply = await client.get(f"{url.rstrip('/')}/v1/audit/anchor/{key_id}", params={"limit": 1000})
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=f"the witness could not be reached ({type(exc).__name__})") from exc
+        if reply.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"the witness answered {reply.status_code}")
+        with _connect() as conn:
+            return {"witness": url, "key_id": key_id, **governance_view.check_witness(conn, reply.json())}
 
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:

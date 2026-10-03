@@ -28,12 +28,45 @@ TLS. Nothing else is published. Not covered: backups off the host, monitoring, m
   and 443 must be reachable).
 - A non-root login user in the `docker` group; SSH by key only; the firewall allows 22, 80, 443 and nothing else.
 
+## 1b. Can the host be free? (checked 2026-10-03)
+
+**Oracle Cloud "Always Free" can run this, with two traps.** What Oracle publishes today (its Always Free resources page, read 2026-10-03):
+Ampere A1 Arm VMs with a monthly allowance of 1,500 OCPU-hours and 9,000 GB-hours, which is **2 OCPUs and 12 GB of RAM running all month** (up to
+2 instances of 1 OCPU / 6 GB, or one of 2 / 12), 200 GB of block storage in total (a boot volume of at least 47 GB), 10 TB of outbound transfer a
+month, and the boot images Oracle Linux and Ubuntu (Ubuntu is the one this kit was written for; check the Arm build of Docker images: the image
+here is built for the machine it is built on, so **build it on the Arm VM, do not copy an x86 image**). Two AMD micro VMs (1/8 OCPU, 1 GB) also
+exist but 1 GB cannot hold the runtime (about 650-780 MB resident) plus the notary and Caddy.
+
+- **It was halved in June 2026.** Press and community reports (for example bex.co, 26 Sep 2026) say Oracle cut the A1 allowance from 4 OCPU / 24 GB
+  to 2 OCPU / 12 GB on 15 June 2026 by editing the documentation, and from about 18 August began stopping instances above the new limit. 2 OCPU / 12 GB
+  is still far more than this runtime needs (2 vCPU / 4 GB), but any older guide that says 4 / 24 is out of date, and Oracle can change it again.
+- **Trap 1, idle reclaim.** Oracle's documentation says an Always Free instance is reclaimed (stopped) if, over 7 days, CPU (95th percentile) AND
+  network are below 20% AND, for A1 shapes, memory is below 20%. This runtime idles at well under 20% on all three (about 0.8 GB of 12 GB is 7%), so
+  **a quiet Always Free host would be reclaimed**, which would break exactly the "run seven days without anyone touching it" test (R57). The usual
+  fix reported by users is to upgrade the account to Pay As You Go: Always Free resources stay free as long as usage stays inside their limits, and
+  idle reclaim is reported not to apply to such accounts. That needs a payment card on file (it stays at 0 while inside the limits; check the card
+  verification hold at sign-up, which this document cannot see). Treat "reported" as unverified until you have run it for a week.
+- **Trap 2, capacity.** A1 instances are often "out of capacity" in popular regions at creation time; the home region is fixed at sign-up, so
+  choose it with that in mind and expect to retry. Resources created outside the home region do not count as Always Free.
+- **Free is not unconditional.** Accounts and instances have been terminated without notice in community reports. Keep the `/data` volume and the keys backed
+  up off the host (see section 6).
+
+**Alternatives, honestly:** a small paid VPS (for example Hetzner CX22, about 5 USD a month, 2 shared vCPU / 4 GB, as one source quotes; check the
+current price) removes the reclaim and capacity risks at the cost of 60 USD a year. The always-free tiers of Google Cloud (e2-micro, 1 GB) and AWS
+(time-limited credits) are too small or temporary for this runtime. My recommendation for R57: start on Oracle Always Free **with Pay As You Go
+enabled**, because the point of R57 is to learn what breaks on a real Linux host, not to save 5 dollars; move to a paid VPS the day the free one is
+reclaimed or throttled, since the kit is portable. Either way the domain is a separate need: Caddy needs a name that points at the host (a
+registered domain is a few dollars a year; a free dynamic-DNS name also works for a trial but not for webhooks from LINE/WhatsApp, which require
+a stable HTTPS name you control).
+
+Not tested: any of this on Oracle. The kit has only been run on Docker Desktop (Windows). The first Linux/Arm run will find new defects.
+
 ## 2. Secrets and the first token (made on the host, once)
 
 ```bash
 git clone <your fork of delentia-labs/Delentia-OS> && cd Delentia-OS/deploy/host
 echo 'DELENTIA_DOMAIN=agent.example.org' > .env           # your real name
-docker compose build                                       # first build is slow (torch, the 41 algorithms' dependencies); later ones reuse a pip cache
+docker compose build                                       # first build is slow (torch, the 41 algorithms' dependencies); since Round 56 an edit to the source rebuilds only the last two layers (seconds)
 ./bootstrap.sh alice                                       # keys + the notary token + alice's API token (shown once)
 ```
 
@@ -64,8 +97,17 @@ not scheduled. Fix them in order:
 4. **Model:** `docker compose exec delentia delentia model set <id> --provider openrouter` and put `OPENROUTER_API_KEY=...` in `secrets/runtime.env`
    (create the file; it is read by Compose and is ignored by git). Keep `EPISODE_BUDGET_USD` and `EPISODE_MAX_TOKENS` in `.env`, and set a
    **credit limit at the provider** as well: the per-episode cap does not stop a thousand episodes.
-5. **Anchoring (A3):** set `DELENTIA_AUDIT_ANCHOR_URL` / `DELENTIA_AUDIT_ANCHOR_KEY_ID` for the notary and the runtime once the notary's public key is
-   registered at the witness (Round 49 doc, section 5). Until then do not describe the logs as tamper-proof.
+5. **Anchoring (A3), in this order** (Round 56 made it a setting instead of a rebuild):
+   1. Print what the witness must learn: `docker compose exec delentia delentia audit-chain witness-entry --key-id host-1` (the runtime's audit
+      key) and `docker compose exec --user 10002 notary delentia notary witness-entry --key-id host-notary-1 --key /run/secrets/notary_key` (the notary's).
+      Each prints one JSON object `{"key_id": ..., "public_key_hex": ...}`.
+   2. Add both objects to the witness's `AUDIT_ANCHOR_KEYS_JSON` (the fdia Worker variable in `delentia-mcp/ecosystem/packages/fdia/wrangler.jsonc`, a JSON
+      array) and redeploy that Worker yourself. **Register before the first anchor or the witness refuses it.**
+   3. In `.env` set `DELENTIA_AUDIT_ANCHOR_URL=<the fdia Worker's address>`, `AUDIT_ANCHOR_KEY_ID=host-1`, `NOTARY_ANCHOR_KEY_ID=host-notary-1`
+      (optional `AUDIT_ANCHOR_EVERY_S`, default 900), then `docker compose up -d`. Both the runtime's chain head and the notary's log head are then published
+      on that schedule. Empty values mean anchoring is off.
+   4. Check it from the Desk (Audit page, "Check against the witness") or `delentia audit-chain check-anchors --url ... --key-id host-1`.
+   Until then do not describe the logs as tamper-proof.
 
 ## 4. Smoke test (from your own machine)
 
@@ -104,3 +146,4 @@ Commands that read the notary's files must run as the notary's uid and, on Windo
 Single worker only (the daemon and reminders are not coordinated across workers). One shared model endpoint. No automatic off-host backups.
 The audit trail is re-verifiable (A1) and, with the notary, separated from the agent (A2); it is **not** externally anchored until step 3.5 is done (A3).
 The shell sandbox is not a jail: it runs as the runtime's user inside the container. DNS rebinding is not covered by the crawler's address check.
+

@@ -1,13 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
-import { Badge, Code, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
-import { desk } from "@/lib/desk-api";
+import { EventExplorer } from "@/components/desk/events";
+import { Badge, Button, Code, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
+import { desk, type GovVerify, type WitnessCheck } from "@/lib/desk-api";
 
 export default function AuditPage() {
   const { t, lang } = useLang();
   const audit = useDeskData(() => desk.audit(), [], 60000);
   const a = audit.data;
+  const [verify, setVerify] = useState<GovVerify | null>(null);
+  const [witness, setWitness] = useState<WitnessCheck | null>(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const runVerify = async () => {
+    setBusy(true);
+    setNote("");
+    try { setVerify(await desk.govVerify()); } catch (e) { setNote(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
+  const runWitness = async () => {
+    setBusy(true);
+    setNote("");
+    try { setWitness(await desk.govCheckWitness()); } catch (e) { setNote(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
 
   const tiers = a ? [
     { tier: "A1", name: "Chained and signed on this host", on: a.chain.ok && a.signing_key_configured,
@@ -56,26 +73,37 @@ export default function AuditPage() {
               </Panel>
             </div>
 
-            <Panel title={`Latest rows (${a.recent.length})`}>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left text-[13px]">
-                  <thead className="desk-mono text-[11px] text-dl-muted">
-                    <tr><th className="pb-2 font-normal">#</th><th className="pb-2 font-normal">Type</th><th className="pb-2 font-normal">Action</th><th className="pb-2 font-normal">Actor</th><th className="pb-2 font-normal">When</th></tr>
-                  </thead>
-                  <tbody className="desk-mono">
-                    {a.recent.map((r) => (
-                      <tr key={r.id} className="border-t border-dl-rule/60">
-                        <td className="py-1.5 pr-3 text-dl-muted">{r.id}</td>
-                        <td className="py-1.5 pr-3 text-dl-text">{r.entity_type}</td>
-                        <td className="py-1.5 pr-3 text-dl-muted">{r.action}</td>
-                        <td className="max-w-[180px] truncate py-1.5 pr-3 text-dl-muted">{r.actor}</td>
-                        <td className="py-1.5 text-dl-muted">{fmtTime(r.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
+            <div className="min-w-0 space-y-6">
+              <Panel title="Verify everything now">
+                <p className="text-[13px] leading-relaxed text-dl-muted">Recomputes every link in the chain, checks the signatures with this host&apos;s key when it is known, and re-verifies the signature of every episode. The A3 check compares the chain with the heads the outside witness holds.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button onClick={runVerify} disabled={busy}>{busy ? "Working…" : "Verify chain and episodes"}</Button>
+                  <Button tone="ghost" onClick={runWitness} disabled={busy || !a.anchor.configured}>Check against the witness (A3)</Button>
+                </div>
+                {note ? <p role="alert" className="mt-3 text-[13px] text-dl-rust">{note}</p> : null}
+                {verify ? (
+                  <div className="mt-4">
+                    <Row label="Chain">{verify.chain.ok ? <Badge tone="leaf">intact</Badge> : <Badge tone="rust">broken at #{verify.chain.first_bad_seq}</Badge>}</Row>
+                    {!verify.chain.ok ? <p className="text-[13px] text-dl-rust">{verify.chain.reason}</p> : null}
+                    <Row label="Signatures">{verify.signature_check.startsWith("NOT") ? <Badge tone="amber">not checked</Badge> : <Badge tone="leaf">checked</Badge>}</Row>
+                    <p className="pb-2 text-[12px] text-dl-muted">{verify.signature_check}</p>
+                    <Row label="Episode signatures">{verify.episodes.signature_ok} ok · {verify.episodes.signature_bad} bad · {verify.episodes.unsigned} unsigned (of {verify.episodes.checked})</Row>
+                    {verify.episodes.signature_bad ? <p className="text-[13px] text-dl-rust">Rows with a bad episode signature: {verify.episodes.bad_audit_ids.join(", ")}</p> : null}
+                    <Row label="Notary receipts kept locally">{verify.notary.receipts_in_local_trail} (gaps: {verify.notary.gaps})</Row>
+                    <p className="mt-2 text-[12px] leading-relaxed text-dl-muted">{verify.episodes.note}</p>
+                  </div>
+                ) : null}
+                {witness ? (
+                  <div className="mt-4">
+                    <Row label="Witness">{witness.witness} ({witness.key_id})</Row>
+                    <Row label="Anchored heads checked">{witness.checked}</Row>
+                    <Row label="Result">{witness.ok ? <Badge tone="leaf">all match this chain</Badge> : <Badge tone="rust">MISMATCH</Badge>}</Row>
+                    {witness.problems.map((p) => <p key={p} className="text-[13px] text-dl-rust">{p}</p>)}
+                  </div>
+                ) : null}
+              </Panel>
+              <EventExplorer initial="all" title="Audit trail" />
+            </div>
           </div>
         ) : null}
       </PageBody>

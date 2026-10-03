@@ -2276,6 +2276,30 @@ def audit_chain_anchor(url: str, key_id: str, db: Optional[str]) -> None:
         sys.exit(1)
 
 
+def _print_witness_entry(key_id: str, public_hex: str) -> None:
+    entry = {"key_id": key_id, "public_key_hex": public_hex}
+    click.echo("Add this object to the witness's AUDIT_ANCHOR_KEYS_JSON (the fdia Worker's variable; it is a JSON array of such objects):")
+    click.echo(json.dumps(entry))
+    click.echo("A new key must be registered BEFORE its first anchor, or the witness refuses it. Registering is a deploy of the Worker: "
+               "do it yourself (npx wrangler deploy from delentia-mcp/ecosystem/packages/fdia) after editing the variable.")
+
+
+@audit_chain_group.command("witness-entry")
+@click.option("--key-id", required=True, help="The id the runtime will anchor under (DELENTIA_AUDIT_ANCHOR_KEY_ID).")
+@click.option("--pubkey", default=None, help="Public key hex; default: derived from DELENTIA_AUDIT_SIGNING_KEY.")
+def audit_chain_witness_entry(key_id: str, pubkey: Optional[str]) -> None:
+    """Print the JSON entry that registers this host's audit signing key at the witness (tier A3)."""
+    from rct_control_plane import audit_chain
+    public_hex = (pubkey or "").strip().lower()
+    if not public_hex:
+        key = audit_chain.load_signing_key()
+        if key is None:
+            click.echo(click.style(f"Error: pass --pubkey or set {audit_chain.SIGNING_KEY_ENV}", fg="red"), err=True)
+            sys.exit(1)
+        public_hex = audit_chain._public_hex(key)
+    _print_witness_entry(key_id, public_hex)
+
+
 @audit_chain_group.command("check-anchors")
 @click.option("--url", required=True, help="Witness base URL.")
 @click.option("--key-id", required=True, help="Key id to check.")
@@ -2352,9 +2376,9 @@ def notary_keygen(out_path: str) -> None:
 @click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
 @click.option("--key-id", default="delentia-notary-1", show_default=True, help="Key id written into receipts.")
 @click.option("--port", default=8765, show_default=True, type=int, help="Loopback port.")
-@click.option("--anchor-url", default=None, help="Witness base URL: anchor the log head on a schedule (tier A3).")
-@click.option("--anchor-key-id", default=None, help="Key id the witness knows this notary's public key under.")
-@click.option("--anchor-every", default=3600.0, show_default=True, type=float, help="Seconds between anchors.")
+@click.option("--anchor-url", default=None, envvar="DELENTIA_NOTARY_ANCHOR_URL", help="Witness base URL: anchor the log head on a schedule (tier A3). Or DELENTIA_NOTARY_ANCHOR_URL.")
+@click.option("--anchor-key-id", default=None, envvar="DELENTIA_NOTARY_ANCHOR_KEY_ID", help="Key id the witness knows this notary's public key under. Or DELENTIA_NOTARY_ANCHOR_KEY_ID.")
+@click.option("--anchor-every", default=3600.0, show_default=True, type=float, envvar="DELENTIA_NOTARY_ANCHOR_EVERY_S", help="Seconds between anchors.")
 def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, anchor_url: Optional[str] = None,
                  anchor_key_id: Optional[str] = None, anchor_every: float = 3600.0) -> None:
     """Serve POST /append and GET /head on 127.0.0.1 (token: DELENTIA_NOTARY_TOKEN)."""
@@ -2384,6 +2408,17 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, ancho
         if stop_anchoring is not None:
             stop_anchoring.set()
         server.server_close()
+
+
+@notary_group.command("witness-entry")
+@click.option("--key-id", required=True, help="The id the notary will anchor under (--anchor-key-id).")
+@click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
+@click.option("--pubkey", default=None, help="Public key hex instead of reading the key (run it where the key is not).")
+def notary_witness_entry(key_id: str, key_path: Optional[str], pubkey: Optional[str]) -> None:
+    """Print the JSON entry that registers the notary's public key at the witness (tier A3 for the notary log)."""
+    from rct_control_plane import notary
+    public_hex = (pubkey or "").strip().lower() or notary.public_hex(_notary_key(key_path))
+    _print_witness_entry(key_id, public_hex)
 
 
 @notary_group.command("verify")
@@ -3338,6 +3373,14 @@ def tokens_group():
     pass
 
 
+def _audit_identity(action: str, name: str) -> None:
+    """Who was given or lost access is part of the audit trail (the name and the action; never the token or its hash)."""
+    try:
+        _audit_db(None).append_audit(entity_type="identity", entity_id=name, action=action, actor="cli", changes={"name": name})
+    except Exception as exc:        # noqa: BLE001 - the token change itself already happened
+        click.echo(click.style(f"warning: could not write the audit row ({type(exc).__name__})", fg="yellow"), err=True)
+
+
 @tokens_group.command("create")
 @click.argument("name")
 def tokens_create(name: str) -> None:
@@ -3348,6 +3391,7 @@ def tokens_create(name: str) -> None:
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
+    _audit_identity("token_created", name)
     click.echo(f"token for {name} (copy it now; it cannot be shown again):\n{token}\n"
                f"send it as 'Authorization: Bearer <token>'. File: {api_tokens.tokens_path()}")
 
@@ -3373,7 +3417,10 @@ def tokens_revoke(name: str) -> None:
     """Disable a person's token (the entry stays on record)."""
     from rct_control_plane import api_tokens
     try:
-        click.echo("revoked" if api_tokens.revoke(name) else "no active token with that name")
+        changed = api_tokens.revoke(name)
+        if changed:
+            _audit_identity("token_revoked", name)
+        click.echo("revoked" if changed else "no active token with that name")
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)

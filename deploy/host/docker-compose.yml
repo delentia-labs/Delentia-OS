@@ -27,6 +27,10 @@ services:
               "--key-id", "${NOTARY_KEY_ID:-delentia-notary-1}"]
     environment:
       DELENTIA_NOTARY_TOKEN_FILE: /run/secrets/notary_token
+      # Tier A3 for the notary log (empty = off). Register the notary's key at the witness FIRST: `delentia notary witness-entry`.
+      DELENTIA_NOTARY_ANCHOR_URL: "${DELENTIA_AUDIT_ANCHOR_URL:-}"
+      DELENTIA_NOTARY_ANCHOR_KEY_ID: "${NOTARY_ANCHOR_KEY_ID:-}"
+      DELENTIA_NOTARY_ANCHOR_EVERY_S: "${AUDIT_ANCHOR_EVERY_S:-900}"
     secrets: [notary_key, notary_token]
     volumes: ["notary-data:/notary"]
     read_only: true
@@ -53,6 +57,11 @@ services:
       DELENTIA_AUDIT_SIGNING_KEY: /run/secrets/audit_key
       DELENTIA_NOTARY_URL: http://127.0.0.1:8765
       DELENTIA_NOTARY_TOKEN_FILE: /run/secrets/notary_token
+      # Tier A3 for the runtime's chain (empty = off): the daemon anchors the head on this schedule. Register the audit key first:
+      # `delentia audit-chain witness-entry --key-id <id>`.
+      DELENTIA_AUDIT_ANCHOR_URL: "${DELENTIA_AUDIT_ANCHOR_URL:-}"
+      DELENTIA_AUDIT_ANCHOR_KEY_ID: "${AUDIT_ANCHOR_KEY_ID:-}"
+      DELENTIA_AUDIT_ANCHOR_INTERVAL_S: "${AUDIT_ANCHOR_EVERY_S:-900}"
       DELENTIA_EPISODE_BUDGET_USD: "${EPISODE_BUDGET_USD:-0.20}"
       DELENTIA_EPISODE_MAX_TOKENS: "${EPISODE_MAX_TOKENS:-60000}"
       # Channels stay closed until you list who may talk to the agent (an empty list = nobody). Examples, uncomment as you need:

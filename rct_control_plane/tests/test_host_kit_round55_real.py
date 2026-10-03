@@ -175,3 +175,69 @@ def test_the_ollama_address_can_be_set_by_environment_and_an_explicit_address_st
     monkeypatch.setenv("DELENTIA_OLLAMA_URL", "http://ollama.internal:11434/")
     assert OllamaProvider().llm_url == "http://ollama.internal:11434"
     assert OllamaProvider(llm_url="http://127.0.0.1:9").llm_url == "http://127.0.0.1:9"
+
+
+def test_the_dependency_layer_does_not_depend_on_the_source_tree():
+    """Round 56: the 9-10 minute install must only be invalidated by pyproject.toml / requirements.txt, not by any .py edit."""
+    lines = [line.strip() for line in (HOST / "Dockerfile").read_text(encoding="utf-8").splitlines()]
+    deps_copy = next(i for i, line in enumerate(lines) if line.startswith("COPY pyproject.toml requirements.txt"))
+    source_copy = next(i for i, line in enumerate(lines) if line.startswith("COPY --chown=delentia:delentia . ."))
+    install = next(i for i, line in enumerate(lines) if "pip install -r requirements.txt" in line)
+    project_install = next(i for i, line in enumerate(lines) if line.startswith("RUN pip install --no-deps -e ."))
+    assert deps_copy < install < source_copy < project_install
+
+
+def test_export_deps_lists_every_runtime_dependency_and_the_full_extra():
+    import subprocess
+    root = HOST.parent.parent
+    out = subprocess.run([sys.executable, str(HOST / "export_deps.py"), str(root / "pyproject.toml")], capture_output=True, text=True, check=True).stdout.splitlines()
+    names = {line.split(">")[0].split("[")[0].strip().lower() for line in out}
+    assert {"fastapi", "cryptography", "mcp", "torch", "spacy", "faiss-cpu", "ultralytics"} <= names
+    assert len(out) == len(set(out))
+
+
+# ------------------------------------------------------------------ Round 56: A3 anchoring as a setting, and registering a key at the witness
+
+def test_compose_turns_anchoring_on_by_environment_for_both_the_notary_and_the_runtime_and_off_by_default():
+    compose = yaml.safe_load((HOST / "docker-compose.yml").read_text(encoding="utf-8"))
+    notary_env = compose["services"]["notary"]["environment"]
+    runtime_env = compose["services"]["delentia"]["environment"]
+    assert notary_env["DELENTIA_NOTARY_ANCHOR_URL"].startswith("${DELENTIA_AUDIT_ANCHOR_URL:-") and notary_env["DELENTIA_NOTARY_ANCHOR_KEY_ID"].endswith(":-}")
+    assert runtime_env["DELENTIA_AUDIT_ANCHOR_URL"].endswith(":-}") and runtime_env["DELENTIA_AUDIT_ANCHOR_KEY_ID"].endswith(":-}")
+    assert "DELENTIA_AUDIT_ANCHOR_INTERVAL_S" in runtime_env
+
+
+def test_the_notary_reads_its_anchor_settings_from_the_environment_and_refuses_a_url_without_a_key_id(tmp_path, monkeypatch):
+    from click.testing import CliRunner
+    from rct_control_plane.cli import cli
+    key = tmp_path / "notary.pem"
+    notary.generate_key(str(key))
+    monkeypatch.setenv("DELENTIA_NOTARY_ANCHOR_URL", "http://127.0.0.1:9")
+    monkeypatch.delenv("DELENTIA_NOTARY_ANCHOR_KEY_ID", raising=False)
+    result = CliRunner().invoke(cli, ["notary", "serve", "--db", str(tmp_path / "n.db"), "--key", str(key), "--port", "0"])
+    assert result.exit_code == 1 and "--anchor-url needs --anchor-key-id" in result.output
+    monkeypatch.setenv("DELENTIA_NOTARY_ANCHOR_URL", "")                      # what the compose file passes when anchoring is off
+    monkeypatch.delenv("DELENTIA_NOTARY_ANCHOR_URL")
+
+
+def test_witness_entry_prints_the_exact_object_the_witness_registry_expects(tmp_path, monkeypatch):
+    import json
+    from click.testing import CliRunner
+    from rct_control_plane import audit_chain
+    from rct_control_plane.cli import cli
+    runner = CliRunner()
+    notary_key = tmp_path / "notary.pem"
+    public = notary.generate_key(str(notary_key))
+    out = runner.invoke(cli, ["notary", "witness-entry", "--key-id", "delentia-notary-2", "--key", str(notary_key)])
+    assert out.exit_code == 0, out.output
+    entry = json.loads([line for line in out.output.splitlines() if line.startswith("{")][0])
+    assert entry == {"key_id": "delentia-notary-2", "public_key_hex": public}
+    assert "BEFORE its first anchor" in out.output
+
+    audit_key = tmp_path / "audit.pem"
+    audit_public = audit_chain.generate_signing_key(str(audit_key))
+    monkeypatch.setenv(audit_chain.SIGNING_KEY_ENV, str(audit_key))
+    out = runner.invoke(cli, ["audit-chain", "witness-entry", "--key-id", "host-1"])
+    assert json.loads([line for line in out.output.splitlines() if line.startswith("{")][0]) == {"key_id": "host-1", "public_key_hex": audit_public}
+    monkeypatch.delenv(audit_chain.SIGNING_KEY_ENV)
+    assert runner.invoke(cli, ["audit-chain", "witness-entry", "--key-id", "host-1"]).exit_code == 1
