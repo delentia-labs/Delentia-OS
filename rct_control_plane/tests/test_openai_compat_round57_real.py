@@ -69,8 +69,12 @@ def server(tmp_path, monkeypatch):
         thread.join(timeout=10)
 
 
+def base_url_of(client):
+    return str(client.base_url).rstrip("/") + "/v1"
+
+
 def sdk(client):
-    return openai.OpenAI(base_url=f"{str(client.base_url).rstrip("/")}/v1", api_key="not-needed-on-loopback")
+    return openai.OpenAI(base_url=base_url_of(client), api_key="not-needed-on-loopback")
 
 
 def test_the_models_list_has_one_model_called_delentia(server):
@@ -180,7 +184,7 @@ def test_identity_comes_from_the_token_never_from_the_user_field(server, tmp_pat
 
 
 def sdk_with_token(client, token):
-    return openai.OpenAI(base_url=f"{str(client.base_url).rstrip("/")}/v1", api_key=token)
+    return openai.OpenAI(base_url=base_url_of(client), api_key=token)
 
 
 def test_a_broken_agent_gives_an_openai_style_502_without_a_stack_trace(server, monkeypatch):
