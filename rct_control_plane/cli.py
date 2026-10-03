@@ -2542,6 +2542,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (set either variable to 0 to turn it off here too).
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
@@ -3359,6 +3360,22 @@ def forge_off(name: str) -> None:
     click.echo("turned off" if forge.deactivate(name) else "no such active tool")
 
 
+@cli.command("context")
+def context_cmd() -> None:
+    """Show which standing-instruction files (AGENTS.md, SOUL.md) the agent would read now, which were kept out, and why."""
+    from rct_control_plane import context_files, data_home
+    from rct_control_plane.mcp_server import REPO_ROOT
+    info = context_files.describe(REPO_ROOT, data_home.data_home())
+    click.echo(f"enabled : {info['enabled']} (set DELENTIA_CONTEXT_FILES=1; `delentia serve` does)")
+    click.echo(f"repo    : {info['repo_root']}\nhome    : {info['home']}")
+    for item in info["used"]:
+        click.echo(f"read    : {item['name']}  {item['chars']} chars  sha256 {item['sha256'][:16]}" + ("  (cut to the limit)" if item["truncated"] else ""))
+    for item in info["refused"]:
+        click.echo(click.style(f"REFUSED: {item['name']}  the injection screen found {', '.join(item['findings'])}", fg="red"))
+    if not info["used"] and not info["refused"]:
+        click.echo("no AGENTS.md, .delentia.md or SOUL.md found")
+
+
 @cli.group("checkpoints")
 def checkpoints_group():
     """
@@ -3636,6 +3653,57 @@ def skills_group():
         delentia skills list
     """
     pass
+
+
+@skills_group.command("import")
+@click.argument("source")
+@click.option("--yes", is_flag=True, help="I have read the instructions (skip the question).")
+def skills_import_cmd(source: str, yes: bool) -> None:
+    """Import a SKILL.md from a file or an https address. You are shown the instructions and asked; refused if the injection screen finds anything; the agent cannot do this itself."""
+    from pathlib import Path as _Path
+    from rct_control_plane import skill_format
+    from rct_control_plane.skill_library import SkillLibrary
+    try:
+        if source.lower().startswith(("http://", "https://")):
+            text = skill_format.fetch(source)
+        else:
+            text = _Path(source).read_text(encoding="utf-8")
+        parsed = skill_format.parse(text)
+        from rct_control_plane.mcp_server import mcp
+        import asyncio as _asyncio
+        known = [t.name for t in _asyncio.run(mcp.list_tools())]
+        unknown = skill_format.check_tools(parsed, known)
+        click.echo(f"--- {parsed.name} {parsed.version}: {parsed.description}\n{parsed.body}\n---")
+        if not yes and not click.confirm("The model will read the text above as guidance. Have you read it and do you trust it?"):
+            click.echo("not imported")
+            sys.exit(1)
+        outcome = skill_format.install(SkillLibrary(), parsed, source, reviewed=True)
+    except (skill_format.SkillFormatError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{outcome['status']}: {outcome['skill_id']} ({parsed.name})")
+    if unknown:
+        click.echo(f"note: it mentions tools this runtime does not have: {', '.join(unknown)}")
+
+
+@skills_group.command("export")
+@click.argument("skill_id")
+@click.option("--out", default=None, help="Write the SKILL.md here instead of printing it.")
+def skills_export_cmd(skill_id: str, out: Optional[str]) -> None:
+    """Write one of this runtime's skills (learned, bundled or imported) as a SKILL.md."""
+    from pathlib import Path as _Path
+    from rct_control_plane import skill_format
+    from rct_control_plane.skill_library import SkillLibrary
+    record = SkillLibrary().get_skill(skill_id)
+    if record is None:
+        click.echo(click.style(f"Error: no skill {skill_id!r} (see `delentia skills list`)", fg="red"), err=True)
+        sys.exit(1)
+    text = skill_format.export(record)
+    if out:
+        _Path(out).write_text(text, encoding="utf-8")
+        click.echo(f"wrote {out}")
+    else:
+        click.echo(text)
 
 
 @skills_group.group("starter")

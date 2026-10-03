@@ -232,8 +232,38 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             item["archived"] = bool(r["archived"])
             item["reliability"] = round((r["successes"] + 1) / (r["uses"] + 2), 4)
             item["bundled"] = bool(r["session_id"] and str(r["session_id"]).startswith("bundled:"))   # Round 55: a starter playbook, not learned
+            item["imported"] = bool(r["session_id"] and str(r["session_id"]).startswith("imported:"))   # Round 57: somebody else's SKILL.md
             out.append(item)
         return {"count": lib.count(), "skills": out}
+
+    @router.post("/skills/import")
+    async def skills_import(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Import a SKILL.md (pasted text, or an https address). A person's act, never the agent's; refused if the injection screen finds anything."""
+        from rct_control_plane import skill_format
+        text, source = payload.get("text"), str(payload.get("source") or "pasted in the Desk")
+        try:
+            if payload.get("url"):
+                source = str(payload["url"])
+                import asyncio as _asyncio
+                text = await _asyncio.to_thread(skill_format.fetch, source)
+            parsed = skill_format.parse(str(text or ""))
+            if not payload.get("reviewed"):
+                # Step one: show what would be imported. The caller shows the text to a person and repeats the call with reviewed=true.
+                return {"preview": {"name": parsed.name, "description": parsed.description, "version": parsed.version, "tags": parsed.tags,
+                                    "instructions": parsed.body, "source": source, "screen_findings": skill_format.screen(parsed)},
+                        "needs_review": True}
+            outcome = skill_format.install(_skills(), parsed, source, reviewed=True)
+        except skill_format.SkillFormatError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return outcome
+
+    @router.get("/skills/{skill_id}/export")
+    async def skills_export(skill_id: str) -> Dict[str, Any]:
+        from rct_control_plane import skill_format
+        record = _skills().get_skill(skill_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail=f"no skill {skill_id!r}")
+        return {"skill_id": skill_id, "skill_md": skill_format.export(record)}
 
     @router.get("/models")
     async def models(catalog: Optional[str] = Query(None, pattern="^(openrouter|ollama)$"),

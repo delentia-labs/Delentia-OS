@@ -202,6 +202,11 @@ class SkillRecord:
         return bool(self.session_id and self.session_id.startswith("bundled:"))
 
     @property
+    def imported(self) -> bool:
+        """True for a skill a person imported from a SKILL.md (skill_format.py): third-party text, labelled as such wherever it is shown."""
+        return bool(self.session_id and self.session_id.startswith("imported:"))
+
+    @property
     def reliability(self) -> float:
         """Laplace-smoothed success rate of this skill when reused: an unused
         skill is 0.5, so it is neither trusted nor distrusted yet."""
@@ -229,6 +234,7 @@ class SkillRecord:
             "archived": self.archived,
             "reliability": round(self.reliability, 4),
             "bundled": self.bundled,
+            "imported": self.imported,
         }
 
 

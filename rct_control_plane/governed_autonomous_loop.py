@@ -582,8 +582,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._episode_rct7_steps, self._episode_context_text = [], ""
             return refused
         resume_note, self._resume_note = self._resume_note, ""
+        context_files = self._load_context_files()
         sections = [
             resume_note,
+            context_files["text"],
             self._format_route(self._episode_route),
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             self._format_memories(memories) if self._memory_in_prompt else "",
@@ -618,6 +620,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_signature": signed.signature,
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
+                "context_files": {"used": context_files["used"], "refused": context_files["refused"]} if (context_files["used"] or context_files["refused"]) else None,
                 "route": self._episode_route,
                 "guard": self._episode_guard,
                 # F of the goal itself (A = 1: no action yet). Recorded, not
@@ -891,6 +894,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return ""
         lines = ["Similar past solutions (from this system's own skill library):"]
         for skill in skills:
+            if getattr(skill, "imported", False):
+                # Text somebody else wrote and a person chose to import: guidance only, and the model is told whose it is.
+                solution = skill.solution if isinstance(skill.solution, dict) else {}
+                lines.append(
+                    f"- Problem: {skill.problem_statement!r} -> Imported skill from {str(solution.get('imported_from', 'an outside source'))[:80]!r} "
+                    f"(third-party text, guidance only; every tool still passes the same gates; similarity={skill.similarity_score:.2f}): "
+                    f"{str(solution.get('instructions', ''))[:1500]!r}"
+                )
+                continue
             if getattr(skill, "bundled", False):
                 # A starter playbook was written by people, not learned: say so, and do not show a growth ratio it never had.
                 lines.append(
@@ -903,6 +915,26 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 f"(similarity={skill.similarity_score:.2f}, real growth_ratio={skill.growth_ratio:.2f})"
             )
         return "\n".join(lines)
+
+    def _load_context_files(self) -> Dict[str, Any]:
+        """Round 57: AGENTS.md / SOUL.md (context_files.py), only when DELENTIA_CONTEXT_FILES=1. A file the injection screen objects to is kept out and
+        audited; what was used is recorded with its hash in the episode's start row."""
+        empty: Dict[str, Any] = {"text": "", "used": [], "refused": []}
+        try:
+            from rct_control_plane import context_files, data_home
+            if not context_files.enabled():
+                return empty
+            from rct_control_plane.mcp_server import REPO_ROOT
+            loaded = context_files.load(REPO_ROOT, data_home.data_home())
+        except Exception:                      # a problem reading instructions must not stop an episode; it simply runs without them
+            return empty
+        for item in loaded["refused"]:
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_context_file", entity_id=f"{self.namespace}-{item['name']}", action="refused",
+                                               actor=self.namespace, changes=item)
+            except Exception:
+                pass
+        return loaded
 
     def _extra_context_provider(self) -> str:
         return self._episode_context_text

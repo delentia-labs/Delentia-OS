@@ -111,6 +111,7 @@ export interface Skill {
   g_before: number; g_after: number; governance_violation: boolean; session_id: string | null; created_at: string;
   uses: number; successes: number; failures: number; reinforced: number; archived: boolean; reliability: number;
   bundled?: boolean;
+  imported?: boolean;
 }
 export interface GrowthLedger {
   namespace: string; G: number | null; resilience: number | null; growth_ratio: number | null;
@@ -349,6 +350,12 @@ export const desk = {
   checkpoints: () => call<CheckpointList>("/v1/desk/checkpoints"),
   checkpointDiff: (id: number) => call<{ diff: string }>(`/v1/desk/checkpoints/${id}/diff`),
   checkpointRollback: (id: number, force = false) => call<{ path: string; result: string; undo_checkpoint: number | null }>(`/v1/desk/checkpoints/${id}/rollback`, { method: "POST", body: JSON.stringify({ force }) }),
+  skillImportPreview: (text: string, source: string) =>
+    call<{ needs_review: true; preview: { name: string; description: string; version: string; tags: string[]; instructions: string; source: string; screen_findings: string[] } }>(
+      "/v1/desk/skills/import", { method: "POST", body: JSON.stringify({ text, source }) }),
+  skillImport: (text: string, source: string) =>
+    call<{ skill_id: string; status: string; name: string }>("/v1/desk/skills/import", { method: "POST", body: JSON.stringify({ text, source, reviewed: true }) }),
+  skillExport: (id: string) => call<{ skill_id: string; skill_md: string }>(`/v1/desk/skills/${encodeURIComponent(id)}/export`),
   runTask: (taskId: string) => call<{ status: string; output?: string; error?: string }>(`/v1/desk/cron/${encodeURIComponent(taskId)}/run`, { method: "POST" }),
   subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
   runSubagents: (goals: string[], timeoutSeconds = 240) =>
