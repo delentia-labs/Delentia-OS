@@ -92,11 +92,12 @@ class TelegramGateway:
         text message (e.g. a sticker, an edited_message) - honestly
         ignored, not silently mishandled."""
         message = update.get("message")
-        if not message or "text" not in message:
+        voice = (message or {}).get("voice") or (message or {}).get("audio")
+        if not message or ("text" not in message and not (voice and self._voice_input_enabled())):
             return None
 
         chat_id = message["chat"]["id"]
-        text = message["text"]
+        text = message.get("text")
         namespace = f"telegram-{chat_id}"
 
         # Round 48 R0.1: fail-closed sender allowlist (Telegram user id,
@@ -112,18 +113,69 @@ class TelegramGateway:
             return {"chat_id": chat_id, "namespace": namespace, "goal": text, "rejected": True,
                     "sender_id": sender_id}
 
-        from rct_control_plane import chat_commands
-        command_reply = chat_commands.handle(self._kernel, "telegram", sender_id, namespace, text)
-        if command_reply is not None:
-            if self.is_configured():
-                await self.send_message(chat_id, command_reply)
-            return {"chat_id": chat_id, "namespace": namespace, "goal": text, "command": True, "reply_text": command_reply}
+        heard_prefix = ""
+        if text is None:
+            # A voice note from an allowed sender (checked above, so a stranger never makes this machine download or transcribe anything).
+            try:
+                text = await self._hear(voice)
+            except Exception as exc:
+                reason = str(exc) if exc.__class__.__name__ == "VoiceError" else f"I could not use that voice note ({type(exc).__name__})."
+                if self.is_configured():
+                    await self.send_message(chat_id, reason[:300])
+                return {"chat_id": chat_id, "namespace": namespace, "voice_error": reason[:300], "sender_id": sender_id}
+            if not text.strip():
+                if self.is_configured():
+                    await self.send_message(chat_id, "I could not make out any words in that voice note.")
+                return {"chat_id": chat_id, "namespace": namespace, "voice_error": "no speech", "sender_id": sender_id}
+            heard_prefix = f"(I heard: \u201c{text.strip()[:300]}\u201d)\n"
+        else:
+            from rct_control_plane import chat_commands
+            command_reply = chat_commands.handle(self._kernel, "telegram", sender_id, namespace, text)
+            if command_reply is not None:
+                if self.is_configured():
+                    await self.send_message(chat_id, command_reply)
+                return {"chat_id": chat_id, "namespace": namespace, "goal": text, "command": True, "reply_text": command_reply}
 
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")
         if self.is_configured():
-            await self.send_message(chat_id, str(reply_text))
-        return {"chat_id": chat_id, "namespace": namespace, "goal": text, "result": result}
+            await self.send_message(chat_id, heard_prefix + str(reply_text))
+        return {"chat_id": chat_id, "namespace": namespace, "goal": text, "result": result, **({"heard": text} if heard_prefix else {})}
+
+    @staticmethod
+    def _voice_input_enabled() -> bool:
+        return (os.environ.get("DELENTIA_VOICE_INPUT") or "").strip().lower() in ("1", "true", "yes", "on")
+
+    async def _hear(self, voice: Dict[str, Any]) -> str:
+        """Downloads one voice note from Telegram and returns what it says (voice.py: Whisper on this machine, nothing leaves it)."""
+        from rct_control_plane import voice as voice_module
+        if int(voice.get("duration") or 0) > voice_module.MAX_AUDIO_SECONDS:
+            raise voice_module.VoiceError(f"That voice note is longer than {voice_module.MAX_AUDIO_SECONDS} seconds; please send a shorter one.")
+        if int(voice.get("file_size") or 0) > voice_module.MAX_AUDIO_BYTES:
+            raise voice_module.VoiceError("That voice note is too large.")
+        file_id = str(voice.get("file_id") or "")
+        if not file_id:
+            raise voice_module.VoiceError("That voice note has no file.")
+        async with http_client.async_client(timeout=60) as client:
+            info = await client.get(self._url("getFile"), params={"file_id": file_id})
+            info.raise_for_status()
+            file_path = str((info.json().get("result") or {}).get("file_path") or "")
+            if not file_path or ".." in file_path:
+                raise voice_module.VoiceError("Telegram did not give a file for that voice note.")
+            blob = await client.get(f"{self._api_base}/file/bot{self._bot_token}/{file_path}")
+            blob.raise_for_status()
+            data = blob.content
+        if len(data) > voice_module.MAX_AUDIO_BYTES:
+            raise voice_module.VoiceError("That voice note is too large.")
+        temp = voice_module.temp_audio_file(data, suffix=os.path.splitext(file_path)[1] or ".oga")
+        try:
+            heard = await voice_module.transcribe_file(temp)
+        finally:
+            try:
+                temp.unlink()
+            except OSError:
+                pass
+        return str(heard["text"])
 
     def start(self) -> None:
         """Real listener start - idempotent, honestly no-ops (with a

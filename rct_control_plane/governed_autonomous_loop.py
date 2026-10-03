@@ -250,7 +250,7 @@ TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
                                     "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page",
-                                    "delentia_describe_image"})
+                                    "delentia_describe_image", "delentia_transcribe_audio"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
 ADDRESSED_TO_THE_AI_RULES = frozenset({"CORD-S006", "CORD-S010", "CORD-S011", "CORD-S016"})
@@ -300,7 +300,8 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
 # (used only to measure the difference; the audit trail records the mode).
 TAINT_ENV = "DELENTIA_TAINT_GATE"
 TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_read_exchange_file",
-                                "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image"})
+                                "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
+                                "delentia_transcribe_audio"})
 TAINT_GATED_TOOLS = frozenset({
     "delentia_remember",                  # a persisted instruction is an attack that survives restarts
     "delentia_run_sandboxed_command", "delentia_write_repo_file", "delentia_patch_repo_file", "delentia_save_exchange_file",

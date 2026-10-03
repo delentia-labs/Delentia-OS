@@ -41,6 +41,8 @@ HINTS: Dict[str, str] = {
     "delentia_write_repo_file": "create write add new file save content draft | สร้างไฟล์ เขียนไฟล์ เพิ่มไฟล์",
     "delentia_patch_repo_file": "change edit replace modify update fix rename substitute line function | แก้ไขไฟล์ แก้ไข เปลี่ยน แทนที่",
     "delentia_run_sandboxed_command": "run execute command shell tests lint build script terminal test pytest | รันคำสั่ง สั่งรัน ทดสอบ คำสั่ง",
+    "delentia_transcribe_audio": "audio voice recording transcribe speech to text listen hear whisper mp3 wav podcast | เสียง ถอดเสียง ฟังเสียง บันทึกเสียง",
+    "delentia_speak": "speak say read aloud text to speech voice tts audio narrate | พูด อ่านออกเสียง เสียงพูด",
     "delentia_describe_image": "image picture photo screenshot look see vision describe ocr read text in image diagram | รูปภาพ ภาพ รูป ดูรูป อ่านข้อความในรูป สกรีนช็อต",
     "delentia_browse_page": "browser open page render javascript screenshot website dynamic single-page app snapshot | เบราว์เซอร์ เปิดหน้าเว็บ ภาพหน้าจอ",
     "delentia_crawl_url": "fetch open page website url link http https webpage download read site | เว็บ ลิงก์ หน้าเว็บ เปิดเว็บ ไปที่",
