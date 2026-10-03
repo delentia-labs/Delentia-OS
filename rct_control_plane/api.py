@@ -12,7 +12,7 @@ import sys
 import time
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, Request, status, WebSocket, WebSocketDisconnect
@@ -28,7 +28,10 @@ from .persistence import ControlPlanePersistence
 from .websocket_manager import WS_MANAGER
 from .approval_queue import APPROVAL_QUEUE
 from ._version import PACKAGE_VERSION
-from rct_control_plane.lora_multiplexer import LoRAMultiplexer
+if TYPE_CHECKING:
+    # Round 57: imported lazily (see _get_lora_multiplexer). This one import pulled transformers, torch and scikit-learn in at module import and cost
+    # about 13.6 of the 16.5 seconds `import rct_control_plane.api` took (measured with `python -X importtime`), for an adapter engine the runtime does not use.
+    from rct_control_plane.lora_multiplexer import LoRAMultiplexer
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,13 @@ logger = logging.getLogger(__name__)
 # loaded at most once per process, not once per /v1/lora/swap request. Same
 # warm-process-caching pattern as the isolate-scoped Ed25519 keypair cache
 # added to the TypeScript sovereign gateway the same day (packages/jitna).
-_lora_mux: Optional[LoRAMultiplexer] = None
+_lora_mux: Optional["LoRAMultiplexer"] = None
 
 
-def _get_lora_multiplexer() -> LoRAMultiplexer:
+def _get_lora_multiplexer() -> "LoRAMultiplexer":
     global _lora_mux
     if _lora_mux is None:
+        from rct_control_plane.lora_multiplexer import LoRAMultiplexer
         _lora_mux = LoRAMultiplexer()
     return _lora_mux
 
