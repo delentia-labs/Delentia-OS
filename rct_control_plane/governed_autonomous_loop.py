@@ -247,7 +247,7 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
-                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions"})
+                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
 ADDRESSED_TO_THE_AI_RULES = frozenset({"CORD-S006", "CORD-S010", "CORD-S011", "CORD-S016"})
@@ -287,6 +287,25 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     # Round 57: a recurring job is an unattended future action; the agent may propose one, a human signs it.
     "delentia_cron_create",
 })
+
+
+# Round 58, TAINT: the injection screen is a detector, and detectors miss phrasings (measured: well under half of unseen attacks). What a detector cannot
+# give is a guarantee. This is the guarantee that does not depend on it: once text from OUTSIDE (a web page, a search result, a file somebody dropped, an
+# external MCP tool, a result the screen flagged) has been shown to the model in an episode, that episode is TAINTED, and from then on a tool that could cause
+# a side effect or move data out needs a human signature, whatever the model asks for and whatever the owner's policy says. A model that has been fully
+# hijacked can then ask for anything it likes and nothing happens without a person. Reading and answering stay free. DELENTIA_TAINT_GATE=off turns it off
+# (used only to measure the difference; the audit trail records the mode).
+TAINT_ENV = "DELENTIA_TAINT_GATE"
+TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_read_exchange_file",
+                                "delentia_convert_content", "delentia_import_session_state"})
+TAINT_GATED_TOOLS = frozenset({
+    "delentia_remember",                  # a persisted instruction is an attack that survives restarts
+    "delentia_run_sandboxed_command", "delentia_write_repo_file", "delentia_patch_repo_file", "delentia_save_exchange_file",
+    "delentia_cron_create", "delentia_cron_delete", "delentia_schedule_reminder", "delentia_schedule_self_evolution",
+    "delentia_spawn_subagents", "delentia_delegate", "delentia_autonomous_loop",
+    "delentia_create_worktree", "delentia_remove_worktree", "delentia_export_session_state",
+})
+TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
 
 
 # Round 55: tools from external MCP servers (mcp__<server>__<tool>, external_mcp.py) are not in the fixed sets above, so the
@@ -542,6 +561,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
         self._episode_guard = {}
+        self._episode_taint = None
+        self._episode_seen_urls = set()
         self._episode_evidence = []
         self._warm_info = {}
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
@@ -1013,6 +1034,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if policy_error:
             return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
                                       policy_info={"error": True})
+        taint = self._taint_reason(goal, tool_name, tool_args)
+        if taint is not None:
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{tool_name}", action="gated", actor=self.namespace,
+                                               changes={"tool_name": tool_name, "source_tool": self._episode_taint, "args_sha256": _sha(tool_args)})
+            except Exception:
+                pass
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {"pending_approval": True, "tool_name": tool_name, "tool_args": tool_args, "reason": taint,
+                                "approval_policy": {"rule_id": "taint", "required_signatures": 1, "approver_roles": [], "policy_digest": None}},
+            }
         if not is_risky_tool(tool_name) and policy is None:
             return None
 
@@ -1828,6 +1861,67 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return tool_result
 
     def _screen_tool_result(self, tool_name: str, tool_result: Any) -> Any:
+        shown = self._screen_tool_result_inner(tool_name, tool_result)
+        self._note_provenance(tool_name, shown)
+        return shown
+
+    # ------------------------------------------------------------------
+    # Round 58 TAINT (see TAINT_ENV above)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _taint_enabled() -> bool:
+        return (os.environ.get(TAINT_ENV) or "on").strip().lower() not in ("off", "0", "false", "no")
+
+    def _note_provenance(self, tool_name: str, shown: Any) -> None:
+        """Called with what the model is about to read. Outside text that reaches it taints the episode; a result the screen withheld never reached it."""
+        if isinstance(shown, dict) and shown.get("withheld_by_cord"):
+            return
+        flagged = isinstance(shown, dict) and "_cord_warning" in shown
+        if not (is_external_content(tool_name) and (tool_name in TAINT_SOURCE_TOOLS or tool_name.startswith("mcp__"))) and not flagged:
+            return
+        import re as _re
+        urls = getattr(self, "_episode_seen_urls", None)
+        if urls is None:
+            urls = self._episode_seen_urls = set()
+        urls.update(u.rstrip(".,;:!?)\"'") for u in _re.findall(r"https?://[^\s<>\"'\])]+", self._render_tool_result(shown)[:400_000]))
+        if getattr(self, "_episode_taint", None) is None:
+            self._episode_taint = tool_name
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action="tainted",
+                                               actor=self.namespace, changes={"source_tool": tool_name, "flagged_by_screen": flagged, "gate": "on" if self._taint_enabled() else "off"})
+            except Exception:                                    # an audit problem must not decide what the model sees
+                pass
+
+    @staticmethod
+    def _url_was_named(url: str, goal: str, seen: Any) -> bool:
+        """Is this the address the person wrote, or one a page the agent read already contained, with nothing smuggled in? A query string, a fragment or a
+        user name in an address is a place to hide data, so such an address is acceptable only if the person wrote exactly that."""
+        from urllib.parse import urlsplit
+        if not url.strip():
+            return False                                      # "" is a substring of every goal: an empty address must not count as one the person wrote
+        parts = urlsplit(url.strip())
+        if url.strip() in goal:
+            return True
+        if parts.query or parts.fragment or parts.username or parts.password or parts.scheme not in ("http", "https"):
+            return False
+        return url.strip().rstrip("/") in {s.rstrip("/") for s in (seen or ())}
+
+    def _taint_reason(self, goal: str, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
+        """Why this call must wait for a signature in a tainted episode, or None."""
+        source = getattr(self, "_episode_taint", None)
+        if source is None or not self._taint_enabled():
+            return None
+        from rct_control_plane import external_mcp
+        gated = tool_name in TAINT_GATED_TOOLS or (external_mcp.is_external(tool_name) and not external_mcp.taint_exempt(tool_name))
+        if tool_name in TAINT_EGRESS_TOOLS:
+            url = str((tool_args or {}).get("url") or (tool_args or {}).get("target_url") or "")
+            gated = not self._url_was_named(url, goal, getattr(self, "_episode_seen_urls", set()))
+        if not gated:
+            return None
+        return (f"this episode has read text from outside ({source}), so {tool_name} cannot run without a human signature: an instruction hidden in that text "
+                "could be steering it (injection protection by taint: reading and answering stay free)")
+
+    def _screen_tool_result_inner(self, tool_name: str, tool_result: Any) -> Any:
         """Withholds (or flags) a tool result that carries an instruction aimed at the model. The audit row has
         the tool, the rule ids and a hash of the content, never the content."""
         mode = (os.environ.get(TOOL_RESULT_SCREEN_ENV) or "block").strip().lower()

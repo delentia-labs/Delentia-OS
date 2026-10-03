@@ -79,6 +79,9 @@ class ServerSpec:
     url: str = ""
     headers_env: Dict[str, str] = field(default_factory=dict)
     read_only_tools: frozenset = frozenset()
+    # Round 58: tools the owner vouches for as unable to send data anywhere (a local file reader). Only these keep working in an episode that has read outside text
+    # (the taint gate); every other external tool then waits for a signature, because "read-only" says it changes nothing, not that it sends nothing.
+    taint_exempt_tools: frozenset = frozenset()
     tools_sha256: str = ""
     timeout_s: float = DEFAULT_TIMEOUT_S
     enabled: bool = True
@@ -95,7 +98,7 @@ def _parse_server(name: str, raw: Any) -> ServerSpec:
         raise ExternalMCPError(f"server name {name!r}: use 1-24 lower-case letters, digits or '-' (no underscore)")
     if not isinstance(raw, dict):
         raise ExternalMCPError(f"server {name!r}: must be an object")
-    known = {"command", "args", "cwd", "env_vars", "url", "headers_env", "read_only_tools", "tools_sha256", "timeout_s", "enabled", "region"}
+    known = {"command", "args", "cwd", "env_vars", "url", "headers_env", "read_only_tools", "taint_exempt_tools", "tools_sha256", "timeout_s", "enabled", "region"}
     extra = set(raw) - known
     if extra:
         # A field called "env" or "token" would invite a pasted secret; refuse unknown fields rather than ignore them.
@@ -121,6 +124,11 @@ def _parse_server(name: str, raw: Any) -> ServerSpec:
     ro = raw.get("read_only_tools") or []
     if not isinstance(ro, list) or not all(isinstance(t, str) and _TOOL_NAME.match(t) for t in ro):
         raise ExternalMCPError(f"server {name!r}: read_only_tools must list tool names")
+    exempt = raw.get("taint_exempt_tools") or []
+    if not isinstance(exempt, list) or not all(isinstance(t, str) and _TOOL_NAME.match(t) for t in exempt):
+        raise ExternalMCPError(f"server {name!r}: taint_exempt_tools must list tool names")
+    if set(exempt) - set(ro):
+        raise ExternalMCPError(f"server {name!r}: taint_exempt_tools may only name tools that are also in read_only_tools")
     pin = str(raw.get("tools_sha256") or "").strip().lower()
     if pin and not re.fullmatch(r"[0-9a-f]{64}", pin):
         raise ExternalMCPError(f"server {name!r}: tools_sha256 must be a 64-character hex digest (see `delentia mcp inspect`)")
@@ -129,7 +137,7 @@ def _parse_server(name: str, raw: Any) -> ServerSpec:
     except (TypeError, ValueError) as exc:
         raise ExternalMCPError(f"server {name!r}: timeout_s must be a number") from exc
     return ServerSpec(name=name, command=command, args=list(args), cwd=str(raw.get("cwd") or ""), env_vars=list(env_vars), url=url,
-                      headers_env={str(h): v for h, v in headers_env.items()}, read_only_tools=frozenset(ro), tools_sha256=pin,
+                      headers_env={str(h): v for h, v in headers_env.items()}, read_only_tools=frozenset(ro), taint_exempt_tools=frozenset(exempt), tools_sha256=pin,
                       timeout_s=max(1.0, min(timeout, MAX_TIMEOUT_S)), enabled=bool(raw.get("enabled", True)),
                       region=str(raw.get("region") or "").strip().upper())
 
@@ -185,6 +193,16 @@ def needs_approval(tool_name: str) -> bool:
     servers, _ = enabled_servers()
     spec = servers.get(parts[0])
     return spec is None or parts[1] not in spec.read_only_tools
+
+
+def taint_exempt(tool_name: str) -> bool:
+    """Did the owner vouch that this external tool cannot send data out, so it may run even after the episode read outside text?"""
+    parts = split(tool_name)
+    if parts is None:
+        return False
+    servers, _ = enabled_servers()
+    spec = servers.get(parts[0])
+    return spec is not None and parts[1] in spec.taint_exempt_tools
 
 
 # ---------------------------------------------------------------------------------------------------------------- tool lists
