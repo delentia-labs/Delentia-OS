@@ -408,6 +408,22 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     def _cron_owner(request: Request) -> str:
         return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
 
+    @router.get("/pairing")
+    async def pairing_view() -> Dict[str, Any]:
+        """Who asked to be let in, and who is. A request is let in only by a signed approval (Approvals page or `delentia approvals approve <code>`)."""
+        from rct_control_plane import pairing
+        return pairing.state(_kernel()._persistence)
+
+    @router.post("/pairing/revoke")
+    async def pairing_revoke(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Closing a door needs no signature (like pausing a job); opening one always does."""
+        from rct_control_plane import pairing
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        done = pairing.revoke(str(payload.get("channel", "")), str(payload.get("sender_id", "")), actor=f"desk:{owner}", persistence=_kernel()._persistence)
+        if not done:
+            raise HTTPException(status_code=404, detail="that person was not let in by pairing")
+        return {"revoked": True}
+
     @router.get("/cron/jobs")
     async def cron_jobs_list(request: Request) -> Dict[str, Any]:
         from rct_control_plane import cron_jobs, nl_schedule

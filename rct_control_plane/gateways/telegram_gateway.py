@@ -102,15 +102,22 @@ class TelegramGateway:
         # Round 48 R0.1: fail-closed sender allowlist (Telegram user id,
         # falling back to chat id for messages without a "from").
         from rct_control_plane.agent_factory import (
-            REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+            record_rejected_sender, rejection_reply, sender_allowed,
         )
         sender_id = (message.get("from") or {}).get("id", chat_id)
-        if not sender_allowed("telegram", sender_id):
+        if not sender_allowed("telegram", sender_id, getattr(self._kernel, "_persistence", None)):
             record_rejected_sender(self._kernel, "telegram", sender_id, namespace)
             if self.is_configured():
-                await self.send_message(chat_id, REJECTED_SENDER_REPLY)
+                await self.send_message(chat_id, rejection_reply(self._kernel, "telegram", sender_id))
             return {"chat_id": chat_id, "namespace": namespace, "goal": text, "rejected": True,
                     "sender_id": sender_id}
+
+        from rct_control_plane import chat_commands
+        command_reply = chat_commands.handle(self._kernel, "telegram", sender_id, namespace, text)
+        if command_reply is not None:
+            if self.is_configured():
+                await self.send_message(chat_id, command_reply)
+            return {"chat_id": chat_id, "namespace": namespace, "goal": text, "command": True, "reply_text": command_reply}
 
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")

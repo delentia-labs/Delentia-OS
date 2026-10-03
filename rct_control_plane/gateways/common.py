@@ -49,16 +49,23 @@ async def handle_incoming(
     reply: Optional[Callable[[str], Awaitable[None]]] = None,
     reply_to_rejected: Optional[Callable[[str], Awaitable[None]]] = None,
 ) -> Dict[str, Any]:
-    from rct_control_plane.agent_factory import REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed
+    from rct_control_plane.agent_factory import record_rejected_sender, rejection_reply, sender_allowed
     namespace = namespace_for(channel, sender_id)
-    if not sender_allowed(channel, sender_id):
+    persistence = getattr(kernel, "_persistence", None)
+    if not sender_allowed(channel, sender_id, persistence):
         record_rejected_sender(kernel, channel, sender_id, namespace)
         if reply_to_rejected is not None:
-            await reply_to_rejected(REJECTED_SENDER_REPLY)
+            await reply_to_rejected(rejection_reply(kernel, channel, sender_id))
         return {"sender_id": str(sender_id), "namespace": namespace, "rejected": True}
     goal = (text or "").strip()[:MAX_GOAL_CHARS]
     if not goal:
         return {"sender_id": str(sender_id), "namespace": namespace, "ignored": "empty message"}
+    from rct_control_plane import chat_commands
+    command_reply = chat_commands.handle(kernel, channel, sender_id, namespace, goal)
+    if command_reply is not None:
+        if reply is not None:
+            await reply(command_reply)
+        return {"sender_id": str(sender_id), "namespace": namespace, "goal": goal, "command": True, "reply_text": command_reply}
     result = await dispatch(goal, namespace)
     if reply is not None:
         await reply(reply_text_for(result))

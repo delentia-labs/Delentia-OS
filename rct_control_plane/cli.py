@@ -3677,6 +3677,41 @@ def cron_run_due() -> None:
         click.echo(f"  {j['id']} {j['last_status']}: {(j['last_result'] or '')[:200]}")
 
 
+@cli.group("pairing")
+def pairing_group():
+    """DM pairing: people the agent does not know yet ask for a code; you let them in by SIGNING it (delentia approvals approve <code>)."""
+
+
+@pairing_group.command("list")
+@click.option("--db", default=None)
+def pairing_list(db: Optional[str]) -> None:
+    """Requests waiting for your signature and the people who are let in."""
+    from rct_control_plane import pairing
+    view = pairing.state(_audit_db(db))
+    click.echo(f"pairing is {'ON' if view['enabled'] else 'OFF (set DELENTIA_PAIRING=1)'}")
+    click.echo(f"waiting ({len(view['pending'])}):")
+    for p in view["pending"]:
+        click.echo(f"  code {p['code']}  {p['channel']}  sender {p['sender_id']}   -> delentia approvals approve {p['code']} --key <key>")
+    live = [g for g in view["grants"] if not g["revoked_at"]]
+    click.echo(f"let in ({len(live)}):")
+    for g in live:
+        click.echo(f"  {g['channel']}  sender {g['sender_id']}   (approval {g['approval_id']})")
+
+
+@pairing_group.command("revoke")
+@click.argument("channel")
+@click.argument("sender_id")
+@click.option("--db", default=None)
+def pairing_revoke(channel: str, sender_id: str, db: Optional[str]) -> None:
+    """Take a person's access away again (audited). Closing a door needs no signature."""
+    from rct_control_plane import pairing
+    if pairing.revoke(channel, sender_id, actor="cli", persistence=_audit_db(db)):
+        click.echo(f"revoked {channel} {sender_id}")
+    else:
+        click.echo(click.style(f"{channel} {sender_id} was not let in by pairing (an allowlist entry in the environment is removed there)", fg="yellow"), err=True)
+        sys.exit(1)
+
+
 @cli.group("tokens")
 def tokens_group():
     """
