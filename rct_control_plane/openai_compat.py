@@ -119,7 +119,8 @@ def build_router(kernel_getter: Any, mcp_getter: Any) -> APIRouter:
         model = str(body.get("model") or MODEL_ID)
         if model != MODEL_ID:
             return _error(404, f"the model {model!r} does not exist: this server has one model, {MODEL_ID!r}", "invalid_request_error", "model_not_found")
-        goal, problem = goal_from_messages(body.get("messages"))
+        raw_messages = body.get("messages")
+        goal, problem = goal_from_messages(raw_messages if isinstance(raw_messages, list) else [])
         if problem:
             return _error(400, problem)
         namespace = _namespace(request, body.get("user"))

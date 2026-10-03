@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import time
 import uuid
@@ -29,6 +30,7 @@ from typing import Any, Awaitable, Callable, Deque, Dict, List, Optional
 
 from rct_control_plane import nl_schedule
 
+logger = logging.getLogger(__name__)
 MAX_JOBS_PER_NAMESPACE = 20
 MAX_GOAL_CHARS = 2000
 MAX_RESULT_CHARS = 3000
@@ -278,7 +280,8 @@ class CronService:
         except asyncio.TimeoutError:
             stopped, text = "max_seconds_exceeded", f"the run did not finish within {int(seconds)} s"
         except Exception as exc:                                   # noqa: BLE001 - recorded, never raised into the scheduler
-            stopped, text = "exception", f"{type(exc).__name__}: {str(exc)[:300]}"
+            logger.exception("cron job %s failed", job["id"])
+            stopped, text = "exception", f"the run failed ({type(exc).__name__}); the details are in the server log"
         updated = self._record(job["id"], stopped, text, started, failed)
         _audit(self._p, "run", updated, "cron", {"stopped_reason": stopped, "failed": failed, "run_count": updated["run_count"]})
         notice = ""

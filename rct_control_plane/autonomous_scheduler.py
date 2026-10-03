@@ -94,6 +94,7 @@ class AutonomousScheduler:
     def _cron_service(self) -> Any:
         from rct_control_plane import cron_jobs
         if getattr(self, "_cron", None) is None:
+            assert self._kernel is not None
             self._cron = cron_jobs.CronService(self._kernel._persistence)
         return self._cron
 

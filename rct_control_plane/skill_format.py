@@ -65,12 +65,14 @@ def parse(text: str) -> ParsedSkill:
         raise SkillFormatError(f"the file is {len(text)} characters; the limit is {MAX_FILE_CHARS}")
     if "\x00" in text:
         raise SkillFormatError("the file contains binary data")
-    match = re.match(r"\A﻿?---\s*\r?\n(.*?)\r?\n---\s*(?:\r?\n|\Z)(.*)\Z", text, flags=re.S)
-    if not match:
+    rows = text.lstrip("\ufeff").splitlines()
+    close = next((i for i in range(1, len(rows)) if rows[i].strip() == "---"), None) if rows and rows[0].strip() == "---" else None
+    if close is None:
         raise SkillFormatError("a SKILL.md starts with a YAML header between two '---' lines (name, description)")
+    header_text, body_text = "\n".join(rows[1:close]), "\n".join(rows[close + 1:])
     import yaml
     try:
-        header = yaml.safe_load(match.group(1)) or {}
+        header = yaml.safe_load(header_text) or {}
     except yaml.YAMLError as exc:
         raise SkillFormatError(f"the header is not valid YAML ({type(exc).__name__})") from exc
     if not isinstance(header, dict):
@@ -83,12 +85,12 @@ def parse(text: str) -> ParsedSkill:
         raise SkillFormatError("description is required: it is how the skill is found")
     if len(description) > MAX_DESCRIPTION_CHARS:
         raise SkillFormatError(f"description is longer than {MAX_DESCRIPTION_CHARS} characters")
-    body = match.group(2).strip()
+    body = body_text.strip()
     if not body:
         raise SkillFormatError("the skill has no instructions after the header")
     if len(body) > MAX_BODY_CHARS:
         raise SkillFormatError(f"the instructions are {len(body)} characters; the limit is {MAX_BODY_CHARS} (put long references in a separate file)")
-    meta = header.get("metadata") if isinstance(header.get("metadata"), dict) else {}
+    meta: Dict[str, Any] = header["metadata"] if isinstance(header.get("metadata"), dict) else {}
     nested = next((v for v in meta.values() if isinstance(v, dict)), {})          # metadata: {hermes: {tags: [...]}} or {tags: [...]}
     tags = meta.get("tags") or nested.get("tags") or header.get("tags") or []
     category = str(meta.get("category") or nested.get("category") or header.get("category") or "")

@@ -219,7 +219,8 @@ def parse(text: str, now: Optional[float] = None, tz: str = "") -> Schedule:
     when = time.time() if now is None else float(now)
     t = original.lower()
 
-    if re.fullmatch(r"[\d*/,\-a-z]+(?:\s+[\d*/,\-a-z]+){4}", t) and re.search(r"[\d*]", t.split()[0]):
+    fields = t.split()
+    if len(fields) == 5 and re.search(r"[\d*]", fields[0]) and all(re.fullmatch(r"[\d*/,\-a-z]+", f) for f in fields):
         return parse_cron(t, zone)
 
     clock = _hm(t)
