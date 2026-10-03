@@ -41,6 +41,7 @@ HINTS: Dict[str, str] = {
     "delentia_write_repo_file": "create write add new file save content draft | สร้างไฟล์ เขียนไฟล์ เพิ่มไฟล์",
     "delentia_patch_repo_file": "change edit replace modify update fix rename substitute line function | แก้ไขไฟล์ แก้ไข เปลี่ยน แทนที่",
     "delentia_run_sandboxed_command": "run execute command shell tests lint build script terminal test pytest | รันคำสั่ง สั่งรัน ทดสอบ คำสั่ง",
+    "delentia_browse_page": "browser open page render javascript screenshot website dynamic single-page app snapshot | เบราว์เซอร์ เปิดหน้าเว็บ ภาพหน้าจอ",
     "delentia_crawl_url": "fetch open page website url link http https webpage download read site | เว็บ ลิงก์ หน้าเว็บ เปิดเว็บ ไปที่",
     "delentia_web_search": "search internet web google look up lookup who maintains maintainer author released release version latest current online news find online | ค้นเว็บ ค้นหาเว็บ อินเทอร์เน็ต ล่าสุด ออนไลน์",
     "delentia_schedule_reminder": "remind reminder alert notify later tomorrow tonight friday monday schedule ping | เตือน แจ้งเตือน พรุ่งนี้ ตั้งเตือน",

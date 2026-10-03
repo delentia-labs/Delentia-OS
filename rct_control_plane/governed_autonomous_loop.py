@@ -191,6 +191,7 @@ RISKY_TOOLS = frozenset({
     "delentia_import_session_state",    # merges external/untrusted JITNA state
     "delentia_run_forged_tool",         # runs code the system wrote for itself (a human signed its hash)
     "delentia_web_search",              # outbound query to a search provider the owner configured (Round 55)
+    "delentia_browse_page",             # runs a stranger's page scripts in a browser (Round 58)
 })
 
 # Round 45 (K.1.8): real finding from a live-Ollama scenario battery
