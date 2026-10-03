@@ -145,7 +145,8 @@ class _Cdp:
     """The few DevTools calls this tool needs, over one websocket."""
 
     def __init__(self, ws: Any):
-        self._ws, self._id, self.events = ws, 0, []
+        self._ws, self._id = ws, 0
+        self.events: List[Dict[str, Any]] = []
 
     async def _note(self, event: Dict[str, Any]) -> None:
         """Every event passes here. A page's alert/confirm/prompt would freeze it until answered, so it is dismissed at once (the answer's reply is ignored)."""
