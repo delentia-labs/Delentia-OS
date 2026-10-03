@@ -1293,6 +1293,17 @@ class GovernedAutonomousLoop(AutonomousLoop):
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
         duration = time.time() - self._episode_start_time
         stopped_reason = result["stopped_reason"]
+        if getattr(self, "_episode_taint", None) is not None and self._taint_enabled():
+            # Round 58, answer channel: after reading text from outside, an address in the answer must have come from the person or from a page (answer_guard.py).
+            from rct_control_plane import answer_guard
+            removed = answer_guard.sanitize_result(result, result["goal"], getattr(self, "_episode_seen_urls", set()))
+            if removed:
+                try:
+                    self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action="answer_sanitized",
+                                                   actor=self.namespace, changes={"removed": len(removed), "removed_sha256": [_sha(u) for u in removed][:20],
+                                                                                  "source_tool": self._episode_taint})
+                except Exception:
+                    pass
         warm = stopped_reason == "warm_recall"
         if warm:
             verification = {"applicable": True, "aligned_with_intent": True,
