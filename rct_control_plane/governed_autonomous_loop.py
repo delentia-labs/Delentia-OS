@@ -706,6 +706,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
         elif isinstance(base, OllamaProvider):
             prices = (0.0, 0.0)               # the wrapper below hides the type MeteredProvider would have recognised
         inner = with_circuit_breaker(base)    # Round 53: an endpoint that keeps failing is paused for everyone, not rediscovered per episode
+        # Round 57: DELENTIA_FALLBACK_MODELS names backups tried when this model's endpoint fails (provider_fallback.py). With none configured `inner` is unchanged.
+        from rct_control_plane import provider_fallback
+
+        def price_of(provider: Any) -> Any:
+            if isinstance(provider, OllamaProvider):
+                return (0.0, 0.0)
+            if isinstance(provider, OpenRouterProvider):
+                from rct_control_plane.model_config import lookup_openrouter_prices
+                return lookup_openrouter_prices(provider.model)
+            return None
+        inner, worst_prices, _dropped = provider_fallback.chain(inner, base, self._persistence, self.namespace,
+                                                                cost_budget_set=self._max_episode_cost_usd is not None, price_of=price_of)
+        if worst_prices:
+            prices = worst_prices             # the meter charges every call at the dearest model in the chain, so a switch can never make an episode cost more than it was allowed to
         return MeteredProvider(
             inner, max_cost_usd=self._max_episode_cost_usd, max_tokens_total=self._max_episode_tokens,
             prompt_price_per_mtok=prices[0] if prices else None,
