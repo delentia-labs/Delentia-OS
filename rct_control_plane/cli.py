@@ -3359,6 +3359,205 @@ def forge_off(name: str) -> None:
     click.echo("turned off" if forge.deactivate(name) else "no such active tool")
 
 
+@cli.group("checkpoints")
+def checkpoints_group():
+    """
+    Files the agent wrote, and the way back (Round 57). Before delentia_write_repo_file / delentia_patch_repo_file changes a file its previous content is stored;
+    a rollback restores it only if the file still holds what the agent wrote (a later edit by a person is never overwritten without --force).
+
+    Examples:
+        delentia checkpoints list
+        delentia checkpoints diff 12
+        delentia checkpoints rollback 12
+        delentia checkpoints status
+    """
+    pass
+
+
+def _checkpoint_store():
+    from rct_control_plane.checkpoints import CheckpointStore
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return CheckpointStore(ControlPlanePersistence(db_path=agentic_db_path()))
+
+
+@checkpoints_group.command("list")
+@click.option("--limit", default=30, show_default=True, type=int)
+def checkpoints_list_cmd(limit: int) -> None:
+    """Newest first."""
+    rows = _checkpoint_store().list(limit=limit)
+    if not rows:
+        click.echo("No checkpoints.")
+    for r in rows:
+        state = "rolled back" if r["rolled_back_at"] else ("UNPROTECTED" if not r["protected"] else "ok")
+        click.echo(f"#{r['id']:<5} {time.strftime('%Y-%m-%d %H:%M', time.localtime(r['created_at']))}  {r['tool'].replace('delentia_', ''):<18} "
+                   f"{'new file' if not r['existed_before'] else 'changed '}  {r['rel_path']}  [{state}]")
+
+
+@checkpoints_group.command("diff")
+@click.argument("checkpoint_id", type=int)
+def checkpoints_diff_cmd(checkpoint_id: int) -> None:
+    """What the write changed (the earlier content against the file now)."""
+    from rct_control_plane.checkpoints import CheckpointError
+    try:
+        click.echo(_checkpoint_store().diff(checkpoint_id) or "(no difference)")
+    except CheckpointError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@checkpoints_group.command("rollback")
+@click.argument("checkpoint_id", type=int)
+@click.option("--force", is_flag=True, help="Restore even if the file was changed after the agent wrote it (the current content is kept as a checkpoint).")
+def checkpoints_rollback_cmd(checkpoint_id: int, force: bool) -> None:
+    """Put the earlier content back."""
+    from rct_control_plane.checkpoints import CheckpointError
+    try:
+        out = _checkpoint_store().rollback(checkpoint_id, force=force)
+    except CheckpointError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{out['path']}: {out['result']} (undo with: delentia checkpoints rollback {out['undo_checkpoint']})" if out["undo_checkpoint"] else f"{out['path']}: {out['result']}")
+
+
+@checkpoints_group.command("status")
+def checkpoints_status_cmd() -> None:
+    """How many checkpoints exist and how much space they use."""
+    click.echo(json.dumps(_checkpoint_store().status(), indent=2))
+
+
+@cli.group("cron")
+def cron_group():
+    """
+    Persistent recurring jobs (Round 57): a goal the agent runs on a schedule, unattended, as a normal governed episode, with the result kept in the job
+    and optionally delivered to a chat. Written the way a person says it, in English or Thai, or as a cron line.
+
+    Examples:
+        delentia cron parse "every weekday at 8:30"
+        delentia cron add "Summarise the overnight audit log" --schedule "every weekday at 8:30" --deliver telegram:123456789
+        delentia cron add "ตรวจสอบ backup" --schedule "ทุกวันจันทร์ 9 โมงเช้า"
+        delentia cron list
+        delentia cron pause job_ab12cd34ef  |  resume  |  rm  |  run
+    The daemon (`delentia serve`) starts due jobs; `delentia cron run-due` does the same once, by hand.
+    """
+    pass
+
+
+def _cron_service():
+    from rct_control_plane.cron_jobs import CronService
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return CronService(ControlPlanePersistence(db_path=agentic_db_path()))
+
+
+def _cron_owner(namespace: Optional[str]) -> str:
+    return namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+
+
+@cron_group.command("parse")
+@click.argument("text")
+def cron_parse(text: str) -> None:
+    """Show what a schedule means and its next five runs, without saving anything."""
+    import time as _time
+    from datetime import datetime
+    from rct_control_plane import nl_schedule
+    now = _time.time()
+    try:
+        schedule = nl_schedule.parse(text, now=now)
+        runs = nl_schedule.upcoming(schedule, now, 5)
+        zone = nl_schedule._tz(schedule.tz)
+    except nl_schedule.ScheduleError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"meaning : {nl_schedule.describe(schedule)}")
+    for t in runs:
+        click.echo("  next  : " + datetime.fromtimestamp(t, zone).strftime("%a %Y-%m-%d %H:%M %Z"))
+
+
+@cron_group.command("add")
+@click.argument("goal")
+@click.option("--schedule", "schedule_text", required=True, help='e.g. "every weekday at 8:30", "ทุกวัน 09:00", "in 20 minutes", "*/15 8-18 * * mon-fri".')
+@click.option("--name", default="", help="A short label.")
+@click.option("--deliver", default=None, help="channel:recipient, e.g. telegram:123456789 (the recipient must be on that channel's allowlist).")
+@click.option("--max-runs", default=0, type=int, help="Stop after this many runs (a one-off is 1).")
+@click.option("--namespace", default=None, help="Whose job it is (default: the Desk user).")
+def cron_add(goal: str, schedule_text: str, name: str, deliver: Optional[str], max_runs: int, namespace: Optional[str]) -> None:
+    """Create a job. You are the human here, so no signature is asked; the agent's own tool for this does ask."""
+    from rct_control_plane.cron_jobs import CronError
+    target = None
+    if deliver:
+        channel, _, to = deliver.partition(":")
+        target = {"channel": channel, "to": to}
+    try:
+        job = _cron_service().create(_cron_owner(namespace), goal, schedule_text, name=name, deliver=target, created_by="cli", max_runs=max_runs or None)
+    except CronError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"created {job['id']}: {job['schedule_meaning']}")
+    click.echo("  first run: " + time.strftime("%Y-%m-%d %H:%M", time.localtime(job["next_run_at"])))
+
+
+@cron_group.command("list")
+@click.option("--namespace", default=None)
+@click.option("--all", "show_all", is_flag=True, help="Every person's jobs and deleted ones.")
+def cron_list(namespace: Optional[str], show_all: bool) -> None:
+    """List jobs."""
+    service = _cron_service()
+    jobs = service.list(None if show_all else _cron_owner(namespace), include_deleted=show_all)
+    if not jobs:
+        click.echo("No jobs.")
+    for j in jobs:
+        state = "deleted" if j["deleted"] else ("on" if j["enabled"] else "off")
+        nxt = time.strftime("%Y-%m-%d %H:%M", time.localtime(j["next_run_at"])) if j["next_run_at"] else "-"
+        click.echo(f"{j['id']}  {state:<7} {j['namespace']:<12} next {nxt}  {j['schedule_meaning']}  | {j['name']}  (runs {j['run_count']}, last {j['last_status'] or '-'})")
+
+
+def _cron_act(action: str, job_id: str, namespace: Optional[str]) -> None:
+    import asyncio
+    from rct_control_plane.cron_jobs import CronError
+    service = _cron_service()
+    owner = _cron_owner(namespace)
+    try:
+        if action == "rm":
+            service.delete(job_id, actor="cli", namespace=owner)
+            click.echo("deleted (kept on record; it will not run again)")
+        elif action in ("pause", "resume"):
+            job = service.set_enabled(job_id, action == "resume", actor="cli", namespace=owner)
+            click.echo(f"{action}d; next run " + (time.strftime("%Y-%m-%d %H:%M", time.localtime(job["next_run_at"])) if job["next_run_at"] else "-"))
+        elif action == "run":
+            from rct_control_plane import cron_jobs
+            from rct_control_plane.mcp_server import _kernel
+            job = service._owned(job_id, owner)
+            ran = asyncio.run(service.run_job(_kernel, job, cron_jobs.deliver_via_gateways))
+            click.echo(f"{ran['last_status']}: {ran['last_result']}")
+    except CronError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+for _name, _help in (("pause", "Switch a job off (it keeps its history)."), ("resume", "Switch a job back on."),
+                     ("rm", "Delete a job (soft: the record stays)."), ("run", "Run a job now, once, and show the result.")):
+    def _make(action: str, help_text: str) -> None:
+        @cron_group.command(action, help=help_text)
+        @click.argument("job_id")
+        @click.option("--namespace", default=None)
+        def _command(job_id: str, namespace: Optional[str]) -> None:
+            _cron_act(action, job_id, namespace)
+    _make(_name, _help)
+
+
+@cron_group.command("run-due")
+def cron_run_due() -> None:
+    """Run every job that is due, once, and wait for them (what the daemon does every 15 seconds)."""
+    import asyncio
+    from rct_control_plane import cron_jobs
+    from rct_control_plane.mcp_server import _kernel
+    ran = asyncio.run(_cron_service().run_due(_kernel, cron_jobs.deliver_via_gateways))
+    click.echo(f"{len(ran)} job(s) ran")
+    for j in ran:
+        click.echo(f"  {j['id']} {j['last_status']}: {(j['last_result'] or '')[:200]}")
+
+
 @cli.group("tokens")
 def tokens_group():
     """

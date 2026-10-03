@@ -359,6 +359,78 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             })
         return {"channels": out}
 
+    # ------------------------------------------------------------------
+    # Round 57: persistent cron jobs (cron_jobs.py). The Desk user creates jobs directly (they are the human); the agent can only propose one
+    # through delentia_cron_create, which waits for a signature.
+    # ------------------------------------------------------------------
+    def _cron_service() -> Any:
+        from rct_control_plane.cron_jobs import CronService
+        return CronService(_kernel()._persistence)
+
+    def _cron_owner(request: Request) -> str:
+        return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+
+    @router.get("/cron/jobs")
+    async def cron_jobs_list(request: Request) -> Dict[str, Any]:
+        from rct_control_plane import cron_jobs, nl_schedule
+        return {"jobs": _cron_service().list(_cron_owner(request)), "owner": _cron_owner(request),
+                "delivery": {ch: cron_jobs.allowed_recipients(ch) for ch in cron_jobs.DELIVERY_CHANNELS},
+                "limits": {"max_jobs": cron_jobs.MAX_JOBS_PER_NAMESPACE, "min_interval_s": nl_schedule.MIN_INTERVAL_S,
+                           "fails_before_off": cron_jobs.MAX_FAIL_STREAK, "hourly_cap_env": cron_jobs.HOURLY_CAP_ENV},
+                "timezone": nl_schedule.default_timezone_name() or "this machine's local zone", "forms": list(nl_schedule.FORMS)}
+
+    @router.post("/cron/parse")
+    async def cron_parse(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """What a schedule text means and its next five runs, so a person sees it before anything is saved."""
+        import time as _time
+        from datetime import datetime
+        from rct_control_plane import nl_schedule
+        now = _time.time()
+        try:
+            schedule = nl_schedule.parse(str(payload.get("text", "")), now=now)
+            runs = nl_schedule.upcoming(schedule, now, 5)
+            zone = nl_schedule._tz(schedule.tz)
+        except nl_schedule.ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"kind": schedule.kind, "meaning": nl_schedule.describe(schedule), "timezone": schedule.tz or "local",
+                "upcoming": [datetime.fromtimestamp(t, zone).strftime("%a %Y-%m-%d %H:%M %Z") for t in runs]}
+
+    @router.post("/cron/jobs")
+    async def cron_job_create(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        deliver = payload.get("deliver") if isinstance(payload.get("deliver"), dict) else None
+        try:
+            job = _cron_service().create(_cron_owner(request), str(payload.get("goal", "")), str(payload.get("schedule", "")), name=str(payload.get("name", "")),
+                                         deliver=deliver, created_by=f"desk:{_cron_owner(request)}",
+                                         max_runs=int(payload["max_runs"]) if payload.get("max_runs") else None)
+        except (CronError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"job": job}
+
+    @router.post("/cron/jobs/{job_id}/{action}")
+    async def cron_job_action(job_id: str, action: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        service, owner = _cron_service(), _cron_owner(request)
+        try:
+            if action in ("enable", "pause"):
+                return {"job": service.set_enabled(job_id, action == "enable", actor=f"desk:{owner}", namespace=owner)}
+            if action == "run":
+                job = service._owned(job_id, owner)
+                from rct_control_plane import cron_jobs
+                ran = await service.run_job(_kernel(), job, cron_jobs.deliver_via_gateways)
+                return {"job": ran}
+        except CronError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail="actions: enable, pause, run")
+
+    @router.delete("/cron/jobs/{job_id}")
+    async def cron_job_delete(job_id: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        try:
+            return {"job": _cron_service().delete(job_id, actor=f"desk:{_cron_owner(request)}", namespace=_cron_owner(request))}
+        except CronError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
     @router.post("/cron/{task_id}/run")
     async def run_task(task_id: str) -> Dict[str, Any]:
         scheduler = daemon_state().get("scheduler")
@@ -837,6 +909,38 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     # ------------------------------------------------------------------
     # Round 56: governance in one place (governance_view.py). Read-only: nothing here approves, signs or changes a setting.
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Round 57: checkpoints of files the agent wrote (checkpoints.py). Reading is open; a rollback is a write, so it is the signed-in person's act and is audited.
+    # ------------------------------------------------------------------
+    def _checkpoints() -> Any:
+        from rct_control_plane.checkpoints import CheckpointStore
+        return CheckpointStore(_kernel()._persistence)
+
+    @router.get("/checkpoints")
+    async def checkpoints_list(limit: int = Query(50, ge=1, le=500)) -> Dict[str, Any]:
+        store = _checkpoints()
+        rows = store.list(limit=limit)
+        for row in rows:
+            for key in ("before_sha", "after_sha"):
+                row[key] = (row[key] or "")[:16] or None
+        return {"checkpoints": rows, "status": store.status()}
+
+    @router.get("/checkpoints/{checkpoint_id}/diff")
+    async def checkpoints_diff(checkpoint_id: int) -> Dict[str, Any]:
+        from rct_control_plane.checkpoints import CheckpointError
+        try:
+            return {"diff": _checkpoints().diff(checkpoint_id)}
+        except CheckpointError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.post("/checkpoints/{checkpoint_id}/rollback")
+    async def checkpoints_rollback(checkpoint_id: int, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        from rct_control_plane.checkpoints import CheckpointError
+        try:
+            return _checkpoints().rollback(checkpoint_id, force=bool((payload or {}).get("force")))
+        except CheckpointError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @router.get("/governance")
     async def governance_overview() -> Dict[str, Any]:
         from rct_control_plane import governance_view

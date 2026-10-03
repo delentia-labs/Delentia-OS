@@ -220,6 +220,44 @@ async def delentia_schedule_reminder(goal: str, fire_in_seconds: float) -> dict:
     return {"reminder_id": reminder_id}
 
 
+def _cron() -> "Any":
+    from rct_control_plane.cron_jobs import CronService
+    return CronService(_kernel._persistence)
+
+
+@mcp.tool()
+async def delentia_cron_create(goal: str, schedule: str, name: str = "", deliver_channel: str = "", deliver_to: str = "",
+                               max_runs: int = 0, namespace: Optional[str] = None) -> dict:
+    """Create a PERSISTENT recurring job (Round 57): `goal` runs unattended on `schedule`, written the way a person says it
+    ("every weekday at 8:30", "every 2 hours", "in 20 minutes", "ทุกวันจันทร์ 9 โมงเช้า", or a 5-field cron line), as a normal governed episode, and
+    its result can be delivered to a chat (`deliver_channel` telegram, signal or whatsapp, `deliver_to` a recipient who is on that channel's
+    allowlist). Waits for a human signature, because it is an unattended future action. Returns the job and what the schedule was understood to mean."""
+    from rct_control_plane.cron_jobs import CronError
+    deliver = {"channel": deliver_channel, "to": deliver_to} if deliver_channel else None
+    try:
+        job = _cron().create(namespace or "owner", goal, schedule, name=name, deliver=deliver, created_by=f"agent:{namespace or 'owner'}",
+                             max_runs=max_runs or None)
+    except CronError as exc:
+        return {"error": str(exc)}
+    return {"job": job}
+
+
+@mcp.tool()
+async def delentia_cron_list(namespace: Optional[str] = None) -> dict:
+    """List the caller's own persistent jobs: schedule meaning, next run, last result, whether each is on."""
+    return {"jobs": _cron().list(namespace or "owner")}
+
+
+@mcp.tool()
+async def delentia_cron_delete(job_id: str, namespace: Optional[str] = None) -> dict:
+    """Stop one of the caller's own persistent jobs (it is switched off and hidden; its history stays)."""
+    from rct_control_plane.cron_jobs import CronError
+    try:
+        return {"job": _cron().delete(job_id, actor=f"agent:{namespace or 'owner'}", namespace=namespace or "owner")}
+    except CronError as exc:
+        return {"error": str(exc)}
+
+
 @mcp.tool()
 async def delentia_check_reminders() -> dict:
     """Poll for due reminders and really run each one's goal through a
@@ -441,6 +479,21 @@ async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_re
     return {"matches": matches}
 
 
+def _checkpoint_before(relative_path: str, tool: str) -> "tuple[Any, Optional[int]]":
+    """Round 57: store the file's previous content before a file tool changes it (checkpoints.py). A checkpoint problem never blocks the write the
+    human has signed for: it is logged, and the result simply carries no checkpoint id."""
+    try:
+        from rct_control_plane import checkpoints
+        if not checkpoints.enabled():
+            return None, None
+        store = checkpoints.CheckpointStore(_kernel._persistence)
+        return store, store.begin(REPO_ROOT, relative_path, tool)
+    except Exception as exc:                      # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("checkpoint before %s on %s failed: %s", tool, relative_path, exc)
+        return None, None
+
+
 @mcp.tool()
 async def delentia_write_repo_file(relative_path: str, content_text: str) -> dict:
     """Real, write-capable repo file tool (Round 33, Architect-approved as
@@ -457,8 +510,16 @@ async def delentia_write_repo_file(relative_path: str, content_text: str) -> dic
     if _is_write_blocked(relative_path):
         return {"error": f"writes to this path are blocked by policy: {relative_path!r}"}
     resolved.parent.mkdir(parents=True, exist_ok=True)
-    resolved.write_text(content_text, encoding="utf-8")
-    return {"path": relative_path, "written_bytes": len(content_text.encode("utf-8"))}
+    store, checkpoint = _checkpoint_before(relative_path, "delentia_write_repo_file")
+    try:
+        resolved.write_text(content_text, encoding="utf-8")
+    except Exception as exc:
+        if store is not None:
+            store.abandon(checkpoint, f"{type(exc).__name__}")
+        raise
+    if store is not None:
+        store.seal(checkpoint, REPO_ROOT, relative_path)
+    return {"path": relative_path, "written_bytes": len(content_text.encode("utf-8")), **({"checkpoint": checkpoint} if checkpoint else {})}
 
 
 @mcp.tool()
@@ -482,8 +543,16 @@ async def delentia_patch_repo_file(relative_path: str, old_text: str, new_text: 
         return {"error": "old_text not found in file"}
     if count > 1:
         return {"error": f"old_text is ambiguous - appears {count} times, must appear exactly once"}
-    resolved.write_text(original.replace(old_text, new_text, 1), encoding="utf-8")
-    return {"path": relative_path, "patched": True}
+    store, checkpoint = _checkpoint_before(relative_path, "delentia_patch_repo_file")
+    try:
+        resolved.write_text(original.replace(old_text, new_text, 1), encoding="utf-8")
+    except Exception as exc:
+        if store is not None:
+            store.abandon(checkpoint, f"{type(exc).__name__}")
+        raise
+    if store is not None:
+        store.seal(checkpoint, REPO_ROOT, relative_path)
+    return {"path": relative_path, "patched": True, **({"checkpoint": checkpoint} if checkpoint else {})}
 
 
 @mcp.tool()

@@ -340,9 +340,24 @@ async def _lifespan(app: FastAPI):
     _DAEMON_EMAIL_GATEWAY = EmailGateway(kernel=ALGORITHM_KERNEL)
     _DAEMON_EMAIL_GATEWAY.start()
 
+    # Round 57: persistent cron jobs deliver their results through these running gateways (WhatsApp has no poller, so a sender is built on demand).
+    def _gateway_for(channel: str) -> Any:
+        if channel == "telegram":
+            return _DAEMON_TELEGRAM_GATEWAY
+        if channel == "signal":
+            return _DAEMON_SIGNAL_GATEWAY
+        if channel == "whatsapp":
+            from rct_control_plane.gateways.whatsapp_gateway import WhatsAppGateway
+            gateway = WhatsAppGateway(kernel=ALGORITHM_KERNEL)
+            return gateway if gateway.is_configured() else None
+        return None
+    from rct_control_plane import cron_jobs
+    cron_jobs.set_gateway_resolver(_gateway_for)
+
     try:
         yield
     finally:
+        cron_jobs.set_gateway_resolver(None)
         if _DAEMON_EMAIL_GATEWAY is not None:
             await _DAEMON_EMAIL_GATEWAY.stop()
         _DAEMON_EMAIL_GATEWAY = None

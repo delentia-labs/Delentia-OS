@@ -234,6 +234,27 @@ export interface GovVerify {
 }
 export interface WitnessCheck { witness: string; key_id: string; ok: boolean; checked: number; problems: string[] }
 
+
+// ---- persistent cron jobs (cron_jobs.py, Round 57) ----------------------------------
+export interface CronJob {
+  id: string; namespace: string; name: string; goal: string; schedule_text: string; schedule_meaning: string; enabled: boolean; deleted: boolean;
+  deliver: { channel: string; to: string } | null; created_at: number; created_by: string | null; next_run_at: number | null; last_run_at: number | null;
+  last_status: string | null; last_result: string | null; run_count: number; fail_streak: number; max_runs: number | null;
+}
+export interface CronJobs {
+  jobs: CronJob[]; owner: string; delivery: Record<string, string[]>; timezone: string; forms: string[];
+  limits: { max_jobs: number; min_interval_s: number; fails_before_off: number; hourly_cap_env: string };
+}
+export interface CronPreview { kind: string; meaning: string; timezone: string; upcoming: string[] }
+
+
+// ---- checkpoints of files the agent wrote (checkpoints.py, Round 57) ----------------
+export interface Checkpoint {
+  id: number; project: string; rel_path: string; tool: string; existed_before: number; before_sha: string | null; after_sha: string | null;
+  protected: number; note: string | null; created_at: number; rolled_back_at: number | null; rollback_of: number | null;
+}
+export interface CheckpointList { checkpoints: Checkpoint[]; status: { enabled: boolean; checkpoints: number; unprotected: number; stored_bytes: number; blob_dir: string } }
+
 // ---- calls --------------------------------------------------------------------
 
 // ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
@@ -319,6 +340,15 @@ export const desk = {
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),
   daemon: () => call<DaemonStatus>("/v1/daemon/status"),
+  cronJobs: () => call<CronJobs>("/v1/desk/cron/jobs"),
+  cronPreview: (text: string) => call<CronPreview>("/v1/desk/cron/parse", { method: "POST", body: JSON.stringify({ text }) }),
+  cronCreate: (body: { goal: string; schedule: string; name?: string; deliver?: { channel: string; to: string } | null; max_runs?: number }) =>
+    call<{ job: CronJob }>("/v1/desk/cron/jobs", { method: "POST", body: JSON.stringify(body) }),
+  cronAction: (id: string, action: "enable" | "pause" | "run") => call<{ job: CronJob }>(`/v1/desk/cron/jobs/${encodeURIComponent(id)}/${action}`, { method: "POST", body: "{}" }),
+  cronDelete: (id: string) => call<{ job: CronJob }>(`/v1/desk/cron/jobs/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  checkpoints: () => call<CheckpointList>("/v1/desk/checkpoints"),
+  checkpointDiff: (id: number) => call<{ diff: string }>(`/v1/desk/checkpoints/${id}/diff`),
+  checkpointRollback: (id: number, force = false) => call<{ path: string; result: string; undo_checkpoint: number | null }>(`/v1/desk/checkpoints/${id}/rollback`, { method: "POST", body: JSON.stringify({ force }) }),
   runTask: (taskId: string) => call<{ status: string; output?: string; error?: string }>(`/v1/desk/cron/${encodeURIComponent(taskId)}/run`, { method: "POST" }),
   subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
   runSubagents: (goals: string[], timeoutSeconds = 240) =>

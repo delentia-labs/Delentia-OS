@@ -31,13 +31,16 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "identity": ("identity",),
     "episodes": ("governed_loop_episode_start", "governed_loop_episode_end"),
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
+    "cron": ("cron_job",),
+    "checkpoints": ("repo_checkpoint",),
 }
 CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity in entities}
 # "attention" is the default view: what a person responsible for the system should look at. It leaves out the routine
 # rows (every allowed tool call, every notary receipt, episode start and end).
 ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
-    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap')"
+    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint')"
+    " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
     " OR (t.entity_type = 'residency_decision' AND t.action != 'allow')"
     " OR (t.entity_type = 'governed_loop_second_opinion' AND t.action = 'attack')"
     " OR (t.entity_type = 'governed_loop_fdia_gate' AND t.changes LIKE '%\"blocked\": true%'))")
@@ -102,6 +105,11 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"notary receipt #{(c.get('receipt') or {}).get('seq')} for {action}"
     if entity_type == "notary_gap":
         return f"the notary could not record {action}; kept as a visible gap"
+    if entity_type == "repo_checkpoint":
+        return f"rollback of {_short(c.get('path'), 60)}: {c.get('result')}" + (" (forced)" if c.get("forced") else "")
+    if entity_type == "cron_job":
+        extra = f" ({c.get('reason')})" if c.get("reason") else (f" ended {c.get('stopped_reason')}" if c.get("stopped_reason") else "")
+        return f"cron job {action}: {_short(c.get('name'), 50)} [{c.get('schedule')}]{extra}"
     if entity_type == "identity":
         return f"{action}: {c.get('name')}"
     if entity_type == "autonomous_loop_step":

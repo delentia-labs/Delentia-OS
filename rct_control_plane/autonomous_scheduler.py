@@ -75,6 +75,27 @@ class AutonomousScheduler:
                 interval_seconds=5,
                 handler=self._poll_reminders,
             )
+            self.register_task(
+                name="cron_dispatcher",
+                description="Round 57: starts persistent cron jobs (delentia cron) when they are due; each runs as a governed episode and delivers its result",
+                interval_seconds=15,
+                handler=self._dispatch_cron,
+            )
+
+    async def _dispatch_cron(self) -> str:
+        """Round 57: start every persistent cron job that is due (cron_jobs.py). Returns at once; each job runs as its own governed episode."""
+        from rct_control_plane import cron_jobs
+        if self._kernel is None:
+            raise RuntimeError("_dispatch_cron requires a kernel, but none was configured")
+        service = self._cron_service()
+        started = service.dispatch_background(self._kernel, cron_jobs.deliver_via_gateways)
+        return f"{started} cron job(s) started" if started else "no cron job due"
+
+    def _cron_service(self) -> Any:
+        from rct_control_plane import cron_jobs
+        if getattr(self, "_cron", None) is None:
+            self._cron = cron_jobs.CronService(self._kernel._persistence)
+        return self._cron
 
     async def _poll_reminders(self) -> str:
         """Real handler wired to scheduler.py's existing, already-tested

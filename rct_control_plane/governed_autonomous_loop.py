@@ -284,6 +284,8 @@ def _budget_from_env(name: str, kind: type) -> Optional[Any]:
 _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_write_repo_file",
     "delentia_patch_repo_file",
+    # Round 57: a recurring job is an unattended future action; the agent may propose one, a human signs it.
+    "delentia_cron_create",
 })
 
 
@@ -769,10 +771,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # namespace unless told otherwise, so a fact one user asked the agent to remember was
     # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
     # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
-    MEMORY_TOOLS = ("delentia_remember", "delentia_recall")
+    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete")
     # Channel namespaces belong to outside senders; the shared default store (what the
     # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
-    CHANNEL_NAMESPACE_PREFIXES = ("telegram-", "discord-", "slack-", "line-", "http-agent-")
+    # Round 57: whatsapp-, signal- and email- were missing (those gateways arrived in Round 55), so a sender on them could read the owner's shared memory.
+    CHANNEL_NAMESPACE_PREFIXES = ("telegram-", "discord-", "slack-", "line-", "whatsapp-", "signal-", "email-", "http-agent-")
 
     def _scope_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
         if tool_name in self.MEMORY_TOOLS:
