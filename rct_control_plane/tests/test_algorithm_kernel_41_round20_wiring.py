@@ -33,7 +33,7 @@ async def main():
     print("\n--- ALGO-08 Self-Evolving (empty-ish kernel vault, honest near-zero feedback) ---")
     result = await kernel.algo_08_self_evolving()
     print(result)
-    check("ALGO-08 evolve_cycle returns a real status", result["status"] in ("evolved", "no_evolution", "error"))
+    check("ALGO-08 evolve_cycle returns a real status", result["status"] in ("evolved", "evolution_ready", "no_evolution", "error"))
     status = kernel.algo_08_evolution_status()
     print(status)
     check("ALGO-08 status reflects one real MEESession step", status["mee_session_step_count"] == 1)

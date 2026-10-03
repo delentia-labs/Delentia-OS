@@ -101,6 +101,7 @@ from rct_control_plane.algo_36_rflh import RFLHEngine, LearningExample
 # dependency chain, then independently re-verified by re-running its
 # smoke test directly before this wiring.
 from rct_control_plane.algo_08_self_evolving import SelfEvolvingOrchestrator
+from rct_control_plane.tool_forge import find_gaps as _find_forge_gaps
 from rct_control_plane.algo_17_graph_traversal import GraphEngine, GraphNode, GraphRelationship
 from rct_control_plane.algo_24_benchmark_suite import KernelBenchmarkSuite
 from rct_control_plane.algo_26_intent_classification import IntentClassifier
@@ -368,7 +369,8 @@ class AlgorithmKernel41:
         self._capability_registry.register(
             "self_evolving_orchestrator",
             lambda: SelfEvolvingOrchestrator(
-                self._capability_registry.get("mee_session_default"), self._capability_registry.get("rctdb_client")
+                self._capability_registry.get("mee_session_default"), self._capability_registry.get("rctdb_client"),
+                gap_finder=lambda: _find_forge_gaps(self._persistence),
             ),
             depends_on=["mee_session_default", "rctdb_client"],
         )

@@ -57,6 +57,8 @@ menu, as in Hermes.
 | Channels | `/channels` (allowlist counts, never sender ids) | `/v1/desk/channels` |
 | Analytics | `/experiments` (RCTDB runs, first vs last) | `/v1/desk/experiments` |
 
+Round 54 page: `/fdia` (`/v1/desk/fdia`: the equation explained with a live calculator and four worked calls, the editor for the owner's policy for A, and a tester that evaluates a draft before it is saved). The tab and the save message live in the page, not the workspace, because a save changes the policy digest and remounts the workspace to reset the draft.
+
 Round 51 pages: `/growth` (`/v1/desk/growth`: MEE G per user, the evolution and intent profile), `/memory` (`/v1/desk/memories`), `/algorithms` (`/v1/desk/pipeline`), `/subagents` (`/v1/desk/subagents`). The earlier "Labs" pages, the multi-theme system and the intent-chat window were deleted on 2026-10-01; git history has them.
 
 ## Rules

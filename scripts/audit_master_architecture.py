@@ -9,6 +9,7 @@ IS. This script checks each statement against the repository instead of repeatin
   NOT_WIRED   real code exists but the agent runtime / API never reaches it
   ABSENT      nothing in the repository does this
   DOC_WRONG   the document's wording differs from the code in a way that would mislead
+  CUT         decided not to build now (cost, hardware, or measured to be not worth it); kept on disk, reason recorded
 
 Every check reads source text or runs a small real call; nothing is taken from the document's own claims.
 
@@ -20,14 +21,15 @@ import argparse
 import json
 import re
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 CP = REPO / "rct_control_plane"
-VERDICTS = ("REAL", "PARTIAL", "NOT_WIRED", "ABSENT", "DOC_WRONG")
+VERDICTS = ("REAL", "PARTIAL", "NOT_WIRED", "ABSENT", "DOC_WRONG", "CUT")
+# CUT = the Architect decided (2026-10-02) not to build it now; the code stays on disk (Zero-Delete) and the reason is in the finding.
 
 
 @dataclass
@@ -104,11 +106,14 @@ def layer3() -> Finding:
     zero_d = fdia_score(0.0, 1.0, 1.0)
     ok = zero_a == 0 and zero_i == 0 and zero_d == 0
     gate = mentions("rct_control_plane/governed_autonomous_loop.py", r"FDIA_GATE_THRESHOLD")
-    return Finding("§2 Layer 3", "FDIA hard gate: A=0 blocks before any model call; F = D^I x A",
-                   "REAL" if ok and gate else "PARTIAL",
-                   f"F(A=0)={zero_a}, F(I=0)={zero_i}, F(D=0)={zero_d}; threshold enforced in the loop: {gate}. "
-                   "Python A is per-tool only (no per-action rules, roles or tiers: those exist in the TypeScript policy).",
-                   "Port the owner-defined policy (layer 3 of the FDIA contract) to Python.")
+    policy = (CP / "fdia_policy.py").exists() and mentions("rct_control_plane/governed_autonomous_loop.py", r"fdia_policy")
+    gui = (REPO / "apps" / "gui" / "src" / "app" / "fdia" / "page.tsx").exists()
+    return Finding("§2 Layer 3", "FDIA hard gate: A=0 blocks before any model call; F = D^I x A; A as the owner's policy",
+                   "REAL" if ok and gate and policy else "PARTIAL",
+                   f"F(A=0)={zero_a}, F(I=0)={zero_i}, F(D=0)={zero_d}; threshold enforced in the loop: {gate}. Owner-defined policy for A "
+                   f"(rules, roles, denied paths, 1-3 signatures from approver keys with roles, jury): {policy}; Desk page to explain and edit it: {gui}. "
+                   "Role comes from the server-side identity, so it is only as strong as that identity (an API token per user).",
+                   "Per-user API tokens (so a role is a real identity) and a policy change that itself needs a signature.")
 
 
 def layer3_name() -> Finding:
@@ -123,12 +128,12 @@ def layer4() -> Finding:
     weights = [p for p in REPO.rglob("*.safetensors") if ".claude" not in p.parts and "node_modules" not in p.parts]
     adapters = [p for p in REPO.rglob("adapter_model*") if ".claude" not in p.parts and "node_modules" not in p.parts]
     used = runtime_uses("lora_multiplexer", *AGENT_PATH)
-    route = runtime_uses("lora_multiplexer", "rct_control_plane/api.py")
     return Finding("§2 Layer 4 / §6.2", "1+4 LoRA multiplexer: one frozen base + Router/Guardian/Executor/Scribe adapters in <6 GB VRAM",
-                   "PARTIAL" if module else "ABSENT",
-                   f"scheduling module: {module}; trained adapter weights in the repo: {len(weights) + len(adapters)}; reached from the "
-                   f"agent loop: {used or 'no'} (an API route uses it: {bool(route)}). No VRAM measurement exists; the local model is plain Ollama.",
-                   "Train or source four adapters, measure peak VRAM on the target machine, then wire a route through the provider layer.")
+                   "CUT" if module and not weights and not adapters else ("PARTIAL" if module else "ABSENT"),
+                   f"scheduling module: {module}; trained adapter weights in the repo: {len(weights) + len(adapters)}; reached from the agent loop: {used or 'no'}. "
+                   "Decision 2026-10-02: not now. The development machine has no usable GPU (Ollama runs on CPU), so four adapters cannot be trained or "
+                   "VRAM measured here, and per-role behaviour is already reachable with a different model per profile (model_config.py) at no training cost.",
+                   "Revisit when a GPU machine exists and the per-role-model comparison shows a gap an adapter would close.")
 
 
 def layer5() -> Finding:
@@ -141,33 +146,50 @@ def layer5() -> Finding:
 
 def layer6() -> Finding:
     ir = (CP / "execution_graph_ir.py").exists()
-    in_loop = runtime_uses("execution_graph_ir", *AGENT_PATH) or runtime_uses("parallel_engine", *AGENT_PATH)
+    batch = (CP / "dag_executor.py").exists() and mentions("rct_control_plane/autonomous_loop.py", r"_run_tool_batch")
     return Finding("§2 Layer 6", "Execution Graph IR + DAG swarm with wavefront parallelism (>70% time saved)",
-                   "PARTIAL" if ir else "ABSENT",
-                   f"graph IR exists: {ir}; used by the governed loop: {in_loop or 'no'}. Subagents run in parallel processes, "
-                   "but the loop's plan is a list, not a DAG. The document's own §8 measured 11.9%-91.8% depending on topology.",
-                   "Compile the RCT-7 plan to the IR and run independent steps in waves.")
+                   "PARTIAL" if ir and batch else ("NOT_WIRED" if ir else "ABSENT"),
+                   f"graph IR exists: {ir}; the governed loop runs a model's batch of independent tool calls as waves over it (opt-in DELENTIA_PARALLEL_TOOLS=1): {batch}. "
+                   "Measured on real tools (scripts/dag_wave_benchmark.py): 4 independent waits 3.8x, a diamond 1.3x, a chain 1.0x, CPU-bound Python 1.1x. "
+                   "RCT-7's steps are a chain, so compiling the plan to the IR gains nothing; parallelism comes from the model batching independent calls and from subagents.",
+                   "Turn it on by default only after a capable model uses batches correctly (needs the model benchmark).")
 
 
 def layer7() -> Finding:
     toon = (CP / "toon_formatter.py").exists()
     used = runtime_uses("toon_formatter", *RUNTIME, "rct_control_plane/mcp_server.py", "rct_control_plane/intent_compiler.py")
     return Finding("§2 Layer 7", "Intent compiler emits TOON, which prevents semantic drift",
-                   "NOT_WIRED" if toon and not used else ("REAL" if used else "ABSENT"),
-                   f"toon_formatter exists: {toon}; imported by the runtime / MCP tools: {used or 'no'}. The intent compiler is real "
-                   "(80% on a 30-goal corpus) and RCT-7 step 7 checks the answer against intent, but nothing validates output against a TOON schema.",
-                   "Validate model decisions and tool outputs against a typed schema in the cycle.")
+                   "CUT" if toon and not used else ("REAL" if used else "ABSENT"),
+                   f"toon_formatter exists: {toon}; used by the runtime: {used or 'no'}. TOON is Token-Oriented Object Notation (a compact serialisation), not "
+                   "a typed schema, so it cannot prevent drift. Measured with tiktoken on the runtime's own payloads (scripts/measure_toon_tokens.py): "
+                   "TOON used 15% MORE tokens than compact JSON overall and saved 13-21% only against indented JSON; two of six payloads did not round-trip. "
+                   "The intent compiler is real (80% on a 30-goal corpus) and RCT-7 step 7 plus the per-stage conservation check "
+                   "(delentia_verify_intent_conservation, a similarity check, not a lossless proof) guard the meaning.",
+                   "Do not wire. If drift needs preventing, validate model decisions against a JSON schema instead.")
 
 
 def layer8() -> Finding:
     runner = (REPO / "signedai" / "runner.py").exists()
-    in_loop = runtime_uses("signedai", *AGENT_PATH)
+    in_loop = mentions("rct_control_plane/governed_autonomous_loop.py", r"_jury_gate")
     return Finding("§2 Layer 8", "HexaCore jury of 7 models votes >=75% and the verdict is stamped",
                    "PARTIAL" if runner else "NOT_WIRED",
-                   f"Round 53 jury runner (real calls, abstain rules, independence check, Ed25519 verdict): {runner}; called by the "
-                   f"governed loop: {in_loop or 'no'}. The roster's 7 ids are not all reachable through one provider; tier 6 passes at "
-                   "4/6 (66.7%), not 75%; nothing has run a real multi-vendor vote yet.",
-                   "Configure real endpoints per role, run one recorded vote, and decide which actions require a jury (tier by risk).")
+                   f"Jury runner (real calls, abstain rules, independence check, Ed25519 verdict): {runner}; the governed loop asks it before an action "
+                   f"whose owner-policy rule names a tier, and before an episode whose risk the policy assigns one: {in_loop}; verdicts go to the audit trail. "
+                   "The roster's 7 ids are not all reachable through one provider; tier 6 passes at 4/6 (66.7%), not 75%; "
+                   "no vote with real keys from different vendors has been run yet.",
+                   "Configure real endpoints per role and run one recorded vote.")
+
+
+def genesis() -> Finding:
+    forge = (CP / "tool_forge.py").exists() and mentions("rct_control_plane/mcp_server.py", r"delentia_run_forged_tool")
+    readiness = mentions("rct_control_plane/algo_08_self_evolving.py", r"SPAWN_GROWTH_RATIO")
+    return Finding("§7.4", "Genesis (ALGO-39) and MEE v2 let the system synthesise a new tool when it finds a gap, compile it and use it",
+                   "PARTIAL" if forge else "ABSENT",
+                   f"Tool Forge (gap evidence from RCTDB -> model or human code -> static check + smoke test in another process -> human signs the code hash -> "
+                   f"the agent calls it): {forge}. ALGO-08's readiness is stated as a growth ratio so it can fire on the runtime's G scale: {readiness}. "
+                   "Limits: pure functions only (no files, network or imports outside a short list); model-written tests can be vacuous, so a human signs code and test together; "
+                   "never run against a real capable model yet.",
+                   "Run the forge against a capable model on a real repeated gap; extend beyond pure functions only with a stronger jail.")
 
 
 def layer9() -> Finding:
@@ -251,11 +273,11 @@ def algorithm_names(doc_text: str) -> Tuple[List[Finding], List[Tuple[str, str, 
                       "REAL" if not mismatches else "PARTIAL",
                       f"{len(doc)} entries parsed; {len(mismatches)} whose names differ from the pipeline adapter's: "
                       + "; ".join(f"{i}: doc '{d}' vs code '{c}'" for i, d, c in mismatches),
-                      "Align the names. ALGO-26 is the real difference: the Architect settled it as Intent Classification (algo_26 docstring); the document's 'Intent Conservation' (a lossless semantic verifier) exists only as the heuristic VERIFY step.")
+                      "Align the names. ALGO-26 is the real difference: the Architect settled it as Intent Classification (algo_26 docstring); the document's 'Intent Conservation' exists as delentia_verify_intent_conservation, a per-stage similarity check (>= 0.1), not a lossless verifier.")
     return [finding], mismatches
 
 
-CHECKS: List[Callable[[], Union[Finding, List[Finding]]]] = [layer1, layer2, layer2_range, layer3, layer3_name, layer4, layer5, layer6, layer7, layer8, layer9,
+CHECKS: List[Callable[[], Union[Finding, List[Finding]]]] = [layer1, layer2, layer2_range, layer3, layer3_name, layer4, layer5, layer6, layer7, layer8, genesis, layer9,
                                       layer10, jitna_terms]
 
 

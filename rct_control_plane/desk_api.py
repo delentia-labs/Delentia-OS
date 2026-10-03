@@ -16,7 +16,7 @@ import os
 import sqlite3
 from typing import Any, Callable, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 
 from rct_control_plane import data_home
 
@@ -475,7 +475,10 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         }
 
     @router.get("/memories")
-    async def memories(namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500)) -> Dict[str, Any]:
+    async def memories(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500)) -> Dict[str, Any]:
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            namespace = owner                    # Round 54: with a token per person nobody reads another person's memory
         with _connect() as conn:
             conn.row_factory = sqlite3.Row
             if namespace:
@@ -485,10 +488,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
                 rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
                                     "FROM memories ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
             spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories GROUP BY namespace ORDER BY n DESC").fetchall()]
+        if owner and owner != "shared":
+            spaces = [s for s in spaces if s["namespace"] == owner]       # other people's namespace names are not shown either
         return {"memories": [dict(r) for r in rows], "namespaces": spaces}
 
     @router.post("/memories")
-    async def remember(payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def remember(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
         """Give the agent a fact about the user's world. This is data the user
         owns: it feeds recall, the retrieval algorithms and D."""
         from rct_control_plane.agent_memory import AgentMemory, MemoryType
@@ -500,6 +505,9 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except ValueError:
             raise HTTPException(status_code=400, detail="unknown memory_type") from None
         namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            namespace = owner                                                 # Round 54: a person writes only to their own memory
         importance = max(0.0, min(1.0, float(payload.get("importance", 0.7))))
         memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
         return {"memory_id": memory_id, "namespace": namespace}
@@ -539,6 +547,276 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         path = residency.save_policy(policy)
         return {"saved": str(path), **residency.describe()}
+
+    # ------------------------------------------------------------------
+    # Round 54: the owner's policy for A in F = D^I x A
+    # ------------------------------------------------------------------
+    async def _tool_gate_labels() -> List[Dict[str, Any]]:
+        from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS, RISKY_TOOLS
+        from rct_control_plane.mcp_server import mcp
+        listed = await mcp.list_tools()
+        return [{"name": t.name, "description": (t.description or "").strip()[:160],
+                 "built_in": ("always a signature" if t.name in _ALWAYS_NEEDS_APPROVAL_TOOLS
+                              else "FDIA gate" if t.name in RISKY_TOOLS else "open")} for t in sorted(listed, key=lambda t: t.name)]
+
+    def _approver_summary() -> List[Dict[str, Any]]:
+        from rct_control_plane.approvals import trusted_approver_keys, trusted_approver_roles
+        roles = trusted_approver_roles()
+        return [{"name": name, "role": roles.get(key), "key_prefix": key[:12]} for key, name in trusted_approver_keys().items()]
+
+    @router.get("/fdia")
+    async def fdia_state() -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy, signedai_jury
+        from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD
+        path = fdia_policy.policy_path()
+        policy, error = None, ""
+        try:
+            policy = fdia_policy.load_policy()
+        except ValueError:
+            # The reason is on the host (`delentia fdia show`); the response carries a fixed message, not the exception text.
+            error = "cannot read the policy file, or it is invalid (run `delentia fdia show` on the host for the reason)"
+        jury_path = signedai_jury.config_path()
+        return {
+            "path": str(path), "exists": path.exists(), "error": error,
+            "policy": policy.to_dict() if policy is not None else None,
+            "digest": policy.digest() if policy is not None else None,
+            "built_in": {"threshold": FDIA_GATE_THRESHOLD,
+                         "rules": ["a risky tool needs F >= the threshold", "repo writes always need a human signature",
+                                   "a denied shell command or an unsafe write path is A = 0",
+                                   "the policy can tighten these, never loosen them"]},
+            "tools": await _tool_gate_labels(),
+            "approvers": _approver_summary(),
+            "jury": {"configured": jury_path.exists(), "path": str(jury_path)},
+            "limits": {"max_rules": fdia_policy.MAX_RULES, "action_types": list(fdia_policy.ACTION_TYPES),
+                       "jury_tiers": list(fdia_policy.JURY_TIERS), "risk_levels": list(fdia_policy.RISK_LEVELS)},
+        }
+
+    @router.get("/fdia/template/{name}")
+    async def fdia_template(name: str) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        if name not in ("balanced", "strict"):
+            raise HTTPException(status_code=404, detail="templates: balanced, strict")
+        return {"policy": fdia_policy.template(name, [t["name"] for t in await _tool_gate_labels()])}
+
+    @router.post("/fdia/validate")
+    async def fdia_validate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        policy, errors = fdia_policy.validate_policy(payload.get("policy"))
+        return {"valid": policy is not None, "errors": errors, "digest": policy.digest() if policy is not None else None}
+
+    @router.post("/fdia/evaluate")
+    async def fdia_evaluate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """What the policy does with one call, and F. `policy` (a draft not saved yet) takes precedence over the file."""
+        from rct_control_plane import fdia_policy
+        from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD, fdia_score
+        tool = str(payload.get("tool_name", "")).strip()
+        if not tool:
+            raise HTTPException(status_code=400, detail="tool_name is required")
+        args = payload.get("tool_args") or {}
+        if not isinstance(args, dict):
+            raise HTTPException(status_code=400, detail="tool_args must be an object")
+        try:
+            D = min(1.0, max(0.0, float(payload.get("D", 1.0))))
+            I = min(10.0, max(0.0, float(payload.get("I", 1.0))))        # noqa: E741
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="D and I must be numbers") from exc
+        if payload.get("policy") is not None:
+            policy, errors = fdia_policy.validate_policy(payload["policy"])
+            if policy is None:
+                raise HTTPException(status_code=400, detail="the draft policy is invalid: " + "; ".join(errors[:5]))
+        else:
+            try:
+                policy = fdia_policy.load_policy()
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if policy is None:
+            F = fdia_score(D, I, 1.0)
+            return {"policy": None, "A": 1.0, "F": F, "threshold": FDIA_GATE_THRESHOLD, "outcome": "no policy: the built-in gate applies",
+                    "reason": "no policy file; only the built-in rules apply (see built_in)"}
+        result = fdia_policy.evaluate(policy, tool, args, principal=str(payload.get("principal", ""))[:128],
+                                      approved=bool(payload.get("approved", False)))
+        threshold = max(FDIA_GATE_THRESHOLD, policy.custom_safety_threshold)
+        F = fdia_score(D, I, 1.0 if result.needs_signature else result.A)
+        if result.A <= 0 and not result.needs_signature:
+            outcome = "blocked"
+        elif result.needs_signature:
+            outcome = "waits for signature" if F >= threshold else "blocked (F below threshold)"
+        else:
+            from rct_control_plane.governed_autonomous_loop import RISKY_TOOLS
+            judged = tool in RISKY_TOOLS or result.action_type != "ALLOW"
+            outcome = "allowed" if (F >= threshold or not judged) else "blocked (F below threshold)"
+        return {**result.to_dict(), "F": F, "threshold": threshold, "outcome": outcome, "D": D, "I": I}
+
+    def _policy_change_needs_signature() -> bool:
+        """Round 54: changing the owner's rules is itself an act of the Architect. On a server that has an API token (a host)
+        it needs a signature from a trusted approver; on a token-less loopback developer machine it does not, unless asked
+        (DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE=1)."""
+        from rct_control_plane import api_tokens
+        explicit = (os.environ.get("DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE") or "").strip().lower()
+        if explicit in ("1", "true", "yes", "on"):
+            return True
+        if explicit in ("0", "false", "no", "off"):
+            return False
+        return bool(os.environ.get("DELENTIA_API_TOKEN")) or api_tokens.per_user_mode()
+
+    def _signature_gate(request: Request, payload: Dict[str, Any], tool_name: str, args: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """None = go ahead (no signature needed, or a valid signed approval for exactly this change was presented and is
+        now used up). A dict = answer with it (HTTP 202) because the change is waiting for a signature."""
+        from rct_control_plane.approvals import ApprovalError, PendingActionStore
+        if not _policy_change_needs_signature():
+            return None
+        store = PendingActionStore(_kernel()._persistence)
+        approval_id = str(payload.get("approval_id") or "").strip()
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        if not approval_id:
+            roles = [r.strip() for r in (os.environ.get("DELENTIA_POLICY_APPROVER_ROLES") or "").split(",") if r.strip()]
+            record = store.create(namespace=owner, goal=f"Owner policy change: {tool_name}", tool_name=tool_name, tool_args=args,
+                                  reason="changing the rules for A needs a human signature", approver_roles=roles or None)
+            return {"pending_signature": True, "approval_id": record.approval_id, "action_sha256": record.action_sha256, "args": args,
+                    "how": f"sign it on the machine that holds the approver key: delentia approvals approve {record.approval_id} --key <key>; "
+                           "then send the same request again with approval_id"}
+        existing = store.get(approval_id)
+        if existing is None or existing.tool_name != tool_name or existing.tool_args != args:
+            raise HTTPException(status_code=403, detail="that approval is not for this exact change")
+        try:
+            store.claim_for_execution(approval_id)
+        except ApprovalError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        request.state.claimed_approval = approval_id          # set by the server only, never read from the body
+        return None
+
+    @router.put("/fdia/policy")
+    async def fdia_save(payload: Dict[str, Any], request: Request, response: Response) -> Dict[str, Any]:
+        from rct_control_plane import fdia_policy
+        policy, errors = fdia_policy.validate_policy(payload.get("policy"))
+        if policy is None:
+            raise HTTPException(status_code=400, detail="the policy is invalid: " + "; ".join(errors[:8]))
+        waiting = _signature_gate(request, payload, "fdia_policy_change", {"policy_sha256": policy.digest(), "rules": len(policy.rules)})
+        if waiting is not None:
+            response.status_code = 202
+            return waiting
+        before = None
+        try:
+            existing = fdia_policy.load_policy()
+            before = existing.digest() if existing is not None else None
+        except ValueError:
+            before = "unreadable"
+        path = fdia_policy.save_policy(policy)
+        claimed = getattr(request.state, "claimed_approval", None)
+        if claimed:
+            from rct_control_plane.approvals import PendingActionStore
+            PendingActionStore(_kernel()._persistence).mark_executed(claimed, {"saved": str(path), "digest": policy.digest()})
+        _kernel()._persistence.append_audit(
+            entity_type="fdia_policy", entity_id=policy.policy_id, action="policy_saved",
+            actor=getattr(request.state, "delentia_user", None) or "desk",
+            changes={"digest_before": before, "digest_after": policy.digest(), "rules": len(policy.rules), "path": str(path), "approval_id": claimed})
+        return {"saved": str(path), "digest": policy.digest(), "rules": len(policy.rules)}
+
+    @router.post("/fdia/policy/disable")
+    async def fdia_disable(request: Request, response: Response, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Stop using the policy without deleting it: the file is renamed, never removed (Zero-Delete)."""
+        import time as _time
+        from rct_control_plane import fdia_policy
+        path = fdia_policy.policy_path()
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="there is no policy file")
+        body = payload if payload is not None else {}
+        waiting = _signature_gate(request, body, "fdia_policy_disable", {"file": path.name})
+        if waiting is not None:
+            response.status_code = 202
+            return waiting
+        archived = path.with_name(f"{path.name}.disabled-{int(_time.time())}")
+        path.rename(archived)
+        claimed = getattr(request.state, "claimed_approval", None)
+        if claimed:
+            from rct_control_plane.approvals import PendingActionStore
+            PendingActionStore(_kernel()._persistence).mark_executed(claimed, {"archived_as": str(archived)})
+        _kernel()._persistence.append_audit(entity_type="fdia_policy", entity_id=path.name, action="policy_disabled",
+                                            actor=getattr(request.state, "delentia_user", None) or "desk",
+                                            changes={"archived_as": str(archived), "approval_id": claimed})
+        return {"archived_as": str(archived)}
+
+    # ------------------------------------------------------------------
+    # Round 54: Tool Forge (tool_forge.py) - gaps, proposals, signed activation, forged tools
+    # ------------------------------------------------------------------
+    def _forge() -> Any:
+        from rct_control_plane.tool_forge import ToolForge
+        return ToolForge(_kernel()._persistence)
+
+    def _approval_state(approval_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        if not approval_id:
+            return None
+        from rct_control_plane.approvals import PendingActionStore
+        record = PendingActionStore(_kernel()._persistence).get(approval_id)
+        if record is None:
+            return None
+        return {"approval_id": record.approval_id, "status": record.status, "action_sha256": record.action_sha256,
+                "required_signatures": record.required_signatures, "signatures_collected": record.signatures_collected}
+
+    @router.get("/forge")
+    async def forge_state() -> Dict[str, Any]:
+        from rct_control_plane import tool_forge
+        forge = _forge()
+        return {
+            "gaps": tool_forge.find_gaps(_kernel()._persistence),
+            "proposals": [{**p.to_dict(with_code=False), "approval": _approval_state(p.approval_id)} for p in forge.list_proposals()],
+            "tools": forge.list_tools(include_disabled=True),
+            "limits": {"allowed_imports": sorted(tool_forge.ALLOWED_IMPORTS), "min_asserts": tool_forge.MIN_ASSERTS,
+                       "run_timeout_s": tool_forge.RUN_TIMEOUT_S, "max_code_chars": tool_forge.MAX_CODE_CHARS},
+        }
+
+    @router.get("/forge/proposals/{proposal_id}")
+    async def forge_proposal(proposal_id: str) -> Dict[str, Any]:
+        proposal = _forge().get(proposal_id)
+        if proposal is None:
+            raise HTTPException(status_code=404, detail="no such proposal")
+        return {**proposal.to_dict(), "approval": _approval_state(proposal.approval_id)}
+
+    @router.post("/forge/propose")
+    async def forge_propose(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Writes (the model) or takes (`code`) a candidate tool and checks it. A model call when no code is given."""
+        from rct_control_plane.tool_forge import ForgeError
+        code = payload.get("code")
+        try:
+            proposal = await _forge().propose(str(payload.get("name", "")).strip(), str(payload.get("spec", "")).strip(),
+                                              str(payload.get("smoke_test", "")), code=str(code) if code else None,
+                                              gap=payload.get("gap") if isinstance(payload.get("gap"), dict) else None)
+        except ForgeError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"the model could not write the tool: {type(exc).__name__}") from exc
+        return proposal.to_dict(with_code=False)
+
+    @router.post("/forge/proposals/{proposal_id}/request")
+    async def forge_request(proposal_id: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.tool_forge import ForgeError
+        try:
+            record = _forge().request_activation(proposal_id, namespace=getattr(request.state, "delentia_user", None) or "forge")
+        except ForgeError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"approval_id": record.approval_id, "action_sha256": record.action_sha256,
+                "how": f"sign it where the approver key is: delentia approvals approve {record.approval_id} --key <key> (or paste the signed JSON on the Approvals page), then activate"}
+
+    @router.post("/forge/activate")
+    async def forge_activate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane.approvals import ApprovalError
+        try:
+            return _forge().activate(str(payload.get("approval_id", "")).strip())
+        except ApprovalError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/forge/tools/{name}/off")
+    async def forge_off(name: str) -> Dict[str, Any]:
+        if not _forge().deactivate(name):
+            raise HTTPException(status_code=404, detail="no active tool with that name")
+        return {"turned_off": name}
+
+    @router.post("/forge/tools/{name}/run")
+    async def forge_run(name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        args = payload.get("args") or {}
+        if not isinstance(args, dict):
+            raise HTTPException(status_code=400, detail="args must be an object")
+        return _forge().run(name, args)
 
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:
