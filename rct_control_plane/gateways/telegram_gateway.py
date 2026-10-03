@@ -117,7 +117,7 @@ class TelegramGateway:
         if text is None:
             # A voice note from an allowed sender (checked above, so a stranger never makes this machine download or transcribe anything).
             try:
-                text = await self._hear(voice)
+                text = await self._hear(voice or {})
             except Exception as exc:
                 reason = str(exc) if exc.__class__.__name__ == "VoiceError" else f"I could not use that voice note ({type(exc).__name__})."
                 if self.is_configured():
