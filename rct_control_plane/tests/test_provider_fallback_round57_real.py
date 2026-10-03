@@ -124,7 +124,8 @@ def test_a_bad_request_is_not_a_reason_to_ask_another_model(world):
     monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", bad.url)
     monkeypatch.setenv("DELENTIA_OLLAMA_URL", alive.url)
     provider = pf.FallbackProvider([OpenRouterProvider(model="p/m"), OllamaProvider(model="b")])
-    with pytest.raises(Exception):
+    import httpx
+    with pytest.raises(httpx.HTTPStatusError):
         asyncio.run(provider.complete("hello"))
     assert alive.calls == 0
 
@@ -135,7 +136,8 @@ def test_the_last_error_is_raised_when_every_model_fails(world):
     monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", a.url)
     monkeypatch.setenv("DELENTIA_OLLAMA_URL", b.url)
     provider = pf.FallbackProvider([OpenRouterProvider(model="p/m"), OllamaProvider(model="b")])
-    with pytest.raises(Exception) as info:
+    import httpx
+    with pytest.raises(httpx.HTTPStatusError) as info:
         asyncio.run(provider.complete("hello"))
     assert "502" in str(info.value) and a.calls >= 1 and b.calls >= 1
 
