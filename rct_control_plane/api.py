@@ -746,6 +746,12 @@ class ControlPlaneAPI:
                          "signal": _DAEMON_SIGNAL_GATEWAY, "email": _DAEMON_EMAIL_GATEWAY},
         }))
 
+        # Round 57: GET /v1/models and POST /v1/chat/completions (openai_compat.py): the chat front door for any OpenAI-protocol client; every request is a
+        # governed episode like any other.
+        from rct_control_plane import mcp_server as _mcp_module
+        from rct_control_plane.openai_compat import build_router as _build_openai_router
+        self.app.include_router(_build_openai_router(lambda: _mcp_module._kernel, lambda: _mcp_module.mcp))
+
         @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
         async def line_webhook_endpoint(request: Request):
             """Round 36: real LINE Messaging API webhook - verifies the
