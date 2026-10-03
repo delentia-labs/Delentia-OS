@@ -414,7 +414,8 @@ def test_the_cli_anchors_checks_reports_and_exports(world, tmp_path):
     out = tmp_path / "proof.json"
     exported = runner.invoke(cli, ["audit-chain", "export-proof", "--out", str(out)])
     assert exported.exit_code == 0 and "2 witness(es) consulted" in exported.output
-    assert verify_bundle(out, "--pubkey", public)[0] == 0
+    code, report = verify_bundle(out, "--pubkey", public)
+    assert code == 0, report
 
 
 def test_the_cli_fails_loudly_when_nothing_is_configured(monkeypatch):
