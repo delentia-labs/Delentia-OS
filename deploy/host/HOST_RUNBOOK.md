@@ -107,7 +107,20 @@ not scheduled. Fix them in order:
       (optional `AUDIT_ANCHOR_EVERY_S`, default 900), then `docker compose up -d`. Both the runtime's chain head and the notary's log head are then published
       on that schedule. Empty values mean anchoring is off.
    4. Check it from the Desk (Audit page, "Check against the witness") or `delentia audit-chain check-anchors --url ... --key-id host-1`.
-   Until then do not describe the logs as tamper-proof.
+   5. **A second, independent witness (Round 58).** One witness is one operator to trust. A **git witness** appends each signed head to a file in a
+      repository whose remote this host can push to but never rewrite:
+      1. Create a private repository on a service you do not run on this host (any git host), and protect its main branch: no force-push, no deletion.
+      2. Create a **deploy key** with write access to that repository only, keep its private half in a Docker secret, and let `git` on this host use it
+         (`GIT_SSH_COMMAND` in `secrets/runtime.env`). A key that can push but not force-push is what makes the ledger append-only.
+      3. `docker compose exec delentia git clone <remote> /data/witness-ledger`, then set in `.env`
+         `AUDIT_WITNESSES=[{"type":"http","name":"worker","url":"<fdia Worker>","key_id":"host-1"},{"type":"git","name":"ledger","path":"/data/witness-ledger","remote":"origin","key_id":"host-1"}]`
+         and `docker compose up -d`.
+      4. `delentia audit-chain witness-status` says how many witnesses hold a recent head and how many rows are newer than the newest anchor (that window is
+         what someone with root on this host could still rewrite); `delentia audit-chain check-witnesses` compares every witness with the chain;
+         `delentia audit-chain export-proof --out proof.json` gives an auditor a bundle they verify with `scripts/verify_audit_bundle.py` without trusting this host.
+      `host-check` (H07) passes only with two witnesses of different kinds.
+   Until then do not describe the logs as tamper-proof. Even with two witnesses the honest wording is "tamper-evident against a compromise of this host":
+   the window since the last anchor is not covered, and an attacker who controls every witness's operator is not covered either.
 
 ## 4. Smoke test (from your own machine)
 
