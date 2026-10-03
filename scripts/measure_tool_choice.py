@@ -97,7 +97,9 @@ def adoption(result: Dict[str, Any]) -> Dict[str, Any]:
     errored = {name: arm.get("errors", 0) for name, arm in (("default", base), ("ranked+compact", ranked))}
     inconclusive = [name for name, n in errored.items() if n * 5 >= max(1, base["of"])]
     if inconclusive:
-        value += f" [INCONCLUSIVE: {', '.join(f'{n} errored on {errored[n]} of {base['of']} goals' for n in inconclusive)}]"
+        total = base["of"]
+        detail = ", ".join(f"{n} errored on {errored[n]} of {total} goals" for n in inconclusive)
+        value += f" [INCONCLUSIVE: {detail}]"
         return {"T10": {"value": value, "pass": False, "inconclusive": True}}
     return {"T10": {"value": value, "pass": bool(ok)}}
 

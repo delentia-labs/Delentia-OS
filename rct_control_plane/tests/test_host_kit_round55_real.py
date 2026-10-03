@@ -188,6 +188,7 @@ def test_the_dependency_layer_does_not_depend_on_the_source_tree():
 
 
 def test_export_deps_lists_every_runtime_dependency_and_the_full_extra():
+    pytest.importorskip("tomllib")          # the image is Python 3.12; the script needs 3.11+ (CI also runs 3.10)
     import subprocess
     root = HOST.parent.parent
     out = subprocess.run([sys.executable, str(HOST / "export_deps.py"), str(root / "pyproject.toml")], capture_output=True, text=True, check=True).stdout.splitlines()
