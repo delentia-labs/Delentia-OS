@@ -2192,6 +2192,31 @@
 <td><code>rct_control_plane/fdia_policy.py</code>, <code>test_fdia_policy_*round54_real.py</code></td>
 </tr>
 <tr>
+<td>External MCP tools (Round 55)</td>
+<td><strong>Tools of other MCP servers go through the same gate as the built-in ones: FDIA-judged, results screened, every call to a tool the owner did not declare read-only waits for a human signature, poisoned tool descriptions are dropped, the tool list can be pinned.</strong></td>
+<td><code>rct_control_plane/external_mcp.py</code>, <code>test_external_mcp_round55_real.py</code> (38), harness C21</td>
+</tr>
+<tr>
+<td>Agent web fetch refuses internal addresses (Round 55)</td>
+<td><strong><code>delentia_crawl_url</code> refuses loopback, private, link-local and cloud-metadata addresses, on the first request and on every redirect.</strong> (Before Round 55 it had no such check.)</td>
+<td><code>rct_control_plane/url_safety.py</code>, <code>test_breadth_round55_real.py</code></td>
+</tr>
+<tr>
+<td>Thai CORD figures (Round 55)</td>
+<td><strong>On 31 Thai attack texts written after the Thai rules were tuned, the rules blocked 15 (48.4%) and blocked 0 of 32 harmless Thai texts; with qwen2.5:7b as a second opinion, 21 (67.7%), 0 of 32 false blocks.</strong> Do not say "supports Thai".</td>
+<td><code>tests/fixtures/cord_corpus_thai_round55*.json</code>, <code>scripts/measure_cord_classifier.py</code></td>
+</tr>
+<tr>
+<td>Starter skills (Round 55)</td>
+<td><strong>20 bundled playbooks, validated against the live tool registry and the injection screen, shown as written by people, not learned.</strong> Found 8 of 10 (top 3) for goals phrased differently from the playbooks.</td>
+<td><code>rct_control_plane/starter_skills.py</code>, <code>test_breadth_round55_real.py</code></td>
+</tr>
+<tr>
+<td>Email/WhatsApp/Signal gateways (Round 55)</td>
+<td><strong>Each is closed until its allowlist is set; WhatsApp checks Meta's HMAC before parsing; Email trusts a sender only if the allowlist and the server's DKIM/SPF verdict both agree and never replies to refused senders.</strong></td>
+<td><code>rct_control_plane/gateways/</code>, <code>test_gateways_round55_real.py</code> (29), harness C23</td>
+</tr>
+<tr>
 <td>Per-person API tokens (Round 54)</td>
 <td><strong>With <code>delentia tokens</code>, the server takes a caller's identity from its token; a namespace in the request body is ignored, a person sees only their own memory, and an unreadable token file locks everyone out.</strong></td>
 <td><code>rct_control_plane/api_tokens.py</code>, <code>test_identity_and_review_round54_real.py</code></td>
