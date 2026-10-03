@@ -217,7 +217,7 @@ pydantic-settings==2.15.0  # hand-patched 2026-09-27, NOT a fresh pip-freeze sna
 pydantic_core==2.41.5
 Pygments==2.21.0
 pyiceberg==0.11.1
-PyJWT==2.14.0
+PyJWT==2.15.0
 pymdown-extensions==12.0.1
 pyparsing==3.3.2
 pyproject_hooks==1.2.0
