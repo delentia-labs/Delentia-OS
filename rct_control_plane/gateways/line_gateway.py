@@ -107,13 +107,21 @@ class LineGateway:
 
             # Round 48 R0.1: fail-closed sender allowlist.
             from rct_control_plane.agent_factory import (
-                REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+                record_rejected_sender, rejection_reply, sender_allowed,
             )
-            if not sender_allowed("line", user_id):
+            if not sender_allowed("line", user_id, getattr(self._kernel, "_persistence", None)):
                 record_rejected_sender(self._kernel, "line", user_id, namespace)
                 if reply_token and self._channel_access_token:
-                    await self.reply_message(reply_token, REJECTED_SENDER_REPLY)
+                    await self.reply_message(reply_token, rejection_reply(self._kernel, "line", user_id))
                 results.append({"user_id": user_id, "namespace": namespace, "goal": text, "rejected": True})
+                continue
+
+            from rct_control_plane import chat_commands
+            command_reply = chat_commands.handle(self._kernel, "line", user_id, namespace, text)
+            if command_reply is not None:
+                if reply_token and self._channel_access_token:
+                    await self.reply_message(reply_token, command_reply)
+                results.append({"user_id": user_id, "namespace": namespace, "goal": text, "command": True})
                 continue
 
             result = await self._dispatch_to_autonomous_loop(text, namespace)

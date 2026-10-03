@@ -68,12 +68,16 @@ class SlackGateway:
         namespace = f"slack-{channel_id}-{user_id}"
         # Round 48 R0.1: fail-closed sender allowlist.
         from rct_control_plane.agent_factory import (
-            REJECTED_SENDER_REPLY, record_rejected_sender, sender_allowed,
+            record_rejected_sender, rejection_reply, sender_allowed,
         )
-        if not sender_allowed("slack", user_id):
+        if not sender_allowed("slack", user_id, getattr(self._kernel, "_persistence", None)):
             record_rejected_sender(self._kernel, "slack", user_id, namespace)
             return {"channel_id": channel_id, "namespace": namespace, "goal": text,
-                    "rejected": True, "reply_text": REJECTED_SENDER_REPLY}
+                    "rejected": True, "reply_text": rejection_reply(self._kernel, "slack", user_id)}
+        from rct_control_plane import chat_commands
+        command_reply = chat_commands.handle(self._kernel, "slack", user_id, namespace, text)
+        if command_reply is not None:
+            return {"channel_id": channel_id, "namespace": namespace, "goal": text, "command": True, "reply_text": command_reply}
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = str(result.get("final_answer") or result.get("stopped_reason", "(no response)"))
         return {

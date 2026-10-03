@@ -31,16 +31,23 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "identity": ("identity",),
     "episodes": ("governed_loop_episode_start", "governed_loop_episode_end"),
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
+    "cron": ("cron_job",),
+    "checkpoints": ("repo_checkpoint",),
+    "models": ("model_fallback",),
 }
 CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity in entities}
 # "attention" is the default view: what a person responsible for the system should look at. It leaves out the routine
 # rows (every allowed tool call, every notary receipt, episode start and end).
 ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
-    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap')"
+    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback')"
+    " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
     " OR (t.entity_type = 'residency_decision' AND t.action != 'allow')"
     " OR (t.entity_type = 'governed_loop_second_opinion' AND t.action = 'attack')"
     " OR (t.entity_type = 'governed_loop_fdia_gate' AND t.changes LIKE '%\"blocked\": true%'))")
+
+
+WITNESSES_ENV_NAME = "DELENTIA_AUDIT_WITNESSES"
 
 
 def _loads(value: Any) -> Any:
@@ -102,6 +109,13 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"notary receipt #{(c.get('receipt') or {}).get('seq')} for {action}"
     if entity_type == "notary_gap":
         return f"the notary could not record {action}; kept as a visible gap"
+    if entity_type == "model_fallback":
+        return f"the model {c.get('from')} failed ({_short(c.get('reason'), 70)}); this call went to {c.get('to')}"
+    if entity_type == "repo_checkpoint":
+        return f"rollback of {_short(c.get('path'), 60)}: {c.get('result')}" + (" (forced)" if c.get("forced") else "")
+    if entity_type == "cron_job":
+        extra = f" ({c.get('reason')})" if c.get("reason") else (f" ended {c.get('stopped_reason')}" if c.get("stopped_reason") else "")
+        return f"cron job {action}: {_short(c.get('name'), 50)} [{c.get('schedule')}]{extra}"
     if entity_type == "identity":
         return f"{action}: {c.get('name')}"
     if entity_type == "autonomous_loop_step":
@@ -355,7 +369,6 @@ def check_witness(conn: sqlite3.Connection, witness_json: Dict[str, Any]) -> Dic
 
 def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
     from rct_control_plane import audit_chain, fdia_policy, injection_classifier, residency, signedai_jury
-    from rct_control_plane.autonomous_scheduler import anchor_configured
     from rct_control_plane.governed_autonomous_loop import TOOL_RESULT_SCREEN_ENV
     from rct_control_plane.notary import NOTARY_URL_ENV
 
@@ -402,9 +415,16 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("audit_notary", "Separate notary process (A2)", bool(os.getenv(NOTARY_URL_ENV)),
         "tool calls are recorded by another process before they run" if os.getenv(NOTARY_URL_ENV) else "off: a compromised agent process could rewrite its own history",
         "run `delentia notary serve` as another OS user and set DELENTIA_NOTARY_URL")
-    add("audit_anchor", "Chain head anchored at an outside witness (A3)", anchor_configured(),
-        "on a schedule" if anchor_configured() else "off: whoever controls the host could rewrite the whole log unnoticed",
-        "set DELENTIA_AUDIT_ANCHOR_URL and DELENTIA_AUDIT_ANCHOR_KEY_ID")
+    from rct_control_plane import audit_witness
+    witness = audit_witness.status(conn)
+    add("audit_anchor", "Chain head held by an outside witness (A3)", bool(witness["tamper_evident_against_host_compromise"]),
+        witness["plain"] if witness["configured"] else "off: " + witness["plain"],
+        f"set {WITNESSES_ENV_NAME} (an http witness and a git witness are better than one), then `delentia audit-chain anchor-all`")
+    if witness["configured"]:
+        add("audit_second_witness", "A second, independent witness", witness["independent_witnesses"] >= 2,
+            f"{witness['independent_witnesses']} witness(es) hold a recent head" if witness["independent_witnesses"] >= 2 else
+            "one witness is a single party to trust: with a second one an attacker must defeat both",
+            f"add a git witness to {WITNESSES_ENV_NAME}", severity="info")
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

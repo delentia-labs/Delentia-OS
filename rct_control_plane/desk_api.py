@@ -187,6 +187,14 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     "gateways": {channel: gateway|None}} from api.py's daemon globals."""
     router = APIRouter(prefix="/v1/desk", tags=["Desk"])
 
+    @router.get("/sessions/search")
+    async def sessions_search(request: Request, q: str = Query("", max_length=200), limit: int = Query(10, ge=1, le=25)) -> Dict[str, Any]:
+        """Search the signed-in person's own past episodes (goal and answer)."""
+        from rct_control_plane.session_search import SessionLog
+        owner = getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+        log = SessionLog(_kernel()._persistence)
+        return {"owner": owner, "query": q, "episodes": log.search(owner, q, limit=limit), "indexed": log.count(owner), "fts": log.fts}
+
     @router.get("/sessions")
     async def sessions(limit: int = Query(50, ge=1, le=500)) -> Dict[str, Any]:
         with _connect() as conn:
@@ -232,8 +240,38 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             item["archived"] = bool(r["archived"])
             item["reliability"] = round((r["successes"] + 1) / (r["uses"] + 2), 4)
             item["bundled"] = bool(r["session_id"] and str(r["session_id"]).startswith("bundled:"))   # Round 55: a starter playbook, not learned
+            item["imported"] = bool(r["session_id"] and str(r["session_id"]).startswith("imported:"))   # Round 57: somebody else's SKILL.md
             out.append(item)
         return {"count": lib.count(), "skills": out}
+
+    @router.post("/skills/import")
+    async def skills_import(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Import a SKILL.md (pasted text, or an https address). A person's act, never the agent's; refused if the injection screen finds anything."""
+        from rct_control_plane import skill_format
+        text, source = payload.get("text"), str(payload.get("source") or "pasted in the Desk")
+        try:
+            if payload.get("url"):
+                source = str(payload["url"])
+                import asyncio as _asyncio
+                text = await _asyncio.to_thread(skill_format.fetch, source)
+            parsed = skill_format.parse(str(text or ""))
+            if not payload.get("reviewed"):
+                # Step one: show what would be imported. The caller shows the text to a person and repeats the call with reviewed=true.
+                return {"preview": {"name": parsed.name, "description": parsed.description, "version": parsed.version, "tags": parsed.tags,
+                                    "instructions": parsed.body, "source": source, "screen_findings": skill_format.screen(parsed)},
+                        "needs_review": True}
+            outcome = skill_format.install(_skills(), parsed, source, reviewed=True)
+        except skill_format.SkillFormatError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return outcome
+
+    @router.get("/skills/{skill_id}/export")
+    async def skills_export(skill_id: str) -> Dict[str, Any]:
+        from rct_control_plane import skill_format
+        record = _skills().get_skill(skill_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail=f"no skill {skill_id!r}")
+        return {"skill_id": skill_id, "skill_md": skill_format.export(record)}
 
     @router.get("/models")
     async def models(catalog: Optional[str] = Query(None, pattern="^(openrouter|ollama)$"),
@@ -358,6 +396,94 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
                 "allowlist_count": None if allow is None else len(allow),
             })
         return {"channels": out}
+
+    # ------------------------------------------------------------------
+    # Round 57: persistent cron jobs (cron_jobs.py). The Desk user creates jobs directly (they are the human); the agent can only propose one
+    # through delentia_cron_create, which waits for a signature.
+    # ------------------------------------------------------------------
+    def _cron_service() -> Any:
+        from rct_control_plane.cron_jobs import CronService
+        return CronService(_kernel()._persistence)
+
+    def _cron_owner(request: Request) -> str:
+        return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+
+    @router.get("/pairing")
+    async def pairing_view() -> Dict[str, Any]:
+        """Who asked to be let in, and who is. A request is let in only by a signed approval (Approvals page or `delentia approvals approve <code>`)."""
+        from rct_control_plane import pairing
+        return pairing.state(_kernel()._persistence)
+
+    @router.post("/pairing/revoke")
+    async def pairing_revoke(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Closing a door needs no signature (like pausing a job); opening one always does."""
+        from rct_control_plane import pairing
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        done = pairing.revoke(str(payload.get("channel", "")), str(payload.get("sender_id", "")), actor=f"desk:{owner}", persistence=_kernel()._persistence)
+        if not done:
+            raise HTTPException(status_code=404, detail="that person was not let in by pairing")
+        return {"revoked": True}
+
+    @router.get("/cron/jobs")
+    async def cron_jobs_list(request: Request) -> Dict[str, Any]:
+        from rct_control_plane import cron_jobs, nl_schedule
+        return {"jobs": _cron_service().list(_cron_owner(request)), "owner": _cron_owner(request),
+                "delivery": {ch: cron_jobs.allowed_recipients(ch) for ch in cron_jobs.DELIVERY_CHANNELS},
+                "limits": {"max_jobs": cron_jobs.MAX_JOBS_PER_NAMESPACE, "min_interval_s": nl_schedule.MIN_INTERVAL_S,
+                           "fails_before_off": cron_jobs.MAX_FAIL_STREAK, "hourly_cap_env": cron_jobs.HOURLY_CAP_ENV},
+                "timezone": nl_schedule.default_timezone_name() or "this machine's local zone", "forms": list(nl_schedule.FORMS)}
+
+    @router.post("/cron/parse")
+    async def cron_parse(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """What a schedule text means and its next five runs, so a person sees it before anything is saved."""
+        import time as _time
+        from datetime import datetime
+        from rct_control_plane import nl_schedule
+        now = _time.time()
+        try:
+            schedule = nl_schedule.parse(str(payload.get("text", "")), now=now)
+            runs = nl_schedule.upcoming(schedule, now, 5)
+            zone = nl_schedule._tz(schedule.tz)
+        except nl_schedule.ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"kind": schedule.kind, "meaning": nl_schedule.describe(schedule), "timezone": schedule.tz or "local",
+                "upcoming": [datetime.fromtimestamp(t, zone).strftime("%a %Y-%m-%d %H:%M %Z") for t in runs]}
+
+    @router.post("/cron/jobs")
+    async def cron_job_create(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        deliver = payload.get("deliver") if isinstance(payload.get("deliver"), dict) else None
+        try:
+            job = _cron_service().create(_cron_owner(request), str(payload.get("goal", "")), str(payload.get("schedule", "")), name=str(payload.get("name", "")),
+                                         deliver=deliver, created_by=f"desk:{_cron_owner(request)}",
+                                         max_runs=int(payload["max_runs"]) if payload.get("max_runs") else None)
+        except (CronError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"job": job}
+
+    @router.post("/cron/jobs/{job_id}/{action}")
+    async def cron_job_action(job_id: str, action: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        service, owner = _cron_service(), _cron_owner(request)
+        try:
+            if action in ("enable", "pause"):
+                return {"job": service.set_enabled(job_id, action == "enable", actor=f"desk:{owner}", namespace=owner)}
+            if action == "run":
+                job = service._owned(job_id, owner)
+                from rct_control_plane import cron_jobs
+                ran = await service.run_job(_kernel(), job, cron_jobs.deliver_via_gateways)
+                return {"job": ran}
+        except CronError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail="actions: enable, pause, run")
+
+    @router.delete("/cron/jobs/{job_id}")
+    async def cron_job_delete(job_id: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.cron_jobs import CronError
+        try:
+            return {"job": _cron_service().delete(job_id, actor=f"desk:{_cron_owner(request)}", namespace=_cron_owner(request))}
+        except CronError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @router.post("/cron/{task_id}/run")
     async def run_task(task_id: str) -> Dict[str, Any]:
@@ -837,6 +963,38 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     # ------------------------------------------------------------------
     # Round 56: governance in one place (governance_view.py). Read-only: nothing here approves, signs or changes a setting.
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Round 57: checkpoints of files the agent wrote (checkpoints.py). Reading is open; a rollback is a write, so it is the signed-in person's act and is audited.
+    # ------------------------------------------------------------------
+    def _checkpoints() -> Any:
+        from rct_control_plane.checkpoints import CheckpointStore
+        return CheckpointStore(_kernel()._persistence)
+
+    @router.get("/checkpoints")
+    async def checkpoints_list(limit: int = Query(50, ge=1, le=500)) -> Dict[str, Any]:
+        store = _checkpoints()
+        rows = store.list(limit=limit)
+        for row in rows:
+            for key in ("before_sha", "after_sha"):
+                row[key] = (row[key] or "")[:16] or None
+        return {"checkpoints": rows, "status": store.status()}
+
+    @router.get("/checkpoints/{checkpoint_id}/diff")
+    async def checkpoints_diff(checkpoint_id: int) -> Dict[str, Any]:
+        from rct_control_plane.checkpoints import CheckpointError
+        try:
+            return {"diff": _checkpoints().diff(checkpoint_id)}
+        except CheckpointError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.post("/checkpoints/{checkpoint_id}/rollback")
+    async def checkpoints_rollback(checkpoint_id: int, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        from rct_control_plane.checkpoints import CheckpointError
+        try:
+            return _checkpoints().rollback(checkpoint_id, force=bool((payload or {}).get("force")))
+        except CheckpointError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @router.get("/governance")
     async def governance_overview() -> Dict[str, Any]:
         from rct_control_plane import governance_view
@@ -896,6 +1054,29 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         from rct_control_plane import governance_view
         with _connect() as conn:
             return governance_view.verify_deep(conn)
+
+    @router.get("/governance/audit/witnesses")
+    async def governance_witnesses() -> Dict[str, Any]:
+        """How well the log is protected right now (which witnesses hold a recent head, how many rows are newer than the newest anchor)."""
+        from rct_control_plane import audit_witness
+        with _connect() as conn:
+            return audit_witness.status(conn)
+
+    @router.post("/governance/audit/check-witnesses")
+    async def governance_check_witnesses() -> Dict[str, Any]:
+        """Ask every configured witness what it holds and compare it with this chain (the addresses come from the host's configuration, never from the request)."""
+        import asyncio as _asyncio
+        from rct_control_plane import audit_witness
+        try:
+            def run() -> Any:
+                with _connect() as conn:
+                    return audit_witness.check_witnesses(conn)
+            report = await _asyncio.to_thread(run)
+        except (audit_witness.WitnessError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail="the witness configuration is unusable (see `delentia audit-chain witness-status` on the host)") from exc
+        if not report:
+            raise HTTPException(status_code=409, detail="no witness is configured (DELENTIA_AUDIT_WITNESSES); tier A3 is off")
+        return {"witnesses": report, "ok": all(r["ok"] for r in report)}
 
     @router.post("/governance/audit/check-witness")
     async def governance_check_witness() -> Dict[str, Any]:

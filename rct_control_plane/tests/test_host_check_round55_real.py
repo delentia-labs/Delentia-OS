@@ -101,7 +101,23 @@ def test_notary_and_anchoring_are_warnings_until_configured(monkeypatch):
     assert status("H06") == hc.PASS
     monkeypatch.setenv("DELENTIA_AUDIT_ANCHOR_URL", "https://witness.example")
     monkeypatch.setenv("DELENTIA_AUDIT_ANCHOR_KEY_ID", "delentia-os-1")
+    assert status("H07") == hc.WARN                                    # no signing key: nothing could be anchored
+
+
+def test_anchoring_passes_only_with_two_independent_kinds_of_witness(monkeypatch, tmp_path):
+    key = tmp_path / "audit.pem"
+    audit_chain.generate_signing_key(str(key))
+    monkeypatch.setenv(audit_chain.SIGNING_KEY_ENV, str(key))
+    http = {"type": "http", "name": "worker", "url": "https://witness.example", "key_id": "h1"}
+    git = {"type": "git", "name": "ledger", "path": str(tmp_path / "ledger"), "key_id": "h1"}
+    monkeypatch.setenv("DELENTIA_AUDIT_WITNESSES", json.dumps([http]))
+    assert status("H07") == hc.WARN and "one party" in by_id(hc.run_checks(), "H07").detail
+    monkeypatch.setenv("DELENTIA_AUDIT_WITNESSES", json.dumps([http, {**http, "name": "second"}]))
+    assert status("H07") == hc.WARN and "one failure mode" in by_id(hc.run_checks(), "H07").detail
+    monkeypatch.setenv("DELENTIA_AUDIT_WITNESSES", json.dumps([http, git]))
     assert status("H07") == hc.PASS
+    monkeypatch.setenv("DELENTIA_AUDIT_WITNESSES", "not json")
+    assert status("H07") == hc.FAIL
 
 
 def test_probe_reports_a_dead_notary_as_a_failure(monkeypatch):

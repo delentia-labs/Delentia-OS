@@ -2300,6 +2300,83 @@ def audit_chain_witness_entry(key_id: str, pubkey: Optional[str]) -> None:
     _print_witness_entry(key_id, public_hex)
 
 
+@audit_chain_group.command("anchor-all")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def audit_chain_anchor_all(db: Optional[str]) -> None:
+    """Sign the chain head once and publish it to EVERY configured witness (DELENTIA_AUDIT_WITNESSES). Exit 1 if none received it."""
+    from rct_control_plane import audit_witness
+    persistence = _audit_db(db)
+    try:
+        with persistence._connect() as conn:
+            results = audit_witness.anchor_all(conn)
+    except (audit_witness.WitnessError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if not results:
+        click.echo(click.style("Error: no witness is configured (DELENTIA_AUDIT_WITNESSES)", fg="red"), err=True)
+        sys.exit(1)
+    for r in results:
+        click.echo(f"{'ok  ' if r['ok'] else 'FAIL'} {r['witness']}: {r['detail']}")
+    if not any(r["ok"] for r in results):
+        sys.exit(1)
+
+
+@audit_chain_group.command("witness-status")
+@click.option("--db", default=None)
+def audit_chain_witness_status(db: Optional[str]) -> None:
+    """How well is the log protected RIGHT NOW: which witnesses hold a recent head, and how many rows are newer than the newest anchor."""
+    from rct_control_plane import audit_witness
+    with _audit_db(db)._connect() as conn:
+        report = audit_witness.status(conn)
+    click.echo(json.dumps(report, indent=2))
+
+
+@audit_chain_group.command("check-witnesses")
+@click.option("--db", default=None)
+def audit_chain_check_witnesses(db: Optional[str]) -> None:
+    """Ask EVERY witness what it holds and compare it with this chain; exit 1 on any mismatch, forged anchor or unreachable witness."""
+    from rct_control_plane import audit_witness
+    try:
+        with _audit_db(db)._connect() as conn:
+            report = audit_witness.check_witnesses(conn)
+    except (audit_witness.WitnessError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(report, indent=2))
+    if not report or not all(r["ok"] for r in report):
+        sys.exit(1)
+
+
+@audit_chain_group.command("export-proof")
+@click.option("--db", default=None)
+@click.option("--from-seq", default=1, type=int, show_default=True)
+@click.option("--to-seq", default=None, type=int)
+@click.option("--hashes-only", is_flag=True, help="Leave out the recorded content (links and signatures only): for sharing without exposing what happened.")
+@click.option("--out", required=True, help="Where to write the bundle (JSON).")
+def audit_chain_export_proof(db: Optional[str], from_seq: int, to_seq: Optional[int], hashes_only: bool, out: str) -> None:
+    """Write a bundle a third party can verify with scripts/verify_audit_bundle.py: no database, no Delentia code."""
+    from rct_control_plane import audit_witness
+    persistence = _audit_db(db)
+    try:
+        with persistence._connect() as conn:
+            held: list = []
+            try:
+                for spec in audit_witness.specs_from_env():
+                    try:
+                        held.append({"name": spec.name, "type": spec.type, **audit_witness.make(spec).fetch()})
+                    except audit_witness.WitnessError:
+                        continue
+            except (audit_witness.WitnessError, ValueError):
+                held = []
+            bundle = audit_witness.export_proof(conn, from_seq, to_seq, include_content=not hashes_only, witnesses=held)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    Path(out).write_text(json.dumps(bundle, indent=1, ensure_ascii=False), encoding="utf-8")
+    click.echo(f"wrote {out}: rows {bundle['from_seq']}..{bundle['to_seq']}, {len(bundle['witnesses'])} witness(es) consulted. "
+               "Verify elsewhere with: python scripts/verify_audit_bundle.py <file> --pubkey <the key you published>")
+
+
 @audit_chain_group.command("check-anchors")
 @click.option("--url", required=True, help="Witness base URL.")
 @click.option("--key-id", required=True, help="Key id to check.")
@@ -2542,6 +2619,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     # (set either variable to 0 to turn it off here too).
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
+    os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
@@ -3359,6 +3437,281 @@ def forge_off(name: str) -> None:
     click.echo("turned off" if forge.deactivate(name) else "no such active tool")
 
 
+@cli.command("context")
+def context_cmd() -> None:
+    """Show which standing-instruction files (AGENTS.md, SOUL.md) the agent would read now, which were kept out, and why."""
+    from rct_control_plane import context_files, data_home
+    from rct_control_plane.mcp_server import REPO_ROOT
+    info = context_files.describe(REPO_ROOT, data_home.data_home())
+    click.echo(f"enabled : {info['enabled']} (set DELENTIA_CONTEXT_FILES=1; `delentia serve` does)")
+    click.echo(f"repo    : {info['repo_root']}\nhome    : {info['home']}")
+    for item in info["used"]:
+        click.echo(f"read    : {item['name']}  {item['chars']} chars  sha256 {item['sha256'][:16]}" + ("  (cut to the limit)" if item["truncated"] else ""))
+    for item in info["refused"]:
+        click.echo(click.style(f"REFUSED: {item['name']}  the injection screen found {', '.join(item['findings'])}", fg="red"))
+    if not info["used"] and not info["refused"]:
+        click.echo("no AGENTS.md, .delentia.md or SOUL.md found")
+
+
+@cli.group("sessions")
+def sessions_group():
+    """Past episodes (Round 57). `delentia sessions search "backup job"` finds what you asked the agent and what it answered, Thai or English."""
+    pass
+
+
+@sessions_group.command("search")
+@click.argument("query", required=False, default="")
+@click.option("--namespace", default=None, help="Whose history (default: the Desk user).")
+@click.option("--limit", default=5, show_default=True, type=int)
+def sessions_search_cmd(query: str, namespace: Optional[str], limit: int) -> None:
+    """Search one person's past episodes: the goal and the final answer of each."""
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    from rct_control_plane.session_search import SessionLog
+    owner = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+    hits = SessionLog(ControlPlanePersistence(db_path=agentic_db_path())).search(owner, query, limit=limit)
+    if not hits:
+        click.echo("Nothing found.")
+    for h in hits:
+        click.echo(f"#{h['id']} {time.strftime('%Y-%m-%d %H:%M', time.localtime(h['at']))} [{h['stopped_reason']}] {h['goal'][:120]}")
+        if h["answer"]:
+            click.echo(f"      -> {h['answer'][:200]}")
+
+
+@cli.group("checkpoints")
+def checkpoints_group():
+    """
+    Files the agent wrote, and the way back (Round 57). Before delentia_write_repo_file / delentia_patch_repo_file changes a file its previous content is stored;
+    a rollback restores it only if the file still holds what the agent wrote (a later edit by a person is never overwritten without --force).
+
+    Examples:
+        delentia checkpoints list
+        delentia checkpoints diff 12
+        delentia checkpoints rollback 12
+        delentia checkpoints status
+    """
+    pass
+
+
+def _checkpoint_store():
+    from rct_control_plane.checkpoints import CheckpointStore
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return CheckpointStore(ControlPlanePersistence(db_path=agentic_db_path()))
+
+
+@checkpoints_group.command("list")
+@click.option("--limit", default=30, show_default=True, type=int)
+def checkpoints_list_cmd(limit: int) -> None:
+    """Newest first."""
+    rows = _checkpoint_store().list(limit=limit)
+    if not rows:
+        click.echo("No checkpoints.")
+    for r in rows:
+        state = "rolled back" if r["rolled_back_at"] else ("UNPROTECTED" if not r["protected"] else "ok")
+        click.echo(f"#{r['id']:<5} {time.strftime('%Y-%m-%d %H:%M', time.localtime(r['created_at']))}  {r['tool'].replace('delentia_', ''):<18} "
+                   f"{'new file' if not r['existed_before'] else 'changed '}  {r['rel_path']}  [{state}]")
+
+
+@checkpoints_group.command("diff")
+@click.argument("checkpoint_id", type=int)
+def checkpoints_diff_cmd(checkpoint_id: int) -> None:
+    """What the write changed (the earlier content against the file now)."""
+    from rct_control_plane.checkpoints import CheckpointError
+    try:
+        click.echo(_checkpoint_store().diff(checkpoint_id) or "(no difference)")
+    except CheckpointError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@checkpoints_group.command("rollback")
+@click.argument("checkpoint_id", type=int)
+@click.option("--force", is_flag=True, help="Restore even if the file was changed after the agent wrote it (the current content is kept as a checkpoint).")
+def checkpoints_rollback_cmd(checkpoint_id: int, force: bool) -> None:
+    """Put the earlier content back."""
+    from rct_control_plane.checkpoints import CheckpointError
+    try:
+        out = _checkpoint_store().rollback(checkpoint_id, force=force)
+    except CheckpointError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{out['path']}: {out['result']} (undo with: delentia checkpoints rollback {out['undo_checkpoint']})" if out["undo_checkpoint"] else f"{out['path']}: {out['result']}")
+
+
+@checkpoints_group.command("status")
+def checkpoints_status_cmd() -> None:
+    """How many checkpoints exist and how much space they use."""
+    click.echo(json.dumps(_checkpoint_store().status(), indent=2))
+
+
+@cli.group("cron")
+def cron_group():
+    """
+    Persistent recurring jobs (Round 57): a goal the agent runs on a schedule, unattended, as a normal governed episode, with the result kept in the job
+    and optionally delivered to a chat. Written the way a person says it, in English or Thai, or as a cron line.
+
+    Examples:
+        delentia cron parse "every weekday at 8:30"
+        delentia cron add "Summarise the overnight audit log" --schedule "every weekday at 8:30" --deliver telegram:123456789
+        delentia cron add "ตรวจสอบ backup" --schedule "ทุกวันจันทร์ 9 โมงเช้า"
+        delentia cron list
+        delentia cron pause job_ab12cd34ef  |  resume  |  rm  |  run
+    The daemon (`delentia serve`) starts due jobs; `delentia cron run-due` does the same once, by hand.
+    """
+    pass
+
+
+def _cron_service():
+    from rct_control_plane.cron_jobs import CronService
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return CronService(ControlPlanePersistence(db_path=agentic_db_path()))
+
+
+def _cron_owner(namespace: Optional[str]) -> str:
+    return namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+
+
+@cron_group.command("parse")
+@click.argument("text")
+def cron_parse(text: str) -> None:
+    """Show what a schedule means and its next five runs, without saving anything."""
+    import time as _time
+    from datetime import datetime
+    from rct_control_plane import nl_schedule
+    now = _time.time()
+    try:
+        schedule = nl_schedule.parse(text, now=now)
+        runs = nl_schedule.upcoming(schedule, now, 5)
+        zone = nl_schedule._tz(schedule.tz)
+    except nl_schedule.ScheduleError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"meaning : {nl_schedule.describe(schedule)}")
+    for t in runs:
+        click.echo("  next  : " + datetime.fromtimestamp(t, zone).strftime("%a %Y-%m-%d %H:%M %Z"))
+
+
+@cron_group.command("add")
+@click.argument("goal")
+@click.option("--schedule", "schedule_text", required=True, help='e.g. "every weekday at 8:30", "ทุกวัน 09:00", "in 20 minutes", "*/15 8-18 * * mon-fri".')
+@click.option("--name", default="", help="A short label.")
+@click.option("--deliver", default=None, help="channel:recipient, e.g. telegram:123456789 (the recipient must be on that channel's allowlist).")
+@click.option("--max-runs", default=0, type=int, help="Stop after this many runs (a one-off is 1).")
+@click.option("--namespace", default=None, help="Whose job it is (default: the Desk user).")
+def cron_add(goal: str, schedule_text: str, name: str, deliver: Optional[str], max_runs: int, namespace: Optional[str]) -> None:
+    """Create a job. You are the human here, so no signature is asked; the agent's own tool for this does ask."""
+    from rct_control_plane.cron_jobs import CronError
+    target = None
+    if deliver:
+        channel, _, to = deliver.partition(":")
+        target = {"channel": channel, "to": to}
+    try:
+        job = _cron_service().create(_cron_owner(namespace), goal, schedule_text, name=name, deliver=target, created_by="cli", max_runs=max_runs or None)
+    except CronError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"created {job['id']}: {job['schedule_meaning']}")
+    click.echo("  first run: " + time.strftime("%Y-%m-%d %H:%M", time.localtime(job["next_run_at"])))
+
+
+@cron_group.command("list")
+@click.option("--namespace", default=None)
+@click.option("--all", "show_all", is_flag=True, help="Every person's jobs and deleted ones.")
+def cron_list(namespace: Optional[str], show_all: bool) -> None:
+    """List jobs."""
+    service = _cron_service()
+    jobs = service.list(None if show_all else _cron_owner(namespace), include_deleted=show_all)
+    if not jobs:
+        click.echo("No jobs.")
+    for j in jobs:
+        state = "deleted" if j["deleted"] else ("on" if j["enabled"] else "off")
+        nxt = time.strftime("%Y-%m-%d %H:%M", time.localtime(j["next_run_at"])) if j["next_run_at"] else "-"
+        click.echo(f"{j['id']}  {state:<7} {j['namespace']:<12} next {nxt}  {j['schedule_meaning']}  | {j['name']}  (runs {j['run_count']}, last {j['last_status'] or '-'})")
+
+
+def _cron_act(action: str, job_id: str, namespace: Optional[str]) -> None:
+    import asyncio
+    from rct_control_plane.cron_jobs import CronError
+    service = _cron_service()
+    owner = _cron_owner(namespace)
+    try:
+        if action == "rm":
+            service.delete(job_id, actor="cli", namespace=owner)
+            click.echo("deleted (kept on record; it will not run again)")
+        elif action in ("pause", "resume"):
+            job = service.set_enabled(job_id, action == "resume", actor="cli", namespace=owner)
+            click.echo(f"{action}d; next run " + (time.strftime("%Y-%m-%d %H:%M", time.localtime(job["next_run_at"])) if job["next_run_at"] else "-"))
+        elif action == "run":
+            from rct_control_plane import cron_jobs
+            from rct_control_plane.mcp_server import _kernel
+            job = service._owned(job_id, owner)
+            ran = asyncio.run(service.run_job(_kernel, job, cron_jobs.deliver_via_gateways))
+            click.echo(f"{ran['last_status']}: {ran['last_result']}")
+    except CronError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+for _name, _help in (("pause", "Switch a job off (it keeps its history)."), ("resume", "Switch a job back on."),
+                     ("rm", "Delete a job (soft: the record stays)."), ("run", "Run a job now, once, and show the result.")):
+    def _make(action: str, help_text: str) -> None:
+        @cron_group.command(action, help=help_text)
+        @click.argument("job_id")
+        @click.option("--namespace", default=None)
+        def _command(job_id: str, namespace: Optional[str]) -> None:
+            _cron_act(action, job_id, namespace)
+    _make(_name, _help)
+
+
+@cron_group.command("run-due")
+def cron_run_due() -> None:
+    """Run every job that is due, once, and wait for them (what the daemon does every 15 seconds)."""
+    import asyncio
+    from rct_control_plane import cron_jobs
+    from rct_control_plane.mcp_server import _kernel
+    ran = asyncio.run(_cron_service().run_due(_kernel, cron_jobs.deliver_via_gateways))
+    click.echo(f"{len(ran)} job(s) ran")
+    for j in ran:
+        click.echo(f"  {j['id']} {j['last_status']}: {(j['last_result'] or '')[:200]}")
+
+
+@cli.group("pairing")
+def pairing_group():
+    """DM pairing: people the agent does not know yet ask for a code; you let them in by SIGNING it (delentia approvals approve <code>)."""
+
+
+@pairing_group.command("list")
+@click.option("--db", default=None)
+def pairing_list(db: Optional[str]) -> None:
+    """Requests waiting for your signature and the people who are let in."""
+    from rct_control_plane import pairing
+    view = pairing.state(_audit_db(db))
+    click.echo(f"pairing is {'ON' if view['enabled'] else 'OFF (set DELENTIA_PAIRING=1)'}")
+    click.echo(f"waiting ({len(view['pending'])}):")
+    for p in view["pending"]:
+        click.echo(f"  code {p['code']}  {p['channel']}  sender {p['sender_id']}   -> delentia approvals approve {p['code']} --key <key>")
+    live = [g for g in view["grants"] if not g["revoked_at"]]
+    click.echo(f"let in ({len(live)}):")
+    for g in live:
+        click.echo(f"  {g['channel']}  sender {g['sender_id']}   (approval {g['approval_id']})")
+
+
+@pairing_group.command("revoke")
+@click.argument("channel")
+@click.argument("sender_id")
+@click.option("--db", default=None)
+def pairing_revoke(channel: str, sender_id: str, db: Optional[str]) -> None:
+    """Take a person's access away again (audited). Closing a door needs no signature."""
+    from rct_control_plane import pairing
+    if pairing.revoke(channel, sender_id, actor="cli", persistence=_audit_db(db)):
+        click.echo(f"revoked {channel} {sender_id}")
+    else:
+        click.echo(click.style(f"{channel} {sender_id} was not let in by pairing (an allowlist entry in the environment is removed there)", fg="yellow"), err=True)
+        sys.exit(1)
+
+
 @cli.group("tokens")
 def tokens_group():
     """
@@ -3437,6 +3790,57 @@ def skills_group():
         delentia skills list
     """
     pass
+
+
+@skills_group.command("import")
+@click.argument("source")
+@click.option("--yes", is_flag=True, help="I have read the instructions (skip the question).")
+def skills_import_cmd(source: str, yes: bool) -> None:
+    """Import a SKILL.md from a file or an https address. You are shown the instructions and asked; refused if the injection screen finds anything; the agent cannot do this itself."""
+    from pathlib import Path as _Path
+    from rct_control_plane import skill_format
+    from rct_control_plane.skill_library import SkillLibrary
+    try:
+        if source.lower().startswith(("http://", "https://")):
+            text = skill_format.fetch(source)
+        else:
+            text = _Path(source).read_text(encoding="utf-8")
+        parsed = skill_format.parse(text)
+        from rct_control_plane.mcp_server import mcp
+        import asyncio as _asyncio
+        known = [t.name for t in _asyncio.run(mcp.list_tools())]
+        unknown = skill_format.check_tools(parsed, known)
+        click.echo(f"--- {parsed.name} {parsed.version}: {parsed.description}\n{parsed.body}\n---")
+        if not yes and not click.confirm("The model will read the text above as guidance. Have you read it and do you trust it?"):
+            click.echo("not imported")
+            sys.exit(1)
+        outcome = skill_format.install(SkillLibrary(), parsed, source, reviewed=True)
+    except (skill_format.SkillFormatError, OSError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{outcome['status']}: {outcome['skill_id']} ({parsed.name})")
+    if unknown:
+        click.echo(f"note: it mentions tools this runtime does not have: {', '.join(unknown)}")
+
+
+@skills_group.command("export")
+@click.argument("skill_id")
+@click.option("--out", default=None, help="Write the SKILL.md here instead of printing it.")
+def skills_export_cmd(skill_id: str, out: Optional[str]) -> None:
+    """Write one of this runtime's skills (learned, bundled or imported) as a SKILL.md."""
+    from pathlib import Path as _Path
+    from rct_control_plane import skill_format
+    from rct_control_plane.skill_library import SkillLibrary
+    record = SkillLibrary().get_skill(skill_id)
+    if record is None:
+        click.echo(click.style(f"Error: no skill {skill_id!r} (see `delentia skills list`)", fg="red"), err=True)
+        sys.exit(1)
+    text = skill_format.export(record)
+    if out:
+        _Path(out).write_text(text, encoding="utf-8")
+        click.echo(f"wrote {out}")
+    else:
+        click.echo(text)
 
 
 @skills_group.group("starter")

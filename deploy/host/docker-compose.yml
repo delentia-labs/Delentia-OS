@@ -62,6 +62,11 @@ services:
       DELENTIA_AUDIT_ANCHOR_URL: "${DELENTIA_AUDIT_ANCHOR_URL:-}"
       DELENTIA_AUDIT_ANCHOR_KEY_ID: "${AUDIT_ANCHOR_KEY_ID:-}"
       DELENTIA_AUDIT_ANCHOR_INTERVAL_S: "${AUDIT_ANCHOR_EVERY_S:-900}"
+      # Round 58: several independent witnesses instead of one (empty = the single HTTP witness above, or none). A JSON list, for example
+      #   [{"type":"http","name":"worker","url":"https://<fdia worker>","key_id":"host-1"},
+      #    {"type":"git","name":"ledger","path":"/data/witness-ledger","remote":"origin","key_id":"host-1"}]
+      # The git witness is a repository whose remote this host can append to but not rewrite (protected branch, no force-push). See the runbook, step 3.5.
+      DELENTIA_AUDIT_WITNESSES: "${AUDIT_WITNESSES:-}"
       DELENTIA_EPISODE_BUDGET_USD: "${EPISODE_BUDGET_USD:-0.20}"
       DELENTIA_EPISODE_MAX_TOKENS: "${EPISODE_MAX_TOKENS:-60000}"
       # Channels stay closed until you list who may talk to the agent (an empty list = nobody). Examples, uncomment as you need:

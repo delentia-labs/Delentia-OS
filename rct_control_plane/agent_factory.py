@@ -81,11 +81,32 @@ def allowed_senders(channel: str) -> Optional[set]:
     return {part.strip() for part in raw.split(",") if part.strip()}
 
 
-def sender_allowed(channel: str, sender_id: Any) -> bool:
+def sender_allowed(channel: str, sender_id: Any, persistence: Any = None) -> bool:
+    """On the allowlist, or (only with DELENTIA_PAIRING=1) a sender the owner let in by signing their pairing code. Anything unreadable is a no."""
     allowed = allowed_senders(channel)
     if allowed is None:
         return True
-    return sender_id is not None and str(sender_id) in allowed
+    if sender_id is None:
+        return False
+    if str(sender_id) in allowed:
+        return True
+    from rct_control_plane import pairing
+    return pairing.enabled() and pairing.is_granted(channel, sender_id, persistence)
+
+
+def rejection_reply(kernel: Any, channel: str, sender_id: Any) -> str:
+    """What a refused sender is told. With pairing on (and not on email, where a reply to a forged From would be backscatter) it is a pairing code
+    for the owner to sign; otherwise the fixed refusal."""
+    if channel == "email":
+        return REJECTED_SENDER_REPLY
+    from rct_control_plane import pairing
+    if not pairing.enabled():
+        return REJECTED_SENDER_REPLY
+    try:
+        outcome = pairing.request(channel, sender_id, getattr(kernel, "_persistence", None))
+    except Exception:                        # a broken store is a refusal, never an opening
+        return REJECTED_SENDER_REPLY
+    return pairing.message_for(outcome, REJECTED_SENDER_REPLY)
 
 
 def record_rejected_sender(kernel: Any, channel: str, sender_id: Any, namespace: str) -> None:
