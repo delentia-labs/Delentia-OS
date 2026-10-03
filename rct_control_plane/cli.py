@@ -2300,6 +2300,83 @@ def audit_chain_witness_entry(key_id: str, pubkey: Optional[str]) -> None:
     _print_witness_entry(key_id, public_hex)
 
 
+@audit_chain_group.command("anchor-all")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def audit_chain_anchor_all(db: Optional[str]) -> None:
+    """Sign the chain head once and publish it to EVERY configured witness (DELENTIA_AUDIT_WITNESSES). Exit 1 if none received it."""
+    from rct_control_plane import audit_witness
+    persistence = _audit_db(db)
+    try:
+        with persistence._connect() as conn:
+            results = audit_witness.anchor_all(conn)
+    except (audit_witness.WitnessError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    if not results:
+        click.echo(click.style("Error: no witness is configured (DELENTIA_AUDIT_WITNESSES)", fg="red"), err=True)
+        sys.exit(1)
+    for r in results:
+        click.echo(f"{'ok  ' if r['ok'] else 'FAIL'} {r['witness']}: {r['detail']}")
+    if not any(r["ok"] for r in results):
+        sys.exit(1)
+
+
+@audit_chain_group.command("witness-status")
+@click.option("--db", default=None)
+def audit_chain_witness_status(db: Optional[str]) -> None:
+    """How well is the log protected RIGHT NOW: which witnesses hold a recent head, and how many rows are newer than the newest anchor."""
+    from rct_control_plane import audit_witness
+    with _audit_db(db)._connect() as conn:
+        report = audit_witness.status(conn)
+    click.echo(json.dumps(report, indent=2))
+
+
+@audit_chain_group.command("check-witnesses")
+@click.option("--db", default=None)
+def audit_chain_check_witnesses(db: Optional[str]) -> None:
+    """Ask EVERY witness what it holds and compare it with this chain; exit 1 on any mismatch, forged anchor or unreachable witness."""
+    from rct_control_plane import audit_witness
+    try:
+        with _audit_db(db)._connect() as conn:
+            report = audit_witness.check_witnesses(conn)
+    except (audit_witness.WitnessError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(report, indent=2))
+    if not report or not all(r["ok"] for r in report):
+        sys.exit(1)
+
+
+@audit_chain_group.command("export-proof")
+@click.option("--db", default=None)
+@click.option("--from-seq", default=1, type=int, show_default=True)
+@click.option("--to-seq", default=None, type=int)
+@click.option("--hashes-only", is_flag=True, help="Leave out the recorded content (links and signatures only): for sharing without exposing what happened.")
+@click.option("--out", required=True, help="Where to write the bundle (JSON).")
+def audit_chain_export_proof(db: Optional[str], from_seq: int, to_seq: Optional[int], hashes_only: bool, out: str) -> None:
+    """Write a bundle a third party can verify with scripts/verify_audit_bundle.py: no database, no Delentia code."""
+    from rct_control_plane import audit_witness
+    persistence = _audit_db(db)
+    try:
+        with persistence._connect() as conn:
+            held: list = []
+            try:
+                for spec in audit_witness.specs_from_env():
+                    try:
+                        held.append({"name": spec.name, "type": spec.type, **audit_witness.make(spec).fetch()})
+                    except audit_witness.WitnessError:
+                        continue
+            except (audit_witness.WitnessError, ValueError):
+                held = []
+            bundle = audit_witness.export_proof(conn, from_seq, to_seq, include_content=not hashes_only, witnesses=held)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    Path(out).write_text(json.dumps(bundle, indent=1, ensure_ascii=False), encoding="utf-8")
+    click.echo(f"wrote {out}: rows {bundle['from_seq']}..{bundle['to_seq']}, {len(bundle['witnesses'])} witness(es) consulted. "
+               "Verify elsewhere with: python scripts/verify_audit_bundle.py <file> --pubkey <the key you published>")
+
+
 @audit_chain_group.command("check-anchors")
 @click.option("--url", required=True, help="Witness base URL.")
 @click.option("--key-id", required=True, help="Key id to check.")

@@ -1039,6 +1039,29 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         with _connect() as conn:
             return governance_view.verify_deep(conn)
 
+    @router.get("/governance/audit/witnesses")
+    async def governance_witnesses() -> Dict[str, Any]:
+        """How well the log is protected right now (which witnesses hold a recent head, how many rows are newer than the newest anchor)."""
+        from rct_control_plane import audit_witness
+        with _connect() as conn:
+            return audit_witness.status(conn)
+
+    @router.post("/governance/audit/check-witnesses")
+    async def governance_check_witnesses() -> Dict[str, Any]:
+        """Ask every configured witness what it holds and compare it with this chain (the addresses come from the host's configuration, never from the request)."""
+        import asyncio as _asyncio
+        from rct_control_plane import audit_witness
+        try:
+            def run() -> Any:
+                with _connect() as conn:
+                    return audit_witness.check_witnesses(conn)
+            report = await _asyncio.to_thread(run)
+        except (audit_witness.WitnessError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail="the witness configuration is unusable (see `delentia audit-chain witness-status` on the host)") from exc
+        if not report:
+            raise HTTPException(status_code=409, detail="no witness is configured (DELENTIA_AUDIT_WITNESSES); tier A3 is off")
+        return {"witnesses": report, "ok": all(r["ok"] for r in report)}
+
     @router.post("/governance/audit/check-witness")
     async def governance_check_witness() -> Dict[str, Any]:
         """Compare every chain head the outside witness holds with this chain. The witness address is the host's own

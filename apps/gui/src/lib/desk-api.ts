@@ -256,6 +256,14 @@ export interface Checkpoint {
 }
 export interface CheckpointList { checkpoints: Checkpoint[]; status: { enabled: boolean; checkpoints: number; unprotected: number; stored_bytes: number; blob_dir: string } }
 
+
+export interface WitnessStatus {
+  configured: number; fresh_witnesses: number; independent_witnesses: number; head_seq: number; rows_not_yet_anchored: number; stale_after_s: number;
+  tamper_evident_against_host_compromise: boolean; plain: string; problem: string;
+  witnesses: { name: string; type: string; last_anchored_entries: number | null; last_anchored_age_s: number | null; fresh: boolean; last_attempt_ok: boolean | null; last_attempt_detail: string | null }[];
+}
+export interface WitnessesChecked { ok: boolean; witnesses: { witness: string; reachable: boolean; ok: boolean; checked: number; problems: string[] }[] }
+
 // ---- calls --------------------------------------------------------------------
 
 // ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
@@ -336,6 +344,8 @@ export const desk = {
   govIdentities: () => call<{ mode: string; file: string; shared_token_set: boolean; users: GovIdentity[]; problem: string; default_role: string | null; note: string }>("/v1/desk/governance/identities"),
   govDecisions: () => call<{ decisions: GovDecision[] }>("/v1/desk/governance/decisions"),
   govVerify: () => call<GovVerify>("/v1/desk/governance/audit/verify"),
+  govWitnesses: () => call<WitnessStatus>("/v1/desk/governance/audit/witnesses"),
+  govCheckWitnesses: () => call<WitnessesChecked>("/v1/desk/governance/audit/check-witnesses", { method: "POST", body: "{}" }),
   govCheckWitness: () => call<WitnessCheck>("/v1/desk/governance/audit/check-witness", { method: "POST", body: "{}" }),
   experiments: () => call<{ experiments: Experiment[] }>("/v1/desk/experiments"),
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),

@@ -303,20 +303,18 @@ class AutonomousScheduler:
         return (f"audit chain OK: {report.chained_rows} chained rows ({report.signed_rows} signed), "
                 f"head seq {report.head_seq}")
 
-    async def _anchor_audit_chain(self) -> str:
+    def _anchor_audit_chain(self) -> str:
+        """Tier A3 on a schedule: sign the head once and publish it to EVERY configured witness (audit_witness.py). Runs in a worker thread (git and HTTP block)."""
         if not anchor_configured():
-            return f"not configured ({ANCHOR_URL_ENV} / {ANCHOR_KEY_ID_ENV} unset); nothing anchored"
-        from rct_control_plane import http_client
-
-        from rct_control_plane import audit_chain
+            return f"not configured (no witness: set {WITNESSES_ENV}, or {ANCHOR_URL_ENV} and {ANCHOR_KEY_ID_ENV}; and DELENTIA_AUDIT_SIGNING_KEY); nothing anchored"
+        from rct_control_plane import audit_witness
         with self._persistence()._connect() as conn:
-            body = audit_chain.sign_anchor(conn, os.environ[ANCHOR_KEY_ID_ENV])
-        url = os.environ[ANCHOR_URL_ENV].rstrip("/") + "/v1/audit/anchor"
-        async with http_client.async_client(timeout=20.0) as client:
-            resp = await client.post(url, json=body)
-        if resp.status_code not in (200, 201):
-            raise RuntimeError(f"witness refused the anchor ({resp.status_code}): {resp.text[:200]}")
-        return f"anchored entries={body['entries']} head={body['head'][:16]}... at the witness"
+            results = audit_witness.anchor_all(conn)
+        failed = [r for r in results if not r["ok"]]
+        summary = "; ".join(f"{r['witness']}: {'ok' if r['ok'] else r['detail']}" for r in results)
+        if len(failed) == len(results):
+            raise RuntimeError(f"no witness received the head ({summary})")
+        return f"anchored at {len(results) - len(failed)} of {len(results)} witness(es) ({summary})"
 
 
 ANCHOR_URL_ENV = "DELENTIA_AUDIT_ANCHOR_URL"
@@ -324,6 +322,14 @@ ANCHOR_KEY_ID_ENV = "DELENTIA_AUDIT_ANCHOR_KEY_ID"
 ANCHOR_INTERVAL_ENV = "DELENTIA_AUDIT_ANCHOR_INTERVAL_S"
 
 
+WITNESSES_ENV = "DELENTIA_AUDIT_WITNESSES"
+
+
 def anchor_configured() -> bool:
+    from rct_control_plane import audit_witness
     from rct_control_plane.audit_chain import SIGNING_KEY_ENV
-    return bool(os.getenv(ANCHOR_URL_ENV) and os.getenv(ANCHOR_KEY_ID_ENV) and os.getenv(SIGNING_KEY_ENV))
+    try:
+        has_witness = bool(audit_witness.specs_from_env())
+    except (audit_witness.WitnessError, ValueError):
+        has_witness = False                    # a broken witness list anchors nothing (and `witness-status` says why)
+    return has_witness and bool(os.getenv(SIGNING_KEY_ENV))
