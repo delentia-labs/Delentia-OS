@@ -3376,6 +3376,31 @@ def context_cmd() -> None:
         click.echo("no AGENTS.md, .delentia.md or SOUL.md found")
 
 
+@cli.group("sessions")
+def sessions_group():
+    """Past episodes (Round 57). `delentia sessions search "backup job"` finds what you asked the agent and what it answered, Thai or English."""
+    pass
+
+
+@sessions_group.command("search")
+@click.argument("query", required=False, default="")
+@click.option("--namespace", default=None, help="Whose history (default: the Desk user).")
+@click.option("--limit", default=5, show_default=True, type=int)
+def sessions_search_cmd(query: str, namespace: Optional[str], limit: int) -> None:
+    """Search one person's past episodes: the goal and the final answer of each."""
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    from rct_control_plane.session_search import SessionLog
+    owner = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+    hits = SessionLog(ControlPlanePersistence(db_path=agentic_db_path())).search(owner, query, limit=limit)
+    if not hits:
+        click.echo("Nothing found.")
+    for h in hits:
+        click.echo(f"#{h['id']} {time.strftime('%Y-%m-%d %H:%M', time.localtime(h['at']))} [{h['stopped_reason']}] {h['goal'][:120]}")
+        if h["answer"]:
+            click.echo(f"      -> {h['answer'][:200]}")
+
+
 @cli.group("checkpoints")
 def checkpoints_group():
     """

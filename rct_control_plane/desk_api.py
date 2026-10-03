@@ -187,6 +187,14 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     "gateways": {channel: gateway|None}} from api.py's daemon globals."""
     router = APIRouter(prefix="/v1/desk", tags=["Desk"])
 
+    @router.get("/sessions/search")
+    async def sessions_search(request: Request, q: str = Query("", max_length=200), limit: int = Query(10, ge=1, le=25)) -> Dict[str, Any]:
+        """Search the signed-in person's own past episodes (goal and answer)."""
+        from rct_control_plane.session_search import SessionLog
+        owner = getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+        log = SessionLog(_kernel()._persistence)
+        return {"owner": owner, "query": q, "episodes": log.search(owner, q, limit=limit), "indexed": log.count(owner), "fts": log.fts}
+
     @router.get("/sessions")
     async def sessions(limit: int = Query(50, ge=1, le=500)) -> Dict[str, Any]:
         with _connect() as conn:

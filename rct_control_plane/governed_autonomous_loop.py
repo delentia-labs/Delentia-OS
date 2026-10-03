@@ -247,7 +247,7 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
-                                    "delentia_import_session_state", "delentia_web_search"})
+                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
 ADDRESSED_TO_THE_AI_RULES = frozenset({"CORD-S006", "CORD-S010", "CORD-S011", "CORD-S016"})
@@ -774,7 +774,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # namespace unless told otherwise, so a fact one user asked the agent to remember was
     # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
     # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
-    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete")
+    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions")
     # Channel namespaces belong to outside senders; the shared default store (what the
     # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
     # Round 57: whatsapp-, signal- and email- were missing (those gateways arrived in Round 55), so a sender on them could read the owner's shared memory.
@@ -1324,6 +1324,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
             },
         )
         result["experiment"] = self._record_experiment_run(result, verification, duration)
+        try:                                   # Round 57: keep the goal and the answer, per person, so past episodes can be searched (session_search.py)
+            from rct_control_plane.session_search import SessionLog
+            SessionLog(self._persistence).record(
+                self.namespace, result["goal"], result.get("final_answer"), stopped_reason, episode_id=str(self._episode_id or ""),
+                tools=[s["tool_name"] for s in result.get("steps", []) if s.get("tool_name")])
+        except Exception:                      # a logging problem must never change an episode's outcome
+            pass
         if self._warm_recall and verified_success and stopped_reason == "llm_finished":
             self._warm_store(result, verification)
         await self._pipeline_after(result, duration)

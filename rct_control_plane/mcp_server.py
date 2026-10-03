@@ -226,6 +226,14 @@ def _cron() -> "Any":
 
 
 @mcp.tool()
+async def delentia_search_sessions(query: str = "", limit: int = 5, namespace: Optional[str] = None) -> dict:
+    """Search the caller's OWN past episodes (the goal and the final answer of each, Thai or English, any fragment of three or more characters) to answer
+    "what did we do about X before?". An empty query lists the latest ones. Never shows anyone else's history."""
+    from rct_control_plane.session_search import SessionLog
+    return {"episodes": SessionLog(_kernel._persistence).search(namespace or "owner", query, limit=limit)}
+
+
+@mcp.tool()
 async def delentia_cron_create(goal: str, schedule: str, name: str = "", deliver_channel: str = "", deliver_to: str = "",
                                max_runs: int = 0, namespace: Optional[str] = None) -> dict:
     """Create a PERSISTENT recurring job (Round 57): `goal` runs unattended on `schedule`, written the way a person says it

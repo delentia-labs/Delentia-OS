@@ -72,6 +72,7 @@ HINTS: Dict[str, str] = {
     "delentia_schedule_self_evolution": "schedule periodic self evolution cycle improve over time | วงจรพัฒนาตนเอง",
     "delentia_verify_intent_conservation": "verify intent preserved fidelity stages pipeline conservation | ตรวจความตรงของเจตนา",
     "delentia_autonomous_loop": "autonomous loop agent run goal episode steps work toward | รันเอเจนต์ ทำงานอัตโนมัติ",
+    "delentia_search_sessions": "search past sessions episodes history earlier conversation what did we do before previously discussed decided last week | ค้นประวัติ เคยคุยกัน ครั้งก่อน ที่ผ่านมา เมื่อวาน สัปดาห์ที่แล้ว",
     "delentia_cron_create": "schedule recurring repeat every daily weekly hourly cron job automate regularly unattended report later | ตั้งงาน ตั้งเวลา ทุกวัน ทุกชั่วโมง ทำซ้ำ อัตโนมัติ",
     "delentia_cron_list": "list recurring scheduled jobs cron what is scheduled upcoming | งานที่ตั้งเวลาไว้ รายการงานตามเวลา",
     "delentia_cron_delete": "delete remove stop cancel recurring scheduled job cron | ยกเลิกงานตามเวลา หยุดงาน",
