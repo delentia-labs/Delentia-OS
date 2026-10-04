@@ -422,11 +422,36 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         return {"routes": [{"name": r.name, "verify": r.verify, "mode": r.mode, "events": r.events, "open": wt.secret_of(r) is not None, "secret_env": r.secret_env,
                             "deliver": r.deliver, "max_per_minute": r.max_per_minute} for r in routes.values()], "problems": problems, "recent": recent, "path": str(wt.config_path())}
 
+    @router.get("/tasks")
+    async def tasks_view() -> Dict[str, Any]:
+        """Every task and the latest background jobs, for the owner (people see only their own through /v1/agent/tasks and /v1/agent/jobs)."""
+        import sqlite3
+        from rct_control_plane.task_board_runtime import get_board
+        persistence = _kernel()._persistence
+        jobs: List[Dict[str, Any]] = []
+        with persistence._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            try:
+                jobs = [{k: r[k] for k in ("id", "namespace", "status", "stopped", "steps", "last_tool", "created_at", "finished_at", "approval_id")}
+                        for r in conn.execute("SELECT * FROM agent_jobs ORDER BY created_at DESC LIMIT 30").fetchall()]
+            except sqlite3.OperationalError:
+                jobs = []                                          # no job has ever been submitted on this store
+        return {"tasks": [{**t, "goal": t["goal"][:200]} for t in get_board(persistence).list(limit=50)], "jobs": jobs}
+
+    @router.post("/tasks/{task_id}/cancel")
+    async def task_cancel(task_id: str) -> Dict[str, Any]:
+        from rct_control_plane.task_board import TaskError
+        from rct_control_plane.task_board_runtime import get_board
+        try:
+            return get_board(_kernel()._persistence).cancel(task_id)
+        except TaskError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
     @router.get("/envelope")
     async def envelope_status() -> Dict[str, Any]:
         """Is the agent paused, what are the spending and flood limits, and how much of them has been used (envelope.py)."""
-        from rct_control_plane import envelope
-        return envelope.status(_kernel()._persistence)
+        from rct_control_plane import envelope, owner_notify
+        return {**envelope.status(_kernel()._persistence), "owner_alerts": owner_notify.status()}
 
     @router.post("/envelope/pause")
     async def envelope_pause(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:

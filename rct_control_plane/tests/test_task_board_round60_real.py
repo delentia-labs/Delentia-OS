@@ -308,3 +308,26 @@ class TestSurfaces:
         assert "1. [pending] read" in shown and "2. [pending] group" in shown and "clean" in shown
         assert "cancelled" in runner.invoke(cli, ["task", "cancel", task_id, "--db", db]).output
         assert runner.invoke(cli, ["task", "show", "task-nope", "--db", db]).exit_code == 1
+
+
+def test_the_desk_lists_tasks_and_jobs_and_cancels_a_task(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    import rct_control_plane.desk_api as desk_api
+    from rct_control_plane.api import create_app
+    from rct_control_plane import task_board_runtime
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "desk.db"))
+
+    class K:
+        _persistence = persistence
+    monkeypatch.setattr(desk_api, "_kernel", lambda: K())
+    board = TaskBoard(persistence, Script())
+    monkeypatch.setitem(task_board_runtime._boards, id(persistence), board)
+    task = board.create("alice", "a goal for the desk", ["one", "two"])
+    with TestClient(create_app()) as client:
+        view = client.get("/v1/desk/tasks").json()
+        assert [t["id"] for t in view["tasks"]] == [task["id"]] and view["jobs"] == [] and view["tasks"][0]["steps"][0]["status"] == "pending"
+        cancelled = client.post(f"/v1/desk/tasks/{task['id']}/cancel").json()
+        assert cancelled["status"] == "cancelled"
+        assert client.post("/v1/desk/tasks/task-nope/cancel").status_code == 404
+        status = client.get("/v1/desk/envelope").json()
+        assert "owner_alerts" in status and status["paused"] is None
