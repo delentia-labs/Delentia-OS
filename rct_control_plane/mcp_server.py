@@ -173,6 +173,7 @@ async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240)
         "agent_id": o.get("agent_id"), "goal": o.get("goal"), "success": bool(o.get("success")),
         "stopped_reason": o.get("stopped_reason"), "final_answer": o.get("final_answer"),
         "signed_response_verified": bool((o.get("jitna") or {}).get("response_verified")),
+        "tainted": bool(o.get("tainted", True)), "taint_source": o.get("taint_source"),
         "problem": o.get("error") or o.get("rejected") or (o.get("jitna") or {}).get("reason") or o.get("timed_out") or None,
     } for o in outcomes]}
 

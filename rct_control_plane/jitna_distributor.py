@@ -157,6 +157,13 @@ async def distribute_to_subagents(
                                     "response_verified": verified, "reason": why or None}
                 if not verified:
                     outcome["success"] = False
+                    outcome["tainted"], outcome["taint_source"] = True, "an unverified subagent response"
+                else:
+                    signed = (response or {}).get("payload") or {}
+                    outcome["tainted"] = bool(signed.get("tainted", True))          # a response that does not say is treated as tainted
+                    outcome["taint_source"] = signed.get("taint_source")
+            else:
+                outcome.setdefault("tainted", True)
         real_results.append(outcome)
 
         # The real join: completed sub-agent work now genuinely reaches

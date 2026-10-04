@@ -70,12 +70,14 @@ async def _main() -> int:
         "final_answer": result.get("final_answer"),
         "stopped_reason": result.get("stopped_reason"),
         "iterations": result.get("iterations"),
+        "tainted": bool((result.get("taint") or {}).get("tainted", True)),
+        "taint_source": (result.get("taint") or {}).get("source_tool"),
     }
     if request is not None:
         from rct_control_plane import jitna_subagent
         from rct_control_plane.jitna_protocol import JITNAKeypair
         response, keypair = jitna_subagent.make_response(
-            request, {k: out[k] for k in ("final_answer", "stopped_reason", "iterations")})
+            request, {k: out[k] for k in ("final_answer", "stopped_reason", "iterations", "tainted", "taint_source")})
         keypair_pub: JITNAKeypair = keypair
         out["jitna_response"] = response.to_dict()
         out["child_public_key"] = keypair_pub.public_key_raw().hex()

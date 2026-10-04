@@ -76,6 +76,7 @@ class TestMainFlow:
         assert payload == {
             "agent_id": "a1", "worktree": "/tmp/wt1",
             "final_answer": "done", "stopped_reason": "llm_finished", "iterations": 2,
+            "tainted": True, "taint_source": None,          # Round 59: a result that does not report its taint is reported as tainted (fail closed)
         }
 
     def test_namespace_is_scoped_by_agent_id(self, monkeypatch, patched_loop):

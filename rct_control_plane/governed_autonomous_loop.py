@@ -309,6 +309,7 @@ TAINT_GATED_TOOLS = frozenset({
     "delentia_spawn_subagents", "delentia_delegate", "delentia_autonomous_loop",
     "delentia_create_worktree", "delentia_remove_worktree", "delentia_export_session_state",
 })
+DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
 TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
 
 
@@ -1317,6 +1318,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
             )
         result["intent_verification"] = verification
+        result["taint"] = {"tainted": getattr(self, "_episode_taint", None) is not None, "source_tool": getattr(self, "_episode_taint", None)}
         result["route"] = self._episode_route
         result["guard"] = self._episode_guard
         await self._notarise_best_effort(
@@ -1892,7 +1894,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if isinstance(shown, dict) and shown.get("withheld_by_cord"):
             return
         flagged = isinstance(shown, dict) and "_cord_warning" in shown
-        if not (is_external_content(tool_name) and (tool_name in TAINT_SOURCE_TOOLS or tool_name.startswith("mcp__"))) and not flagged:
+        child = self._child_taint(tool_name, shown)
+        if not (is_external_content(tool_name) and (tool_name in TAINT_SOURCE_TOOLS or tool_name.startswith("mcp__"))) and not flagged and child is None:
             return
         import re as _re
         urls = getattr(self, "_episode_seen_urls", None)
@@ -1900,12 +1903,34 @@ class GovernedAutonomousLoop(AutonomousLoop):
             urls = self._episode_seen_urls = set()
         urls.update(u.rstrip(".,;:!?)\"'") for u in _re.findall(r"https?://[^\s<>\"'\])]+", self._render_tool_result(shown)[:400_000]))
         if getattr(self, "_episode_taint", None) is None:
-            self._episode_taint = tool_name
+            self._episode_taint = f"{tool_name} (a child that read {child})" if child else tool_name
             try:
                 self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action="tainted",
                                                actor=self.namespace, changes={"source_tool": tool_name, "flagged_by_screen": flagged, "gate": "on" if self._taint_enabled() else "off"})
             except Exception:                                    # an audit problem must not decide what the model sees
                 pass
+
+    @staticmethod
+    def _child_taint(tool_name: str, shown: Any) -> Optional[str]:
+        """Round 59: what a delegate or a subagent brings back was written by an episode that may have read outside text. When it did, the parent is tainted too, or the
+        taint gate could be walked around by asking a child to read the page. A child that does not say whether it was tainted is treated as tainted (fail closed).
+        Returns what the child read, or None when no child that produced an answer was tainted."""
+        if tool_name not in DELEGATION_TOOLS or not isinstance(shown, dict):
+            return None
+        if tool_name == "delentia_delegate":
+            if shown.get("final_answer") is None:
+                return None
+            taint = shown.get("taint")
+            if isinstance(taint, dict) and taint.get("tainted") is False:
+                return None
+            return str((taint or {}).get("source_tool") or "text from outside (not reported)")
+        for entry in shown.get("subagents") or []:
+            if not isinstance(entry, dict) or entry.get("final_answer") is None:
+                continue
+            if entry.get("tainted") is False and entry.get("signed_response_verified"):
+                continue
+            return str(entry.get("taint_source") or "text from outside (not reported or not verified)")
+        return None
 
     @staticmethod
     def _url_was_named(url: str, goal: str, seen: Any) -> bool:
