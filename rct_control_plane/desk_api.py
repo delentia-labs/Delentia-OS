@@ -408,6 +408,73 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     def _cron_owner(request: Request) -> str:
         return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
 
+    @router.get("/webhooks")
+    async def webhooks_view() -> Dict[str, Any]:
+        """The webhook routes (never their secrets): which are open, which are not served and why, and the latest deliveries."""
+        from rct_control_plane import webhook_triggers as wt
+        routes, problems = wt.load_routes()
+        with _connect() as conn:
+            try:
+                recent = [{"route": r[0], "action": r[1], "at": r[2]} for r in conn.execute(
+                    "SELECT entity_id, action, created_at FROM audit_trail WHERE entity_type = 'webhook' ORDER BY id DESC LIMIT 30").fetchall()]
+            except Exception:
+                recent = []
+        return {"routes": [{"name": r.name, "verify": r.verify, "mode": r.mode, "events": r.events, "open": wt.secret_of(r) is not None, "secret_env": r.secret_env,
+                            "deliver": r.deliver, "max_per_minute": r.max_per_minute} for r in routes.values()], "problems": problems, "recent": recent, "path": str(wt.config_path())}
+
+    @router.get("/tasks")
+    async def tasks_view() -> Dict[str, Any]:
+        """Every task and the latest background jobs, for the owner (people see only their own through /v1/agent/tasks and /v1/agent/jobs)."""
+        import sqlite3
+        from rct_control_plane.task_board_runtime import get_board
+        persistence = _kernel()._persistence
+        jobs: List[Dict[str, Any]] = []
+        with persistence._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            try:
+                jobs = [{k: r[k] for k in ("id", "namespace", "status", "stopped", "steps", "last_tool", "created_at", "finished_at", "approval_id")}
+                        for r in conn.execute("SELECT * FROM agent_jobs ORDER BY created_at DESC LIMIT 30").fetchall()]
+            except sqlite3.OperationalError:
+                jobs = []                                          # no job has ever been submitted on this store
+        return {"tasks": [{**t, "goal": t["goal"][:200]} for t in get_board(persistence).list(limit=50)], "jobs": jobs}
+
+    @router.post("/tasks/{task_id}/cancel")
+    async def task_cancel(task_id: str) -> Dict[str, Any]:
+        from rct_control_plane.task_board import TaskError
+        from rct_control_plane.task_board_runtime import get_board
+        try:
+            return get_board(_kernel()._persistence).cancel(task_id)
+        except TaskError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.get("/envelope")
+    async def envelope_status() -> Dict[str, Any]:
+        """Is the agent paused, what are the spending and flood limits, and how much of them has been used (envelope.py)."""
+        from rct_control_plane import envelope, owner_notify
+        return {**envelope.status(_kernel()._persistence), "owner_alerts": owner_notify.status()}
+
+    @router.post("/envelope/pause")
+    async def envelope_pause(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Pausing needs no signature: nothing starts and no tool runs, from any entry point, until it is lifted."""
+        from rct_control_plane import envelope
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        return {"paused": envelope.pause(str(payload.get("reason", "")), by=f"desk:{owner}", persistence=_kernel()._persistence)}
+
+    @router.post("/envelope/resume")
+    async def envelope_resume(payload: Dict[str, Any], request: Request, response: Response) -> Dict[str, Any]:
+        """Lifting a pause needs a signed approval when any approver is configured (closing is free, opening is signed): the first call answers 202 with the action to sign."""
+        from rct_control_plane import envelope
+        persistence = _kernel()._persistence
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        approval_id = str(payload.get("approval_id") or "").strip() or None
+        try:
+            return {"resumed": envelope.resume(by=f"desk:{owner}", persistence=persistence, approval_id=approval_id)}
+        except envelope.ResumeRefused as exc:
+            if approval_id is None and envelope.status(persistence)["resume_needs_signature"]:
+                response.status_code = 202
+                return {"pending_signature": True, **envelope.request_resume(persistence, requested_by=f"desk:{owner}")}
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
     @router.get("/pairing")
     async def pairing_view() -> Dict[str, Any]:
         """Who asked to be let in, and who is. A request is let in only by a signed approval (Approvals page or `delentia approvals approve <code>`)."""

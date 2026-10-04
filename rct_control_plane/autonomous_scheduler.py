@@ -197,6 +197,11 @@ class AutonomousScheduler:
             task.last_status = "FAILED"
             task.last_output = str(e)
             task.next_run_at = (now + timedelta(seconds=task.interval_seconds)).isoformat()
+            try:                                                   # Round 60: the owner hears about it (owner_notify.py); never fatal
+                from rct_control_plane import owner_notify
+                owner_notify.on_task_failed(task.name, str(e), self._persistence() if self._kernel is not None else None)
+            except Exception:
+                pass
             return {"status": "FAILED", "task_id": task.task_id, "error": str(e)}
 
     def _register_default_tasks(self):
@@ -213,6 +218,12 @@ class AutonomousScheduler:
                          f"(needs {ANCHOR_URL_ENV}, {ANCHOR_KEY_ID_ENV} and DELENTIA_AUDIT_SIGNING_KEY)"),
             interval_seconds=int(os.getenv(ANCHOR_INTERVAL_ENV, "3600")),
             handler=self._anchor_audit_chain,
+        )
+        self.register_task(
+            name="tasks_advance",
+            description="Round 60: give every live task (task_board.py) its next step, one episode at a time; a paused or over-limit system just holds them",
+            interval_seconds=int(os.getenv("DELENTIA_TASKS_INTERVAL_S", "30")),
+            handler=self._advance_tasks,
         )
         # Off until the host is configured, so a dev machine never anchors a
         # throwaway database (the witness keeps every rollback as evidence).
@@ -293,6 +304,12 @@ class AutonomousScheduler:
             return self._kernel._persistence
         from rct_control_plane.persistence import ControlPlanePersistence
         return ControlPlanePersistence()
+
+    async def _advance_tasks(self) -> str:
+        from rct_control_plane import task_board_runtime
+        board = task_board_runtime.get_board(self._persistence())
+        moved = await board.advance_all()
+        return f"advanced {moved} task(s)"
 
     def _verify_audit_chain(self) -> str:
         from rct_control_plane import audit_chain

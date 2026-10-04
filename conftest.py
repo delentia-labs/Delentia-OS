@@ -64,7 +64,7 @@ if sys.platform == "win32":
 # leave them on for every test after it.
 import pytest  # noqa: E402
 
-_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT", "DELENTIA_STARTER_SKILLS", "DELENTIA_CONTEXT_FILES")
+_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT", "DELENTIA_STARTER_SKILLS", "DELENTIA_CONTEXT_FILES", "DELENTIA_EPISODES_PER_HOUR_PER_USER")
 
 
 @pytest.fixture(autouse=True)
@@ -88,3 +88,43 @@ def _round51_switches_start_and_end_off():
         os.environ.pop(name, None)
     # values present before the test are not restored on purpose: a developer's
     # shell setting must not change what the test suite exercises.
+
+
+# ── Every test gets its own data home (Round 60) ───────────────────────────────
+# The session-wide DELENTIA_HOME above keeps tests away from a real runtime's data, but inside a run every test still shared one set of databases: a Round 58
+# test that wrote to the default agentic.db passed alone and failed in a full run, because earlier tests had left unsigned rows in it (CI caught it on all three
+# Python versions). Code that resolves its store when it is CALLED (the CLI, the gateways' pairing store, cron, sessions...) now gets a fresh one per test.
+# Singletons that bind a path at import (the kernel in mcp_server, SkillLibrary's default) stay per-session, as before.
+@pytest.fixture(autouse=True)
+def _each_test_has_its_own_data_home(tmp_path_factory, monkeypatch):
+    if os.environ.get("DELENTIA_TEST_KEEP_HOME"):
+        yield
+        return
+    monkeypatch.setenv("DELENTIA_HOME", str(tmp_path_factory.mktemp("home")))
+    monkeypatch.delenv("RCT_DB_PATH", raising=False)
+    monkeypatch.delenv("RCT_AGENTIC_DB_PATH", raising=False)
+    yield
+
+
+# ── Optional shuffling to expose order dependence (Round 60) ───────────────────
+# `pytest --shuffle-seed=N` runs modules, classes and the tests inside them in a seeded random order (no extra package needed; the same seed gives the same order).
+def pytest_addoption(parser):
+    parser.addoption("--shuffle-seed", action="store", default=None, help="run the tests in a random order derived from this integer seed")
+
+
+def pytest_collection_modifyitems(config, items):
+    seed = config.getoption("--shuffle-seed")
+    if seed is None:
+        return
+    import random
+    rng = random.Random(int(seed))
+    keys: dict = {}
+
+    def rank(key):
+        if key not in keys:
+            keys[key] = rng.random()
+        return keys[key]
+    items.sort(key=lambda item: (rank(("m", item.module.__name__ if getattr(item, "module", None) else "")),
+                                 rank(("c", item.cls.__name__ if getattr(item, "cls", None) else "", item.module.__name__ if getattr(item, "module", None) else "")),
+                                 rank(("i", item.nodeid))))
+    print(f"\n[shuffle] running {len(items)} tests with --shuffle-seed={seed}")

@@ -481,3 +481,16 @@ def test_the_desk_reports_protection_in_numbers_checks_every_witness_and_turns_a
         monkeypatch.setenv(aw.WITNESSES_ENV, "not json")
         broken = client.post("/v1/desk/governance/audit/check-witnesses")
         assert broken.status_code == 409 and "unusable" in broken.json()["detail"]
+
+
+@pytest.mark.parametrize("url,ok", [
+    ("https://witness.example", True), ("http://127.0.0.1:8787", True), ("http://localhost:8787/x", True), ("http://[::1]:8787", True),
+    ("http://127.0.0.1.evil.example", False), ("http://localhost.evil.example", False), ("http://evil.example", False), ("ftp://x.example", False), ("https://", False),
+])
+def test_a_plain_http_witness_must_be_the_loopback_host_itself(monkeypatch, url, ok):
+    monkeypatch.setenv(aw.WITNESSES_ENV, json.dumps([{"type": "http", "url": url, "key_id": "k"}]))
+    if ok:
+        assert aw.specs_from_env()[0].url == url
+    else:
+        with pytest.raises(aw.WitnessError, match="https"):
+            aw.specs_from_env()

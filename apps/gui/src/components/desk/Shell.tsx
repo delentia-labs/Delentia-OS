@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Activity, BookOpen, Brain, FileCheck2, Hammer, Scale, Globe2, Clock, Cpu, FlaskConical, GitBranch, History, Layers, Link2, Menu, Radio,
-  Settings, ShieldCheck, SquareTerminal, TrendingUp, UserCog, Wrench, X, Landmark, PenLine, Undo2,
+  Settings, ShieldCheck, SquareTerminal, TrendingUp, UserCog, Wrench, X, Landmark, PenLine, Undo2, OctagonPause,
 } from "lucide-react";
 import { DelentiaMark } from "./mark";
 import { LangProvider, useLang, type DictKey } from "./i18n";
@@ -25,6 +25,7 @@ const PRIMARY: { href: string; key: DictKey; icon: typeof Activity }[] = [
   { href: "/governance", key: "governance", icon: Landmark },
   { href: "/fdia", key: "fdia", icon: Scale },
   { href: "/forge", key: "forge", icon: Hammer },
+  { href: "/safety", key: "safety", icon: OctagonPause },
   { href: "/approvals", key: "approvals", icon: ShieldCheck },
   { href: "/signatures", key: "signatures", icon: PenLine },
   { href: "/checkpoints", key: "checkpoints", icon: Undo2 },

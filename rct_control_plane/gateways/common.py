@@ -38,6 +38,9 @@ def reply_text_for(result: Dict[str, Any]) -> str:
         approval = result.get("approval_id")
         suffix = f" (id {approval})" if approval else ""
         return f"This request needs a human approval before it can run{suffix}. Nothing was changed."
+    from rct_control_plane import envelope
+    if reason in envelope.MESSAGES:
+        return envelope.MESSAGES[reason]
     if reason in ("fdia_blocked", "guard_blocked"):
         return "This request was refused by the safety checks. Nothing was changed."
     return f"({reason})"

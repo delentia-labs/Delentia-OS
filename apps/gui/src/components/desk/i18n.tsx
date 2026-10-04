@@ -21,6 +21,7 @@ const DICT = {
   governance: { en: "Governance", th: "ธรรมาภิบาล" },
   signatures: { en: "Signatures", th: "ลายเซ็น" },
   identity: { en: "People", th: "ผู้ใช้" },
+  safety: { en: "Safety", th: "ความปลอดภัย" },
   approvals: { en: "Approvals", th: "อนุมัติ" },
   checkpoints: { en: "Checkpoints", th: "Checkpoint" },
   audit: { en: "Audit", th: "Audit" },

@@ -272,7 +272,7 @@ class CronService:
             seconds = 300.0
         stopped, text, failed = "exception", "", True
         try:
-            loop = build_governed_loop(kernel, namespace=job["namespace"], max_iterations=5, max_seconds=seconds)
+            loop = build_governed_loop(kernel, namespace=job["namespace"], max_iterations=5, max_seconds=seconds, conversation_turns=0)    # a scheduled job is not a reply to a chat
             result = await asyncio.wait_for(loop.run(job["goal"]), timeout=seconds + 30)
             stopped = str(result.get("stopped_reason") or "unknown")
             text = reply_text_for(result)
@@ -285,6 +285,12 @@ class CronService:
         updated = self._record(job["id"], stopped, text, started, failed)
         _audit(self._p, "run", updated, "cron", {"stopped_reason": stopped, "failed": failed, "run_count": updated["run_count"]})
         notice = ""
+        if failed:
+            try:                                                   # Round 60: the owner hears about it (owner_notify.py); never fatal
+                from rct_control_plane import owner_notify
+                owner_notify.on_job_problem(updated, stopped, updated["fail_streak"] >= MAX_FAIL_STREAK, self._p)
+            except Exception:
+                pass
         if updated["fail_streak"] >= MAX_FAIL_STREAK:
             self.set_enabled_off(updated["id"], "cron", f"switched off after {MAX_FAIL_STREAK} failed runs in a row")
             notice = f"\n\n[this job has been switched off after {MAX_FAIL_STREAK} failed runs in a row; last result: {stopped}]"

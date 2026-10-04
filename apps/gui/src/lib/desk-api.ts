@@ -272,6 +272,25 @@ export interface PairingView {
   limits: { max_pending_per_channel: number; refusal_cooldown_s: number };
 }
 
+
+export interface EnvelopeStatus {
+  paused: { by: string; reason: string; at: number | null } | null;
+  limits: Record<string, number | null>;
+  last_24h: { cost_usd?: number; tokens?: number; episodes?: number };
+  last_hour: { cost_usd?: number; tokens?: number; episodes?: number };
+  any_limit_set: boolean;
+  resume_needs_signature: boolean;
+  ledger_problem: string | null;
+  owner_alerts: { configured: boolean; targets: { channel: string; to: string }[]; dropped: { channel: string; to: string; why: string }[]; per_hour: number };
+}
+export interface ResumeAnswer { resumed?: boolean; pending_signature?: boolean; approval_id?: string; how?: string }
+export interface WebhooksView {
+  routes: { name: string; verify: string; mode: string; events: string[]; open: boolean; secret_env: string; deliver: { channel: string; to: string } | null; max_per_minute: number }[];
+  problems: string[]; recent: { route: string; action: string; at: string }[]; path: string;
+}
+export interface BoardTask { id: string; namespace: string; goal: string; status: string; tainted: boolean; taint_source: string | null; note: string | null; steps: { n: number; text: string; status: string; summary: string | null; approval_id: string | null }[] }
+export interface TasksView { tasks: BoardTask[]; jobs: { id: string; namespace: string; status: string; stopped: string | null; steps: number; last_tool: string | null; created_at: number; finished_at: number | null; approval_id: string | null }[] }
+
 // ---- calls --------------------------------------------------------------------
 
 // ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
@@ -358,6 +377,19 @@ export const desk = {
   experiments: () => call<{ experiments: Experiment[] }>("/v1/desk/experiments"),
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),
+  envelope: () => call<EnvelopeStatus>("/v1/desk/envelope"),
+  envelopePause: (reason: string) => call<{ paused: unknown }>("/v1/desk/envelope/pause", { method: "POST", body: JSON.stringify({ reason }) }),
+  envelopeResume: async (approval_id?: string): Promise<ResumeAnswer> => {
+    const gateway = getGateway();
+    const key = getApiKey();
+    const res = await fetch(`${gateway}/v1/desk/envelope/resume`, { method: "POST", headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify(approval_id ? { approval_id } : {}) });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new DeskError(`${res.status}: ${typeof body?.detail === "string" ? body.detail : res.statusText}`, res.status);
+    return body as ResumeAnswer;
+  },
+  webhooks: () => call<WebhooksView>("/v1/desk/webhooks"),
+  tasks: () => call<TasksView>("/v1/desk/tasks"),
+  taskCancel: (id: string) => call<BoardTask>(`/v1/desk/tasks/${encodeURIComponent(id)}/cancel`, { method: "POST", body: "{}" }),
   pairing: () => call<PairingView>("/v1/desk/pairing"),
   pairingRevoke: (channel: string, sender_id: string) => call<{ revoked: boolean }>("/v1/desk/pairing/revoke", { method: "POST", body: JSON.stringify({ channel, sender_id }) }),
   daemon: () => call<DaemonStatus>("/v1/daemon/status"),

@@ -40,6 +40,7 @@ from urllib.parse import parse_qs
 
 TOKEN_ENV = "DELENTIA_API_TOKEN"
 PUBLIC_PATHS = frozenset({"/", "/health"})
+SELF_AUTHENTICATED_PREFIXES = ("/v1/webhooks/",)
 SELF_AUTHENTICATED_PATHS = frozenset({"/v1/gateways/line/webhook", "/v1/gateways/whatsapp/webhook"})
 PROXY_HEADERS = ("cf-ray", "cf-connecting-ip", "x-forwarded-for", "forwarded", "x-real-ip")
 # "testclient" is the fixed client host Starlette's in-process TestClient
@@ -103,6 +104,8 @@ def authenticate(scope: Scope) -> Tuple[str, str]:
     belongs to (Round 54: DELENTIA_API_TOKENS_FILE), "shared" for the old single token, "" for the token-less loopback."""
     path = scope.get("path") or ""
     if path in PUBLIC_PATHS or path in SELF_AUTHENTICATED_PATHS:
+        return "", ""
+    if path.startswith(SELF_AUTHENTICATED_PREFIXES) and scope.get("method") == "POST":     # Round 60: /v1/webhooks/<route> - each route's HMAC is its credential
         return "", ""
     if scope.get("type") == "http" and scope.get("method") == "OPTIONS":
         return "", ""

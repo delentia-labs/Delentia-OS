@@ -2621,6 +2621,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
+    os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
@@ -3675,6 +3676,221 @@ def cron_run_due() -> None:
     click.echo(f"{len(ran)} job(s) ran")
     for j in ran:
         click.echo(f"  {j['id']} {j['last_status']}: {(j['last_result'] or '')[:200]}")
+
+
+@cli.command("pause")
+@click.option("--reason", default="", help="why (shown to the owner and in the audit trail)")
+@click.option("--db", default=None)
+def pause_command(reason: str, db: Optional[str]) -> None:
+    """Stop the agent: from now on no episode starts and no tool runs, from any entry point (chat, cron, subagents, API). Free; lifting it is signed."""
+    from rct_control_plane import envelope
+    state = envelope.pause(reason, by="cli", persistence=_audit_db(db))
+    click.echo(f"paused ({envelope.pause_path()}). Lift it with: delentia resume")
+    if state["reason"]:
+        click.echo(f"reason: {state['reason']}")
+
+
+@cli.command("resume")
+@click.option("--approval", default=None, help="the signed approval id (needed when any approver key is configured)")
+@click.option("--db", default=None)
+def resume_command(approval: Optional[str], db: Optional[str]) -> None:
+    """Lift a pause. With an approver key configured this needs a signature: without --approval it prints the action to sign."""
+    from rct_control_plane import envelope
+    persistence = _audit_db(db)
+    try:
+        was = envelope.resume(by="cli", persistence=persistence, approval_id=approval)
+    except envelope.ResumeRefused as exc:
+        if approval is None and envelope.status(persistence)["resume_needs_signature"]:
+            pending = envelope.request_resume(persistence, requested_by="cli")
+            click.echo(f"resuming needs a signature. Approval id: {pending['approval_id']}")
+            click.echo(pending["how"])
+            sys.exit(2)
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo("resumed" if was else "it was not paused")
+
+
+@cli.command("limits")
+@click.option("--db", default=None)
+def limits_command(db: Optional[str]) -> None:
+    """Show whether the agent is paused, the spending/flood limits (environment variables) and how much of them the last 24 hours used."""
+    from rct_control_plane import envelope
+    report = envelope.status(_audit_db(db))
+    state = report["paused"]
+    click.echo("PAUSED by %s: %s" % (state["by"], state["reason"] or "(no reason given)") if state else "running (not paused)")
+    for name, value in report["limits"].items():
+        click.echo(f"  {name}: {value if value is not None else 'no limit'}")
+    click.echo(f"last 24 h: {report['last_24h']}")
+    click.echo(f"last hour: {report['last_hour']}")
+    if not report["any_limit_set"]:
+        click.echo("no spending or flood limit is set: see DELENTIA_DAILY_BUDGET_USD, DELENTIA_DAILY_MAX_TOKENS, DELENTIA_USER_DAILY_BUDGET_USD, DELENTIA_EPISODES_PER_HOUR_PER_USER")
+    click.echo("resuming needs a signature" if report["resume_needs_signature"] else "resuming needs no signature (no approver key is configured)")
+
+
+@cli.group("backup")
+def backup_group():
+    """Back up and restore the runtime's own state (databases, owner configuration). Private keys stay out unless you ask."""
+
+
+@backup_group.command("create")
+@click.option("--out", required=True, help="the zip to write (never overwritten)")
+@click.option("--include-keys", is_flag=True, help="also include private keys and token files (the backup is then as sensitive as the keys)")
+def backup_create(out: str, include_keys: bool) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.create_backup(out, include_keys=include_keys)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {done['path']}: {done['files']} file(s), {done['bytes']} bytes")
+    if done["keys_note"]:
+        click.echo(done["keys_note"])
+
+
+@backup_group.command("verify")
+@click.argument("path")
+def backup_verify(path: str) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.verify_backup(path)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"NOT VALID: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"valid: {done['files']} file(s); keys included: {done['includes_keys']}")
+
+
+@backup_group.command("restore")
+@click.argument("path")
+@click.option("--to", required=True, help="a folder; files go under <to>/home (the data home) and <to>/user (~/.delentia)")
+@click.option("--force", is_flag=True, help="move files that already exist aside (never deleted) instead of refusing")
+def backup_restore(path: str, to: str, force: bool) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.restore_backup(path, to, force=force)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"restored {done['restored']} file(s) into {done['to']} ({done['moved_aside']} existing file(s) moved aside)")
+
+
+@cli.command("insights")
+@click.option("--days", default=7, show_default=True, type=int)
+@click.option("--db", default=None)
+def insights_command(days: int, db: Optional[str]) -> None:
+    """What the agent has been doing: episodes, tokens and money per day, why episodes stopped, signatures asked."""
+    from rct_control_plane import insights
+    click.echo(insights.render(insights.report(_audit_db(db), days)))
+
+
+@cli.group("task")
+def task_group():
+    """Tasks that outlive one episode: a goal in steps, each step a governed episode (the daemon advances them; `advance` does it by hand)."""
+
+
+def _task_board(db: Optional[str]):
+    from rct_control_plane.task_board_runtime import get_board
+    return get_board(_audit_db(db))
+
+
+@task_group.command("create")
+@click.argument("goal")
+@click.option("--step", "steps", multiple=True, help="a step (repeat for several); without any, the RCT-7 plan of the goal is used")
+@click.option("--namespace", default="owner", show_default=True)
+@click.option("--db", default=None)
+def task_create(goal: str, steps: tuple, namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane.task_board import TaskError
+    try:
+        task = _task_board(db).create(namespace, goal, _list(steps) or None)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+
+
+@task_group.command("list")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def task_list(namespace: Optional[str], db: Optional[str]) -> None:
+    for t in _task_board(db).list(namespace):
+        done = sum(1 for s in t["steps"] if s["status"] == "done")
+        click.echo(f"{t['id']}  {t['status']:<17} {done}/{len(t['steps'])}  {t['namespace']}  {t['goal'][:60]}")
+
+
+@task_group.command("show")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_show(task_id: str, db: Optional[str]) -> None:
+    task = _task_board(db).get(task_id)
+    if task is None:
+        click.echo(click.style("Error: no such task", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{task['id']}  {task['status']}  {'TAINTED by ' + str(task['taint_source']) if task['tainted'] else 'clean'}  {task.get('note') or ''}")
+    click.echo(f"goal: {task['goal']}")
+    for s in task["steps"]:
+        click.echo(f"  {s['n']}. [{s['status']}] {s['text'][:70]}" + (f" -> {s['summary']}" if s.get("summary") else "") + (f"  (approval {s['approval_id']})" if s.get("approval_id") else ""))
+
+
+@task_group.command("advance")
+@click.argument("task_id")
+@click.option("--all", "all_steps", is_flag=True, help="keep going until the task is done, failed or waiting for someone")
+@click.option("--db", default=None)
+def task_advance(task_id: str, all_steps: bool, db: Optional[str]) -> None:
+    import asyncio
+    board = _task_board(db)
+    task = asyncio.run(board.run_to_completion(task_id) if all_steps else board.advance(task_id))
+    click.echo(f"{task['id']}: {task['status']} {task.get('note') or ''}")
+
+
+@task_group.command("cancel")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_cancel(task_id: str, db: Optional[str]) -> None:
+    from rct_control_plane.task_board import TaskError
+    try:
+        task = _task_board(db).cancel(task_id)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{task['id']}: {task['status']}")
+
+
+@cli.group("webhook")
+def webhook_group():
+    """Signed webhooks that start the agent (routes live in <data home>/webhooks.json; secrets only in environment variables)."""
+
+
+@webhook_group.command("list")
+def webhook_list() -> None:
+    """The routes being served, whether each one's secret is set, and what is wrong with the ones that are not served."""
+    from rct_control_plane import webhook_triggers as wt
+    routes, problems = wt.load_routes()
+    click.echo(f"config: {wt.config_path()}")
+    for r in routes.values():
+        state = "open" if wt.secret_of(r) else f"CLOSED (set {r.secret_env}, at least {wt.MIN_SECRET} characters)"
+        target = f" -> {r.deliver['channel']}:{r.deliver['to']}" if r.deliver else ""
+        click.echo(f"  POST /v1/webhooks/{r.name}  [{r.verify}, {r.mode}, {state}]  events: {', '.join(r.events) or 'any'}{target}")
+    for problem in problems:
+        click.echo(click.style(f"  NOT SERVED: {problem}", fg="yellow"))
+    if not routes and not problems:
+        click.echo("  no routes")
+
+
+@webhook_group.command("sign")
+@click.argument("route")
+@click.option("--body", default="{}", help="the exact request body to sign")
+def webhook_sign(route: str, body: str) -> None:
+    """Print the headers a sender must add for this body (to try a route with curl). Uses the route's secret from the environment."""
+    import time as _time
+    from rct_control_plane import webhook_triggers as wt
+    routes, _ = wt.load_routes()
+    chosen = routes.get(route)
+    secret = wt.secret_of(chosen) if chosen else None
+    if chosen is None or secret is None or chosen.verify != "generic-v2":
+        click.echo(click.style("Error: no such generic-v2 route with a usable secret", fg="red"), err=True)
+        sys.exit(1)
+    stamp = int(_time.time())
+    click.echo(f"X-Webhook-Timestamp: {stamp}")
+    click.echo(f"X-Webhook-Signature-V2: {wt.sign_generic_v2(secret, body.encode('utf-8'), stamp)}")
 
 
 @cli.group("pairing")

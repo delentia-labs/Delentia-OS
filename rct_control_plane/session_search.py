@@ -49,6 +49,8 @@ class SessionLog:
         self._p = persistence
         with self._p._connect() as conn:
             conn.executescript(SCHEMA)
+            if "tainted" not in {row[1] for row in conn.execute("PRAGMA table_info(episode_log)").fetchall()}:
+                conn.execute("ALTER TABLE episode_log ADD COLUMN tainted INTEGER NOT NULL DEFAULT 0")      # Round 60: did this episode read text from outside?
             try:
                 conn.executescript(FTS)
                 self.fts = True
@@ -56,12 +58,25 @@ class SessionLog:
                 self.fts = False
 
     def record(self, namespace: str, goal: str, answer: Optional[str], stopped_reason: str = "", episode_id: str = "", tools: Optional[List[str]] = None,
-               now: Optional[float] = None) -> int:
+               now: Optional[float] = None, tainted: bool = False) -> int:
         with self._p._connect() as conn:
-            cur = conn.execute("INSERT INTO episode_log (namespace, episode_id, goal, answer, stopped_reason, tools, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            cur = conn.execute("INSERT INTO episode_log (namespace, episode_id, goal, answer, stopped_reason, tools, created_at, tainted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                                (namespace, episode_id, (goal or "")[:MAX_GOAL_CHARS], (answer or "")[:MAX_ANSWER_CHARS] or None, stopped_reason,
-                                ",".join(dict.fromkeys(tools or []))[:500], time.time() if now is None else now))
+                                ",".join(dict.fromkeys(tools or []))[:500], time.time() if now is None else now, 1 if tainted else 0))
             return int(cur.lastrowid or 0)
+
+    def recent(self, namespace: str, limit: int = 4, within_s: float = 6 * 3600, now: Optional[float] = None) -> List[Dict[str, Any]]:
+        """The caller's own latest turns, oldest first: what the conversation so far was. Only this namespace; only turns newer than `within_s`."""
+        limit = max(0, min(int(limit), 12))
+        if limit == 0:
+            return []
+        since = (time.time() if now is None else now) - within_s
+        with self._p._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT goal, answer, stopped_reason, tainted, created_at FROM episode_log WHERE namespace = ? AND created_at >= ? ORDER BY id DESC LIMIT ?",
+                                (namespace, since, limit)).fetchall()
+        return [{"goal": r["goal"], "answer": r["answer"] or "", "stopped_reason": r["stopped_reason"] or "", "tainted": bool(r["tainted"]), "at": r["created_at"]}
+                for r in reversed(rows)]
 
     def search(self, namespace: str, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Newest-relevant first, only this person's episodes. An empty query lists the most recent ones."""

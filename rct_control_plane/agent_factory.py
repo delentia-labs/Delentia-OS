@@ -47,6 +47,8 @@ def build_governed_loop(
     profile: Optional[str] = None,
     persistence: Optional["ControlPlanePersistence"] = None,
     mcp_server: Any = None,
+    conversation_turns: Optional[int] = None,
+    initial_taint: Optional[str] = None,
 ) -> "GovernedAutonomousLoop":
     from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
 
@@ -68,6 +70,8 @@ def build_governed_loop(
         max_seconds=max_seconds,
         namespace=namespace,
         llm_provider=llm_provider,
+        conversation_turns=conversation_turns,
+        initial_taint=initial_taint,
     )
 
 

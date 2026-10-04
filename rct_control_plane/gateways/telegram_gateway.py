@@ -30,13 +30,22 @@ TELEGRAM_API_BASE = "https://api.telegram.org"
 _LONG_POLL_TIMEOUT_SECONDS = 30
 
 
+def _default_api_base() -> str:
+    """api.telegram.org unless DELENTIA_TELEGRAM_API_BASE names a loopback address (a test server) or api.telegram.org itself: the bot token is sent to whatever this returns."""
+    import re
+    override = (os.environ.get("DELENTIA_TELEGRAM_API_BASE") or "").strip().rstrip("/")
+    if override and (override == "https://api.telegram.org" or override.startswith("https://api.telegram.org/") or re.match(r"^http://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)", override)):
+        return override
+    return TELEGRAM_API_BASE
+
+
 class TelegramGateway:
     """Real Telegram long-polling input adapter."""
 
-    def __init__(self, kernel: Any, bot_token: Optional[str] = None, api_base: str = TELEGRAM_API_BASE):
+    def __init__(self, kernel: Any, bot_token: Optional[str] = None, api_base: Optional[str] = None):
         self._kernel = kernel
         self._bot_token = bot_token or os.environ.get("TELEGRAM_BOT_TOKEN")
-        self._api_base = api_base.rstrip("/")
+        self._api_base = (api_base or _default_api_base()).rstrip("/")
         self._offset: Optional[int] = None
         self._is_running = False
         self._bg_task: Optional[asyncio.Task] = None

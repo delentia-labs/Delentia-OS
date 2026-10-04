@@ -1892,6 +1892,104 @@ class ControlPlaneAPI:
             result["namespace"] = namespace
             return result
 
+        # Round 60 (D4): background jobs - the same governed episode, started in the background, with an id to ask about and cancel (jobs.py).
+        job_state: Dict[str, Any] = {"service": None}
+
+        def _job_service() -> Any:
+            if job_state["service"] is None:
+                from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+                from rct_control_plane.jobs import JobService
+                from rct_control_plane.mcp_server import _kernel as shared_kernel
+                from rct_control_plane.mcp_server import mcp as shared_mcp
+
+                async def runner(namespace: str, goal: str, max_iterations: int, max_seconds: float, on_step: Any, initial_taint: Optional[str] = None) -> Dict[str, Any]:
+                    loop = GovernedAutonomousLoop(mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
+                                                  max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace, initial_taint=initial_taint)
+                    return await loop.run(goal, on_step=on_step)
+                job_state["service"] = JobService(shared_kernel._persistence, runner)
+            return job_state["service"]
+
+        def _job_namespace(request: Request, payload: Optional[Dict[str, Any]] = None, query: Optional[str] = None) -> str:
+            return getattr(request.state, "delentia_user", None) or (payload or {}).get("namespace") or query or "http-agent-default"
+
+        @self.app.post("/v1/agent/jobs", tags=["Kernel"], status_code=202)
+        async def submit_agent_job(payload: Dict[str, Any], request: Request):
+            from rct_control_plane.jobs import JobError
+            try:
+                return _job_service().submit(_job_namespace(request, payload), str(payload.get("goal") or ""),
+                                             int(payload.get("max_iterations", 5)), float(payload.get("max_seconds", 120.0)))
+            except JobError as exc:
+                raise HTTPException(status_code=429 if "allowed" in str(exc) else 400, detail=str(exc)) from exc
+
+        @self.app.post("/v1/webhooks/{route_name}", tags=["Kernel"])
+        async def webhook_endpoint(route_name: str, request: Request):
+            """Round 60 (D6): a signed event starts a governed episode (webhook_triggers.py). Self-authenticated: the route's HMAC is the credential, checked before anything is parsed."""
+            from fastapi.responses import JSONResponse
+
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.webhook_triggers import WebhookService
+            if job_state.get("webhooks") is None:
+                job_state["webhooks"] = WebhookService(shared_kernel._persistence, _job_service())
+            body = await request.body()
+            status, answer = await job_state["webhooks"].handle(route_name, dict(request.headers), body)
+            return JSONResponse(answer, status_code=status)
+
+        @self.app.post("/v1/agent/tasks", tags=["Kernel"], status_code=201)
+        async def create_agent_task(payload: Dict[str, Any], request: Request):
+            """Round 60 (D5): a goal in steps that outlives one episode (task_board.py). The daemon advances it one governed episode at a time."""
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board import TaskError
+            from rct_control_plane.task_board_runtime import get_board
+            try:
+                return get_board(shared_kernel._persistence).create(_job_namespace(request, payload), str(payload.get("goal") or ""),
+                                                                   [str(s) for s in payload["steps"]] if isinstance(payload.get("steps"), list) else None)
+            except TaskError as exc:
+                raise HTTPException(status_code=429 if "allowed" in str(exc) else 400, detail=str(exc)) from exc
+
+        @self.app.get("/v1/agent/tasks", tags=["Kernel"])
+        async def list_agent_tasks(request: Request, namespace: Optional[str] = None, limit: int = 20):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board_runtime import get_board
+            return {"tasks": get_board(shared_kernel._persistence).list(_job_namespace(request, None, namespace), limit)}
+
+        @self.app.get("/v1/agent/tasks/{task_id}", tags=["Kernel"])
+        async def get_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board_runtime import get_board
+            task = get_board(shared_kernel._persistence).get(task_id, _job_namespace(request, None, namespace))
+            if task is None:
+                raise HTTPException(status_code=404, detail="no such task")
+            return task
+
+        @self.app.delete("/v1/agent/tasks/{task_id}", tags=["Kernel"])
+        async def cancel_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board import TaskError
+            from rct_control_plane.task_board_runtime import get_board
+            try:
+                return get_board(shared_kernel._persistence).cancel(task_id, _job_namespace(request, None, namespace))
+            except TaskError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        @self.app.get("/v1/agent/jobs", tags=["Kernel"])
+        async def list_agent_jobs(request: Request, namespace: Optional[str] = None, limit: int = 20):
+            return {"jobs": _job_service().list(_job_namespace(request, None, namespace), limit)}
+
+        @self.app.get("/v1/agent/jobs/{job_id}", tags=["Kernel"])
+        async def get_agent_job(job_id: str, request: Request, namespace: Optional[str] = None):
+            job = _job_service().get(job_id, _job_namespace(request, None, namespace))
+            if job is None:
+                raise HTTPException(status_code=404, detail="no such job")
+            return job
+
+        @self.app.delete("/v1/agent/jobs/{job_id}", tags=["Kernel"])
+        async def cancel_agent_job(job_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.jobs import JobError
+            try:
+                return _job_service().cancel(job_id, _job_namespace(request, None, namespace))
+            except JobError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+
         # Round 48 R1.4: signed human approval for paused agent actions.
         # A decision is only accepted with a trusted approver's Ed25519
         # signature over the exact action (see approvals.py), so the signer
