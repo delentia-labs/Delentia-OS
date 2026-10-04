@@ -426,7 +426,9 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
         # branch issue as CREATE_NEW_PROCESS_GROUP above, mirrored - see
         # that comment. getattr's None fallback is never actually used at
         # runtime since this branch only executes on real POSIX.
-        popen_kwargs["preexec_fn"] = getattr(os, "setsid", None)
+        # Round 59: the same new session, plus memory / CPU / file-size ceilings (resource_limits.py).
+        from rct_control_plane import resource_limits
+        popen_kwargs["preexec_fn"] = resource_limits.posix_preexec(timeout_seconds)
 
     # Bandit B602 (subprocess with shell=True) flags this - correctly
     # identifying that shell=True is in use, but this is this module's
@@ -441,10 +443,16 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
     # to shell=False + an argv list would not add safety here, it would
     # just break the feature, since the actual control is the
     # classification gate upstream, not shell-string avoidance.
+    # Round 59 (Windows): the command and everything it starts live in a Job Object with a memory and a process ceiling that kills them when it closes. The job is
+    # made BEFORE the process so that joining it is one call right after the process starts (found by testing: building it afterwards took long enough for the shell to have
+    # started the command already, which then stayed outside the job). A process that starts a child within microseconds of its own creation could still outrun the assignment.
+    from rct_control_plane import resource_limits
+    job = resource_limits.windows_job()
     proc = subprocess.Popen(  # nosec B602 - see comment above
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, **popen_kwargs,
     )
+    resource_limits.assign_to_job(job, proc)
     try:
         stdout, stderr = proc.communicate(timeout=timeout_seconds)
         return SandboxResult(
@@ -461,6 +469,8 @@ def _run_local(command: str, timeout_seconds: float) -> SandboxResult:
             stdout=(stdout or "")[:_MAX_OUTPUT_BYTES],
             stderr="", exit_code=None, timed_out=True, blocked_reason=None,
         )
+    finally:
+        resource_limits.close_job(job)
 
 
 def _docker_available() -> bool:

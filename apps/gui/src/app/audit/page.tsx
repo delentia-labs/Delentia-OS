@@ -32,8 +32,9 @@ export default function AuditPage() {
       note: a.signing_key_configured ? "DELENTIA_AUDIT_SIGNING_KEY is set" : "rows are chained but not signed: create a key with `delentia audit-chain keygen`" },
     { tier: "A2", name: "Signed by a separate notary process", on: a.notary.configured,
       note: a.notary.configured ? `notary at ${a.notary.url}` : "off: run `delentia notary serve` as another OS user and set DELENTIA_NOTARY_URL" },
-    { tier: "A3", name: "Chain head anchored at an outside witness", on: a.anchor.configured,
-      note: a.anchor.configured ? `anchoring as ${a.anchor.key_id}` : "off: set DELENTIA_AUDIT_ANCHOR_URL and DELENTIA_AUDIT_ANCHOR_KEY_ID on the host" },
+    { tier: "A3", name: "Chain head held by an outside witness", on: !!protection.data?.tamper_evident_against_host_compromise,
+      note: protection.data ? (protection.data.tamper_evident_against_host_compromise ? protection.data.plain : `off: ${protection.data.plain}. Set DELENTIA_AUDIT_WITNESSES on the host.`)
+        : "checking the witnesses…" },
   ] : [];
 
   return (
