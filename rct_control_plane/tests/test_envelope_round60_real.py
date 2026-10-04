@@ -341,3 +341,21 @@ class TestSurfaces:
             assert answer.status_code == 202 and answer.json()["pending_signature"] and "approval_id" in answer.json()
             assert envelope.paused() is not None
             assert client.post("/v1/desk/envelope/resume", json={"approval_id": "nope"}).status_code == 403
+
+
+# ------------------------------------------------------------------ host-check
+
+def test_host_check_reports_the_envelope_and_owner_alerts(monkeypatch, tmp_path):
+    from rct_control_plane import host_check as hc, owner_notify
+    monkeypatch.delenv(owner_notify.TARGETS_ENV, raising=False)
+    checks = {c.id: c for c in hc.run_checks(public=True)}
+    assert checks["H21-limits"].status == hc.WARN and checks["H21-owner-alerts"].status == hc.WARN
+    monkeypatch.setenv(envelope.DAILY_USD_ENV, "5")
+    monkeypatch.setenv("DELENTIA_TELEGRAM_ALLOWED_SENDERS", "42")
+    monkeypatch.setenv(owner_notify.TARGETS_ENV, "telegram:42")
+    checks = {c.id: c for c in hc.run_checks(public=True)}
+    assert checks["H21-limits"].status == hc.PASS and checks["H21-owner-alerts"].status == hc.PASS
+    monkeypatch.setenv(owner_notify.TARGETS_ENV, "telegram:99")
+    assert {c.id: c for c in hc.run_checks(public=True)}["H21-owner-alerts"].status == hc.FAIL
+    envelope.pause("x", by="owner")
+    assert {c.id: c for c in hc.run_checks(public=True)}["H21-paused"].status == hc.WARN

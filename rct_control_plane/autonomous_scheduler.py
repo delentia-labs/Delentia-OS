@@ -197,6 +197,11 @@ class AutonomousScheduler:
             task.last_status = "FAILED"
             task.last_output = str(e)
             task.next_run_at = (now + timedelta(seconds=task.interval_seconds)).isoformat()
+            try:                                                   # Round 60: the owner hears about it (owner_notify.py); never fatal
+                from rct_control_plane import owner_notify
+                owner_notify.on_task_failed(task.name, str(e), self._persistence() if self._kernel is not None else None)
+            except Exception:
+                pass
             return {"status": "FAILED", "task_id": task.task_id, "error": str(e)}
 
     def _register_default_tasks(self):

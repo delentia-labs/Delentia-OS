@@ -185,6 +185,32 @@ def _witness_check() -> Check:
     return Check("H07", PASS, "Anchoring (tier A3)", f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head")
 
 
+def check_envelope(public: bool) -> List[Check]:
+    """H21 (Round 60): what stops the agent when nobody is watching, and who is told when it needs a person."""
+    from rct_control_plane import envelope, owner_notify
+    out: List[Check] = []
+    state = envelope.paused()
+    if state is not None:
+        out.append(Check("H21-paused", WARN, "Pause switch", f"the agent is PAUSED ({state['by']}: {state['reason'] or 'no reason given'}): nothing will run until `delentia resume`",
+                         "`delentia resume` (needs a signature when an approver key exists)"))
+    lim = envelope.limits()
+    if any(lim[k] for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens")):
+        out.append(Check("H21-limits", PASS, "Spending limits", "a daily limit is set (envelope.py)"))
+    else:
+        out.append(Check("H21-limits", WARN if public else INFO, "Spending limits", "no daily money or token limit: only the per-episode cap bounds what a flood of requests can cost",
+                         "set DELENTIA_DAILY_BUDGET_USD (or DELENTIA_DAILY_MAX_TOKENS) and DELENTIA_USER_DAILY_BUDGET_USD"))
+    notify = owner_notify.status()
+    if notify["targets"]:
+        out.append(Check("H21-owner-alerts", PASS, "Owner alerts", f"{len(notify['targets'])} target(s) will be told when a signature is needed or something fails"))
+    elif notify["configured"]:
+        out.append(Check("H21-owner-alerts", FAIL if public else WARN, "Owner alerts", "DELENTIA_OWNER_NOTIFY names targets but none passes the allowlist rule: "
+                         + "; ".join(f"{d['channel']}:{d['to']} ({d['why']})" for d in notify["dropped"]), "list the same person in that channel's DELENTIA_<CHANNEL>_ALLOWED_SENDERS by name"))
+    else:
+        out.append(Check("H21-owner-alerts", WARN if public else INFO, "Owner alerts", "nobody is told when the agent needs a signature: approvals wait silently until someone opens the Desk",
+                         "set DELENTIA_OWNER_NOTIFY=telegram:<your id> (and list that id in DELENTIA_TELEGRAM_ALLOWED_SENDERS)"))
+    return out
+
+
 def check_channels(public: bool) -> List[Check]:
     out: List[Check] = []
     present = 0
@@ -315,6 +341,7 @@ def run_checks(*, public: bool = True, probe: bool = False) -> List[Check]:
         ("H13", "Model and data", check_model_and_data),
         ("H16", "Configuration", check_config_files),
         ("H19", "Storage", check_storage),
+        ("H21", "Safety envelope and owner alerts", lambda: check_envelope(public)),
     ):
         checks.extend(_guard(check_id, title, fn))
     return checks

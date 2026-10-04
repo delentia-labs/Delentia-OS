@@ -696,6 +696,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
         except Exception:
             pass
         await self._notarise_best_effort("envelope_blocked", goal_sha256=_sha(goal), stop=stop["stop"])
+        if stop["stop"] in ("daily_budget_exhausted", "rate_limited"):
+            try:
+                from rct_control_plane import owner_notify
+                owner_notify.on_limit_reached(stop["stop"], self.namespace, stop["detail"], self._persistence)
+            except Exception:
+                pass
         return {"stopped_reason": stop["stop"], "final_answer": stop["message"]}
 
     async def _guard_goal(self, goal: str) -> Optional[Dict[str, Any]]:

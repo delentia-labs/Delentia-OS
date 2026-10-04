@@ -281,6 +281,11 @@ class PendingActionStore:
                          "approver_roles": action.approver_roles, "policy_rule": policy_rule, "reason": reason})
         except Exception:           # an audit problem must not decide whether the action can be asked for
             pass
+        try:                        # Round 60: tell the owner (owner_notify.py): tool name, asker and code only; never fatal
+            from rct_control_plane import owner_notify
+            owner_notify.on_pending_action(action, self._persistence)
+        except Exception:
+            pass
         return action
 
     def get(self, approval_id: str) -> Optional[PendingAction]:
