@@ -231,3 +231,16 @@ class TestOtherEvents:
         flush()
         limit_messages = [m for m in FakeTelegram.messages if "limit" in m["text"]]
         assert len(limit_messages) == 1
+
+
+@pytest.mark.parametrize("override,expected", [
+    ("https://api.telegram.org", "https://api.telegram.org"), ("https://api.telegram.org/", "https://api.telegram.org"),
+    ("http://127.0.0.1:8081", "http://127.0.0.1:8081"), ("http://localhost:9", "http://localhost:9"),
+    ("https://api.telegram.org.evil.example", "https://api.telegram.org"),          # a look-alike host would receive the bot token: refused (found by CodeQL)
+    ("https://api.telegram.org@evil.example", "https://api.telegram.org"), ("http://127.0.0.1.evil.example", "https://api.telegram.org"),
+    ("https://evil.example", "https://api.telegram.org"), ("http://evil.example/127.0.0.1", "https://api.telegram.org"), ("", "https://api.telegram.org"),
+])
+def test_the_telegram_api_base_override_never_points_the_bot_token_at_another_host(monkeypatch, override, expected):
+    from rct_control_plane.gateways.telegram_gateway import _default_api_base
+    monkeypatch.setenv("DELENTIA_TELEGRAM_API_BASE", override)
+    assert _default_api_base().rstrip("/") == expected

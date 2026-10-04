@@ -34,7 +34,7 @@ def _default_api_base() -> str:
     """api.telegram.org unless DELENTIA_TELEGRAM_API_BASE names a loopback address (a test server) or api.telegram.org itself: the bot token is sent to whatever this returns."""
     import re
     override = (os.environ.get("DELENTIA_TELEGRAM_API_BASE") or "").strip().rstrip("/")
-    if override and (override.startswith("https://api.telegram.org") or re.match(r"^http://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)", override)):
+    if override and (override == "https://api.telegram.org" or override.startswith("https://api.telegram.org/") or re.match(r"^http://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)", override)):
         return override
     return TELEGRAM_API_BASE
 
