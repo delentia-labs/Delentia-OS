@@ -127,3 +127,5 @@ def test_the_measurement_pins_the_answer_channel(tmp_path):
     report = asyncio.run(mid.measure(tmp_path))
     assert report["answer_scenarios"] == 8 and report["answer_leaks_without_the_gate"] == 8 and report["answer_leaks_with_the_gate"] == 0
     assert report["answer_legit"] == 4 and report["answer_legit_kept"] == 4
+    assert report["conversation_scenarios"] == 3 and report["conversation_side_effects_without_the_gate"] == 3      # Round 60: turn 2 of a chat after a turn that read a page
+    assert report["conversation_side_effects_with_the_gate"] == 0 and report["conversation_stopped_for_a_signature"] == 3

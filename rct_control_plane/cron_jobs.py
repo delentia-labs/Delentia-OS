@@ -272,7 +272,7 @@ class CronService:
             seconds = 300.0
         stopped, text, failed = "exception", "", True
         try:
-            loop = build_governed_loop(kernel, namespace=job["namespace"], max_iterations=5, max_seconds=seconds)
+            loop = build_governed_loop(kernel, namespace=job["namespace"], max_iterations=5, max_seconds=seconds, conversation_turns=0)    # a scheduled job is not a reply to a chat
             result = await asyncio.wait_for(loop.run(job["goal"]), timeout=seconds + 30)
             stopped = str(result.get("stopped_reason") or "unknown")
             text = reply_text_for(result)
