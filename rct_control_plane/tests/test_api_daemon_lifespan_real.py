@@ -17,8 +17,9 @@ from rct_control_plane.api import create_app
 import rct_control_plane.api as api_module
 
 
-def test_daemon_does_not_start_without_the_opt_in_env_var():
+def test_daemon_does_not_start_without_the_opt_in_env_var(monkeypatch):
     os.environ.pop("DELENTIA_DAEMON_ENABLED", None)
+    monkeypatch.setattr(api_module, "_DAEMON_SCHEDULER", None)       # a module global an earlier test may have left set (found by running the suite in shuffled order)
     application = create_app()
     with TestClient(application) as client:
         resp = client.get("/v1/daemon/status")
