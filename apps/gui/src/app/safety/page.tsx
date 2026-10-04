@@ -26,6 +26,7 @@ export default function SafetyPage() {
     try { await fn(); env.reload(); board.reload(); } catch (e) { setMessage(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
   const e = env.data;
+  const noDaily = !!e && ["daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens"].every((k) => !e.limits[k]);
   return (
     <>
       <PageHeader title={lang === "th" ? "ความปลอดภัยของงานไร้คนดู" : "Safety for unattended work"}
@@ -63,13 +64,13 @@ export default function SafetyPage() {
               </>
             )}
           </Panel>
-          <Panel title="Limits and use" aside={e ? (e.any_limit_set ? <Badge tone="leaf">limits set</Badge> : <Badge tone="amber">no limit set</Badge>) : undefined}>
+          <Panel title="Limits and use" aside={e ? (noDaily ? <Badge tone="amber">no daily limit</Badge> : <Badge tone="leaf">daily limit set</Badge>) : undefined}>
             {e ? (
               <>
                 {Object.entries(e.limits).map(([k, v]) => <Row key={k} label={LIMIT_LABELS[k] ?? k}>{v ?? "no limit"}</Row>)}
                 <Row label="Last 24 hours">{e.last_24h.episodes ?? 0} episodes · {e.last_24h.tokens ?? 0} tokens · ${e.last_24h.cost_usd ?? 0}</Row>
                 <Row label="Last hour">{e.last_hour.episodes ?? 0} episodes</Row>
-                {!e.any_limit_set ? <p className="mt-3 text-[12px] text-dl-muted">Set <Code>DELENTIA_DAILY_BUDGET_USD</Code>, <Code>DELENTIA_USER_DAILY_BUDGET_USD</Code> and <Code>DELENTIA_EPISODES_PER_HOUR_PER_USER</Code> on the host. Without a daily limit, only the per-episode cap bounds what a flood of requests can cost.</p> : null}
+                {noDaily ? <p className="mt-3 text-[12px] text-dl-muted">Set <Code>DELENTIA_DAILY_BUDGET_USD</Code>, <Code>DELENTIA_USER_DAILY_BUDGET_USD</Code> and <Code>DELENTIA_EPISODES_PER_HOUR_PER_USER</Code> on the host. Without a daily limit, only the per-episode cap bounds what a flood of requests can cost.</p> : null}
               </>
             ) : null}
           </Panel>
