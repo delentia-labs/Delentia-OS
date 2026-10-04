@@ -408,6 +408,34 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     def _cron_owner(request: Request) -> str:
         return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
 
+    @router.get("/envelope")
+    async def envelope_status() -> Dict[str, Any]:
+        """Is the agent paused, what are the spending and flood limits, and how much of them has been used (envelope.py)."""
+        from rct_control_plane import envelope
+        return envelope.status(_kernel()._persistence)
+
+    @router.post("/envelope/pause")
+    async def envelope_pause(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Pausing needs no signature: nothing starts and no tool runs, from any entry point, until it is lifted."""
+        from rct_control_plane import envelope
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        return {"paused": envelope.pause(str(payload.get("reason", "")), by=f"desk:{owner}", persistence=_kernel()._persistence)}
+
+    @router.post("/envelope/resume")
+    async def envelope_resume(payload: Dict[str, Any], request: Request, response: Response) -> Dict[str, Any]:
+        """Lifting a pause needs a signed approval when any approver is configured (closing is free, opening is signed): the first call answers 202 with the action to sign."""
+        from rct_control_plane import envelope
+        persistence = _kernel()._persistence
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        approval_id = str(payload.get("approval_id") or "").strip() or None
+        try:
+            return {"resumed": envelope.resume(by=f"desk:{owner}", persistence=persistence, approval_id=approval_id)}
+        except envelope.ResumeRefused as exc:
+            if approval_id is None and envelope.status(persistence)["resume_needs_signature"]:
+                response.status_code = 202
+                return {"pending_signature": True, **envelope.request_resume(persistence, requested_by=f"desk:{owner}")}
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
     @router.get("/pairing")
     async def pairing_view() -> Dict[str, Any]:
         """Who asked to be let in, and who is. A request is let in only by a signed approval (Approvals page or `delentia approvals approve <code>`)."""

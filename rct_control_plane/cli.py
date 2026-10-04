@@ -2621,6 +2621,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
+    os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
 
@@ -3675,6 +3676,55 @@ def cron_run_due() -> None:
     click.echo(f"{len(ran)} job(s) ran")
     for j in ran:
         click.echo(f"  {j['id']} {j['last_status']}: {(j['last_result'] or '')[:200]}")
+
+
+@cli.command("pause")
+@click.option("--reason", default="", help="why (shown to the owner and in the audit trail)")
+@click.option("--db", default=None)
+def pause_command(reason: str, db: Optional[str]) -> None:
+    """Stop the agent: from now on no episode starts and no tool runs, from any entry point (chat, cron, subagents, API). Free; lifting it is signed."""
+    from rct_control_plane import envelope
+    state = envelope.pause(reason, by="cli", persistence=_audit_db(db))
+    click.echo(f"paused ({envelope.pause_path()}). Lift it with: delentia resume")
+    if state["reason"]:
+        click.echo(f"reason: {state['reason']}")
+
+
+@cli.command("resume")
+@click.option("--approval", default=None, help="the signed approval id (needed when any approver key is configured)")
+@click.option("--db", default=None)
+def resume_command(approval: Optional[str], db: Optional[str]) -> None:
+    """Lift a pause. With an approver key configured this needs a signature: without --approval it prints the action to sign."""
+    from rct_control_plane import envelope
+    persistence = _audit_db(db)
+    try:
+        was = envelope.resume(by="cli", persistence=persistence, approval_id=approval)
+    except envelope.ResumeRefused as exc:
+        if approval is None and envelope.status(persistence)["resume_needs_signature"]:
+            pending = envelope.request_resume(persistence, requested_by="cli")
+            click.echo(f"resuming needs a signature. Approval id: {pending['approval_id']}")
+            click.echo(pending["how"])
+            sys.exit(2)
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo("resumed" if was else "it was not paused")
+
+
+@cli.command("limits")
+@click.option("--db", default=None)
+def limits_command(db: Optional[str]) -> None:
+    """Show whether the agent is paused, the spending/flood limits (environment variables) and how much of them the last 24 hours used."""
+    from rct_control_plane import envelope
+    report = envelope.status(_audit_db(db))
+    state = report["paused"]
+    click.echo("PAUSED by %s: %s" % (state["by"], state["reason"] or "(no reason given)") if state else "running (not paused)")
+    for name, value in report["limits"].items():
+        click.echo(f"  {name}: {value if value is not None else 'no limit'}")
+    click.echo(f"last 24 h: {report['last_24h']}")
+    click.echo(f"last hour: {report['last_hour']}")
+    if not report["any_limit_set"]:
+        click.echo("no spending or flood limit is set: see DELENTIA_DAILY_BUDGET_USD, DELENTIA_DAILY_MAX_TOKENS, DELENTIA_USER_DAILY_BUDGET_USD, DELENTIA_EPISODES_PER_HOUR_PER_USER")
+    click.echo("resuming needs a signature" if report["resume_needs_signature"] else "resuming needs no signature (no approver key is configured)")
 
 
 @cli.group("pairing")
