@@ -179,13 +179,16 @@ async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240)
 
 
 @mcp.tool()
-async def delentia_remember(content: str, memory_type: str = "fact", namespace: Optional[str] = None) -> dict:
+async def delentia_remember(content: str, memory_type: str = "fact", namespace: Optional[str] = None, provenance: Optional[dict] = None) -> dict:
     """Store a real memory, recallable later via delentia_recall (semantic
     ranking, not exact match). Without `namespace` it goes to the kernel's
     shared default namespace; the governed agent loop always passes the
-    caller's own namespace, so one user's facts are not another's."""
+    caller's own namespace, so one user's facts are not another's.
+    `provenance` ({"tainted": bool, "source_tool": str}) is written by the governed loop (Round 59), which overwrites anything the model
+    passes: it records whether the episode had read text from outside when this was stored."""
     memory = _kernel._agent_memory if not namespace else AgentMemory(namespace, _kernel._persistence)
-    memory_id = await memory.store(content, MemoryType(memory_type))
+    context = {"provenance": {"tainted": bool(provenance.get("tainted")), "source_tool": str(provenance.get("source_tool") or "")[:120]}} if isinstance(provenance, dict) else None
+    memory_id = await memory.store(content, MemoryType(memory_type), context=context)
     return {"memory_id": memory_id}
 
 
