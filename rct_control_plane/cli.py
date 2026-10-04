@@ -3727,6 +3727,61 @@ def limits_command(db: Optional[str]) -> None:
     click.echo("resuming needs a signature" if report["resume_needs_signature"] else "resuming needs no signature (no approver key is configured)")
 
 
+@cli.group("backup")
+def backup_group():
+    """Back up and restore the runtime's own state (databases, owner configuration). Private keys stay out unless you ask."""
+
+
+@backup_group.command("create")
+@click.option("--out", required=True, help="the zip to write (never overwritten)")
+@click.option("--include-keys", is_flag=True, help="also include private keys and token files (the backup is then as sensitive as the keys)")
+def backup_create(out: str, include_keys: bool) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.create_backup(out, include_keys=include_keys)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {done['path']}: {done['files']} file(s), {done['bytes']} bytes")
+    if done["keys_note"]:
+        click.echo(done["keys_note"])
+
+
+@backup_group.command("verify")
+@click.argument("path")
+def backup_verify(path: str) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.verify_backup(path)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"NOT VALID: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"valid: {done['files']} file(s); keys included: {done['includes_keys']}")
+
+
+@backup_group.command("restore")
+@click.argument("path")
+@click.option("--to", required=True, help="a folder; files go under <to>/home (the data home) and <to>/user (~/.delentia)")
+@click.option("--force", is_flag=True, help="move files that already exist aside (never deleted) instead of refusing")
+def backup_restore(path: str, to: str, force: bool) -> None:
+    from rct_control_plane import backup
+    try:
+        done = backup.restore_backup(path, to, force=force)
+    except backup.BackupError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"restored {done['restored']} file(s) into {done['to']} ({done['moved_aside']} existing file(s) moved aside)")
+
+
+@cli.command("insights")
+@click.option("--days", default=7, show_default=True, type=int)
+@click.option("--db", default=None)
+def insights_command(days: int, db: Optional[str]) -> None:
+    """What the agent has been doing: episodes, tokens and money per day, why episodes stopped, signatures asked."""
+    from rct_control_plane import insights
+    click.echo(insights.render(insights.report(_audit_db(db), days)))
+
+
 @cli.group("task")
 def task_group():
     """Tasks that outlive one episode: a goal in steps, each step a governed episode (the daemon advances them; `advance` does it by hand)."""
