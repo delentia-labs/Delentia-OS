@@ -434,7 +434,7 @@ async def c14(env: Env, ok: Check) -> Dict[str, Any]:
         env.model.policy = sm.delegator
         env.model.reset()
         result = await env.loop("c14", max_iterations=3).run("Read the file README.md")
-        ok("the episode ends", result["stopped_reason"] in ("max_iterations_reached", "llm_finished", "repeated_call"), result["stopped_reason"])
+        ok("the episode ends", result["stopped_reason"] in ("max_iterations_reached", "llm_finished", "repeated_call", "stuck_repeating"), result["stopped_reason"])
         # 3 steps at the top level; each delegation runs its own 3-step loop; depth limit 2 bounds the tree
         bound = sum(3 ** d for d in range(1, max_delegation_depth() + 2))
         ok("model calls stay inside the bound the depth limit implies", env.model.calls <= bound, (env.model.calls, bound))

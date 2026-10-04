@@ -15,7 +15,8 @@ from rct_control_plane import data_home
 
 def test_the_test_session_runs_with_an_isolated_home():
     home = data_home.data_home()
-    assert home is not None and "delentia-test-home-" in str(home)
+    # the session home (root conftest) or, since Round 60, this test's own home under pytest's temp folder: never a real runtime's data
+    assert home is not None and ("delentia-test-home-" in str(home) or "pytest-of-" in str(home) or "pytest-" in str(home))
 
 
 def test_legacy_defaults_when_nothing_is_set(monkeypatch):
