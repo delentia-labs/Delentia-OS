@@ -74,6 +74,15 @@ class WitnessSpec:
     branch: str = "main"
 
 
+def _https_or_loopback(url: str) -> bool:
+    """https anywhere, or plain http only to the loopback host itself (a host that merely STARTS with 127.0.0.1 or localhost is not loopback)."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(url.strip())
+    if parts.scheme == "https":
+        return bool(parts.hostname)
+    return parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost", "::1")
+
+
 def specs_from_env() -> List[WitnessSpec]:
     """The configured witnesses. A broken value gives none and is reported by `status()`, never half-applied."""
     raw = (os.environ.get(WITNESSES_ENV) or "").strip()
@@ -85,7 +94,7 @@ def specs_from_env() -> List[WitnessSpec]:
         for i, item in enumerate(items):
             if not isinstance(item, dict) or item.get("type") not in ("http", "git") or not item.get("key_id"):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}] needs a type (http or git) and a key_id")
-            if item["type"] == "http" and not str(item.get("url", "")).startswith(("https://", "http://127.0.0.1", "http://localhost")):
+            if item["type"] == "http" and not _https_or_loopback(str(item.get("url", ""))):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: an http witness needs an https url (plain http only for loopback)")
             if item["type"] == "git" and not item.get("path"):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: a git witness needs a path to its repository")
