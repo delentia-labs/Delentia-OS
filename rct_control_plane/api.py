@@ -1934,6 +1934,43 @@ class ControlPlaneAPI:
             status, answer = await job_state["webhooks"].handle(route_name, dict(request.headers), body)
             return JSONResponse(answer, status_code=status)
 
+        @self.app.post("/v1/agent/tasks", tags=["Kernel"], status_code=201)
+        async def create_agent_task(payload: Dict[str, Any], request: Request):
+            """Round 60 (D5): a goal in steps that outlives one episode (task_board.py). The daemon advances it one governed episode at a time."""
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board import TaskError
+            from rct_control_plane.task_board_runtime import get_board
+            try:
+                return get_board(shared_kernel._persistence).create(_job_namespace(request, payload), str(payload.get("goal") or ""),
+                                                                   [str(s) for s in payload["steps"]] if isinstance(payload.get("steps"), list) else None)
+            except TaskError as exc:
+                raise HTTPException(status_code=429 if "allowed" in str(exc) else 400, detail=str(exc)) from exc
+
+        @self.app.get("/v1/agent/tasks", tags=["Kernel"])
+        async def list_agent_tasks(request: Request, namespace: Optional[str] = None, limit: int = 20):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board_runtime import get_board
+            return {"tasks": get_board(shared_kernel._persistence).list(_job_namespace(request, None, namespace), limit)}
+
+        @self.app.get("/v1/agent/tasks/{task_id}", tags=["Kernel"])
+        async def get_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board_runtime import get_board
+            task = get_board(shared_kernel._persistence).get(task_id, _job_namespace(request, None, namespace))
+            if task is None:
+                raise HTTPException(status_code=404, detail="no such task")
+            return task
+
+        @self.app.delete("/v1/agent/tasks/{task_id}", tags=["Kernel"])
+        async def cancel_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board import TaskError
+            from rct_control_plane.task_board_runtime import get_board
+            try:
+                return get_board(shared_kernel._persistence).cancel(task_id, _job_namespace(request, None, namespace))
+            except TaskError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+
         @self.app.get("/v1/agent/jobs", tags=["Kernel"])
         async def list_agent_jobs(request: Request, namespace: Optional[str] = None, limit: int = 20):
             return {"jobs": _job_service().list(_job_namespace(request, None, namespace), limit)}

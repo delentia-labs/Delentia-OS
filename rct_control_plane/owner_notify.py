@@ -199,6 +199,15 @@ def on_job_problem(job: Dict[str, Any], stopped: str, switched_off: bool, persis
     notify("cron", text, key=f"cron:{job.get('id')}:{'off' if switched_off else stopped}", persistence=persistence)
 
 
+def on_task_event(task: Dict[str, Any], persistence: Any = None) -> None:
+    """A task finished, failed, or stopped for a signature (task_board.py). The text names the task's id and status, never its goal or results."""
+    status, tid = str(task.get("status")), str(task.get("id"))
+    words = {"done": "finished", "failed": "failed", "waiting_approval": "is waiting for your signature"}.get(status)
+    if words is None:
+        return
+    notify("task", f"A task {words} (task {tid}, asked by {task.get('namespace')}). Look at it in the Desk or: delentia task show {tid}", key=f"task:{tid}:{status}", persistence=persistence)
+
+
 def on_task_failed(task_name: str, error: str, persistence: Any = None) -> None:
     notify("daemon", f"The background task '{task_name}' failed: {error[:300]}", key=f"daemon:{task_name}", persistence=persistence)
 

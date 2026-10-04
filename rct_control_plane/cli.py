@@ -3727,6 +3727,78 @@ def limits_command(db: Optional[str]) -> None:
     click.echo("resuming needs a signature" if report["resume_needs_signature"] else "resuming needs no signature (no approver key is configured)")
 
 
+@cli.group("task")
+def task_group():
+    """Tasks that outlive one episode: a goal in steps, each step a governed episode (the daemon advances them; `advance` does it by hand)."""
+
+
+def _task_board(db: Optional[str]):
+    from rct_control_plane.task_board_runtime import get_board
+    return get_board(_audit_db(db))
+
+
+@task_group.command("create")
+@click.argument("goal")
+@click.option("--step", "steps", multiple=True, help="a step (repeat for several); without any, the RCT-7 plan of the goal is used")
+@click.option("--namespace", default="owner", show_default=True)
+@click.option("--db", default=None)
+def task_create(goal: str, steps: tuple, namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane.task_board import TaskError
+    try:
+        task = _task_board(db).create(namespace, goal, _list(steps) or None)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+
+
+@task_group.command("list")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def task_list(namespace: Optional[str], db: Optional[str]) -> None:
+    for t in _task_board(db).list(namespace):
+        done = sum(1 for s in t["steps"] if s["status"] == "done")
+        click.echo(f"{t['id']}  {t['status']:<17} {done}/{len(t['steps'])}  {t['namespace']}  {t['goal'][:60]}")
+
+
+@task_group.command("show")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_show(task_id: str, db: Optional[str]) -> None:
+    task = _task_board(db).get(task_id)
+    if task is None:
+        click.echo(click.style("Error: no such task", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{task['id']}  {task['status']}  {'TAINTED by ' + str(task['taint_source']) if task['tainted'] else 'clean'}  {task.get('note') or ''}")
+    click.echo(f"goal: {task['goal']}")
+    for s in task["steps"]:
+        click.echo(f"  {s['n']}. [{s['status']}] {s['text'][:70]}" + (f" -> {s['summary']}" if s.get("summary") else "") + (f"  (approval {s['approval_id']})" if s.get("approval_id") else ""))
+
+
+@task_group.command("advance")
+@click.argument("task_id")
+@click.option("--all", "all_steps", is_flag=True, help="keep going until the task is done, failed or waiting for someone")
+@click.option("--db", default=None)
+def task_advance(task_id: str, all_steps: bool, db: Optional[str]) -> None:
+    import asyncio
+    board = _task_board(db)
+    task = asyncio.run(board.run_to_completion(task_id) if all_steps else board.advance(task_id))
+    click.echo(f"{task['id']}: {task['status']} {task.get('note') or ''}")
+
+
+@task_group.command("cancel")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_cancel(task_id: str, db: Optional[str]) -> None:
+    from rct_control_plane.task_board import TaskError
+    try:
+        task = _task_board(db).cancel(task_id)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{task['id']}: {task['status']}")
+
+
 @cli.group("webhook")
 def webhook_group():
     """Signed webhooks that start the agent (routes live in <data home>/webhooks.json; secrets only in environment variables)."""

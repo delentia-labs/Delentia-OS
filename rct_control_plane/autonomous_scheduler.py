@@ -219,6 +219,12 @@ class AutonomousScheduler:
             interval_seconds=int(os.getenv(ANCHOR_INTERVAL_ENV, "3600")),
             handler=self._anchor_audit_chain,
         )
+        self.register_task(
+            name="tasks_advance",
+            description="Round 60: give every live task (task_board.py) its next step, one episode at a time; a paused or over-limit system just holds them",
+            interval_seconds=int(os.getenv("DELENTIA_TASKS_INTERVAL_S", "30")),
+            handler=self._advance_tasks,
+        )
         # Off until the host is configured, so a dev machine never anchors a
         # throwaway database (the witness keeps every rollback as evidence).
         anchor.is_enabled = anchor_configured()
@@ -298,6 +304,12 @@ class AutonomousScheduler:
             return self._kernel._persistence
         from rct_control_plane.persistence import ControlPlanePersistence
         return ControlPlanePersistence()
+
+    async def _advance_tasks(self) -> str:
+        from rct_control_plane import task_board_runtime
+        board = task_board_runtime.get_board(self._persistence())
+        moved = await board.advance_all()
+        return f"advanced {moved} task(s)"
 
     def _verify_audit_chain(self) -> str:
         from rct_control_plane import audit_chain
