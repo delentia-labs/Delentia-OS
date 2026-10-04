@@ -6,9 +6,10 @@ this machine request `http://169.254.169.254/` (cloud credentials), `http://127.
 open on loopback when no token is set) or a router page. This module decides, from the addresses a host name resolves to,
 whether a fetch is allowed. The crawler calls it before the first request and again for every redirect hop.
 
-Limit, stated: the name is resolved here and again by the HTTP client, so a DNS server that answers differently the second time
-(rebinding) can still slip through. Pinning the connection to the checked address is what mcp_gateway does for its own fetches;
-the crawler (algo_34_swcar) uses a shared client and does not pin yet.
+DNS rebinding (Round 59): checking a name and then letting the HTTP client resolve it again leaves a gap - a DNS server that answers with a public address
+for the check and 169.254.169.254 or 127.0.0.1 for the connection gets through. `pinned_async_transport()` closes it for the crawler: the name is resolved ONCE,
+inside the connection, the addresses are checked right there, and the socket is opened to the very address that was checked (TLS still verifies the original
+host name). The earlier check_public_url call stays as the fast, readable refusal; the transport is what cannot be raced.
 
 DELENTIA_CRAWL_ALLOW_PRIVATE=1 lets the owner crawl internal documentation on purpose.
 
@@ -20,7 +21,7 @@ from __future__ import annotations
 import ipaddress
 import os
 import socket
-from typing import List, Union
+from typing import Any, List, Optional, Union
 from urllib.parse import urlsplit
 
 ALLOW_PRIVATE_ENV = "DELENTIA_CRAWL_ALLOW_PRIVATE"
@@ -56,6 +57,50 @@ def addresses_of(host: str, port: int) -> List[IPAddress]:
     except OSError as exc:
         raise UnsafeURLError(f"{host} does not resolve ({exc})") from exc
     return [ipaddress.ip_address(info[4][0]) for info in infos]
+
+
+def check_resolved(host: str, port: int) -> IPAddress:
+    """Resolve `host` once and return the address to connect to; raises UnsafeURLError unless every address it resolves to is public (or private fetches are allowed)."""
+    addresses = addresses_of(host, port)
+    if not addresses:
+        raise UnsafeURLError(f"{host} has no address")
+    if not allow_private():
+        for ip in addresses:
+            if not _is_public(ip):
+                raise UnsafeURLError(f"{host} resolves to {ip}, which is not a public address")
+    return addresses[0]
+
+
+def pinned_async_transport() -> Optional[Any]:
+    """An httpx transport whose connections go to the address that was checked at connect time. None when this httpx/httpcore pair does not allow it (the caller then
+    keeps the check-only behaviour and says so)."""
+    try:
+        import asyncio
+        import httpcore
+        import httpx
+    except ImportError:                                                      # pragma: no cover - httpx is a hard dependency elsewhere
+        return None
+
+    class PinnedBackend(httpcore.AnyIOBackend):
+        async def connect_tcp(self, host: str, port: int, timeout: Optional[float] = None, local_address: Optional[str] = None,
+                              socket_options: Any = None) -> Any:
+            loop = asyncio.get_running_loop()
+            infos = await loop.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            ips = [ipaddress.ip_address(info[4][0]) for info in infos]
+            if not ips:
+                raise UnsafeURLError(f"{host} has no address")
+            if not allow_private():
+                for ip in ips:
+                    if not _is_public(ip):
+                        raise UnsafeURLError(f"{host} resolves to {ip}, which is not a public address")
+            return await super().connect_tcp(str(ips[0]), port, timeout=timeout, local_address=local_address, socket_options=socket_options)
+
+    transport = httpx.AsyncHTTPTransport()
+    pool = getattr(transport, "_pool", None)
+    if pool is None or not hasattr(pool, "_network_backend"):
+        return None
+    pool._network_backend = PinnedBackend()
+    return transport
 
 
 def check_public_url(url: str) -> str:

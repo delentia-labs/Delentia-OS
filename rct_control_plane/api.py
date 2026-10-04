@@ -12,7 +12,7 @@ import sys
 import time
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, Request, status, WebSocket, WebSocketDisconnect
@@ -28,7 +28,10 @@ from .persistence import ControlPlanePersistence
 from .websocket_manager import WS_MANAGER
 from .approval_queue import APPROVAL_QUEUE
 from ._version import PACKAGE_VERSION
-from rct_control_plane.lora_multiplexer import LoRAMultiplexer
+if TYPE_CHECKING:
+    # Round 57: imported lazily (see _get_lora_multiplexer). This one import pulled transformers, torch and scikit-learn in at module import and cost
+    # about 13.6 of the 16.5 seconds `import rct_control_plane.api` took (measured with `python -X importtime`), for an adapter engine the runtime does not use.
+    from rct_control_plane.lora_multiplexer import LoRAMultiplexer
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,13 @@ logger = logging.getLogger(__name__)
 # loaded at most once per process, not once per /v1/lora/swap request. Same
 # warm-process-caching pattern as the isolate-scoped Ed25519 keypair cache
 # added to the TypeScript sovereign gateway the same day (packages/jitna).
-_lora_mux: Optional[LoRAMultiplexer] = None
+_lora_mux: Optional["LoRAMultiplexer"] = None
 
 
-def _get_lora_multiplexer() -> LoRAMultiplexer:
+def _get_lora_multiplexer() -> "LoRAMultiplexer":
     global _lora_mux
     if _lora_mux is None:
+        from rct_control_plane.lora_multiplexer import LoRAMultiplexer
         _lora_mux = LoRAMultiplexer()
     return _lora_mux
 
@@ -340,9 +344,24 @@ async def _lifespan(app: FastAPI):
     _DAEMON_EMAIL_GATEWAY = EmailGateway(kernel=ALGORITHM_KERNEL)
     _DAEMON_EMAIL_GATEWAY.start()
 
+    # Round 57: persistent cron jobs deliver their results through these running gateways (WhatsApp has no poller, so a sender is built on demand).
+    def _gateway_for(channel: str) -> Any:
+        if channel == "telegram":
+            return _DAEMON_TELEGRAM_GATEWAY
+        if channel == "signal":
+            return _DAEMON_SIGNAL_GATEWAY
+        if channel == "whatsapp":
+            from rct_control_plane.gateways.whatsapp_gateway import WhatsAppGateway
+            gateway = WhatsAppGateway(kernel=ALGORITHM_KERNEL)
+            return gateway if gateway.is_configured() else None
+        return None
+    from rct_control_plane import cron_jobs
+    cron_jobs.set_gateway_resolver(_gateway_for)
+
     try:
         yield
     finally:
+        cron_jobs.set_gateway_resolver(None)
         if _DAEMON_EMAIL_GATEWAY is not None:
             await _DAEMON_EMAIL_GATEWAY.stop()
         _DAEMON_EMAIL_GATEWAY = None
@@ -730,6 +749,12 @@ class ControlPlaneAPI:
                          "slack": _DAEMON_SLACK_GATEWAY, "line": None, "whatsapp": None,
                          "signal": _DAEMON_SIGNAL_GATEWAY, "email": _DAEMON_EMAIL_GATEWAY},
         }))
+
+        # Round 57: GET /v1/models and POST /v1/chat/completions (openai_compat.py): the chat front door for any OpenAI-protocol client; every request is a
+        # governed episode like any other.
+        from rct_control_plane import mcp_server as _mcp_module
+        from rct_control_plane.openai_compat import build_router as _build_openai_router
+        self.app.include_router(_build_openai_router(lambda: _mcp_module._kernel, lambda: _mcp_module.mcp))
 
         @self.app.post("/v1/gateways/line/webhook", tags=["Gateways"])
         async def line_webhook_endpoint(request: Request):

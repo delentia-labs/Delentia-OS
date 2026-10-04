@@ -22,6 +22,7 @@ const DICT = {
   signatures: { en: "Signatures", th: "ลายเซ็น" },
   identity: { en: "People", th: "ผู้ใช้" },
   approvals: { en: "Approvals", th: "อนุมัติ" },
+  checkpoints: { en: "Checkpoints", th: "Checkpoint" },
   audit: { en: "Audit", th: "Audit" },
   models: { en: "Models", th: "โมเดล" },
   skills: { en: "Skills", th: "สกิล" },

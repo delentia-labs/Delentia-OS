@@ -111,6 +111,7 @@ export interface Skill {
   g_before: number; g_after: number; governance_violation: boolean; session_id: string | null; created_at: string;
   uses: number; successes: number; failures: number; reinforced: number; archived: boolean; reliability: number;
   bundled?: boolean;
+  imported?: boolean;
 }
 export interface GrowthLedger {
   namespace: string; G: number | null; resilience: number | null; growth_ratio: number | null;
@@ -234,6 +235,43 @@ export interface GovVerify {
 }
 export interface WitnessCheck { witness: string; key_id: string; ok: boolean; checked: number; problems: string[] }
 
+
+// ---- persistent cron jobs (cron_jobs.py, Round 57) ----------------------------------
+export interface CronJob {
+  id: string; namespace: string; name: string; goal: string; schedule_text: string; schedule_meaning: string; enabled: boolean; deleted: boolean;
+  deliver: { channel: string; to: string } | null; created_at: number; created_by: string | null; next_run_at: number | null; last_run_at: number | null;
+  last_status: string | null; last_result: string | null; run_count: number; fail_streak: number; max_runs: number | null;
+}
+export interface CronJobs {
+  jobs: CronJob[]; owner: string; delivery: Record<string, string[]>; timezone: string; forms: string[];
+  limits: { max_jobs: number; min_interval_s: number; fails_before_off: number; hourly_cap_env: string };
+}
+export interface CronPreview { kind: string; meaning: string; timezone: string; upcoming: string[] }
+
+
+// ---- checkpoints of files the agent wrote (checkpoints.py, Round 57) ----------------
+export interface Checkpoint {
+  id: number; project: string; rel_path: string; tool: string; existed_before: number; before_sha: string | null; after_sha: string | null;
+  protected: number; note: string | null; created_at: number; rolled_back_at: number | null; rollback_of: number | null;
+}
+export interface CheckpointList { checkpoints: Checkpoint[]; status: { enabled: boolean; checkpoints: number; unprotected: number; stored_bytes: number; blob_dir: string } }
+
+
+export interface WitnessStatus {
+  configured: number; fresh_witnesses: number; independent_witnesses: number; head_seq: number; rows_not_yet_anchored: number; stale_after_s: number;
+  tamper_evident_against_host_compromise: boolean; plain: string; problem: string;
+  witnesses: { name: string; type: string; last_anchored_entries: number | null; last_anchored_age_s: number | null; fresh: boolean; last_attempt_ok: boolean | null; last_attempt_detail: string | null }[];
+}
+export interface WitnessesChecked { ok: boolean; witnesses: { witness: string; reachable: boolean; ok: boolean; checked: number; problems: string[] }[] }
+
+
+export interface PairingView {
+  enabled: boolean;
+  pending: { code: string; channel: string; sender_id: string; asked_at: number }[];
+  grants: { channel: string; sender_id: string; approval_id: string; granted_at: number; revoked_at: number | null }[];
+  limits: { max_pending_per_channel: number; refusal_cooldown_s: number };
+}
+
 // ---- calls --------------------------------------------------------------------
 
 // ---- the owner's policy for A in F = D^I x A (fdia_policy.py) ----------------
@@ -314,11 +352,30 @@ export const desk = {
   govIdentities: () => call<{ mode: string; file: string; shared_token_set: boolean; users: GovIdentity[]; problem: string; default_role: string | null; note: string }>("/v1/desk/governance/identities"),
   govDecisions: () => call<{ decisions: GovDecision[] }>("/v1/desk/governance/decisions"),
   govVerify: () => call<GovVerify>("/v1/desk/governance/audit/verify"),
+  govWitnesses: () => call<WitnessStatus>("/v1/desk/governance/audit/witnesses"),
+  govCheckWitnesses: () => call<WitnessesChecked>("/v1/desk/governance/audit/check-witnesses", { method: "POST", body: "{}" }),
   govCheckWitness: () => call<WitnessCheck>("/v1/desk/governance/audit/check-witness", { method: "POST", body: "{}" }),
   experiments: () => call<{ experiments: Experiment[] }>("/v1/desk/experiments"),
   experiment: (id: string) => call<{ runs: ExperimentRun[]; compare: Record<string, unknown> | null }>(`/v1/desk/experiments/${encodeURIComponent(id)}`),
   channels: () => call<{ channels: Channel[] }>("/v1/desk/channels"),
+  pairing: () => call<PairingView>("/v1/desk/pairing"),
+  pairingRevoke: (channel: string, sender_id: string) => call<{ revoked: boolean }>("/v1/desk/pairing/revoke", { method: "POST", body: JSON.stringify({ channel, sender_id }) }),
   daemon: () => call<DaemonStatus>("/v1/daemon/status"),
+  cronJobs: () => call<CronJobs>("/v1/desk/cron/jobs"),
+  cronPreview: (text: string) => call<CronPreview>("/v1/desk/cron/parse", { method: "POST", body: JSON.stringify({ text }) }),
+  cronCreate: (body: { goal: string; schedule: string; name?: string; deliver?: { channel: string; to: string } | null; max_runs?: number }) =>
+    call<{ job: CronJob }>("/v1/desk/cron/jobs", { method: "POST", body: JSON.stringify(body) }),
+  cronAction: (id: string, action: "enable" | "pause" | "run") => call<{ job: CronJob }>(`/v1/desk/cron/jobs/${encodeURIComponent(id)}/${action}`, { method: "POST", body: "{}" }),
+  cronDelete: (id: string) => call<{ job: CronJob }>(`/v1/desk/cron/jobs/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  checkpoints: () => call<CheckpointList>("/v1/desk/checkpoints"),
+  checkpointDiff: (id: number) => call<{ diff: string }>(`/v1/desk/checkpoints/${id}/diff`),
+  checkpointRollback: (id: number, force = false) => call<{ path: string; result: string; undo_checkpoint: number | null }>(`/v1/desk/checkpoints/${id}/rollback`, { method: "POST", body: JSON.stringify({ force }) }),
+  skillImportPreview: (text: string, source: string) =>
+    call<{ needs_review: true; preview: { name: string; description: string; version: string; tags: string[]; instructions: string; source: string; screen_findings: string[] } }>(
+      "/v1/desk/skills/import", { method: "POST", body: JSON.stringify({ text, source }) }),
+  skillImport: (text: string, source: string) =>
+    call<{ skill_id: string; status: string; name: string }>("/v1/desk/skills/import", { method: "POST", body: JSON.stringify({ text, source, reviewed: true }) }),
+  skillExport: (id: string) => call<{ skill_id: string; skill_md: string }>(`/v1/desk/skills/${encodeURIComponent(id)}/export`),
   runTask: (taskId: string) => call<{ status: string; output?: string; error?: string }>(`/v1/desk/cron/${encodeURIComponent(taskId)}/run`, { method: "POST" }),
   subagents: (limit = 50) => call<{ runs: SubagentRun[] }>(`/v1/desk/subagents?limit=${limit}`),
   runSubagents: (goals: string[], timeoutSeconds = 240) =>

@@ -523,8 +523,106 @@ def run_sandboxed_docker(command: str, image: str = "python:3.11-slim", timeout_
         )
 
 
+# ---------------------------------------------------------------------------
+# Round 58: the SSH backend (Hermes has one; the point is to keep the agent's shell commands OFF the machine that holds its keys and audit log).
+#
+# The commands run on another host the owner designates, as an account the owner made for it. Nothing here makes that account safe: it should be unprivileged and disposable,
+# on a machine that holds nothing worth stealing. What this code guarantees is only how the connection is made:
+#   * the target and key come from the owner's environment (DELENTIA_SSH_HOST user@host, DELENTIA_SSH_KEY path, DELENTIA_SSH_KNOWN_HOSTS file, optional DELENTIA_SSH_PORT /
+#     DELENTIA_SSH_WORKDIR / DELENTIA_SSH_BIN), never from the model. The private key file is handed to ssh by path; this process never reads it;
+#   * the host key must already be in the known-hosts file the owner supplied: StrictHostKeyChecking=yes, no "accept new key" on first use (a man in the middle on the first
+#     connection is exactly what that would allow);
+#   * no agent forwarding, no port or X11 forwarding, no local command, no password prompt, only the one named key, a connection timeout, nothing from this process's environment sent;
+#   * the host name is validated so a value that starts with "-" cannot become an ssh option;
+#   * if the SSH backend is selected (DELENTIA_SANDBOX_BACKEND=ssh) and anything is missing, the command is REFUSED. It is never quietly run on this machine instead;
+#   * the remote command is wrapped in the remote `timeout` when the remote has one, so a command that outlives its time limit does not keep running after the connection is cut.
+# The risk classification and the denylist run first, exactly as for the other backends.
+# ---------------------------------------------------------------------------
+SSH_HOST_ENV = "DELENTIA_SSH_HOST"
+SSH_KEY_ENV = "DELENTIA_SSH_KEY"
+SSH_KNOWN_HOSTS_ENV = "DELENTIA_SSH_KNOWN_HOSTS"
+SSH_PORT_ENV = "DELENTIA_SSH_PORT"
+SSH_WORKDIR_ENV = "DELENTIA_SSH_WORKDIR"
+SSH_BIN_ENV = "DELENTIA_SSH_BIN"
+SANDBOX_BACKEND_ENV = "DELENTIA_SANDBOX_BACKEND"
+_SSH_TARGET = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._-]{0,63}@[A-Za-z0-9][A-Za-z0-9._:-]{0,252}$")
+_SSH_WORKDIR = re.compile(r"^[A-Za-z0-9_./~-]{1,200}$")
+
+
+def ssh_settings() -> Dict[str, Any]:
+    """The owner's SSH target, or {"error": why not}. Pure: reads the environment and checks that the files exist; connects to nothing."""
+    target = (os.environ.get(SSH_HOST_ENV) or "").strip()
+    key = (os.environ.get(SSH_KEY_ENV) or "").strip()
+    known = (os.environ.get(SSH_KNOWN_HOSTS_ENV) or "").strip()
+    if not target or not key or not known:
+        missing = [n for n, v in ((SSH_HOST_ENV, target), (SSH_KEY_ENV, key), (SSH_KNOWN_HOSTS_ENV, known)) if not v]
+        return {"error": f"the ssh backend is selected but not configured (missing {', '.join(missing)})"}
+    if not _SSH_TARGET.match(target):
+        return {"error": f"{SSH_HOST_ENV} must look like user@host (letters, digits, dots, dashes), not {target[:40]!r}"}
+    if not os.path.isfile(key):
+        return {"error": f"{SSH_KEY_ENV} does not point at a file"}
+    if not os.path.isfile(known):
+        return {"error": f"{SSH_KNOWN_HOSTS_ENV} does not point at a file: the host key must be known before the first connection (ssh-keyscan on a network you trust, "
+                         "or copy it from the host's console); this backend never accepts a key on first use"}
+    port = (os.environ.get(SSH_PORT_ENV) or "22").strip()
+    if not port.isdigit() or not 0 < int(port) < 65536:
+        return {"error": f"{SSH_PORT_ENV} must be a port number"}
+    workdir = (os.environ.get(SSH_WORKDIR_ENV) or "delentia-sandbox").strip()
+    if not _SSH_WORKDIR.match(workdir) or ".." in workdir:
+        return {"error": f"{SSH_WORKDIR_ENV} must be a plain relative or ~ path without .."}
+    return {"target": target, "key": key, "known_hosts": known, "port": port, "workdir": workdir, "bin": (os.environ.get(SSH_BIN_ENV) or "ssh").strip()}
+
+
+def ssh_command_line(settings: Dict[str, Any], command: str, timeout_seconds: float) -> List[str]:
+    """The exact argv this backend runs. Separate so a test can hand it to a real `ssh -G` and check what OpenSSH makes of it."""
+    import shlex
+    limit = max(1, int(timeout_seconds) + 1)
+    quoted = shlex.quote(command)
+    workdir = shlex.quote(settings["workdir"]) if not settings["workdir"].startswith("~") else settings["workdir"]
+    remote = (f"mkdir -p {workdir} && cd {workdir} && "
+              f"if command -v timeout >/dev/null 2>&1; then timeout -k 2 {limit} sh -c {quoted}; else sh -c {quoted}; fi")
+    return [settings["bin"], "-T", "-p", settings["port"], "-i", settings["key"],
+            "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", f"UserKnownHostsFile={settings['known_hosts']}", "-o", "GlobalKnownHostsFile=none",
+            "-o", "IdentitiesOnly=yes", "-o", "IdentityAgent=none", "-o", "ForwardAgent=no", "-o", "ClearAllForwardings=yes", "-o", "ForwardX11=no",
+            "-o", "PermitLocalCommand=no", "-o", "PasswordAuthentication=no", "-o", "KbdInteractiveAuthentication=no", "-o", "ProxyCommand=none",
+            "-o", "SendEnv=none", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2", "-o", "LogLevel=ERROR",
+            "--", settings["target"], remote]
+
+
+def run_sandboxed_ssh(command: str, timeout_seconds: float = 10.0) -> SandboxResult:
+    settings = ssh_settings()
+    if "error" in settings:
+        return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False, blocked_reason=settings["error"])
+    stripped = command.strip().lower()
+    for prefix in _DENYLISTED_PREFIXES:
+        if stripped.startswith(prefix.lower()):
+            return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False, blocked_reason=f"command prefix '{prefix}' is denylisted")
+    argv = ssh_command_line(settings, command, timeout_seconds)
+    popen_kwargs: Dict[str, Any] = {}
+    if os.name == "nt":
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    else:
+        popen_kwargs["preexec_fn"] = getattr(os, "setsid", None)
+    # No shell, and the environment ssh sees holds no secrets (scrubbed_environment): the key is a path argument, not a variable.
+    try:
+        proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, text=True, env=scrubbed_environment(), **popen_kwargs)
+    except FileNotFoundError:
+        return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False, blocked_reason=f"the ssh client ({settings['bin']}) is not installed on this machine")
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout_seconds + 12)         # the remote timeout fires first; this is the local backstop (plus ConnectTimeout)
+        return SandboxResult(stdout=stdout[:_MAX_OUTPUT_BYTES], stderr=stderr[:_MAX_OUTPUT_BYTES], exit_code=proc.returncode, timed_out=proc.returncode == 124,
+                             blocked_reason=None)
+    except subprocess.TimeoutExpired:
+        _kill_process_tree(proc)
+        try:
+            stdout, stderr = proc.communicate(timeout=5)
+        except Exception:
+            stdout = ""
+        return SandboxResult(stdout=(stdout or "")[:_MAX_OUTPUT_BYTES], stderr="", exit_code=None, timed_out=True, blocked_reason=None)
+
+
 def run_sandboxed(
-    command: str, timeout_seconds: float = 10.0, backend: str = "local", approved: bool = False,
+    command: str, timeout_seconds: float = 10.0, backend: Optional[str] = None, approved: bool = False,
 ) -> SandboxResult:
     """Real subprocess execution with real timeout/output-cap/denylist
     protections. See this module's own docstring for the honest scope
@@ -556,6 +654,13 @@ def run_sandboxed(
         return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
                               blocked_reason="command needs approval before running (risk=needs_approval) "
                                              "- call again with approved=True after explicit sign-off")
-    if backend == "docker":
+    # Round 58: an explicit argument wins; otherwise the owner's DELENTIA_SANDBOX_BACKEND (local | docker | ssh); otherwise local (as before).
+    chosen = (backend or os.environ.get(SANDBOX_BACKEND_ENV) or "local").strip().lower()
+    if chosen == "docker":
         return run_sandboxed_docker(command, timeout_seconds=timeout_seconds)
+    if chosen == "ssh":
+        return run_sandboxed_ssh(command, timeout_seconds=timeout_seconds)
+    if chosen != "local":
+        return SandboxResult(stdout="", stderr="", exit_code=None, timed_out=False,
+                             blocked_reason=f"unknown sandbox backend {chosen!r} (local, docker or ssh); nothing was run")
     return _run_local(command, timeout_seconds)

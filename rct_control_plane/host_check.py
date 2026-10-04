@@ -157,12 +157,32 @@ def check_audit_keys(probe: bool) -> List[Check]:
     else:
         out.append(Check("H06", WARN, "Notary (tier A2)", "no notary: the audit key proves 'written by this host', not 'not written by the agent'",
                          "`delentia notary serve` as a different OS user, then DELENTIA_NOTARY_URL and DELENTIA_NOTARY_TOKEN"))
-    if os.environ.get("DELENTIA_AUDIT_ANCHOR_URL") and os.environ.get("DELENTIA_AUDIT_ANCHOR_KEY_ID"):
-        out.append(Check("H07", PASS, "Anchoring (tier A3)", "the chain head is published on a schedule"))
-    else:
-        out.append(Check("H07", WARN, "Anchoring (tier A3)", "not scheduled: a host that rewrites its whole log would not be noticed",
-                         "set DELENTIA_AUDIT_ANCHOR_URL and DELENTIA_AUDIT_ANCHOR_KEY_ID (the witness is already deployed)"))
+    out.append(_witness_check())
     return out
+
+
+def _witness_check() -> Check:
+    """H07: tier A3. One witness is one party to trust; a second, independent one means a host that is taken over must defeat both."""
+    from rct_control_plane import audit_witness
+    try:
+        specs = audit_witness.specs_from_env()
+    except (audit_witness.WitnessError, ValueError) as exc:
+        return Check("H07", FAIL, "Anchoring (tier A3)", f"the witness list cannot be read ({exc}); nothing is anchored",
+                     f"fix {audit_witness.WITNESSES_ENV} (a JSON list of {{type: http|git, key_id, ...}})")
+    if not os.environ.get("DELENTIA_AUDIT_SIGNING_KEY"):
+        return Check("H07", WARN, "Anchoring (tier A3)", "anchoring needs the audit signing key (DELENTIA_AUDIT_SIGNING_KEY) and none is set",
+                     "`delentia audit-chain keygen`, then register the public key with every witness")
+    kinds = {s.type for s in specs}
+    if not specs:
+        return Check("H07", WARN, "Anchoring (tier A3)", "not scheduled: a host that rewrites its whole log would not be noticed",
+                     f"set {audit_witness.WITNESSES_ENV} (see the runbook), or DELENTIA_AUDIT_ANCHOR_URL and DELENTIA_AUDIT_ANCHOR_KEY_ID for the one HTTP witness")
+    if len(specs) == 1:
+        return Check("H07", WARN, "Anchoring (tier A3)", f"one witness ({specs[0].name}): its operator is one party you have to trust; a git witness on a remote this host cannot rewrite is the cheapest second one",
+                     f"add a second entry to {audit_witness.WITNESSES_ENV}")
+    if len(kinds) == 1:
+        return Check("H07", WARN, "Anchoring (tier A3)", f"{len(specs)} witnesses but all of one kind ({next(iter(kinds))}): one failure mode can take them all",
+                     "mix an http witness with a git witness")
+    return Check("H07", PASS, "Anchoring (tier A3)", f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head")
 
 
 def check_channels(public: bool) -> List[Check]:

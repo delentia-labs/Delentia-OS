@@ -301,9 +301,17 @@ class WebCrawler:
                     from rct_control_plane.url_safety import check_public_url
                     check_public_url(str(request.url))
                 hooks = {"request": [_refuse_private]}
+            extra: Dict[str, Any] = {}
+            if self.block_private:
+                from rct_control_plane.url_safety import pinned_async_transport
+                pinned = pinned_async_transport()
+                if pinned is not None:                 # Round 59: connect to the address that was checked (no DNS rebinding); env proxies are off so none can route around it
+                    extra = {"transport": pinned, "trust_env": False}
+            self.dns_pinned = bool(extra)
             self._client = httpx.AsyncClient(
                 timeout=httpx.Timeout(self.timeout),
                 event_hooks=hooks,
+                **extra,
                 follow_redirects=True,
                 headers={
                     "User-Agent": self.user_agent,
