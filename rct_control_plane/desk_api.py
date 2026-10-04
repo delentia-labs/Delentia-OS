@@ -408,6 +408,20 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     def _cron_owner(request: Request) -> str:
         return getattr(request.state, "delentia_user", None) or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
 
+    @router.get("/webhooks")
+    async def webhooks_view() -> Dict[str, Any]:
+        """The webhook routes (never their secrets): which are open, which are not served and why, and the latest deliveries."""
+        from rct_control_plane import webhook_triggers as wt
+        routes, problems = wt.load_routes()
+        with _connect() as conn:
+            try:
+                recent = [{"route": r[0], "action": r[1], "at": r[2]} for r in conn.execute(
+                    "SELECT entity_id, action, created_at FROM audit_trail WHERE entity_type = 'webhook' ORDER BY id DESC LIMIT 30").fetchall()]
+            except Exception:
+                recent = []
+        return {"routes": [{"name": r.name, "verify": r.verify, "mode": r.mode, "events": r.events, "open": wt.secret_of(r) is not None, "secret_env": r.secret_env,
+                            "deliver": r.deliver, "max_per_minute": r.max_per_minute} for r in routes.values()], "problems": problems, "recent": recent, "path": str(wt.config_path())}
+
     @router.get("/envelope")
     async def envelope_status() -> Dict[str, Any]:
         """Is the agent paused, what are the spending and flood limits, and how much of them has been used (envelope.py)."""

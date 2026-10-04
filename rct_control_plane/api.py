@@ -1902,9 +1902,9 @@ class ControlPlaneAPI:
                 from rct_control_plane.mcp_server import _kernel as shared_kernel
                 from rct_control_plane.mcp_server import mcp as shared_mcp
 
-                async def runner(namespace: str, goal: str, max_iterations: int, max_seconds: float, on_step: Any) -> Dict[str, Any]:
+                async def runner(namespace: str, goal: str, max_iterations: int, max_seconds: float, on_step: Any, initial_taint: Optional[str] = None) -> Dict[str, Any]:
                     loop = GovernedAutonomousLoop(mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
-                                                  max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace)
+                                                  max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace, initial_taint=initial_taint)
                     return await loop.run(goal, on_step=on_step)
                 job_state["service"] = JobService(shared_kernel._persistence, runner)
             return job_state["service"]
@@ -1920,6 +1920,19 @@ class ControlPlaneAPI:
                                              int(payload.get("max_iterations", 5)), float(payload.get("max_seconds", 120.0)))
             except JobError as exc:
                 raise HTTPException(status_code=429 if "allowed" in str(exc) else 400, detail=str(exc)) from exc
+
+        @self.app.post("/v1/webhooks/{route_name}", tags=["Kernel"])
+        async def webhook_endpoint(route_name: str, request: Request):
+            """Round 60 (D6): a signed event starts a governed episode (webhook_triggers.py). Self-authenticated: the route's HMAC is the credential, checked before anything is parsed."""
+            from fastapi.responses import JSONResponse
+
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.webhook_triggers import WebhookService
+            if job_state.get("webhooks") is None:
+                job_state["webhooks"] = WebhookService(shared_kernel._persistence, _job_service())
+            body = await request.body()
+            status, answer = await job_state["webhooks"].handle(route_name, dict(request.headers), body)
+            return JSONResponse(answer, status_code=status)
 
         @self.app.get("/v1/agent/jobs", tags=["Kernel"])
         async def list_agent_jobs(request: Request, namespace: Optional[str] = None, limit: int = 20):

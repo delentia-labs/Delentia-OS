@@ -3727,6 +3727,45 @@ def limits_command(db: Optional[str]) -> None:
     click.echo("resuming needs a signature" if report["resume_needs_signature"] else "resuming needs no signature (no approver key is configured)")
 
 
+@cli.group("webhook")
+def webhook_group():
+    """Signed webhooks that start the agent (routes live in <data home>/webhooks.json; secrets only in environment variables)."""
+
+
+@webhook_group.command("list")
+def webhook_list() -> None:
+    """The routes being served, whether each one's secret is set, and what is wrong with the ones that are not served."""
+    from rct_control_plane import webhook_triggers as wt
+    routes, problems = wt.load_routes()
+    click.echo(f"config: {wt.config_path()}")
+    for r in routes.values():
+        state = "open" if wt.secret_of(r) else f"CLOSED (set {r.secret_env}, at least {wt.MIN_SECRET} characters)"
+        target = f" -> {r.deliver['channel']}:{r.deliver['to']}" if r.deliver else ""
+        click.echo(f"  POST /v1/webhooks/{r.name}  [{r.verify}, {r.mode}, {state}]  events: {', '.join(r.events) or 'any'}{target}")
+    for problem in problems:
+        click.echo(click.style(f"  NOT SERVED: {problem}", fg="yellow"))
+    if not routes and not problems:
+        click.echo("  no routes")
+
+
+@webhook_group.command("sign")
+@click.argument("route")
+@click.option("--body", default="{}", help="the exact request body to sign")
+def webhook_sign(route: str, body: str) -> None:
+    """Print the headers a sender must add for this body (to try a route with curl). Uses the route's secret from the environment."""
+    import time as _time
+    from rct_control_plane import webhook_triggers as wt
+    routes, _ = wt.load_routes()
+    chosen = routes.get(route)
+    secret = wt.secret_of(chosen) if chosen else None
+    if chosen is None or secret is None or chosen.verify != "generic-v2":
+        click.echo(click.style("Error: no such generic-v2 route with a usable secret", fg="red"), err=True)
+        sys.exit(1)
+    stamp = int(_time.time())
+    click.echo(f"X-Webhook-Timestamp: {stamp}")
+    click.echo(f"X-Webhook-Signature-V2: {wt.sign_generic_v2(secret, body.encode('utf-8'), stamp)}")
+
+
 @cli.group("pairing")
 def pairing_group():
     """DM pairing: people the agent does not know yet ask for a code; you let them in by SIGNING it (delentia approvals approve <code>)."""

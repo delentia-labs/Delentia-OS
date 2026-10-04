@@ -117,7 +117,9 @@ class JobService:
         with self._p._connect() as conn:
             conn.execute(f"UPDATE agent_jobs SET {names} WHERE id = ?", (*fields.values(), job_id))   # nosec B608 - column names come from this module's own keyword names
 
-    def submit(self, namespace: str, goal: str, max_iterations: int = 5, max_seconds: float = 120.0) -> Dict[str, Any]:
+    def submit(self, namespace: str, goal: str, max_iterations: int = 5, max_seconds: float = 120.0, initial_taint: Optional[str] = None,
+               on_done: Optional[Callable[[Dict[str, Any]], Any]] = None) -> Dict[str, Any]:
+        """`initial_taint` starts the episode already tainted (a webhook payload is text from outside); `on_done(job)` is awaited when the job ends."""
         goal = str(goal or "").strip()
         if not goal:
             raise JobError("a goal is required")
@@ -132,10 +134,12 @@ class JobService:
         with self._p._connect() as conn:
             conn.execute("INSERT INTO agent_jobs (id, namespace, goal, status, created_at) VALUES (?, ?, ?, 'queued', ?)", (job_id, namespace, goal, time.time()))
         self._audit("submitted", job_id, namespace, {"goal_chars": len(goal)})
-        self._tasks[job_id] = asyncio.get_running_loop().create_task(self._run(job_id, namespace, goal, max(1, min(int(max_iterations), 25)), max(5.0, min(float(max_seconds), 1800.0))))
+        self._tasks[job_id] = asyncio.get_running_loop().create_task(self._run(job_id, namespace, goal, max(1, min(int(max_iterations), 25)), max(5.0, min(float(max_seconds), 1800.0)),
+                                                                               initial_taint, on_done))
         return self.get(job_id) or {"id": job_id}
 
-    async def _run(self, job_id: str, namespace: str, goal: str, max_iterations: int, max_seconds: float) -> None:
+    async def _run(self, job_id: str, namespace: str, goal: str, max_iterations: int, max_seconds: float, initial_taint: Optional[str] = None,
+                   on_done: Optional[Callable[[Dict[str, Any]], Any]] = None) -> None:
         self._update(job_id, status="running", started_at=time.time())
         steps = {"n": 0}
 
@@ -143,7 +147,10 @@ class JobService:
             steps["n"] += 1
             self._update(job_id, steps=steps["n"], last_tool=str(getattr(step, "tool_name", None) or "")[:80] or None)
         try:
-            result = await self._runner(namespace, goal, max_iterations, max_seconds, on_step)
+            if initial_taint is None:
+                result = await self._runner(namespace, goal, max_iterations, max_seconds, on_step)
+            else:
+                result = await self._runner(namespace, goal, max_iterations, max_seconds, on_step, initial_taint=initial_taint)
             stopped = str(result.get("stopped_reason") or "unknown")
             answer = result.get("final_answer")
             self._update(job_id, status="done", finished_at=time.time(), stopped=stopped, answer=(str(answer)[:MAX_RESULT_CHARS] if answer else None),
@@ -161,6 +168,15 @@ class JobService:
             logging.getLogger("delentia.jobs").exception("job %s failed", job_id)
         finally:
             self._tasks.pop(job_id, None)
+            if on_done is not None:
+                finished = self.get(job_id)
+                if finished is not None and finished["status"] in ("done", "failed"):
+                    try:
+                        outcome = on_done(finished)
+                        if asyncio.iscoroutine(outcome):
+                            await outcome
+                    except Exception:                                  # noqa: BLE001 - a delivery problem never changes the job
+                        pass
 
     def cancel(self, job_id: str, namespace: str) -> Dict[str, Any]:
         job = self.get(job_id, namespace)
