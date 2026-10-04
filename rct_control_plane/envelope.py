@@ -26,7 +26,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 PAUSED_ENV = "DELENTIA_PAUSED"
 DAILY_USD_ENV = "DELENTIA_DAILY_BUDGET_USD"
@@ -102,7 +102,7 @@ def pause(reason: str = "", by: str = "owner", persistence: Any = None) -> Dict[
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(state), encoding="utf-8")
     os.replace(tmp, path)
-    _audit(persistence, "paused", state["by"], {"reason": state["reason"]})
+    _audit(persistence, "paused", str(state["by"]), {"reason": state["reason"]})
     return state
 
 
@@ -181,6 +181,7 @@ def ensure_ledger(persistence: Any) -> None:
 def usage(persistence: Any, namespace: Optional[str] = None, window_s: float = DAY_S, now: Optional[float] = None) -> Dict[str, Any]:
     ensure_ledger(persistence)
     since = (time.time() if now is None else now) - window_s
+    args: List[Any]
     sql, args = "SELECT COALESCE(SUM(cost_usd), 0), COALESCE(SUM(tokens), 0), COUNT(*), SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) FROM spend_ledger WHERE at >= ?", [since]
     if namespace is not None:
         sql += " AND namespace = ?"

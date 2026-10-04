@@ -116,10 +116,10 @@ class TestMessages:
         assert "SECRET" not in text and "payroll" not in text                       # neither the goal nor the arguments leave
 
     def test_a_pairing_request_says_which_channel_and_the_code_only(self, persistence):
-        PendingActionStore(persistence).create("pairing", "Allow telegram sender 77 to use this agent", "pairing_grant", {"channel": "telegram", "sender_id": "77"})
+        PendingActionStore(persistence).create("pairing", "Allow telegram sender SENDER-ID-XYZ to use this agent", "pairing_grant", {"channel": "telegram", "sender_id": "SENDER-ID-XYZ"})
         flush()
         text = FakeTelegram.messages[0]["text"]
-        assert "telegram" in text and "pairing code" in text and "77" not in text
+        assert "telegram" in text and "pairing code" in text and "SENDER-ID-XYZ" not in text       # (a hex approval code could contain digits like 77, so the marker is not numeric)
 
     def test_multi_signature_needs_are_stated(self, persistence):
         PendingActionStore(persistence).create("alice", "g", "delentia_run_sandboxed_command", {"command": "x"}, required_signatures=2)

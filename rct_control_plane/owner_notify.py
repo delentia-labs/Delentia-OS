@@ -95,7 +95,7 @@ async def _deliver(target: Dict[str, str], text: str) -> None:
     """One message to one target: through the running gateway when the API process registered one, else through a one-shot client built from the environment."""
     from rct_control_plane import cron_jobs
     channel, to = target["channel"], target["to"]
-    gateway = cron_jobs._GATEWAY_RESOLVER(channel) if cron_jobs._GATEWAY_RESOLVER else None
+    gateway: Any = cron_jobs._GATEWAY_RESOLVER(channel) if cron_jobs._GATEWAY_RESOLVER else None
     if gateway is None:
         if channel == "telegram":
             from rct_control_plane.gateways.telegram_gateway import TelegramGateway

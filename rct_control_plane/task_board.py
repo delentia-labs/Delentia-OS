@@ -263,6 +263,8 @@ class TaskBoard:
     async def run_to_completion(self, task_id: str, max_rounds: int = 50) -> Dict[str, Any]:
         """For tests and the CLI: advance until the task is done, failed, cancelled, or waiting for something only a person (or the pause lifting) can supply."""
         task = self.get(task_id)
+        if task is None:
+            raise TaskError("no such task")
         for _ in range(max_rounds):
             before = json.dumps(task["steps"], sort_keys=True), task["status"]
             task = await self.advance(task_id)

@@ -1195,10 +1195,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         paused_state = envelope.paused()
         if paused_state is not None:                      # Round 60: a pause also stops an episode that is already running, before its next tool
             return {"stopped_reason": "paused", "tool_result": {"paused": True, "reason": f"paused by {paused_state['by']}: {paused_state['reason']}".strip()}}
-        counts = getattr(self, "_episode_call_counts", None)
-        if counts is None:
-            counts = self._episode_call_counts = {}
-        key = _sha({"tool": tool_name, "args": tool_args})
+        counts: Dict[str, int] = getattr(self, "_episode_call_counts", None) or {}
+        self._episode_call_counts = counts
+        key = str(_sha({"tool": tool_name, "args": tool_args}))
         counts[key] = counts.get(key, 0) + 1
         if counts[key] >= envelope.limits()["repeat_limit"]:      # the model has been told (the nudge) and asked again: stop, instead of spending the budget on a loop
             try:
