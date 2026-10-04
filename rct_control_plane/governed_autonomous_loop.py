@@ -565,8 +565,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
         self._episode_guard = {}
-        self._episode_taint = None
-        self._episode_seen_urls = set()
+        self._episode_taint: Optional[str] = None
+        self._episode_seen_urls: set = set()
         self._episode_evidence = []
         self._warm_info = {}
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))

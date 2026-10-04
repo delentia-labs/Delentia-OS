@@ -399,8 +399,9 @@ def test_a_garbage_file_is_refused_with_an_exit_code(tmp_path):
 
 # ------------------------------------------------------------------ the CLI, the daemon task and the Desk
 
-def test_the_cli_anchors_checks_reports_and_exports(world, tmp_path):
+def test_the_cli_anchors_checks_reports_and_exports(world, tmp_path, monkeypatch):
     persistence, worker, bare, _, public = world
+    monkeypatch.setenv("RCT_AGENTIC_DB_PATH", str(tmp_path / "cli-agentic.db"))      # the CLI's own store: not the one earlier tests in a full run have already written to
     from rct_control_plane.data_home import agentic_db_path
     cli_persistence = ControlPlanePersistence(db_path=agentic_db_path())
     add_rows(cli_persistence, 5)

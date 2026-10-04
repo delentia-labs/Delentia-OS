@@ -307,7 +307,7 @@ def status(conn: sqlite3.Connection, specs: Optional[List[WitnessSpec]] = None, 
     head = audit_chain.chain_head(conn)
     interval = float(os.environ.get(INTERVAL_ENV) or 3600)
     limit = stale_after_s if stale_after_s is not None else interval * 2 + 60
-    witnesses = []
+    witnesses: List[Dict[str, Any]] = []
     for spec in specs:
         ok = conn.execute("SELECT entries, at FROM audit_anchor_log WHERE witness = ? AND ok = 1 ORDER BY id DESC LIMIT 1", (spec.name,)).fetchone()
         last = conn.execute("SELECT ok, detail, at FROM audit_anchor_log WHERE witness = ? ORDER BY id DESC LIMIT 1", (spec.name,)).fetchone()

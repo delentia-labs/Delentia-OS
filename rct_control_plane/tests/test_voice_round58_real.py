@@ -94,8 +94,11 @@ class TestSpeakAndHear:
 class TestHearingIsBounded:
     def test_a_model_that_is_not_on_the_disk_is_never_downloaded(self, monkeypatch, tmp_path):
         monkeypatch.setenv(voice.STT_MODEL_ENV, "large-v3-not-here")
-        import whisper
-        monkeypatch.setattr(whisper, "load_model", lambda *a, **k: pytest.fail("a model must not be loaded or downloaded"))
+        try:
+            import whisper
+            monkeypatch.setattr(whisper, "load_model", lambda *a, **k: pytest.fail("a model must not be loaded or downloaded"))
+        except ImportError:                      # CI has no Whisper: the status check alone must refuse (nothing to download with)
+            pass
         (tmp_path / "repo" / "a.wav").write_bytes(b"x")
         r = run(voice.transcribe_audio("a.wav"))
         assert "not available" in r["error"] and "not downloaded automatically" in r["error"]
