@@ -406,7 +406,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         jury_config: Optional[Dict[str, Any]] = None,
     ):
         from rct_control_plane import external_mcp
-        mcp_server = external_mcp.maybe_wrap(mcp_server)     # Round 55: configured external MCP servers join the menu, behind the same gate
+        mcp_server = external_mcp.maybe_wrap(mcp_server, namespace)     # Round 55: configured external MCP servers join the menu, behind the same gate
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
         self._kernel = kernel

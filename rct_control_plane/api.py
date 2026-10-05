@@ -380,6 +380,12 @@ async def _lifespan(app: FastAPI):
         if _DAEMON_SCHEDULER is not None:
             await _DAEMON_SCHEDULER.stop()
         _DAEMON_STARTED_AT = None
+        try:                                                  # Round 61: close the pooled sessions with external MCP servers (their processes end with the server)
+            import asyncio as _asyncio
+            from rct_control_plane import external_mcp
+            await _asyncio.to_thread(external_mcp.shutdown_pool)
+        except Exception:                                     # noqa: BLE001
+            pass
 
 
 class ControlPlaneAPI:
