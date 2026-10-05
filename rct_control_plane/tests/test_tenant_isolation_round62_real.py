@@ -182,3 +182,27 @@ class TestHostCheck:
         from rct_control_plane import host_check
         monkeypatch.setenv("DELENTIA_API_TOKENS_FILE", str(tmp_path / "none.json"))
         assert host_check.check_tenants(False)[0].status == "INFO"
+
+
+class TestPersonToPerson:
+    """What a person CAN reach, they reach only for themselves: two people with tokens cannot see or change each other's tasks, jobs, approvals or memory."""
+
+    def test_tasks_belong_to_their_owner(self, world):
+        bob = api_tokens.create("bob", world["path"])
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        made = client.post("/v1/agent/tasks", json={"goal": "alice private task", "steps": ["read it"], "review": True, "namespace": "bob"}, headers=bearer(world["alice"]))
+        assert made.status_code == 201 and made.json()["namespace"] == "alice"                 # the body's namespace is ignored
+        task_id = made.json()["id"]
+        assert client.get(f"/v1/agent/tasks/{task_id}", headers=bearer(bob)).status_code == 404
+        assert client.put(f"/v1/agent/tasks/{task_id}/plan", json={"steps": ["pwned"]}, headers=bearer(bob)).status_code == 404
+        assert client.post(f"/v1/agent/tasks/{task_id}/start", headers=bearer(bob)).status_code == 404
+        assert client.delete(f"/v1/agent/tasks/{task_id}", headers=bearer(bob)).status_code == 404
+        assert "alice private task" not in str(client.get("/v1/agent/tasks", headers=bearer(bob)).json())
+        assert client.get(f"/v1/agent/tasks/{task_id}", headers=bearer(world["alice"])).status_code == 200
+
+    def test_memory_and_history_are_the_callers_even_when_the_body_names_somebody_else(self, world):
+        bob = api_tokens.create("bob", world["path"])
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.post("/v1/desk/memories", json={"content": "alice keeps her notes in the blue folder", "namespace": "bob"}, headers=bearer(world["alice"]))
+        assert "blue folder" not in str(client.get("/v1/desk/memories", params={"namespace": "alice"}, headers=bearer(bob)).json())
+        assert "blue folder" in str(client.get("/v1/desk/memories", headers=bearer(world["alice"])).json())
