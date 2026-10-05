@@ -193,6 +193,7 @@ RISKY_TOOLS = frozenset({
     "delentia_run_forged_tool",         # runs code the system wrote for itself (a human signed its hash)
     "delentia_web_search",              # outbound query to a search provider the owner configured (Round 55)
     "delentia_browse_page",             # runs a stranger's page scripts in a browser (Round 58)
+    "delentia_browser_act",             # clicks and types on somebody else's site (Round 62)
     "delentia_describe_image",          # sends a file's bytes to a model, possibly another country's (Round 58)
 })
 
@@ -250,7 +251,7 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
-                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page",
+                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page", "delentia_browser_act",
                                     "delentia_describe_image", "delentia_transcribe_audio"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
@@ -290,6 +291,8 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_patch_repo_file",
     # Round 57: a recurring job is an unattended future action; the agent may propose one, a human signs it.
     "delentia_cron_create",
+    # Round 62: clicking and typing act on a third party's site (a form can be a purchase): a person signs the exact address and step list every time.
+    "delentia_browser_act",
 })
 
 
@@ -300,7 +303,7 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
 # hijacked can then ask for anything it likes and nothing happens without a person. Reading and answering stay free. DELENTIA_TAINT_GATE=off turns it off
 # (used only to measure the difference; the audit trail records the mode).
 TAINT_ENV = "DELENTIA_TAINT_GATE"
-TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_read_exchange_file",
+TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_browser_act", "delentia_read_exchange_file",
                                 "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
                                 "delentia_transcribe_audio"})
 TAINT_GATED_TOOLS = frozenset({
@@ -333,7 +336,7 @@ OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intent
 # neither returns nor acts on another person's requests, memories or reminders. A new tool must be put in one of the three (tests/test_person_scope_round61_real.py), so "does this show one
 # person what another person did?" is asked once for every tool, not discovered later (the first audit found three tools that did and two that ran as the owner).
 PERSON_NEUTRAL_TOOLS = frozenset({
-    "delentia_assemble_nodes", "delentia_browse_page", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
+    "delentia_assemble_nodes", "delentia_browse_page", "delentia_browser_act", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
     "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
     "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
     "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
@@ -342,7 +345,7 @@ PERSON_NEUTRAL_TOOLS = frozenset({
     "delentia_verify_intent_conservation", "delentia_web_search", "delentia_write_repo_file",
 })
 DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
-TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
+TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page", "delentia_browser_act"})      # may fetch only an address the person or a page the agent already saw named
 
 
 # Round 55: tools from external MCP servers (mcp__<server>__<tool>, external_mcp.py) are not in the fixed sets above, so the

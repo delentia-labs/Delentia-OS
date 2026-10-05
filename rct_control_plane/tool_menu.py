@@ -45,6 +45,7 @@ HINTS: Dict[str, str] = {
     "delentia_speak": "speak say read aloud text to speech voice tts audio narrate | พูด อ่านออกเสียง เสียงพูด",
     "delentia_describe_image": "image picture photo screenshot look see vision describe ocr read text in image diagram | รูปภาพ ภาพ รูป ดูรูป อ่านข้อความในรูป สกรีนช็อต",
     "delentia_browse_page": "browser open page render javascript screenshot website dynamic single-page app snapshot | เบราว์เซอร์ เปิดหน้าเว็บ ภาพหน้าจอ",
+    "delentia_browser_act": "browser click type fill form button press enter log interact page website steps | คลิก พิมพ์ กรอกฟอร์ม กดปุ่ม เบราว์เซอร์ ทำบนเว็บ",
     "delentia_crawl_url": "fetch open page website url link http https webpage download read site | เว็บ ลิงก์ หน้าเว็บ เปิดเว็บ ไปที่",
     "delentia_web_search": "search internet web google look up lookup who maintains maintainer author released release version latest current online news find online | ค้นเว็บ ค้นหาเว็บ อินเทอร์เน็ต ล่าสุด ออนไลน์",
     "delentia_schedule_reminder": "remind reminder alert notify later tomorrow tonight friday monday schedule ping | เตือน แจ้งเตือน พรุ่งนี้ ตั้งเตือน",
