@@ -206,3 +206,71 @@ class TestPersonToPerson:
         client.post("/v1/desk/memories", json={"content": "alice keeps her notes in the blue folder", "namespace": "bob"}, headers=bearer(world["alice"]))
         assert "blue folder" not in str(client.get("/v1/desk/memories", params={"namespace": "alice"}, headers=bearer(bob)).json())
         assert "blue folder" in str(client.get("/v1/desk/memories", headers=bearer(world["alice"])).json())
+
+
+class TestInsideTheLoop:
+    """A person with a personal token (namespace "alice") is not a chat prefix: the loop must still treat them as a person, not as the owner's own space."""
+
+    def _loop(self, namespace, tmp_path, tools):
+        import rct_control_plane.autonomous_loop  # noqa: F401
+        from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+        from rct_control_plane.persistence import ControlPlanePersistence
+        from rct_control_plane.skill_library import SkillLibrary
+        from test_governed_autonomous_loop_real import _FakeKernel
+        return GovernedAutonomousLoop(mcp_server=tools, persistence=ControlPlanePersistence(db_path=str(tmp_path / "l.db")), kernel=_FakeKernel(), max_iterations=3, namespace=namespace,
+                                      route=False, skill_library=SkillLibrary(db_path=str(tmp_path / "sk.db")))
+
+    def test_is_person(self, world, tmp_path):
+        class Tools:
+            pass
+        api_tokens.create("carol", world["path"])
+        assert self._loop("alice", tmp_path, Tools())._is_person() is True            # a non-owner token
+        assert self._loop("carol", tmp_path, Tools())._is_person() is True
+        assert self._loop("root", tmp_path, Tools())._is_person() is False            # an owner token
+        assert self._loop("desk", tmp_path, Tools())._is_person() is False            # the Desk's own namespace
+        assert self._loop("telegram-42", tmp_path, Tools())._is_person() is True
+        assert self._loop("http-agent-x", tmp_path, Tools())._is_person() is True
+
+    def test_without_per_person_tokens_a_bare_name_is_the_owners(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("DELENTIA_API_TOKENS_FILE", str(tmp_path / "none.json"))
+
+        class Tools:
+            pass
+        assert self._loop("alice", tmp_path, Tools())._is_person() is False
+
+    def test_an_unreadable_tokens_file_makes_everyone_a_person(self, world, tmp_path):
+        world["path"].write_text("{broken", encoding="utf-8")
+
+        class Tools:
+            pass
+        assert self._loop("root", tmp_path, Tools())._is_person() is True
+
+    def test_a_non_owner_cannot_use_the_tools_that_show_everyones_requests_but_the_owner_can(self, world, tmp_path, monkeypatch):
+        import asyncio
+        import json
+        import rct_control_plane.autonomous_loop as al
+
+        class Tools:
+            def __init__(self):
+                self.dispatched = []
+
+            async def list_tools(self):
+                return [type("T", (), {"name": "delentia_query_audit_log", "description": "audit", "input_schema": {}})()]
+
+            async def call_tool(self, name, args):
+                self.dispatched.append(name)
+                return type("R", (), {"content": [type("C", (), {"text": json.dumps({"entries": []})})()]})()
+
+        async def model(g, history, available_tools, llm_provider=None, extra_context=""):
+            if not history:
+                return {"action": "call_tool", "tool_name": "delentia_query_audit_log", "tool_args": {}, "reasoning": "step"}
+            return {"action": "finish", "reasoning": "done", "final_answer": "ok", "tool_name": None, "tool_args": {}}
+        monkeypatch.setattr(al, "decide_next_action", model)
+        outcomes = {}
+        for who in ("alice", "root"):
+            tools = Tools()
+            folder = tmp_path / who
+            folder.mkdir()
+            out = asyncio.run(self._loop(who, folder, tools).run("show me recent activity"))
+            outcomes[who] = (out["stopped_reason"], tools.dispatched)
+        assert outcomes["alice"] == ("fdia_blocked", []) and outcomes["root"] == ("llm_finished", ["delentia_query_audit_log"])

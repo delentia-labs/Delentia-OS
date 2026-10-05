@@ -922,13 +922,27 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return scoped
         return tool_args
 
+    def _is_person(self) -> bool:
+        """Is this episode running for a PERSON (a chat sender, an HTTP-API caller, or a non-owner holding a personal token) rather than for the owner's own space? Everything that must differ
+        between the two - the owner's shared memory, the owner-only tools, `@file` from the repository, memory suggestions, conversation context - asks this one question (Round 62: a
+        non-owner's token name, e.g. "alice", is not a channel prefix, so before this a person with a personal token ran with the owner's privileges inside the loop)."""
+        if self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+            return True
+        try:
+            from rct_control_plane import api_tokens
+            if not api_tokens.per_user_mode() or self.namespace == api_tokens.SHARED_IDENTITY:
+                return False
+            return any(e["name"] == self.namespace for e in api_tokens.load_entries()) and not api_tokens.is_owner(self.namespace)
+        except Exception:                                                  # noqa: BLE001 - an unreadable tokens file means nobody is an owner: treat the namespace as a person's
+            return True
+
     def _reads_shared_memory(self) -> bool:
         setting = (os.environ.get("DELENTIA_SHARED_MEMORY") or "").strip().lower()
         if setting in ("1", "true", "yes"):
             return True
         if setting in ("0", "false", "no"):
             return False
-        return not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES)
+        return not self._is_person()
 
     async def _recall_for_goal(self, goal: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Round 48 R1.3: memories relevant to the goal are recalled
@@ -991,7 +1005,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         raw = (os.environ.get(self.CONVERSATION_TURNS_ENV) or "").strip()
         if raw.isdigit():
             return int(raw)
-        return self.CONVERSATION_DEFAULT_TURNS if self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) else 0
+        return self.CONVERSATION_DEFAULT_TURNS if self._is_person() else 0
 
     def _conversation_context(self) -> str:
         """Round 60: the recent turns of THIS person's conversation, framed as data. Rules: only this namespace; only the last few hours; each turn is clipped; a turn that
@@ -1232,7 +1246,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             except Exception:
                 pass
             return {"stopped_reason": "stuck_repeating", "tool_result": {"stuck": True, "tool_name": tool_name, "times": counts[key]}}
-        if tool_name in OWNER_ONLY_TOOLS and self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
+        if tool_name in OWNER_ONLY_TOOLS and self._is_person() and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
             try:
                 self._persistence.append_audit(entity_type="governed_loop_scope", entity_id=f"{self.namespace}-{tool_name}", action="owner_only_refused", actor=self.namespace,
                                                changes={"tool_name": tool_name})
@@ -2105,7 +2119,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return empty
         try:
             from rct_control_plane import file_refs
-            found = file_refs.expand(goal, local=not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES))
+            found = file_refs.expand(goal, local=not self._is_person())
         except Exception:                                                # noqa: BLE001 - a broken attachment must never break the episode
             return empty
         if found["taint"]:
@@ -2117,7 +2131,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         from an outside payload, nothing for a namespace that is not a person's (cron, subagents), and never an error."""
         try:
             from rct_control_plane import memory_nudge
-            if not memory_nudge.enabled() or not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+            if not memory_nudge.enabled() or not self._is_person():
                 return []
             return memory_nudge.MemoryCandidates(self._persistence).propose_from_goal(self.namespace, str(result.get("goal") or ""), tainted=bool((result.get("taint") or {}).get("tainted")))
         except Exception:                                                # noqa: BLE001
