@@ -487,6 +487,10 @@ async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000) 
         resolved = _resolve_within_repo(relative_path)
     except PathTraversalError as e:
         return {"error": str(e)}
+    from rct_control_plane import secret_paths
+    refused = secret_paths.blocked_reason(relative_path) or secret_paths.blocked_reason(resolved.relative_to(REPO_ROOT).as_posix())
+    if refused:                       # Round 61: reads had no block list (only writes did): the agent could return the real .env
+        return {"error": f"refused: {refused}", "refused_by": "secret_paths"}
     if not resolved.is_file():
         return {"error": f"not found: {relative_path}"}
     raw = resolved.read_bytes()[:max_bytes]
@@ -512,6 +516,9 @@ async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_re
             break
         if not path.is_file() or any(part in _SKIP_DIR_NAMES for part in path.parts):
             continue
+        from rct_control_plane import secret_paths
+        if secret_paths.blocked_reason(path.relative_to(REPO_ROOT).as_posix()):
+            continue                  # Round 61: a search must not return lines of a credential file either
         try:
             for i, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
                 if regex.search(line):

@@ -624,8 +624,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         conversation_text = self._conversation_context()
         self._episode_used_conversation = bool(conversation_text)
         self._episode_conversation_text = conversation_text
+        attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
-        warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text) else None
+        warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self.max_iterations != self._applied_max_iterations:
@@ -647,6 +648,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             resume_note,
             context_files["text"],
             conversation_text,
+            attachments["text"],
             self._format_route(self._episode_route),
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             self._format_memories(memories) if self._memory_in_prompt else "",
@@ -682,6 +684,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
                 "context_files": {"used": context_files["used"], "refused": context_files["refused"]} if (context_files["used"] or context_files["refused"]) else None,
+                "attachments": [{k: e[k] for k in ("ref", "status", "chars", "sha256")} for e in attachments["refs"]] or None,
                 "route": self._episode_route,
                 "guard": self._episode_guard,
                 # F of the goal itself (A = 1: no action yet). Recorded, not
@@ -2057,6 +2060,23 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._compress_tool_outputs and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
         return tool_result
+
+    FILE_REFS_ENV = "DELENTIA_FILE_REFS"
+
+    def _attachments(self, goal: str) -> Dict[str, Any]:
+        """Round 61 (file_refs.py): the files the person attached with @-references, as data for the prompt. A goal that came from outside (a webhook payload, an episode that started tainted)
+        gets no attachments: outside text must not be able to pull files into the model. A file from the exchange folder is outside text and taints the episode."""
+        empty: Dict[str, Any] = {"text": "", "refs": [], "taint": None}
+        if (os.environ.get(self.FILE_REFS_ENV) or "on").strip().lower() in ("off", "0", "false", "no") or self._initial_taint:
+            return empty
+        try:
+            from rct_control_plane import file_refs
+            found = file_refs.expand(goal, local=not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES))
+        except Exception:                                                # noqa: BLE001 - a broken attachment must never break the episode
+            return empty
+        if found["taint"]:
+            self._start_tainted(found["taint"])
+        return found
 
     def _memory_nudges(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Round 61 (memory_nudge.py): things the PERSON said about themselves in this message, offered back for them to keep. Nothing for an episode that read outside text or started
