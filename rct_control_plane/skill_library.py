@@ -495,6 +495,25 @@ class SkillLibrary:
                 if record.failures >= ARCHIVE_AFTER_FAILURES and record.reliability < ARCHIVE_RELIABILITY_FLOOR:
                     conn.execute("UPDATE skills SET archived = 1 WHERE id = ?", (skill_id,))
 
+    def archive(self, skill_id: str) -> bool:
+        """Stop offering a skill (Round 61, used by the curator). The row, its solution and its counts stay; nothing is deleted. Starter and imported skills are refused:
+        a person put them there."""
+        record = self.get_skill(skill_id)
+        if record is None or record.archived or record.bundled or record.imported:
+            return False
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("UPDATE skills SET archived = 1 WHERE id = ?", (skill_id,))
+        return True
+
+    def unarchive(self, skill_id: str) -> bool:
+        """Offer an archived skill again (its failure count is kept, so a skill that was archived for failing is archived again after one more failure)."""
+        record = self.get_skill(skill_id)
+        if record is None or not record.archived:
+            return False
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("UPDATE skills SET archived = 0 WHERE id = ?", (skill_id,))
+        return True
+
     # ------------------------------------------------------------------
     # Read path — token-overlap similarity retrieval
     # ------------------------------------------------------------------

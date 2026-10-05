@@ -1514,6 +1514,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         _envelope.record(self._persistence, self.namespace, str(getattr(self, "_episode_id", "") or ""),
                          (_cost.get("cost_usd") if self._meter is not None else 0.0), int(_cost.get("prompt_tokens") or 0) + int(_cost.get("completion_tokens") or 0), stopped_reason)
         result["taint"] = {"tainted": getattr(self, "_episode_taint", None) is not None, "source_tool": getattr(self, "_episode_taint", None)}
+        result["memory_nudge"] = self._memory_nudges(result)
         result["route"] = self._episode_route
         result["guard"] = self._episode_guard
         await self._notarise_best_effort(
@@ -2057,8 +2058,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
         return tool_result
 
+    def _memory_nudges(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Round 61 (memory_nudge.py): things the PERSON said about themselves in this message, offered back for them to keep. Nothing for an episode that read outside text or started
+        from an outside payload, nothing for a namespace that is not a person's (cron, subagents), and never an error."""
+        try:
+            from rct_control_plane import memory_nudge
+            if not memory_nudge.enabled() or not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+                return []
+            return memory_nudge.MemoryCandidates(self._persistence).propose_from_goal(self.namespace, str(result.get("goal") or ""), tainted=bool((result.get("taint") or {}).get("tainted")))
+        except Exception:                                                # noqa: BLE001
+            return []
+
     # ------------------------------------------------------------------
     # Round 61 hooks (hooks.py): a person's signed code that can only tighten
+    # ------------------------------------------------------------------
     # ------------------------------------------------------------------
     def _hook_registry(self) -> Any:
         registry = getattr(self, "_hooks_registry", None)

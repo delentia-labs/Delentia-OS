@@ -32,7 +32,8 @@ def reply_text_for(result: Dict[str, Any]) -> str:
     """What to tell the person. The loop's answer when there is one; for a request that stopped, the reason in words."""
     answer = result.get("final_answer")
     if answer:
-        return str(answer)
+        from rct_control_plane import memory_nudge
+        return str(answer) + memory_nudge.nudge_text(result.get("memory_nudge") or [])
     reason = result.get("stopped_reason") or "no_response"
     if reason == "pending_approval":
         approval = result.get("approval_id")

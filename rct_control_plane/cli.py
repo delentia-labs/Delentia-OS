@@ -2165,6 +2165,45 @@ def memory_list(namespace: str, db: Optional[str]) -> None:
         click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
 
 
+@memory_group.command("candidates")
+@click.option("--namespace", default=None, help="only this person's suggestions")
+@click.option("--status", default="pending", show_default=True, type=click.Choice(["pending", "accepted", "dismissed", "expired"]))
+@click.option("--db", default=None)
+def memory_candidates(namespace: Optional[str], status: str, db: Optional[str]) -> None:
+    """Things the runtime offered to remember (from a person's own words); nothing is kept until it is accepted."""
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    for c in MemoryCandidates(_audit_db(db)).list(namespace, status):
+        click.echo(f"{c['id']}  {c['namespace']:<22} [{c['kind']}]  {c['text']}")
+
+
+def _candidate_action(action: str, candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    try:
+        done = getattr(MemoryCandidates(_audit_db(db)), action)(candidate_id, namespace)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(("remembered: " + done["text"]) if action == "accept" else f"{candidate_id}: dismissed")
+
+
+@memory_group.command("accept")
+@click.argument("candidate_id")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def memory_accept(candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """Keep a suggestion as a memory."""
+    _candidate_action("accept", candidate_id, namespace, db)
+
+
+@memory_group.command("dismiss")
+@click.argument("candidate_id")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def memory_dismiss(candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """Throw a suggestion away."""
+    _candidate_action("dismiss", candidate_id, namespace, db)
+
+
 @cli.command("algorithms")
 def algorithms_command() -> None:
     """The 41 algorithms as pipeline stages, and what each one needs."""
@@ -2621,6 +2660,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
+    os.environ.setdefault("DELENTIA_MEMORY_NUDGE", "1")        # Round 61: offer to remember what a person says about themselves (they answer yes or no)
     os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
@@ -4225,6 +4265,40 @@ def skills_list(limit: int) -> None:
     for skill in SkillLibrary().list_active(limit):
         kind = "bundled" if skill.bundled else "learned"
         click.echo(f"  [{kind:7}] reliability {skill.reliability:.2f}  uses {skill.uses:3}  {skill.problem_statement[:80]}")
+
+
+@skills_group.command("curate")
+@click.option("--apply", "apply_changes", is_flag=True, help="archive the skills with evidence against them (weak, refusal, duplicate); without it nothing changes")
+@click.option("--include-stale", is_flag=True, help="with --apply, also archive skills that were never reused in 90 days")
+@click.option("--skills-db", default=None, help="the skill library file (default: the data home's)")
+@click.option("--db", default=None, help="the persistence DB for the audit rows")
+def skills_curate(apply_changes: bool, include_stale: bool, skills_db: Optional[str], db: Optional[str]) -> None:
+    """Review the learned skills: which are weak, refusals in disguise, duplicates or stale. Archives, never deletes; starter and imported skills are never touched."""
+    from rct_control_plane import skill_curator
+    from rct_control_plane.skill_library import SkillLibrary
+    library = SkillLibrary(db_path=skills_db)
+    if not apply_changes:
+        report = skill_curator.review(library)
+        click.echo(f"{report['skills_reviewed']} learned skill(s) reviewed ({report['protected']} starter/imported left alone); {len(report['proposals'])} proposal(s): {report['counts'] or 'none'}")
+        for p in report["proposals"]:
+            click.echo(f"  [{p['kind']:9}] {p['id']}  {p['problem'][:60]}  - {p['reason']}")
+        if report["proposals"]:
+            click.echo("archive them with: delentia skills curate --apply")
+        return
+    kinds = skill_curator.EVIDENCE_KINDS + (("stale",) if include_stale else ())
+    outcome = skill_curator.apply(library, _audit_db(db), kinds)
+    click.echo(f"archived {len(outcome['archived'])} skill(s); {len(outcome['left_as_proposals'])} left as proposals")
+    for p in outcome["archived"]:
+        click.echo(f"  archived [{p['kind']}] {p['id']}  {p['problem'][:60]}")
+
+
+@skills_group.command("unarchive")
+@click.argument("skill_id")
+@click.option("--skills-db", default=None)
+def skills_unarchive(skill_id: str, skills_db: Optional[str]) -> None:
+    """Offer an archived skill again."""
+    from rct_control_plane.skill_library import SkillLibrary
+    click.echo("offered again" if SkillLibrary(db_path=skills_db).unarchive(skill_id) else "no archived skill with that id")
 
 
 @cli.group("mcp")
