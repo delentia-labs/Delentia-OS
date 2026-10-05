@@ -379,7 +379,12 @@ _DECLINE_PATTERNS = re.compile(
     r"(do|help|complete|perform|access|read|write|create|find|fulfil|fulfill|carry out)\b|"
     r"\bnone of the (provided |available )?tools\b|\bnone of them (are|is|can)\b|"
     r"\bno (suitable|available|relevant) tools?\b|\b(is|are) outside (what|the scope)\b|\bnot possible (to|with)\b|"
-    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ",
+    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ|"
+    # Round 62 (found on a real model's answers: most refusals used none of the phrases above): "cannot be determined with the available tools", "not accessible through the available
+    # tools", "the tools ... do not have the capability", "this goal cannot be achieved", and the same in Chinese.
+    r"\bcannot be (?:determined|achieved|done|accomplished|found|accessed|completed|answered|performed|read)\b|\b(?:is|are) not (?:accessible|available|possible|supported)\b|"
+    r"\b(?:tools?|they|it)(?: provided| available)? (?:do|does|did) not (?:have|support|allow|provide|include)\b|\bnot (?:accessible|available) (?:through|with|using|via)\b|"
+    r"\bwithout (?:access|the ability)\b|\bno (?:access|ability|way) to\b|无法|不能|不支持|没有.{0,6}(?:工具|权限|能力)",
     re.IGNORECASE,
 )
 

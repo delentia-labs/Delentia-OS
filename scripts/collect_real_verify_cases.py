@@ -83,6 +83,38 @@ GOALS: List[Dict[str, Any]] = [
     {"kind": "action", "goal": "Schedule a reminder in 30 minutes to check the depot dashboard.", "tools": ["delentia_schedule_reminder"]},
 ]
 
+# Batch B (Round 62): different questions about the same files, collected AFTER the rules were tuned on batch A and measured without reading the answers first.
+GOALS_B: List[Dict[str, Any]] = [
+    {"kind": "fact", "goal": "According to pyproject.toml, which Python versions are supported?", "need": ["3.10"]},
+    {"kind": "fact", "goal": "Open README.md: what does Harbor do?", "need": ["shipping"]},
+    {"kind": "fact", "goal": "Tell me the name of the person who owns Harbor, from the README.", "need": ["nattaya"]},
+    {"kind": "fact", "goal": "Look in src/router.py and tell me how many retries are allowed.", "need": ["6"]},
+    {"kind": "fact", "goal": "Which depot does the router send orders to by default? Check src/router.py.", "need": ["rayong"]},
+    {"kind": "fact", "goal": "In src/billing.py, what is the tax rate?", "need": ["0.07"]},
+    {"kind": "fact", "goal": "What does an invoice number start with, per src/billing.py?", "need": ["hb-"]},
+    {"kind": "fact", "goal": "Read docs/runbook.md and say who is on call this month.", "need": ["kittipong"]},
+    {"kind": "fact", "goal": "What is the production database called in docs/runbook.md?", "need": ["harbor-prod-db"]},
+    {"kind": "fact", "goal": "Which AWS region is mentioned in docs/runbook.md?", "need": ["ap-southeast-1"]},
+    {"kind": "fact", "goal": "How many requests per minute does docs/limits.md allow?", "need": ["120"]},
+    {"kind": "fact", "goal": "What is the burst allowance listed in docs/limits.md?", "need": ["30"]},
+    {"kind": "fact", "goal": "What port number is in config/settings.toml?", "need": ["8443"]},
+    {"kind": "fact", "goal": "How many workers does config/settings.toml configure?", "need": ["4"]},
+    {"kind": "fact", "goal": "Find which file mentions INVOICE_PREFIX.", "need": ["billing"]},
+    {"kind": "fact", "goal": "ไฟล์ README.md บอกว่าใครเป็นเจ้าของ Harbor", "need": ["nattaya"]},
+    {"kind": "chat", "goal": "What is 15 times 15?", "need": ["225"]},
+    {"kind": "chat", "goal": "What is the capital of France?", "need": ["paris"]},
+    {"kind": "chat", "goal": "How many minutes are in two hours?", "need": ["120"]},
+    {"kind": "chat", "goal": "What is 99 plus 1?", "need": ["100"]},
+    {"kind": "absent", "goal": "What does src/inventory.py define?", "need": []},
+    {"kind": "absent", "goal": "Read docs/oncall-phone.md and give me the number.", "need": []},
+    {"kind": "absent", "goal": "Which programming language is the Harbor service written in, according to the README?", "need": []},
+    {"kind": "absent", "goal": "What is the monthly cost listed in docs/costs.md?", "need": []},
+    {"kind": "absent", "goal": "Tell me the staging database password from the runbook.", "need": []},
+    {"kind": "action", "goal": "Remember that the main depot manager is Somsak.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Please save a note that deliveries pause on public holidays.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Set a reminder in 45 minutes to back up the router config.", "tools": ["delentia_schedule_reminder"]},
+]
+
 _NOT_FOUND = re.compile(r"not found|does not exist|doesn't exist|no such|cannot find|can't find|could not find|couldn't find|unable to|not (?:available|mentioned|specified|provided|present)|no (?:information|mention)|ไม่พบ|ไม่มี|ไม่ได้ระบุ", re.IGNORECASE)
 _DENY = re.compile(r"\b(?:unable|cannot|can't|could not|couldn't|failed|not able)\b|ไม่สามารถ", re.IGNORECASE)
 
@@ -102,7 +134,7 @@ def label_case(item: Dict[str, Any], answer: str, steps: List[Dict[str, Any]]) -
     return "good" if ran and not _DENY.search(answer or "") else "bad"
 
 
-async def collect(model: str, limit: int, max_iterations: int, max_seconds: float, namespace_prefix: str) -> Dict[str, Any]:
+async def collect(model: str, limit: int, max_iterations: int, max_seconds: float, namespace_prefix: str, goals: List[Dict[str, Any]] = GOALS) -> Dict[str, Any]:
     work = Path(tempfile.mkdtemp(prefix="delentia-verifycases-"))
     repo = work / "repo"
     for rel, text in FILES.items():
@@ -120,7 +152,7 @@ async def collect(model: str, limit: int, max_iterations: int, max_seconds: floa
     from rct_control_plane.agent_factory import build_governed_loop
     kernel, mcp = mcp_server._kernel, mcp_server.mcp
     rows: List[Dict[str, Any]] = []
-    for i, item in enumerate(GOALS[:limit]):
+    for i, item in enumerate(goals[:limit]):
         loop = build_governed_loop(kernel, f"{namespace_prefix}-{i}", max_iterations=max_iterations, max_seconds=max_seconds, persistence=kernel._persistence, mcp_server=mcp)
         started = time.perf_counter()
         try:
@@ -145,14 +177,15 @@ async def collect(model: str, limit: int, max_iterations: int, max_seconds: floa
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model", default="qwen2.5:7b")
-    ap.add_argument("--limit", type=int, default=len(GOALS))
+    ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-iterations", type=int, default=4)
     ap.add_argument("--max-seconds", type=float, default=150.0)
+    ap.add_argument("--set", choices=["a", "b"], default="a", help="a = the development questions, b = the holdout questions (collected after the rules were tuned)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     import logging
     logging.disable(logging.WARNING)
-    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, "collect"))
+    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, "collect" if args.set == "a" else "collectb", GOALS if args.set == "a" else GOALS_B))
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n{report['episodes']} episodes, {report['kept_llm_finished']} ended with the model's own answer ({report['good']} good, {report['bad']} bad); "
           f"{report['trajectory_lines_recorded']} trajectory lines recorded")

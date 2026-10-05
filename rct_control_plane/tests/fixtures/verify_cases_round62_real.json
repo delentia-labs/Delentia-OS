@@ -1,0 +1,278 @@
+{
+ "description": "Round 62, batch A. Answers a REAL model (qwen2.5:7b via Ollama, through the real governed loop and tools, on a throw-away repository with known contents) gave, labelled from ground truth by scripts/collect_real_verify_cases.py - not written by the author of the rules. ALL of batch A is DEVELOPMENT data: the author read every answer in it before changing the rules (an even/odd split would have been a contaminated holdout). The holdout is batch B (collected afterwards with different goals, labelled by the same script, its answers not read before the measurement).",
+ "model": "qwen2.5:7b",
+ "dev": [
+  {
+   "id": "r01",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What version is declared in pyproject.toml?",
+   "steps": [],
+   "answer": "This goal cannot be achieved with the provided tools as they do not support file reading operations."
+  },
+  {
+   "id": "r03",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What is the support channel mentioned in README.md?",
+   "steps": [],
+   "answer": "The tools provided do not have the capability to read or access the README.md file to find the support channel mentioned in it."
+  },
+  {
+   "id": "r04",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What is the value of MAX_RETRIES in src/router.py?",
+   "steps": [],
+   "answer": "The value of MAX_RETRIES in src/router.py cannot be determined using the available tools."
+  },
+  {
+   "id": "r05",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What is the default depot in src/router.py?",
+   "steps": [],
+   "answer": "The default depot in src/router.py cannot be determined using the available tools."
+  },
+  {
+   "id": "r06",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What tax rate does src/billing.py use?",
+   "steps": [],
+   "answer": "The tax rate used in src/billing.py cannot be determined with the available tools."
+  },
+  {
+   "id": "r07",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What prefix do invoice numbers have in src/billing.py?",
+   "steps": [],
+   "answer": "The tools provided do not allow access to the source code of the system, so the prefix of invoice numbers in src/billing.py cannot be determined using these tools."
+  },
+  {
+   "id": "r08",
+   "label": "good",
+   "kind": "fact",
+   "goal": "Who is the on-call engineer according to docs/runbook.md?",
+   "steps": [
+    {
+     "tool_name": "delentia_read_repo_file",
+     "tool_args": {
+      "relative_path": "docs/runbook.md",
+      "max_bytes": 200000
+     },
+     "tool_result": {
+      "path": "docs/runbook.md",
+      "content_text": "On-call engineer this month: Kittipong. Pager number is on the wall chart.\r\nDatabase: harbor-prod-db, region ap-southeast-1.\r\n",
+      "truncated": false
+     }
+    }
+   ],
+   "answer": "Kittipong"
+  },
+  {
+   "id": "r09",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "Which database and region does docs/runbook.md name?",
+   "steps": [],
+   "answer": "The tools provided do not have the capability to read or access external files such as docs/runbook.md, so the database and region it names cannot be determined from this system."
+  },
+  {
+   "id": "r10",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What is the rate limit in docs/limits.md?",
+   "steps": [],
+   "answer": "The rate limit information is not accessible through the available tools. Please refer to the repository or documentation directly for this information."
+  },
+  {
+   "id": "r11",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What burst value is given in docs/limits.md?",
+   "steps": [],
+   "answer": "The tools provided do not have the capability to read or access files within the repository, so the burst value in docs/limits.md cannot be determined with the given tools."
+  },
+  {
+   "id": "r12",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "Which port does config/settings.toml set?",
+   "steps": [],
+   "answer": "This goal is outside what these tools can do."
+  },
+  {
+   "id": "r13",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "How many workers are configured in config/settings.toml?",
+   "steps": [],
+   "answer": "This goal is outside what these tools can do, as they do not have access to the actual configuration file or the ability to parse it."
+  },
+  {
+   "id": "r15",
+   "label": "good",
+   "kind": "fact",
+   "goal": "Search the repository for DEFAULT_DEPOT and name the file.",
+   "steps": [
+    {
+     "tool_name": "delentia_search_repo_files",
+     "tool_args": {
+      "pattern": "DEFAULT_DEPOT",
+      "glob": "**/*",
+      "max_results": 1
+     },
+     "tool_result": {
+      "matches": [
+       {
+        "path": "src/router.py",
+        "line_number": 2,
+        "line_text": "DEFAULT_DEPOT = 'rayong'"
+       }
+      ]
+     }
+    }
+   ],
+   "answer": "src/router.py"
+  },
+  {
+   "id": "r16",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "What does src/notes.txt say about the depot keys?",
+   "steps": [],
+   "answer": "The goal is to find information about depot keys in src/notes.txt, but the available tools cannot read or access files within the source code of this system."
+  },
+  {
+   "id": "r19",
+   "label": "bad",
+   "kind": "fact",
+   "goal": "ใน config/settings.toml พอร์ตคืออะไร",
+   "steps": [],
+   "answer": "目标是询问config/settings.toml中的端口号是什么，但当前可用的工具无法直接回答这个问题。此问题需要查看实际的config/settings.toml文件来确定端口号。"
+  },
+  {
+   "id": "r20",
+   "label": "good",
+   "kind": "chat",
+   "goal": "What is 123 times 45?",
+   "steps": [],
+   "answer": "123 times 45 is 5535."
+  },
+  {
+   "id": "r21",
+   "label": "good",
+   "kind": "chat",
+   "goal": "What is the capital of Japan?",
+   "steps": [],
+   "answer": "The capital of Japan is Tokyo."
+  },
+  {
+   "id": "r22",
+   "label": "good",
+   "kind": "chat",
+   "goal": "How many days are in a leap year?",
+   "steps": [],
+   "answer": "366"
+  },
+  {
+   "id": "r23",
+   "label": "good",
+   "kind": "chat",
+   "goal": "What is 2 to the power of 10?",
+   "steps": [],
+   "answer": "1024"
+  },
+  {
+   "id": "r24",
+   "label": "good",
+   "kind": "chat",
+   "goal": "บอกหน่อยว่ากรุงเทพเป็นเมืองหลวงของประเทศอะไร",
+   "steps": [],
+   "answer": "กรุงเทพเป็นเมืองหลวงของประเทศไทย。"
+  },
+  {
+   "id": "r25",
+   "label": "bad",
+   "kind": "absent",
+   "goal": "Read config/database.yaml and tell me the database password policy.",
+   "steps": [],
+   "answer": "当前可用的工具无法直接读取文件内容，因此无法直接从config/database.yaml文件中获取数据库密码策略。"
+  },
+  {
+   "id": "r27",
+   "label": "bad",
+   "kind": "absent",
+   "goal": "Read src/payments.py and tell me the currency it uses.",
+   "steps": [],
+   "answer": "The currency used in src/payments.py cannot be determined with the available tools."
+  },
+  {
+   "id": "r28",
+   "label": "bad",
+   "kind": "absent",
+   "goal": "What is the phone number of the on-call engineer in docs/runbook.md?",
+   "steps": [],
+   "answer": "The phone number of the on-call engineer in docs/runbook.md is not accessible through the available tools."
+  },
+  {
+   "id": "r29",
+   "label": "bad",
+   "kind": "absent",
+   "goal": "Which cloud provider does README.md say Harbor runs on?",
+   "steps": [
+    {
+     "tool_name": "delentia_web_search",
+     "tool_args": {
+      "query": "Harbor cloud provider README.md",
+      "max_results": 1
+     },
+     "tool_result": {
+      "error": "web search is not configured: no provider has been chosen. The owner sets DELENTIA_SEARCH_PROVIDER (searxng or brave); until then use delentia_crawl_url on a known address.",
+      "configured": false
+     }
+    }
+   ],
+   "answer": "This goal is outside what these tools can do."
+  },
+  {
+   "id": "r31",
+   "label": "bad",
+   "kind": "action",
+   "goal": "Remember that the staging depot is called trang-stage.",
+   "steps": [],
+   "answer": "The staging depot is called trang-stage."
+  },
+  {
+   "id": "r32",
+   "label": "bad",
+   "kind": "action",
+   "goal": "Please remember that our release day is Thursday.",
+   "steps": [],
+   "answer": "Our release day is Thursday."
+  },
+  {
+   "id": "r34",
+   "label": "good",
+   "kind": "action",
+   "goal": "Schedule a reminder in 30 minutes to check the depot dashboard.",
+   "steps": [
+    {
+     "tool_name": "delentia_schedule_reminder",
+     "tool_args": {
+      "goal": "Check the depot dashboard",
+      "fire_in_seconds": 1800,
+      "namespace": "collect-34"
+     },
+     "tool_result": {
+      "reminder_id": "reminder_98a3885ff7c6"
+     }
+    }
+   ],
+   "answer": "Reminder scheduled to check the depot dashboard in 30 minutes."
+  }
+ ],
+ "holdout": []
+}
