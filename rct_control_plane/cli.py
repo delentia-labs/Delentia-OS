@@ -4148,15 +4148,18 @@ def _audit_identity(action: str, name: str) -> None:
 
 @tokens_group.command("create")
 @click.argument("name")
-def tokens_create(name: str) -> None:
+@click.option("--owner", is_flag=True, help="an owner may use the Desk, the audit trail, policies and the MCP gateway; a person may only talk to the agent and manage their own things")
+def tokens_create(name: str, owner: bool) -> None:
     """Add a person and print their token. It is shown once; only its SHA-256 is stored."""
     from rct_control_plane import api_tokens
     try:
-        token = api_tokens.create(name)
+        token = api_tokens.create(name, owner=owner)
     except api_tokens.TokenFileError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     _audit_identity("token_created", name)
+    if owner:
+        _audit_identity("owner_granted", name)
     click.echo(f"token for {name} (copy it now; it cannot be shown again):\n{token}\n"
                f"send it as 'Authorization: Bearer <token>'. File: {api_tokens.tokens_path()}")
 
@@ -4173,7 +4176,23 @@ def tokens_list() -> None:
     if not entries:
         click.echo("No per-person tokens: the single DELENTIA_API_TOKEN (or loopback only) applies.")
     for user in entries:
-        click.echo(f"{user['name']:<24} {'REVOKED' if user.get('disabled') else 'active':<8} {time.strftime('%Y-%m-%d', time.localtime(user.get('created_at', 0)))}")
+        click.echo(f"{user['name']:<24} {'REVOKED' if user.get('disabled') else 'active':<8} {'owner' if user.get('owner') else 'person':<7} {time.strftime('%Y-%m-%d', time.localtime(user.get('created_at', 0)))}")
+
+
+@tokens_group.command("owner")
+@click.argument("name")
+@click.option("--off", is_flag=True, help="take the owner mark away again")
+def tokens_owner(name: str, off: bool) -> None:
+    """Make an existing person an owner (the Desk, audit, policies, MCP gateway) - or, with --off, an ordinary person. Host-side: it edits the tokens file."""
+    from rct_control_plane import api_tokens
+    try:
+        changed = api_tokens.set_owner(name, not off)
+        if changed:
+            _audit_identity("owner_revoked" if off else "owner_granted", name)
+        click.echo(("ok" if changed else "nothing to change (no such person, or already so)"))
+    except api_tokens.TokenFileError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
 
 
 @tokens_group.command("revoke")

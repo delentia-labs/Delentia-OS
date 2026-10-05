@@ -2036,7 +2036,7 @@ class ControlPlaneAPI:
             store = PendingActionStore(shared_kernel._persistence)
             wanted = None if status.upper() == "ALL" else status
             person = getattr(request.state, "delentia_user", None)
-            scoped = bool(person and person != api_tokens.SHARED_IDENTITY)
+            scoped = bool(person and not api_tokens.is_owner(person))
             rows = store.list(status=wanted, limit=1000 if scoped else limit)
             if scoped:
                 # Round 61: with a token per person, a person sees THEIR OWN waiting requests; the list used to show everyone's (goals and tool arguments included).
@@ -2058,7 +2058,7 @@ class ControlPlaneAPI:
             return decided.to_dict()
 
         @self.app.post("/v1/agent/approvals/{approval_id}/resume", tags=["Kernel"])
-        async def resume_agent_approval(approval_id: str, payload: Optional[Dict[str, Any]] = None):
+        async def resume_agent_approval(approval_id: str, request: Request, payload: Optional[Dict[str, Any]] = None):
             from rct_control_plane.agent_factory import build_governed_loop
             from rct_control_plane.approvals import ApprovalError, PendingActionStore
             from rct_control_plane.mcp_server import _kernel as shared_kernel
@@ -2066,6 +2066,10 @@ class ControlPlaneAPI:
 
             pending = PendingActionStore(shared_kernel._persistence).get(approval_id)
             if pending is None:
+                raise HTTPException(status_code=404, detail=f"no pending action {approval_id!r}")
+            from rct_control_plane import api_tokens
+            caller = getattr(request.state, "delentia_user", None)
+            if caller and not api_tokens.is_owner(caller) and pending.namespace != caller:      # Round 62: a person resumes only what they asked for
                 raise HTTPException(status_code=404, detail=f"no pending action {approval_id!r}")
             loop = build_governed_loop(shared_kernel, namespace=pending.namespace, mcp_server=shared_mcp)
             try:

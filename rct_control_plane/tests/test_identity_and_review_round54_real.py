@@ -83,7 +83,7 @@ def test_no_file_means_per_user_mode_is_off():
 # ------------------------------------------------------------------ through the real API
 
 def test_in_per_user_mode_a_request_needs_a_person_token_and_the_old_shared_token_still_works_as_shared(monkeypatch):
-    alice = at.create("alice")
+    alice = at.create("alice", owner=True)
     monkeypatch.setenv("DELENTIA_API_TOKEN", "old-shared")
     with TestClient(create_app()) as c:
         assert c.get("/v1/desk/models/setup").status_code == 401
@@ -94,7 +94,7 @@ def test_in_per_user_mode_a_request_needs_a_person_token_and_the_old_shared_toke
 
 
 def test_a_revoked_token_stops_working_at_once():
-    alice = at.create("alice")
+    alice = at.create("alice", owner=True)
     with TestClient(create_app()) as c:
         assert c.get("/v1/desk/models/setup", headers=bearer(alice)).status_code == 200
         at.revoke("alice")

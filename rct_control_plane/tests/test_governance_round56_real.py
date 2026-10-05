@@ -122,7 +122,7 @@ def test_overview_turns_controls_on_when_they_are_really_configured(gov, monkeyp
     policy, errors = fdia_policy.validate_policy(client.get("/v1/desk/fdia/template/balanced").json()["policy"])
     assert policy is not None, errors
     fdia_policy.save_policy(policy)
-    client.headers["Authorization"] = "Bearer " + api_tokens.create("alice", tmp_path / "tokens.json")    # per-person mode: callers need a token
+    client.headers["Authorization"] = "Bearer " + api_tokens.create("alice", tmp_path / "tokens.json", owner=True)    # per-person mode: callers need a token
     monkeypatch.setenv("DELENTIA_HOME_REGION", "TH")
     monkeypatch.setenv("DELENTIA_CORD_SECOND_OPINION", "flag")
     data = client.get("/v1/desk/governance").json()
@@ -365,7 +365,7 @@ def test_identities_list_people_and_roles_but_never_a_token(gov):
     policy, errors = fdia_policy.validate_policy(template)
     assert policy is not None, errors
     fdia_policy.save_policy(policy)
-    token_alice = api_tokens.create("alice", tmp_path / "tokens.json")
+    token_alice = api_tokens.create("alice", tmp_path / "tokens.json", owner=True)
     token_bob = api_tokens.create("bob", tmp_path / "tokens.json")
     api_tokens.revoke("bob", tmp_path / "tokens.json")
     client.headers["Authorization"] = f"Bearer {token_alice}"

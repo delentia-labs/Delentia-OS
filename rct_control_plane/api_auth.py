@@ -52,6 +52,28 @@ CORS_ENV = "DELENTIA_CORS_ORIGINS"
 LOOPBACK_ORIGIN = re.compile(r"^(https?://(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?|tauri://localhost|https?://tauri\.localhost)$")
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "[::1]", "::1", "testserver", "tauri.localhost"})
 
+# Round 62: what a person who is NOT an owner may call when the server has a token per person. Everything else is default-denied (so a route added later is the owner's until someone
+# decides otherwise here). (prefix or exact path, methods or None for any, whether it is a prefix)
+PERSON_ROUTES = (
+    ("/v1/agent/", None, True),                    # run, jobs, tasks, approvals: each scoped to the caller's own namespace by the server
+    ("/v1/chat/completions", {"POST"}, False),    # the OpenAI-compatible API (the identity is the token's, never the request's)
+    ("/v1/models", {"GET"}, False),
+    ("/v1/kernel/stream", None, False),           # the chat stream (a WebSocket) - runs as the caller
+    ("/v1/desk/memories", {"GET", "POST"}, False),            # their own memory: the namespace is the token's
+    ("/v1/desk/sessions/search", {"GET"}, False),             # their own past requests
+    ("/v1/jitna/verify", {"POST"}, False),        # checks a signature; reads nothing
+)
+OWNER_ONLY_MESSAGE = ("this route is for an owner. A token for a person may talk to the agent and manage their own jobs, tasks, approvals and memory; "
+                      "the Desk, the audit trail, policies and the MCP gateway are the owner's. On the host: `delentia tokens owner <name>` (or `delentia tokens create <name> --owner`)")
+
+
+def person_route_allowed(method: str, path: str, scope_type: str = "http") -> bool:
+    for route, methods, is_prefix in PERSON_ROUTES:
+        if (path.startswith(route) if is_prefix else path == route) and (methods is None or scope_type == "websocket" or method.upper() in methods):
+            return True
+    return False
+
+
 Scope = Dict[str, Any]
 Receive = Callable[[], Awaitable[Dict[str, Any]]]
 Send = Callable[[Dict[str, Any]], Awaitable[None]]
@@ -157,6 +179,18 @@ class ApiTokenMiddleware:
         if not reason:
             if identity:                                          # request.state.delentia_user: who this is, decided by the server
                 scope.setdefault("state", {})["delentia_user"] = identity
+                from rct_control_plane import api_tokens
+                path = scope.get("path") or ""
+                if (not api_tokens.is_owner(identity) and path not in PUBLIC_PATHS and path not in SELF_AUTHENTICATED_PATHS
+                        and not path.startswith(SELF_AUTHENTICATED_PREFIXES) and not person_route_allowed(str(scope.get("method") or ""), path, str(scope.get("type")))
+                        and not (scope.get("type") == "http" and scope.get("method") == "OPTIONS")):
+                    if scope["type"] == "websocket":
+                        await send({"type": "websocket.close", "code": 4403, "reason": "owner only"})
+                        return
+                    body = json.dumps({"detail": OWNER_ONLY_MESSAGE}).encode()
+                    await send({"type": "http.response.start", "status": 403, "headers": [(b"content-type", b"application/json")]})
+                    await send({"type": "http.response.body", "body": body})
+                    return
             await self.app(scope, receive, send)
             return
         if scope["type"] == "websocket":
