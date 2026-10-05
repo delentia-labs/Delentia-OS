@@ -130,7 +130,8 @@ class TestTheHoles:
 
     def test_websockets_follow_the_same_list(self, world):
         client = TestClient(create_app())
-        with pytest.raises(Exception):
+        from starlette.websockets import WebSocketDisconnect
+        with pytest.raises(WebSocketDisconnect):
             with client.websocket_connect("/ws/events", headers=bearer(world["alice"])):
                 pass
         with client.websocket_connect("/v1/kernel/stream", headers=bearer(world["alice"])) as ws:
