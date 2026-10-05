@@ -329,6 +329,18 @@ TAINT_INERT_TOOLS = frozenset({
 # `delentia_query_intents` every person's compiled goals, `delentia_check_reminders` every person's stored reminders (and fires them). A person on a chat channel or the HTTP agent API must not
 # read other people's requests through the agent, so these are for the owner's own namespaces (CLI, Desk, MCP client). DELENTIA_OWNER_TOOLS_FOR_CHANNELS=1 gives them back (a single-user host).
 OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intents", "delentia_check_reminders"})
+# Round 61 (multi-person audit): every tool is either PINNED to the asking person (MEMORY_TOOLS: the loop overwrites its `namespace` argument), OWNER-ONLY (above), or PERSON-NEUTRAL: reviewed, and it
+# neither returns nor acts on another person's requests, memories or reminders. A new tool must be put in one of the three (tests/test_person_scope_round61_real.py), so "does this show one
+# person what another person did?" is asked once for every tool, not discovered later (the first audit found three tools that did and two that ran as the owner).
+PERSON_NEUTRAL_TOOLS = frozenset({
+    "delentia_assemble_nodes", "delentia_browse_page", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
+    "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
+    "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
+    "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
+    "delentia_remove_worktree", "delentia_run_forged_tool", "delentia_run_sandboxed_command", "delentia_save_exchange_file", "delentia_schedule_self_evolution",
+    "delentia_search_repo_files", "delentia_spawn_subagents", "delentia_speak", "delentia_synthesize_function", "delentia_transcribe_audio",
+    "delentia_verify_intent_conservation", "delentia_web_search", "delentia_write_repo_file",
+})
 DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
 TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
 
@@ -891,7 +903,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
     # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
     MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions",
-                    "delentia_autonomous_loop")        # Round 61: a nested loop runs as the same person, not as the owner's "mcp_loop" space
+                    "delentia_autonomous_loop",        # Round 61: a nested loop runs as the same person, not as the owner's "mcp_loop" space
+                    "delentia_schedule_reminder")      # Round 61: a reminder runs as the person who set it, not in the owner's "kernel_default" space
     # Channel namespaces belong to outside senders; the shared default store (what the
     # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
     # Round 57: whatsapp-, signal- and email- were missing (those gateways arrived in Round 55), so a sender on them could read the owner's shared memory.

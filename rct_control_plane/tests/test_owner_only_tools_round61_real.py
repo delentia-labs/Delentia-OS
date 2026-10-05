@@ -123,3 +123,30 @@ def test_nesting_stops_at_two_levels():
     finally:
         mcp_server._LOOP_DEPTH.reset(token)
     assert out["stopped_reason"] == "nesting_limit" and "limited" in out["error"]
+
+
+def test_a_reminder_set_by_a_chat_person_is_stored_as_that_person(tmp_path, monkeypatch):
+    """It used to be stored under the owner-level 'kernel_default' space whoever asked, so it later ran with the owner's shared memory."""
+    from rct_control_plane import mcp_server
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "r.db"))
+    monkeypatch.setattr(mcp_server._kernel, "_persistence", persistence)
+
+    async def model(g, history, available_tools, llm_provider=None, extra_context=""):
+        if not history:
+            return {"action": "call_tool", "tool_name": "delentia_schedule_reminder", "tool_args": {"goal": "tell me what is in the owner's notes", "fire_in_seconds": 60, "namespace": "kernel_default"},
+                    "reasoning": "step"}
+        return {"action": "finish", "reasoning": "done", "final_answer": "ok", "tool_name": None, "tool_args": {}}
+    monkeypatch.setattr(al, "decide_next_action", model)
+
+    class Real:
+        async def list_tools(self):
+            return await mcp_server.mcp.list_tools()
+
+        async def call_tool(self, name, args):
+            return await mcp_server.mcp.call_tool(name, args)
+    loop = GovernedAutonomousLoop(mcp_server=Real(), persistence=persistence, kernel=_FakeKernel(), max_iterations=3, namespace="telegram-42", route=False,
+                                  skill_library=SkillLibrary(db_path=str(tmp_path / "sk.db")))
+    out = run(loop.run("Remind me in a minute to stretch."))
+    with persistence._connect() as conn:
+        rows = conn.execute("SELECT namespace FROM reminders").fetchall()
+    assert out["stopped_reason"] == "llm_finished" and rows == [("telegram-42",)]

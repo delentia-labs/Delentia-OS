@@ -230,12 +230,16 @@ async def delentia_expand_tool_output(original_id: str, start_line: Optional[int
 
 
 @mcp.tool()
-async def delentia_schedule_reminder(goal: str, fire_in_seconds: float) -> dict:
+async def delentia_schedule_reminder(goal: str, fire_in_seconds: float, namespace: str = "kernel_default") -> dict:
     """Schedule a real, session-scoped reminder that runs a real
     AutonomousLoop for `goal` once it becomes due. Session-local, not a
     cron/calendar system - call delentia_check_reminders to actually
-    fire due ones."""
-    reminder_id = schedule_reminder(_kernel, goal, fire_in_seconds)
+    fire due ones.
+
+    Round 61: a reminder runs as the person who scheduled it. It used to be stored under the owner-level
+    "kernel_default" space whoever asked, so a chat person's reminder later ran with the owner's shared
+    memory and no restrictions of a channel namespace; the governed loop now pins `namespace` to the caller."""
+    reminder_id = schedule_reminder(_kernel, goal, fire_in_seconds, namespace=namespace or "kernel_default")
     return {"reminder_id": reminder_id}
 
 
