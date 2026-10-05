@@ -160,3 +160,16 @@ class TestInsideARealEpisode:
         out = episode("Read pyproject.toml and tell me the project name", [("delentia_read_repo_file", {"relative_path": "pyproject.toml"})],
                       "The project is delentia-os, version 7.7.7, released 2031-01-01.", self.READ)
         assert "grounding" not in out["intent_verification"] and out["intent_verification"]["aligned_with_intent"] is True
+
+
+class TestHostileInputIsFast:
+    """CodeQL: polynomial regular expressions on uncontrolled data. An answer is model output, so a hostile page can make it anything."""
+
+    @pytest.mark.parametrize("payload", ["-" * 200_000, "a." * 100_000, "a/" * 100_000, "1," * 100_000, "x@" + "-" * 200_000, "0" * 200_000, "a-" * 100_000 + ".", "/" + "a.b" * 60_000],
+                             ids=["dashes", "dots", "slashes", "commas", "email-dashes", "zeros", "dash-pairs", "dotted-path"])
+    def test_a_long_run_of_one_character_class_does_not_stall_the_check(self, payload):
+        import time
+        started = time.perf_counter()
+        vg.check("goal", payload, [])
+        vg.evidence_support(payload, [step("t", {"x": "some words here"})])
+        assert time.perf_counter() - started < 3.0

@@ -37,6 +37,8 @@ def blocked_reason(path: str) -> Optional[str]:
         if part.lower() in _BLOCKED_DIRS:
             return f"{part} holds credentials or history that the agent must not read"
     name = parts[-1] if parts else ""
+    if len(name) > 255 or len(parts) > 64:                                # no real file name is this long; also keeps the pattern below away from adversarial input
+        return "a path this long is not a file the agent may read"
     if name.lower() in _BLOCKED_DIRS:
         return f"{name} holds credentials or history that the agent must not read"
     if _NAME.match(name):

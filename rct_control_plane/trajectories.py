@@ -41,6 +41,7 @@ def enabled() -> bool:
 def redact(text: Any, limit: int = MAX_TEXT) -> str:
     """Secrets, e-mail addresses and long digit sequences (phone, card, ID numbers) replaced by markers; clipped."""
     value = text if isinstance(text, str) else json.dumps(text, ensure_ascii=False, default=str)
+    value = value[: max(limit * 4, 8000)]                                  # patterns run only on what will be kept (and never on unbounded input)
     value = _SECRETS.sub("[secret]", value)
     value = _EMAIL.sub("[email]", value)
     value = _LONG_NUMBER.sub("[number]", value)

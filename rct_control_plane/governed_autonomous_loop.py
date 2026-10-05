@@ -1489,7 +1489,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         score = float(matcher.semantic_similarity(goal, str(final_answer)))
         declined = answer_declines_goal(str(final_answer))
         similar = score >= self._intent_verify_threshold
-        out = {
+        out: Dict[str, Any] = {
             "applicable": True,
             "similarity_score": round(score, 4),
             "threshold": self._intent_verify_threshold,

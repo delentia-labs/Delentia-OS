@@ -27,9 +27,11 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 ENV = "DELENTIA_VERIFY_GROUNDING"
 
 _URL = re.compile(r"https?://[^\s)>\]\"']+", re.IGNORECASE)
-_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
-_PATH = re.compile(r"(?<![\w/])(?:[\w.-]+[/\\])+[\w.-]+\.\w{1,6}\b|(?<![\w/.])[\w-]+\.(?:py|md|txt|json|toml|yaml|yml|db|ts|tsx|js|log|csv|sh|ini|cfg)\b")
-_NUMBER = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})+(?:\.\d+)?|(?<![\w.])\d+(?:\.\d+)?")
+_EMAIL = re.compile(r"\b[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}\b")
+# Every repetition is bounded and the pieces cannot match the same characters two ways (a file name's dots are outside the character class that precedes them), so a long run of "-" or "." cannot make
+# the match slow (CodeQL: polynomial regular expression on uncontrolled data).
+_PATH = re.compile(r"(?<![\w/])(?:[\w.-]{1,80}[/\\]){1,12}[\w-]{1,80}(?:\.\w{1,8}){1,3}\b|(?<![\w/.])[\w-]{1,80}\.(?:py|md|txt|json|toml|yaml|yml|db|ts|tsx|js|log|csv|sh|ini|cfg)\b")
+_NUMBER = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3}){1,6}(?:\.\d{1,12})?|(?<![\w.])\d{1,30}(?:\.\d{1,12})?")
 _ARITH_WORDS = re.compile(r"\d\s*(?:[-+*/x×÷^]|plus|minus|times|divided|multiplied|squared|%)\s*\d|\b(?:sum|total|average|mean|product|difference|percent|how many|how much|count)\b|บวก|ลบ|คูณ|หาร|รวม|เฉลี่ย|กี่|จำนวน", re.IGNORECASE)
 
 _ACTION_GOAL = re.compile(
@@ -46,6 +48,7 @@ EFFECT_TOOLS = frozenset({
 })
 _ERROR_KEYS = ("error", "errors", "blocked", "refused", "pending_approval", "fdia_blocked", "paused", "stuck")
 _MAX_EVIDENCE = 400_000
+MAX_ANSWER_SCANNED = 20_000
 
 
 def _norm(text: str) -> str:
@@ -113,7 +116,7 @@ def _arithmetic_results(goal: str) -> Set[str]:
 def ungrounded_values(goal: str, answer: str, steps: Iterable[Dict[str, Any]], conversation: str = "") -> List[str]:
     """Values the answer states that nothing in the evidence contains."""
     evidence = _evidence(goal, steps, conversation)
-    text = str(answer or "")
+    text = str(answer or "")[:MAX_ANSWER_SCANNED]
     found: List[str] = []
     for url in _URL.findall(text):
         url = url.rstrip(".,;:!?")
@@ -148,7 +151,7 @@ def _effect_ran(steps: Iterable[Dict[str, Any]]) -> bool:
     return any(s.get("tool_name") in EFFECT_TOOLS and not _is_error(s.get("tool_result")) and s.get("tool_result") is not None for s in steps or [])
 
 
-_WORD = re.compile(r"[a-z][a-z0-9_-]{3,}|\d+(?:\.\d+)+")
+_WORD = re.compile(r"[a-z][a-z0-9_-]{3,40}|\d{1,12}(?:\.\d{1,12}){1,4}")
 _STOP = frozenset("that this with from have been were will would there their about which when what your says said they them then than also into over some more most such only does file files tool tools result results".split())
 
 
@@ -166,14 +169,14 @@ def evidence_support(answer: str, steps: Iterable[Dict[str, Any]]) -> bool:
     if not texts:
         return False
     evidence = _norm(" ".join(texts))
-    shared = {w for w in _WORD.findall(str(answer or "").lower()) if w not in _STOP and w in evidence}
+    shared = {w for w in _WORD.findall(str(answer or "").lower()[:MAX_ANSWER_SCANNED]) if w not in _STOP and w in evidence}
     return len(shared) >= 2 or any("." in w and w in evidence for w in shared)
 
 
 def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
     """The grounding verdict. `grounded` is False when any flag is raised; `supported` says the answer reuses a successful tool result's own words."""
     steps = [s for s in (steps or []) if isinstance(s, dict)]
-    text = str(answer or "").strip()
+    text = str(answer or "").strip()[:MAX_ANSWER_SCANNED]
     flags: List[str] = []
     detail: Dict[str, Any] = {}
     if len(text) < 2:
