@@ -60,10 +60,12 @@ def ollama_num_ctx(prompt_chars: int) -> int:
 
 @dataclass
 class LLMUsage:
-    """Round 50: what one model call used. cost_usd None = not known."""
+    """Round 50: what one model call used. cost_usd None = not known. Round 62: `cached_tokens` is how many of the prompt tokens the provider served from its prompt cache (0 when it
+    reports none): the number that decides whether prompt caching is worth building, measured per model instead of assumed."""
     prompt_tokens: int
     completion_tokens: int
     cost_usd: Optional[float]
+    cached_tokens: int = 0
 
 
 class LLMProvider(ABC):
@@ -256,8 +258,9 @@ class OpenRouterProvider(LLMProvider):
             data = response.json()
         usage = data.get("usage") or {}
         cost = usage.get("cost")
+        details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
         self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0),
-                                   float(cost) if isinstance(cost, (int, float)) else None)
+                                   float(cost) if isinstance(cost, (int, float)) else None, int((details or {}).get("cached_tokens") or 0))
         return data["choices"][0]["message"]["content"]
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
@@ -480,6 +483,7 @@ class MeteredProvider(LLMProvider):
         self.calls = 0
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        self.cached_prompt_tokens = 0
         self.cost_usd = 0.0
         self.cost_known = True
         self.refused: Optional[str] = None
@@ -526,11 +530,12 @@ class MeteredProvider(LLMProvider):
         self.calls += 1
         self.prompt_tokens += usage.prompt_tokens
         self.completion_tokens += usage.completion_tokens
+        self.cached_prompt_tokens += min(usage.cached_tokens, usage.prompt_tokens)
         if cost is None:
             self.cost_known = False
         else:
             self.cost_usd += cost
-        self.last_usage = LLMUsage(usage.prompt_tokens, usage.completion_tokens, cost)
+        self.last_usage = LLMUsage(usage.prompt_tokens, usage.completion_tokens, cost, usage.cached_tokens)
 
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
@@ -558,6 +563,8 @@ class MeteredProvider(LLMProvider):
             "calls": self.calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
+            "cached_prompt_tokens": self.cached_prompt_tokens,
+            "cache_hit_rate": round(self.cached_prompt_tokens / self.prompt_tokens, 4) if self.prompt_tokens else None,
             "cost_usd": round(self.cost_usd, 6) if self.cost_known else None,
             "cost_known": self.cost_known,
             "max_cost_usd": self.max_cost_usd,
