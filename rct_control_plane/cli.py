@@ -3901,6 +3901,86 @@ def task_cancel(task_id: str, db: Optional[str]) -> None:
     click.echo(f"{task['id']}: {task['status']}")
 
 
+@cli.group("hooks")
+def hooks_group():
+    """Hooks: your own signed code that can make the agent STRICTER (refuse or demand a signature before a tool, hide parts of a tool's result) and never looser.
+
+    \b
+        delentia hooks propose no_secrets_in_args my_hook.py "refuse commands that name a key file"
+        delentia hooks request no_secrets_in_args      # then: delentia approvals approve <id> --key ...
+        delentia hooks activate <approval_id>
+        delentia hooks list | disable <name>
+    """
+
+
+def _hook_registry(db: Optional[str]):
+    from rct_control_plane.hooks import HookRegistry
+    return HookRegistry(_audit_db(db))
+
+
+@hooks_group.command("propose")
+@click.argument("name")
+@click.argument("code_file", type=click.Path(exists=True, dir_okay=False))
+@click.argument("description", default="")
+@click.option("--db", default=None)
+def hooks_propose(name: str, code_file: str, description: str, db: Optional[str]) -> None:
+    """Check a hook file (static rules + a probe in another process) and store it as PROPOSED. Nothing runs until it is signed."""
+    from rct_control_plane.hooks import HookError
+    try:
+        result = _hook_registry(db).propose(name, Path(code_file).read_text(encoding="utf-8"), description)
+    except HookError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{result['name']}: {result['status']}  points: {', '.join(result['points']) or '-'}  sha256 {result['code_sha256'][:16]}")
+    for problem in result["verification"].get("problems", []):
+        click.echo(click.style(f"  - {problem}", fg="red"))
+    if result["status"] != "PROPOSED":
+        sys.exit(1)
+    click.echo(f"next: delentia hooks request {name}")
+
+
+@hooks_group.command("request")
+@click.argument("name")
+@click.option("--db", default=None)
+def hooks_request(name: str, db: Optional[str]) -> None:
+    """Ask for the human signature over this exact code."""
+    from rct_control_plane.hooks import HookError
+    try:
+        record = _hook_registry(db).request_activation(name)
+    except HookError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"approval {record.approval_id}  digest {record.action_sha256}\nsign it with: delentia approvals approve {record.approval_id} --key <your key>")
+
+
+@hooks_group.command("activate")
+@click.argument("approval_id")
+@click.option("--db", default=None)
+def hooks_activate(approval_id: str, db: Optional[str]) -> None:
+    """Switch the hook on once its approval is signed (every signature is re-verified and the code is re-hashed)."""
+    from rct_control_plane.approvals import ApprovalError
+    try:
+        click.echo(json.dumps(_hook_registry(db).activate(approval_id), indent=2))
+    except ApprovalError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@hooks_group.command("list")
+@click.option("--db", default=None)
+def hooks_list(db: Optional[str]) -> None:
+    for h in _hook_registry(db).list():
+        click.echo(f"{h['name']:<28} {h['status']:<18} {', '.join(h['points']) or '-':<42} {h['description'][:50]}")
+
+
+@hooks_group.command("disable")
+@click.argument("name")
+@click.option("--db", default=None)
+def hooks_disable(name: str, db: Optional[str]) -> None:
+    """Turn a hook off (no signature needed: it only removes a tightening you chose). The code and the record stay."""
+    click.echo("disabled" if _hook_registry(db).disable(name) else "no active hook with that name")
+
+
 @cli.group("webhook")
 def webhook_group():
     """Signed webhooks that start the agent (routes live in <data home>/webhooks.json; secrets only in environment variables)."""

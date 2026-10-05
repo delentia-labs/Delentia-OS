@@ -94,6 +94,7 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -1211,6 +1212,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if policy_error:
             return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
                                       policy_info={"error": True})
+        hook_verdict = await self._hooks_pre(tool_name, tool_args)
+        if hook_verdict is not None:
+            if hook_verdict["action"] == "block":
+                return self._gate_refusal(tool_name, 0.0, f"hook {hook_verdict['hook']} refused this call: {hook_verdict['reason']}", policy_info={"hook": hook_verdict["hook"]})
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {"pending_approval": True, "tool_name": tool_name, "tool_args": tool_args, "reason": f"hook {hook_verdict['hook']}: {hook_verdict['reason']}",
+                                "approval_policy": {"rule_id": f"hook:{hook_verdict['hook']}", "required_signatures": 1, "approver_roles": [], "policy_digest": None}},
+            }
         taint = self._taint_reason(goal, tool_name, tool_args)
         if taint is not None:
             try:
@@ -2040,11 +2050,67 @@ class GovernedAutonomousLoop(AutonomousLoop):
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
         tool_result = self._screen_tool_result(tool_name, tool_result)
+        tool_result = await self._hooks_transform(tool_name, tool_result)
         if is_external_content(tool_name) and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             tool_result = await self._second_opinion_on_result(tool_name, tool_result)
         if self._compress_tool_outputs and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
         return tool_result
+
+    # ------------------------------------------------------------------
+    # Round 61 hooks (hooks.py): a person's signed code that can only tighten
+    # ------------------------------------------------------------------
+    def _hook_registry(self) -> Any:
+        registry = getattr(self, "_hooks_registry", None)
+        if registry is None:
+            from rct_control_plane import hooks
+            registry = self._hooks_registry = hooks.HookRegistry(self._persistence)
+        return registry
+
+    async def _hooks_pre(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        from rct_control_plane import hooks
+        if not hooks.enabled():
+            return None
+        try:
+            registry = self._hook_registry()
+            if not registry.has_active():
+                return None
+            return await asyncio.to_thread(registry.pre_tool_call, tool_name, tool_args)
+        except Exception as exc:                                         # noqa: BLE001 - a hook machinery fault asks the person; it never lets a call through unchecked
+            return {"action": "require_signature", "reason": f"the hook system failed ({type(exc).__name__}), so a person must sign this call", "hook": "hooks"}
+
+    async def _hooks_transform(self, tool_name: str, tool_result: Any) -> Any:
+        from rct_control_plane import hooks
+        if not hooks.enabled() or not isinstance(tool_result, (dict, list, str)) or (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
+            return tool_result
+        try:
+            registry = self._hook_registry()
+            if not registry.has_active():
+                return tool_result
+            leaves: List[str] = []
+
+            def walk(node: Any, collect: bool, it: Any = None) -> Any:
+                if isinstance(node, str):
+                    if len(node) < hooks.MIN_LEAF_CHARS:
+                        return node
+                    if collect:
+                        leaves.append(node)
+                        return node
+                    return next(it)
+                if isinstance(node, dict):
+                    return {k: walk(v, collect, it) for k, v in node.items()}
+                if isinstance(node, list):
+                    return [walk(v, collect, it) for v in node]
+                return node
+            walk(tool_result, True)
+            if not leaves:
+                return tool_result
+            if len(leaves) > 400:
+                return {"withheld_by_hook": True, "message": "This result has too many parts for the hooks to check, so it was withheld."}
+            new_texts, _notes = await asyncio.to_thread(registry.transform, tool_name, leaves)
+            return walk(tool_result, False, iter(new_texts))
+        except Exception:                                                # noqa: BLE001 - never show a result the hooks could not check
+            return {"withheld_by_hook": True, "message": "A hook could not be run on this result, so it was withheld."}
 
     async def _second_opinion_on_result(self, tool_name: str, tool_result: Any) -> Any:
         """Round 54: third-party content gets the small model's second opinion too (a crawled page, a recalled memory)."""
