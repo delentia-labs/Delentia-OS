@@ -4021,6 +4021,35 @@ def hooks_disable(name: str, db: Optional[str]) -> None:
     click.echo("disabled" if _hook_registry(db).disable(name) else "no active hook with that name")
 
 
+@cli.group("trajectories")
+def trajectories_group():
+    """What episodes actually did (steps, redacted), for evaluating or training a model. OFF unless DELENTIA_RECORD_TRAJECTORIES=1; stays on this machine."""
+
+
+@trajectories_group.command("stats")
+def trajectories_stats() -> None:
+    from rct_control_plane import trajectories
+    report = trajectories.stats()
+    click.echo(f"recording is {'ON' if trajectories.enabled() else 'off'} in this shell; {report['episodes']} episode(s) on disk ({report['verified']} verified, {report['tainted']} tainted)")
+    for tool, n in list(report["tools"].items())[:15]:
+        click.echo(f"  {n:5}  {tool}")
+
+
+@trajectories_group.command("export")
+@click.argument("out_path")
+@click.option("--verified-only", is_flag=True)
+@click.option("--exclude-tainted", is_flag=True, help="leave out episodes that read text from outside (recommended before training)")
+def trajectories_export(out_path: str, verified_only: bool, exclude_tainted: bool) -> None:
+    """Write the recorded episodes as JSON Lines (will not overwrite a file)."""
+    from rct_control_plane import trajectories
+    try:
+        done = trajectories.export(out_path, verified_only=verified_only, exclude_tainted=exclude_tainted)
+    except FileExistsError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {done['written']} episode(s) to {done['path']} ({done['skipped']} left out)")
+
+
 @cli.group("webhook")
 def webhook_group():
     """Signed webhooks that start the agent (routes live in <data home>/webhooks.json; secrets only in environment variables)."""

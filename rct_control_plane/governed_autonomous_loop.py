@@ -1623,6 +1623,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._warm_recall and verified_success and stopped_reason == "llm_finished" and not self._episode_used_conversation:
             self._warm_store(result, verification)
         await self._pipeline_after(result, duration)
+        try:                                   # Round 61: opt-in, local, redacted record of the steps (trajectories.py); never changes an outcome
+            from rct_control_plane import trajectories
+            trajectories.record(result, self.namespace, str((result.get("cost") or {}).get("model") or ""))
+        except Exception:
+            pass
         try:
             from rct_control_plane.intent_loop import pillar_report
             result["intent_loop"] = pillar_report(result, self)
