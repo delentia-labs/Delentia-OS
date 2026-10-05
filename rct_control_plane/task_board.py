@@ -15,12 +15,19 @@ What a person can rely on:
   * bounded: at most 12 steps, 2 attempts per step, 3 live tasks per person; no step is ever invented after the plan is made (no silent re-planning: a failed step fails the task, and the
     person can create a new one that starts from what was done).
 
+Round 61 - the plan is the person's to read and change:
+  * `create(..., review=True)` makes a DRAFT: the plan (the person's own steps, or the RCT-7 decomposition) is shown and nothing runs until the person calls `start`. A draft can be edited
+    freely; a task already under way can have its NOT-YET-RUN steps rewritten, added to, removed or reordered (steps that already ran are history and stay), never while a step is running.
+  * `replan(task_id)` answers a failed or cancelled task: it makes a NEW draft that carries over what was done (as completed steps, with their summaries) and the taint, and holds the steps that
+    did not finish, for the person to edit and start. The runtime never replans by itself and never starts the new draft.
+
 The plan is whatever the creator provides; with none, the RCT-7 decomposition of the goal (the same steps shown in every episode's THINK section) is used.
 
 Apache 2.0 - Delentia Labs
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 import uuid
@@ -32,6 +39,7 @@ MAX_LIVE_PER_USER = 3
 MAX_GOAL = 4000
 MAX_STEP = 600
 MAX_SUMMARY = 500
+MAX_DRAFTS_PER_USER = 10
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS agent_tasks (
@@ -132,7 +140,7 @@ class TaskBoard:
 
     # ------------------------------------------------------------ create / cancel
 
-    def create(self, namespace: str, goal: str, steps: Optional[List[str]] = None) -> Dict[str, Any]:
+    def create(self, namespace: str, goal: str, steps: Optional[List[str]] = None, review: bool = False) -> Dict[str, Any]:
         goal = " ".join(str(goal or "").split())
         if not goal:
             raise TaskError("a goal is required")
@@ -145,28 +153,110 @@ class TaskBoard:
             texts = [goal]
         if len(texts) > MAX_STEPS:
             raise TaskError(f"at most {MAX_STEPS} steps (got {len(texts)}): split it into two tasks")
-        if len(self.list(namespace, 100, live_only=True)) >= MAX_LIVE_PER_USER:
+        if review:
+            if sum(1 for t in self.list(namespace, 100) if t["status"] == "draft") >= MAX_DRAFTS_PER_USER:
+                raise TaskError(f"you already have {MAX_DRAFTS_PER_USER} drafts waiting; start or cancel some first")
+        elif len(self.list(namespace, 100, live_only=True)) >= MAX_LIVE_PER_USER:
             raise TaskError("you already have the most tasks running that you are allowed; cancel or finish one first")
         now = time.time()
-        task = {"id": f"task-{uuid.uuid4().hex[:12]}", "namespace": namespace, "goal": goal, "status": "waiting", "tainted": False, "taint_source": None, "created_at": now,
+        status = "draft" if review else "waiting"
+        task = {"id": f"task-{uuid.uuid4().hex[:12]}", "namespace": namespace, "goal": goal, "status": status, "tainted": False, "taint_source": None, "created_at": now,
                 "updated_at": now, "note": None,
                 "steps": [{"n": i + 1, "text": t, "status": "pending", "attempts": 0, "summary": None, "stopped": None, "approval_id": None, "note": None} for i, t in enumerate(texts)]}
         with self._p._connect() as conn:
             conn.execute("INSERT INTO agent_tasks (id, namespace, goal, status, steps_json, tainted, taint_source, created_at, updated_at, note) VALUES (?, ?, ?, ?, ?, 0, NULL, ?, ?, NULL)",
-                         (task["id"], namespace, goal, "waiting", json.dumps(task["steps"], ensure_ascii=False), now, now))
-        self._audit("created", task, {"goal_chars": len(goal)})
+                         (task["id"], namespace, goal, status, json.dumps(task["steps"], ensure_ascii=False), now, now))
+        self._audit("created", task, {"goal_chars": len(goal), "review": bool(review)})
         return task
 
     def cancel(self, task_id: str, namespace: Optional[str] = None) -> Dict[str, Any]:
         task = self.get(task_id, namespace)
         if task is None:
             raise TaskError("no such task")
-        if task["status"] in LIVE:
+        if task["status"] in LIVE or task["status"] == "draft":
             for step in task["steps"]:
                 if step["status"] == "pending":
                     step["status"] = "cancelled"
             self._save(task, status="cancelled", note="cancelled by the person")
             self._audit("cancelled", task)
+        return task
+
+    # ------------------------------------------------------------ the plan is the person's (Round 61)
+
+    @staticmethod
+    def _clean_steps(steps: List[str]) -> List[str]:
+        return [" ".join(str(s).split())[:MAX_STEP] for s in (steps or []) if str(s).strip()]
+
+    @staticmethod
+    def _fresh_step(text: str) -> Dict[str, Any]:
+        return {"n": 0, "text": text, "status": "pending", "attempts": 0, "summary": None, "stopped": None, "approval_id": None, "note": None}
+
+    def edit_plan(self, task_id: str, steps: List[str], namespace: Optional[str] = None) -> Dict[str, Any]:
+        """Replace the steps that have NOT run yet with `steps`. On a draft that is every step; on a task under way, the steps after the last one that ran (those are history).
+        Refused while a step is running, for a task that has ended, and when the new plan would pass MAX_STEPS or be empty."""
+        task = self.get(task_id, namespace)
+        if task is None:
+            raise TaskError("no such task")
+        if task["status"] not in ("draft", "waiting", "waiting_approval"):
+            raise TaskError(f"a task that is {task['status']} cannot be edited")
+        if any(s["status"] == "running" for s in task["steps"]):
+            raise TaskError("a step is running right now; edit the plan when it has finished")
+        texts = self._clean_steps(steps)
+        if not texts:
+            raise TaskError("the plan needs at least one step")
+        kept = [s for s in task["steps"] if s["status"] not in ("pending", "cancelled")]
+        if len(kept) + len(texts) > MAX_STEPS:
+            raise TaskError(f"at most {MAX_STEPS} steps in all ({len(kept)} already ran): split it into two tasks")
+        before = [s["text"] for s in task["steps"] if s["status"] == "pending"]
+        task["steps"] = kept + [self._fresh_step(t) for t in texts]
+        for i, s in enumerate(task["steps"]):
+            s["n"] = i + 1
+        self._save(task, status=task["status"], note="plan edited by the person" + (" (still a draft: nothing has run)" if task["status"] == "draft" else ""))
+        self._audit("plan_edited", task, {"pending_before": len(before), "pending_after": len(texts),
+                                           "before_sha256": hashlib.sha256("\n".join(before).encode("utf-8")).hexdigest(),
+                                           "after_sha256": hashlib.sha256("\n".join(texts).encode("utf-8")).hexdigest()})
+        return self.get(task_id) or task
+
+    def start(self, task_id: str, namespace: Optional[str] = None) -> Dict[str, Any]:
+        """Let a draft run: from now on the daemon advances it like any other task."""
+        task = self.get(task_id, namespace)
+        if task is None:
+            raise TaskError("no such task")
+        if task["status"] != "draft":
+            raise TaskError(f"only a draft can be started (this one is {task['status']})")
+        if len(self.list(task["namespace"], 100, live_only=True)) >= MAX_LIVE_PER_USER:
+            raise TaskError("you already have the most tasks running that you are allowed; cancel or finish one first")
+        self._save(task, status="waiting", note="started by the person")
+        self._audit("started", task)
+        return self.get(task_id) or task
+
+    def replan(self, task_id: str, namespace: Optional[str] = None, steps: Optional[List[str]] = None) -> Dict[str, Any]:
+        """After a failed or cancelled task: a NEW draft with what was done carried over (completed steps with their summaries, and the taint) and the unfinished steps (or `steps`)
+        waiting for the person to edit and start. Nothing is started and nothing about the old task changes."""
+        old = self.get(task_id, namespace)
+        if old is None:
+            raise TaskError("no such task")
+        if old["status"] not in ("failed", "cancelled"):
+            raise TaskError(f"only a failed or cancelled task can be re-planned (this one is {old['status']})")
+        if sum(1 for t in self.list(old["namespace"], 100) if t["status"] == "draft") >= MAX_DRAFTS_PER_USER:
+            raise TaskError(f"you already have {MAX_DRAFTS_PER_USER} drafts waiting; start or cancel some first")
+        done = [dict(s) for s in old["steps"] if s["status"] == "done"]
+        texts = self._clean_steps(steps) if steps else [s["text"] for s in old["steps"] if s["status"] in ("failed", "cancelled", "pending", "refused", "waiting_approval")]
+        if not texts:
+            raise TaskError("nothing is left to plan: every step of that task is done")
+        if len(done) + len(texts) > MAX_STEPS:
+            raise TaskError(f"at most {MAX_STEPS} steps in all: split it into two tasks")
+        now = time.time()
+        task = {"id": f"task-{uuid.uuid4().hex[:12]}", "namespace": old["namespace"], "goal": old["goal"], "status": "draft", "tainted": old["tainted"], "taint_source": old.get("taint_source"),
+                "created_at": now, "updated_at": now, "note": f"re-plan of {old['id']}: {len(done)} step(s) carried over as done; edit the rest, then start it",
+                "steps": done + [self._fresh_step(t) for t in texts]}
+        for i, s in enumerate(task["steps"]):
+            s["n"] = i + 1
+            s["approval_id"] = None
+        with self._p._connect() as conn:
+            conn.execute("INSERT INTO agent_tasks (id, namespace, goal, status, steps_json, tainted, taint_source, created_at, updated_at, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                         (task["id"], task["namespace"], task["goal"], "draft", json.dumps(task["steps"], ensure_ascii=False), 1 if task["tainted"] else 0, task.get("taint_source"), now, now, task["note"]))
+        self._audit("replanned", task, {"from": old["id"], "carried_done": len(done), "new_steps": len(texts)})
         return task
 
     # ------------------------------------------------------------ running

@@ -447,6 +447,26 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except TaskError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    def _desk_task(fn_name: str, task_id: str, **kwargs: Any) -> Any:
+        from rct_control_plane.task_board import TaskError
+        from rct_control_plane.task_board_runtime import get_board
+        try:
+            return getattr(get_board(_kernel()._persistence), fn_name)(task_id, **kwargs)
+        except TaskError as exc:
+            raise HTTPException(status_code=404 if "no such task" in str(exc) else 409, detail=str(exc)) from exc
+
+    @router.post("/tasks/{task_id}/start")
+    async def task_start(task_id: str) -> Dict[str, Any]:
+        return _desk_task("start", task_id)
+
+    @router.put("/tasks/{task_id}/plan")
+    async def task_plan(task_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return _desk_task("edit_plan", task_id, steps=[str(x) for x in payload.get("steps", [])] if isinstance(payload.get("steps"), list) else [])
+
+    @router.post("/tasks/{task_id}/replan")
+    async def task_replan(task_id: str) -> Dict[str, Any]:
+        return _desk_task("replan", task_id)
+
     @router.get("/envelope")
     async def envelope_status() -> Dict[str, Any]:
         """Is the agent paused, what are the spending and flood limits, and how much of them has been used (envelope.py)."""

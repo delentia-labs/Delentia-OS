@@ -3796,15 +3796,62 @@ def _task_board(db: Optional[str]):
 @click.argument("goal")
 @click.option("--step", "steps", multiple=True, help="a step (repeat for several); without any, the RCT-7 plan of the goal is used")
 @click.option("--namespace", default="owner", show_default=True)
+@click.option("--review", is_flag=True, help="make a DRAFT: show the plan and run nothing until `delentia task start`")
 @click.option("--db", default=None)
-def task_create(goal: str, steps: tuple, namespace: str, db: Optional[str]) -> None:
+def task_create(goal: str, steps: tuple, namespace: str, review: bool, db: Optional[str]) -> None:
     from rct_control_plane.task_board import TaskError
     try:
-        task = _task_board(db).create(namespace, goal, _list(steps) or None)
+        task = _task_board(db).create(namespace, goal, _list(steps) or None, review=review)
     except TaskError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
-    click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+    if review:
+        click.echo(f"draft {task['id']} - the plan, nothing has run:")
+        for s_ in task["steps"]:
+            click.echo(f"  {s_['n']}. {s_['text']}")
+        click.echo(f"change it: delentia task plan {task['id']} --step ... ; run it: delentia task start {task['id']}")
+    else:
+        click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+
+
+def _task_call(fn_name: str, task_id: str, db: Optional[str], **kwargs: Any) -> Dict[str, Any]:
+    from rct_control_plane.task_board import TaskError
+    try:
+        return getattr(_task_board(db), fn_name)(task_id, **kwargs)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@task_group.command("plan")
+@click.argument("task_id")
+@click.option("--step", "steps", multiple=True, required=True, help="the new steps, in order (repeat); they replace every step that has not run yet")
+@click.option("--db", default=None)
+def task_plan(task_id: str, steps: tuple, db: Optional[str]) -> None:
+    """Rewrite the steps that have not run yet (a draft: all of them)."""
+    task = _task_call("edit_plan", task_id, db, steps=_list(steps))
+    click.echo(f"{task['id']}: {task['status']}, {sum(1 for s_ in task['steps'] if s_['status'] == 'pending')} step(s) still to run")
+
+
+@task_group.command("start")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_start(task_id: str, db: Optional[str]) -> None:
+    """Let a draft run."""
+    task = _task_call("start", task_id, db)
+    click.echo(f"{task['id']}: {task['status']} - the daemon will run it, or: delentia task advance {task['id']}")
+
+
+@task_group.command("replan")
+@click.argument("task_id")
+@click.option("--step", "steps", multiple=True, help="the steps for the new draft (default: the steps that did not finish)")
+@click.option("--db", default=None)
+def task_replan(task_id: str, steps: tuple, db: Optional[str]) -> None:
+    """After a failed or cancelled task: a new DRAFT that carries over what was done. Nothing runs until you start it."""
+    task = _task_call("replan", task_id, db, steps=_list(steps) or None)
+    click.echo(f"draft {task['id']} - {task['note']}")
+    for s_ in task["steps"]:
+        click.echo(f"  {s_['n']}. [{s_['status']}] {s_['text'][:80]}")
 
 
 @task_group.command("list")

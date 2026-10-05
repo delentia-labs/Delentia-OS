@@ -3,7 +3,39 @@
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
-import { desk, type ResumeAnswer } from "@/lib/desk-api";
+import { desk, type BoardTask, type ResumeAnswer } from "@/lib/desk-api";
+
+/** One task: a DRAFT shows its plan as editable text (one step per line) and runs nothing until Start; a failed or cancelled task can be re-planned into a new draft. */
+function TaskRow({ task: t, busy, act }: { task: BoardTask; busy: boolean; act: (fn: () => Promise<unknown>) => Promise<void> }) {
+  const pendingText = t.steps.filter((s) => s.status === "pending").map((s) => s.text).join("\n");
+  const [text, setText] = useState(pendingText);
+  const editable = ["draft", "waiting", "waiting_approval"].includes(t.status) && !t.steps.some((s) => s.status === "running");
+  const lines = () => text.split("\n").map((x) => x.trim()).filter(Boolean);
+  return (
+    <div className="border-b border-dl-rule/60 py-3 last:border-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[13px] text-dl-text"><Code>{t.id}</Code> · {t.namespace} · {t.goal}</div>
+        <div className="flex items-center gap-2">
+          <Badge tone={t.status === "done" ? "leaf" : t.status === "failed" ? "rust" : "amber"}>{t.status}</Badge>
+          {t.tainted ? <Badge tone="amber">read outside text</Badge> : null}
+          {t.status === "draft" ? <Button disabled={busy || !lines().length} onClick={() => act(async () => { await desk.taskPlan(t.id, lines()); await desk.taskStart(t.id); })}>Save and start</Button> : null}
+          {["failed", "cancelled"].includes(t.status) ? <Button tone="ghost" disabled={busy} onClick={() => act(() => desk.taskReplan(t.id))}>Re-plan</Button> : null}
+          {["running", "waiting", "waiting_approval", "draft"].includes(t.status) ? <Button tone="ghost" disabled={busy} onClick={() => act(() => desk.taskCancel(t.id))}>Cancel</Button> : null}
+        </div>
+      </div>
+      <p className="mt-1 text-[12px] text-dl-muted">{t.steps.map((s) => `${s.n}:${s.status}`).join("  ")}{t.note ? ` — ${t.note}` : ""}</p>
+      {editable && t.steps.some((s) => s.status === "pending") ? (
+        <div className="mt-2">
+          <textarea className="w-full rounded border border-dl-rule bg-transparent p-2 text-[12px] text-dl-text" rows={Math.min(8, Math.max(3, lines().length + 1))} value={text} onChange={(ev) => setText(ev.target.value)} aria-label="Steps that have not run yet, one per line" />
+          <div className="mt-1 flex gap-2">
+            <Button tone="ghost" disabled={busy || !lines().length || text === pendingText} onClick={() => act(() => desk.taskPlan(t.id, lines()))}>Save plan</Button>
+            <span className="text-[11px] text-dl-muted self-center">One step per line. Steps that already ran stay as they are.</span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 const LIMIT_LABELS: Record<string, string> = {
   daily_usd: "Runtime money limit per day (USD)", daily_tokens: "Runtime token limit per day", user_daily_usd: "Per-person money limit per day (USD)",
@@ -93,19 +125,7 @@ export default function SafetyPage() {
         <Panel title={lang === "th" ? "งานที่ค้างและงานเบื้องหลัง" : "Tasks and background jobs"} className="mt-4" aside={board.data ? <Badge>{board.data.tasks.length} task(s) · {board.data.jobs.length} job(s)</Badge> : undefined}>
           {board.error ? <ErrorNote error={board.error} onRetry={board.reload} /> : null}
           {board.data && !board.data.tasks.length && !board.data.jobs.length ? <Empty title="Nothing in progress">Tasks are goals in steps (<Code>delentia task create</Code>); jobs are background runs (<Code>POST /v1/agent/jobs</Code>).</Empty> : null}
-          {board.data?.tasks.map((t) => (
-            <div key={t.id} className="border-b border-dl-rule/60 py-3 last:border-0">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[13px] text-dl-text"><Code>{t.id}</Code> · {t.namespace} · {t.goal}</div>
-                <div className="flex items-center gap-2">
-                  <Badge tone={t.status === "done" ? "leaf" : t.status === "failed" ? "rust" : "amber"}>{t.status}</Badge>
-                  {t.tainted ? <Badge tone="amber">read outside text</Badge> : null}
-                  {["running", "waiting", "waiting_approval"].includes(t.status) ? <Button tone="ghost" disabled={busy} onClick={() => act(() => desk.taskCancel(t.id))}>Cancel</Button> : null}
-                </div>
-              </div>
-              <p className="mt-1 text-[12px] text-dl-muted">{t.steps.map((s) => `${s.n}:${s.status}`).join("  ")}{t.note ? ` — ${t.note}` : ""}</p>
-            </div>
-          ))}
+          {board.data?.tasks.map((t) => <TaskRow key={t.id} task={t} busy={busy} act={act} />)}
           {board.data?.jobs.map((j) => <Row key={j.id} label={`${j.id} · ${j.namespace}`}>{j.status}{j.stopped ? ` (${j.stopped})` : ""} · {j.steps} step(s){j.last_tool ? ` · last: ${j.last_tool}` : ""}</Row>)}
         </Panel>
       </PageBody>

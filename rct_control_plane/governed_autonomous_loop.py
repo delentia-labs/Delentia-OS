@@ -108,7 +108,7 @@ from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.jitna_protocol import (
     JITNAKeypair, JITNAMessageType, JITNAPacket, generate_keypair, sign_packet, verify_packet,
 )
-from rct_control_plane import data_evidence
+from rct_control_plane import data_evidence, verify_grounding
 from rct_control_plane.growth import GrowthLedger, efficiency_baseline, episode_delta
 from rct_control_plane.mee_engine import MEESession
 from rct_control_plane.persistence import ControlPlanePersistence
@@ -622,6 +622,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_D, self._episode_I = D, I
         conversation_text = self._conversation_context()
         self._episode_used_conversation = bool(conversation_text)
+        self._episode_conversation_text = conversation_text
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
@@ -1432,7 +1433,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
-    def _verify_against_intent(self, goal: str, final_answer: Optional[str]) -> Dict[str, Any]:
+    def _verify_against_intent(self, goal: str, final_answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
         """Round 48 R1.2: RCT-7 step 7 ("benchmark with intent") inside the
         agent loop - previously only process_intent_deep_pipeline() did it.
         Same matcher and same 0.15 threshold as the kernel's
@@ -1448,6 +1449,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             matcher = SemanticMatcher()
         score = float(matcher.semantic_similarity(goal, str(final_answer)))
         declined = answer_declines_goal(str(final_answer))
+        similar = score >= self._intent_verify_threshold
         out = {
             "applicable": True,
             "similarity_score": round(score, 4),
@@ -1456,10 +1458,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             # similarity threshold (two real qwen2.5:7b runs did, and were then
             # learned as skills). An answer that declines the goal is not
             # aligned with it, whatever its similarity.
-            "aligned_with_intent": score >= self._intent_verify_threshold and not declined,
+            "aligned_with_intent": similar and not declined,
         }
         if declined:
             out["declined"] = True
+        if (os.environ.get(verify_grounding.ENV) or "on").strip().lower() not in ("off", "0", "false"):
+            # Round 61: similarity alone lets through an answer that invented its facts or claimed an action no tool performed, and rejects a short correct answer.
+            # The grounding check (verify_grounding.py, measured in scripts/measure_verify.py) looks at the evidence instead. DELENTIA_VERIFY_GROUNDING=off restores the old verdict.
+            grounding = verify_grounding.check(goal, str(final_answer), steps or [], conversation)
+            out["grounding"] = {"grounded": grounding["grounded"], "flags": grounding["flags"], "supported": grounding["supported"]}
+            out["aligned_with_intent"] = bool(grounding["grounded"] and not declined and (similar or grounding["supported"]))
         return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
@@ -1484,7 +1492,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             result["warm_recall"] = self._warm_info
         else:
             verification = (
-                self._verify_against_intent(result["goal"], result.get("final_answer"))
+                self._verify_against_intent(result["goal"], result.get("final_answer"), result.get("steps"), getattr(self, "_episode_conversation_text", ""))
                 if stopped_reason == "llm_finished"
                 else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
             )
