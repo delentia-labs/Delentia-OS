@@ -29,8 +29,12 @@ What the runtime does with them:
     credentials; a remote server must be https (or loopback) and its header values come from named variables;
   * a slow or dead server costs one timeout, not the episode, and its error is a normal tool error.
 
-Not done: a persistent connection per server (each call opens a short session; fine for a few calls per episode, slow for
-chatty servers), OAuth for remote servers, MCP resources/prompts, and sampling requests from a server (always refused).
+Round 61, persistent connections: with ``"persistent": true`` on a server (or DELENTIA_MCP_PERSISTENT=1) its tool CALLS reuse one open session instead of starting a process and
+a handshake for every call. The session lives in one long-lived task on a private event loop thread (the SDK ties a connection to the task that opened it), is kept PER PERSON (a server
+that remembers state between calls never shares it between two people), closes itself after 5 minutes idle, and is dropped after any error or timeout so the next call starts clean.
+Off by default: a stateful server is a different thing from one that is asked a fresh question each time, and that is the owner's call.
+
+Not done: OAuth for remote servers, MCP resources/prompts, and sampling requests from a server (always refused).
 
 Apache 2.0 - Delentia Labs
 """
@@ -43,6 +47,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,6 +63,8 @@ MAX_RESULT_CHARS = 200_000
 MAX_DESCRIPTION_CHARS = 500
 MAX_SCHEMA_CHARS = 6_000
 MAX_TOOLS_PER_SERVER = 64
+PERSISTENT_ENV = "DELENTIA_MCP_PERSISTENT"
+IDLE_CLOSE_S = 300.0
 
 _SERVER_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,23}$")        # no underscore: "__" separates server from tool
 _TOOL_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
@@ -86,6 +93,7 @@ class ServerSpec:
     timeout_s: float = DEFAULT_TIMEOUT_S
     enabled: bool = True
     region: str = ""                  # two-letter country code the owner declares for a remote server (data-sovereignty policy)
+    persistent: bool = False          # Round 61: reuse one session per person for tool calls (see the module docstring)
 
 
 def config_path() -> Path:
@@ -98,7 +106,7 @@ def _parse_server(name: str, raw: Any) -> ServerSpec:
         raise ExternalMCPError(f"server name {name!r}: use 1-24 lower-case letters, digits or '-' (no underscore)")
     if not isinstance(raw, dict):
         raise ExternalMCPError(f"server {name!r}: must be an object")
-    known = {"command", "args", "cwd", "env_vars", "url", "headers_env", "read_only_tools", "taint_exempt_tools", "tools_sha256", "timeout_s", "enabled", "region"}
+    known = {"command", "args", "cwd", "env_vars", "url", "headers_env", "read_only_tools", "taint_exempt_tools", "tools_sha256", "timeout_s", "enabled", "region", "persistent"}
     extra = set(raw) - known
     if extra:
         # A field called "env" or "token" would invite a pasted secret; refuse unknown fields rather than ignore them.
@@ -139,7 +147,7 @@ def _parse_server(name: str, raw: Any) -> ServerSpec:
     return ServerSpec(name=name, command=command, args=list(args), cwd=str(raw.get("cwd") or ""), env_vars=list(env_vars), url=url,
                       headers_env={str(h): v for h, v in headers_env.items()}, read_only_tools=frozenset(ro), taint_exempt_tools=frozenset(exempt), tools_sha256=pin,
                       timeout_s=max(1.0, min(timeout, MAX_TIMEOUT_S)), enabled=bool(raw.get("enabled", True)),
-                      region=str(raw.get("region") or "").strip().upper())
+                      region=str(raw.get("region") or "").strip().upper(), persistent=bool(raw.get("persistent", False)))
 
 
 def load_servers(path: Optional[Path] = None) -> Dict[str, ServerSpec]:
@@ -284,6 +292,148 @@ class _Session:
         await self._stack.aclose()
 
 
+# ---------------------------------------------------------------------------------------------------------------- persistent sessions
+
+class _WorkerClosed(ConnectionError):
+    """The pooled session was already gone when a call reached it (nothing was sent): the caller starts a fresh one."""
+
+
+class _Bridge:
+    """A private event loop on its own thread. A pooled session must be opened, used and closed by ONE task (the MCP SDK's streams are tied to the task that made them), and the
+    callers come from many short-lived event loops (a CLI run, a test, the server's), so the sessions live here and callers hand work over."""
+
+    def __init__(self) -> None:
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self._run, name="delentia-mcp-bridge", daemon=True)
+        self.thread.start()
+
+    def _run(self) -> None:
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+
+_BRIDGE: Optional[_Bridge] = None
+_WORKERS: Dict[Tuple[str, str], "_Worker"] = {}
+_POOL_LOCK = threading.Lock()
+
+
+class _Worker:
+    """One open session with one server for one person: a queue of jobs served by a single long-lived task."""
+
+    def __init__(self, spec: ServerSpec, key: Tuple[str, str]):
+        self.spec, self.key = spec, key
+        self.queue: "asyncio.Queue[Any]" = asyncio.Queue()
+        self.ready: "asyncio.Event" = asyncio.Event()
+        self.closed = False
+        self.error: Optional[BaseException] = None
+        self.task = asyncio.ensure_future(self._main())
+
+    async def _main(self) -> None:
+        try:
+            async with _Session(self.spec) as session:
+                self.ready.set()
+                while True:
+                    try:
+                        fn, fut = await asyncio.wait_for(self.queue.get(), timeout=IDLE_CLOSE_S)
+                    except asyncio.TimeoutError:
+                        break                                          # idle: close the session and the process
+                    if fut.cancelled():
+                        continue
+                    try:
+                        result = await asyncio.wait_for(fn(session), timeout=self.spec.timeout_s)
+                    except BaseException as exc:                       # noqa: BLE001 - after ANY failure the connection is not trusted: fail the caller, close, reconnect next time
+                        if not fut.done():
+                            fut.set_exception(exc if isinstance(exc, Exception) else RuntimeError(type(exc).__name__))
+                        if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                            raise
+                        break
+                    if not fut.done():
+                        fut.set_result(result)
+        except BaseException as exc:                                   # noqa: BLE001 - could not even connect, or the connection died
+            self.error = exc
+        finally:
+            self.closed = True
+            self.ready.set()
+            with _POOL_LOCK:
+                if _WORKERS.get(self.key) is self:
+                    del _WORKERS[self.key]
+            while not self.queue.empty():                              # jobs that arrived as the session ended never ran
+                _, fut = self.queue.get_nowait()
+                if not fut.done():
+                    fut.set_exception(_WorkerClosed("the session closed before this call ran"))
+
+    async def submit(self, fn: Any) -> Any:
+        await self.ready.wait()
+        if self.closed:
+            raise _WorkerClosed(f"could not open a session with {self.spec.name}" + (f" ({type(self.error).__name__}: {str(self.error)[:120]})" if self.error else ""))
+        fut: "asyncio.Future[Any]" = asyncio.get_running_loop().create_future()
+        await self.queue.put((fn, fut))
+        return await fut
+
+
+def _bridge() -> _Bridge:
+    global _BRIDGE
+    with _POOL_LOCK:
+        if _BRIDGE is None:
+            _BRIDGE = _Bridge()
+        return _BRIDGE
+
+
+def persistent_enabled(spec: ServerSpec) -> bool:
+    return spec.persistent or (os.environ.get(PERSISTENT_ENV) or "").strip().lower() in ("1", "on", "true", "yes")
+
+
+async def _worker_for(spec: ServerSpec, key: Tuple[str, str]) -> "_Worker":
+    """Runs on the bridge loop: the live worker for this server and person, or a new one."""
+    with _POOL_LOCK:
+        worker = _WORKERS.get(key)
+        if worker is None or worker.closed:
+            worker = _WORKERS[key] = _Worker(spec, key)
+    return worker
+
+
+async def _pooled(spec: ServerSpec, namespace: str, fn: Any) -> Any:
+    """Run `fn(session)` on the pooled session of this person; a session that turned out to be closed is replaced once."""
+    bridge = _bridge()
+    key = (spec.name, namespace or "")
+
+    async def go() -> Any:
+        worker = await _worker_for(spec, key)
+        return await worker.submit(fn)
+    for attempt in (1, 2):
+        try:
+            return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(go(), bridge.loop))
+        except _WorkerClosed:
+            if attempt == 2:
+                raise
+    raise _WorkerClosed("unreachable")                                  # pragma: no cover
+
+
+def pool_status() -> List[Dict[str, Any]]:
+    with _POOL_LOCK:
+        return [{"server": k[0], "person": k[1], "open": not w.closed} for k, w in _WORKERS.items()]
+
+
+def shutdown_pool() -> None:
+    """Close every pooled session (tests, and the server's shutdown). Safe to call when nothing is open."""
+    global _BRIDGE
+    with _POOL_LOCK:
+        workers, bridge = list(_WORKERS.values()), _BRIDGE
+    if bridge is None:
+        return
+
+    async def stop() -> None:
+        for w in workers:
+            w.task.cancel()
+        await asyncio.gather(*(w.task for w in workers), return_exceptions=True)
+    try:
+        asyncio.run_coroutine_threadsafe(stop(), bridge.loop).result(timeout=15)
+    except Exception:                                                  # noqa: BLE001
+        pass
+    with _POOL_LOCK:
+        _WORKERS.clear()
+
+
 async def list_server_tools(spec: ServerSpec, *, force: bool = False) -> Tuple[List[Dict[str, Any]], List[str]]:
     """(cleaned tools, problems). Cached; a server that fails gives no tools and a problem, never an exception."""
     cached = _LIST_CACHE.get(spec.name)
@@ -351,7 +501,7 @@ def _shape_result(server: str, tool: str, result: Any) -> Dict[str, Any]:
     return payload
 
 
-async def call_external_tool(tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
+async def call_external_tool(tool_name: str, tool_args: Dict[str, Any], namespace: str = "") -> Dict[str, Any]:
     parts = split(tool_name)
     servers, config_error = enabled_servers()
     if config_error:
@@ -380,7 +530,13 @@ async def call_external_tool(tool_name: str, tool_args: Dict[str, Any]) -> Dict[
         async def run() -> Any:
             async with _Session(spec) as session:
                 return await session.call_tool(parts[1], tool_args)
-        result = await asyncio.wait_for(run(), timeout=spec.timeout_s)
+
+        async def on_session(session: Any) -> Any:
+            return await session.call_tool(parts[1], tool_args)
+        if persistent_enabled(spec):
+            result = await asyncio.wait_for(_pooled(spec, namespace, on_session), timeout=spec.timeout_s + 5.0)
+        else:
+            result = await asyncio.wait_for(run(), timeout=spec.timeout_s)
     except asyncio.TimeoutError:
         return {"error": f"server {spec.name!r} did not answer within {spec.timeout_s:g}s", "external_mcp": {"server": spec.name, "tool": parts[1]}}
     except Exception as exc:
@@ -391,8 +547,9 @@ async def call_external_tool(tool_name: str, tool_args: Dict[str, Any]) -> Dict[
 class ExternalToolHub:
     """Wraps the built-in tool server: the loop sees one menu, built-in tools first, external tools after."""
 
-    def __init__(self, base: Any):
+    def __init__(self, base: Any, namespace: str = ""):
         self._base = base
+        self._namespace = namespace
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._base, name)
@@ -414,19 +571,19 @@ class ExternalToolHub:
 
     async def call_tool(self, name: str, arguments: Optional[Dict[str, Any]] = None, *args: Any, **kwargs: Any) -> Any:
         if is_external(name):
-            payload = await call_external_tool(name, arguments or {})
+            payload = await call_external_tool(name, arguments or {}, self._namespace)
             return SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps(payload, default=str))])
         return await self._base.call_tool(name, arguments, *args, **kwargs)
 
 
-def maybe_wrap(mcp_server: Any) -> Any:
+def maybe_wrap(mcp_server: Any, namespace: str = "") -> Any:
     """The loop's entry: wraps only when at least one server is configured (or the config is broken, so the problem shows)."""
     if isinstance(mcp_server, ExternalToolHub):
         return mcp_server
     servers, error = enabled_servers()
     if not servers and not error:
         return mcp_server
-    return ExternalToolHub(mcp_server)
+    return ExternalToolHub(mcp_server, namespace)
 
 
 def inspect_server(name: str) -> Dict[str, Any]:

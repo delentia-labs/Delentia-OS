@@ -380,6 +380,12 @@ async def _lifespan(app: FastAPI):
         if _DAEMON_SCHEDULER is not None:
             await _DAEMON_SCHEDULER.stop()
         _DAEMON_STARTED_AT = None
+        try:                                                  # Round 61: close the pooled sessions with external MCP servers (their processes end with the server)
+            import asyncio as _asyncio
+            from rct_control_plane import external_mcp
+            await _asyncio.to_thread(external_mcp.shutdown_pool)
+        except Exception:                                     # noqa: BLE001
+            pass
 
 
 class ControlPlaneAPI:
@@ -1942,7 +1948,8 @@ class ControlPlaneAPI:
             from rct_control_plane.task_board_runtime import get_board
             try:
                 return get_board(shared_kernel._persistence).create(_job_namespace(request, payload), str(payload.get("goal") or ""),
-                                                                   [str(s) for s in payload["steps"]] if isinstance(payload.get("steps"), list) else None)
+                                                                   [str(s) for s in payload["steps"]] if isinstance(payload.get("steps"), list) else None,
+                                                                   review=bool(payload.get("review")))
             except TaskError as exc:
                 raise HTTPException(status_code=429 if "allowed" in str(exc) else 400, detail=str(exc)) from exc
 
@@ -1960,6 +1967,31 @@ class ControlPlaneAPI:
             if task is None:
                 raise HTTPException(status_code=404, detail="no such task")
             return task
+
+        def _task_action(request: Request, task_id: str, namespace: Optional[str], fn_name: str, **kwargs: Any) -> Any:
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.task_board import TaskError
+            from rct_control_plane.task_board_runtime import get_board
+            try:
+                return getattr(get_board(shared_kernel._persistence), fn_name)(task_id, namespace=_job_namespace(request, None, namespace), **kwargs)
+            except TaskError as exc:
+                raise HTTPException(status_code=404 if "no such task" in str(exc) else 409 if "cannot be" in str(exc) or "only a" in str(exc) else 400, detail=str(exc)) from exc
+
+        @self.app.put("/v1/agent/tasks/{task_id}/plan", tags=["Kernel"])
+        async def edit_agent_task_plan(task_id: str, payload: Dict[str, Any], request: Request, namespace: Optional[str] = None):
+            """Round 61: rewrite the steps that have not run yet (all of them on a draft)."""
+            return _task_action(request, task_id, namespace, "edit_plan", steps=[str(x) for x in payload.get("steps", [])] if isinstance(payload.get("steps"), list) else [])
+
+        @self.app.post("/v1/agent/tasks/{task_id}/start", tags=["Kernel"])
+        async def start_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
+            """Round 61: let a draft (created with review=true) run."""
+            return _task_action(request, task_id, namespace, "start")
+
+        @self.app.post("/v1/agent/tasks/{task_id}/replan", tags=["Kernel"], status_code=201)
+        async def replan_agent_task(task_id: str, request: Request, payload: Optional[Dict[str, Any]] = None, namespace: Optional[str] = None):
+            """Round 61: after a failed or cancelled task, a NEW draft that carries over what was done; nothing runs until it is started."""
+            steps = [str(x) for x in (payload or {}).get("steps", [])] if isinstance((payload or {}).get("steps"), list) else None
+            return _task_action(request, task_id, namespace, "replan", steps=steps)
 
         @self.app.delete("/v1/agent/tasks/{task_id}", tags=["Kernel"])
         async def cancel_agent_task(task_id: str, request: Request, namespace: Optional[str] = None):
@@ -1996,13 +2028,20 @@ class ControlPlaneAPI:
         # never has to send a private key - `delentia approvals sign` runs
         # wherever the key lives and only the signature travels here.
         @self.app.get("/v1/agent/approvals", tags=["Kernel"])
-        async def list_agent_approvals(status: str = "PENDING", limit: int = 50):
+        async def list_agent_approvals(request: Request, status: str = "PENDING", limit: int = 50):
+            from rct_control_plane import api_tokens
             from rct_control_plane.approvals import PendingActionStore
             from rct_control_plane.mcp_server import _kernel as shared_kernel
 
             store = PendingActionStore(shared_kernel._persistence)
             wanted = None if status.upper() == "ALL" else status
-            return [a.to_dict() for a in store.list(status=wanted, limit=limit)]
+            person = getattr(request.state, "delentia_user", None)
+            scoped = bool(person and person != api_tokens.SHARED_IDENTITY)
+            rows = store.list(status=wanted, limit=1000 if scoped else limit)
+            if scoped:
+                # Round 61: with a token per person, a person sees THEIR OWN waiting requests; the list used to show everyone's (goals and tool arguments included).
+                rows = [a for a in rows if a.namespace == person]
+            return [a.to_dict() for a in rows[:limit]]
 
         @self.app.post("/v1/agent/approvals/{approval_id}/decision", tags=["Kernel"])
         async def decide_agent_approval(approval_id: str, payload: Dict[str, Any]):

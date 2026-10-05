@@ -2165,6 +2165,45 @@ def memory_list(namespace: str, db: Optional[str]) -> None:
         click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
 
 
+@memory_group.command("candidates")
+@click.option("--namespace", default=None, help="only this person's suggestions")
+@click.option("--status", default="pending", show_default=True, type=click.Choice(["pending", "accepted", "dismissed", "expired"]))
+@click.option("--db", default=None)
+def memory_candidates(namespace: Optional[str], status: str, db: Optional[str]) -> None:
+    """Things the runtime offered to remember (from a person's own words); nothing is kept until it is accepted."""
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    for c in MemoryCandidates(_audit_db(db)).list(namespace, status):
+        click.echo(f"{c['id']}  {c['namespace']:<22} [{c['kind']}]  {c['text']}")
+
+
+def _candidate_action(action: str, candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    try:
+        done = getattr(MemoryCandidates(_audit_db(db)), action)(candidate_id, namespace)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(("remembered: " + done["text"]) if action == "accept" else f"{candidate_id}: dismissed")
+
+
+@memory_group.command("accept")
+@click.argument("candidate_id")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def memory_accept(candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """Keep a suggestion as a memory."""
+    _candidate_action("accept", candidate_id, namespace, db)
+
+
+@memory_group.command("dismiss")
+@click.argument("candidate_id")
+@click.option("--namespace", default=None)
+@click.option("--db", default=None)
+def memory_dismiss(candidate_id: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """Throw a suggestion away."""
+    _candidate_action("dismiss", candidate_id, namespace, db)
+
+
 @cli.command("algorithms")
 def algorithms_command() -> None:
     """The 41 algorithms as pipeline stages, and what each one needs."""
@@ -2621,6 +2660,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
+    os.environ.setdefault("DELENTIA_MEMORY_NUDGE", "1")        # Round 61: offer to remember what a person says about themselves (they answer yes or no)
     os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
@@ -3796,15 +3836,62 @@ def _task_board(db: Optional[str]):
 @click.argument("goal")
 @click.option("--step", "steps", multiple=True, help="a step (repeat for several); without any, the RCT-7 plan of the goal is used")
 @click.option("--namespace", default="owner", show_default=True)
+@click.option("--review", is_flag=True, help="make a DRAFT: show the plan and run nothing until `delentia task start`")
 @click.option("--db", default=None)
-def task_create(goal: str, steps: tuple, namespace: str, db: Optional[str]) -> None:
+def task_create(goal: str, steps: tuple, namespace: str, review: bool, db: Optional[str]) -> None:
     from rct_control_plane.task_board import TaskError
     try:
-        task = _task_board(db).create(namespace, goal, _list(steps) or None)
+        task = _task_board(db).create(namespace, goal, _list(steps) or None, review=review)
     except TaskError as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
-    click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+    if review:
+        click.echo(f"draft {task['id']} - the plan, nothing has run:")
+        for s_ in task["steps"]:
+            click.echo(f"  {s_['n']}. {s_['text']}")
+        click.echo(f"change it: delentia task plan {task['id']} --step ... ; run it: delentia task start {task['id']}")
+    else:
+        click.echo(f"created {task['id']} with {len(task['steps'])} step(s); the daemon runs it, or: delentia task advance {task['id']}")
+
+
+def _task_call(fn_name: str, task_id: str, db: Optional[str], **kwargs: Any) -> Dict[str, Any]:
+    from rct_control_plane.task_board import TaskError
+    try:
+        return getattr(_task_board(db), fn_name)(task_id, **kwargs)
+    except TaskError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@task_group.command("plan")
+@click.argument("task_id")
+@click.option("--step", "steps", multiple=True, required=True, help="the new steps, in order (repeat); they replace every step that has not run yet")
+@click.option("--db", default=None)
+def task_plan(task_id: str, steps: tuple, db: Optional[str]) -> None:
+    """Rewrite the steps that have not run yet (a draft: all of them)."""
+    task = _task_call("edit_plan", task_id, db, steps=_list(steps))
+    click.echo(f"{task['id']}: {task['status']}, {sum(1 for s_ in task['steps'] if s_['status'] == 'pending')} step(s) still to run")
+
+
+@task_group.command("start")
+@click.argument("task_id")
+@click.option("--db", default=None)
+def task_start(task_id: str, db: Optional[str]) -> None:
+    """Let a draft run."""
+    task = _task_call("start", task_id, db)
+    click.echo(f"{task['id']}: {task['status']} - the daemon will run it, or: delentia task advance {task['id']}")
+
+
+@task_group.command("replan")
+@click.argument("task_id")
+@click.option("--step", "steps", multiple=True, help="the steps for the new draft (default: the steps that did not finish)")
+@click.option("--db", default=None)
+def task_replan(task_id: str, steps: tuple, db: Optional[str]) -> None:
+    """After a failed or cancelled task: a new DRAFT that carries over what was done. Nothing runs until you start it."""
+    task = _task_call("replan", task_id, db, steps=_list(steps) or None)
+    click.echo(f"draft {task['id']} - {task['note']}")
+    for s_ in task["steps"]:
+        click.echo(f"  {s_['n']}. [{s_['status']}] {s_['text'][:80]}")
 
 
 @task_group.command("list")
@@ -3852,6 +3939,115 @@ def task_cancel(task_id: str, db: Optional[str]) -> None:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     click.echo(f"{task['id']}: {task['status']}")
+
+
+@cli.group("hooks")
+def hooks_group():
+    """Hooks: your own signed code that can make the agent STRICTER (refuse or demand a signature before a tool, hide parts of a tool's result) and never looser.
+
+    \b
+        delentia hooks propose no_secrets_in_args my_hook.py "refuse commands that name a key file"
+        delentia hooks request no_secrets_in_args      # then: delentia approvals approve <id> --key ...
+        delentia hooks activate <approval_id>
+        delentia hooks list | disable <name>
+    """
+
+
+def _hook_registry(db: Optional[str]):
+    from rct_control_plane.hooks import HookRegistry
+    return HookRegistry(_audit_db(db))
+
+
+@hooks_group.command("propose")
+@click.argument("name")
+@click.argument("code_file", type=click.Path(exists=True, dir_okay=False))
+@click.argument("description", default="")
+@click.option("--db", default=None)
+def hooks_propose(name: str, code_file: str, description: str, db: Optional[str]) -> None:
+    """Check a hook file (static rules + a probe in another process) and store it as PROPOSED. Nothing runs until it is signed."""
+    from rct_control_plane.hooks import HookError
+    try:
+        result = _hook_registry(db).propose(name, Path(code_file).read_text(encoding="utf-8"), description)
+    except HookError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{result['name']}: {result['status']}  points: {', '.join(result['points']) or '-'}  sha256 {result['code_sha256'][:16]}")
+    for problem in result["verification"].get("problems", []):
+        click.echo(click.style(f"  - {problem}", fg="red"))
+    if result["status"] != "PROPOSED":
+        sys.exit(1)
+    click.echo(f"next: delentia hooks request {name}")
+
+
+@hooks_group.command("request")
+@click.argument("name")
+@click.option("--db", default=None)
+def hooks_request(name: str, db: Optional[str]) -> None:
+    """Ask for the human signature over this exact code."""
+    from rct_control_plane.hooks import HookError
+    try:
+        record = _hook_registry(db).request_activation(name)
+    except HookError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"approval {record.approval_id}  digest {record.action_sha256}\nsign it with: delentia approvals approve {record.approval_id} --key <your key>")
+
+
+@hooks_group.command("activate")
+@click.argument("approval_id")
+@click.option("--db", default=None)
+def hooks_activate(approval_id: str, db: Optional[str]) -> None:
+    """Switch the hook on once its approval is signed (every signature is re-verified and the code is re-hashed)."""
+    from rct_control_plane.approvals import ApprovalError
+    try:
+        click.echo(json.dumps(_hook_registry(db).activate(approval_id), indent=2))
+    except ApprovalError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+
+
+@hooks_group.command("list")
+@click.option("--db", default=None)
+def hooks_list(db: Optional[str]) -> None:
+    for h in _hook_registry(db).list():
+        click.echo(f"{h['name']:<28} {h['status']:<18} {', '.join(h['points']) or '-':<42} {h['description'][:50]}")
+
+
+@hooks_group.command("disable")
+@click.argument("name")
+@click.option("--db", default=None)
+def hooks_disable(name: str, db: Optional[str]) -> None:
+    """Turn a hook off (no signature needed: it only removes a tightening you chose). The code and the record stay."""
+    click.echo("disabled" if _hook_registry(db).disable(name) else "no active hook with that name")
+
+
+@cli.group("trajectories")
+def trajectories_group():
+    """What episodes actually did (steps, redacted), for evaluating or training a model. OFF unless DELENTIA_RECORD_TRAJECTORIES=1; stays on this machine."""
+
+
+@trajectories_group.command("stats")
+def trajectories_stats() -> None:
+    from rct_control_plane import trajectories
+    report = trajectories.stats()
+    click.echo(f"recording is {'ON' if trajectories.enabled() else 'off'} in this shell; {report['episodes']} episode(s) on disk ({report['verified']} verified, {report['tainted']} tainted)")
+    for tool, n in list(report["tools"].items())[:15]:
+        click.echo(f"  {n:5}  {tool}")
+
+
+@trajectories_group.command("export")
+@click.argument("out_path")
+@click.option("--verified-only", is_flag=True)
+@click.option("--exclude-tainted", is_flag=True, help="leave out episodes that read text from outside (recommended before training)")
+def trajectories_export(out_path: str, verified_only: bool, exclude_tainted: bool) -> None:
+    """Write the recorded episodes as JSON Lines (will not overwrite a file)."""
+    from rct_control_plane import trajectories
+    try:
+        done = trajectories.export(out_path, verified_only=verified_only, exclude_tainted=exclude_tainted)
+    except FileExistsError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"wrote {done['written']} episode(s) to {done['path']} ({done['skipped']} left out)")
 
 
 @cli.group("webhook")
@@ -4098,6 +4294,40 @@ def skills_list(limit: int) -> None:
     for skill in SkillLibrary().list_active(limit):
         kind = "bundled" if skill.bundled else "learned"
         click.echo(f"  [{kind:7}] reliability {skill.reliability:.2f}  uses {skill.uses:3}  {skill.problem_statement[:80]}")
+
+
+@skills_group.command("curate")
+@click.option("--apply", "apply_changes", is_flag=True, help="archive the skills with evidence against them (weak, refusal, duplicate); without it nothing changes")
+@click.option("--include-stale", is_flag=True, help="with --apply, also archive skills that were never reused in 90 days")
+@click.option("--skills-db", default=None, help="the skill library file (default: the data home's)")
+@click.option("--db", default=None, help="the persistence DB for the audit rows")
+def skills_curate(apply_changes: bool, include_stale: bool, skills_db: Optional[str], db: Optional[str]) -> None:
+    """Review the learned skills: which are weak, refusals in disguise, duplicates or stale. Archives, never deletes; starter and imported skills are never touched."""
+    from rct_control_plane import skill_curator
+    from rct_control_plane.skill_library import SkillLibrary
+    library = SkillLibrary(db_path=skills_db)
+    if not apply_changes:
+        report = skill_curator.review(library)
+        click.echo(f"{report['skills_reviewed']} learned skill(s) reviewed ({report['protected']} starter/imported left alone); {len(report['proposals'])} proposal(s): {report['counts'] or 'none'}")
+        for p in report["proposals"]:
+            click.echo(f"  [{p['kind']:9}] {p['id']}  {p['problem'][:60]}  - {p['reason']}")
+        if report["proposals"]:
+            click.echo("archive them with: delentia skills curate --apply")
+        return
+    kinds = skill_curator.EVIDENCE_KINDS + (("stale",) if include_stale else ())
+    outcome = skill_curator.apply(library, _audit_db(db), kinds)
+    click.echo(f"archived {len(outcome['archived'])} skill(s); {len(outcome['left_as_proposals'])} left as proposals")
+    for p in outcome["archived"]:
+        click.echo(f"  archived [{p['kind']}] {p['id']}  {p['problem'][:60]}")
+
+
+@skills_group.command("unarchive")
+@click.argument("skill_id")
+@click.option("--skills-db", default=None)
+def skills_unarchive(skill_id: str, skills_db: Optional[str]) -> None:
+    """Offer an archived skill again."""
+    from rct_control_plane.skill_library import SkillLibrary
+    click.echo("offered again" if SkillLibrary(db_path=skills_db).unarchive(skill_id) else "no archived skill with that id")
 
 
 @cli.group("mcp")

@@ -431,4 +431,28 @@ def test_a_control_nobody_asked_for_is_not_applicable_and_not_counted(gov):
     data = client.get("/v1/desk/governance").json()
     jury = _control(data, "jury")
     assert jury["applicable"] is False and "jury" not in {g["control"] for g in data["gaps"]}
-    assert data["total"] == sum(1 for c in data["controls"] if c["applicable"]) == len(data["controls"]) - 1
+    hooks = _control(data, "hooks")                       # Round 61: hooks are only listed once somebody has proposed one
+    assert hooks["applicable"] is False and "hooks" not in {g["control"] for g in data["gaps"]}
+    assert data["total"] == sum(1 for c in data["controls"] if c["applicable"]) == len(data["controls"]) - 2
+
+
+def test_round61_controls_are_listed_with_the_state_the_environment_gives(gov, monkeypatch):
+    client, _, tmp_path, _ = gov
+    data = client.get("/v1/desk/governance").json()
+    for cid in ("taint_gate", "spending_limits", "verify_grounding", "memory_nudge", "owner_only_tools", "secret_files"):
+        assert _control(data, cid)["name"], cid
+    assert _control(data, "taint_gate")["on"] is True and _control(data, "owner_only_tools")["on"] is True and _control(data, "secret_files")["always_on"] is True
+    monkeypatch.setenv("DELENTIA_TAINT_GATE", "off")
+    monkeypatch.setenv("DELENTIA_OWNER_TOOLS_FOR_CHANNELS", "1")
+    monkeypatch.setenv("DELENTIA_VERIFY_GROUNDING", "off")
+    data = client.get("/v1/desk/governance").json()
+    assert _control(data, "taint_gate")["on"] is False and _control(data, "owner_only_tools")["on"] is False and _control(data, "verify_grounding")["on"] is False
+    assert {"taint_gate", "owner_only_tools"} <= {g["control"] for g in data["gaps"]}
+
+
+def test_round61_audit_rows_have_readable_summaries_and_categories():
+    from rct_control_plane import governance_view as gv
+    assert "refused a call to delentia_run_sandboxed_command" in gv.summarise("agent_hook", "pre_tool_call_block", {"tool_name": "delentia_run_sandboxed_command", "reason": "names key material"})
+    assert "owner-only" in gv.summarise("governed_loop_scope", "owner_only_refused", {"tool_name": "delentia_query_audit_log"})
+    assert "archived by the curator (weak)" in gv.summarise("skill_curator", "archived", {"kind": "weak", "reason": "reused 4 times"})
+    assert gv.CATEGORY_OF["agent_hook"] == "hooks" and gv.CATEGORY_OF["skill_curator"] == "memory" and gv.CATEGORY_OF["governed_loop_scope"] == "scope"

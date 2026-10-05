@@ -12,6 +12,7 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+import contextvars
 import os
 import re
 from pathlib import Path
@@ -41,6 +42,8 @@ _SKIP_DIR_NAMES = {".git", "__pycache__", "node_modules", ".delentia_worktrees",
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
 _exchange_bridge = NeuralExchangeBridge()
+_LOOP_DEPTH: contextvars.ContextVar = contextvars.ContextVar("delentia_loop_depth", default=0)
+MAX_NESTED_LOOPS = 2
 _web_crawler = WebCrawler(block_private=True)        # Round 55: the agent cannot fetch internal or metadata addresses (url_safety.py)
 _worktree_isolator = GitWorktreeIsolator()
 
@@ -117,14 +120,26 @@ async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
 
 
 @mcp.tool()
-async def delentia_autonomous_loop(goal: str, max_iterations: int = 5) -> dict:
+async def delentia_autonomous_loop(goal: str, max_iterations: int = 5, namespace: str = "mcp_loop") -> dict:
     """Real autonomous decide/act/observe loop over this kernel's MCP
     tools. Bounded by max_iterations and a 120s wall-clock cap. Only has
-    access to this server's own already safety-reviewed tools."""
+    access to this server's own already safety-reviewed tools.
+
+    Round 61: when an AGENT calls this (the governed loop pins `namespace` to its own person), the
+    nested loop runs as that same person - before, it always ran as "mcp_loop", which reads the owner's
+    shared memory and is not a channel namespace, so a chat person's episode could step into the owner's
+    space through this one tool. Nesting is limited to two levels."""
     # Round 48 R0.1: governed like every other entry point.
     from rct_control_plane.agent_factory import build_governed_loop
-    loop = build_governed_loop(_kernel, namespace="mcp_loop", max_iterations=max_iterations, mcp_server=mcp)
-    return await loop.run(goal)
+    depth = _LOOP_DEPTH.get()
+    if depth >= MAX_NESTED_LOOPS:
+        return {"error": f"nested loops are limited to {MAX_NESTED_LOOPS} levels", "stopped_reason": "nesting_limit"}
+    token = _LOOP_DEPTH.set(depth + 1)
+    try:
+        loop = build_governed_loop(_kernel, namespace=namespace or "mcp_loop", max_iterations=max_iterations, mcp_server=mcp)
+        return await loop.run(goal)
+    finally:
+        _LOOP_DEPTH.reset(token)
 
 
 @mcp.tool()
@@ -215,12 +230,16 @@ async def delentia_expand_tool_output(original_id: str, start_line: Optional[int
 
 
 @mcp.tool()
-async def delentia_schedule_reminder(goal: str, fire_in_seconds: float) -> dict:
+async def delentia_schedule_reminder(goal: str, fire_in_seconds: float, namespace: str = "kernel_default") -> dict:
     """Schedule a real, session-scoped reminder that runs a real
     AutonomousLoop for `goal` once it becomes due. Session-local, not a
     cron/calendar system - call delentia_check_reminders to actually
-    fire due ones."""
-    reminder_id = schedule_reminder(_kernel, goal, fire_in_seconds)
+    fire due ones.
+
+    Round 61: a reminder runs as the person who scheduled it. It used to be stored under the owner-level
+    "kernel_default" space whoever asked, so a chat person's reminder later ran with the owner's shared
+    memory and no restrictions of a channel namespace; the governed loop now pins `namespace` to the caller."""
+    reminder_id = schedule_reminder(_kernel, goal, fire_in_seconds, namespace=namespace or "kernel_default")
     return {"reminder_id": reminder_id}
 
 
@@ -487,6 +506,10 @@ async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000) 
         resolved = _resolve_within_repo(relative_path)
     except PathTraversalError as e:
         return {"error": str(e)}
+    from rct_control_plane import secret_paths
+    refused = secret_paths.blocked_reason(relative_path) or secret_paths.blocked_reason(resolved.relative_to(REPO_ROOT).as_posix())
+    if refused:                       # Round 61: reads had no block list (only writes did): the agent could return the real .env
+        return {"error": f"refused: {refused}", "refused_by": "secret_paths"}
     if not resolved.is_file():
         return {"error": f"not found: {relative_path}"}
     raw = resolved.read_bytes()[:max_bytes]
@@ -512,6 +535,9 @@ async def delentia_search_repo_files(pattern: str, glob: str = "**/*.py", max_re
             break
         if not path.is_file() or any(part in _SKIP_DIR_NAMES for part in path.parts):
             continue
+        from rct_control_plane import secret_paths
+        if secret_paths.blocked_reason(path.relative_to(REPO_ROOT).as_posix()):
+            continue                  # Round 61: a search must not return lines of a credential file either
         try:
             for i, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
                 if regex.search(line):

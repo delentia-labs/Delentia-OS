@@ -4,7 +4,9 @@ Round 58: slash commands in chat (/help, /whoami, /status, /jobs, /approvals, /s
 A message whose FIRST word is a known command (`/status`, `/search invoice`) is answered by this module and never reaches the model: no episode, no tool, no tokens spent.
 That is what makes them safe to expose on every channel:
 
-  * they only READ, and only the asking person's own data (their namespace's jobs, approvals and episodes); nothing here changes a file, a job, an approval or a setting;
+  * they only READ, and only the asking person's own data (their namespace's jobs, approvals and episodes); nothing here changes a file, a job, an approval or a setting - with ONE narrow
+    exception from Round 61: `/remember <id>` and `/skip <id>` answer a suggestion the runtime made from the person's own words (memory_nudge.py) and act on that one suggestion, in the
+    asking person's own namespace, nothing else;
   * they cannot approve anything: an approval is a signature from the owner's own device, so `/approvals` only lists ids that wait;
   * only an allowed sender gets here (the allowlist and pairing are checked before), and a text that merely starts with a slash but is not a one-word command
     (`/etc/hosts please read this`) is an ordinary goal and goes to the model as always;
@@ -97,6 +99,34 @@ def _model(ctx: Dict[str, Any], arg: str) -> str:
     return f"model: {sel.model} via {sel.provider} (set on the host; it cannot be changed from chat)"
 
 
+def _suggestions(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.memory_nudge import MemoryCandidates, nudge_text
+    pending = MemoryCandidates(ctx["persistence"]).list(ctx["namespace"], "pending", limit=10)
+    return nudge_text(pending).lstrip("\n") if pending else "Nothing is waiting for your yes or no."
+
+
+def _remember(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    if not arg:
+        return "Say which one: /remember <id> (the id is under the suggestion; /suggestions lists them)."
+    try:
+        done = MemoryCandidates(ctx["persistence"]).accept(arg.split()[0], ctx["namespace"])
+    except ValueError as exc:
+        return str(exc).capitalize() + "."
+    return f"Remembered: {done['text']}"
+
+
+def _skip(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.memory_nudge import MemoryCandidates
+    if not arg:
+        return "Say which one: /skip <id>."
+    try:
+        MemoryCandidates(ctx["persistence"]).dismiss(arg.split()[0], ctx["namespace"])
+    except ValueError as exc:
+        return str(exc).capitalize() + "."
+    return "Okay, I will not keep that."
+
+
 COMMANDS: Dict[str, tuple] = {
     "help": (_help, "this list"),
     "whoami": (_whoami, "who the agent thinks you are"),
@@ -105,6 +135,9 @@ COMMANDS: Dict[str, tuple] = {
     "approvals": (_approvals, "your requests that wait for the owner's signature"),
     "search": (_search, "search your earlier requests: /search <words>"),
     "model": (_model, "which model answers"),
+    "suggestions": (_suggestions, "things I offered to remember for you"),
+    "remember": (_remember, "keep a suggestion: /remember <id>"),
+    "skip": (_skip, "throw a suggestion away: /skip <id>"),
 }
 _ALIASES: Dict[str, Callable[..., str]] = {"start": _help}
 

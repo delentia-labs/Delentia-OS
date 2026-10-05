@@ -82,6 +82,31 @@ class TelegramGateway:
             resp = await client.post(self._url("sendMessage"), json={"chat_id": chat_id, "text": text})
             resp.raise_for_status()
 
+    async def send_voice(self, chat_id: int, ogg_path: str) -> None:
+        """Round 61: a spoken reply (an Ogg/Opus file made on this machine) as a Telegram voice note."""
+        if not self.is_configured():
+            raise RuntimeError("TelegramGateway: TELEGRAM_BOT_TOKEN not configured")
+        with open(ogg_path, "rb") as handle:
+            payload = handle.read()
+        async with http_client.async_client(timeout=30) as client:
+            resp = await client.post(self._url("sendVoice"), data={"chat_id": str(chat_id)}, files={"voice": ("reply.ogg", payload, "audio/ogg")})
+            resp.raise_for_status()
+
+    async def _speak_reply(self, chat_id: int, answer: str) -> Optional[str]:
+        """After the text reply to a VOICE NOTE (and only with DELENTIA_VOICE_REPLY=1), the same words spoken. A missing speech engine or ffmpeg is not an error: the person already
+        has the text. Returns why nothing was sent, or None when a voice note went out."""
+        from rct_control_plane import voice as voice_module
+        if not voice_module.reply_enabled():
+            return "off"
+        answer = str(answer or "").strip()
+        if not answer or len(answer) > voice_module.MAX_REPLY_CHARS:
+            return "too long or empty to speak"
+        spoken = await voice_module.speak_ogg(answer)
+        if "error" in spoken:
+            return str(spoken["error"])[:200]
+        await self.send_voice(chat_id, spoken["path"])
+        return None
+
     async def _dispatch_to_autonomous_loop(self, goal: str, namespace: str) -> Dict[str, Any]:
         """Real dispatch - split into its own method so tests can
         monkeypatch just this seam (avoiding a real LLM call) while
@@ -147,9 +172,16 @@ class TelegramGateway:
 
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")
+        from rct_control_plane import memory_nudge
+        spoken_note: Optional[str] = "not a voice note"
         if self.is_configured():
-            await self.send_message(chat_id, heard_prefix + str(reply_text))
-        return {"chat_id": chat_id, "namespace": namespace, "goal": text, "result": result, **({"heard": text} if heard_prefix else {})}
+            await self.send_message(chat_id, heard_prefix + str(reply_text) + (memory_nudge.nudge_text(result.get("memory_nudge") or []) if result.get("final_answer") else ""))
+            if heard_prefix and result.get("final_answer"):
+                try:
+                    spoken_note = await self._speak_reply(chat_id, str(result["final_answer"]))
+                except Exception as exc:                               # noqa: BLE001 - the text reply is already sent
+                    spoken_note = f"{type(exc).__name__}"
+        return {"chat_id": chat_id, "namespace": namespace, "goal": text, "result": result, **({"heard": text, "voice_reply": spoken_note or "sent"} if heard_prefix else {})}
 
     @staticmethod
     def _voice_input_enabled() -> bool:

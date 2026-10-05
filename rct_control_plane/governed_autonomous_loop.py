@@ -94,6 +94,7 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -108,7 +109,7 @@ from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.jitna_protocol import (
     JITNAKeypair, JITNAMessageType, JITNAPacket, generate_keypair, sign_packet, verify_packet,
 )
-from rct_control_plane import data_evidence
+from rct_control_plane import data_evidence, verify_grounding
 from rct_control_plane.growth import GrowthLedger, efficiency_baseline, episode_delta
 from rct_control_plane.mee_engine import MEESession
 from rct_control_plane.persistence import ControlPlanePersistence
@@ -324,6 +325,22 @@ TAINT_INERT_TOOLS = frozenset({
     "delentia_run_forged_tool",           # a pure function a human signed by hash, in its own process with a time limit
     "delentia_generate_image", "delentia_speak",   # write one bounded file under the scratch / exchange folders, send nothing anywhere
 })
+# Round 61: tools that return what EVERYONE did, not what the asking person did. `delentia_query_audit_log` returns the raw audit rows (the start row of every episode holds its goal),
+# `delentia_query_intents` every person's compiled goals, `delentia_check_reminders` every person's stored reminders (and fires them). A person on a chat channel or the HTTP agent API must not
+# read other people's requests through the agent, so these are for the owner's own namespaces (CLI, Desk, MCP client). DELENTIA_OWNER_TOOLS_FOR_CHANNELS=1 gives them back (a single-user host).
+OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intents", "delentia_check_reminders"})
+# Round 61 (multi-person audit): every tool is either PINNED to the asking person (MEMORY_TOOLS: the loop overwrites its `namespace` argument), OWNER-ONLY (above), or PERSON-NEUTRAL: reviewed, and it
+# neither returns nor acts on another person's requests, memories or reminders. A new tool must be put in one of the three (tests/test_person_scope_round61_real.py), so "does this show one
+# person what another person did?" is asked once for every tool, not discovered later (the first audit found three tools that did and two that ran as the owner).
+PERSON_NEUTRAL_TOOLS = frozenset({
+    "delentia_assemble_nodes", "delentia_browse_page", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
+    "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
+    "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
+    "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
+    "delentia_remove_worktree", "delentia_run_forged_tool", "delentia_run_sandboxed_command", "delentia_save_exchange_file", "delentia_schedule_self_evolution",
+    "delentia_search_repo_files", "delentia_spawn_subagents", "delentia_speak", "delentia_synthesize_function", "delentia_transcribe_audio",
+    "delentia_verify_intent_conservation", "delentia_web_search", "delentia_write_repo_file",
+})
 DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
 TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
 
@@ -405,7 +422,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         jury_config: Optional[Dict[str, Any]] = None,
     ):
         from rct_control_plane import external_mcp
-        mcp_server = external_mcp.maybe_wrap(mcp_server)     # Round 55: configured external MCP servers join the menu, behind the same gate
+        mcp_server = external_mcp.maybe_wrap(mcp_server, namespace)     # Round 55: configured external MCP servers join the menu, behind the same gate
         super().__init__(mcp_server, persistence, max_iterations=max_iterations,
                           max_seconds=max_seconds, namespace=namespace, llm_provider=llm_provider)
         self._kernel = kernel
@@ -622,8 +639,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_D, self._episode_I = D, I
         conversation_text = self._conversation_context()
         self._episode_used_conversation = bool(conversation_text)
+        self._episode_conversation_text = conversation_text
+        attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
-        warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text) else None
+        warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self.max_iterations != self._applied_max_iterations:
@@ -645,6 +664,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             resume_note,
             context_files["text"],
             conversation_text,
+            attachments["text"],
             self._format_route(self._episode_route),
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             self._format_memories(memories) if self._memory_in_prompt else "",
@@ -680,6 +700,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "jitna_public_key": self._keypair.public_key_raw().hex(),
                 "jitna_key_persistent": self._keypair_is_persistent,
                 "context_files": {"used": context_files["used"], "refused": context_files["refused"]} if (context_files["used"] or context_files["refused"]) else None,
+                "attachments": [{k: e[k] for k in ("ref", "status", "chars", "sha256")} for e in attachments["refs"]] or None,
                 "route": self._episode_route,
                 "guard": self._episode_guard,
                 # F of the goal itself (A = 1: no action yet). Recorded, not
@@ -881,7 +902,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # namespace unless told otherwise, so a fact one user asked the agent to remember was
     # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
     # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
-    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions")
+    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions",
+                    "delentia_autonomous_loop",        # Round 61: a nested loop runs as the same person, not as the owner's "mcp_loop" space
+                    "delentia_schedule_reminder")      # Round 61: a reminder runs as the person who set it, not in the owner's "kernel_default" space
     # Channel namespaces belong to outside senders; the shared default store (what the
     # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
     # Round 57: whatsapp-, signal- and email- were missing (those gateways arrived in Round 55), so a sender on them could read the owner's shared memory.
@@ -1206,10 +1229,27 @@ class GovernedAutonomousLoop(AutonomousLoop):
             except Exception:
                 pass
             return {"stopped_reason": "stuck_repeating", "tool_result": {"stuck": True, "tool_name": tool_name, "times": counts[key]}}
+        if tool_name in OWNER_ONLY_TOOLS and self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_scope", entity_id=f"{self.namespace}-{tool_name}", action="owner_only_refused", actor=self.namespace,
+                                               changes={"tool_name": tool_name})
+            except Exception:
+                pass
+            return self._gate_refusal(tool_name, 0.0, f"{tool_name} shows what every person has asked; it is available to the owner (CLI, Desk), not from a chat channel or the HTTP agent API",
+                                      policy_info={"owner_only": True})
         policy, policy_error = self._active_policy()
         if policy_error:
             return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
                                       policy_info={"error": True})
+        hook_verdict = await self._hooks_pre(tool_name, tool_args)
+        if hook_verdict is not None:
+            if hook_verdict["action"] == "block":
+                return self._gate_refusal(tool_name, 0.0, f"hook {hook_verdict['hook']} refused this call: {hook_verdict['reason']}", policy_info={"hook": hook_verdict["hook"]})
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {"pending_approval": True, "tool_name": tool_name, "tool_args": tool_args, "reason": f"hook {hook_verdict['hook']}: {hook_verdict['reason']}",
+                                "approval_policy": {"rule_id": f"hook:{hook_verdict['hook']}", "required_signatures": 1, "approver_roles": [], "policy_digest": None}},
+            }
         taint = self._taint_reason(goal, tool_name, tool_args)
         if taint is not None:
             try:
@@ -1432,7 +1472,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
-    def _verify_against_intent(self, goal: str, final_answer: Optional[str]) -> Dict[str, Any]:
+    def _verify_against_intent(self, goal: str, final_answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
         """Round 48 R1.2: RCT-7 step 7 ("benchmark with intent") inside the
         agent loop - previously only process_intent_deep_pipeline() did it.
         Same matcher and same 0.15 threshold as the kernel's
@@ -1448,7 +1488,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             matcher = SemanticMatcher()
         score = float(matcher.semantic_similarity(goal, str(final_answer)))
         declined = answer_declines_goal(str(final_answer))
-        out = {
+        similar = score >= self._intent_verify_threshold
+        out: Dict[str, Any] = {
             "applicable": True,
             "similarity_score": round(score, 4),
             "threshold": self._intent_verify_threshold,
@@ -1456,10 +1497,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             # similarity threshold (two real qwen2.5:7b runs did, and were then
             # learned as skills). An answer that declines the goal is not
             # aligned with it, whatever its similarity.
-            "aligned_with_intent": score >= self._intent_verify_threshold and not declined,
+            "aligned_with_intent": similar and not declined,
         }
         if declined:
             out["declined"] = True
+        if (os.environ.get(verify_grounding.ENV) or "on").strip().lower() not in ("off", "0", "false"):
+            # Round 61: similarity alone lets through an answer that invented its facts or claimed an action no tool performed, and rejects a short correct answer.
+            # The grounding check (verify_grounding.py, measured in scripts/measure_verify.py) looks at the evidence instead. DELENTIA_VERIFY_GROUNDING=off restores the old verdict.
+            grounding = verify_grounding.check(goal, str(final_answer), steps or [], conversation)
+            out["grounding"] = {"grounded": grounding["grounded"], "flags": grounding["flags"], "supported": grounding["supported"]}
+            out["aligned_with_intent"] = bool(grounding["grounded"] and not declined and (similar or grounding["supported"]))
         return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
@@ -1484,7 +1531,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             result["warm_recall"] = self._warm_info
         else:
             verification = (
-                self._verify_against_intent(result["goal"], result.get("final_answer"))
+                self._verify_against_intent(result["goal"], result.get("final_answer"), result.get("steps"), getattr(self, "_episode_conversation_text", ""))
                 if stopped_reason == "llm_finished"
                 else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
             )
@@ -1496,6 +1543,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         _envelope.record(self._persistence, self.namespace, str(getattr(self, "_episode_id", "") or ""),
                          (_cost.get("cost_usd") if self._meter is not None else 0.0), int(_cost.get("prompt_tokens") or 0) + int(_cost.get("completion_tokens") or 0), stopped_reason)
         result["taint"] = {"tainted": getattr(self, "_episode_taint", None) is not None, "source_tool": getattr(self, "_episode_taint", None)}
+        result["memory_nudge"] = self._memory_nudges(result)
         result["route"] = self._episode_route
         result["guard"] = self._episode_guard
         await self._notarise_best_effort(
@@ -1575,6 +1623,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._warm_recall and verified_success and stopped_reason == "llm_finished" and not self._episode_used_conversation:
             self._warm_store(result, verification)
         await self._pipeline_after(result, duration)
+        try:                                   # Round 61: opt-in, local, redacted record of the steps (trajectories.py); never changes an outcome
+            from rct_control_plane import trajectories
+            trajectories.record(result, self.namespace, str((result.get("cost") or {}).get("model") or ""))
+        except Exception:
+            pass
         try:
             from rct_control_plane.intent_loop import pillar_report
             result["intent_loop"] = pillar_report(result, self)
@@ -2032,11 +2085,96 @@ class GovernedAutonomousLoop(AutonomousLoop):
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
         tool_result = self._screen_tool_result(tool_name, tool_result)
+        tool_result = await self._hooks_transform(tool_name, tool_result)
         if is_external_content(tool_name) and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             tool_result = await self._second_opinion_on_result(tool_name, tool_result)
         if self._compress_tool_outputs and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
         return tool_result
+
+    FILE_REFS_ENV = "DELENTIA_FILE_REFS"
+
+    def _attachments(self, goal: str) -> Dict[str, Any]:
+        """Round 61 (file_refs.py): the files the person attached with @-references, as data for the prompt. A goal that came from outside (a webhook payload, an episode that started tainted)
+        gets no attachments: outside text must not be able to pull files into the model. A file from the exchange folder is outside text and taints the episode."""
+        empty: Dict[str, Any] = {"text": "", "refs": [], "taint": None}
+        if (os.environ.get(self.FILE_REFS_ENV) or "on").strip().lower() in ("off", "0", "false", "no") or self._initial_taint:
+            return empty
+        try:
+            from rct_control_plane import file_refs
+            found = file_refs.expand(goal, local=not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES))
+        except Exception:                                                # noqa: BLE001 - a broken attachment must never break the episode
+            return empty
+        if found["taint"]:
+            self._start_tainted(found["taint"])
+        return found
+
+    def _memory_nudges(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Round 61 (memory_nudge.py): things the PERSON said about themselves in this message, offered back for them to keep. Nothing for an episode that read outside text or started
+        from an outside payload, nothing for a namespace that is not a person's (cron, subagents), and never an error."""
+        try:
+            from rct_control_plane import memory_nudge
+            if not memory_nudge.enabled() or not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+                return []
+            return memory_nudge.MemoryCandidates(self._persistence).propose_from_goal(self.namespace, str(result.get("goal") or ""), tainted=bool((result.get("taint") or {}).get("tainted")))
+        except Exception:                                                # noqa: BLE001
+            return []
+
+    # ------------------------------------------------------------------
+    # Round 61 hooks (hooks.py): a person's signed code that can only tighten
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    def _hook_registry(self) -> Any:
+        registry = getattr(self, "_hooks_registry", None)
+        if registry is None:
+            from rct_control_plane import hooks
+            registry = self._hooks_registry = hooks.HookRegistry(self._persistence)
+        return registry
+
+    async def _hooks_pre(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        from rct_control_plane import hooks
+        if not hooks.enabled():
+            return None
+        try:
+            registry = self._hook_registry()
+            if not registry.has_active():
+                return None
+            return await asyncio.to_thread(registry.pre_tool_call, tool_name, tool_args)
+        except Exception as exc:                                         # noqa: BLE001 - a hook machinery fault asks the person; it never lets a call through unchecked
+            return {"action": "require_signature", "reason": f"the hook system failed ({type(exc).__name__}), so a person must sign this call", "hook": "hooks"}
+
+    async def _hooks_transform(self, tool_name: str, tool_result: Any) -> Any:
+        from rct_control_plane import hooks
+        if not hooks.enabled() or not isinstance(tool_result, (dict, list, str)) or (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
+            return tool_result
+        try:
+            registry = self._hook_registry()
+            if not registry.has_active():
+                return tool_result
+            leaves: List[str] = []
+
+            def walk(node: Any, collect: bool, it: Any = None) -> Any:
+                if isinstance(node, str):
+                    if len(node) < hooks.MIN_LEAF_CHARS:
+                        return node
+                    if collect:
+                        leaves.append(node)
+                        return node
+                    return next(it)
+                if isinstance(node, dict):
+                    return {k: walk(v, collect, it) for k, v in node.items()}
+                if isinstance(node, list):
+                    return [walk(v, collect, it) for v in node]
+                return node
+            walk(tool_result, True)
+            if not leaves:
+                return tool_result
+            if len(leaves) > 400:
+                return {"withheld_by_hook": True, "message": "This result has too many parts for the hooks to check, so it was withheld."}
+            new_texts, _notes = await asyncio.to_thread(registry.transform, tool_name, leaves)
+            return walk(tool_result, False, iter(new_texts))
+        except Exception:                                                # noqa: BLE001 - never show a result the hooks could not check
+            return {"withheld_by_hook": True, "message": "A hook could not be run on this result, so it was withheld."}
 
     async def _second_opinion_on_result(self, tool_name: str, tool_result: Any) -> Any:
         """Round 54: third-party content gets the small model's second opinion too (a crawled page, a recalled memory)."""
