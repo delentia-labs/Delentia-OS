@@ -2028,13 +2028,20 @@ class ControlPlaneAPI:
         # never has to send a private key - `delentia approvals sign` runs
         # wherever the key lives and only the signature travels here.
         @self.app.get("/v1/agent/approvals", tags=["Kernel"])
-        async def list_agent_approvals(status: str = "PENDING", limit: int = 50):
+        async def list_agent_approvals(request: Request, status: str = "PENDING", limit: int = 50):
+            from rct_control_plane import api_tokens
             from rct_control_plane.approvals import PendingActionStore
             from rct_control_plane.mcp_server import _kernel as shared_kernel
 
             store = PendingActionStore(shared_kernel._persistence)
             wanted = None if status.upper() == "ALL" else status
-            return [a.to_dict() for a in store.list(status=wanted, limit=limit)]
+            person = getattr(request.state, "delentia_user", None)
+            scoped = bool(person and person != api_tokens.SHARED_IDENTITY)
+            rows = store.list(status=wanted, limit=1000 if scoped else limit)
+            if scoped:
+                # Round 61: with a token per person, a person sees THEIR OWN waiting requests; the list used to show everyone's (goals and tool arguments included).
+                rows = [a for a in rows if a.namespace == person]
+            return [a.to_dict() for a in rows[:limit]]
 
         @self.app.post("/v1/agent/approvals/{approval_id}/decision", tags=["Kernel"])
         async def decide_agent_approval(approval_id: str, payload: Dict[str, Any]):
