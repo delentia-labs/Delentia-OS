@@ -274,3 +274,33 @@ class TestDaemonWiring:
         # anyway (belt and suspenders: both conditions independently
         # reject it).
         assert daemon._skill_library.count() == 0
+
+
+def test_opening_the_library_from_many_threads_at_once_on_an_old_database_never_fails(tmp_path):
+    """Round 62 (found in CI): the additive migration checked for a column and then added it, so two libraries opened at the same moment raced and one died with
+    'duplicate column name'. A database from before Round 51 (no growth columns) opened by eight threads together must now always work."""
+    import sqlite3
+    import threading
+    from rct_control_plane.skill_library import SkillLibrary
+    for attempt in range(6):
+        path = str(tmp_path / f"old{attempt}.db")
+        with sqlite3.connect(path) as conn:
+            conn.executescript("""CREATE TABLE skills (id TEXT PRIMARY KEY, problem_statement TEXT NOT NULL, solution TEXT NOT NULL, keywords TEXT NOT NULL, delta REAL NOT NULL,
+                                  resilience REAL NOT NULL, g_before REAL NOT NULL, g_after REAL NOT NULL, growth_ratio REAL NOT NULL, governance_violation INTEGER NOT NULL,
+                                  created_at TEXT NOT NULL, session_id TEXT);""")
+        barrier, errors = threading.Barrier(8), []
+
+        def open_it():
+            try:
+                barrier.wait()
+                SkillLibrary(db_path=path)
+            except Exception as exc:                          # noqa: BLE001
+                errors.append(repr(exc))
+        threads = [threading.Thread(target=open_it) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert errors == [], errors
+        with sqlite3.connect(path) as conn:
+            assert {"uses", "successes", "failures", "reinforced", "archived"} <= {r[1] for r in conn.execute("PRAGMA table_info(skills)")}

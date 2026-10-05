@@ -37,8 +37,8 @@ _ARITH_WORDS = re.compile(r"\d\s*(?:[-+*/x×÷^]|plus|minus|times|divided|multip
 # Round 62 (found on a real model's answers): "Remember that the staging depot is called trang-stage" was answered "The staging depot is called trang-stage." with no tool run - it restates the
 # request and never says "done", so the success-claim test above misses it. A goal that BEGINS with a clear do-this verb and ends with no tool that does it is not a completed task.
 _IMPERATIVE_GOAL = re.compile(
-    r"^\s*(?:please\s+|kindly\s+|can you\s+|could you\s+)?(?:remember|save|store|create|write|delete|remove|send|schedule|remind|set (?:a|an|the)? ?reminder|add(?!\s+\d)|rename|move|copy|patch|edit|update)\b|"
-    r"^\s*(?:ช่วย|โปรด)?\s*(?:จำ|บันทึก|สร้าง|เขียน|ลบ|ส่ง|ตั้งเตือน|เตือน|เพิ่ม|แก้ไข)", re.IGNORECASE)
+    r"^\s*(?:(?:please|kindly|can you|could you)\s+)?(?:remember|save|store|create|write|delete|remove|send|schedule|remind|set (?:a|an|the)? ?reminder|add(?!\s+\d)|rename|move|copy|patch|edit|update)\b|"
+    r"^\s*(?:(?:ช่วย|โปรด)\s*)?(?:จำ|บันทึก|สร้าง|เขียน|ลบ|ส่ง|ตั้งเตือน|เตือน|เพิ่ม|แก้ไข)", re.IGNORECASE)
 _ACTION_GOAL = re.compile(
     r"\b(create|make|write|save|store|delete|remove|erase|send|post|run|execute|schedule|remind|remember|patch|edit|update|rename|move|copy|install|deploy|add)\b|"
     r"สร้าง|เขียน|บันทึก|ลบ|ส่ง|รัน|ตั้งเตือน|เตือน|จำ|แก้|ย้าย|คัดลอก|เพิ่ม", re.IGNORECASE)
@@ -54,6 +54,7 @@ EFFECT_TOOLS = frozenset({
 _ERROR_KEYS = ("error", "errors", "blocked", "refused", "pending_approval", "fdia_blocked", "paused", "stuck")
 _MAX_EVIDENCE = 400_000
 MAX_ANSWER_SCANNED = 20_000
+MAX_GOAL_SCANNED = 4_000
 
 
 def _norm(text: str) -> str:
@@ -194,6 +195,7 @@ def _tool_results(steps: Iterable[Dict[str, Any]]) -> List[Any]:
 def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
     """The grounding verdict. `grounded` is False when any flag is raised; `supported` says the answer reuses a successful tool result's own words."""
     steps = [s for s in (steps or []) if isinstance(s, dict)]
+    goal = str(goal or "")[:MAX_GOAL_SCANNED]
     text = str(answer or "").strip()[:MAX_ANSWER_SCANNED]
     flags: List[str] = []
     detail: Dict[str, Any] = {}
