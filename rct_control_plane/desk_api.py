@@ -1048,6 +1048,106 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         return _forge().run(name, args)
 
     # ------------------------------------------------------------------
+    # Round 62: hooks, the skill curator, memory suggestions and trajectories. The owner's pages; nothing here can approve or sign.
+    # ------------------------------------------------------------------
+    def _hooks() -> Any:
+        from rct_control_plane.hooks import HookRegistry
+        return HookRegistry(_kernel()._persistence)
+
+    @router.get("/hooks")
+    async def hooks_state() -> Dict[str, Any]:
+        from rct_control_plane import hooks
+        listed = _hooks().list()
+        return {"enabled": hooks.enabled(), "hooks": [{**h, "approval": _approval_state(h.get("approval_id"))} for h in listed],
+                "limits": {"points": list(hooks.POINTS), "max_code_chars": hooks.MAX_CODE_CHARS, "run_timeout_s": hooks.RUN_TIMEOUT_S,
+                           "allowed_imports": sorted(hooks.forge.ALLOWED_IMPORTS)}}
+
+    @router.get("/hooks/{name}")
+    async def hook_detail(name: str) -> Dict[str, Any]:
+        found = next((h for h in _hooks().list(include_code=True) if h["name"] == name), None)
+        if found is None:
+            raise HTTPException(status_code=404, detail="no such hook")
+        return {**found, "approval": _approval_state(found.get("approval_id"))}
+
+    @router.post("/hooks/propose")
+    async def hook_propose(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane.hooks import HookError
+        try:
+            return _hooks().propose(str(payload.get("name", "")).strip(), str(payload.get("code", "")), str(payload.get("description", "")))
+        except HookError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @router.post("/hooks/activate")
+    async def hook_activate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane.approvals import ApprovalError
+        try:
+            return _hooks().activate(str(payload.get("approval_id", "")).strip())
+        except ApprovalError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/hooks/{name}/request")
+    async def hook_request(name: str, request: Request) -> Dict[str, Any]:
+        from rct_control_plane.hooks import HookError
+        try:
+            record = _hooks().request_activation(name, namespace=getattr(request.state, "delentia_user", None) or "hooks")
+        except HookError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"approval_id": record.approval_id, "action_sha256": record.action_sha256,
+                "how": f"sign it where the approver key is: delentia approvals approve {record.approval_id} --key <key>, then activate"}
+
+    @router.post("/hooks/{name}/disable")
+    async def hook_disable(name: str) -> Dict[str, Any]:
+        if not _hooks().disable(name):
+            raise HTTPException(status_code=404, detail="no active hook with that name")
+        return {"disabled": name}
+
+    @router.get("/curator")
+    async def curator_state() -> Dict[str, Any]:
+        from rct_control_plane import skill_curator
+        library = _skills()
+        report = skill_curator.review(library)
+        return {**report, "archived": [s.to_dict() | {"solution": None} for s in library.list_archived(100)], "kinds_with_evidence": list(skill_curator.EVIDENCE_KINDS)}
+
+    @router.post("/curator/apply")
+    async def curator_apply(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        from rct_control_plane import skill_curator
+        kinds = skill_curator.EVIDENCE_KINDS + (("stale",) if payload.get("include_stale") else ())
+        return skill_curator.apply(_skills(), _kernel()._persistence, kinds)
+
+    @router.post("/curator/skills/{skill_id}/unarchive")
+    async def curator_unarchive(skill_id: str) -> Dict[str, Any]:
+        if not _skills().unarchive(skill_id):
+            raise HTTPException(status_code=404, detail="no archived skill with that id")
+        return {"unarchived": skill_id}
+
+    @router.get("/suggestions")
+    async def suggestions_state(status: str = Query("pending")) -> Dict[str, Any]:
+        """What the runtime offered to remember for people (memory_nudge.py): the owner sees that and what, and may throw one away; only the person it came from can keep it (in chat)."""
+        from rct_control_plane import memory_nudge
+        if status not in ("pending", "accepted", "dismissed", "expired"):
+            raise HTTPException(status_code=400, detail="unknown status")
+        rows = memory_nudge.MemoryCandidates(_kernel()._persistence).list(None, status, limit=100)
+        return {"enabled": memory_nudge.enabled(), "status": status, "suggestions": [{k: r[k] for k in ("id", "namespace", "text", "kind", "status", "created_at")} for r in rows]}
+
+    @router.post("/suggestions/{candidate_id}/dismiss")
+    async def suggestion_dismiss(candidate_id: str) -> Dict[str, Any]:
+        from rct_control_plane import memory_nudge
+        try:
+            return memory_nudge.MemoryCandidates(_kernel()._persistence).dismiss(candidate_id, None)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.get("/trajectories")
+    async def trajectories_state(limit: int = Query(20, ge=1, le=100)) -> Dict[str, Any]:
+        from rct_control_plane import trajectories
+        recent = []
+        for row in list(trajectories._rows())[-limit:][::-1]:
+            recent.append({"id": row.get("id"), "at": row.get("at"), "person": row.get("person"), "model": row.get("model"), "goal": str(row.get("goal"))[:160],
+                           "tools": [s["tool"] for s in row.get("steps", [])], "stopped_reason": row.get("stopped_reason"), "verified": row.get("verified"), "tainted": row.get("tainted")})
+        return {"recording": trajectories.enabled(), "directory": str(trajectories.directory()), "stats": trajectories.stats(), "recent": recent,
+                "how": "set DELENTIA_RECORD_TRAJECTORIES=1 on the host to record; `delentia trajectories export <file> --exclude-tainted` writes JSON Lines"}
+
+    # ------------------------------------------------------------------
     # Round 56: governance in one place (governance_view.py). Read-only: nothing here approves, signs or changes a setting.
     # ------------------------------------------------------------------
     # ------------------------------------------------------------------

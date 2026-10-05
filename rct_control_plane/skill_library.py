@@ -505,6 +505,13 @@ class SkillLibrary:
             conn.execute("UPDATE skills SET archived = 1 WHERE id = ?", (skill_id,))
         return True
 
+    def list_archived(self, limit: int = 200) -> List[SkillRecord]:
+        """Skills that are no longer offered (archived by failing, or by the curator), newest first. Nothing in the library is ever deleted."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM skills WHERE archived = 1 ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        return [_record_from_row(row) for row in rows]
+
     def unarchive(self, skill_id: str) -> bool:
         """Offer an archived skill again (its failure count is kept, so a skill that was archived for failing is archived again after one more failure)."""
         record = self.get_skill(skill_id)

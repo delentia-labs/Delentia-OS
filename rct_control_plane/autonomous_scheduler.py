@@ -225,6 +225,12 @@ class AutonomousScheduler:
             interval_seconds=int(os.getenv("DELENTIA_TASKS_INTERVAL_S", "30")),
             handler=self._advance_tasks,
         )
+        self.register_task(
+            name="skill_curator_report",
+            description="Round 62: once a week, review the learned skills (skill_curator.py) and write what the curator WOULD archive to the audit trail; it archives nothing by itself",
+            interval_seconds=int(os.getenv("DELENTIA_CURATOR_INTERVAL_S", "604800")),
+            handler=self._curator_report,
+        )
         # Off until the host is configured, so a dev machine never anchors a
         # throwaway database (the witness keeps every rollback as evidence).
         anchor.is_enabled = anchor_configured()
@@ -304,6 +310,16 @@ class AutonomousScheduler:
             return self._kernel._persistence
         from rct_control_plane.persistence import ControlPlanePersistence
         return ControlPlanePersistence()
+
+    def _curator_report(self) -> str:
+        """Report only: the proposals go into the audit trail (kind and counts, never the skills' text). The owner archives with `delentia skills curate --apply` or on the Desk."""
+        from rct_control_plane import skill_curator
+        from rct_control_plane.skill_library import SkillLibrary
+        report = skill_curator.review(SkillLibrary())
+        self._persistence().append_audit(entity_type="skill_curator", entity_id="weekly", action="report", actor="daemon",
+                                         changes={"reviewed": report["skills_reviewed"], "counts": report["counts"], "protected": report["protected"], "kind": "report",
+                                                  "reason": f"{len(report['proposals'])} proposal(s); nothing was archived"})
+        return f"reviewed {report['skills_reviewed']} learned skill(s): {len(report['proposals'])} proposal(s) {report['counts'] or ''}; nothing archived"
 
     async def _advance_tasks(self) -> str:
         from rct_control_plane import task_board_runtime
