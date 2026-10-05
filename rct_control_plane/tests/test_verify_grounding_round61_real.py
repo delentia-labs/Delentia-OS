@@ -226,3 +226,12 @@ class TestRealModelFixture:
         s = measure_verify.summarise(measure_verify.evaluate(data["dev"]))
         assert s["bad"] == 19 and s["good"] == 8
         assert s["old"]["bad_let_through"] == 14 and s["new"]["bad_let_through"] == 0 and s["new"]["good_rejected"] <= 2
+
+    def test_batch_b_the_independent_holdout_measured_once(self):
+        """Batch B was collected after the rules were frozen and its answers were not read before this measurement. These are the numbers as measured, kept so that a later change that
+        'improves' them by tuning on this batch is visible: from now on batch B is development data and the next holdout must be a new batch."""
+        import json as _json
+        data = _json.loads(open(os.path.join(os.path.dirname(__file__), "fixtures", "verify_cases_round62_real.json"), encoding="utf-8").read())
+        s = measure_verify.summarise(measure_verify.evaluate(data["holdout"]))
+        assert (s["good"], s["bad"]) == (8, 16)
+        assert s["old"] == {"bad_let_through": 14, "good_rejected": 3} and s["new"]["bad_let_through"] <= 5 and s["new"]["good_rejected"] <= 2
