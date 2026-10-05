@@ -12,6 +12,7 @@ Uses `mcp.server.mcpserver.MCPServer` (the real, current mcp>=2.0 API —
 `FastMCP` was renamed to `MCPServer` in mcp 2.x; confirmed by direct
 inspection of the installed package, not assumed from older docs).
 """
+import contextvars
 import os
 import re
 from pathlib import Path
@@ -41,6 +42,8 @@ _SKIP_DIR_NAMES = {".git", "__pycache__", "node_modules", ".delentia_worktrees",
 mcp = MCPServer("delentia-kernel")
 _kernel = AlgorithmKernel41()
 _exchange_bridge = NeuralExchangeBridge()
+_LOOP_DEPTH: contextvars.ContextVar = contextvars.ContextVar("delentia_loop_depth", default=0)
+MAX_NESTED_LOOPS = 2
 _web_crawler = WebCrawler(block_private=True)        # Round 55: the agent cannot fetch internal or metadata addresses (url_safety.py)
 _worktree_isolator = GitWorktreeIsolator()
 
@@ -117,14 +120,26 @@ async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
 
 
 @mcp.tool()
-async def delentia_autonomous_loop(goal: str, max_iterations: int = 5) -> dict:
+async def delentia_autonomous_loop(goal: str, max_iterations: int = 5, namespace: str = "mcp_loop") -> dict:
     """Real autonomous decide/act/observe loop over this kernel's MCP
     tools. Bounded by max_iterations and a 120s wall-clock cap. Only has
-    access to this server's own already safety-reviewed tools."""
+    access to this server's own already safety-reviewed tools.
+
+    Round 61: when an AGENT calls this (the governed loop pins `namespace` to its own person), the
+    nested loop runs as that same person - before, it always ran as "mcp_loop", which reads the owner's
+    shared memory and is not a channel namespace, so a chat person's episode could step into the owner's
+    space through this one tool. Nesting is limited to two levels."""
     # Round 48 R0.1: governed like every other entry point.
     from rct_control_plane.agent_factory import build_governed_loop
-    loop = build_governed_loop(_kernel, namespace="mcp_loop", max_iterations=max_iterations, mcp_server=mcp)
-    return await loop.run(goal)
+    depth = _LOOP_DEPTH.get()
+    if depth >= MAX_NESTED_LOOPS:
+        return {"error": f"nested loops are limited to {MAX_NESTED_LOOPS} levels", "stopped_reason": "nesting_limit"}
+    token = _LOOP_DEPTH.set(depth + 1)
+    try:
+        loop = build_governed_loop(_kernel, namespace=namespace or "mcp_loop", max_iterations=max_iterations, mcp_server=mcp)
+        return await loop.run(goal)
+    finally:
+        _LOOP_DEPTH.reset(token)
 
 
 @mcp.tool()

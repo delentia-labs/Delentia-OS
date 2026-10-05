@@ -325,6 +325,10 @@ TAINT_INERT_TOOLS = frozenset({
     "delentia_run_forged_tool",           # a pure function a human signed by hash, in its own process with a time limit
     "delentia_generate_image", "delentia_speak",   # write one bounded file under the scratch / exchange folders, send nothing anywhere
 })
+# Round 61: tools that return what EVERYONE did, not what the asking person did. `delentia_query_audit_log` returns the raw audit rows (the start row of every episode holds its goal),
+# `delentia_query_intents` every person's compiled goals, `delentia_check_reminders` every person's stored reminders (and fires them). A person on a chat channel or the HTTP agent API must not
+# read other people's requests through the agent, so these are for the owner's own namespaces (CLI, Desk, MCP client). DELENTIA_OWNER_TOOLS_FOR_CHANNELS=1 gives them back (a single-user host).
+OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intents", "delentia_check_reminders"})
 DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
 TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
 
@@ -886,7 +890,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # namespace unless told otherwise, so a fact one user asked the agent to remember was
     # visible to every other user of the same kernel (found by scripts/full_pipeline_cases.py
     # case C05). The loop now pins both tools to its own namespace, whatever the model wrote.
-    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions")
+    MEMORY_TOOLS = ("delentia_remember", "delentia_recall", "delentia_cron_create", "delentia_cron_list", "delentia_cron_delete", "delentia_search_sessions",
+                    "delentia_autonomous_loop")        # Round 61: a nested loop runs as the same person, not as the owner's "mcp_loop" space
     # Channel namespaces belong to outside senders; the shared default store (what the
     # owner's own MCP client wrote) is not shown to them. DELENTIA_SHARED_MEMORY=1/0 overrides.
     # Round 57: whatsapp-, signal- and email- were missing (those gateways arrived in Round 55), so a sender on them could read the owner's shared memory.
@@ -1211,6 +1216,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
             except Exception:
                 pass
             return {"stopped_reason": "stuck_repeating", "tool_result": {"stuck": True, "tool_name": tool_name, "times": counts[key]}}
+        if tool_name in OWNER_ONLY_TOOLS and self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_scope", entity_id=f"{self.namespace}-{tool_name}", action="owner_only_refused", actor=self.namespace,
+                                               changes={"tool_name": tool_name})
+            except Exception:
+                pass
+            return self._gate_refusal(tool_name, 0.0, f"{tool_name} shows what every person has asked; it is available to the owner (CLI, Desk), not from a chat channel or the HTTP agent API",
+                                      policy_info={"owner_only": True})
         policy, policy_error = self._active_policy()
         if policy_error:
             return self._gate_refusal(tool_name, 0.0, f"the owner policy could not be loaded, so nothing runs (fail closed): {policy_error}",
