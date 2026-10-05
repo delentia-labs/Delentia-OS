@@ -199,6 +199,39 @@ async def speak(text: str) -> Dict[str, Any]:
     return {"path": str(out), "bytes": len(data), "seconds": seconds, "sha256": hashlib.sha256(data).hexdigest(), "engine": tts_engine(), "chars": len(clean)}
 
 
+REPLY_ENV = "DELENTIA_VOICE_REPLY"
+MAX_REPLY_CHARS = 600
+
+
+def reply_enabled() -> bool:
+    return (os.environ.get(REPLY_ENV) or "").strip().lower() in ("1", "on", "true", "yes")
+
+
+def _to_ogg_opus_sync(wav: Path, out: Path) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise VoiceError("ffmpeg was not found, so a spoken reply cannot be made in the format Telegram plays")
+    done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(wav), "-c:a", "libopus", "-b:a", "24k", "-ar", "24000", "-ac", "1", str(out)], capture_output=True, timeout=60)
+    if done.returncode != 0 or not out.is_file() or out.stat().st_size < 100:
+        raise VoiceError(f"ffmpeg could not make the voice file: {done.stderr.decode('utf-8', 'replace')[:200]}")
+
+
+async def speak_ogg(text: str) -> Dict[str, Any]:
+    """Round 61: a spoken reply in Telegram's voice-note format (Ogg/Opus): the local speech engine, then ffmpeg. Returns {"path", "bytes", "seconds"} or {"error"}.
+    Nothing is downloaded and nothing leaves the machine here; sending the file is the gateway's job."""
+    spoken = await speak(text)
+    if "error" in spoken:
+        return spoken
+    out = Path(spoken["path"]).with_suffix(".ogg")
+    try:
+        await asyncio.to_thread(_to_ogg_opus_sync, Path(spoken["path"]), out)
+    except VoiceError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:                                           # noqa: BLE001
+        return {"error": f"could not convert the reply: {type(exc).__name__}: {str(exc)[:160]}"}
+    return {"path": str(out), "bytes": out.stat().st_size, "seconds": spoken.get("seconds")}
+
+
 def temp_audio_file(data: bytes, suffix: str = ".oga") -> Path:
     handle, name = tempfile.mkstemp(prefix="delentia-voice-", suffix=suffix)
     with os.fdopen(handle, "wb") as f:
