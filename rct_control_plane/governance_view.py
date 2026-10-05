@@ -34,6 +34,11 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "cron": ("cron_job",),
     "checkpoints": ("repo_checkpoint",),
     "models": ("model_fallback",),
+    # Round 61
+    "hooks": ("agent_hook",),
+    "memory": ("memory_candidate", "skill_curator"),
+    "tasks": ("agent_task",),
+    "scope": ("governed_loop_scope", "governed_loop_taint", "governed_loop_envelope"),
 }
 CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity in entities}
 # "attention" is the default view: what a person responsible for the system should look at. It leaves out the routine
@@ -42,6 +47,9 @@ ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
     "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback')"
     " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
+    " OR (t.entity_type = 'agent_hook' AND t.action NOT IN ('transform_applied'))"
+    " OR (t.entity_type = 'governed_loop_scope')"
+    " OR (t.entity_type = 'skill_curator')"
     " OR (t.entity_type = 'residency_decision' AND t.action != 'allow')"
     " OR (t.entity_type = 'governed_loop_second_opinion' AND t.action = 'attack')"
     " OR (t.entity_type = 'governed_loop_fdia_gate' AND t.changes LIKE '%\"blocked\": true%'))")
@@ -118,6 +126,18 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"cron job {action}: {_short(c.get('name'), 50)} [{c.get('schedule')}]{extra}"
     if entity_type == "identity":
         return f"{action}: {c.get('name')}"
+    if entity_type == "agent_hook":
+        verb = {"pre_tool_call_block": "refused a call to", "pre_tool_call_require_signature": "asked for a signature on a call to", "transform_applied": "edited a result of",
+                "transform_refused": "returned an invalid edit for", "hash_mismatch_refused": "no longer matches its signed code (asked for a signature on)"}.get(action, "")
+        return (f"hook {verb} {c.get('tool_name')}" + (f": {_short(c.get('reason'), 80)}" if c.get("reason") else "")) if verb else f"hook {action}"
+    if entity_type == "governed_loop_scope":
+        return f"{c.get('tool_name')} refused for a chat person: it shows what every person asked (owner-only tool)"
+    if entity_type == "skill_curator":
+        return f"skill {action} by the curator ({c.get('kind')}): {_short(c.get('reason'), 90)}"
+    if entity_type == "memory_candidate":
+        return f"memory suggestion {action}"
+    if entity_type == "agent_task":
+        return f"task {action} ({c.get('status')}, {c.get('steps')} step(s))"
     if entity_type == "autonomous_loop_step":
         return f"step: {_short(c.get('action') or c.get('tool_name') or action, 100)}"
     if entity_type == "intent_loop_pillars":
@@ -367,6 +387,27 @@ def check_witness(conn: sqlite3.Connection, witness_json: Dict[str, Any]) -> Dic
 
 # ------------------------------------------------------------------ the overview
 
+class _PersistenceShim:
+    """Just enough of a persistence object (`_connect`) for the registries that only need a connection."""
+
+    def __init__(self, conn: sqlite3.Connection):
+        self._conn = conn
+
+    def _connect(self) -> Any:
+        return _Reuse(self._conn)
+
+
+class _Reuse:
+    def __init__(self, conn: sqlite3.Connection):
+        self._conn = conn
+
+    def __enter__(self) -> sqlite3.Connection:
+        return self._conn
+
+    def __exit__(self, *exc: Any) -> None:
+        return None
+
+
 def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
     from rct_control_plane import audit_chain, fdia_policy, injection_classifier, residency, signedai_jury
     from rct_control_plane.governed_autonomous_loop import TOOL_RESULT_SCREEN_ENV
@@ -447,6 +488,42 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("policy_change_signed", "Changing the policy needs a signature", signed_changes,
         "a policy change waits for an approver's signature" if signed_changes else "anyone who can reach the API can change the owner's policy",
         "DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE=1 (automatic once per-person tokens exist)")
+    # Round 58-61
+    from rct_control_plane.governed_autonomous_loop import TAINT_ENV
+    taint_mode = (os.environ.get(TAINT_ENV) or "on").strip().lower()
+    add("taint_gate", "Taint gate: after outside text, side effects need a signature", taint_mode not in ("off", "0", "false", "no"),
+        "on: once an episode has read a page, file or search result, nothing that changes or sends anything runs without a person" if taint_mode not in ("off", "0", "false", "no")
+        else "OFF: a hijacked model could act on instructions hidden in text it read", f"unset {TAINT_ENV} (it is on by default)", "bad")
+    from rct_control_plane import envelope
+    lim = envelope.limits()
+    has_daily = any(lim.get(k) for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens"))
+    add("spending_limits", "A daily spending or token limit", has_daily,
+        "a daily limit is set" if has_daily else "none: nothing but the per-episode budget stops a busy day from costing more than you expect",
+        "`delentia limits` or DELENTIA_DAILY_BUDGET_USD / DELENTIA_DAILY_MAX_TOKENS")
+    from rct_control_plane import verify_grounding
+    verify_on = (os.environ.get(verify_grounding.ENV) or "on").strip().lower() not in ("off", "0", "false")
+    add("verify_grounding", "VERIFY checks the answer against the evidence", verify_on,
+        "an answer with an invented fact, an action no tool did, or success after an error is never learned as a skill" if verify_on else "off: only word overlap decides what is learned",
+        f"unset {verify_grounding.ENV}", "info")
+    from rct_control_plane import hooks as hooks_module
+    try:
+        registry = hooks_module.HookRegistry(_PersistenceShim(conn))
+        listed = registry.list()
+        active_hooks = [h for h in listed if h["status"] == "ACTIVE"]
+    except Exception:                                      # noqa: BLE001
+        listed, active_hooks = [], []
+    add("hooks", "Hooks (signed code that can only tighten)", bool(active_hooks),
+        (f"{len(active_hooks)} active: " + ", ".join(h["name"] for h in active_hooks)) if active_hooks else "none active", "`delentia hooks propose` (every hook needs a signature)",
+        "info", applicable=bool(listed))
+    from rct_control_plane import memory_nudge
+    add("memory_nudge", "Memory suggestions (asks before remembering)", memory_nudge.enabled(),
+        "on: what a person says about themselves is offered back; nothing is stored until they say yes" if memory_nudge.enabled() else "off",
+        f"set {memory_nudge.ENV}=1 (`delentia serve` does)", "info")
+    owner_tools_open = (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() in ("1", "true", "yes")
+    add("owner_only_tools", "Chat people cannot read other people's requests through the agent", not owner_tools_open,
+        "the audit-log, intents and reminder-firing tools are refused on chat channels and the HTTP agent API" if not owner_tools_open else "OFF: DELENTIA_OWNER_TOOLS_FOR_CHANNELS lets them through (a single-user host only)",
+        "unset DELENTIA_OWNER_TOOLS_FOR_CHANNELS", "bad")
+    add("secret_files", "The agent cannot read credential files", True, "always on: .env, keys, credentials and the runtime's own databases are refused by the read and search tools and @file", "", always=True)
     add("cord_goal_screen", "CORD screens every goal before the model sees it", True, "always on in the governed loop", "", always=True)
     add("fdia_floor", "FDIA gate with the built-in floor", True, "always on: a policy can tighten it, never loosen it", "", always=True)
     return controls, gaps
