@@ -465,8 +465,9 @@ def test_the_desk_reports_protection_in_numbers_checks_every_witness_and_turns_a
         a3 = lambda: next(c for c in client.get("/v1/desk/governance").json()["controls"] if c["id"] == "audit_anchor")   # noqa: E731
         assert a3()["on"] is False and "no witness has received the head recently" in a3()["detail"]
         with conn_of(persistence) as conn:
-            aw.anchor_all(conn)
-        assert a3()["on"] is True and "2 independent witness(es)" in a3()["detail"]
+            results = aw.anchor_all(conn)
+        assert all(r["ok"] for r in results), results                      # Round 62: when this fails on a loaded machine, say WHICH witness failed and why, not just "A3 is off"
+        assert a3()["on"] is True and "2 independent witness(es)" in a3()["detail"], (a3(), results)
         second = next(c for c in client.get("/v1/desk/governance").json()["controls"] if c["id"] == "audit_second_witness")
         assert second["on"] is True
         status = client.get("/v1/desk/governance/audit/witnesses").json()
