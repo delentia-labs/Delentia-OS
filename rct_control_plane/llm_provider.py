@@ -15,7 +15,7 @@ import re
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import Any, AsyncIterator, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rct_control_plane.topic_cache import TopicCache
@@ -188,6 +188,16 @@ class CompatProfile:
     max_tokens_field: str = "max_tokens"
 
 
+CACHE_CONTROL_MIN_CHARS = 4000
+
+
+def _wants_cache_control(model: str, system_prompt: str) -> bool:
+    """Only with the cache-friendly prompt layout, only for the model families that need an explicit marker, and only for a system message long enough to be worth caching."""
+    if (os.environ.get("DELENTIA_PROMPT_LAYOUT") or "").strip().lower() != "cache_friendly":
+        return False
+    return str(model).startswith(("anthropic/", "google/")) and len(system_prompt) >= CACHE_CONTROL_MIN_CHARS
+
+
 def _build_openrouter_payload(
     model: str, prompt: str, system_prompt: Optional[str], temperature: float,
     max_tokens: int, json_mode: bool, compat: CompatProfile,
@@ -197,7 +207,12 @@ def _build_openrouter_payload(
     messages = []
     if system_prompt:
         if compat.supports_developer_role:
-            messages.append({"role": "system", "content": system_prompt})
+            content: Any = system_prompt
+            if _wants_cache_control(model, system_prompt):
+                # Round 64: Anthropic and Gemini models behind OpenRouter cache a prefix only where it is marked; the long, unchanging system message is the prefix. Other
+                # models cache automatically (or not at all) and get the plain string they always got.
+                content = [{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}]
+            messages.append({"role": "system", "content": content})
         else:
             prompt = f"{system_prompt}\n\n{prompt}"
     messages.append({"role": "user", "content": prompt})

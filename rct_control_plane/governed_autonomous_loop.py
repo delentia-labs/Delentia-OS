@@ -1220,6 +1220,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         ranked = tool_menu.maybe_ranked(goal, available_tools)        # DELENTIA_TOOL_MENU=ranked (off by default; see tool_menu.py)
         if ranked is not None:
             return ranked
+        from rct_control_plane.autonomous_loop import cache_friendly_layout
+        if cache_friendly_layout():
+            return available_tools                  # Round 64: a menu that changes with the goal cannot be a cached prefix; the whole menu, in a fixed order
         goal_tokens = self._tokenize(goal)
         if not goal_tokens:
             return available_tools
