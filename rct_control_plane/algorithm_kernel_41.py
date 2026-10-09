@@ -15,6 +15,8 @@ Enforces the 41 Master Algorithms in-process:
 """
 from __future__ import annotations  # lets Layer 1/10 type hints below stay lazy strings, matching their deferred (non-module-level) imports
 
+import hashlib
+import json
 import math
 import time
 from typing import Dict, Any, List, Optional, Tuple, Callable, TYPE_CHECKING
@@ -129,6 +131,19 @@ from rct_control_plane.algo_32_mctr import (
 # genuine PNG image generation, not a substitute for the untrained
 # scaffold's math (which could never have produced a real image).
 from rct_control_plane.algo_14_rct_diffusion import DiffusionEngine, DiffusionConfig, GenerationRequest
+
+
+def crystal_hash(value: Any) -> str:
+    """Fingerprint for RCT-7 step 7 and ALGO-41. Round 63: this used Python's built-in hash(), which is
+    salted per process (PYTHONHASHSEED), so the same intent gave a different "proof" on every run and
+    nothing could be replayed. It is now SHA-256 over a canonical serialisation (sorted keys, UTF-8),
+    shortened to 16 hex characters. A fingerprint of the INPUT only: it says the same input was seen,
+    it is not an attestation of any output and not a signature."""
+    try:
+        canonical = json.dumps(value, sort_keys=True, ensure_ascii=False, default=str, separators=(",", ":"))
+    except (TypeError, ValueError):
+        canonical = str(value)
+    return "CRYSTAL-HASH-" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
 
 class AlgorithmKernel41:
@@ -684,7 +699,7 @@ class AlgorithmKernel41:
                 "Step 4 (Reverse Think): not built (compilation failed)",
                 "Step 5 (Identify Core Intent): skipped (compilation failed)",
                 "Step 6 (Rebuild): skipped (compilation failed)",
-                f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(intent) & 0xFFFFFFFF):08x}",
+                f"Step 7 (Attestation & Proof): {crystal_hash(intent)}",
             ]
 
         intent_obj = result.intent
@@ -705,7 +720,7 @@ class AlgorithmKernel41:
             f"Step 5 (Identify Core Intent): validation {'passed' if (validation and validation.is_valid) else 'flagged'}, "
             f"{len(warnings)} warning(s)" + (f" - {'; '.join(warnings[:2])}" if warnings else ""),
             f"Step 6 (Rebuild): compilation succeeded, priority={getattr(intent_obj.priority, 'value', intent_obj.priority)}",
-            f"Step 7 (Attestation & Proof): CRYSTAL-HASH-{(hash(str(result.intent.dict()) if hasattr(result.intent, 'dict') else str(intent_obj)) & 0xFFFFFFFF):08x}",
+            f"Step 7 (Attestation & Proof): {crystal_hash(result.intent.dict() if hasattr(result.intent, 'dict') else str(intent_obj))}",
         ]
 
     def benchmark_result_against_intent(self, intent: str, result_text: Optional[str]) -> Dict[str, Any]:
@@ -1003,7 +1018,7 @@ class AlgorithmKernel41:
     def algo_41_crystallizer(self, knowledge: Dict[str, Any]) -> str:
         """ALGO-41: The Crystallizer (Final State Condenser)."""
         self.executed_counts["ALGO-41"] += 1
-        return f"CRYSTAL-HASH-{(hash(str(knowledge)) & 0xFFFFFFFF):08x}"
+        return crystal_hash(knowledge)
 
     def crystallize_golden_keywords(self, text: str) -> Dict[str, Any]:
         """Round 24: the real Golden Keyword Extraction & Auto-Concept

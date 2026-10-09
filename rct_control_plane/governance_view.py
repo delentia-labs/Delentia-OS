@@ -494,6 +494,12 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("taint_gate", "Taint gate: after outside text, side effects need a signature", taint_mode not in ("off", "0", "false", "no"),
         "on: once an episode has read a page, file or search result, nothing that changes or sends anything runs without a person" if taint_mode not in ("off", "0", "false", "no")
         else "OFF: a hijacked model could act on instructions hidden in text it read", f"unset {TAINT_ENV} (it is on by default)", "bad")
+    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+    untrusted = GovernedAutonomousLoop._untrusted_prefixes()
+    add("untrusted_folders", "Folders that hold other people's documents count as outside text", bool(untrusted),
+        ("reading a file under " + ", ".join(untrusted) + " taints the episode like a web page") if untrusted
+        else "none declared: a file in the workspace is treated as the owner's own text, so a note hidden in a vendor's quote is not marked as foreign",
+        "DELENTIA_UNTRUSTED_PATHS=quotes/,inbox/ (comma-separated folders, relative to the workspace)", "info")
     from rct_control_plane import envelope
     lim = envelope.limits()
     has_daily = any(lim.get(k) for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens"))

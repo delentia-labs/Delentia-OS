@@ -357,8 +357,8 @@ async def delentia_list_exchange_files(category: str = "all") -> dict:
 
 @mcp.tool()
 async def delentia_read_exchange_file(category: str, filename: str) -> dict:
-    """Real read of a file from the Neural Exchange Bridge, with its
-    real SHA-256 integrity hash. Content is returned as UTF-8 text when
+    """Read a file from the separate Neural Exchange Bridge folder - NOT from the workspace (for a workspace file use delentia_read_repo_file). Real read of
+    a file from the Neural Exchange Bridge, with its real SHA-256 integrity hash. Content is returned as UTF-8 text when
     decodable, otherwise as a note that it's binary (never silently
     corrupts binary content by force-decoding it)."""
     try:
@@ -517,8 +517,8 @@ def _resolve_within_repo(relative_path: str) -> Path:
 
 @mcp.tool()
 async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000) -> dict:
-    """Real, read-only access to any file inside this kernel's own repo
-    (Round 32) - closes the gap where Round 31's file tools were scoped
+    """Read a text file from the workspace folder by its relative path (for example 'quotes/vendor_a.md'). Real, read-only access to any file inside this
+    kernel's own repo (Round 32) - closes the gap where Round 31's file tools were scoped
     only to the exchange/ bridge directory. Bounded to max_bytes to avoid
     dumping huge binaries/model weights into an MCP response. Write/patch
     access is deliberately NOT included this round (higher blast radius,

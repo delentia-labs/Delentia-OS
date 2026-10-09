@@ -64,7 +64,11 @@ if sys.platform == "win32":
 # leave them on for every test after it.
 import pytest  # noqa: E402
 
-_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT", "DELENTIA_STARTER_SKILLS", "DELENTIA_CONTEXT_FILES", "DELENTIA_EPISODES_PER_HOUR_PER_USER")
+_ROUND51_SWITCHES = ("DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_WARM_RECALL", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_RATE_LIMIT", "DELENTIA_STARTER_SKILLS", "DELENTIA_CONTEXT_FILES", "DELENTIA_EPISODES_PER_HOUR_PER_USER",
+                    # Round 63: `serve` also sets these, and a test that called it in-process left the background daemon ON for every later test. The audit-witness test then started
+                    # an app whose daemon anchored a stale chain from an earlier test to the same witness (the Worker answered "rollback or fork"; git: index.lock). It failed in three
+                    # full runs (Rounds 61-63) and passed alone; running any `serve` test before it reproduces it.
+                    "DELENTIA_DAEMON_ENABLED", "DELENTIA_MEMORY_NUDGE")
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +88,7 @@ def _model_circuit_breakers_start_closed():
 def _round51_switches_start_and_end_off():
     saved = {name: os.environ.pop(name, None) for name in _ROUND51_SWITCHES}
     yield
-    for name, value in saved.items():
+    for name in saved:
         os.environ.pop(name, None)
     # values present before the test are not restored on purpose: a developer's
     # shell setting must not change what the test suite exercises.
