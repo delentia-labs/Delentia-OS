@@ -1847,7 +1847,6 @@ class ControlPlaneAPI:
 
             import httpx
 
-            from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
             from rct_control_plane.mcp_server import _kernel as shared_kernel
             from rct_control_plane.mcp_server import mcp as shared_mcp
 
@@ -1861,10 +1860,8 @@ class ControlPlaneAPI:
             max_iterations = int(payload.get("max_iterations", 5))
             max_seconds = float(payload.get("max_seconds", 120.0))
 
-            loop = GovernedAutonomousLoop(
-                mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
-                max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace,
-            )
+            from rct_control_plane.agent_factory import build_governed_loop
+            loop = build_governed_loop(shared_kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=shared_kernel._persistence, mcp_server=shared_mcp)
             try:
                 result = await loop.run(goal)
             except httpx.TimeoutException as e:
@@ -1903,14 +1900,14 @@ class ControlPlaneAPI:
 
         def _job_service() -> Any:
             if job_state["service"] is None:
-                from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
                 from rct_control_plane.jobs import JobService
                 from rct_control_plane.mcp_server import _kernel as shared_kernel
                 from rct_control_plane.mcp_server import mcp as shared_mcp
 
                 async def runner(namespace: str, goal: str, max_iterations: int, max_seconds: float, on_step: Any, initial_taint: Optional[str] = None) -> Dict[str, Any]:
-                    loop = GovernedAutonomousLoop(mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel,
-                                                  max_iterations=max_iterations, max_seconds=max_seconds, namespace=namespace, initial_taint=initial_taint)
+                    from rct_control_plane.agent_factory import build_governed_loop
+                    loop = build_governed_loop(shared_kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=shared_kernel._persistence,
+                                              mcp_server=shared_mcp, initial_taint=initial_taint)
                     return await loop.run(goal, on_step=on_step)
                 job_state["service"] = JobService(shared_kernel._persistence, runner)
             return job_state["service"]
