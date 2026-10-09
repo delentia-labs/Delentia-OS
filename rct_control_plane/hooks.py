@@ -146,6 +146,13 @@ sys.stdout.write(json.dumps(out, default=repr))
 '''
 
 
+def _safe_tail(stderr: str) -> str:
+    """The last line of a process's error output, with file paths removed and clipped: enough to see what went wrong, nothing that maps the host."""
+    lines = [ln.strip() for ln in (stderr or "").strip().splitlines() if ln.strip()]
+    last = lines[-1] if lines else "no error text"
+    return re.sub(r"(?:[A-Za-z]:\\|/)[^\s\"']+", "<path>", last)[:160]
+
+
 def _run(point: str, hooks: List[Dict[str, str]], payload: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Optional[str]]:
     """Runs the hooks' code for one point in a separate process. Returns (entries, problem); a problem means no entry can be trusted."""
     with tempfile.TemporaryDirectory(prefix="hook-run-") as cwd:
@@ -158,7 +165,7 @@ def _run(point: str, hooks: List[Dict[str, str]], payload: Dict[str, Any]) -> Tu
         except subprocess.TimeoutExpired:
             return [], f"the hooks did not finish within {RUN_TIMEOUT_S:g} seconds"
     if done.returncode != 0:
-        return [], "the hook process failed: " + done.stderr[-200:]
+        return [], "the hook process failed: " + _safe_tail(done.stderr)
     try:
         entries = json.loads(done.stdout)
     except ValueError:
@@ -230,9 +237,9 @@ class HookRegistry:
         """Run each defined point on harmless probe inputs: it must not crash, must answer in time, and its answer must be a valid tightening / shrinking edit."""
         problems: List[str] = []
         with tempfile.TemporaryDirectory(prefix="hook-probe-") as folder:
-            path = Path(folder) / f"{name}.py"
+            path = Path(folder) / "candidate.py"                              # a fixed file name: the hook's own name never becomes part of a path here
             path.write_text(code + "\n", encoding="utf-8")
-            hook = [{"name": name, "file": str(path)}]
+            hook = [{"name": "candidate", "file": str(path)}]
             if "pre_tool_call" in points:
                 for tool, args in (("delentia_read_repo_file", {"relative_path": "a.txt"}), ("delentia_run_sandboxed_command", {"command": "ls"}), ("delentia_remember", {"content": "x"})):
                     entries, problem = _run("pre_tool_call", hook, {"tool_name": tool, "args": args})
@@ -287,7 +294,12 @@ class HookRegistry:
         problems = static_check(row["code"])
         if problems:
             raise ApprovalError("the hook no longer passes its checks: " + "; ".join(problems))
-        path = hooks_dir() / f"{name}.py"
+        if not NAME_PATTERN.match(str(name)):
+            raise ApprovalError("the hook name in the approval is not a valid hook name")
+        base = hooks_dir().resolve()
+        path = (base / f"{name}.py").resolve()
+        if path.parent != base:                                            # the name cannot step out of the hooks folder
+            raise ApprovalError("the hook name in the approval is not a valid hook name")
         path.write_text(row["code"] + "\n", encoding="utf-8")
         with self._p._connect() as conn:
             conn.execute("UPDATE agent_hooks SET status = 'ACTIVE', file_path = ?, activated_at = ?, code_sha256 = ? WHERE name = ?", (str(path), time.time(), forge.sha256(row["code"] + "\n"), name))

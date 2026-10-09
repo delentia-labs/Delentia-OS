@@ -225,7 +225,7 @@ export interface GovApproval {
   signatures_collected: number; roles_required: string[]; roles_missing: string[]; signers: GovSigner[];
 }
 export interface GovApprover { name: string; role: string | null; public_key: string; fingerprint: string; approvals_signed: number; last_signed: number | null; rejections_signed: number }
-export interface GovIdentity { name: string; disabled: boolean; created_at: number | null; disabled_at: number | null; role: string | null; role_is_default: boolean }
+export interface GovIdentity { name: string; disabled: boolean; created_at: number | null; disabled_at: number | null; role: string | null; role_is_default: boolean; owner?: boolean }
 export interface GovDecision { id: string; type: string; description: string; at: string; before: Record<string, unknown>; after: Record<string, unknown> }
 export interface GovVerify {
   chain: { ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number; head_seq: number | null; first_bad_seq: number | null; reason: string | null };
@@ -319,6 +319,26 @@ export interface FdiaEvaluation {
 }
 export interface FdiaEvaluateInput {
   tool_name: string; tool_args: Record<string, unknown>; principal?: string; approved?: boolean; D: number; I: number; policy?: FdiaPolicy;
+}
+
+
+// ---- Hooks, the skill curator, memory suggestions, trajectories (Round 62) -------------------------
+export interface HookRecord {
+  name: string; description: string; code_sha256: string; points: string[]; status: string; approval_id: string | null; created_at: number; activated_at: number | null;
+  verification: { static?: string; problems?: string[] }; approval?: ForgeApproval | null; code?: string;
+}
+export interface HooksState { enabled: boolean; hooks: HookRecord[]; limits: { points: string[]; max_code_chars: number; run_timeout_s: number; allowed_imports: string[] } }
+export interface CuratorProposal { id: string; kind: string; reason: string; problem: string; uses: number; reliability: number; keep?: string }
+export interface CuratorArchived { id: string; problem_statement: string; uses: number; reliability: number }
+export interface CuratorState {
+  skills_reviewed: number; protected: number; counts: Record<string, number>; proposals: CuratorProposal[]; archived: CuratorArchived[]; kinds_with_evidence: string[];
+}
+export interface Suggestion { id: string; namespace: string; text: string; kind: string; status: string; created_at: number }
+export interface SuggestionsState { enabled: boolean; status: string; suggestions: Suggestion[] }
+export interface TrajectoryRow { id: string; at: number; person: string; model: string; goal: string; tools: string[]; stopped_reason: string; verified: boolean; tainted: boolean }
+export interface TrajectoriesState {
+  recording: boolean; directory: string; how: string; recent: TrajectoryRow[];
+  stats: { episodes: number; verified: number; tainted: number; stopped: Record<string, number>; tools: Record<string, number> };
 }
 
 // ---- Tool Forge (tool_forge.py) ---------------------------------------------
@@ -432,6 +452,19 @@ export const desk = {
     call<{ saved: string; digest: string; rules: number } | PolicySavePending>("/v1/desk/fdia/policy", { method: "PUT", body: JSON.stringify({ policy, ...(approvalId ? { approval_id: approvalId } : {}) }) }),
   fdiaDisable: (approvalId?: string) =>
     call<{ archived_as: string } | PolicySavePending>("/v1/desk/fdia/policy/disable", { method: "POST", body: JSON.stringify(approvalId ? { approval_id: approvalId } : {}) }),
+  hooks: () => call<HooksState>("/v1/desk/hooks"),
+  hook: (name: string) => call<HookRecord>(`/v1/desk/hooks/${encodeURIComponent(name)}`),
+  hookPropose: (body: { name: string; code: string; description: string }) =>
+    call<{ name: string; status: string; code_sha256: string; points: string[]; verification: { problems?: string[] } }>("/v1/desk/hooks/propose", { method: "POST", body: JSON.stringify(body) }),
+  hookRequest: (name: string) => call<{ approval_id: string; action_sha256: string; how: string }>(`/v1/desk/hooks/${encodeURIComponent(name)}/request`, { method: "POST" }),
+  hookActivate: (approvalId: string) => call<{ name: string; file: string }>("/v1/desk/hooks/activate", { method: "POST", body: JSON.stringify({ approval_id: approvalId }) }),
+  hookDisable: (name: string) => call<{ disabled: string }>(`/v1/desk/hooks/${encodeURIComponent(name)}/disable`, { method: "POST" }),
+  curator: () => call<CuratorState>("/v1/desk/curator"),
+  curatorApply: (includeStale: boolean) => call<{ archived: CuratorProposal[]; left_as_proposals: CuratorProposal[] }>("/v1/desk/curator/apply", { method: "POST", body: JSON.stringify({ include_stale: includeStale }) }),
+  curatorUnarchive: (id: string) => call<{ unarchived: string }>(`/v1/desk/curator/skills/${encodeURIComponent(id)}/unarchive`, { method: "POST" }),
+  suggestions: (status = "pending") => call<SuggestionsState>(`/v1/desk/suggestions?status=${encodeURIComponent(status)}`),
+  suggestionDismiss: (id: string) => call<{ id: string; dismissed: boolean }>(`/v1/desk/suggestions/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+  trajectories: () => call<TrajectoriesState>("/v1/desk/trajectories"),
   forge: () => call<ForgeState>("/v1/desk/forge"),
   forgeProposal: (id: string) => call<ForgeProposal>(`/v1/desk/forge/proposals/${encodeURIComponent(id)}`),
   forgePropose: (body: { name: string; spec: string; smoke_test: string; code?: string; gap?: unknown }) =>

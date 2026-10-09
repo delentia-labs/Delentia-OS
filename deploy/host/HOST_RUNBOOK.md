@@ -88,7 +88,9 @@ docker compose exec delentia delentia host-check
 not scheduled. Fix them in order:
 
 1. **More people:** `docker compose exec delentia delentia tokens create bob` prints a token once (only its hash is stored). Give it over a private
-   channel. With any token present the server is in per-person mode: identity, memory and policy role come from the token.
+   channel. With any token present the server is in per-person mode: identity, memory and policy role come from the token. Round 62: a person's token reaches only the agent and their
+   OWN jobs, tasks, approvals and memory; the Desk, the audit trail, policies and the MCP gateway need an owner token (`tokens create bob --owner`, or `tokens owner bob` for an
+   existing one). The first user made by `bootstrap.sh` is an owner; make owners only of the people who run this host. `delentia host-check` (H22) says who is what.
 2. **Approvers:** on each approver's own device run `delentia approvals keygen --out ~/approver.pem --role Security_Admin` (it prints the public key), then add the
    **public** key to `/data/home/.delentia/approvers.json` on the host:
    `docker compose exec delentia sh -c 'cat /data/home/.delentia/approvers.json'` to check. Until at least one approver exists, nothing that needs

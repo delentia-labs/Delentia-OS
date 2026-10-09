@@ -18,6 +18,8 @@ const DICT = {
   jitna: { en: "JITNA", th: "JITNA" },
   fdia: { en: "FDIA", th: "FDIA" },
   forge: { en: "Forge", th: "Forge" },
+  hooks: { en: "Hooks", th: "Hooks" },
+  learning: { en: "Learning", th: "การเรียนรู้" },
   governance: { en: "Governance", th: "ธรรมาภิบาล" },
   signatures: { en: "Signatures", th: "ลายเซ็น" },
   identity: { en: "People", th: "ผู้ใช้" },

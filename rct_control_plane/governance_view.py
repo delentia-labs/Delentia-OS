@@ -322,7 +322,7 @@ def identities() -> Dict[str, Any]:
     except ValueError:
         pass
     users = [{"name": e["name"], "disabled": bool(e.get("disabled")), "created_at": e.get("created_at"), "disabled_at": e.get("disabled_at"),
-              "role": principals.get(e["name"], default_role), "role_is_default": e["name"] not in principals} for e in entries]
+              "role": principals.get(e["name"], default_role), "role_is_default": e["name"] not in principals, "owner": bool(e.get("owner"))} for e in entries]
     shared = bool(os.environ.get("DELENTIA_API_TOKEN"))
     mode = ("per-person tokens" if api_tokens.per_user_mode() else "one shared token" if shared else "no token (loopback clients only)")
     return {"mode": mode, "file": str(api_tokens.tokens_path()), "shared_token_set": shared, "users": users, "problem": problem,

@@ -34,6 +34,11 @@ _PATH = re.compile(r"(?<![\w/])(?:[\w.-]{1,80}[/\\]){1,12}[\w-]{1,80}(?:\.\w{1,8
 _NUMBER = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3}){1,6}(?:\.\d{1,12})?|(?<![\w.])\d{1,30}(?:\.\d{1,12})?")
 _ARITH_WORDS = re.compile(r"\d\s*(?:[-+*/x×÷^]|plus|minus|times|divided|multiplied|squared|%)\s*\d|\b(?:sum|total|average|mean|product|difference|percent|how many|how much|count)\b|บวก|ลบ|คูณ|หาร|รวม|เฉลี่ย|กี่|จำนวน", re.IGNORECASE)
 
+# Round 62 (found on a real model's answers): "Remember that the staging depot is called trang-stage" was answered "The staging depot is called trang-stage." with no tool run - it restates the
+# request and never says "done", so the success-claim test above misses it. A goal that BEGINS with a clear do-this verb and ends with no tool that does it is not a completed task.
+_IMPERATIVE_GOAL = re.compile(
+    r"^\s*(?:(?:please|kindly|can you|could you)\s+)?(?:remember|save|store|create|write|delete|remove|send|schedule|remind|set (?:a|an|the)? ?reminder|add(?!\s+\d)|rename|move|copy|patch|edit|update)\b|"
+    r"^\s*(?:(?:ช่วย|โปรด)\s*)?(?:จำ|บันทึก|สร้าง|เขียน|ลบ|ส่ง|ตั้งเตือน|เตือน|เพิ่ม|แก้ไข)", re.IGNORECASE)
 _ACTION_GOAL = re.compile(
     r"\b(create|make|write|save|store|delete|remove|erase|send|post|run|execute|schedule|remind|remember|patch|edit|update|rename|move|copy|install|deploy|add)\b|"
     r"สร้าง|เขียน|บันทึก|ลบ|ส่ง|รัน|ตั้งเตือน|เตือน|จำ|แก้|ย้าย|คัดลอก|เพิ่ม", re.IGNORECASE)
@@ -49,6 +54,7 @@ EFFECT_TOOLS = frozenset({
 _ERROR_KEYS = ("error", "errors", "blocked", "refused", "pending_approval", "fdia_blocked", "paused", "stuck")
 _MAX_EVIDENCE = 400_000
 MAX_ANSWER_SCANNED = 20_000
+MAX_GOAL_SCANNED = 4_000
 
 
 def _norm(text: str) -> str:
@@ -97,6 +103,9 @@ def _arithmetic_results(goal: str) -> Set[str]:
         for b in nums[i + 1:]:
             for value in (a + b, a - b, b - a, a * b, a ** 2, b ** 2):
                 add(value)
+            for base, power in ((a, b), (b, a)):
+                if 0 <= power <= 64 and abs(base) <= 1000 and power == int(power):
+                    add(base ** int(power))
             if b:
                 add(a / b)
             if a:
@@ -151,6 +160,7 @@ def _effect_ran(steps: Iterable[Dict[str, Any]]) -> bool:
     return any(s.get("tool_name") in EFFECT_TOOLS and not _is_error(s.get("tool_result")) and s.get("tool_result") is not None for s in steps or [])
 
 
+_QUESTION_END = re.compile(r"[?？]\s*$")
 _WORD = re.compile(r"[a-z][a-z0-9_-]{3,40}|\d{1,12}(?:\.\d{1,12}){1,4}")
 _STOP = frozenset("that this with from have been were will would there their about which when what your says said they them then than also into over some more most such only does file files tool tools result results".split())
 
@@ -169,24 +179,38 @@ def evidence_support(answer: str, steps: Iterable[Dict[str, Any]]) -> bool:
     if not texts:
         return False
     evidence = _norm(" ".join(texts))
-    shared = {w for w in _WORD.findall(str(answer or "").lower()[:MAX_ANSWER_SCANNED]) if w not in _STOP and w in evidence}
-    return len(shared) >= 2 or any("." in w and w in evidence for w in shared)
+    wanted = str(answer or "").lower()[:MAX_ANSWER_SCANNED]
+    shared = {w for w in _WORD.findall(wanted) if w not in _STOP and w in evidence}
+    if len(shared) >= 2 or any("." in w and w in evidence for w in shared):
+        return True
+    # Round 62: a one-word or one-path answer ("Kittipong", "src/router.py") is the tool's own value: the whole short answer appears in what a tool returned.
+    bare = _norm(wanted).strip(" .,!;:\"'`")
+    return 2 <= len(bare) <= 80 and len(bare.split()) <= 6 and bare in evidence
+
+
+def _tool_results(steps: Iterable[Dict[str, Any]]) -> List[Any]:
+    return [s.get("tool_result") for s in steps or [] if s.get("tool_result") is not None]
 
 
 def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
     """The grounding verdict. `grounded` is False when any flag is raised; `supported` says the answer reuses a successful tool result's own words."""
     steps = [s for s in (steps or []) if isinstance(s, dict)]
+    goal = str(goal or "")[:MAX_GOAL_SCANNED]
     text = str(answer or "").strip()[:MAX_ANSWER_SCANNED]
     flags: List[str] = []
     detail: Dict[str, Any] = {}
     if len(text) < 2:
         flags.append("empty_answer")
-    bad = ungrounded_values(goal, text, steps, conversation)
+    # Values can be checked only against evidence. With no tool result at all the model answered from its own knowledge ("366 days in a leap year"): that cannot be verified either way, and
+    # flagging it rejected correct answers (Round 61 holdout h22, Round 62 real answers), so it is left to the other checks.
+    bad = ungrounded_values(goal, text, steps, conversation) if _tool_results(steps) else []
     if bad:
         flags.append("ungrounded_values")
         detail["ungrounded_values"] = bad[:10]
     if _ACTION_GOAL.search(goal or "") and _SUCCESS_CLAIM.search(text) and not _effect_ran(steps):
         flags.append("claims_action_without_effect")
+    elif _IMPERATIVE_GOAL.search(goal or "") and not _effect_ran(steps) and not _QUESTION_END.search(text):
+        flags.append("no_action_taken")
     results = [s.get("tool_result") for s in steps if s.get("tool_result") is not None]
     if results and all(_is_error(r) for r in results) and _SUCCESS_CLAIM.search(text):
         flags.append("claims_success_after_error")

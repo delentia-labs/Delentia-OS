@@ -76,6 +76,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -281,6 +282,9 @@ def _record_from_row(row: Any, similarity: Optional[float] = None) -> "SkillReco
     )
 
 
+_INIT_LOCK = threading.Lock()
+
+
 class SkillLibrary:
     """
     MEE-gated persistent skill library.
@@ -315,13 +319,18 @@ class SkillLibrary:
 
     def _init_schema(self) -> None:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.db_path) as conn:
+        with _INIT_LOCK, sqlite3.connect(self.db_path, timeout=30) as conn:       # one opener at a time in this process; a long timeout for another process
             conn.executescript(_SKILLS_SCHEMA_SQL)
             # Additive migration for databases created before Round 51.
             existing = {row[1] for row in conn.execute("PRAGMA table_info(skills)")}
             for name, ddl in _ADDED_COLUMNS:
                 if name not in existing:
-                    conn.execute(f"ALTER TABLE skills ADD COLUMN {name} {ddl}")
+                    try:
+                        conn.execute(f"ALTER TABLE skills ADD COLUMN {name} {ddl}")
+                    except sqlite3.OperationalError as exc:
+                        # Round 62: two libraries opened at the same moment (the daemon's weekly curator report and a request) both saw the column missing; the loser must not fail.
+                        if "duplicate column name" not in str(exc):
+                            raise
 
     # ------------------------------------------------------------------
     # Write path — the growth-gated extraction
@@ -504,6 +513,13 @@ class SkillLibrary:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("UPDATE skills SET archived = 1 WHERE id = ?", (skill_id,))
         return True
+
+    def list_archived(self, limit: int = 200) -> List[SkillRecord]:
+        """Skills that are no longer offered (archived by failing, or by the curator), newest first. Nothing in the library is ever deleted."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM skills WHERE archived = 1 ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        return [_record_from_row(row) for row in rows]
 
     def unarchive(self, skill_id: str) -> bool:
         """Offer an archived skill again (its failure count is kept, so a skill that was archived for failing is archived again after one more failure)."""

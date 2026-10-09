@@ -10,6 +10,11 @@ learns who is calling from the token and uses that name as the identity; a names
   delentia tokens list                names, created time, disabled or not (never a token)
   delentia tokens revoke alice        disables the entry; the line stays on record (Zero-Delete)
 
+Round 62 (tenant isolation): a token belongs to a PERSON or to an OWNER. An entry may carry "owner": true (`delentia tokens create <name> --owner`,
+`delentia tokens owner <name>`); the old shared token is the owner, and so is the token-less loopback of a single-user machine. In per-person mode a
+person who is not an owner may call only the routes in api_auth.PERSON_ROUTES (talk to the agent, their own jobs/tasks/approvals, their own memory and
+history, the OpenAI-compatible API); every other route, the whole Desk and the raw MCP gateway included, is the owner's.
+
 File: DELENTIA_API_TOKENS_FILE or ~/.delentia/api_tokens.json. If the file has any entry the server is in per-user
 mode: a request needs a token from the file (the old shared token still works if it is set, as the identity "shared",
 so a migration does not lock everyone out; unset it once everyone has their own). An unreadable file locks everyone
@@ -112,7 +117,31 @@ def _write(path: Path, users: List[Dict[str, Any]]) -> None:
     _cache.pop(str(path), None)
 
 
-def create(name: str, path: Optional[Path] = None) -> str:
+def is_owner(identity: str, path: Optional[Path] = None) -> bool:
+    """May this identity use the owner's routes? The shared token and the token-less loopback ("") are the owner; a named person only with "owner": true."""
+    if not identity or identity == SHARED_IDENTITY:
+        return True
+    try:
+        return any(e["name"] == identity and bool(e.get("owner")) and not e.get("disabled") for e in load_entries(path))
+    except TokenFileError:
+        return False
+
+
+def set_owner(name: str, value: bool = True, path: Optional[Path] = None) -> bool:
+    """Marks (or unmarks) an existing person as an owner. Returns whether anything changed. Host-side only (it edits the file)."""
+    target = path or tokens_path()
+    users = list(load_entries(target))
+    changed = False
+    for user in users:
+        if user["name"] == name and bool(user.get("owner")) != value:
+            user["owner"] = value
+            changed = True
+    if changed:
+        _write(target, users)
+    return changed
+
+
+def create(name: str, path: Optional[Path] = None, owner: bool = False) -> str:
     """Adds a person and returns their token. The token is shown to the caller once and never stored."""
     if not NAME.match(name):
         raise TokenFileError("a name is 1-64 characters: letters, digits, . _ @ -")
@@ -123,7 +152,7 @@ def create(name: str, path: Optional[Path] = None) -> str:
     if any(u["name"] == name for u in users):
         raise TokenFileError(f"{name!r} already has an entry (revoke it first if the token is lost; the line is kept)")
     token = PREFIX + secrets.token_urlsafe(32)
-    users.append({"name": name, "token_sha256": hash_token(token), "created_at": time.time(), "disabled": False})
+    users.append({"name": name, "token_sha256": hash_token(token), "created_at": time.time(), "disabled": False, "owner": bool(owner)})
     _write(target, users)
     return token
 

@@ -54,7 +54,7 @@ export default function IdentityPage() {
                       {d.users.map((u) => (
                         <tr key={u.name} className="border-t border-dl-rule/60">
                           <td className="py-1.5 pr-3 text-dl-text">{u.name}</td>
-                          <td className="py-1.5 pr-3">{u.disabled ? <Badge tone="rust">revoked</Badge> : <Badge tone="leaf">active</Badge>}</td>
+                          <td className="py-1.5 pr-3">{u.disabled ? <Badge tone="rust">revoked</Badge> : <Badge tone="leaf">active</Badge>} {u.owner ? <Badge tone="amber" title="may use the Desk, the audit trail, policies and the MCP gateway">owner</Badge> : <Badge tone="muted" title="may talk to the agent and manage their own jobs, tasks, approvals and memory">person</Badge>}</td>
                           <td className="py-1.5 pr-3 text-dl-muted">{u.role ?? "-"}{u.role_is_default ? " (default)" : ""}</td>
                           <td className="py-1.5 text-dl-muted">{u.created_at ? fmtTime(new Date(u.created_at * 1000).toISOString()) : "-"}</td>
                         </tr>

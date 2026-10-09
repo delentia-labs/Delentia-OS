@@ -34,6 +34,6 @@ VOLUME="${COMPOSE_PROJECT_NAME:-delentia-host}_delentia-data"
 docker volume create "$VOLUME" >/dev/null
 echo
 echo "First person's token (shown once; only its hash is stored):"
-docker run --rm --user 10001:10001 -e HOME=/data/home -e DELENTIA_HOME=/data -v "$VOLUME:/data" "$IMAGE" delentia tokens create "$FIRST_USER"
+docker run --rm --user 10001:10001 -e HOME=/data/home -e DELENTIA_HOME=/data -v "$VOLUME:/data" "$IMAGE" delentia tokens create "$FIRST_USER" --owner
 echo
 echo "Next: docker compose up -d   then   docker compose exec delentia delentia host-check"

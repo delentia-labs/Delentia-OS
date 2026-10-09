@@ -185,6 +185,23 @@ def _witness_check() -> Check:
     return Check("H07", PASS, "Anchoring (tier A3)", f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head")
 
 
+def check_tenants(public: bool) -> List[Check]:
+    """H22 (Round 62): who may use the Desk and the other owner-only routes when there is a token per person."""
+    from rct_control_plane import api_tokens
+    if not api_tokens.per_user_mode():
+        return [Check("H22-tenants", INFO, "People and owners", "no per-person tokens: one shared token (or loopback) is the owner; nobody else is distinguished")]
+    try:
+        entries = [e for e in api_tokens.load_entries() if not e.get("disabled")]
+    except api_tokens.TokenFileError as exc:
+        return [Check("H22-tenants", FAIL, "People and owners", f"the tokens file cannot be used, so nobody gets in: {exc}")]
+    owners = [e["name"] for e in entries if e.get("owner")]
+    people = [e["name"] for e in entries if not e.get("owner")]
+    if not owners and not os.environ.get("DELENTIA_API_TOKEN"):
+        return [Check("H22-tenants", WARN, "People and owners", f"{len(people)} person token(s) and no owner: the Desk, the audit trail and the policy cannot be reached over the API",
+                      "`delentia tokens owner <name>` for the person who runs this host")]
+    return [Check("H22-tenants", PASS, "People and owners", f"{len(owners)} owner(s) ({', '.join(owners) or 'the shared token'}), {len(people)} ordinary person(s) limited to the agent, their own jobs, tasks, approvals and memory")]
+
+
 def check_envelope(public: bool) -> List[Check]:
     """H21 (Round 60): what stops the agent when nobody is watching, and who is told when it needs a person."""
     from rct_control_plane import envelope, owner_notify
@@ -342,6 +359,7 @@ def run_checks(*, public: bool = True, probe: bool = False) -> List[Check]:
         ("H16", "Configuration", check_config_files),
         ("H19", "Storage", check_storage),
         ("H21", "Safety envelope and owner alerts", lambda: check_envelope(public)),
+        ("H22", "People and owners", lambda: check_tenants(public)),
     ):
         checks.extend(_guard(check_id, title, fn))
     return checks

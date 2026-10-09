@@ -22,6 +22,17 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 THRESHOLD = 0.15
+# The decline test exactly as it was before Round 62 (Round 50's patterns). "old" in this report means the verdict as it stood at the end of Round 60, so the comparison does not move when the loop's
+# own patterns are extended.
+import re as _re  # noqa: E402
+_OLD_DECLINE = _re.compile(
+    r"\b(i am|i'm|we are|i was)\s+(unable|not able)\b|\bunable to\b|\b(can ?not|can't|couldn't|could not)\s+"
+    r"(do|help|complete|perform|access|read|write|create|find|fulfil|fulfill|carry out)\b|"
+    r"\bnone of the (provided |available )?tools\b|\bnone of them (are|is|can)\b|"
+    r"\bno (suitable|available|relevant) tools?\b|\b(is|are) outside (what|the scope)\b|\bnot possible (to|with)\b|"
+    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ",
+    _re.IGNORECASE,
+)
 
 
 def evaluate(cases):
@@ -33,7 +44,7 @@ def evaluate(cases):
     for c in cases:
         sim = float(matcher.semantic_similarity(c["goal"], c["answer"]))
         declined = answer_declines_goal(c["answer"])
-        old_ok = sim >= THRESHOLD and not declined
+        old_ok = sim >= THRESHOLD and not _OLD_DECLINE.search(c["answer"] or "")
         g = verify_grounding.check(c["goal"], c["answer"], c["steps"])
         new_ok = g["grounded"] and not declined and (sim >= THRESHOLD or g["supported"])
         rows.append({"id": c["id"], "label": c["label"], "similarity": round(sim, 3), "old_accepts": old_ok, "new_accepts": new_ok, "flags": g["flags"], "supported": g["supported"]})
@@ -54,8 +65,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--half", choices=["dev", "holdout", "both"], default="both")
     parser.add_argument("--json", default=None)
+    parser.add_argument("--cases", default="verify_cases_round61.json", help="a fixture in rct_control_plane/tests/fixtures (verify_cases_round62_real.json = answers a real model gave)")
     args = parser.parse_args()
-    data = json.loads((ROOT / "rct_control_plane/tests/fixtures/verify_cases_round61.json").read_text(encoding="utf-8"))
+    data = json.loads((ROOT / "rct_control_plane/tests/fixtures" / args.cases).read_text(encoding="utf-8"))
     report = {}
     for half in (["dev", "holdout"] if args.half == "both" else [args.half]):
         rows = evaluate(data[half])

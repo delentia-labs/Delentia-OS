@@ -193,6 +193,7 @@ RISKY_TOOLS = frozenset({
     "delentia_run_forged_tool",         # runs code the system wrote for itself (a human signed its hash)
     "delentia_web_search",              # outbound query to a search provider the owner configured (Round 55)
     "delentia_browse_page",             # runs a stranger's page scripts in a browser (Round 58)
+    "delentia_browser_act",             # clicks and types on somebody else's site (Round 62)
     "delentia_describe_image",          # sends a file's bytes to a model, possibly another country's (Round 58)
 })
 
@@ -250,7 +251,7 @@ _NEVER_COMPRESS_TOOLS = frozenset({"delentia_expand_tool_output"})
 TOOL_RESULT_SCREEN_ENV = "DELENTIA_TOOL_RESULT_SCREEN"
 # External or stored content: any hard finding withholds the result.
 EXTERNAL_CONTENT_TOOLS = frozenset({"delentia_crawl_url", "delentia_recall", "delentia_read_exchange_file", "delentia_convert_content",
-                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page",
+                                    "delentia_import_session_state", "delentia_web_search", "delentia_search_sessions", "delentia_browse_page", "delentia_browser_act",
                                     "delentia_describe_image", "delentia_transcribe_audio"})
 # Local files and command output legitimately discuss attacks (this repository does): only text that is addressed to an AI,
 # fakes a system turn, spoofs an approval or hides a payload withholds the result; other findings are attached as a warning.
@@ -290,6 +291,8 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
     "delentia_patch_repo_file",
     # Round 57: a recurring job is an unattended future action; the agent may propose one, a human signs it.
     "delentia_cron_create",
+    # Round 62: clicking and typing act on a third party's site (a form can be a purchase): a person signs the exact address and step list every time.
+    "delentia_browser_act",
 })
 
 
@@ -300,7 +303,7 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
 # hijacked can then ask for anything it likes and nothing happens without a person. Reading and answering stay free. DELENTIA_TAINT_GATE=off turns it off
 # (used only to measure the difference; the audit trail records the mode).
 TAINT_ENV = "DELENTIA_TAINT_GATE"
-TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_read_exchange_file",
+TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_browser_act", "delentia_read_exchange_file",
                                 "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
                                 "delentia_transcribe_audio"})
 TAINT_GATED_TOOLS = frozenset({
@@ -333,7 +336,7 @@ OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intent
 # neither returns nor acts on another person's requests, memories or reminders. A new tool must be put in one of the three (tests/test_person_scope_round61_real.py), so "does this show one
 # person what another person did?" is asked once for every tool, not discovered later (the first audit found three tools that did and two that ran as the owner).
 PERSON_NEUTRAL_TOOLS = frozenset({
-    "delentia_assemble_nodes", "delentia_browse_page", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
+    "delentia_assemble_nodes", "delentia_browse_page", "delentia_browser_act", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
     "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
     "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
     "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
@@ -342,7 +345,7 @@ PERSON_NEUTRAL_TOOLS = frozenset({
     "delentia_verify_intent_conservation", "delentia_web_search", "delentia_write_repo_file",
 })
 DELEGATION_TOOLS = frozenset({"delentia_delegate", "delentia_spawn_subagents"})    # Round 59: results carry the child's taint (see _child_taint)
-TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page"})      # may fetch only an address the person or a page the agent already saw named
+TAINT_EGRESS_TOOLS = frozenset({"delentia_crawl_url", "delentia_browse_page", "delentia_browser_act"})      # may fetch only an address the person or a page the agent already saw named
 
 
 # Round 55: tools from external MCP servers (mcp__<server>__<tool>, external_mcp.py) are not in the fixed sets above, so the
@@ -376,7 +379,12 @@ _DECLINE_PATTERNS = re.compile(
     r"(do|help|complete|perform|access|read|write|create|find|fulfil|fulfill|carry out)\b|"
     r"\bnone of the (provided |available )?tools\b|\bnone of them (are|is|can)\b|"
     r"\bno (suitable|available|relevant) tools?\b|\b(is|are) outside (what|the scope)\b|\bnot possible (to|with)\b|"
-    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ",
+    r"ไม่สามารถ|ทำไม่ได้|ไม่มีเครื่องมือ|"
+    # Round 62 (found on a real model's answers: most refusals used none of the phrases above): "cannot be determined with the available tools", "not accessible through the available
+    # tools", "the tools ... do not have the capability", "this goal cannot be achieved", and the same in Chinese.
+    r"\bcannot be (?:determined|achieved|done|accomplished|found|accessed|completed|answered|performed|read)\b|\b(?:is|are) not (?:accessible|available|possible|supported)\b|"
+    r"\b(?:tools?|they|it)(?: provided| available)? (?:do|does|did) not (?:have|support|allow|provide|include)\b|\bnot (?:accessible|available) (?:through|with|using|via)\b|"
+    r"\bwithout (?:access|the ability)\b|\bno (?:access|ability|way) to\b|无法|不能|不支持|没有.{0,6}(?:工具|权限|能力)",
     re.IGNORECASE,
 )
 
@@ -919,13 +927,27 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return scoped
         return tool_args
 
+    def _is_person(self) -> bool:
+        """Is this episode running for a PERSON (a chat sender, an HTTP-API caller, or a non-owner holding a personal token) rather than for the owner's own space? Everything that must differ
+        between the two - the owner's shared memory, the owner-only tools, `@file` from the repository, memory suggestions, conversation context - asks this one question (Round 62: a
+        non-owner's token name, e.g. "alice", is not a channel prefix, so before this a person with a personal token ran with the owner's privileges inside the loop)."""
+        if self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+            return True
+        try:
+            from rct_control_plane import api_tokens
+            if not api_tokens.per_user_mode() or self.namespace == api_tokens.SHARED_IDENTITY:
+                return False
+            return any(e["name"] == self.namespace for e in api_tokens.load_entries()) and not api_tokens.is_owner(self.namespace)
+        except Exception:                                                  # noqa: BLE001 - an unreadable tokens file means nobody is an owner: treat the namespace as a person's
+            return True
+
     def _reads_shared_memory(self) -> bool:
         setting = (os.environ.get("DELENTIA_SHARED_MEMORY") or "").strip().lower()
         if setting in ("1", "true", "yes"):
             return True
         if setting in ("0", "false", "no"):
             return False
-        return not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES)
+        return not self._is_person()
 
     async def _recall_for_goal(self, goal: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Round 48 R1.3: memories relevant to the goal are recalled
@@ -988,7 +1010,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         raw = (os.environ.get(self.CONVERSATION_TURNS_ENV) or "").strip()
         if raw.isdigit():
             return int(raw)
-        return self.CONVERSATION_DEFAULT_TURNS if self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) else 0
+        return self.CONVERSATION_DEFAULT_TURNS if self._is_person() else 0
 
     def _conversation_context(self) -> str:
         """Round 60: the recent turns of THIS person's conversation, framed as data. Rules: only this namespace; only the last few hours; each turn is clipped; a turn that
@@ -1229,7 +1251,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             except Exception:
                 pass
             return {"stopped_reason": "stuck_repeating", "tool_result": {"stuck": True, "tool_name": tool_name, "times": counts[key]}}
-        if tool_name in OWNER_ONLY_TOOLS and self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES) and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
+        if tool_name in OWNER_ONLY_TOOLS and self._is_person() and (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() not in ("1", "true", "yes"):
             try:
                 self._persistence.append_audit(entity_type="governed_loop_scope", entity_id=f"{self.namespace}-{tool_name}", action="owner_only_refused", actor=self.namespace,
                                                changes={"tool_name": tool_name})
@@ -2102,7 +2124,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return empty
         try:
             from rct_control_plane import file_refs
-            found = file_refs.expand(goal, local=not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES))
+            found = file_refs.expand(goal, local=not self._is_person())
         except Exception:                                                # noqa: BLE001 - a broken attachment must never break the episode
             return empty
         if found["taint"]:
@@ -2114,7 +2136,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         from an outside payload, nothing for a namespace that is not a person's (cron, subagents), and never an error."""
         try:
             from rct_control_plane import memory_nudge
-            if not memory_nudge.enabled() or not self.namespace.startswith(self.CHANNEL_NAMESPACE_PREFIXES):
+            if not memory_nudge.enabled() or not self._is_person():
                 return []
             return memory_nudge.MemoryCandidates(self._persistence).propose_from_goal(self.namespace, str(result.get("goal") or ""), tainted=bool((result.get("taint") or {}).get("tainted")))
         except Exception:                                                # noqa: BLE001
