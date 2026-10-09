@@ -1,6 +1,6 @@
 # Rehearsal of the research harness (scripted policies)
 
-Run on 2026-10-09 15:14 at commit 7684e50, split `dev`, one repeat, all 8 arms, 1680 episodes through the real governed loop.
+Run on 2026-10-09 15:21 at commit 7684e50, split `validation`, one repeat, all 8 arms, 1680 episodes through the real governed loop.
 
 > **This is not a result about a model or about Delentia's quality.** Every policy here is a script with a behaviour whose grade is known in advance. What is being tested is the harness: the switches, the graders, the sink, the analysis. Where a line below says an attack succeeded, a script that always obeys was run through the real gates; it says which layer stopped it (or did not), not how often a real model would obey.
 
@@ -414,13 +414,13 @@ Rows: 280 read, 280 used, 0 left out. Floor(s): default.
 | arm | episodes | VTS | STS | violation | attack success (n) | false rejection | refusal tasks correct |
 |---|---|---|---|---|---|---|---|
 | A000 | 35 | 63.6% | 63.6% | 0.0% | 0.0% (15) | 0.0% | 100.0% |
-| A001 | 35 | 81.8% | 81.8% | 17.1% | 0.0% (15) | 0.0% | 100.0% |
+| A001 | 35 | 75.8% | 75.8% | 22.9% | 0.0% (15) | 0.0% | 100.0% |
 | A010 | 35 | 63.6% | 63.6% | 0.0% | 0.0% (15) | 0.0% | 100.0% |
-| A011 | 35 | 81.8% | 81.8% | 17.1% | 0.0% (15) | 0.0% | 100.0% |
+| A011 | 35 | 75.8% | 75.8% | 22.9% | 0.0% (15) | 0.0% | 100.0% |
 | A100 | 35 | 63.6% | 63.6% | 0.0% | 0.0% (15) | 0.0% | 100.0% |
-| A101 | 35 | 81.8% | 81.8% | 17.1% | 0.0% (15) | 0.0% | 100.0% |
+| A101 | 35 | 75.8% | 75.8% | 22.9% | 0.0% (15) | 0.0% | 100.0% |
 | A110 | 35 | 63.6% | 63.6% | 0.0% | 0.0% (15) | 0.0% | 100.0% |
-| A111 | 35 | 81.8% | 81.8% | 17.1% | 0.0% (15) | 0.0% | 100.0% |
+| A111 | 35 | 75.8% | 75.8% | 22.9% | 0.0% (15) | 0.0% | 100.0% |
 
 **VTS: paired contrasts (cluster bootstrap over units, 95% interval, Holm-adjusted p within this table)**
 
@@ -428,8 +428,8 @@ Rows: 280 read, 280 used, 0 left out. Floor(s): default.
 |---|---|---|---|---|
 | delta_R  (A111 - A011) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | delta_F  (A111 - A101) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
-| delta_M  (A111 - A110) | 21 | +7.1 pp | [+1.2, +14.3] | 0.156 |
-| full vs none (A111 - A000) | 21 | +7.1 pp | [+1.2, +14.3] | 0.156 |
+| delta_M  (A111 - A110) | 21 | +4.8 pp | [+1.2, +9.5] | 0.156 |
+| full vs none (A111 - A000) | 21 | +4.8 pp | [+1.2, +9.5] | 0.156 |
 | theta_RM at F=1 (A111 - A110 - A011 + A010) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | theta_RFM (three-way) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 
@@ -439,8 +439,8 @@ Rows: 280 read, 280 used, 0 left out. Floor(s): default.
 |---|---|---|---|---|
 | delta_R  (A111 - A011) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | delta_F  (A111 - A101) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
-| delta_M  (A111 - A110) | 21 | +7.1 pp | [+1.2, +14.3] | 0.156 |
-| full vs none (A111 - A000) | 21 | +7.1 pp | [+1.2, +14.3] | 0.156 |
+| delta_M  (A111 - A110) | 21 | +4.8 pp | [+1.2, +9.5] | 0.156 |
+| full vs none (A111 - A000) | 21 | +4.8 pp | [+1.2, +9.5] | 0.156 |
 | theta_RM at F=1 (A111 - A110 - A011 + A010) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | theta_RFM (three-way) | 21 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 
@@ -461,8 +461,8 @@ Rows: 280 read, 280 used, 0 left out. Floor(s): default.
 |---|---|---|---|---|
 | delta_R  (A111 - A011) | 23 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | delta_F  (A111 - A101) | 23 | +0.0 pp | [+0.0, +0.0] | 1.000 |
-| delta_M  (A111 - A110) | 23 | +6.5 pp | [+1.1, +13.0] | 0.144 |
-| full vs none (A111 - A000) | 23 | +6.5 pp | [+1.1, +13.0] | 0.144 |
+| delta_M  (A111 - A110) | 23 | +8.7 pp | [+2.2, +17.4] | 0.144 |
+| full vs none (A111 - A000) | 23 | +8.7 pp | [+2.2, +17.4] | 0.144 |
 | theta_RM at F=1 (A111 - A110 - A011 + A010) | 23 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 | theta_RFM (three-way) | 23 | +0.0 pp | [+0.0, +0.0] | 1.000 |
 
