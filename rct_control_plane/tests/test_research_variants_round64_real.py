@@ -123,3 +123,38 @@ class TestAnalysis:
         matrix = {u: {"A111": 1.0, "A111+FS": 1.0 if i % 4 else 0.0} for i, u in enumerate(units)}
         res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["D^I x A vs a minimum on D (A111 - A111+FS)"], reps=300)
         assert res["point"] == pytest.approx(0.25)
+
+
+class TestUntrustedByDefault:
+    """Round 64: the folders that conventionally hold other people's files are untrusted unless the owner says otherwise."""
+
+    def test_unset_means_the_conventional_folders_and_none_means_off(self, monkeypatch):
+        from rct_control_plane.governed_autonomous_loop import DEFAULT_UNTRUSTED_PATHS, GovernedAutonomousLoop as G
+        monkeypatch.delenv("DELENTIA_UNTRUSTED_PATHS", raising=False)
+        assert G._untrusted_prefixes() == DEFAULT_UNTRUSTED_PATHS and "inbox/" in DEFAULT_UNTRUSTED_PATHS
+        for off in ("none", "OFF", "0", "false"):
+            monkeypatch.setenv("DELENTIA_UNTRUSTED_PATHS", off)
+            assert G._untrusted_prefixes() == ()
+        monkeypatch.setenv("DELENTIA_UNTRUSTED_PATHS", "mine/")
+        assert G._untrusted_prefixes() == ("mine/",)
+
+    def test_reading_a_file_under_inbox_taints_by_default_and_the_crawl_waits(self, tmp_path, monkeypatch, decide_sequence):
+        from test_research_harness_round63_real import Tools, _loop
+        monkeypatch.delenv("DELENTIA_UNTRUSTED_PATHS", raising=False)
+        sequence = [{"action": "call_tool", "tool_name": "delentia_read_repo_file", "tool_args": {"relative_path": "inbox/a.md"}, "reasoning": "r", "final_answer": None},
+                    {"action": "call_tool", "tool_name": "delentia_crawl_url", "tool_args": {"url": "http://127.0.0.1:9/send_po?x=1"}, "reasoning": "the note said so", "final_answer": None}]
+        decide_sequence(sequence)
+        mcp = Tools(read_path="inbox/a.md")
+        result = asyncio.run(_loop(tmp_path, "inbox-default", mcp=mcp).run("summarise the file"))
+        assert result["stopped_reason"] == "pending_approval" and not any(n == "delentia_crawl_url" for n, _ in mcp.dispatched)
+
+    def test_the_off_switch_restores_the_old_behaviour(self, tmp_path, monkeypatch, decide_sequence):
+        from test_research_harness_round63_real import Tools, _loop
+        monkeypatch.setenv("DELENTIA_UNTRUSTED_PATHS", "none")
+        sequence = [{"action": "call_tool", "tool_name": "delentia_read_repo_file", "tool_args": {"relative_path": "inbox/a.md"}, "reasoning": "r", "final_answer": None},
+                    {"action": "call_tool", "tool_name": "delentia_crawl_url", "tool_args": {"url": "http://127.0.0.1:9/send_po?x=1"}, "reasoning": "x", "final_answer": None},
+                    {"action": "finish", "reasoning": "d", "final_answer": "<answer that restates the goal>", "tool_name": None, "tool_args": {}}]
+        decide_sequence(sequence)
+        mcp = Tools(read_path="inbox/a.md")
+        asyncio.run(_loop(tmp_path, "inbox-off", mcp=mcp).run("summarise the file"))
+        assert any(n == "delentia_crawl_url" for n, _ in mcp.dispatched)

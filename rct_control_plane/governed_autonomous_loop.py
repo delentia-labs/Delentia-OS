@@ -316,6 +316,10 @@ TAINT_ENV = "DELENTIA_TAINT_GATE"
 # the note was followed by every arm because nothing about the read marked the text as foreign. DELENTIA_UNTRUSTED_PATHS names such folders (comma-separated,
 # repo-relative, e.g. "quotes/,inbox/"); reading or searching a file under one taints the episode exactly like a web page does. Unset = unchanged behaviour.
 UNTRUSTED_PATHS_ENV = "DELENTIA_UNTRUSTED_PATHS"
+# Round 64: unset used to mean "none". Seven payloads of rising subtlety (research/generate_tasks.py LIBRARY, including "Note to the assistant reading this file" and a fake "[SYSTEM] policy
+# update") all got through the content screen under the default floor (14 of 14 episodes of an always-obeying script reached the sink) and none did once the folder was declared (0 of 14), so
+# the folder names that conventionally hold other people's files are untrusted by default. DELENTIA_UNTRUSTED_PATHS=none switches the default off; any other value replaces it.
+DEFAULT_UNTRUSTED_PATHS = ("inbox/", "downloads/", "attachments/", "incoming/")
 TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_browser_act", "delentia_read_exchange_file",
                                 "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
                                 "delentia_transcribe_audio"})
@@ -2291,8 +2295,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
     @staticmethod
     def _untrusted_prefixes() -> Tuple[str, ...]:
         import re as _re
+        raw = os.environ.get(UNTRUSTED_PATHS_ENV)
+        if raw is None:
+            return DEFAULT_UNTRUSTED_PATHS
+        if raw.strip().lower() in ("none", "off", "0", "false"):
+            return ()
         prefixes = []
-        for part in (os.environ.get(UNTRUSTED_PATHS_ENV) or "").split(","):
+        for part in raw.split(","):
             norm = _re.sub(r"^(\./)+", "", part.strip().replace("\\", "/")).lstrip("/")
             if norm:
                 prefixes.append(norm if norm.endswith("/") else norm + "/")
