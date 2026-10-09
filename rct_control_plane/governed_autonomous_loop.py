@@ -667,8 +667,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
-        if self._research is not None and not self._research.R:
-            self._episode_rct7_steps = []                  # research arm R=0: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
+        if self._research is not None and not self._research.plan:
+            self._episode_rct7_steps = []                  # research arm without the plan: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
         if self.max_iterations != self._applied_max_iterations:
             self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
         self.max_iterations = self._configured_max_iterations
@@ -1330,6 +1330,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             elif policy_eval.A > 0.0:
                 a_reason = f"{a_reason}; owner policy {policy_eval.rule_id}"
         F = fdia_score(self._episode_D, self._episode_I, A)
+        research_rule = None
+        if self._research is not None and self._research.simple_d:
+            # research arm FS: the same D and A, but the decision is "D under a minimum", not D^I x A (protocol section 6)
+            F = round(A if self._episode_D >= self._research.simple_d else 0.0, 4)
+            research_rule = "simple_d"
         self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F, "threshold": threshold}
         # Reads that the owner allows are not held to the D/I threshold (they never were); everything riskier is.
         judged = is_risky_tool(tool_name) or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
@@ -1347,6 +1352,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "A": A, "A_reason": a_reason, "F": F, "threshold": threshold,
                 "data_parts": (self._episode_data or {}).get("parts"),
                 "blocked": blocked, "policy": info,
+                **({"research_rule": research_rule} if research_rule else {}),
             },
         )
 
@@ -1529,7 +1535,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         similarity heuristic: a correct but very short answer ("4" for
         "what is 2+2") can score low, so a failed check only stops the
         episode from being learned as a skill; it never hides the answer."""
-        if self._research is not None and not self._research.R:
+        if self._research is not None and not self._research.verify:
             from rct_control_plane import research_switches
             return research_switches.generic_verify(goal, final_answer, steps)
         if not final_answer:
