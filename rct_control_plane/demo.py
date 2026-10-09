@@ -136,10 +136,10 @@ def configure_env(root: Path) -> Dict[str, Path]:
     os.environ.setdefault("DELENTIA_APPROVERS_FILE", str(p["approvers"]))
     os.environ.setdefault("DELENTIA_AUDIT_SIGNING_KEY", str(p["audit_key"]))
     os.environ.setdefault("DELENTIA_SHARED_MEMORY", "0")
-    # A smaller tool menu for the demo only: on this task a local 7B model sent 49,405 prompt tokens and picked the wrong file tool with the full menu, and
-    # 7,566 with the ranked compact one (one run each; the default for other entry points stays off until a capable model's A/B says so).
-    os.environ.setdefault("DELENTIA_TOOL_MENU", "ranked")
-    os.environ.setdefault("DELENTIA_TOOL_MENU_FORMAT", "compact")
+    # The tool menu is left at the product default (the full menu, about 8,200 prompt tokens a call). The ranked compact menu is an opt-in (DELENTIA_TOOL_MENU=ranked): on
+    # the six benign dev tasks of research/ a local 7B read the files in 6/6 episodes with the full menu but only in 1/6 with the ranked one, until two format problems were
+    # found and fixed (the tool name written in the "action" field; a call with arguments but no tool name) - after that it read them in 6/6 with both menus (VTS 0/6 either
+    # way). One small model, six tasks: not enough to change a default; that waits for a model that is good with tools.
     return p
 
 

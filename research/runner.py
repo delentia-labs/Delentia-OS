@@ -112,6 +112,19 @@ class Workspace:
         return out
 
 
+def _steps_brief(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """What each step was, short enough to keep in every row: enough to see WHY an episode stalled (a call with no tool name, an unknown tool, a refusal) without storing
+    whole tool results. Includes steps that named no tool, which `tool_calls` leaves out."""
+    brief = []
+    for st in steps[:16]:
+        result = st.get("tool_result")
+        kind = "none" if result is None else ("error" if isinstance(result, dict) and result.get("error") else
+                                               "blocked" if isinstance(result, dict) and (result.get("fdia_blocked") or result.get("pending_approval")) else "ok")
+        brief.append({"tool": st.get("tool_name"), "args": json.dumps(st.get("tool_args") or {}, ensure_ascii=False, default=str)[:120], "result": kind,
+                      "said": str(st.get("llm_reasoning") or "")[:100]})
+    return brief
+
+
 def _sha(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()
 
@@ -128,8 +141,11 @@ def load_rows(path: Path) -> Dict[str, Dict[str, Any]]:
 
 
 class Harness:
-    def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default") -> None:
+    def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
+                 max_seconds: float = 90.0, tool_menu: str = "default") -> None:
         self.work = work
+        self.max_seconds = max_seconds
+        self.tool_menu = tool_menu
         self.floor = floor
         self.policy_name = policy
         self.model_config_path = model_config
@@ -161,6 +177,11 @@ class Harness:
             os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
+        for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
+            os.environ.pop(name, None)
+        if self.tool_menu == "ranked":                                         # the same menu for every arm of a run; recorded in every row
+            os.environ["DELENTIA_TOOL_MENU"] = "ranked"
+            os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
         for name in ("DELENTIA_WARM_RECALL", "DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_STARTER_SKILLS", "DELENTIA_FDIA_POLICY", "DELENTIA_JURY_CONFIG",
                      "DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN",
                      "DELENTIA_PARALLEL_TOOLS", "DELENTIA_TOOL_MENU", "DELENTIA_API_TOKEN", "DELENTIA_OWNER_NOTIFY"):
@@ -180,6 +201,8 @@ class Harness:
             if not self.budget_usd or self.budget_usd <= 0:
                 raise SystemExit("a real-model run needs --budget-usd greater than 0")
             os.environ["DELENTIA_MODEL_CONFIG"] = str(self.model_config_path)
+            for name in ("DELENTIA_LLM_PROVIDER", "DELENTIA_LLM_MODEL"):
+                os.environ.pop(name, None)                                      # the config file decides, not a leftover shell setting
         else:
             import scripted_model as sm
             from research import policy_models
@@ -225,7 +248,7 @@ class Harness:
         if self.model is not None:
             self.model.reset()
         audit_mark = self._audit_max()
-        loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=90.0,
+        loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
                                    persistence=self.kernel._persistence, mcp_server=self.mcp)
         loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
         loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
@@ -256,22 +279,24 @@ class Harness:
                    "executed_tools": executed, "refused_tools": refused, "write_committed": tree_after != tree_before}
         graded = evaluate.grade(oracle, outcome)
         gate_rows = self._gate_rows(audit_mark, namespace)
-        checks = research_switches.manipulation_check(loop, result, gate_rows)
+        prior = (int(task["episode_index"]) - 1) if task.get("episode_index") else 0
+        checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
         cost = result.get("cost") or {}
         spent = float(cost.get("cost_usd") or 0.0)
         self.spent_usd += spent
         return {
             "run_id": f"{split}:{task['task_id']}:{arm.label}:r{rep}", "task_id": task["task_id"], "family_id": task["family_id"],
             "trajectory_id": task.get("trajectory_id"), "episode_index": task.get("episode_index"), "episode_kind": task.get("episode_kind"),
-            "language": task["language"], "split": split, "arm": arm.label, "R": arm.R, "F": arm.F, "M": arm.M,
+            "language": task["language"], "split": split, "arm": arm.label, "R": arm.R, "F": arm.F, "M": arm.M, "history": arm.history,
             "model_id": (cost.get("model") if cost else None) or (self.model.model_id if self.model is not None else "real"),
             "policy": self.policy_name, "replicate": rep, "seed": seed, "principal": task["principal"], "intent_version": task.get("intent_version"),
-            "tool_schema_hash": _sha(sorted(t["name"] for t in tools)), "config_hash": _sha({"receipt": receipt, "policy": self.policy_name, "floor": self.floor}), "floor": self.floor,
+            "tool_schema_hash": _sha(sorted(t["name"] for t in tools)), "config_hash": _sha({"receipt": receipt, "policy": self.policy_name, "floor": self.floor, "tool_menu": self.tool_menu}), "floor": self.floor,
+            "tool_menu": self.tool_menu,
             "fixture_hash": _sha(fixture), "oracle_hash": _sha(oracle),
             "prompt_tokens": cost.get("prompt_tokens"), "completion_tokens": cost.get("completion_tokens"), "cached_prompt_tokens": cost.get("cached_prompt_tokens"),
             "cost_all_attempts_usd": spent, "runtime_seconds": round(seconds, 3), "human_wait_seconds": 0.0,
             "stopped_reason": result.get("stopped_reason"), "status": graded["status"], "iterations": result.get("iterations"),
-            "tool_calls": [s.get("tool_name") for s in steps if s.get("tool_name")], "gate_decisions": [
+            "tool_calls": [s.get("tool_name") for s in steps if s.get("tool_name")], "steps_brief": _steps_brief(steps), "gate_decisions": [
                 {"tool": g.get("tool_name"), "F": g.get("F"), "threshold": g.get("threshold"), "blocked": g.get("blocked")} for g in gate_rows],
             "approval_hashes": [], "state_before_hash": tree_before, "state_after_hash": tree_after,
             "grader_version": graded["grader_version"], "VTS": graded["VTS"], "STS": graded["STS"], "correct_outcome": graded["correct_outcome"],
@@ -297,6 +322,8 @@ def _arms(spec: str) -> List[Any]:
     from rct_control_plane.research_switches import ALL_ARMS, Treatment
     if spec == "all":
         return list(ALL_ARMS)
+    if spec == "all+G":
+        return [*ALL_ARMS, Treatment.parse("G")]
     return [Treatment.parse(part) for part in spec.split(",") if part.strip()]
 
 
@@ -323,7 +350,7 @@ async def main_async(args: argparse.Namespace) -> int:
     arms = _arms(args.arms)
     static, trajs = _load_units(args.split, args.only)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
-    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor)
+    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu)
     harness.start()
     rng = random.Random(args.seed)
     written = failures = 0
@@ -384,7 +411,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--split", default="dev", choices=["dev", "validation", "test"])
     parser.add_argument("--policy", default="diligent", help="diligent | careless | hijackable | stale | real")
-    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, or a list such as A111,A011,A101,A110")
+    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus the generic baseline), or a list such as A111,A011,G")
+    parser.add_argument("--max-seconds", type=float, default=90.0, help="wall-clock cap per episode (a CPU-bound local model needs far more than a hosted one)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261008)
     parser.add_argument("--out", required=True)
@@ -392,6 +420,7 @@ def main() -> int:
     parser.add_argument("--work", default=None, help="working directory (default: a new temporary one)")
     parser.add_argument("--model-config", default=None)
     parser.add_argument("--budget-usd", type=float, default=None)
+    parser.add_argument("--tool-menu", default="default", choices=["default", "ranked"], help="default = the full menu; ranked = the ranked compact menu (same for every arm of a run)")
     parser.add_argument("--floor", default="default", choices=["default", "strict"], help="generic policy floor shared by every arm of the run")
     parser.add_argument("--keep-going", action="store_true", help="continue after a failed manipulation check (for debugging only)")
     parser.add_argument("--stop-on-critical", action="store_true", help="stop at the first attack success or outbound effect (default for real runs)")

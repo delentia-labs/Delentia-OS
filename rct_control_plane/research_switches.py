@@ -9,6 +9,11 @@ experiments.
   M  experience across episodes    off -> no memory or skill read into the prompt, no warm recall, no skill learned,
                                           and the memory tools refuse
 
+Besides the eight cells there is one BASELINE arm, G ("generic"): R, F and M all off, plus the raw recent conversation (the last four turns: what the person asked
+and what the agent answered) in the prompt. It is the protocol's "generic plan-act-check + the same policy + generic retrieval memory": it carries experience across
+episodes by raw history only, with no structure, no verification and no learning, so the comparison A111 - G asks whether the verified, structured way of
+carrying experience earns anything over simply remembering what was said.
+
 Why a separate module and not a public setting: turning governance off is exactly what a production host must not
 be able to do by accident. `apply()` refuses unless the process was started in research mode
 (`DELENTIA_RESEARCH_MODE=1`) AND the namespace is a research namespace (`research-...`). Nothing in the API, the CLI,
@@ -34,22 +39,28 @@ class ResearchModeError(RuntimeError):
     """Research switches were asked for outside research mode."""
 
 
+GENERIC_HISTORY_TURNS = 4
+
+
 @dataclass(frozen=True)
 class Treatment:
     R: int
     F: int
     M: int
+    history: int = 0            # earlier turns of the same conversation shown raw (0 in every factorial arm; GENERIC_HISTORY_TURNS in the baseline G)
 
     @property
     def label(self) -> str:
-        return f"A{self.R}{self.F}{self.M}"
+        return "G" if self.history else f"A{self.R}{self.F}{self.M}"
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"R": self.R, "F": self.F, "M": self.M, "arm": self.label}
+        return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "arm": self.label}
 
     @staticmethod
     def parse(label: str) -> "Treatment":
         text = (label or "").strip().upper()
+        if text == "G":
+            return BASELINE_G
         if text.startswith("A"):
             text = text[1:]
         if len(text) != 3 or any(c not in "01" for c in text):
@@ -58,6 +69,7 @@ class Treatment:
 
 
 ALL_ARMS = tuple(Treatment(r, f, m) for r in (0, 1) for f in (0, 1) for m in (0, 1))
+BASELINE_G = Treatment(0, 0, 0, history=GENERIC_HISTORY_TURNS)
 
 
 def research_mode_enabled() -> bool:
@@ -93,6 +105,7 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
         raise ResearchModeError(f"research switches only apply to a namespace starting with {RESEARCH_NAMESPACE_PREFIX!r}, "
                                 f"not {getattr(loop, 'namespace', None)!r}")
     loop._research = treatment
+    loop._conversation_turns = int(treatment.history)        # explicit in every arm, so an environment setting cannot give a factorial arm raw history
     loop._rct7_in_prompt = bool(treatment.R)
     if not treatment.F:
         loop._fdia_threshold = 0.0          # F < 0 can never happen, so the number no longer blocks; A <= 0 still does
@@ -105,16 +118,17 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
 def receipt(loop: Any, treatment: Treatment) -> Dict[str, Any]:
     return {**treatment.to_dict(), "rct7_in_prompt": bool(loop._rct7_in_prompt), "fdia_threshold": float(loop._fdia_threshold),
             "memory_in_prompt": bool(loop._memory_in_prompt), "warm_recall": bool(loop._warm_recall),
-            "max_iterations": loop.max_iterations}
+            "conversation_turns": int(getattr(loop, "_conversation_turns", 0) or 0), "max_iterations": loop.max_iterations}
 
 
 def active(loop: Any) -> Optional[Treatment]:
     return getattr(loop, "_research", None)
 
 
-def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]], prior_episodes: Optional[int] = None) -> List[Dict[str, Any]]:
     """After one episode: did each factor behave as its arm says? `gate_rows` are the `governed_loop_fdia_gate`
-    audit rows of this episode (their `changes` dicts). Returns [{"check", "ok", "detail"}]."""
+    audit rows of this episode (their `changes` dicts); `prior_episodes` is how many earlier episodes the same conversation has
+    (None = not checked). Returns [{"check", "ok", "detail"}]."""
     treatment = active(loop)
     if treatment is None:
         return [{"check": "a research treatment was applied", "ok": False, "detail": "loop has no treatment"}]
@@ -137,6 +151,12 @@ def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[s
         add("F=1: every gate decision used the FDIA threshold", all(t >= 0.5 for t in thresholds), thresholds)
     else:
         add("F=0: no gate decision used a numeric threshold", all(t == 0.0 for t in thresholds), thresholds)
+    conversation = str(getattr(loop, "_episode_conversation_text", "") or "")
+    if treatment.history:
+        if prior_episodes:
+            add("G: the raw earlier conversation reached the prompt", "the person:" in conversation, {"prior_episodes": prior_episodes, "chars": len(conversation)})
+    else:
+        add("a factorial arm sees no raw earlier conversation", not conversation, {"chars": len(conversation)})
     if not treatment.M:
         add("M=0: no memory, skill or warm answer reached the episode",
             (getattr(loop, "_episode_skills_injected", 0) == 0 and not getattr(loop, "_episode_memory_scores", []) and result.get("stopped_reason") != "warm_recall"

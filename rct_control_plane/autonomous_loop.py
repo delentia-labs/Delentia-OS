@@ -199,12 +199,36 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def unknown_tool_result(tool_name: Any, known_names: List[str], limit: int = 3) -> Dict[str, Any]:
+def _tools_matching_arguments(tool_args: Any, tools: Optional[List[Dict[str, Any]]], limit: int = 3) -> List[str]:
+    """Round 63: tools whose argument schema contains every argument the model wrote, fewest surplus arguments first - what a reply that gave arguments but no
+    tool name most likely meant. Only suggestions for the model to choose from: nothing is guessed on its behalf and nothing is run."""
+    if not isinstance(tool_args, dict) or not tool_args or not tools:
+        return []
+    wanted = set(tool_args)
+    scored = []
+    for tool in tools:
+        schema = tool.get("input_schema") or {}
+        props = set((schema.get("properties") or {}).keys()) if isinstance(schema, dict) else set()
+        if wanted <= props:
+            scored.append((len(props - wanted), len(str(tool.get("name"))), str(tool.get("name"))))
+    return [name for _, _, name in sorted(scored)[:limit]]
+
+
+def unknown_tool_result(tool_name: Any, known_names: List[str], limit: int = 3, tool_args: Any = None, tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """The tool result for a tool name that does not exist: nothing is run,
     and the closest real names are offered (spelling similarity first, then
-    shared name parts such as read/file/repo)."""
+    shared name parts such as read/file/repo). A reply that named NO tool (a small model leaving tool_name out once the menu is compact) gets a message that says
+    exactly that, plus the tools that take the arguments it wrote."""
     import difflib
     name = str(tool_name or "")
+    if not name.strip():
+        suggestions = _tools_matching_arguments(tool_args, tools, limit)
+        return {
+            "error": "Your reply named no tool: tool_name was missing or empty. Nothing was run.",
+            "did_you_mean": suggestions,
+            "hint": 'Reply again with the tool\'s exact name in tool_name, for example {"action": "call_tool", "tool_name": "'
+                    + (suggestions[0] if suggestions else "<name from the tool list>") + '", "tool_args": {...}, "reasoning": "..."}.',
+        }
     close = difflib.get_close_matches(name, known_names, n=limit, cutoff=0.5)
     if len(close) < limit:
         parts = {p for p in re.split(r"[_\W]+", name.lower()) if p and p != "delentia"}
@@ -306,6 +330,26 @@ def _batch_guidance() -> str:
     )
 
 
+DECISION_ACTIONS = ("call_tool", "call_tools", "finish")
+
+
+def repair_decision_format(decision: Dict[str, Any], tool_names: "set[str]") -> Dict[str, Any]:
+    """Round 63. A small model that has understood WHAT to do sometimes writes it in the wrong shape: the tool's name in the `action` field
+    (`{"action": "delentia_read_repo_file", "tool_args": {...}}`), or an action word of its own with a valid `tool_name`. Measured on qwen2.5:7b with the
+    compact tool menu: in 4 of 6 episodes the model asked for the right tool this way, the loop saw a call with no tool name, and the episode ended as
+    "stuck repeating" without one tool being used. The intent is unambiguous, so the shape is repaired; nothing else changes - the call still goes through
+    the same gate, scoping and unknown-tool check as any other, and the decision records that it was repaired. Anything that is not clearly a tool the model
+    was shown is left exactly as it was."""
+    action = str(decision.get("action") or "")
+    if action in DECISION_ACTIONS:
+        return decision
+    if action in tool_names and not decision.get("tool_name"):
+        decision["tool_name"], decision["action"], decision["format_repaired"] = action, "call_tool", "tool name was in the action field"
+    elif decision.get("tool_name") in tool_names:
+        decision["action"], decision["format_repaired"] = "call_tool", f"unrecognised action {action!r} with a valid tool_name"
+    return decision
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
@@ -382,7 +426,7 @@ OR, if the goal is already achieved or no tool call is needed:
     decision.setdefault("tool_args", {})
     decision.setdefault("final_answer", None)
     decision.setdefault("reasoning", "")
-    return decision
+    return repair_decision_format(decision, {t["name"] for t in available_tools})
 
 
 class AutonomousLoop:
@@ -659,7 +703,7 @@ class AutonomousLoop:
             known_names = [t["name"] for t in available_tools]
             if tool_name not in known_names:
                 step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args,
-                                 tool_result=unknown_tool_result(tool_name, known_names),
+                                 tool_result=unknown_tool_result(tool_name, known_names, tool_args=tool_args, tools=available_tools),
                                  llm_reasoning=decision["reasoning"])
                 history.append(step)
                 self._persist_step(step)
@@ -755,7 +799,7 @@ class AutonomousLoop:
         async def run_one(call: Any) -> Any:
             args = prepared[call.id]
             if call.tool_name not in known:
-                return unknown_tool_result(call.tool_name, known)
+                return unknown_tool_result(call.tool_name, known, tool_args=call.tool_args, tools=available_tools)
             if call.tool_name in dag.PARALLEL_SAFE_TOOLS:
                 result = await asyncio.to_thread(lambda: asyncio.run(invoke(call.tool_name, args)))
             else:

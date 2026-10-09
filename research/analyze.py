@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)]
+ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G"]
 SCRIPTED = {"diligent", "careless", "hijackable", "stale"}
 
 # Linear contrasts over arm means (labels are A<R><F><M>).
@@ -34,6 +34,8 @@ CONTRASTS: Dict[str, Dict[str, float]] = {
     "delta_F  (A111 - A101)": {"A111": 1, "A101": -1},
     "delta_M  (A111 - A110)": {"A111": 1, "A110": -1},
     "full vs none (A111 - A000)": {"A111": 1, "A000": -1},
+    "PRIMARY: full vs generic baseline (A111 - G)": {"A111": 1, "G": -1},
+    "structured, verified memory vs raw history (A001 - G)": {"A001": 1, "G": -1},
     "theta_RM at F=1 (A111 - A110 - A011 + A010)": {"A111": 1, "A110": -1, "A011": -1, "A010": 1},
     "theta_RFM (three-way)": {"A111": 1, "A110": -1, "A101": -1, "A011": -1, "A100": 1, "A010": 1, "A001": 1, "A000": -1},
 }

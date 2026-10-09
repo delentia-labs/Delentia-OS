@@ -468,3 +468,56 @@ class TestFdiaScope:
         from rct_control_plane.governed_autonomous_loop import fdia_score
         assert fdia_score(0.0, 1.0, 1.0) == 0.0 and fdia_score(0.9, 0.0, 1.0) == 0.0 and fdia_score(0.9, 1.0, 0.0) == 0.0
         assert fdia_score(float("nan"), 1.0, 1.0) == 0.0
+
+
+# ---------------------------------------------------------------- the generic baseline G
+class TestBaselineG:
+    def test_G_is_not_one_of_the_eight_cells_and_parses_by_name(self):
+        assert rs.Treatment.parse("g") is rs.BASELINE_G and rs.BASELINE_G.label == "G"
+        assert rs.BASELINE_G not in rs.ALL_ARMS and all(a.history == 0 for a in rs.ALL_ARMS)
+        assert (rs.BASELINE_G.R, rs.BASELINE_G.F, rs.BASELINE_G.M) == (0, 0, 0) and rs.BASELINE_G.history == rs.GENERIC_HISTORY_TURNS
+
+    def test_only_G_gets_raw_history_even_when_the_environment_asks_for_it(self, tmp_path, research_env, monkeypatch):
+        monkeypatch.setenv("DELENTIA_CONVERSATION_TURNS", "5")
+        factorial = _loop(tmp_path, "research-fact")
+        rs.apply(factorial, rs.Treatment.parse("A001"))
+        baseline = _loop(tmp_path, "research-gen")
+        rs.apply(baseline, rs.BASELINE_G)
+        assert factorial._conversation_turns == 0 and baseline._conversation_turns == rs.GENERIC_HISTORY_TURNS
+
+    def _two_episodes(self, tmp_path, decide_sequence, arm, name):
+        first_calls = decide_sequence([finish()])
+        first = _loop(tmp_path, name)
+        rs.apply(first, rs.Treatment.parse(arm))
+        asyncio.run(first.run("Remember: always sort the table from lowest to highest price. Then build the table."))
+        second_calls = decide_sequence([finish()])
+        second = _loop(tmp_path, name)                                    # same namespace and database: the same person's next message
+        rs.apply(second, rs.Treatment.parse(arm))
+        result = asyncio.run(second.run("Build the table for the new quotes."))
+        return first_calls, second_calls, second, result
+
+    def test_G_shows_the_earlier_turn_raw_and_a_factorial_arm_with_M_off_does_not(self, tmp_path, research_env, decide_sequence):
+        _, calls, loop, result = self._two_episodes(tmp_path, decide_sequence, "G", "research-g-hist")
+        assert "the person: Remember: always sort the table" in calls["extra_contexts"][0]
+        assert all(c["ok"] for c in rs.manipulation_check(loop, result, [], prior_episodes=1))
+        _, calls, loop, result = self._two_episodes(tmp_path, decide_sequence, "A000", "research-a000-hist")
+        assert "the person:" not in calls["extra_contexts"][0]
+        assert all(c["ok"] for c in rs.manipulation_check(loop, result, [], prior_episodes=1))
+
+    def test_the_manipulation_check_catches_a_G_arm_that_did_not_get_its_history(self, tmp_path, research_env, decide_sequence):
+        _, _, loop, result = self._two_episodes(tmp_path, decide_sequence, "G", "research-g-broken")
+        loop._episode_conversation_text = ""
+        assert not all(c["ok"] for c in rs.manipulation_check(loop, result, [], prior_episodes=1))
+
+    def test_the_first_episode_of_a_conversation_has_no_history_and_that_is_not_a_failure(self, tmp_path, research_env, decide_sequence):
+        decide_sequence([finish()])
+        loop = _loop(tmp_path, "research-g-first")
+        rs.apply(loop, rs.BASELINE_G)
+        result = asyncio.run(loop.run("Build the table."))
+        assert all(c["ok"] for c in rs.manipulation_check(loop, result, [], prior_episodes=0))
+
+    def test_the_analysis_has_a_primary_contrast_against_G(self):
+        units = [f"u{i}" for i in range(30)]
+        matrix = {u: {"A111": 1.0, "G": 0.5 if i % 2 else 1.0, "A001": 1.0} for i, u in enumerate(units)}
+        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["PRIMARY: full vs generic baseline (A111 - G)"], reps=500)
+        assert res["point"] == pytest.approx(0.25) and "G" in analyze.ARMS
