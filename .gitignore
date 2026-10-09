@@ -231,3 +231,6 @@ ground_truth_store.db
 # downloaded model weights (ultralytics)
 yolov8n.pt
 .claude/worktrees/
+
+# Round 63: raw traces of research runs (regenerate with research/rehearse.py); summaries are committed as RESULTS_*.md
+research/runs/

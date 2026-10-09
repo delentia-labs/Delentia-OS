@@ -285,7 +285,9 @@ _SCOPE_AND_GROUNDING_GUIDANCE = (
     "explicitly given in the goal or returned by a real tool result above - not even "
     "a plausible-looking one. A shell-command tool being available does not make up "
     "for a real endpoint you do not actually have; if completing the goal would "
-    "require one you don't have, finish honestly and say so instead of guessing one."
+    "require one you don't have, finish honestly and say so instead of guessing one.\n"
+    "5. Write final_answer in the same language as the goal (a Thai goal gets a Thai answer), "
+    "unless the goal asks for another language."
 )
 
 

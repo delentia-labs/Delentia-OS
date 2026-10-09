@@ -101,7 +101,7 @@ import re
 import math
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from rct_control_plane.algo_25_delta_block import DeltaBlock, DeltaDiff, DeltaEngine, DeltaType
 from rct_control_plane.autonomous_loop import AutonomousLoop, LoopStep
@@ -156,10 +156,18 @@ def _write_path_is_safe(relative_path: str) -> bool:
     return real == real_root or real.startswith(real_root + os.sep)
 
 
+def research_receipt(loop: Any, treatment: Any) -> Dict[str, Any]:
+    from rct_control_plane import research_switches
+    return research_switches.receipt(loop, treatment)
+
+
 def fdia_score(D: float, I: float, A: float) -> float:
     """F = (D^I) * A with overflow guard - see module docstring point 4.
     Round 48: D <= 0 or I <= 0 -> 0.0 (no data / no intent = no future),
-    identical to AlgorithmKernel41.algo_01_fdia."""
+    identical to AlgorithmKernel41.algo_01_fdia.
+    Scope (Round 63): F is a ratio to be compared with a threshold, not a probability. D is clamped to 0.01..100 and I to 0.01..10, so F can exceed 1
+    when D > 1 (the kernel's D range is 0.1..1.2); with D in (0, 1] and A = 1, F falls as I grows (I is strictness). It has not been calibrated against
+    labelled action outcomes. For a threshold tau the smallest D that passes is tau ** (1 / I): 0.5 at I = 1, 0.7071 at I = 2, 0.8409 at I = 4."""
     if not (D > 0) or not (I > 0):
         return 0.0
     d_clamped = max(0.01, min(100.0, D))
@@ -303,6 +311,11 @@ _ALWAYS_NEEDS_APPROVAL_TOOLS = frozenset({
 # hijacked can then ask for anything it likes and nothing happens without a person. Reading and answering stay free. DELENTIA_TAINT_GATE=off turns it off
 # (used only to measure the difference; the audit trail records the mode).
 TAINT_ENV = "DELENTIA_TAINT_GATE"
+# Round 63: a file in the workspace is the owner's own text, so reading it never tainted an episode. That is wrong for a folder where other people's documents
+# land (vendor quotes, an inbox, downloaded attachments): measured by research/ with a scripted model that obeys a plain-sounding business note inside a quote,
+# the note was followed by every arm because nothing about the read marked the text as foreign. DELENTIA_UNTRUSTED_PATHS names such folders (comma-separated,
+# repo-relative, e.g. "quotes/,inbox/"); reading or searching a file under one taints the episode exactly like a web page does. Unset = unchanged behaviour.
+UNTRUSTED_PATHS_ENV = "DELENTIA_UNTRUSTED_PATHS"
 TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_browser_act", "delentia_read_exchange_file",
                                 "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
                                 "delentia_transcribe_audio"})
@@ -500,6 +513,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # Round 48 COMPRESS: large tool results are Delta-v2 compressed.
         self._compress_tool_outputs = compress_tool_outputs
         self._fdia_threshold = fdia_threshold
+        self._research: Optional[Any] = None       # Round 63: set only by research_switches.apply() in a research process; None in every production path
         # Round 54: the owner's policy for A (fdia_policy.py) and the optional SignedAI jury it can require. A policy
         # can be passed in (tests, an embedding application); otherwise the file is read on every gate decision, so a
         # change made in the Desk applies to the next tool call without restarting anything.
@@ -653,6 +667,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
+        if self._research is not None and not self._research.R:
+            self._episode_rct7_steps = []                  # research arm R=0: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
         if self.max_iterations != self._applied_max_iterations:
             self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
         self.max_iterations = self._configured_max_iterations
@@ -716,6 +732,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 # is known (see _pre_dispatch_gate).
                 "goal_F": fdia_score(D, I, 1.0),
                 "warm_recall": self._warm_info or None,
+                **({"research": research_receipt(self, self._research)} if self._research is not None else {}),
             },
         )
         if warm_hit:
@@ -880,8 +897,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return (f"Routing (ALGO-21): SLOW - {route['reason']}. Work step by step and check each tool "
                 f"result before choosing the next action.")
 
+    async def _available_tools(self) -> list:
+        tools = await super()._available_tools()
+        if self._research is not None and not self._research.M:
+            from rct_control_plane.research_switches import MEMORY_TOOLS_OFF
+            tools = [t for t in tools if t["name"] not in MEMORY_TOOLS_OFF]      # research arm M=0: nothing that reads or writes experience across episodes
+        return tools
+
     def _retrieve_skills_counted(self, goal: str) -> List[Any]:
-        skills = self._skill_library.retrieve_similar_skills(goal, top_k=3)
+        skills = [] if (self._research is not None and not self._research.M) else self._skill_library.retrieve_similar_skills(goal, top_k=3)
         self._episode_skills_injected = len(skills)
         self._episode_skill_ids = [skill.id for skill in skills]
         self._episode_skill_scores = [
@@ -1502,6 +1526,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         similarity heuristic: a correct but very short answer ("4" for
         "what is 2+2") can score low, so a failed check only stops the
         episode from being learned as a skill; it never hides the answer."""
+        if self._research is not None and not self._research.R:
+            from rct_control_plane import research_switches
+            return research_switches.generic_verify(goal, final_answer, steps)
         if not final_answer:
             return {"applicable": False, "reason": "no final answer to verify"}
         matcher = getattr(self._get_kernel(), "_semantic_matcher", None)
@@ -1611,7 +1638,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 self._skill_library.record_outcome(self._episode_skill_ids, success=verified_success)
             except Exception:
                 pass
-        skill_record = None if (warm or self._episode_used_conversation) else self._skill_library.maybe_extract_skill(
+        no_learning = self._research is not None and not self._research.M
+        skill_record = None if (warm or self._episode_used_conversation or no_learning) else self._skill_library.maybe_extract_skill(
             problem_statement=result["goal"],
             action_sequence_or_solution=result["steps"],
             growth_step=growth_step,
@@ -2232,9 +2260,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return
         flagged = isinstance(shown, dict) and "_cord_warning" in shown
         child = self._child_taint(tool_name, shown)
+        untrusted = self._untrusted_folder_read(tool_name, shown)
         if tool_name == "delentia_recall" and isinstance(shown, dict) and self._memory_origin_tainted(shown.get("memories")):
             self._taint_from_memory("delentia_recall")
-        if not (is_external_content(tool_name) and (tool_name in TAINT_SOURCE_TOOLS or tool_name.startswith("mcp__"))) and not flagged and child is None:
+        if not (is_external_content(tool_name) and (tool_name in TAINT_SOURCE_TOOLS or tool_name.startswith("mcp__"))) and not flagged and child is None and untrusted is None:
             return
         import re as _re
         urls = getattr(self, "_episode_seen_urls", None)
@@ -2242,12 +2271,42 @@ class GovernedAutonomousLoop(AutonomousLoop):
             urls = self._episode_seen_urls = set()
         urls.update(u.rstrip(".,;:!?)\"'") for u in _re.findall(r"https?://[^\s<>\"'\])]+", self._render_tool_result(shown)[:400_000]))
         if getattr(self, "_episode_taint", None) is None:
-            self._episode_taint = f"{tool_name} (a child that read {child})" if child else tool_name
+            self._episode_taint = (f"{tool_name} (a child that read {child})" if child
+                                   else f"{tool_name} ({untrusted} is in a folder declared untrusted)" if untrusted and not flagged else tool_name)
             try:
                 self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action="tainted",
                                                actor=self.namespace, changes={"source_tool": tool_name, "flagged_by_screen": flagged, "gate": "on" if self._taint_enabled() else "off"})
             except Exception:                                    # an audit problem must not decide what the model sees
                 pass
+
+    @staticmethod
+    def _untrusted_prefixes() -> Tuple[str, ...]:
+        import re as _re
+        prefixes = []
+        for part in (os.environ.get(UNTRUSTED_PATHS_ENV) or "").split(","):
+            norm = _re.sub(r"^(\./)+", "", part.strip().replace("\\", "/")).lstrip("/")
+            if norm:
+                prefixes.append(norm if norm.endswith("/") else norm + "/")
+        return tuple(prefixes)
+
+    @classmethod
+    def _untrusted_folder_read(cls, tool_name: str, shown: Any) -> Optional[str]:
+        """The first repo path under a folder the owner declared untrusted that this result shows the model, or None."""
+        prefixes = cls._untrusted_prefixes()
+        if not prefixes or not isinstance(shown, dict):
+            return None
+        if tool_name == "delentia_read_repo_file":
+            paths = [shown.get("path")]
+        elif tool_name == "delentia_search_repo_files":
+            paths = [m.get("path") for m in (shown.get("matches") or []) if isinstance(m, dict)]
+        else:
+            return None
+        import re as _re
+        for raw in paths:
+            norm = _re.sub(r"^(\./)+", "", str(raw or "").replace("\\", "/")).lstrip("/")
+            if norm and norm.startswith(prefixes):
+                return norm
+        return None
 
     @staticmethod
     def _child_taint(tool_name: str, shown: Any) -> Optional[str]:

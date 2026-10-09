@@ -3134,16 +3134,14 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
     import asyncio
     import uuid
 
-    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+    from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.mcp_server import _kernel, mcp
 
     ns = namespace or f"cli-agent-{uuid.uuid4().hex[:8]}"
 
     async def _run() -> dict:
-        loop = GovernedAutonomousLoop(
-            mcp_server=mcp, persistence=_kernel._persistence, kernel=_kernel,
-            max_iterations=max_iterations, max_seconds=max_seconds, namespace=ns,
-        )
+        loop = build_governed_loop(_kernel, ns, max_iterations=max_iterations, max_seconds=max_seconds,
+                                   persistence=_kernel._persistence, mcp_server=mcp)       # the one place a governed loop is built
         return await loop.run(goal)
 
     result = asyncio.run(_run())
@@ -4347,6 +4345,83 @@ def skills_unarchive(skill_id: str, skills_db: Optional[str]) -> None:
     """Offer an archived skill again."""
     from rct_control_plane.skill_library import SkillLibrary
     click.echo("offered again" if SkillLibrary(db_path=skills_db).unarchive(skill_id) else "no archived skill with that id")
+
+
+@cli.group("demo")
+def demo_group():
+    """
+    A first run you can do, check and repeat yourself (Round 63): sample quotes, a Thai goal, real tools, a result file.
+
+    Examples:
+        delentia demo init
+        delentia demo run compare
+        delentia demo run edit           # stops and waits for a signed approval
+        delentia demo approve <id>
+        delentia demo status
+    """
+    pass
+
+
+_DEMO_ROOT_OPTION = click.option("--dir", "root", default=None, type=click.Path(file_okay=False), help="Demo folder (default: ~/delentia-demo).")
+
+
+def _demo_root(root: Optional[str]) -> "Path":
+    from pathlib import Path as _Path
+    from rct_control_plane import demo as demo_module
+    return _Path(root).expanduser() if root else demo_module.DEFAULT_ROOT
+
+
+@demo_group.command("init")
+@_DEMO_ROOT_OPTION
+def demo_init(root: Optional[str]) -> None:
+    """Make the demo folder: three synthetic quotes, a demo approver key, an audit key. Never overwrites."""
+    from rct_control_plane import demo as demo_module
+    out = demo_module.init(_demo_root(root))
+    click.echo(f"เดโมอยู่ที่ {out['root']}")
+    click.echo("สร้างใหม่: " + (", ".join(out["created"]) or "ไม่มี (มีครบอยู่แล้ว)"))
+    click.echo("ต่อไป: delentia model show  แล้ว  delentia demo run compare")
+
+
+@demo_group.command("run")
+@click.argument("goal")
+@_DEMO_ROOT_OPTION
+@click.option("--max-iterations", default=8, show_default=True)
+@click.option("--max-seconds", default=300.0, show_default=True)
+def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: float) -> None:
+    """Run GOAL: compare | edit | remember | ask | budget, or any sentence of your own."""
+    import asyncio
+    from rct_control_plane import demo as demo_module
+    out = asyncio.run(demo_module.run_goal(_demo_root(root), goal, max_iterations=max_iterations, max_seconds=max_seconds))
+    click.echo(out["report"])
+    click.echo(f"ไฟล์ผล: {out['report_path']}")
+    approval = out["result"].get("approval_id")
+    if approval:
+        click.echo(f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}")
+    if out["checks"] is not None and not all(c["ok"] for c in out["checks"]):
+        raise SystemExit(1)
+
+
+@demo_group.command("approve")
+@click.argument("approval_id")
+@_DEMO_ROOT_OPTION
+@click.option("--max-iterations", default=8, show_default=True)
+@click.option("--max-seconds", default=300.0, show_default=True)
+def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max_seconds: float) -> None:
+    """Sign a waiting action with the DEMO key (kept on this machine, demo only) and let the agent continue."""
+    import asyncio
+    from rct_control_plane import demo as demo_module
+    out = asyncio.run(demo_module.approve(_demo_root(root), approval_id, max_iterations=max_iterations, max_seconds=max_seconds))
+    click.echo(out["report"])
+    click.echo(f"ไฟล์ผล: {out['report_path']}")
+
+
+@demo_group.command("status")
+@_DEMO_ROOT_OPTION
+def demo_status(root: Optional[str]) -> None:
+    """Folders, waiting approvals, memories and whether the audit chain verifies."""
+    from rct_control_plane import demo as demo_module
+    info = demo_module.status(_demo_root(root))
+    click.echo(json.dumps(info, indent=2, ensure_ascii=False))
 
 
 @cli.group("mcp")
