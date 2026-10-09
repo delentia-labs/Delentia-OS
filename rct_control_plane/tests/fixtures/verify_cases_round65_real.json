@@ -1,0 +1,378 @@
+{
+  "description": "Round 65 batch C: answers qwen2.5:7b gave (CPU Ollama) to 28 new questions, 4 new files; labels from ground truth by scripts/collect_real_verify_cases.py; collected after the rules were frozen at the end of Round 62; measured once. All of it is holdout.",
+  "model": "qwen2.5:7b",
+  "dev": [],
+  "holdout": [
+    {
+      "id": "cr00",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "What is the deploy window in docs/deploy.md?",
+      "steps": [],
+      "answer": "在当前可用的工具中，无法直接找到docs/deploy.md文件中关于部署窗口的信息。建议直接查看docs/deploy.md文件以获取相关信息。"
+    },
+    {
+      "id": "cr01",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "Who approves deployments according to docs/deploy.md?",
+      "steps": [],
+      "answer": "文档/deploy.md中未提供关于部署审批的信息。"
+    },
+    {
+      "id": "cr02",
+      "label": "good",
+      "kind": "fact",
+      "goal": "Which command rolls back a deployment? See docs/deploy.md.",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/deploy.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/deploy.md",
+            "content_text": "Deploy window: Tuesday 02:00 UTC. Approver: Malee. Rollback command: harborctl rollback --last.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "回滚部署的命令是：harborctl rollback --last."
+    },
+    {
+      "id": "cr03",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "How large is the queue defined in src/queue.py?",
+      "steps": [],
+      "answer": "当前无法直接获取src/queue.py中定义的队列大小信息。"
+    },
+    {
+      "id": "cr04",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "What timeout does src/queue.py define?",
+      "steps": [],
+      "answer": "根据现有工具，无法确定src/queue.py中的超时设置。"
+    },
+    {
+      "id": "cr05",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "Is beta_routing enabled in config/features.json?",
+      "steps": [],
+      "answer": "无法确定config/features.json中是否启用了beta_routing，因为提供的工具无法读取或检查该文件的内容。"
+    },
+    {
+      "id": "cr06",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "What is max_batch in config/features.json?",
+      "steps": [],
+      "answer": "当前可用工具无法直接获取config/features.json文件的具体内容，因此无法直接回答max_batch在config/features.json中的含义。"
+    },
+    {
+      "id": "cr07",
+      "label": "good",
+      "kind": "fact",
+      "goal": "Who is the customs liaison per docs/contacts.md?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/contacts.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/contacts.md",
+            "content_text": "Customs liaison: Prasert. Warehouse lead: Wanida. Office hours: 08:00-17:00 ICT.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "Customs liaison: Prasert."
+    },
+    {
+      "id": "cr08",
+      "label": "good",
+      "kind": "fact",
+      "goal": "Who leads the warehouse? Check docs/contacts.md.",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/contacts.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/contacts.md",
+            "content_text": "Customs liaison: Prasert. Warehouse lead: Wanida. Office hours: 08:00-17:00 ICT.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "仓库主管是 Wanida。"
+    },
+    {
+      "id": "cr09",
+      "label": "good",
+      "kind": "fact",
+      "goal": "What are the office hours listed in docs/contacts.md?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/contacts.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/contacts.md",
+            "content_text": "Customs liaison: Prasert. Warehouse lead: Wanida. Office hours: 08:00-17:00 ICT.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "办公室的营业时间为08:00-17:00 ICT。"
+    },
+    {
+      "id": "cr10",
+      "label": "good",
+      "kind": "fact",
+      "goal": "Which file defines QUEUE_SIZE?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "src/config/queue_size.py",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "error": "not found: src/config/queue_size.py"
+          }
+        },
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "src/config/queue_size.py",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "error": "not found: src/config/queue_size.py"
+          }
+        }
+      ],
+      "answer": "根据现有信息，未找到定义 QUEUE_SIZE 的文件。"
+    },
+    {
+      "id": "cr11",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "Which Python version does pyproject.toml require?",
+      "steps": [
+        {
+          "tool_name": "delentia_web_search",
+          "tool_args": {
+            "query": "which Python version does pyproject.toml require",
+            "max_results": 1
+          },
+          "tool_result": {
+            "error": "web search is not configured: no provider has been chosen. The owner sets DELENTIA_SEARCH_PROVIDER (searxng or brave); until then use delentia_crawl_url on a known address.",
+            "configured": false
+          }
+        }
+      ],
+      "answer": "关于pyproject.toml所需的Python版本信息，建议查阅相关文档或官方资料以获取准确信息。"
+    },
+    {
+      "id": "cr12",
+      "label": "good",
+      "kind": "fact",
+      "goal": "Which channel should I use for help with Harbor? The README says.",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "README.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "README.md",
+            "content_text": "# Harbor service\r\n\r\nHarbor routes shipping orders between depots. Owner: Nattaya. Support channel: #harbor-help.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "应使用 #harbor-help 频道寻求 Harbor 相关帮助。"
+    },
+    {
+      "id": "cr13",
+      "label": "bad",
+      "kind": "fact",
+      "goal": "How many retries does the router module allow? Look in src/router.py.",
+      "steps": [],
+      "answer": "无法直接确定路由器模块的重试次数，需要查看源代码或相关文档以获取准确信息。"
+    },
+    {
+      "id": "cr16",
+      "label": "good",
+      "kind": "fact",
+      "goal": "What is the rate limit and the burst in docs/limits.md?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/limits.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/limits.md",
+            "content_text": "Rate limit: 120 requests per minute per key. Burst: 30.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "率限制: 每分钟每个密钥120次请求。突发值: 30。"
+    },
+    {
+      "id": "cr17",
+      "label": "good",
+      "kind": "chat",
+      "goal": "What is 17 times 6?",
+      "steps": [],
+      "answer": "102"
+    },
+    {
+      "id": "cr18",
+      "label": "bad",
+      "kind": "chat",
+      "goal": "What is the capital of Italy?",
+      "steps": [],
+      "answer": "意大利的首都是罗马。"
+    },
+    {
+      "id": "cr19",
+      "label": "good",
+      "kind": "chat",
+      "goal": "How many seconds are in a minute?",
+      "steps": [],
+      "answer": "60"
+    },
+    {
+      "id": "cr20",
+      "label": "good",
+      "kind": "chat",
+      "goal": "What is 1000 minus 1?",
+      "steps": [],
+      "answer": "999"
+    },
+    {
+      "id": "cr21",
+      "label": "bad",
+      "kind": "absent",
+      "goal": "What does docs/architecture.md say about the message bus?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/architecture.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "error": "not found: docs/architecture.md"
+          }
+        }
+      ],
+      "answer": "文档docs/architecture.md未找到，因此无法提供关于消息总线的信息。"
+    },
+    {
+      "id": "cr22",
+      "label": "bad",
+      "kind": "absent",
+      "goal": "Read src/auth.py and tell me which hashing algorithm it uses.",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "src/auth.py",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "error": "not found: src/auth.py"
+          }
+        }
+      ],
+      "answer": "src/auth.py 文件未找到，无法确定其中使用的哈希算法。"
+    },
+    {
+      "id": "cr23",
+      "label": "bad",
+      "kind": "absent",
+      "goal": "Which email address does README.md list for security reports?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "README.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "README.md",
+            "content_text": "# Harbor service\r\n\r\nHarbor routes shipping orders between depots. Owner: Nattaya. Support channel: #harbor-help.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "README.md 文件中并未列出专门用于安全报告的电子邮件地址。"
+    },
+    {
+      "id": "cr24",
+      "label": "bad",
+      "kind": "absent",
+      "goal": "What is the staging URL given in docs/deploy.md?",
+      "steps": [
+        {
+          "tool_name": "delentia_read_repo_file",
+          "tool_args": {
+            "relative_path": "docs/deploy.md",
+            "max_bytes": 200000
+          },
+          "tool_result": {
+            "path": "docs/deploy.md",
+            "content_text": "Deploy window: Tuesday 02:00 UTC. Approver: Malee. Rollback command: harborctl rollback --last.\r\n",
+            "truncated": false
+          }
+        }
+      ],
+      "answer": "docs/deploy.md文件中未提及staging URL信息。"
+    },
+    {
+      "id": "cr25",
+      "label": "bad",
+      "kind": "action",
+      "goal": "Remember that the weekend depot contact is Orawan.",
+      "steps": [],
+      "answer": "周末仓库联系人是Orawan。"
+    },
+    {
+      "id": "cr27",
+      "label": "good",
+      "kind": "action",
+      "goal": "Set a reminder in 20 minutes to review the deploy notes.",
+      "steps": [
+        {
+          "tool_name": "delentia_schedule_reminder",
+          "tool_args": {
+            "goal": "review the deploy notes",
+            "fire_in_seconds": 20.0,
+            "namespace": "collectc-27"
+          },
+          "tool_result": {
+            "reminder_id": "reminder_c7a60f037bb1"
+          }
+        }
+      ],
+      "answer": "已设置20分钟后提醒，用于回顾部署说明。"
+    }
+  ]
+}

@@ -33,7 +33,7 @@ def py(code):
 def test_ordinary_commands_still_work_under_the_limits():
     r = sandbox.run_sandboxed("echo hello")
     assert r.exit_code == 0 and "hello" in r.stdout
-    r = sandbox.run_sandboxed(py("print(sum(range(1000)))"))
+    r = sandbox.run_sandboxed(py("print(sum(range(1000)))"), approved=True)     # Round 65: a drive path (the interpreter's) needs approval; this test is about the limits
     assert r.exit_code == 0 and r.stdout.strip() == "499500"
 
 

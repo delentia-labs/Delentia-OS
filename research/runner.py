@@ -140,6 +140,13 @@ def load_rows(path: Path) -> Dict[str, Dict[str, Any]]:
     return rows
 
 
+def run_id_for(split: str, task_id: str, arm_label: str, rep: int, unit_budget: Optional[int] = None) -> str:
+    """The identity of one episode. A run under the equal-total-token track is a different run of the same unit, so it carries the UNIT's budget (not what was left for
+    this episode), which keeps the id stable for resuming."""
+    base = f"{split}:{task_id}:{arm_label}:r{rep}"
+    return base if unit_budget is None else f"{base}:b{int(unit_budget)}"
+
+
 class Harness:
     def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
                  max_seconds: float = 90.0, tool_menu: str = "default") -> None:
@@ -174,7 +181,7 @@ class Harness:
         # The generic floor is the same for every arm of a run. "default" = the production defaults; "strict" also declares the quote folder untrusted
         # (DELENTIA_UNTRUSTED_PATHS), so reading a quote taints the episode like a web page. Runs under different floors are different experiments.
         if self.floor == "strict":
-            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/"
+            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
         for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
@@ -235,7 +242,8 @@ class Harness:
                                 (after_id, namespace)).fetchall()
         return [json.loads(r[0]) for r in rows if r[0]]
 
-    async def run_episode(self, arm: Any, task: Dict[str, Any], *, split: str, rep: int, namespace: str, skill_db: str, seed: int) -> Dict[str, Any]:
+    async def run_episode(self, arm: Any, task: Dict[str, Any], *, split: str, rep: int, namespace: str, skill_db: str, seed: int,
+                          token_cap: Optional[int] = None, unit_budget: Optional[int] = None) -> Dict[str, Any]:
         from rct_control_plane import research_switches
         from rct_control_plane.agent_factory import build_governed_loop
         from rct_control_plane.skill_library import SkillLibrary
@@ -253,6 +261,8 @@ class Harness:
         loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
         loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
         loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
+        if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
+            loop._max_episode_tokens = max(1, int(token_cap))
         receipt = research_switches.apply(loop, arm)
         tools = await loop._available_tools()
         started = time.perf_counter()
@@ -284,8 +294,10 @@ class Harness:
         cost = result.get("cost") or {}
         spent = float(cost.get("cost_usd") or 0.0)
         self.spent_usd += spent
+        used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
         return {
-            "run_id": f"{split}:{task['task_id']}:{arm.label}:r{rep}", "task_id": task["task_id"], "family_id": task["family_id"],
+            "run_id": run_id_for(split, task["task_id"], arm.label, rep, unit_budget), "task_id": task["task_id"], "family_id": task["family_id"],
+            "domain": task.get("domain", "quotes"), "attack": oracle.get("attack", ""), "track": "budget" if unit_budget is not None else "config", "unit_token_budget": unit_budget, "token_cap": token_cap, "tokens_used": used,
             "trajectory_id": task.get("trajectory_id"), "episode_index": task.get("episode_index"), "episode_kind": task.get("episode_kind"),
             "language": task["language"], "split": split, "arm": arm.label, "R": arm.R, "F": arm.F, "M": arm.M, "history": arm.history,
             "model_id": (cost.get("model") if cost else None) or (self.model.model_id if self.model is not None else "real"),
@@ -324,15 +336,29 @@ def _arms(spec: str) -> List[Any]:
         return list(ALL_ARMS)
     if spec == "all+G":
         return [*ALL_ARMS, Treatment.parse("G")]
+    if spec == "baselines":                                                    # G (raw recent history) and GP (generic plan-act-check + generic retrieval)
+        from rct_control_plane.research_switches import BASELINES
+        return list(BASELINES)
+    if spec == "all+baselines":
+        from rct_control_plane.research_switches import BASELINES
+        return [*ALL_ARMS, *BASELINES]
     if spec == "variants":
         from rct_control_plane.research_switches import SUB_ABLATIONS
         return [Treatment.parse("A111"), *SUB_ABLATIONS]
     return [Treatment.parse(part) for part in spec.split(",") if part.strip()]
 
 
-def _load_units(split: str, only: Optional[List[str]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    static = [json.loads(line) for line in (HERE / "tasks" / f"{split}_static.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    trajs = [json.loads(line) for line in (HERE / "trajectories" / f"{split}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+DOMAIN_FILES = {"quotes": ("{split}_static.jsonl", "{split}.jsonl"), "tickets": ("{split}_tickets_static.jsonl", "{split}_tickets.jsonl")}
+
+
+def _load_units(split: str, only: Optional[List[str]], domain: str = "quotes") -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    names = list(DOMAIN_FILES) if domain == "all" else [domain]
+    static: List[Dict[str, Any]] = []
+    trajs: List[Dict[str, Any]] = []
+    for name in names:
+        static_file, traj_file = (part.format(split=split) for part in DOMAIN_FILES[name])
+        static += [json.loads(line) for line in (HERE / "tasks" / static_file).read_text(encoding="utf-8").splitlines() if line.strip()]
+        trajs += [json.loads(line) for line in (HERE / "trajectories" / traj_file).read_text(encoding="utf-8").splitlines() if line.strip()]
     if only:
         static = [t for t in static if any(o in t["task_id"] for o in only)]
         trajs = [t for t in trajs if any(o in t["trajectory_id"] for o in only)]
@@ -351,7 +377,7 @@ async def main_async(args: argparse.Namespace) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     done = load_rows(out)
     arms = _arms(args.arms)
-    static, trajs = _load_units(args.split, args.only)
+    static, trajs = _load_units(args.split, args.only, args.domain)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
     harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu)
     harness.start()
@@ -366,10 +392,11 @@ async def main_async(args: argparse.Namespace) -> int:
                 order = list(arms)
                 rng.shuffle(order)
                 for arm in order:
+                    cap = args.unit_token_budget or None
                     if kind == "static":
-                        ids = [f"{args.split}:{unit['task_id']}:{arm.label}:r{rep}"]
+                        ids = [run_id_for(args.split, unit["task_id"], arm.label, rep, cap)]
                     else:
-                        ids = [f"{args.split}:{e['task_id']}:{arm.label}:r{rep}" for e in unit["episodes"]]
+                        ids = [run_id_for(args.split, e["task_id"], arm.label, rep, cap) for e in unit["episodes"]]
                     if all(i in done for i in ids):
                         continue
                     episodes = [unit] if kind == "static" else unit["episodes"]
@@ -377,8 +404,11 @@ async def main_async(args: argparse.Namespace) -> int:
                     namespace = f"research-{arm.label}-{safe}-r{rep}"
                     skill_db = str(work / "skills" / f"{namespace}.db")
                     Path(skill_db).parent.mkdir(parents=True, exist_ok=True)
+                    remaining = cap                                          # equal-total-token track: one budget per (unit, arm), spent across the unit's episodes
                     for task in episodes:
-                        row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed)
+                        row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed, token_cap=remaining, unit_budget=cap)
+                        if remaining is not None:
+                            remaining = max(0, remaining - int(row.get("tokens_used") or 0))
                         with out.open("a", encoding="utf-8") as fh:
                             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
                         done[row["run_id"]] = row
@@ -414,7 +444,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--split", default="dev", choices=["dev", "validation", "test"])
     parser.add_argument("--policy", default="diligent", help="diligent | careless | hijackable | stale | real")
-    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus the generic baseline), variants (A111 and its four sub-ablations), or a list such as A111,A011,G,A111+FS")
+    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus G), baselines (G and GP), all+baselines, variants (A111 and its four sub-ablations), or a list such as A111,A011,G,GP,A111+FS")
+    parser.add_argument("--domain", default="quotes", choices=["quotes", "tickets", "all"], help="which task domain to run (quotes = the first domain, tickets = support triage)")
+    parser.add_argument("--unit-token-budget", type=int, default=0, help="track B (equal total tokens): every arm gets the same token budget per task or trajectory; "
+                        "0 = track A, equal configuration with no extra cap")
     parser.add_argument("--max-seconds", type=float, default=90.0, help="wall-clock cap per episode (a CPU-bound local model needs far more than a hosted one)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261008)

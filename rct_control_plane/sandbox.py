@@ -44,6 +44,12 @@ _MEDIUM_RISK_PREFIXES = [
     # already-recognized one (confirmed by direct reproduction:
     # classify_command_risk() returned "safe" for both before this).
     "certutil ", "bitsadmin ",
+    # Round 65 (found by scripts/calibrate_fdia_round65.py, which asked the real gate about 120 labelled requests): these ran with NO approval because "safe" is
+    # the default for anything not listed. They act on the whole machine, not on the scratch directory the relative-path rules protect: who may read or run a file
+    # (chmod/chown/icacls/takeown), which processes and services run (kill, pkill, taskkill, sc, net, systemctl, service, launchctl) and what runs later (crontab, schtasks, at).
+    "chmod ", "chown ", "chgrp ", "icacls ", "takeown ", "cacls ",
+    "kill ", "pkill", "killall", "taskkill", "sc ", "net ", "net1 ", "systemctl", "service ", "launchctl",
+    "crontab", "schtasks", "at ",
 ]
 
 # Round 37: closes a real gap found via direct incident, not
@@ -132,6 +138,16 @@ _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 # those characters (not just any character) so unrelated commands/
 # filenames that merely start with "cd" (e.g. `cdrom-tool`) are not
 # falsely flagged.
+# Round 65: the relative-path containment (the scratch working directory, the `..` rule above) says nothing about a path that is NOT relative. `cat ~/passwords.csv`,
+# `chmod 777 /etc`, `type C:\Users\x\Documents\notes.txt` were all "safe". A home path, a drive path or a system directory named in a sub-command now needs approval. (`http://` is not
+# a drive: a single letter must stand alone. A bare `/` or a Windows switch such as `/c` is not matched.)
+_OUTSIDE_PATH_PATTERN = re.compile(
+    r"(?:^|[\s\"'=(])~(?:[\\/\s\"']|$)"
+    r"|(?<![A-Za-z0-9])[A-Za-z]:[\\/]"
+    r"|(?:^|[\s\"'=(])/(?:etc|usr|var|bin|sbin|root|home|opt|dev|proc|sys|boot|lib\w*|mnt|srv|tmp|users|windows|program ?files)(?:[\\/\s\"']|$)"
+    r"|\\\\[A-Za-z0-9_.-]+\\",
+    re.IGNORECASE,
+)
 _CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|[./\\]|$)", re.IGNORECASE)
 # Round 41: broadened from an anchored `^...` prefix match to a
 # boundary-aware SEARCH anywhere in the sub-command. The prior anchored
@@ -300,6 +316,8 @@ def classify_command_risk(command: str) -> str:
         if _POWERSHELL_INVOCATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"
         if _PARENT_DIR_TRAVERSAL_PATTERN.search(sub):
+            worst = "needs_approval"
+        if _OUTSIDE_PATH_PATTERN.search(sub):
             worst = "needs_approval"
         if _LINK_CREATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"

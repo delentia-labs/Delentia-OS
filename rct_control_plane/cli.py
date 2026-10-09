@@ -2165,6 +2165,19 @@ def memory_list(namespace: str, db: Optional[str]) -> None:
         click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
 
 
+@memory_group.command("revoke")
+@click.argument("memory_id")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--reason", default="", help="why (kept in the audit trail)")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_revoke(memory_id: str, namespace: str, reason: str, db: Optional[str]) -> None:
+    """Stop the agent using a memory. The row stays on disk for the audit (Zero-Delete); nothing recalls it again."""
+    if not _audit_db(db).revoke_memory(memory_id, namespace, reason):
+        click.echo(click.style(f"Error: no live memory {memory_id!r} in namespace {namespace!r}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"revoked {memory_id} in namespace {namespace} (kept on disk; no longer recalled)")
+
+
 @memory_group.command("candidates")
 @click.option("--namespace", default=None, help="only this person's suggestions")
 @click.option("--status", default="pending", show_default=True, type=click.Choice(["pending", "accepted", "dismissed", "expired"]))

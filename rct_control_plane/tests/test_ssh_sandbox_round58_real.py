@@ -151,7 +151,7 @@ class TestRefusals:
         monkeypatch.delenv("DELENTIA_SSH_HOST")
         monkeypatch.chdir(tmp_path)
         marker = tmp_path / "ran_locally.txt"
-        r = sandbox.run_sandboxed(f'python -c "open(r\'{marker}\', \'w\').write(\'x\')"')
+        r = sandbox.run_sandboxed(f'python -c "open(r\'{marker}\', \'w\').write(\'x\')"', approved=True)    # Round 65: the marker path is a drive path (needs approval); the point is that the backend refuses first
         assert r.blocked_reason and "not configured" in r.blocked_reason and not marker.exists()
 
     @pytest.mark.parametrize("host", ["-oProxyCommand=evil@x", "evil", "a b@host", "@host", "user@", "user@-oProxyCommand=x", "us er@host", "user@ho;st", "user@host name"])

@@ -9,10 +9,16 @@ experiments.
   M  experience across episodes    off -> no memory or skill read into the prompt, no warm recall, no skill learned,
                                           and the memory tools refuse
 
-Besides the eight cells there is one BASELINE arm, G ("generic"): R, F and M all off, plus the raw recent conversation (the last four turns: what the person asked
+Besides the eight cells there are two BASELINE arms (Round 65 added the second). The plain tool-calling agent of the protocol's list (section 8, baseline 1) is the cell
+A000 itself: same tools, same generic floor, nothing of the structure. The first of the two is G ("generic"): R, F and M all off, plus the raw recent conversation (the last four turns: what the person asked
 and what the agent answered) in the prompt. It is the protocol's "generic plan-act-check + the same policy + generic retrieval memory": it carries experience across
 episodes by raw history only, with no structure, no verification and no learning, so the comparison A111 - G asks whether the verified, structured way of
 carrying experience earns anything over simply remembering what was said.
+
+The second is GP, protocol section 8's baseline 2: "generic plan-act-check + the same policy + generic retrieval memory". It is what a careful engineer would build without
+Delentia's ideas: a short generic instruction to plan, act and check before answering (a few lines, NOT the seven RCT-7 steps), the same generic end-of-episode check as every
+R = 0 arm, and a plain word-overlap lookup of the person's most similar earlier requests instead of the last four turns. It carries no structure, no verified learning, no skills
+and no FDIA number. A111 - GP asks whether the RCT-7 structure, the verified learning and the equation earn their place over that, and GP - G isolates what generic retrieval adds to raw history.
 
 Why a separate module and not a public setting: turning governance off is exactly what a production host must not
 be able to do by accident. `apply()` refuses unless the process was started in research mode
@@ -59,11 +65,15 @@ class Treatment:
     M: int
     history: int = 0            # earlier turns of the same conversation shown raw (0 in every factorial arm; GENERIC_HISTORY_TURNS in the baseline G)
     variant: str = ""           # one of VARIANTS, always on top of A111
+    generic_plan: int = 0       # 1 = the generic "plan, act, check" instruction stands where the RCT-7 plan would (baseline GP only)
+    retrieval: int = 0          # k > 0 = the k most word-similar earlier requests of this person are shown instead of the last turns (baseline GP only)
 
     @property
     def label(self) -> str:
         if self.history:
             return "G"
+        if self.generic_plan or self.retrieval:
+            return "GP"
         return f"A{self.R}{self.F}{self.M}" + (f"+{self.variant}" if self.variant else "")
 
     @property
@@ -83,13 +93,16 @@ class Treatment:
         return self.variant == "MW"
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "variant": self.variant, "arm": self.label}
+        return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "variant": self.variant, "generic_plan": self.generic_plan,
+                "retrieval": self.retrieval, "arm": self.label}
 
     @staticmethod
     def parse(label: str) -> "Treatment":
         text = (label or "").strip().upper()
         if text == "G":
             return BASELINE_G
+        if text == "GP":
+            return BASELINE_GP
         variant = ""
         if "+" in text:
             text, variant = text.split("+", 1)
@@ -106,6 +119,11 @@ class Treatment:
 
 ALL_ARMS = tuple(Treatment(r, f, m) for r in (0, 1) for f in (0, 1) for m in (0, 1))
 BASELINE_G = Treatment(0, 0, 0, history=GENERIC_HISTORY_TURNS)
+GENERIC_RETRIEVAL_K = 3
+BASELINE_GP = Treatment(0, 0, 0, generic_plan=1, retrieval=GENERIC_RETRIEVAL_K)
+BASELINES = (BASELINE_G, BASELINE_GP)
+GENERIC_PLAN_TEXT = ("How to work on this request: first write a short numbered plan (at most five steps); then do one step at a time, using a tool only when a step needs it; "
+                     "before you answer, check your answer against the request and against what the tools returned, and fix anything that does not match.")
 SUB_ABLATIONS = tuple(Treatment(1, 1, 1, variant=v) for v in VARIANTS)
 
 
@@ -144,6 +162,8 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
     loop._research = treatment
     loop._conversation_turns = int(treatment.history)        # explicit in every arm, so an environment setting cannot give a factorial arm raw history
     loop._rct7_in_prompt = bool(treatment.plan)
+    loop._generic_plan = bool(treatment.generic_plan)
+    loop._retrieval_k = int(treatment.retrieval)
     if treatment.warm:
         loop._warm_recall = True
     if not treatment.F:
@@ -157,7 +177,8 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
 def receipt(loop: Any, treatment: Treatment) -> Dict[str, Any]:
     return {**treatment.to_dict(), "rct7_in_prompt": bool(loop._rct7_in_prompt), "fdia_threshold": float(loop._fdia_threshold),
             "memory_in_prompt": bool(loop._memory_in_prompt), "warm_recall": bool(loop._warm_recall),
-            "conversation_turns": int(getattr(loop, "_conversation_turns", 0) or 0), "max_iterations": loop.max_iterations}
+            "conversation_turns": int(getattr(loop, "_conversation_turns", 0) or 0), "generic_plan": bool(getattr(loop, "_generic_plan", False)),
+            "retrieval_k": int(getattr(loop, "_retrieval_k", 0) or 0), "max_iterations": loop.max_iterations}
 
 
 def active(loop: Any) -> Optional[Treatment]:
@@ -188,6 +209,32 @@ def _variant_checks(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str,
     return checks
 
 
+def _generic_baseline_checks(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]], prior_episodes: Optional[int]) -> List[Dict[str, Any]]:
+    """GP: the generic instruction is in the prompt and the RCT-7 text is not; the end check is the generic comparator; the numeric gate is off; no memory, skill or warm
+    answer reached the episode; and, when the person has earlier requests, the retrieval block (and not the raw recent window) reached the prompt."""
+    checks: List[Dict[str, Any]] = []
+
+    def add(name: str, ok: bool, detail: Any = None) -> None:
+        checks.append({"check": name, "ok": bool(ok), "detail": None if ok else detail})
+
+    context = getattr(loop, "_episode_context_text", "") or ""
+    verification = result.get("intent_verification") or {}
+    add("GP: the generic plan-act-check instruction is in the prompt and the RCT-7 plan is not",
+        GENERIC_PLAN_TEXT in context and "RCT-7" not in context and not getattr(loop, "_episode_rct7_steps", []), {"chars": len(context)})
+    add("GP: the end check is the generic comparator", verification.get("comparator") == "generic" or not verification.get("applicable", True), verification)
+    thresholds = [float(r.get("threshold", -1.0)) for r in gate_rows]
+    add("GP: no gate decision used a numeric threshold", all(t == 0.0 for t in thresholds), thresholds)
+    conversation = str(getattr(loop, "_episode_conversation_text", "") or "")
+    if prior_episodes:
+        add("GP: earlier similar requests reached the prompt by retrieval, not as the recent window", "similar earlier requests" in conversation and "conversation so far" not in conversation,
+            {"prior_episodes": prior_episodes, "chars": len(conversation)})
+    add("GP: no memory, skill or warm answer reached the episode",
+        (getattr(loop, "_episode_skills_injected", 0) == 0 and not getattr(loop, "_episode_memory_scores", []) and result.get("stopped_reason") != "warm_recall"
+         and not result.get("skill_extracted")),
+        {"skills": getattr(loop, "_episode_skills_injected", None), "stopped": result.get("stopped_reason"), "skill_extracted": result.get("skill_extracted")})
+    return checks
+
+
 def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]], prior_episodes: Optional[int] = None) -> List[Dict[str, Any]]:
     """After one episode: did each factor behave as its arm says? `gate_rows` are the `governed_loop_fdia_gate`
     audit rows of this episode (their `changes` dicts); `prior_episodes` is how many earlier episodes the same conversation has
@@ -197,6 +244,8 @@ def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[s
         return [{"check": "a research treatment was applied", "ok": False, "detail": "loop has no treatment"}]
     if treatment.variant:
         return _variant_checks(loop, result, gate_rows, treatment)
+    if treatment.generic_plan:
+        return _generic_baseline_checks(loop, result, gate_rows, prior_episodes)
     checks: List[Dict[str, Any]] = []
 
     def add(name: str, ok: bool, detail: Any = None) -> None:

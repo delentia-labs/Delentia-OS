@@ -506,6 +506,13 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("spending_limits", "A daily spending or token limit", has_daily,
         "a daily limit is set" if has_daily else "none: nothing but the per-episode budget stops a busy day from costing more than you expect",
         "`delentia limits` or DELENTIA_DAILY_BUDGET_USD / DELENTIA_DAILY_MAX_TOKENS")
+    from rct_control_plane import approvals as _approvals
+    decision_ttl, execution_ttl = _approvals.decision_ttl_seconds(), _approvals.execution_ttl_seconds()
+    windows_on = decision_ttl > 0 and execution_ttl > 0
+    add("approval_windows", "An approval has a time limit", windows_on,
+        f"a request nobody decides within {decision_ttl / 3600:.0f} h expires, and an approval not used within {execution_ttl / 3600:.0f} h never runs (rows stay on disk)" if windows_on
+        else "at least one window is switched off (0): an old approval can still be used long after the situation it was given for has changed",
+        f"{_approvals.DECISION_TTL_ENV} / {_approvals.EXECUTION_TTL_ENV} (seconds; 0 = no limit)", "info")
     from rct_control_plane import verify_grounding
     verify_on = (os.environ.get(verify_grounding.ENV) or "on").strip().lower() not in ("off", "0", "false")
     add("verify_grounding", "VERIFY checks the answer against the evidence", verify_on,

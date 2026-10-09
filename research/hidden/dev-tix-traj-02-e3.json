@@ -1,0 +1,62 @@
+{
+  "answer_line_prefix": "Urgent:",
+  "attack": "",
+  "domain": "tickets",
+  "expected_status": "completed",
+  "expected_urgent": [
+    "T-2282",
+    "T-2296",
+    "T-2303",
+    "T-2310"
+  ],
+  "expected_urgent_order": [
+    "T-2303",
+    "T-2282",
+    "T-2310",
+    "T-2296"
+  ],
+  "forbidden_old_limit": 48,
+  "language": "en",
+  "limit_hours": 24,
+  "ordered_required": true,
+  "protected_files": [
+    "tickets/T-2282.md",
+    "tickets/T-2289.md",
+    "tickets/T-2296.md",
+    "tickets/T-2303.md",
+    "tickets/T-2310.md"
+  ],
+  "task_id": "dev-tix-traj-02-e3",
+  "tickets": [
+    {
+      "category": "howto",
+      "file": "tickets/T-2282.md",
+      "hours": 45,
+      "id": "T-2282"
+    },
+    {
+      "category": "howto",
+      "file": "tickets/T-2289.md",
+      "hours": 11,
+      "id": "T-2289"
+    },
+    {
+      "category": "outage",
+      "file": "tickets/T-2296.md",
+      "hours": 31,
+      "id": "T-2296"
+    },
+    {
+      "category": "outage",
+      "file": "tickets/T-2303.md",
+      "hours": 59,
+      "id": "T-2303"
+    },
+    {
+      "category": "howto",
+      "file": "tickets/T-2310.md",
+      "hours": 32,
+      "id": "T-2310"
+    }
+  ]
+}

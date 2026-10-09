@@ -29,6 +29,15 @@ Here:
 
 The signature is verified again at execution time, so editing the database
 row (e.g. flipping status to APPROVED) is not enough to get an action run.
+
+Round 65: an approval is also bounded in TIME. A request nobody decided within
+DELENTIA_APPROVAL_DECISION_TTL_SECONDS (default 7 days) can no longer be approved,
+and an approved action not resumed within DELENTIA_APPROVAL_EXECUTION_TTL_SECONDS
+(default 24 h) is marked EXPIRED and never runs: the situation a person looked at
+is not the situation a week later. Expired rows stay on disk (Zero-Delete). A value
+of 0 switches that window off. Removing an approver's key from the trusted list
+revokes every approval it signed that has not yet run (the signature is re-checked
+against the list at execution).
 """
 from __future__ import annotations
 
@@ -46,6 +55,10 @@ from rct_control_plane.persistence import ControlPlanePersistence
 APPROVAL_MESSAGE_VERSION = "delentia-approval:v1"
 DECISIONS = ("APPROVED", "REJECTED")
 APPROVERS_ENV = "DELENTIA_APPROVER_PUBKEYS"
+DECISION_TTL_ENV = "DELENTIA_APPROVAL_DECISION_TTL_SECONDS"
+EXECUTION_TTL_ENV = "DELENTIA_APPROVAL_EXECUTION_TTL_SECONDS"
+DEFAULT_DECISION_TTL_SECONDS = 7 * 24 * 3600
+DEFAULT_EXECUTION_TTL_SECONDS = 24 * 3600
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -86,6 +99,29 @@ _EXTRA_COLUMNS = (
 
 class ApprovalError(ValueError):
     pass
+
+
+def _now() -> float:
+    return time.time()
+
+
+def _ttl(env: str, default: int) -> float:
+    """Seconds, or 0 for "no limit". An unreadable value falls back to the default (never to "no limit")."""
+    raw = (os.getenv(env) or "").strip()
+    if not raw:
+        return float(default)
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return float(default)
+
+
+def decision_ttl_seconds() -> float:
+    return _ttl(DECISION_TTL_ENV, DEFAULT_DECISION_TTL_SECONDS)
+
+
+def execution_ttl_seconds() -> float:
+    return _ttl(EXECUTION_TTL_ENV, DEFAULT_EXECUTION_TTL_SECONDS)
 
 
 @dataclass
@@ -262,7 +298,7 @@ class PendingActionStore:
         digest = action_digest(approval_id, namespace, goal, tool_name, tool_args)
         required_signatures = max(1, min(3, int(required_signatures)))
         action = PendingAction(approval_id, namespace, goal, tool_name, dict(tool_args), digest,
-                               reason, "PENDING", time.time(), required_signatures=required_signatures,
+                               reason, "PENDING", _now(), required_signatures=required_signatures,
                                approver_roles=list(approver_roles) if approver_roles else None,
                                policy_rule=policy_rule, policy_digest=policy_digest)
         with self._persistence._connect() as conn:
@@ -288,7 +324,20 @@ class PendingActionStore:
             pass
         return action
 
+    def _expire_stale(self) -> None:
+        """Marks overdue rows EXPIRED (kept on disk). Pending past the decision window; approved past the execution window."""
+        now = _now()
+        decision_ttl, execution_ttl = decision_ttl_seconds(), execution_ttl_seconds()
+        with self._persistence._connect() as conn:
+            if decision_ttl > 0:
+                conn.execute("UPDATE pending_actions SET status = 'EXPIRED' WHERE status = 'PENDING' AND created_at < ?",
+                             (now - decision_ttl,))
+            if execution_ttl > 0:
+                conn.execute("UPDATE pending_actions SET status = 'EXPIRED' WHERE status = 'APPROVED' AND decided_at IS NOT NULL "
+                             "AND decided_at < ?", (now - execution_ttl,))
+
     def get(self, approval_id: str) -> Optional[PendingAction]:
+        self._expire_stale()
         with self._persistence._connect() as conn:
             row = conn.execute(
                 _SELECT + " WHERE approval_id = ?", (approval_id,),
@@ -302,6 +351,7 @@ class PendingActionStore:
         return found
 
     def list(self, status: Optional[str] = "PENDING", limit: int = 50) -> List[PendingAction]:
+        self._expire_stale()
         query = _SELECT
         params: tuple = ()
         if status:
@@ -331,6 +381,8 @@ class PendingActionStore:
         action = self.get(approval_id)
         if action is None:
             raise ApprovalError(f"no pending action {approval_id!r}")
+        if action.status == "EXPIRED":
+            raise ApprovalError(f"action {approval_id} expired before it was decided; ask for it again")
         if action.status != "PENDING":
             raise ApprovalError(f"action {approval_id} is already {action.status}")
         decision = decision.strip().upper()
@@ -338,7 +390,7 @@ class PendingActionStore:
         self._check_signature(action, decision, public_key_hex, signature_hex)
         if decision == "APPROVED":
             self._check_role(action, public_key_hex)
-        now = time.time()
+        now = _now()
         with self._persistence._connect() as conn:
             if decision == "REJECTED":
                 # Any trusted approver can stop an action; a refusal needs no role and no second signature.
@@ -436,6 +488,8 @@ class PendingActionStore:
         action = self.get(approval_id)
         if action is None:
             raise ApprovalError(f"no pending action {approval_id!r}")
+        if action.status == "EXPIRED":
+            raise ApprovalError(f"action {approval_id} expired before it ran; ask for it again")
         if action.status in ("EXECUTING", "EXECUTED"):
             raise ApprovalError(f"action {approval_id} was already {action.status.lower()}")
         if action.status != "APPROVED":
@@ -469,7 +523,7 @@ class PendingActionStore:
             conn.execute(
                 "UPDATE pending_actions SET status = 'EXECUTED', executed_at = ?, result_json = ? "
                 "WHERE approval_id = ? AND status = 'EXECUTING'",
-                (time.time(), json.dumps(result, default=str), approval_id),
+                (_now(), json.dumps(result, default=str), approval_id),
             )
 
 

@@ -246,6 +246,11 @@ class ControlPlanePersistence:
             conn.executescript(_SCHEMA_SQL)
             # Round 48 A1: tamper-evident chain over audit_trail.
             audit_chain.ensure_schema(conn)
+            # Round 65: a memory can be revoked (kept on disk, never recalled again); older databases get the columns.
+            have = {row[1] for row in conn.execute("PRAGMA table_info(memories)").fetchall()}
+            for column in ("revoked_at", "revoked_reason"):
+                if column not in have:
+                    conn.execute(f"ALTER TABLE memories ADD COLUMN {column} TEXT")
 
     # ------------------------------------------------------------------
     # Intents
@@ -439,19 +444,39 @@ class ControlPlanePersistence:
                 (memory_id, namespace, memory_type, content, json.dumps(context or {}), importance, now),
             )
 
-    def list_memories(self, namespace: str, memory_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_memories(self, namespace: str, memory_type: Optional[str] = None, include_revoked: bool = False) -> List[Dict[str, Any]]:
+        """Every reader of memory (recall, the algorithm pipeline, the chat UI, the CLI) comes through here, so a revoked
+        memory is left out of all of them at once. `include_revoked=True` is for the audit view only."""
+        where = "namespace = ?" + ("" if include_revoked else " AND revoked_at IS NULL")
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if memory_type:
                 rows = conn.execute(
-                    "SELECT * FROM memories WHERE namespace = ? AND memory_type = ?",
+                    f"SELECT * FROM memories WHERE {where} AND memory_type = ?",
                     (namespace, memory_type),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT * FROM memories WHERE namespace = ?", (namespace,),
+                    f"SELECT * FROM memories WHERE {where}", (namespace,),
                 ).fetchall()
         return [_row_to_dict(r) for r in rows]
+
+    def revoke_memory(self, memory_id: str, namespace: str, reason: str = "") -> bool:
+        """Soft-delete (Zero-Delete): the row and its text stay on disk for the audit, but no reader returns it again.
+        Scoped to the namespace so one person cannot revoke another's memory. Returns False when nothing matched."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            changed = conn.execute(
+                "UPDATE memories SET revoked_at = ?, revoked_reason = ? WHERE id = ? AND namespace = ? AND revoked_at IS NULL",
+                (now, (reason or "")[:300], memory_id, namespace),
+            ).rowcount
+        if changed:
+            try:
+                self.append_audit(entity_type="memory_revoked", entity_id=memory_id, action="revoked", actor=namespace,
+                                  changes={"reason": (reason or "")[:300]})
+            except Exception:       # the revocation itself is already stored
+                pass
+        return bool(changed)
 
     def touch_memory(self, memory_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()

@@ -699,11 +699,11 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             conn.row_factory = sqlite3.Row
             if namespace:
                 rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories WHERE namespace = ? ORDER BY created_at DESC LIMIT ?", (namespace, limit)).fetchall()
+                                    "FROM memories WHERE namespace = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT ?", (namespace, limit)).fetchall()
             else:
                 rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-            spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories GROUP BY namespace ORDER BY n DESC").fetchall()]
+                                    "FROM memories WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+            spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories WHERE revoked_at IS NULL GROUP BY namespace ORDER BY n DESC").fetchall()]
         if owner and owner != "shared":
             spaces = [s for s in spaces if s["namespace"] == owner]       # other people's namespace names are not shown either
         return {"memories": [dict(r) for r in rows], "namespaces": spaces}
@@ -727,6 +727,21 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         importance = max(0.0, min(1.0, float(payload.get("importance", 0.7))))
         memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
         return {"memory_id": memory_id, "namespace": namespace}
+
+    @router.post("/memories/revoke")
+    async def revoke_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Round 65: stop the agent using a memory. The row stays on disk for the audit (Zero-Delete) but no reader returns it
+        again. A person revokes only their own; the owner names the namespace."""
+        memory_id = str(payload.get("memory_id") or "").strip()
+        if not memory_id:
+            raise HTTPException(status_code=400, detail="'memory_id' is required")
+        namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            namespace = owner
+        if not _kernel()._persistence.revoke_memory(memory_id, namespace, str(payload.get("reason") or "")):
+            raise HTTPException(status_code=404, detail="no such memory in this namespace (or it was already revoked)")
+        return {"memory_id": memory_id, "namespace": namespace, "revoked": True}
 
     @router.get("/sovereignty")
     async def sovereignty(limit: int = Query(50, ge=1, le=300)) -> Dict[str, Any]:

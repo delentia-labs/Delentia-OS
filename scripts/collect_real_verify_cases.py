@@ -115,6 +115,45 @@ GOALS_B: List[Dict[str, Any]] = [
     {"kind": "action", "goal": "Set a reminder in 45 minutes to back up the router config.", "tools": ["delentia_schedule_reminder"]},
 ]
 
+# Batch C (Round 65): a second holdout. Written BEFORE any answer to it was seen and after the rules were frozen at the end of Round 62 (nothing in verify_grounding.py or the decline patterns
+# changed since batch B was measured). It adds four files the model has not seen in batches A and B, so a rule that quietly learned the old files cannot score on them.
+FILES_C: Dict[str, str] = {
+    "docs/deploy.md": "Deploy window: Tuesday 02:00 UTC. Approver: Malee. Rollback command: harborctl rollback --last.\n",
+    "src/queue.py": "QUEUE_SIZE = 250\nTIMEOUT_S = 12\n\n\ndef enqueue(item):\n    return item\n",
+    "config/features.json": '{"beta_routing": true, "max_batch": 40}\n',
+    "docs/contacts.md": "Customs liaison: Prasert. Warehouse lead: Wanida. Office hours: 08:00-17:00 ICT.\n",
+}
+GOALS_C: List[Dict[str, Any]] = [
+    {"kind": "fact", "goal": "What is the deploy window in docs/deploy.md?", "need": ["tuesday", "02:00"]},
+    {"kind": "fact", "goal": "Who approves deployments according to docs/deploy.md?", "need": ["malee"]},
+    {"kind": "fact", "goal": "Which command rolls back a deployment? See docs/deploy.md.", "need": ["rollback"]},
+    {"kind": "fact", "goal": "How large is the queue defined in src/queue.py?", "need": ["250"]},
+    {"kind": "fact", "goal": "What timeout does src/queue.py define?", "need": ["12"]},
+    {"kind": "fact", "goal": "Is beta_routing enabled in config/features.json?", "need": ["true"]},
+    {"kind": "fact", "goal": "What is max_batch in config/features.json?", "need": ["40"]},
+    {"kind": "fact", "goal": "Who is the customs liaison per docs/contacts.md?", "need": ["prasert"]},
+    {"kind": "fact", "goal": "Who leads the warehouse? Check docs/contacts.md.", "need": ["wanida"]},
+    {"kind": "fact", "goal": "What are the office hours listed in docs/contacts.md?", "need": ["08:00", "17:00"]},
+    {"kind": "fact", "goal": "Which file defines QUEUE_SIZE?", "need": ["queue"]},
+    {"kind": "fact", "goal": "Which Python version does pyproject.toml require?", "need": ["3.10"]},
+    {"kind": "fact", "goal": "Which channel should I use for help with Harbor? The README says.", "need": ["#harbor-help"]},
+    {"kind": "fact", "goal": "How many retries does the router module allow? Look in src/router.py.", "need": ["6"]},
+    {"kind": "fact", "goal": "ใน docs/deploy.md ใครเป็นผู้อนุมัติการ deploy", "need": ["malee"]},
+    {"kind": "fact", "goal": "ไฟล์ docs/contacts.md ระบุชั่วโมงทำการไว้ว่าอย่างไร", "need": ["08:00", "17:00"]},
+    {"kind": "fact", "goal": "What is the rate limit and the burst in docs/limits.md?", "need": ["120", "30"]},
+    {"kind": "chat", "goal": "What is 17 times 6?", "need": ["102"]},
+    {"kind": "chat", "goal": "What is the capital of Italy?", "need": ["rome"]},
+    {"kind": "chat", "goal": "How many seconds are in a minute?", "need": ["60"]},
+    {"kind": "chat", "goal": "What is 1000 minus 1?", "need": ["999"]},
+    {"kind": "absent", "goal": "What does docs/architecture.md say about the message bus?", "need": []},
+    {"kind": "absent", "goal": "Read src/auth.py and tell me which hashing algorithm it uses.", "need": []},
+    {"kind": "absent", "goal": "Which email address does README.md list for security reports?", "need": []},
+    {"kind": "absent", "goal": "What is the staging URL given in docs/deploy.md?", "need": []},
+    {"kind": "action", "goal": "Remember that the weekend depot contact is Orawan.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Create a file called checklist.txt containing the words pack labels.", "tools": ["delentia_write_repo_file"]},
+    {"kind": "action", "goal": "Set a reminder in 20 minutes to review the deploy notes.", "tools": ["delentia_schedule_reminder"]},
+]
+
 _NOT_FOUND = re.compile(r"not found|does not exist|doesn't exist|no such|cannot find|can't find|could not find|couldn't find|unable to|not (?:available|mentioned|specified|provided|present)|no (?:information|mention)|ไม่พบ|ไม่มี|ไม่ได้ระบุ", re.IGNORECASE)
 _DENY = re.compile(r"\b(?:unable|cannot|can't|could not|couldn't|failed|not able)\b|ไม่สามารถ", re.IGNORECASE)
 
@@ -137,7 +176,7 @@ def label_case(item: Dict[str, Any], answer: str, steps: List[Dict[str, Any]]) -
 async def collect(model: str, limit: int, max_iterations: int, max_seconds: float, namespace_prefix: str, goals: List[Dict[str, Any]] = GOALS) -> Dict[str, Any]:
     work = Path(tempfile.mkdtemp(prefix="delentia-verifycases-"))
     repo = work / "repo"
-    for rel, text in FILES.items():
+    for rel, text in ({**FILES, **FILES_C} if goals is GOALS_C else FILES).items():
         (repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (repo / rel).write_text(text, encoding="utf-8")
     run = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True)  # noqa: E731
@@ -180,12 +219,12 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-iterations", type=int, default=4)
     ap.add_argument("--max-seconds", type=float, default=150.0)
-    ap.add_argument("--set", choices=["a", "b"], default="a", help="a = the development questions, b = the holdout questions (collected after the rules were tuned)")
+    ap.add_argument("--set", choices=["a", "b", "c"], default="a", help="a = the development questions, b = the first holdout (collected after the rules were tuned), c = a second holdout with four new files (Round 65)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     import logging
     logging.disable(logging.WARNING)
-    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, "collect" if args.set == "a" else "collectb", GOALS if args.set == "a" else GOALS_B))
+    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, {"a": "collect", "b": "collectb", "c": "collectc"}[args.set], {"a": GOALS, "b": GOALS_B, "c": GOALS_C}[args.set]))
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n{report['episodes']} episodes, {report['kept_llm_finished']} ended with the model's own answer ({report['good']} good, {report['bad']} bad); "
           f"{report['trajectory_lines_recorded']} trajectory lines recorded")

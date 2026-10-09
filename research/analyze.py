@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G", "A111+RP", "A111+RV", "A111+FS", "A111+MW"]
+ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G", "GP", "A111+RP", "A111+RV", "A111+FS", "A111+MW"]
 SCRIPTED = {"diligent", "careless", "hijackable", "stale"}
 
 # Linear contrasts over arm means (labels are A<R><F><M>).
@@ -36,6 +36,9 @@ CONTRASTS: Dict[str, Dict[str, float]] = {
     "full vs none (A111 - A000)": {"A111": 1, "A000": -1},
     "PRIMARY: full vs generic baseline (A111 - G)": {"A111": 1, "G": -1},
     "structured, verified memory vs raw history (A001 - G)": {"A001": 1, "G": -1},
+    "full vs generic plan-act-check + generic retrieval (A111 - GP)": {"A111": 1, "GP": -1},
+    "generic retrieval + plan vs raw history (GP - G)": {"GP": 1, "G": -1},
+    "generic retrieval + plan vs a plain agent (GP - A000)": {"GP": 1, "A000": -1},
     "RCT planning alone vs full RCT (A111+RP - A111)": {"A111+RP": 1, "A111": -1},
     "RCT verifier alone vs full RCT (A111+RV - A111)": {"A111+RV": 1, "A111": -1},
     "D^I x A vs a minimum on D (A111 - A111+FS)": {"A111": 1, "A111+FS": -1},
@@ -173,6 +176,9 @@ def arm_table(rows: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "false_rejection": _rate(sum(int(r["status"] != "completed") for r in productive), len(productive)),
             "refusal_correct": _rate(sum(r["correct_outcome"] for r in sel if r["refusal_task"]), sum(1 for r in sel if r["refusal_task"])),
             "cost_per_verified_usd": (cost / verified) if verified else None,
+            "tokens_per_episode": float(np.mean([int(r.get("tokens_used") or 0) for r in sel])),
+            "tokens_per_verified": (sum(int(r.get("tokens_used") or 0) for r in sel) / verified) if verified else None,
+            "stopped_by_budget": sum(1 for r in sel if "budget" in str(r.get("stopped_reason") or "") or "max_tokens" in str(r.get("stopped_reason") or "")),
             "median_seconds": float(np.median([r["runtime_seconds"] for r in sel])),
         })
     return out
@@ -189,6 +195,8 @@ def analyse(rows: List[Dict[str, Any]], *, reps: int = 10000, seed: int = 202610
     result["policies"] = sorted({r.get("policy", "?") for r in kept})
     result["rehearsal"] = bool(set(result["policies"]) & SCRIPTED)
     result["floors"] = sorted({r.get("floor", "default") for r in kept})
+    result["domains"] = sorted({r.get("domain", "quotes") for r in kept})
+    result["tracks"] = sorted({r.get("track", "config") for r in kept})
     result["arms"] = arm_table(kept)
     contrasts: Dict[str, Dict[str, Any]] = {}
     for metric in ("VTS", "STS", "attack_success", "violation"):
@@ -220,11 +228,14 @@ def to_markdown(res: Dict[str, Any]) -> str:
     if res["rehearsal"]:
         lines += ["> **REHEARSAL.** The policy that produced these rows is scripted (" + ", ".join(res["policies"]) +
                   "). The numbers show that the harness, the graders and the arithmetic work. They say nothing about any language model.", ""]
-    lines += [f"Rows: {res['rows']} read, {res['used']} used, {len(res['dropped'])} left out. Floor(s): {', '.join(res['floors'])}.", ""]
-    lines += ["| arm | episodes | VTS | STS | violation | attack success (n) | false rejection | refusal tasks correct |", "|---|---|---|---|---|---|---|---|"]
+    lines += [f"Rows: {res['rows']} read, {res['used']} used, {len(res['dropped'])} left out. Floor(s): {', '.join(res['floors'])}. "
+              f"Domain(s): {', '.join(res.get('domains', ['quotes']))}. Track(s): {', '.join(res.get('tracks', ['config']))}.", ""]
+    lines += ["| arm | episodes | VTS | STS | violation | attack success (n) | false rejection | refusal tasks correct | tokens/episode | tokens/verified | stopped by budget |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
     for a in res["arms"]:
+        per_verified = a.get("tokens_per_verified")
         lines.append(f"| {a['arm']} | {a['episodes']} | {_f(a['VTS'])} | {_f(a['STS'])} | {_f(a['violation'])} | {_f(a['attack_success'])} ({a['attack_n']}) | "
-                     f"{_f(a['false_rejection'])} | {_f(a['refusal_correct'])} |")
+                     f"{_f(a['false_rejection'])} | {_f(a['refusal_correct'])} | {a.get('tokens_per_episode', 0):,.0f} | {('-' if per_verified is None else format(per_verified, ',.0f'))} | {a.get('stopped_by_budget', 0)} |")
     for metric, entries in res["contrasts"].items():
         if not entries:
             continue
@@ -255,10 +266,16 @@ def main() -> int:
     parser.add_argument("--json", default=None)
     parser.add_argument("--reps", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=20261008)
+    parser.add_argument("--domain", default=None, help="only rows of this domain (quotes or tickets); the default pools them, which is the primary analysis")
+    parser.add_argument("--track", default=None, choices=["config", "budget"], help="only rows of one track (config = equal configuration, budget = equal total tokens)")
     args = parser.parse_args()
     rows: List[Dict[str, Any]] = []
     for path in args.runs:
         rows += load(Path(path))
+    if args.domain:
+        rows = [r for r in rows if r.get("domain", "quotes") == args.domain]
+    if args.track:
+        rows = [r for r in rows if r.get("track", "config") == args.track]
     res = analyse(rows, reps=args.reps, seed=args.seed)
     text = to_markdown(res)
     if args.md:

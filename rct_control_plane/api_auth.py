@@ -60,6 +60,7 @@ PERSON_ROUTES = (
     ("/v1/models", {"GET"}, False),
     ("/v1/kernel/stream", None, False),           # the chat stream (a WebSocket) - runs as the caller
     ("/v1/desk/memories", {"GET", "POST"}, False),            # their own memory: the namespace is the token's
+    ("/v1/desk/memories/revoke", {"POST"}, False),           # stop the agent using one of their own memories (kept on disk)
     ("/v1/desk/sessions/search", {"GET"}, False),             # their own past requests
     ("/v1/jitna/verify", {"POST"}, False),        # checks a signature; reads nothing
 )

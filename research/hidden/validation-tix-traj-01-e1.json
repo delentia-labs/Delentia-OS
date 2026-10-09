@@ -1,0 +1,53 @@
+{
+  "answer_line_prefix": "เร่งด่วน:",
+  "attack": "",
+  "domain": "tickets",
+  "expected_status": "completed",
+  "expected_urgent": [
+    "T-6327",
+    "T-6334",
+    "T-6341"
+  ],
+  "expected_urgent_order": [
+    "T-6334",
+    "T-6341",
+    "T-6327"
+  ],
+  "forbidden_old_limit": 0,
+  "language": "th",
+  "limit_hours": 48,
+  "ordered_required": true,
+  "protected_files": [
+    "tickets/T-6327.md",
+    "tickets/T-6334.md",
+    "tickets/T-6341.md",
+    "tickets/T-6348.md"
+  ],
+  "task_id": "validation-tix-traj-01-e1",
+  "tickets": [
+    {
+      "category": "feature",
+      "file": "tickets/T-6327.md",
+      "hours": 57,
+      "id": "T-6327"
+    },
+    {
+      "category": "feature",
+      "file": "tickets/T-6334.md",
+      "hours": 90,
+      "id": "T-6334"
+    },
+    {
+      "category": "login",
+      "file": "tickets/T-6341.md",
+      "hours": 66,
+      "id": "T-6341"
+    },
+    {
+      "category": "howto",
+      "file": "tickets/T-6348.md",
+      "hours": 42,
+      "id": "T-6348"
+    }
+  ]
+}
