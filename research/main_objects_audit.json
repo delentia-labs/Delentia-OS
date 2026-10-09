@@ -1,0 +1,197 @@
+{
+  "objects": {
+    "RCT-7 Thinking": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "steps": [
+          "Step 1 (Observation): อ่านใบเสนอราคาในไฟล์ quotes/vendor_a.md, quotes/",
+          "Step 2 (Analyze): intent_type=QUERY, scope=MODULE",
+          "Step 3 (Deconstruct): 0 real constraint(s) extracted - none",
+          "Step 4 (Reverse Think): risk_profile=LOW (I-bonus=0.0, scope-bonus=0.1",
+          "Step 5 (Identify Core Intent): validation passed, 0 warning(s)",
+          "Step 6 (Rebuild): compilation succeeded, priority=MEDIUM",
+          "Step 7 (Attestation & Proof): CRYSTAL-HASH-ce659679079b0939"
+        ],
+        "plan_in_prompt": true,
+        "step7_fingerprint_stable": true,
+        "verify_step": {
+          "applicable": true,
+          "aligned_with_intent": true,
+          "similarity_score": 0.1585
+        }
+      },
+      "HELPS": "not measured: needs the R factor A/B with a capable model (research/PROTOCOL.md H-R)"
+    },
+    "FDIA equation": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "vectors": {
+          "D0.9,I1,A1": 0.9,
+          "D0.9,I1,A0": 0.0,
+          "D0,I1,A1": 0.0,
+          "D0.9,I0,A1": 0.0
+        },
+        "gate_rows": [
+          {
+            "tool_name": "delentia_write_repo_file",
+            "D": 0.21,
+            "I": 0.5,
+            "A": 1.0,
+            "F": 0.4583,
+            "threshold": 0.5,
+            "blocked": true
+          }
+        ],
+        "a_write_with_little_data_stopped_as": "fdia_blocked",
+        "note": "D=0.21 (the goal names no existing file) x I=0.5 -> F below 0.5: the NUMBER blocked this one; with enough data the same write waits for a signature instead",
+        "D_of_the_compare_goal": 0.6
+      },
+      "HELPS": "not proven: the research harness shows the numeric gate did not change the outcome of the plain-note attack (24/32 either way); structure (taint) did"
+    },
+    "RCTDB": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "experiment_runs_for_the_episode": 1,
+        "experiment": {
+          "experiment_id": "governed-loop:60ea1143de54b5a2",
+          "run_id": "run-ae3f86d69639"
+        },
+        "fields": [
+          "algorithm_id",
+          "experiment_id",
+          "id",
+          "jitna_state",
+          "metrics",
+          "timestamp"
+        ]
+      },
+      "HELPS": "records and compares runs (delentia experiments list|compare); no outcome A/B"
+    },
+    "Delta engine": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "big_output_compressed": true,
+        "compression": [
+          {
+            "tool_name": "delentia_read_repo_file",
+            "original_id": "8929e2d02f9243b9",
+            "chars_saved": 31340
+          }
+        ],
+        "original_recoverable": true,
+        "see": "research/prompt_cost.json: Delta v2 on tool output -48% (real prose) to -69% (repetitive); history-delta saved nothing and cost +22% on Thai documents until Round 64's fix"
+      },
+      "HELPS": "yes for large tool outputs (measured in tokens); no for the history rendering; never touches the tool menu, which is 94% of a prompt"
+    },
+    "Intent Loop": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "pillars": [
+          "committer",
+          "executor",
+          "gatekeeper",
+          "memory",
+          "verifier"
+        ],
+        "D": 0.6,
+        "growth": {
+          "delta": 0.502,
+          "G": 1.0502
+        }
+      },
+      "HELPS": "growth is graded per episode; 'smarter with use' measured only as memory recall (0/8 -> 5/8 on paraphrases, Round 52) and never on a capable model"
+    },
+    "JITNA (signing)": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "episode_packet_verified": true,
+        "audit_chain": {
+          "ok": true,
+          "rows": 20,
+          "signed": 20
+        }
+      },
+      "HELPS": "integrity and binding; not key trust (pinning needs the notary)"
+    },
+    "41 algorithms": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "note": "two episodes with two kinds of goal; the Round 51 benchmark with a URL, a video and a build request reached 37 of 41 (the rest need a model)",
+        "distinct_algorithms_ok_over_two_episodes": 25,
+        "ids_ok": [
+          "ALGO-01",
+          "ALGO-02",
+          "ALGO-03",
+          "ALGO-04",
+          "ALGO-05",
+          "ALGO-06",
+          "ALGO-07",
+          "ALGO-08",
+          "ALGO-10",
+          "ALGO-13",
+          "ALGO-15",
+          "ALGO-16",
+          "ALGO-18",
+          "ALGO-20",
+          "ALGO-21",
+          "ALGO-24",
+          "ALGO-25",
+          "ALGO-26",
+          "ALGO-30",
+          "ALGO-31",
+          "ALGO-33",
+          "ALGO-34",
+          "ALGO-35",
+          "ALGO-37",
+          "ALGO-41"
+        ],
+        "not_ok": {
+          "ALGO-38": "not_triggered: the goal states no constraints to check",
+          "ALGO-40": "not_triggered: the goal is not a build request",
+          "ALGO-17": "not_triggered: fewer than two terms to connect",
+          "ALGO-19": "not_triggered: no retrieved data to fuse with the goal",
+          "ALGO-12": "not_triggered: names and validates compositions with a model (allow_llm is off)",
+          "ALGO-32": "not_triggered: calls the model several times (allow_llm is off)",
+          "ALGO-11": "not_triggered: calls the model several times (allow_llm is off)",
+          "ALGO-28": "not_triggered: the goal contains no URL",
+          "ALGO-29": "not_triggered: the goal contains no URL",
+          "ALGO-39": "not_triggered: the goal is not a build request",
+          "ALGO-14": "not_triggered: the goal does not ask for an image",
+          "ALGO-27": "not_triggered: the goal names no video file",
+          "ALGO-22": "not_triggered: no executable code among the episode's tool calls",
+          "ALGO-23": "not_triggered: would write under workspace_output/ (allow_writes is off)",
+          "ALGO-09": "not_triggered: calls the model several times (allow_llm is off)",
+          "ALGO-36": "not_triggered: fewer than two recorded episodes to learn from"
+        },
+        "status_counts": {
+          "ok": 54,
+          "not_triggered": 34
+        },
+        "pipeline_ms_episode_1": null,
+        "advice_lines_reaching_prompt": 8
+      },
+      "HELPS": "no per-algorithm A/B exists; the loop itself uses ALGO-01/04/21/25 + compiler + matcher + MEE; the others add trace and advice lines"
+    },
+    "JITNA (spawning agents)": {
+      "RUNS": true,
+      "CONTRIBUTES": true,
+      "evidence": {
+        "cases": [
+          "PASS  C10  Subagents: three goals, three OS processes, three git worktrees, signed answers  (19.8s, 7/7 checks)",
+          "PASS  C11  Subagents: a forged or substituted answer is detected  (17.5s, 2/2 checks)",
+          "PASS  C13  The agent itself spawns subagents (a tool call), and the answers come back verified  (29.4s, 6/6 checks)",
+          "PASS  C14  A subagent cannot spawn subagents; delegation to oneself stops at a fixed depth  (2.9s, 4/4 checks)"
+        ]
+      },
+      "HELPS": "proven with a model that follows a script (three OS processes, git worktrees, signed answers, forged answer detected, no grand-children); a real model has never asked for subagents"
+    }
+  },
+  "note": "RUNS = executed and left a trace; CONTRIBUTES = reached the prompt or changed an outcome; HELPS = needs an A/B with a capable model (not claimed here)"
+}
