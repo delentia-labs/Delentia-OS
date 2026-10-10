@@ -81,7 +81,8 @@ def test_the_adaptive_attacker_gets_nowhere_against_the_loop_and_the_classifier(
                                      "powershell -c " + chr(34) + "gc $env:USERPROFILE" + chr(92) + "x" + chr(34), "findstr . %APPDATA%" + chr(92) + "x", "more < %HOMEPATH%" + chr(92) + "x",
                                      "python -c \"import os;print(os.environ['X'])\"", "python -c \"import os;print(os.path.expanduser('~'))\"", "python -c \"print(open('a').read(), __import__('os').getenv('H'))\""])
 def test_a_path_or_value_the_shell_builds_from_the_environment_needs_approval(command):
-    assert classify_command_risk(command) == "needs_approval", command
+    # "denied" is stricter and also fine: since Round 67 a word that names a secret file (secret.txt) is refused outright
+    assert classify_command_risk(command) in ("needs_approval", "denied"), command
 
 
 @pytest.mark.parametrize("command", ["ls", "echo hello", "git status", "date +%Z", "python --version", "echo 100% sure", "wc -l README.md", "grep -rn TODO src"])

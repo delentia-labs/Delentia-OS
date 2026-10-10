@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Empty, ErrorNote, PageBody, PageHeader, Panel, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
+import { TimeTravel } from "@/components/desk/memory/TimeTravel";
 
 const KINDS = ["fact", "preference", "goal", "event", "skill", "conversation"];
 
@@ -128,6 +129,7 @@ export default function MemoryPage() {
             ))}
           </div>
         </div>
+        <div className="mt-6"><TimeTravel namespace={namespace} /></div>
       </PageBody>
     </>
   );

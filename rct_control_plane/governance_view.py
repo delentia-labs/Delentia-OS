@@ -36,7 +36,7 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "models": ("model_fallback",),
     # Round 61
     "hooks": ("agent_hook",),
-    "memory": ("memory_candidate", "skill_curator"),
+    "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked"),
     "tasks": ("agent_task",),
     "scope": ("governed_loop_scope", "governed_loop_taint", "governed_loop_envelope"),
 }
@@ -132,6 +132,12 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return (f"hook {verb} {c.get('tool_name')}" + (f": {_short(c.get('reason'), 80)}" if c.get("reason") else "")) if verb else f"hook {action}"
     if entity_type == "governed_loop_scope":
         return f"{c.get('tool_name')} refused for a chat person: it shows what every person asked (owner-only tool)"
+    if entity_type == "memory_log" and action == "memory_log_anchor":
+        return f"memory log head #{c.get('head_seq')} written into the audit chain ({_short(c.get('head_hash'), 12)}, {c.get('events_since_last_anchor')} event(s) since the last)"
+    if entity_type == "memory_log" and action == "memory_erased":
+        return f"memory of {_short(c.get('namespace'), 40)} erased by destroying its key ({c.get('events')} event(s), {c.get('plaintext_events')} left readable): {_short(c.get('reason'), 80)}"
+    if entity_type == "memory_revoked":
+        return f"a memory was revoked ({c.get('reason_chars', 0)} characters of reason kept as a hash)"
     if entity_type == "skill_curator":
         return f"skill {action} by the curator ({c.get('kind')}): {_short(c.get('reason'), 90)}"
     if entity_type == "memory_candidate":
@@ -429,7 +435,7 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         policy_problem = "the policy file cannot be read or is invalid, so every tool call is refused (fail closed)"
     add("owner_policy", "Owner policy for A", policy is not None,
         (f"{len(policy.rules)} rule(s), digest {policy.digest()[:12]}" if policy is not None else policy_problem or "no policy file: only the built-in floor applies (risky tools need F >= 0.5; repo writes need a signature)"),
-        "Desk > FDIA policy (start from a template), or `delentia fdia template`", "bad" if policy_problem else "warn")
+        "Desk > FDIA policy (start from 'argument-aware': harmless inspection runs, everything else asks), or `delentia fdia template argaware`", "bad" if policy_problem else "warn")
     # signatures
     keys, key_roles, key_problem = _approvers()
     add("approver_keys", "Approver keys (who may sign)", bool(keys),
@@ -466,6 +472,34 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
             f"{witness['independent_witnesses']} witness(es) hold a recent head" if witness["independent_witnesses"] >= 2 else
             "one witness is a single party to trust: with a second one an attacker must defeat both",
             f"add a git witness to {WITNESSES_ENV_NAME}", severity="info")
+    # Round 67: the memory event log, its anchors in the audit chain, and sealing (what makes erasure possible)
+    from rct_control_plane import memory_erasure, memory_eventlog
+
+    class _ConnShim:
+        def __init__(self, c: sqlite3.Connection) -> None:
+            self._c = c
+
+        def _connect(self) -> sqlite3.Connection:
+            return self._c
+
+    log_on = memory_eventlog.enabled()
+    anchor_report: Dict[str, Any] = {}
+    if log_on:
+        try:
+            anchor_report = memory_eventlog.MemoryEventLog(_ConnShim(conn)).verify_anchors()
+        except sqlite3.Error:
+            anchor_report = {}
+    if log_on and anchor_report:
+        add("memory_log", "Memory history is chained and anchored in the audit chain", bool(anchor_report.get("ok")),
+            (f"{anchor_report.get('anchors', 0)} anchor(s) match the log; {anchor_report.get('unanchored_events', 0)} event(s) since the last one are not yet anchored" if anchor_report.get("ok")
+             else "; ".join(anchor_report.get("problems", [])[:2]) or "an anchored head no longer matches the log"),
+            "`delentia memory log verify` names the broken link; DELENTIA_MEMORY_ANCHOR_EVERY sets how often a head is anchored", "bad")
+    else:
+        add("memory_log", "Memory history is chained and anchored in the audit chain", False, "the memory event log is off: revocation is a column, not a recorded fact, and nothing can be replayed",
+            "unset DELENTIA_MEMORY_EVENTLOG=off")
+    add("memory_sealing", "A person's memory text can be erased (sealed with their own key)", bool(log_on and memory_erasure.sealing_enabled()),
+        "event payloads and checkpoints are sealed per person; `delentia memory erase` destroys the key with an approver's signature" if log_on and memory_erasure.sealing_enabled()
+        else "off: the log holds readable text, so a person's data can be revoked but not erased", "unset DELENTIA_MEMORY_SEAL=off (events written before it was on stay readable)")
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

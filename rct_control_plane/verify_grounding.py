@@ -25,6 +25,7 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 ENV = "DELENTIA_VERIFY_GROUNDING"
+V3_ENV = "DELENTIA_VERIFY_V3"      # Round 67: the three changes written down in research/verify_batch_e_criteria.md before they were made (off until batch E says otherwise)
 V2_ENV = "DELENTIA_VERIFY_V2"      # Round 66: the three changes written down in research/verify_batch_d_criteria.md before they were made
 
 
@@ -33,6 +34,11 @@ def v2_enabled() -> bool:
     batch existed). DELENTIA_VERIFY_V2=off restores the Round 65 rules."""
     import os
     return (os.environ.get(V2_ENV) or "on").strip().lower() not in ("0", "false", "no", "off")
+
+def v3_enabled() -> bool:
+    import os
+    return (os.environ.get(V3_ENV) or "off").strip().lower() in ("1", "true", "yes", "on")
+
 
 _URL = re.compile(r"https?://[^\s)>\]\"']+", re.IGNORECASE)
 _EMAIL = re.compile(r"\b[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}\b")
@@ -182,9 +188,13 @@ _CALC_GOAL = re.compile(r"\bwhat(?:'s| is)\s+[-+]?\d[\d,.\s]*(?:[-+*/x×÷^]|plu
 _BARE_NUMBER = re.compile(r"^\s*[-+]?\d[\d,]*(?:\.\d+)?\s*(?:[A-Za-z\u0E00-\u0E7F%]{0,12})?\s*[.!]?\s*$")
 
 
+# Round 67 (b): "what is 81 divided by 9" - the connecting word the first version did not know
+_CALC_GOAL_V3 = re.compile(r"\bwhat(?:'s| is)\s+[-+]?\d[\d,.\s]*(?:[-+*/x\u00d7\u00f7^]|plus|minus|times|divided(?:\s+by)?|multiplied(?:\s+by)?|to the power(?:\s+of)?)\s*[-+]?\d")
+
+
 def answers_calculation(goal: str, answer: str) -> bool:
     """Round 66 (b): a short bare number answering a calculation or a count. It says the question was answered, not that the number is right (nothing here can know)."""
-    return bool(_CALC_GOAL.search(goal or "")) and bool(_BARE_NUMBER.match(str(answer or ""))) and len(str(answer or "").strip()) <= 12
+    return bool(_CALC_GOAL.search(goal or "") or (v3_enabled() and _CALC_GOAL_V3.search(goal or ""))) and bool(_BARE_NUMBER.match(str(answer or ""))) and len(str(answer or "").strip()) <= 12
 
 
 def _specific_value_reused(answer: str, goal: str, evidence: str) -> bool:
@@ -234,7 +244,7 @@ def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]
     text = str(answer or "").strip()[:MAX_ANSWER_SCANNED]
     flags: List[str] = []
     detail: Dict[str, Any] = {}
-    if len(text) < 2:
+    if len(text) < 2 and not (v3_enabled() and answers_calculation(goal, text)):      # Round 67 (b): "9" is a whole answer to "81 divided by 9"
         flags.append("empty_answer")
     # Values can be checked only against evidence. With no tool result at all the model answered from its own knowledge ("366 days in a leap year"): that cannot be verified either way, and
     # flagging it rejected correct answers (Round 61 holdout h22, Round 62 real answers), so it is left to the other checks.
@@ -249,5 +259,8 @@ def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]
     results = [s.get("tool_result") for s in steps if s.get("tool_result") is not None]
     if results and all(_is_error(r) for r in results) and _SUCCESS_CLAIM.search(text):
         flags.append("claims_success_after_error")
-    return {"grounded": not flags, "flags": flags, "supported": evidence_support(text, steps, goal),
+    supported = evidence_support(text, steps, goal)
+    if not supported and v3_enabled() and _effect_ran(steps) and (_ACTION_GOAL.search(goal) or _IMPERATIVE_GOAL.search(goal)):
+        supported = True                                            # Round 67 (c): the tool that performs the requested effect succeeded; the answer need not repeat its words (it may be in another language)
+    return {"grounded": not flags, "flags": flags, "supported": supported,
             "answers_calc": bool(v2_enabled() and not _tool_results(steps) and answers_calculation(goal, text)), **detail}

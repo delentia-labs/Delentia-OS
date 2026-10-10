@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / "rct_control_plane" / "tests"
 NEW = "test_gate_properties_round65_real.py"
 ADV = "test_adversarial_round66_real.py"
+ANCHOR = "test_memory_anchor_round67_real.py"
+ERASE = "test_memory_erasure_round67_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
     {"id": "P1", "name": "A = 0 blocks restricted effects",
@@ -99,13 +101,31 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{NEW}::test_p9_an_older_database_gets_the_new_columns_and_keeps_its_memories",
                f"{NEW}::test_p9_the_recall_tool_the_agent_uses_does_not_return_a_revoked_memory"],
      "assumes": "Every reader goes through ControlPlanePersistence.list_memories (the only SQL reader of the table besides the Desk page, which filters too).",
-     "not_covered": "A skill derived from a memory is not revoked with it; nothing is erased (PDPA erasure needs a separate, per-subject key design)."},
+     "not_covered": "A skill derived from a memory is not revoked with it. Revoking does not erase (see P12 for erasure and what it leaves)."},
     {"id": "P10", "name": "Cancelling cannot make an action run twice; the emergency stop reaches approved actions",
      "statement": "An approved action cancelled mid-run stays claimed and cannot be claimed again; while the agent is paused an already approved action does not run and is not consumed.",
      "tests": [f"{NEW}::test_p10_an_action_cancelled_midway_is_never_run_a_second_time",
                f"{NEW}::test_the_emergency_stop_reaches_an_action_a_person_already_approved",
                "test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so"],
      "assumes": "", "not_covered": "A tool already executing in a worker thread cannot be recalled; at-most-once is guaranteed, completion is not."},
+    {"id": "P11", "name": "Memory history cannot be rewritten or cut back without being noticed (up to the last anchor)",
+     "statement": "The memory event log is hash-chained and its head is written into the audit chain every N events. Editing one event, rewriting the whole log with every hash recomputed, cutting it back, or editing the anchor row itself is detected by `verify` or `verify_anchors` or the audit chain's own check; events after the latest anchor are reported as unanchored.",
+     "tests": [f"{ANCHOR}::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor",
+               f"{ANCHOR}::test_cutting_the_log_back_is_caught",
+               f"{ANCHOR}::test_editing_the_anchor_row_itself_is_caught_by_the_audit_chain",
+               f"{ANCHOR}::test_events_after_the_last_anchor_are_reported_as_unanchored",
+               "test_memory_eventlog_round66_real.py::test_damage_is_named_by_the_check"],
+     "assumes": "The audit chain is itself protected (signature, notary, an independent witness). With none of those, someone with write access can rewrite the log AND the anchors AND the audit chain.",
+     "not_covered": "Events after the latest anchor can be rewritten undetected until the next anchor; with no independent witness the whole structure is only as strong as the host."},
+    {"id": "P12", "name": "Erasing a person destroys their text and leaves the chains valid",
+     "statement": "After a signed erase, the person's memory text is unreadable from the log (their key is destroyed), absent from every byte of the database file, scrubbed from the table, and the event chain, the anchors and the audit chain still verify; another person is untouched; refusals destroy nothing.",
+     "tests": [f"{ERASE}::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact",
+               f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file",
+               f"{ERASE}::test_erasure_needs_a_trusted_approver_and_the_exact_head",
+               f"{ERASE}::test_the_report_says_what_was_not_erased",
+               f"{ERASE}::test_the_log_holds_ciphertext_not_the_text"],
+     "assumes": "The approver key is held by a person; the key file of the person being erased was not copied elsewhere.",
+     "not_covered": "Events written before sealing was on stay readable; other tables that carry the person's namespace (past requests, skills, experiments) are listed in the report and not erased; backups, swap and filesystem journals are outside the database file."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 
@@ -120,6 +140,8 @@ THREATS: List[Dict[str, object]] = [
                                             f"{NEW}::test_p9_revoking_is_scoped_to_the_owner_and_happens_once"]},
     {"threat": "Tool poisoning (a tool's description or result carries instructions)", "tests": ["test_external_mcp_round55_real.py::test_a_poisoned_tool_description_is_dropped_and_reported_never_shown",
                                                                                               "test_taint_gate_round58_real.py::test_the_measurement_with_a_fully_hijacked_model"]},
+    {"threat": "History rewriting (the log of what the agent knew is edited after the fact)", "tests": [f"{ANCHOR}::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor", f"{ANCHOR}::test_cutting_the_log_back_is_caught"]},
+    {"threat": "Personal data that cannot be erased from an append-only record", "tests": [f"{ERASE}::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact", f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file"]},
     {"threat": "Memory poisoning", "tests": ["test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next",
                                              "test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits",
                                              f"{NEW}::test_p9_a_revoked_memory_is_returned_by_nothing"]},

@@ -728,6 +728,45 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
         return {"memory_id": memory_id, "namespace": namespace}
 
+    def _log_namespace(request: Request, namespace: Optional[str]) -> str:
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            return owner                                   # a person sees only their own history
+        return str(namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+
+    @router.get("/memories/history")
+    async def memory_history(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500), before_seq: Optional[int] = None) -> Dict[str, Any]:
+        """Round 67: the events of one person's memory, newest first (needs DELENTIA_MEMORY_EVENTLOG=1 to have been on when they were written)."""
+        from rct_control_plane import memory_eventlog
+        ns = _log_namespace(request, namespace)
+        if not memory_eventlog.enabled():
+            return {"enabled": False, "namespace": ns, "events": []}
+        return {"enabled": True, "namespace": ns, "events": memory_eventlog.MemoryEventLog(_kernel()._persistence).history(ns, limit, before_seq)}
+
+    @router.get("/memories/at")
+    async def memory_at(request: Request, namespace: Optional[str] = None, seq: Optional[int] = None, at: Optional[str] = None) -> Dict[str, Any]:
+        """Round 67: what the memory held after event `seq` (or at a moment `at`, ISO 8601). Revoked items are shown with their revocation."""
+        from rct_control_plane import memory_eventlog
+        ns = _log_namespace(request, namespace)
+        if not memory_eventlog.enabled():
+            return {"enabled": False, "namespace": ns, "memories": []}
+        log = memory_eventlog.MemoryEventLog(_kernel()._persistence)
+        if at:
+            seq = log.seq_at_time(ns, at)
+        state = log.fold(ns, seq, include_revoked=True)
+        items = [{"id": m["id"], "memory_type": m.get("memory_type"), "content": m.get("content"), "importance": m.get("importance"), "revoked_at": m.get("revoked_at"),
+                  "revoked_reason": m.get("revoked_reason")} for m in state.values()]
+        return {"enabled": True, "namespace": ns, "seq": seq, "memories": items}
+
+    @router.get("/memories/log")
+    async def memory_log_status() -> Dict[str, Any]:
+        """Round 67 (owner only): is the memory log intact, and do its anchored heads still match the audit chain?"""
+        from rct_control_plane import memory_eventlog
+        if not memory_eventlog.enabled():
+            return {"enabled": False}
+        log = memory_eventlog.MemoryEventLog(_kernel()._persistence)
+        return {"enabled": True, "head": log.head(), "chain": log.verify(), "anchors": log.verify_anchors()}
+
     @router.post("/memories/revoke")
     async def revoke_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
         """Round 65: stop the agent using a memory. The row stays on disk for the audit (Zero-Delete) but no reader returns it
@@ -826,8 +865,8 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     @router.get("/fdia/template/{name}")
     async def fdia_template(name: str) -> Dict[str, Any]:
         from rct_control_plane import fdia_policy
-        if name not in ("balanced", "strict"):
-            raise HTTPException(status_code=404, detail="templates: balanced, strict")
+        if name not in ("balanced", "strict", "careful", "argaware"):
+            raise HTTPException(status_code=404, detail="templates: balanced, strict, careful, argaware")
         return {"policy": fdia_policy.template(name, [t["name"] for t in await _tool_gate_labels()])}
 
     @router.post("/fdia/validate")

@@ -202,6 +202,27 @@ def check_tenants(public: bool) -> List[Check]:
     return [Check("H22-tenants", PASS, "People and owners", f"{len(owners)} owner(s) ({', '.join(owners) or 'the shared token'}), {len(people)} ordinary person(s) limited to the agent, their own jobs, tasks, approvals and memory")]
 
 
+def check_memory_log() -> List[Check]:
+    """H23 (Round 67): is the memory history recorded, sealed per person (what makes erasure possible), and are the keys kept where the agent's file tools cannot read them?"""
+    from rct_control_plane import memory_erasure, memory_eventlog
+    if not memory_eventlog.enabled():
+        return [Check("H23-memory-log", WARN, "Memory history", "the memory event log is off: revocation is a column, nothing can be replayed or anchored, a person's data cannot be erased",
+                      "unset DELENTIA_MEMORY_EVENTLOG=off")]
+    if not memory_erasure.sealing_enabled():
+        return [Check("H23-memory-log", WARN, "Memory history", "the log is on but not sealed per person: its text is readable by anyone with the database, and a person cannot be erased from it",
+                      "unset DELENTIA_MEMORY_SEAL=off (events written before sealing was on stay readable)")]
+    keys = memory_erasure.keys_dir()
+    repo = Path(__file__).resolve().parent.parent
+    try:
+        inside = repo in keys.resolve().parents or keys.resolve() == repo
+    except OSError:
+        inside = False
+    if inside:
+        return [Check("H23-memory-log", FAIL, "Memory history", f"the memory keys directory {keys} is inside the repository, where the agent's file tools can read it",
+                      "set DELENTIA_MEMORY_KEYS_DIR to a folder outside the checkout, readable by the runtime's OS user only")]
+    return [Check("H23-memory-log", PASS, "Memory history", f"the log is on and sealed per person; keys live in {keys} (a backup leaves them out unless `--include-keys`, so a restored backup cannot read the sealed history)")]
+
+
 def check_envelope(public: bool) -> List[Check]:
     """H21 (Round 60): what stops the agent when nobody is watching, and who is told when it needs a person."""
     from rct_control_plane import envelope, owner_notify
@@ -360,6 +381,7 @@ def run_checks(*, public: bool = True, probe: bool = False) -> List[Check]:
         ("H19", "Storage", check_storage),
         ("H21", "Safety envelope and owner alerts", lambda: check_envelope(public)),
         ("H22", "People and owners", lambda: check_tenants(public)),
+        ("H23", "Memory history", check_memory_log),
     ):
         checks.extend(_guard(check_id, title, fn))
     return checks
