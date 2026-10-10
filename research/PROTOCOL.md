@@ -47,9 +47,14 @@ baseline นั้น **ยังไม่ได้สร้าง** ในร�
 |---|---|---|
 | A000 | agent ธรรมดา: เครื่องมือเดียวกัน floor เดียวกัน ไม่มีโครงสร้างของ Delentia เลย (= baseline 1 ของโปรโตคอลต้นฉบับ §8) | Delentia ทั้งชุดช่วยเหนือ agent เปล่าหรือไม่ (A111 − A000) |
 | G | R=F=M=0 + บทสนทนาดิบ 4 turn ล่าสุดใน prompt | ความจำแบบมีโครงสร้าง+ผ่านการตรวจ ดีกว่าแค่ "จำที่พูดไว้" หรือไม่ (A001 − G, A111 − G = contrast หลัก) |
+| PL | **ไม่ใช่ loop ของ Delentia เลย** (Round 66): `research/plain_agent.py` ~70 บรรทัด เรียกโมเดลด้วย prompt builder เดียวกัน เรียก tool server เดียวกัน นับ token ด้วย meter เดียวกัน แต่ไม่มี FDIA gate, CORD, taint, approvals, แผน, memory, VERIFY, audit | loop เองให้อะไร แยกจากสวิตช์: A000 − PL (ทุกสวิตช์ปิดแต่ยังอยู่ใน loop) และ A111 − PL |
 | GP | R=F=M=0 + คำสั่งสั้นๆ "วางแผน ≤5 ขั้น ลงมือทีละขั้น ตรวจคำตอบก่อนตอบ" (ไม่ใช่ RCT-7) + ค้น 3 คำขอเก่าของคนเดียวกันที่ **คำซ้ำกันมากที่สุด** แทนหน้าต่างล่าสุด (§8 baseline 2: generic plan-act-check + generic retrieval) | โครงสร้าง RCT-7 + การเรียนรู้ที่ผ่านการตรวจ + สมการ ดีกว่าสิ่งที่วิศวกรทั่วไปจะทำเองหรือไม่ (A111 − GP); GP − G = generic retrieval เพิ่มอะไร |
 
+นโยบายของหน่วยความจำ (`--memory-policy none|dedupe|expire`, `--preload-noise N`) เป็นค่าระดับ run เดียวกันทุกแขน บันทึกในทุกแถว
+
 ยังไม่ทำ (เหตุผลในข้อ 9): baseline 3 ภายนอก Delentia (approval gate + evidence threshold แยกจากสูตร: ใช้ A111+FS แทนในโค้ดนี้), baseline 5 framework (LangGraph)
+
+**หมวดความล้มเหลว (Round 66, §16):** ทุก episode ที่ไม่ผ่านได้ป้ายเดียวจากกฎที่ตรวจได้ (`research/failure_taxonomy.py`: leakage, unauthorized_effect, budget_exceeded, false_block, parse_intent, tool_selection, stale_memory, memory_not_used, incomplete, wrong_content, false_claim, infrastructure_fault, grader_bug_suspect, other) ไม่ใช้ LLM ตัดสิน; `failure_class` อยู่ในทุกแถวและตารางใน analyze
 
 **สอง track (§8 ของโปรโตคอลต้นฉบับ):** *config* = ตั้งค่าเท่ากัน ไม่มี cap เพิ่ม (ค่าเริ่มต้น); *budget* = `--unit-token-budget N`: ทุกแขนได้ token รวมเท่ากันต่อหน่วย (task หรือ trajectory) ใช้ข้าม episode ของหน่วยนั้น
 episode ที่งบหมดจบด้วย `budget_exceeded` และถูกตรวจจากสถานะจริงตามปกติ (ไม่ใช่นับว่าล้มโดยอัตโนมัติ) กฎกำหนดก่อนรัน ไม่มีแขนไหน retry เพิ่ม; run_id ของ track budget ต่อท้ายด้วย `:b<N>`

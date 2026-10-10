@@ -691,18 +691,18 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         }
 
     @router.get("/memories")
-    async def memories(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500)) -> Dict[str, Any]:
+    async def memories(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500), include_revoked: bool = False) -> Dict[str, Any]:
         owner = getattr(request.state, "delentia_user", None)
         if owner and owner != "shared":
             namespace = owner                    # Round 54: with a token per person nobody reads another person's memory
         with _connect() as conn:
             conn.row_factory = sqlite3.Row
             if namespace:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories WHERE namespace = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT ?", (namespace, limit)).fetchall()
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                                    "FROM memories WHERE namespace = ? AND (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (namespace, 1 if include_revoked else 0, limit)).fetchall()
             else:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                                    "FROM memories WHERE (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (1 if include_revoked else 0, limit)).fetchall()
             spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories WHERE revoked_at IS NULL GROUP BY namespace ORDER BY n DESC").fetchall()]
         if owner and owner != "shared":
             spaces = [s for s in spaces if s["namespace"] == owner]       # other people's namespace names are not shown either

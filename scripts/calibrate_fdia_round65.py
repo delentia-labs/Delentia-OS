@@ -197,7 +197,7 @@ class Recorder:
         return type("R", (), {"content": [type("C", (), {"text": json.dumps({"ok": True})})()]})()
 
 
-def run_item(kernel: Any, goal: str, tool: str, args: Dict[str, Any], work: Path) -> Dict[str, Any]:
+def run_item(kernel: Any, goal: str, tool: str, args: Dict[str, Any], work: Path, policy: Any = None) -> Dict[str, Any]:
     import rct_control_plane.autonomous_loop as al
     from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
     from rct_control_plane.persistence import ControlPlanePersistence
@@ -213,7 +213,8 @@ def run_item(kernel: Any, goal: str, tool: str, args: Dict[str, Any], work: Path
     db = str(work / f"i{abs(hash((goal, tool))) % 10**9}.db")
     persistence = ControlPlanePersistence(db_path=db)
     tools = Recorder([tool])
-    loop = GovernedAutonomousLoop(mcp_server=tools, persistence=persistence, kernel=kernel, max_iterations=4, namespace="calibration", skill_library=SkillLibrary(db_path=db + ".sk"))
+    loop = GovernedAutonomousLoop(mcp_server=tools, persistence=persistence, kernel=kernel, max_iterations=4, namespace="calibration", skill_library=SkillLibrary(db_path=db + ".sk"),
+                                  **({"policy": policy} if policy is not None else {}))
     loop._route_enabled = False
     result = asyncio.run(loop.run(goal))
     with persistence._connect() as conn:
@@ -268,6 +269,8 @@ def choose_tau(calib: List[Dict[str, Any]], rule: str) -> float:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", default=str(ROOT / "research" / "fdia_calibration.json"))
+    parser.add_argument("--policy", default="none", choices=["none", "balanced", "strict", "careful"],
+                        help="Round 65b: run the same 120 requests under one of the owner-policy starter templates (fdia_policy.template) instead of the built-in floor alone")
     args = parser.parse_args()
     work = Path(tempfile.mkdtemp(prefix="delentia-fdia-cal-"))
     repo = work / "repo"
@@ -278,11 +281,17 @@ def main() -> int:
         os.environ.pop(name, None)
     import logging
     logging.disable(logging.WARNING)
-    from rct_control_plane.mcp_server import _kernel
+    from rct_control_plane.mcp_server import _kernel, mcp as _mcp
+    policy = None
+    if args.policy != "none":
+        from rct_control_plane import fdia_policy
+        names = [t.name for t in asyncio.run(_mcp.list_tools())]
+        policy, errors = fdia_policy.validate_policy(fdia_policy.template(args.policy, names))
+        assert policy is not None, errors
     rows: List[Dict[str, Any]] = []
     for i, (goal, tool, targs, label) in enumerate(ITEMS):
         try:
-            out = run_item(_kernel, goal, tool, targs, work)
+            out = run_item(_kernel, goal, tool, targs, work, policy)
         except Exception as exc:                                             # a request the loop cannot even start (an empty goal) is a refusal, and is recorded as one
             out = {"verdict": "block", "stopped": f"exception: {type(exc).__name__}", "D": None, "I": None, "A": None, "F": None, "threshold": None, "gate_row": False}
         rows.append({"id": i, "split": "calibration" if i % 2 == 0 else "heldout", "goal": goal, "tool": tool, "args": targs, "label": label, **out})

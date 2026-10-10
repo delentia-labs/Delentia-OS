@@ -246,6 +246,8 @@ class ControlPlanePersistence:
             conn.executescript(_SCHEMA_SQL)
             # Round 48 A1: tamper-evident chain over audit_trail.
             audit_chain.ensure_schema(conn)
+            from rct_control_plane import memory_eventlog
+            memory_eventlog.ensure_schema(conn)         # Round 66: the memory event log (written only when DELENTIA_MEMORY_EVENTLOG=1)
             # Round 65: a memory can be revoked (kept on disk, never recalled again); older databases get the columns.
             have = {row[1] for row in conn.execute("PRAGMA table_info(memories)").fetchall()}
             for column in ("revoked_at", "revoked_reason"):
@@ -443,6 +445,11 @@ class ControlPlanePersistence:
                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)""",
                 (memory_id, namespace, memory_type, content, json.dumps(context or {}), importance, now),
             )
+            from rct_control_plane import memory_eventlog      # Round 66: the same change, as an event in the same transaction (opt-in)
+            if memory_eventlog.enabled():
+                provenance = (context or {}).get("provenance") if isinstance(context, dict) else None
+                memory_eventlog.append(conn, namespace, "add", memory_id, {"namespace": namespace, "memory_type": memory_type, "content": content, "context": context or {},
+                                                                          "importance": importance, "created_at": now}, provenance if isinstance(provenance, dict) else None)
 
     def list_memories(self, namespace: str, memory_type: Optional[str] = None, include_revoked: bool = False) -> List[Dict[str, Any]]:
         """Every reader of memory (recall, the algorithm pipeline, the chat UI, the CLI) comes through here, so a revoked
@@ -470,6 +477,10 @@ class ControlPlanePersistence:
                 "UPDATE memories SET revoked_at = ?, revoked_reason = ? WHERE id = ? AND namespace = ? AND revoked_at IS NULL",
                 (now, (reason or "")[:300], memory_id, namespace),
             ).rowcount
+            if changed:
+                from rct_control_plane import memory_eventlog      # Round 66 (opt-in): the event is written in the same transaction as the revocation
+                if memory_eventlog.enabled():
+                    memory_eventlog.append(conn, namespace, "revoke", memory_id, {"reason": (reason or "")[:300]})
         if changed:
             try:
                 self.append_audit(entity_type="memory_revoked", entity_id=memory_id, action="revoked", actor=namespace,
@@ -485,6 +496,11 @@ class ControlPlanePersistence:
                 "UPDATE memories SET accessed_count = accessed_count + 1, last_accessed = ? WHERE id = ?",
                 (now, memory_id),
             )
+            from rct_control_plane import memory_eventlog      # Round 66 (opt-in)
+            if memory_eventlog.enabled():
+                row = conn.execute("SELECT namespace FROM memories WHERE id = ?", (memory_id,)).fetchone()
+                if row:
+                    memory_eventlog.append(conn, row[0], "touch", memory_id, {})
 
     # ------------------------------------------------------------------
     # Experiments / experiment runs (Round 23 Phase 11 Task 23)

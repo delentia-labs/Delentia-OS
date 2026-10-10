@@ -154,6 +154,52 @@ GOALS_C: List[Dict[str, Any]] = [
     {"kind": "action", "goal": "Set a reminder in 20 minutes to review the deploy notes.", "tools": ["delentia_schedule_reminder"]},
 ]
 
+# Batch D (Round 66): the holdout for the VERIFY changes of research/verify_batch_d_criteria.md. Written BEFORE the code of those changes was frozen and before any answer to it existed;
+# six files the model has not seen in batches A, B or C. Batches A, B and C are development data from now on.
+FILES_D: Dict[str, str] = {
+    "docs/onboarding.md": "New engineers get a laptop on day one. Buddy: Pimchanok. First deploy: Friday of week two.\n",
+    "src/scheduler.py": "POLL_INTERVAL_S = 45\nMAX_PARALLEL = 7\nQUEUE_NAME = 'harbor-jobs'\n",
+    "config/regions.yaml": "primary: ap-southeast-1\nbackup: ap-northeast-1\nfailover_minutes: 15\n",
+    "docs/faq.md": "Q: Can orders be changed after dispatch? A: No, only cancelled within 30 minutes.\nQ: Which carrier handles fragile goods? A: Siam Express.\n",
+    "src/telemetry.py": "SAMPLE_RATE = 0.25\nEXPORT_URL = 'https://metrics.harbor.example/ingest'\n",
+    "docs/oncall-tiers.md": "Tier 1: Rattana. Tier 2: Boonmee. Escalate after 20 minutes.\n",
+}
+GOALS_D: List[Dict[str, Any]] = [
+    {"kind": "fact", "goal": "Who is the onboarding buddy according to docs/onboarding.md?", "need": ["pimchanok"]},
+    {"kind": "fact", "goal": "When is the first deploy for a new engineer? See docs/onboarding.md.", "need": ["friday"]},
+    {"kind": "fact", "goal": "How often does src/scheduler.py poll, in seconds?", "need": ["45"]},
+    {"kind": "fact", "goal": "What is MAX_PARALLEL in src/scheduler.py?", "need": ["7"]},
+    {"kind": "fact", "goal": "Which queue name does the scheduler use?", "need": ["harbor-jobs"]},
+    {"kind": "fact", "goal": "What is the backup region in config/regions.yaml?", "need": ["ap-northeast-1"]},
+    {"kind": "fact", "goal": "How many minutes is failover_minutes set to in config/regions.yaml?", "need": ["15"]},
+    {"kind": "fact", "goal": "Which carrier handles fragile goods? Check docs/faq.md.", "need": ["siam express"]},
+    {"kind": "fact", "goal": "Within how many minutes can an order be cancelled after dispatch, per docs/faq.md?", "need": ["30"]},
+    {"kind": "fact", "goal": "What is the SAMPLE_RATE in src/telemetry.py?", "need": ["0.25"]},
+    {"kind": "fact", "goal": "Where does telemetry get exported? Look in src/telemetry.py.", "need": ["metrics.harbor.example"]},
+    {"kind": "fact", "goal": "Who is Tier 2 on call? Read docs/oncall-tiers.md.", "need": ["boonmee"]},
+    {"kind": "fact", "goal": "After how many minutes should an incident be escalated? See docs/oncall-tiers.md.", "need": ["20"]},
+    {"kind": "fact", "goal": "Who is Tier 1 on call?", "need": ["rattana"]},
+    {"kind": "fact", "goal": "ใครเป็นบัดดี้ของวิศวกรใหม่ ดูจาก docs/onboarding.md", "need": ["pimchanok"]},
+    {"kind": "fact", "goal": "ไฟล์ config/regions.yaml ตั้ง region หลักไว้ที่ไหน", "need": ["ap-southeast-1"]},
+    {"kind": "fact", "goal": "ค่า SAMPLE_RATE ใน src/telemetry.py คือเท่าไร", "need": ["0.25"]},
+    {"kind": "fact", "goal": "Which file defines POLL_INTERVAL_S?", "need": ["scheduler"]},
+    {"kind": "fact", "goal": "What primary region does config/regions.yaml name, and how many minutes is the failover time?", "need": ["ap-southeast-1", "15"]},
+    {"kind": "chat", "goal": "What is 12 times 12?", "need": ["144"]},
+    {"kind": "chat", "goal": "What is 250 plus 175?", "need": ["425"]},
+    {"kind": "chat", "goal": "How many days are in a week?", "need": ["7", "seven"]},
+    {"kind": "chat", "goal": "What is the capital of Germany?", "need": ["berlin"]},
+    {"kind": "chat", "goal": "What is 81 divided by 9?", "need": ["9"]},
+    {"kind": "absent", "goal": "What does docs/billing.md say about refunds?", "need": []},
+    {"kind": "absent", "goal": "Read src/cache.py and tell me the eviction policy.", "need": []},
+    {"kind": "absent", "goal": "Which carrier handles refrigerated goods, according to docs/faq.md?", "need": []},
+    {"kind": "absent", "goal": "What is the SLA percentage listed in docs/onboarding.md?", "need": []},
+    {"kind": "absent", "goal": "Tell me the Tier 3 on-call person from docs/oncall-tiers.md.", "need": []},
+    {"kind": "action", "goal": "Remember that the cold-storage contact is Chaiwat.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Please save a note that the Friday deploy needs a second reviewer.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Create a file called handover.txt containing the words check seals.", "tools": ["delentia_write_repo_file"]},
+    {"kind": "action", "goal": "Set a reminder in 10 minutes to restart the poller.", "tools": ["delentia_schedule_reminder"]},
+]
+
 _NOT_FOUND = re.compile(r"not found|does not exist|doesn't exist|no such|cannot find|can't find|could not find|couldn't find|unable to|not (?:available|mentioned|specified|provided|present)|no (?:information|mention)|ไม่พบ|ไม่มี|ไม่ได้ระบุ", re.IGNORECASE)
 _DENY = re.compile(r"\b(?:unable|cannot|can't|could not|couldn't|failed|not able)\b|ไม่สามารถ", re.IGNORECASE)
 
@@ -176,7 +222,7 @@ def label_case(item: Dict[str, Any], answer: str, steps: List[Dict[str, Any]]) -
 async def collect(model: str, limit: int, max_iterations: int, max_seconds: float, namespace_prefix: str, goals: List[Dict[str, Any]] = GOALS) -> Dict[str, Any]:
     work = Path(tempfile.mkdtemp(prefix="delentia-verifycases-"))
     repo = work / "repo"
-    for rel, text in ({**FILES, **FILES_C} if goals is GOALS_C else FILES).items():
+    for rel, text in ({**FILES, **FILES_C} if goals is GOALS_C else {**FILES, **FILES_D} if goals is GOALS_D else FILES).items():
         (repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (repo / rel).write_text(text, encoding="utf-8")
     run = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True)  # noqa: E731
@@ -219,12 +265,12 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-iterations", type=int, default=4)
     ap.add_argument("--max-seconds", type=float, default=150.0)
-    ap.add_argument("--set", choices=["a", "b", "c"], default="a", help="a = the development questions, b = the first holdout (collected after the rules were tuned), c = a second holdout with four new files (Round 65)")
+    ap.add_argument("--set", choices=["a", "b", "c", "d"], default="a", help="a, b, c = development data (b and c were holdouts when they were measured; all three were read), d = the holdout for the Round 66 changes (six new files)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     import logging
     logging.disable(logging.WARNING)
-    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, {"a": "collect", "b": "collectb", "c": "collectc"}[args.set], {"a": GOALS, "b": GOALS_B, "c": GOALS_C}[args.set]))
+    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, {"a": "collect", "b": "collectb", "c": "collectc", "d": "collectd"}[args.set], {"a": GOALS, "b": GOALS_B, "c": GOALS_C, "d": GOALS_D}[args.set]))
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n{report['episodes']} episodes, {report['kept_llm_finished']} ended with the model's own answer ({report['good']} good, {report['bad']} bad); "
           f"{report['trajectory_lines_recorded']} trajectory lines recorded")

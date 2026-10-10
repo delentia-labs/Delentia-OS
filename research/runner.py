@@ -149,7 +149,9 @@ def run_id_for(split: str, task_id: str, arm_label: str, rep: int, unit_budget: 
 
 class Harness:
     def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
-                 max_seconds: float = 90.0, tool_menu: str = "default") -> None:
+                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0) -> None:
+        self.memory_policy = memory_policy
+        self.preload_noise = preload_noise
         self.work = work
         self.max_seconds = max_seconds
         self.tool_menu = tool_menu
@@ -189,6 +191,7 @@ class Harness:
         if self.tool_menu == "ranked":                                         # the same menu for every arm of a run; recorded in every row
             os.environ["DELENTIA_TOOL_MENU"] = "ranked"
             os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
+        os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
         for name in ("DELENTIA_WARM_RECALL", "DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_STARTER_SKILLS", "DELENTIA_FDIA_POLICY", "DELENTIA_JURY_CONFIG",
                      "DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN",
                      "DELENTIA_PARALLEL_TOOLS", "DELENTIA_TOOL_MENU", "DELENTIA_API_TOKEN", "DELENTIA_OWNER_NOTIFY"):
@@ -231,6 +234,29 @@ class Harness:
             self.sink.close()
 
     # ----------------------------------------------------------------- episodes
+    def preload(self, namespace: str, seed: int) -> None:
+        """Round 66: unrelated facts, exact duplicates of one of them, and old episodes (conversation and event, low importance, back-dated), the same for every arm and policy of a run."""
+        if self.preload_noise <= 0:
+            return
+        import random
+        rng = random.Random(f"{seed}:{namespace}")
+        words = "invoice shipment depot courier pallet barcode manifest customs warehouse dock forklift route driver schedule".split()
+        persistence = self.kernel._persistence
+        first = ""
+        for i in range(self.preload_noise):
+            roll = rng.random()
+            if roll < 0.5 or not first:
+                content, kind, imp, days = " ".join(rng.choice(words) for _ in range(10)), rng.choice(["fact", "fact", "preference"]), round(rng.uniform(0.3, 0.7), 2), rng.randint(1, 60)
+                first = first or content
+            elif roll < 0.7:
+                content, kind, imp, days = first, "fact", 0.5, rng.randint(1, 60)                 # an exact duplicate
+            else:
+                content, kind, imp, days = " ".join(rng.choice(words) for _ in range(10)), rng.choice(["conversation", "event"]), round(rng.uniform(0.1, 0.5), 2), rng.randint(90, 400)
+            mid = f"noise_{namespace}_{i}"
+            persistence.save_memory(mid, namespace, kind, content, {}, imp)
+            with persistence._connect() as conn:
+                conn.execute("UPDATE memories SET created_at = ? WHERE id = ?", ((__import__("datetime").datetime.now(__import__("datetime").timezone.utc) - __import__("datetime").timedelta(days=days)).isoformat(), mid))
+
     def _audit_max(self) -> int:
         with self.kernel._persistence._connect() as conn:
             row = conn.execute("SELECT COALESCE(MAX(id), 0) FROM audit_trail").fetchone()
@@ -256,15 +282,23 @@ class Harness:
         if self.model is not None:
             self.model.reset()
         audit_mark = self._audit_max()
-        loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
-                                   persistence=self.kernel._persistence, mcp_server=self.mcp)
-        loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
-        loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
-        loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
-        if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
-            loop._max_episode_tokens = max(1, int(token_cap))
-        receipt = research_switches.apply(loop, arm)
-        tools = await loop._available_tools()
+        plain = bool(getattr(arm, "plain_loop", 0))
+        if plain:                                                                # Round 66: not Delentia's loop at all
+            from research.plain_agent import PlainAgent
+            loop = PlainAgent(self.mcp, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
+                              max_tokens=max(1, int(token_cap)) if token_cap is not None else None)
+            receipt = arm.to_dict()
+            tools = [{"name": t.name} for t in await self.mcp.list_tools()]
+        else:
+            loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
+                                       persistence=self.kernel._persistence, mcp_server=self.mcp)
+            loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
+            loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
+            loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
+            if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
+                loop._max_episode_tokens = max(1, int(token_cap))
+            receipt = research_switches.apply(loop, arm)
+            tools = await loop._available_tools()
         started = time.perf_counter()
         error = ""
         try:
@@ -290,7 +324,12 @@ class Harness:
         graded = evaluate.grade(oracle, outcome)
         gate_rows = self._gate_rows(audit_mark, namespace)
         prior = (int(task["episode_index"]) - 1) if task.get("episode_index") else 0
-        checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
+        if plain:
+            with self.kernel._persistence._connect() as conn:
+                governed = conn.execute("SELECT COUNT(*) FROM audit_trail WHERE id > ? AND entity_type LIKE 'governed_loop%' AND actor = ?", (audit_mark, namespace)).fetchone()[0]
+            checks = research_switches.plain_loop_checks(int(governed), result, [t["name"] for t in tools])
+        else:
+            checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
         cost = result.get("cost") or {}
         spent = float(cost.get("cost_usd") or 0.0)
         self.spent_usd += spent
@@ -316,17 +355,19 @@ class Harness:
             "attack_present": graded["attack_present"], "attack_success": graded["attack_success"], "false_success_claim": graded["false_success_claim"],
             "truthful": graded["truthful"], "grader_detail": graded["detail"],
             "memory_items_in_prompt": len(getattr(loop, "_episode_memory_scores", []) or []), "skills_injected": getattr(loop, "_episode_skills_injected", 0),
-            "skill_extracted": bool(result.get("skill_extracted")), "cache_hit": result.get("stopped_reason") == "warm_recall",
+            "skill_extracted": bool(result.get("skill_extracted")), "cache_hit": result.get("stopped_reason") == "warm_recall", "plain_loop": int(plain), "memory_policy": self.memory_policy, "preload_noise": self.preload_noise,
             "manipulation_checks": checks, "manipulation_ok": all(c["ok"] for c in checks),
             "exclusion_reason": f"infrastructure: {error}" if error else None,
         }
 
     async def run_with_retry(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        from research import failure_taxonomy
         row = await self.run_episode(*args, **kwargs)
         if row["exclusion_reason"]:                                              # one retry for an infrastructure fault (protocol: infrastructure_retries = 1)
             retry = await self.run_episode(*args, **kwargs)
             retry["retried_after"] = row["exclusion_reason"]
-            return retry
+            row = retry
+        row["failure_class"] = failure_taxonomy.classify(row)                    # Round 66: one label per failed episode, assigned by rules (research/failure_taxonomy.py)
         return row
 
 
@@ -339,6 +380,13 @@ def _arms(spec: str) -> List[Any]:
     if spec == "baselines":                                                    # G (raw recent history) and GP (generic plan-act-check + generic retrieval)
         from rct_control_plane.research_switches import BASELINES
         return list(BASELINES)
+    if spec == "plain":                                                        # PL: not Delentia's loop (research/plain_agent.py)
+        return [Treatment.parse("PL")]
+    if spec == "all+plain":
+        return [*ALL_ARMS, Treatment.parse("PL")]
+    if spec == "all+baselines+plain":
+        from rct_control_plane.research_switches import BASELINES
+        return [*ALL_ARMS, *BASELINES, Treatment.parse("PL")]
     if spec == "all+baselines":
         from rct_control_plane.research_switches import BASELINES
         return [*ALL_ARMS, *BASELINES]
@@ -379,7 +427,8 @@ async def main_async(args: argparse.Namespace) -> int:
     arms = _arms(args.arms)
     static, trajs = _load_units(args.split, args.only, args.domain)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
-    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu)
+    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu,
+                      memory_policy=args.memory_policy, preload_noise=args.preload_noise)
     harness.start()
     rng = random.Random(args.seed)
     written = failures = 0
@@ -405,6 +454,7 @@ async def main_async(args: argparse.Namespace) -> int:
                     skill_db = str(work / "skills" / f"{namespace}.db")
                     Path(skill_db).parent.mkdir(parents=True, exist_ok=True)
                     remaining = cap                                          # equal-total-token track: one budget per (unit, arm), spent across the unit's episodes
+                    harness.preload(namespace, args.seed)
                     for task in episodes:
                         row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed, token_cap=remaining, unit_budget=cap)
                         if remaining is not None:
@@ -448,6 +498,8 @@ def main() -> int:
     parser.add_argument("--domain", default="quotes", choices=["quotes", "tickets", "all"], help="which task domain to run (quotes = the first domain, tickets = support triage)")
     parser.add_argument("--unit-token-budget", type=int, default=0, help="track B (equal total tokens): every arm gets the same token budget per task or trajectory; "
                         "0 = track A, equal configuration with no extra cap")
+    parser.add_argument("--memory-policy", default="none", choices=["none", "dedupe", "expire"], help="Round 66: what recall may offer the model (DELENTIA_MEMORY_POLICY); the same for every arm of a run")
+    parser.add_argument("--preload-noise", type=int, default=0, help="Round 66: store this many unrelated and duplicate memories (some of them old episodes) for each person before their first episode, to give the policies something to cut")
     parser.add_argument("--max-seconds", type=float, default=90.0, help="wall-clock cap per episode (a CPU-bound local model needs far more than a hosted one)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261008)

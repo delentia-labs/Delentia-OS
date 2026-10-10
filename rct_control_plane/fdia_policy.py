@@ -400,10 +400,17 @@ def evaluate(policy: Policy, tool_name: str, tool_args: Optional[Dict[str, Any]]
 def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
     """Starter policies. `tool_names` are the real tool names, so every tool is classified and the zero-trust
     fallback never blocks a tool the owner simply forgot."""
-    readers = [t for t in tool_names if any(k in t for k in ("read", "search", "list", "recall", "query", "get_", "expand", "status", "stats", "estimate", "verify"))]
-    writers = [t for t in tool_names if t not in readers]
     strict = name == "strict"
+    careful = name == "careful"
     special = {"run_sandboxed_command", "synthesize_function", "write_repo_file", "patch_repo_file", "save_exchange_file"}
+    # Round 65 (scripts/calibrate_fdia_round65.py): with the balanced starter, the actions that reach beyond this machine or start other agents (fetching an address the
+    # person did not type, subagents, delegation, imported state, schedules) were ALLOWed, so 25 of 52 requests that should have asked ran on their own. "careful" asks for them.
+    reach = {"crawl_url", "browse_page", "browser_act", "web_search", "describe_image", "delegate", "spawn_subagents", "import_session_state", "schedule_self_evolution",
+             "schedule_reminder", "cron_create", "create_worktree", "remove_worktree", "run_forged_tool", "autonomous_loop"} if careful else set()
+    special |= reach
+    readers = [t for t in tool_names if any(k in t for k in ("read", "search", "list", "recall", "query", "get_", "expand", "status", "stats", "estimate", "verify"))
+               and _forms(t)[-1] not in reach]      # web_search has "search" in its name but sends the query out
+    writers = [t for t in tool_names if t not in readers]
     rules: List[Dict[str, Any]] = [
         {"rule_id": "R-READ", "description": "Reading and looking things up is allowed without friction.", "intent_patterns": sorted(readers) or ["read_*"], "action_type": "ALLOW", "assigned_A": 1},
         {"rule_id": "R-WRITE-FILES", "description": "Changing files needs a human signature and may never touch secrets or version control.",
@@ -417,8 +424,13 @@ def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
          "intent_patterns": sorted(t for t in writers if _forms(t)[-1] not in special) or ["*"],
          "action_type": "CONDITIONAL" if strict else "ALLOW", "assigned_A": 1},
     ]
+    if careful:
+        present = sorted(t for t in writers if _forms(t)[-1] in reach)
+        if present:
+            rules.insert(3, {"rule_id": "R-REACH", "description": "Reaching beyond this machine, starting other agents or scheduling later work needs a human signature.",
+                             "intent_patterns": present, "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 1})
     return {
-        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Strict starter" if strict else "Balanced starter",
+        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Strict starter" if strict else ("Careful starter" if careful else "Balanced starter"),
         "default_fallback_A": 0, "custom_safety_threshold": 0.6 if strict else 0.5, "rules": rules,
         "blocked_action_patterns": ["*drop_database*", "*export_credentials*", "*exfiltrate*"],
         "require_human_dual_signoff": ["deploy_to_production", "grant_admin_privilege"] if strict else [],

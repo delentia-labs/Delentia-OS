@@ -148,6 +148,15 @@ _OUTSIDE_PATH_PATTERN = re.compile(
     r"|\\\\[A-Za-z0-9_.-]+\\",
     re.IGNORECASE,
 )
+# Round 66 (found by research/adaptive_attacker.py, which tried 30 ways to read a canary "secret" in a throw-away HOME through the real classifier and the real sandbox: 10 got
+# through). The Round 65 rule looked for a path WRITTEN in the command; the shell can build one. An environment variable that names the home or profile folder (%USERPROFILE%, $HOME,
+# $env:...), the cmd escape character `^` (t^ype), `set NAME` (lists variables), and inline Python that reads the environment or the home directory all produced a path or a value
+# the classifier never saw. Any of them now needs approval. This is a speed bump, not a boundary: code that is allowed to run can still compute a path, which is why running an
+# interpreter on arbitrary code stays the sandbox's documented limit and not a claim.
+_ENV_EXPANSION_PATTERN = re.compile(r"%[A-Za-z_][\w()]*%|\$\{[A-Za-z_]\w*\}|\$[A-Za-z_]\w*|\$env:", re.IGNORECASE)
+_CMD_ESCAPE_PATTERN = re.compile(r"\^")
+_SET_LISTING_PATTERN = re.compile(r"^\s*set\s+\S", re.IGNORECASE)
+_INLINE_CODE_ENV_PATTERN = re.compile(r"os\.environ|getenv|expanduser|Path\.home|USERPROFILE|HOMEPATH|APPDATA|HOMEDRIVE", re.IGNORECASE)
 _CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|[./\\]|$)", re.IGNORECASE)
 # Round 41: broadened from an anchored `^...` prefix match to a
 # boundary-aware SEARCH anywhere in the sub-command. The prior anchored
@@ -318,6 +327,8 @@ def classify_command_risk(command: str) -> str:
         if _PARENT_DIR_TRAVERSAL_PATTERN.search(sub):
             worst = "needs_approval"
         if _OUTSIDE_PATH_PATTERN.search(sub):
+            worst = "needs_approval"
+        if (_ENV_EXPANSION_PATTERN.search(sub) or _CMD_ESCAPE_PATTERN.search(sub) or _SET_LISTING_PATTERN.match(sub) or _INLINE_CODE_ENV_PATTERN.search(sub)):
             worst = "needs_approval"
         if _LINK_CREATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"

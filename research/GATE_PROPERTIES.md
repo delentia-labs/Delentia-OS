@@ -19,6 +19,7 @@ When authorization is zero (a denied command, an unsafe path, a tool the owner n
   - `test_gate_properties_round65_real.py::test_p1_with_no_trusted_approver_nothing_can_ever_be_approved`
   - `test_fdia_policy_loop_round54_real.py::test_zero_trust_a_tool_the_owner_never_registered_is_refused_and_not_dispatched`
   - `test_fdia_policy_loop_round54_real.py::test_a_broken_policy_file_refuses_every_tool_including_reads`
+  - `test_adversarial_round66_real.py::test_the_adaptive_attacker_gets_nowhere_against_the_loop_and_the_classifier`
 
 ### P2 - An invalid signature blocks
 
@@ -57,6 +58,8 @@ A request nobody decided in 7 days cannot be approved; an approval not used in 2
   - `test_gate_properties_round65_real.py::test_p4_the_windows_can_be_changed_or_switched_off_and_a_bad_value_never_means_forever`
   - `test_gate_properties_round65_real.py::test_p4_removing_an_approver_key_revokes_what_it_signed_and_has_not_run`
   - `test_gate_properties_round65_real.py::test_p4_one_revoked_signer_of_two_voids_the_whole_approval`
+  - `test_adversarial_round66_real.py::test_the_real_approval_flow_agrees_with_the_spec_on_every_short_sequence`
+  - `test_adversarial_round66_real.py::test_the_model_check_catches_a_bug_injected_into_the_real_code`
   - `test_identity_and_review_round54_real.py::test_a_revoked_token_stops_working_at_once`
 
 ### P5 - An old approval is void for a changed payload
@@ -145,6 +148,6 @@ An approved action cancelled mid-run stays claimed and cannot be claimed again; 
 
 ## Not yet done
 
-- The approval flow has not been model-checked as a state machine (Protocol section 13 suggests it for that part).
-- Adaptive attackers (Protocol section 12) are not in this table: the attacks here are fixed scripts.
+- The approval flow is model-checked on BOUNDED sequences only (research/approval_model_check.py: every sequence up to the stated length plus a seeded random sample of longer ones, against a written specification, with four injected bugs that it must catch); it is not a proof.
+- The adaptive attacker (research/adaptive_attacker.py) has a menu I wrote: 0 of 98 attempts got through after the fixes it found, which bounds nothing about attackers whose menu I did not think of.
 - Properties are checked on the in-process loop with a recording tool server; the same properties against a deployed host have not been run.
