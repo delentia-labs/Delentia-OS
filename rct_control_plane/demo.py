@@ -301,6 +301,55 @@ async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_
     return {"result": result, "report": report, "report_path": str(out), "changed": changed, "audit": audit}
 
 
+# ----------------------------------------------------------------- sharing a run
+REDACTIONS = (
+    (re.compile(r"\b(sk-[A-Za-z0-9_\-]{16,}|sk-or-[A-Za-z0-9_\-]{16,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{12,}|xox[abp]-[A-Za-z0-9\-]{10,})"), "[secret]"),
+    (re.compile(r"(?i)\b(bearer|authorization:?)\s+[A-Za-z0-9._\-]{12,}"), r"\1 [secret]"),
+    (re.compile(r"(?i)\b(api[_-]?key|token|password|secret)\s*[=:]\s*\S{6,}"), r"\1=[secret]"),
+    (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[email]"),
+    (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "[ip]"),
+)
+
+
+def redact(text: str, root: Optional[Path] = None) -> tuple:
+    """(redacted text, how many replacements). Removes what must not travel with a screenshot or a report: key-shaped strings, bearer values, passwords, e-mail addresses, IP
+    addresses, and the owner's home folder and user name in every path. It does not understand meaning: read the result before publishing it."""
+    count = 0
+    home = str(Path.home())
+    for needle, label in ((str(root) if root else "", "<demo>"), (home, "~"), (os.environ.get("USERNAME") or os.environ.get("USER") or "", "<user>")):
+        if needle and len(needle) > 2:
+            for variant in {needle, needle.replace("\\", "/")}:
+                count += text.count(variant)
+                text = text.replace(variant, label)
+    for pattern, repl in REDACTIONS:
+        text, n = pattern.subn(repl, text)
+        count += n
+    return text, count
+
+
+def export_trace(root: Path, *, last: int = 3, model: str = "") -> Dict[str, Any]:
+    """The newest `last` result files of the demo as one redacted document with a header (date, commit, model, what was removed), for a video description, an issue or a report."""
+    p = paths(root)
+    files = sorted(p["results"].glob("*.md"))[-max(1, last):]
+    if not files:
+        raise SystemExit("ยังไม่มีไฟล์ผลลัพธ์ — รัน `delentia demo run compare` ก่อน")
+    import subprocess
+    commit = ""
+    try:
+        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=str(Path(__file__).resolve().parent.parent), timeout=10).stdout.strip()
+    except Exception:                                   # noqa: BLE001 - an installed copy has no git history: the header just says so
+        commit = ""
+    body, removed = [], 0
+    for f in files:
+        clean, n = redact(f.read_text(encoding="utf-8"), root)
+        removed += n
+        body.append(f"<!-- {f.name} -->\n{clean}")
+    header = (f"# Delentia demo trace (redacted)\n\n- exported: {time.strftime('%Y-%m-%d %H:%M:%S')}\n- code version: {commit or 'unknown (not a git checkout)'}\n"
+              f"- model: {model or os.environ.get('DELENTIA_LLM_MODEL') or 'as set by `delentia model show`'}\n- files: {len(files)}; replacements made: {removed}\n"
+              "- This trace shows ONE run each. It is not a benchmark. Check it by eye before you publish it.\n\n---\n\n")
+    return {"text": header + "\n\n---\n\n".join(body), "files": [f.name for f in files], "replacements": removed}
+
+
 def status(root: Path) -> Dict[str, Any]:
     p = configure_env(root)
     from rct_control_plane import approvals

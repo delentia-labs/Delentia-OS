@@ -105,14 +105,15 @@ async def delentia_run_sandboxed_command(command: str, timeout_seconds: float = 
 
 @mcp.tool()
 async def delentia_assemble_nodes(query: str, node_names: list[str]) -> dict:
-    """Real Nodal Assembly: dispatch the named real kernel algorithms
+    """Runs the kernel's own built-in analysis algorithms by name; it cannot read files or work on your documents, so do not use it to compare or sum what a file says (read the file with
+    delentia_read_repo_file and answer yourself). Real Nodal Assembly: dispatch the named real kernel algorithms
     concurrently, merge their real results into one synthesized answer.
     node_names must be from the real allowlist (not arbitrary method
     names) - this is a security boundary, not a convenience shortcut."""
     nodes: List[Tuple[str, Callable, tuple, dict]] = []
     for name in node_names:
         if name not in _ALLOWED_ASSEMBLY_NODES:
-            return {"error": f"'{name}' is not an allowed assembly node"}
+            return {"error": f"'{name}' is not an allowed assembly node", "allowed_nodes": sorted(_ALLOWED_ASSEMBLY_NODES)}     # Round 64: a model that invents names (extract_prices...) is told the real ones
         fn, args, kwargs = _ALLOWED_ASSEMBLY_NODES[name](_kernel, query)
         nodes.append((name, fn, args, kwargs))
     answer = await assemble(query, nodes, ChainMerger(), AnswerSynthesizer())

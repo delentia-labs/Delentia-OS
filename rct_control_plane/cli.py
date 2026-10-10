@@ -4415,6 +4415,21 @@ def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max
     click.echo(f"ไฟล์ผล: {out['report_path']}")
 
 
+@demo_group.command("export-trace")
+@_DEMO_ROOT_OPTION
+@click.option("--last", default=3, show_default=True, help="How many of the newest result files to include.")
+@click.option("--out", "out_path", default=None, type=click.Path(dir_okay=False), help="Write to this file instead of the screen.")
+def demo_export_trace(root: Optional[str], last: int, out_path: Optional[str]) -> None:
+    """The newest runs as ONE document with keys, e-mail addresses, IP addresses and your home folder removed - for a video description, an issue or a report. Read it before you publish."""
+    from rct_control_plane import demo as demo_module
+    out = demo_module.export_trace(_demo_root(root), last=last)
+    if out_path:
+        Path(out_path).write_text(out["text"], encoding="utf-8")
+        click.echo(f"เขียนแล้ว: {out_path} ({len(out['files'])} ไฟล์, แทนที่ {out['replacements']} จุด) — อ่านก่อนเผยแพร่")
+    else:
+        click.echo(out["text"])
+
+
 @demo_group.command("status")
 @_DEMO_ROOT_OPTION
 def demo_status(root: Optional[str]) -> None:

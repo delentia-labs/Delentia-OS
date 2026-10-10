@@ -42,34 +42,71 @@ class ResearchModeError(RuntimeError):
 GENERIC_HISTORY_TURNS = 4
 
 
+# Sub-ablations (protocol section 7), each a change to ONE part of the full system A111:
+#   RP  RCT planning only        the RCT-7 plan is in the prompt, the end-of-episode check is the generic comparator
+#   RV  RCT verification only    no plan anywhere, the end-of-episode check is the RCT-7 step 7 + grounding check
+#   FS  simple evidence gate     the D^I x A number is replaced by "block a risky tool when the evidence D is under a minimum" (same D, same A, same floor):
+#                                the question is whether the equation earns its place over a threshold on D alone (protocol section 6, b vs c)
+#   MW  memory + warm cache      verified answers of the same goal are re-used without a model call (exact caching, kept out of M on purpose)
+VARIANTS = ("RP", "RV", "FS", "MW")
+SIMPLE_D_DEFAULT = 0.5      # the smallest D the numeric gate itself would accept at I = 1; chosen on the validation split before any sealed run
+
+
 @dataclass(frozen=True)
 class Treatment:
     R: int
     F: int
     M: int
     history: int = 0            # earlier turns of the same conversation shown raw (0 in every factorial arm; GENERIC_HISTORY_TURNS in the baseline G)
+    variant: str = ""           # one of VARIANTS, always on top of A111
 
     @property
     def label(self) -> str:
-        return "G" if self.history else f"A{self.R}{self.F}{self.M}"
+        if self.history:
+            return "G"
+        return f"A{self.R}{self.F}{self.M}" + (f"+{self.variant}" if self.variant else "")
+
+    @property
+    def plan(self) -> int:
+        return 0 if self.variant == "RV" else (1 if self.variant == "RP" else self.R)
+
+    @property
+    def verify(self) -> int:
+        return 0 if self.variant == "RP" else (1 if self.variant == "RV" else self.R)
+
+    @property
+    def simple_d(self) -> float:
+        return SIMPLE_D_DEFAULT if self.variant == "FS" else 0.0
+
+    @property
+    def warm(self) -> bool:
+        return self.variant == "MW"
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "arm": self.label}
+        return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "variant": self.variant, "arm": self.label}
 
     @staticmethod
     def parse(label: str) -> "Treatment":
         text = (label or "").strip().upper()
         if text == "G":
             return BASELINE_G
+        variant = ""
+        if "+" in text:
+            text, variant = text.split("+", 1)
+            if variant not in VARIANTS:
+                raise ValueError(f"unknown variant {variant!r}; use one of {VARIANTS}")
+            if text != "A111":
+                raise ValueError("a sub-ablation is a change to the full system: write it as A111+RP, A111+RV, A111+FS or A111+MW")
         if text.startswith("A"):
             text = text[1:]
         if len(text) != 3 or any(c not in "01" for c in text):
             raise ValueError(f"an arm is written like A101 (R, F, M), got {label!r}")
-        return Treatment(int(text[0]), int(text[1]), int(text[2]))
+        return Treatment(int(text[0]), int(text[1]), int(text[2]), variant=variant)
 
 
 ALL_ARMS = tuple(Treatment(r, f, m) for r in (0, 1) for f in (0, 1) for m in (0, 1))
 BASELINE_G = Treatment(0, 0, 0, history=GENERIC_HISTORY_TURNS)
+SUB_ABLATIONS = tuple(Treatment(1, 1, 1, variant=v) for v in VARIANTS)
 
 
 def research_mode_enabled() -> bool:
@@ -106,7 +143,9 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
                                 f"not {getattr(loop, 'namespace', None)!r}")
     loop._research = treatment
     loop._conversation_turns = int(treatment.history)        # explicit in every arm, so an environment setting cannot give a factorial arm raw history
-    loop._rct7_in_prompt = bool(treatment.R)
+    loop._rct7_in_prompt = bool(treatment.plan)
+    if treatment.warm:
+        loop._warm_recall = True
     if not treatment.F:
         loop._fdia_threshold = 0.0          # F < 0 can never happen, so the number no longer blocks; A <= 0 still does
     if not treatment.M:
@@ -125,6 +164,30 @@ def active(loop: Any) -> Optional[Treatment]:
     return getattr(loop, "_research", None)
 
 
+def _variant_checks(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]], treatment: Treatment) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+
+    def add(name: str, ok: bool, detail: Any = None) -> None:
+        checks.append({"check": name, "ok": bool(ok), "detail": None if ok else detail})
+
+    steps = list(getattr(loop, "_episode_rct7_steps", []) or [])
+    context = getattr(loop, "_episode_context_text", "") or ""
+    verification = result.get("intent_verification") or {}
+    if treatment.variant == "RP":
+        add("RP: the RCT-7 plan is in the prompt", bool(steps) and "RCT-7" in context, {"steps": len(steps)})
+        add("RP: the end check is the generic comparator", verification.get("comparator") == "generic" or not verification.get("applicable", True), verification)
+    elif treatment.variant == "RV":
+        add("RV: no plan was built or shown", not steps and "RCT-7" not in context, {"steps": len(steps)})
+        add("RV: the end check is the RCT-7 check", verification.get("comparator") != "generic", verification)
+    elif treatment.variant == "FS":
+        add("FS: every gate decision used the simple evidence rule", all(r.get("research_rule") == "simple_d" for r in gate_rows), [r.get("research_rule") for r in gate_rows])
+        add("FS: the rest of the full system is on (plan, memory)", bool(steps) and bool(getattr(loop, "_memory_in_prompt", False)), {"steps": len(steps)})
+    elif treatment.variant == "MW":
+        add("MW: warm recall is switched on", bool(getattr(loop, "_warm_recall", False)))
+        add("MW: memory is on", bool(getattr(loop, "_memory_in_prompt", False)))
+    return checks
+
+
 def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str, Any]], prior_episodes: Optional[int] = None) -> List[Dict[str, Any]]:
     """After one episode: did each factor behave as its arm says? `gate_rows` are the `governed_loop_fdia_gate`
     audit rows of this episode (their `changes` dicts); `prior_episodes` is how many earlier episodes the same conversation has
@@ -132,6 +195,8 @@ def manipulation_check(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[s
     treatment = active(loop)
     if treatment is None:
         return [{"check": "a research treatment was applied", "ok": False, "detail": "loop has no treatment"}]
+    if treatment.variant:
+        return _variant_checks(loop, result, gate_rows, treatment)
     checks: List[Dict[str, Any]] = []
 
     def add(name: str, ok: bool, detail: Any = None) -> None:

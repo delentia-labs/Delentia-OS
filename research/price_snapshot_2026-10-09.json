@@ -1,0 +1,79 @@
+{
+  "fetched": "2026-10-09",
+  "source": "https://openrouter.ai/api/v1/models (public catalogue, no key)",
+  "unit": "USD per 1M tokens",
+  "models": {
+    "anthropic/claude-haiku-5.5": {
+      "input": 0.1,
+      "output": 0.5,
+      "cache_read": 0.01,
+      "cache_write": 0.125,
+      "context": 1000000,
+      "tools": true
+    },
+    "openai/gpt-5-nano": {
+      "input": 0.05,
+      "output": 0.4,
+      "cache_read": 0.005,
+      "cache_write": 0.0,
+      "context": 400000,
+      "tools": true
+    },
+    "~deepseek/deepseek-v4-flash-latest": {
+      "input": 0.0144,
+      "output": 0.1655,
+      "cache_read": 0.0096,
+      "cache_write": 0.0,
+      "context": 1048576,
+      "tools": true
+    },
+    "google/gemini-2.5-flash": {
+      "input": 0.3,
+      "output": 2.5,
+      "cache_read": 0.03,
+      "cache_write": 0.0833,
+      "context": 1048576,
+      "tools": true
+    },
+    "qwen/qwen3.7-flash": {
+      "input": 0.03,
+      "output": 0.13,
+      "cache_read": 0.006,
+      "cache_write": 0.038,
+      "context": 1000000,
+      "tools": true
+    },
+    "openai/gpt-oss-120b": {
+      "input": 0.037,
+      "output": 0.17,
+      "cache_read": 0.0,
+      "cache_write": 0.0,
+      "context": 131072,
+      "tools": true
+    },
+    "anthropic/claude-sonnet-5.5": {
+      "input": 2.0,
+      "output": 10.0,
+      "cache_read": 0.1,
+      "cache_write": 2.5,
+      "context": 1000000,
+      "tools": true
+    },
+    "nvidia/nemotron-3-super-120b-a12b:free": {
+      "input": 0.0,
+      "output": 0.0,
+      "cache_read": 0.0,
+      "cache_write": 0.0,
+      "context": 262144,
+      "tools": true
+    },
+    "nvidia/nemotron-3-ultra-550b-a55b:free": {
+      "input": 0.0,
+      "output": 0.0,
+      "cache_read": 0.0,
+      "cache_write": 0.0,
+      "context": 1000000,
+      "tools": true
+    }
+  }
+}

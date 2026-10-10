@@ -1,0 +1,563 @@
+{
+  "tokenizer": "tiktoken cl100k_base (approximate)",
+  "tools_in_registry": 48,
+  "layouts": {
+    "current": {
+      "prompt_tokens": 7637,
+      "identical_prefix_tokens_across_two_goals": 10,
+      "share_reusable_across_episodes": 0.001
+    },
+    "cache_friendly": {
+      "prompt_tokens": 7673,
+      "identical_prefix_tokens_across_two_goals": 7520,
+      "share_reusable_across_episodes": 0.98
+    }
+  },
+  "one_prompt": {
+    "full_menu_prompt": 7637,
+    "compact_ranked_prompt": 1023,
+    "menu_only_full": 7153,
+    "menu_only_compact": 539,
+    "everything_but_the_menu": 484,
+    "menu_share_of_full_prompt": 0.937,
+    "tools_in_compact_menu": 11
+  },
+  "episodes": {
+    "demo (3 small files, answer)": {
+      "menu=full history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          7800,
+          7968,
+          8139
+        ],
+        "episode_prompt_tokens": 31544,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7469,
+          7637
+        ],
+        "share_cacheable_after_first_call": 0.937,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=full history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          7800,
+          7968,
+          8139
+        ],
+        "episode_prompt_tokens": 31544,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7469,
+          7637
+        ],
+        "share_cacheable_after_first_call": 0.937,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=ranked history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1186,
+          1354,
+          1525
+        ],
+        "episode_prompt_tokens": 5088,
+        "prefix_identical_to_previous_call": [
+          687,
+          855,
+          1023
+        ],
+        "share_cacheable_after_first_call": 0.631,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=ranked history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1186,
+          1354,
+          1525
+        ],
+        "episode_prompt_tokens": 5088,
+        "prefix_identical_to_previous_call": [
+          687,
+          855,
+          1023
+        ],
+        "share_cacheable_after_first_call": 0.631,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=full history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          7800,
+          7968,
+          8139
+        ],
+        "episode_prompt_tokens": 31544,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7469,
+          7637
+        ],
+        "share_cacheable_after_first_call": 0.937,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=full history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          7800,
+          7968,
+          8139
+        ],
+        "episode_prompt_tokens": 31544,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7469,
+          7637
+        ],
+        "share_cacheable_after_first_call": 0.937,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=ranked history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1186,
+          1354,
+          1525
+        ],
+        "episode_prompt_tokens": 5088,
+        "prefix_identical_to_previous_call": [
+          687,
+          855,
+          1023
+        ],
+        "share_cacheable_after_first_call": 0.631,
+        "tool_output_tokens_as_shown": 441
+      },
+      "menu=ranked history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1186,
+          1354,
+          1525
+        ],
+        "episode_prompt_tokens": 5088,
+        "prefix_identical_to_previous_call": [
+          687,
+          855,
+          1023
+        ],
+        "share_cacheable_after_first_call": 0.631,
+        "tool_output_tokens_as_shown": 441
+      }
+    },
+    "larger documents (3 files of ~30 KB each)": {
+      "menu=full history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          20680,
+          33728,
+          46776
+        ],
+        "episode_prompt_tokens": 108821,
+        "prefix_identical_to_previous_call": [
+          7301,
+          20349,
+          33397
+        ],
+        "share_cacheable_after_first_call": 0.603,
+        "tool_output_tokens_as_shown": 39054
+      },
+      "menu=full history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          20680,
+          33728,
+          46776
+        ],
+        "episode_prompt_tokens": 108821,
+        "prefix_identical_to_previous_call": [
+          7301,
+          20349,
+          33397
+        ],
+        "share_cacheable_after_first_call": 0.603,
+        "tool_output_tokens_as_shown": 39054
+      },
+      "menu=ranked history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          14066,
+          27114,
+          40162
+        ],
+        "episode_prompt_tokens": 82365,
+        "prefix_identical_to_previous_call": [
+          687,
+          13735,
+          26783
+        ],
+        "share_cacheable_after_first_call": 0.507,
+        "tool_output_tokens_as_shown": 39054
+      },
+      "menu=ranked history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          14066,
+          27114,
+          40162
+        ],
+        "episode_prompt_tokens": 82365,
+        "prefix_identical_to_previous_call": [
+          687,
+          13735,
+          26783
+        ],
+        "share_cacheable_after_first_call": 0.507,
+        "tool_output_tokens_as_shown": 39054
+      },
+      "menu=full history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          8131,
+          8629,
+          9126
+        ],
+        "episode_prompt_tokens": 33523,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7800,
+          8298
+        ],
+        "share_cacheable_after_first_call": 0.904,
+        "tool_output_tokens_as_shown": 1404
+      },
+      "menu=full history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          8131,
+          8629,
+          9126
+        ],
+        "episode_prompt_tokens": 33523,
+        "prefix_identical_to_previous_call": [
+          7301,
+          7800,
+          8298
+        ],
+        "share_cacheable_after_first_call": 0.904,
+        "tool_output_tokens_as_shown": 1404
+      },
+      "menu=ranked history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1517,
+          2015,
+          2512
+        ],
+        "episode_prompt_tokens": 7067,
+        "prefix_identical_to_previous_call": [
+          687,
+          1186,
+          1684
+        ],
+        "share_cacheable_after_first_call": 0.589,
+        "tool_output_tokens_as_shown": 1404
+      },
+      "menu=ranked history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          1517,
+          2015,
+          2512
+        ],
+        "episode_prompt_tokens": 7067,
+        "prefix_identical_to_previous_call": [
+          687,
+          1186,
+          1684
+        ],
+        "share_cacheable_after_first_call": 0.589,
+        "tool_output_tokens_as_shown": 1404
+      }
+    },
+    "natural prose (3 real documents of 30 KB: README, whitepaper EN, whitepaper TH)": {
+      "menu=full history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          16911,
+          22868,
+          35997
+        ],
+        "episode_prompt_tokens": 83413,
+        "prefix_identical_to_previous_call": [
+          7301,
+          16580,
+          22537
+        ],
+        "share_cacheable_after_first_call": 0.613,
+        "tool_output_tokens_as_shown": 28229
+      },
+      "menu=full history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          16911,
+          22868,
+          35997
+        ],
+        "episode_prompt_tokens": 83413,
+        "prefix_identical_to_previous_call": [
+          7301,
+          16580,
+          22537
+        ],
+        "share_cacheable_after_first_call": 0.613,
+        "tool_output_tokens_as_shown": 28229
+      },
+      "menu=ranked history=plain output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          10297,
+          16254,
+          29383
+        ],
+        "episode_prompt_tokens": 56957,
+        "prefix_identical_to_previous_call": [
+          687,
+          9966,
+          15923
+        ],
+        "share_cacheable_after_first_call": 0.475,
+        "tool_output_tokens_as_shown": 28229
+      },
+      "menu=ranked history=delta output=raw": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          10297,
+          16254,
+          29383
+        ],
+        "episode_prompt_tokens": 56957,
+        "prefix_identical_to_previous_call": [
+          687,
+          9966,
+          15923
+        ],
+        "share_cacheable_after_first_call": 0.475,
+        "tool_output_tokens_as_shown": 28229
+      },
+      "menu=full history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          9883,
+          11142,
+          14811
+        ],
+        "episode_prompt_tokens": 43473,
+        "prefix_identical_to_previous_call": [
+          7301,
+          9552,
+          10811
+        ],
+        "share_cacheable_after_first_call": 0.772,
+        "tool_output_tokens_as_shown": 7062
+      },
+      "menu=full history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          7637,
+          9883,
+          11142,
+          14811
+        ],
+        "episode_prompt_tokens": 43473,
+        "prefix_identical_to_previous_call": [
+          7301,
+          9552,
+          10811
+        ],
+        "share_cacheable_after_first_call": 0.772,
+        "tool_output_tokens_as_shown": 7062
+      },
+      "menu=ranked history=plain output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          3269,
+          4528,
+          8197
+        ],
+        "episode_prompt_tokens": 17017,
+        "prefix_identical_to_previous_call": [
+          687,
+          2938,
+          4197
+        ],
+        "share_cacheable_after_first_call": 0.489,
+        "tool_output_tokens_as_shown": 7062
+      },
+      "menu=ranked history=delta output=compressed": {
+        "calls": 4,
+        "prompt_tokens_per_call": [
+          1023,
+          3269,
+          4528,
+          8197
+        ],
+        "episode_prompt_tokens": 17017,
+        "prefix_identical_to_previous_call": [
+          687,
+          2938,
+          4197
+        ],
+        "share_cacheable_after_first_call": 0.489,
+        "tool_output_tokens_as_shown": 7062
+      }
+    },
+    "search then read (30 matches, then one file)": {
+      "menu=full history=plain output=raw": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          7637,
+          8992,
+          22039
+        ],
+        "episode_prompt_tokens": 38668,
+        "prefix_identical_to_previous_call": [
+          7301,
+          8660
+        ],
+        "share_cacheable_after_first_call": 0.514,
+        "tool_output_tokens_as_shown": 14342
+      },
+      "menu=full history=delta output=raw": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          7637,
+          8992,
+          22039
+        ],
+        "episode_prompt_tokens": 38668,
+        "prefix_identical_to_previous_call": [
+          7301,
+          8660
+        ],
+        "share_cacheable_after_first_call": 0.514,
+        "tool_output_tokens_as_shown": 14342
+      },
+      "menu=ranked history=plain output=raw": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          1023,
+          2378,
+          15425
+        ],
+        "episode_prompt_tokens": 18826,
+        "prefix_identical_to_previous_call": [
+          687,
+          2046
+        ],
+        "share_cacheable_after_first_call": 0.154,
+        "tool_output_tokens_as_shown": 14342
+      },
+      "menu=ranked history=delta output=raw": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          1023,
+          2378,
+          15425
+        ],
+        "episode_prompt_tokens": 18826,
+        "prefix_identical_to_previous_call": [
+          687,
+          2046
+        ],
+        "share_cacheable_after_first_call": 0.154,
+        "tool_output_tokens_as_shown": 14342
+      },
+      "menu=full history=plain output=compressed": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          7637,
+          8992,
+          9490
+        ],
+        "episode_prompt_tokens": 26119,
+        "prefix_identical_to_previous_call": [
+          7301,
+          8660
+        ],
+        "share_cacheable_after_first_call": 0.864,
+        "tool_output_tokens_as_shown": 1793
+      },
+      "menu=full history=delta output=compressed": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          7637,
+          8992,
+          9490
+        ],
+        "episode_prompt_tokens": 26119,
+        "prefix_identical_to_previous_call": [
+          7301,
+          8660
+        ],
+        "share_cacheable_after_first_call": 0.864,
+        "tool_output_tokens_as_shown": 1793
+      },
+      "menu=ranked history=plain output=compressed": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          1023,
+          2378,
+          2876
+        ],
+        "episode_prompt_tokens": 6277,
+        "prefix_identical_to_previous_call": [
+          687,
+          2046
+        ],
+        "share_cacheable_after_first_call": 0.52,
+        "tool_output_tokens_as_shown": 1793
+      },
+      "menu=ranked history=delta output=compressed": {
+        "calls": 3,
+        "prompt_tokens_per_call": [
+          1023,
+          2378,
+          2876
+        ],
+        "episode_prompt_tokens": 6277,
+        "prefix_identical_to_previous_call": [
+          687,
+          2046
+        ],
+        "share_cacheable_after_first_call": 0.52,
+        "tool_output_tokens_as_shown": 1793
+      }
+    }
+  }
+}

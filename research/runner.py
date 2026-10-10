@@ -324,6 +324,9 @@ def _arms(spec: str) -> List[Any]:
         return list(ALL_ARMS)
     if spec == "all+G":
         return [*ALL_ARMS, Treatment.parse("G")]
+    if spec == "variants":
+        from rct_control_plane.research_switches import SUB_ABLATIONS
+        return [Treatment.parse("A111"), *SUB_ABLATIONS]
     return [Treatment.parse(part) for part in spec.split(",") if part.strip()]
 
 
@@ -411,7 +414,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--split", default="dev", choices=["dev", "validation", "test"])
     parser.add_argument("--policy", default="diligent", help="diligent | careless | hijackable | stale | real")
-    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus the generic baseline), or a list such as A111,A011,G")
+    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus the generic baseline), variants (A111 and its four sub-ablations), or a list such as A111,A011,G,A111+FS")
     parser.add_argument("--max-seconds", type=float, default=90.0, help="wall-clock cap per episode (a CPU-bound local model needs far more than a hosted one)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261008)

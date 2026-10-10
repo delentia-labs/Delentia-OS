@@ -9,11 +9,11 @@ _boards: Dict[int, Any] = {}
 
 
 async def _runner(namespace: str, goal: str, max_iterations: int, max_seconds: float, on_step: Any, initial_taint: Optional[str] = None) -> Dict[str, Any]:
-    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
+    from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.mcp_server import _kernel as shared_kernel
     from rct_control_plane.mcp_server import mcp as shared_mcp
-    loop = GovernedAutonomousLoop(mcp_server=shared_mcp, persistence=shared_kernel._persistence, kernel=shared_kernel, max_iterations=max_iterations, max_seconds=max_seconds,
-                                  namespace=namespace, initial_taint=initial_taint, conversation_turns=0)
+    loop = build_governed_loop(shared_kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=shared_kernel._persistence, mcp_server=shared_mcp,
+                               initial_taint=initial_taint, conversation_turns=0)
     return await loop.run(goal, on_step=on_step)
 
 

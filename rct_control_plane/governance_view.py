@@ -498,8 +498,8 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     untrusted = GovernedAutonomousLoop._untrusted_prefixes()
     add("untrusted_folders", "Folders that hold other people's documents count as outside text", bool(untrusted),
         ("reading a file under " + ", ".join(untrusted) + " taints the episode like a web page") if untrusted
-        else "none declared: a file in the workspace is treated as the owner's own text, so a note hidden in a vendor's quote is not marked as foreign",
-        "DELENTIA_UNTRUSTED_PATHS=quotes/,inbox/ (comma-separated folders, relative to the workspace)", "info")
+        else "switched off (DELENTIA_UNTRUSTED_PATHS=none): a file in the workspace is treated as the owner's own text, so a note hidden in a vendor's quote is not marked as foreign",
+        "DELENTIA_UNTRUSTED_PATHS=quotes/,inbox/ (comma-separated folders relative to the workspace; unset = inbox/, downloads/, attachments/, incoming/; none = off)", "info")
     from rct_control_plane import envelope
     lim = envelope.limits()
     has_daily = any(lim.get(k) for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens"))

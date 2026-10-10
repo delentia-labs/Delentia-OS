@@ -93,6 +93,21 @@ def _turn_state(step: LoopStep) -> Dict[str, Any]:
     }
 
 
+_ENCODER: Any = None
+
+
+def _approx_tokens(text: str) -> int:
+    """cl100k_base token count (an approximation of any provider's tokenizer, good for comparing two renderings of the same step); characters/4 if tiktoken is unavailable."""
+    global _ENCODER
+    if _ENCODER is None:
+        try:
+            import tiktoken
+            _ENCODER = tiktoken.get_encoding("cl100k_base")
+        except Exception:                                  # noqa: BLE001 - tiktoken missing or its DLL blocked
+            _ENCODER = False
+    return len(_ENCODER.encode(text)) if _ENCODER else max(1, len(text) // 4)
+
+
 def _render_turn_full(step: LoopStep) -> str:
     """The original, uncompressed per-turn render - byte-for-byte the
     same text every pre-Round-41 history_desc line contained."""
@@ -137,13 +152,17 @@ def render_history(history: List[LoopStep], delta_engine: Optional[DeltaEngine] 
     for step in history[1:]:
         current_state = _turn_state(step)
         compression = engine.compress_intent_delta(prior_state, current_state)
+        full_line = _render_turn_full(step)
+        chosen = full_line
         if not compression["used_token_fallback_to_full_state"]:
-            patch_json = json.dumps(compression["ops"], sort_keys=True)
-            lines.append(
-                f"Iteration {step.iteration}: [delta vs iteration {step.iteration - 1}] {patch_json}"
-            )
-        else:
-            lines.append(_render_turn_full(step))
+            # Round 64: the engine decides "patch or full state" by comparing the patch with the state as JSON with every non-ASCII character escaped (a Thai letter becomes
+            # six characters), but the prompt carries the full line with the characters as they are. Measured on three real 30 KB documents (research/prompt_cost.json): the
+            # patch was chosen and the episode cost 22% MORE prompt tokens than writing every step out. So the two lines that would really be sent are compared, and the
+            # patch is used only when it is clearly smaller (here: under 90% of the full line, in tokens).
+            patch_line = f"Iteration {step.iteration}: [delta vs iteration {step.iteration - 1}] {json.dumps(compression['ops'], sort_keys=True, ensure_ascii=False)}"
+            if _approx_tokens(patch_line) < 0.9 * _approx_tokens(full_line):
+                chosen = patch_line
+        lines.append(chosen)
         prior_state = current_state
     return "\n".join(lines)
 
@@ -350,6 +369,18 @@ def repair_decision_format(decision: Dict[str, Any], tool_names: "set[str]") -> 
     return decision
 
 
+LAYOUT_ENV = "DELENTIA_PROMPT_LAYOUT"
+
+
+def cache_friendly_layout() -> bool:
+    """Round 64. `DELENTIA_PROMPT_LAYOUT=cache_friendly`: everything that is the same on every call (the role line, the menu of tools, the guidance, the reply format) goes in the SYSTEM
+    message, first; the goal, the history and the extra context go in the user message after it. Why: the menu is about 94% of a prompt (7,153 of 7,637 tokens, scripts/measure_prompt_cost.py)
+    and no compressor in the system touches it, but a provider that caches a prompt prefix bills a cached token at roughly a tenth of the price - and a prefix can only be cached when it comes
+    first and is the same from one call to the next AND from one episode to the next (the old layout starts with the goal, so nothing was shared between episodes). Off by default: it changes
+    what a model sees, and that is not yet measured on a model that is good with tools."""
+    return (os.environ.get(LAYOUT_ENV) or "").strip().lower() == "cache_friendly"
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
@@ -390,7 +421,8 @@ async def decide_next_action(
     provider = llm_provider or get_default_provider()
 
     from rct_control_plane import tool_menu
-    tools_desc = tool_menu.format_menu(available_tools, compact=tool_menu.compact_enabled())
+    menu_tools = sorted(available_tools, key=lambda t: t["name"]) if cache_friendly_layout() else available_tools     # a stable order, or the cached prefix would differ by accident
+    tools_desc = tool_menu.format_menu(menu_tools, compact=tool_menu.compact_enabled())
     # Round 41: real intent-delta compression, actually applied to the
     # bytes sent here (not just computed/reported) - see render_history()'s
     # own docstring for the full compression/fallback contract.
@@ -399,7 +431,28 @@ async def decide_next_action(
     context_parts = [p for p in (_detect_repeated_call(history), extra_context) if p]
     context_section = ("\n" + "\n\n".join(context_parts) + "\n") if context_parts else ""
 
-    prompt = f"""You are an autonomous agent working toward this goal:
+    system_prompt: Optional[str] = None
+    if cache_friendly_layout():
+        system_prompt = f"""You are an autonomous agent. You work toward a goal one action at a time, using only the tools listed here.
+
+Available tools:
+{tools_desc}
+
+{_SCOPE_AND_GROUNDING_GUIDANCE}
+Each turn you decide the SINGLE next action. Respond with ONLY a JSON object, no other text:
+{{"action": "call_tool", "tool_name": "<one of the tool names above>", "tool_args": {{...matching its schema...}}, "reasoning": "<why>"}}
+OR, if the goal is already achieved or no tool call is needed:
+{{"action": "finish", "reasoning": "<why>", "final_answer": "<your answer to the goal>"}}
+{_batch_guidance()}"""
+        prompt = f"""The goal you are working toward:
+{goal}
+
+History so far:
+{history_desc}
+{context_section}
+Decide the SINGLE next action now, as one JSON object."""
+    else:
+        prompt = f"""You are an autonomous agent working toward this goal:
 {goal}
 
 Available tools:
@@ -415,7 +468,10 @@ OR, if the goal is already achieved or no tool call is needed:
 {{"action": "finish", "reasoning": "<why>", "final_answer": "<your answer to the goal>"}}
 {_batch_guidance()}"""
 
-    raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
+    if system_prompt is not None:
+        raw_text = await provider.complete(prompt, system_prompt=system_prompt, temperature=0.3, json_mode=True)
+    else:
+        raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
 
     decision = _extract_json(raw_text)
     if decision is None or "action" not in decision:

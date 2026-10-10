@@ -316,6 +316,10 @@ TAINT_ENV = "DELENTIA_TAINT_GATE"
 # the note was followed by every arm because nothing about the read marked the text as foreign. DELENTIA_UNTRUSTED_PATHS names such folders (comma-separated,
 # repo-relative, e.g. "quotes/,inbox/"); reading or searching a file under one taints the episode exactly like a web page does. Unset = unchanged behaviour.
 UNTRUSTED_PATHS_ENV = "DELENTIA_UNTRUSTED_PATHS"
+# Round 64: unset used to mean "none". Seven payloads of rising subtlety (research/generate_tasks.py LIBRARY, including "Note to the assistant reading this file" and a fake "[SYSTEM] policy
+# update") all got through the content screen under the default floor (14 of 14 episodes of an always-obeying script reached the sink) and none did once the folder was declared (0 of 14), so
+# the folder names that conventionally hold other people's files are untrusted by default. DELENTIA_UNTRUSTED_PATHS=none switches the default off; any other value replaces it.
+DEFAULT_UNTRUSTED_PATHS = ("inbox/", "downloads/", "attachments/", "incoming/")
 TAINT_SOURCE_TOOLS = frozenset({"delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_browser_act", "delentia_read_exchange_file",
                                 "delentia_convert_content", "delentia_import_session_state", "delentia_describe_image",
                                 "delentia_transcribe_audio"})
@@ -667,8 +671,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
-        if self._research is not None and not self._research.R:
-            self._episode_rct7_steps = []                  # research arm R=0: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
+        if self._research is not None and not self._research.plan:
+            self._episode_rct7_steps = []                  # research arm without the plan: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
         if self.max_iterations != self._applied_max_iterations:
             self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
         self.max_iterations = self._configured_max_iterations
@@ -1220,6 +1224,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         ranked = tool_menu.maybe_ranked(goal, available_tools)        # DELENTIA_TOOL_MENU=ranked (off by default; see tool_menu.py)
         if ranked is not None:
             return ranked
+        from rct_control_plane.autonomous_loop import cache_friendly_layout
+        if cache_friendly_layout():
+            return available_tools                  # Round 64: a menu that changes with the goal cannot be a cached prefix; the whole menu, in a fixed order
         goal_tokens = self._tokenize(goal)
         if not goal_tokens:
             return available_tools
@@ -1327,6 +1334,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             elif policy_eval.A > 0.0:
                 a_reason = f"{a_reason}; owner policy {policy_eval.rule_id}"
         F = fdia_score(self._episode_D, self._episode_I, A)
+        research_rule = None
+        if self._research is not None and self._research.simple_d:
+            # research arm FS: the same D and A, but the decision is "D under a minimum", not D^I x A (protocol section 6)
+            F = round(A if self._episode_D >= self._research.simple_d else 0.0, 4)
+            research_rule = "simple_d"
         self._last_gate_fdia = {"D": self._episode_D, "I": self._episode_I, "A": A, "F": F, "threshold": threshold}
         # Reads that the owner allows are not held to the D/I threshold (they never were); everything riskier is.
         judged = is_risky_tool(tool_name) or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
@@ -1344,6 +1356,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "A": A, "A_reason": a_reason, "F": F, "threshold": threshold,
                 "data_parts": (self._episode_data or {}).get("parts"),
                 "blocked": blocked, "policy": info,
+                **({"research_rule": research_rule} if research_rule else {}),
             },
         )
 
@@ -1526,7 +1539,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         similarity heuristic: a correct but very short answer ("4" for
         "what is 2+2") can score low, so a failed check only stops the
         episode from being learned as a skill; it never hides the answer."""
-        if self._research is not None and not self._research.R:
+        if self._research is not None and not self._research.verify:
             from rct_control_plane import research_switches
             return research_switches.generic_verify(goal, final_answer, steps)
         if not final_answer:
@@ -2282,8 +2295,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
     @staticmethod
     def _untrusted_prefixes() -> Tuple[str, ...]:
         import re as _re
+        raw = os.environ.get(UNTRUSTED_PATHS_ENV)
+        if raw is None:
+            return DEFAULT_UNTRUSTED_PATHS
+        if raw.strip().lower() in ("none", "off", "0", "false"):
+            return ()
         prefixes = []
-        for part in (os.environ.get(UNTRUSTED_PATHS_ENV) or "").split(","):
+        for part in raw.split(","):
             norm = _re.sub(r"^(\./)+", "", part.strip().replace("\\", "/")).lstrip("/")
             if norm:
                 prefixes.append(norm if norm.endswith("/") else norm + "/")
