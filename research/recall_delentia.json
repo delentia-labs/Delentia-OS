@@ -1,0 +1,396 @@
+{
+  "summary": {
+    "system": "delentia",
+    "questions": 30,
+    "hit_at_3": 7,
+    "hit_at_1": 5,
+    "seconds_total": 2.5,
+    "missed": [
+      "f00",
+      "f02",
+      "f03",
+      "f04",
+      "f05",
+      "f06",
+      "f07",
+      "f08",
+      "f09",
+      "f10",
+      "f11",
+      "f12",
+      "f13",
+      "f14",
+      "f15",
+      "f18",
+      "f19",
+      "f20",
+      "f21",
+      "f22",
+      "f23",
+      "f26",
+      "f28"
+    ]
+  },
+  "rows": [
+    {
+      "id": "f00",
+      "question": "Who handles import clearance for us?",
+      "answer": "Prasert",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45.",
+        "Orders over 76,400 baht ship free within Hat Yai."
+      ]
+    },
+    {
+      "id": "f01",
+      "question": "When do the storage facility doors shut on a Saturday?",
+      "answer": "12:00",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+        "Our facilities manager is Pichai and works from the Korat office.",
+        "Our facilities manager is Wipa and works from the Chiang Mai office."
+      ]
+    },
+    {
+      "id": "f02",
+      "question": "What does a bill number start with?",
+      "answer": "HB-",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The billing rate limit is 45 requests per minute.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f03",
+      "question": "How long after receiving goods can a customer get their money back?",
+      "answer": "14 days",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The back office closes at 18:30 on Sunday.",
+        "The courier for fragile goods is Siam Express.",
+        "On-call escalation happens after 20 minutes without an acknowledgement."
+      ]
+    },
+    {
+      "id": "f04",
+      "question": "Which company supplies our cartons when the primary cannot?",
+      "answer": "BoxHub",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f05",
+      "question": "Who signs off on releases?",
+      "answer": "Malee",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Release notes are published in the #harbor-announce channel.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f06",
+      "question": "What is the name of the pre-production data store?",
+      "answer": "stg-db-1",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The parts store closes at 18:30 on Monday.",
+        "The product catalogue lives in the repository folder data/catalog.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f07",
+      "question": "How much may we spend each month on hosting?",
+      "answer": "15,000",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "The server room closes at 06:45 on the last day of the month.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f08",
+      "question": "How long do we wait before paging the next person?",
+      "answer": "20 minutes",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45.",
+        "Orders over 76,400 baht ship free within Hat Yai."
+      ]
+    },
+    {
+      "id": "f09",
+      "question": "Who gives access to the cold-storage section?",
+      "answer": "Chaiwat",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Mali gives access to the chemical section.",
+        "Nattaya gives access to the chemical section.",
+        "Nattaya gives access to the electronics section."
+      ]
+    },
+    {
+      "id": "f10",
+      "question": "For how long do we retain the copies of our data?",
+      "answer": "35 days",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The product catalogue lives in the repository folder data/catalog.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f11",
+      "question": "What number do customers ring for help?",
+      "answer": "02-555-0147",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Customer interviews are recorded only with written consent.",
+        "Our customs liaison is Prasert and he works from the Laem Chabang office.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f12",
+      "question": "Above what purchase amount is delivery at no charge in the capital?",
+      "answer": "6,500",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The back office for spare cables is 45 days from purchase.",
+        "The refund window for online orders is 14 days from delivery.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f13",
+      "question": "On which dates is the workplace shut for holidays?",
+      "answer": "12 August",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Thanakorn covers the night shift on public holidays.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f14",
+      "question": "On which weekday does money from card sales land in our bank?",
+      "answer": "Wednesday",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f15",
+      "question": "Where in the codebase are the items we sell listed?",
+      "answer": "data/catalog",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45.",
+        "Orders over 76,400 baht ship free within Hat Yai."
+      ]
+    },
+    {
+      "id": "f16",
+      "question": "How many times will a failed transfer be tried again?",
+      "answer": "9 attempts",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The retry limit for failed uploads is 9 attempts.",
+        "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f17",
+      "question": "Who is staffed overnight on bank holidays?",
+      "answer": "Thanakorn",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Thanakorn covers the night shift on public holidays.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f18",
+      "question": "How many calls a minute may a client make?",
+      "answer": "120 requests",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "On-call escalation happens after 20 minutes without an acknowledgement.",
+        "The archive database is called rpt-db-4.",
+        "The analytics database is called trn-db-2."
+      ]
+    },
+    {
+      "id": "f19",
+      "question": "Where does traffic go if the main data centre goes down?",
+      "answer": "ap-northeast-1",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The main printing vendor is Duangjai; the backup vendor is SafeBox.",
+        "The main security vendor is Nattaya; the backup vendor is WrapIt.",
+        "The main labelling vendor is Pichai; the backup vendor is WrapIt."
+      ]
+    },
+    {
+      "id": "f20",
+      "question": "What must we have before taping a conversation with a client?",
+      "answer": "written consent",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45.",
+        "Orders over 76,400 baht ship free within Hat Yai."
+      ]
+    },
+    {
+      "id": "f21",
+      "question": "How frequently do we change the test environment credentials?",
+      "answer": "90 days",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The test database is called arc-db-8.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f22",
+      "question": "Which chat room gets the changelog posts?",
+      "answer": "#harbor-announce",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The server room closes at 06:45 on the last day of the month.",
+        "The server room for spare cables is 60 days from pickup.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f23",
+      "question": "Which delivery company carries delicate items?",
+      "answer": "Siam Express",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The refund window for online orders is 14 days from delivery.",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    },
+    {
+      "id": "f24",
+      "question": "Who mentors newcomers during their first weeks?",
+      "answer": "Pimchanok",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "Quarterly planning happens in the first week of January, April, July and October.",
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "Our SLA promises a first reply within 4 hours."
+      ]
+    },
+    {
+      "id": "f25",
+      "question": "After how many seconds is a pending task abandoned?",
+      "answer": "12 seconds",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+        "On-call escalation happens after 20 minutes without an acknowledgement.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f26",
+      "question": "When do we sit down to plan each three-month period?",
+      "answer": "first week",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "The server room closes at 06:45 on the last day of the month.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f27",
+      "question": "How fast must we first answer a ticket?",
+      "answer": "4 hours",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "Our SLA promises a first reply within 4 hours.",
+        "Quarterly planning happens in the first week of January, April, July and October."
+      ]
+    },
+    {
+      "id": "f28",
+      "question": "In which month do supplier agreements come up for renewal?",
+      "answer": "March",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "The server room closes at 06:45 on the last day of the month.",
+        "The reception closes at 16:20 on Thursday."
+      ]
+    },
+    {
+      "id": "f29",
+      "question": "ใครเป็นคนเซ็นอนุมัติเงินของทีมขาย",
+      "answer": "วันดี",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+        "The reception closes at 16:20 on Thursday.",
+        "The operations meeting is held every Friday at 06:45."
+      ]
+    }
+  ]
+}

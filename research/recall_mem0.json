@@ -1,0 +1,379 @@
+{
+  "summary": {
+    "system": "mem0",
+    "questions": 30,
+    "hit_at_3": 24,
+    "hit_at_1": 20,
+    "seconds_total": 14.8,
+    "missed": [
+      "f05",
+      "f06",
+      "f08",
+      "f09",
+      "f12",
+      "f14"
+    ]
+  },
+  "rows": [
+    {
+      "id": "f00",
+      "question": "Who handles import clearance for us?",
+      "answer": "Prasert",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Our customs liaison is Prasert and he works from the Laem Chabang office.",
+        "Ploy is the contact for visa paperwork.",
+        "The main cleaning vendor is Surasak; the backup vendor is FoamLine."
+      ]
+    },
+    {
+      "id": "f01",
+      "question": "When do the storage facility doors shut on a Saturday?",
+      "answer": "12:00",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+        "The back office closes at 18:30 on Sunday.",
+        "The parts store closes at 18:30 on Monday."
+      ]
+    },
+    {
+      "id": "f02",
+      "question": "What does a bill number start with?",
+      "answer": "HB-",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Invoices are numbered with the prefix HB- followed by five digits.",
+        "The billing rate limit is 45 requests per minute.",
+        "The support hotline is 02-555-0147 and is open 08:00-17:00."
+      ]
+    },
+    {
+      "id": "f03",
+      "question": "How long after receiving goods can a customer get their money back?",
+      "answer": "14 days",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The refund window for online orders is 14 days from delivery.",
+        "The server room for spare cables is 60 days from pickup.",
+        "The back office for spare cables is 45 days from purchase."
+      ]
+    },
+    {
+      "id": "f04",
+      "question": "Which company supplies our cartons when the primary cannot?",
+      "answer": "BoxHub",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "The main uniform vendor is Pichai; the backup vendor is CartonCo.",
+        "Our main packaging vendor is PakWell; the backup vendor is BoxHub.",
+        "The main printing vendor is Kritsada; the backup vendor is FoamLine."
+      ]
+    },
+    {
+      "id": "f05",
+      "question": "Who signs off on releases?",
+      "answer": "Malee",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Release notes are published in the #harbor-announce channel.",
+        "The main labelling vendor is Surasak; the backup vendor is TapeWorks.",
+        "The main labelling vendor is Duangjai; the backup vendor is FoamLine."
+      ]
+    },
+    {
+      "id": "f06",
+      "question": "What is the name of the pre-production data store?",
+      "answer": "stg-db-1",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The archive database is called demo-db-5.",
+        "The analytics database is called trn-db-2.",
+        "The product catalogue lives in the repository folder data/catalog."
+      ]
+    },
+    {
+      "id": "f07",
+      "question": "How much may we spend each month on hosting?",
+      "answer": "15,000",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The monthly cloud budget is capped at 15,000 baht.",
+        "The monthly software budget is capped at 1,350 baht.",
+        "The monthly marketing budget is capped at 40,300 baht."
+      ]
+    },
+    {
+      "id": "f08",
+      "question": "How long do we wait before paging the next person?",
+      "answer": "20 minutes",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The billing rate limit is 45 requests per minute.",
+        "Quarterly planning happens in the first week of January, April, July and October.",
+        "The upload rate limit is 30 requests per minute."
+      ]
+    },
+    {
+      "id": "f09",
+      "question": "Who gives access to the cold-storage section?",
+      "answer": "Chaiwat",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Kritsada gives access to the dry goods section.",
+        "Pichai gives access to the dry goods section.",
+        "Mali gives access to the dry goods section."
+      ]
+    },
+    {
+      "id": "f10",
+      "question": "For how long do we retain the copies of our data?",
+      "answer": "35 days",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Backups run nightly at 03:30 and are kept for 35 days.",
+        "The mail digest runs nightly at 06:45 and is kept for 21 days.",
+        "The log rotation runs nightly at 18:30 and is kept for 60 days."
+      ]
+    },
+    {
+      "id": "f11",
+      "question": "What number do customers ring for help?",
+      "answer": "02-555-0147",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The support hotline is 02-555-0147 and is open 08:00-17:00.",
+        "Invoices are numbered with the prefix HB- followed by five digits.",
+        "The billing rate limit is 45 requests per minute."
+      ]
+    },
+    {
+      "id": "f12",
+      "question": "Above what purchase amount is delivery at no charge in the capital?",
+      "answer": "6,500",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "Orders over 1,350 baht ship free within Nonthaburi.",
+        "Orders over 40,300 baht ship free within Nonthaburi.",
+        "Orders over 40,300 baht ship free within Pattaya."
+      ]
+    },
+    {
+      "id": "f13",
+      "question": "On which dates is the workplace shut for holidays?",
+      "answer": "12 August",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The office closes on 12 August and 5 December.",
+        "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+        "The back office closes at 18:30 on Sunday."
+      ]
+    },
+    {
+      "id": "f14",
+      "question": "On which weekday does money from card sales land in our bank?",
+      "answer": "Wednesday",
+      "hit_at_3": false,
+      "hit_at_1": false,
+      "top": [
+        "The finance meeting is held every Friday at 13:10.",
+        "The marketing meeting is held every Sunday at 09:15.",
+        "The marketing meeting is held every Monday at 06:45."
+      ]
+    },
+    {
+      "id": "f15",
+      "question": "Where in the codebase are the items we sell listed?",
+      "answer": "data/catalog",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The product catalogue lives in the repository folder data/catalog.",
+        "The main labelling vendor is Surasak; the backup vendor is TapeWorks.",
+        "The main labelling vendor is Duangjai; the backup vendor is FoamLine."
+      ]
+    },
+    {
+      "id": "f16",
+      "question": "How many times will a failed transfer be tried again?",
+      "answer": "9 attempts",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The retry limit for failed uploads is 9 attempts.",
+        "The upload rate limit is 3 requests per minute.",
+        "The upload rate limit is 30 requests per minute."
+      ]
+    },
+    {
+      "id": "f17",
+      "question": "Who is staffed overnight on bank holidays?",
+      "answer": "Thanakorn",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Thanakorn covers the night shift on public holidays.",
+        "The back office closes at 18:30 on Sunday.",
+        "Backups run nightly at 03:30 and are kept for 35 days."
+      ]
+    },
+    {
+      "id": "f18",
+      "question": "How many calls a minute may a client make?",
+      "answer": "120 requests",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "The billing rate limit is 45 requests per minute.",
+        "The API rate limit is 120 requests per minute with a burst of 30.",
+        "The webhook rate limit is 21 requests per minute."
+      ]
+    },
+    {
+      "id": "f19",
+      "question": "Where does traffic go if the main data centre goes down?",
+      "answer": "ap-northeast-1",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+        "Duangjai is the contact for fleet vehicles.",
+        "Mali is the contact for fleet vehicles."
+      ]
+    },
+    {
+      "id": "f20",
+      "question": "What must we have before taping a conversation with a client?",
+      "answer": "written consent",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Customer interviews are recorded only with written consent.",
+        "Ploy is the contact for visa paperwork.",
+        "On-call escalation happens after 20 minutes without an acknowledgement."
+      ]
+    },
+    {
+      "id": "f21",
+      "question": "How frequently do we change the test environment credentials?",
+      "answer": "90 days",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The sandbox password rotates every 90 days.",
+        "The deploy window is Tuesday at 02:00 UTC and Malee approves it.",
+        "The server room for spare cables is 60 days from pickup."
+      ]
+    },
+    {
+      "id": "f22",
+      "question": "Which chat room gets the changelog posts?",
+      "answer": "#harbor-announce",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "The support hotline is 02-555-0147 and is open 08:00-17:00.",
+        "Release notes are published in the #harbor-announce channel.",
+        "The server room for spare cables is 60 days from pickup."
+      ]
+    },
+    {
+      "id": "f23",
+      "question": "Which delivery company carries delicate items?",
+      "answer": "Siam Express",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "The courier for fragile goods is Siam Express.",
+        "Our main packaging vendor is PakWell; the backup vendor is BoxHub.",
+        "The main catering vendor is Mali; the backup vendor is SafeBox."
+      ]
+    },
+    {
+      "id": "f24",
+      "question": "Who mentors newcomers during their first weeks?",
+      "answer": "Pimchanok",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Pimchanok is the buddy of every new engineer for the first month.",
+        "Quarterly planning happens in the first week of January, April, July and October.",
+        "The server room for spare cables is 60 days from pickup."
+      ]
+    },
+    {
+      "id": "f25",
+      "question": "After how many seconds is a pending task abandoned?",
+      "answer": "12 seconds",
+      "hit_at_3": true,
+      "hit_at_1": false,
+      "top": [
+        "On-call escalation happens after 20 minutes without an acknowledgement.",
+        "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+        "The retry limit for failed uploads is 9 attempts."
+      ]
+    },
+    {
+      "id": "f26",
+      "question": "When do we sit down to plan each three-month period?",
+      "answer": "first week",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Quarterly planning happens in the first week of January, April, July and October.",
+        "The support meeting is held every Friday at 16:20.",
+        "The design meeting is held every Friday at 09:15."
+      ]
+    },
+    {
+      "id": "f27",
+      "question": "How fast must we first answer a ticket?",
+      "answer": "4 hours",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Our SLA promises a first reply within 4 hours.",
+        "The billing rate limit is 45 requests per minute.",
+        "The webhook rate limit is 60 requests per minute."
+      ]
+    },
+    {
+      "id": "f28",
+      "question": "In which month do supplier agreements come up for renewal?",
+      "answer": "March",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "Vendor contracts renew every March.",
+        "Quarterly planning happens in the first week of January, April, July and October.",
+        "Backups run nightly at 03:30 and are kept for 35 days."
+      ]
+    },
+    {
+      "id": "f29",
+      "question": "ใครเป็นคนเซ็นอนุมัติเงินของทีมขาย",
+      "answer": "วันดี",
+      "hit_at_3": true,
+      "hit_at_1": true,
+      "top": [
+        "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+        "Duangjai gives access to the chemical section.",
+        "The courier for fragile goods is Siam Express."
+      ]
+    }
+  ]
+}
