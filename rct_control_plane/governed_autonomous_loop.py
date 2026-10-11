@@ -2001,7 +2001,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             run_id = f"run-{uuid.uuid4().hex[:12]}"
             self._persistence.save_experiment_run(
                 run_id, experiment_id, algorithm_id=f"governed_loop/{self._model_label()}", metrics=metrics,
-                jitna_state={"namespace": self.namespace, "jitna_verified": self._episode_jitna_verified},
+                jitna_state={"namespace": self.namespace, "jitna_verified": self._episode_jitna_verified,
+                             # Round 69: the experiment is named by a hash when sealing is on (it is shared by everyone who asked the same goal), so the goal's words are kept here instead,
+                             # sealed under THIS person's key: the Tool Forge reads them back while the person exists, and an erasure destroys them with the key.
+                             **({"goal": audit_text.protect(self.namespace, {"goal": result["goal"]}, ("goal",))["goal"]} if audit_text.sealing_on() else {})},
             )
             return {"experiment_id": experiment_id, "run_id": run_id}
         except Exception as exc:

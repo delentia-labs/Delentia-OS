@@ -97,7 +97,8 @@ class TestDemoPath:
         out = compare_run.stdout
         assert compare_run.returncode == 0, (out[-1500:], compare_run.stderr[-800:])
         assert "จบเอง" in out and "สยามแอร์" in out and "บางกอกเทคนิค" in out
-        assert out.count("`delentia_read_repo_file`") == 3
+        assert out.count("- `delentia_read_repo_file` {") == 3                                 # the three reads (Round 69: with the default policy every call is judged and the report also lists each judgement)
+        assert out.count("`delentia_read_repo_file`: D=") == 3 and "ผ่าน" in out
         assert "ไม่ผ่าน" not in out and "ผ่าน: ไฟล์ต้นฉบับไม่ถูกแก้" in out
         assert "ครบสมบูรณ์" in out
         results = sorted((world["root"] / "results").glob("*compare*.md"))
