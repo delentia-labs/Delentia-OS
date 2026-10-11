@@ -24,6 +24,8 @@ NEW = "test_gate_properties_round65_real.py"
 ADV = "test_adversarial_round66_real.py"
 ANCHOR = "test_memory_anchor_round67_real.py"
 ERASE = "test_memory_erasure_round67_real.py"
+ERASE2 = "test_erasure_tables_round68_real.py"
+GOALCTX = "test_fdia_goal_context_round68_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
     {"id": "P1", "name": "A = 0 blocks restricted effects",
@@ -123,8 +125,13 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file",
                f"{ERASE}::test_erasure_needs_a_trusted_approver_and_the_exact_head",
                f"{ERASE}::test_the_report_says_what_was_not_erased",
-               f"{ERASE}::test_the_log_holds_ciphertext_not_the_text"],
-     "assumes": "The approver key is held by a person; the key file of the person being erased was not copied elsewhere.",
+               f"{ERASE}::test_the_log_holds_ciphertext_not_the_text",
+               f"{ERASE2}::test_after_the_erase_no_byte_of_the_file_holds_the_persons_words_and_the_other_person_is_untouched",
+               f"{ERASE2}::test_before_the_erase_the_words_are_in_the_table_and_not_in_the_chain",
+               f"{ERASE2}::test_a_refused_erase_changes_nothing",
+               f"{ERASE2}::test_the_full_text_index_forgets_the_words",
+               f"{ERASE2}::test_the_chains_still_verify_and_the_desk_shows_the_erased_marker"],
+     "assumes": "The approver key is held by a person; the key file of the person being erased was not copied elsewhere. Audit rows written with DELENTIA_AUDIT_TEXT=plain keep the person's words in the chain (the report counts them).",
      "not_covered": "Events written before sealing was on stay readable; other tables that carry the person's namespace (past requests, skills, experiments) are listed in the report and not erased; backups, swap and filesystem journals are outside the database file."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
@@ -142,6 +149,7 @@ THREATS: List[Dict[str, object]] = [
                                                                                               "test_taint_gate_round58_real.py::test_the_measurement_with_a_fully_hijacked_model"]},
     {"threat": "History rewriting (the log of what the agent knew is edited after the fact)", "tests": [f"{ANCHOR}::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor", f"{ANCHOR}::test_cutting_the_log_back_is_caught"]},
     {"threat": "Personal data that cannot be erased from an append-only record", "tests": [f"{ERASE}::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact", f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file"]},
+    {"threat": "An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it)", "tests": [f"{GOALCTX}::test_an_address_that_extends_cuts_or_differs_does_not_count", f"{GOALCTX}::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one", f"{GOALCTX}::test_the_taint_gate_still_decides_after_text_from_outside_was_read"]},
     {"threat": "Memory poisoning", "tests": ["test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next",
                                              "test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits",
                                              f"{NEW}::test_p9_a_revoked_memory_is_returned_by_nothing"]},
