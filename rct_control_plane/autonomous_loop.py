@@ -21,6 +21,8 @@ decompression counterpart for whenever full context needs to be
 recovered."""
 from __future__ import annotations
 
+from rct_control_plane import audit_text
+
 import asyncio
 import inspect
 import json
@@ -917,6 +919,6 @@ Write your final answer to the goal, in natural language. Do not use JSON - plai
             entity_id=f"{self.namespace}-{step.iteration}",
             action="loop_step",
             actor=self.namespace,
-            changes={"tool_name": step.tool_name, "tool_args": step.tool_args,
-                     "reasoning": step.llm_reasoning[:500]},
+            changes=audit_text.protect(self.namespace, {"tool_name": step.tool_name, "tool_args": step.tool_args,
+                                                        "reasoning": step.llm_reasoning[:500]}, ("tool_args", "reasoning")),
         )

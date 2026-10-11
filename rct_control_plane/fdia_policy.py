@@ -66,7 +66,33 @@ _ARG_VALUE_CAP = 4000
 #   lacks_any          the value contains NONE of `values` (case-insensitive): used to refuse flags that make a read-only program write or run something (--output, -delete, --exec)
 # A missing argument is the empty string, so "starts with one of" is false and "has no metacharacter" is true: a rule that ALLOWS must
 # combine a positive operation (prefix_in) with the negative ones, and a rule that ASKS uses them in `unless`.
-CONDITION_OPS = ("prefix_in", "prefix_in_pipe", "no_shell_metachar", "no_shell_metachar_except_pipe", "no_outside_paths", "glob_any", "contains_any", "lacks_any")
+CONDITION_OPS = ("prefix_in", "prefix_in_pipe", "no_shell_metachar", "no_shell_metachar_except_pipe", "no_outside_paths", "glob_any", "contains_any", "lacks_any", "appears_in_goal")
+# Round 68: `appears_in_goal` holds when the argument is EXACTLY an address the PERSON wrote in this request (the loop passes the request as context={"goal": ...}). It is not a substring test: an address that
+# extends what was typed (a longer host, user-info, an added query), one that cuts it short, one read on a page, an empty argument and a missing goal all fail, and a call with no context fails closed.
+_TYPED_URL = re.compile(r"[A-Za-z][A-Za-z0-9+.\-]{1,15}://[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+")
+_URL_TAIL = ".,;:!?)]}>'\""
+
+
+def typed_urls(goal: str) -> List[str]:
+    """The addresses written in a request, as written (trailing sentence punctuation removed)."""
+    found = []
+    for raw in _TYPED_URL.findall(str(goal or "")[:20000]):
+        found.append(raw.rstrip(_URL_TAIL))
+    return found
+
+
+def address_typed_in(goal: str, url: str) -> bool:
+    """Is this address, with ANY scheme, written whole in the request? (The taint gate uses this one; a tool that cannot open the scheme refuses it anyway.)"""
+    candidate = str(url or "").strip().rstrip(_URL_TAIL)
+    if not candidate or "://" not in candidate:
+        return False
+    wanted = candidate.rstrip("/")
+    return any(wanted == t.rstrip("/") for t in typed_urls(goal))
+
+
+def url_typed_in(goal: str, url: str) -> bool:
+    """The policy's version: only http and https count (the fetching tools open nothing else)."""
+    return str(url or "").strip().lower().startswith(("http://", "https://")) and address_typed_in(goal, url)
 _METACHARS = set(";&><`${}()^%!~\n\r")
 _MAX_CONDITIONS = 12
 _MAX_CONDITION_VALUES = 80
@@ -199,7 +225,7 @@ def _outside_path_word(word: str) -> bool:
             or "/../" in w or w.endswith("/.."))
 
 
-def _one_condition_holds(cond: Dict[str, Any], tool_args: Dict[str, Any]) -> bool:
+def _one_condition_holds(cond: Dict[str, Any], tool_args: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> bool:
     name, op, values = str(cond.get("arg", "")), cond.get("op"), [str(v) for v in cond.get("values", [])]
     if name == "*":
         text = " ".join(_arg_strings(tool_args))
@@ -223,17 +249,20 @@ def _one_condition_holds(cond: Dict[str, Any], tool_args: Dict[str, Any]) -> boo
     if op == "contains_any":
         low = text.lower()
         return any(v.lower() in low for v in values if v)
+    if op == "appears_in_goal":
+        goal = (context or {}).get("goal")
+        return isinstance(goal, str) and url_typed_in(goal, text)
     if op == "lacks_any":
         low = text.lower()
         return not any(v.lower() in low for v in values if v)
     return False                                                         # an unknown operation never holds
 
 
-def conditions_apply(rule: "Rule", tool_args: Dict[str, Any]) -> bool:
+def conditions_apply(rule: "Rule", tool_args: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> bool:
     """Does this rule apply to this call? All `when` hold, and not all `unless` hold."""
-    if rule.when and not all(_one_condition_holds(c, tool_args) for c in rule.when):
+    if rule.when and not all(_one_condition_holds(c, tool_args, context) for c in rule.when):
         return False
-    if rule.unless and all(_one_condition_holds(c, tool_args) for c in rule.unless):
+    if rule.unless and all(_one_condition_holds(c, tool_args, context) for c in rule.unless):
         return False
     return True
 
@@ -447,7 +476,7 @@ def save_policy(policy: Policy, path: Optional[Path] = None) -> Path:
 # ------------------------------------------------------------------ evaluation
 
 def evaluate(policy: Policy, tool_name: str, tool_args: Optional[Dict[str, Any]] = None, *, principal: str = "",
-             approved: bool = False) -> Evaluation:
+             approved: bool = False, context: Optional[Dict[str, Any]] = None) -> Evaluation:
     """A for one tool call. `approved` means the human signatures the rule asks for are already verified (the
     resume path): the signature requirement is then satisfied, but a blocked pattern, a denied path or a refused
     role still stops the call, because a signature may not authorise what the owner forbade."""
@@ -462,7 +491,7 @@ def evaluate(policy: Policy, tool_name: str, tool_args: Optional[Dict[str, Any]]
         if matches_tool(tool_name, pattern):
             return verdict(0.0, f"{tool_name} matches the forbidden pattern {pattern!r}", "BLOCKED_ACTION_PATTERN", "BLOCKED")
 
-    matched = [r for r in policy.rules if any(matches_tool(tool_name, p) for p in r.intent_patterns) and conditions_apply(r, args)]
+    matched = [r for r in policy.rules if any(matches_tool(tool_name, p) for p in r.intent_patterns) and conditions_apply(r, args, context)]
     if matched:
         rule = max(enumerate(matched), key=lambda pair: (_SEVERITY[pair[1].action_type], -pair[0]))[1]
         names = [r.rule_id for r in matched]
@@ -585,7 +614,15 @@ def _argaware_rules(tool_names: List[str], readers: List[str], writers: List[str
         image = [{"arg": "path", "op": "glob_any", "values": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"]}, {"arg": "path", "op": "no_outside_paths", "values": []}]
         rules.append({"rule_id": "R-IMAGE-LOCAL", "description": "Describing a picture inside the project may run.", "intent_patterns": ["describe_image"], "action_type": "ALLOW", "assigned_A": 1, "when": image})
         rules.append({"rule_id": "R-IMAGE-OTHER", "description": "Any other image path needs a human signature.", "intent_patterns": ["describe_image"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "unless": image})
-    reach_rest = sorted(t for t in writers if _forms(t)[-1] in reach and _forms(t)[-1] not in ("web_search", "describe_image"))
+    typed_ok = {"crawl_url", "browse_page"}                                      # read-only fetches: no click, no typing
+    typed_tools = sorted(t for t in writers if _forms(t)[-1] in typed_ok)
+    if typed_tools:
+        written = [{"arg": "url", "op": "appears_in_goal", "values": []}]
+        rules.append({"rule_id": "R-URL-TYPED", "description": "Opening an address the person wrote in this request may run.", "intent_patterns": typed_tools,
+                      "action_type": "ALLOW", "assigned_A": 1, "when": written})
+        rules.append({"rule_id": "R-URL-OTHER", "description": "Opening any other address needs a human signature.", "intent_patterns": typed_tools,
+                      "action_type": "REQUIRE_HUMAN_SIGNATURE", "unless": written})
+    reach_rest = sorted(t for t in writers if _forms(t)[-1] in reach and _forms(t)[-1] not in ("web_search", "describe_image") and _forms(t)[-1] not in typed_ok)
     if reach_rest:
         rules.append({"rule_id": "R-REACH", "description": "Reaching an address, starting other agents or scheduling later work needs a human signature.",
                       "intent_patterns": reach_rest, "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 1})
