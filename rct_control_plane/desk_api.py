@@ -784,6 +784,18 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             raise HTTPException(status_code=404, detail="no such memory in this namespace (or it was already revoked)")
         return {"memory_id": memory_id, "namespace": namespace, "revoked": True}
 
+    @router.post("/memories/pin")
+    async def pin_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Round 70: make a memory a standing rule (shown to every episode of the namespace) or stop doing so. Owner only (the route is not on the person allowlist)."""
+        memory_id = str(payload.get("memory_id") or "").strip()
+        if not memory_id:
+            raise HTTPException(status_code=400, detail="'memory_id' is required")
+        namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        result = _kernel()._persistence.pin_memory(memory_id, namespace, bool(payload.get("pinned", True)), by="desk", allow_tainted=bool(payload.get("reviewed", False)))
+        if not result["ok"]:
+            raise HTTPException(status_code=409 if "already" in result["reason"] or "pinned" in result["reason"] else 404, detail=result["reason"])
+        return {"memory_id": memory_id, "namespace": namespace, "pinned": bool(payload.get("pinned", True)), "changed": result["changed"]}
+
     @router.get("/sovereignty")
     async def sovereignty(limit: int = Query(50, ge=1, le=300)) -> Dict[str, Any]:
         """The data-residency policy (or its absence), where the selected model would

@@ -176,6 +176,22 @@ With no policy file the argument-aware starter judges every tool call on top of 
   - `test_default_policy_round69_real.py::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow`
   - `test_default_policy_round69_real.py::test_an_address_seen_verbatim_in_this_episode_may_be_opened_without_a_signature`
 
+### P14 - A standing rule the person pinned is shown to every episode, and only a person can pin
+
+A rule pinned by a person or the owner is shown to every episode of that person whatever the goal (at most 5, newest first), never counts as evidence for D, is never shown after it was revoked or after the person was erased, and cannot be pinned by the model (no tool exists for it) or from a memory stored after outside text was read unless a human says they reviewed it.
+
+- **Assumes:** The person (or owner) chose what to pin; a pinned rule is advice to the model in its prompt, it is never a permission: the approval, the policy and the taint gates still decide every call.
+- **Not covered:** A model can ignore a rule it is shown (nothing here measures obedience); more than 5 pinned rules: only the newest 5 are shown; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement).
+- **Pinned by:**
+  - `test_pinned_rules_round70_real.py::test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it`
+  - `test_pinned_rules_round70_real.py::test_a_pinned_rule_is_never_evidence_for_d`
+  - `test_pinned_rules_round70_real.py::test_the_model_has_no_tool_to_pin_and_remember_cannot_set_it`
+  - `test_pinned_rules_round70_real.py::test_a_memory_stored_after_outside_text_was_read_is_refused_unless_a_human_reviewed_it`
+  - `test_pinned_rules_round70_real.py::test_the_newest_pinned_rule_comes_first_and_a_revoked_rule_is_never_returned`
+  - `test_pinned_rules_round70_real.py::test_erasing_a_person_stops_their_rules_from_being_shown`
+  - `test_pinned_rules_round70_real.py::test_pins_follow_the_person_and_not_somebody_else`
+  - `test_pinned_rules_round70_real.py::test_the_log_replays_to_the_table_including_pins_after_a_random_workload`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |
@@ -189,6 +205,7 @@ With no policy file the argument-aware starter judges every tool call on top of 
 | Personal data that cannot be erased from an append-only record | `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`<br>`test_memory_erasure_round67_real.py::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file` |
 | An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it) | `test_fdia_goal_context_round68_real.py::test_an_address_that_extends_cuts_or_differs_does_not_count`<br>`test_fdia_goal_context_round68_real.py::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one`<br>`test_fdia_goal_context_round68_real.py::test_the_taint_gate_still_decides_after_text_from_outside_was_read` |
 | A fresh install with no policy file runs side effects on the built-in floor alone | `test_default_policy_round69_real.py::test_in_the_loop_the_default_policy_judges_with_no_file`<br>`test_default_policy_round69_real.py::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow` |
+| A standing rule is forgotten because the goal does not resemble it, or an attacker makes a rule permanent | `test_pinned_rules_round70_real.py::test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it`<br>`test_pinned_rules_round70_real.py::test_a_memory_stored_after_outside_text_was_read_is_refused_unless_a_human_reviewed_it` |
 | Memory poisoning | `test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next`<br>`test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits`<br>`test_gate_properties_round65_real.py::test_p9_a_revoked_memory_is_returned_by_nothing` |
 | Skill poisoning (a page's text saved as the agent's own habit) | `test_gate_properties_round65_real.py::test_p8_an_episode_that_read_outside_text_does_not_become_a_skill` |
 | Cancellation | `test_gate_properties_round65_real.py::test_p10_an_action_cancelled_midway_is_never_run_a_second_time`<br>`test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so` |

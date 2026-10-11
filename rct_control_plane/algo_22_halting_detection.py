@@ -444,7 +444,7 @@ class HaltingAnalyzer:
                 }
 
         # Check for decrementing counter
-        if re.search(r'while\s+\w+\s*>\s*0', code) and re.search(r'\w+\s*-=\s*1', code):
+        if re.search(r'while\s{1,8}\w{1,64}\s{0,8}>\s{0,8}0', code) and re.search(r'\w{1,64}\s{0,8}-=\s{0,8}1', code):
             return {
                 "halts": True,
                 "confidence": 0.95,

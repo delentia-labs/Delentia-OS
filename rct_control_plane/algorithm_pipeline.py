@@ -45,7 +45,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 PER_ALGORITHM_TIMEOUT_S = 120.0     # first calls load models (spaCy, torch); later calls are milliseconds
 STAGES = ("understand", "recall", "plan", "act", "verify", "compress", "record", "evolve")
 _URL_RE = re.compile(r"https?://[^\s\"']+")
-_VIDEO_RE = re.compile(r"[\w./\\:-]+\.(?:mp4|mov|avi|mkv|webm)", re.IGNORECASE)
+_VIDEO_RE = re.compile(r"(?<![\w./\\:-])[\w./\\:-]{1,300}\.(?:mp4|mov|avi|mkv|webm)", re.IGNORECASE)         # Round 70: bounded, started at the beginning of a run
 _BUILD_RE = re.compile(r"\b(app|api|website|service|backend|frontend|dashboard|scaffold)\b|แอป|เว็บ", re.IGNORECASE)
 _IMAGE_RE = re.compile(r"\b(draw|paint|image of|picture of|illustration|generate an image)\b|วาดรูป|สร้างรูป", re.IGNORECASE)
 

@@ -56,6 +56,10 @@ class AgentMemory:
                 pass
         return memory_id
 
+    def pinned(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """The standing rules this person pinned (Round 70), shown to every episode whatever the goal."""
+        return [{**m, "pinned": True} for m in self._persistence.pinned_memories(self.namespace, limit)]
+
     @staticmethod
     def _type_boost(candidate: Dict[str, Any]) -> float:
         return _TYPE_BOOST.get(MemoryType(candidate["memory_type"]), 1.0)

@@ -40,7 +40,7 @@ ENABLE_ENV = "DELENTIA_MEMORY_EVENTLOG"
 CHECKPOINT_ENV = "DELENTIA_MEMORY_CHECKPOINT_EVERY"
 POLICY_ENV = "DELENTIA_MEMORY_POLICY"
 TTL_ENV = "DELENTIA_MEMORY_TTL_DAYS"
-KINDS = ("add", "touch", "revoke", "edit", "erase")
+KINDS = ("add", "touch", "revoke", "edit", "erase", "pin", "unpin")
 SEALED_KINDS = ("add", "edit", "revoke")
 ANCHOR_ENV = "DELENTIA_MEMORY_ANCHOR_EVERY"
 ANCHOR_ENTITY = "memory_log"
@@ -170,6 +170,10 @@ def _apply(state: Dict[str, Dict[str, Any]], kind: str, memory_id: str, payload:
             state[memory_id]["revoked_reason"] = payload.get("reason", "")
         elif kind == "edit":
             state[memory_id].update({k: v for k, v in payload.items() if k in ("content", "importance", "memory_type", "context")})
+        elif kind == "pin":
+            state[memory_id]["pinned_at"] = at
+        elif kind == "unpin":
+            state[memory_id]["pinned_at"] = None
 
 
 def _fold(conn: sqlite3.Connection, namespace: str, upto_seq: Optional[int]) -> Dict[str, Dict[str, Any]]:
@@ -331,6 +335,8 @@ class MemoryEventLog:
                     diffs.append(f"{mid}.{field}: log {a.get(field)!r} vs table {b.get(field)!r}")
             if bool(a.get("revoked_at")) != bool(b.get("revoked_at")):
                 diffs.append(f"{mid}.revoked: log {bool(a.get('revoked_at'))} vs table {bool(b.get('revoked_at'))}")
+            if bool(a.get("pinned_at")) != bool(b.get("pinned_at")):
+                diffs.append(f"{mid}.pinned: log {bool(a.get('pinned_at'))} vs table {bool(b.get('pinned_at'))}")
         return {"ok": not diffs, "items": len(rows), "differences": diffs[:20]}
 
     def stats(self, namespace: str) -> Dict[str, Any]:

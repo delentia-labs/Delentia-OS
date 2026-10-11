@@ -30,7 +30,7 @@ MAX_STEPS = 40
 _SECRETS = re.compile(
     r"sk-[A-Za-z0-9_-]{10,}|ghp_[A-Za-z0-9]{20,}|xox[abp]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)|"
     r"(?i:bearer)\s+[A-Za-z0-9._~+/=-]{16,}|(?i:(?:api[_-]?key|token|secret|password|passwd|pwd)\"?\s*[:=]\s*\"?)[^\s\"',;]{6,}", re.IGNORECASE)
-_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}\b")        # Round 70: bounded and started at the beginning of a run (a 20,000-character dotted text cost 1.1 s)
 _LONG_NUMBER = re.compile(r"(?<![\w.])\+?\d[\d\s().-]{7,}\d(?![\w.])")
 
 

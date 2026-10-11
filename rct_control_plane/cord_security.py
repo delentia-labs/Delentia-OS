@@ -287,7 +287,7 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
 
     # ── Context confusion / escape sequences ─────────────────────────────
     _InjectionPattern("CORD-I015", re.compile(
-        r"(?:^|\n)\s*#{1,6}\s+(?:system|assistant|user|human|ai)\s*:",
+        r"(?:^|\n)[ \t]*#{1,6}[ \t]+(?:system|assistant|user|human|ai)[ \t]*:",          # Round 70: [ \t] not \s (a run of newlines made every start scan the rest: 20,000 newlines cost 1.4 s)
         re.IGNORECASE | re.MULTILINE
     ), "hard", "Markdown header role injection (# System: / # User:)."),
     _InjectionPattern("CORD-I016", re.compile(
@@ -307,7 +307,7 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
         re.IGNORECASE
     ), "soft", "Context reset injection attempt."),
     _InjectionPattern("CORD-I020", re.compile(
-        r"---+\s*(?:system|instructions?|prompt)\s*---+",
+        r"(?<!-)-{3,}[ \t]{0,20}(?:system|instructions?|prompt)[ \t]{0,20}-{3,}",          # Round 70: start only at the beginning of a run of dashes (20,000 dashes cost 2.8 s)
         re.IGNORECASE
     ), "hard", "HR-delimiter role injection (--- system ---)."),
 

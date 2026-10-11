@@ -2148,13 +2148,18 @@ def memory_group():
 @click.option("--type", "memory_type", default="fact", show_default=True,
               type=click.Choice(["fact", "preference", "goal", "event", "skill", "conversation"]))
 @click.option("--importance", default=0.7, show_default=True, type=float)
+@click.option("--pin", is_flag=True, help="A standing rule: show it to every episode of this namespace, whatever the goal (at most 20 per namespace, 5 are shown).")
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
-def memory_add(content: str, namespace: str, memory_type: str, importance: float, db: Optional[str]) -> None:
+def memory_add(content: str, namespace: str, memory_type: str, importance: float, pin: bool, db: Optional[str]) -> None:
     """Store a fact. Do not store secrets: recalled text is placed in the model's prompt."""
     import asyncio
     from rct_control_plane.agent_memory import AgentMemory, MemoryType
-    memory_id = asyncio.run(AgentMemory(namespace, _audit_db(db)).store(content, MemoryType(memory_type), importance=importance))
+    persistence = _audit_db(db)
+    memory_id = asyncio.run(AgentMemory(namespace, persistence).store(content, MemoryType(memory_type), importance=importance))
     click.echo(f"stored {memory_id} in namespace {namespace}")
+    if pin:
+        result = persistence.pin_memory(memory_id, namespace, True, by="cli")
+        click.echo(("pinned: every episode of this namespace will be shown it" if result["ok"] else f"not pinned: {result['reason']}"))
 
 
 @memory_group.command("list")
@@ -2162,7 +2167,32 @@ def memory_add(content: str, namespace: str, memory_type: str, importance: float
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
 def memory_list(namespace: str, db: Optional[str]) -> None:
     for item in _audit_db(db).list_memories(namespace):
-        click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
+        click.echo(f"{item['id']}  [{item['memory_type']}]{'  PINNED' if item.get('pinned_at') else ''}  used={item['accessed_count']}  {item['content'][:100]}")
+
+
+@memory_group.command("pin")
+@click.argument("memory_id")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--i-reviewed-it", "reviewed", is_flag=True, help="Needed only for a memory that was stored after text from outside was read.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_pin(memory_id: str, namespace: str, reviewed: bool, db: Optional[str]) -> None:
+    """Make a memory a standing rule: it is shown to every episode of this namespace, whatever the goal."""
+    result = _audit_db(db).pin_memory(memory_id, namespace, True, by="cli", allow_tainted=reviewed)
+    click.echo(result["reason"] if result["ok"] else click.style(f"Error: {result['reason']}", fg="red"), err=not result["ok"])
+    if not result["ok"]:
+        sys.exit(1)
+
+
+@memory_group.command("unpin")
+@click.argument("memory_id")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_unpin(memory_id: str, namespace: str, db: Optional[str]) -> None:
+    """Stop showing a memory to every episode (it stays a normal memory)."""
+    result = _audit_db(db).pin_memory(memory_id, namespace, False, by="cli")
+    click.echo(result["reason"] if result["ok"] else click.style(f"Error: {result['reason']}", fg="red"), err=not result["ok"])
+    if not result["ok"]:
+        sys.exit(1)
 
 
 @memory_group.command("calibrate")

@@ -251,7 +251,7 @@ class ControlPlanePersistence:
             memory_eventlog.ensure_schema(conn)         # Round 66: the memory event log (written only when DELENTIA_MEMORY_EVENTLOG=1)
             # Round 65: a memory can be revoked (kept on disk, never recalled again); older databases get the columns.
             have = {row[1] for row in conn.execute("PRAGMA table_info(memories)").fetchall()}
-            for column in ("revoked_at", "revoked_reason"):
+            for column in ("revoked_at", "revoked_reason", "pinned_at", "pinned_by"):        # Round 70: pinned_at/pinned_by = a standing rule the person asked to see in every episode
                 if column not in have:
                     conn.execute(f"ALTER TABLE memories ADD COLUMN {column} TEXT")
 
@@ -489,6 +489,54 @@ class ControlPlanePersistence:
             except Exception:       # the revocation itself is already stored
                 pass
         return bool(changed)
+
+    MAX_PINS_PER_PERSON = 20
+
+    def pin_memory(self, memory_id: str, namespace: str, pinned: bool = True, by: str = "", allow_tainted: bool = False) -> Dict[str, Any]:
+        """Round 70: pin (or unpin) a standing rule so that every episode of this person is shown it, whatever the goal. Only a person or the owner does this (the CLI, the Desk, a chat command): the model has no tool
+        for it, and a memory that was stored after outside text was read is refused unless a human says they reviewed it. At most MAX_PINS_PER_PERSON per namespace. Scoped to the namespace, like a revocation.
+        Returns {"ok": bool, "changed": bool, "reason": str}. The change is one event in the memory log (same transaction) and one audit row."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT id, context, pinned_at FROM memories WHERE id = ? AND namespace = ? AND revoked_at IS NULL", (memory_id, namespace)).fetchone()
+            if row is None:
+                return {"ok": False, "changed": False, "reason": "no such memory in this namespace (or it was revoked)"}
+            from rct_control_plane import memory_eventlog
+            if pinned:
+                if row["pinned_at"]:
+                    return {"ok": True, "changed": False, "reason": "already pinned"}
+                try:
+                    context = json.loads(row["context"] or "{}")
+                except ValueError:
+                    context = {}
+                provenance = context.get("provenance") if isinstance(context, dict) else None
+                if isinstance(provenance, dict) and provenance.get("tainted") and not allow_tainted:
+                    return {"ok": False, "changed": False, "reason": "this memory was stored after text from outside was read; pin it only after reviewing it (allow_tainted)"}
+                count = conn.execute("SELECT COUNT(*) FROM memories WHERE namespace = ? AND pinned_at IS NOT NULL AND revoked_at IS NULL", (namespace,)).fetchone()[0]
+                if count >= self.MAX_PINS_PER_PERSON:
+                    return {"ok": False, "changed": False, "reason": f"{self.MAX_PINS_PER_PERSON} rules are already pinned; unpin one first"}
+                conn.execute("UPDATE memories SET pinned_at = ?, pinned_by = ? WHERE id = ?", (now, (by or "")[:80], memory_id))
+                if memory_eventlog.enabled():
+                    memory_eventlog.append(conn, namespace, "pin", memory_id, {"by": (by or "")[:80]})
+            else:
+                if not row["pinned_at"]:
+                    return {"ok": True, "changed": False, "reason": "was not pinned"}
+                conn.execute("UPDATE memories SET pinned_at = NULL, pinned_by = NULL WHERE id = ?", (memory_id,))
+                if memory_eventlog.enabled():
+                    memory_eventlog.append(conn, namespace, "unpin", memory_id, {"by": (by or "")[:80]})
+        try:
+            self.append_audit(entity_type="memory_pinned", entity_id=memory_id, action="pinned" if pinned else "unpinned", actor=(by or namespace)[:80], changes={"namespace": namespace})
+        except Exception:                      # the pin itself is already stored
+            pass
+        return {"ok": True, "changed": True, "reason": "pinned" if pinned else "unpinned"}
+
+    def pinned_memories(self, namespace: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """The standing rules of one person, most recently pinned first (revoked ones are never returned)."""
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM memories WHERE namespace = ? AND revoked_at IS NULL AND pinned_at IS NOT NULL ORDER BY pinned_at DESC LIMIT ?", (namespace, int(limit))).fetchall()
+        return [_row_to_dict(r) for r in rows]
 
     def touch_memory(self, memory_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
