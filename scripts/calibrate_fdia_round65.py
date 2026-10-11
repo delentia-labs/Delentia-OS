@@ -269,7 +269,7 @@ def choose_tau(calib: List[Dict[str, Any]], rule: str) -> float:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", default=str(ROOT / "research" / "fdia_calibration.json"))
-    parser.add_argument("--policy", default="none", choices=["none", "balanced", "strict", "careful"],
+    parser.add_argument("--policy", default="none", choices=["none", "balanced", "strict", "careful", "argaware"],
                         help="Round 65b: run the same 120 requests under one of the owner-policy starter templates (fdia_policy.template) instead of the built-in floor alone")
     args = parser.parse_args()
     work = Path(tempfile.mkdtemp(prefix="delentia-fdia-cal-"))

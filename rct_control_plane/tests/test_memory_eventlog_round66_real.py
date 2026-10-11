@@ -46,8 +46,10 @@ def workload(p, ids, rng, n, ns="alice"):
             p.revoke_memory(rng.choice(ids), ns, "test")
 
 
-def test_the_log_is_off_unless_asked_for(tmp_path, monkeypatch):
+def test_the_log_can_be_switched_off_and_is_on_by_default(tmp_path, monkeypatch):
     monkeypatch.delenv(me.ENABLE_ENV, raising=False)
+    assert me.enabled() is True                                            # Round 67: on unless switched off
+    monkeypatch.setenv(me.ENABLE_ENV, "off")
     p, log = new(tmp_path)
     p.save_memory("a", "alice", "fact", "x", {}, 0.5)
     p.touch_memory("a")
@@ -114,7 +116,7 @@ def test_damage_is_named_by_the_check(tmp_path, on, damage):
     assert log.verify()["ok"]
     with sqlite3.connect(tmp_path / "m.db") as conn:
         if damage == "edit_event":
-            conn.execute("UPDATE memory_events SET payload = REPLACE(payload, 'vendor', 'VENDOR') WHERE seq = (SELECT seq FROM memory_events WHERE kind = 'add' LIMIT 1 OFFSET 20)")
+            conn.execute("UPDATE memory_events SET payload = payload || ' ' WHERE seq = (SELECT seq FROM memory_events WHERE kind = 'add' LIMIT 1 OFFSET 20)")      # any change to the stored text, sealed or not
         elif damage == "remove_event":
             conn.execute("DELETE FROM memory_events WHERE seq = 30")
         elif damage == "edit_checkpoint":
@@ -205,7 +207,7 @@ def test_the_policy_is_applied_when_the_agent_recalls_but_nothing_is_deleted(tmp
 def test_the_intent_loop_report_says_what_the_log_holds_and_which_policy_applies(tmp_path, monkeypatch):
     from types import SimpleNamespace
     from rct_control_plane.intent_loop import pillar_report
-    monkeypatch.delenv(me.ENABLE_ENV, raising=False)
+    monkeypatch.setenv(me.ENABLE_ENV, "off")
     monkeypatch.setenv(me.POLICY_ENV, "dedupe")
     p = ControlPlanePersistence(db_path=str(tmp_path / "i.db"))
     loop = SimpleNamespace(_persistence=p, namespace="alice", _episode_memory_scores=[], _episode_skills_injected=0, _episode_compressions=[], _episode_I=1.0)
@@ -215,6 +217,7 @@ def test_the_intent_loop_report_says_what_the_log_holds_and_which_policy_applies
     p.save_memory("a", "alice", "fact", "x", {}, 0.5)
     on = pillar_report({"steps": []}, loop)["memory"]["log"]
     assert on["enabled"] is True and on["events"] == 1 and on["live_memories"] == 1 and len(on["head"]) == 16 and on["policy"] == "dedupe"
+    assert on["anchors"]["ok"] is True
 
 
 def test_rctdb_can_replay_what_the_agent_knew_at_an_earlier_event(tmp_path, on):

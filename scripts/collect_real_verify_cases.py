@@ -200,6 +200,56 @@ GOALS_D: List[Dict[str, Any]] = [
     {"kind": "action", "goal": "Set a reminder in 10 minutes to restart the poller.", "tools": ["delentia_schedule_reminder"]},
 ]
 
+# Batch E (Round 67): the holdout for the "v3" changes of research/verify_batch_e_criteria.md. Written BEFORE the v3 code was frozen and before any answer to it existed; six files the model
+# has not seen in batches A-D. Batches A, B, C and D are development data from now on.
+FILES_E: Dict[str, str] = {
+    "docs/returns.md": "Returns are accepted within 14 days. Restocking fee: 8 percent. Contact: Narumon.\n",
+    "src/retry.py": "BACKOFF_BASE_S = 3\nMAX_ATTEMPTS = 9\nJITTER = True\n",
+    "config/limits.toml": "daily_quota = 5000\nburst = 80\nregion = 'eu-west-2'\n",
+    "docs/holidays.md": "Closed on 12 August and 5 December. Skeleton crew: Thanakorn. Emergency line: 02-555-0147.\n",
+    "src/notify.py": "CHANNEL = 'ops-alerts'\nTHROTTLE_PER_HOUR = 30\nSENDER = 'noreply@harbor.example'\n",
+    "docs/vendors.md": "Primary packaging vendor: PakWell. Backup vendor: BoxHub. Contract renews in March.\n",
+}
+GOALS_E: List[Dict[str, Any]] = [
+    {"kind": "fact", "goal": "Within how many days are returns accepted? See docs/returns.md.", "need": ["14"]},
+    {"kind": "fact", "goal": "What is the restocking fee in docs/returns.md?", "need": ["8"]},
+    {"kind": "fact", "goal": "Who is the returns contact according to docs/returns.md?", "need": ["narumon"]},
+    {"kind": "fact", "goal": "What is BACKOFF_BASE_S in src/retry.py?", "need": ["3"]},
+    {"kind": "fact", "goal": "How many attempts does src/retry.py allow at most?", "need": ["9"]},
+    {"kind": "fact", "goal": "Is jitter enabled in src/retry.py?", "need": ["true"]},
+    {"kind": "fact", "goal": "What is the daily quota in config/limits.toml?", "need": ["5000"]},
+    {"kind": "fact", "goal": "Which region does config/limits.toml name?", "need": ["eu-west-2"]},
+    {"kind": "fact", "goal": "What burst value is set in config/limits.toml?", "need": ["80"]},
+    {"kind": "fact", "goal": "On which dates is the office closed per docs/holidays.md?", "need": ["12 august", "5 december"]},
+    {"kind": "fact", "goal": "Who is on the skeleton crew? Check docs/holidays.md.", "need": ["thanakorn"]},
+    {"kind": "fact", "goal": "What is the emergency line in docs/holidays.md?", "need": ["555-0147"]},
+    {"kind": "fact", "goal": "Which channel does src/notify.py post to?", "need": ["ops-alerts"]},
+    {"kind": "fact", "goal": "What is the hourly throttle in src/notify.py?", "need": ["30"]},
+    {"kind": "fact", "goal": "Who is the primary packaging vendor? See docs/vendors.md.", "need": ["pakwell"]},
+    {"kind": "fact", "goal": "ผู้ขายสำรองด้านบรรจุภัณฑ์ใน docs/vendors.md คือใคร", "need": ["boxhub"]},
+    {"kind": "fact", "goal": "ค่า MAX_ATTEMPTS ใน src/retry.py คือเท่าไร", "need": ["9"]},
+    {"kind": "chat", "goal": "What is 15 times 4?", "need": ["60"]},
+    {"kind": "chat", "goal": "What is 90 divided by 6?", "need": ["15"]},
+    {"kind": "chat", "goal": "What is 500 minus 125?", "need": ["375"]},
+    {"kind": "chat", "goal": "How many hours are in a day?", "need": ["24", "twenty-four"]},
+    {"kind": "chat", "goal": "What is the capital of Spain?", "need": ["madrid"]},
+    {"kind": "chat", "goal": "What is 7 plus 8?", "need": ["15"]},
+    {"kind": "absent", "goal": "What does docs/shipping.md say about customs duties?", "need": []},
+    {"kind": "absent", "goal": "Read src/session.py and tell me how long a session lasts.", "need": []},
+    {"kind": "absent", "goal": "Which vendor supplies labels, according to docs/vendors.md?", "need": []},
+    {"kind": "absent", "goal": "What is the refund window for gift cards in docs/returns.md?", "need": []},
+    {"kind": "absent", "goal": "Tell me the password-rotation interval listed in config/limits.toml.", "need": []},
+    {"kind": "absent", "goal": "Who is the night-shift supervisor named in docs/holidays.md?", "need": []},
+    {"kind": "absent", "goal": "Read config/secrets.toml and tell me the database host.", "need": []},
+    {"kind": "absent", "goal": "What does src/notify.py say about the SMS provider?", "need": []},
+    {"kind": "action", "goal": "Remember that the returns desk closes at 16:00.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Please save a note that the vendor contract needs legal review.", "tools": ["delentia_remember"]},
+    {"kind": "action", "goal": "Create a file called closing.txt containing the words lock doors.", "tools": ["delentia_write_repo_file"]},
+    {"kind": "action", "goal": "Set a reminder in 15 minutes to check the alert channel.", "tools": ["delentia_schedule_reminder"]},
+    {"kind": "action", "goal": "Create a file called vendors_todo.txt containing the words ask BoxHub for a quote.", "tools": ["delentia_write_repo_file"]},
+    {"kind": "action", "goal": "Remember that the emergency line must be tested monthly.", "tools": ["delentia_remember"]},
+]
+
 _NOT_FOUND = re.compile(r"not found|does not exist|doesn't exist|no such|cannot find|can't find|could not find|couldn't find|unable to|not (?:available|mentioned|specified|provided|present)|no (?:information|mention)|ไม่พบ|ไม่มี|ไม่ได้ระบุ", re.IGNORECASE)
 _DENY = re.compile(r"\b(?:unable|cannot|can't|could not|couldn't|failed|not able)\b|ไม่สามารถ", re.IGNORECASE)
 
@@ -222,7 +272,7 @@ def label_case(item: Dict[str, Any], answer: str, steps: List[Dict[str, Any]]) -
 async def collect(model: str, limit: int, max_iterations: int, max_seconds: float, namespace_prefix: str, goals: List[Dict[str, Any]] = GOALS) -> Dict[str, Any]:
     work = Path(tempfile.mkdtemp(prefix="delentia-verifycases-"))
     repo = work / "repo"
-    for rel, text in ({**FILES, **FILES_C} if goals is GOALS_C else {**FILES, **FILES_D} if goals is GOALS_D else FILES).items():
+    for rel, text in ({**FILES, **FILES_C} if goals is GOALS_C else {**FILES, **FILES_D} if goals is GOALS_D else {**FILES, **FILES_E} if goals is GOALS_E else FILES).items():
         (repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (repo / rel).write_text(text, encoding="utf-8")
     run = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True)  # noqa: E731
@@ -265,12 +315,12 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-iterations", type=int, default=4)
     ap.add_argument("--max-seconds", type=float, default=150.0)
-    ap.add_argument("--set", choices=["a", "b", "c", "d"], default="a", help="a, b, c = development data (b and c were holdouts when they were measured; all three were read), d = the holdout for the Round 66 changes (six new files)")
+    ap.add_argument("--set", choices=["a", "b", "c", "d", "e"], default="a", help="a, b, c = development data (b and c were holdouts when they were measured; all three were read), d = the holdout for the Round 66 changes (six new files)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     import logging
     logging.disable(logging.WARNING)
-    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, {"a": "collect", "b": "collectb", "c": "collectc", "d": "collectd"}[args.set], {"a": GOALS, "b": GOALS_B, "c": GOALS_C, "d": GOALS_D}[args.set]))
+    report = asyncio.run(collect(args.model, args.limit, args.max_iterations, args.max_seconds, {"a": "collect", "b": "collectb", "c": "collectc", "d": "collectd", "e": "collecte"}[args.set], {"a": GOALS, "b": GOALS_B, "c": GOALS_C, "d": GOALS_D, "e": GOALS_E}[args.set]))
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n{report['episodes']} episodes, {report['kept_llm_finished']} ended with the model's own answer ({report['good']} good, {report['bad']} bad); "
           f"{report['trajectory_lines_recorded']} trajectory lines recorded")

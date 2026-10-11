@@ -113,7 +113,7 @@ An episode that was held, refused, errored, declined, or that read text from out
 After `revoke_memory` no reader returns it (recall, scored recall, listings, the Desk page); the row and text stay on disk and the revocation is in the audit trail; one person cannot revoke another's; old databases are migrated.
 
 - **Assumes:** Every reader goes through ControlPlanePersistence.list_memories (the only SQL reader of the table besides the Desk page, which filters too).
-- **Not covered:** A skill derived from a memory is not revoked with it; nothing is erased (PDPA erasure needs a separate, per-subject key design).
+- **Not covered:** A skill derived from a memory is not revoked with it. Revoking does not erase (see P12 for erasure and what it leaves).
 - **Pinned by:**
   - `test_gate_properties_round65_real.py::test_p9_a_revoked_memory_is_returned_by_nothing`
   - `test_gate_properties_round65_real.py::test_p9_revoking_is_scoped_to_the_owner_and_happens_once`
@@ -130,6 +130,32 @@ An approved action cancelled mid-run stays claimed and cannot be claimed again; 
   - `test_gate_properties_round65_real.py::test_the_emergency_stop_reaches_an_action_a_person_already_approved`
   - `test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so`
 
+### P11 - Memory history cannot be rewritten or cut back without being noticed (up to the last anchor)
+
+The memory event log is hash-chained and its head is written into the audit chain every N events. Editing one event, rewriting the whole log with every hash recomputed, cutting it back, or editing the anchor row itself is detected by `verify` or `verify_anchors` or the audit chain's own check; events after the latest anchor are reported as unanchored.
+
+- **Assumes:** The audit chain is itself protected (signature, notary, an independent witness). With none of those, someone with write access can rewrite the log AND the anchors AND the audit chain.
+- **Not covered:** Events after the latest anchor can be rewritten undetected until the next anchor; with no independent witness the whole structure is only as strong as the host.
+- **Pinned by:**
+  - `test_memory_anchor_round67_real.py::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor`
+  - `test_memory_anchor_round67_real.py::test_cutting_the_log_back_is_caught`
+  - `test_memory_anchor_round67_real.py::test_editing_the_anchor_row_itself_is_caught_by_the_audit_chain`
+  - `test_memory_anchor_round67_real.py::test_events_after_the_last_anchor_are_reported_as_unanchored`
+  - `test_memory_eventlog_round66_real.py::test_damage_is_named_by_the_check`
+
+### P12 - Erasing a person destroys their text and leaves the chains valid
+
+After a signed erase, the person's memory text is unreadable from the log (their key is destroyed), absent from every byte of the database file, scrubbed from the table, and the event chain, the anchors and the audit chain still verify; another person is untouched; refusals destroy nothing.
+
+- **Assumes:** The approver key is held by a person; the key file of the person being erased was not copied elsewhere.
+- **Not covered:** Events written before sealing was on stay readable; other tables that carry the person's namespace (past requests, skills, experiments) are listed in the report and not erased; backups, swap and filesystem journals are outside the database file.
+- **Pinned by:**
+  - `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`
+  - `test_memory_erasure_round67_real.py::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file`
+  - `test_memory_erasure_round67_real.py::test_erasure_needs_a_trusted_approver_and_the_exact_head`
+  - `test_memory_erasure_round67_real.py::test_the_report_says_what_was_not_erased`
+  - `test_memory_erasure_round67_real.py::test_the_log_holds_ciphertext_not_the_text`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |
@@ -139,6 +165,8 @@ An approved action cancelled mid-run stays claimed and cannot be claimed again; 
 | Role mismatch | `test_gate_properties_round65_real.py::test_p3_a_signature_from_the_wrong_role_is_refused`<br>`test_fdia_policy_loop_round54_real.py::test_roles_follow_the_server_side_identity_not_the_request` |
 | Cross-user access | `test_approvals_scope_round61_real.py::test_a_person_sees_only_their_own_waiting_requests`<br>`test_signed_approval_resume_real.py::test_another_namespace_cannot_resume_it`<br>`test_tenant_isolation_round62_real.py::test_a_person_cannot_resume_somebody_elses_approval`<br>`test_gate_properties_round65_real.py::test_p9_revoking_is_scoped_to_the_owner_and_happens_once` |
 | Tool poisoning (a tool's description or result carries instructions) | `test_external_mcp_round55_real.py::test_a_poisoned_tool_description_is_dropped_and_reported_never_shown`<br>`test_taint_gate_round58_real.py::test_the_measurement_with_a_fully_hijacked_model` |
+| History rewriting (the log of what the agent knew is edited after the fact) | `test_memory_anchor_round67_real.py::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor`<br>`test_memory_anchor_round67_real.py::test_cutting_the_log_back_is_caught` |
+| Personal data that cannot be erased from an append-only record | `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`<br>`test_memory_erasure_round67_real.py::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file` |
 | Memory poisoning | `test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next`<br>`test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits`<br>`test_gate_properties_round65_real.py::test_p9_a_revoked_memory_is_returned_by_nothing` |
 | Skill poisoning (a page's text saved as the agent's own habit) | `test_gate_properties_round65_real.py::test_p8_an_episode_that_read_outside_text_does_not_become_a_skill` |
 | Cancellation | `test_gate_properties_round65_real.py::test_p10_an_action_cancelled_midway_is_never_run_a_second_time`<br>`test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so` |

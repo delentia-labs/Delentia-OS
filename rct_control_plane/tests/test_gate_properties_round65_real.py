@@ -538,7 +538,7 @@ def test_the_property_table_is_current_and_every_test_it_names_exists():
     assert gate_properties.missing_tests() == []
     committed = (gate_properties.ROOT / "research" / "GATE_PROPERTIES.md").read_bytes().decode("utf-8").replace("\r\n", "\n")
     assert committed == gate_properties.render(), "run: python research/gate_properties.py"
-    assert [p["id"] for p in gate_properties.PROPERTIES] == [f"P{i}" for i in range(1, 11)]
+    assert [p["id"] for p in gate_properties.PROPERTIES] == [f"P{i}" for i in range(1, 13)]      # Round 67 added P11 (memory history) and P12 (erasure)
 
 
 # ------------------------------------------------------------------------------------------------ found by the FDIA calibration (scripts/calibrate_fdia_round65.py)

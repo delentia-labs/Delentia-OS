@@ -410,6 +410,14 @@ _DECLINE_PATTERNS = re.compile(
 _DECLINE_ZH = re.compile(r"(?:未|并未|没有|没能|没)(?:提供|提及|列出|找到|包含|说明|显示|给出|发现)|找不到|不存在|建议(?:查阅|参考|咨询|查看)|请(?:查阅|参考|咨询)|无从得知|不清楚")
 
 
+# Round 67 (a): absence and deferral phrases ("is not explicitly mentioned", "the value has to be looked up in the file") found on batch D. Off unless DELENTIA_VERIFY_V3 is on.
+_DECLINE_V3 = re.compile(
+    r"\bnot (?:explicitly |specifically |clearly )?(?:mentioned|specified|stated|provided|listed|defined)\b|"
+    r"\b(?:does|do|did) not (?:say|specify|mention|state|list|define|contain)\b|\bno (?:explicit|specific) (?:mention|information|value)\b|"
+    r"(?:没有|未)明确|需要(?:直接)?(?:查看|查阅|检查)[^。.\n]{0,24}才能(?:确定|知道|得知)|具体(?:值|内容)需要",
+    re.IGNORECASE)
+
+
 def answer_declines_goal(answer: str) -> bool:
     """True when the final answer says the agent did not do the task
     (a refusal or "no tool can do this"). Used by VERIFY so declined work is
@@ -417,6 +425,8 @@ def answer_declines_goal(answer: str) -> bool:
     if _DECLINE_PATTERNS.search(answer or ""):
         return True
     from rct_control_plane import verify_grounding
+    if verify_grounding.v3_enabled() and _DECLINE_V3.search(answer or ""):
+        return True
     return bool(verify_grounding.v2_enabled() and _DECLINE_ZH.search(answer or ""))
 
 
