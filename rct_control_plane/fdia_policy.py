@@ -17,6 +17,10 @@ Precedence (same as TypeScript, plus one stricter rule):
   1. blocked_action_patterns             A = 0, final (TypeScript only checks these when no rules exist)
   2. rules whose intent_patterns match   the MOST restrictive wins (REQUIRE_HUMAN_SIGNATURE > CONDITIONAL > ALLOW),
                                          then the earlier rule. A rule with allowed_roles refuses other roles.
+                                         Round 67: a rule may look at the arguments. `when` = conditions that must ALL
+                                         hold for the rule to apply; `unless` = the rule does NOT apply when ALL of
+                                         them hold. Conditions are fixed operations (see CONDITION_OPS), never a
+                                         regular expression, so a policy file cannot hang the gate.
   3. require_human_dual_signoff          two signatures from distinct approver keys
   4. nothing matched                     default_fallback_A (0 = zero trust: the action is not registered, so no one
                                          can sign for it; the owner must add a rule)
@@ -51,6 +55,22 @@ _RULE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}$")
 _ROLE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\- ]{0,47}$")
 _ARG_VALUE_CAP = 4000
 
+# Round 67: argument-aware rules. A condition reads ONE argument (or "*": every string argument) and applies a fixed operation to it.
+#   prefix_in          the command starts with one of `values` at a word boundary ("git status" matches "git status -s", not "git statusx")
+#   prefix_in_pipe     same, but a plain `|` pipeline is fine when EVERY segment starts with one of `values`
+#   no_shell_metachar  none of ; & > < ` $ ( ) { } ^ % ! ~ newline (and, unless the value itself needs them, no `|`)
+#   no_shell_metachar_except_pipe   the same, a plain `|` is allowed (pair it with prefix_in_pipe)
+#   no_outside_paths   no word that is absolute (/x, C:\x, \\x), starts with ~, or climbs out with ..
+#   glob_any           the value matches one of the glob patterns in `values`
+#   contains_any       the value contains one of `values` (case-insensitive)
+#   lacks_any          the value contains NONE of `values` (case-insensitive): used to refuse flags that make a read-only program write or run something (--output, -delete, --exec)
+# A missing argument is the empty string, so "starts with one of" is false and "has no metacharacter" is true: a rule that ALLOWS must
+# combine a positive operation (prefix_in) with the negative ones, and a rule that ASKS uses them in `unless`.
+CONDITION_OPS = ("prefix_in", "prefix_in_pipe", "no_shell_metachar", "no_shell_metachar_except_pipe", "no_outside_paths", "glob_any", "contains_any", "lacks_any")
+_METACHARS = set(";&><`${}()^%!~\n\r")
+_MAX_CONDITIONS = 12
+_MAX_CONDITION_VALUES = 80
+
 
 def policy_path() -> Path:
     override = os.environ.get(POLICY_ENV)
@@ -66,6 +86,8 @@ class Rule:
     assigned_A: float = 1.0
     require_human_confirmation: bool = False
     denied_paths: List[str] = field(default_factory=list)
+    when: List[Dict[str, Any]] = field(default_factory=list)
+    unless: List[Dict[str, Any]] = field(default_factory=list)
     allowed_roles: List[str] = field(default_factory=list)
     human_approver_role: List[str] = field(default_factory=list)
     required_signatures: int = 1
@@ -160,6 +182,62 @@ def path_is_denied(value: str, pattern: str) -> bool:
     return False
 
 
+def _words(text: str) -> List[str]:
+    return [w.strip("'\"") for w in re.split(r"\s+", text.strip()) if w]
+
+
+def _starts_with(text: str, prefix: str) -> bool:
+    have, want = [w.lower() for w in _words(text)], [w.lower() for w in _words(prefix)]
+    if have and have[0].endswith(".exe"):
+        have[0] = have[0][:-4]
+    return bool(want) and have[: len(want)] == want
+
+
+def _outside_path_word(word: str) -> bool:
+    w = word.replace("\\", "/")
+    return (w.startswith(("/", "~")) or bool(re.match(r"^[A-Za-z]:", w)) or w == ".." or w.startswith("../")
+            or "/../" in w or w.endswith("/.."))
+
+
+def _one_condition_holds(cond: Dict[str, Any], tool_args: Dict[str, Any]) -> bool:
+    name, op, values = str(cond.get("arg", "")), cond.get("op"), [str(v) for v in cond.get("values", [])]
+    if name == "*":
+        text = " ".join(_arg_strings(tool_args))
+    else:
+        raw = tool_args.get(name, "")
+        text = raw if isinstance(raw, str) else (" ".join(str(x) for x in raw) if isinstance(raw, (list, tuple)) else str(raw))
+    text = text[:_ARG_VALUE_CAP]
+    if op == "prefix_in":
+        return any(_starts_with(text, v) for v in values)
+    if op == "prefix_in_pipe":
+        segments = text.split("|")
+        return bool(text.strip()) and all(any(_starts_with(seg, v) for v in values) for seg in segments)
+    if op == "no_shell_metachar":
+        return not any(c in _METACHARS for c in text) and "|" not in text
+    if op == "no_shell_metachar_except_pipe":
+        return not any(c in _METACHARS for c in text)
+    if op == "no_outside_paths":
+        return not any(_outside_path_word(w) for w in _words(text))
+    if op == "glob_any":
+        return any(fnmatch.fnmatchcase(text.lower(), v.lower()) for v in values)
+    if op == "contains_any":
+        low = text.lower()
+        return any(v.lower() in low for v in values if v)
+    if op == "lacks_any":
+        low = text.lower()
+        return not any(v.lower() in low for v in values if v)
+    return False                                                         # an unknown operation never holds
+
+
+def conditions_apply(rule: "Rule", tool_args: Dict[str, Any]) -> bool:
+    """Does this rule apply to this call? All `when` hold, and not all `unless` hold."""
+    if rule.when and not all(_one_condition_holds(c, tool_args) for c in rule.when):
+        return False
+    if rule.unless and all(_one_condition_holds(c, tool_args) for c in rule.unless):
+        return False
+    return True
+
+
 def _arg_strings(tool_args: Dict[str, Any]) -> List[str]:
     values: List[str] = []
 
@@ -207,6 +285,30 @@ def _clean_list(raw: Any, field_name: str, errors: List[str], limit: int = MAX_P
         if len(item) > chars:
             errors.append(f"{field_name}: entry longer than {chars} characters")
     return [x[:chars] for x in items]
+
+
+def _clean_conditions(raw: Any, field_name: str, errors: List[str]) -> List[Dict[str, Any]]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list) or len(raw) > _MAX_CONDITIONS:
+        errors.append(f"{field_name} must be a list of at most {_MAX_CONDITIONS} conditions")
+        return []
+    cleaned: List[Dict[str, Any]] = []
+    for i, c in enumerate(raw):
+        label = f"{field_name}[{i}]"
+        if not isinstance(c, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        arg, op = str(c.get("arg", "")).strip(), str(c.get("op", "")).strip()
+        if arg != "*" and not re.match(r"^[A-Za-z0-9_]{1,64}$", arg):
+            errors.append(f"{label}.arg is an argument name or *")
+        if op not in CONDITION_OPS:
+            errors.append(f"{label}.op must be one of {', '.join(CONDITION_OPS)}")
+        values = _clean_list(c.get("values"), f"{label}.values", errors, _MAX_CONDITION_VALUES, 128)
+        if op in ("prefix_in", "prefix_in_pipe", "glob_any", "contains_any", "lacks_any") and not values:
+            errors.append(f"{label}.values needs at least one entry for {op}")
+        cleaned.append({"arg": arg, "op": op, "values": values})
+    return cleaned
 
 
 def _number(raw: Any, name: str, errors: List[str], default: float, low: float = 0.0, high: float = 1.0) -> float:
@@ -271,6 +373,8 @@ def validate_policy(data: Any) -> Tuple[Optional[Policy], List[str]]:
             assigned_A=_number(raw.get("assigned_A"), f"{label}.assigned_A", errors, 1.0),
             require_human_confirmation=bool(raw.get("require_human_confirmation", False)),
             denied_paths=_clean_list(raw.get("denied_paths"), f"{label}.denied_paths", errors),
+            when=_clean_conditions(raw.get("when"), f"{label}.when", errors),
+            unless=_clean_conditions(raw.get("unless"), f"{label}.unless", errors),
             allowed_roles=roles, human_approver_role=approvers, required_signatures=signatures, jury_tier=jury))
     roles_block = data.get("roles") if isinstance(data.get("roles"), dict) else {}
     principals_raw = roles_block.get("principals", {}) if isinstance(roles_block, dict) else {}
@@ -358,7 +462,7 @@ def evaluate(policy: Policy, tool_name: str, tool_args: Optional[Dict[str, Any]]
         if matches_tool(tool_name, pattern):
             return verdict(0.0, f"{tool_name} matches the forbidden pattern {pattern!r}", "BLOCKED_ACTION_PATTERN", "BLOCKED")
 
-    matched = [r for r in policy.rules if any(matches_tool(tool_name, p) for p in r.intent_patterns)]
+    matched = [r for r in policy.rules if any(matches_tool(tool_name, p) for p in r.intent_patterns) and conditions_apply(r, args)]
     if matched:
         rule = max(enumerate(matched), key=lambda pair: (_SEVERITY[pair[1].action_type], -pair[0]))[1]
         names = [r.rule_id for r in matched]
@@ -400,10 +504,18 @@ def evaluate(policy: Policy, tool_name: str, tool_args: Optional[Dict[str, Any]]
 def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
     """Starter policies. `tool_names` are the real tool names, so every tool is classified and the zero-trust
     fallback never blocks a tool the owner simply forgot."""
-    readers = [t for t in tool_names if any(k in t for k in ("read", "search", "list", "recall", "query", "get_", "expand", "status", "stats", "estimate", "verify"))]
-    writers = [t for t in tool_names if t not in readers]
     strict = name == "strict"
+    argaware = name == "argaware"
+    careful = name == "careful" or argaware
     special = {"run_sandboxed_command", "synthesize_function", "write_repo_file", "patch_repo_file", "save_exchange_file"}
+    # Round 65 (scripts/calibrate_fdia_round65.py): with the balanced starter, the actions that reach beyond this machine or start other agents (fetching an address the
+    # person did not type, subagents, delegation, imported state, schedules) were ALLOWed, so 25 of 52 requests that should have asked ran on their own. "careful" asks for them.
+    reach = {"crawl_url", "browse_page", "browser_act", "web_search", "describe_image", "delegate", "spawn_subagents", "import_session_state", "schedule_self_evolution",
+             "schedule_reminder", "cron_create", "create_worktree", "remove_worktree", "run_forged_tool", "autonomous_loop"} if careful else set()
+    special |= reach
+    readers = [t for t in tool_names if any(k in t for k in ("read", "search", "list", "recall", "query", "get_", "expand", "status", "stats", "estimate", "verify"))
+               and _forms(t)[-1] not in reach]      # web_search has "search" in its name but sends the query out
+    writers = [t for t in tool_names if t not in readers]
     rules: List[Dict[str, Any]] = [
         {"rule_id": "R-READ", "description": "Reading and looking things up is allowed without friction.", "intent_patterns": sorted(readers) or ["read_*"], "action_type": "ALLOW", "assigned_A": 1},
         {"rule_id": "R-WRITE-FILES", "description": "Changing files needs a human signature and may never touch secrets or version control.",
@@ -417,10 +529,67 @@ def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
          "intent_patterns": sorted(t for t in writers if _forms(t)[-1] not in special) or ["*"],
          "action_type": "CONDITIONAL" if strict else "ALLOW", "assigned_A": 1},
     ]
+    if argaware:
+        rules = _argaware_rules(tool_names, readers, writers, special, reach)
+    elif careful:
+        present = sorted(t for t in writers if _forms(t)[-1] in reach)
+        if present:
+            rules.insert(3, {"rule_id": "R-REACH", "description": "Reaching beyond this machine, starting other agents or scheduling later work needs a human signature.",
+                             "intent_patterns": present, "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 1})
     return {
-        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Strict starter" if strict else "Balanced starter",
+        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Strict starter" if strict else ("Argument-aware starter" if argaware else ("Careful starter" if careful else "Balanced starter")),
         "default_fallback_A": 0, "custom_safety_threshold": 0.6 if strict else 0.5, "rules": rules,
         "blocked_action_patterns": ["*drop_database*", "*export_credentials*", "*exfiltrate*"],
         "require_human_dual_signoff": ["deploy_to_production", "grant_admin_privilege"] if strict else [],
         "roles": {"default_role": "developer", "principals": {}}, "jury_by_risk": {"SYSTEMIC": "tier_4"} if strict else {},
     }
+
+
+# ------------------------------------------------------------------ Round 67: the argument-aware starter
+
+SAFE_SHELL_PREFIXES = ["ls", "dir", "pwd", "echo", "date", "whoami", "wc", "head", "tail", "cat", "grep", "du", "df", "file", "stat",
+                       "git status", "git log", "git diff", "git show", "git rev-parse", "git branch --show-current", "git branch --list",
+                       "python --version", "python3 --version", "node --version", "pip --version", "pip list", "pip show"]
+# flags that turn an inspection program into one that writes or runs something (found by the fresh set: `git log --output=log.txt` wrote a file)
+WRITING_FLAGS = ["--output", "--exec", "-exec", "-delete", "--ext-diff", "--textconv", "--upload-pack", "--open-files-in-pager"]
+PERSONAL_DATA_WORDS = ["home address", "address", "phone", "full name", "ssn", "passport", "salary", "date of birth", "id card", "ที่อยู่", "เบอร์โทร", "เลขบัตร"]
+_SHELL_SAFE_CONDITIONS = [
+    {"arg": "command", "op": "prefix_in_pipe", "values": SAFE_SHELL_PREFIXES},
+    {"arg": "command", "op": "no_shell_metachar_except_pipe", "values": []},
+    {"arg": "command", "op": "no_outside_paths", "values": []},
+    {"arg": "command", "op": "lacks_any", "values": WRITING_FLAGS},
+]
+_SECRET_PATHS = [".env", ".git/*", "*.pem", "*.key", "id_rsa*", "/etc/*"]
+
+
+def _argaware_rules(tool_names: List[str], readers: List[str], writers: List[str], special: set, reach: set) -> List[Dict[str, Any]]:
+    """A starter whose rules look at WHAT the call does, not only which tool it is. A rule per tool cannot tell `ls` from `rm`; this one lets a read-only inspection
+    command run and asks for everything else. It can still only tighten the built-in floor (the loop takes the stricter of the two)."""
+    have = {_forms(t)[-1] for t in tool_names}
+    rules: List[Dict[str, Any]] = [
+        {"rule_id": "R-READ", "description": "Reading and looking things up is allowed without friction.", "intent_patterns": sorted(readers) or ["read_*"], "action_type": "ALLOW", "assigned_A": 1},
+        {"rule_id": "R-WRITE-FILES", "description": "Changing files needs a human signature and may never touch secrets or version control.",
+         "intent_patterns": ["write_repo_file", "patch_repo_file", "save_exchange_file"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "denied_paths": _SECRET_PATHS + ["production.config.*"], "required_signatures": 1},
+        {"rule_id": "R-SHELL-INSPECT", "description": "A read-only inspection command (a listed program, no redirection or substitution, nothing outside the project) may run.",
+         "intent_patterns": ["run_sandboxed_command"], "action_type": "ALLOW", "assigned_A": 1, "denied_paths": _SECRET_PATHS, "when": _SHELL_SAFE_CONDITIONS},
+        {"rule_id": "R-SHELL-OTHER", "description": "Any other command needs a human signature.",
+         "intent_patterns": ["run_sandboxed_command"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "denied_paths": _SECRET_PATHS, "unless": _SHELL_SAFE_CONDITIONS},
+        {"rule_id": "R-CODE", "description": "Running generated code needs a human signature.", "intent_patterns": ["synthesize_function"], "action_type": "REQUIRE_HUMAN_SIGNATURE"},
+    ]
+    if "web_search" in have:
+        personal = [{"arg": "query", "op": "contains_any", "values": PERSONAL_DATA_WORDS}]
+        rules.append({"rule_id": "R-SEARCH-PERSONAL", "description": "A search that asks for personal data about someone needs a human signature.",
+                      "intent_patterns": ["web_search"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "when": personal})
+        rules.append({"rule_id": "R-SEARCH-PLAIN", "description": "An ordinary search may run.", "intent_patterns": ["web_search"], "action_type": "ALLOW", "assigned_A": 1, "unless": personal})
+    if "describe_image" in have:
+        image = [{"arg": "path", "op": "glob_any", "values": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"]}, {"arg": "path", "op": "no_outside_paths", "values": []}]
+        rules.append({"rule_id": "R-IMAGE-LOCAL", "description": "Describing a picture inside the project may run.", "intent_patterns": ["describe_image"], "action_type": "ALLOW", "assigned_A": 1, "when": image})
+        rules.append({"rule_id": "R-IMAGE-OTHER", "description": "Any other image path needs a human signature.", "intent_patterns": ["describe_image"], "action_type": "REQUIRE_HUMAN_SIGNATURE", "unless": image})
+    reach_rest = sorted(t for t in writers if _forms(t)[-1] in reach and _forms(t)[-1] not in ("web_search", "describe_image"))
+    if reach_rest:
+        rules.append({"rule_id": "R-REACH", "description": "Reaching an address, starting other agents or scheduling later work needs a human signature.",
+                      "intent_patterns": reach_rest, "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 1})
+    rest = sorted(t for t in writers if _forms(t)[-1] not in special)
+    if rest:
+        rules.append({"rule_id": "R-OTHER-ACTIONS", "description": "Everything else is allowed but audited.", "intent_patterns": rest, "action_type": "ALLOW", "assigned_A": 1})
+    return rules

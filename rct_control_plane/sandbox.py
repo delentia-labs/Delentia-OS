@@ -44,6 +44,14 @@ _MEDIUM_RISK_PREFIXES = [
     # already-recognized one (confirmed by direct reproduction:
     # classify_command_risk() returned "safe" for both before this).
     "certutil ", "bitsadmin ",
+    # Round 65 (found by scripts/calibrate_fdia_round65.py, which asked the real gate about 120 labelled requests): these ran with NO approval because "safe" is
+    # the default for anything not listed. They act on the whole machine, not on the scratch directory the relative-path rules protect: who may read or run a file
+    # (chmod/chown/icacls/takeown), which processes and services run (kill, pkill, taskkill, sc, net, systemctl, service, launchctl) and what runs later (crontab, schtasks, at).
+    "chmod ", "chown ", "chgrp ", "icacls ", "takeown ", "cacls ",
+    "kill ", "pkill", "killall", "taskkill", "sc ", "net ", "net1 ", "systemctl", "service ", "launchctl",
+    "crontab", "schtasks", "at ",
+    # Round 67 (GTFOBins' reverse-shell and upload recipes): programs whose job is to open or accept a network connection or copy files to another machine.
+    "socat", "nc ", "ncat", "netcat", "telnet", "ssh ", "scp ", "sftp ", "ftp ", "tftp ", "rsync ", "openssl s_client", "bash -i", "sh -i", "nohup ",
 ]
 
 # Round 37: closes a real gap found via direct incident, not
@@ -132,6 +140,39 @@ _SUBSTITUTION_PATTERN = re.compile(r"\$\(([^)]*)\)|`([^`]*)`")
 # those characters (not just any character) so unrelated commands/
 # filenames that merely start with "cd" (e.g. `cdrom-tool`) are not
 # falsely flagged.
+# Round 65: the relative-path containment (the scratch working directory, the `..` rule above) says nothing about a path that is NOT relative. `cat ~/passwords.csv`,
+# `chmod 777 /etc`, `type C:\Users\x\Documents\notes.txt` were all "safe". A home path, a drive path or a system directory named in a sub-command now needs approval. (`http://` is not
+# a drive: a single letter must stand alone. A bare `/` or a Windows switch such as `/c` is not matched.)
+_OUTSIDE_PATH_PATTERN = re.compile(
+    r"(?:^|[\s\"'=(])~(?:[\\/\s\"']|$)"
+    r"|(?<![A-Za-z0-9])[A-Za-z]:[\\/]"
+    r"|(?:^|[\s\"'=(])/(?:etc|usr|var|bin|sbin|root|home|opt|dev|proc|sys|boot|lib\w*|mnt|srv|tmp|users|windows|program ?files)(?:[\\/\s\"']|$)"
+    r"|\\\\[A-Za-z0-9_.-]+\\",
+    re.IGNORECASE,
+)
+# Round 66 (found by research/adaptive_attacker.py, which tried 30 ways to read a canary "secret" in a throw-away HOME through the real classifier and the real sandbox: 10 got
+# through). The Round 65 rule looked for a path WRITTEN in the command; the shell can build one. An environment variable that names the home or profile folder (%USERPROFILE%, $HOME,
+# $env:...), the cmd escape character `^` (t^ype), `set NAME` (lists variables), and inline Python that reads the environment or the home directory all produced a path or a value
+# the classifier never saw. Any of them now needs approval. This is a speed bump, not a boundary: code that is allowed to run can still compute a path, which is why running an
+# interpreter on arbitrary code stays the sandbox's documented limit and not a claim.
+_ENV_EXPANSION_PATTERN = re.compile(r"%[A-Za-z_][\w()]*%|\$\{[A-Za-z_]\w*\}|\$[A-Za-z_]\w*|\$env:", re.IGNORECASE)
+_CMD_ESCAPE_PATTERN = re.compile(r"\^")
+_SET_LISTING_PATTERN = re.compile(r"^\s*set\s+\S", re.IGNORECASE)
+_INLINE_CODE_ENV_PATTERN = re.compile(r"os\.environ|getenv|expanduser|Path\.home|USERPROFILE|HOMEPATH|APPDATA|HOMEDRIVE", re.IGNORECASE)
+# Round 67 (found by running other people's attack menus, research/external_menu_attack.py - GTFOBins): the floor called these "safe" because "safe" is what an unlisted command gets.
+#  * git has subcommands that write the repository or run a program (init, commit, apply, config, help -> a pager -> a shell, -C, -c, --exec-path, -p, branch NAME ...): only the read-only
+#    ones (status, log, diff, show, rev-parse, branch --show-current/--list ...) stay safe.
+#  * an inline script (`python -c`, `node -e`, `perl -e` ...) that opens a socket, spawns a process, writes a file, loads a library or evals text is code execution, not inspection.
+_GIT_MUTATING_PATTERN = re.compile(
+    r"^git\s+(?:(?:-C\s+\S+|-c\s+\S+|--[\w-]+(?:=\S*)?)\s+)*(?:init|commit|apply|am|config|help|checkout|switch|restore|clean|rm|mv|stash|merge|rebase|pull|fetch|clone|submodule|tag|worktree|revert|cherry-pick|add)\b"
+    r"|^git\s+(?:-C|-c|-p|--paginate|--exec-path|--git-dir|--work-tree)\b"
+    r"|^git\s+branch\s+(?!--show-current\b|--list\b|-l\b|-a\b|-r\b|-v\b|-vv\b|--all\b|--remotes\b)\S",
+    re.IGNORECASE)
+_INLINE_INTERPRETER_PATTERN = re.compile(r"\b(?:python[\d.]*|py|node|nodejs|perl|ruby|php|deno|bun)(?:\.exe)?\b[^\n]*?\s-(?:c|e|r|-eval|-command)\b", re.IGNORECASE)
+_INLINE_CODE_RISK_PATTERN = re.compile(
+    # Writing a RELATIVE file is deliberately not here: relative paths resolve in the sandbox's scratch directory (Round 38), and an absolute or `..` path is caught by the path rules.
+    r"socket|urllib|urlopen|requests\.|httpx|http\.(?:client|server)|aiohttp|subprocess|os\.(?:system|exec\w*|popen|spawn\w*|dup2|kill)|\bpty\b|ctypes|cdll"
+    r"|\beval\(|\bexec\(|__import__|child_process|\bfetch\(|\bnet\.|\brequire\(", re.IGNORECASE)
 _CD_COMMAND_PATTERN = re.compile(r"^(cd|chdir|pushd)(\s|[./\\]|$)", re.IGNORECASE)
 # Round 41: broadened from an anchored `^...` prefix match to a
 # boundary-aware SEARCH anywhere in the sub-command. The prior anchored
@@ -264,6 +305,27 @@ _KEY_MATERIAL_PATTERN = re.compile(
 _ENV_DUMP_PATTERN = re.compile(r"^\s*(printenv|env|set)\s*$|^\s*printenv\b", re.IGNORECASE)
 
 
+def _names_a_secret_file(command: str) -> bool:
+    """Round 67: the agent's read, search and @file tools refuse the files in secret_paths (secrets.yaml, token.json, *.keystore, .netrc, the runtime's own databases ...), but the shell had a
+    shorter list of its own, so `type secrets.yaml` ran while `delentia_read_repo_file("secrets.yaml")` did not. The shell now asks the same list about every word of the command."""
+    from rct_control_plane import secret_paths
+    for raw in re.split(r"[\s;&|<>()]+", command):
+        word = raw.strip("'\"`")
+        candidates = []
+        if word.startswith("-"):
+            if "=" in word:
+                candidates.append(word.split("=", 1)[1])
+        else:
+            candidates.append(word)
+            if "=" in word:
+                candidates.append(word.split("=", 1)[1])
+        for c in candidates:
+            c = c.strip("'\"`")
+            if c and len(c) <= 255 and secret_paths.blocked_reason(c):
+                return True
+    return False
+
+
 def classify_command_risk(command: str) -> str:
     """Returns "denied" (any real sub-command matches
     _DENYLISTED_PREFIXES), "needs_approval" (any real sub-command
@@ -278,8 +340,9 @@ def classify_command_risk(command: str) -> str:
     `runas` invocation always needs_approval at minimum (Round 45); if
     its wrapped command is extractable and itself denylisted, that
     denies the whole thing."""
-    if _KEY_MATERIAL_PATTERN.search(command):
+    if _KEY_MATERIAL_PATTERN.search(command) or _names_a_secret_file(command):
         return "denied"
+    inline_risky = bool(_INLINE_INTERPRETER_PATTERN.search(command) and _INLINE_CODE_RISK_PATTERN.search(command))      # judged on the whole string: a quoted script can span lines
     worst = "safe"
     for sub in _split_into_subcommands(command):
         if _ENV_DUMP_PATTERN.search(sub):
@@ -295,11 +358,17 @@ def classify_command_risk(command: str) -> str:
                 worst = "needs_approval"
         if _FILE_WRITE_REDIRECT_PATTERN.search(sub):
             worst = "needs_approval"
+        if _GIT_MUTATING_PATTERN.match(sub_stripped):
+            worst = "needs_approval"
         if _CD_COMMAND_PATTERN.match(sub_stripped):
             worst = "needs_approval"
         if _POWERSHELL_INVOCATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"
         if _PARENT_DIR_TRAVERSAL_PATTERN.search(sub):
+            worst = "needs_approval"
+        if _OUTSIDE_PATH_PATTERN.search(sub):
+            worst = "needs_approval"
+        if (_ENV_EXPANSION_PATTERN.search(sub) or _CMD_ESCAPE_PATTERN.search(sub) or _SET_LISTING_PATTERN.match(sub) or _INLINE_CODE_ENV_PATTERN.search(sub)):
             worst = "needs_approval"
         if _LINK_CREATION_PATTERN.search(sub_stripped):
             worst = "needs_approval"
@@ -312,6 +381,8 @@ def classify_command_risk(command: str) -> str:
             worst = "needs_approval"
         if _SUDO_DOAS_INVOCATION_PATTERN.search(original_sub):
             worst = "needs_approval"
+    if inline_risky and worst == "safe":
+        worst = "needs_approval"
     return worst
 
 

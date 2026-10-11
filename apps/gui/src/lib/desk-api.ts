@@ -154,7 +154,15 @@ export interface SovereigntyInfo {
   decisions: { id: number; namespace: string; action: string; at: string; reason: string | null; hosting: { kind: string; region: string; operator?: string } | null; pii: Record<string, number> | null; cross_border: boolean | null; text_chars: number | null }[];
   counts: { allow: number; redact: number; block: number };
 }
-export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number }
+export interface MemoryEvent { seq: number; kind: string; memory_id: string; at: string; preview: string; tainted: boolean }
+export interface MemoryAt { id: string; memory_type: string | null; content: string | null; importance: number | null; revoked_at: string | null; revoked_reason: string | null }
+export interface MemoryLogStatus {
+  enabled: boolean;
+  head?: { seq: number; hash: string };
+  chain?: { ok: boolean; events: number; problems: string[] };
+  anchors?: { ok: boolean; anchors: number; latest_anchored_seq: number; unanchored_events: number; problems: string[] };
+}
+export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number; revoked_at?: string | null; revoked_reason?: string | null }
 export interface ChainReport {
   ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number;
   head_seq: number | null; head_hash: string | null; first_bad_seq: number | null; reason: string | null;
@@ -438,12 +446,21 @@ export const desk = {
   sovereignty: () => call<SovereigntyInfo>("/v1/desk/sovereignty"),
   growth: () => call<Growth>("/v1/desk/growth"),
   pipeline: () => call<Pipeline>("/v1/desk/pipeline"),
-  memories: (namespace?: string) =>
-    call<{ memories: MemoryItem[]; namespaces: { namespace: string; n: number }[] }>(`/v1/desk/memories${namespace ? `?namespace=${encodeURIComponent(namespace)}` : ""}`),
+  memories: (namespace?: string, includeRevoked = false) => {
+    const q = [namespace ? `namespace=${encodeURIComponent(namespace)}` : "", includeRevoked ? "include_revoked=true" : ""].filter(Boolean).join("&");
+    return call<{ memories: MemoryItem[]; namespaces: { namespace: string; n: number }[] }>(`/v1/desk/memories${q ? `?${q}` : ""}`);
+  },
+  memoryHistory: (namespace?: string, limit = 100) =>
+    call<{ enabled: boolean; namespace: string; events: MemoryEvent[] }>(`/v1/desk/memories/history?limit=${limit}${namespace ? `&namespace=${encodeURIComponent(namespace)}` : ""}`),
+  memoryAt: (seq: number, namespace?: string) =>
+    call<{ enabled: boolean; namespace: string; seq: number; memories: MemoryAt[] }>(`/v1/desk/memories/at?seq=${seq}${namespace ? `&namespace=${encodeURIComponent(namespace)}` : ""}`),
+  memoryLog: () => call<MemoryLogStatus>("/v1/desk/memories/log"),
+  revokeMemory: (memoryId: string, reason: string, namespace?: string) =>
+    call<{ memory_id: string; namespace: string; revoked: boolean }>("/v1/desk/memories/revoke", { method: "POST", body: JSON.stringify({ memory_id: memoryId, reason, namespace }) }),
   remember: (content: string, memoryType = "fact", namespace?: string) =>
     call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
   fdia: () => call<FdiaState>("/v1/desk/fdia"),
-  fdiaTemplate: (name: "balanced" | "strict") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
+  fdiaTemplate: (name: "balanced" | "strict" | "careful" | "argaware") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
   fdiaValidate: (policy: FdiaPolicy) =>
     call<{ valid: boolean; errors: string[]; digest: string | null }>("/v1/desk/fdia/validate", { method: "POST", body: JSON.stringify({ policy }) }),
   fdiaEvaluate: (body: FdiaEvaluateInput) =>

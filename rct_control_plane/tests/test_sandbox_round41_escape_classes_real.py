@@ -186,7 +186,9 @@ class TestParentDirectoryTraversalNeedsApproval:
         ) == "needs_approval"
 
     def test_a_windows_style_backslash_dotdot_traversal_needs_approval(self):
-        assert classify_command_risk("type ..\\..\\secret.txt") == "needs_approval"
+        # Round 67: secret.txt is also a secret-file name, which the classifier now refuses outright (stricter than "needs approval")
+        assert classify_command_risk("type ..\\..\\secret.txt") in ("needs_approval", "denied")
+        assert classify_command_risk("type ..\\..\\notes.txt") == "needs_approval"
 
     def test_a_plain_relative_path_with_no_traversal_stays_safe(self):
         assert classify_command_risk(

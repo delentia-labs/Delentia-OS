@@ -1,0 +1,29 @@
+{
+  "ops": 500,
+  "results": [
+    {
+      "system": "mem0 (infer=False, qdrant local, nomic-embed-text)",
+      "ops": 500,
+      "current_view_exact": true,
+      "current_view_wrong": 0,
+      "time_travel": {
+        "supported": true,
+        "checked": 6,
+        "exact": 6,
+        "note": "rebuilt from the history table's timestamps; mem0 offers per-memory history(), not a state-at-time call"
+      },
+      "bytes_on_disk": 1770060,
+      "write_ms_median": 34.747,
+      "write_ms_p95": 41.623,
+      "tamper_detected": false,
+      "tamper_note": "no integrity check is offered; the history table and the vector payload are plain rows",
+      "erase": {
+        "call": "delete_all(user_id)",
+        "canary_in_raw_bytes_before": 2,
+        "canary_in_raw_bytes_after": 3,
+        "canary_in_raw_bytes_after_a_manual_vacuum": 2,
+        "other_person_intact": true
+      }
+    }
+  ]
+}

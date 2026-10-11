@@ -1,0 +1,25 @@
+{
+  "events": [
+    "sign1",
+    "sign2",
+    "sign_bad",
+    "reject1",
+    "revoke1",
+    "wait_short",
+    "wait_long",
+    "pause",
+    "unpause",
+    "resume",
+    "resume_cancelled",
+    "edit_args",
+    "edit_status_approved"
+  ],
+  "exhaustive_up_to": 3,
+  "exhaustive_sequences": 2379,
+  "random_sample": 8000,
+  "max_len": 10,
+  "sequences_run": 10379,
+  "disagreements": 0,
+  "first_disagreements": [],
+  "seconds": 9344.5
+}

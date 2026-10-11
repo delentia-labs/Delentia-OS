@@ -691,19 +691,19 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         }
 
     @router.get("/memories")
-    async def memories(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500)) -> Dict[str, Any]:
+    async def memories(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500), include_revoked: bool = False) -> Dict[str, Any]:
         owner = getattr(request.state, "delentia_user", None)
         if owner and owner != "shared":
             namespace = owner                    # Round 54: with a token per person nobody reads another person's memory
         with _connect() as conn:
             conn.row_factory = sqlite3.Row
             if namespace:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories WHERE namespace = ? ORDER BY created_at DESC LIMIT ?", (namespace, limit)).fetchall()
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                                    "FROM memories WHERE namespace = ? AND (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (namespace, 1 if include_revoked else 0, limit)).fetchall()
             else:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count "
-                                    "FROM memories ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-            spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories GROUP BY namespace ORDER BY n DESC").fetchall()]
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                                    "FROM memories WHERE (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (1 if include_revoked else 0, limit)).fetchall()
+            spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories WHERE revoked_at IS NULL GROUP BY namespace ORDER BY n DESC").fetchall()]
         if owner and owner != "shared":
             spaces = [s for s in spaces if s["namespace"] == owner]       # other people's namespace names are not shown either
         return {"memories": [dict(r) for r in rows], "namespaces": spaces}
@@ -727,6 +727,60 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         importance = max(0.0, min(1.0, float(payload.get("importance", 0.7))))
         memory_id = await AgentMemory(namespace, _kernel()._persistence).store(content, kind, importance=importance)
         return {"memory_id": memory_id, "namespace": namespace}
+
+    def _log_namespace(request: Request, namespace: Optional[str]) -> str:
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            return owner                                   # a person sees only their own history
+        return str(namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+
+    @router.get("/memories/history")
+    async def memory_history(request: Request, namespace: Optional[str] = None, limit: int = Query(100, ge=1, le=500), before_seq: Optional[int] = None) -> Dict[str, Any]:
+        """Round 67: the events of one person's memory, newest first (needs DELENTIA_MEMORY_EVENTLOG=1 to have been on when they were written)."""
+        from rct_control_plane import memory_eventlog
+        ns = _log_namespace(request, namespace)
+        if not memory_eventlog.enabled():
+            return {"enabled": False, "namespace": ns, "events": []}
+        return {"enabled": True, "namespace": ns, "events": memory_eventlog.MemoryEventLog(_kernel()._persistence).history(ns, limit, before_seq)}
+
+    @router.get("/memories/at")
+    async def memory_at(request: Request, namespace: Optional[str] = None, seq: Optional[int] = None, at: Optional[str] = None) -> Dict[str, Any]:
+        """Round 67: what the memory held after event `seq` (or at a moment `at`, ISO 8601). Revoked items are shown with their revocation."""
+        from rct_control_plane import memory_eventlog
+        ns = _log_namespace(request, namespace)
+        if not memory_eventlog.enabled():
+            return {"enabled": False, "namespace": ns, "memories": []}
+        log = memory_eventlog.MemoryEventLog(_kernel()._persistence)
+        if at:
+            seq = log.seq_at_time(ns, at)
+        state = log.fold(ns, seq, include_revoked=True)
+        items = [{"id": m["id"], "memory_type": m.get("memory_type"), "content": m.get("content"), "importance": m.get("importance"), "revoked_at": m.get("revoked_at"),
+                  "revoked_reason": m.get("revoked_reason")} for m in state.values()]
+        return {"enabled": True, "namespace": ns, "seq": seq, "memories": items}
+
+    @router.get("/memories/log")
+    async def memory_log_status() -> Dict[str, Any]:
+        """Round 67 (owner only): is the memory log intact, and do its anchored heads still match the audit chain?"""
+        from rct_control_plane import memory_eventlog
+        if not memory_eventlog.enabled():
+            return {"enabled": False}
+        log = memory_eventlog.MemoryEventLog(_kernel()._persistence)
+        return {"enabled": True, "head": log.head(), "chain": log.verify(), "anchors": log.verify_anchors()}
+
+    @router.post("/memories/revoke")
+    async def revoke_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Round 65: stop the agent using a memory. The row stays on disk for the audit (Zero-Delete) but no reader returns it
+        again. A person revokes only their own; the owner names the namespace."""
+        memory_id = str(payload.get("memory_id") or "").strip()
+        if not memory_id:
+            raise HTTPException(status_code=400, detail="'memory_id' is required")
+        namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        owner = getattr(request.state, "delentia_user", None)
+        if owner and owner != "shared":
+            namespace = owner
+        if not _kernel()._persistence.revoke_memory(memory_id, namespace, str(payload.get("reason") or "")):
+            raise HTTPException(status_code=404, detail="no such memory in this namespace (or it was already revoked)")
+        return {"memory_id": memory_id, "namespace": namespace, "revoked": True}
 
     @router.get("/sovereignty")
     async def sovereignty(limit: int = Query(50, ge=1, le=300)) -> Dict[str, Any]:
@@ -811,8 +865,8 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     @router.get("/fdia/template/{name}")
     async def fdia_template(name: str) -> Dict[str, Any]:
         from rct_control_plane import fdia_policy
-        if name not in ("balanced", "strict"):
-            raise HTTPException(status_code=404, detail="templates: balanced, strict")
+        if name not in ("balanced", "strict", "careful", "argaware"):
+            raise HTTPException(status_code=404, detail="templates: balanced, strict, careful, argaware")
         return {"policy": fdia_policy.template(name, [t["name"] for t in await _tool_gate_labels()])}
 
     @router.post("/fdia/validate")

@@ -1,0 +1,49 @@
+{
+  "ops": 2000,
+  "results": [
+    {
+      "system": "delentia (table_only)",
+      "ops": 2000,
+      "bytes_on_disk": 487424,
+      "write_ms_median": 9.581,
+      "write_ms_p95": 20.024,
+      "current_view_exact": true,
+      "current_view_wrong": 0,
+      "time_travel": {
+        "supported": false,
+        "checked": 0,
+        "exact": 0
+      },
+      "tamper_detected": false,
+      "tamper_note": "no integrity check exists; the edited text is simply returned",
+      "erase": {
+        "performed": true,
+        "canary_in_raw_bytes_before": 2,
+        "canary_in_raw_bytes_after": 0,
+        "other_person_intact": true
+      }
+    },
+    {
+      "system": "delentia (log_sealed)",
+      "ops": 2000,
+      "bytes_on_disk": 1511556,
+      "write_ms_median": 3.491,
+      "write_ms_p95": 14.469,
+      "current_view_exact": true,
+      "current_view_wrong": 0,
+      "time_travel": {
+        "supported": true,
+        "checked": 6,
+        "exact": 6
+      },
+      "tamper_detected": true,
+      "tamper_note": "event 4: its content does not match its hash (it was edited)",
+      "erase": {
+        "performed": true,
+        "canary_in_raw_bytes_before": 1,
+        "canary_in_raw_bytes_after": 0,
+        "other_person_intact": true
+      }
+    }
+  ]
+}

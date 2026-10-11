@@ -25,6 +25,20 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 ENV = "DELENTIA_VERIFY_GROUNDING"
+V3_ENV = "DELENTIA_VERIFY_V3"      # Round 67: the three changes written down in research/verify_batch_e_criteria.md before they were made (off until batch E says otherwise)
+V2_ENV = "DELENTIA_VERIFY_V2"      # Round 66: the three changes written down in research/verify_batch_d_criteria.md before they were made
+
+
+def v2_enabled() -> bool:
+    """On by default since batch D (research/verify_round66_batch_d.json: good answers rejected 6/10 -> 3/10, bad answers let through 4/15 -> 4/15, the two criteria written before the
+    batch existed). DELENTIA_VERIFY_V2=off restores the Round 65 rules."""
+    import os
+    return (os.environ.get(V2_ENV) or "on").strip().lower() not in ("0", "false", "no", "off")
+
+def v3_enabled() -> bool:
+    import os
+    return (os.environ.get(V3_ENV) or "off").strip().lower() in ("1", "true", "yes", "on")
+
 
 _URL = re.compile(r"https?://[^\s)>\]\"']+", re.IGNORECASE)
 _EMAIL = re.compile(r"\b[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}\b")
@@ -165,7 +179,36 @@ _WORD = re.compile(r"[a-z][a-z0-9_-]{3,40}|\d{1,12}(?:\.\d{1,12}){1,4}")
 _STOP = frozenset("that this with from have been were will would there their about which when what your says said they them then than also into over some more most such only does file files tool tools result results".split())
 
 
-def evidence_support(answer: str, steps: Iterable[Dict[str, Any]]) -> bool:
+# Round 66 (a): a value the answer shares with a successful tool result that the GOAL did not contain: a name, a number, a time, a path. Such a value cannot have come from the question.
+_VALUE = re.compile(r"\d{1,2}:\d{2}(?:\s?-\s?\d{1,2}:\d{2})?|\d{2,}(?:[.,]\d+)*|[A-Za-z][A-Za-z0-9_./-]{2,40}")
+_VALUE_STOP = frozenset("the and for that this with from have been were will not are was has but you your its can may also true false none null".split())
+# Round 66 (b): a question that is a calculation or a count, and an answer that is only a short number with its unit
+_CALC_GOAL = re.compile(r"\bwhat(?:'s| is)\s{1,5}[-+]?\d[\d,.\s]{0,40}(?:[-+*/x×÷^]|plus|minus|times|divided|multiplied|to the power)\s{0,5}[-+]?\d|\bhow many\b.{0,40}\b(?:in|are|is|does|do)\b|"
+                        r"\b\d[\d,.]{0,30}\s{0,5}(?:[-+*/x×÷^]|plus|minus|times|divided by|multiplied by)\s{0,5}\d|คูณ|บวก|ลบ|หาร|กี่|เท่าไหร่|เท่าไร", re.IGNORECASE)
+_BARE_NUMBER = re.compile(r"^\s*[-+]?\d[\d,]*(?:\.\d+)?(?:\s*[A-Za-z\u0E00-\u0E7F%]{1,12})?\s*(?:[.!]\s*)?$")
+
+
+# Round 67 (b): "what is 81 divided by 9" - the connecting word the first version did not know
+_CALC_GOAL_V3 = re.compile(r"\bwhat(?:'s| is)\s{1,5}[-+]?\d[\d,.\s]{0,40}(?:[-+*/x\u00d7\u00f7^]|plus|minus|times|divided(?:\s{1,5}by)?|multiplied(?:\s{1,5}by)?|to the power(?:\s{1,5}of)?)\s{0,5}[-+]?\d")
+
+
+def answers_calculation(goal: str, answer: str) -> bool:
+    """Round 66 (b): a short bare number answering a calculation or a count. It says the question was answered, not that the number is right (nothing here can know)."""
+    return bool(_CALC_GOAL.search(goal or "") or (v3_enabled() and _CALC_GOAL_V3.search(goal or ""))) and bool(_BARE_NUMBER.match(str(answer or ""))) and len(str(answer or "").strip()) <= 12
+
+
+def _specific_value_reused(answer: str, goal: str, evidence: str) -> bool:
+    goal_n = _norm(goal)
+    for raw in _VALUE.findall(str(answer or "")[:MAX_ANSWER_SCANNED]):
+        v = _norm(raw).strip(" .,:;-")
+        if len(v) < 2 or v in _VALUE_STOP or v in goal_n:
+            continue
+        if v in evidence:
+            return True
+    return False
+
+
+def evidence_support(answer: str, steps: Iterable[Dict[str, Any]], goal: str = "") -> bool:
     """True when the answer reuses at least two distinct content words (or a dotted number such as a version) that a SUCCESSFUL tool result contains. Similarity to the goal is a poor
     test for a short, correct answer ("It says to water plants early"); sharing the tool's own words is a better one. An answer with no tool behind it can never be supported."""
     texts = []
@@ -183,6 +226,8 @@ def evidence_support(answer: str, steps: Iterable[Dict[str, Any]]) -> bool:
     shared = {w for w in _WORD.findall(wanted) if w not in _STOP and w in evidence}
     if len(shared) >= 2 or any("." in w and w in evidence for w in shared):
         return True
+    if v2_enabled() and goal and _specific_value_reused(answer, goal, evidence):
+        return True
     # Round 62: a one-word or one-path answer ("Kittipong", "src/router.py") is the tool's own value: the whole short answer appears in what a tool returned.
     bare = _norm(wanted).strip(" .,!;:\"'`")
     return 2 <= len(bare) <= 80 and len(bare.split()) <= 6 and bare in evidence
@@ -199,7 +244,7 @@ def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]
     text = str(answer or "").strip()[:MAX_ANSWER_SCANNED]
     flags: List[str] = []
     detail: Dict[str, Any] = {}
-    if len(text) < 2:
+    if len(text) < 2 and not (v3_enabled() and answers_calculation(goal, text)):      # Round 67 (b): "9" is a whole answer to "81 divided by 9"
         flags.append("empty_answer")
     # Values can be checked only against evidence. With no tool result at all the model answered from its own knowledge ("366 days in a leap year"): that cannot be verified either way, and
     # flagging it rejected correct answers (Round 61 holdout h22, Round 62 real answers), so it is left to the other checks.
@@ -214,4 +259,8 @@ def check(goal: str, answer: Optional[str], steps: Optional[List[Dict[str, Any]]
     results = [s.get("tool_result") for s in steps if s.get("tool_result") is not None]
     if results and all(_is_error(r) for r in results) and _SUCCESS_CLAIM.search(text):
         flags.append("claims_success_after_error")
-    return {"grounded": not flags, "flags": flags, "supported": evidence_support(text, steps), **detail}
+    supported = evidence_support(text, steps, goal)
+    if not supported and v3_enabled() and _effect_ran(steps) and (_ACTION_GOAL.search(goal) or _IMPERATIVE_GOAL.search(goal)):
+        supported = True                                            # Round 67 (c): the tool that performs the requested effect succeeded; the answer need not repeat its words (it may be in another language)
+    return {"grounded": not flags, "flags": flags, "supported": supported,
+            "answers_calc": bool(v2_enabled() and not _tool_results(steps) and answers_calculation(goal, text)), **detail}

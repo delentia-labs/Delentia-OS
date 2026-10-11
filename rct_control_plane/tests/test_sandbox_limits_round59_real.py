@@ -33,7 +33,7 @@ def py(code):
 def test_ordinary_commands_still_work_under_the_limits():
     r = sandbox.run_sandboxed("echo hello")
     assert r.exit_code == 0 and "hello" in r.stdout
-    r = sandbox.run_sandboxed(py("print(sum(range(1000)))"))
+    r = sandbox.run_sandboxed(py("print(sum(range(1000)))"), approved=True)     # Round 65: a drive path (the interpreter's) needs approval; this test is about the limits
     assert r.exit_code == 0 and r.stdout.strip() == "499500"
 
 
@@ -121,14 +121,14 @@ class TestWindowsJob:
 @pytest.mark.skipif(IS_WINDOWS, reason="POSIX resource limits")
 class TestPosix:
     def test_the_children_get_their_own_session_and_the_limits(self):
-        r = sandbox.run_sandboxed(py("import os, resource; print(os.getsid(0), resource.getrlimit(resource.RLIMIT_CORE)[0], resource.getrlimit(resource.RLIMIT_AS)[0])"))
+        r = sandbox.run_sandboxed(py("import os, resource; print(os.getsid(0), resource.getrlimit(resource.RLIMIT_CORE)[0], resource.getrlimit(resource.RLIMIT_AS)[0])"), approved=True)    # Round 65: the interpreter's absolute path needs approval; this test is about the limits
         assert r.exit_code == 0
         session, core, address_space = r.stdout.split()
         assert int(session) != os.getsid(0)                                   # not this process's session: the command (and its children) can be killed as a group
         assert core == "0" and int(address_space) == 2048 * 1024 * 1024
 
     def test_a_file_bigger_than_the_ceiling_cannot_be_written(self, monkeypatch):
-        r = sandbox.run_sandboxed(py("open('big.bin', 'wb').write(b'0' * (600 * 1024 * 1024))"), timeout_seconds=60)
+        r = sandbox.run_sandboxed(py("open('big.bin', 'wb').write(b'0' * (600 * 1024 * 1024))"), timeout_seconds=60, approved=True)
         assert r.exit_code != 0
 
 
