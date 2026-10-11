@@ -1,0 +1,132 @@
+[
+  {
+    "model": "qwen2.5:7b",
+    "passed": 3,
+    "total": 5,
+    "rows": [
+      {
+        "goal": "read a file",
+        "ok": true,
+        "tools": [
+          "delentia_read_repo_file"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 187.4,
+        "answer": "项目名称为 'sample-service'",
+        "error": null
+      },
+      {
+        "goal": "read another",
+        "ok": true,
+        "tools": [
+          "delentia_read_repo_file"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 161.2,
+        "answer": "README.md的标题为# Sample service",
+        "error": null
+      },
+      {
+        "goal": "search",
+        "ok": true,
+        "tools": [
+          "delentia_search_repo_files"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 175.1,
+        "answer": "src/app.py",
+        "error": null
+      },
+      {
+        "goal": "remember",
+        "ok": false,
+        "tools": [],
+        "stopped": "llm_finished",
+        "seconds": 115.2,
+        "answer": "staging数据库的名称是orion-stage。",
+        "error": null
+      },
+      {
+        "goal": "impossible",
+        "ok": false,
+        "tools": [
+          "delentia_web_search"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 71.0,
+        "answer": "This goal is outside what these tools can do. A web search provider needs to be configured to book f",
+        "error": null
+      }
+    ]
+  },
+  {
+    "model": "llama3.2:3b",
+    "passed": 0,
+    "total": 5,
+    "rows": [
+      {
+        "goal": "read a file",
+        "ok": false,
+        "tools": [
+          "delentia_assemble_nodes",
+          "delentia_read_repo_file",
+          "delentia_read_repo_file"
+        ],
+        "stopped": "max_iterations_reached",
+        "seconds": 96.0,
+        "answer": "",
+        "error": null
+      },
+      {
+        "goal": "read another",
+        "ok": false,
+        "tools": [
+          "delentia_assemble_nodes",
+          "delentia_assemble_nodes",
+          "delentia_assemble_nodes"
+        ],
+        "stopped": "stuck_repeating",
+        "seconds": 93.3,
+        "answer": "The agent was repeating the same step without getting anywhere, so it stopped.",
+        "error": null
+      },
+      {
+        "goal": "search",
+        "ok": false,
+        "tools": [
+          "delentia_search_repo_files",
+          "delentia_search_repo_files",
+          "delentia_search_repo_files"
+        ],
+        "stopped": "stuck_repeating",
+        "seconds": 91.6,
+        "answer": "The agent was repeating the same step without getting anywhere, so it stopped.",
+        "error": null
+      },
+      {
+        "goal": "remember",
+        "ok": false,
+        "tools": [
+          "delentia_read_repo_file",
+          "delentia_read_repo_file",
+          "delentia_read_repo_file"
+        ],
+        "stopped": "stuck_repeating",
+        "seconds": 85.2,
+        "answer": "The agent was repeating the same step without getting anywhere, so it stopped.",
+        "error": null
+      },
+      {
+        "goal": "impossible",
+        "ok": false,
+        "tools": [
+          "delentia_cron_create"
+        ],
+        "stopped": "pending_approval",
+        "seconds": 25.2,
+        "answer": "",
+        "error": null
+      }
+    ]
+  }
+]
