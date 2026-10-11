@@ -406,11 +406,18 @@ _DECLINE_PATTERNS = re.compile(
 )
 
 
+# Round 66 (c): the common Chinese ways a small model says "not provided / not found / look it up elsewhere" (it answers in Chinese to an English question; measured on batches B and C)
+_DECLINE_ZH = re.compile(r"(?:未|并未|没有|没能|没)(?:提供|提及|列出|找到|包含|说明|显示|给出|发现)|找不到|不存在|建议(?:查阅|参考|咨询|查看)|请(?:查阅|参考|咨询)|无从得知|不清楚")
+
+
 def answer_declines_goal(answer: str) -> bool:
     """True when the final answer says the agent did not do the task
     (a refusal or "no tool can do this"). Used by VERIFY so declined work is
     never learned as a skill; it does not change what the user is shown."""
-    return bool(_DECLINE_PATTERNS.search(answer or ""))
+    if _DECLINE_PATTERNS.search(answer or ""):
+        return True
+    from rct_control_plane import verify_grounding
+    return bool(verify_grounding.v2_enabled() and _DECLINE_ZH.search(answer or ""))
 
 
 class GovernedAutonomousLoop(AutonomousLoop):
@@ -1583,7 +1590,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             # The grounding check (verify_grounding.py, measured in scripts/measure_verify.py) looks at the evidence instead. DELENTIA_VERIFY_GROUNDING=off restores the old verdict.
             grounding = verify_grounding.check(goal, str(final_answer), steps or [], conversation)
             out["grounding"] = {"grounded": grounding["grounded"], "flags": grounding["flags"], "supported": grounding["supported"]}
-            out["aligned_with_intent"] = bool(grounding["grounded"] and not declined and (similar or grounding["supported"]))
+            out["aligned_with_intent"] = bool(grounding["grounded"] and not declined and (similar or grounding["supported"] or grounding.get("answers_calc")))
         return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:

@@ -349,6 +349,6 @@ def test_sandboxed_commands_do_not_inherit_credentials(monkeypatch):
     assert "ROUND52_PROVIDER_API_KEY" not in env and "DELENTIA_AUDIT_SIGNING_KEY" not in env
     assert env["ROUND52_HARMLESS_SETTING"] == "visible" and "PATH" in {k.upper() for k in env}
     command = "echo %ROUND52_PROVIDER_API_KEY%" if os.name == "nt" else "echo $ROUND52_PROVIDER_API_KEY"
-    result = run_sandboxed(command)
+    result = run_sandboxed(command, approved=True)      # Round 66: any command that reads an environment variable now needs approval; this test is about what the shell INHERITS
     assert result.blocked_reason is None
     assert SECRET not in result.stdout

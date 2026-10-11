@@ -10,7 +10,10 @@ const KINDS = ["fact", "preference", "goal", "event", "skill", "conversation"];
 export default function MemoryPage() {
   const { lang } = useLang();
   const [namespace, setNamespace] = useState<string>("");
-  const list = useDeskData(() => desk.memories(namespace || undefined), [namespace], 20000);
+  const [showRevoked, setShowRevoked] = useState(false);
+  const list = useDeskData(() => desk.memories(namespace || undefined, showRevoked), [namespace, showRevoked], 20000);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
   const [content, setContent] = useState("");
   const [kind, setKind] = useState("fact");
   const [busy, setBusy] = useState(false);
@@ -23,6 +26,22 @@ export default function MemoryPage() {
       const r = await desk.remember(content.trim(), kind, namespace || undefined);
       setNote({ tone: "ok", text: `Stored in namespace ${r.namespace}.` });
       setContent("");
+      list.reload();
+    } catch (err) {
+      setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (m: { id: string; namespace: string }) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await desk.revokeMemory(m.id, reason.trim(), m.namespace);
+      setNote({ tone: "ok", text: lang === "th" ? "เพิกถอนแล้ว: ยังเก็บอยู่ในดิสก์เพื่อการตรวจสอบ แต่ agent จะไม่ใช้อีก" : "Revoked: it stays on disk for the audit, but the agent will not use it again." });
+      setRevoking(null);
+      setReason("");
       list.reload();
     } catch (err) {
       setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
@@ -64,6 +83,11 @@ export default function MemoryPage() {
               <Badge tone={namespace === "" ? "leaf" : "muted"}>
                 <button onClick={() => setNamespace("")} className="desk-focus">all</button>
               </Badge>
+              <Badge tone={showRevoked ? "amber" : "muted"}>
+                <button onClick={() => setShowRevoked((v) => !v)} className="desk-focus" aria-pressed={showRevoked}>
+                  {lang === "th" ? "แสดงที่เพิกถอนแล้ว" : "show revoked"}
+                </button>
+              </Badge>
               {list.data?.namespaces.map((n) => (
                 <Badge key={n.namespace} tone={namespace === n.namespace ? "leaf" : "muted"}>
                   <button onClick={() => setNamespace(n.namespace)} className="desk-focus">{n.namespace} · {n.n}</button>
@@ -76,8 +100,30 @@ export default function MemoryPage() {
             ) : null}
             {list.data?.memories.map((m) => (
               <Panel key={m.id} title={m.memory_type} aside={<span className="desk-mono text-[11px] text-dl-muted">{m.namespace} · used {m.accessed_count}×</span>}>
-                <p className="whitespace-pre-wrap break-words text-sm text-dl-text">{m.content}</p>
+                <p className={`whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>{m.content}</p>
                 <p className="desk-mono mt-2 text-[11px] text-dl-muted">importance {m.importance} · {fmtTime(m.created_at)}</p>
+                {m.revoked_at ? (
+                  <p role="status" className="desk-mono mt-2 text-[12px] text-dl-amber">
+                    {lang === "th" ? "เพิกถอนแล้ว" : "Revoked"} {fmtTime(m.revoked_at)}{m.revoked_reason ? ` · ${m.revoked_reason}` : ""} · {lang === "th" ? "ยังอยู่บนดิสก์ แต่ agent ไม่ใช้อีก" : "still on disk, no longer used by the agent"}
+                  </p>
+                ) : revoking === m.id ? (
+                  <div className="mt-3 space-y-2">
+                    <label className="block">
+                      <span className="text-[12px] text-dl-muted">{lang === "th" ? "เหตุผล (จำเป็น, บันทึกในบันทึกตรวจสอบ)" : "Reason (required, written to the audit trail)"}</span>
+                      <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} disabled={busy}
+                        className="desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-xs text-dl-text" />
+                    </label>
+                    <div className="flex gap-2">
+                      <Button tone="amber" onClick={() => revoke(m)} disabled={busy || !reason.trim()}>{lang === "th" ? "ยืนยันเพิกถอน" : "Confirm revoke"}</Button>
+                      <Button tone="ghost" onClick={() => { setRevoking(null); setReason(""); }} disabled={busy}>{lang === "th" ? "ยกเลิก" : "Cancel"}</Button>
+                    </div>
+                    <p className="text-[12px] text-dl-muted">{lang === "th" ? "ข้อความจะไม่ถูกลบ: ถูกเก็บไว้ตามนโยบาย Zero-Delete" : "The text is not deleted: it is kept under the Zero-Delete policy."}</p>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <Button tone="ghost" onClick={() => { setRevoking(m.id); setReason(""); }} disabled={busy}>{lang === "th" ? "เพิกถอน" : "Revoke"}</Button>
+                  </div>
+                )}
               </Panel>
             ))}
           </div>

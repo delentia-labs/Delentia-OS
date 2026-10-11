@@ -1,0 +1,4 @@
+d068db0bb8d445f4bfc41cbcc4339252abad355b6a1ffd564838f43d7ef8c148 *rct_control_plane/verify_grounding.py
+d5aa17c4e8558c3dc7e38f6d8043ffa1538d9b33af2c9f35d0ca16ddf818360d *rct_control_plane/governed_autonomous_loop.py
+fff30624fbc133ee376d60ded60951c9e7e2a828e6d6dde6f1ff750898c20db3 *scripts/measure_verify.py
+Sat Oct 10 10:02:03     2026

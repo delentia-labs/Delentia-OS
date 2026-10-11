@@ -46,6 +46,22 @@ def _stage_ok(result: Dict[str, Any], stage: str) -> int:
     return sum(1 for t in (result.get("pipeline") or {}).get("traces", []) if t["stage"] == stage and t["status"] == "ok")
 
 
+def _memory_log_summary(loop: Any) -> Dict[str, Any]:
+    """Round 66: what the memory event log holds for this person (opt-in, DELENTIA_MEMORY_EVENTLOG=1) and which read-time policy decides what recall may offer. Counts only: the chain
+    is verified on demand (`MemoryEventLog.verify`), not on every episode."""
+    import os
+    from rct_control_plane import memory_eventlog
+    summary: Dict[str, Any] = {"enabled": memory_eventlog.enabled(), "policy": (os.environ.get(memory_eventlog.POLICY_ENV) or "none").strip().lower()}
+    if not summary["enabled"]:
+        return summary
+    try:
+        stats = memory_eventlog.MemoryEventLog(loop._persistence).stats(getattr(loop, "namespace", ""))
+        summary.update({"events": stats["events"], "live_memories": stats["live_memories"], "checkpoints": stats["checkpoints"], "head": stats["head"]["hash"][:16]})
+    except Exception as exc:                                   # noqa: BLE001 - a reporting problem must never change an episode
+        summary["error"] = type(exc).__name__
+    return summary
+
+
 def pillar_report(result: Dict[str, Any], loop: Any) -> Dict[str, Any]:
     stopped = result.get("stopped_reason")
     growth = result.get("growth") or {}
@@ -67,6 +83,7 @@ def pillar_report(result: Dict[str, Any], loop: Any) -> Dict[str, Any]:
             "retrieval_algorithms_ok": _stage_ok(result, "recall"),
             "warm_recall": (result.get("warm_recall") or {}).get("hit", False),
             "tool_outputs_compressed": len(getattr(loop, "_episode_compressions", []) or []),
+            "log": _memory_log_summary(loop),
         },
         "executor": {
             "route": (result.get("route") or {}).get("path"),

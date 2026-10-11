@@ -21,6 +21,7 @@ from typing import Dict, List
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / "rct_control_plane" / "tests"
 NEW = "test_gate_properties_round65_real.py"
+ADV = "test_adversarial_round66_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
     {"id": "P1", "name": "A = 0 blocks restricted effects",
@@ -30,7 +31,8 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{NEW}::test_p1_a_safe_looking_write_still_waits_for_a_person",
                f"{NEW}::test_p1_with_no_trusted_approver_nothing_can_ever_be_approved",
                "test_fdia_policy_loop_round54_real.py::test_zero_trust_a_tool_the_owner_never_registered_is_refused_and_not_dispatched",
-               "test_fdia_policy_loop_round54_real.py::test_a_broken_policy_file_refuses_every_tool_including_reads"],
+               "test_fdia_policy_loop_round54_real.py::test_a_broken_policy_file_refuses_every_tool_including_reads",
+               f"{ADV}::test_the_adaptive_attacker_gets_nowhere_against_the_loop_and_the_classifier"],
      "assumes": "The tool server is reached only through the loop's dispatch (P6). The built-in floor treats most tools as A = 1 unless the owner writes a policy; the zero-trust claim holds WITH a policy file.",
      "not_covered": "Without an owner policy a restricted tool that is not a write is judged by F >= threshold alone (D and I), not by a signature. That is the design; say so when describing the default."},
     {"id": "P2", "name": "An invalid signature blocks",
@@ -57,6 +59,8 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{NEW}::test_p4_the_windows_can_be_changed_or_switched_off_and_a_bad_value_never_means_forever",
                f"{NEW}::test_p4_removing_an_approver_key_revokes_what_it_signed_and_has_not_run",
                f"{NEW}::test_p4_one_revoked_signer_of_two_voids_the_whole_approval",
+               f"{ADV}::test_the_real_approval_flow_agrees_with_the_spec_on_every_short_sequence",
+               f"{ADV}::test_the_model_check_catches_a_bug_injected_into_the_real_code",
                "test_identity_and_review_round54_real.py::test_a_revoked_token_stops_working_at_once"],
      "assumes": "The clock of the host is right. Before Round 65 an approval never expired (found by writing this property).",
      "not_covered": "An action already running when its key is revoked finishes."},
@@ -102,6 +106,7 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{NEW}::test_the_emergency_stop_reaches_an_action_a_person_already_approved",
                "test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so"],
      "assumes": "", "not_covered": "A tool already executing in a worker thread cannot be recalled; at-most-once is guaranteed, completion is not."},
+    # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 
 # Protocol section 12: the attacks and where each one is tested.
@@ -167,8 +172,8 @@ def render() -> str:
     for th in THREATS:
         lines.append(f"| {th['threat']} | " + "<br>".join(f"`{t}`" for t in th["tests"]) + " |")  # type: ignore[union-attr]
     lines += ["", "## Not yet done", "",
-              "- The approval flow has not been model-checked as a state machine (Protocol section 13 suggests it for that part).",
-              "- Adaptive attackers (Protocol section 12) are not in this table: the attacks here are fixed scripts.",
+              "- The approval flow is model-checked on BOUNDED sequences only (research/approval_model_check.py: every sequence up to the stated length plus a seeded random sample of longer ones, against a written specification, with four injected bugs that it must catch); it is not a proof.",
+              "- The adaptive attacker (research/adaptive_attacker.py) has a menu I wrote: 0 of 98 attempts got through after the fixes it found, which bounds nothing about attackers whose menu I did not think of.",
               "- Properties are checked on the in-process loop with a recording tool server; the same properties against a deployed host have not been run."]
     return "\n".join(lines) + "\n"
 

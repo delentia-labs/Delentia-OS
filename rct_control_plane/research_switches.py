@@ -67,9 +67,12 @@ class Treatment:
     variant: str = ""           # one of VARIANTS, always on top of A111
     generic_plan: int = 0       # 1 = the generic "plan, act, check" instruction stands where the RCT-7 plan would (baseline GP only)
     retrieval: int = 0          # k > 0 = the k most word-similar earlier requests of this person are shown instead of the last turns (baseline GP only)
+    plain_loop: int = 0         # 1 = not Delentia's loop at all: research/plain_agent.py (baseline PL only)
 
     @property
     def label(self) -> str:
+        if self.plain_loop:
+            return "PL"
         if self.history:
             return "G"
         if self.generic_plan or self.retrieval:
@@ -94,7 +97,7 @@ class Treatment:
 
     def to_dict(self) -> Dict[str, Any]:
         return {"R": self.R, "F": self.F, "M": self.M, "history": self.history, "variant": self.variant, "generic_plan": self.generic_plan,
-                "retrieval": self.retrieval, "arm": self.label}
+                "retrieval": self.retrieval, "plain_loop": self.plain_loop, "arm": self.label}
 
     @staticmethod
     def parse(label: str) -> "Treatment":
@@ -103,6 +106,8 @@ class Treatment:
             return BASELINE_G
         if text == "GP":
             return BASELINE_GP
+        if text == "PL":
+            return BASELINE_PL
         variant = ""
         if "+" in text:
             text, variant = text.split("+", 1)
@@ -122,6 +127,7 @@ BASELINE_G = Treatment(0, 0, 0, history=GENERIC_HISTORY_TURNS)
 GENERIC_RETRIEVAL_K = 3
 BASELINE_GP = Treatment(0, 0, 0, generic_plan=1, retrieval=GENERIC_RETRIEVAL_K)
 BASELINES = (BASELINE_G, BASELINE_GP)
+BASELINE_PL = Treatment(0, 0, 0, plain_loop=1)         # Round 66: a plain tool-calling agent that does not use Delentia's loop (research/plain_agent.py)
 GENERIC_PLAN_TEXT = ("How to work on this request: first write a short numbered plan (at most five steps); then do one step at a time, using a tool only when a step needs it; "
                      "before you answer, check your answer against the request and against what the tools returned, and fix anything that does not match.")
 SUB_ABLATIONS = tuple(Treatment(1, 1, 1, variant=v) for v in VARIANTS)
@@ -232,6 +238,21 @@ def _generic_baseline_checks(loop: Any, result: Dict[str, Any], gate_rows: List[
         (getattr(loop, "_episode_skills_injected", 0) == 0 and not getattr(loop, "_episode_memory_scores", []) and result.get("stopped_reason") != "warm_recall"
          and not result.get("skill_extracted")),
         {"skills": getattr(loop, "_episode_skills_injected", None), "stopped": result.get("stopped_reason"), "skill_extracted": result.get("skill_extracted")})
+    return checks
+
+
+def plain_loop_checks(governed_rows: int, result: Dict[str, Any], tool_names: List[str]) -> List[Dict[str, Any]]:
+    """PL: the episode must have left NO trace of Delentia's loop (no governed_loop_* audit row for its namespace), not been stopped by a gate, and still have been offered the same
+    tool server. (It may CALL a memory tool if the model chooses to - the plain agent has the tools - but nothing recalls memory into its prompt: it has no such code.) A baseline that
+    quietly ran inside the governed loop would measure nothing."""
+    checks: List[Dict[str, Any]] = []
+
+    def add(name: str, ok: bool, detail: Any = None) -> None:
+        checks.append({"check": name, "ok": bool(ok), "detail": None if ok else detail})
+
+    add("PL: no governed-loop audit row was written for this episode", governed_rows == 0, {"governed_loop_rows": governed_rows})
+    add("PL: the episode ended by itself or ran out of steps, not by a gate", result.get("stopped_reason") not in ("pending_approval", "fdia_blocked", "guard_blocked", "notary_unavailable"), result.get("stopped_reason"))
+    add("PL: the same tool server was offered", bool(tool_names), tool_names)
     return checks
 
 

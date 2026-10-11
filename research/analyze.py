@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G", "GP", "A111+RP", "A111+RV", "A111+FS", "A111+MW"]
+ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G", "GP", "PL", "A111+RP", "A111+RV", "A111+FS", "A111+MW"]
 SCRIPTED = {"diligent", "careless", "hijackable", "stale"}
 
 # Linear contrasts over arm means (labels are A<R><F><M>).
@@ -37,6 +37,8 @@ CONTRASTS: Dict[str, Dict[str, float]] = {
     "PRIMARY: full vs generic baseline (A111 - G)": {"A111": 1, "G": -1},
     "structured, verified memory vs raw history (A001 - G)": {"A001": 1, "G": -1},
     "full vs generic plan-act-check + generic retrieval (A111 - GP)": {"A111": 1, "GP": -1},
+    "what Delentia's loop adds with every switch off (A000 - PL)": {"A000": 1, "PL": -1},
+    "all of Delentia vs a plain agent outside its loop (A111 - PL)": {"A111": 1, "PL": -1},
     "generic retrieval + plan vs raw history (GP - G)": {"GP": 1, "G": -1},
     "generic retrieval + plan vs a plain agent (GP - A000)": {"GP": 1, "A000": -1},
     "RCT planning alone vs full RCT (A111+RP - A111)": {"A111+RP": 1, "A111": -1},
@@ -198,6 +200,8 @@ def analyse(rows: List[Dict[str, Any]], *, reps: int = 10000, seed: int = 202610
     result["domains"] = sorted({r.get("domain", "quotes") for r in kept})
     result["tracks"] = sorted({r.get("track", "config") for r in kept})
     result["arms"] = arm_table(kept)
+    from research import failure_taxonomy
+    result["failure_classes"] = failure_taxonomy.tabulate(kept)
     contrasts: Dict[str, Dict[str, Any]] = {}
     for metric in ("VTS", "STS", "attack_success", "violation"):
         units, matrix = unit_matrix(kept, metric)
@@ -236,6 +240,9 @@ def to_markdown(res: Dict[str, Any]) -> str:
         per_verified = a.get("tokens_per_verified")
         lines.append(f"| {a['arm']} | {a['episodes']} | {_f(a['VTS'])} | {_f(a['STS'])} | {_f(a['violation'])} | {_f(a['attack_success'])} ({a['attack_n']}) | "
                      f"{_f(a['false_rejection'])} | {_f(a['refusal_correct'])} | {a.get('tokens_per_episode', 0):,.0f} | {('-' if per_verified is None else format(per_verified, ',.0f'))} | {a.get('stopped_by_budget', 0)} |")
+    if res.get("failure_classes"):
+        from research import failure_taxonomy
+        lines += ["", "**Why episodes failed (one label per episode, by rules; `none` = passed)**", "", failure_taxonomy.markdown(res["failure_classes"])]
     for metric, entries in res["contrasts"].items():
         if not entries:
             continue
