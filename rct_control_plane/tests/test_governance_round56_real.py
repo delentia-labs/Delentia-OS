@@ -433,7 +433,9 @@ def test_a_control_nobody_asked_for_is_not_applicable_and_not_counted(gov):
     assert jury["applicable"] is False and "jury" not in {g["control"] for g in data["gaps"]}
     hooks = _control(data, "hooks")                       # Round 61: hooks are only listed once somebody has proposed one
     assert hooks["applicable"] is False and "hooks" not in {g["control"] for g in data["gaps"]}
-    assert data["total"] == sum(1 for c in data["controls"] if c["applicable"]) == len(data["controls"]) - 2
+    pinned = _control(data, "pinned_rules")                 # Round 70: standing rules are optional, listed for information, never a gap
+    assert pinned["applicable"] is False and "pinned_rules" not in {g["control"] for g in data["gaps"]}
+    assert data["total"] == sum(1 for c in data["controls"] if c["applicable"]) == len(data["controls"]) - 3
 
 
 def test_round61_controls_are_listed_with_the_state_the_environment_gives(gov, monkeypatch):
