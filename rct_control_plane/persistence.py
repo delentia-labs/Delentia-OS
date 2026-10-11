@@ -25,6 +25,7 @@ Note: This is a local-dev bridge. Production deployments connect to RCTDB
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -484,7 +485,7 @@ class ControlPlanePersistence:
         if changed:
             try:
                 self.append_audit(entity_type="memory_revoked", entity_id=memory_id, action="revoked", actor=namespace,
-                                  changes={"reason": (reason or "")[:300]})
+                                  changes={"reason_sha256": hashlib.sha256((reason or "")[:300].encode("utf-8")).hexdigest(), "reason_chars": len((reason or "")[:300])})      # Round 67: the chain keeps a hash, not the person's words (erasure cannot edit a chained row); the text is in the table and the sealed event
             except Exception:       # the revocation itself is already stored
                 pass
         return bool(changed)

@@ -57,6 +57,8 @@ def _memory_log_summary(loop: Any) -> Dict[str, Any]:
     try:
         stats = memory_eventlog.MemoryEventLog(loop._persistence).stats(getattr(loop, "namespace", ""))
         summary.update({"events": stats["events"], "live_memories": stats["live_memories"], "checkpoints": stats["checkpoints"], "head": stats["head"]["hash"][:16]})
+        anchors = memory_eventlog.MemoryEventLog(loop._persistence).verify_anchors()      # Round 67: is the head also written into the audit chain, and does it still match?
+        summary["anchors"] = {"count": anchors["anchors"], "ok": anchors["ok"], "unanchored_events": anchors["unanchored_events"]}
     except Exception as exc:                                   # noqa: BLE001 - a reporting problem must never change an episode
         summary["error"] = type(exc).__name__
     return summary

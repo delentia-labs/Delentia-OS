@@ -1,5 +1,5 @@
 """
-Round 66: the memory pipeline, redesigned as an append-only event log (opt-in: DELENTIA_MEMORY_EVENTLOG=1).
+Round 66: the memory pipeline, redesigned as an append-only event log (Round 67: on by default; DELENTIA_MEMORY_EVENTLOG=off turns it off).
 
 Before this, the agent's memory was the rows of one SQLite table (`memories`) and "Delta" meant three unrelated things (docs/ROUND66 plan, section 2). The measurements of Round 65 settled
 the storage question: a delta log is no smaller than snapshots compressed with zstd, so bytes are not the reason to change anything. What a log gives that a table cannot:
@@ -16,7 +16,13 @@ Q1 (storage) is therefore a settled engineering choice (events for history, zstd
 text count once: the newest, with the highest importance), `expire` (episodic memories - conversation and event - older than DELENTIA_MEMORY_TTL_DAYS stop being candidates unless their
 importance is high; facts, preferences, goals and skills never expire). `DELENTIA_MEMORY_POLICY` chooses; the default is `none` until a measurement with a capable model says otherwise.
 
-PDPA note: the log keeps text, so "erasure" of a person needs the per-subject-key design in the Round 66 plan (M4); today the log is Zero-Delete and the person's data is revoked, not erased.
+Round 67 - ANCHORED IN THE AUDIT CHAIN. The event chain alone cannot tell a host that rewrote the WHOLE log (recomputing every hash) from one that never did. Every
+DELENTIA_MEMORY_ANCHOR_EVERY events (default 50, 0 = off) the head of this chain (sequence number and hash) is written as an audit row in the same transaction, so it is covered by whatever
+protects the audit chain: the signature, the notary, the witness. `verify_anchors` then checks that the event at each anchored sequence still has the hash it had when it was anchored. What
+that defeats: rewriting or cutting history up to the latest anchor. What it does not: events written after the latest anchor (`unanchored_events` says how many).
+
+PDPA / erasure (Round 67, memory_erasure.py): event payloads and checkpoints are SEALED with a key that belongs to one person (DELENTIA_MEMORY_SEAL=off disables sealing). The hash covers
+the ciphertext, so destroying the key erases the text without breaking the chain. Events written before sealing was on stay readable and are counted in the erasure report.
 """
 from __future__ import annotations
 
@@ -34,7 +40,11 @@ ENABLE_ENV = "DELENTIA_MEMORY_EVENTLOG"
 CHECKPOINT_ENV = "DELENTIA_MEMORY_CHECKPOINT_EVERY"
 POLICY_ENV = "DELENTIA_MEMORY_POLICY"
 TTL_ENV = "DELENTIA_MEMORY_TTL_DAYS"
-KINDS = ("add", "touch", "revoke", "edit")
+KINDS = ("add", "touch", "revoke", "edit", "erase")
+SEALED_KINDS = ("add", "edit", "revoke")
+ANCHOR_ENV = "DELENTIA_MEMORY_ANCHOR_EVERY"
+ANCHOR_ENTITY = "memory_log"
+ANCHOR_ACTION = "memory_log_anchor"
 POLICIES = ("none", "dedupe", "expire")
 EPISODIC = ("conversation", "event")
 HIGH_IMPORTANCE = 0.85
@@ -66,7 +76,9 @@ CREATE INDEX IF NOT EXISTS idx_memory_checkpoints_ns ON memory_checkpoints(names
 
 
 def enabled() -> bool:
-    return (os.environ.get(ENABLE_ENV) or "").strip().lower() in ("1", "true", "yes", "on")
+    """On unless switched off (Round 67; it was opt-in in Round 66). The log changed no answer in the measurements, adds under a millisecond to a write, and is what revocation as a
+    fact, time travel, the anchors and per-person erasure rest on. DELENTIA_MEMORY_EVENTLOG=off turns it off."""
+    return (os.environ.get(ENABLE_ENV) or "").strip().lower() not in ("0", "off", "false", "no")
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
@@ -89,11 +101,15 @@ def append(conn: sqlite3.Connection, namespace: str, kind: str, memory_id: str, 
     ensure_schema(conn)
     prev = conn.execute("SELECT event_hash FROM memory_events ORDER BY seq DESC LIMIT 1").fetchone()
     prev_hash = prev[0] if prev else GENESIS
+    from rct_control_plane import memory_erasure
     body, prov, now = _canon(payload), _canon(provenance or {}), datetime.now(timezone.utc).isoformat()
+    if kind in SEALED_KINDS:
+        body = memory_erasure.seal(namespace, body)
     h = event_hash(prev_hash, namespace, kind, memory_id, body, prov, now)
     cur = conn.execute("INSERT INTO memory_events (namespace, kind, memory_id, payload, provenance, created_at, prev_hash, event_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (namespace, kind, memory_id, body, prov, now, prev_hash, h))
     seq = int(cur.lastrowid or 0)
+    _maybe_anchor(conn, seq, h)
     every = _int_env(CHECKPOINT_ENV, 50)
     if every > 0:
         # A checkpoint holds the WHOLE state of one person, so a fixed interval makes the checkpoints grow as n^2 / interval (measured: 97 checkpoints of a 5,000-operation log were 8x the
@@ -107,6 +123,24 @@ def append(conn: sqlite3.Connection, namespace: str, kind: str, memory_id: str, 
     return seq
 
 
+def _maybe_anchor(conn: sqlite3.Connection, seq: int, event_hash_value: str, force: bool = False) -> bool:
+    """Writes the chain head into the audit chain when ANCHOR_EVERY events have passed since the last anchor. Never raises: a missing audit table must not stop a memory write."""
+    every = _int_env(ANCHOR_ENV, 50)
+    if every <= 0 and not force:
+        return False
+    try:
+        row = conn.execute("SELECT changes FROM audit_trail WHERE entity_type = ? ORDER BY id DESC LIMIT 1", (ANCHOR_ENTITY,)).fetchone()
+        last = int(json.loads(row[0]).get("head_seq", 0)) if row else 0
+        if not force and seq - last < every:
+            return False
+        from rct_control_plane.persistence import ControlPlanePersistence
+        ControlPlanePersistence._append_audit(conn, ANCHOR_ENTITY, "log", ANCHOR_ACTION, "memory_eventlog",
+                                              {"head_seq": seq, "head_hash": event_hash_value, "events_since_last_anchor": seq - last})
+        return True
+    except (sqlite3.Error, ValueError, KeyError, TypeError):
+        return False
+
+
 def _int_env(name: str, default: int) -> int:
     try:
         return int((os.environ.get(name) or "").strip() or default)
@@ -115,6 +149,16 @@ def _int_env(name: str, default: int) -> int:
 
 
 def _apply(state: Dict[str, Dict[str, Any]], kind: str, memory_id: str, payload: Dict[str, Any], at: str) -> None:
+    if payload.get("_erased"):                           # the text was sealed and the person's key has been destroyed: the memory still existed, its text does not
+        if kind == "add":
+            state[memory_id] = {"id": memory_id, "content": "[erased]", "memory_type": None, "importance": None, "context": {}, "accessed_count": 0, "last_accessed": None,
+                                "revoked_at": None, "revoked_reason": None, "erased": True}
+        elif memory_id in state and kind == "revoke":
+            state[memory_id]["revoked_at"] = at
+            state[memory_id]["revoked_reason"] = "[erased]"
+        elif memory_id in state and kind == "touch":
+            state[memory_id]["accessed_count"] += 1
+        return
     if kind == "add":
         state[memory_id] = {**payload, "id": memory_id, "accessed_count": 0, "last_accessed": None, "revoked_at": None, "revoked_reason": None}
     elif memory_id in state:
@@ -135,13 +179,23 @@ def _fold(conn: sqlite3.Connection, namespace: str, upto_seq: Optional[int]) -> 
     row = conn.execute("SELECT upto_seq, state_zstd, state_sha256 FROM memory_checkpoints WHERE namespace = ? AND upto_seq <= ? ORDER BY upto_seq DESC LIMIT 1",
                        (namespace, upto_seq if upto_seq is not None else 2 ** 62)).fetchone()
     if row:
-        raw = zstandard.ZstdDecompressor().decompress(row[1])
-        if hashlib.sha256(raw).hexdigest() != row[2]:
-            raise ValueError(f"checkpoint at seq {row[0]} of {namespace!r} does not match its hash")
-        state, start = json.loads(raw), int(row[0])
+        from rct_control_plane import memory_erasure
+        blob = bytes(row[1])
+        if memory_erasure.is_sealed_bytes(blob):
+            if hashlib.sha256(blob).hexdigest() != row[2]:                  # the hash covers the ciphertext, so it can be checked without the key
+                raise ValueError(f"checkpoint at seq {row[0]} of {namespace!r} does not match its hash")
+            opened = memory_erasure.open_bytes(namespace, blob)
+            raw = zstandard.ZstdDecompressor().decompress(opened) if opened is not None else None      # None = the key was destroyed: replay from the first event instead
+        else:
+            raw = zstandard.ZstdDecompressor().decompress(blob)
+            if hashlib.sha256(raw).hexdigest() != row[2]:
+                raise ValueError(f"checkpoint at seq {row[0]} of {namespace!r} does not match its hash")
+        if raw is not None:
+            state, start = json.loads(raw), int(row[0])
+    from rct_control_plane import memory_erasure as _me
     for _seq, kind, mid, payload, at in conn.execute("SELECT seq, kind, memory_id, payload, created_at FROM memory_events WHERE namespace = ? AND seq > ? AND seq <= ? ORDER BY seq",
                                                     (namespace, start, upto_seq if upto_seq is not None else 2 ** 62)):
-        _apply(state, kind, mid, json.loads(payload), at)
+        _apply(state, kind, mid, _me.open_payload(namespace, payload), at)
     return state
 
 
@@ -149,9 +203,13 @@ def _write_checkpoint(conn: sqlite3.Connection, namespace: str) -> int:
     import zstandard
     upto = conn.execute("SELECT COALESCE(MAX(seq), 0) FROM memory_events WHERE namespace = ?", (namespace,)).fetchone()[0]
     state = _fold(conn, namespace, upto)
+    from rct_control_plane import memory_erasure
     raw = _canon(state).encode("utf-8")
+    packed = zstandard.ZstdCompressor(level=6).compress(raw)
+    blob = memory_erasure.seal_bytes(namespace, packed)                       # a checkpoint holds the person's whole text, so it is sealed like the events
+    digest = hashlib.sha256(blob).hexdigest() if memory_erasure.is_sealed_bytes(blob) else hashlib.sha256(raw).hexdigest()
     conn.execute("INSERT INTO memory_checkpoints (namespace, upto_seq, state_zstd, state_sha256, items, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                 (namespace, upto, zstandard.ZstdCompressor(level=6).compress(raw), hashlib.sha256(raw).hexdigest(), len(state), datetime.now(timezone.utc).isoformat()))
+                 (namespace, upto, blob, digest, len(state), datetime.now(timezone.utc).isoformat()))
     return int(upto)
 
 
@@ -170,6 +228,59 @@ class MemoryEventLog:
     def checkpoint(self, namespace: str) -> int:
         with self._p._connect() as conn:
             return _write_checkpoint(conn, namespace)
+
+    def anchor(self) -> Dict[str, Any]:
+        """Anchor the current head now (the CLI and tests use this; writes also anchor on their own every ANCHOR_EVERY events)."""
+        head = self.head()
+        if head["seq"] == 0:
+            return {"anchored": False, "reason": "the log is empty"}
+        with self._p._connect() as conn:
+            done = _maybe_anchor(conn, head["seq"], head["hash"], force=True)
+        return {"anchored": done, "head": head}
+
+    def verify_anchors(self) -> Dict[str, Any]:
+        """Every anchored head must still be in the log with the hash it had. A cut log (the anchored event is gone) and a rewritten one (it has another hash) are named separately."""
+        problems: List[str] = []
+        latest, n = 0, 0
+        with self._p._connect() as conn:
+            rows = conn.execute("SELECT id, changes FROM audit_trail WHERE entity_type = ? AND action = ? ORDER BY id", (ANCHOR_ENTITY, ANCHOR_ACTION)).fetchall()
+            for audit_id, changes in rows:
+                n += 1
+                try:
+                    note = json.loads(changes)
+                    want_seq, want_hash = int(note["head_seq"]), str(note["head_hash"])
+                except (ValueError, KeyError, TypeError):
+                    problems.append(f"anchor {audit_id}: unreadable")
+                    continue
+                got = conn.execute("SELECT event_hash FROM memory_events WHERE seq = ?", (want_seq,)).fetchone()
+                if got is None:
+                    problems.append(f"anchor {audit_id}: event {want_seq} no longer exists (the log was cut back to before it)")
+                elif got[0] != want_hash:
+                    problems.append(f"anchor {audit_id}: event {want_seq} has a different hash than when it was anchored (history up to it was rewritten)")
+                else:
+                    latest = max(latest, want_seq)
+        head = self.head()
+        return {"ok": not problems, "anchors": n, "latest_anchored_seq": latest, "unanchored_events": max(0, head["seq"] - latest), "problems": problems[:20]}
+
+    def history(self, namespace: str, limit: int = 100, before_seq: Optional[int] = None) -> List[Dict[str, Any]]:
+        """The events of one person, newest first, with a short preview: what the time-travel view lists."""
+        limit = max(1, min(int(limit), 500))
+        with self._p._connect() as conn:
+            rows = conn.execute("SELECT seq, kind, memory_id, payload, provenance, created_at FROM memory_events WHERE namespace = ? AND (? IS NULL OR seq < ?) ORDER BY seq DESC LIMIT ?",
+                                (namespace, before_seq, before_seq, limit)).fetchall()
+        out = []
+        for seq, kind, mid, payload, prov, at in rows:
+            from rct_control_plane import memory_erasure
+            body = memory_erasure.open_payload(namespace, payload)
+            text = "[erased]" if body.get("_erased") else (body.get("content") or body.get("reason") or "")
+            out.append({"seq": seq, "kind": kind, "memory_id": mid, "at": at, "preview": str(text)[:120], "tainted": bool(json.loads(prov).get("tainted")) if prov else False})
+        return out
+
+    def seq_at_time(self, namespace: str, iso_time: str) -> int:
+        """The last event of this person at or before a moment (ISO 8601); 0 if there is none."""
+        with self._p._connect() as conn:
+            row = conn.execute("SELECT COALESCE(MAX(seq), 0) FROM memory_events WHERE namespace = ? AND created_at <= ?", (namespace, iso_time)).fetchone()
+        return int(row[0])
 
     def head(self) -> Dict[str, Any]:
         with self._p._connect() as conn:
@@ -190,9 +301,12 @@ class MemoryEventLog:
                     problems.append(f"event {seq}: its content does not match its hash (it was edited)")
                 prev = h
             import zstandard
+            from rct_control_plane import memory_erasure
             for cid, ns, upto, blob, sha in conn.execute("SELECT id, namespace, upto_seq, state_zstd, state_sha256 FROM memory_checkpoints ORDER BY id"):
                 try:
-                    if hashlib.sha256(zstandard.ZstdDecompressor().decompress(blob)).hexdigest() != sha:
+                    blob = bytes(blob)
+                    check = hashlib.sha256(blob).hexdigest() if memory_erasure.is_sealed_bytes(blob) else hashlib.sha256(zstandard.ZstdDecompressor().decompress(blob)).hexdigest()
+                    if check != sha:
                         problems.append(f"checkpoint {cid} ({ns} at seq {upto}): it does not match its hash")
                 except Exception as exc:                                    # noqa: BLE001
                     problems.append(f"checkpoint {cid} ({ns} at seq {upto}): unreadable ({type(exc).__name__})")
@@ -211,6 +325,8 @@ class MemoryEventLog:
                 diffs.append(f"{mid}: only in the {'table' if a is None else 'log'}")
                 continue
             for field in ("content", "memory_type", "importance", "accessed_count"):
+                if a.get("erased") and field in ("content", "memory_type", "importance"):
+                    continue                                                  # the text is gone on purpose (erasure); the table copy was scrubbed to the same marker
                 if a.get(field) != b.get(field):
                     diffs.append(f"{mid}.{field}: log {a.get(field)!r} vs table {b.get(field)!r}")
             if bool(a.get("revoked_at")) != bool(b.get("revoked_at")):
@@ -255,13 +371,19 @@ def verify_archive(path: str) -> Dict[str, Any]:
     if header.get("format") != "delentia-memory-archive-1" or header.get("events") != len(events):
         problems.append("the header does not match the events")
     state: Dict[str, Dict[str, Any]] = {}
+    sealed = 0
     for e in events:
         if event_hash(e["prev_hash"], e["namespace"], e["kind"], e["memory_id"], e["payload"], e["provenance"], e["created_at"]) != e["event_hash"]:
             problems.append(f"event {e['seq']}: its content does not match its hash")
-        _apply(state, e["kind"], e["memory_id"], json.loads(e["payload"]), e["created_at"])
-    if state != final.get("final_state"):
+        from rct_control_plane import memory_erasure
+        body = memory_erasure.open_payload(e["namespace"], e["payload"])      # with the person's key on this machine a sealed event is replayed too; without it only its hash is checked
+        if body.get("_erased"):
+            sealed += 1
+            continue
+        _apply(state, e["kind"], e["memory_id"], body, e["created_at"])
+    if not sealed and state != final.get("final_state"):
         problems.append("the final state does not equal the replay of the events")
-    return {"ok": not problems, "events": len(events), "problems": problems[:10]}
+    return {"ok": not problems, "events": len(events), "sealed_events": sealed, "replay_checked": not sealed, "problems": problems[:10]}
 
 
 # ----------------------------------------------------------------------------------------- Q2: what the model is shown
