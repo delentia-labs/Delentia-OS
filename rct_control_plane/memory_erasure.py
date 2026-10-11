@@ -219,7 +219,7 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
 TEXT_COLUMNS = {"goal": ERASED_TEXT, "answer": ERASED_TEXT, "content": ERASED_TEXT, "message": ERASED_TEXT, "text": ERASED_TEXT, "reason": ERASED_TEXT, "note": ERASED_TEXT, "title": ERASED_TEXT,
                 "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]"}
 NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures"}
-NO_PERSONAL_TEXT = {"spend_ledger"}                    # numbers per person per day: counted, not listed as holding words
+NO_PERSONAL_TEXT = {"spend_ledger", "memory_vectors"}          # memory_vectors: sealed under the person's key and zeroed by scrub_tables (Round 68)                    # numbers per person per day: counted, not listed as holding words
 
 
 def _namespaced_tables(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
@@ -260,6 +260,10 @@ def scrub_tables(conn: sqlite3.Connection, namespace: str) -> Dict[str, Any]:
         count = conn.execute(f'UPDATE "{table}" SET {sets} WHERE namespace = ?', [TEXT_COLUMNS[c] for c in cols] + [namespace]).rowcount
         if count:
             done.append({"table": table, "rows": int(count), "columns": cols})
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'memory_vectors'").fetchone():
+        zeroed = conn.execute("UPDATE memory_vectors SET vec = zeroblob(length(vec)) WHERE namespace = ?", (namespace,)).rowcount
+        if zeroed:
+            done.append({"table": "memory_vectors", "rows": int(zeroed), "columns": ["vec"]})
     if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'episode_log_fts'").fetchone():
         conn.execute("INSERT INTO episode_log_fts(episode_log_fts) VALUES ('rebuild')")           # the index kept the old words; it reads the (now scrubbed) content table again
     return {"tables": done}

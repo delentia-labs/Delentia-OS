@@ -27,3 +27,14 @@ mem0 runs with `infer=False` (no LLM extraction) so the question is retrieval, a
 ## 5. The model budget is recalculated for several vendors (no code in the runtime changes)
 Prices and tool support are read from OpenRouter's public model list on the day, the token estimates are the measured ones of Round 64/54B. A model enters the shortlist only if it advertises tool use, has a context
 window of at least 32k, and is priced; the shortlist must contain at least 5 different vendors. Reported with the date, the method and what would change the numbers.
+
+## 6. Embedding recall for memory (opt-in; added after the benchmark of section 4 showed a gap, BEFORE any code for it)
+Measured first (research/recall_benchmark_r68.py, 30 paraphrased questions, 120 stored texts): Delentia 7/30 hit@3, plain nomic-embed-text cosine 24/30, mem0 24/30. The paraphrase questions avoid the words of the facts,
+so the lexical matcher fails them; that is a weakness, not a benchmark artefact, because people paraphrase.
+`DELENTIA_MEMORY_EMBED=ollama` ranks memories with a local embedding model fused with the existing matcher. Pass, on the same 30 questions and with the same dataset (not edited):
+ 1. hit@3 with it on is at least 21/30 (within 3 of plain cosine); with it off the result is the unchanged 7/30 and the code path is the old one;
+ 2. median added cost with the model warm on this CPU: store <= 150 ms, recall <= 150 ms (127.0.0.1: `localhost` costs 2 s per call on this Windows machine, a defect found while measuring and fixed everywhere);
+ 3. `relevance` (what D reads) does not rise for an unrelated query: the best match of 30 unrelated questions against the facts stays below 0.5 on average;
+ 4. Ollama down, slow or returning rubbish: recall falls back to the matcher and never raises; a remote embedding address is refused unless explicitly allowed;
+ 5. vectors are sealed under the person's key, zeroed by erasure, and revoked memories are never ranked;
+ 6. every existing memory, growth and warm-recall test passes with it off, and the memory tests pass with it on.

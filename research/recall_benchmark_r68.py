@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "research"))
 import recall_dataset_r68 as ds  # noqa: E402
 
-OLLAMA = "http://localhost:11434"
+OLLAMA = "http://127.0.0.1:11434"
 
 
 def embed(texts: List[str]) -> List[List[float]]:
@@ -106,7 +106,7 @@ def run_mem0(texts: List[str], questions: List[str], k: int) -> List[List[str]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--system", choices=["delentia", "nomic", "mem0"], required=True)
+    ap.add_argument("--system", choices=["delentia", "delentia-embed", "nomic", "mem0"], required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--k", type=int, default=3)
     args = ap.parse_args()
@@ -115,7 +115,9 @@ def main() -> int:
     answers = [f["answer"] for f in d["facts"]]
     texts = corpus()
     started = time.perf_counter()
-    got = {"delentia": run_delentia, "nomic": run_nomic, "mem0": run_mem0}[args.system](texts, questions, args.k)
+    if args.system == "delentia-embed":
+        os.environ["DELENTIA_MEMORY_EMBED"] = "ollama"                      # Round 68: the opt-in embedding recall of rct_control_plane/memory_embeddings.py
+    got = {"delentia": run_delentia, "delentia-embed": run_delentia, "nomic": run_nomic, "mem0": run_mem0}[args.system](texts, questions, args.k)
     seconds = round(time.perf_counter() - started, 1)
     rows = []
     for f, top in zip(d["facts"], got, strict=True):
