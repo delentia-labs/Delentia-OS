@@ -2165,6 +2165,21 @@ def memory_list(namespace: str, db: Optional[str]) -> None:
         click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
 
 
+@memory_group.command("calibrate")
+@click.option("--model", "model_name", default=None, help="Embedding model to measure (default: DELENTIA_MEMORY_EMBED_MODEL or nomic-embed-text).")
+@click.option("--write", is_flag=True, help="Save the result so `relevance` (what D reads) is calibrated for this model.")
+def memory_calibrate(model_name: Optional[str], write: bool) -> None:
+    """Measure an embedding model's cosine scale on a neutral English and Thai sample, and say whether it reads Thai."""
+    from rct_control_plane import memory_embeddings
+    report = memory_embeddings.calibrate(model_name, write=write)
+    if "error" in report:
+        click.echo(click.style(f"Error: {report['error']}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+    if not write:
+        click.echo("(not saved: add --write to calibrate relevance for this model)")
+
+
 @memory_group.command("revoke")
 @click.argument("memory_id")
 @click.option("--namespace", default="desk", show_default=True)
@@ -3389,6 +3404,11 @@ def fdia_show(file_path: Optional[str]) -> None:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     if policy is None:
+        fallback = None if file_path else fdia_policy.default_policy()
+        if fallback is not None:                                  # Round 69: no file of your own = the default starter judges tool calls on top of the built-in floor
+            click.echo(f"No policy at {target}: the default starter '{fdia_policy.default_template_name()}' is judging tool calls (digest {fallback.digest()[:16]}), on top of the built-in floor. "
+                       f"Write your own file to replace it, or set {fdia_policy.DEFAULT_ENV}=none for the built-in floor alone. `delentia fdia template {fdia_policy.default_template_name()}` prints it.")
+            return
         click.echo(f"No policy at {target}: built-in behaviour (12 risky tools gated, repo writes always need a signature).")
         return
     click.echo(f"{target}  digest {policy.digest()[:16]}")

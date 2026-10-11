@@ -1,0 +1,82 @@
+[
+  {
+    "set": "dev",
+    "mode": "embedQ",
+    "n": 30,
+    "hit@1": 21,
+    "hit@3": 26,
+    "hit@5": 28,
+    "hit@10": 29,
+    "store_ms_median": 3240.3,
+    "recall_ms_median": 320.2,
+    "misses@3": [
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "The main labelling vendor is Pichai; the backup vendor is WrapIt.",
+          "The main labelling vendor is Surasak; the backup vendor is TapeWorks."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "The server room for spare cables is 60 days from pickup.",
+          "Our SLA promises a first reply within 4 hours.",
+          "The queue holds at most 250 jobs and each job times out after 12 seconds."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Mali gives access to the chemical section.",
+          "Duangjai gives access to the chemical section.",
+          "Ploy gives access to the chemical section."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The finance meeting is held every Friday at 13:10.",
+          "The marketing meeting is held every Sunday at 09:15.",
+          "The platform meeting is held every Sunday at 13:10."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "dev",
+    "mode": "embedQG",
+    "n": 30,
+    "hit@1": 23,
+    "hit@3": 28,
+    "hit@5": 28,
+    "hit@10": 30,
+    "store_ms_median": 3132.4,
+    "recall_ms_median": 3251.9,
+    "misses@3": [
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Mali gives access to the chemical section.",
+          "Nattaya gives access to the chemical section.",
+          "Duangjai gives access to the chemical section."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The finance meeting is held every Friday at 13:10.",
+          "The support meeting is held every Friday at 16:20.",
+          "The platform meeting is held every Sunday at 13:10."
+        ]
+      }
+    ]
+  }
+]

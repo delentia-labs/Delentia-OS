@@ -1,0 +1,1675 @@
+{
+  "set": "h4",
+  "questions": 40,
+  "texts": 200,
+  "results": [
+    {
+      "variant": "A",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 34,
+      "hit@3": 38,
+      "hit@5": 38,
+      "hit@10": 40,
+      "misses@3": [
+        "shipping to chiang mai takes ____ by the standard courier.",
+        "interns receive a monthly allowance of ____ baht."
+      ],
+      "hit@3_wilson95": [
+        0.835,
+        0.986
+      ],
+      "rows": [
+        {
+          "question": "employees accrue ____ per month of service.",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Expense reports are due on the 5th of the following month."
+          ]
+        },
+        {
+          "question": "the printer on the third floor is named ____.",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks."
+          ]
+        },
+        {
+          "question": "visitors must sign in at the front desk and wear a ____.",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The loading dock for visitor badges is reviewed every 3 weeks.",
+            "The server room for visitor badges is reviewed every 11 weeks."
+          ]
+        },
+        {
+          "question": "the cfo, ____, approves any expense above 50,000 baht.",
+          "answer": "Rattanaporn",
+          "rank": 2,
+          "top": [
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly stationery budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "our kubernetes cluster is named harbor-prod and runs version ____.",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The index rebuild runs nightly at 09:15 and is kept for 9 weeks."
+          ]
+        },
+        {
+          "question": "lunch is served in the canteen between ____ and 13:00.",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 13:10 on Tuesday."
+          ]
+        },
+        {
+          "question": "passwords must be at least ____ long.",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The archive room must be inspected every 9 weeks by Ploy.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "the annual audit is performed by ____ in november.",
+          "answer": "Kasikorn Assurance",
+          "rank": 1,
+          "top": [
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday."
+          ]
+        },
+        {
+          "question": "forklift certification expires every ____.",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The server room for visitor badges is reviewed every 11 weeks.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "customer complaints go to ____ and are answered within 2 business days.",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The server room must be inspected every 8 weeks by Nattaya.",
+            "The billing limit is 8 requests per hour."
+          ]
+        },
+        {
+          "question": "the conference room sapphire seats ____.",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The research meeting is held every Monday at 13:10."
+          ]
+        },
+        {
+          "question": "shipping to chiang mai takes ____ by the standard courier.",
+          "answer": "3 days",
+          "rank": 6,
+          "top": [
+            "Orders over 12,400 baht ship within Pattaya.",
+            "Orders over 1,350 baht ship within Pattaya.",
+            "Orders over 40,300 baht ship within Nonthaburi."
+          ]
+        },
+        {
+          "question": "the vpn gateway is vpn.northwind.example on port ____.",
+          "answer": "4433",
+          "rank": 2,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly."
+          ]
+        },
+        {
+          "question": "the janitorial contract is held by ____ and ends in june.",
+          "answer": "CleanWave",
+          "rank": 1,
+          "top": [
+            "The janitorial contract is held by CleanWave and ends in June.",
+            "Forklift certification expires every 24 months.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "interns receive a monthly allowance of ____ baht.",
+          "answer": "9,000",
+          "rank": 10,
+          "top": [
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The monthly stationery budget is capped at 40,300 baht.",
+            "The monthly training budget is capped at 1,350 baht."
+          ]
+        },
+        {
+          "question": "the incident post-mortem must be written within ____.",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "The reception must be inspected every 9 weeks by Somsak.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "the chief executive's assistant is ladda, extension ____.",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office.",
+            "Our safety officer is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "source code is stored in the gitlab group ____.",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The default branch of the website repository is trunk.",
+            "Somsak gives access to the spare parts section."
+          ]
+        },
+        {
+          "question": "the loyalty programme gives 1 point per ____ spent.",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "the cafeteria is closed on ____ for deep cleaning.",
+          "answer": "Mondays",
+          "rank": 2,
+          "top": [
+            "The server room closes at 16:20 on Sunday.",
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "fire drills happen on the ____ of every quarter.",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The finance meeting is held every Sunday at 09:15.",
+            "The finance meeting is held every Tuesday at 09:15."
+          ]
+        },
+        {
+          "question": "the default branch of the website repository is ____.",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The archive service is called rep-db-4.",
+            "Source code is stored in the GitLab group northwind-core."
+          ]
+        },
+        {
+          "question": "parking permits cost ____ per month and are issued by security.",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "Anan is the contact for parking stickers.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "cctv footage is kept for ____.",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The archive room closes at 13:10 on Sunday.",
+            "The archive room closes at 13:10 on Monday."
+          ]
+        },
+        {
+          "question": "dr. siriwan is the company physician and is on site on ____.",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Pichai is the contact for visa paperwork.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the monthly newsletter goes out on the ____.",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "laptops are replaced every ____.",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks."
+          ]
+        },
+        {
+          "question": "the emergency assembly point is the car park behind ____.",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Anan is the contact for parking stickers.",
+            "The demo service is called demo-db-5."
+          ]
+        },
+        {
+          "question": "translation work is outsourced to ____.",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our payroll clerk is Wipa and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the guest wi-fi network is ____ and its code changes weekly.",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "The reception for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "expense reports are due on the ____ of the following month.",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "the backup generator is tested every ____.",
+          "answer": "second Saturday",
+          "rank": 3,
+          "top": [
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks.",
+            "The backup generator is tested every second Saturday."
+          ]
+        },
+        {
+          "question": "the cold room must stay between ____ celsius.",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The server room closes at 16:20 on Sunday.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "maternity leave is ____ with full pay.",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "ticket priority p1 means the ____.",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "The demo service is called demo-db-5.",
+            "The conference room Sapphire seats 18 people."
+          ]
+        },
+        {
+          "question": "the company anniversary is celebrated on ____.",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "Dr. Siriwan is the company physician and is on site on Wednesdays."
+          ]
+        },
+        {
+          "question": "the procurement portal is ____.",
+          "answer": "buy.northwind.example",
+          "rank": 1,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "security guards change shift at ____.",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "Our security officer is Orasa and works from the Hat Yai office.",
+            "Our security officer is Wipa and works from the Phuket office."
+          ]
+        },
+        {
+          "question": "customer data may only be exported by the data protection officer, ____.",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "The export limit is 6 requests per hour.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "the standard warranty on our products is ____.",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "The company anniversary is celebrated on 17 March.",
+            "The VPN gateway is vpn.northwind.example on port 4433."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "C",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 40,
+      "hit@3": 40,
+      "hit@5": 40,
+      "hit@10": 40,
+      "misses@3": [],
+      "hit@3_wilson95": [
+        0.912,
+        1.0
+      ],
+      "rows": [
+        {
+          "question": "employees accrue ____ per month of service.",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Expense reports are due on the 5th of the following month."
+          ]
+        },
+        {
+          "question": "the printer on the third floor is named ____.",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks."
+          ]
+        },
+        {
+          "question": "visitors must sign in at the front desk and wear a ____.",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The loading dock for visitor badges is reviewed every 3 weeks.",
+            "The server room for visitor badges is reviewed every 11 weeks."
+          ]
+        },
+        {
+          "question": "the cfo, ____, approves any expense above 50,000 baht.",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "The monthly cloud budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "our kubernetes cluster is named harbor-prod and runs version ____.",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The index rebuild runs nightly at 09:15 and is kept for 9 weeks."
+          ]
+        },
+        {
+          "question": "lunch is served in the canteen between ____ and 13:00.",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 13:10 on Tuesday."
+          ]
+        },
+        {
+          "question": "passwords must be at least ____ long.",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The archive room must be inspected every 9 weeks by Ploy.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "the annual audit is performed by ____ in november.",
+          "answer": "Kasikorn Assurance",
+          "rank": 1,
+          "top": [
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday."
+          ]
+        },
+        {
+          "question": "forklift certification expires every ____.",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The server room for visitor badges is reviewed every 11 weeks.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "customer complaints go to ____ and are answered within 2 business days.",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The server room must be inspected every 8 weeks by Nattaya.",
+            "The billing limit is 8 requests per hour."
+          ]
+        },
+        {
+          "question": "the conference room sapphire seats ____.",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The research meeting is held every Monday at 13:10."
+          ]
+        },
+        {
+          "question": "shipping to chiang mai takes ____ by the standard courier.",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Orders over 1,350 baht ship within Hua Hin.",
+            "Orders over 1,350 baht ship within Pattaya."
+          ]
+        },
+        {
+          "question": "the vpn gateway is vpn.northwind.example on port ____.",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The procurement portal is buy.northwind.example.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly."
+          ]
+        },
+        {
+          "question": "the janitorial contract is held by ____ and ends in june.",
+          "answer": "CleanWave",
+          "rank": 1,
+          "top": [
+            "The janitorial contract is held by CleanWave and ends in June.",
+            "Forklift certification expires every 24 months.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "interns receive a monthly allowance of ____ baht.",
+          "answer": "9,000",
+          "rank": 1,
+          "top": [
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "The monthly training budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "the incident post-mortem must be written within ____.",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "The archive room must be inspected every 9 weeks by Ploy.",
+            "The archive room closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "the chief executive's assistant is ladda, extension ____.",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office.",
+            "Our safety officer is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "source code is stored in the gitlab group ____.",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The default branch of the website repository is trunk.",
+            "Somsak gives access to the spare parts section."
+          ]
+        },
+        {
+          "question": "the loyalty programme gives 1 point per ____ spent.",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "the cafeteria is closed on ____ for deep cleaning.",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 16:20 on Sunday.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "fire drills happen on the ____ of every quarter.",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The finance meeting is held every Sunday at 09:15.",
+            "The finance meeting is held every Tuesday at 09:15."
+          ]
+        },
+        {
+          "question": "the default branch of the website repository is ____.",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The archive service is called rep-db-4.",
+            "Source code is stored in the GitLab group northwind-core."
+          ]
+        },
+        {
+          "question": "parking permits cost ____ per month and are issued by security.",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "Anan is the contact for parking stickers.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "cctv footage is kept for ____.",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The archive room closes at 13:10 on Sunday.",
+            "The archive room closes at 13:10 on Monday."
+          ]
+        },
+        {
+          "question": "dr. siriwan is the company physician and is on site on ____.",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Pichai is the contact for visa paperwork.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the monthly newsletter goes out on the ____.",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "laptops are replaced every ____.",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks."
+          ]
+        },
+        {
+          "question": "the emergency assembly point is the car park behind ____.",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Anan is the contact for parking stickers.",
+            "Duangjai gives access to the spare parts section."
+          ]
+        },
+        {
+          "question": "translation work is outsourced to ____.",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our payroll clerk is Wipa and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the guest wi-fi network is ____ and its code changes weekly.",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "The reception for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "expense reports are due on the ____ of the following month.",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "the backup generator is tested every ____.",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks."
+          ]
+        },
+        {
+          "question": "the cold room must stay between ____ celsius.",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The server room closes at 16:20 on Sunday.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "maternity leave is ____ with full pay.",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "ticket priority p1 means the ____.",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "Anan is the contact for parking stickers.",
+            "Pichai is the contact for uniform sizes."
+          ]
+        },
+        {
+          "question": "the company anniversary is celebrated on ____.",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "The marketing meeting is held every Saturday at 06:45."
+          ]
+        },
+        {
+          "question": "the procurement portal is ____.",
+          "answer": "buy.northwind.example",
+          "rank": 1,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "security guards change shift at ____.",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "Our security officer is Orasa and works from the Hat Yai office.",
+            "Our security officer is Wipa and works from the Phuket office."
+          ]
+        },
+        {
+          "question": "customer data may only be exported by the data protection officer, ____.",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "The export limit is 6 requests per hour.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "the standard warranty on our products is ____.",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "Forklift certification expires every 24 months.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "D",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 40,
+      "hit@3": 40,
+      "hit@5": 40,
+      "hit@10": 40,
+      "misses@3": [],
+      "hit@3_wilson95": [
+        0.912,
+        1.0
+      ],
+      "rows": [
+        {
+          "question": "employees accrue ____ per month of service.",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Expense reports are due on the 5th of the following month.",
+            "Parking permits cost 600 baht per month and are issued by Security."
+          ]
+        },
+        {
+          "question": "the printer on the third floor is named ____.",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "visitors must sign in at the front desk and wear a ____.",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "the cfo, ____, approves any expense above 50,000 baht.",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Expense reports are due on the 5th of the following month."
+          ]
+        },
+        {
+          "question": "our kubernetes cluster is named harbor-prod and runs version ____.",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "lunch is served in the canteen between ____ and 13:00.",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "Security guards change shift at 06:00 and 18:00."
+          ]
+        },
+        {
+          "question": "passwords must be at least ____ long.",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "the annual audit is performed by ____ in november.",
+          "answer": "Kasikorn Assurance",
+          "rank": 1,
+          "top": [
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "forklift certification expires every ____.",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "customer complaints go to ____ and are answered within 2 business days.",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The incident post-mortem must be written within 5 working days.",
+            "Customer data may only be exported by the Data Protection Officer, Arunee."
+          ]
+        },
+        {
+          "question": "the conference room sapphire seats ____.",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The server room must be inspected every 8 weeks by Nattaya.",
+            "The server room must be inspected every 8 weeks by Orasa."
+          ]
+        },
+        {
+          "question": "shipping to chiang mai takes ____ by the standard courier.",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "The standard warranty on our products is 18 months.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "the vpn gateway is vpn.northwind.example on port ____.",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The procurement portal is buy.northwind.example.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "the janitorial contract is held by ____ and ends in june.",
+          "answer": "CleanWave",
+          "rank": 1,
+          "top": [
+            "The janitorial contract is held by CleanWave and ends in June.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "The finance meeting is held every Sunday at 09:15."
+          ]
+        },
+        {
+          "question": "interns receive a monthly allowance of ____ baht.",
+          "answer": "9,000",
+          "rank": 1,
+          "top": [
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 1,350 baht."
+          ]
+        },
+        {
+          "question": "the incident post-mortem must be written within ____.",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "Orders over 1,350 baht ship within Pattaya.",
+            "Orders over 4,200 baht ship within Pattaya."
+          ]
+        },
+        {
+          "question": "the chief executive's assistant is ladda, extension ____.",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "source code is stored in the gitlab group ____.",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "the loyalty programme gives 1 point per ____ spent.",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "The emergency assembly point is the car park behind building C.",
+            "Mali gives access to the records section."
+          ]
+        },
+        {
+          "question": "the cafeteria is closed on ____ for deep cleaning.",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+            "The main cleaning vendor is Surasak; the backup vendor is CartonCo."
+          ]
+        },
+        {
+          "question": "fire drills happen on the ____ of every quarter.",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "the default branch of the website repository is ____.",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "parking permits cost ____ per month and are issued by security.",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "Anan is the contact for parking stickers.",
+            "Expense reports are due on the 5th of the following month."
+          ]
+        },
+        {
+          "question": "cctv footage is kept for ____.",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "dr. siriwan is the company physician and is on site on ____.",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "The company anniversary is celebrated on 17 March.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "the monthly newsletter goes out on the ____.",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 1,350 baht."
+          ]
+        },
+        {
+          "question": "laptops are replaced every ____.",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "the emergency assembly point is the car park behind ____.",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "translation work is outsourced to ____.",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "the guest wi-fi network is ____ and its code changes weekly.",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "Source code is stored in the GitLab group northwind-core.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "expense reports are due on the ____ of the following month.",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "the backup generator is tested every ____.",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The main security vendor is Mali; the backup vendor is TapeWorks.",
+            "The main catering vendor is Orasa; the backup vendor is CartonCo."
+          ]
+        },
+        {
+          "question": "the cold room must stay between ____ celsius.",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "maternity leave is ____ with full pay.",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "ticket priority p1 means the ____.",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "the company anniversary is celebrated on ____.",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "the procurement portal is ____.",
+          "answer": "buy.northwind.example",
+          "rank": 1,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "security guards change shift at ____.",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "Our security officer is Wipa and works from the Phuket office.",
+            "The main security vendor is Mali; the backup vendor is TapeWorks."
+          ]
+        },
+        {
+          "question": "customer data may only be exported by the data protection officer, ____.",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "Our safety officer is Surasak and works from the Phuket office.",
+            "Our security officer is Wipa and works from the Phuket office."
+          ]
+        },
+        {
+          "question": "the standard warranty on our products is ____.",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 40,
+      "hit@3": 40,
+      "hit@5": 40,
+      "hit@10": 40,
+      "misses@3": [],
+      "hit@3_wilson95": [
+        0.912,
+        1.0
+      ],
+      "rows": [
+        {
+          "question": "employees accrue ____ per month of service.",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Expense reports are due on the 5th of the following month."
+          ]
+        },
+        {
+          "question": "the printer on the third floor is named ____.",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks."
+          ]
+        },
+        {
+          "question": "visitors must sign in at the front desk and wear a ____.",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The loading dock for visitor badges is reviewed every 3 weeks.",
+            "The server room for visitor badges is reviewed every 11 weeks."
+          ]
+        },
+        {
+          "question": "the cfo, ____, approves any expense above 50,000 baht.",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "The monthly cloud budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "our kubernetes cluster is named harbor-prod and runs version ____.",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The index rebuild runs nightly at 09:15 and is kept for 9 weeks."
+          ]
+        },
+        {
+          "question": "lunch is served in the canteen between ____ and 13:00.",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 13:10 on Tuesday."
+          ]
+        },
+        {
+          "question": "passwords must be at least ____ long.",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The archive room must be inspected every 9 weeks by Ploy.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "the annual audit is performed by ____ in november.",
+          "answer": "Kasikorn Assurance",
+          "rank": 1,
+          "top": [
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday."
+          ]
+        },
+        {
+          "question": "forklift certification expires every ____.",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The server room for visitor badges is reviewed every 11 weeks.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "customer complaints go to ____ and are answered within 2 business days.",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The incident post-mortem must be written within 5 working days.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "the conference room sapphire seats ____.",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room for safety gear is reviewed every 3 weeks."
+          ]
+        },
+        {
+          "question": "shipping to chiang mai takes ____ by the standard courier.",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Orders over 1,350 baht ship within Hua Hin.",
+            "Orders over 1,350 baht ship within Pattaya."
+          ]
+        },
+        {
+          "question": "the vpn gateway is vpn.northwind.example on port ____.",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The procurement portal is buy.northwind.example.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly."
+          ]
+        },
+        {
+          "question": "the janitorial contract is held by ____ and ends in june.",
+          "answer": "CleanWave",
+          "rank": 1,
+          "top": [
+            "The janitorial contract is held by CleanWave and ends in June.",
+            "Forklift certification expires every 24 months.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "interns receive a monthly allowance of ____ baht.",
+          "answer": "9,000",
+          "rank": 1,
+          "top": [
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "The monthly training budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "the incident post-mortem must be written within ____.",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "The archive room must be inspected every 9 weeks by Ploy.",
+            "The archive room closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "the chief executive's assistant is ladda, extension ____.",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office.",
+            "Our safety officer is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "source code is stored in the gitlab group ____.",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The default branch of the website repository is trunk.",
+            "Somsak gives access to the spare parts section."
+          ]
+        },
+        {
+          "question": "the loyalty programme gives 1 point per ____ spent.",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "the cafeteria is closed on ____ for deep cleaning.",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 16:20 on Sunday.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "fire drills happen on the ____ of every quarter.",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The finance meeting is held every Sunday at 09:15.",
+            "The finance meeting is held every Tuesday at 09:15."
+          ]
+        },
+        {
+          "question": "the default branch of the website repository is ____.",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The archive service is called rep-db-4.",
+            "Source code is stored in the GitLab group northwind-core."
+          ]
+        },
+        {
+          "question": "parking permits cost ____ per month and are issued by security.",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "Anan is the contact for parking stickers.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "cctv footage is kept for ____.",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "dr. siriwan is the company physician and is on site on ____.",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Pichai is the contact for visa paperwork.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the monthly newsletter goes out on the ____.",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly stationery budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "laptops are replaced every ____.",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks."
+          ]
+        },
+        {
+          "question": "the emergency assembly point is the car park behind ____.",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Anan is the contact for parking stickers.",
+            "Duangjai gives access to the spare parts section."
+          ]
+        },
+        {
+          "question": "translation work is outsourced to ____.",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our payroll clerk is Wipa and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "the guest wi-fi network is ____ and its code changes weekly.",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "The reception for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "expense reports are due on the ____ of the following month.",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The monthly newsletter goes out on the last Friday.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "the backup generator is tested every ____.",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks."
+          ]
+        },
+        {
+          "question": "the cold room must stay between ____ celsius.",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The server room closes at 16:20 on Sunday.",
+            "The server room closes at 21:00 on Saturday."
+          ]
+        },
+        {
+          "question": "maternity leave is ____ with full pay.",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Interns receive a monthly allowance of 9,000 baht.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "ticket priority p1 means the ____.",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "Anan is the contact for parking stickers.",
+            "Pichai is the contact for uniform sizes."
+          ]
+        },
+        {
+          "question": "the company anniversary is celebrated on ____.",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "The marketing meeting is held every Saturday at 06:45."
+          ]
+        },
+        {
+          "question": "the procurement portal is ____.",
+          "answer": "buy.northwind.example",
+          "rank": 1,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "security guards change shift at ____.",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "Our security officer is Orasa and works from the Hat Yai office.",
+            "Our security officer is Wipa and works from the Phuket office."
+          ]
+        },
+        {
+          "question": "customer data may only be exported by the data protection officer, ____.",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "The export limit is 6 requests per hour.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "the standard warranty on our products is ____.",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "Forklift certification expires every 24 months.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        }
+      ]
+    }
+  ],
+  "seconds": 35.3
+}

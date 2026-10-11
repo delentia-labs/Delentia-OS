@@ -66,7 +66,7 @@ def main() -> int:
     Path(args.out).write_text(json.dumps({"summary": summary, "rows": rows}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in summary.items() if k != "still_safe_after"}, indent=2))
     for r in summary["still_safe_after"]:
-        print("  still safe:", r["program"], r["function"], r["command"][:80].replace("\n", " "))
+        print("  still safe:", r["program"], r["function"], "command sha256", __import__("hashlib").sha256(r["command"].encode("utf-8", "replace")).hexdigest()[:12])      # the menu's text is not echoed
     return 0
 
 

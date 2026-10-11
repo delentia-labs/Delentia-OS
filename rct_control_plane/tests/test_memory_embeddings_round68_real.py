@@ -110,11 +110,11 @@ def test_a_paraphrase_finds_the_memory_with_embeddings_and_not_without(server, t
     on = [r["content"] for r in run(m.recall(question, limit=2))]
     assert FACTS[0] in on
     candidates = m._persistence.list_memories("alice")
-    ranked = {c["id"]: (sim, lex) for sim, lex, c in m._ranked(question, candidates, 5)}
+    ranked = {c["id"]: (rel, lex) for _key, rel, lex, c in m._ranked(question, candidates, 5)}          # (order key, relevance, lexical, memory) since Round 69
     sim, lex = ranked[next(c["id"] for c in candidates if c["content"] == FACTS[0])]
     assert sim > lex + 0.2                                                      # the similarity that found it came from meaning, not from shared words
     monkeypatch.setenv(mx.ENV, "off")
-    assert m._ranked(question, candidates, 5)[0][0] == m._ranked(question, candidates, 5)[0][1]          # off: the similarity IS the lexical one (the old path)
+    assert m._ranked(question, candidates, 5)[0][1] == m._ranked(question, candidates, 5)[0][2]          # off: the similarity IS the lexical one (the old path)
 
 
 def test_a_question_that_shares_words_still_wins_by_words(server, tmp_path):

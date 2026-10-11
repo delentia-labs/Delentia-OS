@@ -1,0 +1,1720 @@
+{
+  "set": "h1",
+  "questions": 40,
+  "texts": 200,
+  "results": [
+    {
+      "variant": "A",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 35,
+      "hit@3": 36,
+      "hit@5": 38,
+      "hit@10": 39,
+      "misses@3": [
+        "Which company looks after cleaning?",
+        "How much pocket money do trainees get each month?",
+        "How many baht must a shopper spend to earn a reward unit?",
+        "Where do staff go online to request purchases?"
+      ],
+      "hit@3_wilson95": [
+        0.769,
+        0.96
+      ],
+      "rows": [
+        {
+          "question": "How quickly do staff build up paid time off?",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Maternity leave is 98 days with full pay.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "What is the label of the copier two flights above the ground level?",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo."
+          ]
+        },
+        {
+          "question": "What colour strap are guests given on arrival?",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The main catering vendor is Pichai; the backup vendor is FoamLine.",
+            "Pichai is the contact for visa paperwork."
+          ]
+        },
+        {
+          "question": "Who has to authorise a large spend?",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "Duangjai manages the spare parts budget for the research team."
+          ]
+        },
+        {
+          "question": "Which release of the container orchestrator do we operate?",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The main labelling vendor is Kritsada; the backup vendor is SafeBox.",
+            "Ploy manages the packaging budget for the logistics team."
+          ]
+        },
+        {
+          "question": "During which hours can employees eat their midday meal on site?",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "Security guards change shift at 06:00 and 18:00."
+          ]
+        },
+        {
+          "question": "What is the minimum length for a login secret?",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The search limit is 8 requests per hour.",
+            "The search limit is 11 requests per hour."
+          ]
+        },
+        {
+          "question": "Which outside firm checks our books every year?",
+          "answer": "Kasikorn Assurance",
+          "rank": 2,
+          "top": [
+            "The back office must be inspected every 8 weeks by Piya.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "The loading dock must be inspected every 11 weeks by Duangjai."
+          ]
+        },
+        {
+          "question": "How often must the lift-truck driver licence be renewed?",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The loading dock for office keys is reviewed every 6 weeks.",
+            "The loading dock must be inspected every 11 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "Where should an unhappy client send their grievance?",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The messaging limit is 8 requests per hour.",
+            "Staff in the support team use the messaging tool on Saturday."
+          ]
+        },
+        {
+          "question": "How many can fit in the meeting space named after a blue gem?",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room must be inspected every 3 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "How long does ordinary delivery to the northern city take?",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "Mali gives access to the records section."
+          ]
+        },
+        {
+          "question": "Which network port does the secure tunnel endpoint listen on?",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The main security vendor is Anan; the backup vendor is SafeBox.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "Which company looks after cleaning?",
+          "answer": "CleanWave",
+          "rank": 4,
+          "top": [
+            "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+            "The main cleaning vendor is Surasak; the backup vendor is CartonCo.",
+            "The main cleaning vendor is Duangjai; the backup vendor is FoamLine."
+          ]
+        },
+        {
+          "question": "How much pocket money do trainees get each month?",
+          "answer": "9,000",
+          "rank": 5,
+          "top": [
+            "The monthly training budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 12,400 baht.",
+            "The monthly training budget is capped at 4,200 baht."
+          ]
+        },
+        {
+          "question": "By when must the review document after an outage be completed?",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "Ticket priority P1 means the whole service is down.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "Which extension reaches the head boss's secretary?",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our finance contact is Surasak and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "Where do we keep our programs' repositories?",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The archive service is called rep-db-4.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "How many baht must a shopper spend to earn a reward unit?",
+          "answer": "25 baht",
+          "rank": 11,
+          "top": [
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The monthly stationery budget is capped at 40,300 baht.",
+            "The monthly training budget is capped at 1,350 baht."
+          ]
+        },
+        {
+          "question": "Which weekday can we not buy food at the staff restaurant?",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 18:30 on Friday.",
+            "Lunch is served in the canteen between 11:30 and 13:00."
+          ]
+        },
+        {
+          "question": "When do we rehearse building evacuations?",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The emergency assembly point is the car park behind building C.",
+            "The meeting room closes at 09:15 on Friday."
+          ]
+        },
+        {
+          "question": "What is the main line called in the web project's version control?",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The demo service is called rep-db-4.",
+            "The demo service is called trn-db-2."
+          ]
+        },
+        {
+          "question": "What is the fee for a car space pass?",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "Anan is the contact for badge photos.",
+            "Pichai is the contact for visa paperwork."
+          ]
+        },
+        {
+          "question": "How long do we hold on to video from the surveillance cameras?",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "Which day can staff see the in-house doctor?",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "The research meeting is held every Monday at 13:10.",
+            "The marketing meeting is held every Saturday at 06:45."
+          ]
+        },
+        {
+          "question": "When is the company bulletin sent to everyone?",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The company anniversary is celebrated on 17 March."
+          ]
+        },
+        {
+          "question": "After how many years does a staff computer get swapped for a new one?",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "Where do we gather if the premises must be evacuated?",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room for safety gear is reviewed every 3 weeks."
+          ]
+        },
+        {
+          "question": "Which agency handles converting documents between languages?",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Pichai is the contact for visa paperwork.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "What is the name of the wireless network for outside people?",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "Anan is the contact for badge photos."
+          ]
+        },
+        {
+          "question": "By what date must reimbursement claims be filed?",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The incident post-mortem must be written within 5 working days.",
+            "The reception must be inspected every 9 weeks by Somsak."
+          ]
+        },
+        {
+          "question": "How often do we trial the standby power unit?",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The reception for spare cables is reviewed every 9 weeks.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "What temperature range must the refrigerated storage hold?",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The reception must be inspected every 9 weeks by Somsak.",
+            "The server room must be inspected every 8 weeks by Nattaya."
+          ]
+        },
+        {
+          "question": "How long can a new mother stay away from work while still paid?",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "What does the most severe support category indicate?",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "The support meeting is held every Saturday at 16:20.",
+            "Nattaya manages the dry goods budget for the support team."
+          ]
+        },
+        {
+          "question": "On which date does the firm hold its yearly birthday party?",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "The finance meeting is held every Sunday at 09:15."
+          ]
+        },
+        {
+          "question": "Where do staff go online to request purchases?",
+          "answer": "buy.northwind.example",
+          "rank": 7,
+          "top": [
+            "Staff in the marketing team use the upload tool on Sunday.",
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "When do the watchmen swap?",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "The demo service is called demo-db-5.",
+            "The conference room Sapphire seats 18 people."
+          ]
+        },
+        {
+          "question": "Who alone is allowed to extract client records?",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "Mali gives access to the records section.",
+            "Somsak gives access to the records section."
+          ]
+        },
+        {
+          "question": "For how long do we repair goods free after sale?",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "The parts store must be inspected every 8 weeks by Piya.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "C",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 36,
+      "hit@3": 37,
+      "hit@5": 39,
+      "hit@10": 40,
+      "misses@3": [
+        "Which company looks after cleaning?",
+        "How much pocket money do trainees get each month?",
+        "Where do staff go online to request purchases?"
+      ],
+      "hit@3_wilson95": [
+        0.801,
+        0.974
+      ],
+      "rows": [
+        {
+          "question": "How quickly do staff build up paid time off?",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Maternity leave is 98 days with full pay.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "What is the label of the copier two flights above the ground level?",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo."
+          ]
+        },
+        {
+          "question": "What colour strap are guests given on arrival?",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The main catering vendor is Pichai; the backup vendor is FoamLine.",
+            "Pichai is the contact for visa paperwork."
+          ]
+        },
+        {
+          "question": "Who has to authorise a large spend?",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "Duangjai manages the spare parts budget for the research team."
+          ]
+        },
+        {
+          "question": "Which release of the container orchestrator do we operate?",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The main labelling vendor is Kritsada; the backup vendor is SafeBox.",
+            "Ploy manages the packaging budget for the logistics team."
+          ]
+        },
+        {
+          "question": "During which hours can employees eat their midday meal on site?",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "Security guards change shift at 06:00 and 18:00."
+          ]
+        },
+        {
+          "question": "What is the minimum length for a login secret?",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The search limit is 8 requests per hour.",
+            "The search limit is 11 requests per hour."
+          ]
+        },
+        {
+          "question": "Which outside firm checks our books every year?",
+          "answer": "Kasikorn Assurance",
+          "rank": 2,
+          "top": [
+            "The back office must be inspected every 8 weeks by Piya.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "The loading dock must be inspected every 11 weeks by Duangjai."
+          ]
+        },
+        {
+          "question": "How often must the lift-truck driver licence be renewed?",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The loading dock for office keys is reviewed every 6 weeks.",
+            "The loading dock must be inspected every 11 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "Where should an unhappy client send their grievance?",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The messaging limit is 8 requests per hour.",
+            "Staff in the support team use the messaging tool on Saturday."
+          ]
+        },
+        {
+          "question": "How many can fit in the meeting space named after a blue gem?",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room must be inspected every 3 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "How long does ordinary delivery to the northern city take?",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "Orders over 40,300 baht ship within Nonthaburi."
+          ]
+        },
+        {
+          "question": "Which network port does the secure tunnel endpoint listen on?",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The main security vendor is Anan; the backup vendor is SafeBox.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "Which company looks after cleaning?",
+          "answer": "CleanWave",
+          "rank": 4,
+          "top": [
+            "The main cleaning vendor is Surasak; the backup vendor is CartonCo.",
+            "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+            "The main cleaning vendor is Duangjai; the backup vendor is FoamLine."
+          ]
+        },
+        {
+          "question": "How much pocket money do trainees get each month?",
+          "answer": "9,000",
+          "rank": 5,
+          "top": [
+            "The monthly training budget is capped at 7,800 baht.",
+            "The monthly training budget is capped at 12,400 baht.",
+            "The monthly training budget is capped at 4,200 baht."
+          ]
+        },
+        {
+          "question": "By when must the review document after an outage be completed?",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "Ticket priority P1 means the whole service is down.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "Which extension reaches the head boss's secretary?",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our finance contact is Surasak and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "Where do we keep our programs' repositories?",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The archive service is called rep-db-4.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "How many baht must a shopper spend to earn a reward unit?",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "The monthly stationery budget is capped at 7,800 baht.",
+            "The monthly stationery budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "Which weekday can we not buy food at the staff restaurant?",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 18:30 on Friday.",
+            "Lunch is served in the canteen between 11:30 and 13:00."
+          ]
+        },
+        {
+          "question": "When do we rehearse building evacuations?",
+          "answer": "first Thursday",
+          "rank": 1,
+          "top": [
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The emergency assembly point is the car park behind building C.",
+            "The meeting room closes at 09:15 on Friday."
+          ]
+        },
+        {
+          "question": "What is the main line called in the web project's version control?",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The demo service is called rep-db-4.",
+            "The demo service is called trn-db-2."
+          ]
+        },
+        {
+          "question": "What is the fee for a car space pass?",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "The billing limit is 8 requests per hour.",
+            "The billing limit is 11 requests per hour."
+          ]
+        },
+        {
+          "question": "How long do we hold on to video from the surveillance cameras?",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "Which day can staff see the in-house doctor?",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "The research meeting is held every Monday at 13:10.",
+            "The marketing meeting is held every Saturday at 06:45."
+          ]
+        },
+        {
+          "question": "When is the company bulletin sent to everyone?",
+          "answer": "last Friday",
+          "rank": 1,
+          "top": [
+            "The monthly newsletter goes out on the last Friday.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The company anniversary is celebrated on 17 March."
+          ]
+        },
+        {
+          "question": "After how many years does a staff computer get swapped for a new one?",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "Where do we gather if the premises must be evacuated?",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room for safety gear is reviewed every 3 weeks."
+          ]
+        },
+        {
+          "question": "Which agency handles converting documents between languages?",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Pichai is the contact for visa paperwork.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "What is the name of the wireless network for outside people?",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The reception for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "By what date must reimbursement claims be filed?",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The incident post-mortem must be written within 5 working days.",
+            "The monthly newsletter goes out on the last Friday."
+          ]
+        },
+        {
+          "question": "How often do we trial the standby power unit?",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The reception for spare cables is reviewed every 9 weeks.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "What temperature range must the refrigerated storage hold?",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "The monthly stationery budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "How long can a new mother stay away from work while still paid?",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "The incident post-mortem must be written within 5 working days."
+          ]
+        },
+        {
+          "question": "What does the most severe support category indicate?",
+          "answer": "whole service is down",
+          "rank": 1,
+          "top": [
+            "Ticket priority P1 means the whole service is down.",
+            "The support meeting is held every Saturday at 16:20.",
+            "The demo service is called rep-db-4."
+          ]
+        },
+        {
+          "question": "On which date does the firm hold its yearly birthday party?",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "The finance meeting is held every Sunday at 09:15."
+          ]
+        },
+        {
+          "question": "Where do staff go online to request purchases?",
+          "answer": "buy.northwind.example",
+          "rank": 7,
+          "top": [
+            "Staff in the marketing team use the upload tool on Sunday.",
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "When do the watchmen swap?",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "Who alone is allowed to extract client records?",
+          "answer": "Arunee",
+          "rank": 1,
+          "top": [
+            "Customer data may only be exported by the Data Protection Officer, Arunee.",
+            "Mali gives access to the records section.",
+            "Somsak gives access to the records section."
+          ]
+        },
+        {
+          "question": "For how long do we repair goods free after sale?",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "The parts store must be inspected every 8 weeks by Piya.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "D",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 3,
+      "hit@3": 6,
+      "hit@5": 6,
+      "hit@10": 6,
+      "misses@3": [
+        "How quickly do staff build up paid time off?",
+        "What is the label of the copier two flights above the ground level?",
+        "What colour strap are guests given on arrival?",
+        "Who has to authorise a large spend?",
+        "During which hours can employees eat their midday meal on site?",
+        "What is the minimum length for a login secret?",
+        "Which outside firm checks our books every year?",
+        "How often must the lift-truck driver licence be renewed?",
+        "Where should an unhappy client send their grievance?",
+        "How many can fit in the meeting space named after a blue gem?",
+        "How long does ordinary delivery to the northern city take?",
+        "Which company looks after cleaning?",
+        "How much pocket money do trainees get each month?",
+        "By when must the review document after an outage be completed?",
+        "Where do we keep our programs' repositories?",
+        "How many baht must a shopper spend to earn a reward unit?",
+        "Which weekday can we not buy food at the staff restaurant?",
+        "When do we rehearse building evacuations?",
+        "What is the main line called in the web project's version control?",
+        "What is the fee for a car space pass?",
+        "How long do we hold on to video from the surveillance cameras?",
+        "Which day can staff see the in-house doctor?",
+        "When is the company bulletin sent to everyone?",
+        "Where do we gather if the premises must be evacuated?",
+        "By what date must reimbursement claims be filed?",
+        "How often do we trial the standby power unit?",
+        "What temperature range must the refrigerated storage hold?",
+        "How long can a new mother stay away from work while still paid?",
+        "What does the most severe support category indicate?",
+        "On which date does the firm hold its yearly birthday party?",
+        "Where do staff go online to request purchases?",
+        "When do the watchmen swap?",
+        "Who alone is allowed to extract client records?",
+        "For how long do we repair goods free after sale?"
+      ],
+      "hit@3_wilson95": [
+        0.071,
+        0.291
+      ],
+      "rows": [
+        {
+          "question": "How quickly do staff build up paid time off?",
+          "answer": "1.5 vacation days",
+          "rank": 49,
+          "top": [
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Staff in the finance team use the export tool on Saturday.",
+            "Staff in the logistics team use the upload tool on Monday."
+          ]
+        },
+        {
+          "question": "What is the label of the copier two flights above the ground level?",
+          "answer": "LaserJet-Orchid",
+          "rank": 24,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "What colour strap are guests given on arrival?",
+          "answer": "green lanyard",
+          "rank": 82,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Who has to authorise a large spend?",
+          "answer": "Rattanaporn",
+          "rank": 16,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Which release of the container orchestrator do we operate?",
+          "answer": "1.29",
+          "rank": 2,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "During which hours can employees eat their midday meal on site?",
+          "answer": "11:30",
+          "rank": 114,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "What is the minimum length for a login secret?",
+          "answer": "14 characters",
+          "rank": 13,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Which outside firm checks our books every year?",
+          "answer": "Kasikorn Assurance",
+          "rank": 90,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "How often must the lift-truck driver licence be renewed?",
+          "answer": "24 months",
+          "rank": 97,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Where should an unhappy client send their grievance?",
+          "answer": "complaints@northwind.example",
+          "rank": 187,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "How many can fit in the meeting space named after a blue gem?",
+          "answer": "18 people",
+          "rank": 76,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The meeting room must be inspected every 3 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "How long does ordinary delivery to the northern city take?",
+          "answer": "3 days",
+          "rank": 165,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "Which network port does the secure tunnel endpoint listen on?",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "Which company looks after cleaning?",
+          "answer": "CleanWave",
+          "rank": 15,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "The cafeteria is closed on Mondays for deep cleaning."
+          ]
+        },
+        {
+          "question": "How much pocket money do trainees get each month?",
+          "answer": "9,000",
+          "rank": 190,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Parking permits cost 600 baht per month and are issued by Security."
+          ]
+        },
+        {
+          "question": "By when must the review document after an outage be completed?",
+          "answer": "5 working days",
+          "rank": 178,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Which extension reaches the head boss's secretary?",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "Where do we keep our programs' repositories?",
+          "answer": "northwind-core",
+          "rank": 183,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "How many baht must a shopper spend to earn a reward unit?",
+          "answer": "25 baht",
+          "rank": 13,
+          "top": [
+            "The monthly travel budget is capped at 1,350 baht.",
+            "The monthly training budget is capped at 1,350 baht.",
+            "The monthly cloud budget is capped at 7,800 baht."
+          ]
+        },
+        {
+          "question": "Which weekday can we not buy food at the staff restaurant?",
+          "answer": "Mondays",
+          "rank": 120,
+          "top": [
+            "The procurement portal is buy.northwind.example.",
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Staff in the finance team use the export tool on Saturday."
+          ]
+        },
+        {
+          "question": "When do we rehearse building evacuations?",
+          "answer": "first Thursday",
+          "rank": 131,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "What is the main line called in the web project's version control?",
+          "answer": "trunk",
+          "rank": 125,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The archive service is called rep-db-4.",
+            "The analytics service is called arch-db-9."
+          ]
+        },
+        {
+          "question": "What is the fee for a car space pass?",
+          "answer": "600 baht",
+          "rank": 186,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "How long do we hold on to video from the surveillance cameras?",
+          "answer": "30 days",
+          "rank": 181,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+          ]
+        },
+        {
+          "question": "Which day can staff see the in-house doctor?",
+          "answer": "Wednesdays",
+          "rank": 193,
+          "top": [
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Staff in the finance team use the export tool on Saturday.",
+            "Staff in the logistics team use the upload tool on Monday."
+          ]
+        },
+        {
+          "question": "When is the company bulletin sent to everyone?",
+          "answer": "last Friday",
+          "rank": 24,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "After how many years does a staff computer get swapped for a new one?",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Staff in the finance team use the export tool on Saturday."
+          ]
+        },
+        {
+          "question": "Where do we gather if the premises must be evacuated?",
+          "answer": "building C",
+          "rank": 75,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Which agency handles converting documents between languages?",
+          "answer": "LinguaBridge",
+          "rank": 3,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "What is the name of the wireless network for outside people?",
+          "answer": "Northwind-Visitors",
+          "rank": 2,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "By what date must reimbursement claims be filed?",
+          "answer": "5th",
+          "rank": 158,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "How often do we trial the standby power unit?",
+          "answer": "second Saturday",
+          "rank": 176,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "What temperature range must the refrigerated storage hold?",
+          "answer": "2 and 4 degrees",
+          "rank": 27,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "How long can a new mother stay away from work while still paid?",
+          "answer": "98 days",
+          "rank": 26,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Passwords must be at least 14 characters long.",
+            "The cold room must stay between 2 and 4 degrees Celsius."
+          ]
+        },
+        {
+          "question": "What does the most severe support category indicate?",
+          "answer": "whole service is down",
+          "rank": 163,
+          "top": [
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Nattaya manages the dry goods budget for the support team.",
+            "The support meeting is held every Saturday at 16:20."
+          ]
+        },
+        {
+          "question": "On which date does the firm hold its yearly birthday party?",
+          "answer": "17 March",
+          "rank": 64,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Where do staff go online to request purchases?",
+          "answer": "buy.northwind.example",
+          "rank": 161,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "Staff in the support team use the messaging tool on Saturday.",
+            "Staff in the finance team use the export tool on Saturday."
+          ]
+        },
+        {
+          "question": "When do the watchmen swap?",
+          "answer": "06:00 and 18:00",
+          "rank": 41,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The back office closes at 13:10 on Sunday."
+          ]
+        },
+        {
+          "question": "Who alone is allowed to extract client records?",
+          "answer": "Arunee",
+          "rank": 199,
+          "top": [
+            "Mali gives access to the records section.",
+            "Somsak gives access to the records section.",
+            "Translation work is outsourced to LinguaBridge."
+          ]
+        },
+        {
+          "question": "For how long do we repair goods free after sale?",
+          "answer": "18 months",
+          "rank": 93,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "Wipa gives access to the dry goods section.",
+            "Pichai gives access to the dry goods section."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.9,
+      "n": 40,
+      "hit@1": 32,
+      "hit@3": 37,
+      "hit@5": 39,
+      "hit@10": 40,
+      "misses@3": [
+        "Which company looks after cleaning?",
+        "How much pocket money do trainees get each month?",
+        "Where do staff go online to request purchases?"
+      ],
+      "hit@3_wilson95": [
+        0.801,
+        0.974
+      ],
+      "rows": [
+        {
+          "question": "How quickly do staff build up paid time off?",
+          "answer": "1.5 vacation days",
+          "rank": 1,
+          "top": [
+            "Employees accrue 1.5 vacation days per month of service.",
+            "Maternity leave is 98 days with full pay.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "What is the label of the copier two flights above the ground level?",
+          "answer": "LaserJet-Orchid",
+          "rank": 1,
+          "top": [
+            "The printer on the third floor is named LaserJet-Orchid.",
+            "The main printing vendor is Piya; the backup vendor is TapeWorks.",
+            "The main printing vendor is Piya; the backup vendor is CartonCo."
+          ]
+        },
+        {
+          "question": "What colour strap are guests given on arrival?",
+          "answer": "green lanyard",
+          "rank": 1,
+          "top": [
+            "Visitors must sign in at the front desk and wear a green lanyard.",
+            "The main catering vendor is Pichai; the backup vendor is FoamLine.",
+            "Pichai is the contact for visa paperwork."
+          ]
+        },
+        {
+          "question": "Who has to authorise a large spend?",
+          "answer": "Rattanaporn",
+          "rank": 1,
+          "top": [
+            "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "Duangjai manages the spare parts budget for the research team."
+          ]
+        },
+        {
+          "question": "Which release of the container orchestrator do we operate?",
+          "answer": "1.29",
+          "rank": 1,
+          "top": [
+            "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+            "The main labelling vendor is Kritsada; the backup vendor is SafeBox.",
+            "Ploy manages the packaging budget for the logistics team."
+          ]
+        },
+        {
+          "question": "During which hours can employees eat their midday meal on site?",
+          "answer": "11:30",
+          "rank": 1,
+          "top": [
+            "Lunch is served in the canteen between 11:30 and 13:00.",
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Employees accrue 1.5 vacation days per month of service."
+          ]
+        },
+        {
+          "question": "What is the minimum length for a login secret?",
+          "answer": "14 characters",
+          "rank": 1,
+          "top": [
+            "Passwords must be at least 14 characters long.",
+            "The search limit is 8 requests per hour.",
+            "The search limit is 11 requests per hour."
+          ]
+        },
+        {
+          "question": "Which outside firm checks our books every year?",
+          "answer": "Kasikorn Assurance",
+          "rank": 2,
+          "top": [
+            "The back office must be inspected every 8 weeks by Piya.",
+            "The annual audit is performed by Kasikorn Assurance in November.",
+            "The loading dock must be inspected every 11 weeks by Duangjai."
+          ]
+        },
+        {
+          "question": "How often must the lift-truck driver licence be renewed?",
+          "answer": "24 months",
+          "rank": 1,
+          "top": [
+            "Forklift certification expires every 24 months.",
+            "The loading dock for office keys is reviewed every 6 weeks.",
+            "The loading dock must be inspected every 11 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "Where should an unhappy client send their grievance?",
+          "answer": "complaints@northwind.example",
+          "rank": 1,
+          "top": [
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "The messaging limit is 8 requests per hour.",
+            "Staff in the support team use the messaging tool on Saturday."
+          ]
+        },
+        {
+          "question": "How many can fit in the meeting space named after a blue gem?",
+          "answer": "18 people",
+          "rank": 1,
+          "top": [
+            "The conference room Sapphire seats 18 people.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room must be inspected every 3 weeks by Ploy."
+          ]
+        },
+        {
+          "question": "How long does ordinary delivery to the northern city take?",
+          "answer": "3 days",
+          "rank": 1,
+          "top": [
+            "Shipping to Chiang Mai takes 3 days by the standard courier.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "Orders over 40,300 baht ship within Nonthaburi."
+          ]
+        },
+        {
+          "question": "Which network port does the secure tunnel endpoint listen on?",
+          "answer": "4433",
+          "rank": 1,
+          "top": [
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The main security vendor is Anan; the backup vendor is SafeBox."
+          ]
+        },
+        {
+          "question": "Which company looks after cleaning?",
+          "answer": "CleanWave",
+          "rank": 4,
+          "top": [
+            "The main cleaning vendor is Surasak; the backup vendor is CartonCo.",
+            "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+            "The main cleaning vendor is Duangjai; the backup vendor is FoamLine."
+          ]
+        },
+        {
+          "question": "How much pocket money do trainees get each month?",
+          "answer": "9,000",
+          "rank": 5,
+          "top": [
+            "The monthly training budget is capped at 7,800 baht.",
+            "The monthly training budget is capped at 12,400 baht.",
+            "The monthly training budget is capped at 4,200 baht."
+          ]
+        },
+        {
+          "question": "By when must the review document after an outage be completed?",
+          "answer": "5 working days",
+          "rank": 1,
+          "top": [
+            "The incident post-mortem must be written within 5 working days.",
+            "Ticket priority P1 means the whole service is down.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "Which extension reaches the head boss's secretary?",
+          "answer": "2210",
+          "rank": 1,
+          "top": [
+            "The chief executive's assistant is Ladda, extension 2210.",
+            "Our finance contact is Surasak and works from the Khon Kaen office.",
+            "Our legal liaison is Kritsada and works from the Khon Kaen office."
+          ]
+        },
+        {
+          "question": "Where do we keep our programs' repositories?",
+          "answer": "northwind-core",
+          "rank": 1,
+          "top": [
+            "Source code is stored in the GitLab group northwind-core.",
+            "The archive service is called rep-db-4.",
+            "The default branch of the website repository is trunk."
+          ]
+        },
+        {
+          "question": "How many baht must a shopper spend to earn a reward unit?",
+          "answer": "25 baht",
+          "rank": 1,
+          "top": [
+            "The loyalty programme gives 1 point per 25 baht spent.",
+            "The monthly stationery budget is capped at 7,800 baht.",
+            "The monthly stationery budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "Which weekday can we not buy food at the staff restaurant?",
+          "answer": "Mondays",
+          "rank": 1,
+          "top": [
+            "The cafeteria is closed on Mondays for deep cleaning.",
+            "The server room closes at 18:30 on Friday.",
+            "Lunch is served in the canteen between 11:30 and 13:00."
+          ]
+        },
+        {
+          "question": "When do we rehearse building evacuations?",
+          "answer": "first Thursday",
+          "rank": 2,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "Fire drills happen on the first Thursday of every quarter.",
+            "The meeting room closes at 09:15 on Friday."
+          ]
+        },
+        {
+          "question": "What is the main line called in the web project's version control?",
+          "answer": "trunk",
+          "rank": 1,
+          "top": [
+            "The default branch of the website repository is trunk.",
+            "The demo service is called rep-db-4.",
+            "The demo service is called trn-db-2."
+          ]
+        },
+        {
+          "question": "What is the fee for a car space pass?",
+          "answer": "600 baht",
+          "rank": 1,
+          "top": [
+            "Parking permits cost 600 baht per month and are issued by Security.",
+            "The billing limit is 8 requests per hour.",
+            "The emergency assembly point is the car park behind building C."
+          ]
+        },
+        {
+          "question": "How long do we hold on to video from the surveillance cameras?",
+          "answer": "30 days",
+          "rank": 1,
+          "top": [
+            "CCTV footage is kept for 30 days.",
+            "The backup runs nightly at 21:00 and is kept for 11 weeks.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "Which day can staff see the in-house doctor?",
+          "answer": "Wednesdays",
+          "rank": 1,
+          "top": [
+            "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+            "Staff in the research team use the messaging tool on Tuesday.",
+            "Staff in the marketing team use the upload tool on Sunday."
+          ]
+        },
+        {
+          "question": "When is the company bulletin sent to everyone?",
+          "answer": "last Friday",
+          "rank": 2,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The monthly newsletter goes out on the last Friday.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+          ]
+        },
+        {
+          "question": "After how many years does a staff computer get swapped for a new one?",
+          "answer": "4 years",
+          "rank": 1,
+          "top": [
+            "Laptops are replaced every 4 years.",
+            "The server room for spare cables is reviewed every 9 weeks.",
+            "Forklift certification expires every 24 months."
+          ]
+        },
+        {
+          "question": "Where do we gather if the premises must be evacuated?",
+          "answer": "building C",
+          "rank": 1,
+          "top": [
+            "The emergency assembly point is the car park behind building C.",
+            "The meeting room closes at 09:15 on Friday.",
+            "The meeting room for safety gear is reviewed every 3 weeks."
+          ]
+        },
+        {
+          "question": "Which agency handles converting documents between languages?",
+          "answer": "LinguaBridge",
+          "rank": 1,
+          "top": [
+            "Translation work is outsourced to LinguaBridge.",
+            "Pichai is the contact for visa paperwork.",
+            "Staff in the legal team use the export tool on Tuesday."
+          ]
+        },
+        {
+          "question": "What is the name of the wireless network for outside people?",
+          "answer": "Northwind-Visitors",
+          "rank": 1,
+          "top": [
+            "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+            "The VPN gateway is vpn.northwind.example on port 4433.",
+            "The reception for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "By what date must reimbursement claims be filed?",
+          "answer": "5th",
+          "rank": 1,
+          "top": [
+            "Expense reports are due on the 5th of the following month.",
+            "The incident post-mortem must be written within 5 working days.",
+            "The monthly newsletter goes out on the last Friday."
+          ]
+        },
+        {
+          "question": "How often do we trial the standby power unit?",
+          "answer": "second Saturday",
+          "rank": 1,
+          "top": [
+            "The backup generator is tested every second Saturday.",
+            "The reception for spare cables is reviewed every 9 weeks.",
+            "The server room for spare cables is reviewed every 9 weeks."
+          ]
+        },
+        {
+          "question": "What temperature range must the refrigerated storage hold?",
+          "answer": "2 and 4 degrees",
+          "rank": 1,
+          "top": [
+            "The cold room must stay between 2 and 4 degrees Celsius.",
+            "The monthly cloud budget is capped at 40,300 baht.",
+            "The monthly stationery budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "How long can a new mother stay away from work while still paid?",
+          "answer": "98 days",
+          "rank": 1,
+          "top": [
+            "Maternity leave is 98 days with full pay.",
+            "Employees accrue 1.5 vacation days per month of service.",
+            "The incident post-mortem must be written within 5 working days."
+          ]
+        },
+        {
+          "question": "What does the most severe support category indicate?",
+          "answer": "whole service is down",
+          "rank": 2,
+          "top": [
+            "The support meeting is held every Saturday at 16:20.",
+            "Ticket priority P1 means the whole service is down.",
+            "Staff in the support team use the messaging tool on Saturday."
+          ]
+        },
+        {
+          "question": "On which date does the firm hold its yearly birthday party?",
+          "answer": "17 March",
+          "rank": 1,
+          "top": [
+            "The company anniversary is celebrated on 17 March.",
+            "The marketing meeting is held every Saturday at 06:45.",
+            "The finance meeting is held every Sunday at 09:15."
+          ]
+        },
+        {
+          "question": "Where do staff go online to request purchases?",
+          "answer": "buy.northwind.example",
+          "rank": 10,
+          "top": [
+            "Staff in the marketing team use the upload tool on Sunday.",
+            "Customer complaints go to complaints@northwind.example and are answered within 2 business days.",
+            "Visitors must sign in at the front desk and wear a green lanyard."
+          ]
+        },
+        {
+          "question": "When do the watchmen swap?",
+          "answer": "06:00 and 18:00",
+          "rank": 1,
+          "top": [
+            "Security guards change shift at 06:00 and 18:00.",
+            "The backup runs nightly at 21:00 and is kept for 8 weeks.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        },
+        {
+          "question": "Who alone is allowed to extract client records?",
+          "answer": "Arunee",
+          "rank": 3,
+          "top": [
+            "Mali gives access to the records section.",
+            "Somsak gives access to the records section.",
+            "Customer data may only be exported by the Data Protection Officer, Arunee."
+          ]
+        },
+        {
+          "question": "For how long do we repair goods free after sale?",
+          "answer": "18 months",
+          "rank": 1,
+          "top": [
+            "The standard warranty on our products is 18 months.",
+            "The parts store must be inspected every 8 weeks by Piya.",
+            "The index rebuild runs nightly at 06:45 and is kept for 8 weeks."
+          ]
+        }
+      ]
+    }
+  ],
+  "seconds": 33.8
+}

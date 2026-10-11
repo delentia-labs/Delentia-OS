@@ -269,7 +269,7 @@ def choose_tau(calib: List[Dict[str, Any]], rule: str) -> float:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", default=str(ROOT / "research" / "fdia_calibration.json"))
-    parser.add_argument("--policy", default="none", choices=["none", "balanced", "strict", "careful", "argaware"],
+    parser.add_argument("--policy", default="none", choices=["none", "balanced", "strict", "careful", "argaware", "default"],
                         help="Round 65b: run the same 120 requests under one of the owner-policy starter templates (fdia_policy.template) instead of the built-in floor alone")
     args = parser.parse_args()
     work = Path(tempfile.mkdtemp(prefix="delentia-fdia-cal-"))
@@ -286,7 +286,12 @@ def main() -> int:
     if args.policy != "none":
         from rct_control_plane import fdia_policy
         names = [t.name for t in asyncio.run(_mcp.list_tools())]
-        policy, errors = fdia_policy.validate_policy(fdia_policy.template(args.policy, names))
+        if args.policy == "default":                                         # Round 69: what a host with no policy file now runs (no env, no file)
+            os.environ.pop(fdia_policy.DEFAULT_ENV, None)
+            policy = fdia_policy.default_policy(names)
+            errors = []
+        else:
+            policy, errors = fdia_policy.validate_policy(fdia_policy.template(args.policy, names))
         assert policy is not None, errors
     rows: List[Dict[str, Any]] = []
     for i, (goal, tool, targs, label) in enumerate(ITEMS):

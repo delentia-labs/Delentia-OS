@@ -110,6 +110,17 @@ def _each_test_has_its_own_data_home(tmp_path_factory, monkeypatch):
     yield
 
 
+# ── The default owner policy is off in tests (Round 68) ────────────────────────
+# With no policy file the argument-aware starter now judges tool calls (fdia_policy.default_policy). Tests written before that assume only the built-in floor, so they run with the default
+# off; a test of the default policy turns it on with monkeypatch.delenv("DELENTIA_FDIA_POLICY_DEFAULT"). DELENTIA_TEST_KEEP_POLICY_DEFAULT=1 runs the whole suite with the product default
+# (used once to list which older tests depend on the floor-only behaviour).
+@pytest.fixture(autouse=True)
+def _the_default_owner_policy_is_off_unless_a_test_asks(monkeypatch):
+    if not os.environ.get("DELENTIA_TEST_KEEP_POLICY_DEFAULT"):
+        monkeypatch.setenv("DELENTIA_FDIA_POLICY_DEFAULT", "none")
+    yield
+
+
 # ── Optional shuffling to expose order dependence (Round 60) ───────────────────
 # `pytest --shuffle-seed=N` runs modules, classes and the tests inside them in a seeded random order (no extra package needed; the same seed gives the same order).
 def pytest_addoption(parser):

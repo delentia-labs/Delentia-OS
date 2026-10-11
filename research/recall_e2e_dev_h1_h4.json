@@ -1,0 +1,121 @@
+[
+  {
+    "set": "dev",
+    "mode": "embed",
+    "n": 30,
+    "hit@1": 20,
+    "hit@3": 24,
+    "hit@5": 28,
+    "hit@10": 28,
+    "store_ms_median": 117.2,
+    "recall_ms_median": 428.0,
+    "misses@3": [
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "The main labelling vendor is Surasak; the backup vendor is TapeWorks.",
+          "The main labelling vendor is Duangjai; the backup vendor is FoamLine."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The archive database is called demo-db-5.",
+          "The analytics database is called trn-db-2.",
+          "The product catalogue lives in the repository folder data/catalog."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "The billing rate limit is 45 requests per minute.",
+          "Quarterly planning happens in the first week of January, April, July and October.",
+          "The upload rate limit is 30 requests per minute."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Kritsada gives access to the dry goods section.",
+          "Pichai gives access to the dry goods section.",
+          "Mali gives access to the dry goods section."
+        ]
+      },
+      {
+        "question": "Above what purchase amount is delivery at no charge in the capital?",
+        "answer": "6,500",
+        "top": [
+          "Orders over 1,350 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Pattaya."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The finance meeting is held every Friday at 13:10.",
+          "The marketing meeting is held every Sunday at 09:15.",
+          "The marketing meeting is held every Monday at 06:45."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h1",
+    "mode": "embed",
+    "n": 40,
+    "hit@1": 36,
+    "hit@3": 37,
+    "hit@5": 39,
+    "hit@10": 40,
+    "store_ms_median": 122.0,
+    "recall_ms_median": 479.5,
+    "misses@3": [
+      {
+        "question": "Which company looks after cleaning?",
+        "answer": "CleanWave",
+        "top": [
+          "The main cleaning vendor is Surasak; the backup vendor is CartonCo.",
+          "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Duangjai; the backup vendor is FoamLine."
+        ]
+      },
+      {
+        "question": "How much pocket money do trainees get each month?",
+        "answer": "9,000",
+        "top": [
+          "The monthly training budget is capped at 7,800 baht.",
+          "The monthly training budget is capped at 12,400 baht.",
+          "The monthly training budget is capped at 4,200 baht."
+        ]
+      },
+      {
+        "question": "Where do staff go online to request purchases?",
+        "answer": "buy.northwind.example",
+        "top": [
+          "Staff in the marketing team use the upload tool on Sunday.",
+          "Visitors must sign in at the front desk and wear a green lanyard.",
+          "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h4",
+    "mode": "embed",
+    "n": 40,
+    "hit@1": 40,
+    "hit@3": 40,
+    "hit@5": 40,
+    "hit@10": 40,
+    "store_ms_median": 128.8,
+    "recall_ms_median": 492.1,
+    "misses@3": []
+  }
+]

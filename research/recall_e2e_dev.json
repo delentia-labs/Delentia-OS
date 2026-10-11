@@ -1,0 +1,289 @@
+[
+  {
+    "set": "dev",
+    "mode": "lexical",
+    "n": 30,
+    "hit@1": 5,
+    "hit@3": 7,
+    "hit@5": 7,
+    "hit@10": 8,
+    "store_ms_median": 18.0,
+    "recall_ms_median": 176.3,
+    "misses@3": [
+      {
+        "question": "Who handles import clearance for us?",
+        "answer": "Prasert",
+        "top": [
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45.",
+          "Orders over 76,400 baht ship free within Hat Yai."
+        ]
+      },
+      {
+        "question": "What does a bill number start with?",
+        "answer": "HB-",
+        "top": [
+          "The billing rate limit is 45 requests per minute.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "How long after receiving goods can a customer get their money back?",
+        "answer": "14 days",
+        "top": [
+          "The back office closes at 18:30 on Sunday.",
+          "The courier for fragile goods is Siam Express.",
+          "On-call escalation happens after 20 minutes without an acknowledgement."
+        ]
+      },
+      {
+        "question": "Which company supplies our cartons when the primary cannot?",
+        "answer": "BoxHub",
+        "top": [
+          "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The parts store closes at 18:30 on Monday.",
+          "The product catalogue lives in the repository folder data/catalog.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "How much may we spend each month on hosting?",
+        "answer": "15,000",
+        "top": [
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "The server room closes at 06:45 on the last day of the month.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45.",
+          "Orders over 76,400 baht ship free within Hat Yai."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Mali gives access to the chemical section.",
+          "Nattaya gives access to the chemical section.",
+          "Nattaya gives access to the electronics section."
+        ]
+      },
+      {
+        "question": "For how long do we retain the copies of our data?",
+        "answer": "35 days",
+        "top": [
+          "The product catalogue lives in the repository folder data/catalog.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "What number do customers ring for help?",
+        "answer": "02-555-0147",
+        "top": [
+          "Customer interviews are recorded only with written consent.",
+          "Our customs liaison is Prasert and he works from the Laem Chabang office.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "Above what purchase amount is delivery at no charge in the capital?",
+        "answer": "6,500",
+        "top": [
+          "The back office for spare cables is 45 days from purchase.",
+          "The refund window for online orders is 14 days from delivery.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "On which dates is the workplace shut for holidays?",
+        "answer": "12 August",
+        "top": [
+          "Thanakorn covers the night shift on public holidays.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "Where in the codebase are the items we sell listed?",
+        "answer": "data/catalog",
+        "top": [
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45.",
+          "Orders over 76,400 baht ship free within Hat Yai."
+        ]
+      },
+      {
+        "question": "How many calls a minute may a client make?",
+        "answer": "120 requests",
+        "top": [
+          "On-call escalation happens after 20 minutes without an acknowledgement.",
+          "The archive database is called rpt-db-4.",
+          "The analytics database is called trn-db-2."
+        ]
+      },
+      {
+        "question": "Where does traffic go if the main data centre goes down?",
+        "answer": "ap-northeast-1",
+        "top": [
+          "The main printing vendor is Duangjai; the backup vendor is SafeBox.",
+          "The main security vendor is Nattaya; the backup vendor is WrapIt.",
+          "The main labelling vendor is Pichai; the backup vendor is WrapIt."
+        ]
+      },
+      {
+        "question": "What must we have before taping a conversation with a client?",
+        "answer": "written consent",
+        "top": [
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45.",
+          "Orders over 76,400 baht ship free within Hat Yai."
+        ]
+      },
+      {
+        "question": "How frequently do we change the test environment credentials?",
+        "answer": "90 days",
+        "top": [
+          "The test database is called arc-db-8.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "Which chat room gets the changelog posts?",
+        "answer": "#harbor-announce",
+        "top": [
+          "The server room closes at 06:45 on the last day of the month.",
+          "The server room for spare cables is 60 days from pickup.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "Which delivery company carries delicate items?",
+        "answer": "Siam Express",
+        "top": [
+          "The refund window for online orders is 14 days from delivery.",
+          "The reception closes at 16:20 on Thursday.",
+          "The operations meeting is held every Friday at 06:45."
+        ]
+      },
+      {
+        "question": "When do we sit down to plan each three-month period?",
+        "answer": "first week",
+        "top": [
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "The server room closes at 06:45 on the last day of the month.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      },
+      {
+        "question": "In which month do supplier agreements come up for renewal?",
+        "answer": "March",
+        "top": [
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "The server room closes at 06:45 on the last day of the month.",
+          "The reception closes at 16:20 on Thursday."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "dev",
+    "mode": "embed",
+    "n": 30,
+    "hit@1": 20,
+    "hit@3": 24,
+    "hit@5": 28,
+    "hit@10": 28,
+    "store_ms_median": 127.4,
+    "recall_ms_median": 366.0,
+    "misses@3": [
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "The main labelling vendor is Surasak; the backup vendor is TapeWorks.",
+          "The main labelling vendor is Duangjai; the backup vendor is FoamLine."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The archive database is called demo-db-5.",
+          "The analytics database is called trn-db-2.",
+          "The product catalogue lives in the repository folder data/catalog."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "The billing rate limit is 45 requests per minute.",
+          "Quarterly planning happens in the first week of January, April, July and October.",
+          "The upload rate limit is 30 requests per minute."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Kritsada gives access to the dry goods section.",
+          "Pichai gives access to the dry goods section.",
+          "Mali gives access to the dry goods section."
+        ]
+      },
+      {
+        "question": "Above what purchase amount is delivery at no charge in the capital?",
+        "answer": "6,500",
+        "top": [
+          "Orders over 1,350 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Pattaya."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The finance meeting is held every Friday at 13:10.",
+          "The marketing meeting is held every Sunday at 09:15.",
+          "The marketing meeting is held every Monday at 06:45."
+        ]
+      }
+    ]
+  }
+]

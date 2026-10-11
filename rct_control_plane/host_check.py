@@ -311,10 +311,12 @@ def check_model_and_data() -> List[Check]:
     else:
         out.append(Check("H14", PASS if sovereignty else INFO, "Data location policy", "a policy is set" if sovereignty else "no policy, and the model is local"))
     try:
-        policy = fdia_policy.load_policy()
-        out.append(Check("H15", PASS if policy else WARN, "Owner policy for A (FDIA)",
-                         "policy loaded; a broken file would fail closed" if policy else "no policy file: only the built-in floor judges tool calls",
-                         "" if policy else "write one in the Desk page /fdia or `delentia fdia ...`"))
+        policy, source = fdia_policy.effective_policy()
+        out.append(Check("H15", PASS if source == "file" else (INFO if source == "default" else WARN), "Owner policy for A (FDIA)",
+                         "policy loaded; a broken file would fail closed" if source == "file" else
+                         f"no policy file: the default starter '{fdia_policy.default_template_name()}' judges tool calls on top of the built-in floor" if source == "default" else
+                         "no policy file and the default starter is off: only the built-in floor judges tool calls",
+                         "" if source == "file" else "write your own in the Desk page /fdia or `delentia fdia ...` (the default can be tightened or replaced)"))
     except ValueError as exc:
         out.append(Check("H15", FAIL, "Owner policy for A (FDIA)", f"the policy file is invalid, so every tool call is refused (fail closed): {exc}"))
     return out

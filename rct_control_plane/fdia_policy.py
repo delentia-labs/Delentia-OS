@@ -66,7 +66,7 @@ _ARG_VALUE_CAP = 4000
 #   lacks_any          the value contains NONE of `values` (case-insensitive): used to refuse flags that make a read-only program write or run something (--output, -delete, --exec)
 # A missing argument is the empty string, so "starts with one of" is false and "has no metacharacter" is true: a rule that ALLOWS must
 # combine a positive operation (prefix_in) with the negative ones, and a rule that ASKS uses them in `unless`.
-CONDITION_OPS = ("prefix_in", "prefix_in_pipe", "no_shell_metachar", "no_shell_metachar_except_pipe", "no_outside_paths", "glob_any", "contains_any", "lacks_any", "appears_in_goal")
+CONDITION_OPS = ("prefix_in", "prefix_in_pipe", "no_shell_metachar", "no_shell_metachar_except_pipe", "no_outside_paths", "glob_any", "contains_any", "lacks_any", "appears_in_goal", "named_in_episode")
 # Round 68: `appears_in_goal` holds when the argument is EXACTLY an address the PERSON wrote in this request (the loop passes the request as context={"goal": ...}). It is not a substring test: an address that
 # extends what was typed (a longer host, user-info, an added query), one that cuts it short, one read on a page, an empty argument and a missing goal all fail, and a call with no context fails closed.
 _TYPED_URL = re.compile(r"[A-Za-z][A-Za-z0-9+.\-]{1,15}://[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+")
@@ -79,6 +79,26 @@ def typed_urls(goal: str) -> List[str]:
     for raw in _TYPED_URL.findall(str(goal or "")[:20000]):
         found.append(raw.rstrip(_URL_TAIL))
     return found
+
+
+def address_seen_verbatim(url: str, seen: Any) -> bool:
+    """An address a page the agent read in this episode already contained, with nothing that could carry data out: no query, no fragment, no user-info, http(s) only."""
+    from urllib.parse import urlsplit
+    text = str(url or "").strip()
+    if not text:
+        return False
+    parts = urlsplit(text)
+    if parts.query or parts.fragment or parts.username or parts.password or parts.scheme not in ("http", "https"):
+        return False
+    try:
+        return text.rstrip("/") in {str(s).rstrip("/") for s in (seen or ())}
+    except TypeError:
+        return False
+
+
+def address_named(url: str, goal: str, seen: Any = None) -> bool:
+    """The address the person wrote (the whole address, as a word of the request) or one the episode already saw verbatim. The one place both the taint gate and the policy decide it."""
+    return address_typed_in(goal, url) or address_seen_verbatim(url, seen)
 
 
 def address_typed_in(goal: str, url: str) -> bool:
@@ -252,6 +272,10 @@ def _one_condition_holds(cond: Dict[str, Any], tool_args: Dict[str, Any], contex
     if op == "appears_in_goal":
         goal = (context or {}).get("goal")
         return isinstance(goal, str) and url_typed_in(goal, text)
+    if op == "named_in_episode":
+        ctx = context or {}
+        goal = ctx.get("goal")
+        return isinstance(goal, str) and address_named(text, goal, ctx.get("seen_urls"))
     if op == "lacks_any":
         low = text.lower()
         return not any(v.lower() in low for v in values if v)
@@ -459,6 +483,59 @@ def load_policy(path: Optional[Path] = None) -> Optional[Policy]:
     return policy
 
 
+# ------------------------------------------------------------------ Round 68: the argument-aware starter is the default
+
+DEFAULT_ENV = "DELENTIA_FDIA_POLICY_DEFAULT"          # argaware (when unset) | careful | balanced | strict | none
+_TEMPLATES = ("argaware", "careful", "balanced", "strict")
+_default_cache: Dict[Any, Optional["Policy"]] = {}
+
+
+def default_template_name() -> str:
+    """The starter that judges tool calls when the owner wrote no policy file. `none` (or off/0/false/no) restores the old behaviour: only the built-in floor."""
+    if (os.environ.get("DELENTIA_RESEARCH_MODE") or "").strip() in ("1", "true", "yes"):
+        return ""                                          # the arms of an experiment are switches of the built-in floor: a default policy on top would confound them
+    value = (os.environ.get(DEFAULT_ENV) or "argaware").strip().lower()
+    if value in ("none", "off", "0", "false", "no", ""):
+        return ""
+    return value if value in _TEMPLATES else "argaware"
+
+
+def registry_tool_names() -> List[str]:
+    """The agent's tool names, read without starting an event loop (the policy is consulted from inside one). Empty when they cannot be read: the default policy then
+    falls back to its pattern rules and the built-in floor."""
+    try:
+        from rct_control_plane.mcp_server import mcp
+        return sorted(getattr(getattr(mcp, "_tool_manager", None), "_tools", {}) or {})
+    except Exception:                                                        # noqa: BLE001 - a default policy must never be the reason an episode cannot start
+        return []
+
+
+def default_policy(tool_names: Optional[List[str]] = None) -> Optional["Policy"]:
+    """The starter named by default_template_name(), built over the real tool names. Unlike an owner-written policy its fallback is A = 1 (a tool it has no rule for is left to the built-in
+    floor and to that tool's own signature requirement; the zero-trust fallback would block every tool added later, such as an external MCP tool). It can only tighten the floor."""
+    name = default_template_name()
+    if not name:
+        return None
+    names = list(tool_names) if tool_names is not None else registry_tool_names()
+    key = (name, tuple(names))
+    if key not in _default_cache:
+        data = template(name, names)
+        data["policy_id"], data["policy_name"] = f"default-{name}", f"Default policy ({name}): used because no policy file exists"
+        data["default_fallback_A"] = 1
+        policy, _errors = validate_policy(data)
+        _default_cache[key] = policy
+    return _default_cache[key]
+
+
+def effective_policy() -> Tuple[Optional["Policy"], str]:
+    """(policy, source): the owner's file when there is one ("file"), else the default starter ("default"), else None ("none"). A broken file raises, as in load_policy."""
+    owned = load_policy()
+    if owned is not None:
+        return owned, "file"
+    fallback = default_policy()
+    return (fallback, "default") if fallback is not None else (None, "none")
+
+
 def save_policy(policy: Policy, path: Optional[Path] = None) -> Path:
     target = path or policy_path()
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -617,8 +694,8 @@ def _argaware_rules(tool_names: List[str], readers: List[str], writers: List[str
     typed_ok = {"crawl_url", "browse_page"}                                      # read-only fetches: no click, no typing
     typed_tools = sorted(t for t in writers if _forms(t)[-1] in typed_ok)
     if typed_tools:
-        written = [{"arg": "url", "op": "appears_in_goal", "values": []}]
-        rules.append({"rule_id": "R-URL-TYPED", "description": "Opening an address the person wrote in this request may run.", "intent_patterns": typed_tools,
+        written = [{"arg": "url", "op": "named_in_episode", "values": []}]
+        rules.append({"rule_id": "R-URL-TYPED", "description": "Opening an address the person wrote in this request, or one a page read in this episode showed word for word (no query string), may run.", "intent_patterns": typed_tools,
                       "action_type": "ALLOW", "assigned_A": 1, "when": written})
         rules.append({"rule_id": "R-URL-OTHER", "description": "Opening any other address needs a human signature.", "intent_patterns": typed_tools,
                       "action_type": "REQUIRE_HUMAN_SIGNATURE", "unless": written})

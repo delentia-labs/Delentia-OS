@@ -1290,11 +1290,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         """(policy, error). No policy file = (None, ""). A file that cannot be read or fails validation is an error,
         and the gate then refuses every call: a broken policy must never quietly become no policy."""
         if self._policy_override is not None:
+            self._policy_source = "override"
             return self._policy_override, ""
         from rct_control_plane import fdia_policy
         try:
-            return fdia_policy.load_policy(), ""
+            policy, self._policy_source = fdia_policy.effective_policy()
+            return policy, ""
         except ValueError as exc:
+            self._policy_source = "error"
             return None, str(exc)
 
     async def _pre_dispatch_gate(
@@ -1357,7 +1360,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         threshold = self._fdia_threshold
         if policy is not None:
             from rct_control_plane import fdia_policy
-            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal})
+            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace,
+                                               context={"goal": goal, "seen_urls": sorted(getattr(self, "_episode_seen_urls", None) or ())})
             threshold = max(threshold, float(policy.custom_safety_threshold))
             if policy_eval.needs_signature:
                 # The signature will supply A = 1; D and I must still hold, so F is judged as if it were given.
@@ -1378,7 +1382,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         judged = is_risky_tool(tool_name) or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
         blocked = A <= 0.0 or (judged and F < threshold)
         info = policy_eval.to_dict() if policy_eval is not None else None
-        self._episode_policy = {"policy_digest": policy.digest(), "last": info} if policy is not None else {}
+        self._episode_policy = {"policy_digest": policy.digest(), "source": getattr(self, "_policy_source", ""), "last": info} if policy is not None else {}
 
         self._persistence.append_audit(
             entity_type="governed_loop_fdia_gate",
@@ -1390,6 +1394,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "A": A, "A_reason": a_reason, "F": F, "threshold": threshold,
                 "data_parts": (self._episode_data or {}).get("parts"),
                 "blocked": blocked, "policy": info,
+                "policy_source": getattr(self, "_policy_source", "none") if policy is not None else "none",      # Round 69: "file" (the owner's), "default" (the starter used when there is no file), "override"
                 **({"research_rule": research_rule} if research_rule else {}),
             },
         )
@@ -2396,16 +2401,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
     def _url_was_named(url: str, goal: str, seen: Any) -> bool:
         """Is this the address the person wrote, or one a page the agent read already contained, with nothing smuggled in? A query string, a fragment or a
         user name in an address is a place to hide data, so such an address is acceptable only if the person wrote exactly that."""
-        from urllib.parse import urlsplit
         if not url.strip():
             return False                                      # "" is a substring of every goal: an empty address must not count as one the person wrote
-        parts = urlsplit(url.strip())
-        from rct_control_plane.fdia_policy import address_typed_in
-        if address_typed_in(goal, url):                           # Round 68: the whole address, as a word of the request (a substring let a TRUNCATED address count as typed)
-            return True
-        if parts.query or parts.fragment or parts.username or parts.password or parts.scheme not in ("http", "https"):
-            return False
-        return url.strip().rstrip("/") in {s.rstrip("/") for s in (seen or ())}
+        from rct_control_plane.fdia_policy import address_named
+        return address_named(url, goal, seen)                 # Round 69: one definition for the taint gate and the owner policy (Round 68: the whole address, never a substring)
 
     def _taint_reason(self, goal: str, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
         """Why this call must wait for a signature in a tainted episode, or None."""

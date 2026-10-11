@@ -1,0 +1,231 @@
+{
+  "set": "dev",
+  "questions": 30,
+  "texts": 120,
+  "results": [
+    {
+      "variant": "E",
+      "weight": 0.0,
+      "n": 30,
+      "hit@1": 5,
+      "hit@3": 7,
+      "hit@5": 7,
+      "hit@10": 9,
+      "misses@3": [
+        "Who handles import clearance for us?",
+        "When do the storage facility doors shut on a Saturday?",
+        "What does a bill number start with?",
+        "How long after receiving goods can a customer get their money back?",
+        "Which company supplies our cartons when the primary cannot?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How much may we spend each month on hosting?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "For how long do we retain the copies of our data?",
+        "What number do customers ring for help?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which dates is the workplace shut for holidays?",
+        "On which weekday does money from card sales land in our bank?",
+        "Where in the codebase are the items we sell listed?",
+        "How many calls a minute may a client make?",
+        "What must we have before taping a conversation with a client?",
+        "How frequently do we change the test environment credentials?",
+        "Which chat room gets the changelog posts?",
+        "Which delivery company carries delicate items?",
+        "When do we sit down to plan each three-month period?",
+        "In which month do supplier agreements come up for renewal?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.1,
+      "n": 30,
+      "hit@1": 12,
+      "hit@3": 21,
+      "hit@5": 24,
+      "hit@10": 28,
+      "misses@3": [
+        "How long after receiving goods can a customer get their money back?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.2,
+      "n": 30,
+      "hit@1": 13,
+      "hit@3": 21,
+      "hit@5": 24,
+      "hit@10": 28,
+      "misses@3": [
+        "How long after receiving goods can a customer get their money back?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.3,
+      "n": 30,
+      "hit@1": 13,
+      "hit@3": 21,
+      "hit@5": 24,
+      "hit@10": 28,
+      "misses@3": [
+        "How long after receiving goods can a customer get their money back?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.4,
+      "n": 30,
+      "hit@1": 13,
+      "hit@3": 21,
+      "hit@5": 24,
+      "hit@10": 28,
+      "misses@3": [
+        "How long after receiving goods can a customer get their money back?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.5,
+      "n": 30,
+      "hit@1": 13,
+      "hit@3": 21,
+      "hit@5": 25,
+      "hit@10": 28,
+      "misses@3": [
+        "How long after receiving goods can a customer get their money back?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.6,
+      "n": 30,
+      "hit@1": 13,
+      "hit@3": 22,
+      "hit@5": 26,
+      "hit@10": 28,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "How many calls a minute may a client make?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.7,
+      "n": 30,
+      "hit@1": 16,
+      "hit@3": 23,
+      "hit@5": 26,
+      "hit@10": 28,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.8,
+      "n": 30,
+      "hit@1": 18,
+      "hit@3": 23,
+      "hit@5": 26,
+      "hit@10": 28,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?",
+        "Which chat room gets the changelog posts?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 0.9,
+      "n": 30,
+      "hit@1": 21,
+      "hit@3": 24,
+      "hit@5": 27,
+      "hit@10": 28,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?"
+      ]
+    },
+    {
+      "variant": "E",
+      "weight": 1.0,
+      "n": 30,
+      "hit@1": 20,
+      "hit@3": 24,
+      "hit@5": 28,
+      "hit@10": 28,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which weekday does money from card sales land in our bank?"
+      ]
+    }
+  ],
+  "seconds": 2.8
+}
