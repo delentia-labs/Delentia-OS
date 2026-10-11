@@ -164,8 +164,11 @@ _INLINE_CODE_ENV_PATTERN = re.compile(r"os\.environ|getenv|expanduser|Path\.home
 #    ones (status, log, diff, show, rev-parse, branch --show-current/--list ...) stay safe.
 #  * an inline script (`python -c`, `node -e`, `perl -e` ...) that opens a socket, spawns a process, writes a file, loads a library or evals text is code execution, not inspection.
 _GIT_MUTATING_PATTERN = re.compile(
-    r"^git\s+(?:(?:-C\s+\S+|-c\s+\S+|--[\w-]+(?:=\S*)?)\s+)*(?:init|commit|apply|am|config|help|checkout|switch|restore|clean|rm|mv|stash|merge|rebase|pull|fetch|clone|submodule|tag|worktree|revert|cherry-pick|add)\b"
+    # Round 69 (CodeQL py/redos): the option groups are bounded (at most 8) and a value may not start with "-", so "-c -c -c ..." cannot be split in several ways (it backtracked exponentially).
+    # `git -C|-c` straight after `git` is caught by the next alternative whatever follows.
+    r"^git\s+(?:(?:-[Cc]\s+[^\s-]\S*|--[\w-]+(?:=\S*)?)\s+){0,8}(?:init|commit|apply|am|config|help|checkout|switch|restore|clean|rm|mv|stash|merge|rebase|pull|fetch|clone|submodule|tag|worktree|revert|cherry-pick|add)\b"
     r"|^git\s+(?:-C|-c|-p|--paginate|--exec-path|--git-dir|--work-tree)\b"
+    r"|^git\s+(?:(?:-[Cc]\s+[^\s-]\S*|--[\w-]+(?:=\S*)?)\s+){1,8}-[Cc]\b"                      # Round 69: `git --no-pager -c alias.x=!sh log`: -c/-C after other global options is still a global option
     r"|^git\s+branch\s+(?!--show-current\b|--list\b|-l\b|-a\b|-r\b|-v\b|-vv\b|--all\b|--remotes\b)\S",
     re.IGNORECASE)
 _INLINE_INTERPRETER_PATTERN = re.compile(r"\b(?:python[\d.]*|py|node|nodejs|perl|ruby|php|deno|bun)(?:\.exe)?\b[^\n]*?\s-(?:c|e|r|-eval|-command)\b", re.IGNORECASE)
