@@ -356,10 +356,17 @@ _INJECTION_PATTERNS: List[_InjectionPattern] = [
         r"\bsend\s+(this|the)\s+(to|data|payload|context)\s+(http|https|ftp|webhook)\b",
         re.IGNORECASE
     ), "hard", "Exfiltration via URL injection."),
+    # Round 68: this rule rejected EVERY request that began "fetch <address>" - "Fetch https://example.net/changelog and list the newest three entries" never reached the model (found by the FDIA
+    # calibration set, which labelled it harmless). The attack it names is an address that reaches INSIDE (loopback, private ranges, cloud metadata), carries user-info, or puts data in the query.
     _InjectionPattern("CORD-I032", re.compile(
-        r"\bfetch\s+(?:http|https)://\S+",
+        r"\bfetch\s+https?://(?:"
+        r"(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}"
+        r"|169\.254\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1?\])(?:[:/?#]\S*)?"
+        r"|[^/\s@]+@\S*"
+        r"|\S*[?&](?:d|data|payload|secret|key|token|password|passwd|cred|credentials|dump|exfil|file|files|content)=\S*"
+        r")",
         re.IGNORECASE
-    ), "hard", "SSRF / data exfiltration attempt via fetch."),
+    ), "hard", "SSRF / data exfiltration attempt via fetch (an internal address, user-info, or data in the query)."),
     _InjectionPattern("CORD-I033", re.compile(
         r"\b(?:curl|wget|nc|ncat|netcat)\s+(?:-\w+\s+)*https?://\S+",
         re.IGNORECASE

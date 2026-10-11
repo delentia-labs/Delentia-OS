@@ -147,7 +147,7 @@ The memory event log is hash-chained and its head is written into the audit chai
 
 After a signed erase, the person's memory text is unreadable from the log (their key is destroyed), absent from every byte of the database file, scrubbed from the table, and the event chain, the anchors and the audit chain still verify; another person is untouched; refusals destroy nothing.
 
-- **Assumes:** The approver key is held by a person; the key file of the person being erased was not copied elsewhere.
+- **Assumes:** The approver key is held by a person; the key file of the person being erased was not copied elsewhere. Audit rows written with DELENTIA_AUDIT_TEXT=plain keep the person's words in the chain (the report counts them).
 - **Not covered:** Events written before sealing was on stay readable; other tables that carry the person's namespace (past requests, skills, experiments) are listed in the report and not erased; backups, swap and filesystem journals are outside the database file.
 - **Pinned by:**
   - `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`
@@ -155,6 +155,11 @@ After a signed erase, the person's memory text is unreadable from the log (their
   - `test_memory_erasure_round67_real.py::test_erasure_needs_a_trusted_approver_and_the_exact_head`
   - `test_memory_erasure_round67_real.py::test_the_report_says_what_was_not_erased`
   - `test_memory_erasure_round67_real.py::test_the_log_holds_ciphertext_not_the_text`
+  - `test_erasure_tables_round68_real.py::test_after_the_erase_no_byte_of_the_file_holds_the_persons_words_and_the_other_person_is_untouched`
+  - `test_erasure_tables_round68_real.py::test_before_the_erase_the_words_are_in_the_table_and_not_in_the_chain`
+  - `test_erasure_tables_round68_real.py::test_a_refused_erase_changes_nothing`
+  - `test_erasure_tables_round68_real.py::test_the_full_text_index_forgets_the_words`
+  - `test_erasure_tables_round68_real.py::test_the_chains_still_verify_and_the_desk_shows_the_erased_marker`
 
 ## Threats (Protocol section 12)
 
@@ -167,6 +172,7 @@ After a signed erase, the person's memory text is unreadable from the log (their
 | Tool poisoning (a tool's description or result carries instructions) | `test_external_mcp_round55_real.py::test_a_poisoned_tool_description_is_dropped_and_reported_never_shown`<br>`test_taint_gate_round58_real.py::test_the_measurement_with_a_fully_hijacked_model` |
 | History rewriting (the log of what the agent knew is edited after the fact) | `test_memory_anchor_round67_real.py::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor`<br>`test_memory_anchor_round67_real.py::test_cutting_the_log_back_is_caught` |
 | Personal data that cannot be erased from an append-only record | `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`<br>`test_memory_erasure_round67_real.py::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file` |
+| An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it) | `test_fdia_goal_context_round68_real.py::test_an_address_that_extends_cuts_or_differs_does_not_count`<br>`test_fdia_goal_context_round68_real.py::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one`<br>`test_fdia_goal_context_round68_real.py::test_the_taint_gate_still_decides_after_text_from_outside_was_read` |
 | Memory poisoning | `test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next`<br>`test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits`<br>`test_gate_properties_round65_real.py::test_p9_a_revoked_memory_is_returned_by_nothing` |
 | Skill poisoning (a page's text saved as the agent's own habit) | `test_gate_properties_round65_real.py::test_p8_an_episode_that_read_outside_text_does_not_become_a_skill` |
 | Cancellation | `test_gate_properties_round65_real.py::test_p10_an_action_cancelled_midway_is_never_run_a_second_time`<br>`test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so` |

@@ -198,8 +198,8 @@ def run_mem0(ops: List[Dict[str, Any]]) -> Dict[str, Any]:
     history_db = work / "history.db"
     config = {
         "vector_store": {"provider": "qdrant", "config": {"path": str(work / "qdrant"), "collection_name": "m6", "embedding_model_dims": 768, "on_disk": True}},
-        "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text", "ollama_base_url": "http://localhost:11434", "embedding_dims": 768}},
-        "llm": {"provider": "ollama", "config": {"model": "qwen2.5:7b", "ollama_base_url": "http://localhost:11434"}},
+        "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text", "ollama_base_url": "http://127.0.0.1:11434", "embedding_dims": 768}},
+        "llm": {"provider": "ollama", "config": {"model": "qwen2.5:7b", "ollama_base_url": "http://127.0.0.1:11434"}},
         "history_db_path": str(history_db),
     }
     m = Memory.from_config(config)

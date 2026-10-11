@@ -183,13 +183,13 @@ _STOP = frozenset("that this with from have been were will would there their abo
 _VALUE = re.compile(r"\d{1,2}:\d{2}(?:\s?-\s?\d{1,2}:\d{2})?|\d{2,}(?:[.,]\d+)*|[A-Za-z][A-Za-z0-9_./-]{2,40}")
 _VALUE_STOP = frozenset("the and for that this with from have been were will not are was has but you your its can may also true false none null".split())
 # Round 66 (b): a question that is a calculation or a count, and an answer that is only a short number with its unit
-_CALC_GOAL = re.compile(r"\bwhat(?:'s| is)\s+[-+]?\d[\d,.\s]*(?:[-+*/x×÷^]|plus|minus|times|divided|multiplied|to the power)\s*[-+]?\d|\bhow many\b.{0,40}\b(?:in|are|is|does|do)\b|"
-                        r"\b\d[\d,.]*\s*(?:[-+*/x×÷^]|plus|minus|times|divided by|multiplied by)\s*\d|คูณ|บวก|ลบ|หาร|กี่|เท่าไหร่|เท่าไร", re.IGNORECASE)
-_BARE_NUMBER = re.compile(r"^\s*[-+]?\d[\d,]*(?:\.\d+)?\s*(?:[A-Za-z\u0E00-\u0E7F%]{0,12})?\s*[.!]?\s*$")
+_CALC_GOAL = re.compile(r"\bwhat(?:'s| is)\s{1,5}[-+]?\d[\d,.\s]{0,40}(?:[-+*/x×÷^]|plus|minus|times|divided|multiplied|to the power)\s{0,5}[-+]?\d|\bhow many\b.{0,40}\b(?:in|are|is|does|do)\b|"
+                        r"\b\d[\d,.]{0,30}\s{0,5}(?:[-+*/x×÷^]|plus|minus|times|divided by|multiplied by)\s{0,5}\d|คูณ|บวก|ลบ|หาร|กี่|เท่าไหร่|เท่าไร", re.IGNORECASE)
+_BARE_NUMBER = re.compile(r"^\s*[-+]?\d[\d,]*(?:\.\d+)?(?:\s*[A-Za-z\u0E00-\u0E7F%]{1,12})?\s*(?:[.!]\s*)?$")
 
 
 # Round 67 (b): "what is 81 divided by 9" - the connecting word the first version did not know
-_CALC_GOAL_V3 = re.compile(r"\bwhat(?:'s| is)\s+[-+]?\d[\d,.\s]*(?:[-+*/x\u00d7\u00f7^]|plus|minus|times|divided(?:\s+by)?|multiplied(?:\s+by)?|to the power(?:\s+of)?)\s*[-+]?\d")
+_CALC_GOAL_V3 = re.compile(r"\bwhat(?:'s| is)\s{1,5}[-+]?\d[\d,.\s]{0,40}(?:[-+*/x\u00d7\u00f7^]|plus|minus|times|divided(?:\s{1,5}by)?|multiplied(?:\s{1,5}by)?|to the power(?:\s{1,5}of)?)\s{0,5}[-+]?\d")
 
 
 def answers_calculation(goal: str, answer: str) -> bool:

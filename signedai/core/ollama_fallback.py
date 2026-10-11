@@ -10,7 +10,7 @@ the fallback chain attempts:
     3. RegexFallback   — deterministic pattern-matching stub
 
 OLLAMA_DEFAULT_MODEL = "llama3.1:8b"
-OLLAMA_API_URL       = "http://localhost:11434"
+OLLAMA_API_URL       = "http://127.0.0.1:11434"
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import urllib.request
 from typing import Any, Callable, Optional
 
 OLLAMA_DEFAULT_MODEL = "llama3.1:8b"
-OLLAMA_API_URL = "http://localhost:11434"
+OLLAMA_API_URL = "http://127.0.0.1:11434"
 OLLAMA_TIMEOUT_SECONDS = 30
 OLLAMA_FALLBACK_VERSION = "1.0"
 
@@ -39,7 +39,7 @@ class OllamaFallback:
     ``urllib.request.urlopen`` (no third-party HTTP library required).
 
     Args:
-        base_url: Base URL of the Ollama server (default: http://localhost:11434)
+        base_url: Base URL of the Ollama server (default: http://127.0.0.1:11434)
         timeout: HTTP timeout in seconds
     """
 

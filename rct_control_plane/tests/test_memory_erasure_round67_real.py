@@ -135,12 +135,15 @@ def test_the_report_says_what_was_not_erased(world, monkeypatch):
     with p._connect() as conn:
         conn.execute("CREATE TABLE IF NOT EXISTS sessions_demo (id INTEGER PRIMARY KEY, namespace TEXT, goal TEXT)")
         conn.execute("INSERT INTO sessions_demo (namespace, goal) VALUES ('alice', 'a past request')")
+        conn.execute("CREATE TABLE IF NOT EXISTS odd_table (id INTEGER PRIMARY KEY, namespace TEXT, body TEXT)")        # a column this module does not know carries the person's words
+        conn.execute("INSERT INTO odd_table (namespace, body) VALUES ('alice', 'something the person wrote')")
     pem, public = approver(tmp, monkeypatch)
     trust(monkeypatch, public)
     sig = er.sign_erase(pem, "alice", log.head()["hash"])
     report = er.erase_person(p, "alice", "asked", sig["public_key"], sig["signature"])
     assert report["not_erased"]["plaintext_events_in_the_chain"] == 1
-    assert {"table": "sessions_demo", "rows": 1} in report["not_erased"]["other_tables"]
+    assert {"table": "odd_table", "rows": 1} in report["not_erased"]["other_tables"]                         # an unknown column is listed, never silently skipped
+    assert {"table": "sessions_demo", "rows": 1, "columns": ["goal"]} in report["other_tables_scrubbed"]      # a known one is overwritten
     assert "backups" in report["not_erased"]["note"]
 
 

@@ -46,11 +46,13 @@ MARGIN = 1.5
 TOKENS_PER_MODEL_PASS = {"prompt": 1_050_000, "completion": 70_000}
 # Tier S is the K.1.5 stage (~30 short runs of ~4 calls at ~2,050 prompt tokens: ~250k, guessed as 400k with room) plus the tool-choice stage (31 goals x two menus:
 # ~31 x (5,200 + 900) = ~190k prompt tokens, measured from the real menu). 600k / 40k is a guess with room, not a measurement.
-TOKENS_BY_TIER = {"A": TOKENS_PER_MODEL_PASS, "B": TOKENS_PER_MODEL_PASS, "S": {"prompt": 600_000, "completion": 40_000}}
+# Tier W (Round 68, "wide screening"): the K.1.5 stage ONLY, for up to 40 models from many vendors, so that the runtime is qualified against several brands before any one of them is paid for at length.
+# ~30 short runs of ~4 calls at ~2,050-5,000 prompt tokens: 400k prompt / 30k completion is a guess with room, like tier S.
+TOKENS_BY_TIER = {"A": TOKENS_PER_MODEL_PASS, "B": TOKENS_PER_MODEL_PASS, "S": {"prompt": 600_000, "completion": 40_000}, "W": {"prompt": 400_000, "completion": 30_000}}
 # One jury run: 30 proposals x 4 members x (~450 prompt + ~120 completion tokens), billed to the four jury models.
 JURY_TOKENS_PER_MEMBER = {"prompt": 30 * 450, "completion": 30 * 120}
-TIER_PASSES = {"S": 1, "A": 1, "B": 3}
-MAX_MODELS = {"S": 6, "A": 1, "B": 3}
+TIER_PASSES = {"S": 1, "A": 1, "B": 3, "W": 1}
+MAX_MODELS = {"S": 6, "A": 1, "B": 3, "W": 40}
 KEY_LOOKING = re.compile(r"sk-or-[A-Za-z0-9_-]{16,}|sk-[A-Za-z0-9]{32,}")
 
 T_BARS = {
@@ -252,6 +254,8 @@ def stages_for(model: str, prices: Dict[str, Any], work: Path, tier: str = "A") 
     choice = {"name": "toolchoice", "covers": ["T10"], "timeout": 2400.0, "json": work / f"toolchoice-{re.sub(r'[^A-Za-z0-9]+', '_', model)}.json",
               "cmd": [sys.executable, "scripts/measure_tool_choice.py", model, "--provider", "openrouter", "--arms", "default,ranked+compact", "--price-in",
                       str(price.get("in", 0.0)), "--price-out", str(price.get("out", 0.0)), "--json", str(work / f"toolchoice-{re.sub(r'[^A-Za-z0-9]+', '_', model)}.json")]}
+    if tier == "W":
+        return all_stages[:1]                                          # the capability screen only
     return all_stages[:1] + [choice] if tier == "S" else all_stages + [choice]
 
 
@@ -365,18 +369,28 @@ def table(report: Dict[str, Any]) -> str:
 
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--tier", choices=["S", "A", "B"], default="A")
+    ap.add_argument("--tier", choices=["S", "A", "B", "W"], default="A")
     ap.add_argument("--jury-models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None,
                     help="tier B only: four models from at least three vendors for the T6 jury run")
-    ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], required=True, help="comma-separated OpenRouter model ids")
+    ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="comma-separated OpenRouter model ids")
+    ap.add_argument("--shortlist-json", default=None, help="Round 68: the shortlist written by research/budget_multivendor.py --json (its models, from many vendors, with the snapshot's prices)")
     ap.add_argument("--budget-usd", type=float, default=0.0)
     ap.add_argument("--prices-file", default=None, help='JSON {"model-id": {"in": usd_per_Mtok, "out": usd_per_Mtok}}')
     ap.add_argument("--live-prices", action="store_true", help="read prices from OpenRouter's public model list")
     ap.add_argument("--execute", action="store_true", help="really run (spends money); without it only the plan is printed")
     ap.add_argument("--out", default=None, help="write the JSON report here")
     args = ap.parse_args(argv)
+    from_list: Dict[str, Dict[str, float]] = {}
+    if args.shortlist_json:
+        listed = json.loads(Path(args.shortlist_json).read_text(encoding="utf-8"))["shortlist"]
+        from_list = {m["id"]: {"in": float(m["in_per_m"]), "out": float(m["out_per_m"])} for m in listed}
+        args.models = (args.models or []) + [m["id"] for m in listed if m["id"] not in (args.models or [])]
+    if not args.models:
+        ap.error("give --models or --shortlist-json")
 
     prices = load_prices(args)
+    for model_id, price in from_list.items():
+        prices.setdefault(model_id, price)
     est = estimate(args.models, prices, TIER_PASSES[args.tier], TOKENS_BY_TIER[args.tier], args.jury_models)
     tokens = TOKENS_BY_TIER[args.tier]
     print(f"Tier {args.tier}: {len(args.models)} model(s), {est['passes']} pass(es) each, ~{tokens['prompt']:,} prompt + {tokens['completion']:,} completion tokens per model pass"

@@ -35,7 +35,7 @@ COUNTRIES: Dict[str, str] = {
 # id, name, country, base_url, credential_env, models (examples only), docs, note
 _P = [
     # ---- self-hosted: data stays on the operator's own machine or network
-    dict(id="ollama-openai", name="Ollama (OpenAI-compatible mode)", country=LOCAL, base_url="http://localhost:11434/v1",
+    dict(id="ollama-openai", name="Ollama (OpenAI-compatible mode)", country=LOCAL, base_url="http://127.0.0.1:11434/v1",
          credential_env="", models=["qwen2.5:7b", "llama3.2:3b"], docs="https://ollama.com",
          note="Runs on this machine. Needs no key. For plain Ollama, the 'Ollama' provider on the Models page works too."),
     dict(id="vllm", name="vLLM server", country=LOCAL, base_url="http://localhost:8000/v1", credential_env="VLLM_API_KEY",
