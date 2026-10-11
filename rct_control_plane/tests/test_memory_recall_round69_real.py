@@ -406,3 +406,21 @@ def test_auto_gives_the_same_recall_as_on_and_the_old_path_when_off(server, tmp_
         assert conn.execute("SELECT COUNT(*) FROM memory_vectors").fetchone()[0] == len(FACTS)
     monkeypatch.setenv(mx.ENV, "off")
     assert mx.enabled() is False
+
+
+# ------------------------------------------------------------------ how many recalled memories an episode is shown
+
+def test_the_episode_is_shown_three_memories_five_with_recall_by_meaning_and_the_setting_decides(server, monkeypatch):
+    from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop as G
+    monkeypatch.delenv(G.MEMORY_INJECT_ENV, raising=False)
+    monkeypatch.setenv(mx.ENV, "off")
+    assert G._memory_inject_limit(3) == 3
+    monkeypatch.setenv(mx.ENV, "ollama")
+    assert G._memory_inject_limit(3) == 5 and G._memory_inject_limit(8) == 8          # never fewer than the caller asked for
+    monkeypatch.setenv(G.MEMORY_INJECT_ENV, "7")
+    assert G._memory_inject_limit(3) == 7
+    for bad in ("0", "11", "x", "-2", ""):
+        monkeypatch.setenv(G.MEMORY_INJECT_ENV, bad)
+        assert G._memory_inject_limit(3) == 5                                           # a bad value is ignored (embeddings still on here)
+    monkeypatch.setenv(mx.ENV, "off")
+    assert G._memory_inject_limit(3) == 3

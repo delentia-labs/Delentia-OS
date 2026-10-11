@@ -1,0 +1,1042 @@
+[
+  {
+    "set": "h1",
+    "mode": "lexical",
+    "n": 40,
+    "hit@1": 3,
+    "hit@3": 6,
+    "hit@5": 6,
+    "hit@10": 6,
+    "store_ms_median": 9.5,
+    "recall_ms_median": 108.8,
+    "misses@3": [
+      {
+        "question": "How quickly do staff build up paid time off?",
+        "answer": "1.5 vacation days",
+        "top": [
+          "Staff in the support team use the messaging tool on Saturday.",
+          "Staff in the finance team use the export tool on Saturday.",
+          "Staff in the logistics team use the upload tool on Monday."
+        ]
+      },
+      {
+        "question": "What is the label of the copier two flights above the ground level?",
+        "answer": "LaserJet-Orchid",
+        "top": [
+          "The CFO, Rattanaporn, approves any expense above 50,000 baht.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "What colour strap are guests given on arrival?",
+        "answer": "green lanyard",
+        "top": [
+          "The guest Wi-Fi network is Northwind-Visitors and its code changes weekly.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "Who has to authorise a large spend?",
+        "answer": "Rattanaporn",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "During which hours can employees eat their midday meal on site?",
+        "answer": "11:30",
+        "top": [
+          "The search limit is 8 requests per hour.",
+          "The export limit is 9 requests per hour.",
+          "The billing limit is 11 requests per hour."
+        ]
+      },
+      {
+        "question": "What is the minimum length for a login secret?",
+        "answer": "14 characters",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "Which outside firm checks our books every year?",
+        "answer": "Kasikorn Assurance",
+        "top": [
+          "Laptops are replaced every 4 years.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "How often must the lift-truck driver licence be renewed?",
+        "answer": "24 months",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "Where should an unhappy client send their grievance?",
+        "answer": "complaints@northwind.example",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "How many can fit in the meeting space named after a blue gem?",
+        "answer": "18 people",
+        "top": [
+          "The marketing meeting is held every Saturday at 06:45.",
+          "The finance meeting is held every Sunday at 09:15.",
+          "The meeting room closes at 09:15 on Friday."
+        ]
+      },
+      {
+        "question": "How long does ordinary delivery to the northern city take?",
+        "answer": "3 days",
+        "top": [
+          "Passwords must be at least 14 characters long.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "Which company looks after cleaning?",
+        "answer": "CleanWave",
+        "top": [
+          "The company anniversary is celebrated on 17 March.",
+          "The cafeteria is closed on Mondays for deep cleaning.",
+          "The main cleaning vendor is Somsak; the backup vendor is FoamLine."
+        ]
+      },
+      {
+        "question": "How much pocket money do trainees get each month?",
+        "answer": "9,000",
+        "top": [
+          "The standard warranty on our products is 18 months.",
+          "Forklift certification expires every 24 months.",
+          "The monthly training budget is capped at 1,350 baht."
+        ]
+      },
+      {
+        "question": "By when must the review document after an outage be completed?",
+        "answer": "5 working days",
+        "top": [
+          "The reception for spare cables is reviewed every 9 weeks.",
+          "The parts store for safety gear is reviewed every 3 weeks.",
+          "The meeting room for safety gear is reviewed every 3 weeks."
+        ]
+      },
+      {
+        "question": "Where do we keep our programs' repositories?",
+        "answer": "northwind-core",
+        "top": [
+          "The default branch of the website repository is trunk.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "How many baht must a shopper spend to earn a reward unit?",
+        "answer": "25 baht",
+        "top": [
+          "The monthly travel budget is capped at 1,350 baht.",
+          "Orders over 12,400 baht ship within Pattaya.",
+          "Orders over 1,350 baht ship within Pattaya."
+        ]
+      },
+      {
+        "question": "Which weekday can we not buy food at the staff restaurant?",
+        "answer": "Mondays",
+        "top": [
+          "The procurement portal is buy.northwind.example.",
+          "Staff in the support team use the messaging tool on Saturday.",
+          "Staff in the finance team use the export tool on Saturday."
+        ]
+      },
+      {
+        "question": "When do we rehearse building evacuations?",
+        "answer": "first Thursday",
+        "top": [
+          "The emergency assembly point is the car park behind building C.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "What is the main line called in the web project's version control?",
+        "answer": "trunk",
+        "top": [
+          "The demo service is called demo-db-5.",
+          "The archive service is called rep-db-4.",
+          "The analytics service is called arch-db-9."
+        ]
+      },
+      {
+        "question": "What is the fee for a car space pass?",
+        "answer": "600 baht",
+        "top": [
+          "The emergency assembly point is the car park behind building C.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "How long do we hold on to video from the surveillance cameras?",
+        "answer": "30 days",
+        "top": [
+          "Passwords must be at least 14 characters long.",
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29."
+        ]
+      },
+      {
+        "question": "Which day can staff see the in-house doctor?",
+        "answer": "Wednesdays",
+        "top": [
+          "CCTV footage is kept for 30 days.",
+          "Maternity leave is 98 days with full pay.",
+          "Staff in the support team use the messaging tool on Saturday."
+        ]
+      },
+      {
+        "question": "When is the company bulletin sent to everyone?",
+        "answer": "last Friday",
+        "top": [
+          "The company anniversary is celebrated on 17 March.",
+          "Dr. Siriwan is the company physician and is on site on Wednesdays.",
+          "Translation work is outsourced to LinguaBridge."
+        ]
+      },
+      {
+        "question": "Where do we gather if the premises must be evacuated?",
+        "answer": "building C",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "By what date must reimbursement claims be filed?",
+        "answer": "5th",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "How often do we trial the standby power unit?",
+        "answer": "second Saturday",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "What temperature range must the refrigerated storage hold?",
+        "answer": "2 and 4 degrees",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "How long can a new mother stay away from work while still paid?",
+        "answer": "98 days",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Passwords must be at least 14 characters long.",
+          "Our safety officer is Surasak and works from the Phuket office."
+        ]
+      },
+      {
+        "question": "What does the most severe support category indicate?",
+        "answer": "whole service is down",
+        "top": [
+          "The support meeting is held every Saturday at 16:20.",
+          "Staff in the support team use the messaging tool on Saturday.",
+          "Nattaya manages the dry goods budget for the support team."
+        ]
+      },
+      {
+        "question": "On which date does the firm hold its yearly birthday party?",
+        "answer": "17 March",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "Where do staff go online to request purchases?",
+        "answer": "buy.northwind.example",
+        "top": [
+          "The search limit is 8 requests per hour.",
+          "The export limit is 9 requests per hour.",
+          "The billing limit is 11 requests per hour."
+        ]
+      },
+      {
+        "question": "When do the watchmen swap?",
+        "answer": "06:00 and 18:00",
+        "top": [
+          "Translation work is outsourced to LinguaBridge.",
+          "Our Kubernetes cluster is named harbor-prod and runs version 1.29.",
+          "The back office closes at 13:10 on Sunday."
+        ]
+      },
+      {
+        "question": "Who alone is allowed to extract client records?",
+        "answer": "Arunee",
+        "top": [
+          "Mali gives access to the records section.",
+          "Somsak gives access to the records section.",
+          "Translation work is outsourced to LinguaBridge."
+        ]
+      },
+      {
+        "question": "For how long do we repair goods free after sale?",
+        "answer": "18 months",
+        "top": [
+          "Passwords must be at least 14 characters long.",
+          "Wipa gives access to the dry goods section.",
+          "Pichai gives access to the dry goods section."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h1",
+    "mode": "embed",
+    "n": 40,
+    "hit@1": 36,
+    "hit@3": 37,
+    "hit@5": 39,
+    "hit@10": 40,
+    "store_ms_median": 52.4,
+    "recall_ms_median": 270.3,
+    "misses@3": [
+      {
+        "question": "Which company looks after cleaning?",
+        "answer": "CleanWave",
+        "top": [
+          "The main cleaning vendor is Surasak; the backup vendor is CartonCo.",
+          "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Duangjai; the backup vendor is FoamLine."
+        ]
+      },
+      {
+        "question": "How much pocket money do trainees get each month?",
+        "answer": "9,000",
+        "top": [
+          "The monthly training budget is capped at 7,800 baht.",
+          "The monthly training budget is capped at 12,400 baht.",
+          "The monthly training budget is capped at 4,200 baht."
+        ]
+      },
+      {
+        "question": "Where do staff go online to request purchases?",
+        "answer": "buy.northwind.example",
+        "top": [
+          "Staff in the marketing team use the upload tool on Sunday.",
+          "Visitors must sign in at the front desk and wear a green lanyard.",
+          "Customer complaints go to complaints@northwind.example and are answered within 2 business days."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h1",
+    "mode": "embedQ",
+    "n": 40,
+    "hit@1": 36,
+    "hit@3": 39,
+    "hit@5": 40,
+    "hit@10": 40,
+    "store_ms_median": 3005.4,
+    "recall_ms_median": 326.9,
+    "misses@3": [
+      {
+        "question": "Which company looks after cleaning?",
+        "answer": "CleanWave",
+        "top": [
+          "The main cleaning vendor is Duangjai; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Surasak; the backup vendor is CartonCo."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h1",
+    "mode": "embedQG",
+    "n": 40,
+    "hit@1": 35,
+    "hit@3": 39,
+    "hit@5": 40,
+    "hit@10": 40,
+    "store_ms_median": 3106.0,
+    "recall_ms_median": 3801.1,
+    "misses@3": [
+      {
+        "question": "Which company looks after cleaning?",
+        "answer": "CleanWave",
+        "top": [
+          "The main cleaning vendor is Duangjai; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Somsak; the backup vendor is FoamLine.",
+          "The main cleaning vendor is Surasak; the backup vendor is CartonCo."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h5",
+    "mode": "lexical",
+    "n": 40,
+    "hit@1": 16,
+    "hit@3": 20,
+    "hit@5": 20,
+    "hit@10": 22,
+    "store_ms_median": 10.3,
+    "recall_ms_median": 122.8,
+    "misses@3": [
+      {
+        "question": "โกดังที่ปทุมธานีเริ่มรับของเข้ากี่โมง",
+        "answer": "7 โมงเช้า",
+        "top": [
+          "ระบบ CRM ของเราคือ HubSpot",
+          "ที่ปรึกษาด้านภาษีของบริษัทคือสำนักงานบัญชีธนชัย",
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย"
+        ]
+      },
+      {
+        "question": "ถ้าเครื่องปรับอากาศเสียต้องเรียกใคร",
+        "answer": "สมพงษ์",
+        "top": [
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องเครื่องเขียนปีละ 3 ครั้ง",
+          "พนักงานฝ่ายการตลาดต้องอบรมเรื่องเครื่องเขียนปีละ 2 ครั้ง",
+          "เครื่องถ่ายเอกสารเสียให้โทรแจ้งเบอร์ 02-444-7788"
+        ]
+      },
+      {
+        "question": "ต้องย้ายหรือต่อสัญญาที่ทำงานเมื่อไร",
+        "answer": "มิถุนายน",
+        "top": [
+          "นักเรียนฝึกงานต้องรายงานตัวกับคุณกัญญา",
+          "พนักงานที่ทำงานครบ 5 ปีจะได้รับโบนัสพิเศษ 20,000 บาท",
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง"
+        ]
+      },
+      {
+        "question": "ถ้าก๊อปปี้เสียต้องติดต่อหมายเลขไหน",
+        "answer": "02-444-7788",
+        "top": [
+          "ใบอนุญาตความปลอดภัยต้องต่ออายุทุก 5 ปี",
+          "ใบอนุญาตลูกกุญแจต้องต่ออายุทุก 2 ปี",
+          "ใบอนุญาตลูกกุญแจต้องต่ออายุทุก 3 ปี"
+        ]
+      },
+      {
+        "question": "ใครคุมทีมทำความสะอาด",
+        "answer": "สมจิตร",
+        "top": [
+          "ใบอนุญาตความปลอดภัยต้องต่ออายุทุก 5 ปี",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครส่งของดิบให้โรงครัว",
+        "answer": "สยามฟู้ดส์",
+        "top": [
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ห้องสมุดของบริษัทให้ยืมหนังสือครั้งละไม่เกิน 3 เล่ม",
+          "ใบรับรองมาตรฐานคุณภาพของโรงงานคือ ISO 9001"
+        ]
+      },
+      {
+        "question": "ใครช่วยดูเรื่องภาษีให้องค์กร",
+        "answer": "ธนชัย",
+        "top": [
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง",
+          "พนักงานฝ่ายโลจิสติกส์ต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง"
+        ]
+      },
+      {
+        "question": "อยู่ครบห้าปีได้เงินรางวัลเท่าไร",
+        "answer": "20,000",
+        "top": [
+          "ตู้เซฟเก็บเงินสดอยู่ในห้องบัญชีชั้น 3",
+          "ห้องเก็บเอกสารใช้ได้เฉพาะฝ่ายการเงิน",
+          "ห้องซ้อมดับเพลิงใช้ได้เฉพาะฝ่ายการเงิน"
+        ]
+      },
+      {
+        "question": "ต้องตรวจเช็กความเที่ยงตรงของตาชั่งบ่อยแค่ไหน",
+        "answer": "6 เดือน",
+        "top": [
+          "ใบอนุญาตความปลอดภัยต้องต่ออายุทุก 5 ปี",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 6 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 2 ของอาคาร"
+        ]
+      },
+      {
+        "question": "จะรายงานการโกงภายในองค์กรได้ทางไหน",
+        "answer": "ethics@northwind.example",
+        "top": [
+          "ลูกค้าองค์กรชำระเงินภายใน 45 วันหลังออกใบแจ้งหนี้",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอาทิตย์"
+        ]
+      },
+      {
+        "question": "ใครรับผิดชอบพื้นที่เก็บของอันตราย",
+        "answer": "เอกชัย",
+        "top": [
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 5 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "ภาพจากกล้องรักษาความปลอดภัยถูกเก็บนานเท่าไร",
+        "answer": "60 วัน",
+        "top": [
+          "บัตรพนักงานหายต้องแจ้งฝ่ายรักษาความปลอดภัยภายใน 24 ชั่วโมง",
+          "ใบอนุญาตความปลอดภัยต้องต่ออายุทุก 5 ปี",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล"
+        ]
+      },
+      {
+        "question": "ใครดูแลคลังที่กรุงเทพ",
+        "answer": "วีรพงษ์",
+        "top": [
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณกิตติ",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณอนันต์"
+        ]
+      },
+      {
+        "question": "Which customer database tool do we use?",
+        "answer": "HubSpot",
+        "top": [
+          "ราคาค่าบริการรายเดือนของ Premium plan คือ 1,990 บาท",
+          "พนักงานฝ่ายกฎหมายต้องอบรมเรื่องลูกกุญแจปีละ 3 ครั้ง",
+          "ลิฟต์บรรทุกของจำกัดน้ำหนัก 800 กิโลกรัม"
+        ]
+      },
+      {
+        "question": "Where do we report computer problems?",
+        "answer": "#it-help",
+        "top": [
+          "ราคาค่าบริการรายเดือนของ Premium plan คือ 1,990 บาท",
+          "พนักงานฝ่ายกฎหมายต้องอบรมเรื่องลูกกุญแจปีละ 3 ครั้ง",
+          "ลิฟต์บรรทุกของจำกัดน้ำหนัก 800 กิโลกรัม"
+        ]
+      },
+      {
+        "question": "ใครต้องอนุมัติการทำงานล่วงเวลา",
+        "answer": "สายฝน",
+        "top": [
+          "พนักงานฝ่ายการตลาดต้องอบรมเรื่องเครื่องเขียนปีละ 2 ครั้ง",
+          "พนักงานฝ่ายการตลาดต้องอบรมเรื่องลูกกุญแจปีละ 6 ครั้ง",
+          "พนักงานฝ่ายบริการลูกค้าต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 5 ครั้ง"
+        ]
+      },
+      {
+        "question": "รหัสของโกดังลำลูกกาคืออะไร",
+        "answer": "WH-LKB",
+        "top": [
+          "ระบบ CRM ของเราคือ HubSpot",
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "ราคาค่าบริการรายเดือนของ Premium plan คือ 1,990 บาท"
+        ]
+      },
+      {
+        "question": "When is the company closed over New Year?",
+        "answer": "30 ธันวาคม",
+        "top": [
+          "ราคาค่าบริการรายเดือนของ Premium plan คือ 1,990 บาท",
+          "พนักงานฝ่ายกฎหมายต้องอบรมเรื่องลูกกุญแจปีละ 3 ครั้ง",
+          "ลิฟต์บรรทุกของจำกัดน้ำหนัก 800 กิโลกรัม"
+        ]
+      },
+      {
+        "question": "ใครทำเงินเดือนให้พนักงาน",
+        "answer": "พิมพา",
+        "top": [
+          "สัญญาเช่าสำนักงานครบกำหนดเดือนมิถุนายนปีหน้า",
+          "พนักงานฝ่ายการเงินต้องอบรมเรื่องลูกกุญแจปีละ 5 ครั้ง",
+          "พนักงานฝ่ายการเงินต้องอบรมเรื่องลูกกุญแจปีละ 3 ครั้ง"
+        ]
+      },
+      {
+        "question": "How fast is our office internet?",
+        "answer": "1 Gbps",
+        "top": [
+          "ราคาค่าบริการรายเดือนของ Premium plan คือ 1,990 บาท",
+          "พนักงานฝ่ายกฎหมายต้องอบรมเรื่องลูกกุญแจปีละ 3 ครั้ง",
+          "ลิฟต์บรรทุกของจำกัดน้ำหนัก 800 กิโลกรัม"
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h5",
+    "mode": "embed",
+    "n": 40,
+    "hit@1": 17,
+    "hit@3": 23,
+    "hit@5": 25,
+    "hit@10": 31,
+    "store_ms_median": 47.2,
+    "recall_ms_median": 218.2,
+    "misses@3": [
+      {
+        "question": "โกดังที่ปทุมธานีเริ่มรับของเข้ากี่โมง",
+        "answer": "7 โมงเช้า",
+        "top": [
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ที่ปรึกษาด้านภาษีของบริษัทคือสำนักงานบัญชีธนชัย",
+          "รถรับส่งพนักงานรอบเช้าออกจากสถานีรถไฟฟ้า 07:15 น."
+        ]
+      },
+      {
+        "question": "ถ้าเครื่องปรับอากาศเสียต้องเรียกใคร",
+        "answer": "สมพงษ์",
+        "top": [
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องเครื่องเขียนปีละ 3 ครั้ง",
+          "เครื่องถ่ายเอกสารเสียให้โทรแจ้งเบอร์ 02-444-7788",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครคุมทีมทำความสะอาด",
+        "answer": "สมจิตร",
+        "top": [
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณดวงใจ"
+        ]
+      },
+      {
+        "question": "ใครส่งของดิบให้โรงครัว",
+        "answer": "สยามฟู้ดส์",
+        "top": [
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันเสาร์"
+        ]
+      },
+      {
+        "question": "ใครช่วยดูเรื่องภาษีให้องค์กร",
+        "answer": "ธนชัย",
+        "top": [
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "คุณสมชายเป็นผู้ติดต่อเรื่องภาษีหัก ณ ที่จ่าย",
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง"
+        ]
+      },
+      {
+        "question": "อยู่ครบห้าปีได้เงินรางวัลเท่าไร",
+        "answer": "20,000",
+        "top": [
+          "ห้องเก็บเอกสารใช้ได้เฉพาะฝ่ายการเงิน",
+          "ห้องซ้อมดับเพลิงใช้ได้เฉพาะฝ่ายการเงิน",
+          "ตู้เซฟเก็บเงินสดอยู่ในห้องบัญชีชั้น 3"
+        ]
+      },
+      {
+        "question": "จะรายงานการโกงภายในองค์กรได้ทางไหน",
+        "answer": "ethics@northwind.example",
+        "top": [
+          "ลูกค้าองค์กรชำระเงินภายใน 45 วันหลังออกใบแจ้งหนี้",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอาทิตย์"
+        ]
+      },
+      {
+        "question": "ใครรับผิดชอบพื้นที่เก็บของอันตราย",
+        "answer": "เอกชัย",
+        "top": [
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 5 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "จะต่อโน้ตบุ๊กเข้ากับจอห้องประชุมใช้อะไร",
+        "answer": "HDMI",
+        "top": [
+          "ห้องประชุมเล็กอยู่ที่ชั้น 2 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "ภาพจากกล้องรักษาความปลอดภัยถูกเก็บนานเท่าไร",
+        "answer": "60 วัน",
+        "top": [
+          "บัตรพนักงานหายต้องแจ้งฝ่ายรักษาความปลอดภัยภายใน 24 ชั่วโมง",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครดูแลคลังที่กรุงเทพ",
+        "answer": "วีรพงษ์",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "ผู้ดูแลเรื่องบัตรจอดรถคือคุณมณี"
+        ]
+      },
+      {
+        "question": "Which customer database tool do we use?",
+        "answer": "HubSpot",
+        "top": [
+          "Our payroll provider is คุณพิมพา at KBank",
+          "The Bangkok depot manager is คุณวีรพงษ์",
+          "ช่องทางสำหรับแจ้งปัญหาไอทีคือ #it-help"
+        ]
+      },
+      {
+        "question": "Where do we report computer problems?",
+        "answer": "#it-help",
+        "top": [
+          "เครื่องถ่ายเอกสารเสียให้โทรแจ้งเบอร์ 02-444-7788",
+          "รถรับส่งพนักงานรอบเช้าออกจากสถานีรถไฟฟ้า 07:15 น.",
+          "Our payroll provider is คุณพิมพา at KBank"
+        ]
+      },
+      {
+        "question": "ใครต้องอนุมัติการทำงานล่วงเวลา",
+        "answer": "สายฝน",
+        "top": [
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร"
+        ]
+      },
+      {
+        "question": "รหัสของโกดังลำลูกกาคืออะไร",
+        "answer": "WH-LKB",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ระบบ CRM ของเราคือ HubSpot"
+        ]
+      },
+      {
+        "question": "When is the company closed over New Year?",
+        "answer": "30 ธันวาคม",
+        "top": [
+          "รถรับส่งพนักงานรอบเช้าออกจากสถานีรถไฟฟ้า 07:15 น.",
+          "คุณสมชายเป็นผู้ติดต่อเรื่องภาษีหัก ณ ที่จ่าย",
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์"
+        ]
+      },
+      {
+        "question": "ใครทำเงินเดือนให้พนักงาน",
+        "answer": "พิมพา",
+        "top": [
+          "สัญญาเช่าสำนักงานครบกำหนดเดือนมิถุนายนปีหน้า",
+          "อุปกรณ์ดับเพลิงตรวจสอบทุกต้นเดือน",
+          "พนักงานฝ่ายการเงินต้องอบรมเรื่องลูกกุญแจปีละ 5 ครั้ง"
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h5",
+    "mode": "embedQ",
+    "n": 40,
+    "hit@1": 20,
+    "hit@3": 26,
+    "hit@5": 27,
+    "hit@10": 32,
+    "store_ms_median": 2953.1,
+    "recall_ms_median": 267.6,
+    "misses@3": [
+      {
+        "question": "โกดังที่ปทุมธานีเริ่มรับของเข้ากี่โมง",
+        "answer": "7 โมงเช้า",
+        "top": [
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ที่ปรึกษาด้านภาษีของบริษัทคือสำนักงานบัญชีธนชัย",
+          "รถรับส่งพนักงานรอบเช้าออกจากสถานีรถไฟฟ้า 07:15 น."
+        ]
+      },
+      {
+        "question": "ถ้าเครื่องปรับอากาศเสียต้องเรียกใคร",
+        "answer": "สมพงษ์",
+        "top": [
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องเครื่องเขียนปีละ 3 ครั้ง",
+          "เครื่องถ่ายเอกสารเสียให้โทรแจ้งเบอร์ 02-444-7788",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครคุมทีมทำความสะอาด",
+        "answer": "สมจิตร",
+        "top": [
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณดวงใจ"
+        ]
+      },
+      {
+        "question": "ใครส่งของดิบให้โรงครัว",
+        "answer": "สยามฟู้ดส์",
+        "top": [
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันเสาร์"
+        ]
+      },
+      {
+        "question": "ใครช่วยดูเรื่องภาษีให้องค์กร",
+        "answer": "ธนชัย",
+        "top": [
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "คุณสมชายเป็นผู้ติดต่อเรื่องภาษีหัก ณ ที่จ่าย",
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง"
+        ]
+      },
+      {
+        "question": "อยู่ครบห้าปีได้เงินรางวัลเท่าไร",
+        "answer": "20,000",
+        "top": [
+          "ห้องเก็บเอกสารใช้ได้เฉพาะฝ่ายการเงิน",
+          "ห้องซ้อมดับเพลิงใช้ได้เฉพาะฝ่ายการเงิน",
+          "ตู้เซฟเก็บเงินสดอยู่ในห้องบัญชีชั้น 3"
+        ]
+      },
+      {
+        "question": "จะรายงานการโกงภายในองค์กรได้ทางไหน",
+        "answer": "ethics@northwind.example",
+        "top": [
+          "ลูกค้าองค์กรชำระเงินภายใน 45 วันหลังออกใบแจ้งหนี้",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอาทิตย์"
+        ]
+      },
+      {
+        "question": "ใครรับผิดชอบพื้นที่เก็บของอันตราย",
+        "answer": "เอกชัย",
+        "top": [
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 5 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "จะต่อโน้ตบุ๊กเข้ากับจอห้องประชุมใช้อะไร",
+        "answer": "HDMI",
+        "top": [
+          "ห้องประชุมเล็กอยู่ที่ชั้น 2 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "ภาพจากกล้องรักษาความปลอดภัยถูกเก็บนานเท่าไร",
+        "answer": "60 วัน",
+        "top": [
+          "บัตรพนักงานหายต้องแจ้งฝ่ายรักษาความปลอดภัยภายใน 24 ชั่วโมง",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครดูแลคลังที่กรุงเทพ",
+        "answer": "วีรพงษ์",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "ผู้ดูแลเรื่องบัตรจอดรถคือคุณมณี"
+        ]
+      },
+      {
+        "question": "ใครต้องอนุมัติการทำงานล่วงเวลา",
+        "answer": "สายฝน",
+        "top": [
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร"
+        ]
+      },
+      {
+        "question": "รหัสของโกดังลำลูกกาคืออะไร",
+        "answer": "WH-LKB",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ระบบ CRM ของเราคือ HubSpot"
+        ]
+      },
+      {
+        "question": "ใครทำเงินเดือนให้พนักงาน",
+        "answer": "พิมพา",
+        "top": [
+          "สัญญาเช่าสำนักงานครบกำหนดเดือนมิถุนายนปีหน้า",
+          "อุปกรณ์ดับเพลิงตรวจสอบทุกต้นเดือน",
+          "พนักงานฝ่ายการเงินต้องอบรมเรื่องลูกกุญแจปีละ 5 ครั้ง"
+        ]
+      }
+    ]
+  },
+  {
+    "set": "h5",
+    "mode": "embedQG",
+    "n": 40,
+    "hit@1": 20,
+    "hit@3": 26,
+    "hit@5": 27,
+    "hit@10": 32,
+    "store_ms_median": 3058.0,
+    "recall_ms_median": 4934.7,
+    "misses@3": [
+      {
+        "question": "โกดังที่ปทุมธานีเริ่มรับของเข้ากี่โมง",
+        "answer": "7 โมงเช้า",
+        "top": [
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ที่ปรึกษาด้านภาษีของบริษัทคือสำนักงานบัญชีธนชัย",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ถ้าเครื่องปรับอากาศเสียต้องเรียกใคร",
+        "answer": "สมพงษ์",
+        "top": [
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องเครื่องเขียนปีละ 3 ครั้ง",
+          "เครื่องถ่ายเอกสารเสียให้โทรแจ้งเบอร์ 02-444-7788",
+          "ผู้ดูแลเรื่องเครื่องเขียนคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครคุมทีมทำความสะอาด",
+        "answer": "สมจิตร",
+        "top": [
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณดวงใจ"
+        ]
+      },
+      {
+        "question": "ใครส่งของดิบให้โรงครัว",
+        "answer": "สยามฟู้ดส์",
+        "top": [
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันเสาร์"
+        ]
+      },
+      {
+        "question": "ใครช่วยดูเรื่องภาษีให้องค์กร",
+        "answer": "ธนชัย",
+        "top": [
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "คุณสมชายเป็นผู้ติดต่อเรื่องภาษีหัก ณ ที่จ่าย",
+          "พนักงานฝ่ายวิจัยต้องอบรมเรื่องภาษีหัก ณ ที่จ่ายปีละ 2 ครั้ง"
+        ]
+      },
+      {
+        "question": "อยู่ครบห้าปีได้เงินรางวัลเท่าไร",
+        "answer": "20,000",
+        "top": [
+          "ห้องเก็บเอกสารใช้ได้เฉพาะฝ่ายการเงิน",
+          "ห้องซ้อมดับเพลิงใช้ได้เฉพาะฝ่ายการเงิน",
+          "ตู้เซฟเก็บเงินสดอยู่ในห้องบัญชีชั้น 3"
+        ]
+      },
+      {
+        "question": "จะรายงานการโกงภายในองค์กรได้ทางไหน",
+        "answer": "ethics@northwind.example",
+        "top": [
+          "ลูกค้าองค์กรชำระเงินภายใน 45 วันหลังออกใบแจ้งหนี้",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอาทิตย์"
+        ]
+      },
+      {
+        "question": "ใครรับผิดชอบพื้นที่เก็บของอันตราย",
+        "answer": "เอกชัย",
+        "top": [
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 5 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องเก็บเอกสารอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "จะต่อโน้ตบุ๊กเข้ากับจอห้องประชุมใช้อะไร",
+        "answer": "HDMI",
+        "top": [
+          "ห้องประชุมเล็กอยู่ที่ชั้น 2 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 3 ของอาคาร",
+          "ห้องประชุมเล็กอยู่ที่ชั้น 6 ของอาคาร"
+        ]
+      },
+      {
+        "question": "ภาพจากกล้องรักษาความปลอดภัยถูกเก็บนานเท่าไร",
+        "answer": "60 วัน",
+        "top": [
+          "บัตรพนักงานหายต้องแจ้งฝ่ายรักษาความปลอดภัยภายใน 24 ชั่วโมง",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณนฤมล",
+          "ผู้ดูแลเรื่องความปลอดภัยคือคุณกิตติ"
+        ]
+      },
+      {
+        "question": "ใครดูแลคลังที่กรุงเทพ",
+        "answer": "วีรพงษ์",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "ผู้ดูแลเรื่องภาษีหัก ณ ที่จ่ายคือคุณอนันต์",
+          "ผู้ดูแลเรื่องบัตรจอดรถคือคุณมณี"
+        ]
+      },
+      {
+        "question": "ใครต้องอนุมัติการทำงานล่วงเวลา",
+        "answer": "สายฝน",
+        "top": [
+          "ระบบรายงานยอดขายให้บริการตลอดเวลา ยกเว้นวันอังคาร",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันจันทร์",
+          "ระบบส่งข้อความให้บริการตลอดเวลา ยกเว้นวันอังคาร"
+        ]
+      },
+      {
+        "question": "รหัสของโกดังลำลูกกาคืออะไร",
+        "answer": "WH-LKB",
+        "top": [
+          "คลังสินค้าสาขาลำลูกกาเปิดรับสินค้าตั้งแต่ 7 โมงเช้า",
+          "โกดังเก็บสารเคมีต้องมีผู้ควบคุมชื่อคุณเอกชัย",
+          "ระบบ CRM ของเราคือ HubSpot"
+        ]
+      },
+      {
+        "question": "ใครทำเงินเดือนให้พนักงาน",
+        "answer": "พิมพา",
+        "top": [
+          "สัญญาเช่าสำนักงานครบกำหนดเดือนมิถุนายนปีหน้า",
+          "อุปกรณ์ดับเพลิงตรวจสอบทุกต้นเดือน",
+          "พนักงานฝ่ายการเงินต้องอบรมเรื่องลูกกุญแจปีละ 5 ครั้ง"
+        ]
+      }
+    ]
+  }
+]

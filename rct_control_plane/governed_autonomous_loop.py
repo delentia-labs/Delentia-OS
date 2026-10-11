@@ -997,6 +997,24 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return False
         return not self._is_person()
 
+    MEMORY_INJECT_ENV = "DELENTIA_MEMORY_RECALL_LIMIT"
+    MEMORY_INJECT_WITH_EMBEDDINGS = 5
+
+    @classmethod
+    def _memory_inject_limit(cls, default: int) -> int:
+        """How many recalled memories an episode is shown. DELENTIA_MEMORY_RECALL_LIMIT (1..10) decides; without it 3, or 5 when recall by meaning is on: measured on the English held-out
+        set, the right memory was in the top 3 for 37 of 40 questions and in the top 5 for 39 (research/recall_lab_r69.py), and a Thai set 23 against 25; two more short memories cost about 100 tokens."""
+        raw = (os.environ.get(cls.MEMORY_INJECT_ENV) or "").strip()
+        if raw.isdigit() and 1 <= int(raw) <= 10:
+            return int(raw)
+        try:
+            from rct_control_plane import memory_embeddings
+            if memory_embeddings.enabled():
+                return max(default, cls.MEMORY_INJECT_WITH_EMBEDDINGS)
+        except Exception:                                                    # noqa: BLE001 - never a reason an episode cannot start
+            pass
+        return default
+
     async def _recall_for_goal(self, goal: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Round 48 R1.3: memories relevant to the goal are recalled
         automatically. K.1.5 showed the current local model never calls
@@ -1005,6 +1023,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         carries its raw relevance, anything below the relevance floor is
         dropped (it is noise, not memory), and the scores feed D."""
         self._episode_memory_scores = []
+        limit = self._memory_inject_limit(limit)
         stores = []
         default_memory = getattr(self._get_kernel(), "_agent_memory", None)
         if default_memory is not None and self._reads_shared_memory():
