@@ -86,10 +86,33 @@ def shortlist(models: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return chosen
 
 
+W_TOKENS = {"prompt": 400_000, "completion": 30_000}        # scripts/full_test_orchestrator.py tier W (the K.1.5 capability screen), a guess with room
+
+
+def screen_cost(m: Dict[str, Any]) -> float:
+    return (W_TOKENS["prompt"] * m["in_per_m"] + W_TOKENS["completion"] * m["out_per_m"]) / 1e6
+
+
+def fit_budget(models: List[Dict[str, Any]], budget: float) -> List[Dict[str, Any]]:
+    """The models to screen first when only `budget` dollars are available (margin included): one model per vendor, cheapest first, then second models while money remains. Vendors are spread before depth."""
+    by_vendor: Dict[str, List[Dict[str, Any]]] = {}
+    for m in sorted(models, key=screen_cost):
+        by_vendor.setdefault(m["vendor"], []).append(m)
+    chosen: List[Dict[str, Any]] = []
+    spent = 0.0
+    for depth in range(2):
+        for _vendor, lst in sorted(by_vendor.items(), key=lambda kv: screen_cost(kv[1][0])):
+            if depth < len(lst) and spent + screen_cost(lst[depth]) * MARGIN <= budget:
+                chosen.append(lst[depth])
+                spent += screen_cost(lst[depth]) * MARGIN
+    return chosen
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--fetch", action="store_true")
     ap.add_argument("--json", default=None, help="also write the result as JSON")
+    ap.add_argument("--fit-budget", type=float, default=None, help="print which models the capability screen (tier W) can cover for this many dollars, margin included")
     args = ap.parse_args()
     if args.fetch:
         print("wrote", fetch())
@@ -124,8 +147,17 @@ def main() -> int:
         cached = cost_per_episode(r, PROMPT_FULL, 0.9) if r["cache_read_per_m"] is not None else None
         print(f"       {r['id']:44} ${r['episode_full'] * ALL * MARGIN:8.2f}  (compact menu ${r['episode_compact'] * ALL * MARGIN:7.2f}" + (f"; 90% cached ${cached * ALL * MARGIN:7.2f}" if cached is not None else "") + ")")
     print(f"\nFREE tool-capable models ({len(free)}): " + ", ".join(sorted(m['id'] for m in free)[:14]))
+    if args.fit_budget is not None:
+        picked = fit_budget(short, args.fit_budget)
+        total = sum(screen_cost(m) for m in picked) * MARGIN
+        print(f"\nWITHIN ${args.fit_budget:g} (margin included) the capability screen covers {len(picked)} models from {len({m['vendor'] for m in picked})} vendors, ${total:.2f}:")
+        for m in picked:
+            print(f"   {m['id']:44} screen ${screen_cost(m):.3f} (x{MARGIN} = ${screen_cost(m) * MARGIN:.3f})")
+        rows_json = [m["id"] for m in picked]
+    else:
+        rows_json = None
     if args.json:
-        Path(args.json).write_text(json.dumps({"snapshot": snap["fetched"], "shortlist": rows, "s0_all_models": s0_all, "margin": MARGIN}, indent=1) + "\n", encoding="utf-8")
+        Path(args.json).write_text(json.dumps({"snapshot": snap["fetched"], "shortlist": rows, "s0_all_models": s0_all, "margin": MARGIN, "fit_budget_models": rows_json}, indent=1) + "\n", encoding="utf-8")
     return 0
 
 
