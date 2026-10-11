@@ -243,6 +243,10 @@ class Corpus:
             letters = [c for c in query if c.isalpha()]
             thai = sum(1 for c in letters if "฀" <= c <= "๿") / (len(letters) or 1)
             return self.scores("C", query) if thai < 0.2 else self.scores("E", query, 0.25)
+        if variant == "L2":                                                  # multilingual model: C for questions under 20% Thai letters, the fusion with the Thai weight chosen on H2 for the others
+            letters = [c for c in query if c.isalpha()]
+            thai = sum(1 for c in letters if "\u0e00" <= c <= "\u0e7f") / (len(letters) or 1)
+            return self.scores("C", query) if thai < 0.2 else self.scores("E", query, float(os.environ.get("RECALL_LAB_W_TH", "0.8")))
         if variant == "J":                                                   # the shipped lexical matcher alone (what memory uses with embeddings off)
             return jaccard_scores(query, self.docs)
         if variant == "D":

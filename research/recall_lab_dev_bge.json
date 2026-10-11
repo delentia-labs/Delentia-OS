@@ -1,0 +1,669 @@
+{
+  "set": "dev",
+  "questions": 30,
+  "texts": 120,
+  "results": [
+    {
+      "variant": "C",
+      "weight": 0.7,
+      "n": 30,
+      "hit@1": 24,
+      "hit@3": 26,
+      "hit@5": 28,
+      "hit@10": 29,
+      "misses@3": [
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How much may we spend each month on hosting?",
+        "Who gives access to the cold-storage section?"
+      ],
+      "hit@3_wilson95": [
+        0.703,
+        0.947
+      ],
+      "rows": [
+        {
+          "question": "Who handles import clearance for us?",
+          "answer": "Prasert",
+          "rank": 1,
+          "top": [
+            "Our customs liaison is Prasert and he works from the Laem Chabang office.",
+            "Our procurement lead is Mali and works from the Chiang Mai office.",
+            "Ploy is the contact for visa paperwork."
+          ]
+        },
+        {
+          "question": "When do the storage facility doors shut on a Saturday?",
+          "answer": "12:00",
+          "rank": 1,
+          "top": [
+            "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+            "The loading dock closes at 13:10 on Tuesday.",
+            "The back office closes at 18:30 on Sunday."
+          ]
+        },
+        {
+          "question": "What does a bill number start with?",
+          "answer": "HB-",
+          "rank": 1,
+          "top": [
+            "Invoices are numbered with the prefix HB- followed by five digits.",
+            "The billing rate limit is 45 requests per minute.",
+            "The support hotline is 02-555-0147 and is open 08:00-17:00."
+          ]
+        },
+        {
+          "question": "How long after receiving goods can a customer get their money back?",
+          "answer": "14 days",
+          "rank": 1,
+          "top": [
+            "The refund window for online orders is 14 days from delivery.",
+            "The back office for spare cables is 45 days from purchase.",
+            "The server room for spare cables is 60 days from pickup."
+          ]
+        },
+        {
+          "question": "Which company supplies our cartons when the primary cannot?",
+          "answer": "BoxHub",
+          "rank": 1,
+          "top": [
+            "Our main packaging vendor is PakWell; the backup vendor is BoxHub.",
+            "The main uniform vendor is Pichai; the backup vendor is CartonCo.",
+            "The main catering vendor is Wipa; the backup vendor is FoamLine."
+          ]
+        },
+        {
+          "question": "Who signs off on releases?",
+          "answer": "Malee",
+          "rank": 18,
+          "top": [
+            "Customer interviews are recorded only with written consent.",
+            "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+            "Release notes are published in the #harbor-announce channel."
+          ]
+        },
+        {
+          "question": "What is the name of the pre-production data store?",
+          "answer": "stg-db-1",
+          "rank": 5,
+          "top": [
+            "The product catalogue lives in the repository folder data/catalog.",
+            "The training database is called tst-db-3.",
+            "The archive database is called demo-db-5."
+          ]
+        },
+        {
+          "question": "How much may we spend each month on hosting?",
+          "answer": "15,000",
+          "rank": 5,
+          "top": [
+            "The monthly marketing budget is capped at 310 baht.",
+            "The monthly software budget is capped at 310 baht.",
+            "The monthly marketing budget is capped at 40,300 baht."
+          ]
+        },
+        {
+          "question": "How long do we wait before paging the next person?",
+          "answer": "20 minutes",
+          "rank": 1,
+          "top": [
+            "On-call escalation happens after 20 minutes without an acknowledgement.",
+            "Our SLA promises a first reply within 4 hours.",
+            "The queue holds at most 250 jobs and each job times out after 12 seconds."
+          ]
+        },
+        {
+          "question": "Who gives access to the cold-storage section?",
+          "answer": "Chaiwat",
+          "rank": 7,
+          "top": [
+            "Pichai gives access to the dry goods section.",
+            "Kritsada gives access to the dry goods section.",
+            "Mali gives access to the dry goods section."
+          ]
+        },
+        {
+          "question": "For how long do we retain the copies of our data?",
+          "answer": "35 days",
+          "rank": 1,
+          "top": [
+            "Backups run nightly at 03:30 and are kept for 35 days.",
+            "The server room for spare cables is 60 days from pickup.",
+            "The back office for spare cables is 45 days from purchase."
+          ]
+        },
+        {
+          "question": "What number do customers ring for help?",
+          "answer": "02-555-0147",
+          "rank": 1,
+          "top": [
+            "The support hotline is 02-555-0147 and is open 08:00-17:00.",
+            "The billing rate limit is 45 requests per minute.",
+            "Anan is the contact for equipment loans."
+          ]
+        },
+        {
+          "question": "Above what purchase amount is delivery at no charge in the capital?",
+          "answer": "6,500",
+          "rank": 1,
+          "top": [
+            "Orders over 6,500 baht ship free within Bangkok.",
+            "Orders over 40,300 baht ship free within Pattaya.",
+            "Orders over 8,200 baht ship free within Pattaya."
+          ]
+        },
+        {
+          "question": "On which dates is the workplace shut for holidays?",
+          "answer": "12 August",
+          "rank": 1,
+          "top": [
+            "The office closes on 12 August and 5 December.",
+            "The back office closes at 18:30 on Sunday.",
+            "The parts store closes at 18:30 on Monday."
+          ]
+        },
+        {
+          "question": "On which weekday does money from card sales land in our bank?",
+          "answer": "Wednesday",
+          "rank": 1,
+          "top": [
+            "Our payment provider is Omise and settlements arrive every Wednesday.",
+            "The finance meeting is held every Friday at 13:10.",
+            "The reception closes at 21:00 on Monday."
+          ]
+        },
+        {
+          "question": "Where in the codebase are the items we sell listed?",
+          "answer": "data/catalog",
+          "rank": 1,
+          "top": [
+            "The product catalogue lives in the repository folder data/catalog.",
+            "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+            "Vendor contracts renew every March."
+          ]
+        },
+        {
+          "question": "How many times will a failed transfer be tried again?",
+          "answer": "9 attempts",
+          "rank": 1,
+          "top": [
+            "The retry limit for failed uploads is 9 attempts.",
+            "The sandbox password rotates every 90 days.",
+            "On-call escalation happens after 20 minutes without an acknowledgement."
+          ]
+        },
+        {
+          "question": "Who is staffed overnight on bank holidays?",
+          "answer": "Thanakorn",
+          "rank": 1,
+          "top": [
+            "Thanakorn covers the night shift on public holidays.",
+            "The back office closes at 18:30 on Sunday.",
+            "The reception closes at 21:00 on Monday."
+          ]
+        },
+        {
+          "question": "How many calls a minute may a client make?",
+          "answer": "120 requests",
+          "rank": 2,
+          "top": [
+            "The billing rate limit is 45 requests per minute.",
+            "The API rate limit is 120 requests per minute with a burst of 30.",
+            "The webhook rate limit is 21 requests per minute."
+          ]
+        },
+        {
+          "question": "Where does traffic go if the main data centre goes down?",
+          "answer": "ap-northeast-1",
+          "rank": 2,
+          "top": [
+            "The loading dock closes at 13:10 on Tuesday.",
+            "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+            "The server room closes at 06:45 on the last day of the month."
+          ]
+        },
+        {
+          "question": "What must we have before taping a conversation with a client?",
+          "answer": "written consent",
+          "rank": 1,
+          "top": [
+            "Customer interviews are recorded only with written consent.",
+            "Anan is the contact for equipment loans.",
+            "Our SLA promises a first reply within 4 hours."
+          ]
+        },
+        {
+          "question": "How frequently do we change the test environment credentials?",
+          "answer": "90 days",
+          "rank": 1,
+          "top": [
+            "The sandbox password rotates every 90 days.",
+            "Backups run nightly at 03:30 and are kept for 35 days.",
+            "The test database is called arc-db-8."
+          ]
+        },
+        {
+          "question": "Which chat room gets the changelog posts?",
+          "answer": "#harbor-announce",
+          "rank": 1,
+          "top": [
+            "Release notes are published in the #harbor-announce channel.",
+            "The report build runs nightly at 09:15 and is kept for 21 days.",
+            "The server room for spare cables is 60 days from pickup."
+          ]
+        },
+        {
+          "question": "Which delivery company carries delicate items?",
+          "answer": "Siam Express",
+          "rank": 1,
+          "top": [
+            "The courier for fragile goods is Siam Express.",
+            "The main catering vendor is Pichai; the backup vendor is ShipPack.",
+            "The main catering vendor is Wipa; the backup vendor is FoamLine."
+          ]
+        },
+        {
+          "question": "Who mentors newcomers during their first weeks?",
+          "answer": "Pimchanok",
+          "rank": 1,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "Anan is the contact for equipment loans.",
+            "The monthly training budget is capped at 8,200 baht."
+          ]
+        },
+        {
+          "question": "After how many seconds is a pending task abandoned?",
+          "answer": "12 seconds",
+          "rank": 1,
+          "top": [
+            "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+            "On-call escalation happens after 20 minutes without an acknowledgement.",
+            "The server room for spare cables is 60 days from pickup."
+          ]
+        },
+        {
+          "question": "When do we sit down to plan each three-month period?",
+          "answer": "first week",
+          "rank": 1,
+          "top": [
+            "Quarterly planning happens in the first week of January, April, July and October.",
+            "The design meeting is held every Friday at 09:15.",
+            "The platform meeting is held every Sunday at 13:10."
+          ]
+        },
+        {
+          "question": "How fast must we first answer a ticket?",
+          "answer": "4 hours",
+          "rank": 1,
+          "top": [
+            "Our SLA promises a first reply within 4 hours.",
+            "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+            "The billing rate limit is 45 requests per minute."
+          ]
+        },
+        {
+          "question": "In which month do supplier agreements come up for renewal?",
+          "answer": "March",
+          "rank": 1,
+          "top": [
+            "Vendor contracts renew every March.",
+            "Quarterly planning happens in the first week of January, April, July and October.",
+            "Our payment provider is Omise and settlements arrive every Wednesday."
+          ]
+        },
+        {
+          "question": "ใครเป็นคนเซ็นอนุมัติเงินของทีมขาย",
+          "answer": "วันดี",
+          "rank": 1,
+          "top": [
+            "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+            "Anan is the contact for equipment loans.",
+            "Customer interviews are recorded only with written consent."
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "D",
+      "weight": 0.7,
+      "n": 30,
+      "hit@1": 5,
+      "hit@3": 7,
+      "hit@5": 7,
+      "hit@10": 9,
+      "misses@3": [
+        "Who handles import clearance for us?",
+        "When do the storage facility doors shut on a Saturday?",
+        "What does a bill number start with?",
+        "How long after receiving goods can a customer get their money back?",
+        "Which company supplies our cartons when the primary cannot?",
+        "Who signs off on releases?",
+        "What is the name of the pre-production data store?",
+        "How much may we spend each month on hosting?",
+        "How long do we wait before paging the next person?",
+        "Who gives access to the cold-storage section?",
+        "For how long do we retain the copies of our data?",
+        "What number do customers ring for help?",
+        "Above what purchase amount is delivery at no charge in the capital?",
+        "On which dates is the workplace shut for holidays?",
+        "On which weekday does money from card sales land in our bank?",
+        "Where in the codebase are the items we sell listed?",
+        "How many calls a minute may a client make?",
+        "What must we have before taping a conversation with a client?",
+        "How frequently do we change the test environment credentials?",
+        "Which chat room gets the changelog posts?",
+        "Which delivery company carries delicate items?",
+        "When do we sit down to plan each three-month period?",
+        "In which month do supplier agreements come up for renewal?"
+      ],
+      "hit@3_wilson95": [
+        0.118,
+        0.409
+      ],
+      "rows": [
+        {
+          "question": "Who handles import clearance for us?",
+          "answer": "Prasert",
+          "rank": 79,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "When do the storage facility doors shut on a Saturday?",
+          "answer": "12:00",
+          "rank": 93,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "What does a bill number start with?",
+          "answer": "HB-",
+          "rank": 64,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "How long after receiving goods can a customer get their money back?",
+          "answer": "14 days",
+          "rank": 110,
+          "top": [
+            "Customer interviews are recorded only with written consent.",
+            "The back office for spare cables is 45 days from purchase.",
+            "The back office closes at 18:30 on Sunday."
+          ]
+        },
+        {
+          "question": "Which company supplies our cartons when the primary cannot?",
+          "answer": "BoxHub",
+          "rank": 57,
+          "top": [
+            "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "Who signs off on releases?",
+          "answer": "Malee",
+          "rank": 21,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "What is the name of the pre-production data store?",
+          "answer": "stg-db-1",
+          "rank": 105,
+          "top": [
+            "The parts store closes at 18:30 on Monday.",
+            "The product catalogue lives in the repository folder data/catalog.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "How much may we spend each month on hosting?",
+          "answer": "15,000",
+          "rank": 17,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "The server room closes at 06:45 on the last day of the month.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "How long do we wait before paging the next person?",
+          "answer": "20 minutes",
+          "rank": 14,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "Who gives access to the cold-storage section?",
+          "answer": "Chaiwat",
+          "rank": 89,
+          "top": [
+            "Mali gives access to the chemical section.",
+            "Nattaya gives access to the chemical section.",
+            "Nattaya gives access to the electronics section."
+          ]
+        },
+        {
+          "question": "For how long do we retain the copies of our data?",
+          "answer": "35 days",
+          "rank": 61,
+          "top": [
+            "The product catalogue lives in the repository folder data/catalog.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "What number do customers ring for help?",
+          "answer": "02-555-0147",
+          "rank": 40,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "Above what purchase amount is delivery at no charge in the capital?",
+          "answer": "6,500",
+          "rank": 28,
+          "top": [
+            "The back office for spare cables is 45 days from purchase.",
+            "The refund window for online orders is 14 days from delivery.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "On which dates is the workplace shut for holidays?",
+          "answer": "12 August",
+          "rank": 96,
+          "top": [
+            "Thanakorn covers the night shift on public holidays.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "On which weekday does money from card sales land in our bank?",
+          "answer": "Wednesday",
+          "rank": 102,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "Where in the codebase are the items we sell listed?",
+          "answer": "data/catalog",
+          "rank": 13,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "How many times will a failed transfer be tried again?",
+          "answer": "9 attempts",
+          "rank": 1,
+          "top": [
+            "The retry limit for failed uploads is 9 attempts.",
+            "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "Who is staffed overnight on bank holidays?",
+          "answer": "Thanakorn",
+          "rank": 1,
+          "top": [
+            "Thanakorn covers the night shift on public holidays.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "How many calls a minute may a client make?",
+          "answer": "120 requests",
+          "rank": 6,
+          "top": [
+            "The upload rate limit is 3 requests per minute.",
+            "The billing rate limit is 45 requests per minute.",
+            "The webhook rate limit is 60 requests per minute."
+          ]
+        },
+        {
+          "question": "Where does traffic go if the main data centre goes down?",
+          "answer": "ap-northeast-1",
+          "rank": 2,
+          "top": [
+            "The product catalogue lives in the repository folder data/catalog.",
+            "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+            "The main printing vendor is Duangjai; the backup vendor is SafeBox."
+          ]
+        },
+        {
+          "question": "What must we have before taping a conversation with a client?",
+          "answer": "written consent",
+          "rank": 103,
+          "top": [
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45.",
+            "Orders over 76,400 baht ship free within Hat Yai."
+          ]
+        },
+        {
+          "question": "How frequently do we change the test environment credentials?",
+          "answer": "90 days",
+          "rank": 75,
+          "top": [
+            "The test database is called arc-db-8.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "Which chat room gets the changelog posts?",
+          "answer": "#harbor-announce",
+          "rank": 45,
+          "top": [
+            "The server room for spare cables is 60 days from pickup.",
+            "The server room closes at 06:45 on the last day of the month.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "Which delivery company carries delicate items?",
+          "answer": "Siam Express",
+          "rank": 90,
+          "top": [
+            "The refund window for online orders is 14 days from delivery.",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        },
+        {
+          "question": "Who mentors newcomers during their first weeks?",
+          "answer": "Pimchanok",
+          "rank": 1,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "Our SLA promises a first reply within 4 hours.",
+            "Quarterly planning happens in the first week of January, April, July and October."
+          ]
+        },
+        {
+          "question": "After how many seconds is a pending task abandoned?",
+          "answer": "12 seconds",
+          "rank": 1,
+          "top": [
+            "The queue holds at most 250 jobs and each job times out after 12 seconds.",
+            "On-call escalation happens after 20 minutes without an acknowledgement.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "When do we sit down to plan each three-month period?",
+          "answer": "first week",
+          "rank": 77,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "The server room closes at 06:45 on the last day of the month.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "How fast must we first answer a ticket?",
+          "answer": "4 hours",
+          "rank": 2,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "Our SLA promises a first reply within 4 hours.",
+            "Quarterly planning happens in the first week of January, April, July and October."
+          ]
+        },
+        {
+          "question": "In which month do supplier agreements come up for renewal?",
+          "answer": "March",
+          "rank": 9,
+          "top": [
+            "Pimchanok is the buddy of every new engineer for the first month.",
+            "The server room closes at 06:45 on the last day of the month.",
+            "The reception closes at 16:20 on Thursday."
+          ]
+        },
+        {
+          "question": "ใครเป็นคนเซ็นอนุมัติเงินของทีมขาย",
+          "answer": "วันดี",
+          "rank": 1,
+          "top": [
+            "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+            "The reception closes at 16:20 on Thursday.",
+            "The operations meeting is held every Friday at 06:45."
+          ]
+        }
+      ]
+    }
+  ],
+  "seconds": 32.0
+}

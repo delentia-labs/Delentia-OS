@@ -252,28 +252,62 @@ def test_a_revoked_memory_is_never_returned_whatever_its_score(server, tmp_path)
 
 # ------------------------------------------------------------------ calibration per model
 
-def test_calibrate_measures_the_scale_and_says_the_model_cannot_read_thai(server):
+# a stand-in embedding model for `calibrate`: the question and the sentence that answers it of pair i get nearly the same vector, different pairs nearly orthogonal ones; with `reads_thai` False every
+# Thai text lands on one point (what nomic-embed-text does)
+def _calibration_embed(reads_thai):
+    from rct_control_plane import embed_calibration_samples as sample
+    index = {}
+    for lang, pairs in (("en", sample.EN), ("th", sample.TH)):
+        for i, (q, a) in enumerate(pairs):
+            index[q] = index[a] = (lang, i)
+
+    def fake(texts, model_name=None):
+        out = []
+        for t in texts:
+            lang, i = index[t]
+            slot = (0 if lang == "th" and not reads_thai else (i + (100 if lang == "th" else 0)))
+            v = [0.0] * 256
+            v[slot % 256] = 1.0
+            v[(slot * 7 + 3) % 256] += 0.55 * (1 if t in [q for q, _a in (sample.EN if lang == "en" else sample.TH)] else 0.8)          # the question and its answer share most of their direction
+            n = math.sqrt(sum(x * x for x in v))
+            out.append([x / n for x in v])
+        return out
+    return fake
+
+
+def test_calibrate_measures_the_scale_and_says_the_model_cannot_read_thai(server, monkeypatch):
+    monkeypatch.setattr(mx, "embed", _calibration_embed(reads_thai=False))
     report = mx.calibrate()
     assert report["usable"] is True and report["reads_thai"] is False
     assert report["en"]["separated"] is True and report["th"]["separated"] is False
-    assert 0.3 < report["floor"] < 0.65 and report["span"] >= 0.05                    # the fake model's floor sits where nomic's does (0.50)
-    Handler.multilingual = True
+    assert 0.0 <= report["floor"] < 0.9 and report["span"] >= 0.05
+    monkeypatch.setattr(mx, "embed", _calibration_embed(reads_thai=True))
     assert mx.calibrate()["reads_thai"] is True
 
 
 def test_a_calibration_is_written_read_and_never_written_for_an_unusable_model(server, tmp_path, monkeypatch):
     monkeypatch.setenv(mx.MODEL_ENV, "my-new-model")
     assert mx.calibration() is None and mx.relevance(0.9) == 0.0
+    monkeypatch.setattr(mx, "embed", _calibration_embed(reads_thai=False))
     written = mx.calibrate("my-new-model", write=True)
     assert written["usable"] and "written_to" in written
     floor, span = mx.calibration()
     assert (floor, span) == (written["floor"], written["span"]) and mx.relevance(floor + span) == pytest.approx(1.0) and mx.relevance(floor - 0.1) == 0.0
     table = json.loads((tmp_path / "calibration.json").read_text(encoding="utf-8"))
     assert table["my-new-model"]["reads_thai"] is False
-    assert Handler.models_seen and set(Handler.models_seen) == {"my-new-model"}      # the model measured is the one named, not the default
     # a built-in model keeps working next to it
     monkeypatch.setenv(mx.MODEL_ENV, "nomic-embed-text:latest")
     assert mx.calibration() == (0.5, 0.15)
+    # a model that separates nothing is never written
+    monkeypatch.setattr(mx, "embed", lambda texts, model_name=None: [[1.0] + [0.0] * 7 for _ in texts])
+    (tmp_path / "calibration.json").unlink()
+    flat = mx.calibrate("flat-model", write=True)
+    assert flat["usable"] is False and "written_to" not in flat and not (tmp_path / "calibration.json").exists()
+
+
+def test_the_model_named_in_the_calibration_is_the_model_that_is_asked(server, monkeypatch):
+    mx.calibrate("my-other-model")
+    assert Handler.models_seen and set(Handler.models_seen) == {"my-other-model"}      # the model measured is the one named, not the default
 
 
 def test_calibrate_reports_a_service_that_is_down_and_a_model_that_separates_nothing(server, monkeypatch):
@@ -424,3 +458,56 @@ def test_the_episode_is_shown_three_memories_five_with_recall_by_meaning_and_the
         assert G._memory_inject_limit(3) == 5                                           # a bad value is ignored (embeddings still on here)
     monkeypatch.setenv(mx.ENV, "off")
     assert G._memory_inject_limit(3) == 3
+
+
+# ------------------------------------------------------------------ a model that reads Thai (bge-m3)
+
+def test_which_models_read_thai_comes_from_the_calibration_file_then_the_built_in_list(server, monkeypatch, tmp_path):
+    monkeypatch.setenv(mx.MODEL_ENV, "nomic-embed-text")
+    assert mx.reads_thai() is False and mx.calibration() == (0.5, 0.15)
+    monkeypatch.setenv(mx.MODEL_ENV, "bge-m3")
+    assert mx.reads_thai() is True and mx.calibration() == (0.487, 0.221)
+    monkeypatch.setenv(mx.MODEL_ENV, "bge-m3:latest")
+    assert mx.reads_thai() is True
+    monkeypatch.setenv(mx.MODEL_ENV, "some-new-model")
+    assert mx.reads_thai() is False                                                    # unknown: not trusted with Thai
+    (tmp_path / "calibration.json").write_text(json.dumps({"some-new-model": {"floor": 0.4, "span": 0.2, "reads_thai": True}, "bge-m3": {"floor": 0.55, "span": 0.18, "reads_thai": False}}), encoding="utf-8")
+    assert mx.reads_thai() is True                                                     # a measured file wins over the built-in list
+    monkeypatch.setenv(mx.MODEL_ENV, "bge-m3")
+    assert mx.reads_thai() is False
+
+
+def test_for_a_model_that_reads_thai_the_dense_score_counts_for_most_of_a_thai_questions_order(server, monkeypatch):
+    docs = ["ผู้จัดการฝ่ายบุคคลชื่อคุณสุดา ฝ่ายบุคคลดูแลพนักงาน", "ช่างซ่อมแอร์ประจำบริษัทคือคุณสมพงษ์", "ห้องประชุมใหญ่ชื่อราชพฤกษ์ จุคนได้ 40 ที่นั่ง", "ฝ่ายบุคคลประชุมทุกวันศุกร์ ฝ่ายบุคคลประชุมใหญ่"]
+    candidates = [cand(i, d) for i, d in enumerate(docs)]
+    query = "ใครรับผิดชอบเรื่องบุคลากรของบริษัท"                                      # no word of the right memory, a decoy shares "บุคคล"-like trigrams
+    cosines = {"m0": 0.80, "m1": 0.50, "m2": 0.45, "m3": 0.52}
+    monkeypatch.setenv(mx.MODEL_ENV, "nomic-embed-text")
+    blind = rk.rank(query, candidates, {k: 0.999 for k in cosines}, {})                # a model that cannot read Thai: every cosine is the same, the words decide
+    assert rk.DENSE_WEIGHT_THAI == 0.25 and blind[0][0] is not None
+    monkeypatch.setenv(mx.MODEL_ENV, "bge-m3")
+    sighted = rk.rank(query, candidates, cosines, {})
+    assert sighted[0][3]["id"] == "m0"
+    monkeypatch.setenv(mx.MODEL_ENV, "nomic-embed-text")
+    leaning_on_words = rk.rank(query, candidates, cosines, {})
+    scores_sighted = {c["id"]: k for k, _r, _l, c in sighted}
+    scores_blind = {c["id"]: k for k, _r, _l, c in leaning_on_words}
+    gap_sighted = scores_sighted["m0"] - max(v for i, v in scores_sighted.items() if i != "m0")
+    gap_blind = scores_blind["m0"] - max(v for i, v in scores_blind.items() if i != "m0")
+    assert gap_sighted > gap_blind                                                    # the dense evidence weighs more when the model can read the language
+
+
+# ------------------------------------------------------------------ a model that cannot read Thai must not raise D for a Thai question
+
+def test_a_blind_model_gets_no_relevance_from_a_collapsed_thai_cosine(server, monkeypatch):
+    monkeypatch.setenv(mx.MODEL_ENV, "nomic-embed-text")
+    thai = [cand(0, "ผู้จัดการฝ่ายบุคคลชื่อคุณสุดา"), cand(1, "ช่างซ่อมแอร์ประจำบริษัทคือคุณสมพงษ์")]
+    ranked = rk.rank("เมืองหลวงของฝรั่งเศสคืออะไร", thai, {"m0": 0.999, "m1": 0.999}, {})
+    assert all(r[1] == 0.0 for r in ranked)                                            # an unrelated Thai question: cosine 1.0 is not evidence
+    english_memory_thai_question = rk.rank("ใครดูแลคน", [cand(0, "The refund window is 14 days.")], {"m0": 0.9}, {})
+    assert english_memory_thai_question[0][1] == 0.0
+    english = rk.rank("What is the refund window?", [cand(0, "The refund window is 14 days.")], {"m0": 0.8}, {})
+    assert english[0][1] == 1.0                                                        # English is untouched
+    monkeypatch.setenv(mx.MODEL_ENV, "bge-m3")
+    sighted = rk.rank("ใครดูแลเรื่องพนักงาน", thai, {"m0": 0.75, "m1": 0.40}, {})
+    assert sighted[0][1] > 0.9 and sighted[1][1] == 0.0                                # a model that reads Thai keeps its cosine as evidence

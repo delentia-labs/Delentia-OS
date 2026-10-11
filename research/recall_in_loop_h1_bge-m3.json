@@ -1,0 +1,419 @@
+{
+  "summary": {
+    "set": "h1",
+    "model": "bge-m3",
+    "injected_per_episode": 5,
+    "questions": 40,
+    "gold_shown_to_the_episode": 37,
+    "mean_D_gain_from_memory_on_questions": 0.1316,
+    "unrelated_questions": 20,
+    "unrelated_that_still_show_a_memory": 2,
+    "unrelated_mean_D_gain": 0.0052,
+    "unrelated_max_D_gain": 0.0575
+  },
+  "shown": 37,
+  "rows": [
+    {
+      "question": "How quickly do staff build up paid time off?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.53,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What is the label of the copier two flights above the ground level?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.244,
+      "memory_part": 0.487
+    },
+    {
+      "question": "What colour strap are guests given on arrival?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.538,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Who has to authorise a large spend?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.537,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which release of the container orchestrator do we operate?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.301,
+      "memory_part": 0.603
+    },
+    {
+      "question": "During which hours can employees eat their midday meal on site?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.516,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What is the minimum length for a login secret?",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.896,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which outside firm checks our books every year?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.491,
+      "memory_part": 0.983
+    },
+    {
+      "question": "How often must the lift-truck driver licence be renewed?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.679,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where should an unhappy client send their grievance?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.532,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How many can fit in the meeting space named after a blue gem?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.354,
+      "memory_part": 0.708
+    },
+    {
+      "question": "How long does ordinary delivery to the northern city take?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.575,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which network port does the secure tunnel endpoint listen on?",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.308,
+      "memory_part": 0.616
+    },
+    {
+      "question": "Which company looks after cleaning?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.609,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How much pocket money do trainees get each month?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "By when must the review document after an outage be completed?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.402,
+      "memory_part": 0.803
+    },
+    {
+      "question": "Which extension reaches the head boss's secretary?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.592,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where do we keep our programs' repositories?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.331,
+      "memory_part": 0.662
+    },
+    {
+      "question": "How many baht must a shopper spend to earn a reward unit?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.956,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which weekday can we not buy food at the staff restaurant?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.606,
+      "memory_part": 1.0
+    },
+    {
+      "question": "When do we rehearse building evacuations?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.241,
+      "memory_part": 0.483
+    },
+    {
+      "question": "What is the main line called in the web project's version control?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.437,
+      "memory_part": 0.874
+    },
+    {
+      "question": "What is the fee for a car space pass?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.447,
+      "memory_part": 0.894
+    },
+    {
+      "question": "How long do we hold on to video from the surveillance cameras?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which day can staff see the in-house doctor?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.542,
+      "memory_part": 1.0
+    },
+    {
+      "question": "When is the company bulletin sent to everyone?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.654,
+      "memory_part": 1.0
+    },
+    {
+      "question": "After how many years does a staff computer get swapped for a new one?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where do we gather if the premises must be evacuated?",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.537,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which agency handles converting documents between languages?",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.568,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What is the name of the wireless network for outside people?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "By what date must reimbursement claims be filed?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.384,
+      "memory_part": 0.767
+    },
+    {
+      "question": "How often do we trial the standby power unit?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.521,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What temperature range must the refrigerated storage hold?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.919,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How long can a new mother stay away from work while still paid?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What does the most severe support category indicate?",
+      "found": false,
+      "n": 1,
+      "best_relevance": 0.186,
+      "memory_part": 0.371
+    },
+    {
+      "question": "On which date does the firm hold its yearly birthday party?",
+      "found": true,
+      "n": 2,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where do staff go online to request purchases?",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.606,
+      "memory_part": 1.0
+    },
+    {
+      "question": "When do the watchmen swap?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.645,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Who alone is allowed to extract client records?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.637,
+      "memory_part": 1.0
+    },
+    {
+      "question": "For how long do we repair goods free after sale?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.425,
+      "memory_part": 0.851
+    }
+  ],
+  "noise": [
+    {
+      "question": "What is the capital of France?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How do I bake sourdough bread?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the boiling point of water at sea level?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Which planet has the most moons?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How many players are on a football team?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the square root of 144?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who wrote Hamlet?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What does DNA stand for?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How tall is Mount Everest?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "เมืองหลวงของฝรั่งเศสคืออะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทำขนมปังซาวร์โดว์อย่างไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครวาดภาพโมนาลิซ่า",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "น้ำเดือดที่กี่องศาเซลเซียส",
+      "n": 1,
+      "best_relevance": 0.152,
+      "memory_part": 0.304
+    },
+    {
+      "question": "ดาวเคราะห์ดวงไหนมีดวงจันทร์มากที่สุด",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทีมฟุตบอลมีผู้เล่นกี่คน",
+      "n": 4,
+      "best_relevance": 0.192,
+      "memory_part": 0.383
+    },
+    {
+      "question": "รากที่สองของ 144 คือเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครเขียนเรื่องแฮมเล็ต",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ดีเอ็นเอย่อมาจากอะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ยอดเขาเอเวอเรสต์สูงเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    }
+  ]
+}

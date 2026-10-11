@@ -16,7 +16,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -78,14 +78,15 @@ def main() -> int:
     ran = json.loads(RAN.read_text(encoding="utf-8")) if RAN.exists() else {}
     results = []
     for name in args.sets.split(","):
-        if name in HELD_OUT and args.once and name in ran:
-            raise SystemExit(f"{name} was already measured once ({ran[name]}); a held-out set is not run twice")
+        key = name + (f"@{os.environ['DELENTIA_MEMORY_EMBED_MODEL']}" if os.environ.get("DELENTIA_MEMORY_EMBED_MODEL") else "")        # a new model is a new variant: its own single look
+        if name in HELD_OUT and args.once and key in ran:
+            raise SystemExit(f"{key} was already measured once ({ran[key]}); a held-out set is not run twice")
         for mode in args.modes.split(","):
             r = run_set(name, mode)
             results.append(r)
             print(f"{name} [{mode}]: hit@1 {r['hit@1']}/{r['n']}  hit@3 {r['hit@3']}  hit@5 {r['hit@5']}  hit@10 {r['hit@10']}  store {r['store_ms_median']} ms  recall {r['recall_ms_median']} ms")
         if name in HELD_OUT and args.once:
-            ran[name] = time.strftime("%Y-%m-%d %H:%M")
+            ran[key] = time.strftime("%Y-%m-%d %H:%M")
             RAN.write_text(json.dumps(ran, indent=2) + "\n", encoding="utf-8")
     if args.out:
         Path(args.out).write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

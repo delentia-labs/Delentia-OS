@@ -34,7 +34,10 @@ DEFAULT_MODEL = "nomic-embed-text"
 FLOOR, SPAN = 0.50, 0.15                        # cosine at which relevance is 0, and the width of the ramp to 1 (see the docstring): measured for nomic-embed-text
 # Round 69: the numbers above describe ONE model. Another model has another cosine scale, so `relevance` (which D reads) is calibrated per model; an uncalibrated model still helps the ORDER
 # (memory_ranking.py) but contributes nothing to relevance, so D is never raised by a scale nobody measured. `delentia memory calibrate` measures a model and writes the table below.
-CALIBRATIONS = {"nomic-embed-text": (0.50, 0.15)}
+# nomic: measured by hand on the Round 68 benchmark. bge-m3: `delentia memory calibrate --model bge-m3` on the paraphrase sample (the first, word-sharing sample gave 0.547 / 0.18, which hid 12 of 40
+# real matches from the agent behind the relevance floor; the paraphrase sample with the 10th-percentile span gave 0.487 / 0.098: 37 of 40 shown but 3 of 20 unrelated questions showed a memory; the median span, chosen because a stranger the scale overrates is worse than a match it underrates, gives 0.487 / 0.221).
+CALIBRATIONS = {"nomic-embed-text": (0.50, 0.15), "bge-m3": (0.487, 0.221)}
+READS_THAI = frozenset({"bge-m3"})                                                    # models measured to tell Thai texts apart (calibrate: reads_thai); nomic-embed-text puts every Thai text on one point
 CALIBRATION_FILE_ENV = "DELENTIA_MEMORY_EMBED_CALIBRATION"
 MAX_BACKFILL = 256                              # memories embedded at once when a recall finds some without a vector
 MAX_TEXT_CHARS = 4000
@@ -162,6 +165,22 @@ def calibration(model_name: Optional[str] = None) -> Optional[tuple]:
     return CALIBRATIONS.get(name)
 
 
+def reads_thai(model_name: Optional[str] = None) -> bool:
+    """Does the model tell Thai texts apart? A file written by `delentia memory calibrate` decides, then the built-in list. Unknown models: no (the ranking then leans on BM25 for Thai questions)."""
+    name = model_name or model()
+    if name.endswith(":latest"):
+        name = name[:-len(":latest")]
+    try:
+        path = calibration_path()
+        if path.exists():
+            entry = json.loads(path.read_text(encoding="utf-8")).get(name)
+            if isinstance(entry, dict) and isinstance(entry.get("reads_thai"), bool):
+                return bool(entry["reads_thai"])
+    except (OSError, ValueError):
+        pass
+    return name in READS_THAI
+
+
 def relevance(cos: Optional[float]) -> float:
     """0..1 evidence that a memory answers the question, from the cosine. 0 for a model that has no calibration (see CALIBRATIONS)."""
     if cos is None:
@@ -186,7 +205,7 @@ def calibrate(model_name: Optional[str] = None, write: bool = False) -> Dict[str
     """Measure where a model puts a question and the sentence that answers it (related) against a question and some other sentence (unrelated), on the neutral sample of
     embed_calibration_samples.py, English and Thai separately. A language counts only if its related pairs are clearly above its unrelated ones (the 10th percentile of related above the 90th of
     unrelated); nomic-embed-text puts every Thai text almost on the same point (unrelated median cosine ~1.0), so Thai does not count for it. Over the languages that count:
-    floor = the largest 90th percentile of the unrelated cosines, span = the smallest 10th percentile of the related ones minus the floor (at least 0.05): conservative, so D is not raised by a scale nobody measured.
+    floor = the largest 90th percentile of the unrelated cosines, span = the smallest MEDIAN of the related ones minus the floor (at least 0.05). The median, not the 10th percentile, because the two ways of being wrong are not equal: a match the scale underrates only lowers D (the agent asks more), a stranger the scale overrates raises D (evidence that is not there). Measured through the loop with the 10th-percentile rule bge-m3 showed a memory for 3 of 20 unrelated questions.
     `reads_thai` says whether Thai counts. With write=True a usable result is merged into the calibration file (calibration_path()); an unusable one is never written.
     Returns {"error": ...} when the service cannot be reached."""
     from rct_control_plane import embed_calibration_samples as sample
@@ -208,7 +227,7 @@ def calibrate(model_name: Optional[str] = None, write: bool = False) -> Dict[str
                             "unrelated_median": round(_percentile(unrelated, 0.5), 3), "pairs": n, "separated": separated}
         if separated:
             floors.append(floor)
-            spans.append(low - floor)
+            spans.append(report[language]['related_median'] - floor)
     report["reads_thai"] = bool(report["th"]["separated"])
     report["usable"] = bool(floors)
     if floors:
@@ -232,7 +251,18 @@ def pack(vector: Sequence[float]) -> bytes:
     return array.array("f", vector).tobytes()
 
 
-def unpack(blob: bytes) -> List[float]:
+_np: Any
+try:                                                                   # numpy is a declared dependency of the package; the plain-Python path below is the fallback
+    import numpy as _np
+except ImportError:                                                    # pragma: no cover
+    _np = None
+
+
+def unpack(blob: bytes) -> Any:
+    if _np is not None:
+        if len(blob) % 4:
+            raise ValueError("a vector is a whole number of 32-bit floats")
+        return _np.frombuffer(blob, dtype=_np.float32)
     values = array.array("f")
     values.frombytes(blob)
     return list(values)
@@ -322,11 +352,20 @@ def similarities(persistence: Any, namespace: str, query: str, candidates: Seque
         return None
     dim = len(query_vecs[0])
     best: Dict[str, float] = {}
-    for key, vec in have.items():
-        if len(vec) != dim:
-            continue
+    keys = [k for k, vec in have.items() if len(vec) == dim]
+    if _np is not None and keys:                                       # one matrix product for every memory and every query variant
+        matrix = _np.vstack([_np.asarray(have[k], dtype=_np.float32) for k in keys])
+        norms = _np.linalg.norm(matrix, axis=1)
+        qmat = _np.asarray(query_vecs, dtype=_np.float32)
+        qn = _np.linalg.norm(qmat, axis=1)
+        denom = _np.outer(norms, qn)
+        with _np.errstate(divide="ignore", invalid="ignore"):
+            sims = _np.where(denom > 0, (matrix @ qmat.T) / denom, 0.0).max(axis=1)
+        scores = {k: float(v) for k, v in zip(keys, sims, strict=True)}
+    else:
+        scores = {k: max(cosine(qv, have[k]) for qv in query_vecs) for k in keys}
+    for key, score in scores.items():
         memory_id = key.split("#q", 1)[0]
-        score = max(cosine(qv, vec) for qv in query_vecs)
         if score > best.get(memory_id, -1.0):
             best[memory_id] = score
     return best

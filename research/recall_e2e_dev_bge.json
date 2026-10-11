@@ -1,0 +1,51 @@
+[
+  {
+    "set": "dev",
+    "mode": "embed",
+    "n": 30,
+    "hit@1": 24,
+    "hit@3": 26,
+    "hit@5": 28,
+    "hit@10": 29,
+    "store_ms_median": 76.0,
+    "recall_ms_median": 222.9,
+    "misses@3": [
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Customer interviews are recorded only with written consent.",
+          "ผู้อนุมัติงบประมาณของฝ่ายขายคือคุณวันดี",
+          "Release notes are published in the #harbor-announce channel."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The product catalogue lives in the repository folder data/catalog.",
+          "The training database is called tst-db-3.",
+          "The archive database is called demo-db-5."
+        ]
+      },
+      {
+        "question": "How much may we spend each month on hosting?",
+        "answer": "15,000",
+        "top": [
+          "The monthly marketing budget is capped at 310 baht.",
+          "The monthly software budget is capped at 310 baht.",
+          "The monthly marketing budget is capped at 40,300 baht."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Pichai gives access to the dry goods section.",
+          "Kritsada gives access to the dry goods section.",
+          "Mali gives access to the dry goods section."
+        ]
+      }
+    ]
+  }
+]

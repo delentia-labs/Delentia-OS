@@ -1,0 +1,334 @@
+[
+  {
+    "set": "scale",
+    "mode": "lexical",
+    "n": 30,
+    "hit@1": 6,
+    "hit@3": 6,
+    "hit@5": 6,
+    "hit@10": 6,
+    "store_ms_median": 9.7,
+    "recall_ms_median": 112.5,
+    "misses@3": [
+      {
+        "question": "Who handles import clearance for us?",
+        "answer": "Prasert",
+        "top": [
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks.",
+          "The main catering vendor is Ploy; the backup vendor is SafeBox."
+        ]
+      },
+      {
+        "question": "What does a bill number start with?",
+        "answer": "HB-",
+        "top": [
+          "The billing limit is 8 requests per hour.",
+          "The billing limit is 11 requests per hour.",
+          "The billing limit is 3 requests per hour."
+        ]
+      },
+      {
+        "question": "How long after receiving goods can a customer get their money back?",
+        "answer": "14 days",
+        "top": [
+          "The back office closes at 13:10 on Friday.",
+          "The back office closes at 16:20 on Friday.",
+          "The back office closes at 21:00 on Monday."
+        ]
+      },
+      {
+        "question": "Which company supplies our cartons when the primary cannot?",
+        "answer": "BoxHub",
+        "top": [
+          "The primary region is ap-southeast-1 and failover goes to ap-northeast-1.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The parts store closes at 13:10 on Saturday.",
+          "The parts store closes at 09:15 on Monday.",
+          "The parts store closes at 16:20 on Monday."
+        ]
+      },
+      {
+        "question": "How much may we spend each month on hosting?",
+        "answer": "15,000",
+        "top": [
+          "The server room closes at 06:45 on the last day of the month.",
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "Somsak manages the chemical budget for the legal team."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks.",
+          "The main catering vendor is Ploy; the backup vendor is SafeBox."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Nattaya gives access to the records section.",
+          "Mali gives access to the chemical section.",
+          "Pichai gives access to the packaging section."
+        ]
+      },
+      {
+        "question": "For how long do we retain the copies of our data?",
+        "answer": "35 days",
+        "top": [
+          "The product catalogue lives in the repository folder data/catalog.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "What number do customers ring for help?",
+        "answer": "02-555-0147",
+        "top": [
+          "Customer interviews are recorded only with written consent.",
+          "Our customs liaison is Prasert and he works from the Laem Chabang office.",
+          "Somsak manages the chemical budget for the legal team."
+        ]
+      },
+      {
+        "question": "Above what purchase amount is delivery at no charge in the capital?",
+        "answer": "6,500",
+        "top": [
+          "The back office for spare cables is 45 days from purchase.",
+          "The refund window for online orders is 14 days from delivery.",
+          "Somsak manages the chemical budget for the legal team."
+        ]
+      },
+      {
+        "question": "On which dates is the workplace shut for holidays?",
+        "answer": "12 August",
+        "top": [
+          "Thanakorn covers the night shift on public holidays.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The warehouse closes at 17:00 on weekdays and at 12:00 on Saturdays.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "Where in the codebase are the items we sell listed?",
+        "answer": "data/catalog",
+        "top": [
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks.",
+          "The main catering vendor is Ploy; the backup vendor is SafeBox."
+        ]
+      },
+      {
+        "question": "How many calls a minute may a client make?",
+        "answer": "120 requests",
+        "top": [
+          "On-call escalation happens after 20 minutes without an acknowledgement.",
+          "The demo service is called demo-db-5.",
+          "The reporting database is called tst-db-3."
+        ]
+      },
+      {
+        "question": "Where does traffic go if the main data centre goes down?",
+        "answer": "ap-northeast-1",
+        "top": [
+          "The main catering vendor is Ploy; the backup vendor is SafeBox.",
+          "The main cleaning vendor is Surasak; the backup vendor is FoamLine.",
+          "The main catering vendor is Pichai; the backup vendor is ShipPack."
+        ]
+      },
+      {
+        "question": "What must we have before taping a conversation with a client?",
+        "answer": "written consent",
+        "top": [
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks.",
+          "The main catering vendor is Ploy; the backup vendor is SafeBox."
+        ]
+      },
+      {
+        "question": "How frequently do we change the test environment credentials?",
+        "answer": "90 days",
+        "top": [
+          "The test database is called arc-db-8.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "Which chat room gets the changelog posts?",
+        "answer": "#harbor-announce",
+        "top": [
+          "The archive room closes at 18:30 on Sunday.",
+          "The meeting room closes at 09:15 on Friday.",
+          "The archive room closes at 21:00 on Monday."
+        ]
+      },
+      {
+        "question": "Which delivery company carries delicate items?",
+        "answer": "Siam Express",
+        "top": [
+          "The refund window for online orders is 14 days from delivery.",
+          "Somsak manages the chemical budget for the legal team.",
+          "The log rotation runs nightly at 18:30 and is kept for 9 weeks."
+        ]
+      },
+      {
+        "question": "Who mentors newcomers during their first weeks?",
+        "answer": "Pimchanok",
+        "top": [
+          "Quarterly planning happens in the first week of January, April, July and October.",
+          "The reception must be inspected every 6 weeks by Anan.",
+          "The reception must be inspected every 11 weeks by Orasa."
+        ]
+      },
+      {
+        "question": "When do we sit down to plan each three-month period?",
+        "answer": "first week",
+        "top": [
+          "The server room closes at 06:45 on the last day of the month.",
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "Somsak manages the chemical budget for the legal team."
+        ]
+      },
+      {
+        "question": "In which month do supplier agreements come up for renewal?",
+        "answer": "March",
+        "top": [
+          "The server room closes at 06:45 on the last day of the month.",
+          "Pimchanok is the buddy of every new engineer for the first month.",
+          "Somsak manages the chemical budget for the legal team."
+        ]
+      }
+    ]
+  },
+  {
+    "set": "scale",
+    "mode": "embed",
+    "n": 30,
+    "hit@1": 18,
+    "hit@3": 20,
+    "hit@5": 22,
+    "hit@10": 22,
+    "store_ms_median": 50.7,
+    "recall_ms_median": 323.4,
+    "misses@3": [
+      {
+        "question": "Which company supplies our cartons when the primary cannot?",
+        "answer": "BoxHub",
+        "top": [
+          "The main catering vendor is Kritsada; the backup vendor is CartonCo.",
+          "The main labelling vendor is Kritsada; the backup vendor is CartonCo.",
+          "The main printing vendor is Piya; the backup vendor is CartonCo."
+        ]
+      },
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Release notes are published in the #harbor-announce channel.",
+          "The main labelling vendor is Duangjai; the backup vendor is TapeWorks.",
+          "The main labelling vendor is Orasa; the backup vendor is TapeWorks."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The archive database is called demo-db-5.",
+          "The analytics database is called trn-db-2.",
+          "The analytics service is called demo-db-5."
+        ]
+      },
+      {
+        "question": "How much may we spend each month on hosting?",
+        "answer": "15,000",
+        "top": [
+          "The monthly cloud budget is capped at 7,800 baht.",
+          "The monthly cloud budget is capped at 4,200 baht.",
+          "The monthly cloud budget is capped at 12,400 baht."
+        ]
+      },
+      {
+        "question": "How long do we wait before paging the next person?",
+        "answer": "20 minutes",
+        "top": [
+          "The search limit is 6 requests per hour.",
+          "The search limit is 11 requests per hour.",
+          "The search limit is 9 requests per hour."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Somsak gives access to the packaging section.",
+          "Somsak gives access to the records section.",
+          "Chai gives access to the records section."
+        ]
+      },
+      {
+        "question": "Above what purchase amount is delivery at no charge in the capital?",
+        "answer": "6,500",
+        "top": [
+          "Orders over 1,350 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Nonthaburi.",
+          "Orders over 40,300 baht ship free within Pattaya."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "The finance meeting is held every Saturday at 09:15.",
+          "The finance meeting is held every Saturday at 06:45.",
+          "The finance meeting is held every Friday at 09:15."
+        ]
+      },
+      {
+        "question": "How many calls a minute may a client make?",
+        "answer": "120 requests",
+        "top": [
+          "The billing rate limit is 45 requests per minute.",
+          "The billing limit is 6 requests per hour.",
+          "The billing limit is 11 requests per hour."
+        ]
+      },
+      {
+        "question": "Which chat room gets the changelog posts?",
+        "answer": "#harbor-announce",
+        "top": [
+          "The support hotline is 02-555-0147 and is open 08:00-17:00.",
+          "The server room for spare cables is reviewed every 3 weeks.",
+          "The meeting room for spare cables is reviewed every 8 weeks."
+        ]
+      }
+    ]
+  }
+]

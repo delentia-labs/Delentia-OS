@@ -1,0 +1,349 @@
+{
+  "summary": {
+    "set": "dev",
+    "model": "nomic-embed-text",
+    "injected_per_episode": 5,
+    "questions": 30,
+    "gold_shown_to_the_episode": 28,
+    "mean_D_gain_from_memory_on_questions": 0.1415,
+    "unrelated_questions": 20,
+    "unrelated_that_still_show_a_memory": 0,
+    "unrelated_mean_D_gain": 0.0,
+    "unrelated_max_D_gain": 0.0
+  },
+  "shown": 28,
+  "rows": [
+    {
+      "question": "Who handles import clearance for us?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.94,
+      "memory_part": 1.0
+    },
+    {
+      "question": "When do the storage facility doors shut on a Saturday?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What does a bill number start with?",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.865,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How long after receiving goods can a customer get their money back?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which company supplies our cartons when the primary cannot?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Who signs off on releases?",
+      "found": false,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What is the name of the pre-production data store?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.871,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How much may we spend each month on hosting?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.864,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How long do we wait before paging the next person?",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.287,
+      "memory_part": 0.574
+    },
+    {
+      "question": "Who gives access to the cold-storage section?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.907,
+      "memory_part": 1.0
+    },
+    {
+      "question": "For how long do we retain the copies of our data?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What number do customers ring for help?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Above what purchase amount is delivery at no charge in the capital?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.73,
+      "memory_part": 1.0
+    },
+    {
+      "question": "On which dates is the workplace shut for holidays?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "On which weekday does money from card sales land in our bank?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.692,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where in the codebase are the items we sell listed?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.571,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How many times will a failed transfer be tried again?",
+      "found": true,
+      "n": 3,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Who is staffed overnight on bank holidays?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How many calls a minute may a client make?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Where does traffic go if the main data centre goes down?",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.182,
+      "memory_part": 0.363
+    },
+    {
+      "question": "What must we have before taping a conversation with a client?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.878,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How frequently do we change the test environment credentials?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.692,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which chat room gets the changelog posts?",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.504,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which delivery company carries delicate items?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Who mentors newcomers during their first weeks?",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.762,
+      "memory_part": 1.0
+    },
+    {
+      "question": "After how many seconds is a pending task abandoned?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.78,
+      "memory_part": 1.0
+    },
+    {
+      "question": "When do we sit down to plan each three-month period?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How fast must we first answer a ticket?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.935,
+      "memory_part": 1.0
+    },
+    {
+      "question": "In which month do supplier agreements come up for renewal?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ใครเป็นคนเซ็นอนุมัติเงินของทีมขาย",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.184,
+      "memory_part": 0.367
+    }
+  ],
+  "noise": [
+    {
+      "question": "What is the capital of France?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How do I bake sourdough bread?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the boiling point of water at sea level?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Which planet has the most moons?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How many players are on a football team?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the square root of 144?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who wrote Hamlet?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What does DNA stand for?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How tall is Mount Everest?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "เมืองหลวงของฝรั่งเศสคืออะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทำขนมปังซาวร์โดว์อย่างไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครวาดภาพโมนาลิซ่า",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "น้ำเดือดที่กี่องศาเซลเซียส",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ดาวเคราะห์ดวงไหนมีดวงจันทร์มากที่สุด",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทีมฟุตบอลมีผู้เล่นกี่คน",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "รากที่สองของ 144 คือเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครเขียนเรื่องแฮมเล็ต",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ดีเอ็นเอย่อมาจากอะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ยอดเขาเอเวอเรสต์สูงเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    }
+  ]
+}
