@@ -400,7 +400,7 @@ This repository is the **public SDK layer** of the RCT Ecosystem. Understanding 
 | Feature | Why not here |
 |---------|--------------|
 | Genome / Creator Profile full API | Proprietary enterprise data model |
-| Full 62-microservice stack | Production infrastructure (not open-source) |
+| The proprietary service layer | A private codebase (not open-source) |
 | Enterprise dashboard | Proprietary UI |
 | Private test suite (4,849 tests) | Covers proprietary modules |
 | `rct-ecosystem-private` content | Internal enterprise codebase |
