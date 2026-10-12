@@ -47,8 +47,17 @@ def _cache_dir() -> Path:
     return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "whisper"
 
 
+PREFERRED_STT_MODELS = ("small", "base", "tiny")
+
+
 def stt_model_name() -> str:
-    return (os.environ.get(STT_MODEL_ENV) or "tiny").strip()
+    """DELENTIA_STT_MODEL when set; otherwise the best of small / base / tiny that is ALREADY in the cache (this module never downloads one). Measured on 30 real Thai clips (Google FLEURS,
+    research/whisper_thai_eval_r73.py): character error rate tiny 0.593, base 0.364, small 0.214 (5 s per clip on a CPU); only small is under the 0.30 that leaves a voice note usable."""
+    named = (os.environ.get(STT_MODEL_ENV) or "").strip()
+    if named:
+        return named
+    cache = _cache_dir()
+    return next((m for m in PREFERRED_STT_MODELS if (cache / f"{m}.pt").exists()), "tiny")
 
 
 def stt_status() -> Dict[str, Any]:

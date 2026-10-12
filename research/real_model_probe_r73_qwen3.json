@@ -1,0 +1,64 @@
+[
+  {
+    "model": "qwen3:8b",
+    "passed": 4,
+    "total": 5,
+    "rows": [
+      {
+        "goal": "read a file",
+        "ok": true,
+        "tools": [
+          "delentia_read_repo_file"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 283.7,
+        "answer": "sample-service",
+        "error": null
+      },
+      {
+        "goal": "read another",
+        "ok": true,
+        "tools": [
+          "delentia_read_repo_file"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 329.1,
+        "answer": "The title of the README.md file is 'Sample service'.",
+        "error": null
+      },
+      {
+        "goal": "search",
+        "ok": true,
+        "tools": [
+          "delentia_search_repo_files"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 475.0,
+        "answer": "src/app.py",
+        "error": null
+      },
+      {
+        "goal": "remember",
+        "ok": true,
+        "tools": [
+          "delentia_remember"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 405.0,
+        "answer": "The staging database is remembered as 'orion-stage' in the 'probe-remember-0' namespace with memory ",
+        "error": null
+      },
+      {
+        "goal": "impossible",
+        "ok": false,
+        "tools": [
+          "delentia_web_search"
+        ],
+        "stopped": "llm_finished",
+        "seconds": 494.4,
+        "answer": "I cannot book a flight for you as the required tools and configurations are not available.",
+        "error": null
+      }
+    ]
+  }
+]

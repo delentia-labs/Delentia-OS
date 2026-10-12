@@ -1706,6 +1706,40 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
                                "precedence over this config", fg="yellow"))
 
 
+@cli.command("setup")
+@click.option("--home", default=None, help="Delentia home folder (default ~/.delentia); nothing is written outside it.")
+@click.option("--provider", type=click.Choice(["ollama", "openrouter"]), default=None, help="Choose the provider instead of detecting one.")
+@click.option("--model", default=None, help="Choose the model instead of detecting one.")
+@click.option("--approver-key-here", is_flag=True, help="Create an approver key on THIS machine (a one-person trial only: the agent runs as the same user and could read it).")
+@click.option("--yes", "assume_yes", is_flag=True, help="Apply the plan without asking.")
+@click.option("--dry-run", is_flag=True, help="Show the plan and write nothing.")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+def setup_command(home: Optional[str], provider: Optional[str], model: Optional[str], approver_key_here: bool, assume_yes: bool, dry_run: bool, as_json: bool) -> None:
+    """
+    The first ten minutes in one command: looks at this machine, proposes the steps (model, audit key, approver key, recall by meaning), asks once, does them.
+    Idempotent. The approver key is NOT created unless you ask: it belongs on another device.
+
+    Examples:
+        delentia setup --dry-run
+        delentia setup --yes --approver-key-here
+    """
+    from rct_control_plane import setup_wizard
+    folder = setup_wizard.delentia_home(home)
+    facts = setup_wizard.inspect_machine(folder)
+    steps = setup_wizard.make_plan(facts, provider=provider, model=model, approver_here=approver_key_here)
+    pending = [s for s in steps if s.action == "do"]
+    if pending and not dry_run and not as_json and not assume_yes:
+        click.echo(setup_wizard.render(facts, steps))
+        if not click.confirm(f"\nDo the {len(pending)} step(s) marked [do]?", default=False):
+            click.echo("Nothing was changed.")
+            return
+        assume_yes = True
+    setup_wizard.apply_plan(steps, folder, dry_run=dry_run or not assume_yes)
+    click.echo(setup_wizard.as_json(facts, steps) if as_json else setup_wizard.render(facts, steps))
+    if any(s.result.startswith("FAILED") for s in steps):
+        sys.exit(1)
+
+
 @cli.command("acp")
 def acp_command() -> None:
     """
