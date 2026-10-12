@@ -56,7 +56,8 @@ def _connect() -> sqlite3.Connection:
 # ---------------------------------------------------------------------------
 
 def _episode_summary(start: sqlite3.Row, end: Optional[sqlite3.Row]) -> Dict[str, Any]:
-    s = _loads(start["changes"]) or {}
+    from rct_control_plane import audit_text
+    s = audit_text.reveal_changes(start["actor"], _loads(start["changes"]) or {})
     e = _loads(end["changes"]) if end is not None else {}
     route = s.get("route") or {}
     verify = (e or {}).get("intent_verification") or {}
@@ -125,7 +126,8 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
         f"SELECT id, entity_type, action, changes, created_at FROM audit_trail WHERE actor = ? "
         f"AND id > ? AND id <= ? AND entity_type IN ({placeholders}) ORDER BY id",
         (start["actor"], start["id"], upper, *_EPISODE_EVENT_TYPES)).fetchall()
-    s = _loads(start["changes"]) or {}
+    from rct_control_plane import audit_text
+    s = audit_text.reveal_changes(start["actor"], _loads(start["changes"]) or {})
     summary = _episode_summary(start, end)
     summary.update({
         "rct7_steps": s.get("rct7_steps") or [],
@@ -140,7 +142,7 @@ def get_session(conn: sqlite3.Connection, start_id: int) -> Optional[Dict[str, A
         "growth": ({"delta": (_loads(end["changes"]) or {}).get("mee_delta"), "G": (_loads(end["changes"]) or {}).get("mee_g")}
                    if end is not None else None),
         "events": [{"id": r["id"], "type": r["entity_type"], "action": r["action"],
-                    "at": r["created_at"], "data": _loads(r["changes"])} for r in rows if r["entity_type"] != "intent_loop_pillars"],
+                    "at": r["created_at"], "data": audit_text.reveal_changes(start["actor"], _loads(r["changes"]))} for r in rows if r["entity_type"] != "intent_loop_pillars"],
     })
     return summary
 

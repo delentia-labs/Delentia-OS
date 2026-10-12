@@ -160,7 +160,7 @@ class MetaAlgorithmEngine:
 
     def __init__(
         self,
-        llm_url: str = "http://localhost:11434",
+        llm_url: str = "http://127.0.0.1:11434",
         model: str = "llama3.2:3b",
         max_composition_depth: int = 5
     ):

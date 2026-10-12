@@ -72,7 +72,7 @@ class TestOllamaFallbackConstants(unittest.TestCase):
         self.assertIn("llama", OLLAMA_DEFAULT_MODEL)
 
     def test_default_url(self):
-        self.assertEqual(OLLAMA_API_URL, "http://localhost:11434")
+        self.assertEqual(OLLAMA_API_URL, "http://127.0.0.1:11434")
 
 
 # ============================================================

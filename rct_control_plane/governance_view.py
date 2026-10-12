@@ -189,7 +189,8 @@ def events(conn: sqlite3.Connection, category: Optional[str] = "attention", quer
     rows = conn.execute(sql, [*args, max(1, min(int(limit), 300))]).fetchall()
     out = []
     for r in rows:
-        changes = _loads(r["changes"]) or {}
+        from rct_control_plane import audit_text
+        changes = audit_text.reveal_changes(r["actor"], _loads(r["changes"]) or {})
         out.append({"id": r["id"], "category": CATEGORY_OF.get(r["entity_type"], "other"), "entity_type": r["entity_type"],
                     "entity_id": r["entity_id"], "action": r["action"], "actor": r["actor"], "at": r["created_at"],
                     "summary": summarise(r["entity_type"], r["action"], changes),
@@ -205,9 +206,11 @@ def event_detail(conn: sqlite3.Connection, audit_id: int) -> Optional[Dict[str, 
     if row is None:
         return None
     link = conn.execute("SELECT seq, prev_hash, row_hash, signature_hex, signer_fingerprint FROM audit_chain WHERE audit_id = ?", (audit_id,)).fetchone()
+    from rct_control_plane import audit_text
+    shown = audit_text.reveal_changes(row["actor"], _loads(row["changes"]) or {})
     detail: Dict[str, Any] = {"id": row["id"], "entity_type": row["entity_type"], "entity_id": row["entity_id"], "action": row["action"],
-                              "actor": row["actor"], "at": row["created_at"], "changes": _loads(row["changes"]),
-                              "summary": summarise(row["entity_type"], row["action"], _loads(row["changes"]) or {}), "chain": None}
+                              "actor": row["actor"], "at": row["created_at"], "changes": shown,
+                              "summary": summarise(row["entity_type"], row["action"], shown), "chain": None}
     if link is not None:
         recomputed = audit_chain.row_hash(link["prev_hash"], row["id"], row["entity_type"], row["entity_id"], row["action"],
                                           row["actor"], row["changes"], row["created_at"])
@@ -500,6 +503,10 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("memory_sealing", "A person's memory text can be erased (sealed with their own key)", bool(log_on and memory_erasure.sealing_enabled()),
         "event payloads and checkpoints are sealed per person; `delentia memory erase` destroys the key with an approver's signature" if log_on and memory_erasure.sealing_enabled()
         else "off: the log holds readable text, so a person's data can be revoked but not erased", "unset DELENTIA_MEMORY_SEAL=off (events written before it was on stay readable)")
+    from rct_control_plane import audit_text
+    add("audit_text_sealed", "A person's words are sealed in the audit chain (so they can be erased)", audit_text.sealing_on(),
+        "the goal, the model's reasoning and tool arguments are written under the person's own key; the chain holds ciphertext and hashes" if audit_text.sealing_on()
+        else "off: those words sit in the chain in the clear and a person's erasure cannot remove them", "unset DELENTIA_AUDIT_TEXT=plain (rows written before it was on stay readable)")
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

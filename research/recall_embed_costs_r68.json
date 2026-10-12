@@ -1,0 +1,16 @@
+{
+  "off": {
+    "store_ms_median": 9.2,
+    "recall_ms_median": 38.9,
+    "unrelated_best_relevance_mean": 0.012,
+    "unrelated_best_relevance_max": 0.186
+  },
+  "on": {
+    "store_ms_median": 47.3,
+    "recall_ms_median": 109.5,
+    "unrelated_best_relevance_mean": 0.031,
+    "unrelated_best_relevance_max": 0.249
+  },
+  "added_store_ms": 38.1,
+  "added_recall_ms": 70.6
+}

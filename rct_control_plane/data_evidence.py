@@ -50,7 +50,9 @@ _MAX_GOAL_CHARS = 4000
 _MAX_PATH_CHARS = 260
 _URL_RE = re.compile(r"https?://\S+")
 _QUOTED_RE = re.compile(r"[\"'`“”‘’]([^\"'`“”‘’]{2,80})[\"'`“”‘’]")
-_CREATE_VERBS = re.compile(r"\b(create|write|add|make|generate|scaffold|new)\b|สร้าง|เขียน|เพิ่ม", re.IGNORECASE)
+# Round 68: "Save these notes to the exchange folder as notes.txt" and "Put a copy of the summary in the outbox as summary.txt" name a file that is MEANT to be new, but save/put/copy/store/export/append were not
+# creation verbs, so the missing file counted as missing evidence (D 0.09 and 0.30) and two harmless requests were blocked on a cold start.
+_CREATE_VERBS = re.compile(r"\b(create|write|add|make|generate|scaffold|new|save|put|copy|store|export|append|record)\b|สร้าง|เขียน|เพิ่ม|บันทึก|เก็บ|คัดลอก|ส่งออก", re.IGNORECASE)
 
 # Intent types that act on something that must already exist / be named.
 _NEEDS_TARGET = {"DEBUG", "REFACTOR", "TRANSFORM", "DEPLOY", "TEST", "OPTIMIZE", "MIGRATE"}

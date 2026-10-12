@@ -94,6 +94,8 @@ Apache 2.0 — Delentia Labs (https://delentia.com)
 
 from __future__ import annotations
 
+from rct_control_plane import audit_text
+
 import asyncio
 import json
 import os
@@ -734,7 +736,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             entity_id=f"{self.namespace}-{signed.packet_id}",
             action="episode_start",
             actor=self.namespace,
-            changes={
+            changes=audit_text.protect(self.namespace, {
                 "goal": goal, "D": D, "I": I,
                 "data_evidence": self._episode_data,
                 "intent": self._episode_intent,
@@ -755,7 +757,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "goal_F": fdia_score(D, I, 1.0),
                 "warm_recall": self._warm_info or None,
                 **({"research": research_receipt(self, self._research)} if self._research is not None else {}),
-            },
+            }, ("goal", "rct7_steps")),                # Round 68: the person's words are sealed under their key, not written into the chain in the clear
         )
         if warm_hit:
             return {"stopped_reason": "warm_recall", "final_answer": warm_hit["answer"]}
@@ -1355,7 +1357,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         threshold = self._fdia_threshold
         if policy is not None:
             from rct_control_plane import fdia_policy
-            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace)
+            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal})
             threshold = max(threshold, float(policy.custom_safety_threshold))
             if policy_eval.needs_signature:
                 # The signature will supply A = 1; D and I must still hold, so F is judged as if it were given.
@@ -1941,7 +1943,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         import uuid
         try:
             experiment_id = self.experiment_id_for_goal(result["goal"])
-            self._persistence.save_experiment(experiment_id, name=result["goal"][:200],
+            self._persistence.save_experiment(experiment_id, name=audit_text.experiment_label(result["goal"]),
                                               description="GovernedAutonomousLoop episodes for this goal")
             aligned = verification.get("aligned_with_intent") if verification.get("applicable") else None
             metrics = {
@@ -2064,7 +2066,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         elif policy is not None and A > 0.0:
             # A signature satisfies "needs a human"; it does not lift a blocked pattern, a denied path or a refused role.
             from rct_control_plane import fdia_policy
-            again = fdia_policy.evaluate(policy, action.tool_name, action.tool_args, principal=self.namespace, approved=True)
+            again = fdia_policy.evaluate(policy, action.tool_name, action.tool_args, principal=self.namespace, approved=True, context={"goal": action.goal})
             if again.A <= 0.0:
                 A, a_reason = 0.0, f"owner policy {again.rule_id}: {again.reason}"
         if A <= 0.0:
@@ -2398,7 +2400,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if not url.strip():
             return False                                      # "" is a substring of every goal: an empty address must not count as one the person wrote
         parts = urlsplit(url.strip())
-        if url.strip() in goal:
+        from rct_control_plane.fdia_policy import address_typed_in
+        if address_typed_in(goal, url):                           # Round 68: the whole address, as a word of the request (a substring let a TRUNCATED address count as typed)
             return True
         if parts.query or parts.fragment or parts.username or parts.password or parts.scheme not in ("http", "https"):
             return False

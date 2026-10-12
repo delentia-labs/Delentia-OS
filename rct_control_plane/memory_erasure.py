@@ -15,6 +15,10 @@ What this module does
   * Erasure is irreversible, so it needs the signature of a trusted approver key over the exact request (namespace and the log head at that moment). No approver key configured = it
     cannot be done, the same rule as every other irreversible action here.
 
+Round 68 - the other tables. `erase_person(..., scrub_tables=True)` (the default) also overwrites the text columns of every table that carries the person's namespace (past requests and answers and
+their full-text index, the key-value states such as the warm-recall cache, the approvals' goals and arguments), expires their waiting approvals, rebuilds the full-text index and VACUUMs. The audit
+rows that held their words (`goal`, the model's reasoning, tool arguments) are sealed under the same key (audit_text.py), so destroying it erases those too. Rows are overwritten, never deleted.
+
 What it does NOT do, and says so in its report
   * Events written BEFORE sealing was on are plaintext in the chain and cannot be sealed afterwards (changing them would break their hashes). The report counts them.
   * The `memories` table keeps a readable copy for recall; erasure scrubs it (the one overwrite this policy allows, because it is the purpose of erasure). Other tables that carry the
@@ -189,19 +193,80 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
         sealed = sum(1 for (p,) in events if is_sealed(p))
         other: List[Dict[str, Any]] = []
         for (table,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").fetchall():
-            if table in ("memory_events", "memory_checkpoints", "memories", "audit_trail", "audit_chain"):
+            if table in ("memory_events", "memory_checkpoints", "memories", "audit_trail", "audit_chain") or table in NO_PERSONAL_TEXT or "_fts" in table:
                 continue
             try:
                 cols = [r[1] for r in conn.execute(f'PRAGMA table_info("{table}")')]
                 if "namespace" in cols:
+                    carrying = [c for c in cols if c in TEXT_COLUMNS]
                     n = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE namespace = ?', (namespace,)).fetchone()[0]
-                    if n:
-                        other.append({"table": table, "rows": int(n)})
+                    erased = 0
+                    if carrying:
+                        probe = " AND ".join(f'(COALESCE("{c}", \'\') IN (\'\', ?))' for c in carrying)
+                        erased = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE namespace = ? AND {probe}', [namespace] + [TEXT_COLUMNS[c] for c in carrying]).fetchone()[0]
+                    if n - erased > 0:
+                        other.append({"table": table, "rows": int(n - erased)})
             except sqlite3.Error:
                 continue
+        plain_audit = _plain_audit_rows(conn, namespace)
+        plain_experiments = conn.execute("SELECT COUNT(*) FROM experiments WHERE name NOT LIKE 'goal sha256:%' AND name NOT LIKE 'governed-loop:%'").fetchone()[0] if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'experiments'").fetchone() else 0
         table_rows = conn.execute("SELECT COUNT(*) FROM memories WHERE namespace = ?", (namespace,)).fetchone()[0]
     return {"events": len(events), "sealed_events": sealed, "plaintext_events": len(events) - sealed, "memory_rows": int(table_rows), "other_tables_with_this_person": other,
-            "has_key": get_key(namespace) is not None}
+            "plain_audit_rows": plain_audit, "experiments_named_by_goal": int(plain_experiments), "has_key": get_key(namespace) is not None}
+
+
+# columns that hold a person's words, and what an erased value looks like (so a reader that parses JSON still parses it)
+TEXT_COLUMNS = {"goal": ERASED_TEXT, "answer": ERASED_TEXT, "content": ERASED_TEXT, "message": ERASED_TEXT, "text": ERASED_TEXT, "reason": ERASED_TEXT, "note": ERASED_TEXT, "title": ERASED_TEXT,
+                "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]"}
+NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures"}
+NO_PERSONAL_TEXT = {"spend_ledger", "memory_vectors"}          # memory_vectors: sealed under the person's key and zeroed by scrub_tables (Round 68)                    # numbers per person per day: counted, not listed as holding words
+
+
+def _namespaced_tables(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    found = []
+    for (table,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").fetchall():
+        if table in NEVER_SCRUB or "_fts" in table:
+            continue
+        cols = [r[1] for r in conn.execute(f'PRAGMA table_info("{table}")')]
+        if "namespace" in cols:
+            found.append({"table": table, "columns": [c for c in cols if c in TEXT_COLUMNS]})
+    return found
+
+
+def _plain_audit_rows(conn: sqlite3.Connection, namespace: str) -> int:
+    """Audit rows of this person that still hold their words in the clear (written before audit_text sealing was on). They are chained, so they cannot be edited."""
+    n = 0
+    for entity_type, text in conn.execute("SELECT entity_type, changes FROM audit_trail WHERE actor = ? AND entity_type IN ('governed_loop_episode_start', 'autonomous_loop_step')", (namespace,)):
+        try:
+            changes = json.loads(text)
+        except ValueError:
+            continue
+        fields = ("goal", "rct7_steps") if entity_type == "governed_loop_episode_start" else ("tool_args", "reasoning")
+        if any(changes.get(f) not in (None, "", [], {}) and not (isinstance(changes.get(f), dict) and "sealed" in changes[f]) for f in fields):
+            n += 1
+    return n
+
+
+def scrub_tables(conn: sqlite3.Connection, namespace: str) -> Dict[str, Any]:
+    """Overwrite the person's text in every namespaced table. Waiting approvals are expired first (their digest covers the text they are about to lose)."""
+    done: List[Dict[str, Any]] = []
+    for entry in _namespaced_tables(conn):
+        table, cols = entry["table"], entry["columns"]
+        if table == "pending_actions":
+            conn.execute("UPDATE pending_actions SET status = 'EXPIRED' WHERE namespace = ? AND status = 'PENDING'", (namespace,))
+        if not cols:
+            continue
+        sets = ", ".join(f'"{c}" = ?' for c in cols)
+        count = conn.execute(f'UPDATE "{table}" SET {sets} WHERE namespace = ?', [TEXT_COLUMNS[c] for c in cols] + [namespace]).rowcount
+        if count:
+            done.append({"table": table, "rows": int(count), "columns": cols})
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'memory_vectors'").fetchone():
+        zeroed = conn.execute("UPDATE memory_vectors SET vec = zeroblob(length(vec)) WHERE namespace = ?", (namespace,)).rowcount
+        if zeroed:
+            done.append({"table": "memory_vectors", "rows": int(zeroed), "columns": ["vec"]})
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'episode_log_fts'").fetchone():
+        conn.execute("INSERT INTO episode_log_fts(episode_log_fts) VALUES ('rebuild')")           # the index kept the old words; it reads the (now scrubbed) content table again
+    return {"tables": done}
 
 
 def _destroy_key(namespace: str) -> bool:
@@ -239,7 +304,7 @@ def _vacuum(persistence: Any) -> bool:
         return False
 
 
-def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: str, signature_hex: str) -> Dict[str, Any]:
+def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: str, signature_hex: str, scrub_other_tables: bool = True) -> Dict[str, Any]:
     from rct_control_plane import approvals, memory_eventlog
     if not namespace or not reason.strip():
         raise ErasureError("a namespace and a reason are required")
@@ -258,6 +323,7 @@ def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: 
     with persistence._connect() as conn:
         conn.execute("PRAGMA secure_delete = ON")                        # overwritten pages are zeroed, not just unlinked (found by looking at the raw file after an erase)
         scrubbed = conn.execute("UPDATE memories SET content = ?, context = '{}', revoked_reason = CASE WHEN revoked_reason IS NULL THEN NULL ELSE ? END WHERE namespace = ?", (ERASED_TEXT, ERASED_TEXT, namespace)).rowcount
+        scrubbed_tables = scrub_tables(conn, namespace) if scrub_other_tables else {"tables": []}
         seq = memory_eventlog.append(conn, namespace, "erase", "-", {"reason": reason.strip()[:300], "key_destroyed": destroyed})
         ControlPlanePersistence._append_audit(conn, memory_eventlog.ANCHOR_ENTITY, namespace, "memory_erased", "memory_erasure",
                                               {"namespace": namespace, "reason": reason.strip()[:300], "key_destroyed": destroyed, "events": before["events"],
@@ -265,6 +331,9 @@ def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: 
         memory_eventlog._maybe_anchor(conn, seq, conn.execute("SELECT event_hash FROM memory_events WHERE seq = ?", (seq,)).fetchone()[0], force=True)
     vacuumed = _vacuum(persistence)
     after = inventory(persistence, namespace)
-    return {"erased": True, "vacuumed": vacuumed, "namespace": namespace, "key_destroyed": destroyed, "table_rows_scrubbed": int(scrubbed), "before": before, "after": after,
+    return {"erased": True, "vacuumed": vacuumed, "namespace": namespace, "key_destroyed": destroyed, "table_rows_scrubbed": int(scrubbed), "other_tables_scrubbed": scrubbed_tables["tables"],
+            "before": before, "after": after,
             "not_erased": {"plaintext_events_in_the_chain": after["plaintext_events"], "other_tables": after["other_tables_with_this_person"],
+                           "plain_audit_rows": after["plain_audit_rows"], "experiments_named_by_goal": after["experiments_named_by_goal"],
+                           "skills_database": "learned skills live in a separate file and are shared knowledge; not scrubbed",
                            "note": "backups made earlier, any copy of the key file, and remnants outside the database file (filesystem journal, swap, snapshots) still hold the readable data"}}
