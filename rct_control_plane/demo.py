@@ -148,6 +148,7 @@ def _hashes(workspace: Path) -> Dict[str, str]:
 
 def configure_env(root: Path) -> Dict[str, Path]:
     """Points this process at the demo folder. Must run before the kernel/tools are imported (they read these at import)."""
+    quiet_startup()
     p = paths(root)
     if not p["workspace"].is_dir() or not p["approver_key"].exists():
         raise SystemExit(f"ยังไม่มีเดโมที่ {root} — รัน `delentia demo init` ก่อน")

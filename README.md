@@ -35,6 +35,8 @@ delentia demo approve <id> --scripted       # you sign; only now does the file c
 delentia demo status                        # the audit chain: how many rows, how many signed, intact or not
 ```
 
+Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT.md) (a real run).
+
 `--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It is there so that you can see the mechanism without installing a model; it says nothing about how good any model is, and every report says so on its first line. To use a real model: `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
 
 ## What is measured, and what is not
