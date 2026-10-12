@@ -246,7 +246,7 @@ import type {
 - **Website**: [delentia.com](https://delentia.com)
 - **Python SDK (PyPI)**: [delentia-os](https://pypi.org/project/delentia-os/)
 - **GitHub**: [rctlabs/delentia-os](https://github.com/delentia-labs/delentia-os)
-- **Docs**: [rctlabs.github.io/delentia-os](https://rctlabs.github.io/delentia-os/)
+- **Docs**: [delentia-labs.github.io/Delentia-OS](https://delentia-labs.github.io/Delentia-OS/)
 - **Issues**: [GitHub Issues](https://github.com/delentia-labs/delentia-os/issues)
 
 ---

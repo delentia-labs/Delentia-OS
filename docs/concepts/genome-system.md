@@ -1,6 +1,6 @@
 # Genome System — Seven Interconnected AI Modules
 
-> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/delentia-os/concepts/).  
+> This document is part of the [RCT Platform concepts documentation](https://delentia-labs.github.io/Delentia-OS/concepts/).  
 > For the full architectural article, see: [delentia.com/en/blog/rct-7-genome-system](https://delentia.com/en/blog/rct-7-genome-system)
 
 ---
