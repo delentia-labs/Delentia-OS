@@ -1706,6 +1706,18 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
                                "precedence over this config", fg="yellow"))
 
 
+@cli.command("acp")
+def acp_command() -> None:
+    """
+    Run as an Agent Client Protocol agent over stdin/stdout, for editors that speak ACP (Zed, JetBrains, ...). The editor starts this itself.
+
+    Every prompt is one governed episode (the FDIA gate, the owner's policy, the taint gate, the audit chain). An action that needs a human signature stops the
+    episode and says so: an editor's "allow" button is not a signature. MCP servers the editor lists are ignored.
+    """
+    from rct_control_plane import acp_server
+    sys.exit(acp_server.main())
+
+
 @cli.group("credentials")
 def credentials_group():
     """

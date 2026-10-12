@@ -28,7 +28,7 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "policy": ("fdia_policy",),
     "sovereignty": ("residency_decision",),
     "notary": ("notary_receipt", "notary_gap"),
-    "identity": ("identity",),
+    "identity": ("identity", "acp_session"),
     "episodes": ("governed_loop_episode_start", "governed_loop_episode_end"),
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
     "cron": ("cron_job",),
@@ -142,6 +142,8 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"memory of {_short(c.get('namespace'), 40)} erased by destroying its key ({c.get('events')} event(s), {c.get('plaintext_events')} left readable): {_short(c.get('reason'), 80)}"
     if entity_type == "memory_revoked":
         return f"a memory was revoked ({c.get('reason_chars', 0)} characters of reason kept as a hash)"
+    if entity_type == "acp_session":
+        return f"an editor ({_short((c.get('client') or {}).get('name'), 40) or 'unnamed'}) opened an ACP session; {c.get('mcp_servers_ignored', 0)} MCP server(s) it listed were ignored"
     if entity_type == "memory_replaced":
         return f"memory {_short(c.get('old_id'), 24)} was replaced by {_short(c.get('new_id'), 24)}" + (" (the pinned rule moved with it)" if c.get("pin_moved") else "")
     if entity_type == "memory_pinned":
