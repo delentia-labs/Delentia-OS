@@ -114,8 +114,13 @@ class MemoryCandidates:
             pending = conn.execute("SELECT COUNT(*) FROM memory_candidates WHERE namespace = ? AND status = 'pending'", (namespace,)).fetchone()[0]
             known = {r[0].lower() for r in conn.execute("SELECT text FROM memory_candidates WHERE namespace = ? AND status IN ('pending', 'accepted')", (namespace,)).fetchall()}
             known |= {r[0].lower() for r in conn.execute("SELECT content FROM memories WHERE namespace = ?", (namespace,)).fetchall()}
-            for item in extract(goal):
-                if pending + len(made) >= MAX_PENDING_PER_USER or item["text"].lower() in known:
+            from rct_control_plane import user_model                    # Round 72: how the person wants to be answered (language, length, format, time zone) is proposed the same way
+            detections = user_model.detect(goal)
+            said = {d["evidence"].lower() for d in detections}                      # a sentence that states how to be answered is ONE suggestion (the profile entry), not that and the sentence as well
+            profile = [{"text": user_model.sentence_for(d["facet"], d["value"]), "kind": f"profile:{d['facet']}={d['value']}", "evidence": d["evidence"]} for d in detections]
+            plain = [i for i in extract(goal) if i["text"][:160].lower() not in said]
+            for item in plain + profile:
+                if pending + len(made) >= MAX_PENDING_PER_USER or item["text"].lower() in known or str(item.get("evidence", "")).lower() in known:
                     continue
                 cid = "mc-" + uuid.uuid4().hex[:8]
                 conn.execute("INSERT INTO memory_candidates (id, namespace, text, kind, goal_sha256, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
@@ -151,9 +156,14 @@ class MemoryCandidates:
             raise ValueError("no such suggestion")
         if row["status"] != "pending":
             raise ValueError(f"that suggestion is already {row['status']}")
-        memory_id = f"mem_{uuid.uuid4().hex[:12]}"
-        self._p.save_memory(memory_id=memory_id, namespace=row["namespace"], memory_type=row["kind"], content=row["text"],
-                            context={"provenance": {"tainted": False, "source_tool": "", "via": "memory_nudge"}}, importance=0.7)
+        if str(row["kind"]).startswith("profile:"):                   # Round 72: a profile entry becomes the person's current value for that facet (user_model.py)
+            from rct_control_plane import user_model
+            facet, _, value = str(row["kind"])[len("profile:"):].partition("=")
+            memory_id = user_model.UserModel(self._p, row["namespace"]).set(facet, value, by="accepted suggestion")["memory_id"]
+        else:
+            memory_id = f"mem_{uuid.uuid4().hex[:12]}"
+            self._p.save_memory(memory_id=memory_id, namespace=row["namespace"], memory_type=row["kind"], content=row["text"],
+                                context={"provenance": {"tainted": False, "source_tool": "", "via": "memory_nudge"}}, importance=0.7)
         with self._p._connect() as conn:
             conn.execute("UPDATE memory_candidates SET status = 'accepted', decided_at = ?, memory_id = ? WHERE id = ?", (time.time(), memory_id, candidate_id))
         self._audit("accepted", candidate_id, row["namespace"], {"memory_id": memory_id})

@@ -79,11 +79,11 @@ class DSLParser:
     INTENT_PATTERN = r'intent\s+"([^"]+)"\s*\{'
     PHASE_PATTERN = r'phase\s+(\w+)\s*\{'
     NODE_PATTERN = r'node\s+(\w+)\s*\{'
-    PARAMETER_PATTERN = r'(\w+)\s*=\s*(.+?)(?:,|\n|$)'
+    PARAMETER_PATTERN = r'(\w{1,64})\s{0,20}=\s{0,20}(.{1,2000}?)(?:,|\n|$)'      # Round 72: bounded (the regex audit: 20,000 Thai letters took 3 s with the unbounded form)
     ARRAY_PATTERN = r'\[([^\]]*)\]'
     STRING_PATTERN = r'"([^"]*)"'
     NUMBER_PATTERN = r'(\d+\.?\d*)'
-    DURATION_PATTERN = r'(\d+)s'
+    DURATION_PATTERN = r'(\d{1,9})s'                                                # Round 72: bounded; the parser uses re.match, the audit uses search
     
     def __init__(self, observer: Optional['ControlPlaneObserver'] = None):
         """Initialize parser

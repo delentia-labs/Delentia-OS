@@ -15,7 +15,7 @@ import re
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Optional, TYPE_CHECKING
+from typing import Any, AsyncIterator, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rct_control_plane.topic_cache import TopicCache
@@ -249,11 +249,35 @@ _NO_JSON_MODE: set = set()
 class OpenRouterProvider(LLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-sonnet-5",
                  compat: Optional[CompatProfile] = None):
+        from rct_control_plane import credential_pool
+        self._explicit_key = api_key
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenRouterProvider requires OPENROUTER_API_KEY (arg or env var)")
+        if not self.api_key and not credential_pool.available("openrouter"):
+            raise ValueError("OpenRouterProvider requires OPENROUTER_API_KEY (arg or env var) or a credential pool with a usable key")
         self.model = model
         self.compat = compat or CompatProfile()
+
+    def _key_ring(self) -> Any:
+        """Round 72: the keys this call may use. One key when no pool is configured (the one given or read at construction, as before); with a pool, the next usable key."""
+        from rct_control_plane import credential_pool
+        explicit = self._explicit_key if self._explicit_key is not None else (None if credential_pool.configured("openrouter") else self.api_key)
+        return credential_pool.KeyRing("openrouter", explicit, "OPENROUTER_API_KEY")
+
+    async def post_json(self, client: Any, url: str, payload: Dict[str, Any]) -> Any:
+        """POST with the next usable key; a 401/402/403/429 moves to another key of the pool (credential_pool.py), anything else is returned to the caller as it is."""
+        from rct_control_plane import credential_pool
+        ring = self._key_ring()
+        while True:
+            key = ring.take()
+            if not key:
+                raise ValueError("OpenRouterProvider has no key to send")
+            response = await client.post(url, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, json=payload)
+            status = getattr(response, "status_code", 200)
+            if isinstance(status, int):
+                if ring.refused(status, credential_pool.retry_after_seconds(getattr(response, "headers", None))):
+                    continue
+                ring.succeeded(status)
+            return response
 
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
@@ -261,14 +285,13 @@ class OpenRouterProvider(LLMProvider):
         payload = _build_openrouter_payload(
             self.model, prompt, system_prompt, temperature, max_tokens, json_mode and self.model not in _NO_JSON_MODE, self.compat,
         )
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         async with http_client.async_client(timeout=90.0) as client:
-            response = await client.post(f"{openrouter_base_url()}/chat/completions", headers=headers, json=payload)
+            response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
             if getattr(response, "status_code", 200) == 400 and "response_format" in payload:
                 # This model (or the upstream provider it was routed to) does not take JSON mode: remember that and ask again without it.
                 _NO_JSON_MODE.add(self.model)
                 payload.pop("response_format")
-                response = await client.post(f"{openrouter_base_url()}/chat/completions", headers=headers, json=payload)
+                response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
             response.raise_for_status()
             data = response.json()
         usage = data.get("usage") or {}
@@ -288,26 +311,37 @@ class OpenRouterProvider(LLMProvider):
             self.model, prompt, system_prompt, temperature, max_tokens, json_mode=False, compat=self.compat,
         )
         payload["stream"] = True
+        from rct_control_plane import credential_pool
+        ring = self._key_ring()
         async with http_client.async_client(timeout=90.0) as client:
-            async with client.stream(
-                "POST", f"{openrouter_base_url()}/chat/completions",
-                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
-                json=payload,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line.startswith("data:"):
-                        continue
-                    data = line[len("data:"):].strip()
-                    if data == "[DONE]":
-                        break
-                    if not data:
-                        continue
-                    chunk = json.loads(data)
-                    delta = chunk.get("choices", [{}])[0].get("delta", {})
-                    text = delta.get("content")
-                    if text:
-                        yield text
+            while True:
+                key = ring.take()
+                if not key:
+                    raise ValueError("OpenRouterProvider has no key to send")
+                async with client.stream(
+                    "POST", f"{openrouter_base_url()}/chat/completions",
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json=payload,
+                ) as response:
+                    status = getattr(response, "status_code", 200)
+                    if isinstance(status, int) and ring.refused(status, credential_pool.retry_after_seconds(getattr(response, "headers", None))):
+                        continue                              # the refusal came with the headers, before any text: another key can answer
+                    response.raise_for_status()
+                    ring.succeeded(status if isinstance(status, int) else 200)
+                    async for line in response.aiter_lines():
+                        if not line.startswith("data:"):
+                            continue
+                        data = line[len("data:"):].strip()
+                        if data == "[DONE]":
+                            break
+                        if not data:
+                            continue
+                        chunk = json.loads(data)
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        text = delta.get("content")
+                        if text:
+                            yield text
+                    return
 
 
 class OpenAICompatibleProvider(LLMProvider):
@@ -340,12 +374,33 @@ class OpenAICompatibleProvider(LLMProvider):
             headers["Authorization"] = f"Bearer {key}"
         return headers
 
+    def _key_ring(self) -> Any:
+        """Round 72: one key (the variable named by `credential_env`), or the pool configured for "openai-compat" (credential_pool.py)."""
+        from rct_control_plane import credential_pool
+        return credential_pool.KeyRing("openai-compat", None, self.credential_env)
+
+    async def post_json(self, client: Any, url: str, payload: Dict[str, Any]) -> Any:
+        from rct_control_plane import credential_pool
+        ring = self._key_ring()
+        while True:
+            key = ring.take()
+            headers = {"Content-Type": "application/json"}
+            if key:
+                headers["Authorization"] = f"Bearer {key}"
+            response = await client.post(url, headers=headers, json=payload)
+            status = getattr(response, "status_code", 200)
+            if isinstance(status, int):
+                if ring.refused(status, credential_pool.retry_after_seconds(getattr(response, "headers", None))):
+                    continue
+                ring.succeeded(status)
+            return response
+
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, json_mode, self.compat)
         async with http_client.async_client(timeout=self.timeout) as client:
-            response = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
+            response = await self.post_json(client, f"{self.base_url}/chat/completions", payload)
             response.raise_for_status()
             data = response.json()
         usage = data.get("usage") or {}
@@ -357,20 +412,32 @@ class OpenAICompatibleProvider(LLMProvider):
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
         payload = _build_openrouter_payload(self.model, prompt, system_prompt, temperature, max_tokens, False, self.compat)
         payload["stream"] = True
+        from rct_control_plane import credential_pool
+        ring = self._key_ring()
         async with http_client.async_client(timeout=self.timeout) as client:
-            async with client.stream("POST", f"{self.base_url}/chat/completions", headers=self._headers(), json=payload) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line.startswith("data:"):
+            while True:
+                key = ring.take()
+                headers = {"Content-Type": "application/json"}
+                if key:
+                    headers["Authorization"] = f"Bearer {key}"
+                async with client.stream("POST", f"{self.base_url}/chat/completions", headers=headers, json=payload) as response:
+                    status = getattr(response, "status_code", 200)
+                    if isinstance(status, int) and ring.refused(status, credential_pool.retry_after_seconds(getattr(response, "headers", None))):
                         continue
-                    data = line[len("data:"):].strip()
-                    if data == "[DONE]":
-                        break
-                    if not data:
-                        continue
-                    text = json.loads(data).get("choices", [{}])[0].get("delta", {}).get("content")
-                    if text:
-                        yield text
+                    response.raise_for_status()
+                    ring.succeeded(status if isinstance(status, int) else 200)
+                    async for line in response.aiter_lines():
+                        if not line.startswith("data:"):
+                            continue
+                        data = line[len("data:"):].strip()
+                        if data == "[DONE]":
+                            break
+                        if not data:
+                            continue
+                        text = json.loads(data).get("choices", [{}])[0].get("delta", {}).get("content")
+                        if text:
+                            yield text
+                    return
 
 
 def get_default_provider(profile: Optional[str] = None) -> LLMProvider:
@@ -390,7 +457,8 @@ def get_default_provider(profile: Optional[str] = None) -> LLMProvider:
             kind=endpoint.get("kind", "cross_border"), region=endpoint.get("region", ""), operator=endpoint.get("operator", ""),
         )
     if selection.provider == "openrouter":
-        if os.getenv("OPENROUTER_API_KEY"):
+        from rct_control_plane import credential_pool
+        if credential_pool.available("openrouter", "OPENROUTER_API_KEY"):
             return OpenRouterProvider(model=selection.model)
         logger.warning(
             "model selection is openrouter:%s but OPENROUTER_API_KEY is unset; falling back to Ollama %s",

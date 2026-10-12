@@ -1,0 +1,26 @@
+{
+  "positives": 20,
+  "negatives": 20,
+  "right": 19,
+  "missed": 1,
+  "detections": 19,
+  "precision": 1.0,
+  "recall": 0.95,
+  "recall_interval": [
+    0.764,
+    0.991
+  ],
+  "negatives_clean": 20,
+  "negatives_clean_interval": [
+    0.839,
+    1.0
+  ],
+  "passes": true,
+  "misses_and_false": [
+    [
+      "MISS",
+      "Please do not use tables in your answers; bullets are better.",
+      "[]"
+    ]
+  ]
+}

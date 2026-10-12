@@ -109,7 +109,7 @@ def current_view() -> Dict[str, Any]:
         "endpoint": endpoint,
         "credential_env": key_env or None,
         "credential_present": bool(key_env and os.environ.get(key_env)),
-        "openrouter_key_present": bool(os.environ.get("OPENROUTER_API_KEY")),
+        "openrouter_key_present": __import__("rct_control_plane.credential_pool", fromlist=["available"]).available("openrouter", "OPENROUTER_API_KEY"),
         "profiles": {name: dict(p) for name, p in (cfg.get("profiles") or {}).items() if isinstance(p, dict)},
         "endpoint_verdict": policy_verdict(endpoint) if endpoint else None,
     }

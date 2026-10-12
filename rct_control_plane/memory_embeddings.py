@@ -59,29 +59,39 @@ CREATE INDEX IF NOT EXISTS idx_memory_vectors_ns ON memory_vectors(namespace);
 
 
 AUTO_PROBE_S = 300.0
-_auto_probe: Dict[str, Any] = {"at": -1e9, "url": "", "model": "", "ok": False}
+# With DELENTIA_MEMORY_EMBED=auto and no DELENTIA_MEMORY_EMBED_MODEL, the first of these that the local Ollama has is used. Measured (Round 69): bge-m3 reads Thai (38 of 40 held-out Thai questions found in the
+# top 3, nomic 23) and costs 2 to 4 questions of 40 on English (33 against 37); nomic-embed-text is the smaller, faster model that cannot read Thai. A person who writes Thai or mixed text is better served by the
+# first; one who writes only English loses a little. A model set by name is always obeyed.
+PREFERRED_MODELS = ("bge-m3", "nomic-embed-text")
+_auto_probe: Dict[str, Any] = {"at": -1e9, "url": "", "model": "", "ok": False, "have": [], "wanted": ""}
+
+
+def _installed_models(url: str) -> List[str]:
+    try:
+        tags = json.loads(urllib.request.urlopen(url + "/api/tags", timeout=2.0).read())
+        return sorted({str(m.get("name", "")) for m in tags.get("models", [])})
+    except Exception:                                                        # noqa: BLE001 - no Ollama, or too slow: memory simply keeps using its words
+        return []
+
+
+def _has(have: Sequence[str], name: str) -> bool:
+    return name in have or f"{name}:latest" in have
 
 
 def _model_is_installed() -> bool:
-    """For DELENTIA_MEMORY_EMBED=auto: is the local Ollama reachable and does it list the embedding model? One short request every five minutes, then the answer is remembered."""
+    """For DELENTIA_MEMORY_EMBED=auto: is the local Ollama reachable and does it list the embedding model (the named one, else the first of PREFERRED_MODELS)? One short request every five minutes."""
     now = time.monotonic()
-    url, name = base_url(), model()
-    if now - _auto_probe["at"] < AUTO_PROBE_S and _auto_probe["url"] == url and _auto_probe["model"] == name:
+    url, named = base_url(), (os.environ.get(MODEL_ENV) or "").strip()
+    if now - _auto_probe["at"] < AUTO_PROBE_S and _auto_probe["url"] == url and _auto_probe["wanted"] == named:
         return bool(_auto_probe["ok"])
-    ok = False
-    if _address_allowed(url):
-        try:
-            tags = json.loads(urllib.request.urlopen(url + "/api/tags", timeout=2.0).read())
-            have = {str(m.get("name", "")) for m in tags.get("models", [])}
-            ok = name in have or f"{name}:latest" in have
-        except Exception:                                                    # noqa: BLE001 - no Ollama, or too slow: memory simply keeps using its words
-            ok = False
-    _auto_probe.update({"at": now, "url": url, "model": name, "ok": ok})
-    return ok
+    have = _installed_models(url) if _address_allowed(url) else []
+    chosen = named or next((m for m in PREFERRED_MODELS if _has(have, m)), DEFAULT_MODEL)
+    _auto_probe.update({"at": now, "url": url, "wanted": named, "model": chosen, "ok": _has(have, chosen), "have": have})
+    return bool(_auto_probe["ok"])
 
 
 def reset_auto_probe() -> None:
-    _auto_probe.update({"at": -1e9, "url": "", "model": "", "ok": False})
+    _auto_probe.update({"at": -1e9, "url": "", "model": "", "ok": False, "have": [], "wanted": ""})
 
 
 def enabled() -> bool:
@@ -93,7 +103,13 @@ def enabled() -> bool:
 
 
 def model() -> str:
-    return (os.environ.get(MODEL_ENV) or DEFAULT_MODEL).strip()
+    named = (os.environ.get(MODEL_ENV) or "").strip()
+    if named:
+        return named
+    if (os.environ.get(ENV) or "").strip().lower() == "auto":
+        _model_is_installed()                                                # fills the probe (cached); its choice is the best installed model
+        return str(_auto_probe["model"] or DEFAULT_MODEL)
+    return DEFAULT_MODEL
 
 
 def base_url() -> str:

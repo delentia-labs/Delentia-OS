@@ -1,0 +1,16 @@
+{
+  "threshold": 0.4,
+  "holdout_hits": 9,
+  "holdout_pairs": 10,
+  "hits_interval": [
+    0.596,
+    0.982
+  ],
+  "holdout_false_hints": 0,
+  "holdout_facts": 20,
+  "false_interval": [
+    0.0,
+    0.161
+  ],
+  "passes": true
+}

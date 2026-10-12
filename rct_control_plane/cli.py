@@ -1592,7 +1592,7 @@ def model_show(profile: Optional[str], output: str) -> None:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     data = {**sel.to_dict(), "config_file": str(config_path()),
-            "openrouter_key_set": bool(os.getenv("OPENROUTER_API_KEY"))}
+            "openrouter_key_set": __import__("rct_control_plane.credential_pool", fromlist=["available"]).available("openrouter", "OPENROUTER_API_KEY")}
     if output == "json":
         click.echo(json.dumps(data, indent=2))
         return
@@ -1704,6 +1704,139 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
     if os.getenv("DELENTIA_LLM_MODEL") or os.getenv("DELENTIA_LLM_PROVIDER"):
         click.echo(click.style("note: DELENTIA_LLM_PROVIDER/DELENTIA_LLM_MODEL env vars are set and take "
                                "precedence over this config", fg="yellow"))
+
+
+@cli.command("acp")
+def acp_command() -> None:
+    """
+    Run as an Agent Client Protocol agent over stdin/stdout, for editors that speak ACP (Zed, JetBrains, ...). The editor starts this itself.
+
+    Every prompt is one governed episode (the FDIA gate, the owner's policy, the taint gate, the audit chain). An action that needs a human signature stops the
+    episode and says so: an editor's "allow" button is not a signature. MCP servers the editor lists are ignored.
+    """
+    from rct_control_plane import acp_server
+    sys.exit(acp_server.main())
+
+
+@cli.group("profile")
+def profile_group():
+    """
+    How you want to be answered (Round 72): language, answer length, format, time zone. Shown to every episode; yours to read, change and erase.
+
+    Examples:
+        delentia profile show
+        delentia profile set language th
+        delentia profile unset answer_length
+    """
+    pass
+
+
+@profile_group.command("show")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_show(namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane import user_model
+    facets = user_model.UserModel(_audit_db(db), namespace).facets()
+    if not facets:
+        click.echo("nothing in the profile yet (it fills from what you say about how to be answered, once you accept the suggestion: `delentia memory candidates`)")
+    for name, f in facets.items():
+        click.echo(f"{name:<14} {f['value']:<14} {f['sentence']}   ({f['memory_id']})")
+
+
+@profile_group.command("set")
+@click.argument("facet", type=click.Choice(["language", "answer_length", "format", "timezone"]))
+@click.argument("value")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_set(facet: str, value: str, namespace: str, db: Optional[str]) -> None:
+    """Set one entry directly. VALUE comes from a fixed list (th en ja zh ko fr de es / short detailed / bullets table / an IANA zone or UTC+7)."""
+    from rct_control_plane import user_model
+    try:
+        done = user_model.UserModel(_audit_db(db), namespace).set(facet, value, by="cli")
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{facet} = {value}" + ("" if done["changed"] else "  (already so)"))
+
+
+@profile_group.command("unset")
+@click.argument("facet", type=click.Choice(["language", "answer_length", "format", "timezone"]))
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_unset(facet: str, namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane import user_model
+    click.echo("removed (kept on disk, no longer shown)" if user_model.UserModel(_audit_db(db), namespace).unset(facet, by="cli") else f"{facet} was not set")
+
+
+@cli.group("credentials")
+def credentials_group():
+    """
+    Several keys for one provider (Round 72): when one is rate limited, out of credit or revoked, the next takes the call.
+
+    The pool holds the NAMES of environment variables, never the keys. Examples:
+        delentia credentials set openrouter OPENROUTER_API_KEY OPENROUTER_API_KEY_BACKUP
+        delentia credentials status
+        delentia credentials clear openrouter
+    """
+    pass
+
+
+@credentials_group.command("status")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def credentials_status(output: str) -> None:
+    """Which keys the pool knows, by label, and whether each is ready, cooling down, disabled or missing (never a value)."""
+    from rct_control_plane import credential_pool
+    state = credential_pool.status(include_error_text=True)
+    if output == "json":
+        click.echo(json.dumps(state, indent=2))
+        return
+    click.echo(f"pool file: {state['file']}")
+    if state["error"]:
+        click.echo(click.style(f"error: {state['error']}", fg="red"))
+    if not state["providers"]:
+        click.echo("no pool configured: each provider uses its single key (OPENROUTER_API_KEY, or the variable named by the endpoint)")
+    for provider, spec in state["providers"].items():
+        click.echo(f"{provider}  ({spec['strategy']})")
+        for key in spec["keys"]:
+            extra = f"  ready again in {key['cooldown_seconds']:.0f} s" if key["state"] == "cooling" else ""
+            click.echo(f"  {key['label']:<34} {key['state']:<9} uses={key['uses']} last_status={key['last_status']}{extra}")
+    click.echo("(the states are those of THIS process; a server has its own)")
+
+
+@credentials_group.command("set")
+@click.argument("provider", type=click.Choice(["openrouter", "openai-compat"]))
+@click.argument("names", nargs=-1, required=True)
+@click.option("--strategy", type=click.Choice(["fill_first", "round_robin", "least_used"]), default="fill_first", show_default=True)
+def credentials_set(provider: str, names: tuple, strategy: str) -> None:
+    """Use these environment variables, in this order, as the keys of PROVIDER. Names only; a pasted key is refused."""
+    from rct_control_plane import credential_pool
+    try:
+        path = credential_pool.save_config(provider, [*names], strategy)
+    except credential_pool.PoolConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"saved {len(names)} key name(s) for {provider} in {path}")
+    missing = [n for n in names if not os.environ.get(n)]
+    if missing:
+        click.echo(click.style("not set in this shell (they must be set where the server starts): " + ", ".join(missing), fg="yellow"))
+
+
+@credentials_group.command("clear")
+@click.argument("provider", type=click.Choice(["openrouter", "openai-compat"]))
+def credentials_clear(provider: str) -> None:
+    """Stop using a pool for PROVIDER (the entry is moved aside in the file as `<provider>.cleared`, not deleted)."""
+    from rct_control_plane import credential_pool
+    path = credential_pool.pool_path()
+    if not path.exists():
+        click.echo("no pool file")
+        return
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if provider not in data:
+        click.echo(f"no pool for {provider}")
+        return
+    data[f"{provider}.cleared"] = data.pop(provider)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    click.echo(f"{provider}: pool switched off (kept in the file under {provider}.cleared)")
 
 
 @cli.group("approvals")
@@ -2157,9 +2290,31 @@ def memory_add(content: str, namespace: str, memory_type: str, importance: float
     persistence = _audit_db(db)
     memory_id = asyncio.run(AgentMemory(namespace, persistence).store(content, MemoryType(memory_type), importance=importance))
     click.echo(f"stored {memory_id} in namespace {namespace}")
+    from rct_control_plane import memory_replace
+    for hint in [h for h in memory_replace.likely_replaced(persistence, namespace, content) if h["id"] != memory_id][:2]:
+        click.echo(click.style(f"  this may replace {hint['id']} ({hint['score']}): {hint['content'][:90]}", fg="yellow"))
+        click.echo(f"    if it does: delentia memory replace {hint['id']} \"<the new text>\" --namespace {namespace}   (the old one is kept, no longer recalled)")
     if pin:
         result = persistence.pin_memory(memory_id, namespace, True, by="cli")
         click.echo(("pinned: every episode of this namespace will be shown it" if result["ok"] else f"not pinned: {result['reason']}"))
+
+
+@memory_group.command("replace")
+@click.argument("old_id")
+@click.argument("content")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_replace_command(old_id: str, content: str, namespace: str, db: Optional[str]) -> None:
+    """The new text is the current version of OLD_ID. The old memory is kept on disk and in the history but no longer recalled; a pinned rule stays pinned."""
+    import asyncio
+    from rct_control_plane import memory_replace
+    from rct_control_plane.agent_memory import AgentMemory
+    try:
+        done = asyncio.run(memory_replace.replace(AgentMemory(namespace, _audit_db(db)), old_id, content, by="cli"))
+    except memory_replace.ReplaceError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{done['old_id']} replaced by {done['new_id']}" + ("; the pin moved to the new one" if done["pin_moved"] else ""))
 
 
 @memory_group.command("list")
@@ -2827,6 +2982,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     os.environ.setdefault("DELENTIA_MEMORY_NUDGE", "1")        # Round 61: offer to remember what a person says about themselves (they answer yes or no)
+    os.environ.setdefault("DELENTIA_MEMORY_EMBED", "auto")     # Round 72: recall by meaning when the local Ollama has an embedding model (bge-m3 first, then nomic-embed-text); with none, words only. Nothing leaves the machine.
     os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise

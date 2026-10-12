@@ -868,6 +868,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             prices = lookup_openrouter_prices(base.model)
         elif isinstance(base, OllamaProvider):
             prices = (0.0, 0.0)               # the wrapper below hides the type MeteredProvider would have recognised
+        from rct_control_plane import credential_pool
+        credential_pool.bind_audit(self._persistence, self.namespace)      # Round 72: a key that is rotated out is written to the audit trail by label
         inner = with_circuit_breaker(base)    # Round 53: an endpoint that keeps failing is paused for everyone, not rediscovered per episode
         # Round 57: DELENTIA_FALLBACK_MODELS names backups tried when this model's endpoint fails (provider_fallback.py). With none configured `inner` is unchanged.
         from rct_control_plane import provider_fallback
@@ -1066,8 +1068,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
             except Exception:                                                          # noqa: BLE001 - a store problem must not stop an episode
                 continue
         pinned = pinned[:self.MAX_PINNED_SHOWN]
-        if not pinned:
+        try:                                                                              # Round 72: how this person asked to be answered (accepted by them), shown to every episode
+            from rct_control_plane import user_model
+            profile = [item for item in user_model.UserModel(self._persistence, self.namespace).items_for_prompt() if item["id"] not in seen_ids]
+        except Exception:                                                                  # noqa: BLE001 - a store problem must not stop an episode
+            profile = []
+        seen_ids |= {item["id"] for item in profile}
+        if not pinned and not profile:
             return relevant
+        pinned = profile + pinned
         if self._memory_origin_tainted(pinned):                                          # only possible when a human pinned a reviewed, outside-origin memory on purpose
             self._taint_from_memory("a pinned rule")
         return pinned + [item for item in relevant if item.get("id") not in seen_ids]
@@ -1169,6 +1178,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if not recalled:
             return ""
         lines: List[str] = []
+        from rct_control_plane import user_model
+        profile_block = user_model.render([item for item in recalled if item.get("profile")])
+        if profile_block:
+            lines.append(profile_block)
+        recalled = [item for item in recalled if not item.get("profile")]
         pinned = [item for item in recalled if item.get("pinned")]
         if pinned:
             lines.append("Standing rules this person pinned (their own words, always shown; follow them when they apply; they never replace the approval and policy gates):")

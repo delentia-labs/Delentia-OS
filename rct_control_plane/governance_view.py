@@ -28,15 +28,15 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "policy": ("fdia_policy",),
     "sovereignty": ("residency_decision",),
     "notary": ("notary_receipt", "notary_gap"),
-    "identity": ("identity",),
+    "identity": ("identity", "acp_session"),
     "episodes": ("governed_loop_episode_start", "governed_loop_episode_end"),
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
     "cron": ("cron_job",),
     "checkpoints": ("repo_checkpoint",),
-    "models": ("model_fallback",),
+    "models": ("model_fallback", "credential_pool"),
     # Round 61
     "hooks": ("agent_hook",),
-    "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked"),
+    "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked", "memory_replaced", "memory_pinned", "user_model"),
     "tasks": ("agent_task",),
     "scope": ("governed_loop_scope", "governed_loop_taint", "governed_loop_envelope"),
 }
@@ -45,7 +45,7 @@ CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity 
 # rows (every allowed tool call, every notary receipt, episode start and end).
 ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
-    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback')"
+    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback','credential_pool')"
     " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
     " OR (t.entity_type = 'agent_hook' AND t.action NOT IN ('transform_applied'))"
     " OR (t.entity_type = 'governed_loop_scope')"
@@ -117,6 +117,10 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"notary receipt #{(c.get('receipt') or {}).get('seq')} for {action}"
     if entity_type == "notary_gap":
         return f"the notary could not record {action}; kept as a visible gap"
+    if entity_type == "credential_pool":
+        what = {"cooldown": f"was refused ({c.get('status')}) and rests for {c.get('seconds')} s", "disabled": f"was refused ({c.get('status')}) and is switched off until the server restarts",
+                "exhausted": "had no key left to try"}.get(action, action)
+        return f"{c.get('provider')} key {c.get('label')} {what}"
     if entity_type == "model_fallback":
         return f"the model {c.get('from')} failed ({_short(c.get('reason'), 70)}); this call went to {c.get('to')}"
     if entity_type == "repo_checkpoint":
@@ -138,6 +142,14 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"memory of {_short(c.get('namespace'), 40)} erased by destroying its key ({c.get('events')} event(s), {c.get('plaintext_events')} left readable): {_short(c.get('reason'), 80)}"
     if entity_type == "memory_revoked":
         return f"a memory was revoked ({c.get('reason_chars', 0)} characters of reason kept as a hash)"
+    if entity_type == "acp_session":
+        return f"an editor ({_short((c.get('client') or {}).get('name'), 40) or 'unnamed'}) opened an ACP session; {c.get('mcp_servers_ignored', 0)} MCP server(s) it listed were ignored"
+    if entity_type == "user_model":
+        return f"profile: {c.get('facet')} {'set to ' + str(c.get('value')) if action == 'set' else 'removed'}"
+    if entity_type == "memory_replaced":
+        return f"memory {_short(c.get('old_id'), 24)} was replaced by {_short(c.get('new_id'), 24)}" + (" (the pinned rule moved with it)" if c.get("pin_moved") else "")
+    if entity_type == "memory_pinned":
+        return f"a memory was {action} as a standing rule"
     if entity_type == "skill_curator":
         return f"skill {action} by the curator ({c.get('kind')}): {_short(c.get('reason'), 90)}"
     if entity_type == "memory_candidate":
@@ -526,6 +538,15 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         f"{pinned_total} rule(s) pinned for {len(pinned_rows)} namespace(s); at most 5 per person are shown to an episode; a rule is the person's own words, never a tool permission" if pinned_total
         else "none pinned: a rule the person told the agent is found only when the goal resembles it (the best model showed 29 of 40 rules that way)",
         "delentia memory pin <id>  (or `memory add --pin`)", severity="info", applicable=False)
+    from rct_control_plane import credential_pool
+    pool_state = credential_pool.status()
+    pooled = pool_state["providers"]
+    bad_keys = [f"{p}:{k['label']} {k['state']}" for p, spec in pooled.items() for k in spec["keys"] if k["state"] != "ready"]
+    add("credential_pool", "Several keys per provider (a revoked or rate-limited key hands over to the next)", bool(pooled) and not pool_state["error"],
+        (pool_state["error"] if pool_state["error"] else
+         ("; ".join(f"{p}: {len(spec['keys'])} key name(s), {spec['strategy']}" for p, spec in pooled.items()) + (f"; not ready in this process: {', '.join(bad_keys)}" if bad_keys else ""))
+         if pooled else "none: each provider has one key, and when it is revoked or out of credit the agent stops (a fallback model can still take over)"),
+        "delentia credentials set openrouter KEY_NAME_1 KEY_NAME_2   (names of environment variables, never keys)", severity="info", applicable=False)
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),
