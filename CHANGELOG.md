@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-10-12
+
+First release that contains the governed agent runtime (earlier PyPI releases were the SDK only).
+
+### Added
+- `GovernedAutonomousLoop`: every agent episode passes GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN. Risky tools wait for an Ed25519-signed human approval; episodes are hash-chained in an audit log and re-verifiable (`delentia audit-chain verify`).
+- `delentia` CLI: `setup`, `demo` (a first run you can repeat and check yourself), `serve`, `approvals`, `memory`, `credentials`, `profile`, `acp` (Agent Client Protocol for editors), and more.
+- OpenAI-compatible endpoint, MCP tools, messaging gateways (Telegram, Discord, Slack, LINE, WhatsApp, Signal, e-mail), cron jobs, subagents, external MCP servers and an OpenAPI-to-MCP bridge, all through the same gate.
+- Memory as a hash-chained event log with per-person erasure, recall by meaning (optional local embeddings), pinned rules.
+
+### Fixed
+- A clean `pip install` could not import the algorithm kernel: `numpy`, `networkx`, `faiss-cpu`, `opencv-python-headless`, `gql`, `websockets`, `loguru` and `robotexclusionrulesparser` were imported unconditionally but not declared. They are declared now, and a CI job installs the built wheel into an empty environment.
+
+### Not claimed
+- The runtime has been exercised with scripted models and small local models; a capable hosted model driving it for days, a public host and independent witnesses are not yet in place. The messaging gateways were tested against local fakes, not the live services.
+
+---
+
 ## [2.2.6] - 2026-06-06
 
 ### Changed

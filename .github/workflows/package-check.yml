@@ -1,0 +1,63 @@
+name: Package check
+
+# Round 78: a clean `pip install delentia-os` could not import the algorithm kernel because pyproject.toml did not declare what the kernel imports
+# (requirements.txt did, so every other CI job passed). This job installs the BUILT WHEEL into an empty virtual environment, the way a user would.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "pyproject.toml"
+      - "rct_control_plane/**"
+      - "core/**"
+      - "signedai/**"
+      - "microservices/**"
+      - ".github/workflows/package-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - ".github/workflows/package-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  clean-install:
+    name: Wheel installs and starts in an empty environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build the wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build --wheel
+          twine check dist/*.whl
+      - name: Install it into an empty virtual environment
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/python -m pip install --upgrade pip
+          /tmp/clean/bin/python -m pip install dist/*.whl
+      - name: Import the parts a user reaches first, and run the CLI
+        env:
+          DELENTIA_HOME: /tmp/clean-home
+        working-directory: /tmp
+        run: |
+          /tmp/clean/bin/python - <<'EOF'
+          import importlib
+          failed = []
+          for name in ("rct_control_plane.cli", "rct_control_plane.api", "rct_control_plane.governed_autonomous_loop", "rct_control_plane.mcp_server",
+                       "rct_control_plane.acp_server", "rct_control_plane.algorithm_kernel_41", "rct_control_plane.agent_factory"):
+              try:
+                  importlib.import_module(name)
+                  print("ok  ", name)
+              except Exception as exc:                       # noqa: BLE001
+                  failed.append(name)
+                  print("FAIL", name, type(exc).__name__, str(exc)[:200])
+          raise SystemExit(1 if failed else 0)
+          EOF
+          /tmp/clean/bin/delentia --help
+          /tmp/clean/bin/delentia demo status
