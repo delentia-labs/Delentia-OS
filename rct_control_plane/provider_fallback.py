@@ -123,7 +123,8 @@ def configured() -> List[Tuple[str, str]]:
 def _build(provider: str, model: str) -> Optional[LLMProvider]:
     from rct_control_plane.llm_provider import OllamaProvider, OpenRouterProvider
     if provider == "openrouter":
-        return OpenRouterProvider(model=model) if os.environ.get("OPENROUTER_API_KEY") else None      # no key: it could never answer
+        from rct_control_plane import credential_pool
+        return OpenRouterProvider(model=model) if credential_pool.available("openrouter", "OPENROUTER_API_KEY") else None      # no key: it could never answer
     return OllamaProvider(model=model)
 
 

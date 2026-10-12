@@ -275,6 +275,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             raise HTTPException(status_code=404, detail=f"no skill {skill_id!r}")
         return {"skill_id": skill_id, "skill_md": skill_format.export(record)}
 
+    @router.get("/credentials")
+    async def credentials() -> Dict[str, Any]:
+        """Round 72: the key pool by LABEL and state (never a value). Owner-only like every Desk route."""
+        from rct_control_plane import credential_pool
+        return credential_pool.status()
+
     @router.get("/models")
     async def models(catalog: Optional[str] = Query(None, pattern="^(openrouter|ollama)$"),
                      free: bool = False, search: Optional[str] = None) -> Dict[str, Any]:
@@ -282,7 +288,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         selection = model_config.resolve_model_selection()
         out: Dict[str, Any] = {"selection": selection.to_dict(),
                                "config_path": str(model_config.config_path()),
-                               "openrouter_key_present": bool(os.getenv("OPENROUTER_API_KEY"))}
+                               "openrouter_key_present": __import__("rct_control_plane.credential_pool", fromlist=["available"]).available("openrouter", "OPENROUTER_API_KEY")}
         if catalog == "openrouter":
             try:
                 found = model_config.filter_models(model_config.list_openrouter_models())

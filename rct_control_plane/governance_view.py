@@ -33,7 +33,7 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
     "cron": ("cron_job",),
     "checkpoints": ("repo_checkpoint",),
-    "models": ("model_fallback",),
+    "models": ("model_fallback", "credential_pool"),
     # Round 61
     "hooks": ("agent_hook",),
     "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked"),
@@ -45,7 +45,7 @@ CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity 
 # rows (every allowed tool call, every notary receipt, episode start and end).
 ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
-    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback')"
+    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback','credential_pool')"
     " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
     " OR (t.entity_type = 'agent_hook' AND t.action NOT IN ('transform_applied'))"
     " OR (t.entity_type = 'governed_loop_scope')"
@@ -117,6 +117,10 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"notary receipt #{(c.get('receipt') or {}).get('seq')} for {action}"
     if entity_type == "notary_gap":
         return f"the notary could not record {action}; kept as a visible gap"
+    if entity_type == "credential_pool":
+        what = {"cooldown": f"was refused ({c.get('status')}) and rests for {c.get('seconds')} s", "disabled": f"was refused ({c.get('status')}) and is switched off until the server restarts",
+                "exhausted": "had no key left to try"}.get(action, action)
+        return f"{c.get('provider')} key {c.get('label')} {what}"
     if entity_type == "model_fallback":
         return f"the model {c.get('from')} failed ({_short(c.get('reason'), 70)}); this call went to {c.get('to')}"
     if entity_type == "repo_checkpoint":
@@ -526,6 +530,15 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         f"{pinned_total} rule(s) pinned for {len(pinned_rows)} namespace(s); at most 5 per person are shown to an episode; a rule is the person's own words, never a tool permission" if pinned_total
         else "none pinned: a rule the person told the agent is found only when the goal resembles it (the best model showed 29 of 40 rules that way)",
         "delentia memory pin <id>  (or `memory add --pin`)", severity="info", applicable=False)
+    from rct_control_plane import credential_pool
+    pool_state = credential_pool.status()
+    pooled = pool_state["providers"]
+    bad_keys = [f"{p}:{k['label']} {k['state']}" for p, spec in pooled.items() for k in spec["keys"] if k["state"] != "ready"]
+    add("credential_pool", "Several keys per provider (a revoked or rate-limited key hands over to the next)", bool(pooled) and not pool_state["error"],
+        (pool_state["error"] if pool_state["error"] else
+         ("; ".join(f"{p}: {len(spec['keys'])} key name(s), {spec['strategy']}" for p, spec in pooled.items()) + (f"; not ready in this process: {', '.join(bad_keys)}" if bad_keys else ""))
+         if pooled else "none: each provider has one key, and when it is revoked or out of credit the agent stops (a fallback model can still take over)"),
+        "delentia credentials set openrouter KEY_NAME_1 KEY_NAME_2   (names of environment variables, never keys)", severity="info", applicable=False)
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

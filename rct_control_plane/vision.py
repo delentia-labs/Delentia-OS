@@ -123,12 +123,9 @@ async def _ask(provider: Any, data: bytes, mime: str, question: str, max_tokens:
         messages = [{"role": "system", "content": SYSTEM},
                     {"role": "user", "content": [{"type": "text", "text": question}, {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}]}]
         payload = {"model": inner.model, "messages": messages, "temperature": 0.2, "max_tokens": max_tokens}
-        if isinstance(inner, OpenRouterProvider):
-            url, headers = f"{openrouter_base_url()}/chat/completions", {"Authorization": f"Bearer {inner.api_key}", "Content-Type": "application/json"}
-        else:
-            url, headers = f"{inner.base_url}/chat/completions", inner._headers()
+        url = f"{openrouter_base_url()}/chat/completions" if isinstance(inner, OpenRouterProvider) else f"{inner.base_url}/chat/completions"
         async with http_client.async_client(timeout=120.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await inner.post_json(client, url, payload)                    # the provider picks the key (a pool, when one is configured)
             response.raise_for_status()
             return str(response.json()["choices"][0]["message"]["content"])
     raise VisionError(f"the configured model provider ({type(inner).__name__}) cannot take images")

@@ -868,6 +868,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             prices = lookup_openrouter_prices(base.model)
         elif isinstance(base, OllamaProvider):
             prices = (0.0, 0.0)               # the wrapper below hides the type MeteredProvider would have recognised
+        from rct_control_plane import credential_pool
+        credential_pool.bind_audit(self._persistence, self.namespace)      # Round 72: a key that is rotated out is written to the audit trail by label
         inner = with_circuit_breaker(base)    # Round 53: an endpoint that keeps failing is paused for everyone, not rediscovered per episode
         # Round 57: DELENTIA_FALLBACK_MODELS names backups tried when this model's endpoint fails (provider_fallback.py). With none configured `inner` is unchanged.
         from rct_control_plane import provider_fallback

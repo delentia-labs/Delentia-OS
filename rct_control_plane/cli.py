@@ -1592,7 +1592,7 @@ def model_show(profile: Optional[str], output: str) -> None:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     data = {**sel.to_dict(), "config_file": str(config_path()),
-            "openrouter_key_set": bool(os.getenv("OPENROUTER_API_KEY"))}
+            "openrouter_key_set": __import__("rct_control_plane.credential_pool", fromlist=["available"]).available("openrouter", "OPENROUTER_API_KEY")}
     if output == "json":
         click.echo(json.dumps(data, indent=2))
         return
@@ -1704,6 +1704,77 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
     if os.getenv("DELENTIA_LLM_MODEL") or os.getenv("DELENTIA_LLM_PROVIDER"):
         click.echo(click.style("note: DELENTIA_LLM_PROVIDER/DELENTIA_LLM_MODEL env vars are set and take "
                                "precedence over this config", fg="yellow"))
+
+
+@cli.group("credentials")
+def credentials_group():
+    """
+    Several keys for one provider (Round 72): when one is rate limited, out of credit or revoked, the next takes the call.
+
+    The pool holds the NAMES of environment variables, never the keys. Examples:
+        delentia credentials set openrouter OPENROUTER_API_KEY OPENROUTER_API_KEY_BACKUP
+        delentia credentials status
+        delentia credentials clear openrouter
+    """
+    pass
+
+
+@credentials_group.command("status")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def credentials_status(output: str) -> None:
+    """Which keys the pool knows, by label, and whether each is ready, cooling down, disabled or missing (never a value)."""
+    from rct_control_plane import credential_pool
+    state = credential_pool.status()
+    if output == "json":
+        click.echo(json.dumps(state, indent=2))
+        return
+    click.echo(f"pool file: {state['file']}")
+    if state["error"]:
+        click.echo(click.style(f"error: {state['error']}", fg="red"))
+    if not state["providers"]:
+        click.echo("no pool configured: each provider uses its single key (OPENROUTER_API_KEY, or the variable named by the endpoint)")
+    for provider, spec in state["providers"].items():
+        click.echo(f"{provider}  ({spec['strategy']})")
+        for key in spec["keys"]:
+            extra = f"  ready again in {key['cooldown_seconds']:.0f} s" if key["state"] == "cooling" else ""
+            click.echo(f"  {key['label']:<34} {key['state']:<9} uses={key['uses']} last_status={key['last_status']}{extra}")
+    click.echo("(the states are those of THIS process; a server has its own)")
+
+
+@credentials_group.command("set")
+@click.argument("provider", type=click.Choice(["openrouter", "openai-compat"]))
+@click.argument("names", nargs=-1, required=True)
+@click.option("--strategy", type=click.Choice(["fill_first", "round_robin", "least_used"]), default="fill_first", show_default=True)
+def credentials_set(provider: str, names: tuple, strategy: str) -> None:
+    """Use these environment variables, in this order, as the keys of PROVIDER. Names only; a pasted key is refused."""
+    from rct_control_plane import credential_pool
+    try:
+        path = credential_pool.save_config(provider, [*names], strategy)
+    except credential_pool.PoolConfigError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"saved {len(names)} key name(s) for {provider} in {path}")
+    missing = [n for n in names if not os.environ.get(n)]
+    if missing:
+        click.echo(click.style("not set in this shell (they must be set where the server starts): " + ", ".join(missing), fg="yellow"))
+
+
+@credentials_group.command("clear")
+@click.argument("provider", type=click.Choice(["openrouter", "openai-compat"]))
+def credentials_clear(provider: str) -> None:
+    """Stop using a pool for PROVIDER (the entry is moved aside in the file as `<provider>.cleared`, not deleted)."""
+    from rct_control_plane import credential_pool
+    path = credential_pool.pool_path()
+    if not path.exists():
+        click.echo("no pool file")
+        return
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if provider not in data:
+        click.echo(f"no pool for {provider}")
+        return
+    data[f"{provider}.cleared"] = data.pop(provider)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    click.echo(f"{provider}: pool switched off (kept in the file under {provider}.cleared)")
 
 
 @cli.group("approvals")
