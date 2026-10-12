@@ -44,6 +44,7 @@ jobs:
       - name: Import the parts a user reaches first, and run the CLI
         env:
           DELENTIA_HOME: /tmp/clean-home
+          HOME: /tmp/clean-user
         working-directory: /tmp
         run: |
           /tmp/clean/bin/python - <<'EOF'
@@ -60,4 +61,5 @@ jobs:
           raise SystemExit(1 if failed else 0)
           EOF
           /tmp/clean/bin/delentia --help
+          /tmp/clean/bin/delentia demo init
           /tmp/clean/bin/delentia demo status
