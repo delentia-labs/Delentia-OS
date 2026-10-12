@@ -269,7 +269,8 @@ def pack(vector: Sequence[float]) -> bytes:
 
 _np: Any
 try:                                                                   # numpy is a declared dependency of the package; the plain-Python path below is the fallback
-    import numpy as _np
+    import numpy as _numpy
+    _np = _numpy
 except ImportError:                                                    # pragma: no cover
     _np = None
 
