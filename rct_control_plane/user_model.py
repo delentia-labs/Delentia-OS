@@ -103,7 +103,7 @@ def detect(text: str) -> List[Dict[str, str]]:
             add("language", _LANG_NAMES[match.group(1).lower()], sentence)
         # length
         match = _SHORT_EN.search(sentence)
-        if match and (marked or _STAND_EN.search(sentence) or re.match(r"\s*(?:please\s+)?(?:keep|make)\b", sentence, re.IGNORECASE)):
+        if match and (marked or _STAND_EN.search(sentence) or re.match(r"\s{0,20}(?:please\s{1,5})?(?:keep|make)\b", sentence, re.IGNORECASE)):
             add("answer_length", "short", sentence)
         elif _DETAIL_EN.search(sentence):
             add("answer_length", "detailed", sentence)
