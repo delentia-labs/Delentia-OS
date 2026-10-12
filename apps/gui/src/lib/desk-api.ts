@@ -162,7 +162,8 @@ export interface MemoryLogStatus {
   chain?: { ok: boolean; events: number; problems: string[] };
   anchors?: { ok: boolean; anchors: number; latest_anchored_seq: number; unanchored_events: number; problems: string[] };
 }
-export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number; revoked_at?: string | null; revoked_reason?: string | null }
+export interface MemoryItem { id: string; namespace: string; memory_type: string; content: string; importance: number; created_at: string; accessed_count: number; revoked_at?: string | null; revoked_reason?: string | null; pinned_at?: string | null }
+export interface ReplaceHint { id: string; content: string; score: number; change_announced: boolean }
 export interface ChainReport {
   ok: boolean; chained_rows: number; signed_rows: number; legacy_unchained_rows: number;
   head_seq: number | null; head_hash: string | null; first_bad_seq: number | null; reason: string | null;
@@ -457,6 +458,12 @@ export const desk = {
   memoryLog: () => call<MemoryLogStatus>("/v1/desk/memories/log"),
   revokeMemory: (memoryId: string, reason: string, namespace?: string) =>
     call<{ memory_id: string; namespace: string; revoked: boolean }>("/v1/desk/memories/revoke", { method: "POST", body: JSON.stringify({ memory_id: memoryId, reason, namespace }) }),
+  pinMemory: (memoryId: string, pinned: boolean, namespace?: string, reviewed = false) =>
+    call<{ memory_id: string; namespace: string; pinned: boolean; changed: boolean }>("/v1/desk/memories/pin", { method: "POST", body: JSON.stringify({ memory_id: memoryId, pinned, namespace, reviewed }) }),
+  replaceMemory: (memoryId: string, content: string, namespace?: string) =>
+    call<{ namespace: string; old_id: string; new_id: string; pin_moved: boolean }>("/v1/desk/memories/replace", { method: "POST", body: JSON.stringify({ memory_id: memoryId, content, namespace }) }),
+  memoryHints: (text: string, namespace?: string) =>
+    call<{ namespace: string; hints: ReplaceHint[] }>(`/v1/desk/memories/hints?text=${encodeURIComponent(text)}${namespace ? `&namespace=${encodeURIComponent(namespace)}` : ""}`),
   remember: (content: string, memoryType = "fact", namespace?: string) =>
     call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
   fdia: () => call<FdiaState>("/v1/desk/fdia"),

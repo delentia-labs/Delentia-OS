@@ -2228,9 +2228,31 @@ def memory_add(content: str, namespace: str, memory_type: str, importance: float
     persistence = _audit_db(db)
     memory_id = asyncio.run(AgentMemory(namespace, persistence).store(content, MemoryType(memory_type), importance=importance))
     click.echo(f"stored {memory_id} in namespace {namespace}")
+    from rct_control_plane import memory_replace
+    for hint in [h for h in memory_replace.likely_replaced(persistence, namespace, content) if h["id"] != memory_id][:2]:
+        click.echo(click.style(f"  this may replace {hint['id']} ({hint['score']}): {hint['content'][:90]}", fg="yellow"))
+        click.echo(f"    if it does: delentia memory replace {hint['id']} \"<the new text>\" --namespace {namespace}   (the old one is kept, no longer recalled)")
     if pin:
         result = persistence.pin_memory(memory_id, namespace, True, by="cli")
         click.echo(("pinned: every episode of this namespace will be shown it" if result["ok"] else f"not pinned: {result['reason']}"))
+
+
+@memory_group.command("replace")
+@click.argument("old_id")
+@click.argument("content")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_replace_command(old_id: str, content: str, namespace: str, db: Optional[str]) -> None:
+    """The new text is the current version of OLD_ID. The old memory is kept on disk and in the history but no longer recalled; a pinned rule stays pinned."""
+    import asyncio
+    from rct_control_plane import memory_replace
+    from rct_control_plane.agent_memory import AgentMemory
+    try:
+        done = asyncio.run(memory_replace.replace(AgentMemory(namespace, _audit_db(db)), old_id, content, by="cli"))
+    except memory_replace.ReplaceError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{done['old_id']} replaced by {done['new_id']}" + ("; the pin moved to the new one" if done["pin_moved"] else ""))
 
 
 @memory_group.command("list")

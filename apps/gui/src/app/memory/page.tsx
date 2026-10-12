@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Empty, ErrorNote, PageBody, PageHeader, Panel, fmtTime, useDeskData } from "@/components/desk/ui";
-import { desk } from "@/lib/desk-api";
+import { desk, type ReplaceHint } from "@/lib/desk-api";
 import { TimeTravel } from "@/components/desk/memory/TimeTravel";
 
 const KINDS = ["fact", "preference", "goal", "event", "skill", "conversation"];
@@ -19,17 +19,69 @@ export default function MemoryPage() {
   const [kind, setKind] = useState("fact");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
+  const [hints, setHints] = useState<ReplaceHint[] | null>(null);
+  const [replacing, setReplacing] = useState<{ id: string; text: string } | null>(null);
 
-  const add = async () => {
+  const fail = (err: unknown) => setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+
+  const store = async () => {
     setBusy(true);
     setNote(null);
     try {
       const r = await desk.remember(content.trim(), kind, namespace || undefined);
       setNote({ tone: "ok", text: `Stored in namespace ${r.namespace}.` });
       setContent("");
+      setHints(null);
       list.reload();
     } catch (err) {
-      setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+      fail(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Before storing, ask which existing memory this text may replace. A hint only: nothing changes until the person chooses.
+  const add = async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const found = await desk.memoryHints(content.trim(), namespace || undefined);
+      if (found.hints.length) {
+        setHints(found.hints);
+        setBusy(false);
+        return;
+      }
+    } catch {
+      /* the hint is optional: store anyway */
+    }
+    setBusy(false);
+    await store();
+  };
+
+  const replaceWith = async (oldId: string, text: string, after?: () => void) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const r = await desk.replaceMemory(oldId, text.trim(), namespace || undefined);
+      setNote({ tone: "ok", text: lang === "th" ? `แทนที่แล้ว: ${r.old_id} ถูกเก็บไว้แต่ agent ไม่ใช้อีก${r.pin_moved ? " และกฎที่ปักหมุดย้ายมาที่ความจำใหม่" : ""}` : `Replaced: ${r.old_id} is kept on disk but no longer used${r.pin_moved ? "; the pinned rule moved to the new memory" : ""}.` });
+      after?.();
+      list.reload();
+    } catch (err) {
+      fail(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pin = async (m: { id: string; namespace: string; pinned_at?: string | null }) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await desk.pinMemory(m.id, !m.pinned_at, m.namespace);
+      setNote({ tone: "ok", text: m.pinned_at ? (lang === "th" ? "เลิกปักหมุดแล้ว" : "Unpinned.") : (lang === "th" ? "ปักหมุดแล้ว: ทุก episode จะเห็นกฎนี้ ไม่ว่าเป้าหมายจะเป็นอะไร (สูงสุด 5 ข้อต่อคน)" : "Pinned: every episode is shown this rule, whatever the goal (at most 5 per person).") });
+      list.reload();
+    } catch (err) {
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -73,6 +125,21 @@ export default function MemoryPage() {
               </select>
               <Button onClick={add} disabled={busy || !content.trim()}>{busy ? "Saving…" : "Remember"}</Button>
             </div>
+            {hints ? (
+              <div role="group" aria-label="This may replace" className="mt-3 space-y-2 rounded border border-dl-amber/50 p-3">
+                <p className="text-[13px] text-dl-amber">{lang === "th" ? "ข้อความนี้อาจแทนที่ความจำที่มีอยู่แล้ว เลือกว่าจะทำอย่างไร (ยังไม่มีอะไรเปลี่ยน)" : "This may replace something you already told the agent. Nothing has changed yet."}</p>
+                {hints.map((h) => (
+                  <div key={h.id} className="space-y-1">
+                    <p className="desk-mono break-words text-[12px] text-dl-muted">{h.id} · {h.score}: {h.content}</p>
+                    <Button tone="amber" disabled={busy} onClick={() => replaceWith(h.id, content, () => { setContent(""); setHints(null); })}>{lang === "th" ? "แทนที่ข้อนี้" : "Replace this one"}</Button>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <Button tone="ghost" disabled={busy} onClick={store}>{lang === "th" ? "เก็บเป็นความจำใหม่ (ไม่แทนที่)" : "Store as a new memory"}</Button>
+                  <Button tone="ghost" disabled={busy} onClick={() => setHints(null)}>{lang === "th" ? "ยกเลิก" : "Cancel"}</Button>
+                </div>
+              </div>
+            ) : null}
             {note ? <p role="status" className={`mt-3 text-[13px] ${note.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{note.text}</p> : null}
             <p className="mt-4 text-[12px] leading-relaxed text-dl-muted">
               Memories are stored on this machine in RCTDB (SQLite). Do not store secrets here: recalled text is placed in the model&apos;s prompt.
@@ -100,7 +167,7 @@ export default function MemoryPage() {
               <Empty title="Nothing remembered yet">Add a fact on the left, or ask the agent to remember something in Chat.</Empty>
             ) : null}
             {list.data?.memories.map((m) => (
-              <Panel key={m.id} title={m.memory_type} aside={<span className="desk-mono text-[11px] text-dl-muted">{m.namespace} · used {m.accessed_count}×</span>}>
+              <Panel key={m.id} title={m.pinned_at ? `${m.memory_type} · ${lang === "th" ? "กฎที่ปักหมุด" : "pinned rule"}` : m.memory_type} aside={<span className="desk-mono text-[11px] text-dl-muted">{m.namespace} · used {m.accessed_count}×</span>}>
                 <p className={`whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>{m.content}</p>
                 <p className="desk-mono mt-2 text-[11px] text-dl-muted">importance {m.importance} · {fmtTime(m.created_at)}</p>
                 {m.revoked_at ? (
@@ -120,8 +187,23 @@ export default function MemoryPage() {
                     </div>
                     <p className="text-[12px] text-dl-muted">{lang === "th" ? "ข้อความจะไม่ถูกลบ: ถูกเก็บไว้ตามนโยบาย Zero-Delete" : "The text is not deleted: it is kept under the Zero-Delete policy."}</p>
                   </div>
+                ) : replacing?.id === m.id ? (
+                  <div className="mt-3 space-y-2">
+                    <label className="block">
+                      <span className="text-[12px] text-dl-muted">{lang === "th" ? "ข้อความใหม่ที่เป็นเวอร์ชันปัจจุบัน" : "The new text: the current version of this memory"}</span>
+                      <textarea value={replacing.text} onChange={(e) => setReplacing({ id: m.id, text: e.target.value })} rows={3} maxLength={4000} disabled={busy}
+                        className="desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink p-2 text-[13px] text-dl-text" />
+                    </label>
+                    <div className="flex gap-2">
+                      <Button tone="amber" onClick={() => replaceWith(m.id, replacing.text, () => setReplacing(null))} disabled={busy || !replacing.text.trim()}>{lang === "th" ? "ยืนยันแทนที่" : "Confirm replace"}</Button>
+                      <Button tone="ghost" onClick={() => setReplacing(null)} disabled={busy}>{lang === "th" ? "ยกเลิก" : "Cancel"}</Button>
+                    </div>
+                    <p className="text-[12px] text-dl-muted">{lang === "th" ? "ความจำเก่าไม่ถูกลบ: ยังอยู่ในประวัติและย้อนดูได้ แต่ agent จะไม่เห็นอีก" : "The old memory is not deleted: it stays in the history and in time travel, but the agent no longer sees it."}</p>
+                  </div>
                 ) : (
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button tone="ghost" onClick={() => pin(m)} disabled={busy}>{m.pinned_at ? (lang === "th" ? "เลิกปักหมุด" : "Unpin") : (lang === "th" ? "ปักหมุดเป็นกฎ" : "Pin as a rule")}</Button>
+                    <Button tone="ghost" onClick={() => setReplacing({ id: m.id, text: m.content })} disabled={busy}>{lang === "th" ? "แทนที่ด้วยข้อความใหม่" : "Replace"}</Button>
                     <Button tone="ghost" onClick={() => { setRevoking(m.id); setReason(""); }} disabled={busy}>{lang === "th" ? "เพิกถอน" : "Revoke"}</Button>
                   </div>
                 )}

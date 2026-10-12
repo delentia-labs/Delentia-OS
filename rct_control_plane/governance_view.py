@@ -36,7 +36,7 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "models": ("model_fallback", "credential_pool"),
     # Round 61
     "hooks": ("agent_hook",),
-    "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked"),
+    "memory": ("memory_candidate", "skill_curator", "memory_log", "memory_revoked", "memory_replaced", "memory_pinned"),
     "tasks": ("agent_task",),
     "scope": ("governed_loop_scope", "governed_loop_taint", "governed_loop_envelope"),
 }
@@ -142,6 +142,10 @@ def summarise(entity_type: str, action: str, changes: Dict[str, Any]) -> str:
         return f"memory of {_short(c.get('namespace'), 40)} erased by destroying its key ({c.get('events')} event(s), {c.get('plaintext_events')} left readable): {_short(c.get('reason'), 80)}"
     if entity_type == "memory_revoked":
         return f"a memory was revoked ({c.get('reason_chars', 0)} characters of reason kept as a hash)"
+    if entity_type == "memory_replaced":
+        return f"memory {_short(c.get('old_id'), 24)} was replaced by {_short(c.get('new_id'), 24)}" + (" (the pinned rule moved with it)" if c.get("pin_moved") else "")
+    if entity_type == "memory_pinned":
+        return f"a memory was {action} as a standing rule"
     if entity_type == "skill_curator":
         return f"skill {action} by the curator ({c.get('kind')}): {_short(c.get('reason'), 90)}"
     if entity_type == "memory_candidate":

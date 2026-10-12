@@ -706,10 +706,10 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         with _connect() as conn:
             conn.row_factory = sqlite3.Row
             if namespace:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason, pinned_at "
                                     "FROM memories WHERE namespace = ? AND (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (namespace, 1 if include_revoked else 0, limit)).fetchall()
             else:
-                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason "
+                rows = conn.execute("SELECT id, namespace, memory_type, content, importance, created_at, accessed_count, revoked_at, revoked_reason, pinned_at "
                                     "FROM memories WHERE (revoked_at IS NULL OR ?) ORDER BY created_at DESC LIMIT ?", (1 if include_revoked else 0, limit)).fetchall()
             spaces = [dict(r) for r in conn.execute("SELECT namespace, COUNT(*) AS n FROM memories WHERE revoked_at IS NULL GROUP BY namespace ORDER BY n DESC").fetchall()]
         if owner and owner != "shared":
@@ -789,6 +789,34 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         if not _kernel()._persistence.revoke_memory(memory_id, namespace, str(payload.get("reason") or "")):
             raise HTTPException(status_code=404, detail="no such memory in this namespace (or it was already revoked)")
         return {"memory_id": memory_id, "namespace": namespace, "revoked": True}
+
+    @router.post("/memories/replace")
+    async def replace_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+        """Round 72: the new text is the current version of memory `memory_id`; the old one is retired (kept on disk, soft-revoked as "superseded by ...") and a pinned rule stays pinned.
+        A person replaces only their own memories; the owner names the namespace."""
+        from rct_control_plane import memory_replace
+        from rct_control_plane.agent_memory import AgentMemory
+        memory_id, content = str(payload.get("memory_id") or "").strip(), str(payload.get("content") or "")
+        if not memory_id or not content.strip():
+            raise HTTPException(status_code=400, detail="'memory_id' and 'content' are required")
+        namespace = str(payload.get("namespace") or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk"))
+        who = getattr(request.state, "delentia_user", None)
+        if who and who != "shared":
+            namespace = who
+        try:
+            return {"namespace": namespace, **await memory_replace.replace(AgentMemory(namespace, _kernel()._persistence), memory_id, content, by=who or "desk")}
+        except memory_replace.ReplaceError as exc:
+            raise HTTPException(status_code=404 if "no live memory" in str(exc) else 409, detail=str(exc)) from exc
+
+    @router.get("/memories/hints")
+    async def replace_hints(request: Request, text: str = Query(..., min_length=1, max_length=4000), namespace: Optional[str] = None) -> Dict[str, Any]:
+        """Round 72: which of this person's memories a new text may replace (a hint for the person who is about to store it; nothing changes)."""
+        from rct_control_plane import memory_replace
+        ns = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+        who = getattr(request.state, "delentia_user", None)
+        if who and who != "shared":
+            ns = who
+        return {"namespace": ns, "hints": memory_replace.likely_replaced(_kernel()._persistence, ns, text)}
 
     @router.post("/memories/pin")
     async def pin_memory(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
