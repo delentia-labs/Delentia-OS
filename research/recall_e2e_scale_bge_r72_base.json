@@ -1,0 +1,114 @@
+[
+  {
+    "set": "scale",
+    "mode": "embed",
+    "n": 30,
+    "hit@1": 18,
+    "hit@3": 19,
+    "hit@5": 20,
+    "hit@10": 23,
+    "store_ms_median": 80.8,
+    "recall_ms_median": 530.7,
+    "misses@3": [
+      {
+        "question": "When do the storage facility doors shut on a Saturday?",
+        "answer": "12:00",
+        "top": [
+          "The loading dock closes at 13:10 on Saturday.",
+          "The server room closes at 06:45 on Saturday.",
+          "The server room closes at 13:10 on Saturday."
+        ]
+      },
+      {
+        "question": "Which company supplies our cartons when the primary cannot?",
+        "answer": "BoxHub",
+        "top": [
+          "The main printing vendor is Piya; the backup vendor is CartonCo.",
+          "The main catering vendor is Pichai; the backup vendor is CartonCo.",
+          "The main cleaning vendor is Pichai; the backup vendor is CartonCo."
+        ]
+      },
+      {
+        "question": "Who signs off on releases?",
+        "answer": "Malee",
+        "top": [
+          "Pichai gives access to the packaging section.",
+          "Piya manages the records budget for the support team.",
+          "Anan gives access to the records section."
+        ]
+      },
+      {
+        "question": "What is the name of the pre-production data store?",
+        "answer": "stg-db-1",
+        "top": [
+          "The product catalogue lives in the repository folder data/catalog.",
+          "The training database is called tst-db-3.",
+          "The archive database is called demo-db-5."
+        ]
+      },
+      {
+        "question": "How much may we spend each month on hosting?",
+        "answer": "15,000",
+        "top": [
+          "The monthly marketing budget is capped at 310 baht.",
+          "The monthly software budget is capped at 310 baht.",
+          "The monthly marketing budget is capped at 40,300 baht."
+        ]
+      },
+      {
+        "question": "Who gives access to the cold-storage section?",
+        "answer": "Chaiwat",
+        "top": [
+          "Pichai gives access to the dry goods section.",
+          "Pichai gives access to the dry goods section.",
+          "Anan gives access to the dry goods section."
+        ]
+      },
+      {
+        "question": "On which weekday does money from card sales land in our bank?",
+        "answer": "Wednesday",
+        "top": [
+          "Staff in the finance team use the billing tool on Sunday.",
+          "Staff in the finance team use the messaging tool on Sunday.",
+          "Staff in the marketing team use the billing tool on Friday."
+        ]
+      },
+      {
+        "question": "How many calls a minute may a client make?",
+        "answer": "120 requests",
+        "top": [
+          "The billing rate limit is 45 requests per minute.",
+          "The billing limit is 8 requests per hour.",
+          "The billing limit is 9 requests per hour."
+        ]
+      },
+      {
+        "question": "Where does traffic go if the main data centre goes down?",
+        "answer": "ap-northeast-1",
+        "top": [
+          "The loading dock closes at 06:45 on Tuesday.",
+          "The server room closes at 06:45 on Friday.",
+          "The loading dock closes at 06:45 on Monday."
+        ]
+      },
+      {
+        "question": "How frequently do we change the test environment credentials?",
+        "answer": "90 days",
+        "top": [
+          "The server room for office keys is reviewed every 3 weeks.",
+          "The server room for office keys is reviewed every 6 weeks.",
+          "The server room for office keys is reviewed every 8 weeks."
+        ]
+      },
+      {
+        "question": "Which chat room gets the changelog posts?",
+        "answer": "#harbor-announce",
+        "top": [
+          "Chai gives access to the records section.",
+          "The meeting room for office keys is reviewed every 6 weeks.",
+          "The meeting room for office keys is reviewed every 3 weeks."
+        ]
+      }
+    ]
+  }
+]

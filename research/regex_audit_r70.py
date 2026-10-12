@@ -12,6 +12,8 @@ Limits: patterns built at run time (22 f-strings or variables) are not covered; 
 from __future__ import annotations
 
 import ast
+import json
+import os
 import re
 import subprocess
 import sys
@@ -34,6 +36,9 @@ def hostile_inputs(n: int = N) -> List[Tuple[str, str]]:
 
 
 def collect() -> List[Dict[str, object]]:
+    given = os.environ.get("DELENTIA_REGEX_AUDIT_ITEMS")                                 # Round 72: research/regex_audit_r72.py hands the worker processes its own list (literal + built at import)
+    if given and Path(given).exists():
+        return list(json.loads(Path(given).read_text(encoding="utf-8"))) + [{"pattern": "__skipped__", "flags": 0, "where": ""}]
     seen: Dict[str, Dict[str, object]] = {}
     skipped = 0
     for path in sorted(SOURCE.glob("**/*.py")):
