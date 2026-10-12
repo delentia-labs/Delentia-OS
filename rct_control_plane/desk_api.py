@@ -808,6 +808,16 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except memory_replace.ReplaceError as exc:
             raise HTTPException(status_code=404 if "no live memory" in str(exc) else 409, detail=str(exc)) from exc
 
+    @router.get("/profile")
+    async def profile(request: Request, namespace: Optional[str] = None) -> Dict[str, Any]:
+        """Round 72: how this person asked to be answered (language, length, format, time zone); every entry is one of their own memories and can be revoked or replaced on the Memory page."""
+        from rct_control_plane import user_model
+        ns = namespace or os.environ.get("DELENTIA_DESK_NAMESPACE", "desk")
+        who = getattr(request.state, "delentia_user", None)
+        if who and who != "shared":
+            ns = who
+        return {"namespace": ns, "facets": user_model.UserModel(_kernel()._persistence, ns).facets()}
+
     @router.get("/memories/hints")
     async def replace_hints(request: Request, text: str = Query(..., min_length=1, max_length=4000), namespace: Optional[str] = None) -> Dict[str, Any]:
         """Round 72: which of this person's memories a new text may replace (a hint for the person who is about to store it; nothing changes)."""

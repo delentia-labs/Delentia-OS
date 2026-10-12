@@ -14,3 +14,13 @@ Wilson 95% intervals are reported; with n = 10 and 20 a difference of one item i
 
 ## 2. Credential pool (credential_pool.py)
 Not a measurement: properties pinned by tests (names only, no value anywhere, rotation on 401/402/403/429, nothing moves on 5xx, audited by label, hidden from the shell). A mutation check (rotation disabled) must fail the rotation tests: done, 7 of 25 fail.
+
+## 3. The user model (rct_control_plane/user_model.py), written BEFORE the detector
+What it is: a person's standing preferences about HOW to answer (language, answer length, format, timezone), taken only from the person's own message, proposed as a suggestion and kept only when the person accepts;
+once accepted it is shown to every episode as "what this person asked for about how to answer" (never a permission). Nothing is learned from a tool result, a page, a file or an episode that read outside text.
+Data: research/user_model_dataset_r72.py, DEV 24 sentences (12 state a preference, 12 do not: tasks, questions, one-off instructions), HOLDOUT 40 (20 / 20), frozen by SHA-256. Labels and sentences are the author's.
+Rules were written against DEV only. HOLDOUT is measured ONCE. Pass on HOLDOUT: precision (detections that are right: the facet AND the value) >= 0.90 and recall >= 0.70 on the 20 positives; zero detections on at least 18 of the 20 negatives.
+Reported with Wilson 95% intervals; n = 20 means one sentence moves a rate by 5 points.
+Not measured here (needs a capable model and users): whether answering in the person's language / length / format makes the person's work better. The test is only that the right statement becomes the right suggestion.
+Properties pinned by tests: an episode that read outside text proposes nothing; a sentence that looks like a secret proposes nothing; a facet is a memory of the person (sealed, revocable, replaceable, erased with the person); the rendered block is at most 500 characters
+and only the fixed vocabulary reaches the prompt (a facet value is never free text, except `name`, which is not a facet here).

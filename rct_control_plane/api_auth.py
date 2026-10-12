@@ -64,6 +64,7 @@ PERSON_ROUTES = (
     ("/v1/desk/memories/at", {"GET"}, False),                 # their own memory as it was at an earlier moment
     ("/v1/desk/memories/revoke", {"POST"}, False),           # stop the agent using one of their own memories (kept on disk)
     ("/v1/desk/memories/replace", {"POST"}, False),          # say that a new memory of theirs replaces an old one of theirs (Round 72)
+    ("/v1/desk/profile", {"GET"}, False),                     # how they asked to be answered (their own profile entries)
     ("/v1/desk/memories/hints", {"GET"}, False),             # which of their own memories a new text may replace (a hint, changes nothing)
     ("/v1/desk/sessions/search", {"GET"}, False),             # their own past requests
     ("/v1/jitna/verify", {"POST"}, False),        # checks a signature; reads nothing

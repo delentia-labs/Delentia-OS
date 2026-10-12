@@ -1718,6 +1718,56 @@ def acp_command() -> None:
     sys.exit(acp_server.main())
 
 
+@cli.group("profile")
+def profile_group():
+    """
+    How you want to be answered (Round 72): language, answer length, format, time zone. Shown to every episode; yours to read, change and erase.
+
+    Examples:
+        delentia profile show
+        delentia profile set language th
+        delentia profile unset answer_length
+    """
+    pass
+
+
+@profile_group.command("show")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_show(namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane import user_model
+    facets = user_model.UserModel(_audit_db(db), namespace).facets()
+    if not facets:
+        click.echo("nothing in the profile yet (it fills from what you say about how to be answered, once you accept the suggestion: `delentia memory candidates`)")
+    for name, f in facets.items():
+        click.echo(f"{name:<14} {f['value']:<14} {f['sentence']}   ({f['memory_id']})")
+
+
+@profile_group.command("set")
+@click.argument("facet", type=click.Choice(["language", "answer_length", "format", "timezone"]))
+@click.argument("value")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_set(facet: str, value: str, namespace: str, db: Optional[str]) -> None:
+    """Set one entry directly. VALUE comes from a fixed list (th en ja zh ko fr de es / short detailed / bullets table / an IANA zone or UTC+7)."""
+    from rct_control_plane import user_model
+    try:
+        done = user_model.UserModel(_audit_db(db), namespace).set(facet, value, by="cli")
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"{facet} = {value}" + ("" if done["changed"] else "  (already so)"))
+
+
+@profile_group.command("unset")
+@click.argument("facet", type=click.Choice(["language", "answer_length", "format", "timezone"]))
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def profile_unset(facet: str, namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane import user_model
+    click.echo("removed (kept on disk, no longer shown)" if user_model.UserModel(_audit_db(db), namespace).unset(facet, by="cli") else f"{facet} was not set")
+
+
 @cli.group("credentials")
 def credentials_group():
     """
