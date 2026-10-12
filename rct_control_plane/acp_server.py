@@ -270,7 +270,7 @@ def stdio_server(**kwargs: Any) -> AcpServer:
         return raw.decode("utf-8", errors="replace") if raw else ""
 
     read_line = read_line_in_a_thread
-    if os.name == "nt":
+    if sys.platform == "win32":                                              # (not os.name: mypy only understands sys.platform, and the Windows-only calls below do not exist in the Linux stubs)
         # On Windows a thread blocked in a read of the stdin pipe makes the FIRST import of numpy or pyarrow in this process wait until the pipe closes (measured: 19 s and 24 s, i.e. until the
         # other end of the pipe went away), and the agent imports them the first time a tool needs them. So nothing waits in a read: the event loop asks the pipe how many bytes are there
         # (PeekNamedPipe) and reads only those.
