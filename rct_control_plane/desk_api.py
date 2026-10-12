@@ -842,15 +842,16 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         from rct_control_plane import fdia_policy, signedai_jury
         from rct_control_plane.governed_autonomous_loop import FDIA_GATE_THRESHOLD
         path = fdia_policy.policy_path()
-        policy, error = None, ""
+        policy, error, source = None, "", "none"
         try:
-            policy = fdia_policy.load_policy()
+            policy, source = fdia_policy.effective_policy()
         except ValueError:
             # The reason is on the host (`delentia fdia show`); the response carries a fixed message, not the exception text.
             error = "cannot read the policy file, or it is invalid (run `delentia fdia show` on the host for the reason)"
         jury_path = signedai_jury.config_path()
         return {
             "path": str(path), "exists": path.exists(), "error": error,
+            "source": source, "default_template": fdia_policy.default_template_name(),
             "policy": policy.to_dict() if policy is not None else None,
             "digest": policy.digest() if policy is not None else None,
             "built_in": {"threshold": FDIA_GATE_THRESHOLD,

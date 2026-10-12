@@ -50,6 +50,8 @@ class SemanticMatcher:
     Supports Jaccard (original) and WangchanBERTa (Thai embeddings) modes.
     """
 
+    _engine_import_failed = False
+
     def __init__(
         self,
         min_token_length: int = 2,
@@ -68,6 +70,8 @@ class SemanticMatcher:
         """Lazily load ThaiEmbeddingEngine; return None on ImportError."""
         if self._embedding_engine is not None:
             return self._embedding_engine
+        if SemanticMatcher._engine_import_failed:                       # Round 69: the private package is absent in a public checkout; trying the import again for EVERY pair cost ~0.15 s per recall at 1,000 memories
+            return None
         try:
             from rct_platform.microservices.kernel.thai_embedding_engine import (
                 ThaiEmbeddingEngine,
@@ -78,6 +82,7 @@ class SemanticMatcher:
                 self._embedding_engine = engine
             return self._embedding_engine
         except Exception:
+            SemanticMatcher._engine_import_failed = True
             return None
 
     def compute_jaccard(self, text_a: str, text_b: str) -> float:

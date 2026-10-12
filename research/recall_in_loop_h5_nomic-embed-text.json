@@ -1,0 +1,419 @@
+{
+  "summary": {
+    "set": "h5",
+    "model": "nomic-embed-text",
+    "injected_per_episode": 5,
+    "questions": 40,
+    "gold_shown_to_the_episode": 18,
+    "mean_D_gain_from_memory_on_questions": 0.0471,
+    "unrelated_questions": 20,
+    "unrelated_that_still_show_a_memory": 2,
+    "unrelated_mean_D_gain": 0.0062,
+    "unrelated_max_D_gain": 0.0786
+  },
+  "shown": 18,
+  "rows": [
+    {
+      "question": "โกดังที่ปทุมธานีเริ่มรับของเข้ากี่โมง",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ถ้าเครื่องปรับอากาศเสียต้องเรียกใคร",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.22,
+      "memory_part": 0.44
+    },
+    {
+      "question": "ส่งของแบบเร่งด่วนคิดเงินเท่าไรต่อน้ำหนักหนึ่งกิโล",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.183,
+      "memory_part": 0.366
+    },
+    {
+      "question": "เงินสดของบริษัทถูกเก็บไว้ที่ไหน",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.205,
+      "memory_part": 0.409
+    },
+    {
+      "question": "เด็กที่มาฝึกงานต้องไปพบใครวันแรก",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.195,
+      "memory_part": 0.39
+    },
+    {
+      "question": "ต้องย้ายหรือต่อสัญญาที่ทำงานเมื่อไร",
+      "found": false,
+      "n": 1,
+      "best_relevance": 0.152,
+      "memory_part": 0.305
+    },
+    {
+      "question": "ถ้าก๊อปปี้เสียต้องติดต่อหมายเลขไหน",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "รถวิ่งไปภาคเหนือเดินทางวันไหน",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.162,
+      "memory_part": 0.324
+    },
+    {
+      "question": "ลูกค้าจอดรถโดยไม่เสียเงินได้นานเท่าไร",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.239,
+      "memory_part": 0.479
+    },
+    {
+      "question": "โรงงานได้รับการรับรองมาตรฐานอะไร",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.424,
+      "memory_part": 0.848
+    },
+    {
+      "question": "ใครคุมทีมทำความสะอาด",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ประชุมทางไกลใช้แอปอะไร",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.169,
+      "memory_part": 0.337
+    },
+    {
+      "question": "ต้องส่งเอกสารกองทุนประกันสังคมก่อนวันที่เท่าไร",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.429,
+      "memory_part": 0.858
+    },
+    {
+      "question": "พนักงานยืมหนังสือได้สูงสุดกี่เล่มต่อครั้ง",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.306,
+      "memory_part": 0.613
+    },
+    {
+      "question": "ใครส่งของดิบให้โรงครัว",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทำบัตรประจำตัวสูญหายต้องรีบรายงานภายในเวลาเท่าไร",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.201,
+      "memory_part": 0.403
+    },
+    {
+      "question": "ลิฟต์สำหรับขนสินค้ารับน้ำหนักได้สูงสุดเท่าไร",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.196,
+      "memory_part": 0.391
+    },
+    {
+      "question": "ใครช่วยดูเรื่องภาษีให้องค์กร",
+      "found": false,
+      "n": 4,
+      "best_relevance": 0.216,
+      "memory_part": 0.431
+    },
+    {
+      "question": "คอร์สเซฟตี้ประจำปีมีเมื่อไร",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "อยู่ครบห้าปีได้เงินรางวัลเท่าไร",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ต้องตรวจเช็กความเที่ยงตรงของตาชั่งบ่อยแค่ไหน",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "จะรายงานการโกงภายในองค์กรได้ทางไหน",
+      "found": false,
+      "n": 2,
+      "best_relevance": 0.168,
+      "memory_part": 0.336
+    },
+    {
+      "question": "ใครรับผิดชอบพื้นที่เก็บของอันตราย",
+      "found": false,
+      "n": 3,
+      "best_relevance": 0.167,
+      "memory_part": 0.334
+    },
+    {
+      "question": "บริษัทลูกค้าต้องจ่ายหนี้ภายในกี่วัน",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.25,
+      "memory_part": 0.5
+    },
+    {
+      "question": "จะต่อโน้ตบุ๊กเข้ากับจอห้องประชุมใช้อะไร",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.227,
+      "memory_part": 0.453
+    },
+    {
+      "question": "ภาพจากกล้องรักษาความปลอดภัยถูกเก็บนานเท่าไร",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.293,
+      "memory_part": 0.585
+    },
+    {
+      "question": "ใครเป็นตัวกลางของงานก่อสร้าง",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.211,
+      "memory_part": 0.422
+    },
+    {
+      "question": "บริการรับส่งตอนเช้าเริ่มจากสถานีกี่โมง",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.28,
+      "memory_part": 0.56
+    },
+    {
+      "question": "น้ำดื่มในตู้เย็นของสำนักงานราคาเท่าไร",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.238,
+      "memory_part": 0.475
+    },
+    {
+      "question": "ถังดับเพลิงถูกเช็กเมื่อไรของแต่ละเดือน",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.22,
+      "memory_part": 0.44
+    },
+    {
+      "question": "ใครดูแลคลังที่กรุงเทพ",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Which customer database tool do we use?",
+      "found": false,
+      "n": 1,
+      "best_relevance": 0.279,
+      "memory_part": 0.558
+    },
+    {
+      "question": "How often does the audit committee meet?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.272,
+      "memory_part": 0.543
+    },
+    {
+      "question": "Where do we report computer problems?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครต้องอนุมัติการทำงานล่วงเวลา",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How much is the top subscription tier per month?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "รหัสของโกดังลำลูกกาคืออะไร",
+      "found": false,
+      "n": 1,
+      "best_relevance": 0.171,
+      "memory_part": 0.343
+    },
+    {
+      "question": "When is the company closed over New Year?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครทำเงินเดือนให้พนักงาน",
+      "found": false,
+      "n": 4,
+      "best_relevance": 0.203,
+      "memory_part": 0.407
+    },
+    {
+      "question": "How fast is our office internet?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    }
+  ],
+  "noise": [
+    {
+      "question": "What is the capital of France?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How do I bake sourdough bread?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the boiling point of water at sea level?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Which planet has the most moons?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How many players are on a football team?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the square root of 144?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who wrote Hamlet?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What does DNA stand for?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How tall is Mount Everest?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "เมืองหลวงของฝรั่งเศสคืออะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทำขนมปังซาวร์โดว์อย่างไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครวาดภาพโมนาลิซ่า",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "น้ำเดือดที่กี่องศาเซลเซียส",
+      "n": 1,
+      "best_relevance": 0.153,
+      "memory_part": 0.307
+    },
+    {
+      "question": "ดาวเคราะห์ดวงไหนมีดวงจันทร์มากที่สุด",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทีมฟุตบอลมีผู้เล่นกี่คน",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "รากที่สองของ 144 คือเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครเขียนเรื่องแฮมเล็ต",
+      "n": 5,
+      "best_relevance": 0.262,
+      "memory_part": 0.524
+    },
+    {
+      "question": "ดีเอ็นเอย่อมาจากอะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ยอดเขาเอเวอเรสต์สูงเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    }
+  ]
+}

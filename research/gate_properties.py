@@ -26,6 +26,7 @@ ANCHOR = "test_memory_anchor_round67_real.py"
 ERASE = "test_memory_erasure_round67_real.py"
 ERASE2 = "test_erasure_tables_round68_real.py"
 GOALCTX = "test_fdia_goal_context_round68_real.py"
+DEFAULT = "test_default_policy_round69_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
     {"id": "P1", "name": "A = 0 blocks restricted effects",
@@ -133,6 +134,18 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{ERASE2}::test_the_chains_still_verify_and_the_desk_shows_the_erased_marker"],
      "assumes": "The approver key is held by a person; the key file of the person being erased was not copied elsewhere. Audit rows written with DELENTIA_AUDIT_TEXT=plain keep the person's words in the chain (the report counts them).",
      "not_covered": "Events written before sealing was on stay readable; other tables that carry the person's namespace (past requests, skills, experiments) are listed in the report and not erased; backups, swap and filesystem journals are outside the database file."},
+    {"id": "P13", "name": "A host with no owner policy is judged by the default starter, not by the floor alone",
+     "statement": "With no policy file the argument-aware starter judges every tool call on top of the built-in floor: a command outside the read-only list, an address nobody typed and no page showed, a write, a schedule all wait for a signature; "
+                  "a tool it has no rule for is left to the floor (never blocked by zero trust); a broken policy FILE still stops everything (the default never hides it); the audit row of every gate decision says which policy judged it.",
+     "tests": [f"{DEFAULT}::test_no_file_means_the_default_and_a_file_always_wins",
+               f"{DEFAULT}::test_a_broken_file_still_fails_closed_and_is_never_hidden_by_the_default",
+               f"{DEFAULT}::test_a_tool_it_has_no_rule_for_is_left_to_the_floor_not_blocked_by_zero_trust",
+               f"{DEFAULT}::test_the_default_gives_the_same_verdicts_as_the_argaware_starter_on_every_tool",
+               f"{DEFAULT}::test_in_the_loop_the_default_policy_judges_with_no_file",
+               f"{DEFAULT}::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow",
+               f"{DEFAULT}::test_an_address_seen_verbatim_in_this_episode_may_be_opened_without_a_signature"],
+     "assumes": "The host did not set DELENTIA_FDIA_POLICY_DEFAULT=none; research mode (DELENTIA_RESEARCH_MODE=1) switches the default off on purpose, so an experiment measures the floor.",
+     "not_covered": "The default is a starter written by the author; the 169 labelled requests it was measured on are the author's labels. It does not replace an owner's own policy, roles or signers."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 
@@ -150,6 +163,7 @@ THREATS: List[Dict[str, object]] = [
     {"threat": "History rewriting (the log of what the agent knew is edited after the fact)", "tests": [f"{ANCHOR}::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor", f"{ANCHOR}::test_cutting_the_log_back_is_caught"]},
     {"threat": "Personal data that cannot be erased from an append-only record", "tests": [f"{ERASE}::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact", f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file"]},
     {"threat": "An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it)", "tests": [f"{GOALCTX}::test_an_address_that_extends_cuts_or_differs_does_not_count", f"{GOALCTX}::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one", f"{GOALCTX}::test_the_taint_gate_still_decides_after_text_from_outside_was_read"]},
+    {"threat": "A fresh install with no policy file runs side effects on the built-in floor alone", "tests": [f"{DEFAULT}::test_in_the_loop_the_default_policy_judges_with_no_file", f"{DEFAULT}::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow"]},
     {"threat": "Memory poisoning", "tests": ["test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next",
                                              "test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits",
                                              f"{NEW}::test_p9_a_revoked_memory_is_returned_by_nothing"]},

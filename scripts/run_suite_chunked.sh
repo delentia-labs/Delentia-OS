@@ -9,10 +9,10 @@ run_chunk() {
   local tmp="$OUT.$name.tmp"
   for attempt in 1 2; do
     python -m pytest -q -p no:cacheprovider -W ignore --no-header "$@" > "$tmp" 2>&1
-    if tail -n 3 "$tmp" | grep -Eq "(passed|failed|error)"; then break; fi
+    if grep -Eq "^=+ .*(passed|failed|error).* in [0-9.]+s" "$tmp"; then break; fi        # the summary line, wherever it is (OpenTelemetry can print after it)
     echo "[$name] attempt $attempt ended without a summary (crash?)" >> "$OUT"
   done
-  echo "[$name] $(tail -n 1 "$tmp")" >> "$OUT"
+  echo "[$name] $(grep -E '^=+ .*(passed|failed|error).* in [0-9.]+s' "$tmp" | tail -n 1)" >> "$OUT"
   grep -E "^(FAILED|ERROR) " "$tmp" >> "$OUT"
 }
 run_chunk core core/tests microservices signedai/tests tests

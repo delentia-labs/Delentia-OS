@@ -1,0 +1,419 @@
+{
+  "summary": {
+    "set": "h2",
+    "model": "bge-m3",
+    "injected_per_episode": 5,
+    "questions": 40,
+    "gold_shown_to_the_episode": 36,
+    "mean_D_gain_from_memory_on_questions": 0.1379,
+    "unrelated_questions": 20,
+    "unrelated_that_still_show_a_memory": 2,
+    "unrelated_mean_D_gain": 0.0107,
+    "unrelated_max_D_gain": 0.1341
+  },
+  "shown": 36,
+  "rows": [
+    {
+      "question": "ใครดูแลเรื่องพนักงานในบริษัท",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.48,
+      "memory_part": 0.96
+    },
+    {
+      "question": "ช่วงทดสอบความสามารถของคนที่เพิ่งเข้าทำงานนานเท่าไร",
+      "found": true,
+      "n": 4,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "บริษัทโอนค่าจ้างให้พนักงานวันไหน",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.867,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ต้องแนบเอกสารจากหมอเมื่อหยุดงานเพราะไม่สบายกี่วันขึ้นไป",
+      "found": true,
+      "n": 3,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "สถานที่ที่ใช้ประชุมทั้งบริษัทรองรับคนได้กี่คน",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.787,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ของที่ส่งออกนอกกรุงเทพฯ ใช้บริษัทไหนขนส่ง",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.398,
+      "memory_part": 0.795
+    },
+    {
+      "question": "ต้องกรอกอะไรเพื่อเชื่อมต่ออินเทอร์เน็ตไร้สายในสำนักงาน",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.307,
+      "memory_part": 0.614
+    },
+    {
+      "question": "ทีมมักไปกินข้าวร้านไหนด้วยกัน",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.956,
+      "memory_part": 1.0
+    },
+    {
+      "question": "บริษัทคุ้มครองค่ารักษาพยาบาลให้สูงสุดเท่าไรต่อปี",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.835,
+      "memory_part": 1.0
+    },
+    {
+      "question": "โทรหาเรื่องอินเทอร์เน็ตล่มต้องกดต่อเบอร์ไหน",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.609,
+      "memory_part": 1.0
+    },
+    {
+      "question": "เทศกาลปีใหม่ไทยออฟฟิศปิดช่วงไหน",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.443,
+      "memory_part": 0.886
+    },
+    {
+      "question": "ใครมีสิทธิ์จอดรถชั้นล่างสุดของตึก",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.903,
+      "memory_part": 1.0
+    },
+    {
+      "question": "สำเนาของข้อมูลถูกเก็บไว้ที่ไหน",
+      "found": true,
+      "n": 3,
+      "best_relevance": 0.664,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ทีมขายนัดพบกันเมื่อไรเป็นประจำ",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "เบี้ยเลี้ยงสำหรับไปทำงานต่างแดนต่อวันเท่าไร",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ผู้ซื้อต้องส่งของกลับภายในกี่วันถ้าไม่พอใจ",
+      "found": true,
+      "n": 3,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ใครเป็นนายใหญ่ของแผนกคอมพิวเตอร์",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.768,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ก่อนเซ็นสัญญาต้องให้ใครตรวจทางกฎหมาย",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.804,
+      "memory_part": 1.0
+    },
+    {
+      "question": "จะชงกาแฟต้องไปที่ไหนของตึก",
+      "found": false,
+      "n": 5,
+      "best_relevance": 0.666,
+      "memory_part": 1.0
+    },
+    {
+      "question": "บริษัทใช้โปรแกรมอะไรทำบัญชี",
+      "found": true,
+      "n": 4,
+      "best_relevance": 0.854,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ปาร์ตี้ปลายปีของบริษัทไปจัดที่ไหน",
+      "found": true,
+      "n": 4,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "พนักงานที่อยากเรียนต่อได้เงินสนับสนุนเท่าไรต่อปี",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "สมาชิกระดับสูงสุดได้ลดราคากี่เปอร์เซ็นต์",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.828,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ฝ่ายตรวจสอบภายในต้องส่งรายงานให้ใคร",
+      "found": true,
+      "n": 1,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "รถรับส่งพนักงานกลับบ้านออกกี่โมง",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ต้องต่อใบอนุญาตทำธุรกิจภายในเดือนใด",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ถ้ามีคนบาดเจ็บไปขอยาที่ไหน",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.315,
+      "memory_part": 0.63
+    },
+    {
+      "question": "เราใช้เน็ตเจ้าไหน",
+      "found": true,
+      "n": 2,
+      "best_relevance": 0.543,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ทำงานเกินเวลาได้เงินเพิ่มกี่เท่า",
+      "found": true,
+      "n": 4,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ถ้าไฟฟ้าขัดข้องจะใช้อะไรแทน",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.905,
+      "memory_part": 1.0
+    },
+    {
+      "question": "ใครดูแลเรื่องวีซ่าให้พนักงานต่างชาติ",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.781,
+      "memory_part": 1.0
+    },
+    {
+      "question": "What prefix do our issue numbers have?",
+      "found": false,
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ผู้จัดการบัญชีธนาคารของบริษัทชื่ออะไร",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.847,
+      "memory_part": 1.0
+    },
+    {
+      "question": "Which month is the yearly general meeting?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.716,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How long is each development iteration?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.297,
+      "memory_part": 0.595
+    },
+    {
+      "question": "Which channel carries official announcements?",
+      "found": true,
+      "n": 1,
+      "best_relevance": 0.387,
+      "memory_part": 0.774
+    },
+    {
+      "question": "ใครอนุมัติการขึ้นระบบจริง",
+      "found": false,
+      "n": 1,
+      "best_relevance": 0.264,
+      "memory_part": 0.527
+    },
+    {
+      "question": "How much do we pay per overseas transfer fee?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.978,
+      "memory_part": 1.0
+    },
+    {
+      "question": "เบอร์สายด่วนของบริษัทคืออะไร",
+      "found": true,
+      "n": 5,
+      "best_relevance": 0.687,
+      "memory_part": 1.0
+    },
+    {
+      "question": "How many days may we work remotely each week?",
+      "found": true,
+      "n": 5,
+      "best_relevance": 1.0,
+      "memory_part": 1.0
+    }
+  ],
+  "noise": [
+    {
+      "question": "What is the capital of France?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How do I bake sourdough bread?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the boiling point of water at sea level?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Which planet has the most moons?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How many players are on a football team?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What is the square root of 144?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "Who wrote Hamlet?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "What does DNA stand for?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "How tall is Mount Everest?",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "เมืองหลวงของฝรั่งเศสคืออะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทำขนมปังซาวร์โดว์อย่างไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครวาดภาพโมนาลิซ่า",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "น้ำเดือดที่กี่องศาเซลเซียส",
+      "n": 1,
+      "best_relevance": 0.447,
+      "memory_part": 0.894
+    },
+    {
+      "question": "ดาวเคราะห์ดวงไหนมีดวงจันทร์มากที่สุด",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ทีมฟุตบอลมีผู้เล่นกี่คน",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "รากที่สองของ 144 คือเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ใครเขียนเรื่องแฮมเล็ต",
+      "n": 3,
+      "best_relevance": 0.267,
+      "memory_part": 0.534
+    },
+    {
+      "question": "ดีเอ็นเอย่อมาจากอะไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    },
+    {
+      "question": "ยอดเขาเอเวอเรสต์สูงเท่าไร",
+      "n": 0,
+      "best_relevance": 0.0,
+      "memory_part": 0.0
+    }
+  ]
+}

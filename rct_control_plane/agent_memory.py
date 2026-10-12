@@ -48,29 +48,33 @@ class AgentMemory:
         if memory_embeddings.enabled():                  # Round 68 (opt-in): index it by meaning, best effort (a failure is not the memory's failure)
             import asyncio
             try:
-                await asyncio.to_thread(memory_embeddings.store_vectors, self._persistence, self.namespace, [{"id": memory_id, "text": content}])
+                stored = await asyncio.to_thread(memory_embeddings.store_vectors, self._persistence, self.namespace, [{"id": memory_id, "text": content}])
+                from rct_control_plane import memory_llm
+                if stored and memory_llm.questions_enabled():     # Round 69 (opt-in): the questions this memory answers, written by a local model
+                    await asyncio.to_thread(memory_embeddings.store_questions, self._persistence, self.namespace, memory_id, content)
             except Exception:                            # noqa: BLE001
                 pass
         return memory_id
 
+    @staticmethod
+    def _type_boost(candidate: Dict[str, Any]) -> float:
+        return _TYPE_BOOST.get(MemoryType(candidate["memory_type"]), 1.0)
+
     def _ranked(self, query: str, candidates: List[Dict[str, Any]], limit: int) -> List[Any]:
-        """(similarity, lexical similarity, candidate) best first. Without embeddings this is exactly the old ranking over the lexical top limit*3; with them every candidate gets
-        max(lexical, calibrated embedding similarity), so a paraphrase can win by meaning and a question that shares words still wins by words."""
+        """(order key, relevance, lexical similarity, candidate) best first; `relevance` is what D reads, the order key is what sorts. Without embeddings this is exactly the old ranking:
+        the lexical top limit*3 ordered by similarity * importance * type boost. With them (Round 68, reordered in Round 69: memory_ranking.py) the order uses the raw cosine of the embedding
+        model (BM25 over character trigrams for a Thai question), nudged by at most 0.03 for importance and type, and `relevance` stays max(lexical, calibrated cosine)."""
         from rct_control_plane import memory_embeddings
         cosines = memory_embeddings.similarities(self._persistence, self.namespace, query, candidates) if memory_embeddings.enabled() else None
         if cosines is None:
             matches = self._matcher.match(query, [c["content"] for c in candidates], top_k=limit * 3, threshold=0.0)
             by_text = {c["content"]: c for c in candidates}
-            return [(m["score"], m["score"], by_text[m["text"]]) for m in matches if m["text"] in by_text]
+            return [(m["score"] * by_text[m["text"]]["importance"] * self._type_boost(by_text[m["text"]]), m["score"], m["score"], by_text[m["text"]])
+                    for m in matches if m["text"] in by_text]
+        from rct_control_plane import memory_ranking
         lexical = {m["text"]: m["score"] for m in self._matcher.match(query, [c["content"] for c in candidates], top_k=len(candidates), threshold=0.0)}
-        out = []
-        for c in candidates:
-            lex = lexical.get(c["content"], 0.0)
-            cos = cosines.get(c["id"])
-            sim = max(lex, memory_embeddings.relevance(cos)) if cos is not None else lex
-            out.append((sim, lex, c))
-        out.sort(key=lambda t: t[0], reverse=True)
-        return out[:max(limit * 3, 1)]
+        bonus = {c["id"]: 0.03 * min(1.0, float(c["importance"]) * self._type_boost(c) / 2.0) for c in candidates}
+        return memory_ranking.rank(query, candidates, cosines, lexical, importance_bonus=bonus)[:max(limit * 3, 1)]
 
     async def recall_scored(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Like recall(), but each item carries `relevance` (the raw semantic
@@ -81,10 +85,7 @@ class AgentMemory:
         candidates = memory_eventlog.select_for_recall(candidates)
         if not candidates:
             return []
-        scored = []
-        for similarity_, _lexical, candidate in self._ranked(query, candidates, limit):
-            boost = _TYPE_BOOST.get(MemoryType(candidate["memory_type"]), 1.0)
-            scored.append((similarity_ * candidate["importance"] * boost, similarity_, candidate))
+        scored = [(order_key, relevance, candidate) for order_key, relevance, _lexical, candidate in self._ranked(query, candidates, limit)]
         scored.sort(key=lambda x: x[0], reverse=True)
         results = []
         for _final, similarity, candidate in scored[:limit]:
@@ -101,10 +102,7 @@ class AgentMemory:
         if not candidates:
             return []
 
-        scored = []
-        for similarity_, _lexical, candidate in self._ranked(query, candidates, limit):
-            boost = _TYPE_BOOST.get(MemoryType(candidate["memory_type"]), 1.0)
-            scored.append((similarity_ * candidate["importance"] * boost, candidate))
+        scored = [(order_key, candidate) for order_key, _relevance, _lexical, candidate in self._ranked(query, candidates, limit)]
 
         scored.sort(key=lambda x: x[0], reverse=True)
         results = [c for _, c in scored[:limit]]

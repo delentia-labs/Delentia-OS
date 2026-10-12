@@ -31,7 +31,14 @@ MODEL_ENV = "DELENTIA_MEMORY_EMBED_MODEL"
 URL_ENV = "DELENTIA_OLLAMA_URL"
 REMOTE_ENV = "DELENTIA_MEMORY_EMBED_ALLOW_REMOTE"
 DEFAULT_MODEL = "nomic-embed-text"
-FLOOR, SPAN = 0.50, 0.15                        # cosine at which relevance is 0, and the width of the ramp to 1 (see the docstring)
+FLOOR, SPAN = 0.50, 0.15                        # cosine at which relevance is 0, and the width of the ramp to 1 (see the docstring): measured for nomic-embed-text
+# Round 69: the numbers above describe ONE model. Another model has another cosine scale, so `relevance` (which D reads) is calibrated per model; an uncalibrated model still helps the ORDER
+# (memory_ranking.py) but contributes nothing to relevance, so D is never raised by a scale nobody measured. `delentia memory calibrate` measures a model and writes the table below.
+# nomic: measured by hand on the Round 68 benchmark. bge-m3: `delentia memory calibrate --model bge-m3` on the paraphrase sample (the first, word-sharing sample gave 0.547 / 0.18, which hid 12 of 40
+# real matches from the agent behind the relevance floor; the paraphrase sample with the 10th-percentile span gave 0.487 / 0.098: 37 of 40 shown but 3 of 20 unrelated questions showed a memory; the median span, chosen because a stranger the scale overrates is worse than a match it underrates, gives 0.487 / 0.221).
+CALIBRATIONS = {"nomic-embed-text": (0.50, 0.15), "bge-m3": (0.487, 0.221)}
+READS_THAI = frozenset({"bge-m3"})                                                    # models measured to tell Thai texts apart (calibrate: reads_thai); nomic-embed-text puts every Thai text on one point
+CALIBRATION_FILE_ENV = "DELENTIA_MEMORY_EMBED_CALIBRATION"
 MAX_BACKFILL = 256                              # memories embedded at once when a recall finds some without a vector
 MAX_TEXT_CHARS = 4000
 TIMEOUT_S = 20.0
@@ -51,8 +58,38 @@ CREATE INDEX IF NOT EXISTS idx_memory_vectors_ns ON memory_vectors(namespace);
 """
 
 
+AUTO_PROBE_S = 300.0
+_auto_probe: Dict[str, Any] = {"at": -1e9, "url": "", "model": "", "ok": False}
+
+
+def _model_is_installed() -> bool:
+    """For DELENTIA_MEMORY_EMBED=auto: is the local Ollama reachable and does it list the embedding model? One short request every five minutes, then the answer is remembered."""
+    now = time.monotonic()
+    url, name = base_url(), model()
+    if now - _auto_probe["at"] < AUTO_PROBE_S and _auto_probe["url"] == url and _auto_probe["model"] == name:
+        return bool(_auto_probe["ok"])
+    ok = False
+    if _address_allowed(url):
+        try:
+            tags = json.loads(urllib.request.urlopen(url + "/api/tags", timeout=2.0).read())
+            have = {str(m.get("name", "")) for m in tags.get("models", [])}
+            ok = name in have or f"{name}:latest" in have
+        except Exception:                                                    # noqa: BLE001 - no Ollama, or too slow: memory simply keeps using its words
+            ok = False
+    _auto_probe.update({"at": now, "url": url, "model": name, "ok": ok})
+    return ok
+
+
+def reset_auto_probe() -> None:
+    _auto_probe.update({"at": -1e9, "url": "", "model": "", "ok": False})
+
+
 def enabled() -> bool:
-    return (os.environ.get(ENV) or "").strip().lower() in ("ollama", "1", "on", "true", "yes")
+    """on: ollama / 1 / on / true / yes. auto: on only when the local Ollama is reachable and has the embedding model (nothing is sent anywhere else, nothing breaks without it). Otherwise off."""
+    value = (os.environ.get(ENV) or "").strip().lower()
+    if value == "auto":
+        return _model_is_installed()
+    return value in ("ollama", "1", "on", "true", "yes")
 
 
 def model() -> str:
@@ -70,7 +107,7 @@ def _address_allowed(url: str) -> bool:
     return (os.environ.get(REMOTE_ENV) or "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def embed(texts: Sequence[str]) -> Optional[List[List[float]]]:
+def embed(texts: Sequence[str], model_name: Optional[str] = None) -> Optional[List[List[float]]]:
     """Vectors for the texts, or None when the service cannot be used (down, slow, refused address, wrong shape). Never raises."""
     global _breaker_until
     if not texts or time.monotonic() < _breaker_until:
@@ -80,7 +117,7 @@ def embed(texts: Sequence[str]) -> Optional[List[List[float]]]:
         LOG.warning("memory embedding refused: %s is not a loopback address (set %s=1 to allow it)", url, REMOTE_ENV)
         return None
     try:
-        request = urllib.request.Request(url + "/api/embed", data=json.dumps({"model": model(), "input": [str(t)[:MAX_TEXT_CHARS] for t in texts], "keep_alive": "30m"}).encode("utf-8"),
+        request = urllib.request.Request(url + "/api/embed", data=json.dumps({"model": model_name or model(), "input": [str(t)[:MAX_TEXT_CHARS] for t in texts], "keep_alive": "30m"}).encode("utf-8"),
                                          headers={"Content-Type": "application/json"})
         body = json.loads(urllib.request.urlopen(request, timeout=TIMEOUT_S).read())
         vectors = body["embeddings"]
@@ -106,15 +143,127 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
     return sum(x * y for x, y in zip(a, b, strict=True)) / (na * nb) if na and nb and len(a) == len(b) else 0.0
 
 
-def relevance(cos: float) -> float:
-    return max(0.0, min(1.0, (cos - FLOOR) / SPAN))
+def calibration_path() -> "Any":
+    from pathlib import Path
+    override = os.environ.get(CALIBRATION_FILE_ENV)
+    return Path(override) if override else Path.home() / ".delentia" / "embed_calibration.json"
+
+
+def calibration(model_name: Optional[str] = None) -> Optional[tuple]:
+    """(floor, span) for the model, or None when it has not been measured. Order of precedence: a file written by `delentia memory calibrate`, then the built-in table."""
+    name = model_name or model()
+    if name.endswith(":latest"):
+        name = name[:-len(":latest")]
+    try:
+        path = calibration_path()
+        if path.exists():
+            entry = json.loads(path.read_text(encoding="utf-8")).get(name)
+            if isinstance(entry, dict) and isinstance(entry.get("floor"), (int, float)) and isinstance(entry.get("span"), (int, float)) and entry["span"] > 0:
+                return float(entry["floor"]), float(entry["span"])
+    except (OSError, ValueError):
+        pass
+    return CALIBRATIONS.get(name)
+
+
+def reads_thai(model_name: Optional[str] = None) -> bool:
+    """Does the model tell Thai texts apart? A file written by `delentia memory calibrate` decides, then the built-in list. Unknown models: no (the ranking then leans on BM25 for Thai questions)."""
+    name = model_name or model()
+    if name.endswith(":latest"):
+        name = name[:-len(":latest")]
+    try:
+        path = calibration_path()
+        if path.exists():
+            entry = json.loads(path.read_text(encoding="utf-8")).get(name)
+            if isinstance(entry, dict) and isinstance(entry.get("reads_thai"), bool):
+                return bool(entry["reads_thai"])
+    except (OSError, ValueError):
+        pass
+    return name in READS_THAI
+
+
+def relevance(cos: Optional[float]) -> float:
+    """0..1 evidence that a memory answers the question, from the cosine. 0 for a model that has no calibration (see CALIBRATIONS)."""
+    if cos is None:
+        return 0.0
+    cal = calibration()
+    if cal is None:
+        return 0.0
+    floor, span = cal
+    return max(0.0, min(1.0, (cos - floor) / span))
+
+
+def _percentile(values: Sequence[float], q: float) -> float:
+    ordered = sorted(values)
+    if not ordered:
+        return 0.0
+    pos = (len(ordered) - 1) * q
+    lo, hi = int(math.floor(pos)), int(math.ceil(pos))
+    return ordered[lo] + (ordered[hi] - ordered[lo]) * (pos - lo)
+
+
+def calibrate(model_name: Optional[str] = None, write: bool = False) -> Dict[str, Any]:
+    """Measure where a model puts a question and the sentence that answers it (related) against a question and some other sentence (unrelated), on the neutral sample of
+    embed_calibration_samples.py, English and Thai separately. A language counts only if its related pairs are clearly above its unrelated ones (the 10th percentile of related above the 90th of
+    unrelated); nomic-embed-text puts every Thai text almost on the same point (unrelated median cosine ~1.0), so Thai does not count for it. Over the languages that count:
+    floor = the largest 90th percentile of the unrelated cosines, span = the smallest MEDIAN of the related ones minus the floor (at least 0.05). The median, not the 10th percentile, because the two ways of being wrong are not equal: a match the scale underrates only lowers D (the agent asks more), a stranger the scale overrates raises D (evidence that is not there). Measured through the loop with the 10th-percentile rule bge-m3 showed a memory for 3 of 20 unrelated questions.
+    `reads_thai` says whether Thai counts. With write=True a usable result is merged into the calibration file (calibration_path()); an unusable one is never written.
+    Returns {"error": ...} when the service cannot be reached."""
+    from rct_control_plane import embed_calibration_samples as sample
+    name = model_name or model()
+    report: Dict[str, Any] = {"model": name}
+    floors: List[float] = []
+    spans: List[float] = []
+    for language, pairs in (("en", sample.EN), ("th", sample.TH)):
+        vectors = embed([q for q, _a in pairs] + [a for _q, a in pairs], model_name=name)
+        if vectors is None:
+            return {"model": name, "error": "the embedding service could not be reached (down, too slow, or a refused address)"}
+        n = len(pairs)
+        questions, answers = vectors[:n], vectors[n:]
+        related = [cosine(questions[i], answers[i]) for i in range(n)]
+        unrelated = [cosine(questions[i], answers[(i + 7) % n]) for i in range(n)]
+        floor, low = _percentile(unrelated, 0.90), _percentile(related, 0.10)
+        separated = low > floor
+        report[language] = {"related_median": round(_percentile(related, 0.5), 3), "related_p10": round(low, 3), "unrelated_p90": round(floor, 3),
+                            "unrelated_median": round(_percentile(unrelated, 0.5), 3), "pairs": n, "separated": separated}
+        if separated:
+            floors.append(floor)
+            spans.append(report[language]['related_median'] - floor)
+    report["reads_thai"] = bool(report["th"]["separated"])
+    report["usable"] = bool(floors)
+    if floors:
+        report["floor"], report["span"] = round(max(floors), 3), round(max(0.05, min(spans)), 3)
+    else:
+        report["note"] = "this model does not separate related from unrelated sentences on the sample: do not use it for memory"
+    if write and report["usable"]:
+        path = calibration_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            table = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        except (OSError, ValueError):
+            table = {}
+        table[name[:-len(":latest")] if name.endswith(":latest") else name] = {"floor": report["floor"], "span": report["span"], "reads_thai": report["reads_thai"]}
+        path.write_text(json.dumps(table, indent=2) + "\n", encoding="utf-8")
+        report["written_to"] = str(path)
+    return report
 
 
 def pack(vector: Sequence[float]) -> bytes:
     return array.array("f", vector).tobytes()
 
 
-def unpack(blob: bytes) -> List[float]:
+_np: Any
+try:                                                                   # numpy is a declared dependency of the package; the plain-Python path below is the fallback
+    import numpy as _numpy
+    _np = _numpy
+except ImportError:                                                    # pragma: no cover
+    _np = None
+
+
+def unpack(blob: bytes) -> Any:
+    if _np is not None:
+        if len(blob) % 4:
+            raise ValueError("a vector is a whole number of 32-bit floats")
+        return _np.frombuffer(blob, dtype=_np.float32)
     values = array.array("f")
     values.frombytes(blob)
     return list(values)
@@ -139,6 +288,23 @@ def store_vectors(persistence: Any, namespace: str, items: Sequence[Dict[str, st
             conn.execute("INSERT OR REPLACE INTO memory_vectors (memory_id, namespace, model, dim, vec, created_at) VALUES (?, ?, ?, ?, ?, ?)",
                          (item["id"], namespace, model(), len(vec), blob, now))
     return len(items)
+
+
+QUESTION_SLOTS = 3                              # vectors of the questions a memory answers (memory_llm.py): rows named "<memory id>#q0" .. "#q2"
+MAX_QUESTION_BACKFILL = 10                      # memories that get their questions written during one recall (each one is a model call)
+
+
+def question_ids(memory_id: str) -> List[str]:
+    return [f"{memory_id}#q{k}" for k in range(QUESTION_SLOTS)]
+
+
+def store_questions(persistence: Any, namespace: str, memory_id: str, text: str) -> int:
+    """Have the local model write the questions this memory answers, embed them and keep them sealed next to the memory's own vector. Returns how many were stored (0 when no model)."""
+    from rct_control_plane import memory_llm
+    lines = memory_llm.questions_for(text)
+    if not lines:
+        return 0
+    return store_vectors(persistence, namespace, [{"id": qid, "text": line} for qid, line in zip(question_ids(memory_id), lines, strict=False)])
 
 
 def load_vectors(persistence: Any, namespace: str, ids: Sequence[str]) -> Dict[str, List[float]]:
@@ -169,12 +335,38 @@ def similarities(persistence: Any, namespace: str, query: str, candidates: Seque
     """Raw cosine of the query to each candidate (by memory id), embedding the candidates that have no vector yet (up to MAX_BACKFILL). None = use the lexical path."""
     if not enabled() or not candidates:
         return None
+    from rct_control_plane import memory_llm
     ids = [c["id"] for c in candidates]
-    have = load_vectors(persistence, namespace, ids)
+    questions_on = memory_llm.questions_enabled()
+    wanted = ids + [qid for i in ids for qid in question_ids(i)] if questions_on else ids
+    have = load_vectors(persistence, namespace, wanted)
     missing = [c for c in candidates if c["id"] not in have][:MAX_BACKFILL]
     if missing and store_vectors(persistence, namespace, [{"id": c["id"], "text": c["content"]} for c in missing]):
-        have = load_vectors(persistence, namespace, ids)
-    query_vec = embed([query])
-    if query_vec is None or not have:
+        have = load_vectors(persistence, namespace, wanted)
+    if questions_on:                                                       # memories stored before the setting was on (or when the model was down) get their questions here, a few at a time
+        for c in [c for c in candidates if question_ids(c["id"])[0] not in have and c["id"] in have][:MAX_QUESTION_BACKFILL]:
+            if store_questions(persistence, namespace, c["id"], c["content"]):
+                have.update(load_vectors(persistence, namespace, question_ids(c["id"])))
+    queries = [query] + (memory_llm.paraphrases_of(query) if memory_llm.expansion_enabled() else [])
+    query_vecs = embed(queries)
+    if query_vecs is None or not have:
         return None
-    return {memory_id: cosine(query_vec[0], vec) for memory_id, vec in have.items() if len(vec) == len(query_vec[0])}
+    dim = len(query_vecs[0])
+    best: Dict[str, float] = {}
+    keys = [k for k, vec in have.items() if len(vec) == dim]
+    if _np is not None and keys:                                       # one matrix product for every memory and every query variant
+        matrix = _np.vstack([_np.asarray(have[k], dtype=_np.float32) for k in keys])
+        norms = _np.linalg.norm(matrix, axis=1)
+        qmat = _np.asarray(query_vecs, dtype=_np.float32)
+        qn = _np.linalg.norm(qmat, axis=1)
+        denom = _np.outer(norms, qn)
+        with _np.errstate(divide="ignore", invalid="ignore"):
+            sims = _np.where(denom > 0, (matrix @ qmat.T) / denom, 0.0).max(axis=1)
+        scores = {k: float(v) for k, v in zip(keys, sims, strict=True)}
+    else:
+        scores = {k: max(cosine(qv, have[k]) for qv in query_vecs) for k in keys}
+    for key, score in scores.items():
+        memory_id = key.split("#q", 1)[0]
+        if score > best.get(memory_id, -1.0):
+            best[memory_id] = score
+    return best

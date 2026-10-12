@@ -431,13 +431,15 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
             gaps.append({"control": cid, "severity": severity, "text": f"{name}: {detail}", "fix": fix})
 
     # owner policy
-    policy, policy_problem = None, ""
+    policy, policy_problem, policy_source = None, "", "none"
     try:
-        policy = fdia_policy.load_policy()
+        policy, policy_source = fdia_policy.effective_policy()
     except ValueError:
         policy_problem = "the policy file cannot be read or is invalid, so every tool call is refused (fail closed)"
-    add("owner_policy", "Owner policy for A", policy is not None,
-        (f"{len(policy.rules)} rule(s), digest {policy.digest()[:12]}" if policy is not None else policy_problem or "no policy file: only the built-in floor applies (risky tools need F >= 0.5; repo writes need a signature)"),
+    add("owner_policy", "Owner policy for A", policy is not None and policy_source == "file",
+        (f"{len(policy.rules)} rule(s), digest {policy.digest()[:12]}" if policy is not None and policy_source == "file" else
+         f"no policy file of your own: the default starter '{fdia_policy.default_template_name()}' is judging tool calls (digest {policy.digest()[:12]}); write your own to change it" if policy is not None else
+         policy_problem or "no policy file: only the built-in floor applies (risky tools need F >= 0.5; repo writes need a signature)"),
         "Desk > FDIA policy (start from 'argument-aware': harmless inspection runs, everything else asks), or `delentia fdia template argaware`", "bad" if policy_problem else "warn")
     # signatures
     keys, key_roles, key_problem = _approvers()
@@ -507,6 +509,14 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("audit_text_sealed", "A person's words are sealed in the audit chain (so they can be erased)", audit_text.sealing_on(),
         "the goal, the model's reasoning and tool arguments are written under the person's own key; the chain holds ciphertext and hashes" if audit_text.sealing_on()
         else "off: those words sit in the chain in the clear and a person's erasure cannot remove them", "unset DELENTIA_AUDIT_TEXT=plain (rows written before it was on stay readable)")
+    from rct_control_plane import memory_embeddings, memory_llm
+    embed_on = memory_embeddings.enabled()
+    cal = memory_embeddings.calibration() if embed_on else None
+    add("memory_recall_by_meaning", "Memory recall by meaning (a local embedding model)", embed_on,
+        (f"on: model {memory_embeddings.model()}, {'calibrated' if cal else 'NOT calibrated (it orders results but adds nothing to D; run `delentia memory calibrate --write`)'}"
+         + ("; store-time questions on" if memory_llm.questions_enabled() else "") + ("; query expansion on" if memory_llm.expansion_enabled() else "")) if embed_on
+        else "off: memories are found by shared words (a paraphrase is missed: 7 of 30 in the Round 68 benchmark against 24 with embeddings; Thai needs a multilingual model)",
+        "set DELENTIA_MEMORY_EMBED=ollama (or `auto`: on only when the local Ollama has the model); the text never leaves this machine unless DELENTIA_MEMORY_EMBED_ALLOW_REMOTE=1")
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

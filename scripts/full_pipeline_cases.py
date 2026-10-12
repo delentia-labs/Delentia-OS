@@ -925,6 +925,34 @@ async def c23(env: Env, ok: Check) -> Dict[str, Any]:
     return {}
 
 
+@case("C24", "With no policy file the default starter judges the agent: spawning subagents waits for a signature, a plain read does not, and the audit row names the source")
+async def c24(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    from rct_control_plane import fdia_policy
+    original, previous = env.model.policy, os.environ.get(fdia_policy.DEFAULT_ENV)
+    os.environ.pop(fdia_policy.DEFAULT_ENV, None)                           # the product default: argaware
+    os.environ.pop(fdia_policy.POLICY_ENV, None)
+    try:
+        env.model.reset()
+        read = await env.loop("c24r").run(READ_GOAL)
+        ok("a plain read of a project file runs without a signature", read["stopped_reason"] == "llm_finished" and "sample-service" in str(read.get("final_answer")), read["stopped_reason"])
+        env.model.policy = sm.spawner
+        env.model.reset()
+        spawn = await env.loop("c24s", max_iterations=4).run("Do these in parallel: Read the file pyproject.toml and tell me the project name; Read the file README.md")
+        ok("the agent's attempt to start subagents waits for a human signature", spawn["stopped_reason"] == "pending_approval", spawn["stopped_reason"])
+        step = spawn["steps"][0] if spawn["steps"] else {}
+        ok("nothing was started", not ((step.get("tool_result") or {}).get("subagents")), step.get("tool_result"))
+        rows = [r["changes"] for r in env.audit_rows("governed_loop_fdia_gate") if r["changes"].get("tool_name") == "delentia_spawn_subagents"]
+        ok("the audit row says the default policy judged it", bool(rows) and rows[-1].get("policy_source") == "default", rows[-1:])
+    finally:
+        env.model.policy = original
+        if previous is None:
+            os.environ[fdia_policy.DEFAULT_ENV] = "none"
+        else:
+            os.environ[fdia_policy.DEFAULT_ENV] = previous
+    return {}
+
+
 @case("C12", "RECORD: the audit trail detects an edit made after the fact")
 async def c12(env: Env, ok: Check) -> Dict[str, Any]:
     from rct_control_plane import audit_chain
@@ -960,6 +988,9 @@ async def main_async(args: argparse.Namespace) -> int:
         "DELENTIA_HOME": str(work / "home"), "DELENTIA_REPO_ROOT": str(env.repo), "DELENTIA_MODEL_CONFIG": str(env.model_config),
         "DELENTIA_ALGORITHM_PIPELINE": "1", "DELENTIA_WARM_RECALL": "1", "DELENTIA_APPROVERS_FILE": str(work / "approvers.json"),
         "DELENTIA_LLM_PROVIDER": "openai-compat", "DELENTIA_LLM_MODEL": "scripted-1", "DELENTIA_LLM_RETRY_BACKOFF": "0.01",
+        # Round 69: with no policy file the argument-aware starter now judges every call. Most cases test the mechanics (spawning, delegation, notary...) on the built-in floor, so it is OFF here;
+        # C24 turns it on for the one thing it is about.
+        "DELENTIA_FDIA_POLICY_DEFAULT": "none",
     })
     for name in ("DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN"):
         os.environ.pop(name, None)

@@ -230,6 +230,12 @@ def find_gaps(persistence: Any, *, min_count: int = 2, limit: int = 2000) -> Lis
         except ValueError:
             continue
         if metrics.get("finished") == 1 and metrics.get("aligned_with_intent") == 0 and not metrics.get("warm_recall"):
+            from rct_control_plane import audit_text
+            if audit_text.is_sealed_value(state.get("goal")):             # Round 69: the goal's words, sealed under the person's key (the experiment name is only a hash then)
+                revealed = audit_text.reveal(state.get("namespace", ""), state["goal"])
+                if not isinstance(revealed, str) or revealed == audit_text.ERASED:
+                    continue                                              # the person was erased: their goals are no longer evidence of anything
+                name = revealed[:200]
             slot = unmet.setdefault(name, {"goal": name, "count": 0, "users": set(), "last_seen": stamp, "first_seen": stamp})
             slot["count"] += 1
             slot["users"].add(state.get("namespace", ""))

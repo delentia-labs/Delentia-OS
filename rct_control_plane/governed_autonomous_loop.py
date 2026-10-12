@@ -997,6 +997,24 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return False
         return not self._is_person()
 
+    MEMORY_INJECT_ENV = "DELENTIA_MEMORY_RECALL_LIMIT"
+    MEMORY_INJECT_WITH_EMBEDDINGS = 5
+
+    @classmethod
+    def _memory_inject_limit(cls, default: int) -> int:
+        """How many recalled memories an episode is shown. DELENTIA_MEMORY_RECALL_LIMIT (1..10) decides; without it 3, or 5 when recall by meaning is on: measured on the English held-out
+        set, the right memory was in the top 3 for 37 of 40 questions and in the top 5 for 39 (research/recall_lab_r69.py), and a Thai set 23 against 25; two more short memories cost about 100 tokens."""
+        raw = (os.environ.get(cls.MEMORY_INJECT_ENV) or "").strip()
+        if raw.isdigit() and 1 <= int(raw) <= 10:
+            return int(raw)
+        try:
+            from rct_control_plane import memory_embeddings
+            if memory_embeddings.enabled():
+                return max(default, cls.MEMORY_INJECT_WITH_EMBEDDINGS)
+        except Exception:                                                    # noqa: BLE001 - never a reason an episode cannot start
+            pass
+        return default
+
     async def _recall_for_goal(self, goal: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Round 48 R1.3: memories relevant to the goal are recalled
         automatically. K.1.5 showed the current local model never calls
@@ -1005,6 +1023,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         carries its raw relevance, anything below the relevance floor is
         dropped (it is noise, not memory), and the scores feed D."""
         self._episode_memory_scores = []
+        limit = self._memory_inject_limit(limit)
         stores = []
         default_memory = getattr(self._get_kernel(), "_agent_memory", None)
         if default_memory is not None and self._reads_shared_memory():
@@ -1290,11 +1309,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         """(policy, error). No policy file = (None, ""). A file that cannot be read or fails validation is an error,
         and the gate then refuses every call: a broken policy must never quietly become no policy."""
         if self._policy_override is not None:
+            self._policy_source = "override"
             return self._policy_override, ""
         from rct_control_plane import fdia_policy
         try:
-            return fdia_policy.load_policy(), ""
+            policy, self._policy_source = fdia_policy.effective_policy()
+            return policy, ""
         except ValueError as exc:
+            self._policy_source = "error"
             return None, str(exc)
 
     async def _pre_dispatch_gate(
@@ -1357,7 +1379,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         threshold = self._fdia_threshold
         if policy is not None:
             from rct_control_plane import fdia_policy
-            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal})
+            policy_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace,
+                                               context={"goal": goal, "seen_urls": sorted(getattr(self, "_episode_seen_urls", None) or ())})
             threshold = max(threshold, float(policy.custom_safety_threshold))
             if policy_eval.needs_signature:
                 # The signature will supply A = 1; D and I must still hold, so F is judged as if it were given.
@@ -1378,7 +1401,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         judged = is_risky_tool(tool_name) or policy is None or (policy_eval is not None and policy_eval.action_type != "ALLOW")
         blocked = A <= 0.0 or (judged and F < threshold)
         info = policy_eval.to_dict() if policy_eval is not None else None
-        self._episode_policy = {"policy_digest": policy.digest(), "last": info} if policy is not None else {}
+        self._episode_policy = {"policy_digest": policy.digest(), "source": getattr(self, "_policy_source", ""), "last": info} if policy is not None else {}
 
         self._persistence.append_audit(
             entity_type="governed_loop_fdia_gate",
@@ -1390,6 +1413,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "A": A, "A_reason": a_reason, "F": F, "threshold": threshold,
                 "data_parts": (self._episode_data or {}).get("parts"),
                 "blocked": blocked, "policy": info,
+                "policy_source": getattr(self, "_policy_source", "none") if policy is not None else "none",      # Round 69: "file" (the owner's), "default" (the starter used when there is no file), "override"
                 **({"research_rule": research_rule} if research_rule else {}),
             },
         )
@@ -1977,7 +2001,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             run_id = f"run-{uuid.uuid4().hex[:12]}"
             self._persistence.save_experiment_run(
                 run_id, experiment_id, algorithm_id=f"governed_loop/{self._model_label()}", metrics=metrics,
-                jitna_state={"namespace": self.namespace, "jitna_verified": self._episode_jitna_verified},
+                jitna_state={"namespace": self.namespace, "jitna_verified": self._episode_jitna_verified,
+                             # Round 69: the experiment is named by a hash when sealing is on (it is shared by everyone who asked the same goal), so the goal's words are kept here instead,
+                             # sealed under THIS person's key: the Tool Forge reads them back while the person exists, and an erasure destroys them with the key.
+                             **({"goal": audit_text.protect(self.namespace, {"goal": result["goal"]}, ("goal",))["goal"]} if audit_text.sealing_on() else {})},
             )
             return {"experiment_id": experiment_id, "run_id": run_id}
         except Exception as exc:
@@ -2396,16 +2423,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
     def _url_was_named(url: str, goal: str, seen: Any) -> bool:
         """Is this the address the person wrote, or one a page the agent read already contained, with nothing smuggled in? A query string, a fragment or a
         user name in an address is a place to hide data, so such an address is acceptable only if the person wrote exactly that."""
-        from urllib.parse import urlsplit
         if not url.strip():
             return False                                      # "" is a substring of every goal: an empty address must not count as one the person wrote
-        parts = urlsplit(url.strip())
-        from rct_control_plane.fdia_policy import address_typed_in
-        if address_typed_in(goal, url):                           # Round 68: the whole address, as a word of the request (a substring let a TRUNCATED address count as typed)
-            return True
-        if parts.query or parts.fragment or parts.username or parts.password or parts.scheme not in ("http", "https"):
-            return False
-        return url.strip().rstrip("/") in {s.rstrip("/") for s in (seen or ())}
+        from rct_control_plane.fdia_policy import address_named
+        return address_named(url, goal, seen)                 # Round 69: one definition for the taint gate and the owner policy (Round 68: the whole address, never a substring)
 
     def _taint_reason(self, goal: str, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
         """Why this call must wait for a signature in a tainted episode, or None."""

@@ -161,6 +161,21 @@ After a signed erase, the person's memory text is unreadable from the log (their
   - `test_erasure_tables_round68_real.py::test_the_full_text_index_forgets_the_words`
   - `test_erasure_tables_round68_real.py::test_the_chains_still_verify_and_the_desk_shows_the_erased_marker`
 
+### P13 - A host with no owner policy is judged by the default starter, not by the floor alone
+
+With no policy file the argument-aware starter judges every tool call on top of the built-in floor: a command outside the read-only list, an address nobody typed and no page showed, a write, a schedule all wait for a signature; a tool it has no rule for is left to the floor (never blocked by zero trust); a broken policy FILE still stops everything (the default never hides it); the audit row of every gate decision says which policy judged it.
+
+- **Assumes:** The host did not set DELENTIA_FDIA_POLICY_DEFAULT=none; research mode (DELENTIA_RESEARCH_MODE=1) switches the default off on purpose, so an experiment measures the floor.
+- **Not covered:** The default is a starter written by the author; the 169 labelled requests it was measured on are the author's labels. It does not replace an owner's own policy, roles or signers.
+- **Pinned by:**
+  - `test_default_policy_round69_real.py::test_no_file_means_the_default_and_a_file_always_wins`
+  - `test_default_policy_round69_real.py::test_a_broken_file_still_fails_closed_and_is_never_hidden_by_the_default`
+  - `test_default_policy_round69_real.py::test_a_tool_it_has_no_rule_for_is_left_to_the_floor_not_blocked_by_zero_trust`
+  - `test_default_policy_round69_real.py::test_the_default_gives_the_same_verdicts_as_the_argaware_starter_on_every_tool`
+  - `test_default_policy_round69_real.py::test_in_the_loop_the_default_policy_judges_with_no_file`
+  - `test_default_policy_round69_real.py::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow`
+  - `test_default_policy_round69_real.py::test_an_address_seen_verbatim_in_this_episode_may_be_opened_without_a_signature`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |
@@ -173,6 +188,7 @@ After a signed erase, the person's memory text is unreadable from the log (their
 | History rewriting (the log of what the agent knew is edited after the fact) | `test_memory_anchor_round67_real.py::test_a_whole_log_rewrite_that_the_event_chain_alone_cannot_see_is_caught_by_the_anchor`<br>`test_memory_anchor_round67_real.py::test_cutting_the_log_back_is_caught` |
 | Personal data that cannot be erased from an append-only record | `test_memory_erasure_round67_real.py::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact`<br>`test_memory_erasure_round67_real.py::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file` |
 | An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it) | `test_fdia_goal_context_round68_real.py::test_an_address_that_extends_cuts_or_differs_does_not_count`<br>`test_fdia_goal_context_round68_real.py::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one`<br>`test_fdia_goal_context_round68_real.py::test_the_taint_gate_still_decides_after_text_from_outside_was_read` |
+| A fresh install with no policy file runs side effects on the built-in floor alone | `test_default_policy_round69_real.py::test_in_the_loop_the_default_policy_judges_with_no_file`<br>`test_default_policy_round69_real.py::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow` |
 | Memory poisoning | `test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next`<br>`test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits`<br>`test_gate_properties_round65_real.py::test_p9_a_revoked_memory_is_returned_by_nothing` |
 | Skill poisoning (a page's text saved as the agent's own habit) | `test_gate_properties_round65_real.py::test_p8_an_episode_that_read_outside_text_does_not_become_a_skill` |
 | Cancellation | `test_gate_properties_round65_real.py::test_p10_an_action_cancelled_midway_is_never_run_a_second_time`<br>`test_jobs_round60_real.py::test_cancelling_a_running_job_stops_it_and_says_so` |

@@ -169,8 +169,10 @@ def test_a_paid_model_without_a_cap_warns_and_a_local_model_passes(monkeypatch):
     assert status("H13") == hc.PASS
 
 
-def test_a_broken_owner_policy_is_a_failure_and_no_policy_a_warning(clean):
-    assert status("H15") == hc.WARN
+def test_a_broken_owner_policy_is_a_failure_and_no_policy_a_warning(clean, monkeypatch):
+    assert status("H15") == hc.INFO                                              # Round 69: no file = the default starter judges tool calls (said so, not a warning)
+    monkeypatch.setenv("DELENTIA_FDIA_POLICY_DEFAULT", "none")
+    assert status("H15") == hc.WARN                                              # the default switched off: only the built-in floor
     (clean / "policy.json").write_text("{not json", encoding="utf-8")
     assert status("H15") == hc.FAIL
 
