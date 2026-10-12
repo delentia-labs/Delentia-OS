@@ -131,8 +131,18 @@ def test_conditions_change_the_digest_and_survive_a_round_trip(tmp_path, policy)
 
 
 def test_large_inputs_are_cheap():
+    # Round 73: this was a bare wall-clock bound (2.0 s) that a slow CI runner missed by 0.07 s. What it guards is that the cost does not blow up with the input, so it now compares a
+    # 4x larger input with the smaller one (linear = about 4x, quadratic = about 16x) and keeps only a generous absolute bound; best of three runs removes a one-off stall.
     import time
-    start = time.perf_counter()
-    for _ in range(200):
-        fp._one_condition_holds({"arg": "command", "op": "prefix_in_pipe", "values": fp.SAFE_SHELL_PREFIXES}, {"command": "ls | " * 800})
-    assert time.perf_counter() - start < 2.0
+
+    def best_of_three(repeats: int) -> float:
+        times = []
+        for _ in range(3):
+            start = time.perf_counter()
+            for _ in range(60):
+                fp._one_condition_holds({"arg": "command", "op": "prefix_in_pipe", "values": fp.SAFE_SHELL_PREFIXES}, {"command": "ls | " * repeats})
+            times.append(time.perf_counter() - start)
+        return min(times)
+    small, large = best_of_three(400), best_of_three(1600)
+    assert large < 10 * max(small, 0.02), (small, large)                       # quadratic growth would be about 16x
+    assert large < 15.0, large
