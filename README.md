@@ -215,7 +215,7 @@ SDK Modules: signedai/ · core/ · rct_control_plane/
              5 reference microservices
 ```
 
-> **Enterprise layer** (62 microservices, proprietary) runs in production at [delentia.com](https://delentia.com).
+> **What is in this repository:** the agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and 5 reference microservices. **What is not:** a separate, proprietary service layer that lives in a private repository and is not part of this release. Enterprise licensing and early access: [delentia.com](https://delentia.com).
 
 ---
 
