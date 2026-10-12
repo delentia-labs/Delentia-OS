@@ -162,11 +162,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     from mcp.server.mcpserver import MCPServer
     server = MCPServer(f"openapi-{args.name}")
     token = os.environ.get(args.auth_env) if args.auth_env else None
+    client = httpx.Client(timeout=30.0, follow_redirects=False, trust_env=False)     # ONE client for the life of the bridge: building one per call costs ~200 ms (an SSL context, even for plain http)
 
     def call(op: Dict[str, Any], arguments: Dict[str, Any]) -> Dict[str, Any]:
         method, url, query, body = build_request(base, op, arguments)
         headers = {"Authorization": f"Bearer {token}"} if token else {}
-        response = httpx.request(method, url, params=query, json=body, headers=headers, timeout=30.0, follow_redirects=False)
+        response = client.request(method, url, params=query, json=body, headers=headers)
         try:
             parsed: Any = response.json()
         except ValueError:
