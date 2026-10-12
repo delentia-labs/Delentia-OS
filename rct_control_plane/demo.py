@@ -306,7 +306,7 @@ REDACTIONS = (
     (re.compile(r"\b(sk-[A-Za-z0-9_\-]{16,}|sk-or-[A-Za-z0-9_\-]{16,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{12,}|xox[abp]-[A-Za-z0-9\-]{10,})"), "[secret]"),
     (re.compile(r"(?i)\b(bearer|authorization:?)\s+[A-Za-z0-9._\-]{12,}"), r"\1 [secret]"),
     (re.compile(r"(?i)\b(api[_-]?key|token|password|secret)\s*[=:]\s*\S{6,}"), r"\1=[secret]"),
-    (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[email]"),
+    (re.compile(r"(?<![\w.+-])[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{1,190}"), "[email]"),
     (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "[ip]"),
 )
 

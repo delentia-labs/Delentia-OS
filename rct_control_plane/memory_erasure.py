@@ -322,7 +322,8 @@ def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: 
     from rct_control_plane.persistence import ControlPlanePersistence
     with persistence._connect() as conn:
         conn.execute("PRAGMA secure_delete = ON")                        # overwritten pages are zeroed, not just unlinked (found by looking at the raw file after an erase)
-        scrubbed = conn.execute("UPDATE memories SET content = ?, context = '{}', revoked_reason = CASE WHEN revoked_reason IS NULL THEN NULL ELSE ? END WHERE namespace = ?", (ERASED_TEXT, ERASED_TEXT, namespace)).rowcount
+        scrubbed = conn.execute("UPDATE memories SET content = ?, context = '{}', revoked_reason = CASE WHEN revoked_reason IS NULL THEN NULL ELSE ? END, pinned_at = NULL, pinned_by = NULL WHERE namespace = ?",
+                                (ERASED_TEXT, ERASED_TEXT, namespace)).rowcount        # Round 70: an erased person's standing rules are no longer shown to anyone
         scrubbed_tables = scrub_tables(conn, namespace) if scrub_other_tables else {"tables": []}
         seq = memory_eventlog.append(conn, namespace, "erase", "-", {"reason": reason.strip()[:300], "key_destroyed": destroyed})
         ControlPlanePersistence._append_audit(conn, memory_eventlog.ANCHOR_ENTITY, namespace, "memory_erased", "memory_erasure",

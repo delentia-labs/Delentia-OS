@@ -27,6 +27,7 @@ ERASE = "test_memory_erasure_round67_real.py"
 ERASE2 = "test_erasure_tables_round68_real.py"
 GOALCTX = "test_fdia_goal_context_round68_real.py"
 DEFAULT = "test_default_policy_round69_real.py"
+PINNED = "test_pinned_rules_round70_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
     {"id": "P1", "name": "A = 0 blocks restricted effects",
@@ -146,6 +147,19 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{DEFAULT}::test_an_address_seen_verbatim_in_this_episode_may_be_opened_without_a_signature"],
      "assumes": "The host did not set DELENTIA_FDIA_POLICY_DEFAULT=none; research mode (DELENTIA_RESEARCH_MODE=1) switches the default off on purpose, so an experiment measures the floor.",
      "not_covered": "The default is a starter written by the author; the 169 labelled requests it was measured on are the author's labels. It does not replace an owner's own policy, roles or signers."},
+    {"id": "P14", "name": "A standing rule the person pinned is shown to every episode, and only a person can pin",
+     "statement": "A rule pinned by a person or the owner is shown to every episode of that person whatever the goal (at most 5, newest first), never counts as evidence for D, is never shown after it was revoked or after the person was erased, "
+                  "and cannot be pinned by the model (no tool exists for it) or from a memory stored after outside text was read unless a human says they reviewed it.",
+     "tests": [f"{PINNED}::test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it",
+               f"{PINNED}::test_a_pinned_rule_is_never_evidence_for_d",
+               f"{PINNED}::test_the_model_has_no_tool_to_pin_and_remember_cannot_set_it",
+               f"{PINNED}::test_a_memory_stored_after_outside_text_was_read_is_refused_unless_a_human_reviewed_it",
+               f"{PINNED}::test_the_newest_pinned_rule_comes_first_and_a_revoked_rule_is_never_returned",
+               f"{PINNED}::test_erasing_a_person_stops_their_rules_from_being_shown",
+               f"{PINNED}::test_pins_follow_the_person_and_not_somebody_else",
+               f"{PINNED}::test_the_log_replays_to_the_table_including_pins_after_a_random_workload"],
+     "assumes": "The person (or owner) chose what to pin; a pinned rule is advice to the model in its prompt, it is never a permission: the approval, the policy and the taint gates still decide every call.",
+     "not_covered": "A model can ignore a rule it is shown (nothing here measures obedience); more than 5 pinned rules: only the newest 5 are shown; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement)."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 
@@ -164,6 +178,7 @@ THREATS: List[Dict[str, object]] = [
     {"threat": "Personal data that cannot be erased from an append-only record", "tests": [f"{ERASE}::test_erasing_a_person_destroys_their_text_and_leaves_the_chain_intact", f"{ERASE}::test_after_an_erase_the_text_is_gone_from_every_byte_of_the_database_file"]},
     {"threat": "An address typed by the person is confused with one the agent read on a page (or with a truncation or extension of it)", "tests": [f"{GOALCTX}::test_an_address_that_extends_cuts_or_differs_does_not_count", f"{GOALCTX}::test_in_the_loop_an_address_that_was_only_read_on_a_page_is_not_a_typed_one", f"{GOALCTX}::test_the_taint_gate_still_decides_after_text_from_outside_was_read"]},
     {"threat": "A fresh install with no policy file runs side effects on the built-in floor alone", "tests": [f"{DEFAULT}::test_in_the_loop_the_default_policy_judges_with_no_file", f"{DEFAULT}::test_the_default_policy_alone_stops_most_of_the_attacks_the_taint_gate_stops_and_breaks_no_legitimate_workflow"]},
+    {"threat": "A standing rule is forgotten because the goal does not resemble it, or an attacker makes a rule permanent", "tests": [f"{PINNED}::test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it", f"{PINNED}::test_a_memory_stored_after_outside_text_was_read_is_refused_unless_a_human_reviewed_it"]},
     {"threat": "Memory poisoning", "tests": ["test_memory_provenance_round59_real.py::test_a_poisoned_memory_written_in_one_episode_cannot_act_in_the_next",
                                              "test_taint_gate_round58_real.py::test_a_poisoned_memory_is_the_attack_that_used_to_get_through_and_now_waits",
                                              f"{NEW}::test_p9_a_revoked_memory_is_returned_by_nothing"]},

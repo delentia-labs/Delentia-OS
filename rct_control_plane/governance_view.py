@@ -517,6 +517,15 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
          + ("; store-time questions on" if memory_llm.questions_enabled() else "") + ("; query expansion on" if memory_llm.expansion_enabled() else "")) if embed_on
         else "off: memories are found by shared words (a paraphrase is missed: 7 of 30 in the Round 68 benchmark against 24 with embeddings; Thai needs a multilingual model)",
         "set DELENTIA_MEMORY_EMBED=ollama (or `auto`: on only when the local Ollama has the model); the text never leaves this machine unless DELENTIA_MEMORY_EMBED_ALLOW_REMOTE=1")
+    try:
+        pinned_rows = conn.execute("SELECT namespace, COUNT(*) FROM memories WHERE pinned_at IS NOT NULL AND revoked_at IS NULL GROUP BY namespace").fetchall()
+    except sqlite3.Error:
+        pinned_rows = []
+    pinned_total = sum(int(n) for _ns, n in pinned_rows)
+    add("pinned_rules", "Standing rules a person pinned (shown to every episode)", pinned_total > 0,
+        f"{pinned_total} rule(s) pinned for {len(pinned_rows)} namespace(s); at most 5 per person are shown to an episode; a rule is the person's own words, never a tool permission" if pinned_total
+        else "none pinned: a rule the person told the agent is found only when the goal resembles it (the best model showed 29 of 40 rules that way)",
+        "delentia memory pin <id>  (or `memory add --pin`)", severity="info", applicable=False)
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),

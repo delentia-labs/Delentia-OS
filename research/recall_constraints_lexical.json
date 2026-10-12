@@ -1,0 +1,246 @@
+{
+  "mode": "lexical",
+  "n": 40,
+  "hit@1": 11,
+  "hit@3": 22,
+  "hit@5": 27,
+  "hit@10": 32,
+  "shown_to_the_episode": 15,
+  "shown_wilson95": [
+    0.242,
+    0.53
+  ],
+  "th_n": 24,
+  "th_hit@5": 15,
+  "th_shown": 8,
+  "en_n": 16,
+  "en_hit@5": 12,
+  "en_shown": 7,
+  "misses_not_shown": [
+    {
+      "goal": "จองโฆษณาเฟซบุ๊กสัปดาห์หน้าด้วยงบ 22,000 บาท",
+      "rank": 1,
+      "top": [
+        "งบโฆษณาไม่เกิน 15,000 บาทต่อเดือน",
+        "สัปดาห์นี้มีวันหยุดชดเชยหนึ่งวัน",
+        "ดีลขายระบบล่าสุดปิดได้เมื่อสัปดาห์ก่อน"
+      ]
+    },
+    {
+      "goal": "เขียนสรุปรายงานยอดขายไตรมาสนี้ให้ลูกค้า",
+      "rank": 4,
+      "top": [
+        "รายงานยอดขายไตรมาสนี้จัดทำโดยฝ่ายการเงิน",
+        "ลูกค้ารายใหญ่รายนี้ซื้อสินค้าทุกไตรมาส",
+        "ลูกค้าจากยุโรปรายนี้สนใจผลิตภัณฑ์รุ่นใหม่"
+      ]
+    },
+    {
+      "goal": "รันสคริปต์ย้ายข้อมูลตอนนี้เลยตอนบ่ายสอง",
+      "rank": 2,
+      "top": [
+        "สำรองข้อมูลก่อนแก้ไขทุกครั้ง",
+        "การเปลี่ยนแปลงฐานข้อมูลต้องทำช่วงตีสองถึงตีสี่เท่านั้น",
+        "ฐานข้อมูลหลักมีขนาดประมาณสองร้อยกิกะไบต์"
+      ]
+    },
+    {
+      "goal": "ตอบคำถามลูกค้าเรื่องการคืนสินค้า",
+      "rank": 7,
+      "top": [
+        "ลูกค้าส่วนใหญ่ถามเรื่องการคืนสินค้าทางไลน์",
+        "ตอบอีเมลลูกค้าภายในหนึ่งวันทำการ",
+        "ลูกค้ารายใหญ่รายนี้ซื้อสินค้าทุกไตรมาส"
+      ]
+    },
+    {
+      "goal": "คำนวณราคาเสนอให้ลูกค้าสำหรับงานติดตั้งระบบ",
+      "rank": 6,
+      "top": [
+        "งานติดตั้งระบบครั้งล่าสุดใช้เวลาสองสัปดาห์",
+        "ห้ามเปิดเผยราคาต้นทุนให้ลูกค้า",
+        "ระบบบัญชีถูกติดตั้งบนเครื่องในห้องเซิร์ฟเวอร์"
+      ]
+    },
+    {
+      "goal": "เตรียมรายงานคาดการณ์รายได้ปีหน้า",
+      "rank": 7,
+      "top": [
+        "รายได้ปีนี้เติบโตขึ้นจากปีก่อนเล็กน้อย",
+        "รายงานยอดขายไตรมาสนี้จัดทำโดยฝ่ายการเงิน",
+        "รายงานประจำวันถูกส่งให้หัวหน้าทุกเย็น"
+      ]
+    },
+    {
+      "goal": "บันทึกรายงานประจำวันเป็นไฟล์ใหม่",
+      "rank": null,
+      "top": [
+        "รายงานประจำวันถูกส่งให้หัวหน้าทุกเย็น",
+        "ทีมใช้ Slack สำหรับคุยงานประจำวัน",
+        "สรุปรายงานเป็นภาษาไทยและไม่เกินห้าบรรทัด"
+      ]
+    },
+    {
+      "goal": "แก้ไขไฟล์ตั้งค่าของระบบบัญชี",
+      "rank": 4,
+      "top": [
+        "ระบบบัญชีถูกติดตั้งบนเครื่องในห้องเซิร์ฟเวอร์",
+        "ห้ามแก้ไขไฟล์ต้นฉบับในโฟลเดอร์ quotes เด็ดขาด",
+        "งานติดตั้งระบบครั้งล่าสุดใช้เวลาสองสัปดาห์"
+      ]
+    },
+    {
+      "goal": "จัดรูปแบบเอกสารสัญญาก่อนส่งให้ลูกค้า",
+      "rank": 5,
+      "top": [
+        "เอกสารสัญญาต้องผ่านฝ่ายกฎหมายก่อนส่ง",
+        "บริษัทส่งของขวัญปีใหม่ให้ลูกค้าประจำ",
+        "ห้ามเปิดเผยราคาต้นทุนให้ลูกค้า"
+      ]
+    },
+    {
+      "goal": "สั่งซื้ออุปกรณ์สำนักงานจากร้านใหม่ที่ราคาถูก",
+      "rank": 6,
+      "top": [
+        "อุปกรณ์สำนักงานชุดล่าสุดถูกส่งมอบเมื่อเดือนก่อน",
+        "ลูกค้าจากเชียงใหม่มาเยี่ยมสำนักงานเมื่อเดือนก่อน",
+        "ป้ายชื่อพนักงานใหม่เป็นสีเขียว"
+      ]
+    },
+    {
+      "goal": "ปิดดีลขายระบบมูลค่า 800,000 บาท",
+      "rank": 2,
+      "top": [
+        "ดีลขายระบบล่าสุดปิดได้เมื่อสัปดาห์ก่อน",
+        "ต้องแจ้งผู้จัดการทุกครั้งที่ปิดดีลเกินห้าแสนบาท",
+        "ทุกครั้งที่เสนอราคาต้องบวกภาษีมูลค่าเพิ่ม 7 เปอร์เซ็นต์"
+      ]
+    },
+    {
+      "goal": "แชร์เอกสารแผนงานให้พาร์ตเนอร์ภายนอก",
+      "rank": 2,
+      "top": [
+        "พาร์ตเนอร์ภายนอกรายนี้อยู่ที่เชียงใหม่",
+        "เอกสารภายในห้ามส่งออกนอกบริษัทโดยไม่ลบเครื่องหมายลับ",
+        "เอกสารสัญญาต้องผ่านฝ่ายกฎหมายก่อนส่ง"
+      ]
+    },
+    {
+      "goal": "นัดสัมภาษณ์ผู้สมัครที่อยู่ที่ลอนดอน",
+      "rank": null,
+      "top": [
+        "ผู้สมัครคนนี้ส่งประวัติมาทางอีเมลเมื่อวาน",
+        "ป้ายบอกทางไปห้องประชุมติดอยู่ที่ผนัง",
+        "เซิร์ฟเวอร์ทดสอบอยู่ที่ห้องข้างบันได"
+      ]
+    },
+    {
+      "goal": "เสนอส่วนลดให้ลูกค้ารายใหญ่เพื่อปิดการขายเร็ว",
+      "rank": 8,
+      "top": [
+        "ลูกค้าส่วนใหญ่ถามเรื่องการคืนสินค้าทางไลน์",
+        "ลูกค้ารายใหญ่รายนี้ซื้อสินค้าทุกไตรมาส",
+        "ห้ามเปิดเผยราคาต้นทุนให้ลูกค้า"
+      ]
+    },
+    {
+      "goal": "จัดลำดับงานของสัปดาห์นี้",
+      "rank": null,
+      "top": [
+        "สัปดาห์นี้มีวันหยุดชดเชยหนึ่งวัน",
+        "งานติดตั้งระบบครั้งล่าสุดใช้เวลาสองสัปดาห์",
+        "ดีลขายระบบล่าสุดปิดได้เมื่อสัปดาห์ก่อน"
+      ]
+    },
+    {
+      "goal": "เขียนประกาศถึงผู้ถือหุ้น",
+      "rank": null,
+      "top": [
+        "ผู้ถือหุ้นรายใหญ่สามรายถือหุ้นรวมกันเกินครึ่ง",
+        "ผู้ใช้ชอบสีเขียวเข้มสำหรับโลโก้",
+        "ผู้ใช้เดินทางด้วยรถไฟฟ้าเป็นประจำ"
+      ]
+    },
+    {
+      "goal": "Add logging with local timestamps to the importer.",
+      "rank": 1,
+      "top": [
+        "Always use UTC for timestamps in logs.",
+        "The feature branch adds export to spreadsheet.",
+        "The importer runs every night and reads files from the shared drive."
+      ]
+    },
+    {
+      "goal": "Reply to the refund request email.",
+      "rank": 4,
+      "top": [
+        "Refund requests are usually answered the same afternoon.",
+        "The user likes short emails.",
+        "Never reply to journalists; forward their messages to communications."
+      ]
+    },
+    {
+      "goal": "Format the invoice totals for the PDF.",
+      "rank": null,
+      "top": [
+        "The invoice PDF is generated by the billing service each month.",
+        "The warehouse has forty shelves in total.",
+        "ใช้ภาษาสุภาพ ลงท้ายด้วยค่ะ ทุกครั้งที่ตอบลูกค้า"
+      ]
+    },
+    {
+      "goal": "Send the autumn campaign to everyone in the CRM.",
+      "rank": null,
+      "top": [
+        "The autumn campaign starts on the first of October.",
+        "ใช้ภาษาสุภาพ ลงท้ายด้วยค่ะ ทุกครั้งที่ตอบลูกค้า",
+        "The user reads the news at lunch."
+      ]
+    },
+    {
+      "goal": "Write the shipping instructions for the machine parts.",
+      "rank": null,
+      "top": [
+        "The machine parts are shipped from the Rayong warehouse.",
+        "A new coffee machine arrived last week.",
+        "ใช้ภาษาสุภาพ ลงท้ายด้วยค่ะ ทุกครั้งที่ตอบลูกค้า"
+      ]
+    },
+    {
+      "goal": "Export the full year of transactions into one file.",
+      "rank": 4,
+      "top": [
+        "Transactions are exported once a quarter for the auditors.",
+        "The repository has a config folder with one file per environment.",
+        "The intranet was redesigned last year."
+      ]
+    },
+    {
+      "goal": "Install the new charting library for the dashboard.",
+      "rank": 2,
+      "top": [
+        "The user reads the news at lunch.",
+        "Do not install packages without asking Pichai first.",
+        "The dashboard shows sales by region and by month."
+      ]
+    },
+    {
+      "goal": "Answer the reporter's question about the outage.",
+      "rank": null,
+      "top": [
+        "The weekly report must be under 300 words.",
+        "The weekly report goes to the directors on Mondays.",
+        "The outage lasted about forty minutes on Tuesday."
+      ]
+    },
+    {
+      "goal": "Send the quarterly update to the board members.",
+      "rank": 2,
+      "top": [
+        "The board meets on the second Thursday of each quarter.",
+        "Use the formal template for any message to the board.",
+        "ใช้ภาษาสุภาพ ลงท้ายด้วยค่ะ ทุกครั้งที่ตอบลูกค้า"
+      ]
+    }
+  ]
+}
