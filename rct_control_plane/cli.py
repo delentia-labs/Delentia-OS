@@ -2982,6 +2982,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     os.environ.setdefault("DELENTIA_MEMORY_NUDGE", "1")        # Round 61: offer to remember what a person says about themselves (they answer yes or no)
+    os.environ.setdefault("DELENTIA_MEMORY_EMBED", "auto")     # Round 72: recall by meaning when the local Ollama has an embedding model (bge-m3 first, then nomic-embed-text); with none, words only. Nothing leaves the machine.
     os.environ.setdefault("DELENTIA_EPISODES_PER_HOUR_PER_USER", "60")    # Round 60: a host that talks to the world gets a flood limit per person unless the owner sets another (0 or a bigger number)
     from rct_control_plane.api_ratelimit import DEFAULT_SERVE_LIMIT, RATE_ENV
     os.environ.setdefault(RATE_ENV, DEFAULT_SERVE_LIMIT)      # Round 53: a served API is rate limited unless the operator says otherwise
