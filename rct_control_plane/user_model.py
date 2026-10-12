@@ -52,8 +52,8 @@ _BULLETS = re.compile(r"\bbullet(?:s|\s*points?)?\b|\bnumbered list\b", re.IGNOR
 _TABLE = re.compile(r"\btables?\b", re.IGNORECASE)
 _NOT_TABLE = re.compile(r"\b(?:do not|don't|never|avoid|without|no)\s+(?:use\s+|using\s+|put\s+)?(?:any\s+)?tables?\b", re.IGNORECASE)
 _FORMAT_TH = re.compile(r"ตอบ[^\n.!?]{0,6}?(?:เป็น)?\s*(ข้อๆ|ข้อ ๆ|ตาราง|บูลเล็ต)")
-_ZONE_EN = re.compile(r"\b(?:my|our)\s+time\s?zone\s+is\s+([A-Za-z_]+/[A-Za-z_+\-0-9/]+|UTC\s?[+-]\s?\d{1,2}(?::\d{2})?|GMT\s?[+-]\s?\d{1,2}(?::\d{2})?)|\bi\s?(?:'m|am)\s+in\s+(UTC\s?[+-]\s?\d{1,2}(?::\d{2})?)", re.IGNORECASE)
-_ZONE_TH = re.compile(r"เขตเวลา(?:ของ)?(?:ฉัน|ผม|หนู|เรา)?\s*(?:คือ|เป็น)?\s*([A-Za-z_]+/[A-Za-z_+\-0-9/]+|UTC\s?[+-]\s?\d{1,2}(?::\d{2})?|GMT\s?[+-]\s?\d{1,2}(?::\d{2})?)")
+_ZONE_EN = re.compile(r"\b(?:my|our)\s+time\s?zone\s{1,3}is\s{1,3}([A-Za-z_]{1,30}/[A-Za-z_+\-0-9]{1,30}(?:/[A-Za-z_+\-0-9]{1,30}){0,2}|UTC\s?[+-]\s?\d{1,2}(?::\d{2})?|GMT\s?[+-]\s?\d{1,2}(?::\d{2})?)|\bi\s?(?:'m|am)\s{1,3}in\s{1,3}(UTC\s?[+-]\s?\d{1,2}(?::\d{2})?)", re.IGNORECASE)
+_ZONE_TH = re.compile(r"เขตเวลา(?:ของ)?(?:ฉัน|ผม|หนู|เรา)?\s{0,5}(?:คือ|เป็น)?\s{0,5}([A-Za-z_]{1,30}/[A-Za-z_+\-0-9]{1,30}(?:/[A-Za-z_+\-0-9]{1,30}){0,2}|UTC\s?[+-]\s?\d{1,2}(?::\d{2})?|GMT\s?[+-]\s?\d{1,2}(?::\d{2})?)")
 
 
 def _valid_zone(raw: str) -> Optional[str]:

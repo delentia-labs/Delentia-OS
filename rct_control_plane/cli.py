@@ -1786,7 +1786,7 @@ def credentials_group():
 def credentials_status(output: str) -> None:
     """Which keys the pool knows, by label, and whether each is ready, cooling down, disabled or missing (never a value)."""
     from rct_control_plane import credential_pool
-    state = credential_pool.status()
+    state = credential_pool.status(include_error_text=True)
     if output == "json":
         click.echo(json.dumps(state, indent=2))
         return

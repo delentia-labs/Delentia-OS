@@ -300,13 +300,13 @@ def retry_after_seconds(headers: Any) -> Optional[float]:
         return None
 
 
-def status() -> Dict[str, Any]:
-    """For the CLI, the Desk and the Governance page: labels and states, never a value."""
+def status(include_error_text: bool = False) -> Dict[str, Any]:
+    """For the CLI, the Desk and the Governance page: labels and states, never a value. The reason a broken pool file was refused is spelled out only when `include_error_text` is set (the CLI on the host); the HTTP pages say that it is broken and where to look."""
     try:
         config = load_config()
         error = None
     except PoolConfigError as exc:
-        config, error = {}, str(exc)
+        config, error = {}, (str(exc) if include_error_text else "the credential pool file is not usable; run `delentia credentials status` on the host for the reason")
     now = time.time()
     out: Dict[str, Any] = {"file": str(pool_path()), "providers": {}, "error": error, "recent_events": list(_events[-20:])}
     with _lock:
