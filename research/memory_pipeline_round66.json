@@ -1,0 +1,387 @@
+{
+  "W1_exactness_and_cost": {
+    "rows": [
+      {
+        "operations": 100,
+        "events": 98,
+        "write_ms_per_op_off": 9.742,
+        "write_ms_per_op_on": 10.198,
+        "overhead_ms_per_op": 0.456,
+        "fold_with_checkpoints_ms": 8.3,
+        "fold_without_ms": 8.9,
+        "verify_ms": 0.9,
+        "replay_equals_table": true,
+        "fold_same_with_and_without_checkpoints": true,
+        "chain_ok": true
+      },
+      {
+        "operations": 500,
+        "events": 489,
+        "write_ms_per_op_off": 9.892,
+        "write_ms_per_op_on": 10.085,
+        "overhead_ms_per_op": 0.192,
+        "fold_with_checkpoints_ms": 9.2,
+        "fold_without_ms": 10.6,
+        "verify_ms": 2.3,
+        "replay_equals_table": true,
+        "fold_same_with_and_without_checkpoints": true,
+        "chain_ok": true
+      },
+      {
+        "operations": 2000,
+        "events": 1953,
+        "write_ms_per_op_off": 9.338,
+        "write_ms_per_op_on": 10.264,
+        "overhead_ms_per_op": 0.926,
+        "fold_with_checkpoints_ms": 12.6,
+        "fold_without_ms": 13.6,
+        "verify_ms": 6.3,
+        "replay_equals_table": true,
+        "fold_same_with_and_without_checkpoints": true,
+        "chain_ok": true
+      },
+      {
+        "operations": 5000,
+        "events": 4895,
+        "write_ms_per_op_off": 9.445,
+        "write_ms_per_op_on": 9.651,
+        "overhead_ms_per_op": 0.207,
+        "fold_with_checkpoints_ms": 20.6,
+        "fold_without_ms": 29.9,
+        "verify_ms": 15.4,
+        "replay_equals_table": true,
+        "fold_same_with_and_without_checkpoints": true,
+        "chain_ok": true
+      }
+    ]
+  },
+  "W2_bytes": {
+    "rows": [
+      {
+        "operations": 500,
+        "table_bytes_json": 63324,
+        "events": 483,
+        "event_bytes": 131603,
+        "checkpoints": 8,
+        "checkpoint_bytes_zstd": 43444,
+        "archive_raw_bytes": 309500,
+        "archive_zstd_bytes": 39992,
+        "sqlite_dump_zstd_bytes": 91772,
+        "log_overhead_vs_table": 2.76,
+        "archive_vs_dump_zstd": 0.44
+      },
+      {
+        "operations": 2000,
+        "table_bytes_json": 260826,
+        "events": 1951,
+        "event_bytes": 538030,
+        "checkpoints": 14,
+        "checkpoint_bytes_zstd": 179936,
+        "archive_raw_bytes": 1267940,
+        "archive_zstd_bytes": 169754,
+        "sqlite_dump_zstd_bytes": 373386,
+        "log_overhead_vs_table": 2.75,
+        "archive_vs_dump_zstd": 0.45
+      },
+      {
+        "operations": 5000,
+        "table_bytes_json": 640425,
+        "events": 4870,
+        "event_bytes": 1332583,
+        "checkpoints": 18,
+        "checkpoint_bytes_zstd": 432542,
+        "archive_raw_bytes": 3136157,
+        "archive_zstd_bytes": 439564,
+        "sqlite_dump_zstd_bytes": 929517,
+        "log_overhead_vs_table": 2.76,
+        "archive_vs_dump_zstd": 0.47
+      }
+    ]
+  },
+  "W3_damage": {
+    "rows": [
+      {
+        "checkpoint_every": 20,
+        "damaged_events_tried": 12,
+        "all_named": true,
+        "mean_moments_wrong_of_sampled": 5.08,
+        "max_moments_wrong": 11,
+        "sampled_every_6_events": true,
+        "newest_state_right_in": 12
+      },
+      {
+        "checkpoint_every": 50,
+        "damaged_events_tried": 12,
+        "all_named": true,
+        "mean_moments_wrong_of_sampled": 6.33,
+        "max_moments_wrong": 18,
+        "sampled_every_6_events": true,
+        "newest_state_right_in": 11
+      },
+      {
+        "checkpoint_every": 100,
+        "damaged_events_tried": 12,
+        "all_named": true,
+        "mean_moments_wrong_of_sampled": 9.58,
+        "max_moments_wrong": 15,
+        "sampled_every_6_events": true,
+        "newest_state_right_in": 12
+      }
+    ]
+  },
+  "W5_what_the_model_is_shown": {
+    "rows": [
+      {
+        "scenario": "the needed rule is a preference, 200 days old; 6 newer copies of it exist",
+        "memories": 67,
+        "none": {
+          "kept": 67,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 0.936,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        },
+        "expire": {
+          "kept": 27,
+          "prompt_chars_share": 0.387,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is an event, 200 days old, importance 0.5; 6 newer copies of it exist",
+        "memories": 67,
+        "none": {
+          "kept": 67,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 0.935,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        },
+        "expire": {
+          "kept": 26,
+          "prompt_chars_share": 0.372,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        }
+      },
+      {
+        "scenario": "the needed rule is a fact, 400 days old; 6 newer copies of it exist",
+        "memories": 67,
+        "none": {
+          "kept": 67,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 0.936,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        },
+        "expire": {
+          "kept": 27,
+          "prompt_chars_share": 0.379,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is an event, 200 days old, marked important (0.9); 6 newer copies of it exist",
+        "memories": 67,
+        "none": {
+          "kept": 67,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 0.935,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        },
+        "expire": {
+          "kept": 27,
+          "prompt_chars_share": 0.382,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is a conversation turn, 200 days old; 6 newer copies of it exist",
+        "memories": 67,
+        "none": {
+          "kept": 67,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 0.935,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        },
+        "expire": {
+          "kept": 26,
+          "prompt_chars_share": 0.371,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": false
+        }
+      },
+      {
+        "scenario": "the needed rule is a preference, 200 days old; 0 newer copies of it exist",
+        "memories": 61,
+        "none": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "expire": {
+          "kept": 21,
+          "prompt_chars_share": 0.343,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is an event, 200 days old, importance 0.5; 0 newer copies of it exist",
+        "memories": 61,
+        "none": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "expire": {
+          "kept": 20,
+          "prompt_chars_share": 0.332,
+          "needed_rule_still_offered": false,
+          "original_needed_item_kept": false
+        }
+      },
+      {
+        "scenario": "the needed rule is a fact, 400 days old; 0 newer copies of it exist",
+        "memories": 61,
+        "none": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "expire": {
+          "kept": 21,
+          "prompt_chars_share": 0.343,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is an event, 200 days old, marked important (0.9); 0 newer copies of it exist",
+        "memories": 61,
+        "none": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "expire": {
+          "kept": 21,
+          "prompt_chars_share": 0.337,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        }
+      },
+      {
+        "scenario": "the needed rule is a conversation turn, 200 days old; 0 newer copies of it exist",
+        "memories": 61,
+        "none": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "dedupe": {
+          "kept": 61,
+          "prompt_chars_share": 1.0,
+          "needed_rule_still_offered": true,
+          "original_needed_item_kept": true
+        },
+        "expire": {
+          "kept": 20,
+          "prompt_chars_share": 0.326,
+          "needed_rule_still_offered": false,
+          "original_needed_item_kept": false
+        }
+      }
+    ]
+  },
+  "W4_whole_system": {
+    "episodes_each": 128,
+    "identical_outcomes_with_log_off_and_on": true,
+    "seconds_off": 39.5,
+    "seconds_on": 35.4,
+    "runtime_seconds_per_episode_off": 0.214,
+    "runtime_seconds_per_episode_on": 0.213,
+    "databases": [
+      {
+        "events": 64,
+        "chain_ok": true,
+        "people": 16,
+        "replay_equals_table_for_every_person": true,
+        "checkpoints": 0
+      }
+    ]
+  },
+  "W6_duplicates_crowding_top5": {
+    "none": {
+      "runs": 30,
+      "both_needed_memories_in_top5": 30,
+      "rule_in_top5": 30,
+      "approver_in_top5": 30
+    },
+    "dedupe": {
+      "runs": 30,
+      "both_needed_memories_in_top5": 30,
+      "rule_in_top5": 30,
+      "approver_in_top5": 30
+    }
+  }
+}

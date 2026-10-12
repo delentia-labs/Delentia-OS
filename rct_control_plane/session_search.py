@@ -44,6 +44,23 @@ END;
 """
 
 
+_WORD = re.compile(r"[A-Za-z0-9_]{2,}")
+_THAI = re.compile(r"[\u0E00-\u0E7F]+")
+
+
+_STOP = frozenset("the an of to and or is are was be in on for with from what which that this it as by at do does you your me my we our i can will please then".split())
+
+
+def _bag(text: str) -> set:
+    """Words (lower-cased Latin/digits, length >= 2, common English function words dropped) plus character trigrams of every Thai run: enough to tell two requests apart
+    without a tokenizer or a model."""
+    text = str(text or "")
+    out = {w.lower() for w in _WORD.findall(text)} - _STOP
+    for run in _THAI.findall(text):
+        out.update(run[i:i + 3] for i in range(max(1, len(run) - 2)))
+    return out
+
+
 class SessionLog:
     def __init__(self, persistence: Any):
         self._p = persistence
@@ -77,6 +94,27 @@ class SessionLog:
                                 (namespace, since, limit)).fetchall()
         return [{"goal": r["goal"], "answer": r["answer"] or "", "stopped_reason": r["stopped_reason"] or "", "tainted": bool(r["tainted"]), "at": r["created_at"]}
                 for r in reversed(rows)]
+
+    def similar(self, namespace: str, query: str, limit: int = 3, scan: int = 200) -> List[Dict[str, Any]]:
+        """Round 65, the research baseline GP: the person's earlier requests that share the most words with `query`, best first. Plain word overlap (Thai as character
+        trigrams, which need no word breaker), over the last `scan` requests of this person only; nothing is learned or ranked by a model. A request with no word in common is not returned."""
+        limit = max(1, min(int(limit), MAX_RESULTS))
+        wanted = _bag(query)
+        if not wanted:
+            return []
+        with self._p._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT id, goal, answer, stopped_reason, tainted, created_at FROM episode_log WHERE namespace = ? ORDER BY id DESC LIMIT ?",
+                                (namespace, max(1, min(int(scan), 1000)))).fetchall()
+        scored = []
+        for r in rows:
+            have = _bag(r["goal"])
+            overlap = len(wanted & have)
+            if overlap:
+                scored.append((overlap / len(wanted | have), r["id"], r))
+        scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+        return [{"goal": r["goal"], "answer": r["answer"] or "", "stopped_reason": r["stopped_reason"] or "", "tainted": bool(r["tainted"]), "at": r["created_at"],
+                 "similarity": round(score, 3)} for score, _id, r in scored[:limit]]
 
     def search(self, namespace: str, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Newest-relevant first, only this person's episodes. An empty query lists the most recent ones."""

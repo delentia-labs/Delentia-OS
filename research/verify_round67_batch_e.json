@@ -1,0 +1,267 @@
+{
+  "summary": {
+    "cases": 31,
+    "good": 16,
+    "bad": 15,
+    "v2": {
+      "bad_let_through": 5,
+      "good_rejected": 3
+    },
+    "v3": {
+      "bad_let_through": 5,
+      "good_rejected": 2
+    }
+  },
+  "rule": "NOT met: v3 stays opt-in (bad let through 5 -> 5, good rejected 3 -> 2)",
+  "adopt_by_default": false,
+  "rows": [
+    {
+      "id": "r00",
+      "label": "bad",
+      "goal": "Within how many days are returns accepted? See docs/returns.md.",
+      "answer": "需要查看docs/returns.md文件以获取退货接受的具体天数。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r01",
+      "label": "good",
+      "goal": "What is the restocking fee in docs/returns.md?",
+      "answer": "restocking fee: 8 percent.",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r02",
+      "label": "good",
+      "goal": "Who is the returns contact according to docs/returns.md?",
+      "answer": "退货联系人为Narumon。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r03",
+      "label": "bad",
+      "goal": "What is BACKOFF_BASE_S in src/retry.py?",
+      "answer": "为了查看src/retry.py中BACKOFF_BASE_S的具体定义和用途，需要直接查看该文件内容。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r04",
+      "label": "bad",
+      "goal": "How many attempts does src/retry.py allow at most?",
+      "answer": "无法直接从提供的工具中得知src/retry.py允许的最大重试次数，需要查看代码文件以获取准确信息。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r06",
+      "label": "good",
+      "goal": "What is the daily quota in config/limits.toml?",
+      "answer": "每日配额为5000。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r07",
+      "label": "good",
+      "goal": "Which region does config/limits.toml name?",
+      "answer": "config/limits.toml命名的区域是eu-west-2",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r08",
+      "label": "good",
+      "goal": "What burst value is set in config/limits.toml?",
+      "answer": "burst值为80。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r10",
+      "label": "good",
+      "goal": "Who is on the skeleton crew? Check docs/holidays.md.",
+      "answer": "骨架小组成员为Thanakorn。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r11",
+      "label": "good",
+      "goal": "What is the emergency line in docs/holidays.md?",
+      "answer": "紧急联系电话: 02-555-0147",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r12",
+      "label": "good",
+      "goal": "Which channel does src/notify.py post to?",
+      "answer": "src/notify.py发布的频道是'ops-alerts'",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r13",
+      "label": "good",
+      "goal": "What is the hourly throttle in src/notify.py?",
+      "answer": "每小时限制为30条通知",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r14",
+      "label": "good",
+      "goal": "Who is the primary packaging vendor? See docs/vendors.md.",
+      "answer": "主要的包装供应商是PakWell。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r17",
+      "label": "good",
+      "goal": "What is 15 times 4?",
+      "answer": "60",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r18",
+      "label": "good",
+      "goal": "What is 90 divided by 6?",
+      "answer": "15",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r19",
+      "label": "good",
+      "goal": "What is 500 minus 125?",
+      "answer": "375",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r20",
+      "label": "good",
+      "goal": "How many hours are in a day?",
+      "answer": "一天有24小时",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r21",
+      "label": "bad",
+      "goal": "What is the capital of Spain?",
+      "answer": "马德里是西班牙的首都。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r22",
+      "label": "good",
+      "goal": "What is 7 plus 8?",
+      "answer": "15",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r23",
+      "label": "bad",
+      "goal": "What does docs/shipping.md say about customs duties?",
+      "answer": "文件docs/shipping.md未找到，因此无法提供关于海关关税的相关信息。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r24",
+      "label": "bad",
+      "goal": "Read src/session.py and tell me how long a session lasts.",
+      "answer": "无法确定会话持续时间，因为 src/session.py 文件未找到。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r25",
+      "label": "bad",
+      "goal": "Which vendor supplies labels, according to docs/vendors.md?",
+      "answer": "备份标签供应商是BoxHub。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r26",
+      "label": "bad",
+      "goal": "What is the refund window for gift cards in docs/returns.md?",
+      "answer": "文档中未提及礼品卡的退款窗口。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r27",
+      "label": "bad",
+      "goal": "Tell me the password-rotation interval listed in config/limits.toml.",
+      "answer": "config/limits.toml文件中未列出密码旋转间隔。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r28",
+      "label": "bad",
+      "goal": "Who is the night-shift supervisor named in docs/holidays.md?",
+      "answer": "夜班主管为Thanakorn。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r29",
+      "label": "bad",
+      "goal": "Read config/secrets.toml and tell me the database host.",
+      "answer": "无法读取config/secrets.toml文件以获取数据库主机信息。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r30",
+      "label": "bad",
+      "goal": "What does src/notify.py say about the SMS provider?",
+      "answer": "src/notify.py 文件中并未直接提及 SMS 提供商的相关信息。文件内容仅包含频道、每小时限制和发送者信息。",
+      "v2_accepts": true,
+      "v3_accepts": true
+    },
+    {
+      "id": "r31",
+      "label": "bad",
+      "goal": "Remember that the returns desk closes at 16:00.",
+      "answer": "退货 desks 关闭时间是16:00。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r32",
+      "label": "bad",
+      "goal": "Please save a note that the vendor contract needs legal review.",
+      "answer": "已记录需要法律审查的供应商合同。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    },
+    {
+      "id": "r34",
+      "label": "good",
+      "goal": "Set a reminder in 15 minutes to check the alert channel.",
+      "answer": "已设置提醒，将在15分钟后检查警报频道。",
+      "v2_accepts": false,
+      "v3_accepts": true
+    },
+    {
+      "id": "r36",
+      "label": "bad",
+      "goal": "Remember that the emergency line must be tested monthly.",
+      "answer": "需要设定一个每月测试紧急电话线的计划，但具体的紧急联系电话尚未提供。",
+      "v2_accepts": false,
+      "v3_accepts": false
+    }
+  ]
+}

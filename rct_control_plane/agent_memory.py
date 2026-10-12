@@ -51,6 +51,8 @@ class AgentMemory:
         similarity to the query, 0..1, not boosted by type or importance) so a
         caller can tell "relevant" from "the least irrelevant thing stored"."""
         candidates = self._persistence.list_memories(namespace=self.namespace)
+        from rct_control_plane import memory_eventlog      # Round 66: what the model may be shown (read-time policy; the default keeps every candidate)
+        candidates = memory_eventlog.select_for_recall(candidates)
         if not candidates:
             return []
         matches = self._matcher.match(query, [c["content"] for c in candidates], top_k=limit * 3, threshold=0.0)
@@ -73,6 +75,8 @@ class AgentMemory:
         candidates = self._persistence.list_memories(
             namespace=self.namespace, memory_type=memory_type.value if memory_type else None,
         )
+        from rct_control_plane import memory_eventlog
+        candidates = memory_eventlog.select_for_recall(candidates)
         if not candidates:
             return []
 

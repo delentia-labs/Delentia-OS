@@ -456,3 +456,15 @@ def test_round61_audit_rows_have_readable_summaries_and_categories():
     assert "owner-only" in gv.summarise("governed_loop_scope", "owner_only_refused", {"tool_name": "delentia_query_audit_log"})
     assert "archived by the curator (weak)" in gv.summarise("skill_curator", "archived", {"kind": "weak", "reason": "reused 4 times"})
     assert gv.CATEGORY_OF["agent_hook"] == "hooks" and gv.CATEGORY_OF["skill_curator"] == "memory" and gv.CATEGORY_OF["governed_loop_scope"] == "scope"
+
+
+def test_round65_approval_windows_are_listed_and_switching_one_off_is_a_gap(gov, monkeypatch):
+    client, _, tmp_path, _ = gov
+    for name in ("DELENTIA_APPROVAL_DECISION_TTL_SECONDS", "DELENTIA_APPROVAL_EXECUTION_TTL_SECONDS"):
+        monkeypatch.delenv(name, raising=False)
+    on = _control(client.get("/v1/desk/governance").json(), "approval_windows")
+    assert on["on"] is True and "168 h" in on["detail"] and "24 h" in on["detail"]
+    monkeypatch.setenv("DELENTIA_APPROVAL_EXECUTION_TTL_SECONDS", "0")
+    data = client.get("/v1/desk/governance").json()
+    off = _control(data, "approval_windows")
+    assert off["on"] is False and "approval_windows" in {g["control"] for g in data["gaps"]}

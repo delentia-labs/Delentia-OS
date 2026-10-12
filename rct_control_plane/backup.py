@@ -64,7 +64,7 @@ def _sources(include_keys: bool) -> List[Dict[str, Any]]:
                 kind = "database"
             elif is_config:
                 kind = "config"
-            elif is_key and include_keys and (path.suffix == ".pem" or "keys" in {p.lower() for p in rel.parts}):
+            elif is_key and include_keys and (path.suffix == ".pem" or {"keys", "memory_keys"} & {p.lower() for p in rel.parts}):      # Round 67: with the memory keys a restored backup can read the sealed memory log
                 kind = "key"
             else:
                 continue

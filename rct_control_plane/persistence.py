@@ -25,6 +25,7 @@ Note: This is a local-dev bridge. Production deployments connect to RCTDB
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -246,6 +247,13 @@ class ControlPlanePersistence:
             conn.executescript(_SCHEMA_SQL)
             # Round 48 A1: tamper-evident chain over audit_trail.
             audit_chain.ensure_schema(conn)
+            from rct_control_plane import memory_eventlog
+            memory_eventlog.ensure_schema(conn)         # Round 66: the memory event log (written only when DELENTIA_MEMORY_EVENTLOG=1)
+            # Round 65: a memory can be revoked (kept on disk, never recalled again); older databases get the columns.
+            have = {row[1] for row in conn.execute("PRAGMA table_info(memories)").fetchall()}
+            for column in ("revoked_at", "revoked_reason"):
+                if column not in have:
+                    conn.execute(f"ALTER TABLE memories ADD COLUMN {column} TEXT")
 
     # ------------------------------------------------------------------
     # Intents
@@ -438,20 +446,49 @@ class ControlPlanePersistence:
                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)""",
                 (memory_id, namespace, memory_type, content, json.dumps(context or {}), importance, now),
             )
+            from rct_control_plane import memory_eventlog      # Round 66: the same change, as an event in the same transaction (opt-in)
+            if memory_eventlog.enabled():
+                provenance = (context or {}).get("provenance") if isinstance(context, dict) else None
+                memory_eventlog.append(conn, namespace, "add", memory_id, {"namespace": namespace, "memory_type": memory_type, "content": content, "context": context or {},
+                                                                          "importance": importance, "created_at": now}, provenance if isinstance(provenance, dict) else None)
 
-    def list_memories(self, namespace: str, memory_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_memories(self, namespace: str, memory_type: Optional[str] = None, include_revoked: bool = False) -> List[Dict[str, Any]]:
+        """Every reader of memory (recall, the algorithm pipeline, the chat UI, the CLI) comes through here, so a revoked
+        memory is left out of all of them at once. `include_revoked=True` is for the audit view only."""
+        where = "namespace = ?" + ("" if include_revoked else " AND revoked_at IS NULL")
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if memory_type:
                 rows = conn.execute(
-                    "SELECT * FROM memories WHERE namespace = ? AND memory_type = ?",
+                    f"SELECT * FROM memories WHERE {where} AND memory_type = ?",
                     (namespace, memory_type),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT * FROM memories WHERE namespace = ?", (namespace,),
+                    f"SELECT * FROM memories WHERE {where}", (namespace,),
                 ).fetchall()
         return [_row_to_dict(r) for r in rows]
+
+    def revoke_memory(self, memory_id: str, namespace: str, reason: str = "") -> bool:
+        """Soft-delete (Zero-Delete): the row and its text stay on disk for the audit, but no reader returns it again.
+        Scoped to the namespace so one person cannot revoke another's memory. Returns False when nothing matched."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            changed = conn.execute(
+                "UPDATE memories SET revoked_at = ?, revoked_reason = ? WHERE id = ? AND namespace = ? AND revoked_at IS NULL",
+                (now, (reason or "")[:300], memory_id, namespace),
+            ).rowcount
+            if changed:
+                from rct_control_plane import memory_eventlog      # Round 66 (opt-in): the event is written in the same transaction as the revocation
+                if memory_eventlog.enabled():
+                    memory_eventlog.append(conn, namespace, "revoke", memory_id, {"reason": (reason or "")[:300]})
+        if changed:
+            try:
+                self.append_audit(entity_type="memory_revoked", entity_id=memory_id, action="revoked", actor=namespace,
+                                  changes={"reason_sha256": hashlib.sha256((reason or "")[:300].encode("utf-8")).hexdigest(), "reason_chars": len((reason or "")[:300])})      # Round 67: the chain keeps a hash, not the person's words (erasure cannot edit a chained row); the text is in the table and the sealed event
+            except Exception:       # the revocation itself is already stored
+                pass
+        return bool(changed)
 
     def touch_memory(self, memory_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
@@ -460,6 +497,11 @@ class ControlPlanePersistence:
                 "UPDATE memories SET accessed_count = accessed_count + 1, last_accessed = ? WHERE id = ?",
                 (now, memory_id),
             )
+            from rct_control_plane import memory_eventlog      # Round 66 (opt-in)
+            if memory_eventlog.enabled():
+                row = conn.execute("SELECT namespace FROM memories WHERE id = ?", (memory_id,)).fetchone()
+                if row:
+                    memory_eventlog.append(conn, row[0], "touch", memory_id, {})
 
     # ------------------------------------------------------------------
     # Experiments / experiment runs (Round 23 Phase 11 Task 23)

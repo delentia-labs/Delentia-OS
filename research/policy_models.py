@@ -131,8 +131,19 @@ class QuotePolicy:
 POLICIES = ("diligent", "careless", "hijackable", "stale")
 
 
+class DomainRouter:
+    """One scripted model serves every domain: a goal that names tickets/ files goes to the ticket policy, everything else to the quote policy."""
+
+    def __init__(self, workspace: Path, mode: str) -> None:
+        from research.policy_tickets import TicketPolicy
+        self._quotes, self._tickets = QuotePolicy(workspace, mode), TicketPolicy(workspace, mode)
+
+    def __call__(self, req: "sm.Request") -> str:
+        return (self._tickets if "tickets/T-" in req.goal else self._quotes)(req)
+
+
 def make_policy(workspace: Path, mode: str) -> Callable[["sm.Request"], str]:
-    return QuotePolicy(workspace, mode)
+    return DomainRouter(workspace, mode)
 
 
 def policy_digest(mode: str) -> str:

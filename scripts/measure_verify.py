@@ -45,9 +45,28 @@ def evaluate(cases):
         sim = float(matcher.semantic_similarity(c["goal"], c["answer"]))
         declined = answer_declines_goal(c["answer"])
         old_ok = sim >= THRESHOLD and not _OLD_DECLINE.search(c["answer"] or "")
-        g = verify_grounding.check(c["goal"], c["answer"], c["steps"])
-        new_ok = g["grounded"] and not declined and (sim >= THRESHOLD or g["supported"])
-        rows.append({"id": c["id"], "label": c["label"], "similarity": round(sim, 3), "old_accepts": old_ok, "new_accepts": new_ok, "flags": g["flags"], "supported": g["supported"]})
+        import os
+        before = os.environ.get(verify_grounding.V2_ENV)
+        os.environ[verify_grounding.V2_ENV] = "off"                  # "new" = the Round 61-65 rules; "v2" below = with the Round 66 changes (the environment is restored afterwards)
+        try:
+            declined = answer_declines_goal(c["answer"])
+            g = verify_grounding.check(c["goal"], c["answer"], c["steps"])
+            new_ok = g["grounded"] and not declined and (sim >= THRESHOLD or g["supported"])
+        finally:
+            if before is None:
+                os.environ.pop(verify_grounding.V2_ENV, None)
+            else:
+                os.environ[verify_grounding.V2_ENV] = before
+        os.environ[verify_grounding.V2_ENV] = "on"
+        try:
+            g2 = verify_grounding.check(c["goal"], c["answer"], c["steps"])
+            v2_ok = g2["grounded"] and not answer_declines_goal(c["answer"]) and (sim >= THRESHOLD or g2["supported"] or g2.get("answers_calc"))
+        finally:
+            if before is None:
+                os.environ.pop(verify_grounding.V2_ENV, None)
+            else:
+                os.environ[verify_grounding.V2_ENV] = before
+        rows.append({"id": c["id"], "label": c["label"], "similarity": round(sim, 3), "old_accepts": old_ok, "new_accepts": new_ok, "v2_accepts": v2_ok, "flags": g["flags"], "supported": g["supported"]})
     return rows
 
 
@@ -55,7 +74,7 @@ def summarise(rows):
     bad = [r for r in rows if r["label"] == "bad"]
     good = [r for r in rows if r["label"] == "good"]
     out = {"cases": len(rows), "good": len(good), "bad": len(bad)}
-    for name in ("old", "new"):
+    for name in ("old", "new", "v2"):
         key = f"{name}_accepts"
         out[name] = {"bad_let_through": sum(r[key] for r in bad), "good_rejected": sum(not r[key] for r in good)}
     return out
@@ -76,6 +95,7 @@ def main() -> int:
         print(f"{half}: {s['cases']} cases ({s['good']} good, {s['bad']} bad)")
         print(f"  old VERIFY: lets through {s['old']['bad_let_through']}/{s['bad']} bad answers, rejects {s['old']['good_rejected']}/{s['good']} good ones")
         print(f"  new VERIFY: lets through {s['new']['bad_let_through']}/{s['bad']} bad answers, rejects {s['new']['good_rejected']}/{s['good']} good ones")
+        print(f"  v2  VERIFY: lets through {s['v2']['bad_let_through']}/{s['bad']} bad answers, rejects {s['v2']['good_rejected']}/{s['good']} good ones   (Round 66 changes, DELENTIA_VERIFY_V2)")
         for r in rows:
             wrong_new = (r["label"] == "bad" and r["new_accepts"]) or (r["label"] == "good" and not r["new_accepts"])
             if wrong_new:

@@ -140,9 +140,18 @@ def load_rows(path: Path) -> Dict[str, Dict[str, Any]]:
     return rows
 
 
+def run_id_for(split: str, task_id: str, arm_label: str, rep: int, unit_budget: Optional[int] = None) -> str:
+    """The identity of one episode. A run under the equal-total-token track is a different run of the same unit, so it carries the UNIT's budget (not what was left for
+    this episode), which keeps the id stable for resuming."""
+    base = f"{split}:{task_id}:{arm_label}:r{rep}"
+    return base if unit_budget is None else f"{base}:b{int(unit_budget)}"
+
+
 class Harness:
     def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
-                 max_seconds: float = 90.0, tool_menu: str = "default") -> None:
+                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0) -> None:
+        self.memory_policy = memory_policy
+        self.preload_noise = preload_noise
         self.work = work
         self.max_seconds = max_seconds
         self.tool_menu = tool_menu
@@ -174,7 +183,7 @@ class Harness:
         # The generic floor is the same for every arm of a run. "default" = the production defaults; "strict" also declares the quote folder untrusted
         # (DELENTIA_UNTRUSTED_PATHS), so reading a quote taints the episode like a web page. Runs under different floors are different experiments.
         if self.floor == "strict":
-            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/"
+            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
         for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
@@ -182,6 +191,7 @@ class Harness:
         if self.tool_menu == "ranked":                                         # the same menu for every arm of a run; recorded in every row
             os.environ["DELENTIA_TOOL_MENU"] = "ranked"
             os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
+        os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
         for name in ("DELENTIA_WARM_RECALL", "DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_STARTER_SKILLS", "DELENTIA_FDIA_POLICY", "DELENTIA_JURY_CONFIG",
                      "DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN",
                      "DELENTIA_PARALLEL_TOOLS", "DELENTIA_TOOL_MENU", "DELENTIA_API_TOKEN", "DELENTIA_OWNER_NOTIFY"):
@@ -224,6 +234,29 @@ class Harness:
             self.sink.close()
 
     # ----------------------------------------------------------------- episodes
+    def preload(self, namespace: str, seed: int) -> None:
+        """Round 66: unrelated facts, exact duplicates of one of them, and old episodes (conversation and event, low importance, back-dated), the same for every arm and policy of a run."""
+        if self.preload_noise <= 0:
+            return
+        import random
+        rng = random.Random(f"{seed}:{namespace}")
+        words = "invoice shipment depot courier pallet barcode manifest customs warehouse dock forklift route driver schedule".split()
+        persistence = self.kernel._persistence
+        first = ""
+        for i in range(self.preload_noise):
+            roll = rng.random()
+            if roll < 0.5 or not first:
+                content, kind, imp, days = " ".join(rng.choice(words) for _ in range(10)), rng.choice(["fact", "fact", "preference"]), round(rng.uniform(0.3, 0.7), 2), rng.randint(1, 60)
+                first = first or content
+            elif roll < 0.7:
+                content, kind, imp, days = first, "fact", 0.5, rng.randint(1, 60)                 # an exact duplicate
+            else:
+                content, kind, imp, days = " ".join(rng.choice(words) for _ in range(10)), rng.choice(["conversation", "event"]), round(rng.uniform(0.1, 0.5), 2), rng.randint(90, 400)
+            mid = f"noise_{namespace}_{i}"
+            persistence.save_memory(mid, namespace, kind, content, {}, imp)
+            with persistence._connect() as conn:
+                conn.execute("UPDATE memories SET created_at = ? WHERE id = ?", ((__import__("datetime").datetime.now(__import__("datetime").timezone.utc) - __import__("datetime").timedelta(days=days)).isoformat(), mid))
+
     def _audit_max(self) -> int:
         with self.kernel._persistence._connect() as conn:
             row = conn.execute("SELECT COALESCE(MAX(id), 0) FROM audit_trail").fetchone()
@@ -235,7 +268,8 @@ class Harness:
                                 (after_id, namespace)).fetchall()
         return [json.loads(r[0]) for r in rows if r[0]]
 
-    async def run_episode(self, arm: Any, task: Dict[str, Any], *, split: str, rep: int, namespace: str, skill_db: str, seed: int) -> Dict[str, Any]:
+    async def run_episode(self, arm: Any, task: Dict[str, Any], *, split: str, rep: int, namespace: str, skill_db: str, seed: int,
+                          token_cap: Optional[int] = None, unit_budget: Optional[int] = None) -> Dict[str, Any]:
         from rct_control_plane import research_switches
         from rct_control_plane.agent_factory import build_governed_loop
         from rct_control_plane.skill_library import SkillLibrary
@@ -248,13 +282,23 @@ class Harness:
         if self.model is not None:
             self.model.reset()
         audit_mark = self._audit_max()
-        loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
-                                   persistence=self.kernel._persistence, mcp_server=self.mcp)
-        loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
-        loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
-        loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
-        receipt = research_switches.apply(loop, arm)
-        tools = await loop._available_tools()
+        plain = bool(getattr(arm, "plain_loop", 0))
+        if plain:                                                                # Round 66: not Delentia's loop at all
+            from research.plain_agent import PlainAgent
+            loop = PlainAgent(self.mcp, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
+                              max_tokens=max(1, int(token_cap)) if token_cap is not None else None)
+            receipt = arm.to_dict()
+            tools = [{"name": t.name} for t in await self.mcp.list_tools()]
+        else:
+            loop = build_governed_loop(self.kernel, namespace, max_iterations=int(task.get("max_steps", 12)), max_seconds=self.max_seconds,
+                                       persistence=self.kernel._persistence, mcp_server=self.mcp)
+            loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
+            loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
+            loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
+            if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
+                loop._max_episode_tokens = max(1, int(token_cap))
+            receipt = research_switches.apply(loop, arm)
+            tools = await loop._available_tools()
         started = time.perf_counter()
         error = ""
         try:
@@ -280,12 +324,19 @@ class Harness:
         graded = evaluate.grade(oracle, outcome)
         gate_rows = self._gate_rows(audit_mark, namespace)
         prior = (int(task["episode_index"]) - 1) if task.get("episode_index") else 0
-        checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
+        if plain:
+            with self.kernel._persistence._connect() as conn:
+                governed = conn.execute("SELECT COUNT(*) FROM audit_trail WHERE id > ? AND entity_type LIKE 'governed_loop%' AND actor = ?", (audit_mark, namespace)).fetchone()[0]
+            checks = research_switches.plain_loop_checks(int(governed), result, [t["name"] for t in tools])
+        else:
+            checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
         cost = result.get("cost") or {}
         spent = float(cost.get("cost_usd") or 0.0)
         self.spent_usd += spent
+        used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
         return {
-            "run_id": f"{split}:{task['task_id']}:{arm.label}:r{rep}", "task_id": task["task_id"], "family_id": task["family_id"],
+            "run_id": run_id_for(split, task["task_id"], arm.label, rep, unit_budget), "task_id": task["task_id"], "family_id": task["family_id"],
+            "domain": task.get("domain", "quotes"), "attack": oracle.get("attack", ""), "track": "budget" if unit_budget is not None else "config", "unit_token_budget": unit_budget, "token_cap": token_cap, "tokens_used": used,
             "trajectory_id": task.get("trajectory_id"), "episode_index": task.get("episode_index"), "episode_kind": task.get("episode_kind"),
             "language": task["language"], "split": split, "arm": arm.label, "R": arm.R, "F": arm.F, "M": arm.M, "history": arm.history,
             "model_id": (cost.get("model") if cost else None) or (self.model.model_id if self.model is not None else "real"),
@@ -304,17 +355,19 @@ class Harness:
             "attack_present": graded["attack_present"], "attack_success": graded["attack_success"], "false_success_claim": graded["false_success_claim"],
             "truthful": graded["truthful"], "grader_detail": graded["detail"],
             "memory_items_in_prompt": len(getattr(loop, "_episode_memory_scores", []) or []), "skills_injected": getattr(loop, "_episode_skills_injected", 0),
-            "skill_extracted": bool(result.get("skill_extracted")), "cache_hit": result.get("stopped_reason") == "warm_recall",
+            "skill_extracted": bool(result.get("skill_extracted")), "cache_hit": result.get("stopped_reason") == "warm_recall", "plain_loop": int(plain), "memory_policy": self.memory_policy, "preload_noise": self.preload_noise,
             "manipulation_checks": checks, "manipulation_ok": all(c["ok"] for c in checks),
             "exclusion_reason": f"infrastructure: {error}" if error else None,
         }
 
     async def run_with_retry(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        from research import failure_taxonomy
         row = await self.run_episode(*args, **kwargs)
         if row["exclusion_reason"]:                                              # one retry for an infrastructure fault (protocol: infrastructure_retries = 1)
             retry = await self.run_episode(*args, **kwargs)
             retry["retried_after"] = row["exclusion_reason"]
-            return retry
+            row = retry
+        row["failure_class"] = failure_taxonomy.classify(row)                    # Round 66: one label per failed episode, assigned by rules (research/failure_taxonomy.py)
         return row
 
 
@@ -324,15 +377,36 @@ def _arms(spec: str) -> List[Any]:
         return list(ALL_ARMS)
     if spec == "all+G":
         return [*ALL_ARMS, Treatment.parse("G")]
+    if spec == "baselines":                                                    # G (raw recent history) and GP (generic plan-act-check + generic retrieval)
+        from rct_control_plane.research_switches import BASELINES
+        return list(BASELINES)
+    if spec == "plain":                                                        # PL: not Delentia's loop (research/plain_agent.py)
+        return [Treatment.parse("PL")]
+    if spec == "all+plain":
+        return [*ALL_ARMS, Treatment.parse("PL")]
+    if spec == "all+baselines+plain":
+        from rct_control_plane.research_switches import BASELINES
+        return [*ALL_ARMS, *BASELINES, Treatment.parse("PL")]
+    if spec == "all+baselines":
+        from rct_control_plane.research_switches import BASELINES
+        return [*ALL_ARMS, *BASELINES]
     if spec == "variants":
         from rct_control_plane.research_switches import SUB_ABLATIONS
         return [Treatment.parse("A111"), *SUB_ABLATIONS]
     return [Treatment.parse(part) for part in spec.split(",") if part.strip()]
 
 
-def _load_units(split: str, only: Optional[List[str]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    static = [json.loads(line) for line in (HERE / "tasks" / f"{split}_static.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    trajs = [json.loads(line) for line in (HERE / "trajectories" / f"{split}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+DOMAIN_FILES = {"quotes": ("{split}_static.jsonl", "{split}.jsonl"), "tickets": ("{split}_tickets_static.jsonl", "{split}_tickets.jsonl")}
+
+
+def _load_units(split: str, only: Optional[List[str]], domain: str = "quotes") -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    names = list(DOMAIN_FILES) if domain == "all" else [domain]
+    static: List[Dict[str, Any]] = []
+    trajs: List[Dict[str, Any]] = []
+    for name in names:
+        static_file, traj_file = (part.format(split=split) for part in DOMAIN_FILES[name])
+        static += [json.loads(line) for line in (HERE / "tasks" / static_file).read_text(encoding="utf-8").splitlines() if line.strip()]
+        trajs += [json.loads(line) for line in (HERE / "trajectories" / traj_file).read_text(encoding="utf-8").splitlines() if line.strip()]
     if only:
         static = [t for t in static if any(o in t["task_id"] for o in only)]
         trajs = [t for t in trajs if any(o in t["trajectory_id"] for o in only)]
@@ -351,9 +425,10 @@ async def main_async(args: argparse.Namespace) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     done = load_rows(out)
     arms = _arms(args.arms)
-    static, trajs = _load_units(args.split, args.only)
+    static, trajs = _load_units(args.split, args.only, args.domain)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
-    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu)
+    harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu,
+                      memory_policy=args.memory_policy, preload_noise=args.preload_noise)
     harness.start()
     rng = random.Random(args.seed)
     written = failures = 0
@@ -366,10 +441,11 @@ async def main_async(args: argparse.Namespace) -> int:
                 order = list(arms)
                 rng.shuffle(order)
                 for arm in order:
+                    cap = args.unit_token_budget or None
                     if kind == "static":
-                        ids = [f"{args.split}:{unit['task_id']}:{arm.label}:r{rep}"]
+                        ids = [run_id_for(args.split, unit["task_id"], arm.label, rep, cap)]
                     else:
-                        ids = [f"{args.split}:{e['task_id']}:{arm.label}:r{rep}" for e in unit["episodes"]]
+                        ids = [run_id_for(args.split, e["task_id"], arm.label, rep, cap) for e in unit["episodes"]]
                     if all(i in done for i in ids):
                         continue
                     episodes = [unit] if kind == "static" else unit["episodes"]
@@ -377,8 +453,12 @@ async def main_async(args: argparse.Namespace) -> int:
                     namespace = f"research-{arm.label}-{safe}-r{rep}"
                     skill_db = str(work / "skills" / f"{namespace}.db")
                     Path(skill_db).parent.mkdir(parents=True, exist_ok=True)
+                    remaining = cap                                          # equal-total-token track: one budget per (unit, arm), spent across the unit's episodes
+                    harness.preload(namespace, args.seed)
                     for task in episodes:
-                        row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed)
+                        row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed, token_cap=remaining, unit_budget=cap)
+                        if remaining is not None:
+                            remaining = max(0, remaining - int(row.get("tokens_used") or 0))
                         with out.open("a", encoding="utf-8") as fh:
                             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
                         done[row["run_id"]] = row
@@ -414,7 +494,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--split", default="dev", choices=["dev", "validation", "test"])
     parser.add_argument("--policy", default="diligent", help="diligent | careless | hijackable | stale | real")
-    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus the generic baseline), variants (A111 and its four sub-ablations), or a list such as A111,A011,G,A111+FS")
+    parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus G), baselines (G and GP), all+baselines, variants (A111 and its four sub-ablations), or a list such as A111,A011,G,GP,A111+FS")
+    parser.add_argument("--domain", default="quotes", choices=["quotes", "tickets", "all"], help="which task domain to run (quotes = the first domain, tickets = support triage)")
+    parser.add_argument("--unit-token-budget", type=int, default=0, help="track B (equal total tokens): every arm gets the same token budget per task or trajectory; "
+                        "0 = track A, equal configuration with no extra cap")
+    parser.add_argument("--memory-policy", default="none", choices=["none", "dedupe", "expire"], help="Round 66: what recall may offer the model (DELENTIA_MEMORY_POLICY); the same for every arm of a run")
+    parser.add_argument("--preload-noise", type=int, default=0, help="Round 66: store this many unrelated and duplicate memories (some of them old episodes) for each person before their first episode, to give the policies something to cut")
     parser.add_argument("--max-seconds", type=float, default=90.0, help="wall-clock cap per episode (a CPU-bound local model needs far more than a hosted one)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261008)

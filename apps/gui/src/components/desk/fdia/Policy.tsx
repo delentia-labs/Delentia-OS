@@ -130,7 +130,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
   const blocksEverything = draft.rules.length === 0 && draft.default_fallback_A <= 0;
   const needsConfirm = blocksEverything || draft.default_fallback_A > 0;
 
-  const fromTemplate = async (name: "balanced" | "strict") => {
+  const fromTemplate = async (name: "balanced" | "strict" | "careful" | "argaware") => {
     setBusy(true); setMessage(null);
     try { setDraft((await desk.fdiaTemplate(name)).policy); setUnderstand(false); }
     catch (err) { setMessage({ tone: "rust", text: err instanceof Error ? err.message : String(err) }); }
@@ -195,6 +195,8 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button tone="ghost" onClick={() => fromTemplate("balanced")} disabled={busy}>{T("Start from: balanced", "เริ่มจาก: balanced")}</Button>
           <Button tone="ghost" onClick={() => fromTemplate("strict")} disabled={busy}>{T("Start from: strict (jury on shell, threshold 0.6)", "เริ่มจาก: strict (jury กับ shell, เกณฑ์ 0.6)")}</Button>
+          <Button tone="ghost" onClick={() => fromTemplate("careful")} disabled={busy}>{T("Start from: careful (asks before reaching out)", "เริ่มจาก: careful (ถามก่อนออกไปข้างนอก)")}</Button>
+          <Button tone="ghost" onClick={() => fromTemplate("argaware")} disabled={busy}>{T("Start from: argument-aware (inspection runs, the rest asks)", "เริ่มจาก: argument-aware (ดูอย่างเดียวรันได้ ที่เหลือถาม)")}</Button>
           <Button tone="ghost" onClick={() => setDraft(EMPTY_POLICY)} disabled={busy}>{T("Empty", "ว่าง")}</Button>
           {state.exists ? <Button tone="amber" onClick={disable} disabled={busy}>{T("Turn the policy off (file kept)", "ปิดนโยบาย (เก็บไฟล์ไว้)")}</Button> : null}
         </div>

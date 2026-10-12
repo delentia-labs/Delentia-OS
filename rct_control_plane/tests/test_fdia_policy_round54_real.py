@@ -254,3 +254,21 @@ def test_starters_keep_a_shell_command_away_from_secrets_even_when_signed(real_t
     assert fp.evaluate(parsed, "delentia_run_sandboxed_command", {"command": "cat .env"}, approved=True).A == 0.0
     assert fp.evaluate(parsed, "delentia_run_sandboxed_command", {"command": "cat /etc/passwd"}, approved=True).A == 0.0
     assert fp.evaluate(parsed, "delentia_run_sandboxed_command", {"command": "echo hello"}, approved=True).A == 1.0
+
+
+def test_round65_the_careful_starter_asks_for_everything_that_reaches_beyond_the_machine(real_tool_names):
+    """scripts/calibrate_fdia_round65.py: under the balanced starter 16 of 52 should-ask requests still ran (fetching an unnamed address, subagents, delegation, imported state,
+    schedules, web search). The careful starter asks for those too; reading and remembering stay free."""
+    careful, errors = fp.validate_policy(fp.template("careful", real_tool_names))
+    assert careful is not None, errors
+    for tool in ("delentia_crawl_url", "delentia_web_search", "delentia_browse_page", "delentia_spawn_subagents", "delentia_delegate", "delentia_import_session_state",
+                 "delentia_schedule_self_evolution", "delentia_create_worktree"):
+        if tool in real_tool_names:
+            assert fp.evaluate(careful, tool, {}).needs_signature, tool
+    assert fp.evaluate(careful, "delentia_read_repo_file", {"relative_path": "a.md"}).A == 1.0
+    assert fp.evaluate(careful, "delentia_recall", {"query": "x"}).A == 1.0
+    balanced, _ = fp.validate_policy(fp.template("balanced", real_tool_names))
+    assert not fp.evaluate(balanced, "delentia_web_search", {"query": "x"}).needs_signature          # the balanced starter is unchanged
+    reach = next(r for r in fp.template("careful", real_tool_names)["rules"] if r["rule_id"] == "R-REACH")["intent_patterns"]
+    other = next(r for r in fp.template("careful", real_tool_names)["rules"] if r["rule_id"] == "R-OTHER-ACTIONS")["intent_patterns"]
+    assert not set(reach) & set(other)

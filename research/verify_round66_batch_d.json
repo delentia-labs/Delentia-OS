@@ -1,0 +1,282 @@
+{
+  "holdout": {
+    "summary": {
+      "cases": 25,
+      "good": 10,
+      "bad": 15,
+      "old": {
+        "bad_let_through": 9,
+        "good_rejected": 6
+      },
+      "new": {
+        "bad_let_through": 4,
+        "good_rejected": 6
+      },
+      "v2": {
+        "bad_let_through": 4,
+        "good_rejected": 3
+      }
+    },
+    "rows": [
+      {
+        "id": "dr01",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr02",
+        "label": "bad",
+        "similarity": 0.556,
+        "old_accepts": true,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr03",
+        "label": "bad",
+        "similarity": 0.7,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr04",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr05",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr06",
+        "label": "bad",
+        "similarity": 0.238,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr08",
+        "label": "bad",
+        "similarity": 0.253,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr09",
+        "label": "bad",
+        "similarity": 0.644,
+        "old_accepts": true,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr10",
+        "label": "good",
+        "similarity": 0.155,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "dr11",
+        "label": "good",
+        "similarity": 0.174,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "dr12",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr13",
+        "label": "good",
+        "similarity": 0.24,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "dr15",
+        "label": "bad",
+        "similarity": 0.26,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr17",
+        "label": "bad",
+        "similarity": 0.52,
+        "old_accepts": true,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr19",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr20",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr21",
+        "label": "good",
+        "similarity": 0.636,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr22",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr23",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [
+          "empty_answer"
+        ],
+        "supported": false
+      },
+      {
+        "id": "dr24",
+        "label": "bad",
+        "similarity": 0.5,
+        "old_accepts": true,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [
+          "ungrounded_values"
+        ],
+        "supported": false
+      },
+      {
+        "id": "dr25",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr26",
+        "label": "bad",
+        "similarity": 0.637,
+        "old_accepts": true,
+        "new_accepts": true,
+        "v2_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "dr29",
+        "label": "bad",
+        "similarity": 0.3,
+        "old_accepts": true,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [
+          "no_action_taken"
+        ],
+        "supported": false
+      },
+      {
+        "id": "dr30",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [
+          "no_action_taken"
+        ],
+        "supported": false
+      },
+      {
+        "id": "dr32",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "v2_accepts": false,
+        "flags": [],
+        "supported": false
+      }
+    ]
+  },
+  "adopt_by_default": true
+}

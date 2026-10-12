@@ -2165,6 +2165,127 @@ def memory_list(namespace: str, db: Optional[str]) -> None:
         click.echo(f"{item['id']}  [{item['memory_type']}]  used={item['accessed_count']}  {item['content'][:100]}")
 
 
+@memory_group.command("revoke")
+@click.argument("memory_id")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--reason", default="", help="why (kept in the audit trail)")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_revoke(memory_id: str, namespace: str, reason: str, db: Optional[str]) -> None:
+    """Stop the agent using a memory. The row stays on disk for the audit (Zero-Delete); nothing recalls it again."""
+    if not _audit_db(db).revoke_memory(memory_id, namespace, reason):
+        click.echo(click.style(f"Error: no live memory {memory_id!r} in namespace {namespace!r}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"revoked {memory_id} in namespace {namespace} (kept on disk; no longer recalled)")
+
+
+@memory_group.group("log")
+def memory_log_group():
+    """The memory event log (opt-in, DELENTIA_MEMORY_EVENTLOG=1): history, time travel, and the check against the audit chain."""
+
+
+@memory_log_group.command("stats")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_log_stats(namespace: str, db: Optional[str]) -> None:
+    from rct_control_plane import memory_eventlog
+    click.echo(json.dumps({"enabled": memory_eventlog.enabled(), **memory_eventlog.MemoryEventLog(_audit_db(db)).stats(namespace)}, indent=2, ensure_ascii=False))
+
+
+@memory_log_group.command("verify")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_log_verify(db: Optional[str]) -> None:
+    """Recompute every event and checkpoint hash, then check the heads that were written into the audit chain. Exit 1 on any problem."""
+    from rct_control_plane import memory_eventlog
+    log = memory_eventlog.MemoryEventLog(_audit_db(db))
+    chain, anchors = log.verify(), log.verify_anchors()
+    click.echo(json.dumps({"chain": chain, "anchors": anchors}, indent=2, ensure_ascii=False))
+    if not (chain["ok"] and anchors["ok"]):
+        sys.exit(1)
+
+
+@memory_log_group.command("anchor")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_log_anchor(db: Optional[str]) -> None:
+    """Write the current head of the memory log into the audit chain now."""
+    from rct_control_plane import memory_eventlog
+    click.echo(json.dumps(memory_eventlog.MemoryEventLog(_audit_db(db)).anchor(), indent=2))
+
+
+@memory_log_group.command("at")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--seq", type=int, default=None, help="the state after this event")
+@click.option("--time", "at_time", default=None, help="the state at this moment (ISO 8601)")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_log_at(namespace: str, seq: Optional[int], at_time: Optional[str], db: Optional[str]) -> None:
+    """What this person's memory held at an earlier moment."""
+    from rct_control_plane import memory_eventlog
+    log = memory_eventlog.MemoryEventLog(_audit_db(db))
+    if at_time:
+        seq = log.seq_at_time(namespace, at_time)
+    for item in log.fold(namespace, seq).values():
+        click.echo(f"{item['id']}  [{item.get('memory_type')}]  {str(item.get('content'))[:100]}")
+
+
+@memory_log_group.command("history")
+@click.option("--namespace", default="desk", show_default=True)
+@click.option("--limit", default=30, show_default=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_log_history(namespace: str, limit: int, db: Optional[str]) -> None:
+    from rct_control_plane import memory_eventlog
+    for e in memory_eventlog.MemoryEventLog(_audit_db(db)).history(namespace, limit):
+        click.echo(f"{e['seq']:>6}  {e['at'][:19]}  {e['kind']:<7} {e['memory_id']}  {e['preview']}")
+
+
+@memory_group.command("inventory")
+@click.argument("namespace")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_inventory(namespace: str, db: Optional[str]) -> None:
+    """What holds one person's text: sealed and plaintext events, table rows, and every other table with their namespace. Read-only."""
+    from rct_control_plane import memory_erasure
+    click.echo(json.dumps(memory_erasure.inventory(_audit_db(db), namespace), indent=2, ensure_ascii=False))
+
+
+@memory_group.command("erase-request")
+@click.argument("namespace")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_erase_request(namespace: str, db: Optional[str]) -> None:
+    """Print what an approver must sign to erase this person: the person and the current head of the memory log. Sign it on the approver's own device with `memory erase-sign`."""
+    from rct_control_plane import memory_erasure, memory_eventlog
+    head = memory_eventlog.MemoryEventLog(_audit_db(db)).head()
+    click.echo(json.dumps({"namespace": namespace, "head_hash": head["hash"], "head_seq": head["seq"], "message": memory_erasure.erase_message(namespace, head["hash"]).decode("utf-8"),
+                           "inventory": memory_erasure.inventory(_audit_db(db), namespace), "warning": "erasure is irreversible; the head changes with every new memory, so sign and run `memory erase` promptly"}, indent=2, ensure_ascii=False))
+
+
+@memory_group.command("erase-sign")
+@click.argument("namespace")
+@click.argument("head_hash")
+@click.option("--approver-key", required=True, type=click.Path(exists=True), help="the approver's private key (PEM); this command needs no database")
+def memory_erase_sign(namespace: str, head_hash: str, approver_key: str) -> None:
+    from rct_control_plane import memory_erasure
+    click.echo(json.dumps(memory_erasure.sign_erase(approver_key, namespace, head_hash), indent=2))
+
+
+@memory_group.command("erase")
+@click.argument("namespace")
+@click.option("--reason", required=True, help="why (kept in the audit trail; do not put personal data here)")
+@click.option("--public-key", required=True, help="the approver's public key (hex), on the trusted list")
+@click.option("--signature", required=True, help="from `memory erase-sign`, over this person and the current head")
+@click.option("--confirm", required=True, help="type the namespace again")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def memory_erase(namespace: str, reason: str, public_key: str, signature: str, confirm: str, db: Optional[str]) -> None:
+    """Erase one person's memory by destroying their key. Irreversible. Needs a trusted approver's signature; prints what was NOT erased."""
+    from rct_control_plane import memory_erasure
+    if confirm != namespace:
+        click.echo(click.style("Error: --confirm must repeat the namespace exactly", fg="red"), err=True)
+        sys.exit(1)
+    try:
+        report = memory_erasure.erase_person(_audit_db(db), namespace, reason, public_key, signature)
+    except memory_erasure.ErasureError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+
+
 @memory_group.command("candidates")
 @click.option("--namespace", default=None, help="only this person's suggestions")
 @click.option("--status", default="pending", show_default=True, type=click.Choice(["pending", "accepted", "dismissed", "expired"]))
@@ -3293,7 +3414,7 @@ def fdia_validate(policy_file: str) -> None:
 
 
 @fdia_group.command("template")
-@click.argument("name", type=click.Choice(["balanced", "strict"]))
+@click.argument("name", type=click.Choice(["balanced", "strict", "careful", "argaware"]))
 @click.option("--out", "out_path", type=click.Path(dir_okay=False), default=None, help="Write the starter here instead of printing it.")
 def fdia_template(name: str, out_path: Optional[str]) -> None:
     """A starter policy that classifies every real tool."""

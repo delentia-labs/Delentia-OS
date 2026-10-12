@@ -14,7 +14,7 @@ runtime experience records - both stay, per Zero-Delete.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import Optional, TYPE_CHECKING, Any, Dict, List
 
 if TYPE_CHECKING:
     from rct_control_plane.agent_memory import AgentMemory
@@ -39,6 +39,12 @@ class RCTDBFacade:
 
     def compare_experiment(self, experiment_id: str) -> Dict[str, Any]:
         return self._persistence.compare_experiment_runs(experiment_id)
+
+    def memory_state_at(self, namespace: str, upto_seq: Optional[int] = None, include_revoked: bool = False) -> Dict[str, Any]:
+        """Round 66: what one person's memory held after event `upto_seq` of the memory event log (None = now): replay of what the agent could have known at that moment.
+        Empty unless DELENTIA_MEMORY_EVENTLOG=1 was on when the memories were written."""
+        from rct_control_plane.memory_eventlog import MemoryEventLog
+        return MemoryEventLog(self._persistence).fold(namespace, upto_seq, include_revoked)
 
     def restore_session_context(self, session_id: str) -> Dict[str, Any]:
         """Real composite query matching the whitepaper's own example:

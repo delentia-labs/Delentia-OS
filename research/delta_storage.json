@@ -1,0 +1,328 @@
+{
+  "ticks": 120,
+  "items": 150,
+  "seeds": 3,
+  "checkpoint_every": 20,
+  "families": {
+    "sparse (1 new, 1% touched, no edits)": {
+      "raw": {
+        "bytes_mean": 5870571,
+        "bytes_range": [
+          5856683,
+          5888066
+        ],
+        "vs_raw_pct": 0.0,
+        "encode_s": 0.039,
+        "get_ms": 0.19,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "zstd_stream": {
+        "bytes_mean": 24137,
+        "bytes_range": [
+          23287,
+          24624
+        ],
+        "vs_raw_pct": 99.6,
+        "encode_s": 0.057,
+        "get_ms": 2.14,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "zstd_each": {
+        "bytes_mean": 864542,
+        "bytes_range": [
+          861730,
+          866721
+        ],
+        "vs_raw_pct": 85.3,
+        "encode_s": 0.094,
+        "get_ms": 0.21,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "delta_raw": {
+        "bytes_mean": 338444,
+        "bytes_range": [
+          337502,
+          340230
+        ],
+        "vs_raw_pct": 94.2,
+        "encode_s": 0.063,
+        "get_ms": 3.28,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 20,
+        "silently_wrong": 0
+      },
+      "delta_zstd_stream": {
+        "bytes_mean": 17675,
+        "bytes_range": [
+          17349,
+          17875
+        ],
+        "vs_raw_pct": 99.7,
+        "encode_s": 0.07,
+        "get_ms": 3.41,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "delta_zstd_each": {
+        "bytes_mean": 72186,
+        "bytes_range": [
+          71965,
+          72415
+        ],
+        "vs_raw_pct": 98.8,
+        "encode_s": 0.069,
+        "get_ms": 3.32,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 20,
+        "silently_wrong": 0
+      }
+    },
+    "typical (2 new, 5% touched, 1% edited, 0.5% deleted)": {
+      "raw": {
+        "bytes_mean": 5967787,
+        "bytes_range": [
+          5854665,
+          6142030
+        ],
+        "vs_raw_pct": 0.0,
+        "encode_s": 0.042,
+        "get_ms": 0.19,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "zstd_stream": {
+        "bytes_mean": 55258,
+        "bytes_range": [
+          53515,
+          56910
+        ],
+        "vs_raw_pct": 99.1,
+        "encode_s": 0.057,
+        "get_ms": 2.37,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "zstd_each": {
+        "bytes_mean": 892886,
+        "bytes_range": [
+          878700,
+          919088
+        ],
+        "vs_raw_pct": 85.0,
+        "encode_s": 0.097,
+        "get_ms": 0.22,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "delta_raw": {
+        "bytes_mean": 530158,
+        "bytes_range": [
+          520029,
+          541836
+        ],
+        "vs_raw_pct": 91.1,
+        "encode_s": 0.069,
+        "get_ms": 3.57,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 20,
+        "silently_wrong": 0
+      },
+      "delta_zstd_stream": {
+        "bytes_mean": 46930,
+        "bytes_range": [
+          45961,
+          47823
+        ],
+        "vs_raw_pct": 99.2,
+        "encode_s": 0.073,
+        "get_ms": 3.86,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "delta_zstd_each": {
+        "bytes_mean": 106434,
+        "bytes_range": [
+          105137,
+          107871
+        ],
+        "vs_raw_pct": 98.2,
+        "encode_s": 0.073,
+        "get_ms": 3.65,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 20,
+        "silently_wrong": 0
+      }
+    },
+    "dense (4 new, 30% touched, 10% edited, 3% deleted)": {
+      "raw": {
+        "bytes_mean": 3785261,
+        "bytes_range": [
+          3721469,
+          3858084
+        ],
+        "vs_raw_pct": 0.0,
+        "encode_s": 0.025,
+        "get_ms": 0.13,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "zstd_stream": {
+        "bytes_mean": 124245,
+        "bytes_range": [
+          123655,
+          125139
+        ],
+        "vs_raw_pct": 96.7,
+        "encode_s": 0.049,
+        "get_ms": 1.23,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "zstd_each": {
+        "bytes_mean": 581763,
+        "bytes_range": [
+          571171,
+          593416
+        ],
+        "vs_raw_pct": 84.6,
+        "encode_s": 0.069,
+        "get_ms": 0.14,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "delta_raw": {
+        "bytes_mean": 1135379,
+        "bytes_range": [
+          1122161,
+          1142582
+        ],
+        "vs_raw_pct": 70.0,
+        "encode_s": 0.059,
+        "get_ms": 3.05,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 3,
+        "silently_wrong": 0
+      },
+      "delta_zstd_stream": {
+        "bytes_mean": 120306,
+        "bytes_range": [
+          119220,
+          121069
+        ],
+        "vs_raw_pct": 96.8,
+        "encode_s": 0.065,
+        "get_ms": 3.8,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "delta_zstd_each": {
+        "bytes_mean": 175154,
+        "bytes_range": [
+          174216,
+          176151
+        ],
+        "vs_raw_pct": 95.4,
+        "encode_s": 0.065,
+        "get_ms": 3.15,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 2,
+        "silently_wrong": 0
+      }
+    },
+    "runtime_memory_table (real writers; 2 new + 5% touched per tick)": {
+      "raw": {
+        "bytes_mean": 11422495,
+        "bytes_range": [
+          11410479,
+          11434030
+        ],
+        "vs_raw_pct": 0.0,
+        "encode_s": 0.074,
+        "get_ms": 0.37,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "zstd_stream": {
+        "bytes_mean": 53901,
+        "bytes_range": [
+          50947,
+          55639
+        ],
+        "vs_raw_pct": 99.5,
+        "encode_s": 0.109,
+        "get_ms": 5.42,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "zstd_each": {
+        "bytes_mean": 1483743,
+        "bytes_range": [
+          1477819,
+          1488973
+        ],
+        "vs_raw_pct": 87.0,
+        "encode_s": 0.16,
+        "get_ms": 0.38,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 1,
+        "silently_wrong": 0
+      },
+      "delta_raw": {
+        "bytes_mean": 852843,
+        "bytes_range": [
+          852115,
+          853222
+        ],
+        "vs_raw_pct": 92.5,
+        "encode_s": 0.113,
+        "get_ms": 5.89,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 19.3,
+        "silently_wrong": 0
+      },
+      "delta_zstd_stream": {
+        "bytes_mean": 55929,
+        "bytes_range": [
+          54946,
+          56848
+        ],
+        "vs_raw_pct": 99.5,
+        "encode_s": 0.132,
+        "get_ms": 6.21,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 120,
+        "silently_wrong": 0
+      },
+      "delta_zstd_each": {
+        "bytes_mean": 136403,
+        "bytes_range": [
+          136002,
+          136842
+        ],
+        "vs_raw_pct": 98.8,
+        "encode_s": 0.127,
+        "get_ms": 6.04,
+        "exact_all_ticks": true,
+        "ticks_lost_per_damaged_byte": 20,
+        "silently_wrong": 0
+      }
+    }
+  }
+}

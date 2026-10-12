@@ -1,0 +1,29 @@
+{
+  "ops": 2000,
+  "results": [
+    {
+      "system": "langgraph SqliteSaver",
+      "ops": 2000,
+      "current_view_exact": true,
+      "current_view_wrong": 0,
+      "time_travel": {
+        "supported": true,
+        "checked": 6,
+        "exact": 6
+      },
+      "bytes_on_disk": 192376832,
+      "write_ms_median": 5.106,
+      "write_ms_p95": 44.718,
+      "tamper_detected": false,
+      "tamper_note": "reading back the edited checkpoint succeeded silently",
+      "erase": {
+        "call": "delete_thread('alice')",
+        "canary_in_raw_bytes_before": 7609,
+        "canary_in_raw_bytes_after": 7444,
+        "rows_of_the_person_left_in_the_table": 0,
+        "canary_in_raw_bytes_after_a_manual_vacuum": 0,
+        "other_person_intact": true
+      }
+    }
+  ]
+}

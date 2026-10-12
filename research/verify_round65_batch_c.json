@@ -1,0 +1,249 @@
+{
+  "holdout": {
+    "summary": {
+      "cases": 25,
+      "good": 11,
+      "bad": 14,
+      "old": {
+        "bad_let_through": 12,
+        "good_rejected": 8
+      },
+      "new": {
+        "bad_let_through": 4,
+        "good_rejected": 7
+      }
+    },
+    "rows": [
+      {
+        "id": "cr00",
+        "label": "bad",
+        "similarity": 0.5,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr01",
+        "label": "bad",
+        "similarity": 0.4,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr02",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "cr03",
+        "label": "bad",
+        "similarity": 0.467,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr04",
+        "label": "bad",
+        "similarity": 0.543,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr05",
+        "label": "bad",
+        "similarity": 0.7,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr06",
+        "label": "bad",
+        "similarity": 0.7,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr07",
+        "label": "good",
+        "similarity": 0.298,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "cr08",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr09",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr10",
+        "label": "good",
+        "similarity": 0.52,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr11",
+        "label": "bad",
+        "similarity": 0.543,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr12",
+        "label": "good",
+        "similarity": 0.345,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "cr13",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr16",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr17",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr18",
+        "label": "bad",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr19",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr20",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr21",
+        "label": "bad",
+        "similarity": 0.44,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [
+          "ungrounded_values"
+        ],
+        "supported": false
+      },
+      {
+        "id": "cr22",
+        "label": "bad",
+        "similarity": 0.4,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr23",
+        "label": "bad",
+        "similarity": 0.36,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": false
+      },
+      {
+        "id": "cr24",
+        "label": "bad",
+        "similarity": 0.6,
+        "old_accepts": true,
+        "new_accepts": true,
+        "flags": [],
+        "supported": true
+      },
+      {
+        "id": "cr25",
+        "label": "bad",
+        "similarity": 0.3,
+        "old_accepts": true,
+        "new_accepts": false,
+        "flags": [
+          "no_action_taken"
+        ],
+        "supported": false
+      },
+      {
+        "id": "cr27",
+        "label": "good",
+        "similarity": 0.0,
+        "old_accepts": false,
+        "new_accepts": false,
+        "flags": [],
+        "supported": false
+      }
+    ]
+  },
+  "adopt_by_default": true
+}
