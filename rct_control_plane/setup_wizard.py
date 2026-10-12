@@ -20,8 +20,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Local models in the order they are preferred as the agent's brain. Measured on this runtime's own probe (scripts/real_model_tool_probe.py, five simple goals, CPU): see the Round 73 document.
-PREFERRED_LOCAL_MODELS = ("qwen2.5:7b",)
+# Local models in the order they are preferred as the agent's brain. Measured on this runtime's own probe (scripts/real_model_tool_probe.py, five simple goals, one run each, CPU only):
+# qwen3:8b 4/5 (the right tool every time; one episode ran out of its time, 90-443 s per goal), qwen2.5:7b 3/5 (70-190 s per goal). A difference of one goal is noise; the larger model is also much slower.
+PREFERRED_LOCAL_MODELS = ("qwen3:8b", "qwen2.5:7b")
 DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-5"
 
 

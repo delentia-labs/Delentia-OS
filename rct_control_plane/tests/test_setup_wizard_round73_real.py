@@ -82,6 +82,13 @@ def test_a_fresh_machine_with_a_local_model_gets_a_model_and_an_audit_key_but_no
     assert "ollama" in json.dumps(model) and "qwen2.5:7b" in json.dumps(model)
 
 
+def test_the_better_measured_local_model_is_preferred_when_both_are_installed(machine):
+    start, home = machine
+    start(["qwen2.5:7b", "qwen3:8b"])
+    steps = {s.id: s for s in sw.make_plan(sw.inspect_machine(home))}
+    assert steps["model"].payload == {"provider": "ollama", "model": "qwen3:8b"}
+
+
 def test_a_second_run_changes_nothing(machine):
     start, home = machine
     start(["qwen2.5:7b"])
