@@ -4740,7 +4740,7 @@ def demo_init(root: Optional[str]) -> None:
     out = demo_module.init(_demo_root(root))
     click.echo(f"เดโมอยู่ที่ {out['root']}")
     click.echo("สร้างใหม่: " + (", ".join(out["created"]) or "ไม่มี (มีครบอยู่แล้ว)"))
-    click.echo("ต่อไป: delentia model show  แล้ว  delentia demo run compare")
+    click.echo("ต่อไป: delentia demo run compare --scripted  (ไม่ต้องมีโมเดล)  หรือ  delentia model show  แล้ว  delentia demo run compare")
 
 
 @demo_group.command("run")
@@ -4748,16 +4748,25 @@ def demo_init(root: Optional[str]) -> None:
 @_DEMO_ROOT_OPTION
 @click.option("--max-iterations", default=8, show_default=True)
 @click.option("--max-seconds", default=300.0, show_default=True)
-def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: float) -> None:
+@click.option("--scripted", is_flag=True, help="No model needed: a fixed program stands in for the model (compare | budget | edit). Tools, gate, signatures and audit are real.")
+def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: float, scripted: bool) -> None:
     """Run GOAL: compare | edit | remember | ask | budget, or any sentence of your own."""
     import asyncio
     from rct_control_plane import demo as demo_module
-    out = asyncio.run(demo_module.run_goal(_demo_root(root), goal, max_iterations=max_iterations, max_seconds=max_seconds))
+    from rct_control_plane.model_config import ModelConfigError
+    try:
+        out = asyncio.run(demo_module.run_goal(_demo_root(root), goal, max_iterations=max_iterations, max_seconds=max_seconds, scripted=scripted))
+    except ModelConfigError as exc:
+        click.echo(f"ยังตั้งโมเดลไม่ครบ: {exc}")
+        click.echo("ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
+        raise SystemExit(2) from None
     click.echo(out["report"])
     click.echo(f"ไฟล์ผล: {out['report_path']}")
     approval = out["result"].get("approval_id")
     if approval:
-        click.echo(f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}")
+        click.echo(f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}" + (" --scripted" if scripted else ""))
+    if str(out["result"].get("stopped_reason")) == "llm_error" and not scripted:
+        click.echo("ยังไม่มีโมเดลที่ใช้ได้? ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
     if out["checks"] is not None and not all(c["ok"] for c in out["checks"]):
         raise SystemExit(1)
 
@@ -4767,11 +4776,12 @@ def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: f
 @_DEMO_ROOT_OPTION
 @click.option("--max-iterations", default=8, show_default=True)
 @click.option("--max-seconds", default=300.0, show_default=True)
-def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max_seconds: float) -> None:
+@click.option("--scripted", is_flag=True, help="Use together with `demo run edit --scripted`.")
+def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max_seconds: float, scripted: bool) -> None:
     """Sign a waiting action with the DEMO key (kept on this machine, demo only) and let the agent continue."""
     import asyncio
     from rct_control_plane import demo as demo_module
-    out = asyncio.run(demo_module.approve(_demo_root(root), approval_id, max_iterations=max_iterations, max_seconds=max_seconds))
+    out = asyncio.run(demo_module.approve(_demo_root(root), approval_id, max_iterations=max_iterations, max_seconds=max_seconds, scripted=scripted))
     click.echo(out["report"])
     click.echo(f"ไฟล์ผล: {out['report_path']}")
 
