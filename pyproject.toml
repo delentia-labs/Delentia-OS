@@ -54,7 +54,6 @@ dependencies = [
     # Found by installing the built wheel in an empty virtual environment and importing, one missing module at a time.
     "numpy>=1.24",                      # algo_13_graphrag, algo_16_vector, algo_27_tvra
     "networkx>=3.0",                    # algo_20_workflow_orchestrator
-    "faiss-cpu>=1.8.0",                 # algo_16_vector builds its index when the kernel is constructed
     "gql[aiohttp]>=3.5.0",              # algo_29_uia
     "websockets>=12.0",                 # algo_29_uia
     "loguru>=0.7.0",                    # algo_36_rflh
