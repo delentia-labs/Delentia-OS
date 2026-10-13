@@ -1,10 +1,10 @@
-# Delentia OS — An Experimental Causal-Constraint AI Operating System SDK
+# Delentia OS — a governed AI agent runtime
 
 [![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
 [![Version](https://img.shields.io/badge/version-2.3.0-blue)](CHANGELOG.md)
-[![PyPI](https://img.shields.io/badge/PyPI-v2.3.0-gold)](https://pypi.org/project/delentia-os/)
+[![PyPI](https://img.shields.io/pypi/v/delentia-os?label=PyPI)](https://pypi.org/project/delentia-os/)
 [![npm](https://img.shields.io/badge/npm-%40delentia%2Fdelentia--os-cb3837?logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
@@ -15,13 +15,46 @@
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/Delentia-OS/main?filepath=notebooks%2Frct_playground.ipynb)
 [![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/Delentia-OS)
 
-> 💬 **RFC-001 is Live!** We just crossed **5,195 monthly downloads** on Hugging Face. Join our architecture review and help us audit weight-level security constraints in our [GitHub Discussions #58](https://github.com/delentia-labs/Delentia-OS/discussions/58).
 
-## Causal-Constraint AI Operating System — Experimental Constitutional SDK
+## A governed AI agent runtime: it stops and asks before it acts, and it can prove what it did
 
-> **RCT** = **Reverse Component Thinking** — decompose any system into its smallest verifiable parts, then rebuild with constitutional guarantees.
+Delentia OS is an agent runtime. An agent here is not a loop that does whatever the model says. Every episode passes the same fixed cycle:
+
+**GUARD** (is the request itself an attack?) → **THINK** (plan) → **ROUTE** (fast or careful) → **ACT** (each tool call is judged first; anything that writes, sends or runs code waits for a person's Ed25519 signature) → **COMPRESS** → **VERIFY** (does the answer match what was asked?) → **RECORD** (hash-chained, signed audit log you can re-verify offline) → **LEARN** (only verified episodes become skills).
+
+Why you might care: the model can be wrong, or be talked into something by text it reads on a web page. The runtime does not rely on the model behaving. Text from outside (a web page, a file in an untrusted folder, a message) marks the episode as *tainted*, and from then on anything that could send or change something needs a human signature, whatever the model says.
+
+## Try it in two minutes: no model, no API key
+
+```bash
+pip install delentia-os
+delentia demo init                          # a folder with three sample vendor quotes and a demo approver key
+delentia demo run compare --scripted        # the agent reads the quotes, answers, and the answer is checked against what is known to be true
+delentia demo run edit --scripted           # asks to change a file: the agent STOPS and waits for a signature
+delentia demo approve <id> --scripted       # you sign; only now does the file change
+delentia demo status                        # the audit chain: how many rows, how many signed, intact or not
+```
+
+Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT.md) (a real run).
+
+`--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It is there so that you can see the mechanism without installing a model; it says nothing about how good any model is, and every report says so on its first line. To use a real model: `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
+
+## What is measured, and what is not
+
+| Measured (and where) | Not yet |
+|---|---|
+| The public test suite: 7,109 passed, 32 skipped, 0 failed, 91.08% coverage ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/38231121128)) | A strong hosted model driving the runtime for days with real users |
+| The gate, the approvals and the taint rule against a scripted attacker (a hijacked model: 18 harmful side effects without the gate, 0 with it) | Independent witnesses for the audit chain: until they exist, the log is hash-chained and signed, **not** tamper-proof |
+| Local small models: they complete some simple tasks, not reliably (3 of 5 and 0 of 5 on a probe) | A public hosted service. Nothing here runs anywhere except on your machine |
+
+Details and the history of every claim: [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) and [`CHANGELOG.md`](CHANGELOG.md).
+
+## What is in this repository
+
+The agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and 5 reference microservices. A separate, private service layer is **not** part of this repository; the runtime can use any HTTP service that publishes an OpenAPI document through the same gate (`python -m rct_control_plane.openapi_mcp_bridge --help`).
 
 ---
+
 
 ## What is RCT?
 
@@ -110,7 +143,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | Docker Compose + full infra | ❌ | ✅ |
 | Private test suite (count not published) | ❌ | ✅ private |
 
-> **Stable SDK** means: API is stable, the full suite is **3,922 passed** (2026-09-28, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
+> **Stable SDK** means: API is stable, the full suite is **7,109 passed, 32 skipped, 0 failed** (CI, 2026-10-12, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
 > **Enterprise** means: runs at [delentia.com](https://delentia.com) — contact for licensing.
 
 ---
@@ -215,7 +248,7 @@ SDK Modules: signedai/ · core/ · rct_control_plane/
              5 reference microservices
 ```
 
-> **Enterprise layer** (62 microservices, proprietary) runs in production at [delentia.com](https://delentia.com).
+> **What is in this repository:** the agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and 5 reference microservices. **What is not:** a separate, proprietary service layer that lives in a private repository and is not part of this release. Enterprise licensing and early access: [delentia.com](https://delentia.com).
 
 ---
 
@@ -731,7 +764,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
 
-✅ **2,369 Passed** (see TESTING_CANONICAL.md for the current checkpoint and known caveats) — Full delentia-os SDK test suite  
+✅ **7,109 Passed** (public CI, 2026-10-12; see TESTING_CANONICAL.md for the checkpoint and caveats) — Full delentia-os test suite  
 ✅ **Plan Engine** — `plan_engine.py` real Terraform-style pre-execution simulation logic *(corrected 2026-09-24: not currently wired to any real CLI command - `plan` isn't in `delentia --help`'s command list; the module itself is real)*  
 ✅ **Policy Governance** — `approval_gateway.py` real omni-channel human approval logic, plus the real `delentia governance` command (shows governance violations from the audit log) *(corrected 2026-09-24: `rct policy` doesn't exist as a command; `approval_gateway.py` isn't currently wired to any CLI command either)*  
 ✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  

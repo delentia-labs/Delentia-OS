@@ -306,10 +306,10 @@ To set clear expectations:
 
 | Out of Scope | Reason |
 |---|---|
-| Full production microservice stack (62 services) | Enterprise tier — [contact delentia.com](https://delentia.com) |
+| The proprietary service layer (a private codebase, not part of this repository) | Enterprise tier — [contact delentia.com](https://delentia.com) |
 | Genome / Creator Profile API | Enterprise proprietary |
 | Full inference engine | Hardware / cost constraints outside OSS scope |
-| Hosted API / SaaS | Runs at delentia.com — enterprise licensing |
+| Hosted API / SaaS | Not offered from this repository — enterprise licensing |
 
 ---
 
