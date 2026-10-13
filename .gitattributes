@@ -9,3 +9,6 @@ research/hidden/** -text
 research/tasks/** -text
 research/trajectories/** -text
 research/SEALED_*.json -text
+
+# Round 80: shell scripts run on Linux hosts; a CRLF checkout breaks them
+*.sh text eol=lf
