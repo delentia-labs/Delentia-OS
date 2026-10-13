@@ -49,6 +49,17 @@ dependencies = [
     "structlog>=24.1.0",
     "PyYAML>=6.0",  # Round 44 item I.1: DAG-workflow-YAML front-end (workflow_yaml_loader.py) -
                     # was already importable as a transitive dep (fastapi/uvicorn), now used directly
+    # Round 78: a clean `pip install delentia-os` could not import the algorithm kernel (so the agent loop, `delentia demo`, the API all failed with
+    # ModuleNotFoundError): these are imported unconditionally by the kernel's algorithm modules and were declared only in requirements.txt / extras.
+    # Found by installing the built wheel in an empty virtual environment and importing, one missing module at a time.
+    "numpy>=1.24",                      # algo_13_graphrag, algo_16_vector, algo_27_tvra
+    "networkx>=3.0",                    # algo_20_workflow_orchestrator
+    "faiss-cpu>=1.8.0",                 # algo_16_vector builds its index when the kernel is constructed
+    "opencv-python-headless>=4.8.0",    # algo_27_tvra (headless: no GUI libraries)
+    "gql[aiohttp]>=3.5.0",              # algo_29_uia
+    "websockets>=12.0",                 # algo_29_uia
+    "loguru>=0.7.0",                    # algo_36_rflh
+    "robotexclusionrulesparser>=1.7.1", # algo_34_swcar
 ]
 
 [project.optional-dependencies]

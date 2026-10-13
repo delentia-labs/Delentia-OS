@@ -1,6 +1,6 @@
 # Vault-1068 — Constitutional Static Knowledge Store
 
-> This document is part of the [RCT Platform concepts documentation](https://rctlabs.github.io/delentia-os/concepts/).  
+> This document is part of the [RCT Platform concepts documentation](https://delentia-labs.github.io/Delentia-OS/concepts/).  
 > For the full architectural article, see: [delentia.com/en/blog/knowledge-vault-architecture](https://delentia.com/en/blog/knowledge-vault-architecture)
 
 ---
