@@ -1,0 +1,14 @@
+# Private access: nothing is published to the internet. Use this on a trial host (Oracle Always Free, any VPS) when you reach the agent
+# through an SSH tunnel from your own machine:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.private.yml up -d
+#   # on your machine:   ssh -N -L 8000:127.0.0.1:8000 ubuntu@<host-ip>      then use http://127.0.0.1:8000 with your token
+#
+# Only the host's own loopback gets port 8000; Caddy (public TLS) is not started unless you ask for the "public" profile. Compose still reads
+# every service's variables, so put any placeholder in .env:  DELENTIA_DOMAIN=unused.invalid
+# The cloud firewall then needs ONE rule: SSH (22), ideally only from your own address. No 80, no 443.
+services:
+  net:
+    ports: ["127.0.0.1:8000:8000"]
+  caddy:
+    profiles: ["public"]
