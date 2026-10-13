@@ -2003,15 +2003,22 @@
 <h1 id="delentia-15">เริ่มใช้ Delentia ด้วยตัวเองใน 15 นาที (เดโมภาษาไทย)<a class="headerlink" href="#delentia-15" title="Permanent link">&para;</a></h1>
 <p>สถานะ: <strong>ทดลอง (experimental)</strong> เดโมนี้พิสูจน์เส้นทาง "สั่งงานภาษาไทย → agent ใช้เครื่องมือจริงกับโฟลเดอร์จริง → ได้ไฟล์ผล → ตรวจผล → ปิดแล้วเปิดใหม่ยังจำได้"
 ไม่ใช่การรับรองว่า agent ทำงานได้ทุกอย่าง และไม่ใช่ผล benchmark ของโมเดลใด</p>
+<h2 id="2">ยังไม่มีโมเดล? เริ่มตรงนี้ (2 นาที)<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>delentia-os
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>init
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare<span class="w"> </span>--scripted<span class="w">     </span><span class="c1"># อ่านใบเสนอราคาตัวอย่าง ตอบ แล้วตรวจคำตอบกับสิ่งที่รู้ว่าจริง</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>edit<span class="w"> </span>--scripted<span class="w">        </span><span class="c1"># หยุดรอลายเซ็น แล้วสั่ง: delentia demo approve &lt;รหัส&gt; --scripted</span>
+</span></code></pre></div>
+<p><code>--scripted</code> เปลี่ยนเฉพาะ <strong>โมเดล</strong> เป็นโปรแกรมที่เขียนไว้ล่วงหน้า ส่วนไฟล์ เครื่องมือ ประตูความปลอดภัย การรอลายเซ็น และ audit log เป็นของจริง ใช้ดูกลไก ไม่ได้บอกความสามารถของโมเดลใด เมื่อมีโมเดลแล้วเอา <code>--scripted</code> ออกและทำตามหน้านี้ต่อ</p>
 <h2 id="_1">ต้องมี<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Windows + Python 3.10 ขึ้นไป และโปรเจกต์ <code>Delentia-OS</code> ที่ติดตั้ง dependency แล้ว</li>
 <li>โมเดลที่ <strong>เรียกเครื่องมือได้จริง</strong> (ดูหัวข้อ "เลือกโมเดล") โมเดลที่ตอบแชทได้ไม่ได้แปลว่าเรียกเครื่องมือได้</li>
 </ul>
 <h2 id="delentia-os-run_delentia_demobat-delentia">ขั้นตอน (ทำจากโฟลเดอร์ <code>Delentia-OS</code> หรือดับเบิลคลิก <code>RUN_DELENTIA_DEMO.bat</code> ที่โฟลเดอร์ Delentia)<a class="headerlink" href="#delentia-os-run_delentia_demobat-delentia" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span>show
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>init
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span>show
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>init
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare
 </span></code></pre></div>
 <ol>
 <li><code>model show</code> บอกว่าจะใช้โมเดลไหน ถ้ามีคำเตือนเรื่อง key ให้ตั้งตามหัวข้อถัดไปก่อน</li>
@@ -2056,7 +2063,7 @@
 <h2 id="_2">เลือกโมเดล<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>ทดลองกับโมเดลในเครื่อง qwen2.5:7b (Ollama, CPU) เมื่อ 9 ต.ค. 2026: อ่านไฟล์ครบ 3 ใบได้ในบางรอบ แต่ตอบไม่ครบ/ตอบเป็นภาษาจีนในบางรอบ ยังไม่ผ่านเดโมนี้
 ควรใช้โมเดลผ่าน OpenRouter ที่เรียกเครื่องมือได้ดี:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;รหัสโมเดลจาก<span class="w"> </span>openrouter.ai/models&gt;<span class="w"> </span>--provider<span class="w"> </span>openrouter
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;รหัสโมเดลจาก<span class="w"> </span>openrouter.ai/models&gt;<span class="w"> </span>--provider<span class="w"> </span>openrouter
 </span></code></pre></div>
 <p>ตั้ง key ใน environment ของเครื่อง (ตัวแปร <code>OPENROUTER_API_KEY</code>) <strong>อย่าพิมพ์ key ลงในไฟล์ แชท คลิป หรือ repository</strong> แนะนำสร้าง key แยกสำหรับทดสอบและตั้งวงเงินต่ำ (เช่น 2–5 ดอลลาร์)
 ที่หน้า OpenRouter ระบบมีเพดานต่อ episode อยู่แล้ว: <code>DELENTIA_EPISODE_BUDGET_USD</code>, <code>DELENTIA_EPISODE_MAX_TOKENS</code>, จำนวนขั้น (<code>--max-iterations</code>) และเวลา (<code>--max-seconds</code>)

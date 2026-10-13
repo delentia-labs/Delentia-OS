@@ -2004,15 +2004,22 @@
 <p>Status: <strong>experimental.</strong> This demo shows one path: <em>give a goal in Thai → the agent uses real tools on a real folder → a result file → the answer is checked → close the program and open it again, and what you told it is still there.</em>
 It does not show that the agent can do everything, and it is not a benchmark of any model.
 (The Thai version, <code>QUICKSTART_TH.md</code>, is the source. If the two ever differ, trust the Thai one and tell us.)</p>
+<h2 id="no-model-yet-start-here-2-minutes">No model yet? Start here (2 minutes)<a class="headerlink" href="#no-model-yet-start-here-2-minutes" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>delentia-os
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>init
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare<span class="w"> </span>--scripted<span class="w">     </span><span class="c1"># reads the sample quotes, answers, and the answer is checked</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>edit<span class="w"> </span>--scripted<span class="w">        </span><span class="c1"># stops and waits for a signature; then: delentia demo approve &lt;id&gt; --scripted</span>
+</span></code></pre></div>
+<p><code>--scripted</code> replaces only the <strong>model</strong> with a fixed program. The files, tools, safety gate, signature wait and audit log are real. It shows the mechanism, not any model's ability. When you have a model, drop <code>--scripted</code> and follow the rest of this page.</p>
 <h2 id="you-need">You need<a class="headerlink" href="#you-need" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Windows, Python 3.10 or newer, and the <code>Delentia-OS</code> project with its dependencies installed.</li>
 <li>A model that <strong>can really call tools</strong> (see "Choosing a model"). A model that chats well may still be unable to use tools.</li>
 </ul>
 <h2 id="steps-from-the-delentia-os-folder-or-double-click-run_delentia_demobat-in-the-delentia-folder">Steps (from the <code>Delentia-OS</code> folder, or double-click <code>RUN_DELENTIA_DEMO.bat</code> in the Delentia folder)<a class="headerlink" href="#steps-from-the-delentia-os-folder-or-double-click-run_delentia_demobat-in-the-delentia-folder" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span>show
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>init
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span>show
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>init
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare
 </span></code></pre></div>
 <ol>
 <li><code>model show</code> tells you which model will be used. If it warns about a missing key, set one first (next section).</li>
@@ -2057,7 +2064,7 @@ If a check fails the command exits with code 1 and the result file lists what fa
 <h2 id="choosing-a-model">Choosing a model<a class="headerlink" href="#choosing-a-model" title="Permanent link">&para;</a></h2>
 <p>Tried on 9 Oct 2026 with the local model qwen2.5:7b (Ollama, CPU): in some runs it read all three files, but it also used the wrong tools, answered in Chinese, or answered incompletely. It does <strong>not</strong> pass this demo yet.
 Use a model through OpenRouter that handles tools well:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;model<span class="w"> </span>id<span class="w"> </span>from<span class="w"> </span>openrouter.ai/models&gt;<span class="w"> </span>--provider<span class="w"> </span>openrouter
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>rct_control_plane.cli<span class="w"> </span>model<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;model<span class="w"> </span>id<span class="w"> </span>from<span class="w"> </span>openrouter.ai/models&gt;<span class="w"> </span>--provider<span class="w"> </span>openrouter
 </span></code></pre></div>
 <p>Put your key in the machine's environment (<code>OPENROUTER_API_KEY</code>). <strong>Never put a key in a file, a chat, a video or a repository.</strong> Create a separate test key with a small spending limit (for example 2–5 US dollars) on the OpenRouter site.
 The runtime also caps each episode: <code>DELENTIA_EPISODE_BUDGET_USD</code>, <code>DELENTIA_EPISODE_MAX_TOKENS</code>, steps (<code>--max-iterations</code>), time (<code>--max-seconds</code>), and it stops itself when it repeats the same step.</p>
