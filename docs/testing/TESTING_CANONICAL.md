@@ -3,9 +3,11 @@
 This document is the **single source of truth** for public test-count and coverage claims used in README, roadmap, release notes, and launch materials.
 
 **Version:** 2.0.4  
-**Last Updated:** 2026-09-28  
-**Authoritative checkpoint:** **3,922 passed · 1 failed · coverage pending re-measurement**  
+**Last Updated:** 2026-10-12  
+**Authoritative checkpoint:** **7,109 passed · 32 skipped · 0 failed · 91.08% coverage**  
 **CI Status:** [![CI](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml/badge.svg)](https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml)
+
+> **2026-10-12 update:** the public CI (Python 3.12, run 38231121128, commit e78c9c4) gave **7,109 passed, 32 skipped, 1 xfailed, 0 failed, total coverage 91.08%** (`--cov-fail-under=72` reached). This replaces the local 3,922 figure below, which is kept as history.
 
 > **2026-09-28 update:** a real full local run (`python -m pytest -q --no-header`, Python 3.13) after the Round 48 work gave **3,922 passed, 1 failed**. The one failure is a live OpenRouter test that needs a network API key; it is not a code defect. Growth from 2,369 comes from Round 45–48 test files (governed loop, approvals, audit chain, model config, FDIA gate threshold and contract vectors, Architect tokens). Coverage was not re-measured in this run, so no coverage figure is claimed until it is. Since this run, paid OpenRouter tests are opt-in: they run only with both `OPENROUTER_API_KEY` and `DELENTIA_RUN_LIVE_TESTS=1` (several modules load the key from `.env`, so a key alone used to trigger paid calls on every full run).
 
@@ -19,7 +21,7 @@ The following numbers were verified from the current public repository working t
 
 | Metric | Verified Result | Validation Command |
 |---|---|---|
-| Full SDK suite | **3,922 passed · 1 failed** (2026-09-28, see note above) | `python -m pytest -q --no-header` |
+| Full SDK suite | **7,109 passed · 32 skipped · 0 failed** (public CI, 2026-10-12, see note above) | `python -m pytest -q --no-header` |
 | Coverage (local, Ollama reachable) | **75.02%** as of 2026-09-23 (not re-measured 2026-09-28) (39,830 statements, 9,949 missed) - measured 2026-09-23, replacing the stale 2026-05-27 "90%" figure (predates ~450 net new tests and was never actually re-verified against a passing coverage run - CI had been failing at the import stage for weeks before this update, so this drift went unnoticed) | `python -m pytest --cov=microservices --cov=core --cov=signedai --cov=rct_control_plane --cov-report=term -q --no-header` |
 | Coverage (real GitHub Actions runner, no Ollama) | **73.17-73.22%** across 2 real runs 2026-09-23 - genuinely lower than the local figure for a real, understood reason: ~13 tests exercise a real Ollama backend (this codebase's own "real, not mocked" philosophy) that isn't reachable on a stock hosted runner, so those code paths aren't covered there. Not a regression - an environment difference. | Same command, via `.github/workflows/ci.yml`'s "Run tests" step |
 | Direct microservice tests | *(not separately re-measured this update)* | `python -m pytest microservices -q --no-header` |

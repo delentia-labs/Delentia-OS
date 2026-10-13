@@ -48,6 +48,7 @@ GOALS: Dict[str, str] = {
     "budget": f"งบใหม่เปลี่ยนเป็น 12,000 บาท ทำตารางเปรียบเทียบจากไฟล์ {FILES_ARG} อีกครั้ง แล้วบอกว่าบริษัทไหนไม่เกินงบ ห้ามแก้ไฟล์ต้นฉบับและห้ามส่งข้อมูลออกไป",
 }
 STOP_TEXT = {
+    "approved_and_executed": "ทำขั้นที่ได้รับอนุมัติแล้ว",
     "llm_finished": "จบเอง: โมเดลตอบคำถามเสร็จ",
     "warm_recall": "ตอบจากคำตอบที่เคยตรวจแล้ว (ไม่เรียกโมเดล)",
     "pending_approval": "หยุดรอคนอนุมัติ: ขั้นตอนนี้ต้องมีลายเซ็นของผู้อนุมัติก่อนจึงจะทำ",
@@ -59,6 +60,26 @@ STOP_TEXT = {
     "parse_error": "โมเดลตอบในรูปแบบที่ระบบอ่านไม่ได้",
     "paused": "ระบบถูกพักไว้ (delentia pause)",
 }
+
+
+def quiet_startup() -> None:
+    """The kernel logs every algorithm it builds at INFO. For someone running the demo the first screen should be the result, so below-WARNING log lines are
+    switched off for this process (the demo CLI is its own process; nothing else is affected). `DELENTIA_DEMO_VERBOSE=1` keeps them."""
+    if os.environ.get("DELENTIA_DEMO_VERBOSE") == "1":
+        return
+    import logging
+    logging.disable(logging.INFO)
+    try:
+        from loguru import logger as _loguru
+        _loguru.remove()
+        _loguru.add(lambda message: None, level="WARNING")
+    except Exception:                                                 # noqa: BLE001 - cosmetic only
+        pass
+    try:
+        import structlog
+        structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING))
+    except Exception:                                                 # noqa: BLE001
+        pass
 
 
 def paths(root: Path) -> Dict[str, Path]:
@@ -127,6 +148,7 @@ def _hashes(workspace: Path) -> Dict[str, str]:
 
 def configure_env(root: Path) -> Dict[str, Path]:
     """Points this process at the demo folder. Must run before the kernel/tools are imported (they read these at import)."""
+    quiet_startup()
     p = paths(root)
     if not p["workspace"].is_dir() or not p["approver_key"].exists():
         raise SystemExit(f"ยังไม่มีเดโมที่ {root} — รัน `delentia demo init` ก่อน")
@@ -245,13 +267,20 @@ def format_report(goal: str, result: Dict[str, Any], gates: List[Dict[str, Any]]
     return "\n".join(lines) + "\n"
 
 
-async def run_goal(root: Path, goal_or_key: str, *, max_iterations: int = 8, max_seconds: float = 300.0) -> Dict[str, Any]:
+async def run_goal(root: Path, goal_or_key: str, *, max_iterations: int = 8, max_seconds: float = 300.0, scripted: bool = False) -> Dict[str, Any]:
     p = configure_env(root)
+    quiet_startup()
     from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.mcp_server import _kernel, mcp
     goal = resolve_goal(goal_or_key)
     loop = build_governed_loop(_kernel, NAMESPACE, max_iterations=max_iterations, max_seconds=max_seconds, persistence=_kernel._persistence, mcp_server=mcp)
     loop._fast_max_iterations = max_iterations                       # the FAST route would cap a three-file task at three steps
+    if scripted:
+        from rct_control_plane import demo_scripted
+        key = goal_or_key.strip().lower()
+        if key not in demo_scripted.SCRIPTED_KEYS:
+            raise SystemExit("--scripted ใช้ได้กับ compare, budget, edit เท่านั้น (remember/ask ต้องมีโมเดลจริงที่อ่านความจำ)")
+        loop._configured_llm_provider = demo_scripted.ScriptedDemoProvider(key, p["workspace"], 12000 if key == "budget" else BUDGET)
     mark = _audit_mark(loop)
     started = time.perf_counter()
     result = await loop.run(goal)
@@ -264,7 +293,13 @@ async def run_goal(root: Path, goal_or_key: str, *, max_iterations: int = 8, max
         checks = [{"check": "ไฟล์ต้นฉบับยังไม่ถูกแก้ก่อนมีลายเซ็น", "ok": _hashes(p["workspace"]) == originals}]
     audit = audit_summary(loop)
     model = str((result.get("cost") or {}).get("model") or os.environ.get("DELENTIA_LLM_MODEL") or "(ตามที่ตั้งไว้ใน delentia model show)")
+    if scripted:
+        model = "สคริปต์ (ไม่ใช่โมเดลจริง)"
+        result = {**result, "cost": {}}                                  # the prompt sizes of a script are not a model's cost
     report = format_report(goal, result, gates, checks, audit, seconds, model)
+    if scripted:
+        from rct_control_plane import demo_scripted
+        report = report.replace(chr(10), chr(10) + "> " + demo_scripted.NOTICE + chr(10), 1)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     name = re.sub(r"[^a-z0-9]+", "-", goal_or_key.strip().lower())[:20].strip("-") or "free"
     out = p["results"] / f"{stamp}-{name}-{uuid.uuid4().hex[:4]}.md"
@@ -272,7 +307,7 @@ async def run_goal(root: Path, goal_or_key: str, *, max_iterations: int = 8, max
     return {"result": result, "report": report, "report_path": str(out), "checks": checks, "audit": audit, "gates": gates}
 
 
-async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_seconds: float = 300.0) -> Dict[str, Any]:
+async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_seconds: float = 300.0, scripted: bool = False) -> Dict[str, Any]:
     """Signs the waiting action with the demo approver key (which lives on this machine: demo only) and lets the agent carry on."""
     p = configure_env(root)
     from rct_control_plane import approvals
@@ -288,6 +323,9 @@ async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_
     store.decide(approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"])
     loop = build_governed_loop(_kernel, NAMESPACE, max_iterations=max_iterations, max_seconds=max_seconds, persistence=_kernel._persistence, mcp_server=mcp)
     loop._fast_max_iterations = max_iterations
+    if scripted:
+        from rct_control_plane import demo_scripted
+        loop._configured_llm_provider = demo_scripted.ScriptedDemoProvider("edit", p["workspace"], resumed=True)
     started = time.perf_counter()
     result = await loop.resume(approval_id)
     seconds = time.perf_counter() - started
@@ -295,7 +333,10 @@ async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_
     changed = [rel for rel, h in _hashes(p["workspace"]).items() if originals.get(rel) != h]
     audit = audit_summary(loop)
     note = ("\n> ลายเซ็นนี้ใช้กุญแจเดโมที่อยู่ในเครื่องเดียวกับ agent เพื่อให้เห็นขั้นตอนครบเท่านั้น งานจริงต้องเซ็นจากอีกอุปกรณ์ (`delentia approvals sign`)\n")
-    report = format_report(action.goal, result, [], [{"check": "หลังอนุมัติ ไฟล์ที่เปลี่ยนคือ: " + (", ".join(changed) or "ไม่มี"), "ok": True}], audit, seconds, "-") + note
+    view = dict(result.get("continuation") or {})                    # resume() returns {executed_result, continuation}: the report shows the continued episode
+    view.setdefault("stopped_reason", "llm_finished" if view.get("final_answer") else "approved_and_executed")
+    view.setdefault("iterations", len(view.get("steps") or []))
+    report = format_report(action.goal, view, [], [{"check": "หลังอนุมัติ ไฟล์ที่เปลี่ยนคือ: " + (", ".join(changed) or "ไม่มี"), "ok": True}], audit, seconds, "สคริปต์ (ไม่ใช่โมเดลจริง)" if scripted else "-") + note
     out = p["results"] / f"{time.strftime('%Y%m%d-%H%M%S')}-approve-{approval_id}.md"
     out.write_text(report, encoding="utf-8")
     return {"result": result, "report": report, "report_path": str(out), "changed": changed, "audit": audit}

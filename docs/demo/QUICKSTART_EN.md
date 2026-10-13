@@ -4,6 +4,17 @@ Status: **experimental.** This demo shows one path: *give a goal in Thai → the
 It does not show that the agent can do everything, and it is not a benchmark of any model.
 (The Thai version, `QUICKSTART_TH.md`, is the source. If the two ever differ, trust the Thai one and tell us.)
 
+## No model yet? Start here (2 minutes)
+
+```bash
+pip install delentia-os
+delentia demo init
+delentia demo run compare --scripted     # reads the sample quotes, answers, and the answer is checked
+delentia demo run edit --scripted        # stops and waits for a signature; then: delentia demo approve <id> --scripted
+```
+
+`--scripted` replaces only the **model** with a fixed program. The files, tools, safety gate, signature wait and audit log are real. It shows the mechanism, not any model's ability. When you have a model, drop `--scripted` and follow the rest of this page.
+
 ## You need
 
 - Windows, Python 3.10 or newer, and the `Delentia-OS` project with its dependencies installed.
