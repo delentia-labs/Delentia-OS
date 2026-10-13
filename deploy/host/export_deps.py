@@ -9,4 +9,6 @@ import tomllib
 
 with open(sys.argv[1] if len(sys.argv) > 1 else "pyproject.toml", "rb") as handle:
     project = tomllib.load(handle)["project"]
-print("\n".join(project["dependencies"] + project["optional-dependencies"]["full"]))
+# Round 78: some core dependencies are also listed in the full extra; list each requirement once
+lines = list(dict.fromkeys(project["dependencies"] + project["optional-dependencies"]["full"]))
+print("\n".join(lines))
