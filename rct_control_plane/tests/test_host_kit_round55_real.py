@@ -145,7 +145,8 @@ def test_encoded_and_tricky_forms_of_internal_addresses_are_refused(url, monkeyp
 def test_the_ffmpeg_copy_at_import_time_survives_an_unwritable_site_packages():
     """Found in the container: algo_27 copied a binary into site-packages at IMPORT time, so as an unprivileged user the whole kernel died."""
     source = (ROOT / "rct_control_plane" / "algo_27_tvra.py").read_text(encoding="utf-8")
-    body = source[source.index("import imageio_ffmpeg"):source.index("except ImportError")]
+    start = source.index("import imageio_ffmpeg")
+    body = source[start:source.index("except ImportError", start)]     # an earlier `except ImportError` (the lazy cv2 proxy) must not end the slice
     assert "except OSError" in body and "gettempdir" in body
 
 
