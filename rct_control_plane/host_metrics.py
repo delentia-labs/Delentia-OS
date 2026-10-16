@@ -61,7 +61,8 @@ def _process(unavailable: List[str]) -> Dict[str, Any]:
             try:
                 import ctypes
                 from ctypes import wintypes
-                kernel32, psapi = ctypes.windll.kernel32, ctypes.windll.psapi
+                windll = getattr(ctypes, "windll")                       # getattr: Windows only, and the type checker also runs on Linux
+                kernel32, psapi = windll.kernel32, windll.psapi
 
                 class Counters(ctypes.Structure):
                     _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD), ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
