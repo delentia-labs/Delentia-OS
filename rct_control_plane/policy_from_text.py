@@ -60,7 +60,8 @@ _NO_ASK = re.compile(r"no need to ask|(do not|don't|dont|not) (need to )?ask( me
 _ASK = re.compile(r"ask( me)?( before| first)|my (approval|ok|okay|permission)|confirm with me|requires? (my )?approval|approval (is )?(needed|required)|ต้องถาม|ขออนุมัติ|ถามก่อน|ต้องได้รับอนุมัติ|ต้องขอ")
 _NEVER = re.compile(r"\bnever\b|\bdo not\b|\bdon't\b|\bdont\b|must not|\bforbid|\bforbidden\b|\bprohibit|ห้าม|อย่า|ไม่อนุญาต")
 _ALLOW = re.compile(r"you may|you can|feel free|\bfreely\b|\ballowed?\b|\bis fine\b|\bok to\b|ได้เลย|อนุญาต|ทำได้")
-_SPLIT = re.compile(r"[.;!?\n]+|\s+but\s+|\s+however\s+|\s+แต่\s*")
+# Bounded, and anchored at the start of a whitespace run: a bare \s+ is quadratic on a long run of spaces (found by the regex audit).
+_SPLIT = re.compile(r"[.;!?\n]+|(?<!\s)\s{1,20}but\s{1,20}|(?<!\s)\s{1,20}however\s{1,20}|(?<!\s)\s{1,20}แต่\s{0,20}")
 _NEGATED_NO_ASK = re.compile(r"not ask|ห้ามถาม")
 
 
