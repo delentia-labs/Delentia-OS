@@ -46,7 +46,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import sqlite3
 import time
@@ -57,10 +56,13 @@ import numpy as np
 
 TOPIC_CACHE_VERSION = "0.1"
 
-_DEFAULT_DB_PATH = os.environ.get(
-    "RCT_DB_PATH",
-    str(Path(__file__).parent.parent / "rct_control_plane.db"),
-)
+def _default_db_path() -> str:
+    """RCT_DB_PATH, else the control-plane database the rest of the runtime uses (DELENTIA_HOME, the repository, or ~/.delentia for an installed package)."""
+    from rct_control_plane import data_home
+    return data_home.control_plane_db_path()
+
+
+_DEFAULT_DB_PATH = _default_db_path()
 
 _CACHE_SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;

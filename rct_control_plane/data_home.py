@@ -40,15 +40,34 @@ def _under_home(name: str) -> Optional[str]:
     return str(home / name)
 
 
+def is_source_checkout() -> bool:
+    """True when this code runs from a git/source checkout (pyproject.toml beside the package), False when it was pip-installed into site-packages."""
+    return (_REPO_ROOT / "pyproject.toml").exists()
+
+
+def legacy_default(name: str) -> str:
+    """The default place for a database file when neither an explicit path nor DELENTIA_HOME says otherwise.
+
+    From a source checkout this is the repository root, exactly as before (nothing moves). From an INSTALLED package the repository root is site-packages: writing there fails on a
+    read-only install (system Python, a container run as a normal user) and, on a writable one, puts the person's data where an upgrade or uninstall deletes it. Round 82: the install-contract
+    check on Linux found this. An installed package keeps such files under ~/.delentia instead.
+    """
+    if is_source_checkout():
+        return str(_REPO_ROOT / name)
+    base = Path.home() / ".delentia"
+    base.mkdir(parents=True, exist_ok=True)
+    return str(base / name)
+
+
 def control_plane_db_path() -> str:
     """Skills and the general control-plane store."""
-    return os.environ.get("RCT_DB_PATH") or _under_home("control_plane.db") or str(_REPO_ROOT / "rct_control_plane.db")
+    return os.environ.get("RCT_DB_PATH") or _under_home("control_plane.db") or legacy_default("rct_control_plane.db")
 
 
 def agentic_db_path() -> str:
     """The kernel's persistence: audit trail + hash chain, RCTDB experiments,
     pending approvals, tool-output store."""
-    return os.environ.get("RCT_AGENTIC_DB_PATH") or _under_home("agentic.db") or "rct_control_plane_agentic.db"
+    return os.environ.get("RCT_AGENTIC_DB_PATH") or _under_home("agentic.db") or ("rct_control_plane_agentic.db" if is_source_checkout() else legacy_default("agentic.db"))
 
 
 def describe() -> dict:
