@@ -156,7 +156,9 @@ def test_a_backup_comes_back_on_a_clean_directory_and_the_restored_state_verifie
 
 
 def test_a_damaged_backup_is_refused_before_anything_is_written(tmp_path):
-    p = persistence(tmp_path)
+    home = tmp_path / "home"                                         # backups read the data home only; a database elsewhere is not found (it passed on a machine that had a real ~/.delentia)
+    home.mkdir()
+    p = ControlPlanePersistence(db_path=str(home / "agentic.db"))
     p.append_audit(entity_type="t", entity_id="x", action="a", actor="test", changes={})
     out = tmp_path / "b.zip"
     backup.create_backup(str(out))
