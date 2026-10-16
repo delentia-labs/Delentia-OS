@@ -183,7 +183,7 @@ class Harness:
         # The generic floor is the same for every arm of a run. "default" = the production defaults; "strict" also declares the quote folder untrusted
         # (DELENTIA_UNTRUSTED_PATHS), so reading a quote taints the episode like a web page. Runs under different floors are different experiments.
         if self.floor == "strict":
-            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/"
+            os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/,ops/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
         for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
@@ -396,7 +396,8 @@ def _arms(spec: str) -> List[Any]:
     return [Treatment.parse(part) for part in spec.split(",") if part.strip()]
 
 
-DOMAIN_FILES = {"quotes": ("{split}_static.jsonl", "{split}.jsonl"), "tickets": ("{split}_tickets_static.jsonl", "{split}_tickets.jsonl")}
+DOMAIN_FILES = {"quotes": ("{split}_static.jsonl", "{split}.jsonl"), "tickets": ("{split}_tickets_static.jsonl", "{split}_tickets.jsonl"),
+                "ops": ("{split}_ops_static.jsonl", None)}                      # Round 82: the third domain has static tasks only (no trajectories yet)
 
 
 def _load_units(split: str, only: Optional[List[str]], domain: str = "quotes") -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -404,9 +405,10 @@ def _load_units(split: str, only: Optional[List[str]], domain: str = "quotes") -
     static: List[Dict[str, Any]] = []
     trajs: List[Dict[str, Any]] = []
     for name in names:
-        static_file, traj_file = (part.format(split=split) for part in DOMAIN_FILES[name])
-        static += [json.loads(line) for line in (HERE / "tasks" / static_file).read_text(encoding="utf-8").splitlines() if line.strip()]
-        trajs += [json.loads(line) for line in (HERE / "trajectories" / traj_file).read_text(encoding="utf-8").splitlines() if line.strip()]
+        static_file, traj_file = (part.format(split=split) if part else None for part in DOMAIN_FILES[name])
+        static += [json.loads(line) for line in (HERE / "tasks" / str(static_file)).read_text(encoding="utf-8").splitlines() if line.strip()]
+        if traj_file:
+            trajs += [json.loads(line) for line in (HERE / "trajectories" / traj_file).read_text(encoding="utf-8").splitlines() if line.strip()]
     if only:
         static = [t for t in static if any(o in t["task_id"] for o in only)]
         trajs = [t for t in trajs if any(o in t["trajectory_id"] for o in only)]
@@ -495,7 +497,7 @@ def main() -> int:
     parser.add_argument("--split", default="dev", choices=["dev", "validation", "test"])
     parser.add_argument("--policy", default="diligent", help="diligent | careless | hijackable | stale | real")
     parser.add_argument("--arms", default=DEFAULT_ARMS, help="all, all+G (the eight cells plus G), baselines (G and GP), all+baselines, variants (A111 and its four sub-ablations), or a list such as A111,A011,G,GP,A111+FS")
-    parser.add_argument("--domain", default="quotes", choices=["quotes", "tickets", "all"], help="which task domain to run (quotes = the first domain, tickets = support triage)")
+    parser.add_argument("--domain", default="quotes", choices=["quotes", "tickets", "ops", "all"], help="which task domain to run (quotes = the first domain, tickets = support triage, ops = twelve shapes of office work)")
     parser.add_argument("--unit-token-budget", type=int, default=0, help="track B (equal total tokens): every arm gets the same token budget per task or trajectory; "
                         "0 = track A, equal configuration with no extra cap")
     parser.add_argument("--memory-policy", default="none", choices=["none", "dedupe", "expire"], help="Round 66: what recall may offer the model (DELENTIA_MEMORY_POLICY); the same for every arm of a run")

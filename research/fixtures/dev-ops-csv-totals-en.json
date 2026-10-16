@@ -1,0 +1,6 @@
+{
+  "files": {
+    "ops/data/README.txt": "Units: THB. Amounts exclude VAT.\n",
+    "ops/data/sales.csv": "date,category,amount\n2026-09-10,produce,2341\n2026-09-21,meat,5701\n2026-09-15,drinks,5763\n2026-09-28,fruit,1172\n2026-09-03,drinks,9101\n2026-09-21,produce,1911\n2026-09-03,meat,5399\n2026-09-13,meat,1164\n2026-09-28,drinks,2097\n2026-09-03,produce,5820\n2026-09-20,fruit,980\n2026-09-06,fruit,5103\n"
+  }
+}
