@@ -54,8 +54,8 @@ Layer 5: Delta Engine
 
 Layer 4: FDIA Engine
 ├─ F = D^I × A  (constitutional equation)
-├─ A=0 → full block (governance guarantee)
-├─ Accuracy: 0.92 vs industry 0.65
+├─ A=0 → F=0, the gate refuses (on every path that applies it)
+├─ No accuracy figure is claimed
 └─ core/fdia/fdia.py
 
 Layer 3: Control Plane DSL (15 modules)

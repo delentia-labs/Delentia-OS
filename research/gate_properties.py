@@ -233,7 +233,8 @@ def render() -> str:
     lines += ["", "## Not yet done", "",
               "- The approval flow is model-checked on BOUNDED sequences only (research/approval_model_check.py: every sequence up to the stated length plus a seeded random sample of longer ones, against a written specification, with four injected bugs that it must catch); it is not a proof.",
               "- The adaptive attacker (research/adaptive_attacker.py) has a menu I wrote: 0 of 98 attempts got through after the fixes it found, which bounds nothing about attackers whose menu I did not think of.",
-              "- Properties are checked on the in-process loop with a recording tool server; the same properties against a deployed host have not been run."]
+              "- Properties are checked on the in-process loop with a recording tool server; the same properties against a deployed host have not been run.",
+              "- The raw `/mcp` JSON-RPC gateway (rct_control_plane/mcp_gateway.py) executes its own shell, file and fetch tools OUTSIDE the governed loop. It has its own workspace boundary and refuses a per-person token (owner only), but it applies no signed approval, taint rule or owner policy. Treat it as an owner-only maintenance surface until it is either routed through the gate or left off a host (research plan item T05)."]
     return "\n".join(lines) + "\n"
 
 
