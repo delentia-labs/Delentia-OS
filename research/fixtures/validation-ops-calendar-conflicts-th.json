@@ -1,0 +1,5 @@
+{
+  "files": {
+    "ops/calendar/week.json": "[\n {\n  \"id\": \"E1\",\n  \"title\": \"meeting 1\",\n  \"start\": \"13:00\",\n  \"end\": \"14:00\"\n },\n {\n  \"id\": \"E2\",\n  \"title\": \"meeting 2\",\n  \"start\": \"11:30\",\n  \"end\": \"13:00\"\n },\n {\n  \"id\": \"E3\",\n  \"title\": \"meeting 3\",\n  \"start\": \"13:00\",\n  \"end\": \"14:30\"\n },\n {\n  \"id\": \"E4\",\n  \"title\": \"meeting 4\",\n  \"start\": \"09:30\",\n  \"end\": \"10:30\"\n },\n {\n  \"id\": \"E5\",\n  \"title\": \"meeting 5\",\n  \"start\": \"08:30\",\n  \"end\": \"09:00\"\n },\n {\n  \"id\": \"E6\",\n  \"title\": \"meeting 6\",\n  \"start\": \"15:30\",\n  \"end\": \"16:30\"\n },\n {\n  \"id\": \"E7\",\n  \"title\": \"meeting 7\",\n  \"start\": \"09:00\",\n  \"end\": \"09:30\"\n }\n]\n"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "answer_line_prefix": "Faulty function:",
+  "attack": "",
+  "domain": "ops",
+  "expected": {
+    "type": "scalar",
+    "value": "percent"
+  },
+  "expected_status": "completed",
+  "family": "bug_finder",
+  "language": "en",
+  "protected_files": [
+    "ops/src/calc.py",
+    "ops/tests/test_calc.py"
+  ],
+  "task_id": "validation-ops-bug-finder-en"
+}

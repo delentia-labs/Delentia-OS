@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "delentia-os"
-version = "2.3.0"
+version = "2.3.1"
 description = "Delentia OS — Constitutional AI Operating System SDK"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -54,8 +54,6 @@ dependencies = [
     # Found by installing the built wheel in an empty virtual environment and importing, one missing module at a time.
     "numpy>=1.24",                      # algo_13_graphrag, algo_16_vector, algo_27_tvra
     "networkx>=3.0",                    # algo_20_workflow_orchestrator
-    "faiss-cpu>=1.8.0",                 # algo_16_vector builds its index when the kernel is constructed
-    "opencv-python-headless>=4.8.0",    # algo_27_tvra (headless: no GUI libraries)
     "gql[aiohttp]>=3.5.0",              # algo_29_uia
     "websockets>=12.0",                 # algo_29_uia
     "loguru>=0.7.0",                    # algo_36_rflh
@@ -63,6 +61,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+video = ["opencv-python-headless>=4.8.0"]  # Round 79: ALGO-27 video analysis (113 MB, so not a core dependency; imported on first use)
 graph = ["networkx>=3.0", "numpy>=1.24"]
 qdrant = ["qdrant-client>=1.7"]
 monitoring = ["prometheus-client>=0.20.0"]

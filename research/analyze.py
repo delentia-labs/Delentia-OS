@@ -27,6 +27,7 @@ import numpy as np
 
 ARMS = [f"A{r}{f}{m}" for r in (0, 1) for f in (0, 1) for m in (0, 1)] + ["G", "GP", "PL", "A111+RP", "A111+RV", "A111+FS", "A111+MW"]
 SCRIPTED = {"diligent", "careless", "hijackable", "stale"}
+PROTOCOL_VERSION = "delentia-core-v1.1-pilot"           # must equal research/config.yaml and the header of research/PROTOCOL.md (a test checks it)
 
 # Linear contrasts over arm means (labels are A<R><F><M>).
 CONTRASTS: Dict[str, Dict[str, float]] = {
@@ -34,9 +35,9 @@ CONTRASTS: Dict[str, Dict[str, float]] = {
     "delta_F  (A111 - A101)": {"A111": 1, "A101": -1},
     "delta_M  (A111 - A110)": {"A111": 1, "A110": -1},
     "full vs none (A111 - A000)": {"A111": 1, "A000": -1},
-    "PRIMARY: full vs generic baseline (A111 - G)": {"A111": 1, "G": -1},
+    "secondary: full vs raw-history baseline (A111 - G)": {"A111": 1, "G": -1},
     "structured, verified memory vs raw history (A001 - G)": {"A001": 1, "G": -1},
-    "full vs generic plan-act-check + generic retrieval (A111 - GP)": {"A111": 1, "GP": -1},
+    "PRIMARY: full vs generic plan-act-check + generic retrieval (A111 - GP)": {"A111": 1, "GP": -1},
     "what Delentia's loop adds with every switch off (A000 - PL)": {"A000": 1, "PL": -1},
     "all of Delentia vs a plain agent outside its loop (A111 - PL)": {"A111": 1, "PL": -1},
     "generic retrieval + plan vs raw history (GP - G)": {"GP": 1, "G": -1},
@@ -229,6 +230,7 @@ def analyse(rows: List[Dict[str, Any]], *, reps: int = 10000, seed: int = 202610
     result: Dict[str, Any] = {"rows": len(rows), "used": len(kept), "dropped": [
         {"run_id": r["run_id"], "why": r.get("exclusion_reason") or "manipulation check failed"} for r in dropped]}
     result["missingness_by_arm"] = missingness_by_arm(rows)
+    result["protocol_version"] = PROTOCOL_VERSION
     result["policies"] = sorted({r.get("policy", "?") for r in kept})
     result["rehearsal"] = bool(set(result["policies"]) & SCRIPTED)
     result["floors"] = sorted({r.get("floor", "default") for r in kept})

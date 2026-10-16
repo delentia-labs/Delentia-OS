@@ -1,0 +1,5 @@
+{
+  "files": {
+    "ops/config/settings.ini": "[server]\ndebug = true\nport = 3000\nlog_level = WARN\nmax_connections = 70\ntimeout_s = 44\n"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "files": {
+    "ops/data/reorder.csv": "sku,min_qty\nSKU-240,11\nSKU-579,12\nSKU-993,10\nSKU-703,20\nSKU-125,36\nSKU-648,24\nSKU-813,32\n",
+    "ops/data/stock.csv": "sku,qty\nSKU-240,47\nSKU-579,40\nSKU-993,24\nSKU-703,25\nSKU-125,3\nSKU-648,56\nSKU-813,8\n"
+  }
+}

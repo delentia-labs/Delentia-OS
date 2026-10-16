@@ -39,6 +39,8 @@ REPEAT_LIMIT_ENV = "DELENTIA_REPEAT_LIMIT"
 DEFAULT_REPEAT_LIMIT = 3
 DAY_S = 24 * 3600
 HOUR_S = 3600
+RESERVED = "reserved"                      # Round 82: an episode's share of the day, taken before it runs and replaced by what it really spent when it ends
+STALE_RESERVATION_S = 3600                 # an episode that has been "in flight" longer than this was most likely killed; its share stays counted until its window passes
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS spend_ledger (
@@ -192,14 +194,65 @@ def usage(persistence: Any, namespace: Optional[str] = None, window_s: float = D
 
 
 def record(persistence: Any, namespace: str, episode_id: str, cost_usd: Optional[float], tokens: int, stopped: str, now: Optional[float] = None) -> None:
-    """Called at the end of every episode, including the ones that were stopped before they started (they count toward the flood limit)."""
+    """Called at the end of every episode, including the ones that were stopped before they started (they count toward the flood limit). Round 82: the episode's reservation (if it
+    took one) is removed in the SAME transaction that writes what it really spent, so the share is never counted twice and never lost. If the write fails the reservation stays, which
+    over-counts rather than under-counts."""
     try:
         ensure_ledger(persistence)
         with persistence._connect() as conn:
+            if episode_id:
+                conn.execute("DELETE FROM spend_ledger WHERE stopped = ? AND episode_id = ? AND namespace = ?", (RESERVED, episode_id, namespace))
             conn.execute("INSERT INTO spend_ledger (at, namespace, episode_id, cost_usd, tokens, stopped) VALUES (?, ?, ?, ?, ?, ?)",
                          (time.time() if now is None else now, namespace, episode_id, cost_usd, int(tokens or 0), stopped))
     except Exception:                       # a ledger problem must not turn a finished episode into a crash
         pass
+
+
+def _usage_on(conn: Any, namespace: Optional[str], window_s: float, now: float) -> Tuple[float, int]:
+    sql = "SELECT COALESCE(SUM(cost_usd), 0), COALESCE(SUM(tokens), 0) FROM spend_ledger WHERE at >= ?"
+    args: List[Any] = [now - window_s]
+    if namespace is not None:
+        sql += " AND namespace = ?"
+        args.append(namespace)
+    cost, tokens = conn.execute(sql, args).fetchone()
+    return float(cost), int(tokens)
+
+
+def reserve(persistence: Any, namespace: str, episode_id: str, want_usd: Optional[float] = None, want_tokens: Optional[int] = None,
+            now: Optional[float] = None) -> Tuple[Optional[float], Optional[int]]:
+    """Take this episode's share of what is left of today's limits, ATOMICALLY, and return (dollars, tokens) it may spend (None = no limit applies to that kind).
+
+    Before Round 82 every episode READ what was left and none took it, so N episodes started together could each be given the whole remainder, and an episode that was killed left
+    no trace. Here the read and the write happen inside one SQLite write transaction (BEGIN IMMEDIATE): the share is a ledger row, so it counts toward every limit at once (a new
+    episode, a flood count, another person's share) and `record` replaces it with the real figures. With no money or token limit configured nothing is reserved and the wanted values
+    pass through unchanged."""
+    import sqlite3
+    lim = limits()
+    if all(lim[k] is None for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens")):
+        return want_usd, want_tokens
+    ensure_ledger(persistence)
+    when = time.time() if now is None else now
+    conn = sqlite3.connect(str(persistence.db_path), timeout=30, isolation_level=None)
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            all_cost, all_tokens = _usage_on(conn, None, DAY_S, when)
+            user_cost, user_tokens = _usage_on(conn, namespace, DAY_S, when)
+            money = [lim[k] - spent for k, spent in (("daily_usd", all_cost), ("user_daily_usd", user_cost)) if lim[k] is not None]
+            toks = [lim[k] - spent for k, spent in (("daily_tokens", all_tokens), ("user_daily_tokens", user_tokens)) if lim[k] is not None]
+            left_usd = max(0.0, min(money)) if money else None
+            left_tokens = max(0, int(min(toks))) if toks else None
+            granted_usd = left_usd if want_usd is None else (want_usd if left_usd is None else min(want_usd, left_usd))
+            granted_tokens = left_tokens if want_tokens is None else (want_tokens if left_tokens is None else min(want_tokens, left_tokens))
+            conn.execute("INSERT INTO spend_ledger (at, namespace, episode_id, cost_usd, tokens, stopped) VALUES (?, ?, ?, ?, ?, ?)",
+                         (when, namespace, episode_id, granted_usd, int(granted_tokens or 0), RESERVED))
+            conn.execute("COMMIT")
+        except BaseException:
+            conn.execute("ROLLBACK")
+            raise
+    finally:
+        conn.close()
+    return granted_usd, granted_tokens
 
 
 def check_start(persistence: Any, namespace: str, now: Optional[float] = None) -> Optional[Dict[str, str]]:
@@ -247,6 +300,14 @@ def status(persistence: Any, now: Optional[float] = None) -> Dict[str, Any]:
     except Exception as exc:
         day = hour = {}
         ensure = f"{type(exc).__name__}"
-    return {"paused": paused(), "limits": lim, "last_24h": day, "last_hour": hour, "ledger_problem": ensure,
+    in_flight = stale = 0
+    try:
+        when = time.time() if now is None else now
+        with persistence._connect() as conn:
+            (in_flight,) = conn.execute("SELECT COUNT(*) FROM spend_ledger WHERE stopped = ? AND at >= ?", (RESERVED, when - STALE_RESERVATION_S)).fetchone()
+            (stale,) = conn.execute("SELECT COUNT(*) FROM spend_ledger WHERE stopped = ? AND at < ? AND at >= ?", (RESERVED, when - STALE_RESERVATION_S, when - DAY_S)).fetchone()
+    except Exception:
+        pass
+    return {"paused": paused(), "limits": lim, "last_24h": day, "last_hour": hour, "ledger_problem": ensure, "reserved_in_flight": int(in_flight), "stale_reservations": int(stale),
             "any_limit_set": any(lim[k] for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens", "per_hour_per_user", "per_hour")),
             "resume_needs_signature": _approvers_configured()}

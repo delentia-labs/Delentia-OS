@@ -57,6 +57,8 @@ def compare_answer(rows: List[Dict[str, Any]], budget: int) -> str:
 class ScriptedDemoProvider(LLMProvider):
     """Returns the next step of a fixed program each time the loop asks the model. Not a model."""
 
+    free_of_charge = True      # read by MeteredProvider: a script has no price, and must not be refused under a dollar budget
+
     def __init__(self, key: str, workspace: Path, budget: int = 15000, resumed: bool = False):
         self.key = key
         self.workspace = Path(workspace)

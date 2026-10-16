@@ -38,10 +38,10 @@ $$F = D^I \times A$$
 |--------|---------|
 | **F** | **Future** — the desired output the AI must deliver |
 | **D** | Data quality — accuracy and completeness of inputs (0.0–1.0) |
-| **I** | Intent precision — clarity of intent acts as an **exponent** |
+| **I** | Intent precision — the **exponent** (with D in [0, 1] a larger I makes F smaller: I acts as strictness) |
 | **A** | **Architect** — Human-in-the-loop approval gate (0.0–1.0) |
 
-> When **I** is high, even moderate **D** produces excellent results. Accuracy: **0.92** vs industry baseline ~0.65.
+> Because **D** is in [0, 1], a larger **I** makes **F** smaller for the same **D**: a clearer, more demanding intent needs better data. No accuracy figure is claimed; see [Benchmark methodology](benchmark/methodology.md) for what has and has not been measured.
 
 ---
 
