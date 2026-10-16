@@ -365,6 +365,49 @@ def dot_product(a: np.ndarray, b: np.ndarray) -> float:
 # does. See the DEPENDENCY GAP note at the top of this file.
 # ============================================================================
 
+class _NumpyFlatIndex:
+    """Exact nearest-neighbour search in numpy, with the small part of the faiss index API that FAISSBackend uses (add, search, reset, ntotal).
+
+    Round 80: faiss-cpu is 66 MB and only the exact ("flat") index is used by the kernel, so a install without faiss gets this instead of a failure at start-up.
+    It does what IndexFlatIP / IndexFlatL2 do: inner product (larger is nearer) or squared L2 distance (smaller is nearer); missing results are index -1, as in faiss.
+    Brute force, one matrix product per query: fine for the thousands of vectors the agent keeps, not a replacement for faiss at millions (use `delentia-os[vector]`).
+    """
+
+    def __init__(self, dimension: int, metric: str):
+        self.d = dimension
+        self.metric = metric
+        self._vectors = np.zeros((0, dimension), dtype=np.float32)
+
+    @property
+    def ntotal(self) -> int:
+        return int(self._vectors.shape[0])
+
+    def add(self, vectors: Any) -> None:
+        self._vectors = np.vstack([self._vectors, np.asarray(vectors, dtype=np.float32).reshape(-1, self.d)])
+
+    def reset(self) -> None:
+        self._vectors = np.zeros((0, self.d), dtype=np.float32)
+
+    def search(self, queries: Any, k: int) -> Any:
+        queries = np.asarray(queries, dtype=np.float32).reshape(-1, self.d)
+        count = min(k, self.ntotal)
+        worst = -np.finfo(np.float32).max if self.metric != "euclidean" else np.finfo(np.float32).max
+        distances = np.full((len(queries), k), worst, dtype=np.float32)
+        indices = np.full((len(queries), k), -1, dtype=np.int64)
+        if count == 0:
+            return distances, indices
+        if self.metric == "euclidean":
+            scores = ((queries ** 2).sum(axis=1, keepdims=True) - 2.0 * queries @ self._vectors.T + (self._vectors ** 2).sum(axis=1)[None, :]).clip(min=0.0)
+            order = np.argsort(scores, axis=1, kind="stable")[:, :count]
+        else:
+            scores = queries @ self._vectors.T
+            order = np.argsort(-scores, axis=1, kind="stable")[:, :count]
+        for row in range(len(queries)):
+            indices[row, :count] = order[row]
+            distances[row, :count] = scores[row, order[row]]
+        return distances, indices
+
+
 class FAISSBackend(VectorBackendInterface):
     """
     FAISS backend for fast in-memory vector search.
@@ -398,9 +441,21 @@ class FAISSBackend(VectorBackendInterface):
 
     def initialize(self, dimension: int, **kwargs):
         """Initialize the real FAISS index for the given dimension/type/metric."""
-        import faiss  # lazy import — see module docstring's DEPENDENCY GAP note
-
         self.dimension = dimension
+        try:
+            import faiss  # lazy import — see module docstring's DEPENDENCY GAP note
+        except ImportError:
+            faiss = None
+        if faiss is None:                                  # Round 80: faiss-cpu is an optional extra; the exact index has a numpy equivalent
+            if self.index_type != "flat":
+                raise ImportError(f"the '{self.index_type}' index needs faiss-cpu: pip install 'delentia-os[vector]'") from None
+            if self.metric not in ("cosine", "euclidean", "dot"):
+                raise ValueError(f"Unknown metric: {self.metric}")
+            self.faiss_index = _NumpyFlatIndex(dimension, self.metric)
+            self.engine = "numpy-flat"
+            logger.info(f"faiss-cpu not installed: exact numpy index created, dimension={dimension}")
+            return
+        self.engine = "faiss"
 
         if self.metric == "cosine":
             base_index = faiss.IndexFlatIP(dimension)
@@ -594,6 +649,7 @@ class FAISSBackend(VectorBackendInterface):
 
         return {
             "backend": "faiss",
+            "engine": getattr(self, "engine", "faiss"),
             "index_type": self.index_type,
             "metric": self.metric,
             "memory_mb": round(total_memory_mb, 2),

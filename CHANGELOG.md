@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-10-13
+
+### Changed
+- OpenCV is an optional extra (`pip install delentia-os[video]`); the video algorithm imports it on first use. The install is about 113 MB smaller.
+- `faiss-cpu` is an optional extra (`pip install delentia-os[vector]`). Without it the vector index uses an exact numpy search with the same neighbours and scores for cosine, dot and euclidean; IVF and HNSW indexes say to install the extra. `get_stats()['engine']` reports which engine answered.
+
+### Fixed
+- `deploy/host/export_deps.py` listed each requirement once even when a core dependency repeats an extra.
+
 ## [2.3.0] - 2026-10-12
 
 First release that contains the governed agent runtime (earlier PyPI releases were the SDK only).

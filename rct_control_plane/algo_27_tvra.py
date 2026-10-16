@@ -75,8 +75,20 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-import cv2
 import numpy as np
+
+class _LazyCV2:
+    """Round 79: opencv is 113 MB and only the video functions of this algorithm use it, so it is an extra (`pip install delentia-os[video]`) and is imported on first use."""
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            import cv2 as _cv2
+        except ImportError as exc:
+            raise ImportError("ALGO-27 video analysis needs OpenCV: pip install 'delentia-os[video]'") from exc
+        return getattr(_cv2, name)
+
+
+cv2: Any = _LazyCV2()
 
 logger = logging.getLogger(__name__)
 
