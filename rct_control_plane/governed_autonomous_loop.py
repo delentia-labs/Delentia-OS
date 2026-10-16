@@ -688,6 +688,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
+        self._episode_call_counts = {}                    # the replay went through the gate and was counted there; the episode itself starts from zero
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self._research is not None and not self._research.plan:
@@ -1415,6 +1416,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             }
         taint = self._taint_reason(goal, tool_name, tool_args)
         if taint is not None:
+            # Round 82 (T11): "the strictest wins". A call that a hard rule (the built-in floor, the owner's denied path or blocked pattern) refuses outright is refused, not
+            # parked for a signature that could never make it run (resume re-checks the same rules): that only invited the owner to sign something forbidden.
+            hard_A, hard_reason = self._authorization_signal(tool_name, tool_args)
+            if policy is not None:
+                from rct_control_plane import fdia_policy
+                hard_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal, "seen_urls": sorted(getattr(self, "_episode_seen_urls", None) or ())})
+                if not hard_eval.needs_signature and hard_eval.A < hard_A:
+                    hard_A, hard_reason = hard_eval.A, f"owner policy {hard_eval.rule_id}: {hard_eval.reason}"
+            if hard_A <= 0.0:
+                return self._gate_refusal(tool_name, hard_A, hard_reason, policy_info={"taint": True})
             try:
                 self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{tool_name}", action="gated", actor=self.namespace,
                                                changes={"tool_name": tool_name, "source_tool": self._episode_taint, "args_sha256": _sha(tool_args)})
@@ -1948,6 +1959,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 except NotaryUnavailable:
                     self._warm_info = {"hit": False, "reason": "the audit notary is unreachable"}
                     return None
+            # Round 82 (N6): the replay is a tool call like any other and goes through the same gate, under the policy in force NOW. Before, it called the tool
+            # server directly, so a folder the owner had forbidden since the answer was stored was read again and the old answer served. A refusal is a cache miss.
+            refusal = await self._pre_dispatch_gate(goal, tool, args)
+            if refusal is not None:
+                self._warm_info = {"hit": False, "reason": f"replaying {tool} is not allowed now ({refusal.get('stopped_reason')}); the episode runs normally"}
+                return None
             try:
                 raw = await self._mcp.call_tool(tool, args)
                 current = json.loads(raw.content[0].text)
