@@ -241,7 +241,7 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
         world.call_tool = call                                        # type: ignore[method-assign]
         try:
             result = asyncio.run(loop.run(goal))
-            summary.update({"stopped_reason": result.get("stopped_reason"), "final_answer": result.get("final_answer"), "steps": normalize_steps(result)})
+            summary.update({"stopped_reason": result.get("stopped_reason"), "final_answer": result.get("final_answer"), "steps": normalize_steps(result), "partial_completion": result.get("partial_completion")})
             verdicts: List[str] = []
             rounds = 0
             while rounds < (40 if continue_after else 1) and (approve and result.get("approval_id") or (continue_after and result.get("stopped_reason") == "fdia_blocked")):

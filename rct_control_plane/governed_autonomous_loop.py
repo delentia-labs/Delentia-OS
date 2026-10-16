@@ -1741,6 +1741,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._llm_provider is not self._meter and callable(residency_summary):
             result["residency"] = residency_summary()
         pending_record = self._record_pending_action(result) if stopped_reason == "pending_approval" else None
+        try:                                   # Round 83 (T14): what an unfinished episode already did, and whether running it again could repeat a side effect
+            from rct_control_plane.partial_report import partial_completion
+            result["partial_completion"] = partial_completion(result)
+        except Exception:                      # a report must never change an episode's outcome
+            result["partial_completion"] = None
         change_description = (
             f"episode goal={result['goal']!r} stopped_reason={stopped_reason} "
             f"iterations={result['iterations']} duration_s={duration:.2f} "
