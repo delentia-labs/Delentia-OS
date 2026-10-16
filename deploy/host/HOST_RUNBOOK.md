@@ -133,7 +133,13 @@ not scheduled. Fix them in order:
       4. `delentia audit-chain witness-status` says how many witnesses hold a recent head and how many rows are newer than the newest anchor (that window is
          what someone with root on this host could still rewrite); `delentia audit-chain check-witnesses` compares every witness with the chain;
          `delentia audit-chain export-proof --out proof.json` gives an auditor a bundle they verify with `scripts/verify_audit_bundle.py` without trusting this host.
-      `host-check` (H07) passes only with two witnesses of different kinds.
+      5. **The check that counts is the one made from ANOTHER machine** (Round 82). The git witness now reads the ledger's whole history, not only its newest version: an ordinary commit
+         that removes or changes an anchor, a deleted or renamed ledger file, a shallow copy, a pinned commit that is no longer an ancestor, or a tip that is not a descendant of the
+         last one seen is a failure (before Round 82 a rewritten chain plus a normal commit replacing the ledger passed). But a host that is taken over can also change what its own
+         `check-witnesses` reads, so for any claim about a compromised host run, from a machine you control:
+         `python verify_audit_bundle.py proof.json --pubkey <the audit key's public hex> --git-ledger <remote address> --git-key-id host-1 --pin <a ledger commit you wrote down earlier>`
+         (it clones the ledger fresh and needs no Delentia code). Without `--pin` it says it cannot tell a force-push that replaced the whole history from a normal one: write down the tip it prints.
+      `host-check` (H07) passes only with two witnesses of different kinds; it does not prove the host is honest, the verifier on the other machine does.
    Until then do not describe the logs as tamper-proof. Even with two witnesses the honest wording is "tamper-evident against a compromise of this host":
    the window since the last anchor is not covered, and an attacker who controls every witness's operator is not covered either.
 
