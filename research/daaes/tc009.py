@@ -215,7 +215,7 @@ def run_tc009(store_name: str, workdir: Path, seed: int = 1701, profile: Optiona
     score = round(sum(used[k] * metrics[k] for k in used) / sum(used.values()), 2)
     passed = score >= THRESHOLD and exactness == 100.0 and not hard_failures
     result = {
-        "case": "TC-009", "store": store_name, "profile": profile, "seed": seed, "operations": total_ops, "states_checked": len(checked), "states_exact": exact,
+        "case": "TC-009", "fixture_sha256": state_hash({"initial": initial, "steps": steps}), "store": store_name, "profile": profile, "seed": seed, "operations": total_ops, "states_checked": len(checked), "states_exact": exact,
         "mismatched_versions": mismatches, "refused_on_intact_data": raised, "faults": faults, "faults_supported": len(supported), "faults_passed": len(passed_faults),
         "metrics": metrics, "weights": WEIGHTS, "score": score, "threshold": THRESHOLD, "hard_failures": hard_failures, "passed": passed,
         "performance": {"write_ms_mean": round(statistics.mean(write_latencies) * 1000, 3), "write_ms_p95": round(sorted(write_latencies)[int(len(write_latencies) * 0.95)] * 1000, 3),

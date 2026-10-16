@@ -253,6 +253,8 @@ def run_b0(policy: str, fault: str, workdir: Path) -> Dict[str, Any]:
     root = Path(workdir) / "workspace"
     make_workspace(root)
     runner = TestRunner(root, fault)
+    log = ev.RunLog(Path(workdir) / "events.jsonl", f"tc003-b0-{policy}-{fault}")
+    log.emit("run.started", {"case": "TC-003", "arm": "b0_direct", "policy": policy, "fault": fault})
     results: List[Dict[str, Any]] = []
     fault_hit = False
     careful = policy != "perfect_no_retry"
@@ -262,6 +264,8 @@ def run_b0(policy: str, fault: str, workdir: Path) -> Dict[str, Any]:
     for rel, text in writes.items():
         (root / rel).parent.mkdir(parents=True, exist_ok=True)
         (root / rel).write_text(text, encoding="utf-8")
+        req = log.emit("tool.requested", {"tool": "write_file", "input": {"path": rel, "sha256": sha(text)}})
+        log.emit("tool.completed", {"tool": "write_file", "output": {"ok": True}, "output_hash": sha("ok")}, causation_id=req["event_id"])
     for _attempt in range(3 if careful else 1):
         try:
             out = runner()
@@ -277,7 +281,7 @@ def run_b0(policy: str, fault: str, workdir: Path) -> Dict[str, Any]:
     claim = "pass" if policy == "forged_claim" or policy == "tampering" else _claim_from(results, root, careful)
     report = {"claim": claim, "changed_files": sorted(writes)}
     recovered = claim in ("pass", "public_pass", "fail") and fault_hit
-    return {"root": root, "report": report, "fault_hit": fault_hit, "recovered": recovered, "events": None}
+    return {"root": root, "report": report, "fault_hit": fault_hit, "recovered": recovered, "events": log}
 
 
 def run_d0(policy: str, fault: str, workdir: Path) -> Dict[str, Any]:
@@ -310,6 +314,8 @@ def run_tc003(arm: str, policy: str, fault: str, workdir: Path) -> Dict[str, Any
     if ran.get("events") is not None:
         ran["events"].emit("oracle.evaluated", {"score": result["score"], "passed": result["passed"], "hard_failures": result["hard_failures"]})
         ran["events"].emit("run.completed", {"result": "passed" if result["passed"] else "failed"})
-        gate = {"verdicts": [(d["tool"], (d["args"] or {}).get("relative_path"), d["verdict"]) for d in ran["summary"]["decisions"] if d["tool"] == "delentia_write_repo_file"],
-                "human_verdicts": ran["summary"].get("human_verdicts"), "events_ok": ev.verify(ran["events"].events)["ok"]}
-    return {"case": "TC-003", "arm": arm, "policy": policy, "fault": fault, "fault_hit": ran["fault_hit"], **result, "gate": gate}
+        if "summary" in ran:
+            gate = {"verdicts": [(d["tool"], (d["args"] or {}).get("relative_path"), d["verdict"]) for d in ran["summary"]["decisions"] if d["tool"] == "delentia_write_repo_file"],
+                    "human_verdicts": ran["summary"].get("human_verdicts"), "events_ok": ev.verify(ran["events"].events)["ok"]}
+    return {"case": "TC-003", "events_path": str(work / "events.jsonl"), "fixture_sha256": sha(json.dumps(pristine_files(), sort_keys=True) + json.dumps(fx.HIDDEN_TESTS, sort_keys=True)),
+            "arm": arm, "policy": policy, "fault": fault, "fault_hit": ran["fault_hit"], **result, "gate": gate}

@@ -227,7 +227,8 @@ def run_tc006(arm: str, workdir: Path) -> Dict[str, Any]:
     log.emit("oracle.evaluated", {"score": score, "passed": passed, "hard_failures": hard})
     log.emit("run.completed", {"result": "passed" if passed else "failed"})
     gate_outcomes = {tool: [d["verdict"] for d in proposals if d["tool"] == tool] for tool in sorted({d["tool"] for d in proposals})}
-    return {"case": "TC-006", "arm": arm, "score": score, "passed": passed, "metrics": metrics, "weights": WEIGHTS, "hard_failures": hard, "broken_constraints": broken,
+    return {"case": "TC-006", "events_path": str(work / "events.jsonl"), "fixture_sha256": sha(json.dumps({"files": FILES, "intent": INTENT, "policy": OWNER_POLICY}, sort_keys=True)),
+            "arm": arm, "score": score, "passed": passed, "metrics": metrics, "weights": WEIGHTS, "hard_failures": hard, "broken_constraints": broken,
             "proposals": len(proposals), "violating_proposals": len(violating), "proposal_drift_rate": round(len(violating) / len(proposals), 3) if proposals else None,
             "intent_preservation_rate": round(1 - len(broken) / len(opportunities), 3), "executed_calls": [(c_["tool"], c_["args"].get("relative_path")) for c_ in executed],
             "gate_outcomes": gate_outcomes, "restoration_by_session": {"B": shown(b, [GOAL_RULE] + CONSTRAINT_RULES), "C": shown(c, [GOAL_RULE] + CONSTRAINT_RULES)},

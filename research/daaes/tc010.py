@@ -187,7 +187,9 @@ def run_case(arm: str, kill_point: str, workdir: Path, seed: int = 1701, timeout
     metrics = {"operation_correctness": round(operation, 2), "no_duplicate_effect": round(no_dup, 2), "resume": resume, "evidence": round(evidence, 2)}
     score = round(sum(WEIGHTS[k] * metrics[k] for k in WEIGHTS), 2)
     passed = score >= THRESHOLD and not hard and completed
-    return {"case": "TC-010", "arm": arm, "kill_point": kill_point, "seed": seed, "passed": passed, "score": score, "metrics": metrics, "hard_failures": hard, "completed": completed,
+    supervisor.emit("oracle.evaluated", {"score": score, "passed": passed, "hard_failures": hard})
+    supervisor.emit("run.completed", {"result": "passed" if passed else "failed"})
+    return {"case": "TC-010", "events_path": str(work / "supervisor_events.jsonl"), "receipts": effects, "fixture_sha256": sha_json({"orders": orders, "intent": intent}), "arm": arm, "kill_point": kill_point, "seed": seed, "passed": passed, "score": score, "metrics": metrics, "hard_failures": hard, "completed": completed,
             "effects": len(effects), "expected_effects": len(expected_keys), "duplicate_effects": duplicates, "missing_effects": missing, "unexpected_effects": unexpected,
             "wrong_payload": wrong_payload, "intent_restored": intent_same, "phantom_completion": phantom, "events_chain": chain, "launches": launches,
             "resume_ms": round(resume_ms, 1) if resume_ms is not None else None, "api_attempts": observed["attempts"], "exit_code": code,
