@@ -1927,7 +1927,7 @@ def approvals_keygen(out_path: str, trust_name: Optional[str], role: Optional[st
 
 @approvals_group.command("list")
 @click.option("--status", default="PENDING", show_default=True,
-              type=click.Choice(["PENDING", "APPROVED", "REJECTED", "EXECUTING", "EXECUTED", "ALL"],
+              type=click.Choice(["PENDING", "APPROVED", "REJECTED", "EXECUTING", "EXECUTED", "OUTCOME_UNKNOWN", "NOT_EXECUTED", "ALL"],
                                 case_sensitive=False))
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
 @click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table", help="Output format")
@@ -1945,6 +1945,36 @@ def approvals_list(status: str, db: Optional[str], output: str) -> None:
         click.echo(f"{a.approval_id}  {a.status:<9} {a.namespace}  {a.tool_name} {json.dumps(a.tool_args)[:80]}")
         click.echo(f"    goal   : {a.goal[:100]}")
         click.echo(f"    digest : {a.action_sha256}")
+
+
+@approvals_group.command("reconcile")
+@click.option("--older-than", "older_than", type=float, default=None, help="Seconds an approved action may stay 'executing' before it is called unknown (default 900).")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def approvals_reconcile(older_than: Optional[float], db: Optional[str]) -> None:
+    """Find approved actions that were claimed and never recorded a result (the process died). They become OUTCOME_UNKNOWN and are never run again by the system."""
+    from rct_control_plane.approvals import OUTCOME_UNKNOWN_AFTER_SECONDS
+    flagged = _approval_store(db).reconcile(older_than=OUTCOME_UNKNOWN_AFTER_SECONDS if older_than is None else older_than)
+    if not flagged:
+        click.echo("Nothing to reconcile: no approved action is waiting for a receipt that never came.")
+        return
+    for a in flagged:
+        click.echo(f"{a.approval_id}  OUTCOME_UNKNOWN  {a.namespace}  {a.tool_name}")
+    click.echo("Look at the world, then: delentia approvals resolve <id> --outcome done|not_done --note \"what you checked\"")
+
+
+@approvals_group.command("resolve")
+@click.argument("approval_id")
+@click.option("--outcome", type=click.Choice(["done", "not_done"]), required=True, help="What really happened to the action.")
+@click.option("--note", required=True, help="What you checked. Kept in the audit trail.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def approvals_resolve(approval_id: str, outcome: str, note: str, db: Optional[str]) -> None:
+    """Record what happened to an OUTCOME_UNKNOWN action. Writes the record only; nothing is run."""
+    from rct_control_plane.approvals import ApprovalError
+    try:
+        resolved = _approval_store(db).resolve_unknown(approval_id, outcome, note, actor="owner-cli")
+    except ApprovalError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"{resolved.approval_id}  {resolved.status}")
 
 
 @approvals_group.command("sign")
