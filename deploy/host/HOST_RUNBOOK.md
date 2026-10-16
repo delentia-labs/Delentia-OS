@@ -61,6 +61,19 @@ a stable HTTPS name you control).
 
 Not tested: any of this on Oracle. The kit has only been run on Docker Desktop (Windows). The first Linux/Arm run will find new defects.
 
+### 1c. Trial without a domain and without any public port (Round 80)
+
+For a first trial you do not need Caddy, a domain or ports 80/443. Two files make that path:
+
+- `ubuntu_arm_setup.sh` - run once as the normal login user on a fresh Ubuntu 22.04/24.04 server (aarch64 or x86): installs Docker, Compose, git and
+  automatic security updates, adds a 2 GB swap file if there is none, and checks that containers run on this CPU. It opens no port and creates no secret.
+- `docker-compose.private.yml` - used together with the main file: `docker compose -f docker-compose.yml -f docker-compose.private.yml up -d`.
+  The agent listens on the host's own loopback only (`127.0.0.1:8000`) and Caddy is not started. Put `DELENTIA_DOMAIN=unused.invalid` in `.env`.
+  From your own machine: `ssh -N -L 8000:127.0.0.1:8000 ubuntu@<host-ip>`, then use `http://127.0.0.1:8000` with your token.
+
+The cloud firewall then needs one rule: SSH (22), from your own address if you can. Webhooks (LINE, WhatsApp) cannot reach a host like this; add Caddy
+and a domain only when you open a channel (section 5). Validated with `docker compose config` only; never started on Arm.
+
 ## 2. Secrets and the first token (made on the host, once)
 
 ```bash
