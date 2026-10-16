@@ -1402,6 +1402,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             }
         taint = self._taint_reason(goal, tool_name, tool_args)
         if taint is not None:
+            # Round 82 (T11): "the strictest wins". A call that a hard rule (the built-in floor, the owner's denied path or blocked pattern) refuses outright is refused, not
+            # parked for a signature that could never make it run (resume re-checks the same rules): that only invited the owner to sign something forbidden.
+            hard_A, hard_reason = self._authorization_signal(tool_name, tool_args)
+            if policy is not None:
+                from rct_control_plane import fdia_policy
+                hard_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal, "seen_urls": sorted(getattr(self, "_episode_seen_urls", None) or ())})
+                if not hard_eval.needs_signature and hard_eval.A < hard_A:
+                    hard_A, hard_reason = hard_eval.A, f"owner policy {hard_eval.rule_id}: {hard_eval.reason}"
+            if hard_A <= 0.0:
+                return self._gate_refusal(tool_name, hard_A, hard_reason, policy_info={"taint": True})
             try:
                 self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{tool_name}", action="gated", actor=self.namespace,
                                                changes={"tool_name": tool_name, "source_tool": self._episode_taint, "args_sha256": _sha(tool_args)})
