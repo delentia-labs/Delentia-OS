@@ -559,7 +559,9 @@ class MeteredProvider(LLMProvider):
         self._inner = inner
         self.max_cost_usd = max_cost_usd
         self.max_tokens_total = max_tokens_total
-        if isinstance(inner, OllamaProvider) and prompt_price_per_mtok is None and completion_price_per_mtok is None:
+        # a local Ollama model and the model-free demo's script cost nothing; any other provider without a price is still refused under a dollar budget
+        if (isinstance(inner, OllamaProvider) or getattr(inner, "free_of_charge", False)) \
+                and prompt_price_per_mtok is None and completion_price_per_mtok is None:
             prompt_price_per_mtok = completion_price_per_mtok = 0.0
         self.prompt_price_per_mtok = prompt_price_per_mtok
         self.completion_price_per_mtok = completion_price_per_mtok
