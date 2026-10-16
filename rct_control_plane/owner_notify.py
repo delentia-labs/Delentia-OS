@@ -195,6 +195,7 @@ def on_pending_action(action: Any, persistence: Any = None) -> None:
 def on_job_problem(job: Dict[str, Any], stopped: str, switched_off: bool, persistence: Any = None) -> None:
     name = str(job.get("name") or job.get("id"))[:60]
     text = (f"Scheduled job '{name}' was switched off after repeated failures (last: {stopped})." if switched_off
+            else f"Scheduled job '{name}' was cut off when the server stopped; that run did not finish and was not run again." if stopped == "interrupted"
             else f"Scheduled job '{name}' failed (stop reason: {stopped}).")
     notify("cron", text, key=f"cron:{job.get('id')}:{'off' if switched_off else stopped}", persistence=persistence)
 
