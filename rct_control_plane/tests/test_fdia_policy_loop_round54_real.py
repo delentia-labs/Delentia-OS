@@ -297,8 +297,11 @@ def test_a_signature_cannot_authorise_what_the_policy_now_forbids(tmp_path, deci
     store = loop._pending_actions()
     sign(store, store.get(result["approval_id"]), keys["sec"][0])
     loop._policy_override = make_policy([SHELL], blocked_action_patterns=["*sandboxed_command*"])     # the owner changed their mind
-    outcome = asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
-    assert outcome["executed_result"]["fdia_blocked"] and not mcp.dispatched
+    # Round 82 (N2): a signature is bound to the policy it was asked under, so a changed policy refuses the resume outright (before: it ran the action through the new policy
+    # and the tool result said fdia_blocked). Either way the action does not run.
+    with pytest.raises(ApprovalError, match="policy"):
+        asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
+    assert not mcp.dispatched
 
 
 # ------------------------------------------------------------------ the jury, by action
