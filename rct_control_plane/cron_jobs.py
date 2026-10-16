@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 MAX_JOBS_PER_NAMESPACE = 20
 MAX_GOAL_CHARS = 2000
 MAX_RESULT_CHARS = 3000
+DEFAULT_RUN_SECONDS = 300                 # a run's time limit when DELENTIA_CRON_MAX_SECONDS is not set
+INTERRUPTED_GRACE_SECONDS = 60            # a run marked `running` is only called interrupted this long after its limit (Round 82, N4)
 MAX_FAIL_STREAK = 3
 DELIVERY_CHANNELS = ("telegram", "signal", "whatsapp")
 HOURLY_CAP_ENV = "DELENTIA_CRON_MAX_RUNS_PER_HOUR"
@@ -126,6 +128,7 @@ class CronService:
         self._p = persistence
         self._runs: Deque[float] = deque()              # start times of runs in the last hour (per process)
         self._background: "set[asyncio.Task[Any]]" = set()
+        self._active: "set[str]" = set()                 # jobs this process is running right now (never called interrupted)
         with self._p._connect() as conn:
             conn.executescript(SCHEMA)
 
@@ -236,9 +239,49 @@ class CronService:
         schedule = nl_schedule.Schedule.from_dict(job["schedule"])
         following = nl_schedule.next_run(schedule, now)
         with self._p._connect() as conn:
-            cur = conn.execute("UPDATE cron_jobs SET next_run_at = ?, enabled = CASE WHEN ? IS NULL THEN 0 ELSE enabled END WHERE id = ? AND next_run_at = ? AND enabled = 1 AND deleted = 0",
-                               (following, following, job["id"], job["next_run_at"]))
+            # Round 82 (N4): the claim also marks the job `running`, so a process that dies after it leaves a trace `recover_interrupted` can find, not silence
+            cur = conn.execute("UPDATE cron_jobs SET next_run_at = ?, enabled = CASE WHEN ? IS NULL THEN 0 ELSE enabled END, last_status = 'running', last_run_at = ? "
+                               "WHERE id = ? AND next_run_at = ? AND enabled = 1 AND deleted = 0",
+                               (following, following, now, job["id"], job["next_run_at"]))
             return cur.rowcount == 1
+
+    def _run_limit_seconds(self) -> float:
+        try:
+            return float(os.environ.get(RUN_SECONDS_ENV) or DEFAULT_RUN_SECONDS)
+        except ValueError:
+            return float(DEFAULT_RUN_SECONDS)
+
+    def recover_interrupted(self, now: Optional[float] = None) -> List[Dict[str, Any]]:
+        """Jobs that were claimed and are still `running` long after any run could have lasted (its time limit plus a grace) and that this process is not running: the process
+        that claimed them died. Mark them `interrupted`, audit it and tell the owner. It is not the job's own failure (no streak, no run counted), and the missed occurrence is NOT
+        run again: it may already have had effects, and the next occurrence is already scheduled. Cheap enough to call on every dispatcher tick."""
+        when = time.time() if now is None else now
+        cutoff = when - self._run_limit_seconds() - INTERRUPTED_GRACE_SECONDS
+        import sqlite3
+        flagged: List[Dict[str, Any]] = []
+        with self._p._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT id FROM cron_jobs WHERE last_status = 'running' AND last_run_at IS NOT NULL AND last_run_at < ?", (cutoff,)).fetchall()
+            for (job_id,) in [(r["id"],) for r in rows]:
+                if job_id in self._active:
+                    continue
+                done = conn.execute("UPDATE cron_jobs SET last_status = 'interrupted', last_result = ? WHERE id = ? AND last_status = 'running' AND last_run_at < ?",
+                                    ("the server stopped while this run was in progress; it was not run again", job_id, cutoff)).rowcount
+                if done == 1:
+                    flagged.append({"id": job_id})
+        result: List[Dict[str, Any]] = []
+        for item in flagged:
+            job = self.get(item["id"])
+            if job is None:
+                continue
+            _audit(self._p, "interrupted", job, "cron", {"claimed_at": job.get("last_run_at")})
+            try:
+                from rct_control_plane import owner_notify
+                owner_notify.on_job_problem(job, "interrupted", False, self._p)
+            except Exception:
+                pass
+            result.append(job)
+        return result
 
     def _under_hourly_cap(self, now: float) -> bool:
         try:
@@ -266,11 +309,9 @@ class CronService:
         started = time.time() if now is None else now
         if not counted:
             self._runs.append(started)
-        try:
-            seconds = float(os.environ.get(RUN_SECONDS_ENV) or 300)
-        except ValueError:
-            seconds = 300.0
+        seconds = self._run_limit_seconds()
         stopped, text, failed = "exception", "", True
+        self._active.add(job["id"])
         try:
             loop = build_governed_loop(kernel, namespace=job["namespace"], max_iterations=5, max_seconds=seconds, conversation_turns=0)    # a scheduled job is not a reply to a chat
             result = await asyncio.wait_for(loop.run(job["goal"]), timeout=seconds + 30)
@@ -282,6 +323,8 @@ class CronService:
         except Exception as exc:                                   # noqa: BLE001 - recorded, never raised into the scheduler
             logger.exception("cron job %s failed", job["id"])
             stopped, text = "exception", f"the run failed ({type(exc).__name__}); the details are in the server log"
+        finally:
+            self._active.discard(job["id"])
         updated = self._record(job["id"], stopped, text, started, failed)
         _audit(self._p, "run", updated, "cron", {"stopped_reason": stopped, "failed": failed, "run_count": updated["run_count"]})
         notice = ""
@@ -318,6 +361,7 @@ class CronService:
         used by tests and `delentia cron run-due`.) Must be called from inside a running event loop."""
         when = time.time() if now is None else now
         started = 0
+        self.recover_interrupted(when)
         for job in self.due(when):
             if not self._under_hourly_cap(when):
                 _audit(self._p, "throttled", job, "cron", {"cap_env": HOURLY_CAP_ENV})
@@ -332,6 +376,7 @@ class CronService:
 
     async def run_due(self, kernel: Any, deliver: Optional[Deliverer] = None, now: Optional[float] = None, parallel: int = 2) -> List[Dict[str, Any]]:
         when = time.time() if now is None else now
+        self.recover_interrupted(when)
         ran: List[Dict[str, Any]] = []
         gate = asyncio.Semaphore(max(1, parallel))
         tasks = []
