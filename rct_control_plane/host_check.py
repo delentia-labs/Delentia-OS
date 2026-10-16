@@ -208,6 +208,23 @@ def check_tenants(public: bool) -> List[Check]:
     return [Check("H22-tenants", PASS, "People and owners", f"{len(owners)} owner(s) ({', '.join(owners) or 'the shared token'}), {len(people)} ordinary person(s) limited to the agent, their own jobs, tasks, approvals and memory")]
 
 
+def check_raw_gateway() -> List[Check]:
+    """H24 (Round 82, research plan T05): the raw JSON-RPC gateway (/mcp) runs its own shell, file and fetch tools OUTSIDE the governed loop: no signed approval, no taint rule, no owner
+    policy. It answers 403 to a per-person token, so only an owner reaches it. Said once here so that an owner who opens the host to other people knows what is and is not mediated."""
+    from rct_control_plane import api_tokens
+    people = 0
+    try:
+        if api_tokens.per_user_mode():
+            people = sum(1 for e in api_tokens.load_entries() if not e.get("disabled") and not e.get("owner"))
+    except Exception:                                                  # noqa: BLE001 - H22 already reports an unreadable token file
+        pass
+    detail = ("the raw /mcp gateway is a maintenance surface for the owner: it runs its own shell, file and fetch tools outside the governed loop (no signed approval, no taint rule, no owner policy); "
+              "a per-person token gets 403 there. See research/EFFECT_INVENTORY.md")
+    if people:
+        return [Check("H24", INFO, "Surface outside the governed loop", f"{people} ordinary person token(s) exist: they are refused at /mcp, but any owner token reaches it. " + detail)]
+    return [Check("H24", INFO, "Surface outside the governed loop", detail)]
+
+
 def check_memory_log() -> List[Check]:
     """H23 (Round 67): is the memory history recorded, sealed per person (what makes erasure possible), and are the keys kept where the agent's file tools cannot read them?"""
     from rct_control_plane import memory_erasure, memory_eventlog
@@ -390,6 +407,7 @@ def run_checks(*, public: bool = True, probe: bool = False) -> List[Check]:
         ("H21", "Safety envelope and owner alerts", lambda: check_envelope(public)),
         ("H22", "People and owners", lambda: check_tenants(public)),
         ("H23", "Memory history", check_memory_log),
+        ("H24", "Surface outside the governed loop", check_raw_gateway),
     ):
         checks.extend(_guard(check_id, title, fn))
     return checks
