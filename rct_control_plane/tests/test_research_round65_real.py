@@ -283,8 +283,10 @@ class TestBudgetTrack:
     def test_the_two_domains_load_from_their_own_files_and_all_pools_them(self):
         quotes_static, quotes_traj = runner._load_units("dev", None, "quotes")
         tix_static, tix_traj = runner._load_units("dev", None, "tickets")
+        ops_static, ops_traj = runner._load_units("dev", None, "ops")                  # Round 82: the third domain (static tasks only)
         all_static, all_traj = runner._load_units("dev", None, "all")
-        assert len(all_static) == len(quotes_static) + len(tix_static) and len(all_traj) == len(quotes_traj) + len(tix_traj)
+        assert len(all_static) == len(quotes_static) + len(tix_static) + len(ops_static) and len(all_traj) == len(quotes_traj) + len(tix_traj) and ops_traj == []
+        assert {t.get("domain") for t in ops_static} == {"ops"}
         assert {t.get("domain", "quotes") for t in tix_static} == {"tickets"} and {t.get("domain", "quotes") for t in quotes_static} == {"quotes"}
 
     def test_the_analysis_can_be_cut_by_domain_and_track_and_reports_tokens(self):
@@ -300,7 +302,7 @@ class TestBudgetTrack:
 
     def test_the_strict_floor_declares_both_domains_folders_untrusted(self):
         source = (ROOT / "research" / "runner.py").read_text(encoding="utf-8")
-        assert '"quotes/,tickets/"' in source
+        assert '"quotes/,tickets/,ops/"' in source                                          # Round 82: the office-operations domain's folder too
 
 
 # ---------------------------------------------------------------- Round 66: failure taxonomy and the plain agent

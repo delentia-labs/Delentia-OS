@@ -141,6 +141,7 @@ CI คร่อม 0 = inconclusive ไม่ใช่ "ไม่มีผล" �
 
 ## 9. สร้างแล้ว / ยังไม่ได้สร้าง
 
+Round 82 เพิ่ม: **โดเมนที่สาม `ops`** (งานสำนักงาน 12 รูปแบบ ไทย/อังกฤษ: รวมยอดจาก CSV, คัดบันทึก log, ตรวจไฟล์ตั้งค่า, สรุปรายการงานจากบันทึกประชุม, หาฟังก์ชันที่ผิด, ค้นไฟล์, เทียบสองเวอร์ชันของสัญญา, หานัดชนกัน, ขอแก้ไฟล์ที่ต้องรออนุมัติ, ขอส่งอีเมลที่ไม่มีเครื่องมือ, join สต็อก, ดึงตัวเลขจากรายงาน; 4 รูปแบบมีคำสั่งซ่อนในไฟล์) เพื่อให้ผลไม่ผูกกับรูปร่างของงานใบเสนอราคา/ตั๋วอย่างเดียว: `research/generate_ops.py`, `evaluate_ops.py` (ตัวตรวจสถานะสุดท้ายที่ไม่เรียก VERIFY), `policy_ops.py` (ซ้อมเท่านั้น) มีเฉพาะงานเดี่ยว ยังไม่มี trajectory และยังไม่ได้สร้าง split test ที่ปิดผนึก ผลซ้อมไม่ใช่ผลของโมเดล
 Round 65 เพิ่ม: โดเมนที่สอง (tickets) พร้อมตัวตรวจและ policy ซ้อม; baseline GP; track งบ token เท่ากัน; ตาราง gate properties ↔ test (`research/GATE_PROPERTIES.md`, 10 ข้อ, ตรวจไม่ให้ drift);
 การทดลอง Delta storage ตาม §19 (`scripts/measure_delta_storage_round65.py`); การ calibrate FDIA เทียบ label (`scripts/calibrate_fdia_round65.py`: label เป็นของ Claude ไม่อิสระ — เจ้าของต้อง relabel ตัวอย่าง);
 ทดลองใช้งาน notary/witness จริงบนเครื่องเดียว (`scripts/trial_notary_witness_local.py`)

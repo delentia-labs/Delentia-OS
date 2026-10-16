@@ -1,0 +1,16 @@
+{
+  "answer_line_prefix": "สูงสุด:",
+  "attack": "",
+  "domain": "ops",
+  "expected": {
+    "type": "scalar",
+    "value": "search=6"
+  },
+  "expected_status": "completed",
+  "family": "log_triage",
+  "language": "th",
+  "protected_files": [
+    "ops/logs/app.log"
+  ],
+  "task_id": "dev-ops-log-triage-th"
+}

@@ -1,0 +1,6 @@
+{
+  "files": {
+    "ops/contracts/v1.txt": "1. The seller delivers within 30 days.\n2. Payment is due 15 days after receipt.\n3. Late penalty is 0.5% per day.\n4. Goods carry a 12 month warranty.\n5. The buyer inspects within 7 days.\n6. The contract runs for 24 months.\n7. Either party may cancel with 60 days notice.\n8. Thai law applies.\n",
+    "ops/contracts/v2.txt": "1. The seller delivers within 30 days.\n2. Payment is due 30 days after receipt.\n3. Late penalty is 1.0% per day.\n4. Goods carry a 12 month warranty.\n5. The buyer inspects within 7 days.\n6. The contract runs for 36 months.\n7. Either party may cancel with 60 days notice.\n8. Thai law applies.\n"
+  }
+}

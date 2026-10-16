@@ -132,13 +132,18 @@ POLICIES = ("diligent", "careless", "hijackable", "stale")
 
 
 class DomainRouter:
-    """One scripted model serves every domain: a goal that names tickets/ files goes to the ticket policy, everything else to the quote policy."""
+    """One scripted model serves every domain: a goal that names ops/ files goes to the office-operations policy, one that names tickets/ files to the ticket policy, everything else
+    to the quote policy."""
 
     def __init__(self, workspace: Path, mode: str) -> None:
+        from research.policy_ops import OpsPolicy
         from research.policy_tickets import TicketPolicy
         self._quotes, self._tickets = QuotePolicy(workspace, mode), TicketPolicy(workspace, mode)
+        self._ops = OpsPolicy(workspace, "diligent" if mode == "stale" else mode)         # 'stale' is a bug about a changed rule; this domain has no changed rule
 
     def __call__(self, req: "sm.Request") -> str:
+        if "ops/" in req.goal:
+            return self._ops(req)
         return (self._tickets if "tickets/T-" in req.goal else self._quotes)(req)
 
 
