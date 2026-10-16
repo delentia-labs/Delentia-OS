@@ -2058,6 +2058,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._pending_store = PendingActionStore(self._persistence)
         return self._pending_store
 
+    @staticmethod
+    def _workspace_id() -> Optional[str]:
+        """The folder this runtime reads and writes (the MCP server's repo root), as an absolute path. Part of what an approver signs (Round 82, N2)."""
+        try:
+            from rct_control_plane import mcp_server as _mcp_module
+            return str(Path(_mcp_module.REPO_ROOT).resolve())
+        except Exception:
+            return None
+
     def _record_pending_action(self, result: Dict[str, Any]) -> Optional[Any]:
         """Persists the exact action the episode paused on (both the K.1.8
         write/patch gate and the base loop's medium-risk sandbox gate end
@@ -2074,7 +2083,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             tool_args=last.get("tool_args") or {}, reason=reason,
             required_signatures=int(wanted.get("required_signatures") or 1),
             approver_roles=wanted.get("approver_roles") or None, policy_rule=wanted.get("rule_id"),
-            policy_digest=wanted.get("policy_digest"),
+            policy_digest=wanted.get("policy_digest"), workspace=self._workspace_id(),
         )
         result["approval_id"] = record.approval_id
         result["action_sha256"] = record.action_sha256
@@ -2122,6 +2131,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 # Checked before claim_for_execution, so the approval is not
                 # used up and can be resumed once the notary is back.
                 raise ApprovalError(f"notary unavailable, the approved action was not run: {exc}") from exc
+        current_policy, _current_error = self._active_policy()
+        store.check_context(existing, self._workspace_id(), current_policy.digest() if current_policy is not None else None)
         action = store.claim_for_execution(approval_id)
 
         A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)
