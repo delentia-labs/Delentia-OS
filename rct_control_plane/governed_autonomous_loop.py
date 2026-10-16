@@ -855,13 +855,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         cost_cap, token_cap = self._max_episode_cost_usd, self._max_episode_tokens
         try:
             from rct_control_plane import envelope
-            left_usd, left_tokens = envelope.remaining(self._persistence, self.namespace)
+            # Round 82: take the share atomically (envelope.reserve) instead of only reading what is left, so episodes started together cannot be given the same remainder
+            cost_cap, token_cap = envelope.reserve(self._persistence, self.namespace, str(getattr(self, "_episode_id", "") or ""), cost_cap, token_cap)
         except Exception:
-            left_usd = left_tokens = None
-        if left_usd is not None:
-            cost_cap = left_usd if cost_cap is None else min(cost_cap, left_usd)
-        if left_tokens is not None:
-            token_cap = left_tokens if token_cap is None else min(token_cap, left_tokens)
+            pass
         prices = None
         if cost_cap is not None and isinstance(base, OpenRouterProvider):
             from rct_control_plane.model_config import lookup_openrouter_prices
