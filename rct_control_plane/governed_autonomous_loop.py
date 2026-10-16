@@ -688,6 +688,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
         warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
+        self._episode_call_counts = {}                    # the replay went through the gate and was counted there; the episode itself starts from zero
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self._research is not None and not self._research.plan:
@@ -855,13 +856,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         cost_cap, token_cap = self._max_episode_cost_usd, self._max_episode_tokens
         try:
             from rct_control_plane import envelope
-            left_usd, left_tokens = envelope.remaining(self._persistence, self.namespace)
+            # Round 82: take the share atomically (envelope.reserve) instead of only reading what is left, so episodes started together cannot be given the same remainder
+            cost_cap, token_cap = envelope.reserve(self._persistence, self.namespace, str(getattr(self, "_episode_id", "") or ""), cost_cap, token_cap)
         except Exception:
-            left_usd = left_tokens = None
-        if left_usd is not None:
-            cost_cap = left_usd if cost_cap is None else min(cost_cap, left_usd)
-        if left_tokens is not None:
-            token_cap = left_tokens if token_cap is None else min(token_cap, left_tokens)
+            pass
         prices = None
         if cost_cap is not None and isinstance(base, OpenRouterProvider):
             from rct_control_plane.model_config import lookup_openrouter_prices
@@ -1402,6 +1400,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             }
         taint = self._taint_reason(goal, tool_name, tool_args)
         if taint is not None:
+            # Round 82 (T11): "the strictest wins". A call that a hard rule (the built-in floor, the owner's denied path or blocked pattern) refuses outright is refused, not
+            # parked for a signature that could never make it run (resume re-checks the same rules): that only invited the owner to sign something forbidden.
+            hard_A, hard_reason = self._authorization_signal(tool_name, tool_args)
+            if policy is not None:
+                from rct_control_plane import fdia_policy
+                hard_eval = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, context={"goal": goal, "seen_urls": sorted(getattr(self, "_episode_seen_urls", None) or ())})
+                if not hard_eval.needs_signature and hard_eval.A < hard_A:
+                    hard_A, hard_reason = hard_eval.A, f"owner policy {hard_eval.rule_id}: {hard_eval.reason}"
+            if hard_A <= 0.0:
+                return self._gate_refusal(tool_name, hard_A, hard_reason, policy_info={"taint": True})
             try:
                 self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{tool_name}", action="gated", actor=self.namespace,
                                                changes={"tool_name": tool_name, "source_tool": self._episode_taint, "args_sha256": _sha(tool_args)})
@@ -1935,6 +1943,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 except NotaryUnavailable:
                     self._warm_info = {"hit": False, "reason": "the audit notary is unreachable"}
                     return None
+            # Round 82 (N6): the replay is a tool call like any other and goes through the same gate, under the policy in force NOW. Before, it called the tool
+            # server directly, so a folder the owner had forbidden since the answer was stored was read again and the old answer served. A refusal is a cache miss.
+            refusal = await self._pre_dispatch_gate(goal, tool, args)
+            if refusal is not None:
+                self._warm_info = {"hit": False, "reason": f"replaying {tool} is not allowed now ({refusal.get('stopped_reason')}); the episode runs normally"}
+                return None
             try:
                 raw = await self._mcp.call_tool(tool, args)
                 current = json.loads(raw.content[0].text)
@@ -2061,6 +2075,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._pending_store = PendingActionStore(self._persistence)
         return self._pending_store
 
+    @staticmethod
+    def _workspace_id() -> Optional[str]:
+        """The folder this runtime reads and writes (the MCP server's repo root), as an absolute path. Part of what an approver signs (Round 82, N2)."""
+        try:
+            from rct_control_plane import mcp_server as _mcp_module
+            return str(Path(_mcp_module.REPO_ROOT).resolve())
+        except Exception:
+            return None
+
     def _record_pending_action(self, result: Dict[str, Any]) -> Optional[Any]:
         """Persists the exact action the episode paused on (both the K.1.8
         write/patch gate and the base loop's medium-risk sandbox gate end
@@ -2077,7 +2100,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             tool_args=last.get("tool_args") or {}, reason=reason,
             required_signatures=int(wanted.get("required_signatures") or 1),
             approver_roles=wanted.get("approver_roles") or None, policy_rule=wanted.get("rule_id"),
-            policy_digest=wanted.get("policy_digest"),
+            policy_digest=wanted.get("policy_digest"), workspace=self._workspace_id(),
         )
         result["approval_id"] = record.approval_id
         result["action_sha256"] = record.action_sha256
@@ -2125,6 +2148,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 # Checked before claim_for_execution, so the approval is not
                 # used up and can be resumed once the notary is back.
                 raise ApprovalError(f"notary unavailable, the approved action was not run: {exc}") from exc
+        current_policy, _current_error = self._active_policy()
+        store.check_context(existing, self._workspace_id(), current_policy.digest() if current_policy is not None else None)
         action = store.claim_for_execution(approval_id)
 
         A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)

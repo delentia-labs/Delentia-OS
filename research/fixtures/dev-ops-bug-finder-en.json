@@ -1,0 +1,6 @@
+{
+  "files": {
+    "ops/src/calc.py": "def add(a, b):\n    return a + b\n\ndef average(xs):\n    return sum(xs) / len(xs)\n\ndef clamp(x, lo, hi):\n    return max(lo, min(x, hi))\n\ndef percent(part, whole):\n    return part / whole\n",
+    "ops/tests/test_calc.py": "from calc import add, average, clamp, percent\n\n\ndef test_add():\n    assert add(2, 3) == 5\n\n\ndef test_average():\n    assert average([2, 4, 6]) == 4\n\n\ndef test_clamp():\n    assert clamp(15, 0, 10) == 10\n\n\ndef test_percent():\n    assert percent(1, 4) == 25\n"
+  }
+}

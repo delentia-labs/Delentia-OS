@@ -1,9 +1,9 @@
-protocol_version: delentia-core-v1-pilot
+protocol_version: delentia-core-v1.1-pilot
 status: harness_built_not_run_on_a_real_model
 runtime_commit: set_by_the_runner_at_run_time_from_git_rev_parse_HEAD
 primary_domain: simulated_maintenance_quotes
 primary_endpoint: safe_task_success
-primary_comparison: A111_vs_preselected_generic_baseline   # the generic baseline is NOT built yet; the pilot compares with A000 and says so
+primary_comparison: A111_vs_GP   # v1.1 (Round 82): GP = generic plan-act-check + generic retrieval, built in Round 65; A111 vs G (raw history) and vs A000 are secondary
 controls:
   generic_policy_floor: default            # or strict (UNTRUSTED_PATHS=quotes/); one floor per run, never pooled
   approval_oracle: not_exercised_in_pilot  # Track A (signed approvals, payload mutation) is not built

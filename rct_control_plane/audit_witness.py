@@ -72,6 +72,7 @@ class WitnessSpec:
     path: str = ""
     remote: str = ""
     branch: str = "main"
+    pin: str = ""        # a commit of the ledger written down by an independent verifier: it must still be an ancestor of the branch (git witnesses only)
 
 
 def _https_or_loopback(url: str) -> bool:
@@ -98,8 +99,11 @@ def specs_from_env() -> List[WitnessSpec]:
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: an http witness needs an https url (plain http only for loopback)")
             if item["type"] == "git" and not item.get("path"):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: a git witness needs a path to its repository")
+            if item.get("pin") and (item["type"] != "git" or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", str(item["pin"]))):
+                raise WitnessError(f"{WITNESSES_ENV}[{i}]: pin must be a full commit hash and only a git witness has one")
             out.append(WitnessSpec(type=item["type"], name=str(item.get("name") or f"{item['type']}-{i + 1}"), key_id=str(item["key_id"]), url=str(item.get("url", "")),
-                                   path=str(item.get("path", "")), remote=str(item.get("remote", "")), branch=str(item.get("branch", "main"))))
+                                   path=str(item.get("path", "")), remote=str(item.get("remote", "")), branch=str(item.get("branch", "main")),
+                                   pin=str(item.get("pin", ""))))
         if len({s.name for s in out}) != len(out):
             raise WitnessError("witness names must be unique")
         return out
@@ -144,11 +148,14 @@ class GitWitness:
         self.repo = Path(spec.path).expanduser()
         self.file = Path("anchors") / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', spec.key_id)}.jsonl"
 
-    def _git(self, *args: str, check: bool = True) -> str:
+    def _run(self, *args: str) -> "subprocess.CompletedProcess[str]":
         if shutil.which("git") is None:
             raise WitnessError("git is not installed")
-        done = subprocess.run(["git", "-C", str(self.repo), "-c", "user.name=delentia-witness", "-c", "user.email=witness@delentia.invalid", "-c", "commit.gpgsign=false", *args],
+        return subprocess.run(["git", "-C", str(self.repo), "-c", "user.name=delentia-witness", "-c", "user.email=witness@delentia.invalid", "-c", "commit.gpgsign=false", *args],
                               capture_output=True, text=True, timeout=GIT_TIMEOUT_S, encoding="utf-8", errors="replace")
+
+    def _git(self, *args: str, check: bool = True) -> str:
+        done = self._run(*args)
         if check and done.returncode != 0:
             raise WitnessError(f"git {args[0]} failed: {(done.stderr or done.stdout).strip()[:200]}")
         return done.stdout
@@ -189,31 +196,94 @@ class GitWitness:
             self._git("push", "-q", self.spec.remote, f"HEAD:{self.spec.branch}")
         return {"entries": body["entries"]}
 
+    # ------------------------------------------------------------------ what the history says (Round 82, plan item T01)
+
+    def _is_ancestor(self, older: str, newer: str) -> bool:
+        return self._run("merge-base", "--is-ancestor", older, newer).returncode == 0
+
+    def _seen_ref(self) -> str:
+        return f"refs/delentia/witness-seen/{re.sub(r'[^A-Za-z0-9_.-]', '_', self.spec.branch)}"
+
+    def _history(self, ref: str) -> "tuple[List[Dict[str, Any]], List[Dict[str, Any]]]":
+        """Every anchor this ledger file ever held, and every place where an ordinary commit took something OUT of any ledger under anchors/.
+
+        Reading only the newest version of the file (what this class used to do) let an attacker who controls the host, its signing key and the push credential rewrite the chain,
+        sign the new head and replace the ledger with a normal fast-forward commit: the old anchor stayed in git's history and nobody looked. A ledger may only grow, so the
+        patches of the first-parent line are read: a removed or changed line, a deleted or renamed file is a conflict, and every anchor ever added still has to match the chain.
+        """
+        if self._run("rev-parse", "--verify", "-q", f"{ref}^{{commit}}").returncode != 0:
+            return [], []
+        done = self._run("log", "--first-parent", "--diff-merges=first-parent", "--reverse", "-p", "--no-color", "--no-ext-diff", "--format=@@commit %H", ref, "--", "anchors/")
+        if done.returncode != 0:
+            raise WitnessError(f"git log failed: {(done.stderr or done.stdout).strip()[:200]}")
+        own = self.file.as_posix()
+        anchors: List[Dict[str, Any]] = []
+        seen_anchor = set()
+        conflicts: List[Dict[str, Any]] = []
+        commit, path, in_hunk = "", "", False
+        touched: Dict[tuple, int] = {}
+
+        def flag(kind: str) -> None:
+            touched[(commit, path, kind)] = touched.get((commit, path, kind), 0) + 1
+
+        for line in done.stdout.splitlines():
+            if line.startswith("@@commit "):
+                commit, path, in_hunk = line.split(" ", 1)[1].strip(), "", False
+            elif line.startswith("diff --git "):
+                in_hunk = False
+                path = line.rsplit(" b/", 1)[-1] if " b/" in line else line
+            elif not in_hunk and line.startswith(("deleted file mode", "rename from ", "rename to ")):
+                flag("deleted or renamed")
+            elif line.startswith("@@"):
+                in_hunk = True
+            elif in_hunk and line.startswith("-"):
+                flag("removed or changed")
+            elif in_hunk and line.startswith("+") and path == own:
+                try:
+                    row = json.loads(line[1:])
+                except ValueError:
+                    conflicts.append({"line": 0, "reason": f"{path}: an unreadable line was added in commit {commit[:12]}"})
+                    continue
+                key = (row.get("entries"), row.get("head"), row.get("signature"))
+                if key not in seen_anchor:
+                    seen_anchor.add(key)
+                    anchors.append(row)
+        for (sha, file_path, kind), count in touched.items():
+            conflicts.append({"line": 0, "commit": sha, "path": file_path,
+                              "reason": f"{file_path}: {count} anchor line(s) {kind} by an ordinary commit {sha[:12]}: a ledger may only be appended to (the history shows what was taken out)"})
+        return anchors, conflicts
+
     def fetch(self) -> Dict[str, Any]:
-        """What the witness holds NOW: from the remote's branch when there is one (a fresh `git fetch`), else the local committed file."""
+        """What the witness holds NOW: from the remote's branch when there is one (a fresh `git fetch`), else the local committed file, together with everything the ledger
+        ever held. A history that cannot be seen in full (a shallow copy) is an error, never a pass."""
         self._ensure_repo()
         ref = "HEAD"
         if self.spec.remote:
             self._git("fetch", "-q", self.spec.remote, self.spec.branch)
             ref = "FETCH_HEAD"
-        text = self._git("show", f"{ref}:{self.file.as_posix()}", check=False)
-        anchors, conflicts = [], []
-        seen: Dict[int, str] = {}
+        if self._git("rev-parse", "--is-shallow-repository", check=False).strip() == "true":
+            raise WitnessError("the ledger copy is shallow: its history cannot be checked, clone it in full")
+        tip = self._git("rev-parse", "--verify", "-q", f"{ref}^{{commit}}", check=False).strip()
+        rows, conflicts = self._history(ref)
+        if tip and self.spec.pin and not self._is_ancestor(self.spec.pin, tip):
+            conflicts.append({"line": 0, "reason": f"force-push or branch reset: the pinned commit {self.spec.pin[:12]} is not an ancestor of the ledger's branch"})
+        seen = self._git("rev-parse", "--verify", "-q", f"{self._seen_ref()}^{{commit}}", check=False).strip()
+        if tip and seen and not self._is_ancestor(seen, tip):
+            conflicts.append({"line": 0, "reason": f"force-push or branch reset: the tip seen at the last check ({seen[:12]}) is not an ancestor of the ledger's branch now"})
+        anchors: List[Dict[str, Any]] = []
+        seen_entries: Dict[int, str] = {}
         highest = 0
-        for number, line in enumerate(text.splitlines(), 1):
-            try:
-                row = json.loads(line)
-            except ValueError:
-                conflicts.append({"line": number, "reason": "unreadable line"})
-                continue
+        for number, row in enumerate(rows, 1):
             if row["entries"] < highest:
                 conflicts.append({"line": number, "reason": f"entries went back from {highest} to {row['entries']} (rollback)"})
-            if row["entries"] in seen and seen[row["entries"]] != row["head"]:
+            if row["entries"] in seen_entries and seen_entries[row["entries"]] != row["head"]:
                 conflicts.append({"line": number, "reason": f"entry {row['entries']} anchored with two different heads (fork)"})
-            seen[row["entries"]] = row["head"]
+            seen_entries[row["entries"]] = row["head"]
             highest = max(highest, row["entries"])
             anchors.append({**row, "received_at": row.get("signed_at")})
-        return {"anchors": anchors, "conflicts": conflicts}
+        if tip and not conflicts:
+            self._git("update-ref", self._seen_ref(), tip, check=False)                # the next check must see a descendant of this tip: it catches a force-push
+        return {"anchors": anchors, "conflicts": conflicts, "tip": tip}
 
 
 def make(spec: WitnessSpec) -> Any:
@@ -295,6 +365,7 @@ def check_witnesses(conn: sqlite3.Connection, specs: Optional[List[WitnessSpec]]
             continue
         result = audit_chain.check_anchors(conn, held)
         problems = list(result["problems"])
+        problems.extend(str(c.get("reason")) for c in (held.get("conflicts") or [])[:5] if c.get("reason"))
         if public:
             bad = [a for a in held.get("anchors", []) if "signature" in a and not verify_anchor_signature(a, public)]
             if bad:

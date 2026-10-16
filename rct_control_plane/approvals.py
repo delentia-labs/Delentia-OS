@@ -59,6 +59,7 @@ DECISION_TTL_ENV = "DELENTIA_APPROVAL_DECISION_TTL_SECONDS"
 EXECUTION_TTL_ENV = "DELENTIA_APPROVAL_EXECUTION_TTL_SECONDS"
 DEFAULT_DECISION_TTL_SECONDS = 7 * 24 * 3600
 DEFAULT_EXECUTION_TTL_SECONDS = 24 * 3600
+OUTCOME_UNKNOWN_AFTER_SECONDS = 900          # Round 82 (T06): an action claimed this long ago with no receipt is OUTCOME_UNKNOWN
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -94,6 +95,8 @@ _EXTRA_COLUMNS = (
     ("approver_roles_json", "TEXT"),
     ("policy_rule", "TEXT"),
     ("policy_digest", "TEXT"),
+    ("workspace", "TEXT"),            # Round 82 (N2): the folder the action was asked for; part of what the approver signs
+    ("claimed_at", "REAL"),           # Round 82 (T06): when the action was claimed for execution, so a claim that never got a receipt can be found
 )
 
 
@@ -144,18 +147,24 @@ class PendingAction:
     approver_roles: Optional[List[str]] = None
     policy_rule: Optional[str] = None
     policy_digest: Optional[str] = None
+    workspace: Optional[str] = None
+    claimed_at: Optional[float] = None
     signatures_collected: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 
-def action_digest(approval_id: str, namespace: str, goal: str, tool_name: str, tool_args: Dict[str, Any]) -> str:
-    canonical = json.dumps(
-        {"approval_id": approval_id, "namespace": namespace, "goal": goal,
-         "tool_name": tool_name, "tool_args": tool_args},
-        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-    )
+def action_digest(approval_id: str, namespace: str, goal: str, tool_name: str, tool_args: Dict[str, Any],
+                  policy_digest: Optional[str] = None, workspace: Optional[str] = None) -> str:
+    """What an approver signs. Round 82 (N2): the owner policy that judged the request and the workspace it was asked in are part of it when they are known, so a signature cannot be
+    carried over to a changed policy or another folder. When neither is given the digest is exactly the one older approvals were signed with."""
+    body: Dict[str, Any] = {"approval_id": approval_id, "namespace": namespace, "goal": goal, "tool_name": tool_name, "tool_args": tool_args}
+    if policy_digest:
+        body["policy_digest"] = policy_digest
+    if workspace:
+        body["workspace"] = workspace
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -277,7 +286,7 @@ def sign_decision(private_key_path: str, approval_id: str, action_sha256: str, d
 
 _SELECT = ("SELECT approval_id, namespace, goal, tool_name, tool_args_json, action_sha256, reason, status, "
            "created_at, decided_at, approver_public_key, signature_hex, executed_at, result_json, "
-           "required_signatures, approver_roles_json, policy_rule, policy_digest FROM pending_actions")
+           "required_signatures, approver_roles_json, policy_rule, policy_digest, workspace, claimed_at FROM pending_actions")
 
 
 class PendingActionStore:
@@ -293,22 +302,22 @@ class PendingActionStore:
     def create(self, namespace: str, goal: str, tool_name: str, tool_args: Dict[str, Any],
                reason: Optional[str] = None, *, required_signatures: int = 1,
                approver_roles: Optional[List[str]] = None, policy_rule: Optional[str] = None,
-               policy_digest: Optional[str] = None) -> PendingAction:
+               policy_digest: Optional[str] = None, workspace: Optional[str] = None) -> PendingAction:
         approval_id = uuid.uuid4().hex[:12]
-        digest = action_digest(approval_id, namespace, goal, tool_name, tool_args)
+        digest = action_digest(approval_id, namespace, goal, tool_name, tool_args, policy_digest, workspace)
         required_signatures = max(1, min(3, int(required_signatures)))
         action = PendingAction(approval_id, namespace, goal, tool_name, dict(tool_args), digest,
                                reason, "PENDING", _now(), required_signatures=required_signatures,
                                approver_roles=list(approver_roles) if approver_roles else None,
-                               policy_rule=policy_rule, policy_digest=policy_digest)
+                               policy_rule=policy_rule, policy_digest=policy_digest, workspace=workspace)
         with self._persistence._connect() as conn:
             conn.execute(
                 "INSERT INTO pending_actions (approval_id, namespace, goal, tool_name, tool_args_json, "
                 "action_sha256, reason, status, created_at, required_signatures, approver_roles_json, "
-                "policy_rule, policy_digest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "policy_rule, policy_digest, workspace) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (approval_id, namespace, goal, tool_name, json.dumps(tool_args, sort_keys=True),
                  digest, reason, "PENDING", action.created_at, required_signatures,
-                 json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest),
+                 json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest, workspace),
             )
         try:
             self._persistence.append_audit(
@@ -352,6 +361,7 @@ class PendingActionStore:
 
     def list(self, status: Optional[str] = "PENDING", limit: int = 50) -> List[PendingAction]:
         self._expire_stale()
+        self.reconcile()                      # Round 82 (T06): a claim that never got a receipt is shown as OUTCOME_UNKNOWN, not as EXECUTING forever
         query = _SELECT
         params: tuple = ()
         if status:
@@ -374,7 +384,7 @@ class PendingActionStore:
             created_at=row[8], decided_at=row[9], approver_public_key=row[10], signature_hex=row[11],
             executed_at=row[12], result=json.loads(row[13]) if row[13] else None,
             required_signatures=int(row[14] or 1), approver_roles=json.loads(row[15]) if row[15] else None,
-            policy_rule=row[16], policy_digest=row[17],
+            policy_rule=row[16], policy_digest=row[17], workspace=row[18], claimed_at=row[19],
         )
 
     def decide(self, approval_id: str, decision: str, public_key_hex: str, signature_hex: str) -> PendingAction:
@@ -471,12 +481,20 @@ class PendingActionStore:
         if public_key_hex not in trusted:
             raise ApprovalError("signing key is not on the trusted-approver list")
         recomputed = action_digest(action.approval_id, action.namespace, action.goal,
-                                   action.tool_name, action.tool_args)
+                                   action.tool_name, action.tool_args, action.policy_digest, action.workspace)
         if recomputed != action.action_sha256:
             raise ApprovalError("stored action does not match its digest (the record was altered)")
         if not _verify(public_key_hex, approval_message(action.approval_id, action.action_sha256, decision),
                        signature_hex):
             raise ApprovalError("signature does not verify for this exact action and decision")
+
+    def check_context(self, action: PendingAction, workspace: Optional[str], policy_digest: Optional[str]) -> None:
+        """Round 82 (N2): refuse to run an approval in a different workspace, or under a different owner policy, than the one the approver signed for. Called BEFORE
+        claim_for_execution, so a refusal does not use the approval up. Approvals that recorded neither (made before this change) are not constrained."""
+        if action.workspace and workspace != action.workspace:
+            raise ApprovalError(f"action {action.approval_id} was approved for the workspace {action.workspace!r}, not {workspace!r}; it was not run")
+        if action.policy_digest and policy_digest != action.policy_digest:
+            raise ApprovalError(f"action {action.approval_id} was approved under an owner policy that has since changed; it was not run, ask for it again")
 
     def claim_for_execution(self, approval_id: str) -> PendingAction:
         """Re-verifies everything at execution time (status alone is not
@@ -490,6 +508,9 @@ class PendingActionStore:
             raise ApprovalError(f"no pending action {approval_id!r}")
         if action.status == "EXPIRED":
             raise ApprovalError(f"action {approval_id} expired before it ran; ask for it again")
+        if action.status == "OUTCOME_UNKNOWN":
+            raise ApprovalError(f"action {approval_id} was claimed and the process stopped before it recorded a result: its outcome is unknown, so it will not be run again; "
+                                "a person checks and records what happened (delentia approvals resolve)")
         if action.status in ("EXECUTING", "EXECUTED"):
             raise ApprovalError(f"action {approval_id} was already {action.status.lower()}")
         if action.status != "APPROVED":
@@ -510,13 +531,71 @@ class PendingActionStore:
             self._check_role(action, key)
         with self._persistence._connect() as conn:
             claimed = conn.execute(
-                "UPDATE pending_actions SET status = 'EXECUTING' WHERE approval_id = ? AND status = 'APPROVED'",
-                (approval_id,),
+                "UPDATE pending_actions SET status = 'EXECUTING', claimed_at = ? WHERE approval_id = ? AND status = 'APPROVED'",
+                (_now(), approval_id),
             ).rowcount
         if claimed != 1:
             raise ApprovalError(f"action {approval_id} was claimed by another resume")
         action.status = "EXECUTING"
         return action
+
+    def reconcile(self, older_than: float = OUTCOME_UNKNOWN_AFTER_SECONDS, now: Optional[float] = None) -> List[PendingAction]:
+        """Round 82 (T06). An action is claimed (APPROVED -> EXECUTING) BEFORE its effect so it can never run twice; if the process dies after the claim, nobody knows whether the effect
+        happened. An EXECUTING row silent for longer than `older_than` seconds becomes OUTCOME_UNKNOWN: audited, the owner is told, and it is never run again by the system. A person
+        looks at the world and records the truth with `resolve_unknown`. The promise is at-most-once, not exactly-once."""
+        when = _now() if now is None else now
+        flagged: List[str] = []
+        with self._persistence._connect() as conn:
+            rows = conn.execute("SELECT approval_id FROM pending_actions WHERE status = 'EXECUTING' AND COALESCE(claimed_at, decided_at, created_at) <= ?",
+                                (when - float(older_than),)).fetchall()
+            for (approval_id,) in rows:
+                done = conn.execute("UPDATE pending_actions SET status = 'OUTCOME_UNKNOWN' WHERE approval_id = ? AND status = 'EXECUTING'", (approval_id,)).rowcount
+                if done == 1:
+                    flagged.append(approval_id)
+        result: List[PendingAction] = []
+        for approval_id in flagged:
+            action = self.get(approval_id)
+            if action is None:
+                continue
+            try:
+                self._persistence.append_audit(
+                    entity_type="pending_action_outcome_unknown", entity_id=approval_id, action="needs_a_person", actor="reconcile",
+                    changes={"tool_name": action.tool_name, "action_sha256": action.action_sha256, "claimed_at": action.claimed_at, "namespace": action.namespace})
+            except Exception:
+                pass
+            try:
+                from rct_control_plane import owner_notify
+                owner_notify.on_outcome_unknown(action, self._persistence)
+            except Exception:
+                pass
+            result.append(action)
+        return result
+
+    def resolve_unknown(self, approval_id: str, outcome: str, note: str, actor: str = "owner") -> PendingAction:
+        """A person records what really happened to an OUTCOME_UNKNOWN action: `done` (it took effect) or `not_done`. This only writes the record; it runs nothing. Asking for the action
+        again is a new request with a new signature."""
+        action = self.get(approval_id)
+        if action is None:
+            raise ApprovalError(f"no pending action {approval_id!r}")
+        if action.status != "OUTCOME_UNKNOWN":
+            raise ApprovalError(f"action {approval_id} is {action.status}; only an OUTCOME_UNKNOWN action is resolved this way")
+        if outcome not in ("done", "not_done"):
+            raise ApprovalError("the outcome is 'done' or 'not_done'")
+        if not str(note or "").strip():
+            raise ApprovalError("a note is required: what did you check?")
+        status = "EXECUTED" if outcome == "done" else "NOT_EXECUTED"
+        record = {"reconciled_by_person": outcome, "note": str(note).strip()[:500], "actor": actor, "at": _now()}
+        with self._persistence._connect() as conn:
+            conn.execute("UPDATE pending_actions SET status = ?, executed_at = ?, result_json = ? WHERE approval_id = ? AND status = 'OUTCOME_UNKNOWN'",
+                         (status, _now(), json.dumps(record), approval_id))
+        try:
+            self._persistence.append_audit(entity_type="pending_action_outcome_resolved", entity_id=approval_id, action=outcome, actor=actor,
+                                           changes={"note": record["note"], "tool_name": action.tool_name, "action_sha256": action.action_sha256})
+        except Exception:
+            pass
+        resolved = self.get(approval_id)
+        assert resolved is not None
+        return resolved
 
     def mark_executed(self, approval_id: str, result: Dict[str, Any]) -> None:
         with self._persistence._connect() as conn:

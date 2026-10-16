@@ -263,7 +263,7 @@ class TestBaselineGP:
         assert len(names) == 3
         units = [f"u{i}" for i in range(20)]
         matrix = {u: {"A111": 1.0, "GP": 0.5 if i % 2 else 1.0, "G": 0.5, "A000": 0.5} for i, u in enumerate(units)}
-        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["full vs generic plan-act-check + generic retrieval (A111 - GP)"], reps=300)
+        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["PRIMARY: full vs generic plan-act-check + generic retrieval (A111 - GP)"], reps=300)
         assert res["point"] == pytest.approx(0.25)
 
     def test_the_runner_understands_the_new_arm_lists(self):
@@ -283,8 +283,10 @@ class TestBudgetTrack:
     def test_the_two_domains_load_from_their_own_files_and_all_pools_them(self):
         quotes_static, quotes_traj = runner._load_units("dev", None, "quotes")
         tix_static, tix_traj = runner._load_units("dev", None, "tickets")
+        ops_static, ops_traj = runner._load_units("dev", None, "ops")                  # Round 82: the third domain (static tasks only)
         all_static, all_traj = runner._load_units("dev", None, "all")
-        assert len(all_static) == len(quotes_static) + len(tix_static) and len(all_traj) == len(quotes_traj) + len(tix_traj)
+        assert len(all_static) == len(quotes_static) + len(tix_static) + len(ops_static) and len(all_traj) == len(quotes_traj) + len(tix_traj) and ops_traj == []
+        assert {t.get("domain") for t in ops_static} == {"ops"}
         assert {t.get("domain", "quotes") for t in tix_static} == {"tickets"} and {t.get("domain", "quotes") for t in quotes_static} == {"quotes"}
 
     def test_the_analysis_can_be_cut_by_domain_and_track_and_reports_tokens(self):
@@ -300,7 +302,7 @@ class TestBudgetTrack:
 
     def test_the_strict_floor_declares_both_domains_folders_untrusted(self):
         source = (ROOT / "research" / "runner.py").read_text(encoding="utf-8")
-        assert '"quotes/,tickets/"' in source
+        assert '"quotes/,tickets/,ops/"' in source                                          # Round 82: the office-operations domain's folder too
 
 
 # ---------------------------------------------------------------- Round 66: failure taxonomy and the plain agent

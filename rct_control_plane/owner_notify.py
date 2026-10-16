@@ -192,9 +192,18 @@ def on_pending_action(action: Any, persistence: Any = None) -> None:
     notify("approval", text, key=f"approval:{code}", persistence=persistence)
 
 
+def on_outcome_unknown(action: Any, persistence: Any = None) -> None:
+    """An approved action was claimed and the process stopped before it recorded a result (Round 82, T06). Tool name, asker and code only."""
+    code = str(getattr(action, "approval_id", ""))
+    text = (f"An approved action ({getattr(action, 'tool_name', '?')}, asked by {getattr(action, 'namespace', '?')}) was cut off: nobody knows whether it happened and it will not be run again. "
+            f"Check, then: delentia approvals resolve {code} --outcome done|not_done --note \"what you checked\"")
+    notify("approval", text, key=f"approval-unknown:{code}", persistence=persistence)
+
+
 def on_job_problem(job: Dict[str, Any], stopped: str, switched_off: bool, persistence: Any = None) -> None:
     name = str(job.get("name") or job.get("id"))[:60]
     text = (f"Scheduled job '{name}' was switched off after repeated failures (last: {stopped})." if switched_off
+            else f"Scheduled job '{name}' was cut off when the server stopped; that run did not finish and was not run again." if stopped == "interrupted"
             else f"Scheduled job '{name}' failed (stop reason: {stopped}).")
     notify("cron", text, key=f"cron:{job.get('id')}:{'off' if switched_off else stopped}", persistence=persistence)
 

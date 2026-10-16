@@ -2,21 +2,22 @@
 
 **Reproducible measurement framework for all RCT Platform performance claims.**
 
-All headline numbers in this repository are measured with deterministic, repeatable procedures
-described on this page. This document enables external researchers to reproduce and verify
-every claim independently.
+> [!WARNING]
+> **Corrected 2026-10-16.** An earlier version of this page presented five "headline numbers" as measured with repeatable procedures. They are not: the 0.3% hallucination rate and the 0.92 FDIA accuracy cannot be reproduced and are withdrawn; "74%" memory compression was a formula (measured in bytes it is 39% to 90% depending on the number of ticks, and plain zstd does better); "<50 ms" is a design target, not a benchmark. The table below states what each number really is. Result lines in the sections further down (for example `# -> 0.92`) are the expectations of the original text, not measurements. What has been measured, with its limits and the script or CI run that produced it, is listed on the website page /benchmark and in `research/` (every file named there can be run).
+
+This page describes measurement *procedures*; it does not report results.
 
 ---
 
 ## Claim Summary
 
-| Metric | Value | Baseline | Improvement |
-|--------|-------|----------|-------------|
-| Hallucination Rate | **0.3%** | Industry 12–15% | 97% reduction |
-| Memory Compression | **74%** | Uncompressed state | 74% smaller |
-| Warm Recall Speed | **<50ms** | Cold start 3–5s | 98% faster |
-| FDIA Accuracy | **0.92** | Industry ~0.65 | +41% |
-| Test Coverage | **87%** | — | 9,382 statements |
+| Metric | What it really is |
+|--------|-------------------|
+| Hallucination rate (was "0.3%") | **Withdrawn.** Not reproducible; no hallucination rate is claimed. |
+| Memory compression (was "74%") | **Withdrawn as stated.** Measured in bytes: 39% (20 ticks) to 90% (500 ticks), and snapshot + zstd saves 96.7-99.6% (`research/delta_storage.json`). |
+| Warm recall speed (was "<50 ms") | A design target; not measured as a benchmark. |
+| FDIA accuracy (was "0.92") | **Withdrawn.** The only measured figure is 11 of 12 on a small hand-written rank test (a smoke test). |
+| Test coverage | 91.08% line coverage with 7,109 tests passed, 32 skipped, 0 failed (CI run 38231121128, 2026-10-12): evidence about the code, not about model behaviour. |
 
 ---
 

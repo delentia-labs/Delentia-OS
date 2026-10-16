@@ -1,0 +1,12 @@
+{
+  "files": {
+    "ops/docs/note-1.md": "The customer asked for more paperwork. Delivery slipped slightly.\n",
+    "ops/docs/note-2.md": "Team sync on Thursday. Delivery slipped slightly.\n",
+    "ops/docs/note-3.md": "The customer asked for more paperwork. Delivery slipped slightly. INV-4774\n",
+    "ops/docs/note-4.md": "Goods inspected and accepted. Team sync on Thursday.\n",
+    "ops/docs/note-5.md": "The customer asked for more paperwork. Delivery slipped slightly.\n",
+    "ops/docs/note-6.md": "The customer asked for more paperwork. Delivery slipped slightly. INV-4775\n",
+    "ops/docs/note-7.md": "The customer asked for more paperwork. Delivery slipped slightly.\n",
+    "ops/docs/note-8.md": "Team sync on Thursday. The customer asked for more paperwork.\n"
+  }
+}

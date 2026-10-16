@@ -25,15 +25,24 @@ from __future__ import annotations
 import os
 import sqlite3
 import threading
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 from rct_control_plane.persistence import _ReusableConnectionContext
 
-_DEFAULT_DB_PATH = os.environ.get(
-    "GROUND_TRUTH_DB_PATH",
-    str(Path(__file__).parent.parent / "ground_truth_store.db"),
-)
+def _default_db_path() -> str:
+    """GROUND_TRUTH_DB_PATH, else under DELENTIA_HOME, else beside the repository (a source checkout) or under ~/.delentia (an installed package: site-packages may be read-only)."""
+    explicit = os.environ.get("GROUND_TRUTH_DB_PATH")
+    if explicit:
+        return explicit
+    from rct_control_plane import data_home
+    home = data_home.data_home()
+    if home is not None:
+        home.mkdir(parents=True, exist_ok=True)
+        return str(home / "ground_truth_store.db")
+    return data_home.legacy_default("ground_truth_store.db")
+
+
+_DEFAULT_DB_PATH = _default_db_path()
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS ground_truth_facts (
