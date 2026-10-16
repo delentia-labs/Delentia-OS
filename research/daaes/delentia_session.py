@@ -71,6 +71,38 @@ class ScriptedWorld:
         return digest(self.files)
 
 
+class DirWorld(ScriptedWorld):
+    """A tool server whose files live in a real directory, so they outlive a session. Adds the one outward-reaching tool (crawl_url) the cases use for an egress attempt: it records the call
+    and returns nothing, so no run ever touches a network."""
+
+    def __init__(self, root: Path) -> None:
+        super().__init__({})
+        self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True)
+
+    async def list_tools(self) -> List[Any]:
+        return [_Tool("delentia_read_repo_file"), _Tool("delentia_write_repo_file"), _Tool("delentia_crawl_url"), _Tool("delentia_recall")]
+
+    async def call_tool(self, name: str, args: Dict[str, Any]) -> _Result:
+        if name == "delentia_read_repo_file":
+            path = self.root / args.get("relative_path", "")
+            out: Dict[str, Any] = {"content": path.read_text(encoding="utf-8") if path.is_file() else "", "ok": path.is_file()}
+        elif name == "delentia_write_repo_file":
+            path = self.root / args["relative_path"]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(args["content_text"], encoding="utf-8")
+            out = {"ok": True, "bytes": len(args["content_text"])}
+        elif name == "delentia_crawl_url":
+            out = {"ok": False, "error": "no network in this world"}
+        else:
+            out = {"ok": True}
+        self.calls.append({"tool": name, "args": deepcopy(args), "output": out})
+        return _Result(out)
+
+    def state_hash(self) -> str:
+        return digest({str(p.relative_to(self.root)): p.read_text(encoding="utf-8") for p in sorted(self.root.rglob("*")) if p.is_file()})
+
+
 class ReplayWorld:
     """R2's stand-in for the outside: serves recorded outputs in order and refuses everything else (counted, so the test can prove nothing external was called)."""
 
@@ -97,13 +129,15 @@ def scripted_model(decisions: List[Dict[str, Any]]):
     """Replaces the model's decision function with a fixed list and RESTORES it afterwards (a helper that leaves a global patched breaks every later test)."""
     import rct_control_plane.autonomous_loop as loop_module
     original = loop_module.decide_next_action
-    state = {"i": 0}
+    state: Dict[str, Any] = {"i": 0, "contexts": []}
 
     async def fake(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "") -> Dict[str, Any]:
         i = state["i"]
         state["i"] += 1
+        state["contexts"].append(extra_context)                          # what the model was shown: the cases check that restored intent is really in it
         if i < len(decisions):
-            d = dict(decisions[i])
+            entry = decisions[i]
+            d = dict(entry(goal, history, extra_context) if callable(entry) else entry)
             if d.get("final_answer") == "<restate>":
                 d["final_answer"] = f"Completed the goal: {goal}"
             return d
@@ -116,15 +150,17 @@ def scripted_model(decisions: List[Dict[str, Any]]):
 
 
 @contextlib.contextmanager
-def data_home(home: Path, approver_pub: Optional[str] = None):
-    keys = {"DELENTIA_HOME": str(home), "DELENTIA_MEMORY_EMBED": "off", "DELENTIA_MEMORY_KEYS_DIR": str(home / "memkeys"), "DELENTIA_APPROVERS_FILE": str(home / "approvers.json")}
+def data_home(home: Path, approver_pub: Optional[str] = None, extra_env: Optional[Dict[str, str]] = None):
+    keys = {**(extra_env or {}), "DELENTIA_HOME": str(home), "DELENTIA_MEMORY_EMBED": "off", "DELENTIA_MEMORY_KEYS_DIR": str(home / "memkeys"), "DELENTIA_APPROVERS_FILE": str(home / "approvers.json")}
     if approver_pub:
         keys["DELENTIA_APPROVER_PUBKEYS"] = approver_pub
-    saved = {k: os.environ.get(k) for k in list(keys) + ["DELENTIA_APPROVER_PUBKEYS"]}
+    saved = {k: os.environ.get(k) for k in list(keys) + ["DELENTIA_APPROVER_PUBKEYS", "DELENTIA_FDIA_POLICY"]}
     home.mkdir(parents=True, exist_ok=True)
     os.environ.update(keys)
     if not approver_pub:
         os.environ.pop("DELENTIA_APPROVER_PUBKEYS", None)
+    if not (extra_env and "DELENTIA_FDIA_POLICY" in extra_env):
+        os.environ.pop("DELENTIA_FDIA_POLICY", None)                      # a session never inherits an owner policy from the caller's shell
     try:
         yield
     finally:
@@ -144,8 +180,9 @@ def normalize_steps(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
-def run_session(home: Path, goal: str, decisions: List[Dict[str, Any]], world: Any, log: Optional[RunLog] = None, namespace: str = "daaes", approve: bool = False,
-                max_iterations: int = 6, intent_id: str = "INT-1") -> Dict[str, Any]:
+def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Optional[RunLog] = None, namespace: str = "daaes", approve: bool = False,
+                max_iterations: int = 6, intent_id: str = "INT-1", policy_path: Optional[Path] = None, approve_if: Optional[Callable[[Any], bool]] = None,
+                before_run: Optional[Callable[[Any], None]] = None, continue_after: bool = False, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """One governed episode (and, with approve=True, the signed approval and the resume of what it paused on). Returns a normalized summary; events go to `log`."""
     from rct_control_plane import approvals
     from rct_control_plane.agent_factory import build_governed_loop
@@ -159,10 +196,15 @@ def run_session(home: Path, goal: str, decisions: List[Dict[str, Any]], world: A
         (home / "approver_pub.json").write_text(json.dumps({"pub": pub}), encoding="utf-8")
 
     summary: Dict[str, Any] = {"decisions": []}
-    with data_home(home, approver_pub=pub), scripted_model(decisions):
+    with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), scripted_model(decisions) as model_state:
         persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
-        loop = build_governed_loop(NullKernel(), namespace=namespace, max_iterations=max_iterations, persistence=persistence, mcp_server=world, conversation_turns=0)
+        from rct_control_plane.agent_memory import AgentMemory
+        kernel = NullKernel()
+        kernel._agent_memory = AgentMemory("shared_default", persistence)                  # type: ignore[attr-defined]  # the product's kernel has one; the loop recalls the person's own namespace through it
+        loop = build_governed_loop(kernel, namespace=namespace, max_iterations=max_iterations, persistence=persistence, mcp_server=world, conversation_turns=0)
         current: Dict[str, Optional[str]] = {"decision": None}
+        if before_run is not None:
+            before_run(persistence)
         if log is not None:
             log.emit("intent.created", {"goal": goal}, intent_id=intent_id)
 
@@ -199,15 +241,32 @@ def run_session(home: Path, goal: str, decisions: List[Dict[str, Any]], world: A
         try:
             result = asyncio.run(loop.run(goal))
             summary.update({"stopped_reason": result.get("stopped_reason"), "final_answer": result.get("final_answer"), "steps": normalize_steps(result)})
-            if approve and result.get("approval_id"):
+            verdicts: List[str] = []
+            rounds = 0
+            while rounds < (40 if continue_after else 1) and (approve and result.get("approval_id") or (continue_after and result.get("stopped_reason") == "fdia_blocked")):
+                rounds += 1
+                if not result.get("approval_id"):                           # the gate refused the call and ended the episode: the script carries on in a new one (a model would be told "no" and try again)
+                    result = asyncio.run(loop.run(goal))
+                    continue
                 store = loop._pending_actions()
                 action = store.get(result["approval_id"])
-                signed = approvals.sign_decision(str(key), action.approval_id, action.action_sha256, "APPROVED")
-                store.decide(action.approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"])
+                yes = approve_if(action) if approve_if is not None else True
+                verdict = "APPROVED" if yes else "REJECTED"
+                verdicts.append(verdict)
+                signed = approvals.sign_decision(str(key), action.approval_id, action.action_sha256, verdict)
+                store.decide(action.approval_id, verdict, signed["public_key_hex"], signed["signature_hex"])
                 if log:
-                    log.emit("decision.authorized", {"verdict": "approved_by_human", "approval_digest": action.action_sha256, "tool": action.tool_name}, causation_id=current["decision"], intent_id=intent_id)
-                resumed = asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
-                summary["resumed"] = {"tool": action.tool_name, "executed_result": digest(resumed.get("executed_result") or {})}
+                    log.emit("decision.authorized", {"verdict": "approved_by_human" if yes else "rejected_by_human", "approval_digest": action.action_sha256, "tool": action.tool_name,
+                                                     "tool_args": action.tool_args}, causation_id=current["decision"], intent_id=intent_id)
+                if yes:
+                    outcome = asyncio.run(loop.resume(result["approval_id"], continue_episode=continue_after))
+                    summary.setdefault("resumed", {"tool": action.tool_name, "executed_result": digest(outcome.get("executed_result") or {}), "blocked": bool((outcome.get("executed_result") or {}).get("fdia_blocked"))})
+                    summary.setdefault("resume_results", []).append({"tool": action.tool_name, "blocked": bool((outcome.get("executed_result") or {}).get("fdia_blocked"))})
+                    result = outcome.get("continuation") or {}
+                else:
+                    result = asyncio.run(loop.run(goal)) if continue_after else {}
+            summary["human_verdict"] = verdicts[0] if len(verdicts) == 1 else (verdicts or None)
+            summary["human_verdicts"] = verdicts
         finally:
             world.call_tool = real_call                               # type: ignore[method-assign]
         with persistence._connect() as conn:
@@ -217,6 +276,7 @@ def run_session(home: Path, goal: str, decisions: List[Dict[str, Any]], world: A
         if log:
             log.emit("checkpoint.committed", {"audit_head": summary["audit"]["head"], "audit_rows": summary["audit"]["rows"]}, intent_id=intent_id)
         summary["world_hash"] = world.state_hash() if hasattr(world, "state_hash") else None
+        summary["contexts"] = list(model_state["contexts"])
     return summary
 
 

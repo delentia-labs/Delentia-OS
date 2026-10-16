@@ -163,29 +163,19 @@ def replay_r3(events: List[Dict[str, Any]], home: Path, strict_policy: Optional[
     from rct_control_plane.persistence import ControlPlanePersistence
     proposals = {e["event_id"]: e["payload"] for e in events if e["kind"] == "decision.proposed"}
     recorded = [(proposals[e["causation_id"]], e["payload"]["verdict"]) for e in events if e["kind"] == "decision.authorized" and e["causation_id"] in proposals]
-    import os
-    saved = os.environ.get("DELENTIA_FDIA_POLICY")
-    if strict_policy:
-        os.environ["DELENTIA_FDIA_POLICY"] = str(strict_policy)
-    try:
-        with ds.data_home(home):
-            persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
-            loop = build_governed_loop(ds.NullKernel(), namespace="daaes", persistence=persistence, mcp_server=ds.ScriptedWorld({}), conversation_turns=0)
-            mismatches: List[str] = []
-            for proposal, verdict in recorded:
-                loop._episode_D, loop._episode_I = proposal["D"], proposal["I"]
-                loop._episode_data = {"parts": {}, "missing": []}
-                loop._episode_taint = proposal.get("taint")
-                loop._episode_call_counts = {}
-                out = asyncio.run(loop._pre_dispatch_gate(proposal["goal"], proposal["tool"], proposal["args"]))
-                again = "allow" if out is None else ("ask" if out.get("stopped_reason") == "pending_approval" else "block")
-                if again != verdict:
-                    mismatches.append(f"{proposal['tool']}: recorded {verdict}, now {again}")
-    finally:
-        if saved is None:
-            os.environ.pop("DELENTIA_FDIA_POLICY", None)
-        else:
-            os.environ["DELENTIA_FDIA_POLICY"] = saved
+    with ds.data_home(home, extra_env=({"DELENTIA_FDIA_POLICY": str(strict_policy)} if strict_policy else None)):
+        persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
+        loop = build_governed_loop(ds.NullKernel(), namespace="daaes", persistence=persistence, mcp_server=ds.ScriptedWorld({}), conversation_turns=0)
+        mismatches: List[str] = []
+        for proposal, verdict in recorded:
+            loop._episode_D, loop._episode_I = proposal["D"], proposal["I"]
+            loop._episode_data = {"parts": {}, "missing": []}
+            loop._episode_taint = proposal.get("taint")
+            loop._episode_call_counts = {}
+            out = asyncio.run(loop._pre_dispatch_gate(proposal["goal"], proposal["tool"], proposal["args"]))
+            again = "allow" if out is None else ("ask" if out.get("stopped_reason") == "pending_approval" else "block")
+            if again != verdict:
+                mismatches.append(f"{proposal['tool']}: recorded {verdict}, now {again}")
     return {"checked": len(recorded), "mismatches": mismatches, "ok": not mismatches}
 
 
