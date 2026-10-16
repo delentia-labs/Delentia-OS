@@ -151,7 +151,7 @@ def test_the_suite_plan_covers_every_case_and_arm_and_runs_the_control_arms():
     cases = {c for c, _, _ in plan}
     assert cases == {"TC-003", "TC-006", "TC-009", "TC-010", "TC-025"}
     assert ("TC-010", "naive_new_key", {"kill_point": "in_flight"}) in plan
-    assert len([p for p in plan if p[0] == "TC-009"]) == 4
+    assert len([p for p in plan if p[0] == "TC-009"]) == 5
     assert len(runner.suite_plan(quick=False)) > len(plan)
     assert set(runner.NOT_EVALUATED) == {"hermes", "live_model"}
 
@@ -170,7 +170,7 @@ def test_the_checklist_refuses_when_there_is_no_suite(tmp_path):
 
 
 def test_the_checklist_reads_a_real_suite_and_is_not_a_statement(tmp_path, monkeypatch):
-    small = [("TC-009", a, {}) for a in ("ref_snapshot", "ref_delta", "delentia_delta_engine", "delentia_memory_log")] + [("TC-025", a, {}) for a in ("event_log_baseline", "delentia")] \
+    small = [("TC-009", a, {}) for a in ("ref_snapshot", "ref_delta", "delentia_delta_engine_r82", "delentia_delta_log", "delentia_memory_log")] + [("TC-025", a, {}) for a in ("event_log_baseline", "delentia")] \
         + [("TC-010", "naive_new_key", {"kill_point": "in_flight"}), ("TC-010", "delentia", {"kill_point": "in_flight"}), ("TC-006", "delentia_full", {}), ("TC-006", "delentia_full_cap8", {}),
            ("TC-003", "d0_delentia", {"policy": "perfect", "fault": "F0"})]
     monkeypatch.setattr(runner, "suite_plan", lambda quick=True: small)
@@ -179,7 +179,7 @@ def test_the_checklist_reads_a_real_suite_and_is_not_a_statement(tmp_path, monke
     result = checklist.evaluate(tmp_path)
     assert len(result["items"]) == 7 and {i["status"] for i in result["items"]} <= {"PASS", "PARTIAL", "FAIL"}
     by = {i["n"]: i for i in result["items"]}
-    assert by[1]["status"] == "PARTIAL" and "DeltaEngine" in by[1]["why"]       # the engine's silent wrong states are reported, not hidden
+    assert by[1]["status"] == "PASS" and "hard failure" in by[1]["why"]           # the engine's versioned log passes; the old usage's hard failures stay reported
     assert by[3]["status"] == "PASS" and by[6]["status"] == "PARTIAL"
     text = checklist.render(result)
     assert "Ready for a paid call" in text

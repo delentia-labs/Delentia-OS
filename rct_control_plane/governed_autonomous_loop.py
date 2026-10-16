@@ -514,6 +514,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # section can be measured (A/B) rather than assumed.
         self._rct7_in_prompt = rct7_in_prompt
         self._memory_in_prompt = memory_in_prompt
+        # Round 83 (DAAES D3 / research variant NI): False hides what persists a person's intent from the model - pinned rules, the answer profile and AGENTS.md / SOUL.md. The owner's policy,
+        # the approval gate and the taint gate are NOT touched: they are enforcement, not intent, and an ablation must keep the outer gate (DAAES specification section 5.1).
+        self._persistent_intent_in_prompt = True
         self._intent_verify_threshold = intent_verify_threshold
         # Round 48 R1.4: paused actions are persisted with a digest so a
         # human can approve them (Ed25519, see approvals.py) and resume()
@@ -1064,6 +1067,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._taint_from_memory("the recalled memories")
         pinned: List[Dict[str, Any]] = []
         seen_ids: set = set()
+        if not self._persistent_intent_in_prompt:
+            return relevant
         for memory in stores:                                                          # Round 70: the person's standing rules are shown to every episode, whatever the goal
             getter = getattr(memory, "pinned", None)
             if getter is None:
@@ -1290,6 +1295,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         """Round 57: AGENTS.md / SOUL.md (context_files.py), only when DELENTIA_CONTEXT_FILES=1. A file the injection screen objects to is kept out and
         audited; what was used is recorded with its hash in the episode's start row."""
         empty: Dict[str, Any] = {"text": "", "used": [], "refused": []}
+        if not self._persistent_intent_in_prompt:
+            return empty
         try:
             from rct_control_plane import context_files, data_home
             if not context_files.enabled():

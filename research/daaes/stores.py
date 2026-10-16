@@ -348,9 +348,9 @@ class RefDeltaStore(StateStore):
         self._conn.close()
 
 
-# ------------------------------------------------------------------------------------------------------------ Delentia: DeltaEngine as shipped
+# ------------------------------------------------------------------------------------------------------------ Delentia: DeltaEngine as it was used until Round 82
 class DelentiaDeltaEngineStore(StateStore):
-    name = "delentia_delta_engine"
+    name = "delentia_delta_engine_r82"
     durable = False
     supports_versions = False
 
@@ -423,6 +423,87 @@ class DelentiaDeltaEngineStore(StateStore):
             return {"applied": True, "delivery": "n/a"}
         if fault == "snapshot_crash":
             return {"applied": False, "delivery": "n/a", "note": "the engine has no snapshots"}
+        return {"applied": False, "delivery": "n/a", "note": "unknown fault"}
+
+
+# ------------------------------------------------------------------------------------------------------------ Delentia: DeltaEngine after Round 83 (versioned log)
+class DelentiaDeltaLogStore(StateStore):
+    """`DeltaEngine.versioned_log()` (rct_control_plane/delta_log.py): the engine's own structural diff carried by a durable, versioned, verified log. Nothing in the harness checks anything for it."""
+    name = "delentia_delta_log"
+
+    def __init__(self, workdir: Path, initial: Dict[str, Any]) -> None:
+        super().__init__(workdir, initial)
+        from rct_control_plane.algo_25_delta_block import DeltaEngine, DeltaIntegrityError
+        self._Error = DeltaIntegrityError
+        self.db = self.dir / "delta_log.sqlite"
+        self.log = DeltaEngine().versioned_log(str(self.db), initial_state=initial, snapshot_every=0)
+
+    def head(self) -> int:
+        return self.log.head()
+
+    def commit(self, version: int, op: Dict[str, Any], new_state: Dict[str, Any], base_version: Optional[int] = None) -> None:
+        try:
+            self.log.commit(new_state, base_version=base_version, version=version, source=str(op.get("kind", "")))
+        except self._Error as exc:
+            raise (ConflictError if type(exc).__name__ == "DeltaConflictError" else StoreError)(str(exc)) from exc
+
+    def take_snapshot(self) -> None:
+        self.log.snapshot()
+
+    def reconstruct(self, version: int) -> Dict[str, Any]:
+        try:
+            return self.log.state_at(version)
+        except self._Error as exc:
+            raise StoreError(str(exc)) from exc
+
+    def verify(self) -> Dict[str, Any]:
+        report = self.log.verify()
+        return {"ok": report["ok"], "problems": report["problems"]}
+
+    def sizes(self) -> Dict[str, int]:
+        return self.log.sizes()
+
+    def reopen(self) -> None:
+        self.log.reopen()
+
+    def close(self) -> None:
+        import gc
+        try:
+            self.log.close()
+        finally:
+            gc.collect()
+
+    def inject(self, fault: str, **kw: Any) -> Dict[str, Any]:
+        conn, head = self.log._conn, self.log.head()
+        if fault == "partial_write":
+            conn.execute("UPDATE deltas SET ops = SUBSTR(ops, 1, LENGTH(ops) / 2) WHERE version = ?", (head,))
+            return {"applied": True, "delivery": "n/a"}
+        if fault in ("duplicate", "out_of_order", "concurrent"):
+            op, state = kw["op"], kw["state"]
+            try:
+                if fault == "duplicate":
+                    self.commit(head, op, state)
+                elif fault == "out_of_order":
+                    self.commit(head + 2, op, state)
+                else:
+                    self.commit(head + 1, op, state, base_version=head - 1)
+            except (StoreError, sqlite3.Error):
+                return {"applied": True, "delivery": "rejected"}
+            return {"applied": True, "delivery": "accepted"}
+        if fault == "missing_parent":
+            conn.execute("DELETE FROM deltas WHERE version = ?", (max(2, head // 2),))
+            return {"applied": True, "delivery": "n/a"}
+        if fault == "checksum_corruption":
+            v = max(2, head // 2)
+            row = conn.execute("SELECT ops FROM deltas WHERE version = ?", (v,)).fetchone()
+            ops = json.loads(row[0])
+            ops.append({"op": "add", "path": "/tampered", "value": True})
+            conn.execute("UPDATE deltas SET ops = ? WHERE version = ?", (canonical(ops).decode("utf-8"), v))
+            return {"applied": True, "delivery": "n/a"}
+        if fault == "snapshot_crash":
+            self.take_snapshot()
+            conn.execute("UPDATE snapshots SET blob = SUBSTR(blob, 1, LENGTH(blob) / 2) WHERE version = (SELECT MAX(version) FROM snapshots)")
+            return {"applied": True, "delivery": "n/a"}
         return {"applied": False, "delivery": "n/a", "note": "unknown fault"}
 
 
@@ -528,7 +609,7 @@ class DelentiaMemoryLogStore(StateStore):
         return {"applied": False, "delivery": "n/a", "note": "unknown fault"}
 
 
-STORES = {cls.name: cls for cls in (RefSnapshotStore, RefDeltaStore, DelentiaDeltaEngineStore, DelentiaMemoryLogStore)}
+STORES = {cls.name: cls for cls in (RefSnapshotStore, RefDeltaStore, DelentiaDeltaEngineStore, DelentiaDeltaLogStore, DelentiaMemoryLogStore)}
 
 
 def timed(fn: Any, *args: Any, **kw: Any) -> tuple:

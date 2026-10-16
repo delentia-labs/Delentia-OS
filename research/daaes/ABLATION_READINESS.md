@@ -7,7 +7,7 @@ The specification's rule: removing a core function is not a fair ablation. Each 
 | D0 | nothing | - | yes | - |
 | D1 | RCT-7 | the generic plan-act-check text (arm GP in the research harness) | yes (`R=0`, `generic_plan`) | yes: prompt has no RCT-7 text and the end check is the generic comparator |
 | D2 | FDIA numeric gate | no numeric threshold; the floor, the owner policy and the taint gate stay as the outer gate | yes (`F=0`) | yes: no gate row carries a threshold above 0 |
-| D3 | persistent intent | the session's own context only | **no** | needs: no pinned rule, no standing instruction and no goal memory in the prompt; the audit row says so |
+| D3 | persistent intent | the session's own context only | yes (`A111+NI`, Round 83) | yes: no pinned rule, profile or standing instruction in the prompt, the numeric gate and the rest of the full system on |
 | D4 | Delta | full snapshots | TC-009 only (`ref_snapshot`) | the arm's storage numbers differ from the delta arms by construction |
 | D5 | witness | no external anchor | already the default | the witness status says none configured |
 
@@ -22,4 +22,4 @@ The specification's rule: removing a core function is not a fair ablation. Each 
 
 1. The capability screen (G1) finds at least one model that drives the loop above the K.1.5 line.
 2. The budget guard (G2) is in front of the provider.
-3. The arm labels and manipulation checks are in each episode's audit row (already true for R/F/M; to add for D3).
+3. The arm labels and manipulation checks are in each episode's audit row (true for R/F/M and, since Round 83, for the NI variant's receipt). The NI contrast is not in the registered protocol: it needs an amendment (version bump) before it is analysed.

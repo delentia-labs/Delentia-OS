@@ -1,6 +1,6 @@
 """
 Round 83, DAAES TC-009 (Memory Delta Integrity): the fixture is deterministic and has the specified size, the independent reducer is the oracle, the two reference stores pass the whole matrix, and
-the two Delentia stores are measured as they ship. The Delentia findings are PINNED here on purpose: if the engine ever gains verification, these tests fail and the documents must be updated.
+the Delentia stores are measured (the engine as it was used until Round 82, the engine after Round 83, the memory log). The Delentia findings are PINNED here on purpose: if the engine ever gains verification, these tests fail and the documents must be updated.
 """
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -116,10 +116,10 @@ def test_a_store_that_forgets_to_check_hashes_fails_the_corruption_faults(tmp_pa
     assert "silent_wrong" in outcomes.values() and r["passed"] is False
 
 
-# ---- Delentia as shipped (pinned findings)
+# ---- Delentia's engine used the way it was until Round 82 (pinned findings), then the engine after Round 83
 def test_delentia_delta_engine_rebuilds_exact_states_but_cannot_detect_damage(tmp_path):
     base = run("ref_snapshot", tmp_path, "small")["storage"]["total_bytes"]
-    r = run("delentia_delta_engine", tmp_path, "small", base)
+    r = run("delentia_delta_engine_r82", tmp_path, "small", base)
     assert r["states_exact"] == r["states_checked"]                                                   # it IS correct when nothing is wrong
     outcomes = {f["fault"]: f["outcome"] for f in r["faults"]}
     assert outcomes["missing_parent"] == "silent_wrong" and outcomes["checksum_corruption"] == "silent_wrong"
@@ -168,3 +168,24 @@ def test_the_events_of_a_run_replay_to_the_same_final_state(tmp_path):
     refs = reference_states(initial, steps)
     rebuilt = ev.replay_r1(initial, log.events, reduce)
     assert state_hash(rebuilt) == state_hash(refs[-1]) and ev.verify(log.events)["ok"] and r["passed"]
+
+
+# ---- the engine after Round 83 (DeltaEngine.versioned_log): the Architect asked for the engine to meet the target before any paid test
+def test_the_engine_after_round83_passes_the_whole_fault_matrix(tmp_path):
+    base = run("ref_snapshot", tmp_path, "small")["storage"]["total_bytes"]
+    r = run("delentia_delta_log", tmp_path, "small", base)
+    outcomes = {f["fault"]: f["outcome"] for f in r["faults"]}
+    assert r["passed"] is True and r["hard_failures"] == [] and r["states_exact"] == r["states_checked"]
+    assert outcomes["partial_write"] == "detected" and outcomes["missing_parent"] == "detected" and outcomes["checksum_corruption"] == "detected"
+    assert outcomes["duplicate"] == "rejected_at_write" and outcomes["out_of_order"] == "rejected_at_write" and outcomes["concurrent"] == "rejected_at_write"
+    assert outcomes["snapshot_crash"] in ("detected", "recovered")
+    assert r["durable"] is True and r["metrics"]["recovery"] == 100.0 and r["metrics"]["corruption_detection"] == 100.0
+
+
+def test_the_improvement_is_a_change_not_a_relabelling(tmp_path):
+    """Same fixture, same oracle, same faults: the usage that was pinned as failing still fails, and the engine's new log does not."""
+    before = run("delentia_delta_engine_r82", tmp_path, "small")
+    after = run("delentia_delta_log", tmp_path, "small")
+    assert before["passed"] is False and len(before["hard_failures"]) == 2
+    assert after["passed"] is True and not after["hard_failures"]
+    assert after["metrics"]["corruption_detection"] > before["metrics"]["corruption_detection"]

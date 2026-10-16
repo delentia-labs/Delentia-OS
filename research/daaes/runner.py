@@ -1,7 +1,7 @@
 """
 The DAAES runner: runs a case on an arm, writes the sealed evidence bundle, and can run the whole zero-cost suite.
 
-    python -m research.daaes run  --case TC-009 --arm delentia_delta_engine --seed 1701 --out results
+    python -m research.daaes run  --case TC-009 --arm delentia_delta_log --seed 1701 --out results
     python -m research.daaes suite --out results [--quick]          # every zero-cost case and arm; prints the table; writes SUITE.md
     python -m research.daaes verify results/<date>/<case>/<arm>/<seed>
     python -m research.daaes checklist --out results                # the seven items that must hold before any paid model call
@@ -95,7 +95,7 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
 
 def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
     plan: List[Tuple[str, str, Dict[str, Any]]] = []
-    for arm in ("ref_snapshot", "ref_delta", "delentia_delta_engine", "delentia_memory_log"):
+    for arm in ("ref_snapshot", "ref_delta", "delentia_delta_engine_r82", "delentia_delta_log", "delentia_memory_log"):
         plan.append(("TC-009", arm, {}))
     for arm in ("event_log_baseline", "delentia"):
         plan.append(("TC-025", arm, {}))

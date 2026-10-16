@@ -66,6 +66,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class DeltaIntegrityError(Exception):
+    """Round 83: a delta (or the chain it belongs to) is missing, damaged, duplicated, out of order or does not apply. Raised instead of returning a state that might be wrong."""
+
+
+class DeltaConflictError(DeltaIntegrityError):
+    """Round 83: a writer based its change on a version that is no longer the head (a stale writer would have overwritten the newer change)."""
+
+
+def _escape_key(key: Any) -> str:
+    """RFC 6901: '~' becomes '~0' and '/' becomes '~1', so a key containing a slash or a tilde (or an empty key) has an unambiguous path."""
+    return str(key).replace("~", "~0").replace("/", "~1")
+
+
+def _unescape_key(segment: str) -> str:
+    return segment.replace("~1", "/").replace("~0", "~")
+
+
+def _parse_path(path: str) -> List[str]:
+    """'' is the root; '/a/b' is ['a', 'b']; '/' is the empty key. (The first versions dropped empty segments, so an empty key could not be addressed.)"""
+    if path == "":
+        return []
+    if not path.startswith("/"):
+        raise DeltaIntegrityError(f"a path must start with '/': {path!r}")
+    return [_unescape_key(seg) for seg in path[1:].split("/")]
+
+
 class DeltaType(str, Enum):
     """Types of delta operations"""
     INTENT_UPDATE = "intent_update"
@@ -133,16 +159,23 @@ class DeltaBlock:
 
     def _compute_checksum(self) -> str:
         """Compute SHA256 checksum of delta content"""
+        # Round 83: the checksum also covers the id, the parent link, the source, the confidence and the metadata. Before, those could be changed without notice, and the
+        # parent link (the only thing that orders blocks) was not protected at all.
         content = json.dumps({
             'session_id': self.session_id,
             'timestamp': self.timestamp,
             'delta_type': self.delta_type.value,
+            'delta_id': self.delta_id,
+            'parent_delta_id': self.parent_delta_id,
+            'source': self.source,
+            'confidence': self.confidence,
+            'metadata': self.metadata,
             'diff': {
                 'added': self.diff.added,
                 'removed': self.diff.removed,
                 'modified': self.diff.modified
             }
-        }, sort_keys=True)
+        }, sort_keys=True, default=str)
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -210,8 +243,12 @@ class DeltaEngine:
     - Semantic deduplication
     """
 
-    def __init__(self):
-        """Initialize Delta Engine with in-memory storage"""
+    def __init__(self, strict: bool = False):
+        """Initialize Delta Engine with in-memory storage.
+
+        strict (Round 83): refuse a block whose id is already stored with other content, whose parent is not the session's last block, or whose timestamp goes
+        backwards. Off by default so existing callers keep their behaviour; a block whose checksum does not match its content is refused in both modes."""
+        self.strict = strict
         # Main delta storage (session_id -> list of deltas)
         self._deltas: Dict[str, List[DeltaBlock]] = {}
 
@@ -222,7 +259,7 @@ class DeltaEngine:
         self._state_cache: Dict[str, SessionState] = {}
 
         # Statistics
-        self._stats = {
+        self._stats: Dict[str, Any] = {
             'total_deltas': 0,
             'total_sessions': 0,
             'cache_hits': 0,
@@ -242,6 +279,22 @@ class DeltaEngine:
         Returns:
             delta_id of stored block
         """
+        # Round 83: a block that does not match its own checksum was damaged or built wrongly; it is never stored.
+        if delta.checksum != delta._compute_checksum():
+            raise DeltaIntegrityError(f"delta {delta.delta_id} does not match its checksum")
+        existing = self._delta_index.get(delta.delta_id)
+        if existing is not None:
+            if existing.checksum == delta.checksum:
+                return delta.delta_id                        # the same block delivered twice is applied once
+            if self.strict:
+                raise DeltaIntegrityError(f"delta id {delta.delta_id} is already stored with different content")
+        if self.strict and self._deltas.get(delta.session_id):
+            last = self._deltas[delta.session_id][-1]
+            if delta.parent_delta_id is not None and delta.parent_delta_id != last.delta_id:
+                raise DeltaConflictError(f"delta {delta.delta_id} is based on {delta.parent_delta_id}, the last block of the session is {last.delta_id}")
+            if delta.timestamp < last.timestamp:
+                raise DeltaIntegrityError(f"delta {delta.delta_id} goes backwards in time")
+
         # Initialize session if new
         if delta.session_id not in self._deltas:
             self._deltas[delta.session_id] = []
@@ -300,7 +353,8 @@ class DeltaEngine:
     def reconstruct_state(
         self,
         session_id: str,
-        up_to_timestamp: Optional[float] = None
+        up_to_timestamp: Optional[float] = None,
+        verify: bool = True,
     ) -> SessionState:
         """
         Reconstruct session state by applying delta chain
@@ -308,6 +362,8 @@ class DeltaEngine:
         Args:
             session_id: Session to reconstruct
             up_to_timestamp: Reconstruct state up to this time (None = latest)
+            verify: Round 83 - check every block against its checksum and the parent links first and raise DeltaIntegrityError
+                instead of returning a state built from a damaged chain (verify=False restores the old behaviour)
 
         Returns:
             SessionState with reconstructed data
@@ -318,6 +374,11 @@ class DeltaEngine:
             return self._state_cache[session_id]
 
         self._stats['cache_misses'] += 1
+
+        if verify:
+            report = self.verify_session(session_id)
+            if not report["ok"]:
+                raise DeltaIntegrityError("; ".join(report["problems"][:3]))
 
         # Get deltas
         deltas = self.get_session_deltas(session_id)
@@ -371,7 +432,8 @@ class DeltaEngine:
         # Process additions — use a hash suffix to prevent key collisions
         # when multiple items are added in the same delta block
         for item in delta.diff.added:
-            key = f"item_{len(new_state)}_{abs(hash(str(item))) % 100000}"
+            # Round 83: Python's hash() is salted per process, so the same chain rebuilt after a restart got other keys; a digest of the item is the same everywhere.
+            key = f"item_{len(new_state)}_{int(hashlib.sha256(str(item).encode('utf-8')).hexdigest()[:8], 16) % 100000}"
             new_state[key] = item
 
         # Process removals
@@ -392,6 +454,34 @@ class DeltaEngine:
                     new_state[key] = to_val
 
         return new_state
+
+    def verify_session(self, session_id: str) -> Dict[str, Any]:
+        """Round 83: check every stored block of a session: its checksum matches its content, its id is unique, and its parent (when it names one) is the block before it.
+        Reports every problem; changes nothing."""
+        problems: List[str] = []
+        seen: Dict[str, str] = {}
+        previous: Optional[DeltaBlock] = None
+        for block in self._deltas.get(session_id, []):
+            if block.checksum != block._compute_checksum():
+                problems.append(f"delta {block.delta_id} does not match its checksum (changed after it was stored)")
+            if block.delta_id in seen and seen[block.delta_id] != block.checksum:
+                problems.append(f"delta id {block.delta_id} is used by two different blocks")
+            seen[block.delta_id] = block.checksum
+            if previous is not None and block.parent_delta_id is not None and block.parent_delta_id != previous.delta_id:
+                problems.append(f"delta {block.delta_id} names parent {block.parent_delta_id} but follows {previous.delta_id} (a block is missing or reordered)")
+            previous = block
+        return {"ok": not problems, "problems": problems, "blocks": len(self._deltas.get(session_id, []))}
+
+    def versioned_log(self, path: Optional[str] = None, initial_state: Optional[Dict[str, Any]] = None, **kwargs: Any) -> Any:
+        """Round 83: a durable, versioned, verifiable log of whole-state changes (see delta_log.VersionedDeltaLog). This engine's structural diff carries the changes."""
+        from rct_control_plane.delta_log import VersionedDeltaLog
+        return VersionedDeltaLog(path, initial_state=initial_state, engine=self, **kwargs)
+
+    def structural_ops(self, old_state: Dict[str, Any], new_state: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Round 83: the patch alone, without the size statistics of compute_structural_delta()."""
+        ops: List[Dict[str, Any]] = []
+        self._diff_into(old_state, new_state, "", ops)
+        return ops
 
     def compute_delta(
         self,
@@ -448,26 +538,44 @@ class DeltaEngine:
 
     def _diff_into(self, old: Any, new: Any, path: str, ops: List[Dict[str, Any]]) -> None:
         if isinstance(old, dict) and isinstance(new, dict):
-            for key in old.keys() - new.keys():
-                ops.append({"op": "remove", "path": f"{path}/{key}"})
-            for key in new.keys() - old.keys():
-                ops.append({"op": "add", "path": f"{path}/{key}", "value": new[key]})
-            for key in old.keys() & new.keys():
-                self._diff_into(old[key], new[key], f"{path}/{key}", ops)
+            # Round 83: keys are RFC 6901 escaped and visited in sorted order, so the patch is the same bytes every time and a key with a '/' has an unambiguous path.
+            for key in sorted(old.keys() - new.keys(), key=str):
+                ops.append({"op": "remove", "path": f"{path}/{_escape_key(key)}"})
+            for key in sorted(new.keys() - old.keys(), key=str):
+                ops.append({"op": "add", "path": f"{path}/{_escape_key(key)}", "value": new[key]})
+            for key in sorted(old.keys() & new.keys(), key=str):
+                self._diff_into(old[key], new[key], f"{path}/{_escape_key(key)}", ops)
         elif isinstance(old, list) and isinstance(new, list):
-            # Real, honestly-simple positional list diff (not a real
-            # LCS/edit-distance alignment) - a full list-diff algorithm
-            # is real, separate follow-up scope, disclosed here rather
-            # than silently claimed.
-            for i in range(max(len(old), len(new))):
-                if i >= len(old):
-                    ops.append({"op": "add", "path": f"{path}/{i}", "value": new[i]})
-                elif i >= len(new):
-                    ops.append({"op": "remove", "path": f"{path}/{i}"})
-                else:
-                    self._diff_into(old[i], new[i], f"{path}/{i}", ops)
-        elif old != new:
+            # Round 83: the common head and the common tail of the two lists are left alone, so removing the first element no longer rewrites every later index (the earlier
+            # purely positional diff did exactly that). Inside the part that changed: equal lengths are compared position by position (nested changes stay small), unequal
+            # lengths remove the old middle and insert the new one. Elements are compared strictly (1, 1.0 and True are different values).
+            same = self._strict_equal
+            prefix = 0
+            while prefix < len(old) and prefix < len(new) and same(old[prefix], new[prefix]):
+                prefix += 1
+            suffix = 0
+            while suffix < len(old) - prefix and suffix < len(new) - prefix and same(old[len(old) - 1 - suffix], new[len(new) - 1 - suffix]):
+                suffix += 1
+            old_mid, new_mid = old[prefix:len(old) - suffix], new[prefix:len(new) - suffix]
+            if len(old_mid) == len(new_mid):
+                for k in range(len(old_mid)):
+                    self._diff_into(old_mid[k], new_mid[k], f"{path}/{prefix + k}", ops)
+            else:
+                for k in range(len(old_mid)):
+                    ops.append({"op": "remove", "path": f"{path}/{prefix + k}"})
+                for k in range(len(new_mid)):
+                    ops.append({"op": "add", "path": f"{path}/{prefix + k}", "value": new_mid[k]})
+        elif not self._strict_equal(old, new):
             ops.append({"op": "replace", "path": path, "value": new})
+
+    @staticmethod
+    def _strict_equal(a: Any, b: Any) -> bool:
+        """Equal as JSON values: 1, 1.0 and True are three different values here (Python's == says they are the same, which let a change of type go unnoticed)."""
+        if type(a) is not type(b):
+            return False
+        if isinstance(a, (dict, list)):
+            return json.dumps(a, sort_keys=True, default=str) == json.dumps(b, sort_keys=True, default=str)
+        return bool(a == b)
 
     def compress_intent_delta(
         self, old_state: Dict[str, Any], new_state: Dict[str, Any], zstd_min_bytes: int = 200,
@@ -638,8 +746,8 @@ class DeltaEngine:
         others = [op for op in ops if op.get("op") != "remove"]
 
         def _path_sort_key(op: Dict[str, Any]):
-            segments = [s for s in op["path"].split("/") if s != ""]
-            return [(0, int(s)) if s.isdigit() else (1, s) for s in segments]
+            segments = _parse_path(op["path"])
+            return [(0, int(s), "") if s.isdigit() else (1, 0, s) for s in segments]
 
         removes.sort(key=_path_sort_key, reverse=True)
 
@@ -655,7 +763,7 @@ class DeltaEngine:
         to `root` in place, navigating dicts by key and lists by
         integer index."""
         path = op["path"]
-        segments = [s for s in path.split("/") if s != ""]
+        segments = _parse_path(path)
 
         if not segments:
             # Whole-root replace - only meaningful when old/new state
