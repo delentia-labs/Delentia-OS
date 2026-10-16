@@ -2161,7 +2161,7 @@
 <td><strong>I</strong></td>
 <td>Intent precision</td>
 <td>0.5–2.0</td>
-<td>Clarity of stated intent — acts as an <strong>exponent</strong></td>
+<td>The <strong>exponent</strong>: with D in [0, 1] a larger I lowers F, so I acts as strictness (clearer, more demanding intent needs better data)</td>
 </tr>
 <tr>
 <td><strong>A</strong></td>
@@ -2206,7 +2206,7 @@
 </table>
 <div class="admonition warning">
 <p class="admonition-title">Constitutional Gate — A = 0</p>
-<p>When <code>A = 0.0</code>, <strong>F = 0 regardless of D and I</strong>. This is not a configuration option — it is enforced by the equation itself. The system <strong>cannot act without human approval</strong>.</p>
+<p>When <code>A = 0.0</code>, <strong>F = 0 regardless of D and I</strong>, and the gate refuses. This is not a configuration option: the equation enforces it wherever the equation is applied. The paths that apply it, and the tests that pin them, are listed in <code>research/GATE_PROPERTIES.md</code>; it is an invariant of those paths, not a claim about every code path or about what a model writes.</p>
 </div>
 <hr />
 <h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h2>
@@ -2255,31 +2255,14 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Custom weights for a stricter governance profile</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">weights</span> <span class="o">=</span> <span class="n">FDIAWeights</span><span class="p">(</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">intent_weight</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>     <span class="c1"># Amplify intent influence</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">intent_weight</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>     <span class="c1"># Give the intent exponent more weight (with D in [0, 1] this makes the gate stricter)</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">data_weight</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>       <span class="c1"># Reduce data sensitivity</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">architect_weight</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>  <span class="c1"># Require stronger human approval</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="accuracy">Accuracy<a class="headerlink" href="#accuracy" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Benchmark</th>
-<th>Score</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FDIA Accuracy (SDK v1.0.1a0)</td>
-<td><strong>0.92</strong></td>
-</tr>
-<tr>
-<td>Industry baseline</td>
-<td>~0.65</td>
-</tr>
-</tbody>
-</table>
+<p>No accuracy figure is claimed. The pair of figures that used to be shown here (an accuracy of 0.92 against an "industry" 0.65) was withdrawn: it could not be reproduced. The only accuracy number measured in this repository is 11 of 12 cases on a small hand-written rank test, which is a smoke test and not a benchmark; the measured behaviour of the gate on labelled requests is in <code>research/fdia_calibration.json</code>.</p>
 <p>See <a href="https://github.com/delentia-labs/delentia-os/blob/main/core/tests/test_fdia.py"><code>core/tests/test_fdia.py</code></a> for the full benchmark test suite.</p>
 
 

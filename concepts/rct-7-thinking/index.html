@@ -2481,7 +2481,7 @@ into a <strong>verified, intent-preserved, FDIA-scored</strong> execution plan.<
 </tr>
 <tr>
 <td><strong>I</strong></td>
-<td>Intent precision — acts as <strong>exponent</strong> (higher = amplifies output)</td>
+<td>Intent precision — acts as <strong>exponent</strong> (with D in [0, 1] a larger I is stricter)</td>
 </tr>
 <tr>
 <td><strong>A</strong></td>
@@ -2490,7 +2490,7 @@ into a <strong>verified, intent-preserved, FDIA-scored</strong> execution plan.<
 </tbody>
 </table>
 <blockquote>
-<p><strong>A = 0 is a constitutional veto.</strong> No plan executes without the Architect approval gate.</p>
+<p><strong>A = 0 is a veto</strong> on every path that applies the gate: there, no plan step that needs approval executes without a valid signature (see <code>research/GATE_PROPERTIES.md</code> for the paths and their tests).</p>
 </blockquote>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">core.fdia.fdia</span><span class="w"> </span><span class="kn">import</span> <span class="n">FDIAScorer</span><span class="p">,</span> <span class="n">NPCAction</span><span class="p">,</span> <span class="n">NPCIntentType</span>  <span class="c1"># from concepts/fdia.md</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>

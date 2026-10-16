@@ -2337,50 +2337,40 @@
 
 <h1 id="benchmark-methodology">Benchmark Methodology<a class="headerlink" href="#benchmark-methodology" title="Permanent link">&para;</a></h1>
 <p><strong>Reproducible measurement framework for all RCT Platform performance claims.</strong></p>
-<p>All headline numbers in this repository are measured with deterministic, repeatable procedures
-described on this page. This document enables external researchers to reproduce and verify
-every claim independently.</p>
+<blockquote>
+<p>[!WARNING]
+<strong>Corrected 2026-10-16.</strong> An earlier version of this page presented five "headline numbers" as measured with repeatable procedures. They are not: the 0.3% hallucination rate and the 0.92 FDIA accuracy cannot be reproduced and are withdrawn; "74%" memory compression was a formula (measured in bytes it is 39% to 90% depending on the number of ticks, and plain zstd does better); "&lt;50 ms" is a design target, not a benchmark. The table below states what each number really is. Result lines in the sections further down (for example <code># -&gt; 0.92</code>) are the expectations of the original text, not measurements. What has been measured, with its limits and the script or CI run that produced it, is listed on the website page /benchmark and in <code>research/</code> (every file named there can be run).</p>
+</blockquote>
+<p>This page describes measurement <em>procedures</em>; it does not report results.</p>
 <hr />
 <h2 id="claim-summary">Claim Summary<a class="headerlink" href="#claim-summary" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Metric</th>
-<th>Value</th>
-<th>Baseline</th>
-<th>Improvement</th>
+<th>What it really is</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Hallucination Rate</td>
-<td><strong>0.3%</strong></td>
-<td>Industry 12–15%</td>
-<td>97% reduction</td>
+<td>Hallucination rate (was "0.3%")</td>
+<td><strong>Withdrawn.</strong> Not reproducible; no hallucination rate is claimed.</td>
 </tr>
 <tr>
-<td>Memory Compression</td>
-<td><strong>74%</strong></td>
-<td>Uncompressed state</td>
-<td>74% smaller</td>
+<td>Memory compression (was "74%")</td>
+<td><strong>Withdrawn as stated.</strong> Measured in bytes: 39% (20 ticks) to 90% (500 ticks), and snapshot + zstd saves 96.7-99.6% (<code>research/delta_storage.json</code>).</td>
 </tr>
 <tr>
-<td>Warm Recall Speed</td>
-<td><strong>&lt;50ms</strong></td>
-<td>Cold start 3–5s</td>
-<td>98% faster</td>
+<td>Warm recall speed (was "&lt;50 ms")</td>
+<td>A design target; not measured as a benchmark.</td>
 </tr>
 <tr>
-<td>FDIA Accuracy</td>
-<td><strong>0.92</strong></td>
-<td>Industry ~0.65</td>
-<td>+41%</td>
+<td>FDIA accuracy (was "0.92")</td>
+<td><strong>Withdrawn.</strong> The only measured figure is 11 of 12 on a small hand-written rank test (a smoke test).</td>
 </tr>
 <tr>
-<td>Test Coverage</td>
-<td><strong>87%</strong></td>
-<td>—</td>
-<td>9,382 statements</td>
+<td>Test coverage</td>
+<td>91.08% line coverage with 7,109 tests passed, 32 skipped, 0 failed (CI run 38231121128, 2026-10-12): evidence about the code, not about model behaviour.</td>
 </tr>
 </tbody>
 </table>
