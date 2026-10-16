@@ -182,7 +182,13 @@ def _witness_check() -> Check:
     if len(kinds) == 1:
         return Check("H07", WARN, "Anchoring (tier A3)", f"{len(specs)} witnesses but all of one kind ({next(iter(kinds))}): one failure mode can take them all",
                      "mix an http witness with a git witness")
-    return Check("H07", PASS, "Anchoring (tier A3)", f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head")
+    git_without_pin = [s.name for s in specs if s.type == "git" and not s.pin]
+    detail = f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head"
+    detail += ("; this check runs ON the host, so it is not proof against a host that is taken over: verify from another machine with scripts/verify_audit_bundle.py "
+               "--git-ledger ... --pin <a ledger commit written down earlier>")
+    if git_without_pin:
+        detail += f" (no pin is configured for {', '.join(git_without_pin)}, so a force-push is caught only by the tip this host saw last)"
+    return Check("H07", PASS, "Anchoring (tier A3)", detail)
 
 
 def check_tenants(public: bool) -> List[Check]:

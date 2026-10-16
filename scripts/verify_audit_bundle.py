@@ -114,10 +114,86 @@ def verify(bundle: Dict[str, Any], pubkey: Optional[str] = None) -> Dict[str, An
             "signer": public, "key_source": "argument" if wanted else "bundle"}
 
 
+def git_ledger(source: str, branch: str = "main", key_id: str = "", pin: str = "") -> Dict[str, Any]:
+    """Round 82 (plan item T01): read a git witness's ledger from ANOTHER machine, in full, and report everything an ordinary commit took out of it.
+
+    The ledger is cloned fresh into a temporary folder (so nothing on the audited host is trusted), with its whole history. A ledger may only grow: a removed or changed line,
+    a deleted or renamed file anywhere under anchors/ is a problem, and so is a pinned commit (written down earlier, out of band) that is no longer an ancestor of the branch (a
+    force-push or a reset). Every anchor ever added to anchors/<key_id>.jsonl is returned so the bundle's rows can be compared with ALL of them, not only the newest.
+    """
+    import re
+    import subprocess
+    import tempfile
+    problems: List[str] = []
+    notes: List[str] = []
+    anchors: List[Dict[str, Any]] = []
+    if pin and not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", pin):
+        return {"anchors": [], "problems": ["--pin must be a full commit hash"], "notes": []}
+    with tempfile.TemporaryDirectory(prefix="delentia-ledger-") as tmp:
+        def git(*args: str, check: bool = True) -> "subprocess.CompletedProcess[str]":
+            done = subprocess.run(["git", "-C", tmp, *args], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+            if check and done.returncode != 0:
+                raise RuntimeError((done.stderr or done.stdout).strip()[:200])
+            return done
+        try:
+            subprocess.run(["git", "clone", "--quiet", "--no-tags", "--branch", branch, source, tmp], capture_output=True, text=True, timeout=300, check=True)
+        except (OSError, subprocess.SubprocessError) as exc:
+            detail = getattr(exc, "stderr", "") or str(exc)
+            return {"anchors": [], "problems": [f"the git ledger could not be read ({str(detail).strip()[:160]}): nothing was verified against it"], "notes": []}
+        if git("rev-parse", "--is-shallow-repository").stdout.strip() == "true":
+            return {"anchors": [], "problems": ["the ledger copy is shallow: its history cannot be checked"], "notes": []}
+        tip = git("rev-parse", "HEAD").stdout.strip()
+        if pin:
+            if git("merge-base", "--is-ancestor", pin, tip, check=False).returncode != 0:
+                problems.append(f"force-push or branch reset: the pinned commit {pin[:12]} is not an ancestor of the ledger's branch ({tip[:12]})")
+            else:
+                notes.append(f"the pinned commit {pin[:12]} is still an ancestor of the ledger's branch")
+        else:
+            notes.append(f"no --pin: a force-push that replaced the whole history could not be told from a normal one; write down the tip ({tip}) and pass it next time")
+        log = git("log", "--first-parent", "--diff-merges=first-parent", "--reverse", "-p", "--no-color", "--no-ext-diff", "--format=@@commit %H", "HEAD", "--", "anchors/", check=False).stdout
+        own = f"anchors/{re.sub(r'[^A-Za-z0-9_.-]', '_', key_id)}.jsonl" if key_id else ""
+        seen = set()
+        touched: Dict[tuple, int] = {}
+        commit = path = ""
+        in_hunk = False
+        for line in log.splitlines():
+            if line.startswith("@@commit "):
+                commit, path, in_hunk = line.split(" ", 1)[1].strip(), "", False
+            elif line.startswith("diff --git "):
+                in_hunk = False
+                path = line.rsplit(" b/", 1)[-1]
+            elif not in_hunk and line.startswith(("deleted file mode", "rename from ", "rename to ")):
+                touched[(commit, path, "deleted or renamed")] = touched.get((commit, path, "deleted or renamed"), 0) + 1
+            elif line.startswith("@@"):
+                in_hunk = True
+            elif in_hunk and line.startswith("-"):
+                touched[(commit, path, "removed or changed")] = touched.get((commit, path, "removed or changed"), 0) + 1
+            elif in_hunk and line.startswith("+") and (not own or path == own):
+                try:
+                    row = json.loads(line[1:])
+                except ValueError:
+                    problems.append(f"{path}: an unreadable line was added in commit {commit[:12]}")
+                    continue
+                key = (row.get("key_id"), row.get("entries"), row.get("head"), row.get("signature"))
+                if key not in seen:
+                    seen.add(key)
+                    anchors.append(row)
+        for (sha, file_path, kind), count in touched.items():
+            problems.append(f"{file_path}: {count} anchor line(s) {kind} by an ordinary commit {sha[:12]}: a ledger may only be appended to")
+        if not key_id:
+            notes.append("no --git-key-id: the anchors of every key in the ledger were compared with this bundle")
+        notes.append(f"the ledger was read in full: {len(anchors)} anchor(s) ever added, branch tip {tip[:12]}")
+    return {"anchors": anchors, "problems": problems, "notes": notes, "tip": tip}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("bundle")
     parser.add_argument("--pubkey", default=None, help="the signer's public key hex, published out of band")
+    parser.add_argument("--git-ledger", default=None, help="a git witness's repository (an address or a path), read in full from THIS machine")
+    parser.add_argument("--git-branch", default="main")
+    parser.add_argument("--git-key-id", default="", help="only the ledger file of this key (anchors/<key id>.jsonl) is compared with the bundle")
+    parser.add_argument("--pin", default="", help="a commit of the ledger written down out of band earlier: it must still be an ancestor of the branch")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     try:
@@ -125,7 +201,15 @@ def main() -> int:
     except (OSError, ValueError) as exc:
         print(f"cannot read the bundle: {exc}", file=sys.stderr)
         return 2
+    extra_problems: List[str] = []
+    extra_notes: List[str] = []
+    if args.git_ledger:
+        ledger = git_ledger(args.git_ledger, args.git_branch, args.git_key_id, args.pin)
+        extra_problems, extra_notes = ledger["problems"], ledger["notes"]
+        bundle = {**bundle, "witnesses": [*(bundle.get("witnesses") or []), {"name": "git ledger read by this verifier", "anchors": ledger["anchors"]}]}
     report = verify(bundle, args.pubkey)
+    if extra_problems or extra_notes:
+        report = {**report, "ok": report["ok"] and not extra_problems, "problems": [*report["problems"], *extra_problems], "notes": [*report["notes"], *extra_notes]}
     if args.json:
         print(json.dumps(report, indent=2))
     else:
