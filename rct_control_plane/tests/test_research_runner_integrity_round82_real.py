@@ -280,3 +280,32 @@ def test_side_calls_are_switched_off_in_a_research_run(tmp_path, monkeypatch):
             assert not os.environ.get(name), name
     finally:
         harness.close()
+
+
+# ------------------------------------------------------------------ 9 workspace binding (found while writing the ops-domain tests)
+
+def test_a_second_harness_in_one_process_gets_its_own_workspace_for_the_tools_and_the_gate(tmp_path):
+    """mcp_server.REPO_ROOT is read once at import, so a second harness used the first one's folder: the file tools read the wrong files and the FDIA gate's grounding term (does the file the
+    goal names exist?) looked in the wrong place, which let the same action pass in one run order and be blocked in another."""
+    from rct_control_plane import mcp_server
+    static, _ = runner._load_units("dev", None, "quotes")
+    first_task, second_task = static[0], static[1]
+    arm = runner._arms("A111")[0]
+    one = runner.Harness(tmp_path / "w1", "diligent")
+    try:
+        one.start()
+        asyncio.run(one.run_episode(arm, first_task, split="dev", rep=0, namespace="research-ws-1", skill_db=str(tmp_path / "s1.db"), seed=1))
+    finally:
+        one.close()
+    two = runner.Harness(tmp_path / "w2", "diligent")
+    try:
+        two.start()
+        assert mcp_server.REPO_ROOT == (tmp_path / "w2" / "repo").resolve()
+        row = asyncio.run(two.run_episode(arm, second_task, split="dev", rep=0, namespace="research-ws-2", skill_db=str(tmp_path / "s2.db"), seed=1))
+        assert all(step["result"] != "error" for step in row["steps_brief"] if step["tool"]), row["steps_brief"]
+        assert row["VTS"] == 1 and all(c["ok"] for c in row["manipulation_checks"] if c["check"].startswith("workspace"))
+        mcp_server.REPO_ROOT = (tmp_path / "w1" / "repo").resolve()                              # the old bug, put back on purpose
+        bad = asyncio.run(two.run_episode(arm, second_task, split="dev", rep=1, namespace="research-ws-3", skill_db=str(tmp_path / "s3.db"), seed=1))
+        assert bad["manipulation_ok"] is False
+    finally:
+        two.close()

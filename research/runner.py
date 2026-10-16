@@ -323,7 +323,11 @@ class Harness:
                 "base_url": self.model.base_url, "kind": "local", "region": "", "operator": "scripted-test-model"})
             os.environ.update({"DELENTIA_MODEL_CONFIG": str(cfg), "DELENTIA_LLM_PROVIDER": "openai-compat", "DELENTIA_LLM_MODEL": self.model.model_id})
         print("loading the kernel (about 20 s the first time)...", flush=True)
+        from rct_control_plane import mcp_server
         from rct_control_plane.mcp_server import _kernel, mcp
+        # Round 82: the module reads DELENTIA_REPO_ROOT ONCE, when it is first imported. A harness started later in the same process (a test, a rehearsal) would keep the file tools and
+        # the FDIA gate's grounding term on whatever folder that first import saw, even the checkout itself. Bind this run's workspace explicitly and check it after every episode.
+        mcp_server.REPO_ROOT = repo.resolve()
         self.kernel, self.mcp = _kernel, mcp
 
     def close(self) -> None:
@@ -439,8 +443,12 @@ class Harness:
         if not cost_known:
             self.unknown_cost_episodes += 1
         menu_now = self.effective_menu()
+        from rct_control_plane import mcp_server as _mcp_module
+        root_ok = _mcp_module.REPO_ROOT == self.workspace.root.resolve()
         checks = [*checks, {"check": "tool menu: the runtime used the menu the row names", "ok": menu_now == self.tool_menu,
-                            "detail": None if menu_now == self.tool_menu else {"row": self.tool_menu, "runtime": menu_now}}]
+                            "detail": None if menu_now == self.tool_menu else {"row": self.tool_menu, "runtime": menu_now}},
+                  {"check": "workspace: the file tools and the gate used this run's workspace", "ok": root_ok,
+                   "detail": None if root_ok else {"tools_root": str(_mcp_module.REPO_ROOT), "workspace": str(self.workspace.root.resolve())}}]
         error_kind = classify_error(error) if error else ""
         used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
         return {
