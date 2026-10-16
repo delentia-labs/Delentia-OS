@@ -263,7 +263,7 @@ class TestBaselineGP:
         assert len(names) == 3
         units = [f"u{i}" for i in range(20)]
         matrix = {u: {"A111": 1.0, "GP": 0.5 if i % 2 else 1.0, "G": 0.5, "A000": 0.5} for i, u in enumerate(units)}
-        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["full vs generic plan-act-check + generic retrieval (A111 - GP)"], reps=300)
+        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["PRIMARY: full vs generic plan-act-check + generic retrieval (A111 - GP)"], reps=300)
         assert res["point"] == pytest.approx(0.25)
 
     def test_the_runner_understands_the_new_arm_lists(self):

@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Docs](https://img.shields.io/badge/docs-delentia--labs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/Delentia-OS/)
-[![Status](https://img.shields.io/badge/status-STABLE%20SDK-brightgreen)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-experimental-orange)](CHANGELOG.md)
 [![Website](https://img.shields.io/badge/website-delentia.com-brightgreen)](https://delentia.com)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/Delentia-OS/blob/main/notebooks/rct_playground.ipynb)
 [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/Delentia-OS/main?filepath=notebooks%2Frct_playground.ipynb)
@@ -143,8 +143,8 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | Docker Compose + full infra | ❌ | ✅ |
 | Private test suite (count not published) | ❌ | ✅ private |
 
-> **Stable SDK** means: API is stable, the full suite is **7,109 passed, 32 skipped, 0 failed** (CI, 2026-10-12, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm.  
-> **Enterprise** means: runs at [delentia.com](https://delentia.com) — contact for licensing.
+> **Status: experimental.** The SDK surface is versioned and the full suite is **7,109 passed, 32 skipped, 0 failed** (CI, 2026-10-12, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm. A passing suite is evidence about the code, not about how well a model uses it: no capable hosted model has driven the agent yet (see the table above).  
+> **Enterprise** (not in this repository) means a separate proprietary layer; this repository does not offer it as a running service — contact for licensing or a design-partner conversation.
 
 ---
 
@@ -168,11 +168,11 @@ $$F = D^I \times A$$
 |--------|---------|
 | **F** | **Future** — the desired output the AI must deliver |
 | **D** | Data quality — accuracy and completeness of inputs (0.0–1.0) |
-| **I** | Intent precision — clarity of intent acts as an **exponent** (higher = amplifies result) |
+| **I** | Intent precision — the **exponent**. With D in [0, 1] a larger I makes F *smaller* for the same D: in the gate I acts as strictness (the clearer and more demanding the intent, the better the data has to be) |
 | **A** | **Architect** — Human-in-the-loop approval gate (0.0–1.0) |
 
-> **When Intent is high (I→2), even moderate Data quality produces excellent results.**  
-> **When A = 0, all output is blocked** — Constitutional AI guarantee. The system never acts without human approval.
+> **Because D is in [0, 1], raising I lowers F for the same D** (0.8^2 = 0.64 < 0.8^1 = 0.8): a clearer, more demanding intent needs better data to pass.  
+> **When A = 0, the formula gives F = 0 and the gate refuses — on every code path that applies the gate** (the paths and the tests that pin them are listed in [research/GATE_PROPERTIES.md](research/GATE_PROPERTIES.md)). This is an invariant of those paths, not a guarantee about every path or about what a model writes; maintenance routes that are not part of the governed loop are listed there too.
 
 ---
 
@@ -240,7 +240,7 @@ Layer 5: SignedAI — Multi-LLM Consensus
 Layer 4: RCTDB v2.0 — 8-Dimensional Universal Memory
 └─ Registry Zone · Vault Zone · Governance Zone
 
-Layer 3: 41 Production Algorithms (Tier 1–9)
+Layer 3: 41 Algorithms (Tier 1–9)
 Layer 2: OS Primitives (6 Kernel RFCs)
 Layer 1: 7 Genome System + Cognitive Kernel
 

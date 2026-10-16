@@ -68,7 +68,7 @@ $$F = D^I \times A$$
 - **F (Future/Fulfillment):** Execution confidence output score.
 - **D (Data):** Data quality score ($0.0 - 1.0$).
 - **I (Intent):** Intent precision exponent ($I \ge 1.0$).
-- **A (Architect):** Human-in-the-loop gate. When $A=0$, output is constitutionally blocked.
+- **A (Architect):** Human-in-the-loop gate. When $A=0$, $F=0$ and the gate refuses (on every path that applies it).
 
 ### 2. JITNA Protocol (RFC-001)
 Canonical reference for intent packet transport ($I, D, \Delta, A, R, M$).
@@ -95,5 +95,5 @@ Shipped in `microservices/` with 142 dedicated integration tests:
     verified test count (this repo's own `docs/testing/TESTING_CANONICAL.md`) instead.
 
 - **Enterprise Test Suite:** 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).
-- **Hallucination Protection:** Target $<0.3\%$ hallucination rate via SignedAI multi-model consensus — internal methodology, see `docs/benchmark/hallucination-methodology.md` for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).
+- **Hallucination Protection:** no hallucination rate is claimed (the earlier "0.3%" was withdrawn); SignedAI multi-model consensus exists as a design — internal methodology, see `docs/benchmark/hallucination-methodology.md` for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).
 - **Memory Compression:** Delta Engine's measured saving is 39% (20 ticks) to 90% (500 ticks) against storing a full snapshot every tick — run `python scripts/measure_delta_engine_real.py` yourself to verify. The older 91.5% was a formula estimate and is withdrawn.

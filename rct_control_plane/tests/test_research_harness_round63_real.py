@@ -519,5 +519,5 @@ class TestBaselineG:
     def test_the_analysis_has_a_primary_contrast_against_G(self):
         units = [f"u{i}" for i in range(30)]
         matrix = {u: {"A111": 1.0, "G": 0.5 if i % 2 else 1.0, "A001": 1.0} for i, u in enumerate(units)}
-        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["PRIMARY: full vs generic baseline (A111 - G)"], reps=500)
+        res = analyze.bootstrap_contrast(units, matrix, analyze.CONTRASTS["secondary: full vs raw-history baseline (A111 - G)"], reps=500)
         assert res["point"] == pytest.approx(0.25) and "G" in analyze.ARMS

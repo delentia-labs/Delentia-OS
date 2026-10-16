@@ -220,10 +220,10 @@ $$F = D^I \times A$$
 |--------|-----------------|
 | **F** | Final execution score (must be ≥ threshold) |
 | **D** | Data quality of the reconstructed plan |
-| **I** | Intent precision — acts as **exponent** (higher = amplifies output) |
+| **I** | Intent precision — acts as **exponent** (with D in [0, 1] a larger I is stricter) |
 | **A** | Alignment gate — human approval factor (0 = hard block) |
 
-> **A = 0 is a constitutional veto.** No plan executes without the Architect approval gate.
+> **A = 0 is a veto** on every path that applies the gate: there, no plan step that needs approval executes without a valid signature (see `research/GATE_PROPERTIES.md` for the paths and their tests).
 
 ```python
 from core.fdia.fdia import FDIAScorer, NPCAction, NPCIntentType  # from concepts/fdia.md

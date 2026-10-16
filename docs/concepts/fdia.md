@@ -12,7 +12,7 @@ $$F = D^I \times A$$
 |--------|-----------|-------|------|
 | **F** | Future | 0.0–1.0 | Output score — the "goodness" of the AI action |
 | **D** | Data quality | 0.0–1.0 | How accurate and complete the input data is |
-| **I** | Intent precision | 0.5–2.0 | Clarity of stated intent — acts as an **exponent** |
+| **I** | Intent precision | 0.5–2.0 | The **exponent**: with D in [0, 1] a larger I lowers F, so I acts as strictness (clearer, more demanding intent needs better data) |
 | **A** | Architect | 0.0–1.0 | Human-in-the-loop approval gate |
 
 ### Why I is an exponent
@@ -27,7 +27,7 @@ The exponent design is intentional:
 | High (2.0) | 0.95 | 0.95^2.0 × 1.0 = **0.902** |
 
 !!! warning "Constitutional Gate — A = 0"
-    When `A = 0.0`, **F = 0 regardless of D and I**. This is not a configuration option — it is enforced by the equation itself. The system **cannot act without human approval**.
+    When `A = 0.0`, **F = 0 regardless of D and I**, and the gate refuses. This is not a configuration option: the equation enforces it wherever the equation is applied. The paths that apply it, and the tests that pin them, are listed in `research/GATE_PROPERTIES.md`; it is an invariant of those paths, not a claim about every code path or about what a model writes.
 
 ---
 
@@ -87,7 +87,7 @@ from core.fdia.fdia import FDIAWeights
 
 # Custom weights for a stricter governance profile
 weights = FDIAWeights(
-    intent_weight=1.5,     # Amplify intent influence
+    intent_weight=1.5,     # Give the intent exponent more weight (with D in [0, 1] this makes the gate stricter)
     data_weight=0.8,       # Reduce data sensitivity
     architect_weight=2.0,  # Require stronger human approval
 )
@@ -97,9 +97,6 @@ weights = FDIAWeights(
 
 ## Accuracy
 
-| Benchmark | Score |
-|-----------|-------|
-| FDIA Accuracy (SDK v1.0.1a0) | **0.92** |
-| Industry baseline | ~0.65 |
+No accuracy figure is claimed. The pair of figures that used to be shown here (an accuracy of 0.92 against an "industry" 0.65) was withdrawn: it could not be reproduced. The only accuracy number measured in this repository is 11 of 12 cases on a small hand-written rank test, which is a smoke test and not a benchmark; the measured behaviour of the gate on labelled requests is in `research/fdia_calibration.json`.
 
 See [`core/tests/test_fdia.py`](https://github.com/delentia-labs/delentia-os/blob/main/core/tests/test_fdia.py) for the full benchmark test suite.
