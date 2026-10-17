@@ -17,7 +17,10 @@ import check_installed_wheel as contract
 
 
 @pytest.fixture
-def box(tmp_path):
+def box(tmp_path, monkeypatch):
+    # The checks start child processes in a temporary folder. In the development checkout (CI runs the tests from one, without installing the package) the child can
+    # only import rct_control_plane if the repository is on its path; on a machine where the package is installed this changes nothing.
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join(p for p in (str(Path(__file__).resolve().parents[2]), os.environ.get("PYTHONPATH", "")) if p))
     return contract.Sandbox(tmp_path / "box")
 
 
