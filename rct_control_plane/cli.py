@@ -1898,6 +1898,75 @@ def _approval_store(db: Optional[str]):
     return PendingActionStore(ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence())
 
 
+@cli.group("episodes")
+def episodes_group() -> None:
+    """Episodes that were cut off (the process stopped) and can be continued (Round 84)."""
+
+
+def _journal(db: Optional[str]):
+    from rct_control_plane import episode_journal
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return episode_journal.EpisodeJournal(ControlPlanePersistence(db_path=db or agentic_db_path()))     # the database the agent writes (agentic.db), not the kernel's older one
+
+
+@episodes_group.command("list")
+@click.option("--namespace", default=None, help="Only this person's episodes.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--stale-after", type=float, default=None, help="Seconds of silence after which an episode whose process is still alive is also called interrupted (default 900).")
+def episodes_list(namespace: Optional[str], db: Optional[str], stale_after: Optional[float]) -> None:
+    """List interrupted episodes: what each had done and which step's outcome is unknown."""
+    from rct_control_plane import episode_journal, partial_report
+    side_effects = partial_report._side_effect_tools()
+    rows = _journal(db).interrupted(namespace, episode_journal.STALE_AFTER_SECONDS if stale_after is None else stale_after)
+    if not rows:
+        click.echo("No interrupted episodes.")
+        return
+    for ep in rows:
+        unknown = [s for s in ep.steps if s.state == "dangling" and s.tool in side_effects]
+        click.echo(f"{ep.episode_id}  {ep.namespace}  {sum(1 for s in ep.steps if s.state == 'done')} step(s) done"
+                   f"{'  UNKNOWN: ' + ', '.join(f'step {s.n} {s.tool}' for s in unknown) if unknown else ''}{'  (tainted)' if ep.taint else ''}{'' if ep.chain_ok else '  JOURNAL DOES NOT VERIFY'}")
+        click.echo(f"    goal: {ep.goal[:120]}")
+
+
+@episodes_group.command("show")
+@click.argument("episode_id")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def episodes_show(episode_id: str, db: Optional[str]) -> None:
+    """Show the journal of one episode, step by step."""
+    ep = _journal(db).load(episode_id)
+    if ep is None:
+        raise click.ClickException("no such episode in the journal")
+    click.echo(json.dumps({"episode_id": ep.episode_id, "namespace": ep.namespace, "goal": ep.goal, "ended": ep.ended, "stopped_reason": ep.stopped_reason, "resumed_by": ep.resumed_by,
+                           "resumed_from": ep.resumed_from, "journal_ok": ep.chain_ok, "tainted": ep.taint,
+                           "steps": [{"step": s.n, "tool": s.tool, "state": s.state, "args": s.args, "result_began": s.preview[:160]} for s in ep.steps]}, indent=2, default=str, ensure_ascii=False))
+
+
+@episodes_group.command("resume")
+@click.argument("episode_id")
+@click.option("--allow-unknown", is_flag=True, help="Go on although a step that can change something has an unknown outcome. Look at the world first; the continuation is told it is uncertain.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def episodes_resume(episode_id: str, allow_unknown: bool, db: Optional[str]) -> None:
+    """Continue an interrupted episode as a new governed episode (nothing is replayed; steps that are done are not repeated)."""
+    import asyncio
+
+    from rct_control_plane.agent_factory import build_governed_loop
+    from rct_control_plane.mcp_server import _kernel as shared_kernel
+    from rct_control_plane.mcp_server import mcp as shared_mcp
+    ep = _journal(db).load(episode_id)
+    if ep is None:
+        raise click.ClickException("no such episode in the journal")
+    loop = build_governed_loop(shared_kernel, namespace=ep.namespace, mcp_server=shared_mcp)
+    out = asyncio.run(loop.resume_interrupted(episode_id, allow_unknown=allow_unknown))
+    if not out.get("resumed"):
+        click.echo(f"Not resumed: {out.get('reason')}")
+        for u in out.get("unknown") or []:
+            click.echo(f"  unknown: step {u['step']} {u['tool']} {json.dumps(u.get('args'), default=str)[:120]}")
+        raise SystemExit(1)
+    click.echo(f"Resumed as a new episode: {out.get('stopped_reason')}")
+    click.echo(out.get("final_answer") or "")
+
+
 @approvals_group.command("keygen")
 @click.option("--out", "out_path", required=True, help="Where to write the private key (outside the repo).")
 @click.option("--trust", "trust_name", default=None,

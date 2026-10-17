@@ -18,7 +18,9 @@ The oracle writes this fixture fresh for every run; hidden tests and the answer 
 """
 from __future__ import annotations
 
-from typing import Dict
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Dict, Iterator
 
 INIT = '''from .pricing import line_total, order_total, average_unit_price
 from .refunds import refund_amount, validate_refund
@@ -307,3 +309,33 @@ def test_money_functions_return_decimal():
     assert isinstance(ledgercalc.line_total("1.00", 1), Decimal) and isinstance(ledgercalc.order_total([]), Decimal)
 ''',
 }
+
+
+@dataclass(frozen=True)
+class Fixture:
+    """Everything one TC-003 run needs: the buggy package the agent gets, the answer (reference), the visible tests and the hidden ones. The default is the original five-defect fixture;
+    tc003_variants.py builds others from a seed."""
+    id: str
+    buggy: Dict[str, str]
+    reference: Dict[str, str]
+    public: Dict[str, str]
+    hidden: Dict[str, str]
+    pyproject: str
+
+
+DEFAULT = Fixture("original", BUGGY, REFERENCE, PUBLIC_TESTS, HIDDEN_TESTS, PYPROJECT)
+_active = [DEFAULT]
+
+
+def active() -> Fixture:
+    return _active[-1]
+
+
+@contextmanager
+def use(fixture: Fixture) -> Iterator[Fixture]:
+    """Runs a block against another fixture and puts the previous one back, whatever happens (a helper that leaves a global changed breaks every later run)."""
+    _active.append(fixture)
+    try:
+        yield fixture
+    finally:
+        _active.pop()

@@ -550,6 +550,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._tool_output_store: Optional[Any] = None
         self._episode_compressions: List[Dict[str, Any]] = []
         self._resume_note: str = ""
+        # Round 84: the durable journal of this episode's steps (episode_journal.py), so an interrupted episode can be continued. Best effort: a journal problem is audited, never fatal.
+        self._journal: Any = None
+        self._journal_ok = True
+        self._journal_step = 0
+        self._journal_pending: Dict[str, int] = {}
+        self._resumed_from: Optional[str] = None
         # Round 50 ROUTE (ALGO-21). The configured budget is kept so a FAST
         # episode's smaller cap never leaks into the next episode.
         self._route_enabled = route
@@ -648,6 +654,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_start_time = time.time()
         self._episode_compressions = []
         self._episode_id = uuid.uuid4().hex
+        self._journal_step = 0
+        self._journal_pending = {}
+        self._journal_call("begin", goal, self._resumed_from)
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
         self._episode_guard = {}
@@ -1702,6 +1711,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
+        self._journal_call("end", result.get("stopped_reason"), result.get("final_answer"))
         duration = time.time() - self._episode_start_time
         stopped_reason = result["stopped_reason"]
         if getattr(self, "_episode_taint", None) is not None and self._taint_enabled():
@@ -2235,6 +2245,48 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return outcome
 
 
+    async def resume_interrupted(self, episode_id: str, allow_unknown: bool = False, on_step: Optional[Callable[[LoopStep], Any]] = None) -> Dict[str, Any]:
+        """Round 84: continue an episode that was cut off (episode_journal.py). A NEW governed episode runs the original goal, told which steps already ran; nothing is replayed.
+
+        Refused when: the journal is not this person's, is damaged, the episode already ended or was already resumed (one resume each), or a step that can change something has an unknown
+        outcome and the caller has not said `allow_unknown` (then nothing runs and the unknown steps are returned, so a person can look at the world first). An episode that had read outside text
+        starts tainted, exactly as the original did."""
+        from rct_control_plane import episode_journal, partial_report
+        journal = self._journal if self._journal is not None else episode_journal.EpisodeJournal(self._persistence)
+        ep = journal.load(episode_id)
+        if ep is None:
+            return {"resumed": False, "reason": "no such episode in the journal"}
+        if ep.namespace != self.namespace:
+            return {"resumed": False, "reason": "this episode belongs to someone else"}
+        if not ep.chain_ok:
+            return {"resumed": False, "reason": "the journal of this episode does not verify (it was edited or damaged): nothing was run"}
+        if ep.ended:
+            return {"resumed": False, "reason": f"the episode had already ended ({ep.stopped_reason}): there is nothing to continue"}
+        if ep.resumed_by:
+            return {"resumed": False, "reason": f"the episode was already resumed (by {ep.resumed_by})"}
+        side_effects = partial_report._side_effect_tools()
+        unknown = [{"step": st.n, "tool": st.tool, "args": st.args} for st in ep.steps if st.state == "dangling" and st.tool in side_effects]
+        done = [{"step": st.n, "tool": st.tool} for st in ep.steps if st.state == "done"]
+        if unknown and not allow_unknown:
+            return {"resumed": False, "reason": "a step that can change something has an unknown outcome: check the world, then resume with allow_unknown", "unknown": unknown, "completed": done}
+        import uuid
+        token = uuid.uuid4().hex
+        if not journal.claim_resume(episode_id, self.namespace, token):
+            return {"resumed": False, "reason": "another process is resuming this episode"}
+        self._persistence.append_audit(entity_type="episode_resume", entity_id=f"{self.namespace}-{episode_id}", action="resume", actor=self.namespace,
+                                       changes={"completed_steps": len(done), "unknown_steps": unknown, "allow_unknown": allow_unknown, "tainted": ep.taint})
+        self._resume_note = episode_journal.note_for(ep, side_effects, allow_unknown)
+        previous_taint, previous_from = self._initial_taint, self._resumed_from
+        self._initial_taint = ep.taint or self._initial_taint
+        self._resumed_from = episode_id
+        try:
+            result = await self.run(ep.goal, on_step=on_step)
+        finally:
+            self._initial_taint, self._resumed_from = previous_taint, previous_from
+        result["resumed_from"] = episode_id
+        result["resumed"] = True
+        return result
+
     # ------------------------------------------------------------------
     # Round 50, tier A2: notarise at the dispatch chokepoint
     # ------------------------------------------------------------------
@@ -2278,7 +2330,46 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "last": self._episode_notary_receipts[-1] if self._episode_notary_receipts else None,
                 "gaps": list(self._episode_notary_gaps)}
 
+    # ------------------------------------------------------------------
+    # Round 84: the episode journal (episode_journal.py)
+    # ------------------------------------------------------------------
+    def _journal_call(self, what: str, *args: Any) -> None:
+        """Write one journal row. Never raises: a journal that cannot be written is audited once and the episode goes on (the journal is for recovery, not for permission)."""
+        from rct_control_plane import episode_journal
+        if not episode_journal.enabled() or not self._journal_ok:
+            return
+        try:
+            if self._journal is None:
+                self._journal = episode_journal.EpisodeJournal(self._persistence)
+            journal = self._journal
+            if what == "begin":
+                journal.begin(self._episode_id, self.namespace, args[0], args[1])
+            elif what == "intent":
+                journal.intent(self._episode_id, self.namespace, args[0], args[1], args[2], getattr(self, "_episode_taint", None))
+            elif what == "result":
+                journal.result(self._episode_id, self.namespace, args[0], args[1], args[2], getattr(self, "_episode_taint", None))
+            elif what == "end":
+                journal.end(self._episode_id, self.namespace, args[0], args[1])
+        except Exception as exc:                                         # noqa: BLE001
+            self._journal_ok = False
+            try:
+                self._persistence.append_audit(entity_type="episode_journal", entity_id=f"{self.namespace}-{self._episode_id}", action="journal_gap", actor=self.namespace,
+                                               changes={"while": what, "error": type(exc).__name__})
+            except Exception:                                            # noqa: BLE001
+                pass
+
     async def _notarised_pre_dispatch(
+        self, goal: str, tool_name: str, tool_args: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Notarised gate, then (for a call that will really run) the write-ahead journal row: the intent is on disk BEFORE the tool is dispatched."""
+        gate = await self._notarised_pre_dispatch_inner(goal, tool_name, tool_args)
+        if gate is None:
+            self._journal_step += 1
+            self._journal_pending[f"{tool_name}|{_sha(tool_args)}"] = self._journal_step
+            self._journal_call("intent", self._journal_step, tool_name, tool_args)
+        return gate
+
+    async def _notarised_pre_dispatch_inner(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
         """FDIA gate, then the notary: no receipt, no tool call."""
@@ -2305,6 +2396,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return gate
 
     async def _notarised_post_dispatch(
+        self, goal: str, tool_name: str, tool_args: Dict[str, Any], tool_result: Any,
+    ) -> Any:
+        """The journal row for the result, then the notarised post-processing."""
+        step = self._journal_pending.pop(f"{tool_name}|{_sha(tool_args)}", 0)
+        out = await self._notarised_post_dispatch_inner(goal, tool_name, tool_args, tool_result)
+        if step:
+            self._journal_call("result", step, tool_name, out)
+        return out
+
+    async def _notarised_post_dispatch_inner(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any], tool_result: Any,
     ) -> Any:
         """Result hash of what the tool actually returned (before compression)."""

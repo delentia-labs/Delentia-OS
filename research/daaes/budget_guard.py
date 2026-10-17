@@ -16,8 +16,10 @@ Provider-side spending limits still matter (this guard cannot see a request that
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -69,6 +71,50 @@ class ExperimentLedger:
         self.path, self.policy = Path(path), policy
         self.state: Dict[str, Any] = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {"spent_usd": 0.0, "reserved_usd": 0.0, "runs": {}, "warnings": [], "refusals": []}
 
+    _thread_lock = threading.RLock()
+
+    @contextlib.contextmanager
+    def locked(self):
+        """One writer at a time across threads AND processes (a lock file next to the ledger), and the state is re-read from the file inside the lock: two gateways of two arms that share a
+        ledger must each see what the other has already spent, or the experiment total is not enforced. Re-entrant in one thread. A lock file older than 60 s is taken to be a dead holder's."""
+        with self._thread_lock:
+            if getattr(self, "_depth", 0) > 0:
+                self._depth += 1
+                try:
+                    yield self
+                finally:
+                    self._depth -= 1
+                return
+            lock = self.path.with_suffix(".lock")
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            deadline = time.time() + 30
+            while True:
+                try:
+                    fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                    os.close(fd)
+                    break
+                except FileExistsError:
+                    try:
+                        if time.time() - lock.stat().st_mtime > 60:
+                            lock.unlink()
+                            continue
+                    except OSError:
+                        pass
+                    if time.time() > deadline:
+                        raise TimeoutError(f"the ledger lock {lock} could not be taken in 30 s") from None
+                    time.sleep(0.01)
+            self._depth = 1
+            try:
+                if self.path.exists():
+                    self.state = json.loads(self.path.read_text(encoding="utf-8"))
+                yield self
+            finally:
+                self._depth = 0
+                try:
+                    lock.unlink()
+                except OSError:
+                    pass
+
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(".tmp")
@@ -76,7 +122,14 @@ class ExperimentLedger:
             f.write(json.dumps(self.state, indent=1, sort_keys=True).encode("utf-8"))
             f.flush()
             os.fsync(f.fileno())
-        os.replace(tmp, self.path)
+        for attempt in range(40):                                  # on Windows a reader that has the file open for a moment makes the rename fail; try again
+            try:
+                os.replace(tmp, self.path)
+                return
+            except PermissionError:
+                if attempt == 39:
+                    raise
+                time.sleep(0.01)
 
     @property
     def committed(self) -> float:
@@ -88,6 +141,10 @@ class ExperimentLedger:
         raise BudgetExceeded(why)
 
     def start_run(self, run_id: str) -> "RunBudget":
+        with self.locked():
+            return self._start_run(run_id)
+
+    def _start_run(self, run_id: str) -> "RunBudget":
         if run_id in self.state["runs"]:
             self.refuse(f"run {run_id} was already started (a run is never restarted under the same id)")
         if self.committed >= self.policy.stop_new_runs_usd:
@@ -108,6 +165,10 @@ class RunBudget:
         return self.ledger.state["runs"][self.run_id]
 
     def before_call(self, prompt_tokens: int, max_output_tokens: int, price_in_per_mtok: Optional[float], price_out_per_mtok: Optional[float]) -> float:
+        with self.ledger.locked():
+            return self._before_call(prompt_tokens, max_output_tokens, price_in_per_mtok, price_out_per_mtok)
+
+    def _before_call(self, prompt_tokens: int, max_output_tokens: int, price_in_per_mtok: Optional[float], price_out_per_mtok: Optional[float]) -> float:
         p, run, led = self.ledger.policy, self.run, self.ledger
         if price_in_per_mtok is None or price_out_per_mtok is None:
             led.refuse("the price of this model is unknown, so the call cannot be checked against the budget (fail closed)")
@@ -126,6 +187,10 @@ class RunBudget:
         return worst
 
     def after_call(self, reserved: float, prompt_tokens: int, completion_tokens: int, cost_usd: float) -> None:
+        with self.ledger.locked():
+            self._after_call(reserved, prompt_tokens, completion_tokens, cost_usd)
+
+    def _after_call(self, reserved: float, prompt_tokens: int, completion_tokens: int, cost_usd: float) -> None:
         run, led = self.run, self.ledger
         run["reserved_usd"] = max(0.0, run["reserved_usd"] - reserved)
         led.state["reserved_usd"] = max(0.0, led.state["reserved_usd"] - reserved)
@@ -139,8 +204,9 @@ class RunBudget:
         led.save()
 
     def finish(self, status: str = "finished") -> None:
-        self.run["status"] = status
-        self.ledger.save()
+        with self.ledger.locked():
+            self.run["status"] = status
+            self.ledger.save()
 
 
 class GuardedProvider(LLMProvider):

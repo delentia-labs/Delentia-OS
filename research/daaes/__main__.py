@@ -31,6 +31,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     live.add_argument("--out", default="results")
     live.add_argument("--seed", type=int, default=1701)
     live.add_argument("--fault", default="F0")
+    live.add_argument("--variant-seed", type=int, default=None, help="use another broken package (tc003_variants.py) instead of the original five-defect one")
     live.add_argument("--max-iterations", type=int, default=14)
     live.add_argument("--max-seconds", type=float, default=None, help="wall-clock limit of the episode (default: 3600 for a local model, 300 for a paid one)")
     live.add_argument("--budget-usd", type=float, default=0.0)
@@ -47,7 +48,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0 if row["verified"] else 1
     if args.cmd == "live":
         row = runner.run_live("TC-003", args.provider, args.model, Path(args.out), seed=args.seed, fault=args.fault, budget_usd=args.budget_usd, price_in=args.price_in, price_out=args.price_out,
-                              max_iterations=args.max_iterations, max_seconds=args.max_seconds)
+                              max_iterations=args.max_iterations, max_seconds=args.max_seconds, variant_seed=args.variant_seed)
         print(json.dumps(row, indent=2, default=str))
         return 0 if row["verified"] else 1
     if args.cmd == "suite":

@@ -95,7 +95,9 @@ def test_new_runs_stop_at_the_line_and_a_run_that_could_cut_into_the_reserve_is_
 def test_the_reserve_is_never_spent_even_when_another_process_spent_in_the_meantime(tmp_path):
     ledger = ExperimentLedger(tmp_path / "l.json", policy(max_cost_per_run_usd=0.5))
     guarded = GuardedProvider(FakeProvider(), ledger.start_run("r"), 100.0, 100.0)
-    ledger.state["spent_usd"] = 3.9                                                           # a parallel run spent after this one started
+    other = ExperimentLedger(tmp_path / "l.json", policy(max_cost_per_run_usd=0.5))           # a parallel run (another process) spends and writes the shared file after this one started
+    other.state["spent_usd"] = 3.9
+    other.save()
     with pytest.raises(BudgetExceeded, match="reserve"):
         run(guarded.complete("x" * 400, max_tokens=2000))                                     # worst case $0.2: 3.9 + 0.2 > 5.0 - 1.0
 

@@ -94,7 +94,7 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
 
 
 def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, fault: str = "F0", budget_usd: float = 0.0, price_in: Optional[float] = None, price_out: Optional[float] = None,
-             max_iterations: int = 14, max_seconds: Optional[float] = None, date: Optional[str] = None) -> Dict[str, Any]:
+             max_iterations: int = 14, max_seconds: Optional[float] = None, variant_seed: Optional[int] = None, date: Optional[str] = None) -> Dict[str, Any]:
     """One live run: Delentia's governed loop with a REAL model, the experiment budget guard in front of it, the same oracle, a sealed bundle.
 
     kind 'ollama'     a local model: free, so the price is 0 and nothing can be spent.
@@ -108,7 +108,7 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
         raise ValueError("only TC-003 has a live adapter so far")
     out = Path(out)
     date = date or time.strftime("%Y-%m-%d")
-    arm = f"d0_live-{kind}-{model.replace('/', '_').replace(':', '_')}"
+    arm = f"d0_live-{kind}-{model.replace('/', '_').replace(':', '_')}" + (f"-v{variant_seed}" if variant_seed is not None else "")
     if kind == "ollama":
         inner: Any = OllamaProvider(model=model)
         pin, pout = 0.0, 0.0
@@ -129,7 +129,7 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
     work.mkdir(parents=True)
     guard = live_adapter.guarded(inner, out / "live_ledger.json", policy, f"{arm}-{seed}-{time.time_ns()}", pin, pout)
     started = time.time()
-    result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0))
+    result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0), variant_seed=variant_seed)
     result["guard_refused"] = guard.refused
     result["seconds"] = round(time.time() - started, 1)
     sealed = _bundle(out, date, case, arm, seed, result, out / ".keys" / "bundle-seal.pem")
