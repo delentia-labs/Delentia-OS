@@ -129,6 +129,68 @@ def _sha(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()
 
 
+# ---------------------------------------------------------------- Round 82, plan item T02: trustworthy instruments
+
+# The only failures that may be left out of the primary analysis: an outage OUTSIDE the agent, named before any run. Everything an agent does, including crashing, counts.
+INFRASTRUCTURE_MARKERS = ("ConnectError", "ConnectTimeout", "ReadTimeout", "WriteTimeout", "PoolTimeout", "RemoteProtocolError", "TimeoutException", "ServiceUnavailable",
+                          "BadGateway", "GatewayTimeout", "ConnectionResetError", "ConnectionRefusedError", "BrokenPipeError", "status code 502", "status code 503", "status code 504")
+
+
+def classify_error(text: str) -> str:
+    """'infrastructure' for a predeclared external outage, else 'agent' (counted in the primary analysis)."""
+    return "infrastructure" if text and any(marker in text for marker in INFRASTRUCTURE_MARKERS) else "agent"
+
+
+def episode_cost(cost: Optional[Dict[str, Any]]) -> Tuple[Optional[float], bool]:
+    """(dollars, known). An unknown cost is None and is never added up as 0."""
+    if not cost or cost.get("cost_usd") is None or cost.get("cost_known") is False:
+        return None, False
+    return float(cost["cost_usd"]), True
+
+
+def tool_schema_hash(tools: Any) -> str:
+    """The whole menu, not its names: a changed description or input schema changes the experiment."""
+    items = []
+    for tool in tools:
+        get = tool.get if isinstance(tool, dict) else (lambda key, default=None, _tool=tool: getattr(_tool, key, default))
+        items.append({"name": get("name"), "description": get("description") or "", "schema": get("inputSchema") or get("input_schema") or {}})
+    items.sort(key=lambda item: str(item["name"]))
+    return _sha(items)
+
+
+def budget_state(rows: Any, scope: str = "run") -> Tuple[float, int]:
+    """(dollars already spent, episodes whose cost is unknown). scope 'run': every attempt written to the output file counts, so a resume cannot spend the budget twice;
+    'invocation': this process only (the old behaviour, for a run that is not paid)."""
+    if scope not in ("run", "invocation"):
+        raise ValueError(f"budget scope must be run or invocation, not {scope!r}")
+    if scope == "invocation":
+        return 0.0, 0
+    spent, unknown = 0.0, 0
+    for row in rows:
+        if row.get("cost_known") is False or row.get("cost_all_attempts_usd") is None:
+            unknown += 1
+        else:
+            spent += float(row["cost_all_attempts_usd"])
+    return spent, unknown
+
+
+def read_all_rows(path: Path) -> List[Dict[str, Any]]:
+    """Every row ever written to the file, attempts included (load_rows keeps only the last per run_id)."""
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _code_state() -> str:
+    import subprocess
+    try:
+        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=20).stdout.strip()
+        dirty = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "rct_control_plane", "research", "scripts"], capture_output=True, text=True, timeout=20).stdout
+    except Exception:                                                              # noqa: BLE001
+        return "unknown"
+    return (head or "unknown") + (f"+dirty-{_sha(dirty)[:12]}" if dirty.strip() else "")
+
+
 def load_rows(path: Path) -> Dict[str, Dict[str, Any]]:
     """Trace rows by run_id; when a run_id appears twice (a restarted unit) the last one wins."""
     rows: Dict[str, Dict[str, Any]] = {}
@@ -149,7 +211,7 @@ def run_id_for(split: str, task_id: str, arm_label: str, rep: int, unit_budget: 
 
 class Harness:
     def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
-                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0) -> None:
+                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0, prior_spend: float = 0.0, prior_unknown: int = 0) -> None:
         self.memory_policy = memory_policy
         self.preload_noise = preload_noise
         self.work = work
@@ -159,13 +221,44 @@ class Harness:
         self.policy_name = policy
         self.model_config_path = model_config
         self.budget_usd = budget_usd
-        self.spent_usd = 0.0
+        self.spent_usd = float(prior_spend)                                    # what earlier invocations of the same run already spent (budget_state)
+        self.unknown_cost_episodes = int(prior_unknown)
+        self.identity_sha = ""
         self.sink: Optional[Sink] = None
         self.workspace: Optional[Workspace] = None
         self.model: Any = None
         self.kernel: Any = None
         self.mcp: Any = None
         self.tool_schema_hash = ""
+
+    # ----------------------------------------------------------------- budget, menu and identity (Round 82)
+    def remaining_budget(self) -> Optional[float]:
+        return None if not self.budget_usd else max(0.0, self.budget_usd - self.spent_usd)
+
+    def budget_exhausted(self) -> bool:
+        return bool(self.budget_usd) and self.spent_usd >= self.budget_usd
+
+    def effective_menu(self) -> str:
+        """The menu the RUNTIME will build, read from the runtime's own switch: what the row claims is never taken from the command line alone."""
+        from rct_control_plane import tool_menu
+        return "ranked" if tool_menu.ranked_enabled() else "default"
+
+    def config_identity(self, tools: Any) -> Dict[str, Any]:
+        """Everything a resume must not change. An earlier row is only comparable under the same identity."""
+        from research import evaluate_tickets, policy_models
+        if self.policy_name == "real":
+            route: Any = {"model_config_sha256": hashlib.sha256(Path(self.model_config_path).read_bytes()).hexdigest() if self.model_config_path else ""}
+        else:
+            route = {"scripted_policy": self.policy_name, "policy_digest": policy_models.policy_digest(self.policy_name)}
+        identity = {
+            "code_sha": _code_state(), "model_route": route, "grader_version": f"{evaluate.GRADER_VERSION}+{evaluate_tickets.GRADER_VERSION}",
+            "tool_schema_hash": tool_schema_hash(tools), "policy": self.policy_name, "floor": self.floor, "tool_menu": self.tool_menu,
+            "tool_menu_format": os.environ.get("DELENTIA_TOOL_MENU_FORMAT", ""), "memory_policy": self.memory_policy, "preload_noise": self.preload_noise,
+            "max_seconds": self.max_seconds, "embedding": {"mode": os.environ.get("DELENTIA_MEMORY_EMBED", ""), "model": os.environ.get("DELENTIA_MEMORY_EMBED_MODEL", "")},
+            "fdia_policy_default": os.environ.get("DELENTIA_FDIA_POLICY_DEFAULT", ""),
+        }
+        identity["identity_sha"] = _sha(identity)
+        return identity
 
     # ----------------------------------------------------------------- setup
     def start(self) -> None:
@@ -192,10 +285,16 @@ class Harness:
             os.environ["DELENTIA_TOOL_MENU"] = "ranked"
             os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
         os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
+        # Round 82: DELENTIA_TOOL_MENU used to be in this list, so a ranked run set it above and cleared it here: every row said "ranked" and the runtime built the full menu.
+        # Side calls (a second-opinion classifier, embeddings, store-time questions, fallback models, algorithm calls that use a model) are off in a research run: they would
+        # spend money and change behaviour outside the meter of the main model.
         for name in ("DELENTIA_WARM_RECALL", "DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_STARTER_SKILLS", "DELENTIA_FDIA_POLICY", "DELENTIA_JURY_CONFIG",
                      "DELENTIA_HOME_REGION", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL", "DELENTIA_NOTARY_TOKEN",
-                     "DELENTIA_PARALLEL_TOOLS", "DELENTIA_TOOL_MENU", "DELENTIA_API_TOKEN", "DELENTIA_OWNER_NOTIFY"):
+                     "DELENTIA_PARALLEL_TOOLS", "DELENTIA_API_TOKEN", "DELENTIA_OWNER_NOTIFY", "DELENTIA_CORD_SECOND_OPINION", "DELENTIA_MEMORY_EMBED",
+                     "DELENTIA_MEMORY_EMBED_MODEL", "DELENTIA_MEMORY_QUESTIONS", "DELENTIA_MEMORY_QUERY_EXPANSION", "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_FALLBACK_MODELS"):
             os.environ.pop(name, None)
+        if self.effective_menu() != self.tool_menu:
+            raise SystemExit(f"the tool menu did not reach the runtime: the run says {self.tool_menu!r} and the runtime would build {self.effective_menu()!r}")
         import subprocess
         run = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True)  # noqa: E731
         run("init", "-q", "-b", "main")
@@ -224,7 +323,11 @@ class Harness:
                 "base_url": self.model.base_url, "kind": "local", "region": "", "operator": "scripted-test-model"})
             os.environ.update({"DELENTIA_MODEL_CONFIG": str(cfg), "DELENTIA_LLM_PROVIDER": "openai-compat", "DELENTIA_LLM_MODEL": self.model.model_id})
         print("loading the kernel (about 20 s the first time)...", flush=True)
+        from rct_control_plane import mcp_server
         from rct_control_plane.mcp_server import _kernel, mcp
+        # Round 82: the module reads DELENTIA_REPO_ROOT ONCE, when it is first imported. A harness started later in the same process (a test, a rehearsal) would keep the file tools and
+        # the FDIA gate's grounding term on whatever folder that first import saw, even the checkout itself. Bind this run's workspace explicitly and check it after every episode.
+        mcp_server.REPO_ROOT = repo.resolve()
         self.kernel, self.mcp = _kernel, mcp
 
     def close(self) -> None:
@@ -295,6 +398,10 @@ class Harness:
             loop._skill_library = SkillLibrary(db_path=skill_db)                    # one skill store per trajectory: nothing leaks between arms or trajectories
             loop._route_enabled = False                                              # FAST routing would cap steps at 3 for some arms' tasks; the protocol fixes max_steps for all arms
             loop._warm_recall = False                                                # exact-answer caching is its own sub-ablation, never part of M
+            remaining_budget = self.remaining_budget()
+            if remaining_budget is not None:                                         # Round 82: the runtime refuses any call whose worst case would take the programme past what is left
+                current = loop._max_episode_cost_usd
+                loop._max_episode_cost_usd = remaining_budget if current is None else min(current, remaining_budget)
             if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
                 loop._max_episode_tokens = max(1, int(token_cap))
             receipt = research_switches.apply(loop, arm)
@@ -331,8 +438,18 @@ class Harness:
         else:
             checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
         cost = result.get("cost") or {}
-        spent = float(cost.get("cost_usd") or 0.0)
-        self.spent_usd += spent
+        spent, cost_known = episode_cost(cost)                                       # unknown is None, not 0
+        self.spent_usd += spent or 0.0
+        if not cost_known:
+            self.unknown_cost_episodes += 1
+        menu_now = self.effective_menu()
+        from rct_control_plane import mcp_server as _mcp_module
+        root_ok = _mcp_module.REPO_ROOT == self.workspace.root.resolve()
+        checks = [*checks, {"check": "tool menu: the runtime used the menu the row names", "ok": menu_now == self.tool_menu,
+                            "detail": None if menu_now == self.tool_menu else {"row": self.tool_menu, "runtime": menu_now}},
+                  {"check": "workspace: the file tools and the gate used this run's workspace", "ok": root_ok,
+                   "detail": None if root_ok else {"tools_root": str(_mcp_module.REPO_ROOT), "workspace": str(self.workspace.root.resolve())}}]
+        error_kind = classify_error(error) if error else ""
         used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
         return {
             "run_id": run_id_for(split, task["task_id"], arm.label, rep, unit_budget), "task_id": task["task_id"], "family_id": task["family_id"],
@@ -341,11 +458,12 @@ class Harness:
             "language": task["language"], "split": split, "arm": arm.label, "R": arm.R, "F": arm.F, "M": arm.M, "history": arm.history,
             "model_id": (cost.get("model") if cost else None) or (self.model.model_id if self.model is not None else "real"),
             "policy": self.policy_name, "replicate": rep, "seed": seed, "principal": task["principal"], "intent_version": task.get("intent_version"),
-            "tool_schema_hash": _sha(sorted(t["name"] for t in tools)), "config_hash": _sha({"receipt": receipt, "policy": self.policy_name, "floor": self.floor, "tool_menu": self.tool_menu}), "floor": self.floor,
-            "tool_menu": self.tool_menu,
+            "tool_schema_hash": tool_schema_hash(tools), "config_hash": _sha({"receipt": receipt, "policy": self.policy_name, "floor": self.floor, "tool_menu": self.tool_menu}), "floor": self.floor,
+            "tool_menu": self.tool_menu, "menu_effective": menu_now, "run_identity": self.identity_sha, "trajectory_attempt": 1,
+            "write_committed": tree_after != tree_before, "outbound_count": len(self.sink.events), "budget_reserved": not plain,
             "fixture_hash": _sha(fixture), "oracle_hash": _sha(oracle),
             "prompt_tokens": cost.get("prompt_tokens"), "completion_tokens": cost.get("completion_tokens"), "cached_prompt_tokens": cost.get("cached_prompt_tokens"),
-            "cost_all_attempts_usd": spent, "runtime_seconds": round(seconds, 3), "human_wait_seconds": 0.0,
+            "cost_all_attempts_usd": spent, "cost_usd": spent, "cost_known": cost_known, "runtime_seconds": round(seconds, 3), "human_wait_seconds": 0.0,
             "stopped_reason": result.get("stopped_reason"), "status": graded["status"], "iterations": result.get("iterations"),
             "tool_calls": [s.get("tool_name") for s in steps if s.get("tool_name")], "steps_brief": _steps_brief(steps), "gate_decisions": [
                 {"tool": g.get("tool_name"), "F": g.get("F"), "threshold": g.get("threshold"), "blocked": g.get("blocked")} for g in gate_rows],
@@ -357,16 +475,39 @@ class Harness:
             "memory_items_in_prompt": len(getattr(loop, "_episode_memory_scores", []) or []), "skills_injected": getattr(loop, "_episode_skills_injected", 0),
             "skill_extracted": bool(result.get("skill_extracted")), "cache_hit": result.get("stopped_reason") == "warm_recall", "plain_loop": int(plain), "memory_policy": self.memory_policy, "preload_noise": self.preload_noise,
             "manipulation_checks": checks, "manipulation_ok": all(c["ok"] for c in checks),
-            "exclusion_reason": f"infrastructure: {error}" if error else None,
+            "exclusion_reason": f"infrastructure: {error}" if error_kind == "infrastructure" else None,
+            "agent_error": error if error_kind == "agent" else None,
         }
 
+    @staticmethod
+    def _attempt_summary(number: int, row: Dict[str, Any]) -> Dict[str, Any]:
+        return {"attempt": number, "exclusion_reason": row.get("exclusion_reason"), "agent_error": row.get("agent_error"), "stopped_reason": row.get("stopped_reason"),
+                "cost_usd": row.get("cost_all_attempts_usd"), "cost_known": row.get("cost_known", True), "tokens_used": row.get("tokens_used") or 0,
+                "runtime_seconds": row.get("runtime_seconds"), "write_committed": bool(row.get("write_committed")),
+                "outbound": int(row.get("outbound_count") or row.get("outbound_events") or 0)}
+
     async def run_with_retry(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """One episode, with ONE retry after an external outage (protocol: infrastructure_retries = 1). Round 82: every attempt stays in the row with its cost, and an attempt
+        that already changed something (a write, an outbound request) is never repeated automatically."""
         from research import failure_taxonomy
         row = await self.run_episode(*args, **kwargs)
-        if row["exclusion_reason"]:                                              # one retry for an infrastructure fault (protocol: infrastructure_retries = 1)
-            retry = await self.run_episode(*args, **kwargs)
-            retry["retried_after"] = row["exclusion_reason"]
-            row = retry
+        attempts = [self._attempt_summary(1, row)]
+        skipped = ""
+        if row["exclusion_reason"]:
+            if attempts[0]["write_committed"] or attempts[0]["outbound"]:
+                skipped = "not retried: the attempt had already changed something outside the model; a write is never repeated automatically"
+            else:
+                retry = await self.run_episode(*args, **kwargs)
+                retry["retried_after"] = row["exclusion_reason"]
+                attempts.append(self._attempt_summary(2, retry))
+                row = retry
+        row["attempts"] = attempts
+        row["attempt_count"] = len(attempts)
+        row["cost_known"] = all(a["cost_known"] and a["cost_usd"] is not None for a in attempts)
+        row["cost_all_attempts_usd"] = round(sum(float(a["cost_usd"]) for a in attempts if a["cost_usd"] is not None), 8) if row["cost_known"] else None
+        row["tokens_all_attempts"] = sum(int(a["tokens_used"]) for a in attempts)
+        if skipped:
+            row["retry_skipped"] = skipped
         row["failure_class"] = failure_taxonomy.classify(row)                    # Round 66: one label per failed episode, assigned by rules (research/failure_taxonomy.py)
         return row
 
@@ -425,8 +566,10 @@ async def main_async(args: argparse.Namespace) -> int:
         pass
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    done = load_rows(out)
     arms = _arms(args.arms)
+    if args.policy == "real" and any(getattr(a, "plain_loop", 0) for a in arms):
+        print("REFUSED: the plain arm PL has no per-call cost cap yet; do not run it under a paid budget")
+        return 5
     static, trajs = _load_units(args.split, args.only, args.domain)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
     harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu,
@@ -436,6 +579,29 @@ async def main_async(args: argparse.Namespace) -> int:
     written = failures = 0
     stop = ""
     try:
+        # Round 82: the identity of this run is written next to the output; rows made under another identity are never mixed with new ones, and the budget carries over.
+        identity = harness.config_identity(await harness.mcp.list_tools())
+        harness.identity_sha = identity["identity_sha"]
+        sidecar = Path(str(out) + ".identity.json")
+        raw = read_all_rows(out)
+        if raw and sidecar.exists():
+            earlier = json.loads(sidecar.read_text(encoding="utf-8"))
+            if earlier.get("identity_sha") != identity["identity_sha"]:
+                changed = sorted(k for k in identity if k != "identity_sha" and earlier.get(k) != identity.get(k))
+                if not getattr(args, "new_run", False):
+                    print(f"REFUSED: {out.name} holds rows made under another configuration (changed: {', '.join(changed)}). Use another --out, or --new-run to move the old file aside and start again.")
+                    return 4
+                stamp = str(earlier.get("identity_sha", "unknown"))[:8]
+                out.rename(out.with_name(f"{out.name}.superseded-{stamp}"))        # moved aside, never deleted
+                sidecar.rename(sidecar.with_name(f"{sidecar.name}.superseded-{stamp}"))
+                raw = []
+        if not sidecar.exists():
+            sidecar.write_text(json.dumps(identity, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        harness.spent_usd, harness.unknown_cost_episodes = budget_state(raw, getattr(args, "budget_scope", "run"))
+        done = load_rows(out)
+        attempt_of: Dict[str, int] = {}
+        for earlier_row in raw:
+            attempt_of[earlier_row["run_id"]] = max(attempt_of.get(earlier_row["run_id"], 0), int(earlier_row.get("trajectory_attempt", 1)))
         for rep in range(args.repeats):
             units: List[Tuple[str, Dict[str, Any]]] = [("static", t) for t in static] + [("traj", t) for t in trajs]
             rng.shuffle(units)
@@ -448,17 +614,24 @@ async def main_async(args: argparse.Namespace) -> int:
                         ids = [run_id_for(args.split, unit["task_id"], arm.label, rep, cap)]
                     else:
                         ids = [run_id_for(args.split, e["task_id"], arm.label, rep, cap) for e in unit["episodes"]]
-                    if all(i in done for i in ids):
-                        continue
+                    attempts_seen = [int(done[i].get("trajectory_attempt", 1)) for i in ids if i in done]
+                    if len(attempts_seen) == len(ids) and len(set(attempts_seen)) == 1:
+                        continue                                                      # every episode finished, all in the same attempt
+                    # a half-finished trajectory is rerun WHOLE from a clean namespace (its memory must not come from a killed attempt); the old rows stay in the file
+                    attempt_no = max([attempt_of.get(i, 0) for i in ids] or [0]) + 1
                     episodes = [unit] if kind == "static" else unit["episodes"]
                     safe = (unit["task_id"] if kind == "static" else unit["trajectory_id"]).replace(":", "-")
-                    namespace = f"research-{arm.label}-{safe}-r{rep}"
+                    namespace = f"research-{arm.label}-{safe}-r{rep}" + (f"-t{attempt_no}" if attempt_no > 1 else "")
                     skill_db = str(work / "skills" / f"{namespace}.db")
                     Path(skill_db).parent.mkdir(parents=True, exist_ok=True)
                     remaining = cap                                          # equal-total-token track: one budget per (unit, arm), spent across the unit's episodes
                     harness.preload(namespace, args.seed)
                     for task in episodes:
+                        if harness.budget_exhausted():
+                            stop = f"spend cap reached ({harness.spent_usd:.4f} of {harness.budget_usd} USD) before the next episode"
+                            break
                         row = await harness.run_with_retry(arm, task, split=args.split, rep=rep, namespace=namespace, skill_db=skill_db, seed=args.seed, token_cap=remaining, unit_budget=cap)
+                        row["trajectory_attempt"] = attempt_no
                         if remaining is not None:
                             remaining = max(0, remaining - int(row.get("tokens_used") or 0))
                         with out.open("a", encoding="utf-8") as fh:
@@ -473,6 +646,8 @@ async def main_async(args: argparse.Namespace) -> int:
                                 stop = "a treatment did not reach the behaviour (manipulation check); results would be meaningless"
                         if harness.budget_usd and harness.spent_usd >= harness.budget_usd:
                             stop = f"spend cap reached ({harness.spent_usd:.4f} of {harness.budget_usd} USD)"
+                        if harness.budget_usd and not row.get("cost_known", True):
+                            stop = "the cost of an episode is unknown, so the budget cannot be checked (a budget that cannot be checked is not a budget)"
                         if args.stop_on_critical and (row["attack_success"] or "outbound_contact" in row["violations"]):
                             stop = f"a critical effect happened in {row['run_id']}; triage before resuming on a new version"
                         if stop:
@@ -485,7 +660,7 @@ async def main_async(args: argparse.Namespace) -> int:
                 break
     finally:
         harness.close()
-    print(f"{written} episode rows written to {out}; manipulation-check failures: {failures}; spent {harness.spent_usd:.4f} USD")
+    print(f"{written} episode rows written to {out}; manipulation-check failures: {failures}; spent {harness.spent_usd:.4f} USD; episodes with unknown cost: {harness.unknown_cost_episodes}")
     if stop:
         print(f"STOPPED: {stop}")
         return 3
@@ -510,6 +685,8 @@ def main() -> int:
     parser.add_argument("--work", default=None, help="working directory (default: a new temporary one)")
     parser.add_argument("--model-config", default=None)
     parser.add_argument("--budget-usd", type=float, default=None)
+    parser.add_argument("--budget-scope", default="run", choices=["run", "invocation"], help="run = a resume adds what every earlier invocation of this output file spent (default); invocation = this process only")
+    parser.add_argument("--new-run", action="store_true", help="the configuration changed on purpose: move the old output aside (never deleted) and start a new run")
     parser.add_argument("--tool-menu", default="default", choices=["default", "ranked"], help="default = the full menu; ranked = the ranked compact menu (same for every arm of a run)")
     parser.add_argument("--floor", default="default", choices=["default", "strict"], help="generic policy floor shared by every arm of the run")
     parser.add_argument("--keep-going", action="store_true", help="continue after a failed manipulation check (for debugging only)")

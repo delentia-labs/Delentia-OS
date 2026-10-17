@@ -1,0 +1,25 @@
+{
+  "split": "holdout",
+  "cases": 19,
+  "ok": 19,
+  "families": {
+    "explicit": {
+      "cases": 6,
+      "ok": 6
+    },
+    "ambiguous": {
+      "cases": 5,
+      "ok": 5
+    },
+    "conflicting": {
+      "cases": 3,
+      "ok": 3
+    },
+    "adversarial": {
+      "cases": 5,
+      "ok": 5
+    }
+  },
+  "loosening_proposals": 0,
+  "failures": []
+}

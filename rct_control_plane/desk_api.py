@@ -1295,6 +1295,15 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except CheckpointError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    @router.get("/host/metrics")
+    async def host_metrics_route(format: str = Query("json")) -> Any:
+        """Round 82 (T09): the process, the system, the work in flight, the spend and the witness lag, from real rows; a figure that cannot be read is null and named. Owner only."""
+        from rct_control_plane import host_metrics
+        found = host_metrics.collect(_kernel()._persistence)
+        if format == "prometheus":
+            return Response(content=host_metrics.to_prometheus(found), media_type="text/plain; version=0.0.4")
+        return found
+
     @router.get("/governance")
     async def governance_overview() -> Dict[str, Any]:
         from rct_control_plane import governance_view

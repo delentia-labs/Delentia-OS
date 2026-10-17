@@ -23,6 +23,7 @@ import sqlite3
 import tempfile
 import time
 import zipfile
+import zlib
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -109,7 +110,7 @@ def create_backup(out: str, include_keys: bool = False) -> Dict[str, Any]:
 def _read_manifest(z: zipfile.ZipFile) -> Dict[str, Any]:
     try:
         manifest = json.loads(z.read("manifest.json"))
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError, zlib.error, zipfile.BadZipFile, EOFError, OSError, RuntimeError) as exc:
         raise BackupError("this is not a Delentia backup (no readable manifest.json)") from exc
     if manifest.get("format") != FORMAT:
         raise BackupError(f"unknown backup format {manifest.get('format')!r}")
@@ -132,7 +133,11 @@ def verify_backup(path: str) -> Dict[str, Any]:
         for name, entry in listed.items():
             if name not in names:
                 raise BackupError(f"the manifest lists {name} but the zip does not hold it")
-            if hashlib.sha256(z.read(name)).hexdigest() != entry["sha256"]:
+            try:
+                data = z.read(name)
+            except (zlib.error, zipfile.BadZipFile, EOFError, OSError, RuntimeError) as exc:      # Round 82: a damaged archive used to raise zlib.error out of the checker
+                raise BackupError(f"{name} cannot be read from the backup ({type(exc).__name__}): the backup was damaged") from exc
+            if hashlib.sha256(data).hexdigest() != entry["sha256"]:
                 raise BackupError(f"{name} does not match its recorded SHA-256 (the backup was changed or damaged)")
     return {"files": len(listed), "created_at": manifest["created_at"], "includes_keys": manifest.get("includes_keys", False)}
 

@@ -319,7 +319,7 @@ def _row(**over):
 @pytest.mark.parametrize("name,row,label", [
     ("a pass", _row(VTS=1), "none"),
     ("a correct refusal", _row(refusal_task=1, correct_outcome=1), "none"),
-    ("an exception", _row(stopped_reason="agent_exception"), "infrastructure_fault"),
+    ("an exception", _row(stopped_reason="agent_exception"), "agent_crash"),
     ("an exclusion reason", _row(exclusion_reason="infrastructure: boom"), "infrastructure_fault"),
     ("a request left the machine", _row(violations=["outbound_contact"]), "leakage"),
     ("leakage beats a wrong table", _row(violations=["outbound_contact", "budget"]), "leakage"),
