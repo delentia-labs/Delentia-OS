@@ -20,6 +20,30 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from research.daaes.core import digest
+
+# An ablation arm (DAAES D1-D6) is a research treatment applied to every governed loop a case builds while this context is open. The treatment switches (rct_control_plane/research_switches.py) exist only
+# in research mode and only for a namespace that starts with 'research-', so a case written for the ablation asks `ns(name)` for its namespaces instead of spelling them.
+_AMBIENT: Dict[str, Any] = {"treatment": None}
+
+
+@contextlib.contextmanager
+def treatment(value: Any):
+    previous, previous_records = _AMBIENT["treatment"], _AMBIENT.get("records")
+    _AMBIENT["treatment"], _AMBIENT["records"] = value, []
+    try:
+        yield value
+    finally:
+        _AMBIENT["treatment"], _AMBIENT["records"] = previous, previous_records
+
+
+def records() -> List[Dict[str, Any]]:
+    """What each governed session run inside the open treatment context reported: its namespace, the treatment receipt and the manipulation checks."""
+    return list(_AMBIENT.get("records") or [])
+
+
+def ns(name: str) -> str:
+    """The namespace a case should use: the plain name normally, 'research-<name>' while an ablation treatment is open."""
+    return ("research-" + name) if _AMBIENT["treatment"] is not None else name
 from research.daaes.events import NoExternalCalls, RunLog
 
 
@@ -219,12 +243,24 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
 
     summary: Dict[str, Any] = {"decisions": []}
     model = scripted_model(decisions) if provider is None else contextlib.nullcontext({"i": 0, "contexts": []})     # a real provider replaces the script: the model decides, the world and the gates are the same
-    with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), model as model_state:
+    treated = _AMBIENT["treatment"]
+    research_env = {"DELENTIA_RESEARCH_MODE": "1"} if treated is not None else {}
+    if treated is not None and not treated.F and policy_path is not None and Path(policy_path).exists():
+        # found by the first ablation run: the F switch zeroes the loop's own threshold, but an owner policy carries its own `custom_safety_threshold` and the gate uses THAT one, so "no numeric gate"
+        # was not true while a policy file was in force. The arm removes the number from the policy too (rules, denied paths and signatures stay: they are enforcement, not the equation).
+        data = json.loads(Path(policy_path).read_text(encoding="utf-8"))
+        if float(data.get("custom_safety_threshold", 0.5) or 0) != 0.0:
+            data["custom_safety_threshold"] = 0.0
+            Path(policy_path).write_text(json.dumps(data), encoding="utf-8")
+    with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **research_env, **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), model as model_state:
         persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
         from rct_control_plane.agent_memory import AgentMemory
         kernel = NullKernel()
         kernel._agent_memory = AgentMemory("shared_default", persistence)                  # type: ignore[attr-defined]  # the product's kernel has one; the loop recalls the person's own namespace through it
         loop = build_governed_loop(kernel, namespace=namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=persistence, mcp_server=world, conversation_turns=0, llm_provider=provider)
+        if treated is not None:
+            from rct_control_plane import research_switches
+            summary["treatment"] = research_switches.apply(loop, treated)          # raises ResearchModeError unless the namespace starts with 'research-': a case that forgot `ns()` fails loudly
         loop._route_enabled = route                                   # type: ignore[attr-defined]  # ROUTE (ALGO-21) caps a FAST goal at 3 steps; the cases that need a long script switch it off, like the research runs
         current: Dict[str, Optional[str]] = {"decision": None}
         if before_run is not None:
@@ -264,6 +300,7 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
         world.call_tool = call                                        # type: ignore[method-assign]
         try:
             result = asyncio.run(loop.run(goal))
+            first_result = dict(result)
             summary.update({"stopped_reason": result.get("stopped_reason"), "final_answer": result.get("final_answer"), "steps": normalize_steps(result), "partial_completion": result.get("partial_completion")})
             verdicts: List[str] = []
             rounds = 0
@@ -301,6 +338,12 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
             log.emit("checkpoint.committed", {"audit_head": summary["audit"]["head"], "audit_rows": summary["audit"]["rows"]}, intent_id=intent_id)
         summary["world_hash"] = world.state_hash() if hasattr(world, "state_hash") else None
         summary["contexts"] = list(model_state["contexts"])
+        if treated is not None:
+            from rct_control_plane import research_switches
+            with persistence._connect() as conn:
+                gate_rows = [json.loads(r[0]) for r in conn.execute("SELECT changes FROM audit_trail WHERE entity_type = 'governed_loop_fdia_gate' AND actor = ?", (namespace,))]
+            summary["manipulation_checks"] = research_switches.manipulation_check(loop, first_result, gate_rows)
+            (_AMBIENT.setdefault("records", [])).append({"namespace": namespace, "treatment": summary.get("treatment"), "checks": summary["manipulation_checks"]})
     return summary
 
 

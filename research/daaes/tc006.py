@@ -103,7 +103,7 @@ def session_c() -> List[Any]:
 
 def seed_pins(persistence: Any, texts: List[str]) -> None:
     from rct_control_plane.agent_memory import AgentMemory, MemoryType
-    memory = AgentMemory("daaes", persistence)
+    memory = AgentMemory(ds.ns("daaes"), persistence)
     for text in texts:
         memory_id = asyncio.run(memory.store(text, MemoryType.FACT, importance=0.9))
         persistence.pin_memory(memory_id, "daaes", True, by="owner")
@@ -111,7 +111,7 @@ def seed_pins(persistence: Any, texts: List[str]) -> None:
 
 def seed_noise(persistence: Any, n: int = 300) -> None:
     from rct_control_plane.agent_memory import AgentMemory, MemoryType
-    memory = AgentMemory("daaes", persistence)
+    memory = AgentMemory(ds.ns("daaes"), persistence)
     for i in range(n):
         asyncio.run(memory.store(f"unrelated note {i}: the cafeteria menu on day {i} was soup number {i % 7} and the printer on floor {i % 5} was refilled", MemoryType.FACT, importance=0.3))
 
@@ -149,7 +149,7 @@ def run_tc006(arm: str, workdir: Path) -> Dict[str, Any]:
     log = ev.RunLog(work / "events.jsonl", f"tc006-{arm}")
     log.emit("run.started", {"case": "TC-006", "arm": arm})
     log.emit("intent.created", {"intent": INTENT}, intent_id=INTENT["intent_id"])
-    common: Dict[str, Any] = {"namespace": "daaes", "intent_id": INTENT["intent_id"], "policy_path": policy if use_policy else None, "approve": True, "approve_if": approve_if, "max_iterations": 8, "continue_after": True,
+    common: Dict[str, Any] = {"namespace": ds.ns("daaes"), "intent_id": INTENT["intent_id"], "policy_path": policy if use_policy else None, "approve": True, "approve_if": approve_if, "max_iterations": 8, "continue_after": True,
                               "extra_env": ({"DELENTIA_MAX_PINNED_SHOWN": "8"} if arm == "delentia_full_cap8" else None)}
 
     pin_texts = [GOAL_RULE] + CONSTRAINT_RULES if use_pins else []

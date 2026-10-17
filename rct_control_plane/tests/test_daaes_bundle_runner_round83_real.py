@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from research.daaes import bundle, catalogue, checklist, events as ev, runner
+from research.daaes import bundle, catalogue, checklist, events as ev, run_manifest, runner
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,7 +37,8 @@ def _make(tmp_path, name="b", oracle=True, key=None, score_override=None):
     ev_path = _events(tmp_path / name if False else tmp_path, with_oracle=oracle) if not (tmp_path / "e.jsonl").exists() else tmp_path / "e.jsonl"
     result = {"score": 80.0, "passed": True, "hard_failures": []}
     bundle.write_bundle(folder, case_id="TC-X", arm="a", seed=1, fixture_sha256="f" * 64, events_path=ev_path, agent_result={"ok": True}, oracle_result=result,
-                        score=score_override or {"score": 80.0, "passed": True, "hard_failures": []}, receipts=[{"id": "r1"}], checkpoints={"c1": {"n": 1}})
+                        score=score_override or {"score": 80.0, "passed": True, "hard_failures": []}, receipts=[{"id": "r1"}], checkpoints={"c1": {"n": 1}},
+                        run_manifest_data=run_manifest.for_run("TC-X", "a", 1, {"fixture_sha256": "f" * 64}, ev.load(ev_path)))
     seal = bundle.seal(folder, key)
     return folder, seal
 
@@ -149,7 +150,8 @@ def test_clean_survives_a_folder_it_cannot_remove(tmp_path, monkeypatch):
 def test_the_suite_plan_covers_every_case_and_arm_and_runs_the_control_arms():
     plan = runner.suite_plan(quick=True)
     cases = {c for c, _, _ in plan}
-    assert cases == {"TC-003", "TC-006", "TC-007", "TC-009", "TC-010", "TC-020", "TC-025"}
+    assert cases - {"TC-027"} == {"TC-003", "TC-005", "TC-006", "TC-007", "TC-009", "TC-010", "TC-013", "TC-020", "TC-025", "TC-028"}
+    assert ("TC-027" in cases) == runner._browser_available(), "TC-027 is in the plan exactly when a browser can be started"
     assert {a for c, a, _ in plan if c == "TC-007"} == {"policy", "policy_careless", "pins_only"} and {a for c, a, _ in plan if c == "TC-020"} == {"developer_gate", "developer_careless", "floor_only_careless"}
     assert ("TC-010", "naive_new_key", {"kill_point": "in_flight"}) in plan
     assert len([p for p in plan if p[0] == "TC-009"]) == 5
