@@ -151,7 +151,7 @@ class ModelGateway:
             resp = conn.getresponse()
             data = resp.read()
             handler.send_response(resp.status)
-            content_type = "".join(ch for ch in (resp.getheader("Content-Type") or "application/json") if " " <= ch <= "~")[:120] or "application/json"      # printable ASCII only: no line break can enter a header
+            content_type = "application/json"                                              # a constant, never the upstream's header text: nothing the upstream sends can reach a header line
             handler.send_header("Content-Type", content_type)
             handler.send_header("Content-Length", str(len(data)))
             handler.end_headers()
@@ -214,7 +214,7 @@ class ModelGateway:
             state["status"] = resp.status
             if streaming and resp.status == 200:
                 handler.send_response(200)
-                handler.send_header("Content-Type", "".join(ch for ch in (resp.getheader("Content-Type") or "text/event-stream") if " " <= ch <= "~")[:120] or "text/event-stream")      # printable ASCII only
+                handler.send_header("Content-Type", "text/event-stream")                         # a constant, never the upstream's header text
                 handler.send_header("Cache-Control", "no-cache")
                 handler.send_header("Connection", "close")
                 handler.end_headers()
@@ -253,7 +253,7 @@ class ModelGateway:
                         pass
                 account()
                 handler.send_response(resp.status)
-                content_type = "".join(ch for ch in (resp.getheader("Content-Type") or "application/json") if " " <= ch <= "~")[:120] or "application/json"      # printable ASCII only: no line break can enter a header
+                content_type = "application/json"                                              # a constant, never the upstream's header text: nothing the upstream sends can reach a header line
                 handler.send_header("Content-Type", content_type)
                 handler.send_header("Content-Length", str(len(data)))
                 handler.end_headers()

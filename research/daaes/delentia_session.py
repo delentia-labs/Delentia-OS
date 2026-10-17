@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import re
 import os
 from copy import deepcopy
 from pathlib import Path
@@ -84,12 +85,19 @@ class DirWorld(ScriptedWorld):
         return [_Tool("delentia_read_repo_file"), _Tool("delentia_write_repo_file"), _Tool("delentia_crawl_url"), _Tool("delentia_recall")]
 
     def _inside(self, relative: Any) -> Path:
-        """A path the model named, kept inside this workspace: an absolute path, a drive, or `..` that leaves the folder is refused."""
-        candidate = (self.root / str(relative or "")).resolve()
-        base = self.root.resolve()
-        if candidate != base and base not in candidate.parents:
+        """A path the model named, kept inside this workspace: an absolute path, a drive, or `..` that leaves the folder is refused. Lexical normalisation, then a prefix check, then the
+        real path (a symlink must not lead out either); only a path that passed all three is returned."""
+        raw = str(relative or "")
+        base = os.path.realpath(self.root)
+        if chr(0) in raw or chr(92) in raw or os.path.isabs(raw) or raw.startswith("/") or re.match(r"^[A-Za-z]:", raw):
             raise ValueError("path leaves the workspace")
-        return candidate
+        full = os.path.normpath(os.path.join(base, raw))
+        if full != base and not full.startswith(base + os.sep):
+            raise ValueError("path leaves the workspace")
+        resolved = os.path.realpath(full)
+        if resolved != base and not resolved.startswith(base + os.sep):
+            raise ValueError("path leaves the workspace")
+        return Path(resolved)
 
     async def call_tool(self, name: str, args: Dict[str, Any]) -> _Result:
         if name == "delentia_read_repo_file":
