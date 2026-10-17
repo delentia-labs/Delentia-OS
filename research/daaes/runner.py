@@ -18,7 +18,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from research.daaes import bundle, tc003, tc006, tc007_tc020, tc009, tc010, tc025
+from research.daaes import bundle, run_manifest, tc003, tc006, tc007_tc020, tc009, tc010, tc025
+from research.daaes import events as ev
 
 NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
                  "live_model": "needs a capable model and a key (the live pilot, C3/C4 of the roadmap)"}
@@ -38,14 +39,15 @@ def _clean(path: Path) -> None:
         path.rename(path.with_name(path.name + f".stale-{time.time_ns()}"))
 
 
-def _bundle(out: Path, date: str, case: str, arm: str, seed: int, result: Dict[str, Any], keyfile: Path) -> Dict[str, Any]:
+def _bundle(out: Path, date: str, case: str, arm: str, seed: int, result: Dict[str, Any], keyfile: Path, kw: Optional[Dict[str, Any]] = None, live: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     folder = out / date / case / arm / str(seed)
     _clean(folder)
     score = {k: result.get(k) for k in ("score", "passed", "hard_failures", "metrics", "weights", "threshold")}
     oracle = {k: v for k, v in result.items() if k not in ("events_path", "receipts", "child_stderr")}
     bundle.write_bundle(folder, case_id=case, arm=arm, seed=seed, fixture_sha256=result.get("fixture_sha256") or "n/a", events_path=Path(result["events_path"]) if result.get("events_path") else None,
                         agent_result={"arm": arm, "summary": {k: result.get(k) for k in ("completed", "claim", "executed_calls", "gate_outcomes", "launches", "durable") if k in result}},
-                        oracle_result=oracle, score=score, replay_report=(result.get("sections") or {"mode": "not_evaluated"}), receipts=result.get("receipts"))
+                        oracle_result=oracle, score=score, replay_report=(result.get("sections") or {"mode": "not_evaluated"}), receipts=result.get("receipts"),
+                        run_manifest_data=run_manifest.for_run(case, arm, seed, result, ev.load(Path(result["events_path"])) if result.get("events_path") and Path(result["events_path"]).exists() else [], kw, live))
     seal = bundle.seal(folder, keyfile)
     return {"folder": str(folder), "bundle_sha256": seal["bundle_sha256"], "verified": bundle.verify_bundle(folder, seal.get("public_key"))["valid"]}
 
@@ -93,7 +95,7 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
         arm = f"{arm}@{policy}@{fault}"
     else:
         raise ValueError(f"unknown case {case}")
-    sealed = _bundle(out, date, case, arm, seed, result, keyfile)
+    sealed = _bundle(out, date, case, arm, seed, result, keyfile, kw)
     return {"case": case, "arm": arm, "seed": seed, "passed": result.get("passed"), "score": result.get("score"), "hard_failures": result.get("hard_failures"), **sealed}
 
 
@@ -136,7 +138,11 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
     result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0), variant_seed=variant_seed)
     result["guard_refused"] = guard.refused
     result["seconds"] = round(time.time() - started, 1)
-    sealed = _bundle(out, date, case, arm, seed, result, out / ".keys" / "bundle-seal.pem")
+    live_facts = {"model": model, "provider": kind, "api_mode": ("Ollama native API" if kind == "ollama" else "OpenRouter chat completions"),
+                  "budget": {"usd": policy.total_usd, "max_llm_calls_per_run": policy.max_llm_calls_per_run, "seconds": max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0),
+                             "price_in_per_million": pin, "price_out_per_million": pout},
+                  "network_policy": ("only the local Ollama server on loopback" if kind == "ollama" else "only the provider's endpoint, behind the budget guard; the key is read from the environment, never written")}
+    sealed = _bundle(out, date, case, arm, seed, result, out / ".keys" / "bundle-seal.pem", {"fault": fault}, live_facts)
     return {"case": case, "arm": arm, "seed": seed, "passed": result.get("passed"), "score": result.get("score"), "hard_failures": result.get("hard_failures"),
             "seconds": result["seconds"], "agent": result.get("agent"), "guard_refused": guard.refused, **sealed}
 

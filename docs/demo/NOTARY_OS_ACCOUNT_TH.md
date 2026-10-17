@@ -31,6 +31,15 @@ Get-LocalGroupMember -Group "Administrators"      # ต้องไม่มี 
 ```
 บัญชีใหม่อยู่ในกลุ่ม Users โดยปริยาย (ผู้ใช้ธรรมดา) ซึ่งพอสำหรับงานนี้
 
+**ตรวจให้แน่ว่ามีรหัสผ่านจริง** (ถ้าตอนถามรหัสผ่านกด Enter เปล่า ๆ บัญชีจะไม่มีรหัสผ่าน และ `runas`/Task Scheduler จะใช้ไม่ได้):
+```powershell
+Get-LocalUser delentia-notary | Format-List Name,Enabled,PasswordRequired
+# ถ้า PasswordRequired เป็น False ให้ตั้งรหัสผ่านใหม่:
+$pw = Read-Host -AsSecureString "รหัสผ่านใหม่"
+Set-LocalUser -Name delentia-notary -Password $pw
+```
+(ถ้าคอนโซลแสดงภาษาไทยเพี้ยน ไม่เป็นไร เป็นแค่การแสดงผล ตอนคัดลอกคำสั่งให้ **ไม่ต้องคัดลอกส่วน `# ...` ที่เป็นคอมเมนต์ท้ายบรรทัด**)
+
 ### 2) สร้างโฟลเดอร์ที่ `whale` เข้าไม่ได้
 ```powershell
 New-Item -ItemType Directory -Path C:\DelentiaNotary | Out-Null
@@ -42,9 +51,11 @@ icacls C:\DelentiaNotary          # ตรวจ: ต้องไม่มี wh
 
 ### 3) ติดตั้ง Python + delentia ให้บัญชีนี้ใช้ได้
 Python ของ `whale` อยู่ใต้ `C:\Users\whale\...` (Microsoft Store) บัญชีอื่นเข้าไม่ได้ ต้องมีชุดของ notary เอง:
-1. ติดตั้ง Python 3.12 หรือ 3.13 จาก python.org แบบ **"Install for all users"** (ลงที่ `C:\Program Files\Python313`)
+1. ติดตั้ง Python 3.12 แบบ **ทุกผู้ใช้** (ลงที่ `C:\Program Files\Python312`): ใน PowerShell แบบ Administrator พิมพ์
+   `winget install --id Python.Python.3.12 -e --scope machine` (หรือโหลดตัวติดตั้งจาก python.org แล้วติ๊ก "Install for all users") ตรวจด้วย `Test-Path "C:\Program Files\Python312\python.exe"` ต้องได้ True
+   (ปรับพาธในข้อถัดไปให้ตรงกับเวอร์ชันที่ลง)
 2. ```powershell
-   & "C:\Program Files\Python313\python.exe" -m venv C:\DelentiaNotary\venv
+   & "C:\Program Files\Python312\python.exe" -m venv C:\DelentiaNotary\venv
    C:\DelentiaNotary\venv\Scripts\pip install delentia-os==2.3.0
    icacls C:\DelentiaNotary\venv /grant "delentia-notary:(OI)(CI)RX" /T
    ```
@@ -59,9 +70,13 @@ runas /user:%COMPUTERNAME%\delentia-notary "C:\DelentiaNotary\venv\Scripts\delen
 ### 5) สร้างโทเค็นที่ agent ใช้คุยกับ notary
 โทเค็นคือ "รหัสผ่านสำหรับต่อท้าย" ที่ **ทั้งสองฝั่งต้องรู้** (agent ต้องมี) แต่กุญแจเซ็นไม่ต้องให้ agent รู้
 ```powershell
-$tok = [Convert]::ToHexString((1..32 | ForEach-Object { Get-Random -Maximum 256 }))   # หรือใช้ตัวสร้างสุ่มที่คุณเชื่อถือ
-Set-Content -Path C:\DelentiaNotary\token.txt -Value $tok
-Set-Content -Path C:\Users\whale\delentia-host\notary_token.txt -Value $tok
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+$tok = -join ($bytes | ForEach-Object { $_.ToString("x2") })
+$tok.Length                                                  # ต้องได้ 64
+Set-Content -Path C:\DelentiaNotary\token.txt -Value $tok -NoNewline -Encoding ascii
+Set-Content -Path C:\Users\whale\delentia-host\notary_token.txt -Value $tok -NoNewline -Encoding ascii
+Remove-Variable tok, bytes
 icacls C:\DelentiaNotary\token.txt /inheritance:r /grant "delentia-notary:R" /grant "SYSTEM:F"
 ```
 
@@ -70,7 +85,8 @@ icacls C:\DelentiaNotary\token.txt /inheritance:r /grant "delentia-notary:R" /gr
 $cmd = 'set "DELENTIA_NOTARY_TOKEN_FILE=C:\DelentiaNotary\token.txt" && C:\DelentiaNotary\venv\Scripts\delentia.exe notary serve --db C:\DelentiaNotary\notary.db --key C:\DelentiaNotary\notary_key.pem --port 8765'
 $act = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c $cmd" -WorkingDirectory C:\DelentiaNotary
 $trg = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "DelentiaNotary" -Action $act -Trigger $trg -User "$env:COMPUTERNAME\delentia-notary" -Password "<รหัสผ่านที่ตั้ง>" -RunLevel Limited
+$cred = Get-Credential -UserName "$env:COMPUTERNAME\delentia-notary" -Message "รหัสผ่านของ delentia-notary"      # หน้าต่างถามรหัสผ่าน: รหัสไม่ปรากฏในคำสั่งหรือประวัติ
+Register-ScheduledTask -TaskName "DelentiaNotary" -Action $act -Trigger $trg -User $cred.UserName -Password $cred.GetNetworkCredential().Password -RunLevel Limited
 Start-ScheduledTask -TaskName "DelentiaNotary"
 ```
 ตรวจ: `Invoke-RestMethod http://127.0.0.1:8765/health` ต้องตอบ ok

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from research.daaes import bundle, catalogue, checklist, events as ev, runner
+from research.daaes import bundle, catalogue, checklist, events as ev, run_manifest, runner
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,7 +37,8 @@ def _make(tmp_path, name="b", oracle=True, key=None, score_override=None):
     ev_path = _events(tmp_path / name if False else tmp_path, with_oracle=oracle) if not (tmp_path / "e.jsonl").exists() else tmp_path / "e.jsonl"
     result = {"score": 80.0, "passed": True, "hard_failures": []}
     bundle.write_bundle(folder, case_id="TC-X", arm="a", seed=1, fixture_sha256="f" * 64, events_path=ev_path, agent_result={"ok": True}, oracle_result=result,
-                        score=score_override or {"score": 80.0, "passed": True, "hard_failures": []}, receipts=[{"id": "r1"}], checkpoints={"c1": {"n": 1}})
+                        score=score_override or {"score": 80.0, "passed": True, "hard_failures": []}, receipts=[{"id": "r1"}], checkpoints={"c1": {"n": 1}},
+                        run_manifest_data=run_manifest.for_run("TC-X", "a", 1, {"fixture_sha256": "f" * 64}, ev.load(ev_path)))
     seal = bundle.seal(folder, key)
     return folder, seal
 

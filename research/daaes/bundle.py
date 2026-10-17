@@ -2,7 +2,7 @@
 The evidence bundle of one run (specification section XI) and its seal.
 
     results/{date}/{case_id}/{arm}/{seed}/
-        manifest.json  fixture.sha256  events.jsonl  operation_receipts.jsonl  checkpoints/  agent_result.json  oracle_result.json  score.json  replay_report.json  environment.json  SEAL.json
+        manifest.json  run_manifest.json  fixture.sha256  events.jsonl  operation_receipts.jsonl  checkpoints/  agent_result.json  oracle_result.json  score.json  replay_report.json  environment.json  SEAL.json
 
 `seal` hashes every file and the manifest of hashes; with a key kept OUTSIDE the results folder it also signs that hash (Ed25519), so a later reader can tell a rewritten bundle from the one the run
 produced. `verify_bundle` is stdlib-plus-cryptography and imports nothing from Delentia: it re-hashes, checks the event chain, checks the seal, and applies the specification's validity rule:
@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from research.daaes import events as ev
+from research.daaes import run_manifest
 from research.daaes.core import canonical, sha256_file
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -46,7 +47,7 @@ def write_json(path: Path, obj: Any) -> None:
 
 def write_bundle(folder: Path, *, case_id: str, arm: str, seed: int, fixture_sha256: str, events_path: Optional[Path], agent_result: Dict[str, Any], oracle_result: Dict[str, Any],
                  score: Dict[str, Any], replay_report: Optional[Dict[str, Any]] = None, receipts: Optional[List[Dict[str, Any]]] = None, checkpoints: Optional[Dict[str, Any]] = None,
-                 extra_manifest: Optional[Dict[str, Any]] = None) -> Path:
+                 extra_manifest: Optional[Dict[str, Any]] = None, run_manifest_data: Optional[Dict[str, Any]] = None) -> Path:
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "fixture.sha256").write_text(fixture_sha256 + "\n", encoding="utf-8")
@@ -64,6 +65,8 @@ def write_bundle(folder: Path, *, case_id: str, arm: str, seed: int, fixture_sha
     write_json(folder / "score.json", score)
     write_json(folder / "replay_report.json", replay_report or {"mode": "not_evaluated"})
     write_json(folder / "environment.json", environment())
+    if run_manifest_data is not None:                              # the twelve experiment controls (run_manifest.py); a bundle without them is invalid when verified
+        write_json(folder / "run_manifest.json", run_manifest_data)
     write_json(folder / "manifest.json", {"case_id": case_id, "arm": arm, "seed": seed, "fixture_sha256": fixture_sha256, "oracle_score": score.get("score"), "passed": score.get("passed"),
                                           "hard_failures": score.get("hard_failures"), **(extra_manifest or {})})
     return folder
@@ -126,7 +129,15 @@ def verify_bundle(folder: Path, expected_public_key: Optional[str] = None) -> Di
     elif not any(e["kind"] == "oracle.evaluated" for e in events):
         problems.append("observability: the event log has no oracle.evaluated event")
     try:
+        controls = json.loads((folder / "run_manifest.json").read_text(encoding="utf-8"))
+        problems.extend(run_manifest.validate(controls))
+    except (OSError, ValueError):
+        controls = None
+        problems.append("run manifest: run_manifest.json is missing or unreadable (the experiment conditions are not written down)")
+    try:
         manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+        if controls and (controls.get("fixture_hash") != manifest.get("fixture_sha256") or controls.get("seed") != manifest.get("seed")):
+            problems.append("run manifest: its fixture hash or seed differs from manifest.json")
         if (folder / "fixture.sha256").read_text(encoding="utf-8").strip() != manifest.get("fixture_sha256"):
             problems.append("the fixture hash in the manifest is not the one recorded in fixture.sha256")
         score = json.loads((folder / "score.json").read_text(encoding="utf-8"))
