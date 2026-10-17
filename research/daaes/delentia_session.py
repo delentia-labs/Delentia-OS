@@ -182,7 +182,7 @@ def normalize_steps(result: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Optional[RunLog] = None, namespace: str = "daaes", approve: bool = False,
                 max_iterations: int = 6, intent_id: str = "INT-1", policy_path: Optional[Path] = None, approve_if: Optional[Callable[[Any], bool]] = None,
-                before_run: Optional[Callable[[Any], None]] = None, continue_after: bool = False, extra_env: Optional[Dict[str, str]] = None, route: bool = True) -> Dict[str, Any]:
+                before_run: Optional[Callable[[Any], None]] = None, continue_after: bool = False, extra_env: Optional[Dict[str, str]] = None, route: bool = True, provider: Any = None, max_seconds: float = 120.0) -> Dict[str, Any]:
     """One governed episode (and, with approve=True, the signed approval and the resume of what it paused on). Returns a normalized summary; events go to `log`."""
     from rct_control_plane import approvals
     from rct_control_plane.agent_factory import build_governed_loop
@@ -196,12 +196,13 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
         (home / "approver_pub.json").write_text(json.dumps({"pub": pub}), encoding="utf-8")
 
     summary: Dict[str, Any] = {"decisions": []}
-    with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), scripted_model(decisions) as model_state:
+    model = scripted_model(decisions) if provider is None else contextlib.nullcontext({"i": 0, "contexts": []})     # a real provider replaces the script: the model decides, the world and the gates are the same
+    with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), model as model_state:
         persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
         from rct_control_plane.agent_memory import AgentMemory
         kernel = NullKernel()
         kernel._agent_memory = AgentMemory("shared_default", persistence)                  # type: ignore[attr-defined]  # the product's kernel has one; the loop recalls the person's own namespace through it
-        loop = build_governed_loop(kernel, namespace=namespace, max_iterations=max_iterations, persistence=persistence, mcp_server=world, conversation_turns=0)
+        loop = build_governed_loop(kernel, namespace=namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=persistence, mcp_server=world, conversation_turns=0, llm_provider=provider)
         loop._route_enabled = route                                   # type: ignore[attr-defined]  # ROUTE (ALGO-21) caps a FAST goal at 3 steps; the cases that need a long script switch it off, like the research runs
         current: Dict[str, Optional[str]] = {"decision": None}
         if before_run is not None:

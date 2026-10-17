@@ -11,7 +11,7 @@ What stands between the scripted DAAES cases and the same cases run with a real 
 | G5 | the memory event log carries memory records only | TC-009 on projects, tasks, intents and links | the Architect decides whether tasks and intents belong in the memory log or in a second log | design first |
 | G6 | an episode does not resume after a crash; only the approval of an action does | TC-010 beyond the approval | design: persist the episode's step list and resume at the first step without a receipt | days |
 | G7 | no external anchor by default | truncation of the newest rows goes unnoticed on every chain | the Architect (witness Worker `host-1` key, a host) | $0 |
-| G8 | D3 now exists as the research variant `A111+NI` (pinned rules, profile and standing instructions hidden; every gate stays); D4 for the runtime is a configuration of the memory log's checkpoint interval; D5 (no witness) is the default | the ablation runs themselves, which need a model | - | none |
+| G8 | D3 now exists as the research variant `A111+NI` (pinned rules, profile and standing instructions hidden; every gate stays); D4 is answered by TC-009/TC-025 without a model (no live arm is worth paying for); D5 (no witness) is the default | the ablation runs themselves, which need a model | - | none |
 | G9 | two humans giving contradictory instructions (TC-007) and a planner agent overruled by another agent (TC-020) | those two cases | design | days |
 | G10 | no host that runs for days | TC-012, soak runs | the Architect (Oracle out of capacity; this PC is the interim host) | $0 or about EUR 5 a month |
 | G11 | the first complete suite run uses wall-clock latency in TC-009 | latency numbers differ between machines and with load | only compare latency within one run | none |

@@ -93,6 +93,50 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
     return {"case": case, "arm": arm, "seed": seed, "passed": result.get("passed"), "score": result.get("score"), "hard_failures": result.get("hard_failures"), **sealed}
 
 
+def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, fault: str = "F0", budget_usd: float = 0.0, price_in: Optional[float] = None, price_out: Optional[float] = None,
+             max_iterations: int = 14, max_seconds: Optional[float] = None, date: Optional[str] = None) -> Dict[str, Any]:
+    """One live run: Delentia's governed loop with a REAL model, the experiment budget guard in front of it, the same oracle, a sealed bundle.
+
+    kind 'ollama'     a local model: free, so the price is 0 and nothing can be spent.
+    kind 'openrouter' a paid model: refused unless OPENROUTER_API_KEY is set AND DELENTIA_RUN_LIVE_TESTS=1 AND both prices AND a budget are given. The key is read from the environment and never written anywhere.
+    Not part of `suite`: a live run costs time (local) or money (paid) and its result is about one model."""
+    import os
+
+    from research.daaes import budget_guard, live_adapter
+    from rct_control_plane.llm_provider import OllamaProvider
+    if case != "TC-003":
+        raise ValueError("only TC-003 has a live adapter so far")
+    out = Path(out)
+    date = date or time.strftime("%Y-%m-%d")
+    arm = f"d0_live-{kind}-{model.replace('/', '_').replace(':', '_')}"
+    if kind == "ollama":
+        inner: Any = OllamaProvider(model=model)
+        pin, pout = 0.0, 0.0
+        policy = budget_guard.BudgetPolicy(total_usd=5.0, reserve_usd=0.0, max_cost_per_run_usd=1.0, max_llm_calls_per_run=max_iterations * 3, max_input_tokens_per_run=2_000_000, max_output_tokens_per_run=500_000)
+    elif kind == "openrouter":
+        if not os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DELENTIA_RUN_LIVE_TESTS") != "1":
+            raise budget_guard.BudgetExceeded("a paid run needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1 in the environment (set by you, never written by this tool)")
+        if price_in is None or price_out is None or budget_usd <= 0:
+            raise budget_guard.BudgetExceeded("a paid run needs --price-in, --price-out (USD per million tokens) and --budget-usd: an unknown price is refused")
+        inner = live_adapter.openrouter_provider(model)
+        pin, pout = price_in, price_out
+        policy = budget_guard.BudgetPolicy(total_usd=budget_usd, warning_usd=budget_usd * 0.6, stop_new_runs_usd=budget_usd * 0.8, reserve_usd=budget_usd * 0.2,
+                                           max_cost_per_run_usd=budget_usd * 0.5, max_llm_calls_per_run=max_iterations * 3)
+    else:
+        raise ValueError("kind is 'ollama' or 'openrouter'")
+    work = out / ".work" / case / arm / str(seed)
+    _clean(work)
+    work.mkdir(parents=True)
+    guard = live_adapter.guarded(inner, out / "live_ledger.json", policy, f"{arm}-{seed}-{time.time_ns()}", pin, pout)
+    started = time.time()
+    result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0))
+    result["guard_refused"] = guard.refused
+    result["seconds"] = round(time.time() - started, 1)
+    sealed = _bundle(out, date, case, arm, seed, result, out / ".keys" / "bundle-seal.pem")
+    return {"case": case, "arm": arm, "seed": seed, "passed": result.get("passed"), "score": result.get("score"), "hard_failures": result.get("hard_failures"),
+            "seconds": result["seconds"], "agent": result.get("agent"), "guard_refused": guard.refused, **sealed}
+
+
 def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
     plan: List[Tuple[str, str, Dict[str, Any]]] = []
     for arm in ("ref_snapshot", "ref_delta", "delentia_delta_engine_r82", "delentia_delta_log", "delentia_memory_log"):
