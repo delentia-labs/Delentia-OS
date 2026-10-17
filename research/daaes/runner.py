@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from research.daaes import bundle, run_manifest, tc003, tc006, tc007_tc020, tc009, tc010, tc013, tc025
+from research.daaes import bundle, run_manifest, tc003, tc005, tc006, tc007_tc020, tc009, tc010, tc013, tc025
 from research.daaes import events as ev
 
 NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
@@ -85,6 +85,8 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
         arm = f"{arm}@{kw.get('kill_point', 'none')}"
     elif case == "TC-006":
         result = tc006.run_tc006(arm, work)
+    elif case == "TC-005":
+        result = tc005.run_tc005(arm, work, seed)
     elif case == "TC-013":
         behaviour = kw.get("behaviour", "perfect")
         result = tc013.run_tc013(arm, work, behaviour, seed)
@@ -162,6 +164,8 @@ def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
             plan.append(("TC-010", arm, {"kill_point": point}))
     for arm in tc006.ARMS:
         plan.append(("TC-006", arm, {}))
+    for arm in tc005.ARMS:
+        plan.append(("TC-005", arm, {}))
     for arm, behaviours in (("delentia", tc013.BEHAVIOURS), ("delentia_careless", ("buys",)), ("floor_only_careless", ("perfect", "buys"))):
         for behaviour in behaviours:
             plan.append(("TC-013", arm, {"behaviour": behaviour}))

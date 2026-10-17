@@ -53,6 +53,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     bench.add_argument("--plan", default="perfect", choices=("perfect", "forged", "tampering", "idle"), help="rehearsal only: what the scripted agent does")
     abl = sub.add_parser("ablation", help="the ablation arms D0-D6 on the scripted cases, each arm's manipulation checked (a folder outside the repository)")
     abl.add_argument("--out", default=None)
+    met = sub.add_parser("metrics", help="the twelve metrics and the weight-sensitivity check, from the verified bundles of a results folder")
+    met.add_argument("--results", required=True)
+    met.add_argument("--out", default=None)
     check = sub.add_parser("verify", help="verify one sealed bundle")
     check.add_argument("folder")
     lst = sub.add_parser("checklist", help="the seven items to hold before a paid call")
@@ -67,6 +70,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                               max_iterations=args.max_iterations, max_seconds=args.max_seconds, variant_seed=args.variant_seed)
         print(json.dumps(row, indent=2, default=str))
         return 0 if row["verified"] else 1
+    if args.cmd == "metrics":
+        from research.daaes import metrics
+        return metrics.main(args.results, args.out)
     if args.cmd == "ablation":
         from research.daaes import ablation
         return ablation.main(["--out", args.out] if args.out else [])

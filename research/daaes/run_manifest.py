@@ -84,6 +84,8 @@ def _fault_schedule(case: str, arm: str, kw: Dict[str, Any]) -> Any:
         return {"profile": kw.get("profile", "small"), "fault_ops": kw.get("fault_ops", 60), "faults": "partial write, duplicate, out-of-order, missing parent, corrupted checksum, snapshot crash, concurrent update"}
     if case == "TC-025":
         return {"tampers": ["mutate_payload", "delete_event", "reorder_events", "duplicate_event", "corrupt_hash", "replace_snapshot", "truncate_tail"]}
+    if case == "TC-005":
+        return {"model": "the primary model endpoint stops answering after its 3rd reply (connection error)", "api": "the order API commits order O-3 and loses the reply (timeout)"}
     if case == "TC-013":
         return {"agent_behaviour": kw.get("behaviour", "perfect"), "data": "5 late suppliers, 5 demand surges, 5 book/shelf mismatches (seeded); six review days over 30"}
     if case == "TC-006":
@@ -114,7 +116,7 @@ def for_run(case: str, arm: str, seed: int, result: Dict[str, Any], events: List
         provider = {"name": "none", "api_mode": "in-process scripted decisions"}
         budget = {"tokens": 0, "usd": 0.0, "seconds": kw.get("max_seconds") or "no wall-clock limit beyond the case's own step limit"}
         network = "no network: the tool servers are local stand-ins (a crawl answers 'no network in this world')"
-        retry = ("at-least-once invocation with one operation_id per operation; the mock API makes the effect idempotent" if case == "TC-010"
+        retry = ("at-least-once invocation with one operation_id per operation; the mock API makes the effect idempotent" if case in ("TC-010", "TC-005")
                  else "none by the harness; a failed call is not retried unless the script does")
     return {
         "model": model, "provider": provider,
