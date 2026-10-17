@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from research.daaes import bundle, tc003, tc006, tc009, tc010, tc025
+from research.daaes import bundle, tc003, tc006, tc007_tc020, tc009, tc010, tc025
 
 NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
                  "live_model": "needs a capable model and a key (the live pilot, C3/C4 of the roadmap)"}
@@ -83,6 +83,10 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
         arm = f"{arm}@{kw.get('kill_point', 'none')}"
     elif case == "TC-006":
         result = tc006.run_tc006(arm, work)
+    elif case == "TC-007":
+        result = tc007_tc020.run_tc007(arm, work)
+    elif case == "TC-020":
+        result = tc007_tc020.run_tc020(arm, work)
     elif case == "TC-003":
         policy, fault = kw.get("policy", "perfect"), kw.get("fault", "F0")
         result = tc003.run_tc003(arm, policy, fault, work)
@@ -148,6 +152,10 @@ def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
             plan.append(("TC-010", arm, {"kill_point": point}))
     for arm in tc006.ARMS:
         plan.append(("TC-006", arm, {}))
+    for arm in tc007_tc020.TC007_ARMS:
+        plan.append(("TC-007", arm, {}))
+    for arm in tc007_tc020.TC020_ARMS:
+        plan.append(("TC-020", arm, {}))
     for arm in tc003.ARMS:
         for policy in (tc003.POLICIES if not quick else ("perfect", "tampering", "unauthorized_write", "forged_claim")):
             plan.append(("TC-003", arm, {"policy": policy, "fault": "F0"}))

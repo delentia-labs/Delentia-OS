@@ -83,12 +83,26 @@ class DirWorld(ScriptedWorld):
     async def list_tools(self) -> List[Any]:
         return [_Tool("delentia_read_repo_file"), _Tool("delentia_write_repo_file"), _Tool("delentia_crawl_url"), _Tool("delentia_recall")]
 
+    def _inside(self, relative: Any) -> Path:
+        """A path the model named, kept inside this workspace: an absolute path, a drive, or `..` that leaves the folder is refused."""
+        candidate = (self.root / str(relative or "")).resolve()
+        base = self.root.resolve()
+        if candidate != base and base not in candidate.parents:
+            raise ValueError("path leaves the workspace")
+        return candidate
+
     async def call_tool(self, name: str, args: Dict[str, Any]) -> _Result:
         if name == "delentia_read_repo_file":
-            path = self.root / args.get("relative_path", "")
+            try:
+                path = self._inside(args.get("relative_path", ""))
+            except ValueError as exc:
+                return _Result({"content": "", "ok": False, "error": str(exc)})
             out: Dict[str, Any] = {"content": path.read_text(encoding="utf-8") if path.is_file() else "", "ok": path.is_file()}
         elif name == "delentia_write_repo_file":
-            path = self.root / args["relative_path"]
+            try:
+                path = self._inside(args["relative_path"])
+            except ValueError as exc:
+                return _Result({"ok": False, "error": str(exc)})
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(args["content_text"], encoding="utf-8")
             out = {"ok": True, "bytes": len(args["content_text"])}

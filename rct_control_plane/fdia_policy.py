@@ -35,6 +35,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import json
+import logging
 import os
 import re
 import tempfile
@@ -42,6 +43,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+LOG = logging.getLogger(__name__)
 POLICY_ENV = "DELENTIA_FDIA_POLICY"
 ACTION_TYPES = ("ALLOW", "CONDITIONAL", "REQUIRE_HUMAN_SIGNATURE")
 _SEVERITY = {"ALLOW": 0, "CONDITIONAL": 1, "REQUIRE_HUMAN_SIGNATURE": 2}
@@ -536,7 +538,7 @@ def effective_policy() -> Tuple[Optional["Policy"], str]:
     return (fallback, "default") if fallback is not None else (None, "none")
 
 
-def save_policy(policy: Policy, path: Optional[Path] = None) -> Path:
+def save_policy(policy: Policy, path: Optional[Path] = None, *, actor: str = "", reason: str = "") -> Path:
     target = path or policy_path()
     target.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".fdia_policy.", suffix=".tmp")
@@ -547,6 +549,11 @@ def save_policy(policy: Policy, path: Optional[Path] = None) -> Path:
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
+    try:
+        from rct_control_plane import fdia_policy_history
+        fdia_policy_history.record(policy, target, actor=actor, reason=reason)           # T12: every saved version is kept, hash-chained, next to the file
+    except Exception as exc:                                                              # noqa: BLE001 - the save itself succeeded; a missing history shows up as "out of sync" in verify()
+        LOG.warning("policy history was not written: %s", exc)
     return target
 
 

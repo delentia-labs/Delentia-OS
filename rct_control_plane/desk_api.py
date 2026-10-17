@@ -1025,6 +1025,21 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except Exception:               # the change and its audit row already exist
             pass
 
+    @router.get("/fdia/policy/history")
+    async def fdia_policy_history_view() -> Dict[str, Any]:
+        """Every saved version of the owner's policy (T12) and whether the history is intact and matches the file in use."""
+        from rct_control_plane import fdia_policy_history as fh
+        return {"versions": fh.history(), "check": fh.verify()}
+
+    @router.get("/fdia/policy/explain/{digest}")
+    async def fdia_policy_explain(digest: str) -> Dict[str, Any]:
+        """The policy text behind a digest found in an audit row."""
+        from rct_control_plane import fdia_policy_history as fh
+        found = fh.policy_for_digest(digest) if len(digest) == 64 else None
+        if found is None:
+            raise HTTPException(status_code=404, detail="no recorded version has that digest")
+        return found
+
     @router.put("/fdia/policy")
     async def fdia_save(payload: Dict[str, Any], request: Request, response: Response) -> Dict[str, Any]:
         from rct_control_plane import fdia_policy
@@ -1041,7 +1056,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             before = existing.digest() if existing is not None else None
         except ValueError:
             before = "unreadable"
-        path = fdia_policy.save_policy(policy)
+        path = fdia_policy.save_policy(policy, actor=getattr(request.state, "delentia_user", None) or "desk", reason=str(payload.get("reason") or "")[:300])
         claimed = getattr(request.state, "claimed_approval", None)
         if claimed:
             from rct_control_plane.approvals import PendingActionStore

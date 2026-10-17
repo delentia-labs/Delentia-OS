@@ -452,9 +452,10 @@ class ControlPlanePersistence:
                 memory_eventlog.append(conn, namespace, "add", memory_id, {"namespace": namespace, "memory_type": memory_type, "content": content, "context": context or {},
                                                                           "importance": importance, "created_at": now}, provenance if isinstance(provenance, dict) else None)
 
-    def list_memories(self, namespace: str, memory_type: Optional[str] = None, include_revoked: bool = False) -> List[Dict[str, Any]]:
+    def list_memories(self, namespace: str, memory_type: Optional[str] = None, include_revoked: bool = False, include_expired: bool = False) -> List[Dict[str, Any]]:
         """Every reader of memory (recall, the algorithm pipeline, the chat UI, the CLI) comes through here, so a revoked
-        memory is left out of all of them at once. `include_revoked=True` is for the audit view only."""
+        memory is left out of all of them at once. `include_revoked=True` is for the audit view only. A memory outside its validity window (Round 84: `valid_from` / `valid_to` in its context)
+        is left out the same way unless `include_expired=True` or the audit view is asked for."""
         where = "namespace = ?" + ("" if include_revoked else " AND revoked_at IS NULL")
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
@@ -467,7 +468,11 @@ class ControlPlanePersistence:
                 rows = conn.execute(
                     f"SELECT * FROM memories WHERE {where}", (namespace,),
                 ).fetchall()
-        return [_row_to_dict(r) for r in rows]
+        found = [_row_to_dict(r) for r in rows]
+        if include_revoked or include_expired:
+            return found
+        from rct_control_plane import memory_validity
+        return [m for m in found if memory_validity.is_valid_at(m)]
 
     def revoke_memory(self, memory_id: str, namespace: str, reason: str = "") -> bool:
         """Soft-delete (Zero-Delete): the row and its text stay on disk for the audit, but no reader returns it again.
@@ -532,11 +537,12 @@ class ControlPlanePersistence:
         return {"ok": True, "changed": True, "reason": "pinned" if pinned else "unpinned"}
 
     def pinned_memories(self, namespace: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """The standing rules of one person, most recently pinned first (revoked ones are never returned)."""
+        """The standing rules of one person, most recently pinned first (revoked ones and ones outside their validity window are never returned)."""
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
-            rows = conn.execute("SELECT * FROM memories WHERE namespace = ? AND revoked_at IS NULL AND pinned_at IS NOT NULL ORDER BY pinned_at DESC LIMIT ?", (namespace, int(limit))).fetchall()
-        return [_row_to_dict(r) for r in rows]
+            rows = conn.execute("SELECT * FROM memories WHERE namespace = ? AND revoked_at IS NULL AND pinned_at IS NOT NULL ORDER BY pinned_at DESC", (namespace,)).fetchall()
+        from rct_control_plane import memory_validity
+        return [m for m in (_row_to_dict(r) for r in rows) if memory_validity.is_valid_at(m)][:int(limit)]
 
     def touch_memory(self, memory_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()

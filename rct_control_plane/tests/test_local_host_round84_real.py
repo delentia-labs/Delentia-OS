@@ -12,8 +12,8 @@ import json
 import socket
 import time
 
-import psutil
 import pytest
+psutil = pytest.importorskip("psutil", reason="the host supervisor test kills processes by id and needs psutil")
 
 import local_host as lh
 

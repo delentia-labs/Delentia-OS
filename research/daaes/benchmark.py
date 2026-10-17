@@ -69,6 +69,7 @@ def run_cell(arm: str, seed: int, out: Path, upstream_url: str, upstream_key: Op
     from research.daaes import tc003
     from rct_control_plane.llm_provider import OpenRouterProvider
     work = out / "runs" / f"{arm}-{seed}"
+    wait = str(int(max(90.0, max_seconds)))                                         # every arm waits as long for a slow model (a client-side timeout is not the model failing)
     run_id = f"{arm}-{seed}-{time.time_ns()}"
     started = time.time()
     row: Dict[str, Any] = {"arm": arm, "seed": seed, "valid": False, "passed": False, "score": 0.0, "hard_failures": [], "model": model, "at": started}
@@ -76,10 +77,10 @@ def run_cell(arm: str, seed: int, out: Path, upstream_url: str, upstream_key: Op
         with ModelGateway(upstream_url, out / "ledger.json", policy, run_id, price_in, price_out, upstream_key=upstream_key, calls_path=work.parent / f"{arm}-{seed}.calls.jsonl", allowed_models=allowed_models,
                           timeout=max(60.0, max_seconds)) as gw:
             if arm == "d0":
-                with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url):
+                with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url, DELENTIA_OPENROUTER_TIMEOUT_S=wait):
                     result = tc003.run_live(OpenRouterProvider(api_key=gw.token, model=model), work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed)
             elif arm == "b0":
-                with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url, DELENTIA_LLM_PROVIDER="openrouter", DELENTIA_LLM_MODEL=model, OPENROUTER_API_KEY=gw.token, DELENTIA_EPISODE_BUDGET_USD="0"):
+                with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url, DELENTIA_LLM_PROVIDER="openrouter", DELENTIA_LLM_MODEL=model, OPENROUTER_API_KEY=gw.token, DELENTIA_EPISODE_BUDGET_USD="0", DELENTIA_OPENROUTER_TIMEOUT_S=wait):
                     result = tc003.run_plain(work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed)
             elif arm == "h0":
                 result = tc003.run_hermes(gw.base_url, gw.token, model, work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed, real_model=real_model, sandboxed=hermes_sandboxed)

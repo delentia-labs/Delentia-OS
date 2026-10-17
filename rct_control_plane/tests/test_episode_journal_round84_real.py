@@ -265,3 +265,16 @@ def test_erasing_a_person_leaves_no_trace_of_their_goal_in_the_journal(env, monk
     assert "Process the three orders" not in raw and "order-1.txt" not in raw
     journal = episode_journal.EpisodeJournal(persistence)
     assert journal.load(other._episode_id).goal == GOAL, "someone else's journal is untouched"
+
+
+def test_a_running_process_is_not_called_interrupted_on_a_machine_without_psutil(monkeypatch):
+    """CI found it: without psutil the journal could not read a start time, said 'not alive' for a LIVE process, and a running episode would have been offered for a second run."""
+    monkeypatch.setitem(sys.modules, "psutil", None)                    # `import psutil` now raises ImportError
+    me = os.getpid()
+    assert episode_journal._exists(me) and episode_journal._alive(me, None)
+    assert episode_journal._alive(me, episode_journal._proc_start(me)), "same process, whatever it reports as its start"
+    import subprocess
+    child = subprocess.Popen([sys.executable, "-c", "pass"])
+    child.wait()
+    assert not episode_journal._exists(child.pid) and not episode_journal._alive(child.pid, None), "a process that has finished is gone"
+    assert not episode_journal._alive(None, None) and not episode_journal._alive(0, None)

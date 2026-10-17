@@ -42,20 +42,66 @@ def _digest(value: Any) -> str:
 
 
 def _proc_start(pid: int) -> Optional[float]:
+    """When the process began (epoch seconds), or None when this machine cannot say. psutil if installed, else the operating system's own record (Linux /proc)."""
     try:
         import psutil
         return float(psutil.Process(pid).create_time())
     except Exception:                                                  # noqa: BLE001
-        return None
+        pass
+    if os.name == "posix":
+        try:
+            with open(f"/proc/{int(pid)}/stat", encoding="ascii", errors="replace") as f:
+                fields = f.read().rsplit(")", 1)[1].split()            # after the command name, which may hold spaces and brackets
+            ticks = int(fields[19])                                    # field 22 of /proc/pid/stat: start time in clock ticks since boot
+            with open("/proc/stat", encoding="ascii") as f:
+                boot = next(int(line.split()[1]) for line in f if line.startswith("btime"))
+            return boot + ticks / float(os.sysconf("SC_CLK_TCK"))  # type: ignore[attr-defined]
+        except Exception:                                              # noqa: BLE001
+            return None
+    return None
+
+
+def _exists(pid: int) -> bool:
+    """Is there a process with this id? Standard library only; an answer of "yes" for a process we may not signal is still "yes"."""
+    try:
+        import psutil
+        return bool(psutil.pid_exists(pid))
+    except Exception:                                                  # noqa: BLE001
+        pass
+    if os.name == "nt":
+        try:
+            import ctypes
+            handle = ctypes.windll.kernel32.OpenProcess(0x1000, False, int(pid))      # type: ignore[attr-defined]  # PROCESS_QUERY_LIMITED_INFORMATION
+            if not handle:
+                return False
+            code = ctypes.c_ulong()
+            ok = ctypes.windll.kernel32.GetExitCodeProcess(handle, ctypes.byref(code))  # type: ignore[attr-defined]
+            ctypes.windll.kernel32.CloseHandle(handle)                                 # type: ignore[attr-defined]
+            return bool(ok) and code.value == 259                                      # STILL_ACTIVE
+        except Exception:                                              # noqa: BLE001
+            return True                                                # cannot tell: treat as running (never resume something that may still be going)
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except PermissionError:
+        return True
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return False
 
 
 def _alive(pid: Optional[int], started: Optional[float]) -> bool:
+    """Is the process that began this episode still the same running process? A process that cannot be told apart from a reused id counts as running: the cost is a short wait
+    (the staleness limit still lists it), the opposite mistake would run an episode twice."""
     if not pid:
         return False
-    now = _proc_start(int(pid))
-    if now is None:
+    if not _exists(int(pid)):
         return False
-    return started is None or abs(now - float(started)) < 2.0
+    now = _proc_start(int(pid))
+    if now is None or started is None:
+        return True
+    return abs(now - float(started)) < 2.0
 
 
 @dataclass
