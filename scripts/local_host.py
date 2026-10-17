@@ -68,8 +68,9 @@ def server_env(cfg: Dict[str, Any]) -> Dict[str, str]:
     p = paths(Path(cfg["dir"]))
     env = {k: v for k, v in os.environ.items() if not k.startswith("DELENTIA_") and k not in ("OPENROUTER_API_KEY",)}
     env.update({"DELENTIA_HOME": str(p["home"]), "DELENTIA_API_TOKEN": p["token"].read_text(encoding="utf-8").strip(), "DELENTIA_LLM_PROVIDER": cfg["provider"], "DELENTIA_LLM_MODEL": cfg["model"],
-                "DELENTIA_OLLAMA_URL": os.environ.get("DELENTIA_OLLAMA_URL", "http://127.0.0.1:11434"), "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1",
-                "DELENTIA_EPISODE_BUDGET_USD": str(cfg.get("episode_budget_usd", 0.0))})
+                "DELENTIA_OLLAMA_URL": os.environ.get("DELENTIA_OLLAMA_URL", "http://127.0.0.1:11434"), "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"})
+    if float(cfg.get("episode_budget_usd") or 0) > 0:        # 0 means "no limit" here; the loop refuses a literal 0 (found by the first real episode on this host: every run was an HTTP 500)
+        env["DELENTIA_EPISODE_BUDGET_USD"] = str(cfg["episode_budget_usd"])
     if cfg.get("daily_usd"):
         env["DELENTIA_DAILY_BUDGET_USD"] = str(cfg["daily_usd"])
     if cfg.get("daily_tokens"):
