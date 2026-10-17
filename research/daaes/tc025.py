@@ -92,7 +92,7 @@ def tamper_audit_chain(db: Path, work: Path, anchor_head: Dict[str, Any]) -> Dic
         elif how == "duplicate_event":
             conn.execute("INSERT INTO audit_trail (entity_type, entity_id, action, actor, changes, created_at) SELECT entity_type, entity_id, action, actor, changes, created_at FROM audit_trail WHERE id = ?", (mid,))
         elif how == "corrupt_hash":
-            conn.execute("UPDATE audit_chain SET row_hash = '00' || SUBSTR(row_hash, 3) WHERE audit_id = ?", (mid,))
+            conn.execute("UPDATE audit_chain SET row_hash = CASE WHEN SUBSTR(row_hash, 1, 2) = '00' THEN 'ff' ELSE '00' END || SUBSTR(row_hash, 3) WHERE audit_id = ?", (mid,))
         elif how == "truncate_tail":
             conn.execute("DELETE FROM audit_chain WHERE audit_id IN (SELECT audit_id FROM audit_chain ORDER BY seq DESC LIMIT 2)")
             conn.execute("DELETE FROM audit_trail WHERE id IN (SELECT id FROM audit_trail ORDER BY id DESC LIMIT 2)")
@@ -128,7 +128,7 @@ def tamper_memory_log(store: DelentiaMemoryLogStore) -> Dict[str, Dict[str, Any]
         elif how == "duplicate_event":
             conn.execute("INSERT INTO memory_events (namespace, kind, memory_id, payload, provenance, created_at, prev_hash, event_hash) SELECT namespace, kind, memory_id, payload, provenance, created_at, prev_hash, event_hash FROM memory_events WHERE seq = ?", (mid,))
         elif how == "corrupt_hash":
-            conn.execute("UPDATE memory_events SET event_hash = '00' || SUBSTR(event_hash, 3) WHERE seq = ?", (mid,))
+            conn.execute("UPDATE memory_events SET event_hash = CASE WHEN SUBSTR(event_hash, 1, 2) = '00' THEN 'ff' ELSE '00' END || SUBSTR(event_hash, 3) WHERE seq = ?", (mid,))
         elif how == "replace_snapshot":
             conn.execute("UPDATE memory_checkpoints SET state_zstd = SUBSTR(state_zstd, 1, LENGTH(state_zstd) - 3) || X'000000' WHERE id = (SELECT MAX(id) FROM memory_checkpoints)")
         elif how == "truncate_tail":

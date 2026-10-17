@@ -132,3 +132,18 @@ def test_the_session_adapter_restores_everything_it_patches(tmp_path):
     env_before = dict(os.environ)
     ds.run_session(tmp_path / "home", ds.GOAL, ds.DECISIONS, ds.ScriptedWorld(ds.FILES), None, approve=False)
     assert loop_module.decide_next_action is before and dict(os.environ) == env_before
+
+
+def test_the_hash_corruption_changes_the_value_even_when_the_hash_already_starts_with_00():
+    """CI (Python 3.11) failed once in about 256 runs: the tamper wrote '00' over the first byte, and a real hash that began with '00' was left unchanged, so 'nothing detected' was the test's own doing."""
+    import sqlite3
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[2] / "research" / "daaes" / "tc025.py").read_text(encoding="utf-8")
+    assert source.count("CASE WHEN SUBSTR(") == 2, "both the audit-chain and the memory-log tamper use the guarded form"
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE t (h TEXT)")
+    for start in ("00", "ab", "ff", "0a"):
+        conn.execute("DELETE FROM t")
+        conn.execute("INSERT INTO t VALUES (?)", (start + "c0ffee",))
+        conn.execute("UPDATE t SET h = CASE WHEN SUBSTR(h, 1, 2) = '00' THEN 'ff' ELSE '00' END || SUBSTR(h, 3)")
+        assert conn.execute("SELECT h FROM t").fetchone()[0] != start + "c0ffee", start
