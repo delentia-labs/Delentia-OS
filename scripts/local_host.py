@@ -80,9 +80,31 @@ def server_env(cfg: Dict[str, Any]) -> Dict[str, str]:
     if cfg.get("witness_url") and cfg.get("witness_key_id"):
         env["DELENTIA_AUDIT_ANCHOR_URL"] = cfg["witness_url"]
         env["DELENTIA_AUDIT_ANCHOR_KEY_ID"] = cfg["witness_key_id"]
+    if cfg.get("provider") == "ollama":                                              # a local model on a CPU takes minutes for one call over a long prompt; the 90 s default made a real episode a 504 (found on this host)
+        env["DELENTIA_OLLAMA_TIMEOUT_S"] = str(cfg.get("model_timeout_s") or 600)
+    if cfg.get("notary_url"):                                                       # tier A2: every tool call is recorded by a notary in another OS account BEFORE it runs
+        env["DELENTIA_NOTARY_URL"] = cfg["notary_url"]
+        if cfg.get("notary_token_file"):
+            env["DELENTIA_NOTARY_TOKEN_FILE"] = cfg["notary_token_file"]                   # the PATH only; the token itself is never in this configuration
     if cfg.get("provider") == "openrouter" and os.environ.get("OPENROUTER_API_KEY"):
         env["OPENROUTER_API_KEY"] = os.environ["OPENROUTER_API_KEY"]            # passed on from the person's own environment, never stored by this script
     return env
+
+
+def set_notary(host_dir: Path, url: Optional[str], token_file: Optional[str]) -> Dict[str, Any]:
+    """Point this host at a notary (or away from it). Restart the server for it to take effect. The token file must exist and be non-empty: an empty file would mean 'no token'."""
+    config_path = paths(host_dir)["config"]
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    if url:
+        token = Path(token_file or "")
+        if not token.is_file() or not token.read_text(encoding="utf-8").strip():
+            raise SystemExit(f"the token file {token_file!r} does not exist or is empty")
+        cfg["notary_url"], cfg["notary_token_file"] = url, str(token)
+    else:
+        cfg.pop("notary_url", None)
+        cfg.pop("notary_token_file", None)
+    _write_atomic(config_path, json.dumps(cfg, indent=2))
+    return {"notary_url": cfg.get("notary_url"), "notary_token_file": cfg.get("notary_token_file"), "restart_needed": True}
 
 
 def server_command(cfg: Dict[str, Any]) -> List[str]:
@@ -238,7 +260,7 @@ def env_lines(host_dir: Path) -> str:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
-    for name in ("init", "start", "status", "stop", "env", "_supervise"):
+    for name in ("init", "start", "status", "stop", "env", "notary", "_supervise"):
         sp = sub.add_parser(name)
         sp.add_argument("--dir", default=str(DEFAULT_DIR))
         if name == "init":
@@ -251,12 +273,18 @@ def main(argv: Optional[List[str]] = None) -> int:
             sp.add_argument("--episode-budget-usd", type=float, default=0.0)
             sp.add_argument("--daily-usd", type=float, default=0.0)
             sp.add_argument("--daily-tokens", type=int, default=0)
+        if name == "notary":
+            sp.add_argument("--url", default="http://127.0.0.1:8765")
+            sp.add_argument("--token-file", required=True, help="a file holding the notary token (the path is stored, never the token)")
+            sp.add_argument("--off", action="store_true", help="stop using a notary")
         if name == "status":
             sp.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     host_dir = Path(args.dir)
     if args.cmd == "init":
         print(json.dumps(init(host_dir, args.provider, args.model, args.audit_key, args.witness_url, args.witness_key_id, args.port, args.episode_budget_usd, args.daily_usd, args.daily_tokens), indent=2))
+    elif args.cmd == "notary":
+        print(json.dumps(set_notary(host_dir, None if args.off else args.url, None if args.off else args.token_file)))
     elif args.cmd == "start":
         print(json.dumps(start(host_dir)))
     elif args.cmd == "stop":

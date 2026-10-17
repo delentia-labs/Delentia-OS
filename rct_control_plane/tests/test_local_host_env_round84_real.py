@@ -33,3 +33,37 @@ def test_a_positive_budget_is_passed_on(tmp_path):
     lh.init(host, "openrouter", "m", None, None, None, 8000, 0.25, 0.0, 0)
     env = lh.server_env(json.loads((host / "host.json").read_text(encoding="utf-8")))
     assert env["DELENTIA_EPISODE_BUDGET_USD"] == "0.25"
+
+
+def test_a_notary_is_passed_on_as_a_url_and_a_token_file_path_never_the_token(tmp_path):
+    host = tmp_path / "host"
+    lh.init(host, "ollama", "qwen3:8b", None, None, None, 8000, 0.0, 0.0, 0)
+    token = tmp_path / "notary_token.txt"
+    token.write_text("a" * 64, encoding="ascii")
+    out = lh.set_notary(host, "http://127.0.0.1:8765", str(token))
+    assert out["restart_needed"] is True
+    env = lh.server_env(json.loads((host / "host.json").read_text(encoding="utf-8")))
+    assert env["DELENTIA_NOTARY_URL"] == "http://127.0.0.1:8765" and env["DELENTIA_NOTARY_TOKEN_FILE"] == str(token)
+    assert "a" * 64 not in json.dumps(env) and "a" * 64 not in (host / "host.json").read_text(encoding="utf-8")
+    lh.set_notary(host, None, None)
+    assert "DELENTIA_NOTARY_URL" not in lh.server_env(json.loads((host / "host.json").read_text(encoding="utf-8")))
+
+
+def test_an_empty_or_missing_token_file_is_refused(tmp_path):
+    import pytest
+    host = tmp_path / "host"
+    lh.init(host, "ollama", "qwen3:8b", None, None, None, 8000, 0.0, 0.0, 0)
+    empty = tmp_path / "empty.txt"
+    empty.write_text("", encoding="ascii")
+    for path in (str(empty), str(tmp_path / "missing.txt")):
+        with pytest.raises(SystemExit):
+            lh.set_notary(host, "http://127.0.0.1:8765", path)
+
+
+def test_a_local_model_gets_a_long_call_timeout_and_a_remote_one_does_not(tmp_path):
+    local = tmp_path / "local"
+    lh.init(local, "ollama", "qwen3:8b", None, None, None, 8000, 0.0, 0.0, 0)
+    assert lh.server_env(json.loads((local / "host.json").read_text(encoding="utf-8")))["DELENTIA_OLLAMA_TIMEOUT_S"] == "600"
+    remote = tmp_path / "remote"
+    lh.init(remote, "openrouter", "m", None, None, None, 8000, 0.25, 0.0, 0)
+    assert "DELENTIA_OLLAMA_TIMEOUT_S" not in lh.server_env(json.loads((remote / "host.json").read_text(encoding="utf-8")))

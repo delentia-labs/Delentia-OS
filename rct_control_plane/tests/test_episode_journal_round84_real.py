@@ -278,3 +278,17 @@ def test_a_running_process_is_not_called_interrupted_on_a_machine_without_psutil
     child.wait()
     assert not episode_journal._exists(child.pid) and not episode_journal._alive(child.pid, None), "a process that has finished is gone"
     assert not episode_journal._alive(None, None) and not episode_journal._alive(0, None)
+
+
+def test_when_two_claims_both_get_written_the_first_one_wins_and_the_second_is_told_no(env):
+    """CI found it (Python 3.10, two real processes): both claimers read the journal before either wrote, both inserted a 'resumed' row (different seq numbers, so the UNIQUE key did not stop them), the
+    fold let the LATER row take the claim, and both were told they had won: the episode would have run twice. The first row in order now decides."""
+    tmp, persistence = env
+    loop, _, _ = run_episode(persistence, World(tmp / "w", crash_on=1), three_saves())
+    journal = episode_journal.EpisodeJournal(persistence)
+    ep = journal.load(loop._episode_id)
+    journal._append(ep.episode_id, ep.namespace, "resumed", {"by": "claimer-a"})          # what a racing claimer's insert looks like: written without having seen the other
+    journal._append(ep.episode_id, ep.namespace, "resumed", {"by": "claimer-b"})
+    assert journal.load(ep.episode_id).resumed_by == "claimer-a"
+    assert journal.claim_resume(ep.episode_id, ep.namespace, "claimer-c") is False
+    assert journal.load(ep.episode_id).resumed_by == "claimer-a"

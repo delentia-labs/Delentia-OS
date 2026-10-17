@@ -223,7 +223,8 @@ class EpisodeJournal:
             elif kind == "end":
                 ep.ended, ep.stopped_reason = True, str(data.get("stopped_reason"))
             elif kind == "resumed":
-                ep.resumed_by = str(data.get("by"))
+                if ep.resumed_by is None:                              # the FIRST claim in row order wins; a later one (a race: both read the same state, both inserted) must not take it over
+                    ep.resumed_by = str(data.get("by"))
         ep.steps = [steps[k] for k in sorted(steps)]
         return ep
 
