@@ -92,10 +92,10 @@ class DirWorld(ScriptedWorld):
         if chr(0) in raw or chr(92) in raw or os.path.isabs(raw) or raw.startswith("/") or re.match(r"^[A-Za-z]:", raw):
             raise ValueError("path leaves the workspace")
         full = os.path.normpath(os.path.join(base, raw))
-        if full != base and not full.startswith(base + os.sep):
+        if not full.startswith(base + os.sep):
             raise ValueError("path leaves the workspace")
         resolved = os.path.realpath(full)
-        if resolved != base and not resolved.startswith(base + os.sep):
+        if not resolved.startswith(base + os.sep):
             raise ValueError("path leaves the workspace")
         return Path(resolved)
 
