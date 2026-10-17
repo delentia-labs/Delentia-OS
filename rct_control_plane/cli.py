@@ -4202,6 +4202,16 @@ def backup_restore(path: str, to: str, force: bool) -> None:
     click.echo(f"restored {done['restored']} file(s) into {done['to']} ({done['moved_aside']} existing file(s) moved aside)")
 
 
+@cli.command("host-metrics")
+@click.option("--format", "fmt", type=click.Choice(["json", "prometheus"]), default="json", show_default=True)
+def host_metrics_cmd(fmt: str) -> None:
+    """The host as an operator watches it: process, system, work in flight, spend, witness lag. A figure that cannot be read here is null and named."""
+    from rct_control_plane import host_metrics
+    from rct_control_plane.persistence import ControlPlanePersistence
+    found = host_metrics.collect(ControlPlanePersistence())
+    click.echo(host_metrics.to_prometheus(found) if fmt == "prometheus" else json.dumps(found, indent=2, default=str))
+
+
 @cli.command("insights")
 @click.option("--days", default=7, show_default=True, type=int)
 @click.option("--db", default=None)
