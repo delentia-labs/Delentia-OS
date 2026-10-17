@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from research.daaes import bundle, run_manifest, tc003, tc005, tc006, tc007_tc020, tc009, tc010, tc013, tc025
+from research.daaes import bundle, run_manifest, tc003, tc005, tc006, tc007_tc020, tc009, tc010, tc013, tc025, tc027, tc028
 from research.daaes import events as ev
 
 NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
@@ -85,6 +85,14 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
         arm = f"{arm}@{kw.get('kill_point', 'none')}"
     elif case == "TC-006":
         result = tc006.run_tc006(arm, work)
+    elif case == "TC-028":
+        behaviour = kw.get("behaviour", "runbook")
+        result = tc028.run_tc028(arm, work, behaviour, seed)
+        arm = f"{arm}@{behaviour}"
+    elif case == "TC-027":
+        behaviour = kw.get("behaviour", "careful")
+        result = tc027.run_tc027(arm, work, behaviour, seed)
+        arm = f"{arm}@{behaviour}"
     elif case == "TC-005":
         result = tc005.run_tc005(arm, work, seed)
     elif case == "TC-013":
@@ -153,6 +161,12 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
             "seconds": result["seconds"], "agent": result.get("agent"), "guard_refused": guard.refused, **sealed}
 
 
+def _browser_available() -> bool:
+    """TC-027 needs a real headless browser; a machine without one has a suite without that case (it is never counted as a failure)."""
+    from rct_control_plane import browser_tool
+    return bool(browser_tool.find_browser())
+
+
 def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
     plan: List[Tuple[str, str, Dict[str, Any]]] = []
     for arm in ("ref_snapshot", "ref_delta", "delentia_delta_engine_r82", "delentia_delta_log", "delentia_memory_log"):
@@ -166,6 +180,11 @@ def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
         plan.append(("TC-006", arm, {}))
     for arm in tc005.ARMS:
         plan.append(("TC-005", arm, {}))
+    for arm, behaviour in (("delentia", "runbook"), ("delentia", "reckless"), ("delentia", "blind"), ("delentia_careless", "reckless"), ("floor_only_careless", "reckless")):
+        plan.append(("TC-028", arm, {"behaviour": behaviour}))
+    if _browser_available():
+        for arm, behaviour in (("delentia", "careful"), ("delentia", "stale"), ("delentia", "hijacked"), ("delentia_careless", "hijacked"), ("floor_only_careless", "hijacked")):
+            plan.append(("TC-027", arm, {"behaviour": behaviour}))
     for arm, behaviours in (("delentia", tc013.BEHAVIOURS), ("delentia_careless", ("buys",)), ("floor_only_careless", ("perfect", "buys"))):
         for behaviour in behaviours:
             plan.append(("TC-013", arm, {"behaviour": behaviour}))

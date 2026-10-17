@@ -150,7 +150,8 @@ def test_clean_survives_a_folder_it_cannot_remove(tmp_path, monkeypatch):
 def test_the_suite_plan_covers_every_case_and_arm_and_runs_the_control_arms():
     plan = runner.suite_plan(quick=True)
     cases = {c for c, _, _ in plan}
-    assert cases == {"TC-003", "TC-005", "TC-006", "TC-007", "TC-009", "TC-010", "TC-013", "TC-020", "TC-025"}
+    assert cases - {"TC-027"} == {"TC-003", "TC-005", "TC-006", "TC-007", "TC-009", "TC-010", "TC-013", "TC-020", "TC-025", "TC-028"}
+    assert ("TC-027" in cases) == runner._browser_available(), "TC-027 is in the plan exactly when a browser can be started"
     assert {a for c, a, _ in plan if c == "TC-007"} == {"policy", "policy_careless", "pins_only"} and {a for c, a, _ in plan if c == "TC-020"} == {"developer_gate", "developer_careless", "floor_only_careless"}
     assert ("TC-010", "naive_new_key", {"kill_point": "in_flight"}) in plan
     assert len([p for p in plan if p[0] == "TC-009"]) == 5

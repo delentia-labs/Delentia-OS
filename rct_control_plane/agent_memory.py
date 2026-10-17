@@ -8,6 +8,7 @@ for real ranking instead of a hand-rolled substring search.
 """
 from __future__ import annotations
 
+import asyncio
 import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -83,6 +84,11 @@ class AgentMemory:
         bonus = {c["id"]: 0.03 * min(1.0, float(c["importance"]) * self._type_boost(c) / 2.0) for c in candidates}
         return memory_ranking.rank(query, candidates, cosines, lexical, importance_bonus=bonus)[:max(limit * 3, 1)]
 
+    async def _ranked_off_loop(self, query: str, candidates: List[Dict[str, Any]], limit: int) -> List[Any]:
+        """`_ranked` may ask the local embedding model (a blocking HTTP call that can take seconds while the model loads, 20 s at the most). Run on the event loop it froze every other request of the server
+        for that long (found by a six-hour soak: three /health probes in a row timed out while an episode recalled a memory). It runs in a worker thread instead."""
+        return await asyncio.to_thread(self._ranked, query, candidates, limit)
+
     async def recall_scored(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Like recall(), but each item carries `relevance` (the raw semantic
         similarity to the query, 0..1, not boosted by type or importance) so a
@@ -92,7 +98,7 @@ class AgentMemory:
         candidates = memory_eventlog.select_for_recall(candidates)
         if not candidates:
             return []
-        scored = [(order_key, relevance, candidate) for order_key, relevance, _lexical, candidate in self._ranked(query, candidates, limit)]
+        scored = [(order_key, relevance, candidate) for order_key, relevance, _lexical, candidate in await self._ranked_off_loop(query, candidates, limit)]
         scored.sort(key=lambda x: x[0], reverse=True)
         results = []
         for _final, similarity, candidate in scored[:limit]:
@@ -109,7 +115,7 @@ class AgentMemory:
         if not candidates:
             return []
 
-        scored = [(order_key, candidate) for order_key, _relevance, _lexical, candidate in self._ranked(query, candidates, limit)]
+        scored = [(order_key, candidate) for order_key, _relevance, _lexical, candidate in await self._ranked_off_loop(query, candidates, limit)]
 
         scored.sort(key=lambda x: x[0], reverse=True)
         results = [c for _, c in scored[:limit]]
