@@ -3703,6 +3703,36 @@ def fdia_template(name: str, out_path: Optional[str]) -> None:
         click.echo(text)
 
 
+@fdia_group.command("from-text")
+@click.argument("sentence")
+@click.option("--out", "out_path", type=click.Path(dir_okay=False), default=None, help="Write the proposed policy here (never overwrites; it is NOT activated).")
+@click.option("--json", "as_json", is_flag=True, help="Print the whole proposal as JSON.")
+def fdia_from_text(sentence: str, out_path: Optional[str], as_json: bool) -> None:
+    """Read your sentence and show the policy it means, or ask what is unclear. Nothing is changed: saving a policy is a separate, signed step."""
+    from rct_control_plane import policy_from_text
+    proposal = policy_from_text.propose(sentence)
+    if as_json:
+        click.echo(json.dumps(proposal.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        click.echo(f"status: {proposal.status}")
+        for rule in proposal.rules:
+            click.echo(f"  {rule['stance'].upper():<6} {rule['group']:<9} -> {', '.join(rule['tools'])}")
+        for question in proposal.questions:
+            click.echo(click.style(f"  ? {question}", fg="yellow"))
+        for note in proposal.notes:
+            click.echo(f"  note: {note}")
+    if out_path and proposal.rules:
+        target = Path(out_path).expanduser()
+        if target.exists():
+            click.echo(click.style(f"Error: {target} already exists; refusing to overwrite", fg="red"), err=True)
+            sys.exit(1)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(policy_from_text.to_policy(proposal), indent=2, ensure_ascii=False) + chr(10), encoding="utf-8")
+        click.echo(f"wrote {target} (a proposal: activate it with the signed policy path)")
+    if proposal.status == "refuse":
+        sys.exit(2)
+
+
 @fdia_group.command("test")
 @click.argument("tool_name")
 @click.option("--args", "args_json", default="{}", help="Tool arguments as JSON.")
