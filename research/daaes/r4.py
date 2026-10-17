@@ -30,6 +30,16 @@ POLICY = {"version": "1.0.0", "policy_id": "r4-owner", "default_fallback_A": 0, 
           "blocked_action_patterns": [], "require_human_dual_signoff": [], "roles": {"default_role": "developer", "principals": {}}, "jury_by_risk": {}}
 
 
+class R4World(ds.DirWorld):
+    """The workspace with the REAL definition of the read tool (name, description, argument names). The scripted worlds never needed to describe their tools; a live model that is not told the argument is
+    `relative_path` guesses another name and gets an error (found by the first R4 run, whose six "cannot read the file" answers measured this harness, not the model)."""
+
+    async def list_tools(self) -> List[Any]:
+        from rct_control_plane.mcp_server import mcp
+        real = {t.name: t for t in await mcp.list_tools()}
+        return [real[name] for name in ("delentia_read_repo_file", "delentia_search_repo_files") if name in real]
+
+
 def normalise(text: Optional[str]) -> str:
     return re.sub(r"[^a-z0-9. ]+", "", re.sub(r"\s+", " ", (text or "").lower())).strip()
 
@@ -42,7 +52,7 @@ def correct(answer: Optional[str]) -> bool:
 def one_run(index: int, provider: Any, work: Path, max_seconds: float) -> Dict[str, Any]:
     run_dir = work / f"run-{index}-{time.time_ns()}"
     run_dir.mkdir(parents=True)
-    world = ds.DirWorld(run_dir / "workspace")
+    world = R4World(run_dir / "workspace")
     for rel, text in FILES.items():
         target = run_dir / "workspace" / rel
         target.parent.mkdir(parents=True, exist_ok=True)
