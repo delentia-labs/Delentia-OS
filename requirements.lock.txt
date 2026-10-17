@@ -135,7 +135,7 @@ llvmlite==0.49.0
 loguru==0.7.3
 lxml==6.1.1  # Round 44 item E: satisfies requirements.txt's floor (>=6.1.0) and the real Dependabot fix (>=6.1.0) - bumped one patch further than the bare minimum because lxml-html-clean 0.4.5 itself requires lxml>=6.1.1 (real pip dependency-resolution conflict hit installing 6.1.0)
 lxml_html_clean==0.4.5  # Round 44 item E: matches requirements.txt's own already-correct floor
-Mako==1.4.1
+Mako==1.4.2
 Markdown==3.10.2
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
