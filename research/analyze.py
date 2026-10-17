@@ -51,13 +51,47 @@ CONTRASTS: Dict[str, Dict[str, float]] = {
 }
 
 
-def load(path: Path) -> List[Dict[str, Any]]:
-    rows: Dict[str, Dict[str, Any]] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            row = json.loads(line)
-            rows[row["run_id"]] = row                      # a restarted unit appears twice: the last one wins
-    return list(rows.values())
+def final_attempts(raw: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Round 82: one row per run_id, and for a trajectory only the rows of ONE attempt. A trajectory that was killed is rerun whole (research/runner.py), so its earlier rows are
+    attempts that stay in the file but must never be mixed with the rows of the attempt that finished: per (trajectory, arm, repeat) the highest COMPLETE attempt wins, and
+    when none is complete the highest one is kept (the unit is then incomplete and says so through its missing episodes)."""
+    units: Dict[tuple, Dict[int, Dict[str, Dict[str, Any]]]] = {}
+    singles: Dict[str, Dict[str, Any]] = {}
+    for row in raw:
+        if row.get("trajectory_id"):
+            key = (row["trajectory_id"], row.get("arm"), row.get("replicate"), row.get("unit_token_budget"))
+            units.setdefault(key, {}).setdefault(int(row.get("trajectory_attempt", 1)), {})[row["run_id"]] = row    # inside one attempt the last row of a run_id wins
+        else:
+            singles[row["run_id"]] = row                      # a restarted static task appears twice: the last one wins
+    chosen: List[Dict[str, Any]] = list(singles.values())
+    for by_attempt in units.values():
+        expected = max(len(rows) for rows in by_attempt.values())
+        complete = [n for n, rows in by_attempt.items() if len(rows) == expected]
+        pick = max(complete) if complete else max(by_attempt)
+        chosen.extend(by_attempt[pick].values())
+    return chosen
+
+
+def load_rows(path: Path) -> List[Dict[str, Any]]:
+    raw = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return final_attempts(raw)
+
+
+load = load_rows                                              # the name the older callers use
+
+
+def missingness_by_arm(rows: Sequence[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """Round 82: how many rows each arm lost to an exclusion (a predeclared external outage) or a failed manipulation check. An arm that loses more is not comparable
+    without saying so."""
+    out: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        entry = out.setdefault(str(r.get("arm", "?")), {"rows": 0, "excluded": 0})
+        entry["rows"] += 1
+        if r.get("exclusion_reason") or not r.get("manipulation_ok", True):
+            entry["excluded"] += 1
+    for entry in out.values():
+        entry["share"] = entry["excluded"] / entry["rows"] if entry["rows"] else 0.0
+    return out
 
 
 def usable(rows: Sequence[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -195,6 +229,7 @@ def analyse(rows: List[Dict[str, Any]], *, reps: int = 10000, seed: int = 202610
     kept, dropped = usable(rows)
     result: Dict[str, Any] = {"rows": len(rows), "used": len(kept), "dropped": [
         {"run_id": r["run_id"], "why": r.get("exclusion_reason") or "manipulation check failed"} for r in dropped]}
+    result["missingness_by_arm"] = missingness_by_arm(rows)
     result["protocol_version"] = PROTOCOL_VERSION
     result["policies"] = sorted({r.get("policy", "?") for r in kept})
     result["rehearsal"] = bool(set(result["policies"]) & SCRIPTED)
