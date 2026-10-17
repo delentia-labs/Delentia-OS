@@ -1,0 +1,59 @@
+name: DAAES zero-cost suite
+
+# Round 83: the DAAES cases (TC-003/006/009/010/025) run with a scripted model: no model call, no key, no network. The Windows run is the Architect's machine; this runs the
+# same suite on Linux, so a result that holds on one operating system only (file locking, process termination, line endings) shows up here. The sealed evidence bundles and
+# SUITE.md are kept as an artifact, and the pre-API checklist is printed in the log. It does NOT gate merges: it takes a while and exists to produce evidence.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - "research/daaes/**"
+      - "rct_control_plane/delta_log.py"
+      - "rct_control_plane/algo_25_delta_block.py"
+      - "rct_control_plane/approvals.py"
+      - "rct_control_plane/memory_eventlog.py"
+      - ".github/workflows/daaes-suite.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    name: Zero-cost suite (Linux, Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest cryptography zstandard
+      - name: Run the suite
+        env:
+          DELENTIA_HOME: ${{ runner.temp }}/delentia-home
+          PYTHONIOENCODING: utf-8
+        run: |
+          python -m research.daaes suite --out "$RUNNER_TEMP/daaes-results" 2>&1 | grep -a "^TC-\|runs;" | tee "$RUNNER_TEMP/suite-table.txt"
+          test "${PIPESTATUS[0]}" -eq 0
+      - name: Pre-API Spending Checklist
+        env:
+          DELENTIA_HOME: ${{ runner.temp }}/delentia-home
+          PYTHONIOENCODING: utf-8
+        run: |
+          python -m research.daaes checklist --out "$RUNNER_TEMP/daaes-results" || true
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daaes-evidence
+          path: |
+            ${{ runner.temp }}/daaes-results/*/SUITE.md
+            ${{ runner.temp }}/daaes-results/*/SUITE.json
+            ${{ runner.temp }}/suite-table.txt
+          if-no-files-found: warn

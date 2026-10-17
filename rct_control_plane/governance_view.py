@@ -29,7 +29,7 @@ CATEGORIES: Dict[str, Tuple[str, ...]] = {
     "sovereignty": ("residency_decision",),
     "notary": ("notary_receipt", "notary_gap"),
     "identity": ("identity", "acp_session"),
-    "episodes": ("governed_loop_episode_start", "governed_loop_episode_end"),
+    "episodes": ("governed_loop_episode_start", "governed_loop_episode_end", "episode_resume", "episode_journal"),
     "steps": ("autonomous_loop_step", "autonomous_loop_batch", "intent_loop_pillars", "algorithm_pipeline"),
     "cron": ("cron_job",),
     "checkpoints": ("repo_checkpoint",),
@@ -45,7 +45,7 @@ CATEGORY_OF = {entity: name for name, entities in CATEGORIES.items() for entity 
 # rows (every allowed tool call, every notary receipt, episode start and end).
 ATTENTION_SQL = (
     "(t.entity_type IN ('governed_loop_guard','governed_loop_tool_result_screen','governed_loop_jury','pending_action_created',"
-    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback','credential_pool')"
+    "'pending_action_decided','pending_action_executed','fdia_policy','identity','notary_gap','repo_checkpoint','model_fallback','credential_pool','episode_resume','episode_journal')"
     " OR (t.entity_type = 'cron_job' AND t.action IN ('created','deleted','switched_off','throttled','delivery_failed'))"
     " OR (t.entity_type = 'agent_hook' AND t.action NOT IN ('transform_applied'))"
     " OR (t.entity_type = 'governed_loop_scope')"
@@ -517,6 +517,17 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("memory_sealing", "A person's memory text can be erased (sealed with their own key)", bool(log_on and memory_erasure.sealing_enabled()),
         "event payloads and checkpoints are sealed per person; `delentia memory erase` destroys the key with an approver's signature" if log_on and memory_erasure.sealing_enabled()
         else "off: the log holds readable text, so a person's data can be revoked but not erased", "unset DELENTIA_MEMORY_SEAL=off (events written before it was on stay readable)")
+    from rct_control_plane import episode_journal
+    journal_on = episode_journal.enabled()
+    unfinished = 0
+    if journal_on:
+        try:
+            unfinished = int(conn.execute("SELECT COUNT(DISTINCT episode_id) FROM episode_journal WHERE kind = 'begin' AND episode_id NOT IN (SELECT episode_id FROM episode_journal WHERE kind IN ('end', 'resumed'))").fetchone()[0])
+        except sqlite3.Error:
+            unfinished = 0
+    add("episode_journal", "An episode that is cut off can be continued, and a step whose outcome is unknown is never rerun on its own", journal_on,
+        (f"on: every step's intent is written before the tool runs; {unfinished} episode(s) have begun and not ended (a running one counts; `delentia episodes list` shows which are really interrupted)" if journal_on
+         else "off: a crash loses what an episode had done and a restart can repeat a side effect"), "unset DELENTIA_EPISODE_JOURNAL=off")
     from rct_control_plane import audit_text
     add("audit_text_sealed", "A person's words are sealed in the audit chain (so they can be erased)", audit_text.sealing_on(),
         "the goal, the model's reasoning and tool arguments are written under the person's own key; the chain holds ciphertext and hashes" if audit_text.sealing_on()

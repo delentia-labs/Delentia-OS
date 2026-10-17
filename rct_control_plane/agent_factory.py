@@ -49,14 +49,16 @@ def build_governed_loop(
     mcp_server: Any = None,
     conversation_turns: Optional[int] = None,
     initial_taint: Optional[str] = None,
+    llm_provider: Any = None,
 ) -> "GovernedAutonomousLoop":
     from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
 
     if mcp_server is None:
         from rct_control_plane.mcp_server import mcp as mcp_server
 
-    llm_provider = None
-    if profile:
+    # Round 83: a caller may hand in the provider (an experiment puts its budget guard in front of the model here); the loop still wraps it with the per-episode meter,
+    # the sovereignty policy and the fallback chain exactly as it does for a provider it resolved itself.
+    if profile and llm_provider is None:
         from rct_control_plane.model_config import profile_has_model_override
         if profile_has_model_override(profile):
             from rct_control_plane.llm_provider import get_default_provider

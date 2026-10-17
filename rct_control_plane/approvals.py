@@ -48,7 +48,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Callable, Any, Dict, List, Optional
 
 from rct_control_plane.persistence import ControlPlanePersistence
 
@@ -596,6 +596,27 @@ class PendingActionStore:
         resolved = self.get(approval_id)
         assert resolved is not None
         return resolved
+
+    def reconcile_by_receipt(self, approval_id: str, lookup: Callable[[PendingAction], Dict[str, Any]], actor: str = "reconciler") -> Dict[str, Any]:
+        """Round 83 (DAAES TC-010): settle an OUTCOME_UNKNOWN action by asking the PROVIDER, not a person. `lookup(action)` queries the provider by the operation id the call carried and returns
+        {"committed": True | False | None, "receipt": ...}: True records the action as done (with the receipt's hash as the note), False as not done, None (the provider cannot say, or the lookup failed)
+        leaves it unknown. It records the truth and runs nothing; whether a not-done action is asked for again is a new request with its own signature."""
+        action = self.get(approval_id)
+        if action is None:
+            raise ApprovalError(f"no pending action {approval_id!r}")
+        if action.status != "OUTCOME_UNKNOWN":
+            raise ApprovalError(f"action {approval_id} is {action.status}; only an OUTCOME_UNKNOWN action is reconciled")
+        try:
+            found = lookup(action)
+        except Exception as exc:                                    # noqa: BLE001 - a provider that cannot be asked leaves the question open
+            return {"status": "OUTCOME_UNKNOWN", "reason": f"the provider could not be asked ({type(exc).__name__})"}
+        committed = found.get("committed")
+        if committed is None:
+            return {"status": "OUTCOME_UNKNOWN", "reason": "the provider could not say"}
+        receipt = hashlib.sha256(json.dumps(found.get("receipt"), sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
+        note = (f"provider receipt confirmed the effect (receipt sha256 {receipt})" if committed else "the provider holds no receipt for this operation: it did not happen")
+        resolved = self.resolve_unknown(approval_id, "done" if committed else "not_done", note, actor=actor)
+        return {"status": resolved.status, "committed": bool(committed), "receipt_sha256": receipt}
 
     def mark_executed(self, approval_id: str, result: Dict[str, Any]) -> None:
         with self._persistence._connect() as conn:

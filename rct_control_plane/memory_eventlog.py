@@ -306,7 +306,7 @@ class MemoryEventLog:
                 prev = h
             import zstandard
             from rct_control_plane import memory_erasure
-            for cid, ns, upto, blob, sha in conn.execute("SELECT id, namespace, upto_seq, state_zstd, state_sha256 FROM memory_checkpoints ORDER BY id"):
+            for cid, ns, upto, blob, sha in conn.execute("SELECT id, namespace, upto_seq, CAST(state_zstd AS BLOB), state_sha256 FROM memory_checkpoints ORDER BY id"):     # CAST: a checkpoint whose column type was changed (text instead of blob) is reported, it does not crash the check
                 try:
                     blob = bytes(blob)
                     check = hashlib.sha256(blob).hexdigest() if memory_erasure.is_sealed_bytes(blob) else hashlib.sha256(zstandard.ZstdDecompressor().decompress(blob)).hexdigest()

@@ -38,7 +38,10 @@ class AgentMemory:
         self._matcher = ContentMatcher()
 
     async def store(self, content: str, memory_type: MemoryType,
-                     context: Optional[Dict[str, Any]] = None, importance: float = 0.5) -> str:
+                     context: Optional[Dict[str, Any]] = None, importance: float = 0.5, valid_from: Optional[str] = None, valid_to: Optional[str] = None) -> str:
+        if valid_from or valid_to:                      # Round 84: a window the person set (ISO date or time); a typo or an empty window is refused here, not ignored later
+            from rct_control_plane import memory_validity
+            context = memory_validity.with_bounds(context, valid_from, valid_to)
         memory_id = f"mem_{uuid.uuid4().hex[:12]}"
         self._persistence.save_memory(
             memory_id=memory_id, namespace=self.namespace, memory_type=memory_type.value,

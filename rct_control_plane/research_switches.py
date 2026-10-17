@@ -54,7 +54,8 @@ GENERIC_HISTORY_TURNS = 4
 #   FS  simple evidence gate     the D^I x A number is replaced by "block a risky tool when the evidence D is under a minimum" (same D, same A, same floor):
 #                                the question is whether the equation earns its place over a threshold on D alone (protocol section 6, b vs c)
 #   MW  memory + warm cache      verified answers of the same goal are re-used without a model call (exact caching, kept out of M on purpose)
-VARIANTS = ("RP", "RV", "FS", "MW")
+#   NI  no persistent intent     pinned rules, the answer profile and AGENTS.md / SOUL.md are not shown to the model (DAAES D3); the owner policy and every gate stay
+VARIANTS = ("RP", "RV", "FS", "MW", "NI")
 SIMPLE_D_DEFAULT = 0.5      # the smallest D the numeric gate itself would accept at I = 1; chosen on the validation split before any sealed run
 
 
@@ -114,7 +115,7 @@ class Treatment:
             if variant not in VARIANTS:
                 raise ValueError(f"unknown variant {variant!r}; use one of {VARIANTS}")
             if text != "A111":
-                raise ValueError("a sub-ablation is a change to the full system: write it as A111+RP, A111+RV, A111+FS or A111+MW")
+                raise ValueError("a sub-ablation is a change to the full system: write it as A111+RP, A111+RV, A111+FS, A111+MW or A111+NI")
         if text.startswith("A"):
             text = text[1:]
         if len(text) != 3 or any(c not in "01" for c in text):
@@ -130,7 +131,7 @@ BASELINES = (BASELINE_G, BASELINE_GP)
 BASELINE_PL = Treatment(0, 0, 0, plain_loop=1)         # Round 66: a plain tool-calling agent that does not use Delentia's loop (research/plain_agent.py)
 GENERIC_PLAN_TEXT = ("How to work on this request: first write a short numbered plan (at most five steps); then do one step at a time, using a tool only when a step needs it; "
                      "before you answer, check your answer against the request and against what the tools returned, and fix anything that does not match.")
-SUB_ABLATIONS = tuple(Treatment(1, 1, 1, variant=v) for v in VARIANTS)
+SUB_ABLATIONS = tuple(Treatment(1, 1, 1, variant=v) for v in VARIANTS if v != "NI")      # the four of the registered protocol; NI (DAAES D3) is run by naming it (--arms A111,A111+NI) and needs a protocol amendment before its contrast is analysed
 
 
 def research_mode_enabled() -> bool:
@@ -174,6 +175,8 @@ def apply(loop: Any, treatment: Treatment) -> Dict[str, Any]:
         loop._warm_recall = True
     if not treatment.F:
         loop._fdia_threshold = 0.0          # F < 0 can never happen, so the number no longer blocks; A <= 0 still does
+    if treatment.variant == "NI":
+        loop._persistent_intent_in_prompt = False
     if not treatment.M:
         loop._memory_in_prompt = False
         loop._warm_recall = False
@@ -184,7 +187,8 @@ def receipt(loop: Any, treatment: Treatment) -> Dict[str, Any]:
     return {**treatment.to_dict(), "rct7_in_prompt": bool(loop._rct7_in_prompt), "fdia_threshold": float(loop._fdia_threshold),
             "memory_in_prompt": bool(loop._memory_in_prompt), "warm_recall": bool(loop._warm_recall),
             "conversation_turns": int(getattr(loop, "_conversation_turns", 0) or 0), "generic_plan": bool(getattr(loop, "_generic_plan", False)),
-            "retrieval_k": int(getattr(loop, "_retrieval_k", 0) or 0), "max_iterations": loop.max_iterations}
+            "retrieval_k": int(getattr(loop, "_retrieval_k", 0) or 0), "persistent_intent_in_prompt": bool(getattr(loop, "_persistent_intent_in_prompt", True)),
+            "max_iterations": loop.max_iterations}
 
 
 def active(loop: Any) -> Optional[Treatment]:
@@ -212,6 +216,10 @@ def _variant_checks(loop: Any, result: Dict[str, Any], gate_rows: List[Dict[str,
     elif treatment.variant == "MW":
         add("MW: warm recall is switched on", bool(getattr(loop, "_warm_recall", False)))
         add("MW: memory is on", bool(getattr(loop, "_memory_in_prompt", False)))
+    elif treatment.variant == "NI":
+        add("NI: no pinned rule, profile or standing instruction was shown", "Standing rules this person pinned" not in context and "AGENTS.md" not in context and not getattr(loop, "_persistent_intent_in_prompt", True),
+            {"persistent_intent_in_prompt": getattr(loop, "_persistent_intent_in_prompt", True)})
+        add("NI: the rest of the full system is on (plan, memory, numeric gate)", bool(steps) and bool(getattr(loop, "_memory_in_prompt", False)) and float(getattr(loop, "_fdia_threshold", 0.0)) > 0, {"steps": len(steps)})
     return checks
 
 

@@ -1898,6 +1898,75 @@ def _approval_store(db: Optional[str]):
     return PendingActionStore(ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence())
 
 
+@cli.group("episodes")
+def episodes_group() -> None:
+    """Episodes that were cut off (the process stopped) and can be continued (Round 84)."""
+
+
+def _journal(db: Optional[str]):
+    from rct_control_plane import episode_journal
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    return episode_journal.EpisodeJournal(ControlPlanePersistence(db_path=db or agentic_db_path()))     # the database the agent writes (agentic.db), not the kernel's older one
+
+
+@episodes_group.command("list")
+@click.option("--namespace", default=None, help="Only this person's episodes.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--stale-after", type=float, default=None, help="Seconds of silence after which an episode whose process is still alive is also called interrupted (default 900).")
+def episodes_list(namespace: Optional[str], db: Optional[str], stale_after: Optional[float]) -> None:
+    """List interrupted episodes: what each had done and which step's outcome is unknown."""
+    from rct_control_plane import episode_journal, partial_report
+    side_effects = partial_report._side_effect_tools()
+    rows = _journal(db).interrupted(namespace, episode_journal.STALE_AFTER_SECONDS if stale_after is None else stale_after)
+    if not rows:
+        click.echo("No interrupted episodes.")
+        return
+    for ep in rows:
+        unknown = [s for s in ep.steps if s.state == "dangling" and s.tool in side_effects]
+        click.echo(f"{ep.episode_id}  {ep.namespace}  {sum(1 for s in ep.steps if s.state == 'done')} step(s) done"
+                   f"{'  UNKNOWN: ' + ', '.join(f'step {s.n} {s.tool}' for s in unknown) if unknown else ''}{'  (tainted)' if ep.taint else ''}{'' if ep.chain_ok else '  JOURNAL DOES NOT VERIFY'}")
+        click.echo(f"    goal: {ep.goal[:120]}")
+
+
+@episodes_group.command("show")
+@click.argument("episode_id")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def episodes_show(episode_id: str, db: Optional[str]) -> None:
+    """Show the journal of one episode, step by step."""
+    ep = _journal(db).load(episode_id)
+    if ep is None:
+        raise click.ClickException("no such episode in the journal")
+    click.echo(json.dumps({"episode_id": ep.episode_id, "namespace": ep.namespace, "goal": ep.goal, "ended": ep.ended, "stopped_reason": ep.stopped_reason, "resumed_by": ep.resumed_by,
+                           "resumed_from": ep.resumed_from, "journal_ok": ep.chain_ok, "tainted": ep.taint,
+                           "steps": [{"step": s.n, "tool": s.tool, "state": s.state, "args": s.args, "result_began": s.preview[:160]} for s in ep.steps]}, indent=2, default=str, ensure_ascii=False))
+
+
+@episodes_group.command("resume")
+@click.argument("episode_id")
+@click.option("--allow-unknown", is_flag=True, help="Go on although a step that can change something has an unknown outcome. Look at the world first; the continuation is told it is uncertain.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def episodes_resume(episode_id: str, allow_unknown: bool, db: Optional[str]) -> None:
+    """Continue an interrupted episode as a new governed episode (nothing is replayed; steps that are done are not repeated)."""
+    import asyncio
+
+    from rct_control_plane.agent_factory import build_governed_loop
+    from rct_control_plane.mcp_server import _kernel as shared_kernel
+    from rct_control_plane.mcp_server import mcp as shared_mcp
+    ep = _journal(db).load(episode_id)
+    if ep is None:
+        raise click.ClickException("no such episode in the journal")
+    loop = build_governed_loop(shared_kernel, namespace=ep.namespace, mcp_server=shared_mcp)
+    out = asyncio.run(loop.resume_interrupted(episode_id, allow_unknown=allow_unknown))
+    if not out.get("resumed"):
+        click.echo(f"Not resumed: {out.get('reason')}")
+        for u in out.get("unknown") or []:
+            click.echo(f"  unknown: step {u['step']} {u['tool']} {json.dumps(u.get('args'), default=str)[:120]}")
+        raise SystemExit(1)
+    click.echo(f"Resumed as a new episode: {out.get('stopped_reason')}")
+    click.echo(out.get("final_answer") or "")
+
+
 @approvals_group.command("keygen")
 @click.option("--out", "out_path", required=True, help="Where to write the private key (outside the repo).")
 @click.option("--trust", "trust_name", default=None,
@@ -2346,13 +2415,19 @@ def memory_group():
               type=click.Choice(["fact", "preference", "goal", "event", "skill", "conversation"]))
 @click.option("--importance", default=0.7, show_default=True, type=float)
 @click.option("--pin", is_flag=True, help="A standing rule: show it to every episode of this namespace, whatever the goal (at most 20 per namespace, 5 are shown).")
+@click.option("--valid-from", default=None, help="The memory counts from this date or time on (ISO, e.g. 2026-11-01 or 2026-11-01T09:00:00+07:00; no zone = UTC).")
+@click.option("--valid-to", default=None, help="The memory stops counting at this date or time (exclusive). It stays on disk and in the history; it is no longer shown to the model.")
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
-def memory_add(content: str, namespace: str, memory_type: str, importance: float, pin: bool, db: Optional[str]) -> None:
+def memory_add(content: str, namespace: str, memory_type: str, importance: float, pin: bool, valid_from: Optional[str], valid_to: Optional[str], db: Optional[str]) -> None:
     """Store a fact. Do not store secrets: recalled text is placed in the model's prompt."""
     import asyncio
     from rct_control_plane.agent_memory import AgentMemory, MemoryType
     persistence = _audit_db(db)
-    memory_id = asyncio.run(AgentMemory(namespace, persistence).store(content, MemoryType(memory_type), importance=importance))
+    try:
+        memory_id = asyncio.run(AgentMemory(namespace, persistence).store(content, MemoryType(memory_type), importance=importance, valid_from=valid_from, valid_to=valid_to))
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
     click.echo(f"stored {memory_id} in namespace {namespace}")
     from rct_control_plane import memory_replace
     for hint in [h for h in memory_replace.likely_replaced(persistence, namespace, content) if h["id"] != memory_id][:2]:
@@ -2383,10 +2458,13 @@ def memory_replace_command(old_id: str, content: str, namespace: str, db: Option
 
 @memory_group.command("list")
 @click.option("--namespace", default="desk", show_default=True)
+@click.option("--expired", "show_expired", is_flag=True, help="Also list memories outside their validity window (marked).")
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
-def memory_list(namespace: str, db: Optional[str]) -> None:
-    for item in _audit_db(db).list_memories(namespace):
-        click.echo(f"{item['id']}  [{item['memory_type']}]{'  PINNED' if item.get('pinned_at') else ''}  used={item['accessed_count']}  {item['content'][:100]}")
+def memory_list(namespace: str, show_expired: bool, db: Optional[str]) -> None:
+    from rct_control_plane import memory_validity
+    for item in _audit_db(db).list_memories(namespace, include_expired=show_expired):
+        window = memory_validity.describe(item)
+        click.echo(f"{item['id']}  [{item['memory_type']}]{'  PINNED' if item.get('pinned_at') else ''}{'  (' + window + ')' if window else ''}  used={item['accessed_count']}  {item['content'][:100]}")
 
 
 @memory_group.command("pin")
@@ -3663,6 +3741,59 @@ def fdia_show(file_path: Optional[str]) -> None:
         return
     click.echo(f"{target}  digest {policy.digest()[:16]}")
     click.echo(json.dumps(policy.to_dict(), indent=2, ensure_ascii=False))
+
+
+@fdia_group.command("history")
+@click.option("--file", "file_path", type=click.Path(dir_okay=False), default=None, help="Policy file (default: the active one).")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+def fdia_history(file_path: Optional[str], as_json: bool) -> None:
+    """Every saved version of the policy, oldest first, and whether the history is intact and matches the file in use (T12)."""
+    from rct_control_plane import fdia_policy_history as fh
+    target = Path(file_path) if file_path else None
+    rows, check = fh.history(target), fh.verify(target)
+    if as_json:
+        click.echo(json.dumps({"versions": rows, "check": check}, indent=2, ensure_ascii=False))
+        return
+    if not rows:
+        click.echo("No versions recorded yet (a version is recorded each time the policy is saved through Delentia).")
+    for r in rows:
+        when = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(r["at"]))
+        click.echo(f"  #{r['seq']:<3} {when}  {r['digest'][:16]}  {r.get('label', ''):<28} by {r.get('actor') or '-'}  {r.get('reason') or ''}")
+    state = "intact" if check["ok"] else f"BROKEN at version {check['broken_at']}: {check.get('why')}"
+    sync = {True: "the file in use is the newest recorded version", False: "the file in use is NOT the newest recorded version (edited outside Delentia?)", None: "no file to compare"}[check["in_sync"]]
+    click.echo(f"History {state}; {sync}.")
+    if not check["ok"] or check["in_sync"] is False:
+        sys.exit(1)
+
+
+@fdia_group.command("diff")
+@click.argument("seq_a", type=int)
+@click.argument("seq_b", type=int)
+def fdia_diff(seq_a: int, seq_b: int) -> None:
+    """What changed between two recorded versions, and which of the changes make the gate easier to pass."""
+    from rct_control_plane import fdia_policy_history as fh
+    a, b = fh.proposal_from(seq_a), fh.proposal_from(seq_b)
+    if a is None or b is None:
+        click.echo(click.style("Error: one of those versions is not in the history (see `delentia fdia history`).", fg="red"), err=True)
+        sys.exit(1)
+    d = fh.diff(a, b)
+    click.echo(json.dumps(d, indent=2, ensure_ascii=False))
+    for line in fh.loosened(a, b):
+        click.echo(click.style(f"  looser: {line}", fg="yellow"))
+
+
+@fdia_group.command("explain")
+@click.argument("digest")
+def fdia_explain(digest: str) -> None:
+    """Show the policy that made a decision: give the digest (or its first characters) from an audit row."""
+    from rct_control_plane import fdia_policy_history as fh
+    full = next((r["digest"] for r in fh.history() if r["digest"].startswith(digest)), digest)
+    found = fh.policy_for_digest(full)
+    if found is None:
+        click.echo("No recorded version has that digest (an audit row older than the history, or the policy was edited outside Delentia).")
+        sys.exit(1)
+    click.echo(f"version #{found['seq']} ({found['label']}), saved by {found['actor'] or '-'}: {found['reason'] or ''}")
+    click.echo(json.dumps(found["policy"], indent=2, ensure_ascii=False))
 
 
 @fdia_group.command("validate")

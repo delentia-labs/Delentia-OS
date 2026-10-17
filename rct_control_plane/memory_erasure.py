@@ -193,7 +193,7 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
         sealed = sum(1 for (p,) in events if is_sealed(p))
         other: List[Dict[str, Any]] = []
         for (table,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").fetchall():
-            if table in ("memory_events", "memory_checkpoints", "memories", "audit_trail", "audit_chain") or table in NO_PERSONAL_TEXT or "_fts" in table:
+            if table in ("memory_events", "memory_checkpoints", "memories", "audit_trail", "audit_chain", "episode_journal") or table in NO_PERSONAL_TEXT or "_fts" in table:
                 continue
             try:
                 cols = [r[1] for r in conn.execute(f'PRAGMA table_info("{table}")')]
@@ -218,7 +218,8 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
 # columns that hold a person's words, and what an erased value looks like (so a reader that parses JSON still parses it)
 TEXT_COLUMNS = {"goal": ERASED_TEXT, "answer": ERASED_TEXT, "content": ERASED_TEXT, "message": ERASED_TEXT, "text": ERASED_TEXT, "reason": ERASED_TEXT, "note": ERASED_TEXT, "title": ERASED_TEXT,
                 "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]"}
-NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures"}
+NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures",
+                "episode_journal"}                      # hash-chained like the audit chain: its payload is sealed under the person's key, so destroying the key is the erasure (editing it would break the chain)
 NO_PERSONAL_TEXT = {"spend_ledger", "memory_vectors"}          # memory_vectors: sealed under the person's key and zeroed by scrub_tables (Round 68)                    # numbers per person per day: counted, not listed as holding words
 
 

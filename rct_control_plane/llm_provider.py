@@ -227,6 +227,14 @@ OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_BASE_ENV = "DELENTIA_OPENROUTER_BASE_URL"
 
 
+def openrouter_timeout_s() -> float:
+    """Seconds one model call may take (default 90). A benchmark that points this provider at a slow local model through a gateway sets DELENTIA_OPENROUTER_TIMEOUT_S, so both arms wait the same."""
+    try:
+        return max(5.0, float(os.environ.get("DELENTIA_OPENROUTER_TIMEOUT_S") or 90.0))
+    except ValueError:
+        return 90.0
+
+
 def openrouter_base_url() -> str:
     """Where OpenRouter calls go. The default is OpenRouter itself. DELENTIA_OPENROUTER_BASE_URL may point at a loopback server (a rehearsal
     of the paid test against a fake: scripts/rehearse_full_test.py) or at another openrouter.ai address; anything else is ignored, because
@@ -285,7 +293,7 @@ class OpenRouterProvider(LLMProvider):
         payload = _build_openrouter_payload(
             self.model, prompt, system_prompt, temperature, max_tokens, json_mode and self.model not in _NO_JSON_MODE, self.compat,
         )
-        async with http_client.async_client(timeout=90.0) as client:
+        async with http_client.async_client(timeout=openrouter_timeout_s()) as client:
             response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
             if getattr(response, "status_code", 200) == 400 and "response_format" in payload:
                 # This model (or the upstream provider it was routed to) does not take JSON mode: remember that and ask again without it.
@@ -313,7 +321,7 @@ class OpenRouterProvider(LLMProvider):
         payload["stream"] = True
         from rct_control_plane import credential_pool
         ring = self._key_ring()
-        async with http_client.async_client(timeout=90.0) as client:
+        async with http_client.async_client(timeout=openrouter_timeout_s()) as client:
             while True:
                 key = ring.take()
                 if not key:

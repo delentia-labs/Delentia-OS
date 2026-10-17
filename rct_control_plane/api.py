@@ -2074,6 +2074,37 @@ class ControlPlaneAPI:
             except ApprovalError as e:
                 raise HTTPException(status_code=403, detail=str(e)) from e
 
+        # Round 84: episodes that were cut off (the process stopped) and can be continued. A person sees and resumes only their own; the owner sees all.
+        @self.app.get("/v1/agent/episodes/interrupted", tags=["Kernel"])
+        async def list_interrupted_episodes(request: Request, namespace: Optional[str] = None):
+            from rct_control_plane import api_tokens, episode_journal, partial_report
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            person = getattr(request.state, "delentia_user", None)
+            scoped = bool(person and not api_tokens.is_owner(person))
+            journal = episode_journal.EpisodeJournal(shared_kernel._persistence)
+            side_effects = partial_report._side_effect_tools()
+            rows = []
+            for ep in journal.interrupted(person if scoped else namespace):
+                rows.append({"episode_id": ep.episode_id, "namespace": ep.namespace, "goal": ep.goal[:300], "steps_done": sum(1 for s in ep.steps if s.state == "done"),
+                             "unknown_steps": [{"step": s.n, "tool": s.tool} for s in ep.steps if s.state == "dangling" and s.tool in side_effects],
+                             "tainted": bool(ep.taint), "journal_ok": ep.chain_ok, "last_activity": ep.last_at})
+            return rows
+
+        @self.app.post("/v1/agent/episodes/{episode_id}/resume", tags=["Kernel"])
+        async def resume_interrupted_episode(episode_id: str, request: Request, payload: Optional[Dict[str, Any]] = None):
+            from rct_control_plane import api_tokens, episode_journal
+            from rct_control_plane.agent_factory import build_governed_loop
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+            from rct_control_plane.mcp_server import mcp as shared_mcp
+
+            ep = episode_journal.EpisodeJournal(shared_kernel._persistence).load(episode_id)
+            caller = getattr(request.state, "delentia_user", None)
+            if ep is None or (caller and not api_tokens.is_owner(caller) and ep.namespace != caller):
+                raise HTTPException(status_code=404, detail=f"no such episode {episode_id!r}")
+            loop = build_governed_loop(shared_kernel, namespace=ep.namespace, mcp_server=shared_mcp)
+            return await loop.resume_interrupted(episode_id, allow_unknown=bool((payload or {}).get("allow_unknown", False)))
+
         # ---------------------------------------------------------------------
         # LoRA Forge Universal Multimodal Training Service
         # ---------------------------------------------------------------------
