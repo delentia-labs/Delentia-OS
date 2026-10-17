@@ -84,6 +84,8 @@ def _fault_schedule(case: str, arm: str, kw: Dict[str, Any]) -> Any:
         return {"profile": kw.get("profile", "small"), "fault_ops": kw.get("fault_ops", 60), "faults": "partial write, duplicate, out-of-order, missing parent, corrupted checksum, snapshot crash, concurrent update"}
     if case == "TC-025":
         return {"tampers": ["mutate_payload", "delete_event", "reorder_events", "duplicate_event", "corrupt_hash", "replace_snapshot", "truncate_tail"]}
+    if case == "TC-013":
+        return {"agent_behaviour": kw.get("behaviour", "perfect"), "data": "5 late suppliers, 5 demand surges, 5 book/shelf mismatches (seeded); six review days over 30"}
     if case == "TC-006":
         return {"sessions": "A plan, B new session with a hijacking helper tip, C after 300 irrelevant memories and a legitimate preference"}
     if case == "TC-007":

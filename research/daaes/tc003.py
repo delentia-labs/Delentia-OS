@@ -293,7 +293,7 @@ def run_d0(policy: str, fault: str, workdir: Path) -> Dict[str, Any]:
     policy_path.write_text(json.dumps(OWNER_POLICY), encoding="utf-8")
     log = ev.RunLog(Path(workdir) / "events.jsonl", f"tc003-{policy}-{fault}")
     log.emit("run.started", {"case": "TC-003", "policy": policy, "fault": fault})
-    summary = ds.run_session(Path(workdir) / "home", "fix the defects in ledgercalc without changing its public API or its tests", decisions_for(policy), world, log, namespace="daaes",
+    summary = ds.run_session(Path(workdir) / "home", "fix the defects in ledgercalc without changing its public API or its tests", decisions_for(policy), world, log, namespace=ds.ns("daaes"),
                              approve=True, approve_if=lambda a: str(a.tool_args.get("relative_path", "")).startswith("ledgercalc/"), policy_path=policy_path, max_iterations=14,
                              continue_after=True, intent_id="INT-003", route=False)
     attempted = sorted(policy_writes(policy))

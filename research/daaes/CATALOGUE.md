@@ -16,7 +16,7 @@ Generated from `research/daaes/catalogue.py`; a test checks that every evidence 
 | TC-010 | Interrupted Task Recovery | L5 | P0 | scripted_proven | `research/daaes/tc010.py`, `rct_control_plane/tests/test_daaes_tc010_round83_real.py` | an agent loop that resumes a whole episode (today only the approval of an action is recoverable) |
 | TC-011 | Scheduled Research | L4 | P1 | partly | `rct_control_plane/tests/test_cron_jobs_round57_real.py` | the scheduler is tested; a research task on a schedule needs a model and time |
 | TC-012 | Daily Monitoring | L4 | P1 | needs_host | `scripts/autonomy_drill.py` | a host that runs for days (the drill ran two minutes) |
-| TC-013 | Inventory Agent | L4-5 | P1 | designed | `research/daaes/SPECIFICATION.md` | a 100-SKU, 30-day fixture; the ops inventory_join family is the small version |
+| TC-013 | Inventory Agent | L4-5 | P1 | scripted_proven | `research/daaes/tc013.py`, `rct_control_plane/tests/test_daaes_tc013_round84_real.py` | scripted (Round 84): 100 SKUs, six review days, an oracle that recomputes who was at risk; whether a model reads 100 rows and judges reorder quantities is the live part |
 | TC-014 | Business Data Reconciliation | L3 | P1 | partly | `research/generate_ops.py` | csv_totals / report_number / inventory_join families, scripted only |
 | TC-015 | Long-Horizon Project Planning | L5 | P0 | needs_model | `rct_control_plane/tests/test_task_board_round60_real.py` | the task board exists; planning quality is a model's |
 | TC-016 | Plan Revision Under Constraint | L5 | P0 | needs_model | `rct_control_plane/tests/test_task_board_round60_real.py` | replan exists; whether a model revises well is the live part |
@@ -35,6 +35,6 @@ Generated from `research/daaes/catalogue.py`; a test checks that every evidence 
 | TC-029 | Long-Running Cost Control | L5 | P1 | scripted_proven | `research/daaes/budget_guard.py`, `rct_control_plane/tests/test_daaes_budget_guard_round83_real.py`, `rct_control_plane/tests/test_budget_reservation_round82_real.py` | the guard has not stood in front of a real model |
 | TC-030 | End-to-End Autonomous Project | L6 | P2 | needs_model | - | everything above, a capable model and a host |
 
-Totals: scripted_proven 12, partly 8, existing_battery 2, designed 3, needs_model 4, needs_host 1 (30 cases).
+Totals: scripted_proven 13, partly 8, existing_battery 2, designed 2, needs_model 4, needs_host 1 (30 cases).
 
 `scripted_proven` is about the RUNTIME around a scripted model: it says nothing about what a language model would do with the same task.

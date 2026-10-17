@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from research.daaes import bundle, run_manifest, tc003, tc006, tc007_tc020, tc009, tc010, tc025
+from research.daaes import bundle, run_manifest, tc003, tc006, tc007_tc020, tc009, tc010, tc013, tc025
 from research.daaes import events as ev
 
 NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
@@ -66,7 +66,7 @@ def run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = Non
 def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = None, **kw: Any) -> Dict[str, Any]:
     out = Path(out)
     date = date or time.strftime("%Y-%m-%d")
-    variant = "_".join(str(kw[k]) for k in ("kill_point", "policy", "fault") if kw.get(k) not in (None, "none"))
+    variant = "_".join(str(kw[k]) for k in ("kill_point", "policy", "fault", "behaviour") if kw.get(k) not in (None, "none"))
     work = out / ".work" / case / (f"{arm}__{variant}" if variant else arm) / str(seed)
     _clean(work)
     work.mkdir(parents=True)
@@ -85,6 +85,10 @@ def _run_one(case: str, arm: str, seed: int, out: Path, date: Optional[str] = No
         arm = f"{arm}@{kw.get('kill_point', 'none')}"
     elif case == "TC-006":
         result = tc006.run_tc006(arm, work)
+    elif case == "TC-013":
+        behaviour = kw.get("behaviour", "perfect")
+        result = tc013.run_tc013(arm, work, behaviour, seed)
+        arm = f"{arm}@{behaviour}"
     elif case == "TC-007":
         result = tc007_tc020.run_tc007(arm, work)
     elif case == "TC-020":
@@ -158,6 +162,9 @@ def suite_plan(quick: bool = True) -> List[Tuple[str, str, Dict[str, Any]]]:
             plan.append(("TC-010", arm, {"kill_point": point}))
     for arm in tc006.ARMS:
         plan.append(("TC-006", arm, {}))
+    for arm, behaviours in (("delentia", tc013.BEHAVIOURS), ("delentia_careless", ("buys",)), ("floor_only_careless", ("perfect", "buys"))):
+        for behaviour in behaviours:
+            plan.append(("TC-013", arm, {"behaviour": behaviour}))
     for arm in tc007_tc020.TC007_ARMS:
         plan.append(("TC-007", arm, {}))
     for arm in tc007_tc020.TC020_ARMS:
