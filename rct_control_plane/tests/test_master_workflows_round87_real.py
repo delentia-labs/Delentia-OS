@@ -88,3 +88,20 @@ def test_the_readiness_table_covers_every_workflow_and_its_live_runner_paths_exi
 def test_no_workflow_claims_a_live_result_yet():
     """This changes the day a capable model runs a workflow the stated number of times and the oracle passes it; until then the count must stay zero."""
     assert mw.readiness_counts()["live_result"] == 0
+
+
+def test_run_scripted_runs_each_workflows_pytest_files_and_reports_failures():
+    seen = []
+
+    def fake(files):
+        seen.append(files)
+        return 1 if any("w11" in f for f in files) else 0
+    report = mw.run_scripted(only=["W08", "W11", "W03"], runner=fake)
+    assert report["W08"]["exit_code"] == 0 and report["W11"]["exit_code"] == 1
+    assert report["W03"]["ran"] is True                                # W03 lists pytest files for its parts even though no whole-job run exists yet
+    assert all(f.startswith("rct_control_plane/tests/test_") for files in seen for f in files)
+    assert set(report) == {"W03", "W08", "W11"}
+
+
+def test_scripted_test_files_are_only_pytest_files():
+    assert mw.scripted_test_files("W11") and all("/tests/test_" in f for f in mw.scripted_test_files("W11"))

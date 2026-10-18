@@ -21,7 +21,7 @@ from __future__ import annotations
 import itertools
 import math
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -297,6 +297,37 @@ def render() -> str:
     return "\n".join(lines) + "\n"
 
 
+def scripted_test_files(workflow_id: str) -> List[str]:
+    """The pytest files among a workflow's scripted evidence (the scripts and modules listed beside them are run by those tests or by their own commands)."""
+    w = next(x for x in WORKFLOWS if x["id"] == workflow_id)
+    return [str(p) for p in w["scripted"] if "/tests/test_" in str(p)]                  # type: ignore[union-attr]
+
+
+def run_scripted(only: Optional[List[str]] = None, runner: Optional[Callable[[List[str]], int]] = None) -> Dict[str, Dict[str, object]]:
+    """Run the scripted evidence of each workflow (its pytest files) and report pass or fail per workflow: `python -m research.master_workflows run-scripted [W01 W11 ...]`. This is the day-to-day
+    check that the twelve are still what the table says; it says nothing about a model. `runner` takes the list of test files and returns an exit code (a test passes a fake)."""
+    import subprocess
+    import sys
+
+    def default_runner(files: List[str]) -> int:
+        return subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-W", "ignore", *files], cwd=str(ROOT)).returncode
+    run = runner or default_runner
+    report: Dict[str, Dict[str, object]] = {}
+    for w in WORKFLOWS:
+        wid = str(w["id"])
+        if only and wid not in only:
+            continue
+        files = scripted_test_files(wid)
+        report[wid] = {"files": files, "exit_code": (run(files) if files else None), "ran": bool(files)}
+    return report
+
+
 if __name__ == "__main__":
+    import sys as _sys
+    if len(_sys.argv) > 1 and _sys.argv[1] == "run-scripted":
+        result = run_scripted(_sys.argv[2:] or None)
+        for wid, r in result.items():
+            print(wid, "PASS" if r["exit_code"] == 0 else ("no pytest files" if not r["ran"] else "FAIL"), len(r["files"]), "file(s)")                 # type: ignore[arg-type]
+        raise SystemExit(0 if all(r["exit_code"] in (0, None) for r in result.values()) else 1)
     Path(__file__).with_name("MASTER_WORKFLOWS.md").write_text(render(), encoding="utf-8")
     print(f"{len(WORKFLOWS)} workflows, uncovered by core: {uncovered()}, unstressed: {unstressed()}, missing evidence: {missing_evidence()}, minimum cover: {minimum_cover()}")
