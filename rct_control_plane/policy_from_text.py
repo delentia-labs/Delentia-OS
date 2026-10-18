@@ -39,30 +39,32 @@ GROUP_TOOLS: Dict[str, List[str]] = {
 # Order matters: the first group whose words appear wins the ones it shares (network before read: "browse the web" is not "browse files").
 _GROUP_WORDS: List[Tuple[str, re.Pattern]] = [
     ("agents", re.compile(r"sub-?agents?|spawn|delegat|ผู้ช่วยย่อย|เอเจนต์ย่อย|เอเจนท์ย่อย")),
-    ("schedule", re.compile(r"schedul|recurring|cron|remind|timer|ตั้งเวลา|งานประจำ|นัดหมาย")),
-    ("memory", re.compile(r"remember|memoriz|memory|ความจำ|จดจำ|(?<![ก-๙])จำ(?![ก-๙])")),
+    ("schedule", re.compile(r"schedul|recurring|cron|remind|timer|ตั้งเวลา|ตั้งงาน|งานประจำ|รันเอง|อัตโนมัติ|นัดหมาย")),
+    ("memory", re.compile(r"remember|memoriz|memory|ความจำ|จดจำ|(?<!ประ)จำ(?!นวน|เป็น|กัด|หน่าย|ลอง|แนก|เพาะ|ต้อง|เลย|คุก)")),
     ("shell", re.compile(r"shell|commands?|terminal|scripts?|execut|เชลล์|คำสั่ง|สคริปต์")),
     ("network", re.compile(r"\bweb\b|internet|browser|browse|online|website|download|crawl|เว็บ|อินเทอร์เน็ต|เบราว์เซอร์|ดาวน์โหลด")),
     ("outbound", re.compile(r"\bsend|sending|e-?mails?|\bmail\b|messages?|notif|\breply|publish|\bpost\b|forward|\bshare|outgoing|ส่ง|อีเมล|เมล|ข้อความ|แจ้ง|ตอบกลับ|เผยแพร่")),
-    ("write", re.compile(r"\bwrit|\bedit|chang|modif|updat|overwrit|delet|remov|\bsave|patch|แก้ไข|เขียน|ลบ|เปลี่ยน|บันทึก|อัปเดต")),
-    ("read", re.compile(r"\bread|search|look ?up|\bview|\bopen\b|อ่าน|ค้นหา|ดูไฟล์")),
+    ("write", re.compile(r"\bwrit|\bedit|chang|modif|updat|overwrit|delet|remov|\bsave|patch|แก้ไข|แก้(?=ไฟล์|โค้ด|ข้อมูล|เอกสาร)|เขียน|ลบ|เปลี่ยน|บันทึก|อัปเดต")),
+    ("read", re.compile(r"\bread|search|look ?up|\bview|\bopen\b|อ่าน|ค้นหา|ค้น(?=ไฟล์|ใน|ข้อมูล)|ดูไฟล์")),
 ]
 
 _ATTACK = re.compile(
     r"ignore (all |any |the )?(previous|prior|above|earlier)|disable (the )?(approval|signature|policy|screen|gate|guard|check)|turn off (the )?(injection|screen|guard|policy|approval|gate)|"
     r"admin mode|all tools are allowed|approve (its|their|his|her) own|(already|has) approved|approved everything|pretend|\bset a to\b|skip (the )?(signature|approval)|bypass|"
-    r"no approval (is )?(needed|required)|ยกเลิก(การ)?อนุมัติ|ปิด(การ)?(อนุมัติ|ตรวจ|ป้องกัน)|ข้าม(ขั้นตอน|การ)?อนุมัติ|อนุมัติเอง")
+    r"no approval (is )?(needed|required)|ยกเลิก(การ)?อนุมัติ|ปิด(การ)?(อนุมัติ|ตรวจ|ป้องกัน)|ข้าม(ขั้นตอน|การ)?(อนุมัติ|เซ็น|ลงนาม)|อนุมัติเอง|ถือว่า(ฉัน|ผม)?อนุมัติ|ไม่ต้อง(ขอ)?อนุมัติ")
 _EVERYTHING = re.compile(r"\b(everything|anything|all tools|all actions)\b|ทุกอย่าง|ทั้งหมด")
 _VAGUE = re.compile(
     r"as appropriate|if (it )?(seems|appears)|where (it )?(makes sense|reasonable)|when(ever)? (needed|necessary|you need)|if (needed|necessary)|(your |own )?judg(e)?ment|sensib|reasonabl|"
     r"careful|necessar|whatever|tidy|helpful|risky|appropriate|ตามความเหมาะสม|ตามสมควร|ตามที่เห็นสมควร|ดุลพินิจ|ถ้าจำเป็น|เมื่อจำเป็น|ที่จำเป็น|ระวัง|สมเหตุสมผล")
 _NO_ASK = re.compile(r"no need to ask|(do not|don't|dont|not) (need to )?ask( me)?( before| first)|without (me )?asking|without (my )?(approval|permission)|ไม่ต้องถาม|ห้ามถาม")
-_ASK = re.compile(r"ask( me)?( before| first)|my (approval|ok|okay|permission)|confirm with me|requires? (my )?approval|approval (is )?(needed|required)|ต้องถาม|ขออนุมัติ|ถามก่อน|ต้องได้รับอนุมัติ|ต้องขอ")
+_ASK = re.compile(r"ask( me)?( before| first)|บอก(ฉัน|ผม|เรา)?ก่อน|แจ้ง(ฉัน|ผม|เรา)?ก่อน|รอ(ฉัน|ผม|เรา)?(สั่ง|อนุญาต|อนุมัติ)|ขออนุญาต|ขอให้ถาม|my (approval|ok|okay|permission)|confirm with me|requires? (my )?approval|approval (is )?(needed|required)|ต้องถาม|ขออนุมัติ|ถามก่อน|ต้องได้รับอนุมัติ|ต้องขอ")
 _NEVER = re.compile(r"\bnever\b|\bdo not\b|\bdon't\b|\bdont\b|must not|\bforbid|\bforbidden\b|\bprohibit|ห้าม|อย่า|ไม่อนุญาต")
-_ALLOW = re.compile(r"you may|you can|feel free|\bfreely\b|\ballowed?\b|\bis fine\b|\bok to\b|ได้เลย|อนุญาต|ทำได้")
+_ALLOW = re.compile(r"ได้(ทุก|หมด|ตามสบาย)|ไม่เป็นไร|you may|you can|feel free|\bfreely\b|\ballowed?\b|\bis fine\b|\bok to\b|ได้เลย|อนุญาต|ทำได้")
 # Bounded, and anchored at the start of a whitespace run: a bare \s+ is quadratic on a long run of spaces (found by the regex audit).
 _SPLIT = re.compile(r"[.;!?\n]+|(?<!\s)\s{1,20}but\s{1,20}|(?<!\s)\s{1,20}however\s{1,20}|(?<!\s)\s{1,20}แต่\s{0,20}")
 _NEGATED_NO_ASK = re.compile(r"not ask|ห้ามถาม")
+# Words that make a sentence NARROWER than a per-tool rule can say (one folder, an age, an amount, a time, a kind of person). The proposal is then wider than the sentence, and the owner must be told.
+_SCOPE = re.compile(r"โฟลเดอร์|folder|directory|เก่ากว่า|older than|เกิน|more than|exceed|หลัง.{0,8}(โมง|ทุ่ม)|after \d|เฉพาะ|only (for|in|when|if)|ที่(เป็น|มี)ชื่อ|ของลูกค้า|ข้อมูลลูกค้า|customer data")
 
 
 @dataclass
@@ -160,6 +162,10 @@ def propose(text: str) -> Proposal:
                              f"If that is what you want, confirm it in the policy editor; otherwise say 'ask me before {group}'. (Nothing was proposed for {group}.)")
             continue
         stance = max(stances, key=lambda s: STRICTNESS[s])
+        narrow = [st.text for st in statements if group in st.groups and st.stance in (NEVER, ASK) and _SCOPE.search(st.text)]
+        if narrow and stance in (NEVER, ASK):
+            notes.append(f"“{narrow[0]}” names a narrower case (a folder, an age, an amount, a time or a kind of person). A rule is per tool, so the proposal applies to EVERY use of {group}: it is stricter than your sentence. "
+                         f"To be exact, keep it as a question and write the condition in the policy editor.")
         if len(stances) > 1:
             notes.append(f"For {group} the sentences say {sorted(stances)}; the strictest ({stance}) was kept.")
         rules.append({"group": group, "stance": stance, "tools": list(GROUP_TOOLS[group])})

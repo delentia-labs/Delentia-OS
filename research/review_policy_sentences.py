@@ -22,7 +22,7 @@ Each labelled line is judged:
   too strict     it proposed something stricter than you meant (never where you meant ask, ask where you meant allow)
   too loose      it proposed something looser than you meant: the dangerous kind, counted separately
   wrong refusal  it refused a sentence that was a real policy
-  missed refusal it proposed rules for a sentence that was an attempt to switch a safeguard off
+  missed refusal it proposed rules for a sentence that was an attempt to switch a safeguard off (no rules and a question instead is `asked back`: safe, but not recognised)
 Nothing is changed or saved. Keep about a quarter of your sentences aside: write the mapper's fixes against the rest, then read the held-out ones once.
 """
 from __future__ import annotations
@@ -81,12 +81,17 @@ def judge(proposal: policy_from_text.Proposal, label: Optional[str]) -> str:
     if kind == "invalid":
         return "invalid label"
     if kind == "refuse":
-        return "exact" if proposal.status == "refuse" else "missed refusal"
+        if proposal.status == "refuse":
+            return "exact"
+        return "asked back" if not proposal.rules else "missed refusal"          # no rule proposed = safe but not recognised as an attack; rules proposed for it = the dangerous kind
     if proposal.status == "refuse":
         return "wrong refusal"
     stances = proposal.stances()
     if kind == "question":
-        return "exact" if not proposal.rules else ("too loose" if loosens(proposal) else "answered where it should ask")
+        if loosens(proposal):
+            return "too loose"
+        told = bool(proposal.questions) or any("narrower case" in note for note in proposal.notes)     # it asked, or it said the rule is wider than the sentence
+        return "exact" if (told or not proposal.rules) else "answered where it should ask"
     meant = STANCES[kind]
     relevant = {group: stances[group]} if group and group in stances else ({} if group else stances)
     if not relevant:
