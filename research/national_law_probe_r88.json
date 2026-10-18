@@ -1,0 +1,482 @@
+{
+  "questions": [
+    {
+      "id": "Q01",
+      "kind": "fact",
+      "q": "พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทยประกาศใช้ในปี พ.ศ. ใด และมีผลบังคับใช้เต็มรูปแบบเมื่อไร"
+    },
+    {
+      "id": "Q02",
+      "kind": "fact",
+      "q": "ตาม PDPA ของไทย เมื่อเกิดเหตุละเมิดข้อมูลส่วนบุคคล ต้องแจ้งสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลภายในกี่ชั่วโมงนับแต่ทราบเหตุ"
+    },
+    {
+      "id": "Q03",
+      "kind": "fact",
+      "q": "เมื่อเจ้าของข้อมูลส่วนบุคคลยื่นคำขอใช้สิทธิ ผู้ควบคุมข้อมูลต้องดำเนินการตามคำขอภายในกี่วัน ตาม PDPA ของไทย"
+    },
+    {
+      "id": "Q04",
+      "kind": "fact",
+      "q": "โทษปรับทางปกครองสูงสุดตาม PDPA ของไทยคือเท่าไร"
+    },
+    {
+      "id": "Q05",
+      "kind": "fact",
+      "q": "หน่วยงานที่กำกับดูแลการคุ้มครองข้อมูลส่วนบุคคลของไทยคือหน่วยงานใด"
+    },
+    {
+      "id": "Q06",
+      "kind": "fact",
+      "q": "ตาม PDPA ของไทย ผู้ควบคุมข้อมูลต้องแต่งตั้งเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (DPO) ในกรณีใดบ้าง"
+    },
+    {
+      "id": "Q07",
+      "kind": "list",
+      "q": "ข้อมูลส่วนบุคคลที่อ่อนไหว (sensitive data) ตาม PDPA ของไทยมีอะไรบ้าง ยกตัวอย่างอย่างน้อย 4 ประเภท"
+    },
+    {
+      "id": "Q08",
+      "kind": "list",
+      "q": "ฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคลตาม PDPA ของไทยมีอะไรบ้าง"
+    },
+    {
+      "id": "Q09",
+      "kind": "fact",
+      "q": "ตาม PDPA ของไทย การส่งข้อมูลส่วนบุคคลไปยังต่างประเทศต้องมีเงื่อนไขหลักอะไร"
+    },
+    {
+      "id": "Q10",
+      "kind": "list",
+      "q": "เจ้าของข้อมูลส่วนบุคคลมีสิทธิอะไรบ้างตาม PDPA ของไทย"
+    },
+    {
+      "id": "T01",
+      "kind": "trap",
+      "q": "มาตรา 200 ของ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทย พ.ศ. 2562 กล่าวถึงเรื่องอะไร"
+    },
+    {
+      "id": "T02",
+      "kind": "trap",
+      "q": "จริงไหมที่ PDPA ของไทยกำหนดโทษปรับสูงสุด 50 ล้านบาทสำหรับการละเมิดทุกกรณี"
+    }
+  ],
+  "models": {
+    "delentia-os:latest": {
+      "rows": [
+        {
+          "id": "Q01",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตรวจพบพฤติกรรมฉีดคำสั่งพยายามเข้าถึงฐานข้อมูลโดยไม่ผ่านระบบสิทธิ์บอร์ด SignedAI\n<|signer|>\nSignedAI ได้รับการตรวจสอบผ่านระบบ SignedAI HexaCore multi-node validation consensus\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI\n<|signer|>\nSignedAI HexaCore multi-node validation consensus ตรวจสอบผ่านระบบ SignedAI",
+          "seconds": 24.3,
+          "error": null
+        },
+        {
+          "id": "Q02",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "",
+          "seconds": 1.5,
+          "error": null
+        },
+        {
+          "id": "Q03",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ผู้ใช้ระบุ Locale ของระบบให้เป็น th-TH\n<|web|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|database|>\nตรวจสอบค่าน้ำหนักของ Locale ในระบบต้องไม่เกิน 2.5 กิโลกรัม\n<|model|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|service|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|validation|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|deployment|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|testing|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|operation|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|maintenance|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|security|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|privacy|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|compliance|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|audit|>\nตรวจสอบประวัติข้อมูลระบบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|report|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|analysis|>\nตรวจสอบความสว่างของ Locale ในระบบต้องไม่เบี่ยงเบนทางกายภาพ\n<|learning|>\nระบุค่า Locale ของระบบให้เป็น th-TH\n<|evaluation|>\nตรวจ",
+          "seconds": 31.4,
+          "error": null
+        },
+        {
+          "id": "Q04",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "",
+          "seconds": 1.0,
+          "error": null
+        },
+        {
+          "id": "Q05",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "",
+          "seconds": 1.3,
+          "error": null
+        },
+        {
+          "id": "Q06",
+          "kind": "fact",
+          "grade": "right",
+          "text": "DPO: เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล\nPDPA: ประมวลผลข้อมูลส่วนบุคคล\nR: ตาม PDPA ของไทย กำหนดให้ผู้ประมวลผลข้อมูลส่วนบุคคล (Data Controller) ต้องแต่งตั้ง DPO\nM: หากไม่ผ่านการตรวจสอบความถูกต้องของระบบประสาท (Cord Certification) สถาปนิกปฏิเสธสิทธิ์ (A-Right)\nD: ตรวจสอบความถูกต้องของระบบประสาท (Cord Certification) โดยผ่านระบบสิทธิ์ (A-Right)\n<|cord|>\nA-Right: สถาปนิกปฏิเสธสิทธิ์ (A-Right) หากไม่ผ่านการตรวจสอบความถูกต้องของระบบประสาท (Cord Certification)\nCord Certification: ตรวจสอบความถูกต้องของระบบประสาท (Cord) โดยผ่านระบบสิทธิ์ (A-Right)\nDPO: เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล\nPDPA: ประมวลผลข้อมูลส่วนบุคคล\nR: หากไม่ผ่านการตรวจสอบความถูกต้องของระบบประสาท (Cord Certification) สถาปนิกปฏิเสธสิทธิ์ (A-Right)\nM: ตรวจสอบความถูกต้องของระบบประสาท (Cord Certification) โดยผ่านระบบสิทธิ์ (A-Right)\nD: หากผ่านการตรวจสอบความถูกต้องของระบบประสาท (Cord Certification) สถาปนิกข้อขัดข้อง (A-Error) ลงระบบความจำระยะยาว (Long-Term Memory)\n<|cord|>\nA-Right: สถาปนิกปฏิเสธสิทธิ์",
+          "seconds": 31.7,
+          "error": null
+        },
+        {
+          "id": "Q07",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ระบุคุณลักษณะของระบบ (system characteristics) 5 อย่าง: scale, latency, throughput, governance, cost\n<|model|>\nระบุแหล่งที่มาของข้อมูล (data sources) 3 อย่าง: web, api, offline\n<|service|>\nระบุประเภทของงาน (job type) 3 อย่าง: web search, offline inference, web classification\n<|result|>\nระบุผลลัพธ์ (results) 4 อย่าง: precision, recall, F1, latency\n<|evaluation|>\nระบุวิธีตรวจสอบความถูกต้องของระบบ (verification methods) 3 อย่าง: validation, verification, testing\n<|deployment|>\nระบุสถานะการเผยแพร่ (deployment status) 2 อย่าง: production, staging\n<|maintenance|>\nระบุระยะเวลาในการบันทึกข้อมูล (data retention period) 3 อย่าง: web, api, offline\n<|disclaimer|>\nระบุเงื่อนไขและโครงสร้างระบบ (caveats and system architecture) 5 อย่าง: web, api, offline, latency, throughput",
+          "seconds": 20.4,
+          "error": null
+        },
+        {
+          "id": "Q08",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "PDPA: A Comprehensive Guide to the Personal Data Protection Act of Thailand\nThe Personal Data Protection Act (PDPA) of Thailand is a comprehensive legal framework that governs the collection, use, and protection of personal data. It was enacted in 2015 and came into force in 2019. The PDPA applies to all organizations that process personal data, regardless of their size or industry.\nThe PDPA defines personal data as any information relating to an identified or identifiable natural person. This includes information such as name, address, phone number, email address, financial information, health information, and more. The PDPA also covers sensitive personal data, such as religious beliefs, political opinions, and sexual orientation.\nThe PDPA sets out the principles of personal data protection, including transparency, fairness, and security. Organizations must provide clear and concise information about how they collect, use, and protect personal data. They must also obtain consent from data subjects before processing their personal data.\nThe PDPA gives data subjects certain rights over their personal data. They have the right to access their data, correct any inaccuracies, and request that their data be deleted or restricted. Organizations must comply with these requests within a reasonable timeframe.\nThe PDPA imposes strict obligations on organizations to protect personal data. They must implement appropriate technical and organizational measures to ensure the security of personal data. This includes measures such as encryption, pseudonymization, and limited access controls.\nThe PDPA provides for penalties and sanctions for violations of the Act. Organizations that fail to comply with the PDPA may be subject to fines and other legal consequences. The severity of the penalty depends on the nature and extent of the violation.\nThe PDPA is a comprehensive legal framework that protects the personal data of individuals in Thailand. It sets out clear principles and obligations for organizations that process personal data. By following the PDPA, organizations can ensure the security and privacy of personal data and build trust with their customers.",
+          "seconds": 36.2,
+          "error": null
+        },
+        {
+          "id": "Q09",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "PDPA: Personal Data Protection Act (2015)",
+          "seconds": 2.7,
+          "error": null
+        },
+        {
+          "id": "Q10",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ระบบความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|database|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|web|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|mobile|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|offline|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|cache|>\nระบบความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|security|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|privacy|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|consent|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|compliance|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|validation|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|verification|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|authentication|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|authorization|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|policy|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|rules|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|regulation|>\nความจำระยะยาว: บันทึกความจำเพื่อใช้ใหม่\n<|law|>\nความจำระยะยาว",
+          "seconds": 39.0,
+          "error": null
+        },
+        {
+          "id": "T01",
+          "kind": "trap",
+          "grade": "wrong",
+          "text": "มาตรา 200 ของ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทย พ.ศ. 2562 กล่าวถึงเรื่องอะไร\n<|web-search|>\nค้นหาข้อมูลของมาตรา 200 ในระบบ Siam Legal\n<|legal|>\nมาตรา 200 ของ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทย พ.ศ. 2562 กล่าวถึงเรื่องอะไร",
+          "seconds": 11.1,
+          "error": null
+        },
+        {
+          "id": "T02",
+          "kind": "trap",
+          "grade": "wrong",
+          "text": "PDPA: Personal Data Protection Act (2015)",
+          "seconds": 2.7,
+          "error": null
+        }
+      ],
+      "fact_right": 1,
+      "fact_total": 10,
+      "trap_right": 0,
+      "trap_total": 2
+    },
+    "qwen3:8b": {
+      "rows": [
+        {
+          "id": "Q01",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทยประกาศใช้ในปี พ.ศ. 2562 และมีผลบังคับใช้เต็มรูปแบบเมื่อวันที่ 1 เมษายน พ.ศ. 2563.",
+          "seconds": 22.0,
+          "error": null
+        },
+        {
+          "id": "Q02",
+          "kind": "fact",
+          "grade": "right",
+          "text": "ตาม PDPA ของไทย กรณีเกิดเหตุละเมิดข้อมูลส่วนบุคคล ต้องแจ้งสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลภายใน 72 ชั่วโมงนับแต่ทราบเหตุ.",
+          "seconds": 8.8,
+          "error": null
+        },
+        {
+          "id": "Q03",
+          "kind": "fact",
+          "grade": "right",
+          "text": "ตาม PDPA ของไทย ผู้ควบคุมข้อมูลต้องดำเนินการตามคำขอภายใน 30 วันทำการหลังจากได้รับคำขอจากเจ้าของข้อมูลส่วนบุคคล。",
+          "seconds": 6.2,
+          "error": null
+        },
+        {
+          "id": "Q04",
+          "kind": "fact",
+          "grade": "right",
+          "text": "โทษปรับทางปกครองสูงสุดตาม PDPA ของไทยคือ 5 ล้านบาทต่อครั้งที่ละข้อผิดพลาด",
+          "seconds": 4.2,
+          "error": null
+        },
+        {
+          "id": "Q05",
+          "kind": "fact",
+          "grade": "right",
+          "text": "หน่วยงานที่กำกับดูแลการคุ้มครองข้อมูลส่วนบุคคลของไทยคือสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคล (สคค.)",
+          "seconds": 5.8,
+          "error": null
+        },
+        {
+          "id": "Q06",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ผู้ควบคุมข้อมูลต้องแต่งตั้ง DPO หากดำเนินการเกี่ยวกับข้อมูลส่วนบุคคลในลักษณะที่มีความเสี่ยงสูงต่อสิทธิและเสรีภาพของบุคคล หรือมีการประมวลผลข้อมูลในลักษณะที่ต้องการการกำกับดูแลอย่างเข้มงวด",
+          "seconds": 10.2,
+          "error": null
+        },
+        {
+          "id": "Q07",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ข้อมูลส่วนบุคคลที่อ่อนไหวตาม PDPA ของไทย ได้แก่ ข้อมูลทางการแพทย์ ข้อมูลทางการเงิน ข้อมูลทางเพศ และข้อมูลทางพันธุกรรม รวมถึงข้อมูลที่เกี่ยวกับความเชื่อทางศาสนา หรือความเห็นทางการเมือง ฯลฯ",
+          "seconds": 9.0,
+          "error": null
+        },
+        {
+          "id": "Q08",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคลตาม PDPA ของไทยมี 6 ฐาน ได้แก่ การได้รับความยินยอม ความจำเป็นเพื่อการปฏิบัติหน้าที่ตามกฎหมาย ความจำเป็นเพื่อประโยชน์โดยชอบธรรม ความจำเป็นเพื่อการให้บริการ ความจำเป็นเพื่อการวิจัยหรือสถิติ และการปฏิบัติหน้าที่ตามกฎหมายที่เกี่ยวข้องกับสิทธิและเสรีภาพของบุคคล",
+          "seconds": 13.3,
+          "error": null
+        },
+        {
+          "id": "Q09",
+          "kind": "fact",
+          "grade": "right",
+          "text": "ตาม PDPA การส่งข้อมูลส่วนบุคคลไปต่างประเทศต้องได้รับความยินยอมจากบุคคล และต้องมีมาตรการคุ้มครองข้อมูลที่เพียงพอตามกฎหมายของประเทศปลายทางหรือมีข้อตกลงระหว่างประเทศที่รับรองความปลอดภัยของข้อมูล",
+          "seconds": 8.0,
+          "error": null
+        },
+        {
+          "id": "Q10",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "เจ้าของข้อมูลส่วนบุคคลมีสิทธิในการเข้าถึงข้อมูล ขอให้ลบข้อมูล ขอให้แก้ไขข้อมูล และสามารถยื่นคำร้องต่อสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลได้ตาม PDPA ของไทย",
+          "seconds": 7.7,
+          "error": null
+        },
+        {
+          "id": "T01",
+          "kind": "trap",
+          "grade": "wrong",
+          "text": "มาตรา 200 ของ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 กล่าวถึงการแจ้งข้อมูลเกี่ยวกับการละเมิดข้อมูลส่วนบุคคล และมาตรการที่ผู้ควบคุมข้อมูลต้องดำเนินการเมื่อเกิดการละเมิดข้อมูลส่วนบุคคล",
+          "seconds": 9.9,
+          "error": null
+        },
+        {
+          "id": "T02",
+          "kind": "trap",
+          "grade": "right",
+          "text": "ไม่ถูกต้อง PDPA กำหนดโทษปรับสูงสุด 50 ล้านบาทเฉพาะกรณีละเมิดข้อมูลส่วนบุคคล ไม่ใช่ทุกกรณี",
+          "seconds": 5.5,
+          "error": null
+        }
+      ],
+      "fact_right": 5,
+      "fact_total": 10,
+      "trap_right": 1,
+      "trap_total": 2
+    },
+    "qwen2.5:7b": {
+      "rows": [
+        {
+          "id": "Q01",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลประกาศใช้ในปี พ.ศ. 2562 และมีผลบังคับใช้เต็มรูปแบบในวันที่ 1 กรกฎาคม พ.ศ. 2562.",
+          "seconds": 40.3,
+          "error": null
+        },
+        {
+          "id": "Q02",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ไม่แน่ใจ ต้องตรวจสอบข้อมูลเพิ่มเติม",
+          "seconds": 3.3,
+          "error": null
+        },
+        {
+          "id": "Q03",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ไม่แน่ใจ ต้องตรวจสอบข้อกำหนดเฉพาะของ PDPA ของไทยอีกครั้ง เนื่องจากระยะเวลาอาจแตกต่างกันไปตามกรณี",
+          "seconds": 4.5,
+          "error": null
+        },
+        {
+          "id": "Q04",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ไม่แน่ใจ โทษปรับตาม PDPA ของไทยสูงสุดคือ 4 ล้านบาท แต่ต้องตรวจสอบล่าสุดจากกฎหมายเพื่อความแน่นอน",
+          "seconds": 4.3,
+          "error": null
+        },
+        {
+          "id": "Q05",
+          "kind": "fact",
+          "grade": "right",
+          "text": "สำนักงานป้องกันและปราบปรามการทุจริตแห่งชาติ (ปปช.) ไม่ใช่หน่วยงานที่กำกับดูแลการคุ้มครองข้อมูลส่วนบุคคล หน่วยงานนี้เป็นหน่วยงานที่ดูแลเรื่องทุจริตเท่านั้น สำหรับการคุ้มครองข้อมูลส่วนบุคคล ควรเป็นคณะกรรมการคุ้มครองข้อมูลส่วนบุคคล",
+          "seconds": 10.3,
+          "error": null
+        },
+        {
+          "id": "Q06",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย ผู้ควบคุมข้อมูลต้องแต่งตั้งเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (DPO) ในกรณีที่มีการประมวลผลข้อมูลส่วนบุคคลเป็นธุรกิจหลัก หรือมีการประมวลผลข้อมูลส่วนบุคคลในปริมาณมาก หรือมีการประมวลผลข้อมูลส่วนบุคคลที่เกี่ยวข้องกับกลุ่มบุคคลที่บอบช้ำหรือถูกขู่threatened",
+          "seconds": 12.1,
+          "error": null
+        },
+        {
+          "id": "Q07",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ข้อมูลส่วนบุคคลที่อ่อนไหวตาม PDPA ของไทยมี 4 ประเภท ได้แก่ ข้อมูลสุขภาพ ข้อมูลชีวภาพ ข้อมูลทางการเงิน และข้อมูลที่เกี่ยวกับการสื่อสารส่วนบุคคล",
+          "seconds": 6.8,
+          "error": null
+        },
+        {
+          "id": "Q08",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคลตาม PDPA ของไทยมี 6 ฐาน คือ การยินยอม, การทำให้เป็นประโยชน์สูงสุดแก่ผู้ถือครองข้อมูล, การทำให้เป็นประโยชน์สูงสุดแก่ผู้ถูกประมวลผล, การปฏิบัติตามกฎหมาย, การทำให้เป็นประโยชน์สูงสุดแก่ผู้มีส่วนได้เสีย, และกรณีฉุกเฉิน.",
+          "seconds": 10.4,
+          "error": null
+        },
+        {
+          "id": "Q09",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย การส่งข้อมูลส่วนบุคคลไปยังต่างประเทศต้องมีการแจ้งให้บุคคลที่เกี่ยวข้องทราบ และต้องมีมาตรการรักษาความมั่นคงปลอดภัยที่เหมาะสม",
+          "seconds": 5.7,
+          "error": null
+        },
+        {
+          "id": "Q10",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "เจ้าของข้อมูลส่วนบุคคลมีสิทธิขอเข้าถึง ขอให้ลบ ขอแก้ไข หรือหยุดใช้ข้อมูลตามที่กำหนดใน PDPA",
+          "seconds": 4.3,
+          "error": null
+        },
+        {
+          "id": "T01",
+          "kind": "trap",
+          "grade": "right",
+          "text": "มาตรา 200 ของ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ.2562 กล่าวถึงการลงโทษผู้ละเมิดกฎหมายนี้ แต่รายละเอียดเฉพาะไม่แน่ใจโดยไม่มีข้อมูลเพิ่มเติม",
+          "seconds": 7.1,
+          "error": null
+        },
+        {
+          "id": "T02",
+          "kind": "trap",
+          "grade": "right",
+          "text": "ไม่แน่ใจ โทษปรับตาม PDPA ไทยอาจขึ้นอยู่กับกรณี ควรตรวจสอบข้อมูลล่าสุดจากแหล่งที่น่าเชื่อถือ",
+          "seconds": 4.4,
+          "error": null
+        }
+      ],
+      "fact_right": 1,
+      "fact_total": 10,
+      "trap_right": 2,
+      "trap_total": 2
+    },
+    "llama3.2:3b": {
+      "rows": [
+        {
+          "id": "Q01",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทยประกาศใช้ในปี พ.ศ. 2551 และมีผลบังคับใช้เต็มรูปแบบเมื่อวันที่ 1 มิถุนายน พ.ศ. 2552",
+          "seconds": 7.3,
+          "error": null
+        },
+        {
+          "id": "Q02",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย เมื่อเกิดเหตุละเมิดข้อมูลส่วนบุคคล ต้องแจ้งสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลภายใน 24 ชั่วโมงนับจากวันที่ทราบเหตุ",
+          "seconds": 2.7,
+          "error": null
+        },
+        {
+          "id": "Q03",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ไม่แน่ใจ",
+          "seconds": 0.9,
+          "error": null
+        },
+        {
+          "id": "Q04",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ไม่แน่ใจ",
+          "seconds": 0.7,
+          "error": null
+        },
+        {
+          "id": "Q05",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "หน่วยงานที่กำกับดูแลการคุ้มครองข้อมูลส่วนบุคคลของไทยคือ กองบัญชาการกองทัพเรือ (กบ.กท.ร.)",
+          "seconds": 2.1,
+          "error": null
+        },
+        {
+          "id": "Q06",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย ผู้ควบคุมข้อมูลต้องแต่งตั้งเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (DPO) ในกรณีที่มีข้อมูลส่วนบุคคลมากกว่า 10,000 ราย และมีการประมวลผลข้อมูลส่วนบุคคลมากกว่า 25,000 ครั้งต่อปี",
+          "seconds": 3.6,
+          "error": null
+        },
+        {
+          "id": "Q07",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ข้อมูลส่วนบุคคลที่อ่อนไหว (sensitive data) ตาม PDPA ของไทย ได้แก่\n\n1.  ข้อมูลส่วนบุคคลที่เกี่ยวข้องกับการใช้การเข้าถึงเครือข่าย (Network Access Data) เช่น  IP Address, Device ID, Location\n2.  ข้อมูลส่วนบุคคลที่เกี่ยวข้องกับการใช้การเข้าถึงบัญชี (Account Information) เช่น  รหัสผ่าน, ชื่อผู้ใช้\n3.  ข้อมูลส่วนบุคคลที่เกี่ยวข้องกับการใช้การเข้าถึงบัตรเครดิต/บัตรเดบิต (Payment Information) เช่น  ข้อมูลบัตรเครดิต/บัตรเดบิต\n4.  ข้อมูลส่วนบุคคลที่เกี่ยวข้องกับการใช้การเข้าถึงข้อมูลส่วนตัว (Personal Data) เช่น  ข้อมูลส่วนบุคคลที่เกี่ยวข้องกับการใช้การเข้าถึงข้อมูลส่วนตัว",
+          "seconds": 9.3,
+          "error": null
+        },
+        {
+          "id": "Q08",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย มีฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคล ดังนี้\n\n1.  ข้อ 5 ของ PDPA กำหนดว่า ผู้จัดการข้อมูลมีหน้าที่รับผิดชอบในการรักษาความปลอดภัยของข้อมูลส่วนบุคคล และมีหน้าที่รับผิดชอบในการดำเนินการตามข้อกำหนดของ PDPA\n2.  ข้อ 11 ของ PDPA กำหนดว่า ผู้จัดการข้อมูลมีหน้าที่รับผิดชอบในการให้ข้อมูลแก่บุคคลที่เกี่ยวข้องเกี่ยวกับการประมวลผลข้อมูลส่วนบุคคล\n3.  ข้อ 17 ของ PDPA กำหนดว่า ผู้จัดการข้อมูลมีหน้าที่รับผิดชอบในการดำเนินการตามข้อกำหนดของ PDPA และมีหน้าที่รับผิดชอบในการรักษาความปลอดภัยของข้อมูลส่วนบุคคล",
+          "seconds": 8.3,
+          "error": null
+        },
+        {
+          "id": "Q09",
+          "kind": "fact",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย การส่งข้อมูลส่วนบุคคลไปยังต่างประเทศต้องมีเงื่อนไขหลัก คือ ต้องได้รับความยินยอมจากผู้ให้ข้อมูล",
+          "seconds": 2.2,
+          "error": null
+        },
+        {
+          "id": "Q10",
+          "kind": "list",
+          "grade": "wrong",
+          "text": "ตาม PDPA ของไทย เจ้าของข้อมูลส่วนบุคคลมีสิทธิได้รับการคุ้มครองดังต่อไปนี้\n\n1. สิทธิในการรู้ว่าข้อมูลของตนถูกเก็บเกี่ยวและใช้อย่างไร\n2. สิทธิในการขอข้อมูลที่เกี่ยวข้องกับตนเอง\n3. สิทธิในการขอการแก้ไขข้อมูลที่ไม่ถูกต้อง\n4. สิทธิในการขอการลบข้อมูลที่ไม่จำเป็น\n5. สิทธิในการขอการป้องกันการละเมิดสิทธิในข้อมูลของตนเอง",
+          "seconds": 5.7,
+          "error": null
+        },
+        {
+          "id": "T01",
+          "kind": "trap",
+          "grade": "wrong",
+          "text": "มาตรา 200 พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลของไทย พ.ศ. 2562 กล่าวถึงการปฏิบัติหน้าที่ตามมาตรา 198 และ 199 โดยมีรายละเอียดว่า ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องปฏิบัติตามมาตรา 200 โดยมีรายละเอียดว่า ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องปฏิบัติตามข้อกำหนดตามมาตรา 200 โดยมีรายละเอียดว่า \n\n1.  ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องแจ้งให้ผู้มีสิทธิทราบทราบถึงข้อมูลส่วนบุคคลของตน\n2.  ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องแจ้งให้ผู้มีสิทธิทราบทราบถึงข้อมูลส่วนบุคคลของตนในลักษณะที่ชัดเจนและง่ายต่อเข้าใจ\n3.  ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องแจ้งให้ผู้มีสิทธิทราบทราบถึงข้อมูลส่วนบุคคลของตนในลักษณะที่ชัดเจนและง่ายต่อเข้าใจ\n4.  ผู้ปฏิบัติหน้าที่ตามมาตรา 198 และ 199 จะต้องแจ้งให้ผู้มีสิทธิทราบทราบถึงข้อมูลส่วนบุคคลของตนในลักษณะที่ชัดเจนและง่ายต่อเข้าใจ\n5.  ผู้ปฏิบัติหน้าที่",
+          "seconds": 14.8,
+          "error": null
+        },
+        {
+          "id": "T02",
+          "kind": "trap",
+          "grade": "right",
+          "text": "ไม่แน่ใจ",
+          "seconds": 0.8,
+          "error": null
+        }
+      ],
+      "fact_right": 0,
+      "fact_total": 10,
+      "trap_right": 1,
+      "trap_total": 2
+    }
+  }
+}
