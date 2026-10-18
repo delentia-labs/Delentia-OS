@@ -131,7 +131,7 @@ WORKFLOWS: List[Dict[str, object]] = [
      "stress": "the newest rows of the chain are cut, the chain is rewritten and re-signed with the key, a person's text is searched for in the raw database file",
      "oracle": "the standalone verifier and the witness catch cut and rewrite; the restore reproduces the state; no byte of the erased person remains",
      "pass": "every tamper detected, restore equal, zero residue after erasure",
-     "scripted": ["scripts/verify_audit_bundle.py", "research/daaes/tc025.py", "rct_control_plane/tests/test_memory_erasure_round67_real.py", "rct_control_plane/tests/test_erasure_tables_round68_real.py", "rct_control_plane/tests/test_host_metrics_and_restore_round82_real.py"], "live": "none (no model needed beyond the day's work)"},
+     "scripted": ["rct_control_plane/tests/test_workflow_w11_round87_real.py", "scripts/verify_audit_bundle.py", "research/daaes/tc025.py", "rct_control_plane/tests/test_memory_erasure_round67_real.py", "rct_control_plane/tests/test_erasure_tables_round68_real.py", "rct_control_plane/tests/test_host_metrics_and_restore_round82_real.py"], "live": "none (no model needed beyond the day's work)"},
     {"id": "W12", "name": "Delegate in parallel and use an outside service", "group": "trust", "tier": "P1",
      "job": "Split a job across three subagents in separate processes and worktrees, and call a private HTTP service through the gate.",
      "atoms": ["D2", "D7", "C3", "C5", "C7", "T8", "T10", "S2", "S6"],
@@ -154,7 +154,7 @@ READINESS: Dict[str, Dict[str, object]] = {
     "W08": {"e2e": False, "live_runner": "scripts/measure_repeat_goal.py", "missing": "ten repeats with one tainted run in the middle and a forged tool, scripted, then live"},
     "W09": {"e2e": True, "live_runner": None, "missing": "TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part"},
     "W10": {"e2e": True, "live_runner": "scripts/measure_injection_real_model.py", "missing": "a capable model (the small local models read the page in 2 to 11 of 18 scenarios)"},
-    "W11": {"e2e": False, "live_runner": None, "missing": "one scripted run that does all of it in order: a day of episodes, proof export, standalone verification, cut and rewrite caught by a witness, restore, erasure and a raw-file scan"},
+    "W11": {"e2e": True, "live_runner": None, "missing": "the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed"},
     "W12": {"e2e": False, "live_runner": None, "missing": "one run that combines three subagents with a call to an outside service and a shared budget cap"},
 }
 
