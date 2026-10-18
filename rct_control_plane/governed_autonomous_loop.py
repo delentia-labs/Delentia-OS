@@ -1832,7 +1832,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 tools=[s["tool_name"] for s in result.get("steps", []) if s.get("tool_name")], tainted=getattr(self, "_episode_taint", None) is not None)
         except Exception:                      # a logging problem must never change an episode's outcome
             pass
-        if self._warm_recall and verified_success and stopped_reason == "llm_finished" and not self._episode_used_conversation:
+        # Round 87 (found by the W08 whole-job test): an answer built from outside text was cached like any other and then served with NO model call on the next identical request, so one
+        # run that a page had steered became the permanent answer. An episode that read outside text teaches no skill (Round 65) and now stores no warm answer either.
+        read_outside_text = getattr(self, "_episode_taint", None) is not None and self._taint_enabled()
+        if self._warm_recall and verified_success and stopped_reason == "llm_finished" and not self._episode_used_conversation and not read_outside_text:
             self._warm_store(result, verification)
         await self._pipeline_after(result, duration)
         try:                                   # Round 61: opt-in, local, redacted record of the steps (trajectories.py); never changes an outcome
