@@ -1802,6 +1802,81 @@ def profile_unset(facet: str, namespace: str, db: Optional[str]) -> None:
     click.echo("removed (kept on disk, no longer shown)" if user_model.UserModel(_audit_db(db), namespace).unset(facet, by="cli") else f"{facet} was not set")
 
 
+@cli.group("law")
+def law_group():
+    """
+    Law Pack (Round 89): answers about a statute that come ONLY from text you supply, with the sections named and the numbers checked.
+
+    Not legal advice and not knowledge inside any model: the pack is the text you imported (check its edition), the model only reads the passages shown to it, and an answer that
+    quotes a number the passages do not contain, or cites a section it was not shown, is labelled and never presented as from the statute. Examples:
+        delentia law import thai-pdpa pdpa_en.txt --edition "unofficial translation 2019" --jurisdiction TH
+        delentia law list
+        delentia law ask thai-pdpa "ต้องแจ้งเหตุละเมิดข้อมูลภายในกี่ชั่วโมง"
+    """
+    pass
+
+
+@law_group.command("import")
+@click.argument("name")
+@click.argument("text_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--edition", required=True, help="Which version of the law this text is (a date or a gazette reference): shown with every answer.")
+@click.option("--jurisdiction", required=True, help="Country or region code, e.g. TH.")
+@click.option("--source", default=None, help="Where the text came from (default: the file name).")
+@click.option("--no-embed", is_flag=True, help="Skip the local embedding model: search by words only (weaker for questions asked in another language).")
+def law_import(name: str, text_file: str, edition: str, jurisdiction: str, source: Optional[str], no_embed: bool) -> None:
+    """Import a statute's text (UTF-8; a heading must start a line: 'Section 12', 'Article 12' or 'มาตรา 12')."""
+    from rct_control_plane import law_pack
+    text = Path(text_file).read_text(encoding="utf-8")
+    try:
+        pack = law_pack.build_pack(name, text, edition=edition, jurisdiction=jurisdiction, source=source or Path(text_file).name, embed=not no_embed)
+    except (ValueError, RuntimeError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    target = law_pack.save_pack(pack)
+    click.echo(f"{pack.label()}: {len(pack.sections)} sections, {len(pack.chunks)} passages, {'embedded with ' + pack.embed_model if pack.vectors else 'words only'} -> {target}")
+
+
+@law_group.command("list")
+def law_list() -> None:
+    """The packs you have imported."""
+    from rct_control_plane import law_pack
+    packs = law_pack.list_packs()
+    if not packs:
+        click.echo("no packs yet (`delentia law import NAME FILE --edition ... --jurisdiction ...`)")
+    for p in packs:
+        click.echo(f"{p['name']:<24} {p.get('jurisdiction', '?'):<4} edition {p.get('edition', '?')}  {p.get('sections', '?')} sections  {'embedded' if p.get('embedded') else 'words only'}")
+
+
+@law_group.command("ask")
+@click.argument("name")
+@click.argument("question")
+@click.option("--arm", type=click.Choice(["A0", "A1"]), default="A0", show_default=True, help="A0 = the question's own embedding. A1 puts the section the question names first: measured WORSE on the validation questions (a question naming section 23 can be asking about the penalty in section 82).")
+@click.option("--json", "as_json", is_flag=True, help="Print the whole result (sections shown, check verdict) as JSON.")
+def law_ask(name: str, question: str, arm: str, as_json: bool) -> None:
+    """Ask one question. The model sees only the retrieved passages; the answer is checked before it is called grounded."""
+    import asyncio
+    from rct_control_plane import law_pack
+    from rct_control_plane.llm_provider import get_default_provider
+    from rct_control_plane.residency import guard_provider
+    try:
+        pack = law_pack.load_pack(name)
+    except (FileNotFoundError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    provider = guard_provider(get_default_provider(), _audit_db(None), "law-pack")        # the sovereignty policy applies to this path too
+    result = asyncio.run(law_pack.ask(pack, question, provider, arm=arm))
+    if as_json:
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    click.echo(result["answer"])
+    check = result["check"]
+    label = "from the supplied text" if result["from_statute"] else f"NOT confirmed as from the text ({check['status']})"
+    click.echo(click.style(f"\n[{label}] sections shown: {', '.join(result['sections_shown'])}; cited: {', '.join(check['cited_sections']) or 'none'}", fg="green" if result["from_statute"] else "yellow"))
+    if check["unsupported_numbers"]:
+        click.echo(click.style(f"numbers not found in the shown passages: {check['unsupported_numbers']}", fg="yellow"))
+    click.echo(result["notice"])
+
+
 @cli.group("credentials")
 def credentials_group():
     """

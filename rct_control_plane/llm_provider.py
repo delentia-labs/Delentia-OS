@@ -94,6 +94,20 @@ class LLMProvider(ABC):
         yield await self.complete(prompt, system_prompt, temperature, max_tokens, json_mode=False)
 
 
+OLLAMA_THINK_ENV = "DELENTIA_OLLAMA_THINK"
+
+
+def ollama_think_setting() -> Optional[bool]:
+    """Round 89: a model that thinks before it answers (qwen3) spent 277 s on '17 x 23' through the host. DELENTIA_OLLAMA_THINK=off asks Ollama not to think (the request gets "think": false),
+    =on forces it; unset leaves the model's own default. Models that cannot think ignore the field."""
+    value = (os.environ.get(OLLAMA_THINK_ENV) or "").strip().lower()
+    if value in ("off", "0", "false", "no"):
+        return False
+    if value in ("on", "1", "true", "yes"):
+        return True
+    return None
+
+
 class OllamaProvider(LLMProvider):
     # Round 44 item I.3: only calls at or below this temperature are
     # cached. 0.3 is not an arbitrary new number - it's the real
@@ -139,6 +153,9 @@ class OllamaProvider(LLMProvider):
                    "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
         if json_mode:
             payload["format"] = "json"
+        think = ollama_think_setting()
+        if think is not None:
+            payload["think"] = think
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
@@ -164,6 +181,9 @@ class OllamaProvider(LLMProvider):
         num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": True,
                    "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
+        think = ollama_think_setting()
+        if think is not None:
+            payload["think"] = think
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()
