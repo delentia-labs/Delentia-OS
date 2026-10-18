@@ -59,7 +59,7 @@ def embed(texts: List[str]) -> List[List[float]]:
 
 
 def cosine(a: List[float], b: List[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     return dot / (math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b)) + 1e-9)
 
 
@@ -87,13 +87,13 @@ def main() -> int:
     questions = embed([q["q"] for q in QUESTIONS])
     result: Dict[str, Any] = {"chunks": len(chunks), "models": {}, "retrieval": []}
     contexts = []
-    for q, qv in zip(QUESTIONS, questions):
+    for q, qv in zip(QUESTIONS, questions, strict=True):
         ranked = sorted(range(len(chunks)), key=lambda i: -cosine(qv, vectors[i]))[:TOP_K]
         contexts.append("\n\n".join(f"[Section {chunks[i]['section']}] {chunks[i]['text']}" for i in ranked))
         result["retrieval"].append({"id": q["id"], "sections": [chunks[i]["section"] for i in ranked]})
     for model in args.models:
         rows = []
-        for q, ctx in zip(QUESTIONS, contexts):
+        for q, ctx in zip(QUESTIONS, contexts, strict=True):
             try:
                 text = answer(model, q["q"], ctx)["text"]
                 g = grade(q, text, supplied=True)
