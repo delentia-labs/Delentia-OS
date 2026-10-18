@@ -72,7 +72,7 @@ pytest --tb=short -q
 ```
 delentia-os/
 ├── core/           ← FDIA engine, Delta engine, Regional adapter
-├── signedai/       ← SignedAI consensus, HexaCore registry
+├── signedai/       ← SignedAI jury runner, table of example model roles
 ├── rct_control_plane/  ← 15-module DSL + intent schema
 └── microservices/  ← 5 reference microservices (read-only SDK)
 ```

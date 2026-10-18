@@ -51,7 +51,7 @@ $$F = D^I \times A$$
 |--------|-------|
 | SDK Validation | See `docs/testing/TESTING_CANONICAL.md` for the current verified checkpoint |
 | Algorithms | 41 (Tier 1–9 reference implementations) |
-| LLM Models | 9 HexaCore roles (+ Ollama LOCAL + Groq LPU) — v2.3 |
+| LLM Models | You choose: Ollama, OpenRouter or any OpenAI-compatible endpoint |
 | Hallucination Rate | Not claimed (earlier 0.3% figure withdrawn 2026-09-28: not reproducible) |
 | Memory Compression | 39–90% smaller than full snapshots, measured in bytes (grows with history) via Delta Engine |
 | Intent Recall Speed | Cold start 3–5s → Warm recall **<50ms** |
@@ -64,8 +64,8 @@ $$F = D^I \times A$$
 | Component | Module |
 |-----------|--------|
 | FDIA Scorer + equation engine | `core/fdia/fdia.py` |
-| SignedAI multi-LLM consensus | `signedai/core/` |
-| HexaCore 9-role registry | `signedai/core/registry.py` |
+| SignedAI jury runner (scripted-voter tests only) | `signedai/` |
+| `HexaCoreRegistry`: table of example model roles | `signedai/core/registry.py` |
 | Delta Engine (39–90% measured, grows with history) | `core/delta_engine/` |
 | Regional Language Adapter | `core/regional_adapter/` |
 | RCT Control Plane DSL | `rct_control_plane/` (22 modules) |

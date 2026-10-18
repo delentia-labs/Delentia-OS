@@ -43,7 +43,7 @@ Layer 7: Intent Loop Engine
 Layer 6: SignedAI Consensus
 ├─ S/4/6/8 tier framework
 ├─ ED25519 cryptographic attestation
-├─ 9 HexaCore roles (+ Ollama LOCAL + Groq LPU)
+├─ the model is a setting (Ollama, OpenRouter, OpenAI-compatible)
 └─ signedai/core/
 
 Layer 5: Delta Engine
@@ -112,4 +112,4 @@ The equation `F = D^I × A` is enforced at the **mathematics level**. Governance
 Storing full agent state at every tick is O(n×t). Delta Engine stores only `changed_fields` with SHA-256 content hashing, reducing the stored log by 39% (20 ticks) to 90% (500 ticks) in measured bytes (`scripts/measure_delta_engine_real.py`; the gain grows with history, and plain zstd over full snapshots compresses further). Full rollback is still possible by replaying the delta chain.
 
 ### Why ED25519 over RSA
-ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Critical for high-throughput multi-LLM consensus where thousands of decisions need attestation per second.
+ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Useful where many decisions need an attestation.

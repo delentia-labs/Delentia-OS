@@ -119,8 +119,8 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | Component | In This SDK (Apache 2.0) | Enterprise Only (Proprietary) |
 |-----------|--------------------------|-------------------------------|
 | FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
-| SignedAI multi-LLM consensus | ✅ `signedai/core/` | — |
-| HexaCoreRole registry (10 roles v2.3) | ✅ `signedai/core/registry.py` | — |
+| SignedAI jury runner (independent votes, signed verdict; scripted-voter tests only) | ✅ `signedai/` | — |
+| `HexaCoreRegistry`: a table of example model roles used by the jury arithmetic (no fixed roster runs) | ✅ `signedai/core/registry.py` | — |
 | Delta Engine (memory deltas: ~39% smaller after 20 ticks, ~90% after 500, measured in bytes; see Round 52) | ✅ `core/delta_engine/` | — |
 | Regional Language Adapter | ✅ `core/regional_adapter/` | — |
 | RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
@@ -156,7 +156,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | 🎨 **Delentia AI** | AI-powered creative studio — intent-driven content generation | [delentia.com/products/delentia-ai](https://delentia.com/en/products/delentia-ai) |
 | ✍️ **SignedAI** | Cryptographic verification layer — ED25519 signed AI outputs | [delentia.com/products/signed-ai](https://delentia.com/en/products/signed-ai) |
 
-> All three products run on the same RCT OS constitutional core. SignedAI powers hallucination prevention via multi-LLM consensus + ED25519 attestation.
+> SignedAI is the optional jury runner: models you name vote independently and the verdict is signed with Ed25519. It has been tested with scripted voters only and has not been shown to reduce hallucination.
 
 ---
 
@@ -185,7 +185,7 @@ $$F = D^I \times A$$
 |--------|-------|
 | **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
 | **Algorithms** | 41 (Tier 1–9, reference implementations) |
-| **LLM Models** | 10 HexaCore roles (3 Western + 3 Eastern + 1 Regional + 1 Thai + 1 Local + 1 LPU) - v2.3 |
+| **LLM Models** | You choose: a local model (Ollama), any model on OpenRouter, or any OpenAI-compatible endpoint. No fixed roster |
 | **Hallucination Rate** | Not currently claimed. The earlier 0.3% figure was withdrawn 2026-09-28 because it could not be reproduced (see `docs/benchmark/hallucination-methodology.md`) |
 | **Memory Compression** | stores state diffs, not full state: 39% (20 ticks) to 90% (500 ticks) smaller than a full snapshot per tick, measured in bytes (`scripts/measure_delta_engine_real.py`). The earlier 91.5% was a formula estimate, not a measurement |
 | **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
@@ -233,7 +233,7 @@ Layer 7: Universal Adapters (13 integrations)
 Layer 6: JITNA Protocol (RFC-001 v2.0)
 └─ AI-to-AI intent wire format + task negotiation
 
-Layer 5: SignedAI — Multi-LLM Consensus
+Layer 5: SignedAI — optional jury of independent models
 ├─ TIER_S (1) · TIER_4 (4) · TIER_6 (6) · TIER_8 (8 + veto)
 └─ Hallucination rate: not measured (earlier 0.3% claim withdrawn, see docs/benchmark)
 
@@ -633,7 +633,7 @@ Key capabilities:
 - **Cross-Disciplinary Synthesis** — Connects insights across unrelated domains automatically
 - **Intent Conservation** — Original intent preserved and checked through every refinement pass
 
-### HexaCore Registry (`signedai/core/registry.py`)
+### HexaCoreRegistry: a table of example model roles (`signedai/core/registry.py`)
 
 10 purpose-specific AI roles with full geopolitical balance (v2.3):
 
@@ -653,7 +653,7 @@ Key capabilities:
 ```python
 from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
 
-# All 10 roles
+# All example roles in the table
 for role, model in HexaCoreRegistry.MODELS.items():
     print(f"{role.value}: {model.id} ({model.country})")
 
@@ -793,7 +793,7 @@ delentia-os/
 │  └─ regional_adapter/         # regional routing + sovereignty policy (data residency)
 ├─ signedai/                    # SignedAI consensus framework
 │  └─ core/
-│     ├─ registry.py            # HexaCoreRegistry (9 roles) + SignedAIRegistry
+│     ├─ registry.py            # HexaCoreRegistry (table of example roles) + SignedAIRegistry
 │     ├─ router.py              # TierRouter (risk → tier selection)
 │     └─ models.py              # JITNAPacket, AnalysisJob
 ├─ rct_control_plane/           # 19-module DSL + intent schema + enterprise platform
@@ -879,7 +879,7 @@ Over the next 10 months, working alone from a room in **Klong Toei, Bangkok**, I
 - A 11-layer constitutional AI operating system
 - 41 production algorithms (Tier 1–9)
 - The JITNA Protocol (RFC-001) — an open standard for AI-to-AI communication
-- SignedAI: multi-LLM consensus with ED25519 cryptographic attestation
+- SignedAI: optional jury runner with Ed25519-signed verdicts
 - **1,287 passing tests**, 92% coverage, with 0 skips
 - A 450+ page whitepaper documenting every decision
 
@@ -928,7 +928,7 @@ Delentia OS is the open-source core. The full ecosystem extends across:
 | [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Agent runtime and core SDK — plus the GUI (`apps/gui`), adapter registry (`plugins/adapters`) and public deployment files (`deploy/`), merged here in 2026-09 | ✅ Apache 2.0 |
 | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) | MCP server (6 tools on Cloudflare Workers) and Delentia Guard, source in `ecosystem/` | ✅ Apache 2.0 |
 | [Delentia-AI-SLM](https://github.com/delentia-labs/Delentia-AI-SLM) | SLM fine-tuning experiments | 🗄️ Archived |
-| [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault, PDPA/GDPR compliance | 🔒 Proprietary |
+| [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault (private) | 🔒 Proprietary |
 | [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform (private) | 🔒 Proprietary |
 | [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |
 
