@@ -477,6 +477,18 @@ OR, if the goal is already achieved or no tool call is needed:
 
     decision = _extract_json(raw_text)
     if decision is None or "action" not in decision:
+        # Round 87: found by the b0/d0 rerun on qwen3:8b. All four Delentia runs ended `parse_error` after five calls, and the fifth reply had used exactly the 2048 completion tokens it was allowed:
+        # a reasoning model spent its whole allowance thinking and the JSON was cut off, and one bad reply ended the episode. Ask once more, with a larger allowance and a plain instruction to answer
+        # with the JSON only. One retry, not a loop: it costs one more model call (metered like any other) and only when the first reply was unusable.
+        retry_prompt = (prompt + "\n\nYour previous reply was not a valid JSON object (it may have been cut off while you were thinking). "
+                        "Reply again with ONLY the JSON object, as short as you can: no thinking out loud, no text outside the JSON.")
+        if system_prompt is not None:                             # any exception (the budget meter's refusals included) reaches the loop exactly as it does from the first call
+            raw_retry = await provider.complete(retry_prompt, system_prompt=system_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
+        else:
+            raw_retry = await provider.complete(retry_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
+        second = _extract_json(raw_retry)
+        if second is not None and "action" in second:
+            return second
         return {"action": "finish", "reasoning": "parse_error", "final_answer": raw_text,
                 "tool_name": None, "tool_args": {}, "parse_error": True}
 
