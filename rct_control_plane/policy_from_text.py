@@ -51,7 +51,7 @@ _GROUP_WORDS: List[Tuple[str, re.Pattern]] = [
 _ATTACK = re.compile(
     r"ignore (all |any |the )?(previous|prior|above|earlier)|disable (the )?(approval|signature|policy|screen|gate|guard|check)|turn off (the )?(injection|screen|guard|policy|approval|gate)|"
     r"admin mode|all tools are allowed|approve (its|their|his|her) own|(already|has) approved|approved everything|pretend|\bset a to\b|skip (the )?(signature|approval)|bypass|"
-    r"no approval (is )?(needed|required)|ยกเลิก(การ)?อนุมัติ|ปิด(การ)?(อนุมัติ|ตรวจ|ป้องกัน)|ข้ามการอนุมัติ|อนุมัติเอง")
+    r"no approval (is )?(needed|required)|ยกเลิก(การ)?อนุมัติ|ปิด(การ)?(อนุมัติ|ตรวจ|ป้องกัน)|ข้าม(ขั้นตอน|การ)?อนุมัติ|อนุมัติเอง")
 _EVERYTHING = re.compile(r"\b(everything|anything|all tools|all actions)\b|ทุกอย่าง|ทั้งหมด")
 _VAGUE = re.compile(
     r"as appropriate|if (it )?(seems|appears)|where (it )?(makes sense|reasonable)|when(ever)? (needed|necessary|you need)|if (needed|necessary)|(your |own )?judg(e)?ment|sensib|reasonabl|"
@@ -107,7 +107,7 @@ def _groups_in(segment: str) -> List[str]:
 
 
 def _stance(segment: str) -> Optional[str]:
-    never_with_ask = _NEVER.search(segment) and re.search(r"without (me )?asking|without (my )?(approval|permission)", segment)
+    never_with_ask = _NEVER.search(segment) and re.search(r"without (me )?asking|without (my )?(approval|permission)|โดยไม่(ได้)?(ถาม|ขอ|รับ)(อนุญาต|อนุมัติ|ความยินยอม)?", segment)
     if never_with_ask:
         return ASK                                           # "never X without asking me" = ask before X
     if _NO_ASK.search(segment):
