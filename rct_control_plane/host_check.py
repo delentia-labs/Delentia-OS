@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -227,7 +228,7 @@ def check_raw_gateway() -> List[Check]:
 
 def _fast_startup_enabled() -> Optional[bool]:
     """Windows 'Fast startup' (HiberbootEnabled): True / False, or None where it cannot be read (not Windows, no access)."""
-    if os.name != "nt":
+    if sys.platform != "win32":                                    # the form mypy understands: `winreg` has no members on other platforms
         return None
     try:
         import winreg
