@@ -226,6 +226,24 @@ def normalize_steps(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
+@contextlib.contextmanager
+def _live_recorder() -> Any:
+    """With a real provider nobody scripts the decisions, but the cases still need to know what the model was SHOWN (restoration of intent is read from it). This wraps the loop's decision function,
+    records the extra context of every call and passes the call through unchanged; the original is put back afterwards, whatever happens."""
+    import rct_control_plane.autonomous_loop as autonomous_loop_module
+    state: Dict[str, Any] = {"i": 0, "contexts": []}
+    original = autonomous_loop_module.decide_next_action
+
+    async def recording(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "") -> Dict[str, Any]:
+        state["contexts"].append(extra_context)
+        return await original(goal, history, available_tools, llm_provider=llm_provider, extra_context=extra_context)
+    autonomous_loop_module.decide_next_action = recording                       # type: ignore[assignment]
+    try:
+        yield state
+    finally:
+        autonomous_loop_module.decide_next_action = original                    # type: ignore[assignment]
+
+
 def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Optional[RunLog] = None, namespace: str = "daaes", approve: bool = False,
                 max_iterations: int = 6, intent_id: str = "INT-1", policy_path: Optional[Path] = None, approve_if: Optional[Callable[[Any], bool]] = None,
                 before_run: Optional[Callable[[Any], None]] = None, continue_after: bool = False, extra_env: Optional[Dict[str, str]] = None, route: bool = True, provider: Any = None, max_seconds: float = 120.0) -> Dict[str, Any]:
@@ -242,7 +260,7 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
         (home / "approver_pub.json").write_text(json.dumps({"pub": pub}), encoding="utf-8")
 
     summary: Dict[str, Any] = {"decisions": []}
-    model = scripted_model(decisions) if provider is None else contextlib.nullcontext({"i": 0, "contexts": []})     # a real provider replaces the script: the model decides, the world and the gates are the same
+    model = scripted_model(decisions) if provider is None else _live_recorder()     # a real provider replaces the script: the model decides, the world and the gates are the same
     treated = _AMBIENT["treatment"]
     research_env = {"DELENTIA_RESEARCH_MODE": "1"} if treated is not None else {}
     if treated is not None and not treated.F and policy_path is not None and Path(policy_path).exists():

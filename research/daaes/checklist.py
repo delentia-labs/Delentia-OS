@@ -47,11 +47,11 @@ def evaluate(out: Path) -> Dict[str, Any]:
          f"{sum(1 for x in mine if x['passed'])}/{len(mine)} kill points passed with a real process termination and a separate mock API; the naive control duplicated in "
          f"{sum(1 for x in naive if x['hard_failures'])} windows, so the check can fail")
 
-    full, cap8 = detail("TC-006", "delentia_full"), detail("TC-006", "delentia_full_cap8")
+    full, cap5 = detail("TC-006", "delentia_full"), detail("TC-006", "delentia_full_cap5")
     item(4, "TC-006 (scripted): the user's intent survives a session reset and memory pressure",
-         ("PASS" if full["passed"] else "PARTIAL") if cap8["passed"] and full["metrics"]["protected_intent_accuracy"] == 100.0 else "FAIL",
-         ("with the default of 5 shown pinned rules the goal rule is dropped when a sixth is added (restoration 50; the prompt now says so); with DELENTIA_MAX_PINNED_SHOWN=8 restoration is 100. "
-          "Protected constraints held in every Delentia arm because the owner policy enforces them; the pins only inform") if not full["passed"] else "restored in every session")
+         "PASS" if full["passed"] and full["metrics"]["protected_intent_accuracy"] == 100.0 and not cap5["passed"] else "FAIL",
+         ("the default shows 8 pinned rules since Round 87 (the Architect's decision): restored in every session. The control with the old cap of 5 (DELENTIA_MAX_PINNED_SHOWN=5) still drops the goal rule when a "
+          "sixth is added (restoration 50), so the check can fail. Protected constraints held in every Delentia arm because the owner policy enforces them; the pins only inform") if full["passed"] else "NOT restored at the default cap")
 
     item(5, "the harness has external oracles and a separate workspace per run", "PASS" if find("TC-003", "d0_delentia") and all(x["verified"] for x in suite["runs"]) else "FAIL",
          f"hidden tests and the answer key are outside the agent's workspace (tested); the oracle runs the agent's package in a clean folder in another process; every run has its own work folder; all {len(suite['runs'])} bundles verify")

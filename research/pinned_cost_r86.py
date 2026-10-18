@@ -1,5 +1,5 @@
 """
-What a pinned rule costs in the prompt, computed (not guessed), so the cap (`DELENTIA_MAX_PINNED_SHOWN`, default 5) can be chosen with numbers.
+What a pinned rule costs in the prompt, computed (not guessed), so the cap (`DELENTIA_MAX_PINNED_SHOWN`, default 5 when this was written, 8 since Round 87) can be chosen with numbers.
 
 A pinned rule is a line of the person's own words, at most 300 characters, rendered by `GovernedAutonomousLoop` under a one-line heading; when more rules are pinned than the cap, one more line says how
 many are not shown. This script renders EXACTLY those lines (same strings) for the 40 Thai standing rules of the frozen H6 set (`research/recall_dataset_r70.py`) and for 12 English rules written for this

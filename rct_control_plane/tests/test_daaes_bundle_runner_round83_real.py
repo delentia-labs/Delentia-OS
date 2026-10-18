@@ -174,7 +174,7 @@ def test_the_checklist_refuses_when_there_is_no_suite(tmp_path):
 
 def test_the_checklist_reads_a_real_suite_and_is_not_a_statement(tmp_path, monkeypatch):
     small = [("TC-009", a, {}) for a in ("ref_snapshot", "ref_delta", "delentia_delta_engine_r82", "delentia_delta_log", "delentia_memory_log")] + [("TC-025", a, {}) for a in ("event_log_baseline", "delentia")] \
-        + [("TC-010", "naive_new_key", {"kill_point": "in_flight"}), ("TC-010", "delentia", {"kill_point": "in_flight"}), ("TC-006", "delentia_full", {}), ("TC-006", "delentia_full_cap8", {}),
+        + [("TC-010", "naive_new_key", {"kill_point": "in_flight"}), ("TC-010", "delentia", {"kill_point": "in_flight"}), ("TC-006", "delentia_full", {}), ("TC-006", "delentia_full_cap5", {}),
            ("TC-003", "d0_delentia", {"policy": "perfect", "fault": "F0"})]
     monkeypatch.setattr(runner, "suite_plan", lambda quick=True: small)
     summary = runner.run_suite(tmp_path, 1701, quick=True)
@@ -183,7 +183,7 @@ def test_the_checklist_reads_a_real_suite_and_is_not_a_statement(tmp_path, monke
     assert len(result["items"]) == 7 and {i["status"] for i in result["items"]} <= {"PASS", "PARTIAL", "FAIL"}
     by = {i["n"]: i for i in result["items"]}
     assert by[1]["status"] == "PASS" and "hard failure" in by[1]["why"]           # the engine's versioned log passes; the old usage's hard failures stay reported
-    assert by[3]["status"] == "PASS" and by[6]["status"] == "PASS" and "never stood in front of a REAL model" in by[6]["why"]
+    assert by[3]["status"] == "PASS" and by[4]["status"] == "PASS" and by[6]["status"] == "PASS" and "never stood in front of a REAL model" in by[6]["why"]
     text = checklist.render(result)
     assert "Ready for a paid call" in text
     # tamper with one bundle: item 5 and 7 must turn FAIL

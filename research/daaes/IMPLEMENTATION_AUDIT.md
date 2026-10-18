@@ -22,7 +22,7 @@ Question: for each thing the DAAES specification asks of Delentia, what exists i
 | Evidence bundle per run + seal + validity rule | built (`bundle.py`); nine ways of altering or thinning a bundle are tested |
 | Runner / CLI (`run`, `suite`, `verify`, `checklist`) | built (`runner.py`, `__main__.py`) |
 | Model gateway with token and cost logging, hard budget guard | built and now in front of Delentia's own provider code (`live_adapter.py`, `build_governed_loop(llm_provider=...)`), tested against a fake OpenRouter that charges in its own counter; never in front of a real model |
-| Hermes arm (H0) | `not_evaluated`: no adapter, the pinned repository has not been cloned |
+| Hermes arm (H0) | TC-003 only, since Rounds 84-86: pinned v0.22.2 inside a container; with qwen3:8b every arm scored 0 of 4, so nothing is concluded about the systems; two false success claims by the model through Hermes were found and the claim reader fixed. Every other case: `not_evaluated` for Hermes |
 | Statistics (paired bootstrap, 5-10 seeds, Holm) | exists in the Round 63 research harness (`research/analyze.py`); not yet applied to DAAES cases because the scripted cases are deterministic |
 | Live pilot C0-C4 | not run: needs the Architect's key |
 
@@ -33,7 +33,7 @@ Question: for each thing the DAAES specification asks of Delentia, what exists i
 | 1 | warm-recall replay bypassed the gate | fixed (earlier PR) |
 | 2 | a tainted call to a forbidden path was parked for a signature instead of refused | fixed (earlier PR) |
 | 3 | `memory_eventlog.verify()` crashed when a checkpoint column had been retyped | fixed: reported as a problem |
-| 4 | a sixth pinned rule dropped the oldest pin silently | fixed: the prompt says how many are not shown; `DELENTIA_MAX_PINNED_SHOWN` |
+| 4 | a sixth pinned rule dropped the oldest pin silently | fixed: the prompt says how many are not shown; `DELENTIA_MAX_PINNED_SHOWN`; default raised from 5 to 8 in Round 87 |
 | 5 | an approval left `OUTCOME_UNKNOWN` by a crash could only be settled by a person | added `reconcile_by_receipt` (asks the provider; a failed lookup leaves it unknown) |
 | 6 | `DeltaEngine` computed `DeltaBlock.checksum` and never read it; no durable form, no version argument, no check for a stale writer | FIXED on the Architect's instruction: blocks are refused when they do not match their checksum, the checksum now covers the parent link and the metadata, `reconstruct_state` verifies, `verify_session`, strict mode, and `DeltaEngine.versioned_log()` (durable, versioned, verified); the old usage is kept as the arm `delentia_delta_engine_r82` so the before/after is measured on the same fixture |
 | 6b | found while fixing it: a key containing `/` or `~` or an empty key broke the structural patch; the list diff rewrote every later index when the first element was removed; a change of type (`1` to `True`, `1` to `1.0`) was invisible because Python says they are equal; generated keys depended on Python's per-process hash salt | all four fixed (RFC 6901 escaping, common head and tail of a list kept, strict equality, a digest instead of `hash()`), each with a test; 496 older delta tests still pass |
