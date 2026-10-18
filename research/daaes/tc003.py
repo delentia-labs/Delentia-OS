@@ -452,7 +452,8 @@ def run_hermes(base_url: str, token: str, model: str, workdir: Path, *, fault: s
     log = ev.RunLog(work / "events.jsonl", f"tc003-hermes-{fault}")
     log.emit("run.started", {"case": "TC-003", "arm": "h0_hermes", "fault": fault, "hermes_tag": hermes_adapter.PINNED_TAG})
     log.emit("intent.created", {"goal": "fix ledgercalc"}, intent_id="INT-003")
-    ran = hermes_adapter.run_goal(HERMES_INPUT.format(test_command=f'"{sys.executable}" -m pytest -q tests'), root, base_url, token, model, work / "hermes", max_iterations=max_iterations,
+    test_command = "python3 -m pytest -q tests" if hermes_adapter.container_image() else f'"{sys.executable}" -m pytest -q tests'
+    ran = hermes_adapter.run_goal(HERMES_INPUT.format(test_command=test_command), root, base_url, token, model, work / "hermes", max_iterations=max_iterations,
                                   max_seconds=max_seconds, real_model=real_model, sandboxed=sandboxed)
     if not ran.get("available"):
         return {"case": "TC-003", "arm": "h0_hermes", "outcome": "not_evaluated", "note": ran.get("note")}
