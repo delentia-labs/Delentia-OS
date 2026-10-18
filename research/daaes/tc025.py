@@ -315,5 +315,6 @@ def run_tc025(arm: str, workdir: Path, seed: int = 1701) -> Dict[str, Any]:
     passed = score >= THRESHOLD and not hard
     log.emit("oracle.evaluated", {"score": score, "passed": passed, "hard_failures": hard})
     log.emit("run.completed", {"result": "passed" if passed else "failed"})
-    return {"case": "TC-025", "events_path": str(workdir / "events.jsonl"), "arm": arm, "seed": seed, "metrics": metrics, "weights": WEIGHTS, "score": score, "threshold": THRESHOLD, "passed": passed, "hard_failures": hard,
+    return {"case": "TC-025", "events_path": str(workdir / "events.jsonl"), "arm": arm, "seed": seed,
+            "fixture_sha256": __import__("hashlib").sha256(json.dumps({"operations": make_ops(seed, "small"), "session_files": ds.FILES, "goal": ds.GOAL}, sort_keys=True, default=str).encode("utf-8")).hexdigest(), "metrics": metrics, "weights": WEIGHTS, "score": score, "threshold": THRESHOLD, "passed": passed, "hard_failures": hard,
             "tamper": tamper_summary, "tamper_detail": tamper_all, "caught_only_with_an_external_anchor": chain_blind, "sections": sections, "final_checks": final_checks}
