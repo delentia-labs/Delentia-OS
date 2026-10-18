@@ -580,6 +580,13 @@ class MeteredProvider(LLMProvider):
         self.cost_usd = 0.0
         self.cost_known = True
         self.refused: Optional[str] = None
+        # Round 89: what subagents started by this episode spent. It is charged to the episode's own cap, so a parent and its children share ONE cap.
+        self.children_cost_usd = 0.0
+        self.children_tokens = 0
+
+    def charge_children(self, cost_usd: float, tokens: int) -> None:
+        self.children_cost_usd += max(0.0, float(cost_usd))
+        self.children_tokens += max(0, int(tokens))
 
     @property
     def inner(self) -> LLMProvider:
@@ -598,7 +605,7 @@ class MeteredProvider(LLMProvider):
     def _check_budget(self, prompt_text: str, max_tokens: int) -> None:
         worst_prompt = _count_tokens(prompt_text)
         if self.max_tokens_total is not None:
-            used = self.prompt_tokens + self.completion_tokens
+            used = self.prompt_tokens + self.completion_tokens + self.children_tokens
             if used + worst_prompt + max_tokens > self.max_tokens_total:
                 self.refused = (f"token budget: {used} used + up to {worst_prompt + max_tokens} for this call "
                                 f"> {self.max_tokens_total}")
@@ -608,8 +615,8 @@ class MeteredProvider(LLMProvider):
             if worst is None or not self.cost_known:
                 self.refused = f"cost budget ${self.max_cost_usd} is set but the price of {self.model} is unknown"
                 raise BudgetExceededError(self.refused)
-            if self.cost_usd + worst > self.max_cost_usd:
-                self.refused = (f"cost budget: ${self.cost_usd:.6f} spent + up to ${worst:.6f} for this call "
+            if self.cost_usd + self.children_cost_usd + worst > self.max_cost_usd:
+                self.refused = (f"cost budget: ${self.cost_usd + self.children_cost_usd:.6f} spent + up to ${worst:.6f} for this call "
                                 f"> ${self.max_cost_usd}")
                 raise BudgetExceededError(self.refused)
 
@@ -657,6 +664,8 @@ class MeteredProvider(LLMProvider):
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "cached_prompt_tokens": self.cached_prompt_tokens,
+            "children_cost_usd": round(self.children_cost_usd, 6),
+            "children_tokens": self.children_tokens,
             "cache_hit_rate": round(self.cached_prompt_tokens / self.prompt_tokens, 4) if self.prompt_tokens else None,
             "cost_usd": round(self.cost_usd, 6) if self.cost_known else None,
             "cost_known": self.cost_known,

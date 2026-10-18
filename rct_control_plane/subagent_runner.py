@@ -73,11 +73,15 @@ async def _main() -> int:
         "tainted": bool((result.get("taint") or {}).get("tainted", True)),
         "taint_source": (result.get("taint") or {}).get("source_tool"),
     }
+    # Round 89: what this child spent, signed with the answer, so the parent can charge it to its own cap (None = the cost could not be known: the parent charges the child's whole share)
+    cost = result.get("cost") or {}
+    out["spent_usd"] = cost.get("cost_usd")
+    out["tokens_used"] = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
     if request is not None:
         from rct_control_plane import jitna_subagent
         from rct_control_plane.jitna_protocol import JITNAKeypair
         response, keypair = jitna_subagent.make_response(
-            request, {k: out[k] for k in ("final_answer", "stopped_reason", "iterations", "tainted", "taint_source")})
+            request, {k: out[k] for k in ("final_answer", "stopped_reason", "iterations", "tainted", "taint_source", "spent_usd", "tokens_used")})
         keypair_pub: JITNAKeypair = keypair
         out["jitna_response"] = response.to_dict()
         out["child_public_key"] = keypair_pub.public_key_raw().hex()

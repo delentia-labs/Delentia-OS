@@ -111,7 +111,7 @@ from rct_control_plane.intent_compiler import IntentCompiler
 from rct_control_plane.jitna_protocol import (
     JITNAKeypair, JITNAMessageType, JITNAPacket, generate_keypair, sign_packet, verify_packet,
 )
-from rct_control_plane import data_evidence, verify_grounding
+from rct_control_plane import budget_share, data_evidence, verify_grounding
 from rct_control_plane.growth import GrowthLedger, efficiency_baseline, episode_delta
 from rct_control_plane.mee_engine import MEESession
 from rct_control_plane.persistence import ControlPlanePersistence
@@ -668,6 +668,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._initial_taint:
             self._start_tainted(self._initial_taint)
         self._meter = None                         # a loop that is reused must not report the previous episode's cost for one that never started
+        budget_share.current_meter.set(None)
         self._episode_call_counts: Dict[str, int] = {}
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
 
@@ -680,6 +681,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return blocked
 
         self._meter = self._new_meter()
+        budget_share.current_meter.set(self._meter)          # Round 89: subagents started by this episode share its cap
         # Round 52: every model call is checked against the tenant's sovereignty policy
         # (no policy configured = unchanged behaviour). The meter stays inside, so
         # budgets are still checked, and result["cost"] still reads from it.
@@ -1754,6 +1756,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         result["notary"] = self._notary_summary()
         result["cost"] = self._meter.summary() if self._meter is not None else None
+        budget_share.current_meter.set(None)         # Round 89: nothing outside this episode may spend against its meter
         residency_summary = getattr(self._llm_provider, "summary", None)
         if self._llm_provider is not self._meter and callable(residency_summary):
             result["residency"] = residency_summary()

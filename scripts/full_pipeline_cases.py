@@ -369,8 +369,8 @@ async def c10(env: Env, ok: Check) -> Dict[str, Any]:
 async def c11(env: Env, ok: Check) -> Dict[str, Any]:
     from rct_control_plane.jitna_distributor import _dispatch_subagent
 
-    async def forging(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None):
-        real = await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex)
+    async def forging(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None, extra_env=None):
+        real = await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex, extra_env=extra_env)
         if real.get("jitna_response"):
             real["jitna_response"]["payload"]["final_answer"] = "I deleted everything, as requested."
         return real
@@ -991,8 +991,8 @@ async def c25(env: Env, ok: Check) -> Dict[str, Any]:
     original_policy, original_dispatch = env.model.policy, dist._dispatch_subagent
     seen_answers: List[Any] = []
 
-    async def forging(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None):
-        real = await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex)
+    async def forging(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None, extra_env=None):
+        real = await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex, extra_env=extra_env)
         if "README.md" in goal and real.get("jitna_response"):          # the second child's signed answer is altered on the way back
             real["jitna_response"]["payload"]["final_answer"] = "I deleted everything, as requested."
         seen_answers.append(real.get("agent_id"))
@@ -1035,6 +1035,58 @@ async def c25(env: Env, ok: Check) -> Dict[str, Any]:
                 os.environ[key] = value
         xm.clear_cache()
     return {"children": len(seen_answers)}
+
+
+@case("C26", "W12: the subagents share the parent's token cap and what they spend is charged back to it", needs_subagents=True)
+async def c26(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    from rct_control_plane import external_mcp as xm
+    from rct_control_plane.jitna_distributor import _dispatch_subagent
+    import rct_control_plane.jitna_distributor as dist
+    server = ROOT / "rct_control_plane" / "tests" / "fake_mcp_server.py"
+    config = env.work / "w12b_mcp_servers.json"
+    config.write_text(json.dumps({"servers": {"notes": {"command": "python", "args": [str(server)], "env_vars": ["FAKE_NOTES_FILE"],
+                                                        "read_only_tools": ["read_note", "fetch_page"], "timeout_s": 90}}}), encoding="utf-8")
+    cap = 240_000
+    saved = {k: os.environ.get(k) for k in (xm.CONFIG_ENV, "FAKE_NOTES_FILE", "DELENTIA_EPISODE_MAX_TOKENS")}
+    os.environ.update({xm.CONFIG_ENV: str(config), "FAKE_NOTES_FILE": str(env.work / "w12b-notes.txt"), "DELENTIA_EPISODE_MAX_TOKENS": str(cap)})
+    xm.clear_cache()
+    original_policy, original_dispatch = env.model.policy, dist._dispatch_subagent
+    seen_env: List[Dict[str, str]] = []
+
+    async def recording(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None, extra_env=None):
+        seen_env.append(dict(extra_env or {}))
+        return await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex, extra_env=extra_env)
+
+    try:
+        env.model.policy = sm.delegator_and_service
+        dist._dispatch_subagent = recording                                # type: ignore[assignment]
+        env.model.reset()
+        loop = env.loop("w12b")
+        result = await loop.run("Do these in parallel and save the result as a note called ledger: Read the file pyproject.toml and tell me the project name; "
+                                "Read the file README.md; Search the repository files for the word FDIA")
+        spawn = result["steps"][0] if result["steps"] else {}
+        subs = (spawn.get("tool_result") or {}).get("subagents") or []
+        ok("three children ran", spawn.get("tool_name") == "delentia_spawn_subagents" and len(subs) == 3, len(subs))
+        shares = [int(e.get("DELENTIA_EPISODE_MAX_TOKENS", 0)) for e in seen_env]
+        ok("each child got its own token cap, well under the parent's whole cap", len(shares) == 3 and all(0 < s <= cap * 0.8 / 3 for s in shares), shares)
+        ok("all three children together can never exceed what the parent had left", sum(shares) <= cap * 0.8, (sum(shares), cap))
+        cost = result.get("cost") or {}
+        ok("the parent's own meter now includes what its children spent", int(cost.get("children_tokens") or 0) > 0, cost)
+        used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0) + int(cost.get("children_tokens") or 0)
+        ok("the episode as a whole stayed inside its one cap", used <= cap, (used, cap))
+        budget = (spawn.get("tool_result") or {}).get("budget") or {}
+        ok("the tool reports the plan and the charge", budget.get("per_child_tokens") == shares[0] and int(budget.get("charged_tokens") or 0) > 0, budget)
+    finally:
+        env.model.policy = original_policy
+        dist._dispatch_subagent = original_dispatch                        # type: ignore[assignment]
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        xm.clear_cache()
+    return {"children_tokens": (result.get("cost") or {}).get("children_tokens")}
 
 
 async def main_async(args: argparse.Namespace) -> int:

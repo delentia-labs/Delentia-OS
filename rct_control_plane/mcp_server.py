@@ -183,9 +183,15 @@ async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240)
     if len(goals) > 3:
         return {"error": "at most 3 subagents at a time"}
     timeout = float(max(30, min(int(timeout_seconds), 900)))
+    # Round 89: the children share the running episode's spending cap (what is left, minus a reserve for the parent), and what they report is charged back to it.
+    from rct_control_plane import budget_share
+    plan = budget_share.plan_child_budgets(len(goals))
+    if not plan.allowed:
+        return {"error": f"no budget to share with subagents: {plan.reason}"}
     outcomes = await distribute_to_subagents([g.strip() for g in goals], _kernel._persistence,
-                                             repo_root=str(REPO_ROOT), timeout_seconds=timeout)
-    return {"subagents": [{
+                                             repo_root=str(REPO_ROOT), timeout_seconds=timeout, child_env=plan.env or None)
+    charged = budget_share.charge_children(outcomes, plan) if plan.env else None
+    return {"budget": {**plan.to_dict(), **(charged or {})} if plan.env else None, "subagents": [{
         "agent_id": o.get("agent_id"), "goal": o.get("goal"), "success": bool(o.get("success")),
         "stopped_reason": o.get("stopped_reason"), "final_answer": o.get("final_answer"),
         "signed_response_verified": bool((o.get("jitna") or {}).get("response_verified")),
