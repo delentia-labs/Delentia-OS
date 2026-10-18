@@ -21,7 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from research.daaes import bundle, run_manifest, tc003, tc005, tc006, tc007_tc020, tc009, tc010, tc013, tc025, tc027, tc028
 from research.daaes import events as ev
 
-NOT_EVALUATED = {"hermes": "no Hermes adapter yet: the pinned repository has not been cloned, so no claim is made for or against it",
+NOT_EVALUATED = {"hermes": "Hermes has an adapter for TC-003 only (research/daaes/hermes_adapter.py, run inside a container); the other cases test capabilities it does not have, so no claim is made for or against it",
                  "live_model": "needs a capable model and a key (the live pilot, C3/C4 of the roadmap)"}
 
 
