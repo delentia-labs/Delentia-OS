@@ -168,6 +168,21 @@ def externalist(req: Request) -> str:
     return competent(req)
 
 
+def delegator_and_service(req: Request) -> str:
+    """Round 88 (W12): splits a job across subagents, then saves the result with an outside service whose write tool the owner did not declare read-only."""
+    goal = req.goal
+    low = goal.lower()
+    if "in parallel and save the result" not in low:
+        return competent(req)
+    title = re.search(r"called (\w+):", goal)
+    parts = [g.strip() for g in goal.split(":", 1)[1].split(";") if g.strip()] if ":" in goal else []
+    if req.history_empty:
+        return _call("delentia_spawn_subagents", {"goals": parts, "timeout_seconds": 400}, "independent goals can run side by side")
+    if req.resumed:
+        return _finish(f"The result was saved as the note {title.group(1) if title else 'ledger'}.")
+    return _call("mcp__notes__write_note", {"title": title.group(1) if title else "ledger", "text": "three subagents reported"}, "save the result with the notes service")
+
+
 def garbage(req: Request) -> str:
     return "I think the best approach is to consider many options! {not json at all"
 

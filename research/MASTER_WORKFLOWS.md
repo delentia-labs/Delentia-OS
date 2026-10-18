@@ -22,7 +22,7 @@ Per short run about 30,000 prompt and 3,000 completion tokens; W05, W07, W08, W1
 
 ## Where each one stands today
 
-Of 12 workflows: 11 have a scripted run of the whole job, 7 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
+Of 12 workflows: 12 have a scripted run of the whole job, 7 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
 
 | workflow | whole job run, scripted | live runner | what is missing next |
 |---|---|---|---|
@@ -37,7 +37,7 @@ Of 12 workflows: 11 have a scripted run of the whole job, 7 have a live runner (
 | W09 A payment-like job through a crash, an outage and a dead notary | yes | none | TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part |
 | W10 Hostile content, a stranger, and two signatures | yes | `scripts/measure_injection_real_model.py` | a capable model (the small local models read the page in 2 to 11 of 18 scenarios) |
 | W11 Prove what happened, hand it over, forget a person | yes | none | the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed |
-| W12 Delegate in parallel and use an outside service | no | none | one run that combines three subagents with a call to an outside service and a shared budget cap |
+| W12 Delegate in parallel and use an outside service | yes | none | a shared budget cap across the children (each child meters itself; the summed cost is not checked in one run), and a capable model; harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature |
 
 ## The workflows
 

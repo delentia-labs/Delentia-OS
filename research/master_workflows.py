@@ -155,7 +155,7 @@ READINESS: Dict[str, Dict[str, object]] = {
     "W09": {"e2e": True, "live_runner": None, "missing": "TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part"},
     "W10": {"e2e": True, "live_runner": "scripts/measure_injection_real_model.py", "missing": "a capable model (the small local models read the page in 2 to 11 of 18 scenarios)"},
     "W11": {"e2e": True, "live_runner": None, "missing": "the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed"},
-    "W12": {"e2e": False, "live_runner": None, "missing": "one run that combines three subagents with a call to an outside service and a shared budget cap"},
+    "W12": {"e2e": True, "live_runner": None, "missing": "a shared budget cap across the children (each child meters itself; the summed cost is not checked in one run), and a capable model; harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature"},
 }
 
 
