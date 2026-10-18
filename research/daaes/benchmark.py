@@ -92,6 +92,7 @@ def run_cell(arm: str, seed: int, out: Path, upstream_url: str, upstream_key: Op
             agent = result.get("agent") or {}
             row.update({"valid": True, "passed": bool(result.get("passed")), "score": float(result.get("score") or 0.0), "hard_failures": result.get("hard_failures") or [], "metrics": result.get("metrics"),
                         "k": (result.get("variant") or {}).get("k"), "defects": [d["id"] for d in (result.get("variant") or {}).get("defects", [])], "claim": result.get("claim"),
+                        "final_answer": str(agent.get("final_answer") or "")[:700],
                         "stopped_reason": agent.get("stopped_reason") or ("completed" if agent.get("completed") else None), "steps": agent.get("steps") or len(agent.get("tool_calls") or []),
                         "timeout": agent.get("stopped_reason") == "max_seconds_exceeded"})
     except Exception as exc:                                                        # noqa: BLE001 - recorded as an invalid run, listed in the report, never dropped

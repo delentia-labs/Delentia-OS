@@ -1,6 +1,6 @@
 # DAAES: the thirty cases and where each stands
 
-Generated from `research/daaes/catalogue.py`; a test checks that every evidence file exists. Hermes: every row is `not_evaluated` (no adapter yet).
+Generated from `research/daaes/catalogue.py`; a test checks that every evidence file exists. Hermes (H0, pinned v0.22.2, in a container): only TC-003 is run for it; every other row is `not_evaluated` for Hermes.
 
 | id | case | L | P | status | evidence | what is still needed |
 |---|---|---|---|---|---|---|

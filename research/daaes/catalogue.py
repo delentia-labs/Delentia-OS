@@ -8,7 +8,7 @@ The thirty DAAES test cases (Research-01, section 6.1) and where each stands tod
   needs_model       the case needs a capable model (the live pilot) and has no scripted stand-in that would mean anything
   needs_host        the case needs a host that runs for days, a witness, or users
 
-L = autonomy level (Research-01 section 3.1, L0-L6), P = priority (P0 proves the architecture's core). Hermes: every case is `not_evaluated` until a pinned Hermes adapter exists.
+L = autonomy level (Research-01 section 3.1, L0-L6), P = priority (P0 proves the architecture's core). Hermes (H0, pinned v0.22.2, run inside a container): only TC-003 has an adapter; every other case is `not_evaluated` for Hermes, which has no counterpart of the capability (no replay API, no delta store, no fault injector).
 """
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ def counts() -> Dict[str, int]:
 
 
 def render() -> str:
-    lines = ["# DAAES: the thirty cases and where each stands", "", "Generated from `research/daaes/catalogue.py`; a test checks that every evidence file exists. Hermes: every row is `not_evaluated` (no adapter yet).", "",
+    lines = ["# DAAES: the thirty cases and where each stands", "", "Generated from `research/daaes/catalogue.py`; a test checks that every evidence file exists. Hermes (H0, pinned v0.22.2, in a container): only TC-003 is run for it; every other row is `not_evaluated` for Hermes.", "",
              "| id | case | L | P | status | evidence | what is still needed |", "|---|---|---|---|---|---|---|"]
     for c in CASES:
         lines.append(f"| {c['id']} | {c['name']} | {c['L']} | {c['P']} | {c['status']} | {', '.join('`' + e + '`' for e in c['evidence']) or '-'} | {c['needs']} |")

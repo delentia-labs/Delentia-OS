@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -225,6 +226,31 @@ def check_raw_gateway() -> List[Check]:
     return [Check("H24", INFO, "Surface outside the governed loop", detail)]
 
 
+def _fast_startup_enabled() -> Optional[bool]:
+    """Windows 'Fast startup' (HiberbootEnabled): True / False, or None where it cannot be read (not Windows, no access)."""
+    if sys.platform != "win32":                                    # the form mypy understands: `winreg` has no members on other platforms
+        return None
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Power") as key:
+            return bool(winreg.QueryValueEx(key, "HiberbootEnabled")[0])
+    except OSError:
+        return None
+
+
+def check_restart_behaviour() -> List[Check]:
+    """H25 (Round 86): is 'restart' a real restart on this machine? Found on the Architect's PC: the kernel's boot time stayed on the 16th after the Architect 'rebooted' on the 18th, because Windows' Fast
+    startup turns 'Shut down' into a hibernate. A service or task set to 'at startup' (the notary) does not run again after that, and a restart test that used 'Shut down' proved nothing."""
+    state = _fast_startup_enabled()
+    if state is None:
+        return []
+    if state:
+        return [Check("H25", WARN, "Restart behaviour", "Windows Fast startup is ON: 'Shut down' does not restart the kernel, so a task or service set to run 'at startup' does not run again, "
+                      "and a power-cycle test with 'Shut down' proves nothing about recovery.",
+                      "Test recovery with Restart (or shutdown /r), or turn Fast startup off (Control Panel > Power Options > Choose what the power buttons do, or `powercfg /h off` as administrator)")]
+    return [Check("H25", PASS, "Restart behaviour", "Fast startup is off: 'Shut down' and 'Restart' both start the kernel again")]
+
+
 def check_memory_log() -> List[Check]:
     """H23 (Round 67): is the memory history recorded, sealed per person (what makes erasure possible), and are the keys kept where the agent's file tools cannot read them?"""
     from rct_control_plane import memory_erasure, memory_eventlog
@@ -408,6 +434,7 @@ def run_checks(*, public: bool = True, probe: bool = False) -> List[Check]:
         ("H22", "People and owners", lambda: check_tenants(public)),
         ("H23", "Memory history", check_memory_log),
         ("H24", "Surface outside the governed loop", check_raw_gateway),
+        ("H25", "Restart behaviour", check_restart_behaviour),
     ):
         checks.extend(_guard(check_id, title, fn))
     return checks

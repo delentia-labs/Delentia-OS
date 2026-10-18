@@ -34,7 +34,7 @@ Also here: `live_adapter.py` (the governed loop with the budget guard in front o
 - The expected outcomes were written in the specification before anything ran; the weights are the specification's proposals and are fixed in the module docstrings. Each check has a control that is
   designed to fail (a naive workflow that duplicates, a stricter policy for R3, a verifier forced to say "ok", a store with a wrong reducer, a conftest that forces a pass), and a test proves it does.
 - The pass rule everywhere is: score at or above the threshold AND every critical assertion AND no hard fail. A high score never rescues a hard failure.
-- Not evaluated, and reported as such rather than as a failure: Hermes (no adapter), any live model, a host that runs for days, an independent witness.
+- Not evaluated, and reported as such rather than as a failure: Hermes on every case except TC-003 (the pinned v0.22.2 adapter runs in a container for TC-003 only), any live model, a host that runs for days, an independent witness.
 
 ## What the first complete run found about Delentia
 

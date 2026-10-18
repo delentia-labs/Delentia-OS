@@ -46,9 +46,73 @@ def installed_sha() -> Optional[str]:
         return None
 
 
+CONTAINER_HERMES_SRC = "/home/hermes/.hermes/hermes-agent"
+CONTAINER_PYTHON = "/home/hermes/venv/bin/python"
+CONTAINER_HOME = "/home/hermes/run_home"        # a tmpfs inside the container: Hermes writes thousands of small files on first start, which over a Windows bind mount took minutes
+
+
+def container_image() -> Optional[str]:
+    """The image name when the caller wants Hermes run inside a container (`DELENTIA_HERMES_CONTAINER`, e.g. daaes-hermes:r86; built from research/daaes/hermes_arm/Dockerfile)."""
+    return (os.environ.get("DELENTIA_HERMES_CONTAINER") or "").strip() or None
+
+
+def container_pinned_sha(image: str) -> Optional[str]:
+    try:
+        done = subprocess.run(["docker", "run", "--rm", "--entrypoint", "git", image, "-C", CONTAINER_HERMES_SRC, "rev-parse", "HEAD"], capture_output=True, text=True, timeout=120)
+        return done.stdout.strip() or None
+    except Exception:                                               # noqa: BLE001
+        return None
+
+
+def _run_in_container(image: str, goal: str, workspace: Path, base_url: str, token: str, model: str, workdir: Path, *, max_iterations: int, max_seconds: float, toolsets: Optional[list]) -> Dict[str, Any]:
+    """Hermes inside a throw-away container: only the case workspace (/work) and this run's folder (/run) are mounted; the model gateway is reached through host.docker.internal; no environment variable
+    of ours is passed; all capabilities dropped, no new privileges, memory/CPU/process ceilings. The container is removed afterwards even if it hung."""
+    import re
+    import time
+    workdir = Path(workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / "hermes_logs").mkdir(parents=True, exist_ok=True)      # Hermes' own log is the only record of what a run that timed out was doing
+    runner = workdir / "hermes_runner_script.py"
+    runner.write_text(SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+    inside_url = re.sub(r"^(https?://)(127\.0\.0\.1|localhost)", r"\1host.docker.internal", base_url)
+    cfg = {"hermes_src": CONTAINER_HERMES_SRC, "hermes_home": CONTAINER_HOME, "workspace": "/work", "base_url": inside_url, "api_key": token, "model": model, "goal": goal,
+           "max_iterations": max_iterations, "max_seconds": max_seconds, "toolsets": toolsets or ["file", "terminal"]}
+    declared = (os.environ.get("DELENTIA_HERMES_DECLARED_CTX") or "").strip()
+    if declared.isdigit():
+        cfg["declared_context"] = int(declared)
+    (workdir / "hermes_run.json").write_text(json.dumps(cfg), encoding="utf-8")
+    name = f"daaes-h0-{time.time_ns()}"
+    argv = ["docker", "run", "--rm", "--name", name, "--memory", "3g", "--cpus", "2", "--pids-limit", "512", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+            "--add-host", "host.docker.internal:host-gateway", "--tmpfs", f"{CONTAINER_HOME}:rw,exec,size=768m,uid=1500,gid=1500", "-v", f"{workspace}:/work", "-v", f"{workdir}:/run", "-v", f"{workdir / 'hermes_logs'}:{CONTAINER_HOME}/logs", "-w", "/work", "-e", f"HERMES_HOME={CONTAINER_HOME}",
+            "-e", "PYTHONIOENCODING=utf-8", "-e", "PYTHONUTF8=1", "-e", f"HOME={CONTAINER_HOME}", "--entrypoint", CONTAINER_PYTHON, image, "/run/hermes_runner_script.py", "/run/hermes_run.json"]
+    try:
+        done = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=max_seconds + 120)
+        code, out, err = done.returncode, done.stdout, done.stderr
+    except subprocess.TimeoutExpired as exc:
+        code, out, err = -1, (exc.stdout or "") if isinstance(exc.stdout, str) else "", "timed out"
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, timeout=60)
+    parsed: Dict[str, Any] = {}
+    for line in out.splitlines():
+        if line.startswith("HERMES_RESULT "):
+            try:
+                parsed = json.loads(line[len("HERMES_RESULT "):])
+            except ValueError:
+                pass
+    try:                                                              # the container's home is a tmpfs that disappears; what it printed is the only record of why a run ended as it did
+        (workdir / "container_stdout.txt").write_text(out[-20000:], encoding="utf-8")
+        (workdir / "container_stderr.txt").write_text(err[-20000:], encoding="utf-8")
+    except OSError:
+        pass
+    return {"available": True, "exit_code": code, "result": parsed, "stderr_tail": err[-600:], "pinned_ok": container_pinned_sha(image) == PINNED_SHA, "tag": PINNED_TAG, "container": image}
+
+
 def run_goal(goal: str, workspace: Path, base_url: str, token: str, model: str, workdir: Path, *, max_iterations: int = 14, max_seconds: float = 600.0, toolsets: Optional[list] = None,
              real_model: bool = False, sandboxed: bool = False) -> Dict[str, Any]:
-    """One Hermes conversation in `workspace`. `base_url`/`token` are the gateway's. Returns the parsed result plus how the process ended."""
+    """One Hermes conversation in `workspace`. `base_url`/`token` are the gateway's. Returns the parsed result plus how the process ended.
+    With `DELENTIA_HERMES_CONTAINER=<image>` the run happens inside that container (which also counts as the sandbox a real model requires)."""
+    image = container_image()
+    if image:
+        return _run_in_container(image, goal, Path(workspace), base_url, token, model, workdir, max_iterations=max_iterations, max_seconds=max_seconds, toolsets=toolsets)
     if real_model and not sandboxed:
         raise PermissionError("Hermes' terminal tool runs commands as this user: a run with a real model needs a container or a throw-away account (sandboxed=True), not the owner's own session")
     if not available():
