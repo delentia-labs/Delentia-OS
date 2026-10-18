@@ -46,7 +46,7 @@ def test_container_run_passes_only_the_workspace_and_one_endpoint(tmp_path, monk
     for needed in ("--cap-drop ALL", "--security-opt no-new-privileges", "--memory 3g", "--pids-limit 512", "--tmpfs"):
         assert needed in joined, needed
     assert f"{workspace}:/work" in joined and f"{tmp_path / 'run'}:/run" in joined
-    assert argv.count("-v") == 2, "only the workspace and this run's folder are mounted"
+    assert argv.count("-v") == 3, "only the workspace, this run folder and its log folder are mounted"
     assert "env" not in kwargs or kwargs["env"] is None, "the container gets no environment of ours"
     assert "must-not-reach-the-container" not in joined
     cfg = json.loads((tmp_path / "run" / "hermes_run.json").read_text(encoding="utf-8"))

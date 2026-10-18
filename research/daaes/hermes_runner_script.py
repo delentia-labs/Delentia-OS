@@ -13,6 +13,11 @@ def main() -> int:
     cfg = json.load(open(sys.argv[1], encoding="utf-8"))
     sys.path.insert(0, cfg["hermes_src"])
     os.environ["HERMES_HOME"] = cfg["hermes_home"]
+    declared = cfg.get("declared_context")
+    if declared:                                       # Hermes v0.22.2 refuses any model window below 64K tokens; a run that declares a window says so here and in the result
+        os.makedirs(cfg["hermes_home"], exist_ok=True)
+        with open(os.path.join(cfg["hermes_home"], "config.yaml"), "w", encoding="utf-8") as handle:
+            handle.write("model:\n  ollama_num_ctx: %d\n" % int(declared))
     from run_agent import AIAgent                                    # noqa: E402 - needs the path set above
 
     agent = AIAgent(base_url=cfg["base_url"], api_key=cfg["api_key"], provider="custom", model=cfg["model"], enabled_toolsets=cfg.get("toolsets") or ["file", "terminal"],
@@ -29,7 +34,7 @@ def main() -> int:
             except ValueError:
                 parsed = {"_unparsed": str(args)[:200]}
             calls.append({"tool": fn.get("name"), "path": parsed.get("path"), "command": str(parsed.get("command") or "")[:200]})
-    out = {"final_response": result.get("final_response"), "completed": bool(result.get("completed")), "failed": bool(result.get("failed")), "api_calls": result.get("api_calls"),
+    out = {"declared_context": declared, "final_response": result.get("final_response"), "completed": bool(result.get("completed")), "failed": bool(result.get("failed")), "api_calls": result.get("api_calls"),
            "error": str(result.get("error") or "")[:300], "tool_calls": calls}
     print("HERMES_RESULT " + json.dumps(out))
     return 0

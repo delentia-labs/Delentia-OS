@@ -71,15 +71,19 @@ def _run_in_container(image: str, goal: str, workspace: Path, base_url: str, tok
     import time
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / "hermes_logs").mkdir(parents=True, exist_ok=True)      # Hermes' own log is the only record of what a run that timed out was doing
     runner = workdir / "hermes_runner_script.py"
     runner.write_text(SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
     inside_url = re.sub(r"^(https?://)(127\.0\.0\.1|localhost)", r"\1host.docker.internal", base_url)
     cfg = {"hermes_src": CONTAINER_HERMES_SRC, "hermes_home": CONTAINER_HOME, "workspace": "/work", "base_url": inside_url, "api_key": token, "model": model, "goal": goal,
            "max_iterations": max_iterations, "max_seconds": max_seconds, "toolsets": toolsets or ["file", "terminal"]}
+    declared = (os.environ.get("DELENTIA_HERMES_DECLARED_CTX") or "").strip()
+    if declared.isdigit():
+        cfg["declared_context"] = int(declared)
     (workdir / "hermes_run.json").write_text(json.dumps(cfg), encoding="utf-8")
     name = f"daaes-h0-{time.time_ns()}"
     argv = ["docker", "run", "--rm", "--name", name, "--memory", "3g", "--cpus", "2", "--pids-limit", "512", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
-            "--add-host", "host.docker.internal:host-gateway", "--tmpfs", f"{CONTAINER_HOME}:rw,exec,size=768m,uid=1500,gid=1500", "-v", f"{workspace}:/work", "-v", f"{workdir}:/run", "-w", "/work", "-e", f"HERMES_HOME={CONTAINER_HOME}",
+            "--add-host", "host.docker.internal:host-gateway", "--tmpfs", f"{CONTAINER_HOME}:rw,exec,size=768m,uid=1500,gid=1500", "-v", f"{workspace}:/work", "-v", f"{workdir}:/run", "-v", f"{workdir / 'hermes_logs'}:{CONTAINER_HOME}/logs", "-w", "/work", "-e", f"HERMES_HOME={CONTAINER_HOME}",
             "-e", "PYTHONIOENCODING=utf-8", "-e", "PYTHONUTF8=1", "-e", f"HOME={CONTAINER_HOME}", "--entrypoint", CONTAINER_PYTHON, image, "/run/hermes_runner_script.py", "/run/hermes_run.json"]
     try:
         done = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=max_seconds + 120)
@@ -94,6 +98,11 @@ def _run_in_container(image: str, goal: str, workspace: Path, base_url: str, tok
                 parsed = json.loads(line[len("HERMES_RESULT "):])
             except ValueError:
                 pass
+    try:                                                              # the container's home is a tmpfs that disappears; what it printed is the only record of why a run ended as it did
+        (workdir / "container_stdout.txt").write_text(out[-20000:], encoding="utf-8")
+        (workdir / "container_stderr.txt").write_text(err[-20000:], encoding="utf-8")
+    except OSError:
+        pass
     return {"available": True, "exit_code": code, "result": parsed, "stderr_tail": err[-600:], "pinned_ok": container_pinned_sha(image) == PINNED_SHA, "tag": PINNED_TAG, "container": image}
 
 
