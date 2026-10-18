@@ -74,3 +74,17 @@ def test_cost_estimate_scales_with_runs_and_price():
 def test_the_generated_file_is_current():
     path = Path(mw.__file__).with_name("MASTER_WORKFLOWS.md")
     assert path.read_text(encoding="utf-8").replace("\r\n", "\n") == mw.render()
+
+
+def test_the_readiness_table_covers_every_workflow_and_its_live_runner_paths_exist():
+    assert set(mw.READINESS) == {w["id"] for w in mw.WORKFLOWS}
+    assert mw.missing_live_runners() == []
+    for wid, r in mw.READINESS.items():
+        assert str(r["missing"]).strip(), wid
+        if r["e2e"]:
+            assert next(w for w in mw.WORKFLOWS if w["id"] == wid)["scripted"], wid
+
+
+def test_no_workflow_claims_a_live_result_yet():
+    """This changes the day a capable model runs a workflow the stated number of times and the oracle passes it; until then the count must stay zero."""
+    assert mw.readiness_counts()["live_result"] == 0

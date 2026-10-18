@@ -22,7 +22,7 @@ Question: for each thing the DAAES specification asks of Delentia, what exists i
 | Evidence bundle per run + seal + validity rule | built (`bundle.py`); nine ways of altering or thinning a bundle are tested |
 | Runner / CLI (`run`, `suite`, `verify`, `checklist`) | built (`runner.py`, `__main__.py`) |
 | Model gateway with token and cost logging, hard budget guard | built and now in front of Delentia's own provider code (`live_adapter.py`, `build_governed_loop(llm_provider=...)`), tested against a fake OpenRouter that charges in its own counter; never in front of a real model |
-| Hermes arm (H0) | `not_evaluated`: no adapter, the pinned repository has not been cloned |
+| Hermes arm (H0) | TC-003 only, since Rounds 84-86: pinned v0.22.2 inside a container; with qwen3:8b every arm scored 0 of 4, so nothing is concluded about the systems; two false success claims by the model through Hermes were found and the claim reader fixed. Every other case: `not_evaluated` for Hermes |
 | Statistics (paired bootstrap, 5-10 seeds, Holm) | exists in the Round 63 research harness (`research/analyze.py`); not yet applied to DAAES cases because the scripted cases are deterministic |
 | Live pilot C0-C4 | not run: needs the Architect's key |
 
