@@ -159,7 +159,7 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{PINNED}::test_pins_follow_the_person_and_not_somebody_else",
                f"{PINNED}::test_the_log_replays_to_the_table_including_pins_after_a_random_workload"],
      "assumes": "The person (or owner) chose what to pin; a pinned rule is advice to the model in its prompt, it is never a permission: the approval, the policy and the taint gates still decide every call.",
-     "not_covered": "A model can ignore a rule it is shown (nothing here measures obedience); more than 5 pinned rules: only the newest 5 are shown; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement)."},
+     "not_covered": "A model can ignore a rule it is shown (nothing here measures obedience); more than 8 pinned rules (the default since Round 87; it was 5): only the newest 8 are shown, and the prompt says how many are not; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement)."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 

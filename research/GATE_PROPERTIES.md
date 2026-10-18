@@ -181,7 +181,7 @@ With no policy file the argument-aware starter judges every tool call on top of 
 A rule pinned by a person or the owner is shown to every episode of that person whatever the goal (at most 5, newest first), never counts as evidence for D, is never shown after it was revoked or after the person was erased, and cannot be pinned by the model (no tool exists for it) or from a memory stored after outside text was read unless a human says they reviewed it.
 
 - **Assumes:** The person (or owner) chose what to pin; a pinned rule is advice to the model in its prompt, it is never a permission: the approval, the policy and the taint gates still decide every call.
-- **Not covered:** A model can ignore a rule it is shown (nothing here measures obedience); more than 5 pinned rules: only the newest 5 are shown; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement).
+- **Not covered:** A model can ignore a rule it is shown (nothing here measures obedience); more than 8 pinned rules (the default since Round 87; it was 5): only the newest 8 are shown, and the prompt says how many are not; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement).
 - **Pinned by:**
   - `test_pinned_rules_round70_real.py::test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it`
   - `test_pinned_rules_round70_real.py::test_a_pinned_rule_is_never_evidence_for_d`

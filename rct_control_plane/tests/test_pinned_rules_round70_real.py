@@ -132,7 +132,8 @@ def test_a_pinned_rule_is_shown_for_a_goal_that_has_nothing_to_do_with_it(tmp_pa
     assert [m["content"] for m in shown] == [RULES[0]] and shown[0]["pinned"] is True and shown[0]["relevance"] is None
 
 
-def test_at_most_five_pinned_rules_are_shown_newest_first_and_a_pinned_rule_is_not_shown_twice(tmp_path):
+def test_at_most_five_pinned_rules_are_shown_newest_first_and_a_pinned_rule_is_not_shown_twice(tmp_path, monkeypatch):
+    monkeypatch.setenv("DELENTIA_MAX_PINNED_SHOWN", "5")                                          # the default became 8 in Round 87; this pins the cap mechanism at the old value
     p, alice, loop = world(tmp_path)
     ids = run(store_all(alice))
     for i in ids:
@@ -140,7 +141,7 @@ def test_at_most_five_pinned_rules_are_shown_newest_first_and_a_pinned_rule_is_n
     goal = "Deploy to production on Fridays"                                                    # also similar to the pinned Friday rule
     shown = run(loop._recall_for_goal(goal))
     contents = [m["content"] for m in shown]
-    assert len(shown) <= G.MAX_PINNED_SHOWN + 5 and len(set(contents)) == len(contents)
+    assert len(shown) <= 5 + 5 and len(set(contents)) == len(contents)
     assert [m["content"] for m in shown if m.get("pinned")] == [RULES[6], RULES[5], RULES[4], RULES[3], RULES[2]]       # the five pinned last, newest first
     assert shown[0].get("pinned") is True
 

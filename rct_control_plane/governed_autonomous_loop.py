@@ -1009,12 +1009,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return False
         return not self._is_person()
 
-    MAX_PINNED_SHOWN = 5
+    MAX_PINNED_SHOWN = 8
     MAX_PINNED_ENV = "DELENTIA_MAX_PINNED_SHOWN"
 
     @classmethod
     def _pinned_cap(cls) -> int:
-        """How many standing rules every episode is shown. 5 by default (Round 70 measured the prompt and D cost); the owner can raise it knowingly. Round 83 (DAAES TC-006): a sixth pin used to push
+        """How many standing rules every episode is shown. 8 by default since Round 87 (it was 5: Round 83 found that a sixth rule pushed the goal out; Round 86 measured the cost of 8 at 2.4-5.7% of a full-menu prompt); the owner can change it. Round 83 (DAAES TC-006): a sixth pin used to push
         the OLDEST rule out of the prompt without a word, and the oldest is often the goal itself; the prompt now says how many pinned rules are not shown."""
         try:
             return max(1, min(20, int((os.environ.get(cls.MAX_PINNED_ENV) or "").strip() or cls.MAX_PINNED_SHOWN)))

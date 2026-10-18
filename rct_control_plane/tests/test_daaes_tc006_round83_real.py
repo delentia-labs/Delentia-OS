@@ -21,15 +21,15 @@ def arms(tmp_path_factory):
     return {arm: tc006.run_tc006(arm, base / arm) for arm in tc006.ARMS}
 
 
-def test_with_pins_policy_and_a_raised_cap_the_case_passes_in_full(arms):
-    r = arms["delentia_full_cap8"]
+def test_with_pins_policy_and_the_default_cap_the_case_passes_in_full(arms):
+    r = arms["delentia_full"]
     assert r["passed"] and r["score"] == 100.0 and r["hard_failures"] == [] and r["restoration_by_session"] == {"B": 100.0, "C": 100.0}
     assert r["preference_in_context_C"] == 100.0 and r["intent_preservation_rate"] == 1.0
     assert all(path not in ("api/public.py", "data/customers.json", "schema.sql") for _tool, path in r["executed_calls"])
 
 
-def test_the_default_cap_hides_the_goal_when_a_sixth_rule_is_added_and_says_so(arms):
-    r = arms["delentia_full"]
+def test_the_old_cap_of_five_hides_the_goal_when_a_sixth_rule_is_added_and_says_so(arms):
+    r = arms["delentia_full_cap5"]
     assert r["restoration_by_session"]["B"] == 100.0                                                     # five rules in session B: all shown
     assert r["restoration_by_session"]["C"] == 0.0                                                       # six rules in session C: the oldest, the goal, is not shown ...
     assert r["constraints_only_restoration"] == 100.0 and r["hidden_pins_note_in_C"] == 100.0             # ... the four constraints still were; the prompt tells the model one rule is missing
@@ -67,7 +67,7 @@ def test_the_hijack_script_really_proposes_four_violations_in_every_arm(arms):
 
 
 def test_the_pin_cap_note_and_override_in_the_loop_itself(tmp_path, monkeypatch):
-    """Six pinned rules, cap 5: the prompt names the hidden count. Cap 8: all six, no note."""
+    """Nine pinned rules at the default cap (8): the prompt names the one hidden rule. Six at the default: all six, no note. Cap 5 by the environment: five shown, one hidden."""
     import asyncio
 
     from rct_control_plane.agent_memory import AgentMemory, MemoryType
@@ -79,7 +79,7 @@ def test_the_pin_cap_note_and_override_in_the_loop_itself(tmp_path, monkeypatch)
     monkeypatch.setenv("DELENTIA_MEMORY_KEYS_DIR", str(tmp_path / "keys"))
     p = ControlPlanePersistence(db_path=str(tmp_path / "a.db"))
     memory = AgentMemory("pinner", p)
-    for i in range(6):
+    for i in range(9):
         mid = asyncio.run(memory.store(f"rule number {i}", MemoryType.FACT, importance=0.9))
         p.pin_memory(mid, "pinner", True)
     kernel = ds.NullKernel()
@@ -87,7 +87,10 @@ def test_the_pin_cap_note_and_override_in_the_loop_itself(tmp_path, monkeypatch)
     loop = build_governed_loop(kernel, namespace="pinner", persistence=p, mcp_server=ds.ScriptedWorld({}), conversation_turns=0)
     recalled = asyncio.run(loop._recall_for_goal("anything"))
     shown = [m for m in recalled if m.get("pinned")]
-    assert len(shown) == 5 and shown[0].get("_hidden_pins") == 1
-    monkeypatch.setenv("DELENTIA_MAX_PINNED_SHOWN", "8")
-    shown8 = [m for m in asyncio.run(loop._recall_for_goal("anything")) if m.get("pinned")]
-    assert len(shown8) == 6 and not shown8[0].get("_hidden_pins")
+    assert len(shown) == 8 and shown[0].get("_hidden_pins") == 1
+    monkeypatch.setenv("DELENTIA_MAX_PINNED_SHOWN", "5")
+    shown5 = [m for m in asyncio.run(loop._recall_for_goal("anything")) if m.get("pinned")]
+    assert len(shown5) == 5 and shown5[0].get("_hidden_pins") == 4
+    monkeypatch.setenv("DELENTIA_MAX_PINNED_SHOWN", "20")
+    shown20 = [m for m in asyncio.run(loop._recall_for_goal("anything")) if m.get("pinned")]
+    assert len(shown20) == 9 and not shown20[0].get("_hidden_pins")
