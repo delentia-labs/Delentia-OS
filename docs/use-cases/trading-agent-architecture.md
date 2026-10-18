@@ -20,7 +20,7 @@ This document describes the architectural blueprint for applying `delentia-os` S
 | `RECEIVED` | Data Ingestion (news + price WebSocket) | `IntentSignal` |
 | `MEMORY_CHECK` | Delta Engine warm recall (prior analysis + portfolio state) | `core/delta_engine/` |
 | `VALIDATED` | FDIA Constitutional Scoring (A=0 kill switch) | `core/fdia/` |
-| `COMPUTING` | Multi-model Analysis (HexaCore 7-model ensemble) | `signedai/` |
+| `COMPUTING` | Multi-model analysis (a jury of models you choose) | `signedai/` |
 | `VERIFYING` | SignedAI Risk Gating (TIER_S / TIER_4 / TIER_6 / TIER_8) | `signedai/` |
 | `COMMITTING` | RCTDB Trade Outcome Logging | `core/delta_engine/` |
 
