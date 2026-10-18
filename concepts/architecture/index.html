@@ -2333,7 +2333,7 @@
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>Layer 6: SignedAI Consensus
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>├─ S/4/6/8 tier framework
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>├─ ED25519 cryptographic attestation
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>├─ 9 HexaCore roles (+ Ollama LOCAL + Groq LPU)
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>├─ the model is a setting (Ollama, OpenRouter, OpenAI-compatible)
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>└─ signedai/core/
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>Layer 5: Delta Engine
@@ -2392,7 +2392,7 @@
 <h3 id="why-deltas-instead-of-state-snapshots">Why deltas instead of state snapshots<a class="headerlink" href="#why-deltas-instead-of-state-snapshots" title="Permanent link">&para;</a></h3>
 <p>Storing full agent state at every tick is O(n×t). Delta Engine stores only <code>changed_fields</code> with SHA-256 content hashing, reducing the stored log by 39% (20 ticks) to 90% (500 ticks) in measured bytes (<code>scripts/measure_delta_engine_real.py</code>; the gain grows with history, and plain zstd over full snapshots compresses further). Full rollback is still possible by replaying the delta chain.</p>
 <h3 id="why-ed25519-over-rsa">Why ED25519 over RSA<a class="headerlink" href="#why-ed25519-over-rsa" title="Permanent link">&para;</a></h3>
-<p>ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Critical for high-throughput multi-LLM consensus where thousands of decisions need attestation per second.</p>
+<p>ED25519 signatures are 64 bytes vs RSA-2048's 256 bytes, verify 3× faster, and offer equivalent security. Useful where many decisions need an attestation.</p>
 
 
 

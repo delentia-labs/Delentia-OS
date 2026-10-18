@@ -2308,7 +2308,7 @@
 <p><strong>RCT Platform / Delentia OS</strong> provides an intent-centric constitutional AI SDK built on a 9-Tier architecture. The ecosystem is organized around a clear <strong>Open-Core Architecture Boundary</strong>: the <strong>Public Open-Source Core (Apache 2.0)</strong> and the <strong>Private Enterprise Full Engine</strong>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Open-Core Design Philosophy</p>
-<p>The Public Core SDK ships complete reference implementations for intent scoring, multi-LLM consensus, memory compression, and 5 production reference microservices. High-value enterprise orchestration and proprietary execution clusters are smart-masked within the Private Enterprise Engine.</p>
+<p>The Public Core SDK ships reference implementations for intent scoring, the SignedAI jury runner, memory compression, and 5 reference microservices. High-value enterprise orchestration and proprietary execution clusters are smart-masked within the Private Enterprise Engine.</p>
 </div>
 <hr />
 <h2 id="architecture-topology-boundaries">Architecture Topology &amp; Boundaries<a class="headerlink" href="#architecture-topology-boundaries" title="Permanent link">&para;</a></h2>
@@ -2316,7 +2316,7 @@
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│                        🌐 PUBLIC CORE (Apache 2.0 Open Source SDK)                     │
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│  • FDIA Scorer Engine (core/fdia/fdia.py)                                               │
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  • JITNA Protocol RFC-001 Reference (rct_control_plane/)                              │
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  • SignedAI Multi-LLM Consensus Layer (signedai/core/)                                 │
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  • SignedAI jury runner (signedai/)                                                     │
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│  • Delta Engine Memory State Diffing (core/delta_engine/)                              │
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  • Regional Language Adapter (core/regional_adapter/)                                  │
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│                                                                                        │
@@ -2331,31 +2331,16 @@
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                                           ▼ (Commercial Moat Boundary)
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>┌────────────────────────────────────────────────────────────────────────────────────────┐
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│                     🔒 PRIVATE ENTERPRISE ENGINE (Smart Masked Clusters)               │
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│  • Cluster 1: [Delta Intent Engine Cluster]        ──▶ 15 Microservices / 10 Algorithms   │
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│  • Cluster 2: [Logic &amp; Safety Guard Cluster]      ──▶ 20 Microservices / 15 Algorithms   │
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│  • Cluster 3: [Optimized Nodal Assembler Cluster]  ──▶ 27 Microservices / 16 Algorithms   │
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│                                                                                        │
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│  Proof of Scale &amp; Complexity Metrics (self-reported enterprise snapshot,                │
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│  not independently verified — see note below):                                          │
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│   - 4,849 enterprise test cases (private runtime, separate from the public              │
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│     SDK's own verified suite — see the Public Core's own test count instead             │
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│     for an independently reproducible number)                                           │
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│   - &lt;0.3% hallucination rate target (internal methodology; see                          │
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│     docs/benchmark/hallucination-methodology.md for the full protocol and               │
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│     its own disclosed limitations)                                                      │
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│   - Crash-rate and VRAM-optimization figures for this private tier are not              │
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│     yet published with a reproducible methodology and are omitted here                  │
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│     pending one — see CLAIM_REGISTRY.md §2 for what "not yet qualified"                 │
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>│     means in practice                                                                    │
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>!!! warning "On the Enterprise metrics above"
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>    These describe `Delentia-Private-OS`'s runtime, a separate private codebase this
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>    document does not have access to audit. They are reproduced here as self-reported
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>    context, not as claims this repository can verify. The Public Core's own numbers
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>    (this repo, this SDK) are independently reproducible by anyone who clones it and
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>    runs the test suite themselves — that is the standard this page holds itself to for
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>    everything it presents as "public."
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│ A separate, private codebase. It is not part of this repository and not offered today: │
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│ no hosted service, no price, no customers, and no figure about it is quoted here.      │
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│ Only this repository's own CI test count is quoted (docs/testing/TESTING_CANONICAL.md).  │
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>└────────────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>!!! note "On the private codebase"
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    `Delentia-Private-OS` is a separate private codebase that this repository does not
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    contain and cannot audit, so nothing about it is claimed here. The Public Core's own
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    numbers are reproducible by anyone who clones this repository and runs the test suite,
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    and that is the standard this page holds itself to for everything it presents as "public."
 </span></code></pre></div>
 <hr />
 <h2 id="public-core-components">Public Core Components<a class="headerlink" href="#public-core-components" title="Permanent link">&para;</a></h2>
@@ -2371,7 +2356,7 @@
 <h3 id="2-jitna-protocol-rfc-001">2. JITNA Protocol (RFC-001)<a class="headerlink" href="#2-jitna-protocol-rfc-001" title="Permanent link">&para;</a></h3>
 <p>Canonical reference for intent packet transport (<span class="arithmatex">\(I, D, \Delta, A, R, M\)</span>).</p>
 <h3 id="3-signedai-consensus">3. SignedAI Consensus<a class="headerlink" href="#3-signedai-consensus" title="Permanent link">&para;</a></h3>
-<p>Jury-based multi-LLM consensus voting (<span class="arithmatex">\(\ge 75\%\)</span> consensus threshold, variance <span class="arithmatex">\(\le \pm 0.20\)</span>) with SHA-256 cryptographic attestation.</p>
+<p>A jury runner: independent models vote agree, disagree or abstain, the tier sets the number of agreeing votes required, and the verdict is a SHA-256 digest that can be signed with Ed25519. Tested with scripted voters only.</p>
 <h3 id="4-5-reference-microservices">4. 5 Reference Microservices<a class="headerlink" href="#4-5-reference-microservices" title="Permanent link">&para;</a></h3>
 <p>Shipped in <code>microservices/</code> with 142 dedicated integration tests:
 - <code>analysearch-intent</code>: Intent classification and entity parsing.
@@ -2389,8 +2374,8 @@ this repository. For an independently reproducible number, use the Public Core's
 verified test count (this repo's own <code>docs/testing/TESTING_CANONICAL.md</code>) instead.</p>
 </div>
 <ul>
-<li><strong>Enterprise Test Suite:</strong> 4,849 property-based and integration test cases across Python 3.10–3.12 (self-reported, private runtime — see note above).</li>
-<li><strong>Hallucination Protection:</strong> no hallucination rate is claimed (the earlier "0.3%" was withdrawn); SignedAI multi-model consensus exists as a design — internal methodology, see <code>docs/benchmark/hallucination-methodology.md</code> for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).</li>
+<li><strong>Test suite:</strong> the public repository's CI count is the only count quoted (see <code>docs/testing/TESTING_CANONICAL.md</code>). An earlier private count of 4,849 was withdrawn: it cannot be verified.</li>
+<li><strong>Hallucination Protection:</strong> no hallucination rate is claimed (the earlier "0.3%" was withdrawn); the SignedAI jury runner exists but has been tested with scripted voters only — internal methodology, see <code>docs/benchmark/hallucination-methodology.md</code> for the full protocol and its own disclosed limitations (simulated consensus in the public reproduction, non-public evaluation dataset, no independent review yet).</li>
 <li><strong>Memory Compression:</strong> Delta Engine's measured saving is 39% (20 ticks) to 90% (500 ticks) against storing a full snapshot every tick — run <code>python scripts/measure_delta_engine_real.py</code> yourself to verify. The older 91.5% was a formula estimate and is withdrawn.</li>
 </ul>
 

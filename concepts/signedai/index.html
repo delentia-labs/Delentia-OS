@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#signedai-consensus" class="md-skip">
+        <a href="#signedai-the-jury-runner" class="md-skip">
           Skip to content
         </a>
       
@@ -1062,10 +1062,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tier-framework" class="md-nav__link">
+  <a href="#tier-arithmetic" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tier Framework
+        Tier arithmetic
       
     </span>
   </a>
@@ -1073,10 +1073,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hexacore-9-role-registry-v23" class="md-nav__link">
+  <a href="#hexacoreregistry-a-table-of-example-model-roles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        HexaCore — 9-Role Registry (v2.3)
+        HexaCoreRegistry: a table of example model roles
       
     </span>
   </a>
@@ -2287,114 +2287,58 @@
   
 
 
-<h1 id="signedai-consensus">SignedAI Consensus<a class="headerlink" href="#signedai-consensus" title="Permanent link">&para;</a></h1>
-<p><strong>Multi-tier AI verification with cryptographic attestation.</strong></p>
+<h1 id="signedai-the-jury-runner">SignedAI: the jury runner<a class="headerlink" href="#signedai-the-jury-runner" title="Permanent link">&para;</a></h1>
+<p><strong>Independent model votes with a signed verdict. Optional, and tested with scripted voters only.</strong></p>
 <hr />
 <h2 id="what-is-signedai">What is SignedAI?<a class="headerlink" href="#what-is-signedai" title="Permanent link">&para;</a></h2>
-<p>SignedAI is RCT's hallucination prevention framework. Before any AI output is committed, it is:</p>
+<p>SignedAI asks several models the same question about the same proposal and records how they voted. It does not prevent hallucination, and no hallucination rate is claimed (an earlier 0.3% figure was withdrawn on 2026-09-28 because it could not be reproduced; see <a href="../../whitepaper/DELENTIA_WHITEPAPER_3.0_EN/">Whitepaper 3.0 §9.2</a>).</p>
+<p>How a jury runs (<code>signedai/runner.py</code>, <code>delentia jury run</code>, <code>delentia jury verify</code>):</p>
 <ol>
-<li>Routed to the appropriate tier based on <strong>risk level</strong></li>
-<li>Evaluated by <strong>multiple LLM models</strong> simultaneously (HexaCore)</li>
-<li>Consensus is checked — outputs with low agreement are rejected</li>
-<li>The final decision is <strong>signed with ED25519</strong> and stored with a full audit trail</li>
+<li>Every member of the jury gets the same question about the same proposal, independently. You name the members in a jury file (keys are never in the file; it names an environment variable).</li>
+<li>Each reply is read as agree, disagree or abstain. A reply that cannot be read, a timeout or an error counts as abstain, never as agree.</li>
+<li>The tier sets how many agreeing votes are required and what share of the jury they must be. Abstentions never help a proposal pass.</li>
+<li>A jury of one model is not a jury: if fewer than the required number of <em>different</em> models answered, consensus is not reached.</li>
+<li>In the strictest tier the chairman can veto, but cannot force a pass over a disagreeing jury.</li>
+<li>The verdict is a canonical record with a SHA-256 digest, optionally signed with Ed25519, that anyone can re-check with <code>delentia jury verify</code>.</li>
 </ol>
-<p><strong>Result:</strong> no hallucination rate is claimed. An earlier 0.3% figure was withdrawn on 2026-09-28 because its dataset and benchmark suite are not reproducible from this repository (see <a href="../../whitepaper/DELENTIA_WHITEPAPER_3.0_EN/">Whitepaper 3.0 §9.2</a>).</p>
+<p><strong>What has been tested:</strong> the vote rules, with scripted voters; and a harness that runs four separate HTTP servers as members and checks the signed verdict. <strong>What has not:</strong> any real vote across several vendors' models, and any evidence that a jury is more accurate than one model.</p>
 <hr />
-<h2 id="tier-framework">Tier Framework<a class="headerlink" href="#tier-framework" title="Permanent link">&para;</a></h2>
+<h2 id="tier-arithmetic">Tier arithmetic<a class="headerlink" href="#tier-arithmetic" title="Permanent link">&para;</a></h2>
+<p>The tiers are a table of how many signers and how many agreeing votes a proposal needs. They are not a promise about latency, accuracy or cost; none of those was measured.</p>
 <table>
 <thead>
 <tr>
 <th>Tier</th>
-<th>Models</th>
-<th>Use Case</th>
-<th>Latency</th>
+<th>Signers (in the table)</th>
+<th>Use</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>TIER_S</strong></td>
-<td>1 signer</td>
-<td>Low-risk, idempotent reads</td>
-<td>&lt;50ms</td>
+<td>1</td>
+<td>a single attestation</td>
 </tr>
 <tr>
 <td><strong>TIER_4</strong></td>
-<td>4 signers</td>
-<td>Medium-risk, write operations</td>
-<td>200–500ms</td>
+<td>4</td>
+<td>more than one opinion</td>
 </tr>
 <tr>
 <td><strong>TIER_6</strong></td>
-<td>6 signers</td>
-<td>High-risk, financial/legal</td>
-<td>500ms–2s</td>
+<td>6</td>
+<td>a larger jury</td>
 </tr>
 <tr>
 <td><strong>TIER_8</strong></td>
-<td>6 signers + chairman veto</td>
-<td>Critical, irreversible actions</td>
-<td>2–5s</td>
+<td>6 + chairman veto</td>
+<td>the strictest rule set</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="hexacore-9-role-registry-v23">HexaCore — 9-Role Registry (v2.3)<a class="headerlink" href="#hexacore-9-role-registry-v23" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Model Slot</th>
-<th>Provider Region</th>
-<th>Model Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>W1</td>
-<td>Western (US)</td>
-<td>General reasoning</td>
-</tr>
-<tr>
-<td>W2</td>
-<td>Western (EU)</td>
-<td>Code + technical</td>
-</tr>
-<tr>
-<td>W3</td>
-<td>Western (US)</td>
-<td>Safety-focused</td>
-</tr>
-<tr>
-<td>E1</td>
-<td>Eastern (JP)</td>
-<td>Precision tasks</td>
-</tr>
-<tr>
-<td>E2</td>
-<td>Eastern (KR)</td>
-<td>Multi-turn dialogue</td>
-</tr>
-<tr>
-<td>E3</td>
-<td>Eastern (CN)</td>
-<td>Document synthesis</td>
-</tr>
-<tr>
-<td>R1</td>
-<td>Regional (TH)</td>
-<td>Thai-language specialist</td>
-</tr>
-<tr>
-<td>L1</td>
-<td>Local (Air-Gapped)</td>
-<td>Local model fallback (Ollama)</td>
-</tr>
-<tr>
-<td>Q1</td>
-<td>LPU (US/Global)</td>
-<td>Ultra-fast LPU inference (Groq)</td>
-</tr>
-</tbody>
-</table>
+<h2 id="hexacoreregistry-a-table-of-example-model-roles">HexaCoreRegistry: a table of example model roles<a class="headerlink" href="#hexacoreregistry-a-table-of-example-model-roles" title="Permanent link">&para;</a></h2>
+<p><code>signedai/core/registry.py</code> holds a table of example roles (the name <code>HexaCore</code> is the older name of that table). No fixed roster of models runs, and no model in the table is a partner. A real jury's members are the models you name in your jury file.</p>
 <hr />
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">signedai.core.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">SignedAIRegistry</span><span class="p">,</span> <span class="n">SignedAITier</span><span class="p">,</span> <span class="n">RiskLevel</span>
