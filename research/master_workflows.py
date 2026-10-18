@@ -150,7 +150,7 @@ READINESS: Dict[str, Dict[str, object]] = {
     "W04": {"e2e": False, "live_runner": "research/runner.py (tickets domain, no chat channel)", "missing": "a run through a chat-channel fake: allow-listed sender, pairing, signed reply, two people"},
     "W05": {"e2e": True, "live_runner": "scripts/autonomy_drill.py (scripted model)", "missing": "the same drill with a real model and a host that stays on for 8 hours, then 7 days"},
     "W06": {"e2e": True, "live_runner": None, "missing": "a live model behind a real signed webhook; a duplicate-delivery run on the host"},
-    "W07": {"e2e": True, "live_runner": None, "missing": "TC-006 with a live provider (the sessions are scripts today); the prompt capture must work through a provider wrapper"},
+    "W07": {"e2e": True, "live_runner": "research/daaes/tc006.py (run_tc006 with provider=) through `python -m research.daaes live --case TC-006`", "missing": "a capable model (the live path is rehearsed against a fake paid endpoint, with the budget guard and a sealed bundle; no language model has run it)"},
     "W08": {"e2e": True, "live_runner": "scripts/measure_repeat_goal.py", "missing": "the forged-tool half of the job in the same run (C20 covers it separately); then the same ten requests with a live model"},
     "W09": {"e2e": True, "live_runner": None, "missing": "TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part"},
     "W10": {"e2e": True, "live_runner": "scripts/measure_injection_real_model.py", "missing": "a capable model (the small local models read the page in 2 to 11 of 18 scenarios)"},
@@ -270,7 +270,7 @@ def render() -> str:
              f"Per short run about {TOKENS_PER_RUN['prompt']:,} prompt and {TOKENS_PER_RUN['completion']:,} completion tokens; W05, W07, W08, W12 count as 5, 3, 5, 3 short runs. "
              "Prices are examples; the real ones come from the provider's list on the day.", "",
              "| tier | runs per workflow | total runs | Haiku-class ($0.10 / $0.50 per M) | mid-priced ($1 / $5) | Sonnet-class ($3 / $15) |", "|---|---|---|---|---|---|"]
-    for label, k in (("screen", 5), (f"claim >= 80%", n80), (f"claim >= 90%", n90)):
+    for label, k in (("screen", 5), ("claim >= 80%", n80), ("claim >= 90%", n90)):
         row = [cost_estimate(p, q, k) for p, q in ((0.10, 0.50), (1.0, 5.0), (3.0, 15.0))]
         lines.append(f"| {label} | {k} | {row[0]['runs']} | ${row[0]['usd']} (${row[0]['usd_with_margin']} with margin) | ${row[1]['usd']} (${row[1]['usd_with_margin']}) | ${row[2]['usd']} (${row[2]['usd_with_margin']}) |")
     rc = readiness_counts()

@@ -124,8 +124,8 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
 
     from research.daaes import budget_guard, live_adapter
     from rct_control_plane.llm_provider import OllamaProvider
-    if case != "TC-003":
-        raise ValueError("only TC-003 has a live adapter so far")
+    if case not in ("TC-003", "TC-006"):
+        raise ValueError("only TC-003 and TC-006 have a live adapter so far")
     out = Path(out)
     date = date or time.strftime("%Y-%m-%d")
     arm = f"d0_live-{kind}-{model.replace('/', '_').replace(':', '_')}" + (f"-v{variant_seed}" if variant_seed is not None else "")
@@ -149,7 +149,11 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
     work.mkdir(parents=True)
     guard = live_adapter.guarded(inner, out / "live_ledger.json", policy, f"{arm}-{seed}-{time.time_ns()}", pin, pout)
     started = time.time()
-    result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0), variant_seed=variant_seed)
+    seconds_limit = max_seconds if max_seconds is not None else (3600.0 if kind == "ollama" else 300.0)
+    if case == "TC-003":
+        result = tc003.run_live(guard, work, fault=fault, max_iterations=max_iterations, max_seconds=seconds_limit, variant_seed=variant_seed)
+    else:                                                                       # TC-006 (workflow W07): three sessions, the model decides, the pins and the owner policy are the same as in the scripted case
+        result = tc006.run_tc006("delentia_full", work, provider=guard, max_seconds=seconds_limit)
     result["guard_refused"] = guard.refused
     result["seconds"] = round(time.time() - started, 1)
     live_facts = {"model": model, "provider": kind, "api_mode": ("Ollama native API" if kind == "ollama" else "OpenRouter chat completions"),

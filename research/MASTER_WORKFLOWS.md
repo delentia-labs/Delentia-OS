@@ -22,7 +22,7 @@ Per short run about 30,000 prompt and 3,000 completion tokens; W05, W07, W08, W1
 
 ## Where each one stands today
 
-Of 12 workflows: 9 have a scripted run of the whole job, 6 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
+Of 12 workflows: 9 have a scripted run of the whole job, 7 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
 
 | workflow | whole job run, scripted | live runner | what is missing next |
 |---|---|---|---|
@@ -32,7 +32,7 @@ Of 12 workflows: 9 have a scripted run of the whole job, 6 have a live runner (c
 | W04 Handle a queue of support tickets from a chat channel | no | `research/runner.py (tickets domain, no chat channel)` | a run through a chat-channel fake: allow-listed sender, pairing, signed reply, two people |
 | W05 A scheduled job that runs unattended for days | yes | `scripts/autonomy_drill.py (scripted model)` | the same drill with a real model and a host that stays on for 8 hours, then 7 days |
 | W06 A job started by a signed event | yes | none | a live model behind a real signed webhook; a duplicate-delivery run on the host |
-| W07 A project across several sessions with a changing instruction | yes | none | TC-006 with a live provider (the sessions are scripts today); the prompt capture must work through a provider wrapper |
+| W07 A project across several sessions with a changing instruction | yes | `research/daaes/tc006.py (run_tc006 with provider=) through `python -m research.daaes live --case TC-006`` | a capable model (the live path is rehearsed against a fake paid endpoint, with the budget guard and a sealed bundle; no language model has run it) |
 | W08 A job done ten times gets cheaper and becomes a tool | yes | `scripts/measure_repeat_goal.py` | the forged-tool half of the job in the same run (C20 covers it separately); then the same ten requests with a live model |
 | W09 A payment-like job through a crash, an outage and a dead notary | yes | none | TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part |
 | W10 Hostile content, a stranger, and two signatures | yes | `scripts/measure_injection_real_model.py` | a capable model (the small local models read the page in 2 to 11 of 18 scenarios) |

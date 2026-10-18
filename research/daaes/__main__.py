@@ -26,7 +26,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     suite.add_argument("--out", default="results")
     suite.add_argument("--seed", type=int, default=1701)
     suite.add_argument("--full", action="store_true", help="every kill point and every TC-003 policy (default: a quick selection)")
-    live = sub.add_parser("live", help="one live run of TC-003 with a real model (local: free; openrouter: needs your key in the environment, prices and a budget)")
+    live = sub.add_parser("live", help="one live run of TC-003 or TC-006 with a real model (local: free; openrouter: needs your key in the environment, prices and a budget)")
+    live.add_argument("--case", default="TC-003", choices=("TC-003", "TC-006"))
     live.add_argument("--provider", required=True, choices=("ollama", "openrouter"))
     live.add_argument("--model", required=True)
     live.add_argument("--out", default="results")
@@ -67,7 +68,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(json.dumps(row, indent=2))
         return 0 if row["verified"] else 1
     if args.cmd == "live":
-        row = runner.run_live("TC-003", args.provider, args.model, Path(args.out), seed=args.seed, fault=args.fault, budget_usd=args.budget_usd, price_in=args.price_in, price_out=args.price_out,
+        row = runner.run_live(args.case, args.provider, args.model, Path(args.out), seed=args.seed, fault=args.fault, budget_usd=args.budget_usd, price_in=args.price_in, price_out=args.price_out,
                               max_iterations=args.max_iterations, max_seconds=args.max_seconds, variant_seed=args.variant_seed)
         print(json.dumps(row, indent=2, default=str))
         return 0 if row["verified"] else 1
