@@ -3044,10 +3044,17 @@ def notary_keygen(out_path: str) -> None:
 @click.option("--anchor-url", default=None, envvar="DELENTIA_NOTARY_ANCHOR_URL", help="Witness base URL: anchor the log head on a schedule (tier A3). Or DELENTIA_NOTARY_ANCHOR_URL.")
 @click.option("--anchor-key-id", default=None, envvar="DELENTIA_NOTARY_ANCHOR_KEY_ID", help="Key id the witness knows this notary's public key under. Or DELENTIA_NOTARY_ANCHOR_KEY_ID.")
 @click.option("--anchor-every", default=3600.0, show_default=True, type=float, envvar="DELENTIA_NOTARY_ANCHOR_EVERY_S", help="Seconds between anchors.")
+@click.option("--timestamp-url", default=None, envvar="DELENTIA_NOTARY_TIMESTAMP_URL", help="An RFC 3161 time-stamping authority (for example http://timestamp.digicert.com): the same signed head is time-stamped on the same schedule.")
+@click.option("--timestamp-dir", default=None, envvar="DELENTIA_NOTARY_TIMESTAMP_DIR", help="Where the time-stamp tokens are kept (a folder only the notary's OS user can write).")
+@click.option("--timestamp-ca", default="", envvar="DELENTIA_NOTARY_TIMESTAMP_CA", help="CA bundle a token must chain to (default: certifi's).")
 def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, anchor_url: Optional[str] = None,
-                 anchor_key_id: Optional[str] = None, anchor_every: float = 3600.0) -> None:
+                 anchor_key_id: Optional[str] = None, anchor_every: float = 3600.0, timestamp_url: Optional[str] = None,
+                 timestamp_dir: Optional[str] = None, timestamp_ca: str = "") -> None:
     """Serve POST /append and GET /head on 127.0.0.1 (token: DELENTIA_NOTARY_TOKEN)."""
     from rct_control_plane import notary
+    if bool(timestamp_url) != bool(timestamp_dir):
+        click.echo(click.style("Error: --timestamp-url and --timestamp-dir go together", fg="red"), err=True)
+        sys.exit(1)
     key = _notary_key(key_path)
     store = notary.NotaryStore(db, key, key_id)
     server = notary.make_server(store, port=port, token=notary.token_from_env())
@@ -3056,14 +3063,18 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, ancho
     click.echo(f"agent side  : set {notary.NOTARY_URL_ENV}=http://127.0.0.1:{port} "
                f"(and {notary.NOTARY_TOKEN_ENV} if set here)")
     stop_anchoring = None
-    if anchor_url:
+    if anchor_url or timestamp_url:
         if not anchor_key_id:
-            click.echo(click.style("Error: --anchor-url needs --anchor-key-id", fg="red"), err=True)
+            click.echo(click.style("Error: --anchor-url / --timestamp-url need --anchor-key-id", fg="red"), err=True)
             sys.exit(1)
-        click.echo(f"anchoring   : every {anchor_every:.0f}s to {anchor_url} as {anchor_key_id}")
+        if anchor_url:
+            click.echo(f"anchoring   : every {anchor_every:.0f}s to {anchor_url} as {anchor_key_id}")
+        if timestamp_url:
+            click.echo(f"time-stamps : every {anchor_every:.0f}s from {timestamp_url} into {timestamp_dir}")
         stop_anchoring = notary.start_anchor_loop(
             store.db_path, anchor_key_id, key, anchor_url, anchor_every,
             on_result=lambda r: click.echo(f"anchor      : {json.dumps(r)}"),
+            timestamp_url=timestamp_url, timestamp_dir=timestamp_dir, timestamp_ca=timestamp_ca,
         )
     try:
         server.serve_forever()
@@ -3125,6 +3136,43 @@ def notary_anchor(url: str, key_id: str, db: str, key_path: Optional[str]) -> No
     resp = httpx.post(f"{url.rstrip('/')}/v1/audit/anchor", json=body, timeout=20.0)
     click.echo(json.dumps({"status": resp.status_code, **resp.json()}))
     if resp.status_code not in (200, 201):
+        sys.exit(1)
+
+
+@notary_group.command("timestamp")
+@click.option("--url", required=True, help="An RFC 3161 time-stamping authority, e.g. http://timestamp.digicert.com")
+@click.option("--dir", "tokens_dir", required=True, help="Where the token is kept.")
+@click.option("--key-id", required=True, help="Key id written into the anchor body.")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+@click.option("--key", "key_path", default=None, help="Notary key (or DELENTIA_NOTARY_KEY).")
+@click.option("--ca", default="", help="CA bundle (default: certifi's).")
+def notary_timestamp(url: str, tokens_dir: str, key_id: str, db: str, key_path: Optional[str], ca: str) -> None:
+    """Sign the notary log's head and have a public time-stamping authority (RFC 3161) time-stamp it."""
+    from rct_control_plane import notary
+    result = notary.timestamp_once(db, key_id, _notary_key(key_path), url, tokens_dir, None, ca)
+    click.echo(json.dumps(result))
+    if not result.get("timestamped"):
+        sys.exit(1)
+
+
+@notary_group.command("check-timestamps")
+@click.option("--dir", "tokens_dir", required=True, help="Where the tokens are kept.")
+@click.option("--key-id", required=True, help="Key id the tokens were made under.")
+@click.option("--db", default=_DEFAULT_NOTARY_DB, show_default=True, help="The notary's log.")
+@click.option("--ca", default="", help="CA bundle (default: certifi's).")
+def notary_check_timestamps(tokens_dir: str, key_id: str, db: str, ca: str) -> None:
+    """Check every stored time-stamp token against the notary log (and its signature with openssl, when installed); exit 1 on any problem."""
+    from rct_control_plane import notary
+    from rct_control_plane.audit_witness import WitnessSpec
+    from rct_control_plane.audit_witness_tsa import TimestampWitness
+    held = TimestampWitness(WitnessSpec(type="rfc3161", name="notary-tsa", key_id=key_id, url="http://unused.invalid", path=tokens_dir, ca_file=ca)).fetch()
+    report = notary.check_anchors(db, held)
+    report["problems"] = [*report["problems"], *[str(c.get("reason")) for c in held.get("conflicts", [])]]
+    report["ok"] = not report["problems"]
+    report["tokens"] = len(held.get("anchors", []))
+    report["unchecked_signatures"] = int(held.get("unchecked_signatures", 0))
+    click.echo(json.dumps(report))
+    if not report["ok"]:
         sys.exit(1)
 
 

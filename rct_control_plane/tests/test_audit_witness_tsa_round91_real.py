@@ -333,3 +333,79 @@ def test_a_public_authority_time_stamps_and_the_default_ca_bundle_verifies_it(tm
     assert aw.anchor_all(persistence._connect(), [spec])[0]["ok"]
     held = aw.make(spec).fetch()
     assert held["conflicts"] == [] and held["unchecked_signatures"] == 0 and held["anchors"][0]["received_at"].startswith("20")
+
+
+# ------------------------------------------------------------------ the notary time-stamps its own log (the token lives where the agent's account cannot delete it)
+
+@pytest.fixture
+def notary_world(tmp_path):
+    from rct_control_plane import notary
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    key = Ed25519PrivateKey.generate()
+    db = str(tmp_path / "notary" / "notary.db")
+    store = notary.NotaryStore(db, key, "notary-test")
+    for i in range(4):
+        store.append({"kind": "tool_call", "n": i})
+    authority = Authority(make_authority(tmp_path / "notary_authority"))
+    yield notary, key, db, store, authority, tmp_path
+    authority.stop()
+
+
+def test_the_notary_time_stamps_its_head_and_the_cli_checks_the_tokens(notary_world):
+    from click.testing import CliRunner
+    from rct_control_plane.cli import cli
+    notary, key, db, store, authority, tmp_path = notary_world
+    out = notary.timestamp_once(db, "host-notary-1", key, authority.url, str(tmp_path / "ts"), None, str(authority.folder / "ca.crt"))
+    assert out["timestamped"] is True and out["entries"] == 4
+    again = notary.timestamp_once(db, "host-notary-1", key, authority.url, str(tmp_path / "ts"), 4, str(authority.folder / "ca.crt"))
+    assert again["timestamped"] is False and "unchanged" in again["reason"] and authority.calls == 1
+    ok = CliRunner().invoke(cli, ["notary", "check-timestamps", "--dir", str(tmp_path / "ts"), "--key-id", "host-notary-1", "--db", db, "--ca", str(authority.folder / "ca.crt")])
+    assert ok.exit_code == 0 and '"ok": true' in ok.output and '"tokens": 1' in ok.output
+
+
+def test_a_rewritten_notary_log_fails_the_timestamp_check_and_a_truncated_one_too(notary_world):
+    import sqlite3
+    from click.testing import CliRunner
+    from rct_control_plane.cli import cli
+    notary, key, db, store, authority, tmp_path = notary_world
+    notary.timestamp_once(db, "host-notary-1", key, authority.url, str(tmp_path / "ts"), None, str(authority.folder / "ca.crt"))
+    args = ["notary", "check-timestamps", "--dir", str(tmp_path / "ts"), "--key-id", "host-notary-1", "--db", db, "--ca", str(authority.folder / "ca.crt")]
+    with sqlite3.connect(db) as conn:
+        conn.execute("UPDATE notary_log SET hash = ? WHERE seq = 4", ("e" * 64,))
+    rewritten = CliRunner().invoke(cli, args)
+    assert rewritten.exit_code == 1 and "rewritten" in rewritten.output
+    with sqlite3.connect(db) as conn:
+        conn.execute("DELETE FROM notary_log WHERE seq > 2")
+    truncated = CliRunner().invoke(cli, args)
+    assert truncated.exit_code == 1 and "truncated" in truncated.output
+
+
+def test_the_loop_time_stamps_only_when_the_head_moved_and_survives_a_dead_authority(notary_world):
+    import threading
+    import time
+    notary, key, db, store, authority, tmp_path = notary_world
+    results, seen = [], threading.Event()
+
+    def on_result(r):
+        results.append(r)
+        seen.set()
+    stop = notary.start_anchor_loop(db, "host-notary-1", key, None, 0.4, on_result=on_result, timestamp_url=authority.url, timestamp_dir=str(tmp_path / "ts"), timestamp_ca=str(authority.folder / "ca.crt"))
+    try:
+        assert seen.wait(20)
+        time.sleep(1.3)
+        store.append({"kind": "tool_call", "n": 99})
+        time.sleep(1.3)
+    finally:
+        stop.set()
+    stamped = [r for r in results if r.get("timestamped")]
+    assert [r["entries"] for r in stamped] == [4, 5], results
+    assert authority.calls == 2
+    dead = notary.timestamp_once(db, "host-notary-1", key, "http://127.0.0.1:9/", str(tmp_path / "ts2"), None, "")
+    assert dead["timestamped"] is False and "unreachable" in dead["reason"]
+
+
+def test_serve_options_must_come_as_a_pair():
+    from click.testing import CliRunner
+    from rct_control_plane.cli import cli
+    bad = CliRunner().invoke(cli, ["notary", "serve", "--timestamp-url", "http://timestamp.digicert.com", "--anchor-key-id", "k"])
+    assert bad.exit_code == 1 and "go together" in bad.output
