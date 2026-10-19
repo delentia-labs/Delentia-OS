@@ -407,7 +407,8 @@ class IntentCompiler:
         
         # Extract keywords
         result.keywords = self._extract_keywords(text_lower)
-        
+        result.metadata["head"], result.metadata["later_action"] = self._head_kind(text_lower)
+
         # Extract entities
         result.entities = self._extract_entities(text, text_lower)
         
@@ -529,10 +530,44 @@ class IntentCompiler:
     # CLASSIFICATION & EXTRACTION
     # ========================================================================
     
+    # Round 91 (research/unknown_intent_criteria_r91.md, rule set H): the VERB THAT HEADS THE SENTENCE decides whether a goal asks for a change or asks a question; keywords later in the sentence do
+    # not ("Edit the README so it lists the new command" is not a query because it contains "list", "What did the last deploy change?" is not a deployment). Fixed lists, English only.
+    _POLITE_LEAD = re.compile(r"^(?:please\s+|kindly\s+|go ahead and\s+|can you\s+|could you\s+|would you\s+|i want you to\s+|i need you to\s+|i'd like you to\s+|let's\s+|lets\s+)+")
+    _ACTION_HEADS = frozenset({
+        "set", "edit", "rename", "add", "replace", "delete", "remove", "restart", "commit", "push", "merge", "increase", "raise", "decrease", "lower", "reduce", "install", "uninstall",
+        "run", "execute", "move", "copy", "send", "email", "write", "create", "update", "change", "modify", "disable", "enable", "kill", "stop", "start", "reset", "overwrite", "format",
+        "revert", "rollback", "tag", "publish", "archive", "append", "upgrade", "downgrade", "patch", "apply", "drop", "wipe", "truncate", "erase", "destroy", "transfer",
+        "withdraw", "pay", "deploy", "release", "ship", "migrate", "refactor", "rewrite", "clean", "purge", "restore", "backup", "build", "generate", "save", "store", "put", "insert",
+        "schedule", "cancel", "approve", "reject", "sign", "grant", "revoke", "rotate", "import", "export", "upload", "download", "sync", "trigger", "close", "lock", "unlock",
+    })
+    _READ_HEADS = frozenset({
+        "what", "whats", "when", "where", "who", "whom", "whose", "why", "how", "which", "is", "are", "was", "were", "does", "do", "did", "will", "has", "have", "show", "tell",
+        "list", "find", "count", "check", "compare", "explain", "describe", "summarise", "summarize", "read", "look", "estimate", "search", "display", "view", "calculate",
+        "compute", "measure", "give", "see",
+    })
+    _LATER_CLAUSE = re.compile(r"(?:[,;?!.]|\band\b|\bthen\b)\s+(?:(?:and|then|please)\s+)*([a-z']+)")
+
+    @classmethod
+    def _head_kind(cls, text: str) -> "tuple[Optional[str], bool]":
+        """('action' | 'read' | None, whether a LATER clause starts with a state-changing verb) for an English goal in lower case. Thai and other text has no head and is left to the keyword lists."""
+        head_text = cls._POLITE_LEAD.sub("", text.strip(), count=1)
+        m = re.match(r"[a-z']+", head_text)
+        if not m:
+            return None, False
+        word = m.group(0)
+        later = any(w in cls._ACTION_HEADS for w in cls._LATER_CLAUSE.findall(head_text[m.end():]))
+        if word in cls._ACTION_HEADS:
+            return "action", later
+        if word in cls._READ_HEADS:
+            return "read", later
+        return None, later
+
     def _classify_intent_type(self, lexical: LexicalResult) -> Optional[IntentType]:
         """Classify intent type based on keywords"""
+        head = lexical.metadata.get("head")
+        later = bool(lexical.metadata.get("later_action"))
         scores = {}
-        
+
         for intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             score = 0
             for keyword in type_keywords:
@@ -543,8 +578,15 @@ class IntentCompiler:
             if score > 0:
                 scores[intent_type] = score
         
+        if head == "action":
+            # the sentence asks for a change: a query word later in it does not turn it into a question; with no other type keyword it is a change to something that exists
+            non_query = {t: s for t, s in scores.items() if t != IntentType.QUERY}
+            return max(non_query, key=lambda k: non_query[k]) if non_query else IntentType.REFACTOR
+        if head == "read" and not later and not any(kw in lexical.keywords for kw in self.HIGH_RISK_KEYWORDS):
+            return IntentType.QUERY                         # a question that merely mentions a verb ("what did the last release change?") stays a question; a high-risk word keeps the old reading
+
         if not scores:
-            return None
+            return IntentType.REFACTOR if later else None     # a question followed by a request for a change, and no other type word: it asks for a change
 
         # Return type with highest score
         return max(scores, key=lambda k: scores[k])
@@ -617,21 +659,28 @@ class IntentCompiler:
         # Check for high-risk keywords
         if any(kw in lexical.keywords for kw in self.HIGH_RISK_KEYWORDS):
             return RiskProfile.SYSTEMIC
-        
+
+        head = lexical.metadata.get("head")
+        later = bool(lexical.metadata.get("later_action"))
+        if head == "read" and not later and intent_type == IntentType.QUERY:
+            return RiskProfile.LOW                       # Round 91: a plain question (no high-risk word, nothing asked for later in the sentence)
+        # a goal that asks for a change is never below STRUCTURAL, whatever its type keywords say
+        floor = RiskProfile.STRUCTURAL if (head == "action" or later) else RiskProfile.LOW
+
         # Check for medium-risk keywords
         if any(kw in lexical.keywords for kw in self.MEDIUM_RISK_KEYWORDS):
             return RiskProfile.STRUCTURAL
-        
+
         # Intent type-based risk
         high_risk_types = [IntentType.DEPLOY, IntentType.TRANSFORM]
         medium_risk_types = [IntentType.REFACTOR, IntentType.OPTIMIZE, IntentType.BUILD_APP]
-        
+
         if intent_type in high_risk_types:
             return RiskProfile.SYSTEMIC
         elif intent_type in medium_risk_types:
             return RiskProfile.STRUCTURAL
         else:
-            return RiskProfile.LOW
+            return floor
     
     def _determine_priority(self, lexical: LexicalResult) -> IntentPriority:
         """Determine priority based on keywords"""

@@ -18,6 +18,7 @@ from __future__ import annotations  # lets Layer 1/10 type hints below stay lazy
 import hashlib
 import json
 import math
+import os
 import time
 from typing import Dict, Any, List, Optional, Tuple, Callable, TYPE_CHECKING
 
@@ -621,7 +622,11 @@ class AlgorithmKernel41:
         result = self._intent_compiler.compile(natural_language=intent_text, user_id="kernel", user_tier="PRO")
 
         if not result.success or result.intent is None:
-            return 0.3, 0.5, result
+            # Round 91 (research/unknown_intent_criteria_r91.md, H2): a goal the compiler cannot read is NOT a low-risk goal. I is strictness, so 0.5 (the most lenient exponent the gate uses) rewarded
+            # vocabulary the compiler lacks: cold-start action goals it could not classify passed the data gate in 12 of 14 cases, classified ones in 2 of 21. Unknown now gets the exponent of a
+            # STRUCTURAL goal. DELENTIA_UNKNOWN_INTENT=lenient restores 0.5.
+            lenient = (os.environ.get("DELENTIA_UNKNOWN_INTENT") or "").strip().lower() == "lenient"
+            return 0.3, (0.5 if lenient else 1.0), result
 
         intent_obj = result.intent
         validation = result.validation
