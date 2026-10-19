@@ -425,18 +425,39 @@ class IntentCompiler:
         pattern = r"(?<![a-z0-9])" + re.escape(keyword) + r"(?:s|es|ed|d|ing)?(?![a-z0-9])"
         return re.search(pattern, text) is not None
 
+    # Round 91 (research/intent_risk_criteria_r91.md): the verbs below name a change. Their bare form ("update the file") and their -ing form ("updating the file") ask for one; the other forms
+    # ("what changed", "the files that were updated", "the recent changes") usually DESCRIBE one that already happened, unless an action word stands just in front ("make the changes",
+    # "apply the updates", "commit these changes"). A description is not a request, so it must not make a read-only goal STRUCTURAL.
+    _CHANGE_VERBS = frozenset({"update", "change", "modify", "refactor", "upgrade", "bump", "transform"})
+    _ACTION_WORDS = frozenset({"make", "makes", "apply", "applies", "commit", "push", "save", "implement", "perform", "do", "please", "want", "need", "should", "must", "go", "let's", "lets",
+                               "write", "run", "release", "ship", "deploy", "merge", "revert", "undo"})
+
+    @classmethod
+    def _keyword_is_requested(cls, text: str, keyword: str) -> bool:
+        """True when `keyword` occurs in a form that asks for the change. Only the change verbs get this treatment; every other keyword is matched as before."""
+        if not keyword.isascii() or keyword not in cls._CHANGE_VERBS:
+            return True
+        for m in re.finditer(r"(?<![a-z0-9])" + re.escape(keyword) + r"(s|es|ed|d|ing)?(?![a-z0-9])", text):
+            suffix = m.group(1) or ""
+            if suffix in ("", "ing"):
+                return True
+            before = re.findall(r"[a-z']+", text[:m.start()])[-4:]
+            if any(word in cls._ACTION_WORDS for word in before):
+                return True
+        return False
+
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract action keywords from text"""
         keywords = []
         
         for _intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             for keyword in type_keywords:
-                if self._has_keyword(text, keyword):
+                if self._has_keyword(text, keyword) and self._keyword_is_requested(text, keyword):
                     keywords.append(keyword)
         
         # Add risk keywords
         for keyword in self.HIGH_RISK_KEYWORDS + self.MEDIUM_RISK_KEYWORDS:
-            if self._has_keyword(text, keyword):
+            if self._has_keyword(text, keyword) and self._keyword_is_requested(text, keyword):
                 keywords.append(keyword)
         
         # Add priority keywords
