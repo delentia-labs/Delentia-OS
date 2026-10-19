@@ -227,3 +227,65 @@ def test_the_cli_import_has_the_same_two_steps(desk, tmp_path):
     assert refused.exit_code == 1 and "--allow-flagged" in refused.output
     ok = CliRunner().invoke(cli, [*base, "--allow-flagged"])
     assert ok.exit_code == 0 and "recorded:" in ok.output and "CORD-S" in ok.output
+
+
+# ------------------------------------------------------------------ a statute extracted from a Royal Gazette PDF (pdftotext): page breaks, running headers, lost tone marks
+
+def _gazette_pages():
+    """Seven 'pages' written the way pdftotext writes the Gazette: a form feed before the first line of a page, a running header whose tone mark moved to a line of its own, a page-number line,
+    and a wrapped line ('ตามพระราชบัญญัตินี้') that recurs through the text."""
+    out = []
+    for i in range(1, 8):
+        n = 50 + i
+        body = (f"มาตรา {i * 2 - 1} ผู้ควบคุมข้อมูลต้องปฏิบัติตามหน้าที่ของตนภายในสามสิบวันนับแต่วันที่ได้รับคำขอ ซึ่งเกี่ยวกับการปฏิบัติ\nตามพระราชบัญญัตินี้\n"
+                f"มาตรา {i * 2} ผู้ที่ฝ่าฝืนต้องระวางโทษปรับไม่เกินห้าแสนบาท และต้องเก็บรักษาข้อมูลไว้ให้ปลอดภัย\n")
+        header = f"หนา {n}\n่\nเลม 136 ตอนที่ 69 ก ราชกิจจานุเบกษา 27 พฤษภาคม 2562\n"
+        filler = "".join(f"บรรทัดที่ {k} ของหน้า {i} ว่าด้วยหน้าที่ของผู้ควบคุมข้อมูลและสิทธิของเจ้าของข้อมูลที่ไม่ซ้ำกันทุกหน้า\n" for k in range(6))      # a real page has dozens of lines: the wrapped line is not at its edge
+        out.append(("\x0c" if i > 1 else "") + header + filler + body + filler)
+    return "".join(out)
+
+
+def test_a_heading_that_opens_a_page_is_found_and_the_running_header_is_not_part_of_a_section():
+    sections = dict(lp.split_sections(_gazette_pages()))
+    assert list(sections) == [str(n) for n in range(1, 15)], "every section, including the ones that open a page"
+    joined = " ".join(sections.values())
+    assert "ราชกิจจานุเบกษา" not in joined and "ตอนที่" not in joined and "หนา 5" not in joined
+
+
+def test_a_wrapped_line_that_recurs_is_text_not_furniture_when_page_breaks_are_known():
+    sections = dict(lp.split_sections(_gazette_pages()))
+    assert all("ตามพระราชบัญญัตินี้" in sections[str(n)] for n in (1, 3, 5, 7, 9, 11, 13)), "the line that appears seven times must survive in every section"
+
+
+def test_without_page_breaks_the_old_rule_still_drops_a_line_that_repeats_four_times():
+    text = "\n".join(["Section 1 The controller shall answer a request within thirty days of receiving it.", "Running Header 2019", "Section 2 Another provision of the example statute applies here."] * 1
+                     + ["Running Header 2019"] * 4)
+    assert "Running Header" not in " ".join(b for _n, b in lp.split_sections(text))
+
+
+def test_compare_treats_sara_am_and_sara_aa_as_one_letter_because_pdftotext_drops_the_nikhahit(desk):
+    client, _ = desk
+    a = _pack("with-am", "มาตรา 1 ผู้ควบคุมข้อมูลมีอำนาจหน้าที่ในการดำเนินการตามกฎหมายนี้ทุกประการ\nมาตรา 2 ให้เก็บรักษาข้อมูลไว้เป็นเวลาสามสิบวันนับแต่วันที่ได้รับคำขอตามกฎหมาย")
+    b = _pack("without-am", "มาตรา 1 ผู้ควบคุมข้อมูลมีอานาจหน้าที่ในการดาเนินการตามกฎหมายนี้ทุกประการ\nมาตรา 2 ให้เก็บรักษาข้อมูลไว้เป็นเวลาสามสิบวันนับแต่วันที่ได้รับคำขอตามกฎหมาย")
+    assert lp.compare_packs(a, b)["identical"] == 2
+
+
+def test_archive_takes_a_pack_out_of_use_without_deleting_it(desk):
+    client, tmp = desk
+    _import(client)
+    assert client.post("/v1/desk/law/archive", json={"name": "example"}).status_code == 200
+    assert client.get("/v1/desk/law/packs").json()["packs"] == []
+    assert not lp.has_packs() and "error" in lp.lookup("example", "thirty days")
+    kept = list((tmp / "home" / "law_packs" / "_archive").glob("example.*.json"))
+    assert len(kept) == 1 and kept[0].stat().st_size > 0, "the file is moved, not deleted"
+    assert client.post("/v1/desk/law/archive", json={"name": "example"}).status_code == 404
+    assert client.post("/v1/desk/law/archive", json={"name": "../x"}).status_code == 400
+    out = CliRunner().invoke(cli, ["law", "archive", "example"])
+    assert out.exit_code == 1
+
+
+def test_the_cli_archive_command(desk):
+    client, _ = desk
+    _import(client)
+    out = CliRunner().invoke(cli, ["law", "archive", "example"])
+    assert out.exit_code == 0 and "archived:" in out.output

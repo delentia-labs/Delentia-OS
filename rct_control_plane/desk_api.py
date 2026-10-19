@@ -1200,6 +1200,18 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         return {"name": pack.name, "sections": len(pack.sections), "chunks": len(pack.chunks), "embedded": bool(pack.vectors), "fingerprint": pack.fingerprint()[:16],
                 "label": pack.label(), "reviewed_flags": pack.reviewed_flags}
 
+    @router.post("/law/archive")
+    async def law_archive(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Out of use, not deleted: the pack file moves to an archive folder."""
+        from rct_control_plane import law_pack
+        try:
+            target = law_pack.archive_pack(str(payload.get("name", "")).strip())
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"archived": target.name}
+
     @router.post("/law/lookup")
     async def law_lookup(payload: Dict[str, Any]) -> Dict[str, Any]:
         import asyncio

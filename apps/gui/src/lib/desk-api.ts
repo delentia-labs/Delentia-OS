@@ -486,6 +486,7 @@ export const desk = {
   lawPacks: () => call<LawPacksState>("/v1/desk/law/packs"),
   lawImport: (body: { name: string; text: string; edition: string; jurisdiction: string; source: string; embed: boolean; allow_flagged: boolean }) =>
     call<{ name: string; sections: number; chunks: number; embedded: boolean; fingerprint: string; label: string; reviewed_flags: string[][] }>("/v1/desk/law/import", { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(900000) }),
+  lawArchive: (name: string) => call<{ archived: string }>("/v1/desk/law/archive", { method: "POST", body: JSON.stringify({ name }) }),
   lawLookup: (pack: string, question: string) => call<LawLookup>("/v1/desk/law/lookup", { method: "POST", body: JSON.stringify({ pack, question, limit: 5 }), signal: AbortSignal.timeout(120000) }),
   lawCheck: (pack: string, question: string, answer: string) => call<LawCheck>("/v1/desk/law/check", { method: "POST", body: JSON.stringify({ pack, question, answer }), signal: AbortSignal.timeout(120000) }),
   hooks: () => call<HooksState>("/v1/desk/hooks"),

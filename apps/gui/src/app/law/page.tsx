@@ -51,6 +51,12 @@ export default function LawPage() {
     } catch (e) { setNote(e instanceof Error ? e.message : String(e)); } finally { setImporting(false); }
   };
 
+  const doArchive = async (packName: string) => {
+    if (!window.confirm(T(`Take ${packName} out of use? The file is moved to an archive folder, not deleted.`, `เลิกใช้ ${packName}? ไฟล์จะถูกย้ายไปโฟลเดอร์เก็บถาวร ไม่ถูกลบ`))) return;
+    setNote(null);
+    try { const r = await desk.lawArchive(packName); setNote(T(`Archived ${r.archived}.`, `เก็บถาวรแล้ว ${r.archived}`)); state.reload(); } catch (e) { setNote(e instanceof Error ? e.message : String(e)); }
+  };
+
   const doLookup = async () => {
     setBusy(true); setErr(null); setChecked(null);
     try { setFound(await desk.lawLookup(pack, question.trim())); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
@@ -77,7 +83,7 @@ export default function LawPage() {
                 <div className="space-y-3">
                   {d.packs.map((p) => (
                     <div key={p.name} className="rounded border border-dl-rule bg-dl-ink/40 px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-2"><span className="desk-mono text-[13px] text-dl-text">{p.name}</span>{verifiedBadge(p, T)}{p.reviewed_flags ? <Badge tone="amber" title={T("The content screen flagged places in this text; they were read and imported on the owner's say-so", "ตัวกรองเนื้อหาตั้งธงบางจุดในข้อความนี้ เจ้าของอ่านแล้วอนุมัตินำเข้า")}>{T(`${p.reviewed_flags} flagged place(s) accepted`, `ธงที่รับแล้ว ${p.reviewed_flags} จุด`)}</Badge> : null}{p.embedded ? <Badge tone="fern">{T("meaning search", "ค้นด้วยความหมาย")}</Badge> : <Badge tone="muted">{T("word search", "ค้นด้วยคำ")}</Badge>}</div>
+                      <div className="flex flex-wrap items-center gap-2"><span className="desk-mono text-[13px] text-dl-text">{p.name}</span>{verifiedBadge(p, T)}{p.reviewed_flags ? <Badge tone="amber" title={T("The content screen flagged places in this text; they were read and imported on the owner's say-so", "ตัวกรองเนื้อหาตั้งธงบางจุดในข้อความนี้ เจ้าของอ่านแล้วอนุมัตินำเข้า")}>{T(`${p.reviewed_flags} flagged place(s) accepted`, `ธงที่รับแล้ว ${p.reviewed_flags} จุด`)}</Badge> : null}{p.embedded ? <Badge tone="fern">{T("meaning search", "ค้นด้วยความหมาย")}</Badge> : <Badge tone="muted">{T("word search", "ค้นด้วยคำ")}</Badge>}<span className="ml-auto"><Button tone="amber" onClick={() => doArchive(p.name)}>{T("Archive", "เก็บถาวร")}</Button></span></div>
                       {!p.error ? <p className="mt-1 text-[12px] text-dl-muted">{p.jurisdiction} · {T("edition", "ฉบับ")}: {p.edition} · {p.sections} {T("sections", "มาตรา")} · {p.chunks} {T("passages", "ท่อน")} · sha256 {p.sha256}</p> : null}
                     </div>
                   ))}

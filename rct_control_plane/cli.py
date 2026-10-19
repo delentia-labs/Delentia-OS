@@ -1869,6 +1869,19 @@ def law_compare(pack_a: str, pack_b: str, threshold: float, as_json: bool) -> No
     sys.exit(1 if (flagged or report["only_in_a"] or report["only_in_b"]) else 0)
 
 
+@law_group.command("archive")
+@click.argument("name")
+def law_archive(name: str) -> None:
+    """Take a pack out of use without deleting it: the file moves to law_packs/_archive/ (the agent can no longer be shown it)."""
+    from rct_control_plane import law_pack
+    try:
+        target = law_pack.archive_pack(name)
+    except (FileNotFoundError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"archived: {target}")
+
+
 @law_group.command("verify")
 @click.argument("name")
 def law_verify(name: str) -> None:

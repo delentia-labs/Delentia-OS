@@ -44,6 +44,9 @@ def normalise_digits(text: str) -> str:
     """Thai numerals to ASCII digits, so that a section called ๓๗ in the statute and 37 in an answer are the same section and the number check compares like with like."""
     return text.translate(_THAI_DIGITS)
 _BARE_PAGE_NUMBER = re.compile(r"^[ \t]*\d{1,3}[ \t]*$")
+# Round 91: what the Royal Gazette repeats on every page, as `pdftotext` writes it (the tone mark of "หน้า" and "เล่ม" is often lost and left on a line of its own):
+# "หน้า 53", a line that is only combining marks, and "เล่ม 136 ตอนที่ 69 ก ราชกิจจานุเบกษา 27 พฤษภาคม 2562". The page numbers used to land inside sections and show up as "numbers that differ".
+_GAZETTE_HEADER = re.compile(r"^[ \t]*(?:หน.{0,2}า[ \t]*\d{1,4}|[\u0e31\u0e34-\u0e3a\u0e47-\u0e4e]{1,3}|[^\n]{0,24}ตอนที่[ \t]*\d{1,3}[^\n]{0,12}ราชกิจจานุเบกษา[^\n]{0,40})[ \t]*$")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 _WORD = re.compile(r"[A-Za-z]+|\d+|[฀-๿]+")
 
@@ -58,13 +61,29 @@ _SCALES = {"thousand": 1000, "million": 1_000_000, "billion": 1_000_000_000}
 # ----------------------------------------------------------------------------------------------------------------------------- building a pack
 def _strip_furniture(text: str) -> str:
     """Drop what a PDF repeats on every page (a running header, a bare page number): lines that occur four times or more and are short, and lines that are only a number."""
-    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    # Round 91: a PDF puts a form feed (a page break) in FRONT of the first line of a page, so a heading that opens a page ("\x0cมาตรา 2 ...") did not start a line and was never seen
+    # (the Royal Gazette PDF of the Thai PDPA lost 11 sections this way).
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    pages = text.split("\x0c")
+    furniture: set = set()
+    if len(pages) >= 4:
+        # Round 91: with page breaks known, a short line is furniture only if it opens or closes at least four pages AND most pages. Counting short lines anywhere deleted real text: "ตามพระราชบัญญัตินี้" ("under
+        # this Act"), a wrapped line that recurs through a statute, vanished from sections 42 and 44 of the Thai PDPA.
+        edge_counts: Dict[str, int] = {}
+        for page in pages:
+            page_lines = [ln.strip() for ln in page.split("\n") if ln.strip()]
+            for key in set(page_lines[:3] + page_lines[-3:]):
+                edge_counts[key] = edge_counts.get(key, 0) + 1
+        furniture = {k for k, n in edge_counts.items() if n >= max(4, int(0.6 * len(pages))) and len(k) < 120}      # a running header is on (nearly) every page
+    lines = text.replace("\x0c", "\n").split("\n")
     counts: Dict[str, int] = {}
-    for line in lines:
-        key = line.strip()
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-    kept = [ln for ln in lines if not _BARE_PAGE_NUMBER.match(ln) and not (len(ln.strip()) < 120 and counts.get(ln.strip(), 0) >= 4)]
+    if len(pages) < 4:
+        for line in lines:
+            key = line.strip()
+            if key:
+                counts[key] = counts.get(key, 0) + 1
+    kept = [ln for ln in lines if not _BARE_PAGE_NUMBER.match(ln) and not _GAZETTE_HEADER.match(ln) and ln.strip() not in furniture
+            and not (len(ln.strip()) < 120 and counts.get(ln.strip(), 0) >= 4)]
     return "\n".join(kept)
 
 
@@ -288,7 +307,8 @@ def section_texts(pack: "LawPack") -> Dict[str, str]:
 
 def _canon(text: str) -> str:
     import unicodedata
-    return re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", unicodedata.normalize("NFKC", normalise_digits(text))).lower()
+    folded = unicodedata.normalize("NFKC", normalise_digits(text)).replace("\u0e33", "\u0e32").replace("\u0e4d", "")      # Round 91: pdftotext drops the nikhahit of sara-am ("\u0e2d\u0e33\u0e19\u0e32\u0e08" -> "\u0e2d\u0e32\u0e19\u0e32\u0e08")
+    return re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", folded).lower()
 
 
 def compare_packs(a: "LawPack", b: "LawPack", threshold: float = 0.98) -> Dict[str, Any]:
@@ -314,6 +334,22 @@ def compare_packs(a: "LawPack", b: "LawPack", threshold: float = 0.98) -> Dict[s
     return {"a": a.label(), "b": b.label(), "sections_a": len(ta), "sections_b": len(tb), "identical": identical, "only_in_a": sorted(set(ta) - set(tb), key=lambda n: (len(n), n)),
             "only_in_b": sorted(set(tb) - set(ta), key=lambda n: (len(n), n)), "differing": differing, "threshold": threshold,
             "sections_with_number_differences": [d["section"] for d in differing if d["numbers_only_in_a"] or d["numbers_only_in_b"]]}
+
+
+def archive_pack(name: str) -> Path:
+    """Take a pack out of use WITHOUT deleting it (the repository's Zero-Delete rule): the file moves to `law_packs/_archive/<name>.<timestamp>.json`, where nothing lists or loads it. Use it when an
+    import turned out to be wrong (a transcription that differs from the official text) so that the agent can no longer be shown it."""
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,60}", name):
+        raise ValueError("bad pack name")
+    source = packs_dir() / f"{name}.json"
+    if not source.exists():
+        raise FileNotFoundError(f"no law pack called {name!r}")
+    target_dir = packs_dir() / "_archive"
+    target_dir.mkdir(exist_ok=True)
+    target = target_dir / f"{name}.{time.strftime('%Y%m%dT%H%M%S')}.json"
+    source.replace(target)
+    _CACHE.pop(name, None)
+    return target
 
 
 def has_packs() -> bool:
