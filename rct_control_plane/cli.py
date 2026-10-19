@@ -3098,7 +3098,7 @@ def notary_serve(db: str, key_path: Optional[str], key_id: str, port: int, ancho
     stop_anchoring = None
     if anchor_url or timestamp_url:
         if not anchor_key_id:
-            click.echo(click.style("Error: --anchor-url / --timestamp-url need --anchor-key-id", fg="red"), err=True)
+            click.echo(click.style("Error: --anchor-url needs --anchor-key-id" if anchor_url else "Error: --timestamp-url needs --anchor-key-id", fg="red"), err=True)
             sys.exit(1)
         if anchor_url:
             click.echo(f"anchoring   : every {anchor_every:.0f}s to {anchor_url} as {anchor_key_id}")
