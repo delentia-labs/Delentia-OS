@@ -2494,6 +2494,11 @@
 </ul>
 <h2 id="11-backup-and-restore">11. Backup and restore<a class="headerlink" href="#11-backup-and-restore" title="Permanent link">&para;</a></h2>
 <p><code>delentia backup create --out &lt;zip&gt;</code> (never overwrites; keys left out), <code>delentia backup verify &lt;zip&gt;</code>, <code>delentia backup restore &lt;zip&gt; --to &lt;empty folder&gt;</code> (never overwrites; checked against its manifest before the first byte is written). A restore was exercised on a clean folder with a fresh process (the chain verifies against the public key, the memory and the waiting approval are there). Keep a copy <strong>off the host</strong>; the restore is only as good as the copy.</p>
+<p><strong>A backup keeps what was erased.</strong> Erasing a person changes the live database; a backup taken before the erasure still holds that person's readable words (found by the whole-job test of
+2026-10-18). After every erasure run <code>delentia backup erasure-check &lt;the folder or files where you keep backups&gt;</code>: it lists each backup that is older than an erasure recorded in the audit
+chain and names the people it still holds (exit code 1 when there is one). It deletes nothing; <strong>you</strong> rotate or destroy those backups. A backup made with <code>--include-keys</code> also holds the
+person's key, so it can still read their sealed history: treat it as sensitive as the key. Promise to people only what this allows: "removed from the live system now; from backups when
+the last backup older than the erasure has been destroyed".</p>
 <h2 id="12-what-has-not-been-proven">12. What has not been proven<a class="headerlink" href="#12-what-has-not-been-proven" title="Permanent link">&para;</a></h2>
 <ul>
 <li>No capable hosted model has driven the loop for long; local 7B models pick tools correctly on about 3 of 5 simple goals.</li>
