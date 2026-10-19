@@ -47,6 +47,7 @@ authority resolver (token -> person, role), canonicalisation of arguments, the F
 | `delentia_export_session_state` | state-change | writes a signed state container | FDIA gate; a signature once the episode has read outside text | person-neutral (reviewed) |
 | `delentia_generate_image` | artifact-write | one bounded image file under the scratch/exchange folders | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_import_session_state` | outside-text | merges a state container produced elsewhere: untrusted input | FDIA gate; its result is outside text and taints the episode | person-neutral (reviewed) |
+| `delentia_law_lookup` | read | passages of a statute the OWNER imported (law_pack.py); no model, no network, no write; listed only when a pack exists; the loop checks the final answer against what it showed | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_list_capabilities` | read | the registered capabilities | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_list_exchange_files` | read | the exchange folder's file names | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_list_forged_tools` | read | the tools a human signed | FDIA gate; reviewed inert | person-neutral (reviewed) |
