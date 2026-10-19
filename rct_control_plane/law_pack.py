@@ -261,6 +261,44 @@ def verify_pack(name: str) -> Dict[str, Any]:
             "detail": "the text is exactly what was imported" if ok else "the text was changed after import: do not rely on this pack"}
 
 
+def section_texts(pack: "LawPack") -> Dict[str, str]:
+    """Each section's text, put back together from its overlapping windows (consecutive windows share OVERLAP characters)."""
+    out: Dict[str, str] = {}
+    for c in pack.chunks:
+        out[c["section"]] = c["text"] if c["section"] not in out else out[c["section"]] + c["text"][OVERLAP:]
+    return out
+
+
+def _canon(text: str) -> str:
+    import unicodedata
+    return re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", unicodedata.normalize("NFKC", normalise_digits(text))).lower()
+
+
+def compare_packs(a: "LawPack", b: "LawPack", threshold: float = 0.98) -> Dict[str, Any]:
+    """Two imports of the 'same' statute (say an unofficial translation or a wiki transcription against the Royal Gazette's own text): which sections exist in only one, which differ after
+    spacing, numerals and Unicode form are ignored, and above all which differ in a NUMBER (a fine, a number of days) because those are the differences that change an answer. It compares text,
+    it does not say which one is right: the owner reads the sections it lists."""
+    import difflib
+    ta, tb = section_texts(a), section_texts(b)
+    differing: List[Dict[str, Any]] = []
+    identical = 0
+    for number in sorted(set(ta) & set(tb), key=lambda n: (len(n), n)):
+        ca, cb = _canon(ta[number]), _canon(tb[number])
+        if ca == cb:
+            identical += 1
+            continue
+        matcher = difflib.SequenceMatcher(None, ca, cb, autojunk=False)
+        ratio = matcher.ratio()
+        first = next((op for op in matcher.get_opcodes() if op[0] != "equal"), None)
+        excerpt = {"a": ca[max(0, first[1] - 25):first[2] + 25], "b": cb[max(0, first[3] - 25):first[4] + 25]} if first else {}
+        nums_a, nums_b = sorted(set(re.findall(r"\d+(?:[.,]\d+)*", normalise_digits(ta[number])))), sorted(set(re.findall(r"\d+(?:[.,]\d+)*", normalise_digits(tb[number]))))
+        differing.append({"section": number, "similarity": round(ratio, 4), "below_threshold": ratio < threshold, "first_difference": excerpt,
+                          "numbers_only_in_a": sorted(set(nums_a) - set(nums_b)), "numbers_only_in_b": sorted(set(nums_b) - set(nums_a))})
+    return {"a": a.label(), "b": b.label(), "sections_a": len(ta), "sections_b": len(tb), "identical": identical, "only_in_a": sorted(set(ta) - set(tb), key=lambda n: (len(n), n)),
+            "only_in_b": sorted(set(tb) - set(ta), key=lambda n: (len(n), n)), "differing": differing, "threshold": threshold,
+            "sections_with_number_differences": [d["section"] for d in differing if d["numbers_only_in_a"] or d["numbers_only_in_b"]]}
+
+
 def has_packs() -> bool:
     """Cheap (no JSON is read): is there at least one imported pack? The agent's tool is shown only then, so a host without a pack pays nothing for it in every prompt."""
     try:

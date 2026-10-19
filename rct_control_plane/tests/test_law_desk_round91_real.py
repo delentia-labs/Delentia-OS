@@ -142,3 +142,55 @@ def test_a_person_with_a_personal_token_cannot_reach_the_law_pages(tmp_path, mon
         h = {"Authorization": f"Bearer {token}"}
         assert client.get("/v1/desk/law/packs", headers=h).status_code == 403
         assert client.post("/v1/desk/law/import", headers=h, json={**META, "text": STATUTE}).status_code == 403
+
+
+# ------------------------------------------------------------------ comparing two imports of the same statute
+
+OFFICIAL = """
+Section 1 This Act is called the Example Data Act.
+Section 2 The controller shall answer a request without delay, but shall not exceed thirty (30) days from the date of receiving such request.
+Section 3 A controller who violates section 2 shall be punished with a fine not exceeding Baht one million.
+Section 4 This Act enters into force one year after publication in the Gazette, and applies to every controller.
+"""
+UNOFFICIAL = """
+Section 1  This Act is called the  Example Data Act.
+Section 2 The controller shall answer a request without delay, but shall not exceed thirty (30) days from the date of receiving such request.
+Section 3 A controller who violates section 2 shall be punished with a fine not exceeding Baht 500,000.
+"""
+
+
+def _pack(name, text):
+    p = lp.build_pack(name, text, edition="x", jurisdiction="XX", source="test", embed=False)
+    lp.save_pack(p)
+    return p
+
+
+def test_compare_finds_a_changed_number_a_missing_section_and_ignores_spacing(desk):
+    client, _ = desk
+    a, b = _pack("official", OFFICIAL), _pack("unofficial", UNOFFICIAL)
+    report = lp.compare_packs(a, b)
+    assert report["identical"] == 2 and report["only_in_a"] == ["4"] and report["only_in_b"] == []
+    assert [d["section"] for d in report["differing"]] == ["3"] and report["sections_with_number_differences"] == ["3"]
+    assert "500,000" in report["differing"][0]["numbers_only_in_b"]
+
+
+def test_compare_cli_exits_one_on_any_difference_and_zero_on_none(desk):
+    client, _ = desk
+    _pack("official", OFFICIAL)
+    _pack("unofficial", UNOFFICIAL)
+    _pack("copy", OFFICIAL.replace("Section 1 ", "Section 1  ").replace("Act is", "Act   is"))
+    out = CliRunner().invoke(cli, ["law", "compare", "official", "unofficial"])
+    assert out.exit_code == 1 and "only in A: ['4']" in out.output and "!! section 3" in out.output
+    same = CliRunner().invoke(cli, ["law", "compare", "official", "copy"])
+    assert same.exit_code == 0 and "identical after ignoring spacing" in same.output
+    assert CliRunner().invoke(cli, ["law", "compare", "official", "nope"]).exit_code == 1
+
+
+def test_compare_reassembles_a_long_section_from_its_overlapping_windows(desk):
+    client, _ = desk
+    long_a = "Section 1 " + " ".join(f"word{i}" for i in range(900))
+    long_b = long_a.replace("word450 ", "word450x ")
+    a, b = _pack("la", long_a), _pack("lb", long_b)
+    assert len(a.chunks) > 1 and lp.section_texts(a)["1"] == long_a.replace("\n", " ")
+    d = lp.compare_packs(a, b)["differing"][0]
+    assert d["section"] == "1" and d["similarity"] > 0.99 and "word450" in d["first_difference"]["a"]

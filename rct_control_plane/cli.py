@@ -1836,6 +1836,35 @@ def law_import(name: str, text_file: str, edition: str, jurisdiction: str, sourc
     click.echo(f"{pack.label()}: {len(pack.sections)} sections, {len(pack.chunks)} passages, {'embedded with ' + pack.embed_model if pack.vectors else 'words only'} -> {target}")
 
 
+@law_group.command("compare")
+@click.argument("pack_a")
+@click.argument("pack_b")
+@click.option("--threshold", default=0.98, show_default=True, type=float, help="A section whose similarity is below this is flagged.")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+def law_compare(pack_a: str, pack_b: str, threshold: float, as_json: bool) -> None:
+    """Compare two imports of the same statute (for example an unofficial transcription against the Royal Gazette's text): sections in only one, sections that differ, and above all numbers that differ.
+    It compares text; it does not say which is right. Exit 1 when any section is flagged, missing from one side, or differs in a number."""
+    from rct_control_plane import law_pack
+    try:
+        report = law_pack.compare_packs(law_pack.load_pack(pack_a), law_pack.load_pack(pack_b), threshold)
+    except (FileNotFoundError, ValueError) as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    flagged = [d for d in report["differing"] if d["below_threshold"] or d["numbers_only_in_a"] or d["numbers_only_in_b"]]
+    if as_json:
+        click.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        click.echo(f"A = {report['a']}  ({report['sections_a']} sections)\nB = {report['b']}  ({report['sections_b']} sections)")
+        click.echo(f"identical after ignoring spacing, numerals and Unicode form: {report['identical']}")
+        click.echo(f"only in A: {report['only_in_a'] or 'none'}\nonly in B: {report['only_in_b'] or 'none'}")
+        for d in report["differing"]:
+            mark = "!!" if (d["below_threshold"] or d["numbers_only_in_a"] or d["numbers_only_in_b"]) else "  "
+            click.echo(f"{mark} section {d['section']}: similarity {d['similarity']}" + (f"; numbers only in A {d['numbers_only_in_a']}, only in B {d['numbers_only_in_b']}" if d["numbers_only_in_a"] or d["numbers_only_in_b"] else ""))
+            if d["first_difference"]:
+                click.echo(f"     A: ...{d['first_difference']['a']}...\n     B: ...{d['first_difference']['b']}...")
+    sys.exit(1 if (flagged or report["only_in_a"] or report["only_in_b"]) else 0)
+
+
 @law_group.command("verify")
 @click.argument("name")
 def law_verify(name: str) -> None:
