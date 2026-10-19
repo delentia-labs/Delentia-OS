@@ -198,3 +198,51 @@ def test_the_journal_remembers_the_key_of_each_call_and_the_resume_note_says_wha
     assert [bool(s.idem) and idempotency.valid(s.idem) for s in ep.steps] == [True, True] and ep.steps[1].state == "dangling"
     note = episode_journal.note_for(ep, frozenset({"delentia_save_exchange_file"}), True)
     assert "same idempotency key" in note and ep.steps[1].idem not in note, "the key itself is not put in front of the model"
+
+
+# ------------------------------------------------------------------ every crash point of a four-order episode, before or after the effect, once or twice
+
+class World2(World):
+    """Like World, but the crash can come BEFORE the service is contacted (the effect did not happen) or AFTER (it did)."""
+
+    def __init__(self, service, crash_on=None, after_effect=True):
+        super().__init__(service, crash_on)
+        self.after_effect = after_effect
+
+    async def call_tool(self, name, args):
+        if name != "delentia_save_exchange_file":
+            return ds._Result({"ok": True, "content": "contents"})
+        if self.crash_on == self.calls + 1 and not self.after_effect:
+            self.calls += 1
+            raise Crash()                                                   # before the service was contacted: nothing happened
+        return await super().call_tool(name, args)
+
+
+@pytest.mark.parametrize("crash_at", [1, 2, 3, 4])
+@pytest.mark.parametrize("after_effect", [True, False])
+def test_one_crash_at_any_point_every_order_is_performed_exactly_once(env, crash_at, after_effect):
+    persistence, service = env
+    orders = [1, 2, 3, 4]
+    loop, result = run(persistence, World2(service, crash_on=crash_at, after_effect=after_effect), [*[save(n) for n in orders], FINISH])
+    assert result is None
+    _, out = resume(persistence, World2(service), loop._episode_id, [*[save(n) for n in orders[crash_at - 1:]], FINISH])
+    assert out["resumed"] is True
+    assert sorted(service.performed) == [f"order-{n}.txt" for n in orders], (crash_at, after_effect, service.performed)
+
+
+@pytest.mark.parametrize("first,second", [(1, 1), (2, 1), (2, 2), (3, 1), (1, 3)])
+@pytest.mark.parametrize("after_effect", [True, False])
+def test_two_crashes_in_a_row_still_perform_every_order_exactly_once(env, first, second, after_effect):
+    persistence, service = env
+    orders = [1, 2, 3, 4]
+    loop1, r1 = run(persistence, World2(service, crash_on=first, after_effect=after_effect), [*[save(n) for n in orders], FINISH])
+    assert r1 is None
+    done1 = first if after_effect else first - 1                           # orders finished or performed by the first episode
+    remaining1 = orders[first - 1:]
+    loop2, r2 = resume(persistence, World2(service, crash_on=second, after_effect=after_effect), loop1._episode_id, [*[save(n) for n in remaining1], FINISH])
+    if r2 is None:                                                         # the resumed episode died too: a third process continues the chain
+        remaining2 = remaining1[second - 1:]
+        _, r3 = resume(persistence, World2(service), loop2._episode_id, [*[save(n) for n in remaining2], FINISH])
+        assert r3["resumed"] is True
+    assert sorted(service.performed) == [f"order-{n}.txt" for n in orders], (first, second, after_effect, service.performed)
+    del done1
