@@ -19,6 +19,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import re
 import secrets
 import shutil
@@ -111,6 +112,26 @@ def parse_timestamp_response(raw: bytes) -> Dict[str, Any]:
     return out
 
 
+OPENSSL_ENV = "DELENTIA_OPENSSL"
+_WINDOWS_OPENSSL = (r"C:\Program Files\Git\usr\bin\openssl.exe", r"C:\Program Files\Git\mingw64\bin\openssl.exe", r"C:\Program Files (x86)\Git\usr\bin\openssl.exe")
+
+
+def find_openssl() -> Optional[str]:
+    """The openssl that checks a token's signature. DELENTIA_OPENSSL names one (or says "none" to switch the check off); otherwise the one on PATH, then, on Windows, the one that ships with Git for
+    Windows (a scheduled task's PATH usually lacks Git's usr/bin, so `which` alone would leave every token unchecked on the very machine this was written for)."""
+    named = (os.environ.get(OPENSSL_ENV) or "").strip()
+    if named:
+        return None if named.lower() == "none" else (named if Path(named).is_file() else None)
+    found = shutil.which("openssl")
+    if found:
+        return found
+    if os.name == "nt":
+        for candidate in _WINDOWS_OPENSSL:
+            if Path(candidate).is_file():
+                return candidate
+    return None
+
+
 def _default_ca_file() -> str:
     try:
         import certifi
@@ -175,7 +196,7 @@ class TimestampWitness:
 
     def _verify_signature(self, tsr: bytes, digest_hex: str) -> Optional[bool]:
         """True/False from `openssl ts -verify`; None when openssl or a CA bundle is missing (the token is then read, not checked)."""
-        exe = shutil.which("openssl")
+        exe = find_openssl()
         ca = self.spec.ca_file or _default_ca_file()
         if exe is None or not ca:
             return None

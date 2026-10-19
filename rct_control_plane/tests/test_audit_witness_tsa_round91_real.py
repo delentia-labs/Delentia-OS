@@ -252,7 +252,7 @@ def test_without_openssl_the_token_is_read_but_reported_as_unchecked(world, monk
     persistence, authority, spec, tmp_path = world
     add_rows(persistence, 2)
     aw.anchor_all(persistence._connect(), [spec])
-    monkeypatch.setattr(tsa.shutil, "which", lambda name: None)
+    monkeypatch.setenv(tsa.OPENSSL_ENV, "none")                      # a machine whose scheduled task cannot find openssl
     held = aw.make(spec).fetch()
     assert [a["entries"] for a in held["anchors"]] == [2] and held["unchecked_signatures"] == 1
     report = aw.check_witnesses(persistence._connect(), [spec])[0]
@@ -409,3 +409,21 @@ def test_serve_options_must_come_as_a_pair():
     from rct_control_plane.cli import cli
     bad = CliRunner().invoke(cli, ["notary", "serve", "--timestamp-url", "http://timestamp.digicert.com", "--anchor-key-id", "k"])
     assert bad.exit_code == 1 and "go together" in bad.output
+
+
+def test_openssl_is_found_on_path_or_in_gits_folder_and_the_override_wins(monkeypatch, tmp_path):
+    monkeypatch.delenv(tsa.OPENSSL_ENV, raising=False)
+    assert tsa.find_openssl() is not None                                         # this suite is skipped without openssl, so one exists on PATH or in Git's folder
+    monkeypatch.setenv(tsa.OPENSSL_ENV, "none")
+    assert tsa.find_openssl() is None
+    fake = tmp_path / "openssl-copy.exe"
+    fake.write_bytes(b"x")
+    monkeypatch.setenv(tsa.OPENSSL_ENV, str(fake))
+    assert tsa.find_openssl() == str(fake)
+    monkeypatch.setenv(tsa.OPENSSL_ENV, str(tmp_path / "nope"))
+    assert tsa.find_openssl() is None
+    monkeypatch.delenv(tsa.OPENSSL_ENV)
+    monkeypatch.setattr(tsa.shutil, "which", lambda name: None)
+    monkeypatch.setattr(tsa.os, "name", "nt")
+    monkeypatch.setattr(tsa, "_WINDOWS_OPENSSL", (str(fake),))
+    assert tsa.find_openssl() == str(fake)                                         # PATH has none (a scheduled task), Git's copy is used
