@@ -344,6 +344,7 @@ TAINT_INERT_TOOLS = frozenset({
     "delentia_cron_list", "delentia_daemon_status", "delentia_list_capabilities", "delentia_list_exchange_files", "delentia_list_forged_tools", "delentia_list_worktrees",
     "delentia_query_audit_log", "delentia_query_intents", "delentia_read_repo_file", "delentia_search_repo_files", "delentia_expand_tool_output",
     "delentia_recall", "delentia_search_sessions",
+    "delentia_law_lookup",                # Round 90: reads passages of a statute the OWNER imported (screened at import); returns text only, calls no model, sends nothing
     "delentia_run_forged_tool",           # a pure function a human signed by hash, in its own process with a time limit
     "delentia_generate_image", "delentia_speak",   # write one bounded file under the scratch / exchange folders, send nothing anywhere
 })
@@ -358,7 +359,7 @@ PERSON_NEUTRAL_TOOLS = frozenset({
     "delentia_assemble_nodes", "delentia_browse_page", "delentia_browser_act", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
     "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
     "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
-    "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
+    "delentia_law_lookup", "delentia_list_forged_tools", "delentia_list_worktrees", "delentia_patch_repo_file", "delentia_process_intent", "delentia_read_exchange_file", "delentia_read_repo_file",
     "delentia_remove_worktree", "delentia_run_forged_tool", "delentia_run_sandboxed_command", "delentia_save_exchange_file", "delentia_schedule_self_evolution",
     "delentia_search_repo_files", "delentia_spawn_subagents", "delentia_speak", "delentia_synthesize_function", "delentia_transcribe_audio",
     "delentia_verify_intent_conservation", "delentia_web_search", "delentia_write_repo_file",
@@ -940,6 +941,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if self._research is not None and not self._research.M:
             from rct_control_plane.research_switches import MEMORY_TOOLS_OFF
             tools = [t for t in tools if t["name"] not in MEMORY_TOOLS_OFF]      # research arm M=0: nothing that reads or writes experience across episodes
+        from rct_control_plane import law_pack
+        if not law_pack.has_packs():
+            tools = [t for t in tools if t["name"] != "delentia_law_lookup"]     # Round 90: no pack imported, no tool in the prompt (a tool costs ~170 tokens on every model call)
         return tools
 
     def _retrieve_skills_counted(self, goal: str) -> List[Any]:
@@ -1727,6 +1731,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
                                                                                   "source_tool": self._episode_taint})
                 except Exception:
                     pass
+        try:                                   # Round 90: an answer given after a law lookup is checked against the passages the agent was shown; what is not confirmed is labelled, never silently passed
+            from rct_control_plane import law_pack
+            shown = law_pack.passages_from_steps(result.get("steps") or [])
+            if shown and stopped_reason == "llm_finished" and result.get("final_answer"):
+                law_check = law_pack.check_answer(str(result["final_answer"]), shown, str(result.get("goal") or ""))
+                result["law_check"] = law_check
+                if not law_check["grounded"] and law_check["status"] != "not_found":
+                    result["final_answer"] = (f"{result['final_answer']}\n\n[Law check: NOT confirmed as from the supplied text ({law_check['status']}"
+                                              + (f"; numbers not in the passages: {law_check['unsupported_numbers']}" if law_check["unsupported_numbers"] else "")
+                                              + (f"; sections not shown: {law_check['cites_unseen']}" if law_check["cites_unseen"] else "") + "). " + law_pack.DISCLAIMER + "]")
+                else:
+                    result["final_answer"] = f"{result['final_answer']}\n\n[{law_pack.DISCLAIMER}]"
+        except Exception:                      # a check must never change an episode's outcome beyond its label
+            pass
         warm = stopped_reason == "warm_recall"
         if warm:
             verification = {"applicable": True, "aligned_with_intent": True,

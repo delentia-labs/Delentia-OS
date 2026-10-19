@@ -201,6 +201,15 @@ async def delentia_spawn_subagents(goals: list[str], timeout_seconds: int = 240)
 
 
 @mcp.tool()
+async def delentia_law_lookup(question: str, pack: str = "", limit: int = 5) -> dict:
+    """Look up what a statute says. Finds the passages of a law pack the owner imported (the text of a law, with its edition) that best answer the question, and returns them with their section
+    numbers. Answer ONLY from the returned passages, name the section, use only numbers that appear in them, and say it is not found in the supplied text if the answer is not there. The text is
+    a snapshot of the law as supplied (check its edition: later notices and amendments may not be in it); this is not legal advice. Read-only; `pack` can be left empty when one pack exists."""
+    from rct_control_plane import law_pack
+    return law_pack.lookup(pack, question, limit)
+
+
+@mcp.tool()
 async def delentia_remember(content: str, memory_type: str = "fact", namespace: Optional[str] = None, provenance: Optional[dict] = None) -> dict:
     """Store a real memory, recallable later via delentia_recall (semantic
     ranking, not exact match). Without `namespace` it goes to the kernel's

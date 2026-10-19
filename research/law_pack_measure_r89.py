@@ -23,6 +23,8 @@ from typing import Any, Dict, List
 import httpx
 
 from research.law_pack_questions_r89 import VALIDATION
+from research.law_pack_questions_th_r90 import THAI_FRESH
+from research.law_pack_questions_th_r90b import THAI_FRESH2
 from research.national_law_probe_r88 import OLLAMA, QUESTIONS as DEV_QUESTIONS, grade
 
 DEV_GOLD: Dict[str, List[str]] = {
@@ -52,6 +54,10 @@ class OllamaChat:
 def questions_for(name: str) -> List[Dict[str, Any]]:
     if name == "dev":
         return [dict(q, gold=DEV_GOLD.get(q["id"], [])) for q in DEV_QUESTIONS]
+    if name == "thai-fresh":
+        return list(THAI_FRESH)
+    if name == "thai-fresh2":
+        return list(THAI_FRESH2)
     return list(VALIDATION)
 
 
@@ -68,8 +74,7 @@ async def main_async(args: argparse.Namespace) -> int:
         pack = lp.LawPack.from_json(json.loads(cache.read_text(encoding="utf-8")))
         print(f"pack loaded from {cache}", flush=True)
     else:
-        pack = lp.build_pack("thai-pdpa-test", text, edition="unofficial translation (Government Gazette 27 May 2019)", jurisdiction="TH", source=Path(args.act).name,
-                             embed=True, embed_model=args.embed_model)
+        pack = lp.build_pack("thai-pdpa-test", text, edition=args.edition, jurisdiction="TH", source=Path(args.act).name, embed=True, embed_model=args.embed_model)
     if "A4" in args.arms and not pack.question_vectors:
         n_q = await lp.add_chunk_questions(pack, provider, progress=lambda done, total: print(f"  questions written for {done}/{total} chunks", flush=True))
         print(f"{n_q} questions stored", flush=True)
@@ -127,8 +132,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--act", required=True)
     parser.add_argument("--stage", choices=["retrieval", "answers"], default="retrieval")
-    parser.add_argument("--sets", nargs="+", choices=["dev", "validation"], default=["dev"])
-    parser.add_argument("--arms", nargs="+", choices=["A0", "A1", "A2", "A3", "A4"], default=["A0"])
+    parser.add_argument("--sets", nargs="+", choices=["dev", "validation", "thai-fresh", "thai-fresh2"], default=["dev"])
+    parser.add_argument("--edition", default="unofficial translation (Government Gazette 27 May 2019)", help="shown with every answer")
+    parser.add_argument("--arms", nargs="+", choices=["A0", "A1", "A2", "A3", "A4", "A5"], default=["A0"])
     parser.add_argument("--pack-file", default=None, help="reuse (or create) a pack JSON here, so the slow store-time questions are written once")
     parser.add_argument("--model", default="qwen3:8b")
     parser.add_argument("--embed-model", default="bge-m3")

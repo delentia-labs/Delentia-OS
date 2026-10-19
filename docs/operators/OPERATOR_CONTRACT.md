@@ -77,6 +77,12 @@ Everything lives under the data home (`DELENTIA_HOME`, or the working folder whe
 
 `delentia backup create --out <zip>` (never overwrites; keys left out), `delentia backup verify <zip>`, `delentia backup restore <zip> --to <empty folder>` (never overwrites; checked against its manifest before the first byte is written). A restore was exercised on a clean folder with a fresh process (the chain verifies against the public key, the memory and the waiting approval are there). Keep a copy **off the host**; the restore is only as good as the copy.
 
+**A backup keeps what was erased.** Erasing a person changes the live database; a backup taken before the erasure still holds that person's readable words (found by the whole-job test of
+2026-10-18). After every erasure run `delentia backup erasure-check <the folder or files where you keep backups>`: it lists each backup that is older than an erasure recorded in the audit
+chain and names the people it still holds (exit code 1 when there is one). It deletes nothing; **you** rotate or destroy those backups. A backup made with `--include-keys` also holds the
+person's key, so it can still read their sealed history: treat it as sensitive as the key. Promise to people only what this allows: "removed from the live system now; from backups when
+the last backup older than the erasure has been destroyed".
+
 ## 12. What has not been proven
 
 - No capable hosted model has driven the loop for long; local 7B models pick tools correctly on about 3 of 5 simple goals.

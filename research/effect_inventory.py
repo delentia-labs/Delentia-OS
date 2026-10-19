@@ -59,6 +59,7 @@ EFFECTS: Dict[str, tuple] = {
     "delentia_query_audit_log": (READ, "raw audit rows, which contain every person's goals (owner-only on chat and API)"),
     "delentia_query_intents": (READ, "every person's compiled goals (owner-only on chat and API)"),
     "delentia_read_exchange_file": (OUTSIDE, "one file from the exchange folder, which other systems write"),
+    "delentia_law_lookup": (READ, "passages of a statute the OWNER imported (law_pack.py); no model, no network, no write; listed only when a pack exists; the loop checks the final answer against what it showed"),
     "delentia_read_repo_file": (READ, "one workspace file; secret-looking files refused; text under an untrusted folder taints the episode"),
     "delentia_recall": (READ, "the asking person's memories"),
     "delentia_remember": (MEMORY, "stores a memory in the asking person's namespace with its origin; a persisted instruction survives restarts"),
