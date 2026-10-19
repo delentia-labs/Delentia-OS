@@ -50,7 +50,8 @@ def subagent_depth() -> int:
 
 async def _dispatch_subagent(agent_id: str, goal: str, worktree_path: str, timeout_seconds: float,
                              request_json: Optional[str] = None,
-                             parent_public_key_hex: Optional[str] = None) -> Dict[str, Any]:
+                             parent_public_key_hex: Optional[str] = None,
+                             extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """Real, separate-process dispatch - the default, production
     implementation. Spawns `python -m rct_control_plane.subagent_runner`
     as a genuinely independent OS process.
@@ -65,7 +66,7 @@ async def _dispatch_subagent(agent_id: str, goal: str, worktree_path: str, timeo
     else:
         cmd += ["--goal", goal]
     proc = await asyncio.create_subprocess_exec(
-        *cmd, env={**os.environ, "DELENTIA_REPO_ROOT": worktree_path,
+        *cmd, env={**os.environ, **(extra_env or {}), "DELENTIA_REPO_ROOT": worktree_path,
                    "DELENTIA_SUBAGENT_DEPTH": str(subagent_depth() + 1)},
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
     )
@@ -99,6 +100,7 @@ async def distribute_to_subagents(
     base_branch: str = "main",
     timeout_seconds: float = 60.0,
     dispatch_fn: Optional[Callable[..., Any]] = None,
+    child_env: Optional[Dict[str, str]] = None,
 ) -> List[Dict[str, Any]]:
     """Real fork-join over `goals`. `dispatch_fn` defaults to the real
     `_dispatch_subagent` (spawns real subprocesses) - tests pass a fake
@@ -126,8 +128,9 @@ async def distribute_to_subagents(
             request = jitna_subagent.make_request(goal, agent_id, worktree_info["worktree_path"], 3, keypair,
                                                   correlation_id=distribution_id)
             requests[agent_id] = request
+            extra = {"extra_env": child_env} if child_env else {}              # only passed when there is a cap to hand down, so a replacement dispatcher without the argument still works
             tasks.append(dispatch_fn(agent_id, goal, worktree_info["worktree_path"], timeout_seconds,
-                                     request_json=request.to_json(), parent_public_key_hex=parent_public_key_hex))
+                                     request_json=request.to_json(), parent_public_key_hex=parent_public_key_hex, **extra))
         else:
             tasks.append(dispatch_fn(agent_id, goal, worktree_info["worktree_path"], timeout_seconds))
 
@@ -162,6 +165,8 @@ async def distribute_to_subagents(
                     signed = (response or {}).get("payload") or {}
                     outcome["tainted"] = bool(signed.get("tainted", True))          # a response that does not say is treated as tainted
                     outcome["taint_source"] = signed.get("taint_source")
+                    outcome["spent_usd"] = signed.get("spent_usd")              # the signed numbers replace the unsigned ones the process printed
+                    outcome["tokens_used"] = signed.get("tokens_used")
             else:
                 outcome.setdefault("tainted", True)
         real_results.append(outcome)

@@ -94,6 +94,20 @@ class LLMProvider(ABC):
         yield await self.complete(prompt, system_prompt, temperature, max_tokens, json_mode=False)
 
 
+OLLAMA_THINK_ENV = "DELENTIA_OLLAMA_THINK"
+
+
+def ollama_think_setting() -> Optional[bool]:
+    """Round 89: a model that thinks before it answers (qwen3) spent 277 s on '17 x 23' through the host. DELENTIA_OLLAMA_THINK=off asks Ollama not to think (the request gets "think": false),
+    =on forces it; unset leaves the model's own default. Models that cannot think ignore the field."""
+    value = (os.environ.get(OLLAMA_THINK_ENV) or "").strip().lower()
+    if value in ("off", "0", "false", "no"):
+        return False
+    if value in ("on", "1", "true", "yes"):
+        return True
+    return None
+
+
 class OllamaProvider(LLMProvider):
     # Round 44 item I.3: only calls at or below this temperature are
     # cached. 0.3 is not an arbitrary new number - it's the real
@@ -139,6 +153,9 @@ class OllamaProvider(LLMProvider):
                    "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
         if json_mode:
             payload["format"] = "json"
+        think = ollama_think_setting()
+        if think is not None:
+            payload["think"] = think
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
@@ -164,6 +181,9 @@ class OllamaProvider(LLMProvider):
         num_ctx = ollama_num_ctx(len(full_prompt))
         payload = {"model": self.model, "prompt": full_prompt, "stream": True,
                    "options": {"temperature": temperature, **({"num_ctx": num_ctx} if num_ctx > 0 else {})}}
+        think = ollama_think_setting()
+        if think is not None:
+            payload["think"] = think
         async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()
@@ -580,6 +600,13 @@ class MeteredProvider(LLMProvider):
         self.cost_usd = 0.0
         self.cost_known = True
         self.refused: Optional[str] = None
+        # Round 89: what subagents started by this episode spent. It is charged to the episode's own cap, so a parent and its children share ONE cap.
+        self.children_cost_usd = 0.0
+        self.children_tokens = 0
+
+    def charge_children(self, cost_usd: float, tokens: int) -> None:
+        self.children_cost_usd += max(0.0, float(cost_usd))
+        self.children_tokens += max(0, int(tokens))
 
     @property
     def inner(self) -> LLMProvider:
@@ -598,7 +625,7 @@ class MeteredProvider(LLMProvider):
     def _check_budget(self, prompt_text: str, max_tokens: int) -> None:
         worst_prompt = _count_tokens(prompt_text)
         if self.max_tokens_total is not None:
-            used = self.prompt_tokens + self.completion_tokens
+            used = self.prompt_tokens + self.completion_tokens + self.children_tokens
             if used + worst_prompt + max_tokens > self.max_tokens_total:
                 self.refused = (f"token budget: {used} used + up to {worst_prompt + max_tokens} for this call "
                                 f"> {self.max_tokens_total}")
@@ -608,8 +635,8 @@ class MeteredProvider(LLMProvider):
             if worst is None or not self.cost_known:
                 self.refused = f"cost budget ${self.max_cost_usd} is set but the price of {self.model} is unknown"
                 raise BudgetExceededError(self.refused)
-            if self.cost_usd + worst > self.max_cost_usd:
-                self.refused = (f"cost budget: ${self.cost_usd:.6f} spent + up to ${worst:.6f} for this call "
+            if self.cost_usd + self.children_cost_usd + worst > self.max_cost_usd:
+                self.refused = (f"cost budget: ${self.cost_usd + self.children_cost_usd:.6f} spent + up to ${worst:.6f} for this call "
                                 f"> ${self.max_cost_usd}")
                 raise BudgetExceededError(self.refused)
 
@@ -657,6 +684,8 @@ class MeteredProvider(LLMProvider):
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "cached_prompt_tokens": self.cached_prompt_tokens,
+            "children_cost_usd": round(self.children_cost_usd, 6),
+            "children_tokens": self.children_tokens,
             "cache_hit_rate": round(self.cached_prompt_tokens / self.prompt_tokens, 4) if self.prompt_tokens else None,
             "cost_usd": round(self.cost_usd, 6) if self.cost_known else None,
             "cost_known": self.cost_known,

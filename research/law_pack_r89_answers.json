@@ -1,0 +1,1452 @@
+{
+  "model": "qwen3:8b",
+  "embed_model": "bge-m3",
+  "chunks": 167,
+  "stage": "answers",
+  "sets": {
+    "validation": {
+      "A1": {
+        "rows": [
+          {
+            "id": "V01",
+            "kind": "fact",
+            "sections": [
+              "20",
+              "20",
+              "19",
+              "40",
+              "31"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 20 ผู้เยาว์อายุต่ำกว่า 10 ปี ต้องขอความยินยอมจากผู้ใช้อำนาจปกครอง",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "20"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 31.9,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V02",
+            "kind": "fact",
+            "sections": [
+              "78",
+              "79",
+              "77",
+              "78",
+              "79"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 78 ค่าเสียหายเชิงลงโทษไม่เกินสองเท่าของค่าเสียหายที่แท้จริง",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "78"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 17.4,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V03",
+            "kind": "fact",
+            "sections": [
+              "78",
+              "80",
+              "78",
+              "79",
+              "37"
+            ],
+            "english": null,
+            "answer": "อายุความ 3 ปี ตามมาตรา 78",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "78"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 18.0,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V04",
+            "kind": "fact",
+            "sections": [
+              "27",
+              "79",
+              "87",
+              "84",
+              "83"
+            ],
+            "english": null,
+            "answer": "มาตรา 79 กำหนดว่าผู้ควบคุมข้อมูลที่ฝ่าฝืนมาตรา 27 หรือมาตรา 28 ซึ่งเกี่ยวกับข้อมูลอ่อนไหวจนทำให้ผู้อื่นเสียหายหรือเสียชื่อเสียง ต้องรับโทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 500,000 บาท หรือทั้งสอง",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "79",
+                "27",
+                "28"
+              ],
+              "cites_unseen": [
+                "28"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 24.5,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V05",
+            "kind": "list",
+            "sections": [
+              "33",
+              "37",
+              "34",
+              "33",
+              "32"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 33 (1) และ (4) เจ้าของข้อมูลมีสิทธิขอให้ลบหรือทำลายข้อมูลในกรณีที่ข้อมูลไม่จำเป็นต่อวัตถุประสงค์เดิม หรือข้อมูลถูกเก็บรวบรวมโดยผิดกฎหมาย",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "33"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 28.1,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V06",
+            "kind": "list",
+            "sections": [
+              "39",
+              "41",
+              "37",
+              "40",
+              "40"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 39 (1) ผู้ควบคุมข้อมูลต้องจัดทำบันทึก ได้แก่ (1) ข้อมูลส่วนบุคคลที่รวบรวม (2) วัตถุประสงค์ของการรวบรวมข้อมูลส่วนบุคคลในแต่ละประเภท (3) รายละเอียดของผู้ควบคุมข้อมูล",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "39"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 27.4,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V07",
+            "kind": "fact",
+            "sections": [
+              "40",
+              "73",
+              "77",
+              "40",
+              "42"
+            ],
+            "english": null,
+            "answer": "เจ้าของข้อมูลสามารถยื่นเรื่องร้องเรียนต่อคณะกรรมการได้ตามมาตรา 73",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "73"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 18.7,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V08",
+            "kind": "fact",
+            "sections": [
+              "25",
+              "25",
+              "37",
+              "30",
+              "27"
+            ],
+            "english": null,
+            "answer": "ต้องแจ้งเจ้าของข้อมูลภายในไม่เกิน 30 วัน ตามมาตรา 25 (1)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "25"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 20.1,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V09",
+            "kind": "fact",
+            "sections": [
+              "23",
+              "23",
+              "83",
+              "79",
+              "84"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้ เพราะข้อความไม่ได้ระบุโทษปรับสูงสุดสำหรับการไม่ปฏิบัติตามมาตรา 23 โดยตรง",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "23"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 21.8,
+            "error": null,
+            "grade": "wrong",
+            "hit5": false
+          },
+          {
+            "id": "V10",
+            "kind": "fact",
+            "sections": [
+              "30",
+              "31",
+              "32",
+              "19",
+              "32"
+            ],
+            "english": null,
+            "answer": "ผู้ควบคุมข้อมูลปฏิเสธคำขอได้ในกรณีที่การเข้าถึงข้อมูลจะส่งผลกระทบต่อสิทธิและเสรีภาพของบุคคลอื่น ตามมาตรา 30 (2)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "30"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 23.5,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "T03",
+            "kind": "trap",
+            "sections": [
+              "1",
+              "6",
+              "5",
+              "80",
+              "16"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 15.8,
+            "error": null,
+            "grade": "right"
+          },
+          {
+            "id": "T04",
+            "kind": "trap",
+            "sections": [
+              "80",
+              "79",
+              "96",
+              "6",
+              "1"
+            ],
+            "english": null,
+            "answer": "ไม่จริง ตามข้อความกฎหมายไม่มีการกำหนดโทษจำคุกตลอดชีวิต แต่กำหนดโทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 500,000 บาท หรือทั้งสอง",
+            "check": {
+              "status": "uncited",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 19.6,
+            "error": null,
+            "grade": "right"
+          }
+        ],
+        "hit5": 9,
+        "hit5_of": 10,
+        "fact_right": 5,
+        "fact_total": 10,
+        "trap_right": 2,
+        "trap_total": 2,
+        "grounded": 9,
+        "median_seconds": 21.8
+      },
+      "A0": {
+        "rows": [
+          {
+            "id": "V01",
+            "kind": "fact",
+            "sections": [
+              "20",
+              "20",
+              "19",
+              "40",
+              "31"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 20 ผู้เยาว์อายุต่ำกว่า 10 ปี ต้องขอความยินยอมจากผู้ใช้อำนาจปกครอง",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "20"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 4.2,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V02",
+            "kind": "fact",
+            "sections": [
+              "78",
+              "79",
+              "77",
+              "78",
+              "79"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 78 ค่าเสียหายเชิงลงโทษไม่เกินสองเท่าของค่าเสียหายที่แท้จริง",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "78"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 3.6,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V03",
+            "kind": "fact",
+            "sections": [
+              "78",
+              "80",
+              "78",
+              "79",
+              "37"
+            ],
+            "english": null,
+            "answer": "อายุความ 3 ปี ตามมาตรา 78",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "78"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 2.0,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V04",
+            "kind": "fact",
+            "sections": [
+              "79",
+              "87",
+              "84",
+              "83",
+              "80"
+            ],
+            "english": null,
+            "answer": "มาตรา 79 กำหนดว่าผู้ควบคุมข้อมูลที่ฝ่าฝืนมาตรา 27 หรือไม่ปฏิบัติตามมาตรา 28 ซึ่งเกี่ยวกับข้อมูลอ่อนไหวจนทำให้ผู้อื่นเสียหายหรือเสียชื่อเสียง ต้องรับโทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 500,000 บาท หรือทั้งสอง",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "79",
+                "27",
+                "28"
+              ],
+              "cites_unseen": [
+                "27",
+                "28"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 25.5,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V05",
+            "kind": "list",
+            "sections": [
+              "33",
+              "37",
+              "34",
+              "33",
+              "32"
+            ],
+            "english": null,
+            "answer": "1. เมื่อข้อมูลส่วนบุคคลไม่จำเป็นต่อวัตถุประสงค์ที่เก็บรวบรวมหรือใช้ (มาตรา 33 (1))  \n2. เมื่อเจ้าของข้อมูลถอนความยินยอม และไม่มีเหตุผลทางกฎหมายอื่นที่ทำให้การเก็บรวบรวมหรือใช้ข้อมูลยังคงจำเป็น (มาตรา 33 (2))",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "33"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 11.8,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V06",
+            "kind": "list",
+            "sections": [
+              "39",
+              "41",
+              "37",
+              "40",
+              "40"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 39 (1) ผู้ควบคุมข้อมูลต้องจัดทำบันทึก ได้แก่ (1) ข้อมูลส่วนบุคคลที่รวบรวม (2) วัตถุประสงค์ของการรวบรวมข้อมูลส่วนบุคคลในแต่ละประเภท (3) รายละเอียดของผู้ควบคุมข้อมูล",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "39"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 16.0,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V07",
+            "kind": "fact",
+            "sections": [
+              "40",
+              "73",
+              "77",
+              "40",
+              "42"
+            ],
+            "english": null,
+            "answer": "เจ้าของข้อมูลสามารถยื่นคำร้องต่อคณะกรรมการได้ตามมาตรา 73",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "73"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 3.5,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "V08",
+            "kind": "fact",
+            "sections": [
+              "25",
+              "25",
+              "37",
+              "30",
+              "27"
+            ],
+            "english": null,
+            "answer": "ต้องแจ้งเจ้าของข้อมูลภายในไม่เกิน 30 วัน ตามมาตรา 25 (1)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "25"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 3.4,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V09",
+            "kind": "fact",
+            "sections": [
+              "83",
+              "79",
+              "84",
+              "82",
+              "87"
+            ],
+            "english": null,
+            "answer": "โทษปรับทางปกครองสูงสุดสำหรับผู้ควบคุมข้อมูลที่ไม่ปฏิบัติตามมาตรา 23 คือไม่เกิน 1 ล้านบาท ตามมาตรา 82",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "23",
+                "82"
+              ],
+              "cites_unseen": [
+                "23"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 17.7,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "V10",
+            "kind": "fact",
+            "sections": [
+              "30",
+              "31",
+              "32",
+              "19",
+              "32"
+            ],
+            "english": null,
+            "answer": "ผู้ควบคุมข้อมูลปฏิเสธคำขอได้ในกรณีที่กฎหมายอนุญาตหรือตามคำสั่งศาล และการเข้าถึงข้อมูลจะส่งผลกระทบต่อสิทธิและเสรีภาพของบุคคลอื่น ตามมาตรา 30",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "30"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 6.8,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "T03",
+            "kind": "trap",
+            "sections": [
+              "1",
+              "6",
+              "5",
+              "80",
+              "16"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 1.5,
+            "error": null,
+            "grade": "right"
+          },
+          {
+            "id": "T04",
+            "kind": "trap",
+            "sections": [
+              "80",
+              "79",
+              "96",
+              "6",
+              "1"
+            ],
+            "english": null,
+            "answer": "ไม่จริง ตามข้อความกฎหมายไม่มีการกำหนดโทษจำคุกตลอดชีวิต แต่กำหนดโทษจำคุกไม่เกิน 6 เดือนหรือปรับไม่เกิน 500,000 บาท หรือทั้งสอง",
+            "check": {
+              "status": "uncited",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 6.4,
+            "error": null,
+            "grade": "right"
+          }
+        ],
+        "hit5": 10,
+        "hit5_of": 10,
+        "fact_right": 7,
+        "fact_total": 10,
+        "trap_right": 2,
+        "trap_total": 2,
+        "grounded": 8,
+        "median_seconds": 6.4
+      }
+    },
+    "dev": {
+      "A1": {
+        "rows": [
+          {
+            "id": "Q01",
+            "kind": "fact",
+            "sections": [
+              "96",
+              "1",
+              "3",
+              "80",
+              "6"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้ ข้อความไม่มีข้อมูลเกี่ยวกับปีที่ประกาศใช้หรือวันที่มีผลบังคับใช้เต็มรูปแบบ",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 20.2,
+            "error": null,
+            "grade": "wrong",
+            "hit5": false
+          },
+          {
+            "id": "Q02",
+            "kind": "fact",
+            "sections": [
+              "37",
+              "25",
+              "80",
+              "78",
+              "30"
+            ],
+            "english": null,
+            "answer": "ภายใน 72 ชั่วโมงนับแต่ทราบเหตุ ตามมาตรา 37",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "37"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 16.4,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q03",
+            "kind": "fact",
+            "sections": [
+              "30",
+              "37",
+              "25",
+              "25",
+              "31"
+            ],
+            "english": null,
+            "answer": "ภายใน 30 วัน ตามมาตรา 30 ข้อ 4",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "30"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 16.1,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q04",
+            "kind": "fact",
+            "sections": [
+              "79",
+              "79",
+              "80",
+              "84",
+              "87"
+            ],
+            "english": null,
+            "answer": "โทษปรับทางปกครองสูงสุดตาม PDPA ของไทยคือไม่เกิน 5 ล้านบาท ตามมาตรา 84 และมาตรา 87",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "84",
+                "87"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 14.9,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q05",
+            "kind": "fact",
+            "sections": [
+              "16",
+              "16",
+              "8",
+              "44",
+              "44"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 15.8,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "Q06",
+            "kind": "fact",
+            "sections": [
+              "41",
+              "41",
+              "42",
+              "41",
+              "42"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 41 (1) ผู้ควบคุมข้อมูลต้องแต่งตั้งเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลในกรณีที่เป็นหน่วยงานของรัฐตามที่คณะกรรมการกำหนดและประกาศ หรือกิจกรรมเกี่ยวกับการรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคลต้องมีการตรวจสอบอย่างสม่ำเสมอเนื่องจากมีจำนวนข้อมูลส่วนบุคคลจำนวนมากตามที่คณะกรรมการกำหนดและประกาศ หรือกิจกรรมหลักคือการรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคลตามมาตรา 26",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "41",
+                "26"
+              ],
+              "cites_unseen": [
+                "26"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 29.5,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q07",
+            "kind": "list",
+            "sections": [
+              "4",
+              "6",
+              "8",
+              "26",
+              "4"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้ เพราะข้อความไม่ได้ระบุประเภทของข้อมูลส่วนบุคคลที่อ่อนไหวตาม PDPA ของไทยโดยตรง",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 20.8,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "Q08",
+            "kind": "list",
+            "sections": [
+              "44",
+              "6",
+              "4",
+              "43",
+              "3"
+            ],
+            "english": null,
+            "answer": "ฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคลตาม PDPA ของไทย ได้แก่ มาตรา 4 วรรค 1, มาตรา 30, มาตรา 31, มาตรา 32, มาตรา 33, มาตรา 34, มาตรา 35, มาตรา 36, มาตรา 37, มาตรา 38, มาตรา 39, มาตรา 40, มาตรา 41, มาตรา 42, มาตรา 43, มาตรา 44, มาตรา 45, มาตรา 46, มาตรา 47, มาตรา 48, มาตรา 49, มาตรา 50, มาตรา 51, มาตรา 52, มาตรา 53, มาตรา 54, มาตรา 55, มาตรา 56, มาตรา 57, มาตรา 58, มาตรา 59, มาตรา 60, มาตรา 61, มาตรา 62, มาตรา 63, มาตรา 64, มาตรา 65, มาตรา 66, มาตรา 67, มาตรา 68, มาตรา 69, มาตรา 70, มาตรา 71, มาตรา 72, มาตรา 73, มาตรา 74, มาตรา 75, มาตรา 76, มาตรา 77, มาตรา 78, มาตรา 79, มาตรา 80, มาตรา 81, มาตรา 82, มาตรา 83, มาตรา 84, มาตรา 85, มาตรา 86, มาตรา 87, มาตรา 88, มาตรา 89, มาตรา 90, มาตรา 91, มาตรา 92, มาตรา 93, มาตรา 94, มาตรา 95, มาตรา 96, มาตรา 97, มาตรา 98, มาตรา 99, มาตรา 100, มาตรา 101, มาตรา 102, มาตรา 103, มาตรา 104, มาตรา 105,",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "4",
+                "30",
+                "31",
+                "32",
+                "33",
+                "34",
+                "35",
+                "36",
+                "37",
+                "38",
+                "39",
+                "40",
+                "41",
+                "42",
+                "43",
+                "44",
+                "45",
+                "46",
+                "47",
+                "48",
+                "49",
+                "50",
+                "51",
+                "52",
+                "53",
+                "54",
+                "55",
+                "56",
+                "57",
+                "58",
+                "59",
+                "60",
+                "61",
+                "62",
+                "63",
+                "64",
+                "65",
+                "66",
+                "67",
+                "68",
+                "69",
+                "70",
+                "71",
+                "72",
+                "73",
+                "74",
+                "75",
+                "76",
+                "77",
+                "78",
+                "79",
+                "80",
+                "81",
+                "82",
+                "83",
+                "84",
+                "85",
+                "86",
+                "87",
+                "88",
+                "89",
+                "90",
+                "91",
+                "92",
+                "93",
+                "94",
+                "95",
+                "96",
+                "97",
+                "98",
+                "99",
+                "100",
+                "101",
+                "102",
+                "103",
+                "104",
+                "105"
+              ],
+              "cites_unseen": [
+                "30",
+                "31",
+                "32",
+                "33",
+                "34",
+                "35",
+                "36",
+                "37",
+                "38",
+                "39",
+                "40",
+                "41",
+                "42",
+                "45",
+                "46",
+                "47",
+                "48",
+                "49",
+                "50",
+                "51",
+                "52",
+                "53",
+                "54",
+                "55",
+                "56",
+                "57",
+                "58",
+                "59",
+                "60",
+                "61",
+                "62",
+                "63",
+                "64",
+                "65",
+                "66",
+                "67",
+                "68",
+                "69",
+                "70",
+                "71",
+                "72",
+                "73",
+                "74",
+                "75",
+                "76",
+                "77",
+                "78",
+                "79",
+                "80",
+                "81",
+                "82",
+                "83",
+                "84",
+                "85",
+                "86",
+                "87",
+                "88",
+                "89",
+                "90",
+                "91",
+                "92",
+                "93",
+                "94",
+                "95",
+                "96",
+                "97",
+                "98",
+                "99",
+                "100",
+                "101",
+                "102",
+                "103",
+                "104",
+                "105"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 60.5,
+            "error": null,
+            "grade": "wrong",
+            "hit5": false
+          },
+          {
+            "id": "Q09",
+            "kind": "fact",
+            "sections": [
+              "28",
+              "29",
+              "29",
+              "16",
+              "80"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 28 ข้อมูลส่วนบุคคลต้องส่งไปยังประเทศหรือองค์กรระหว่างประเทศที่มีมาตรฐานการคุ้มครองข้อมูลที่เหมาะสม ยกเว้นกรณีที่ระบุในมาตรา 28 ข้อ (1) (2) (3) และ (4)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "28"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 23.2,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "Q10",
+            "kind": "list",
+            "sections": [
+              "31",
+              "6",
+              "44",
+              "40",
+              "23"
+            ],
+            "english": null,
+            "answer": "เจ้าของข้อมูลส่วนบุคคลมีสิทธิขอให้รับข้อมูลส่วนบุคคลจากผู้ควบคุมข้อมูลตามมาตรา 31 และมีสิทธิขอให้โอนหรือรับข้อมูลในรูปแบบที่อ่านได้หรือใช้โดยอัตโนมัติตามมาตรา 31 (1) และ (2)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "31"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 24.3,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "T01",
+            "kind": "trap",
+            "sections": [
+              "1",
+              "32",
+              "22",
+              "42",
+              "26"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 12.3,
+            "error": null,
+            "grade": "right"
+          },
+          {
+            "id": "T02",
+            "kind": "trap",
+            "sections": [
+              "85",
+              "87",
+              "86",
+              "79",
+              "80"
+            ],
+            "english": null,
+            "answer": "ไม่จริง ตามข้อความกฎหมายที่ให้มา โทษปรับสูงสุดสำหรับการละเมิดคือ 5 ล้านบาท (มาตรา 87) ไม่มีข้อความระบุโทษปรับสูงสุด 50 ล้านบาท",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "87"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 17.0,
+            "error": null,
+            "grade": "right"
+          }
+        ],
+        "hit5": 8,
+        "hit5_of": 10,
+        "fact_right": 4,
+        "fact_total": 10,
+        "trap_right": 2,
+        "trap_total": 2,
+        "grounded": 6,
+        "median_seconds": 20.2
+      },
+      "A0": {
+        "rows": [
+          {
+            "id": "Q01",
+            "kind": "fact",
+            "sections": [
+              "96",
+              "1",
+              "3",
+              "80",
+              "6"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้ ข้อความไม่มีข้อมูลเกี่ยวกับปีที่ประกาศใช้หรือวันที่มีผลบังคับใช้เต็มรูปแบบ",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 5.4,
+            "error": null,
+            "grade": "wrong",
+            "hit5": false
+          },
+          {
+            "id": "Q02",
+            "kind": "fact",
+            "sections": [
+              "37",
+              "25",
+              "80",
+              "78",
+              "30"
+            ],
+            "english": null,
+            "answer": "ภายใน 72 ชั่วโมงนับแต่ทราบเหตุ ตามมาตรา 37 (4)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "37"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 3.1,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q03",
+            "kind": "fact",
+            "sections": [
+              "30",
+              "37",
+              "25",
+              "25",
+              "31"
+            ],
+            "english": null,
+            "answer": "ภายใน 30 วัน ตามมาตรา 30 ข้อ 4",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "30"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 2.2,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q04",
+            "kind": "fact",
+            "sections": [
+              "79",
+              "79",
+              "80",
+              "84",
+              "87"
+            ],
+            "english": null,
+            "answer": "โทษปรับทางปกครองสูงสุดตาม PDPA ของไทยคือไม่เกิน 5 ล้านบาท ตามมาตรา 84 และมาตรา 87",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "84",
+                "87"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 4.0,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q05",
+            "kind": "fact",
+            "sections": [
+              "16",
+              "16",
+              "8",
+              "44",
+              "44"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 1.4,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "Q06",
+            "kind": "fact",
+            "sections": [
+              "41",
+              "41",
+              "42",
+              "41",
+              "42"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 41 (1) ผู้ควบคุมข้อมูลต้องแต่งตั้งเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลในกรณีที่เป็นหน่วยงานของรัฐตามที่คณะกรรมการกำหนดและประกาศ หรือกิจกรรมเกี่ยวกับการรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคลต้องมีการตรวจสอบอย่างสม่ำเสมอเนื่องจากมีจำนวนข้อมูลส่วนบุคคลจำนวนมากตามที่คณะกรรมการกำหนดและประกาศ หรือกิจกรรมหลักคือการรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคลตามมาตรา 26",
+            "check": {
+              "status": "cites_unseen_section",
+              "grounded": false,
+              "cited_sections": [
+                "41",
+                "26"
+              ],
+              "cites_unseen": [
+                "26"
+              ],
+              "unsupported_numbers": []
+            },
+            "seconds": 16.1,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q07",
+            "kind": "list",
+            "sections": [
+              "4",
+              "6",
+              "8",
+              "26",
+              "4"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้ เพราะข้อความไม่ได้ระบุประเภทของข้อมูลส่วนบุคคลที่อ่อนไหวตาม PDPA ของไทยโดยตรง",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 4.8,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "Q08",
+            "kind": "list",
+            "sections": [
+              "44",
+              "6",
+              "4",
+              "43",
+              "3"
+            ],
+            "english": null,
+            "answer": "ฐานทางกฎหมายในการประมวลผลข้อมูลส่วนบุคคลตาม PDPA ของไทย ได้แก่ มาตรา 3, 4, 6, 43, 44 ตามลำดับ",
+            "check": {
+              "status": "unsupported_number",
+              "grounded": false,
+              "cited_sections": [
+                "3"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": [
+                4.0,
+                44.0
+              ]
+            },
+            "seconds": 5.3,
+            "error": null,
+            "grade": "wrong",
+            "hit5": false
+          },
+          {
+            "id": "Q09",
+            "kind": "fact",
+            "sections": [
+              "28",
+              "29",
+              "29",
+              "16",
+              "80"
+            ],
+            "english": null,
+            "answer": "ตามมาตรา 28 ข้อ 1 การส่งข้อมูลส่วนบุคคลไปยังต่างประเทศต้องมีมาตรฐานการปกป้องข้อมูลที่เพียงพอ และต้องปฏิบัติตามกฎเกณฑ์ที่คณะกรรมการกำหนดไว้ในมาตรา 16(5) ยกเว้นกรณีที่ระบุไว้ในข้อ 1-4",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "28",
+                "16"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 8.9,
+            "error": null,
+            "grade": "right",
+            "hit5": true
+          },
+          {
+            "id": "Q10",
+            "kind": "list",
+            "sections": [
+              "31",
+              "6",
+              "44",
+              "40",
+              "23"
+            ],
+            "english": null,
+            "answer": "เจ้าของข้อมูลส่วนบุคคลมีสิทธิขอให้รับข้อมูลส่วนบุคคลจากผู้ควบคุมข้อมูลตามมาตรา 31 และมีสิทธิขอให้โอนหรือรับข้อมูลในรูปแบบที่อ่านได้หรือใช้โดยเครื่องมืออัตโนมัติตามมาตรา 31 (1) และ (2)",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "31"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 10.0,
+            "error": null,
+            "grade": "wrong",
+            "hit5": true
+          },
+          {
+            "id": "T01",
+            "kind": "trap",
+            "sections": [
+              "1",
+              "32",
+              "22",
+              "42",
+              "26"
+            ],
+            "english": null,
+            "answer": "ไม่พบในข้อความที่ให้",
+            "check": {
+              "status": "not_found",
+              "grounded": false,
+              "cited_sections": [],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 1.5,
+            "error": null,
+            "grade": "right"
+          },
+          {
+            "id": "T02",
+            "kind": "trap",
+            "sections": [
+              "85",
+              "87",
+              "86",
+              "79",
+              "80"
+            ],
+            "english": null,
+            "answer": "ไม่จริง ตามข้อความกฎหมายที่ให้มา โทษปรับสูงสุดสำหรับการละเมิดคือ 5 ล้านบาท (มาตรา 87) ไม่มีข้อความระบุโทษปรับสูงสุด 50 ล้านบาท",
+            "check": {
+              "status": "grounded",
+              "grounded": true,
+              "cited_sections": [
+                "87"
+              ],
+              "cites_unseen": [],
+              "unsupported_numbers": []
+            },
+            "seconds": 6.8,
+            "error": null,
+            "grade": "right"
+          }
+        ],
+        "hit5": 8,
+        "hit5_of": 10,
+        "fact_right": 5,
+        "fact_total": 10,
+        "trap_right": 2,
+        "trap_total": 2,
+        "grounded": 6,
+        "median_seconds": 5.3
+      }
+    }
+  },
+  "model_calls": 48
+}
