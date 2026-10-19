@@ -142,6 +142,45 @@ def verify_backup(path: str) -> Dict[str, Any]:
     return {"files": len(listed), "created_at": manifest["created_at"], "includes_keys": manifest.get("includes_keys", False)}
 
 
+def erased_people(persistence: Any) -> List[Dict[str, Any]]:
+    """Every erasure this database has recorded (the audit chain row written by `memory_erasure.erase_person`): who (the namespace), when."""
+    from datetime import datetime
+    from rct_control_plane import memory_eventlog
+    out: List[Dict[str, Any]] = []
+    with persistence._connect() as conn:
+        rows = conn.execute("SELECT entity_id, created_at FROM audit_trail WHERE entity_type = ? AND action = 'memory_erased' ORDER BY id", (memory_eventlog.ANCHOR_ENTITY,)).fetchall()
+    for namespace, created in rows:
+        try:
+            at = datetime.fromisoformat(str(created)).timestamp()
+        except ValueError:
+            continue
+        out.append({"namespace": str(namespace), "erased_at": at})
+    return out
+
+
+def erasure_check(paths: List[str], persistence: Any) -> Dict[str, Any]:
+    """Which backups still hold the words of a person who has since been erased. A backup taken BEFORE an erasure contains the readable tables as they were then (the key of the sealed memory log
+    is not in a backup unless it was made with --include-keys, but the other tables are readable): erasing the live database does not reach it. Nothing is deleted here (Zero-Delete): the answer is
+    a list a person acts on by rotating or destroying those backups. Folders are searched for *.zip; a file that is not a valid Delentia backup is reported, not skipped."""
+    erased = erased_people(persistence)
+    files: List[Path] = []
+    for raw in paths:
+        p = Path(raw)
+        files.extend(sorted(p.glob("*.zip")) if p.is_dir() else [p])
+    report: List[Dict[str, Any]] = []
+    for f in files:
+        try:
+            info = verify_backup(str(f))
+        except BackupError as exc:
+            report.append({"backup": str(f), "status": "not_a_valid_backup", "detail": str(exc)[:200]})
+            continue
+        holds = [e for e in erased if e["erased_at"] > float(info["created_at"])]
+        report.append({"backup": str(f), "created_at": info["created_at"], "includes_keys": info["includes_keys"],
+                       "status": "holds_erased_people" if holds else "ok", "namespaces": sorted({e["namespace"] for e in holds}),
+                       "advice": ("rotate or destroy this backup (it predates the erasure of the people listed; with --include-keys it also holds their key)" if holds else "")})
+    return {"erasures_recorded": len(erased), "backups_checked": len(files), "backups_holding_erased_people": sum(1 for r in report if r["status"] == "holds_erased_people"), "report": report}
+
+
 def _target(base: Path, name: str) -> Path:
     if name.startswith(("/", "\\")) or ".." in Path(name).parts or ":" in name.split("/")[0]:
         raise BackupError(f"unsafe name in the backup: {name!r}")

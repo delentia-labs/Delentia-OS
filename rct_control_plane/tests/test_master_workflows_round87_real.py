@@ -105,3 +105,14 @@ def test_run_scripted_runs_each_workflows_pytest_files_and_reports_failures():
 
 def test_scripted_test_files_are_only_pytest_files():
     assert mw.scripted_test_files("W11") and all("/tests/test_" in f for f in mw.scripted_test_files("W11"))
+
+
+def test_twelve_claims_made_together_need_more_runs_than_one_claim():
+    from research import master_workflows as mw
+    assert mw.simultaneous_confidence(1) == 0.95
+    assert abs(mw.simultaneous_confidence(12) - (1 - 0.05 / 12)) < 1e-12
+    assert mw.runs_needed(0.8) == 14                                    # one claim: 14 clean runs
+    assert mw.runs_needed(0.8, mw.simultaneous_confidence(12)) == 25    # twelve claims together: 25
+    assert mw.runs_needed(0.9, mw.simultaneous_confidence(12)) == 53
+    text = mw.render()
+    assert "TOGETHER" in text and "independent draws" in text and "attempt ledger" in text

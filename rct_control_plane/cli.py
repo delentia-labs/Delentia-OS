@@ -4424,6 +4424,22 @@ def backup_verify(path: str) -> None:
     click.echo(f"valid: {done['files']} file(s); keys included: {done['includes_keys']}")
 
 
+@backup_group.command("erasure-check")
+@click.argument("paths", nargs=-1, required=True)
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+def backup_erasure_check(paths: tuple, db: Optional[str]) -> None:
+    """Which of these backups (files, or folders of *.zip) still hold the words of a person who was erased afterwards. Exit code 1 if any does. Nothing is deleted."""
+    from rct_control_plane import backup
+    result = backup.erasure_check([*paths], _audit_db(db))      # not list(): the legacy `list` command shadows the builtin in this module
+    click.echo(f"{result['erasures_recorded']} erasure(s) recorded; {result['backups_checked']} backup(s) checked")
+    for r in result["report"]:
+        label = {"ok": "ok", "holds_erased_people": "HOLDS ERASED PEOPLE", "not_a_valid_backup": "NOT A VALID BACKUP"}[r["status"]]
+        click.echo(f"  [{label}] {r['backup']}" + (f"  namespaces: {', '.join(r['namespaces'])}" if r.get("namespaces") else "") + (f"  {r['detail']}" if r.get("detail") else ""))
+        if r.get("advice"):
+            click.echo(f"      -> {r['advice']}")
+    sys.exit(1 if result["backups_holding_erased_people"] else 0)
+
+
 @backup_group.command("restore")
 @click.argument("path")
 @click.option("--to", required=True, help="a folder; files go under <to>/home (the data home) and <to>/user (~/.delentia)")

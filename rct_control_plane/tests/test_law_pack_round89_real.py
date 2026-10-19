@@ -173,3 +173,38 @@ def test_a_section_the_shown_text_refers_to_may_be_named_but_an_unrelated_one_ma
     assert bad["status"] == "cites_unseen_section" and bad["cites_unseen"] == ["55"]
     asked = lp.check_answer("ตามมาตรา 79 ผู้ที่ฝ่าฝืนมาตรา 23 มีโทษจำคุกไม่เกิน 6 เดือน", hits, question="ฝ่าฝืนมาตรา 23 โทษคือ")
     assert asked["status"] == "grounded", asked                           # the question itself named section 23
+
+
+THAI_STATUTE = """
+หน้านี้ได้ทำลิงก์สารบัญไว้
+พระราชบัญญัติ
+มาตรา๑พระราชบัญญัตินี้เรียกว่า “พระราชบัญญัติตัวอย่าง พ.ศ. ๒๕๖๒”
+มาตรา๒ผู้ควบคุมข้อมูลต้องดำเนินการตามคำขอโดยไม่ชักช้า แต่ต้องไม่เกินสามสิบวันนับแต่วันที่ได้รับคำขอ ตามที่กำหนดในมาตรา ๓๙ ให้แจ้งภายในเจ็ดสิบสองชั่วโมง
+มาตรา๓ผู้ใดฝ่าฝืนมาตรา ๒ ต้องระวางโทษจำคุกไม่เกินหกเดือน ปรับไม่เกินห้าแสนบาท หรือปรับทางปกครองไม่เกินห้าล้านบาท
+"""
+
+
+def test_thai_headings_run_into_the_text_and_thai_numerals_become_ascii():
+    sections = dict(lp.split_sections(THAI_STATUTE))
+    assert list(sections) == ["1", "2", "3"]
+    assert "2562" in sections["1"] and "๒๕๖๒" not in sections["1"]
+    assert "มาตรา 39" in sections["2"]                                     # an inline reference stays inside its section, and its numeral is ASCII now
+
+
+def test_thai_spelled_out_numbers_in_the_statute_support_digits_in_the_answer():
+    pack = lp.build_pack("th-example", THAI_STATUTE, edition="1", jurisdiction="TH", source="t", embed=False)
+    hits = [{"section": c["section"], "text": c["text"]} for c in pack.chunks]
+    for answer in ("ตามมาตรา 2 ภายใน 30 วัน", "ตามมาตรา 2 แจ้งภายใน 72 ชั่วโมง", "ตามมาตรา 3 จำคุกไม่เกิน 6 เดือน ปรับไม่เกิน 500,000 บาท", "ตามมาตรา 3 ปรับทางปกครองไม่เกิน 5,000,000 บาท",
+                   "ตามมาตรา ๒ ภายใน ๓๐ วัน"):
+        assert lp.check_answer(answer, hits)["status"] == "grounded", answer
+    assert lp.check_answer("ตามมาตรา 2 ภายใน 45 วัน", hits)["status"] == "unsupported_number"
+    assert lp.check_answer("ตามมาตรา 3 ปรับไม่เกิน 50,000,000 บาท", hits)["status"] == "unsupported_number"
+
+
+def test_thai_number_word_parsing():
+    assert lp._thai_number_values("สามสิบวัน") == [30.0]
+    assert lp._thai_number_values("เจ็ดสิบสองชั่วโมง") == [72.0]
+    assert lp._thai_number_values("ห้าล้านบาท") == [5_000_000.0]
+    assert lp._thai_number_values("ห้าแสนบาท") == [500_000.0]
+    assert lp._thai_number_values("ยี่สิบห้า") == [25.0]
+    assert lp._thai_number_values("หนึ่งล้านห้าแสน") == [1_500_000.0]

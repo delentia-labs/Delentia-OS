@@ -239,6 +239,12 @@ def lower_bound(n: int, confidence: float = 0.95) -> float:
     return (1 - confidence) ** (1.0 / n)
 
 
+def simultaneous_confidence(claims: int, family_confidence: float = 0.95) -> float:
+    """Per-claim confidence so that ALL `claims` bounds hold together with `family_confidence` (Bonferroni: each claim is made at 1 - (1 - family)/claims). Twelve separate 95% claims are
+    not a 95% claim about all twelve: the chance that at least one of them is wrong is larger than 5%."""
+    return 1.0 - (1.0 - family_confidence) / claims
+
+
 # Cost model: a stated guess, replaced by the spend the first live pass measures. Tokens per live run (prompt, completion): a short job ~10 model calls at ~3k prompt tokens with the compact menu.
 TOKENS_PER_RUN = {"prompt": 30_000, "completion": 3_000}
 HEAVY = {"W05": 5.0, "W07": 3.0, "W08": 5.0, "W12": 3.0}          # multiples of a short job: days, three sessions, ten repeats, three children
@@ -265,7 +271,12 @@ def render() -> str:
              "## How many runs make a claim", "",
              f"Zero failures in n runs gives a one-sided 95% lower bound of 0.05^(1/n): 5 runs -> {lower_bound(5):.2f} (a screen, not a claim), {n80} runs -> {lower_bound(n80):.2f} (supports 'at least 80%'), "
              f"{n90} runs -> {lower_bound(n90):.2f} (supports 'at least 90%'). One failure in the {n80} needs more runs, not a smaller claim written afterwards. "
-             f"A claim for all {len(WORKFLOWS)} workflows is a claim per workflow: it is never averaged across them.", "",
+             f"A claim for all {len(WORKFLOWS)} workflows is a claim per workflow: it is never averaged across them. "
+             f"**If the claim is 'every one of the {len(WORKFLOWS)} workflows works at least 80% of the time', the twelve bounds must hold TOGETHER:** with a Bonferroni split each is made at "
+             f"{100 * simultaneous_confidence(len(WORKFLOWS)):.2f}% confidence, which needs {runs_needed(0.8, simultaneous_confidence(len(WORKFLOWS)))} clean runs per workflow for 80% "
+             f"(instead of {n80}) and {runs_needed(0.9, simultaneous_confidence(len(WORKFLOWS)))} for 90% (instead of {n90}). "
+             "**The runs must be independent draws:** different tasks or seeds, a fresh namespace and a fresh workspace each time; the same fixture run again fourteen times is one observation, "
+             "not fourteen. A run lost to infrastructure (power, network) is recorded in the attempt ledger and re-drawn, but a run that fails because the agent or the model did something wrong counts as a failure.", "",
              "## Live cost (a guess with its assumptions, replaced by the first measured spend)", "",
              f"Per short run about {TOKENS_PER_RUN['prompt']:,} prompt and {TOKENS_PER_RUN['completion']:,} completion tokens; W05, W07, W08, W12 count as 5, 3, 5, 3 short runs. "
              "Prices are examples; the real ones come from the provider's list on the day.", "",

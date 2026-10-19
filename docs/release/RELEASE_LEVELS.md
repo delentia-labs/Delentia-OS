@@ -12,21 +12,21 @@ What may be said and done at each level, and what must be true first. A level is
 
 ## The gates
 
-A gate is **met** only when the named evidence exists and can be re-checked. Status as of 2026-10-16.
+A gate is **met** only when the named evidence exists and can be re-checked. Status as of 2026-10-19 (the numbers behind each line are in `docs/release/READINESS_SNAPSHOT.md`, generated from the commit, the CI run and the evidence bundles).
 
 | Gate | Needed for | Evidence | Status |
 |---|---|---|---|
-| G-install | L0 | A clean-wheel install imports, runs the CLI and the scripted demos, starts the server, keeps memory across restarts, and works with a read-only package folder (`scripts/check_installed_wheel.py`, CI job *Package check*) | met on Windows locally; Linux run is in CI |
-| G-tests | L0 | The public test suite passes on three Python versions (CI) | met |
-| G-claims | L0 | Every public number is a measured one and `check_claim_sync` passes; withdrawn claims stay withdrawn | met for the repository; the website has editorial items open |
+| G-install | L0 | A clean-wheel install imports, runs the CLI and the scripted demos, starts the server, keeps memory across restarts, and works with a read-only package folder (`scripts/check_installed_wheel.py`, CI job *Package check*) | met: Windows locally, and the *Package check* job in CI installs the built wheel in an empty Linux environment on every change |
+| G-tests | L0 | The public test suite passes on three Python versions (CI) | met (7,820 passed on main at 3dbed0d, 2026-10-18, Python 3.10/3.11/3.12) |
+| G-claims | L0 | Every public number is a measured one and `check_claim_sync` passes; withdrawn claims stay withdrawn | met for the repository; the website was rewritten and merged on 2026-10-19 with a claims lint in CI, blog bodies and a few glossary pages still carry old wording |
 | G-evidence | L0 | `scripts/evidence_kit.py` reproduces the safety headline in one command; `scripts/verify_evidence_kit.py` re-checks it offline | built; **not yet reproduced by anyone but the author** |
 | G-mediation | L1 | Every entry point ends at the same gate, with a mutation that proves the test can fail (`test_complete_mediation_round82_real.py`) | met for six doors |
 | G-approval | L1 | The approval flow matches its specification (10,379 sequences, 0 disagreements); crash windows tested with real processes | met |
-| G-operator | L1 | The operator contract exists and its commands exist (`docs/operators/OPERATOR_CONTRACT.md`) | met (text); no operator other than the author has used it |
-| G-model | L2 | A capable model drives the loop: the capability screen passes (K.1.5 ≥ 90% on the 5-goal and 17-goal batteries) | **not met** (local 7B: 3 of 5 simple goals) |
-| G-host | L2 | A Linux host runs for 72 hours without manual intervention: no crash, no unexplained pending items, backups taken, one restore performed from an off-host copy | **not met** (no host) |
-| G-witness | L2 | At least one independent witness holds a recent signed head and `check-witnesses` passes from a machine that is not the host | **not met** (the public ledger repository exists; no host writes to it) |
-| G-notary-user | L2 | The notary runs as a different operating-system user from the agent | **not met** (needs an account on a host) |
+| G-operator | L1 | The operator contract exists and its commands exist (`docs/operators/OPERATOR_CONTRACT.md`) | met (text); no operator other than the author has used it; a backup taken before an erasure still holds that person's words (see section 8 of the contract and `delentia backup erasure-check`) |
+| G-model | L2 | A capable model drives the loop: the capability screen passes (K.1.5 ≥ 90% on the 5-goal and 17-goal batteries) | **not met** (local 8B qwen3: 5 of 5 simple goals in one run, 84-508 s per goal; the 17-goal battery and a capability screen of stronger models have not been run) |
+| G-host | L2 | A Linux host runs for 72 hours without manual intervention: no crash, no unexplained pending items, backups taken, one restore performed from an off-host copy | **not met** (the owner's PC runs the host: starts at logon, a real Restart passed on 2026-10-19, a 6-hour soak was clean; no Linux host, no 72-hour run) |
+| G-witness | L2 | At least one independent witness holds a recent signed head and `check-witnesses` passes from a machine that is not the host | **not met** (the Worker holds one anchor of the host notary's head from 2026-10-17; the public ledger repository is empty; anchoring is not scheduled; no check from a second machine) |
+| G-notary-user | L2 | The notary runs as a different operating-system user from the agent | **met on the owner's PC** (a separate Windows account runs the notary; tool calls fail closed without it, tested 2026-10-17); **not met on a Linux host** |
 | G-pilot | L2 | A pre-registered pilot (dev and validation splits, manipulation checks, failure taxonomy) has been run with the capable model | **not met** |
 | G-people | L3 | At least one outside person has used it for a real task and told us what broke | **not met** |
 | G-review | L4 | An independent security review of the gate and the approval flow | **not met, not planned** |

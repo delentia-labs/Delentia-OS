@@ -35,7 +35,14 @@ OVERLAP = 150
 TOP_K = 5
 MAX_PACK_CHARS = 3_000_000
 
-_HEAD = re.compile(r"^[ \t]*(?:Section|Article|มาตรา)[ \t]+(\d{1,4})\b", re.M)
+# A heading: "Section 12" / "Article 12" (a space, then the number) or "มาตรา 12" / "มาตรา12พระราชบัญญัตินี้..." (Thai statutes as transcribed often run the number straight into the text).
+_HEAD = re.compile(r"^[ \t]*(?:(?:Section|Article)[ \t]+(\d{1,4})\b|มาตรา[ \t]*(\d{1,4})(?!\d))", re.M)
+_THAI_DIGITS = str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789")
+
+
+def normalise_digits(text: str) -> str:
+    """Thai numerals to ASCII digits, so that a section called ๓๗ in the statute and 37 in an answer are the same section and the number check compares like with like."""
+    return text.translate(_THAI_DIGITS)
 _BARE_PAGE_NUMBER = re.compile(r"^[ \t]*\d{1,3}[ \t]*$")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 _WORD = re.compile(r"[A-Za-z]+|\d+|[฀-๿]+")
@@ -65,11 +72,11 @@ def split_sections(text: str) -> List[Tuple[str, str]]:
     """(section number, its text) in order. A section starts only at the beginning of a line: 'Section 32 (1)' inside a sentence is a reference, not a heading
     (Round 88's first chunker split there and labelled the fragment 'section 32'). A reference that wraps onto a line of its own is
     rejected because section numbers only count up: a heading is accepted when it is the next number or at most three further on (an extraction can lose one)."""
-    text = _strip_furniture(text)
+    text = _strip_furniture(normalise_digits(text))
     heads: List["re.Match[str]"] = []
     last = 0
     for m in _HEAD.finditer(text):                           # a wrapped reference can start a line too: real headings count up, so a number that jumps is a reference
-        number = int(m.group(1))
+        number = int(m.group(1) or m.group(2))
         if last < number <= last + 4:
             heads.append(m)
             last = number
@@ -78,7 +85,7 @@ def split_sections(text: str) -> List[Tuple[str, str]]:
         end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
         body = re.sub(r"\s+", " ", text[head.start():end]).strip()
         if len(body) > 40:
-            out.append((head.group(1), body))
+            out.append(((head.group(1) or head.group(2)), body))
     return out
 
 
@@ -128,12 +135,31 @@ class LawPack:
         return cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
 
 
-def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source: str, embed: bool = True, embed_model: Optional[str] = None) -> LawPack:
+def screen_for_injection(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """(section, rule id) for every section whose text the content screen (CORD-S, untrusted-content rules) would BLOCK. A statute does not tell a reader to ignore its instructions; a pack
+    that does has been tampered with (or is not a statute), and its passages would be put in front of the agent's model."""
+    from rct_control_plane.injection_screen import InjectionScreen
+    screen = InjectionScreen()
+    flagged: List[Tuple[str, str]] = []
+    for number, body in sections:
+        for finding in screen.check(body, trusted=False):
+            if finding.severity == "hard":
+                flagged.append((number, finding.pattern_id))
+    return flagged
+
+
+def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source: str, embed: bool = True, embed_model: Optional[str] = None,
+               allow_flagged: bool = False) -> LawPack:
     if not name.strip() or not re.fullmatch(r"[A-Za-z0-9._-]{1,60}", name):
         raise ValueError("a pack name is 1-60 letters, digits, dot, dash or underscore")
     if len(text) > MAX_PACK_CHARS:
         raise ValueError(f"the text is larger than {MAX_PACK_CHARS:,} characters: import one statute at a time")
-    chunks = make_chunks(split_sections(text))
+    sections = split_sections(text)
+    flagged = [] if allow_flagged else screen_for_injection(sections)
+    if flagged:
+        raise ValueError(f"the content screen would block {len(flagged)} section(s) of this text ({', '.join(f'{s}:{r}' for s, r in flagged[:6])}): a statute should not contain instructions "
+                         "to a reader; check the file, or import with allow_flagged=True if you have read those sections and they are genuine")
+    chunks = make_chunks(sections)
     if not chunks:
         raise ValueError("no sections were found: a section heading must start a line ('Section 12', 'Article 12' or 'มาตรา 12')")
     pack = LawPack(name, edition, jurisdiction, source, hashlib.sha256(text.encode("utf-8")).hexdigest(), chunks)
@@ -210,6 +236,60 @@ def load_pack(name: str) -> LawPack:
     return LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
 
 
+def has_packs() -> bool:
+    """Cheap (no JSON is read): is there at least one imported pack? The agent's tool is shown only then, so a host without a pack pays nothing for it in every prompt."""
+    try:
+        return any(packs_dir().glob("*.json"))
+    except OSError:
+        return False
+
+
+_CACHE: Dict[str, Tuple[float, LawPack]] = {}
+
+
+def load_pack_cached(name: str) -> LawPack:
+    """load_pack, remembered while the file is unchanged (a pack with vectors is a few megabytes of JSON)."""
+    path = packs_dir() / f"{name}.json"
+    mtime = path.stat().st_mtime if path.exists() else 0.0
+    hit = _CACHE.get(name)
+    if hit and hit[0] == mtime and mtime:
+        return hit[1]
+    pack = load_pack(name)
+    _CACHE[name] = (mtime, pack)
+    return pack
+
+
+def lookup(pack_name: str, question: str, limit: int = TOP_K) -> Dict[str, Any]:
+    """What the agent's tool returns: the passages most likely to answer the question, with their section numbers and the pack's edition. No model is called here: the agent's own model reads them
+    (so the episode's budget, sovereignty policy and audit apply), and the loop checks its final answer against these passages."""
+    names = [p["name"] for p in list_packs() if "name" in p]
+    if not pack_name:
+        if len(names) != 1:
+            return {"error": f"say which pack: {', '.join(names) or 'none imported'}"}
+        pack_name = names[0]
+    try:
+        pack = load_pack_cached(pack_name)
+    except (FileNotFoundError, ValueError):
+        return {"error": f"no law pack called {pack_name!r}; the packs are: {', '.join(names) or 'none imported'}"}
+    hits = retrieve(pack, question, k=max(1, min(int(limit), 8)), arm="A0")
+    return {"pack": pack.label(), "source": pack.source, "notice": DISCLAIMER,
+            "how_to_answer": "Answer only from these passages and name the section (e.g. 'มาตรา 30' / 'section 30'). Use only numbers that appear in them. If they do not contain the answer, say it is not found in the supplied text.",
+            "passages": [{"section": h["section"], "text": h["text"]} for h in hits]}
+
+
+def passages_from_steps(steps: Sequence[Any]) -> List[Dict[str, Any]]:
+    """The passages the agent was shown in this episode (from the results of delentia_law_lookup), for the final-answer check."""
+    shown: List[Dict[str, Any]] = []
+    for step in steps or []:
+        get = step.get if isinstance(step, dict) else (lambda k, d=None, s=step: getattr(s, k, d))
+        if get("tool_name") != "delentia_law_lookup":
+            continue
+        result = get("tool_result")
+        if isinstance(result, dict):
+            shown.extend(p for p in (result.get("passages") or []) if isinstance(p, dict) and "section" in p and "text" in p)
+    return shown
+
+
 def list_packs() -> List[Dict[str, Any]]:
     out = []
     for path in sorted(packs_dir().glob("*.json")):
@@ -227,9 +307,25 @@ def _tokens(text: str) -> List[str]:
     return [t.lower() for t in _WORD.findall(text)]
 
 
-def _bm25_scores(query: str, docs: Sequence[str], k1: float = 1.5, b: float = 0.75) -> List[float]:
-    q = set(_tokens(query))
-    toks = [_tokens(d) for d in docs]
+_THAI_RUN = re.compile(r"[\u0E00-\u0E7F]+")
+
+
+def _tokens_th(text: str) -> List[str]:
+    """Latin words and digits as they are, Thai runs as overlapping character trigrams (Thai is written without spaces, so a word tokenizer would see one huge token per clause; trigrams make
+    'การเก็บรวบรวมข้อมูล' in a question and in a one-sentence section share most of their pieces)."""
+    out: List[str] = []
+    for tok in _WORD.findall(text.lower()):
+        if _THAI_RUN.fullmatch(tok):
+            out.extend(tok[i:i + 3] for i in range(max(1, len(tok) - 2)))
+        else:
+            out.append(tok)
+    return out
+
+
+def _bm25_scores(query: str, docs: Sequence[str], k1: float = 1.5, b: float = 0.75, tokenizer: Any = None) -> List[float]:
+    tokenizer = tokenizer or _tokens
+    q = set(tokenizer(query))
+    toks = [tokenizer(d) for d in docs]
     n = len(docs) or 1
     avg = (sum(len(t) for t in toks) / n) or 1.0
     df: Dict[str, int] = {}
@@ -278,7 +374,7 @@ async def translate_question(question: str, provider: Any) -> Optional[str]:
 
 def retrieve(pack: LawPack, question: str, *, k: int = TOP_K, arm: str = "A0", english: Optional[str] = None) -> List[Dict[str, Any]]:
     """The k chunks most likely to answer the question. arm: A0 embedding of the question; A1 + chunks of the section the question names go first; A2 A1 + the English
-    translation (`english`) is embedded as well and a chunk takes the larger cosine; A3 A2 + a lexical (BM25) ranking of the translation fused in; A4 A1 + the questions written for each chunk at import (add_chunk_questions)."""
+    translation (`english`) is embedded as well and a chunk takes the larger cosine; A3 A2 + a lexical (BM25) ranking of the translation fused in; A4 A1 + the questions written for each chunk at import (add_chunk_questions); A5 A0 + a character-trigram BM25 ranking of the question fused in (Round 90, for statutes written in Thai)."""
     from rct_control_plane import memory_embeddings as me
     n = len(pack.chunks)
     rankings: List[List[int]] = []
@@ -295,6 +391,9 @@ def retrieve(pack: LawPack, question: str, *, k: int = TOP_K, arm: str = "A0", e
             rankings.append(sorted(range(n), key=lambda i: -sims[i]))
     if arm == "A3" and english:
         lex = _bm25_scores(english, [c["text"] for c in pack.chunks])
+        rankings.append(sorted(range(n), key=lambda i: -lex[i]))
+    if arm == "A5":                                           # the question's own words, matched as character trigrams, fused with the embedding ranking
+        lex = _bm25_scores(question, [c["text"] for c in pack.chunks], tokenizer=_tokens_th)
         rankings.append(sorted(range(n), key=lambda i: -lex[i]))
     if not rankings:                                          # no embedding available: lexical search on the question itself
         lex = _bm25_scores(question, [c["text"] for c in pack.chunks])
@@ -338,6 +437,36 @@ def _english_number_values(text: str) -> List[float]:
     return values
 
 
+_THAI_UNITS = {"หนึ่ง": 1, "เอ็ด": 1, "สอง": 2, "สาม": 3, "สี่": 4, "ห้า": 5, "หก": 6, "เจ็ด": 7, "แปด": 8, "เก้า": 9}
+_THAI_SCALES = {"สิบ": 10, "ร้อย": 100, "พัน": 1000, "หมื่น": 10000, "แสน": 100000}
+_THAI_NUMBER_RUN = re.compile(r"(?:ยี่สิบ|สิบ|ร้อย|พัน|หมื่น|แสน|ล้าน|หนึ่ง|เอ็ด|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า)+")
+_THAI_TOKEN = re.compile(r"ยี่สิบ|สิบ|ร้อย|พัน|หมื่น|แสน|ล้าน|หนึ่ง|เอ็ด|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า")
+
+
+def _thai_number_values(text: str) -> List[float]:
+    """Values of Thai spelled-out numbers in a PASSAGE (the statute writes 'สามสิบวัน', 'เจ็ดสิบสองชั่วโมง', 'ห้าล้านบาท'). Used only to widen what an answer may quote; a word such as 'ห้าม'
+    (prohibits) is read as 5, which loosens the check slightly and never tightens it. Thai spelled-out numbers in an ANSWER are not checked (nothing flags them)."""
+    values: List[float] = []
+    for run in _THAI_NUMBER_RUN.findall(text):
+        total, pending = 0, 0
+        for tok in _THAI_TOKEN.findall(run):
+            if tok in _THAI_UNITS:
+                pending = _THAI_UNITS[tok]
+            elif tok == "ยี่สิบ":
+                total += 20
+                pending = 0
+            elif tok in _THAI_SCALES:
+                total += (pending or 1) * _THAI_SCALES[tok]
+                pending = 0
+            elif tok == "ล้าน":
+                total = (total + pending or 1) * 1_000_000
+                pending = 0
+        total += pending
+        if total:
+            values.append(float(total))
+    return values
+
+
 def _numbers_in(text: str) -> List[float]:
     out: List[float] = []
     for m in _NUMBER.findall(text):
@@ -345,16 +474,17 @@ def _numbers_in(text: str) -> List[float]:
             out.append(float(m.replace(",", "")))
         except ValueError:
             continue
-    return out + _english_number_values(text)
+    return out + _english_number_values(text) + _thai_number_values(text)
 
 
 def check_answer(answer: str, hits: Sequence[Dict[str, Any]], question: str = "") -> Dict[str, Any]:
     """GROUNDED only when the answer cites at least one section and every section it cites was shown (or is referred to by a shown passage or by the question), and every number in it appears in the shown passages (as digits or as a number word), in the question,
     or is one of the cited section numbers. Anything else is labelled, never silently passed."""
+    answer, question = normalise_digits(answer), normalise_digits(question)
     shown_sections = {str(h["section"]) for h in hits}
-    passage_text = " ".join(str(h["text"]) for h in hits)
+    passage_text = normalise_digits(" ".join(str(h["text"]) for h in hits))
     # a section that a shown passage itself refers to ("violates section 27") may be named in the answer: the answer is repeating the text, not inventing a citation (the question may name one too)
-    referred = set(re.findall(r"(?:[Ss]ection|[Ss]ec\.|[Aa]rticle)\s*(\d{1,4})", passage_text)) | set(re.findall(r"(?:มาตรา|[Ss]ection|[Aa]rticle)\s*(\d{1,4})", question))
+    referred = set(re.findall(r"(?:มาตรา|[Ss]ection|[Ss]ec\.|[Aa]rticle)\s*(\d{1,4})", passage_text)) | set(re.findall(r"(?:มาตรา|[Ss]ection|[Aa]rticle)\s*(\d{1,4})", question))
     cited = [s for s in dict.fromkeys(re.findall(r"(?:มาตรา|[Ss]ection|[Ss]ec\.|[Aa]rticle)\s*(\d{1,4})", answer))]
     foreign = [s for s in cited if s not in shown_sections and s not in referred]
     allowed = set(_numbers_in(passage_text)) | set(_numbers_in(question)) | {float(s) for s in cited if s.isdigit()}
