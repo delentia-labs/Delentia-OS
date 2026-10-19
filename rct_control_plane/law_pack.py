@@ -109,6 +109,12 @@ class LawPack:
         self.vectors = vectors
         self.embed_model = embed_model
         self.question_vectors = question_vectors           # per chunk, the embeddings of the questions the local model wrote for it (arm A4)
+        self.declared_fingerprint: Optional[str] = None    # what the file said at import; None for a pack imported before Round 91
+
+    def fingerprint(self) -> str:
+        """SHA-256 of the sections as the agent would be shown them. A pack file whose text was edited after import no longer matches the fingerprint written into it."""
+        canon = json.dumps([[c["section"], c["text"]] for c in self.chunks], ensure_ascii=False, separators=(",", ":"))
+        return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 
     @property
     def sections(self) -> List[str]:
@@ -123,7 +129,7 @@ class LawPack:
     def to_json(self) -> Dict[str, Any]:
         from rct_control_plane import memory_embeddings as me
         return {"format": 1, "name": self.name, "edition": self.edition, "jurisdiction": self.jurisdiction, "source": self.source, "sha256": self.sha256,
-                "embed_model": self.embed_model, "chunks": self.chunks,
+                "embed_model": self.embed_model, "chunks": self.chunks, "chunks_sha256": self.fingerprint(),
                 "vectors": [base64.b64encode(me.pack(v)).decode("ascii") for v in self.vectors] if self.vectors else None,
                 "question_vectors": [[base64.b64encode(me.pack(v)).decode("ascii") for v in qs] for qs in self.question_vectors] if self.question_vectors else None}
 
@@ -132,7 +138,9 @@ class LawPack:
         from rct_control_plane import memory_embeddings as me
         vectors = [list(me.unpack(base64.b64decode(v))) for v in data["vectors"]] if data.get("vectors") else None
         qvecs = [[list(me.unpack(base64.b64decode(v))) for v in qs] for qs in data["question_vectors"]] if data.get("question_vectors") else None
-        return cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
+        pack = cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
+        pack.declared_fingerprint = data.get("chunks_sha256")
+        return pack
 
 
 def screen_for_injection(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -233,7 +241,24 @@ def load_pack(name: str) -> LawPack:
     path = packs_dir() / f"{name}.json"
     if not path.exists():
         raise FileNotFoundError(f"no law pack called {name!r} (import one with `delentia law import`)")
-    return LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    pack = LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    if pack.declared_fingerprint and pack.declared_fingerprint != pack.fingerprint():
+        raise ValueError(f"the pack file {name!r} was changed after it was imported (its text no longer matches its fingerprint): import it again from the source text")
+    return pack
+
+
+def verify_pack(name: str) -> Dict[str, Any]:
+    """Is the pack file still what was imported? `verified` is True/False, or None for a pack imported before fingerprints existed (it cannot be checked: import it again)."""
+    try:
+        path = packs_dir() / f"{name}.json"
+        pack = LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, ValueError, KeyError) as exc:
+        return {"name": name, "verified": False, "detail": f"unreadable ({type(exc).__name__})"}
+    if not pack.declared_fingerprint:
+        return {"name": name, "verified": None, "detail": "imported before fingerprints existed; it cannot be checked. Import it again from the source text."}
+    ok = pack.declared_fingerprint == pack.fingerprint()
+    return {"name": name, "verified": ok, "fingerprint": pack.declared_fingerprint[:16],
+            "detail": "the text is exactly what was imported" if ok else "the text was changed after import: do not rely on this pack"}
 
 
 def has_packs() -> bool:
@@ -269,8 +294,10 @@ def lookup(pack_name: str, question: str, limit: int = TOP_K) -> Dict[str, Any]:
         pack_name = names[0]
     try:
         pack = load_pack_cached(pack_name)
-    except (FileNotFoundError, ValueError):
+    except FileNotFoundError:
         return {"error": f"no law pack called {pack_name!r}; the packs are: {', '.join(names) or 'none imported'}"}
+    except ValueError as exc:
+        return {"error": str(exc)}
     hits = retrieve(pack, question, k=max(1, min(int(limit), 8)), arm="A0")
     return {"pack": pack.label(), "source": pack.source, "notice": DISCLAIMER,
             "how_to_answer": "Answer only from these passages and name the section (e.g. 'มาตรา 30' / 'section 30'). Use only numbers that appear in them. If they do not contain the answer, say it is not found in the supplied text.",
@@ -296,7 +323,8 @@ def list_packs() -> List[Dict[str, Any]]:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             out.append({"name": data["name"], "edition": data["edition"], "jurisdiction": data["jurisdiction"], "sections": len({c['section'] for c in data["chunks"]}),
-                        "chunks": len(data["chunks"]), "embedded": bool(data.get("vectors")), "sha256": data["sha256"][:12]})
+                        "chunks": len(data["chunks"]), "embedded": bool(data.get("vectors")), "sha256": data["sha256"][:12],
+                        "verified": verify_pack(path.stem)["verified"]})
         except Exception:                                    # noqa: BLE001 - one unreadable file must not hide the others
             out.append({"name": path.stem, "error": "unreadable"})
     return out

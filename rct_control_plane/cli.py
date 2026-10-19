@@ -1836,6 +1836,17 @@ def law_import(name: str, text_file: str, edition: str, jurisdiction: str, sourc
     click.echo(f"{pack.label()}: {len(pack.sections)} sections, {len(pack.chunks)} passages, {'embedded with ' + pack.embed_model if pack.vectors else 'words only'} -> {target}")
 
 
+@law_group.command("verify")
+@click.argument("name")
+def law_verify(name: str) -> None:
+    """Is the pack file still exactly what was imported? Exit 1 when it was changed or cannot be checked."""
+    from rct_control_plane import law_pack
+    result = law_pack.verify_pack(name)
+    word = "OK" if result["verified"] else ("NOT CHECKED" if result["verified"] is None else "CHANGED")
+    click.echo(f"{name}: {word} - {result['detail']}")
+    raise SystemExit(0 if result["verified"] else 1)
+
+
 @law_group.command("list")
 def law_list() -> None:
     """The packs you have imported."""
