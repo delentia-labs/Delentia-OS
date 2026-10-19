@@ -211,6 +211,6 @@ class TimestampWitness:
                 continue
             if verdict is None:
                 unchecked += 1
-            anchors.append({"key_id": row["key_id"], "entries": int(n), "head": row["head"], "signed_at": row["signed_at"], "signature": row.get("signature", ""),
+            anchors.append({"key_id": row["key_id"], "entries": int(row["entries"]), "head": row["head"], "signed_at": row["signed_at"], "signature": row.get("signature", ""),
                             "received_at": parsed["gen_time"]})
         return {"anchors": anchors, "conflicts": conflicts, "unchecked_signatures": unchecked}
