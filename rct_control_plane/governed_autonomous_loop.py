@@ -1733,7 +1733,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                     pass
         try:                                   # Round 90: an answer given after a law lookup is checked against the passages the agent was shown; what is not confirmed is labelled, never silently passed
             from rct_control_plane import law_pack
-            shown = law_pack.passages_from_steps(result.get("steps"))
+            shown = law_pack.passages_from_steps(result.get("steps") or [])
             if shown and stopped_reason == "llm_finished" and result.get("final_answer"):
                 law_check = law_pack.check_answer(str(result["final_answer"]), shown, str(result.get("goal") or ""))
                 result["law_check"] = law_check
