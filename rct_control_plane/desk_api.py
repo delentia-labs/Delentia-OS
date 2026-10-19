@@ -1192,12 +1192,13 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         if not (edition and jurisdiction and source):
             raise HTTPException(status_code=400, detail="edition, jurisdiction and source are required: a pack must say which text it is and where it came from")
         try:
-            pack = await asyncio.to_thread(law_pack.build_pack, name, text, edition=edition, jurisdiction=jurisdiction, source=source, embed=bool(payload.get("embed", True)))
+            pack = await asyncio.to_thread(law_pack.build_pack, name, text, edition=edition, jurisdiction=jurisdiction, source=source, embed=bool(payload.get("embed", True)),
+                                            allow_flagged=bool(payload.get("allow_flagged", False)))
         except (ValueError, RuntimeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         law_pack.save_pack(pack)
         return {"name": pack.name, "sections": len(pack.sections), "chunks": len(pack.chunks), "embedded": bool(pack.vectors), "fingerprint": pack.fingerprint()[:16],
-                "label": pack.label()}
+                "label": pack.label(), "reviewed_flags": pack.reviewed_flags}
 
     @router.post("/law/lookup")
     async def law_lookup(payload: Dict[str, Any]) -> Dict[str, Any]:

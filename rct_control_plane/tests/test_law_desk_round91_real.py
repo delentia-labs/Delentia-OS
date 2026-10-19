@@ -194,3 +194,36 @@ def test_compare_reassembles_a_long_section_from_its_overlapping_windows(desk):
     assert len(a.chunks) > 1 and lp.section_texts(a)["1"] == long_a.replace("\n", " ")
     d = lp.compare_packs(a, b)["differing"][0]
     assert d["section"] == "1" and d["similarity"] > 0.99 and "word450" in d["first_difference"]["a"]
+
+
+# ------------------------------------------------------------------ a real Thai statute trips the content screen: the owner reads the places and imports on their own say-so
+
+THAI_STATUTE = """
+มาตรา 1 พระราชบัญญัตินี้เรียกว่า พระราชบัญญัติตัวอย่าง พ.ศ. 2569
+มาตรา 6 ให้ผู้ควบคุมข้อมูลปิดประกาศคำสั่งของคณะกรรมการไว้ในที่เปิดเผยภายในสามสิบวันนับแต่วันที่ได้รับคำสั่งนั้น
+มาตรา 37 ผู้ควบคุมข้อมูลส่วนบุคคลมีหน้าที่ ลบหรือทำลายข้อมูลส่วนบุคคลเมื่อพ้นกำหนดระยะเวลาเก็บรักษา หรือที่ไม่เกี่ยวข้องหรือเกินความจำเป็น
+"""
+
+
+def test_a_thai_statute_that_trips_the_screen_is_refused_with_the_words_shown_and_accepted_when_the_owner_says_so(desk):
+    client, _ = desk
+    refused = _import(client, text=THAI_STATUTE, name="thai-example")
+    assert refused.status_code == 400
+    detail = refused.json()["detail"]
+    assert "CORD-S" in detail and "--allow-flagged" in detail and "ทำลาย" in detail, "the owner must be shown what tripped the screen"
+    assert client.get("/v1/desk/law/packs").json()["packs"] == []
+    accepted = _import(client, text=THAI_STATUTE, name="thai-example", allow_flagged=True)
+    assert accepted.status_code == 200 and accepted.json()["reviewed_flags"], "the flags are recorded"
+    listed = client.get("/v1/desk/law/packs").json()["packs"][0]
+    assert listed["reviewed_flags"] >= 1 and listed["verified"] is True
+
+
+def test_the_cli_import_has_the_same_two_steps(desk, tmp_path):
+    client, _ = desk
+    f = tmp_path / "thai.txt"
+    f.write_text(THAI_STATUTE, encoding="utf-8")
+    base = ["law", "import", "thai-cli", str(f), "--edition", "test", "--jurisdiction", "TH", "--no-embed"]
+    refused = CliRunner().invoke(cli, base)
+    assert refused.exit_code == 1 and "--allow-flagged" in refused.output
+    ok = CliRunner().invoke(cli, [*base, "--allow-flagged"])
+    assert ok.exit_code == 0 and "recorded:" in ok.output and "CORD-S" in ok.output

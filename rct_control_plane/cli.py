@@ -1823,17 +1823,21 @@ def law_group():
 @click.option("--jurisdiction", required=True, help="Country or region code, e.g. TH.")
 @click.option("--source", default=None, help="Where the text came from (default: the file name).")
 @click.option("--no-embed", is_flag=True, help="Skip the local embedding model: search by words only (weaker for questions asked in another language).")
-def law_import(name: str, text_file: str, edition: str, jurisdiction: str, source: Optional[str], no_embed: bool) -> None:
+@click.option("--allow-flagged", is_flag=True, help="Import even though the content screen flagged places in the text. Read them first (the error lists them); they are recorded in the pack.")
+def law_import(name: str, text_file: str, edition: str, jurisdiction: str, source: Optional[str], no_embed: bool, allow_flagged: bool = False) -> None:
     """Import a statute's text (UTF-8; a heading must start a line: 'Section 12', 'Article 12' or 'มาตรา 12')."""
     from rct_control_plane import law_pack
     text = Path(text_file).read_text(encoding="utf-8")
     try:
-        pack = law_pack.build_pack(name, text, edition=edition, jurisdiction=jurisdiction, source=source or Path(text_file).name, embed=not no_embed)
+        pack = law_pack.build_pack(name, text, edition=edition, jurisdiction=jurisdiction, source=source or Path(text_file).name, embed=not no_embed,
+                                    allow_flagged=allow_flagged)
     except (ValueError, RuntimeError) as exc:
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     target = law_pack.save_pack(pack)
     click.echo(f"{pack.label()}: {len(pack.sections)} sections, {len(pack.chunks)} passages, {'embedded with ' + pack.embed_model if pack.vectors else 'words only'} -> {target}")
+    if pack.reviewed_flags:
+        click.echo(f"recorded: {len(pack.reviewed_flags)} place(s) the content screen flagged, imported on your say-so: {', '.join(f'{s}:{r}' for s, r in pack.reviewed_flags)}")
 
 
 @law_group.command("compare")

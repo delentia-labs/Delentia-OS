@@ -110,6 +110,7 @@ class LawPack:
         self.embed_model = embed_model
         self.question_vectors = question_vectors           # per chunk, the embeddings of the questions the local model wrote for it (arm A4)
         self.declared_fingerprint: Optional[str] = None    # what the file said at import; None for a pack imported before Round 91
+        self.reviewed_flags: List[List[str]] = []          # Round 91: [section, rule] the content screen flagged and the owner imported anyway after reading them
 
     def fingerprint(self) -> str:
         """SHA-256 of the sections as the agent would be shown them. A pack file whose text was edited after import no longer matches the fingerprint written into it."""
@@ -129,7 +130,7 @@ class LawPack:
     def to_json(self) -> Dict[str, Any]:
         from rct_control_plane import memory_embeddings as me
         return {"format": 1, "name": self.name, "edition": self.edition, "jurisdiction": self.jurisdiction, "source": self.source, "sha256": self.sha256,
-                "embed_model": self.embed_model, "chunks": self.chunks, "chunks_sha256": self.fingerprint(),
+                "embed_model": self.embed_model, "chunks": self.chunks, "chunks_sha256": self.fingerprint(), "reviewed_flags": self.reviewed_flags,
                 "vectors": [base64.b64encode(me.pack(v)).decode("ascii") for v in self.vectors] if self.vectors else None,
                 "question_vectors": [[base64.b64encode(me.pack(v)).decode("ascii") for v in qs] for qs in self.question_vectors] if self.question_vectors else None}
 
@@ -140,6 +141,7 @@ class LawPack:
         qvecs = [[list(me.unpack(base64.b64decode(v))) for v in qs] for qs in data["question_vectors"]] if data.get("question_vectors") else None
         pack = cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
         pack.declared_fingerprint = data.get("chunks_sha256")
+        pack.reviewed_flags = [list(map(str, f)) for f in (data.get("reviewed_flags") or [])]
         return pack
 
 
@@ -156,6 +158,19 @@ def screen_for_injection(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str,
     return flagged
 
 
+def screen_details(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str, str, str]]:
+    """(section, rule id, the words that matched) for the same sections `screen_for_injection` lists, so the owner can read what tripped the screen. Round 91: a real Thai statute trips it
+    (the Thai PDPA: 'ปิด ... คำสั่ง' in section 6, 'ทำลายข้อมูล' = destroy data in section 37, 'ไม่มีนโยบาย' = has no policy in section 29), because statutes legitimately speak of closing, destroying and cancelling."""
+    from rct_control_plane.injection_screen import InjectionScreen
+    screen = InjectionScreen()
+    out: List[Tuple[str, str, str]] = []
+    for number, body in sections:
+        for finding in screen.check(body, trusted=False):
+            if finding.severity == "hard":
+                out.append((number, finding.pattern_id, finding.excerpt))
+    return out
+
+
 def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source: str, embed: bool = True, embed_model: Optional[str] = None,
                allow_flagged: bool = False) -> LawPack:
     if not name.strip() or not re.fullmatch(r"[A-Za-z0-9._-]{1,60}", name):
@@ -163,14 +178,16 @@ def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source:
     if len(text) > MAX_PACK_CHARS:
         raise ValueError(f"the text is larger than {MAX_PACK_CHARS:,} characters: import one statute at a time")
     sections = split_sections(text)
-    flagged = [] if allow_flagged else screen_for_injection(sections)
-    if flagged:
-        raise ValueError(f"the content screen would block {len(flagged)} section(s) of this text ({', '.join(f'{s}:{r}' for s, r in flagged[:6])}): a statute should not contain instructions "
-                         "to a reader; check the file, or import with allow_flagged=True if you have read those sections and they are genuine")
+    details = screen_details(sections)
+    if details and not allow_flagged:
+        shown = "; ".join(f"section {s} {r}: \"{e}\"" for s, r, e in details[:8])
+        raise ValueError(f"the content screen flagged {len(details)} place(s) in this text ({shown}). A statute should not give instructions to a reader, but a real one does speak of closing, destroying "
+                         "and cancelling, so read those sections: if they are genuine statute text, import again with --allow-flagged (Desk: tick the box); the flags are then recorded in the pack")
     chunks = make_chunks(sections)
     if not chunks:
         raise ValueError("no sections were found: a section heading must start a line ('Section 12', 'Article 12' or 'มาตรา 12')")
     pack = LawPack(name, edition, jurisdiction, source, hashlib.sha256(text.encode("utf-8")).hexdigest(), chunks)
+    pack.reviewed_flags = [[s, r] for s, r, _e in details] if allow_flagged else []
     if embed:
         from rct_control_plane import memory_embeddings as me
         model_name = embed_model or me.model()
@@ -362,7 +379,7 @@ def list_packs() -> List[Dict[str, Any]]:
             data = json.loads(path.read_text(encoding="utf-8"))
             out.append({"name": data["name"], "edition": data["edition"], "jurisdiction": data["jurisdiction"], "sections": len({c['section'] for c in data["chunks"]}),
                         "chunks": len(data["chunks"]), "embedded": bool(data.get("vectors")), "sha256": data["sha256"][:12],
-                        "verified": verify_pack(path.stem)["verified"]})
+                        "verified": verify_pack(path.stem)["verified"], "reviewed_flags": len(data.get("reviewed_flags") or [])})
         except Exception:                                    # noqa: BLE001 - one unreadable file must not hide the others
             out.append({"name": path.stem, "error": "unreadable"})
     return out

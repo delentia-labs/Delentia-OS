@@ -29,6 +29,7 @@ export default function LawPage() {
   const [source, setSource] = useState("");
   const [text, setText] = useState("");
   const [embed, setEmbed] = useState(true);
+  const [allowFlagged, setAllowFlagged] = useState(false);
   const [importing, setImporting] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -43,9 +44,9 @@ export default function LawPage() {
   const doImport = async () => {
     setImporting(true); setNote(null);
     try {
-      const r = await desk.lawImport({ name: name.trim(), text, edition: edition.trim(), jurisdiction: jurisdiction.trim(), source: source.trim(), embed });
-      setNote(T(`Imported ${r.label}: ${r.sections} sections, ${r.chunks} passages, ${r.embedded ? "searchable by meaning" : "word search only"} (fingerprint ${r.fingerprint}).`,
-        `นำเข้า ${r.label} แล้ว: ${r.sections} มาตรา ${r.chunks} ท่อน ${r.embedded ? "ค้นด้วยความหมายได้" : "ค้นด้วยคำเท่านั้น"} (fingerprint ${r.fingerprint})`));
+      const r = await desk.lawImport({ name: name.trim(), text, edition: edition.trim(), jurisdiction: jurisdiction.trim(), source: source.trim(), embed, allow_flagged: allowFlagged });
+      setNote(T(`Imported ${r.label}: ${r.sections} sections, ${r.chunks} passages, ${r.embedded ? "searchable by meaning" : "word search only"} (fingerprint ${r.fingerprint})${r.reviewed_flags.length ? `; ${r.reviewed_flags.length} flagged place(s) recorded` : ""}.`,
+        `นำเข้า ${r.label} แล้ว: ${r.sections} มาตรา ${r.chunks} ท่อน ${r.embedded ? "ค้นด้วยความหมายได้" : "ค้นด้วยคำเท่านั้น"} (fingerprint ${r.fingerprint})${r.reviewed_flags.length ? ` บันทึกจุดที่ถูกตั้งธง ${r.reviewed_flags.length} จุด` : ""}`));
       setText(""); state.reload();
     } catch (e) { setNote(e instanceof Error ? e.message : String(e)); } finally { setImporting(false); }
   };
@@ -76,7 +77,7 @@ export default function LawPage() {
                 <div className="space-y-3">
                   {d.packs.map((p) => (
                     <div key={p.name} className="rounded border border-dl-rule bg-dl-ink/40 px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-2"><span className="desk-mono text-[13px] text-dl-text">{p.name}</span>{verifiedBadge(p, T)}{p.embedded ? <Badge tone="fern">{T("meaning search", "ค้นด้วยความหมาย")}</Badge> : <Badge tone="muted">{T("word search", "ค้นด้วยคำ")}</Badge>}</div>
+                      <div className="flex flex-wrap items-center gap-2"><span className="desk-mono text-[13px] text-dl-text">{p.name}</span>{verifiedBadge(p, T)}{p.reviewed_flags ? <Badge tone="amber" title={T("The content screen flagged places in this text; they were read and imported on the owner's say-so", "ตัวกรองเนื้อหาตั้งธงบางจุดในข้อความนี้ เจ้าของอ่านแล้วอนุมัตินำเข้า")}>{T(`${p.reviewed_flags} flagged place(s) accepted`, `ธงที่รับแล้ว ${p.reviewed_flags} จุด`)}</Badge> : null}{p.embedded ? <Badge tone="fern">{T("meaning search", "ค้นด้วยความหมาย")}</Badge> : <Badge tone="muted">{T("word search", "ค้นด้วยคำ")}</Badge>}</div>
                       {!p.error ? <p className="mt-1 text-[12px] text-dl-muted">{p.jurisdiction} · {T("edition", "ฉบับ")}: {p.edition} · {p.sections} {T("sections", "มาตรา")} · {p.chunks} {T("passages", "ท่อน")} · sha256 {p.sha256}</p> : null}
                     </div>
                   ))}
@@ -134,6 +135,7 @@ export default function LawPage() {
               </div>
               <label className="mt-3 block"><span className={label}>{T("Statute text", "ข้อความตัวบท")}</span><textarea value={text} onChange={(e) => setText(e.target.value)} rows={10} className={field} aria-label="Statute text" /></label>
               <label className="mt-3 flex items-center gap-2 text-[13px] text-dl-text"><input type="checkbox" checked={embed} onChange={(e) => setEmbed(e.target.checked)} />{T("Search by meaning (needs the local embedding model; can take minutes for a long statute)", "ค้นด้วยความหมาย (ต้องมีโมเดล embedding ในเครื่อง ตัวบทยาวอาจใช้เวลาหลายนาที)")}</label>
+              <label className="mt-2 flex items-start gap-2 text-[13px] text-dl-text"><input type="checkbox" className="mt-1" checked={allowFlagged} onChange={(e) => setAllowFlagged(e.target.checked)} />{T("The content screen flagged places in this text and I have read them: they are genuine statute text (a real statute speaks of closing, destroying and cancelling). Record the flags and import.", "ตัวกรองเนื้อหาตั้งธงบางจุดและฉันอ่านแล้ว: เป็นข้อความตัวบทจริง (ตัวบทจริงพูดถึงการปิด การทำลาย การยกเลิกได้) บันทึกธงและนำเข้า")}</label>
               <div className="mt-3 flex items-center gap-3">
                 <Button onClick={doImport} disabled={importing || !name.trim() || !edition.trim() || !jurisdiction.trim() || !source.trim() || !text.trim()}>{importing ? T("Importing…", "กำลังนำเข้า…") : T("Import", "นำเข้า")}</Button>
                 <span className="text-[12px] text-dl-muted">{d.notice}</span>
