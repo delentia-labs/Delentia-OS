@@ -788,7 +788,7 @@ async def c21(env: Env, ok: Check) -> Dict[str, Any]:
             r["changes"].get("tool_name") == "mcp__notes__fetch_page" for r in env.audit_rows("governed_loop_tool_result_screen")))
         env.model.reset()
         loop = env.loop("c21-write")
-        pending = await loop.run("Save a note called ledger")
+        pending = await loop.run("Save a note called ledger with the project name from pyproject.toml")
         ok("a tool the owner did not declare read-only waits for a human signature", pending["stopped_reason"] == "pending_approval" and not notes_file.exists(),
            (pending["stopped_reason"], notes_file.exists()))
         approval_id = pending["approval_id"]

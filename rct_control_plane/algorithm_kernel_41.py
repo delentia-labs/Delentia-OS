@@ -622,11 +622,12 @@ class AlgorithmKernel41:
         result = self._intent_compiler.compile(natural_language=intent_text, user_id="kernel", user_tier="PRO")
 
         if not result.success or result.intent is None:
-            # Round 91 (research/unknown_intent_criteria_r91.md, H2): a goal the compiler cannot read is NOT a low-risk goal. I is strictness, so 0.5 (the most lenient exponent the gate uses) rewarded
-            # vocabulary the compiler lacks: cold-start action goals it could not classify passed the data gate in 12 of 14 cases, classified ones in 2 of 21. Unknown now gets the exponent of a
-            # STRUCTURAL goal. DELENTIA_UNKNOWN_INTENT=lenient restores 0.5.
-            lenient = (os.environ.get("DELENTIA_UNKNOWN_INTENT") or "").strip().lower() == "lenient"
-            return 0.3, (0.5 if lenient else 1.0), result
+            # Round 91 (research/unknown_intent_criteria_r91.md, H2): a goal the compiler cannot read gets the most lenient exponent the gate uses (0.5), so vocabulary the compiler lacks is rewarded:
+            # cold-start action goals it could not classify passed the data gate in 12 of 14 cases, classified ones in 2 of 21. Giving unknown goals the exponent of a STRUCTURAL goal (1.0) closes
+            # that, but the criteria's rule 4 (every existing test passes) FAILED: the owner demo's edit step (a Thai goal), harness cases C20 (Tool Forge) and C21 (external MCP) were blocked at the
+            # cold start instead of asking for a signature, and every Thai goal is unclassified. So it is OFF by default: DELENTIA_UNKNOWN_INTENT=strict turns it on (for English-only hosts).
+            strict = (os.environ.get("DELENTIA_UNKNOWN_INTENT") or "").strip().lower() == "strict"
+            return 0.3, (1.0 if strict else 0.5), result
 
         intent_obj = result.intent
         validation = result.validation

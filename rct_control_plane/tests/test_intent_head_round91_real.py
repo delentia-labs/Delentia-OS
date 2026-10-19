@@ -24,7 +24,7 @@ def compiled(goal):
 
 
 @pytest.fixture(autouse=True)
-def _strict(monkeypatch):
+def _strict(monkeypatch):  # the default (not strict) is what the measurements below describe
     monkeypatch.delenv("DELENTIA_UNKNOWN_INTENT", raising=False)
 
 
@@ -76,12 +76,13 @@ def test_the_old_design_choice_that_a_typo_fix_is_a_low_risk_debug_stays():
     assert compiled("Fix the typo in README.md") == ("DEBUG", "LOW")            # ALGO-21's FAST route is built on this (Round 48); only "fix" keeps it, other changes are STRUCTURAL
 
 
-def test_an_unclassifiable_goal_is_judged_like_a_structural_one_and_the_switch_restores_the_old_exponent(monkeypatch):
+def test_an_unclassifiable_goal_keeps_the_lenient_exponent_by_default_and_strict_is_opt_in(monkeypatch):
+    """H2 failed the criteria's rule 4 (the owner demo's Thai edit step, harness C20 and C21 were blocked at the cold start), so it is off by default."""
     from rct_control_plane.algorithm_kernel_41 import AlgorithmKernel41
     kernel = AlgorithmKernel41()
-    assert kernel.synthesize_fdia_inputs("Maintenance window next Tuesday")[1] == 1.0
-    monkeypatch.setenv("DELENTIA_UNKNOWN_INTENT", "lenient")
     assert kernel.synthesize_fdia_inputs("Maintenance window next Tuesday")[1] == 0.5
+    monkeypatch.setenv("DELENTIA_UNKNOWN_INTENT", "strict")
+    assert kernel.synthesize_fdia_inputs("Maintenance window next Tuesday")[1] == 1.0
 
 
 HOSTILE = {"commas": ", " * 20000, "and": "and " * 20000, "then": "then " * 20000, "dots": ". " * 20000, "polite-chain": "please and then " * 10000, "one-word": "a" * 100000,

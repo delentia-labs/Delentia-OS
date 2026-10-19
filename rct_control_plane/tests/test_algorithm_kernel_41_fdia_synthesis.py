@@ -45,16 +45,16 @@ class TestFdiaSynthesis:
             D, _, _ = kernel.synthesize_fdia_inputs(text)
             assert 0.1 <= D <= 1.0, f"D={D} out of documented [0.1, 1.0] range for {text!r}"
 
-    def test_unclassifiable_intent_falls_back_to_a_documented_pair_not_a_crash(self, kernel, monkeypatch):
-        """Round 91 (research/unknown_intent_criteria_r91.md, H2): a goal the compiler cannot read gets the exponent of a STRUCTURAL goal (I = 1.0), not the most lenient one (0.5): before, cold-start
-        action goals it could not classify passed the data gate in 12 of 14 cases and classified ones in 2 of 21. DELENTIA_UNKNOWN_INTENT=lenient restores 0.5."""
+    def test_unclassifiable_intent_falls_back_to_a_low_documented_pair_not_a_crash(self, kernel, monkeypatch):
+        """Round 91 (research/unknown_intent_criteria_r91.md, H2): the default stays the most lenient exponent (0.5) because the stricter one (1.0, DELENTIA_UNKNOWN_INTENT=strict) failed the criteria's
+        rule 4: the owner demo's Thai edit step and harness cases C20 and C21 were blocked at the cold start. The strict switch is measured to close a real loophole and is kept for English-only hosts."""
         monkeypatch.delenv("DELENTIA_UNKNOWN_INTENT", raising=False)
         D, I, result = kernel.synthesize_fdia_inputs("asdkjaslkdj random unclassifiable gibberish text")
         assert result.intent is None, "setup assumption: this text must genuinely fail to classify"
         assert D == 0.3
-        assert I == 1.0
-        monkeypatch.setenv("DELENTIA_UNKNOWN_INTENT", "lenient")
-        assert kernel.synthesize_fdia_inputs("asdkjaslkdj random unclassifiable gibberish text")[1] == 0.5
+        assert I == 0.5
+        monkeypatch.setenv("DELENTIA_UNKNOWN_INTENT", "strict")
+        assert kernel.synthesize_fdia_inputs("asdkjaslkdj random unclassifiable gibberish text")[1] == 1.0
 
     def test_pipeline_no_longer_hardcodes_098_096(self, kernel):
         """Regression test for the exact bug found: algo_01_fdia(0.98, 0.96, 1.0) called regardless of `intent`."""
@@ -70,5 +70,5 @@ class TestFdiaSynthesis:
 
     def test_fdia_score_still_computed_via_the_real_algo_01_fdia_formula(self, kernel):
         result = kernel.process_intent_full_pipeline("asdkjaslkdj random unclassifiable gibberish text")
-        # Round 91: an unclassifiable goal now has D=0.3, I=1.0, A=1.0 -> F = 0.3^1.0 = 0.3 (it was I=0.5, F = 0.5477, the most lenient exponent the gate uses)
-        assert result["fdia_score"] == pytest.approx(0.3, abs=1e-4)
+        # D=0.3, I=0.5, A=1.0 -> F = 0.3^0.5 = 0.5477225575... (the default; DELENTIA_UNKNOWN_INTENT=strict would give I=1.0, F=0.3)
+        assert result["fdia_score"] == pytest.approx(0.5477, abs=1e-4)

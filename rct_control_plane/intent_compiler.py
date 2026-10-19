@@ -408,6 +408,7 @@ class IntentCompiler:
         # Extract keywords
         result.keywords = self._extract_keywords(text_lower)
         result.metadata["head"], result.metadata["later_action"] = self._head_kind(text_lower)
+        result.metadata["head_word"] = self._head_word(text_lower)
 
         # Extract entities
         result.entities = self._extract_entities(text, text_lower)
@@ -547,6 +548,14 @@ class IntentCompiler:
     })
     _LATER_CLAUSE = re.compile(r"(?:[,;?!.]|\band\b|\bthen\b)\s+(?:(?:and|then|please)\s+)*([a-z']+)")
 
+    # Verbs that make something new (no existing target is needed): an action with one of these heads and no other type word is a BUILD_APP, not a REFACTOR of something that must already exist.
+    _CREATE_HEADS = frozenset({"create", "write", "save", "store", "put", "generate", "build", "insert"})
+
+    @classmethod
+    def _head_word(cls, text: str) -> str:
+        m = re.match(r"[a-z']+", cls._POLITE_LEAD.sub("", text.strip(), count=1))
+        return m.group(0) if m else ""
+
     @classmethod
     def _head_kind(cls, text: str) -> "tuple[Optional[str], bool]":
         """('action' | 'read' | None, whether a LATER clause starts with a state-changing verb) for an English goal in lower case. Thai and other text has no head and is left to the keyword lists."""
@@ -581,7 +590,9 @@ class IntentCompiler:
         if head == "action":
             # the sentence asks for a change: a query word later in it does not turn it into a question; with no other type keyword it is a change to something that exists
             non_query = {t: s for t, s in scores.items() if t != IntentType.QUERY}
-            return max(non_query, key=lambda k: non_query[k]) if non_query else IntentType.REFACTOR
+            if non_query:
+                return max(non_query, key=lambda k: non_query[k])
+            return IntentType.BUILD_APP if lexical.metadata.get("head_word") in self._CREATE_HEADS else IntentType.REFACTOR
         if head == "read" and not later and not any(kw in lexical.keywords for kw in self.HIGH_RISK_KEYWORDS):
             return IntentType.QUERY                         # a question that merely mentions a verb ("what did the last release change?") stays a question; a high-risk word keeps the old reading
 
