@@ -1,20 +1,28 @@
 # RCT Platform — Public Claim Registry
 
 **Version:** 3.0.0  
-**Last Updated:** 2026-09-28  
+**Last Updated:** 2026-10-22
 **Whitepaper:** [Whitepaper 3.0](../whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md) uses only the claims below  
 **Authoritative source:** [`docs/testing/TESTING_CANONICAL.md`](../testing/TESTING_CANONICAL.md)
 
-This file is the **single approved wording source** for every public-facing claim about RCT Platform. Before publishing anything on X, HN, Reddit, LinkedIn, or Thai communities, check that all numbers and phrases trace to an entry in this registry.
+Use the [current public information](../public/CURRENT_PUBLIC_INFORMATION_EN.md) for creator-confirmed definitions and [release levels](../release/RELEASE_LEVELS.md) for deployment scope. This registry records scoped claims and historical measurements; a row is not evidence that the current checkout reran its source. Before publication, verify the cited source and version. Earlier reports below remain dated observations, not automatic current approval.
 
 ---
+
+## 0. Definitions and origin
+
+- Use **FDIA Equation**; no expanded name is approved. Future/Data/Intent/Architect are variable meanings. Separate concept, estimators and enforcement; the score is not a calibrated safety probability.
+- Use the creator-attributed origin **28 June 2025**; **11 August 2025** is a separate turning point. These do not establish worldwide priority.
+- RCT-7 is Reverse Component Thinking. Explicit unknowns, backward dependencies, a visible plan and mismatch clarification are requirements whose complete implementation is not established by step names.
+- The eight-stage Constitutional Cycle is an execution/feedback lifecycle. LEARN does not automatically train the main LLM's weights.
+- Scripted evidence, capable-model success, comparative causal value and deployment assurance are separate claims.
 
 ## 1. Approved Technical Claims
 
 ### Test Suite
 | Claim | Approved Wording | Source |
 | --- | --- | --- |
-| Total passing tests | **7,820 passed · 43 skipped · 0 failed - public CI 2026-10-18, see TESTING_CANONICAL.md** | `TESTING_CANONICAL.md §1` |
+| Total passing tests | **Reported public CI checkpoint: 7,820 passed · 43 skipped · 1 xfailed · 0 failed, 2026-10-18 at 3dbed0d; see TESTING_CANONICAL.md** | `TESTING_CANONICAL.md §1` |
 | Coverage | *(pending re-measurement - do not quote 90%/91% until re-run; see `TESTING_CANONICAL.md §1`)* | `TESTING_CANONICAL.md §1` |
 | Microservice slice | *(pending re-measurement alongside coverage)* | `TESTING_CANONICAL.md §1` |
 | Python matrix | **Python 3.10 / 3.11 / 3.12** | `ci.yml` |
@@ -26,13 +34,13 @@ This file is the **single approved wording source** for every public-facing clai
 ### Architecture
 | Claim | Approved Wording | Source |
 | --- | --- | --- |
-| Layers | **10-layer architecture** | `README.md`, architecture docs |
+| Layers | Historical mappings differ; do not advertise a reconciled fixed layer count | Architecture documents |
 | Algorithms | **41-algorithm framework** | `README.md`, `lib/site-config.ts` |
 | Genome subsystems | **7 Genome subsystems** | `README.md` |
 | SDK license | **Apache 2.0** | `LICENSE`, `pyproject.toml` |
-| Status | **stable SDK (v2.0.0)** | `CHANGELOG.md`, `_version.py` |
+| Status | **Experimental, self-hosted, intent-centric AI agent runtime** | `docs/release/RELEASE_LEVELS.md` |
 | HexaCore roles | **9 roles (v2.3)** — 3 Western + 3 Eastern + 1 Thai + 1 Local + 1 LPU | `signedai/core/registry.py` |
-| Control plane modules | **22 modules** | `rct_control_plane/` |
+| Control plane modules | Inspect the selected API/module surface; a historical module count does not describe current readiness | `rct_control_plane/` |
 
 ### Performance (Measured, Reproducible)
 | Claim | Approved Wording | Evidence | Notes |
@@ -59,13 +67,13 @@ This file is the **single approved wording source** for every public-facing clai
 | Agent web fetch refuses internal addresses (Round 55) | **`delentia_crawl_url` refuses loopback, private, link-local and cloud-metadata addresses, on the first request and on every redirect.** (Before Round 55 it had no such check.) | `rct_control_plane/url_safety.py`, `test_breadth_round55_real.py` | DNS rebinding is not covered (the name is resolved twice) |
 | Thai CORD figures (Round 55) | **On 31 Thai attack texts written after the Thai rules were tuned, the rules blocked 15 (48.4%) and blocked 0 of 32 harmless Thai texts; with qwen2.5:7b as a second opinion, 21 (67.7%), 0 of 32 false blocks.** Do not say "supports Thai". | `tests/fixtures/cord_corpus_thai_round55*.json`, `scripts/measure_cord_classifier.py` | Small sets written by the maintainer; "0 of 32" means none found, not zero rate; the 41/41 on the first Thai set is tuned and proves nothing about coverage |
 | Starter skills (Round 55) | **20 bundled playbooks, validated against the live tool registry and the injection screen, shown as written by people, not learned.** Found 8 of 10 (top 3) for goals phrased differently from the playbooks. | `rct_control_plane/starter_skills.py`, `test_breadth_round55_real.py` | English matching only; token overlap is brittle |
-| Email/WhatsApp/Signal gateways (Round 55) | **Each is closed until its allowlist is set; WhatsApp checks Meta's HMAC before parsing; Email trusts a sender only if the allowlist and the server's DKIM/SPF verdict both agree and never replies to refused senders.** | `rct_control_plane/gateways/`, `test_gateways_round55_real.py` (29), harness C23 | Tested against loopback fakes only; never run against WhatsApp, Signal or a real mailbox; none is live (no host) |
+| Email/WhatsApp/Signal gateways (Round 55) | **Each is closed until its allowlist is set; WhatsApp checks Meta's HMAC before parsing; Email trusts a sender only if the allowlist and the server's DKIM/SPF verdict both agree and never replies to refused senders.** | `rct_control_plane/gateways/`, `test_gateways_round55_real.py` (29), harness C23 | Tested against loopback fakes only; never run against WhatsApp, Signal or a real mailbox; real-service readiness is not established by these local tests |
 | Per-person API tokens (Round 54) | **With `delentia tokens`, the server takes a caller's identity from its token; a namespace in the request body is ignored, a person sees only their own memory, and an unreadable token file locks everyone out.** | `rct_control_plane/api_tokens.py`, `test_identity_and_review_round54_real.py` | One shared token still works as the identity `shared` during migration |
 | CORD second opinion (Round 54) | **An optional small-model reviewer raised the block rate on a public labelled set from 10% to 23% (qwen2.5:7b, 0 false blocks of 56, ~6 s per text on CPU); 77% of those attacks still pass.** Opt-in; fail open | `scripts/measure_cord_classifier.py` | Not measured on Thai |
 | Parallel tool calls (Round 54) | **A batch of independent tool calls can run as waves over the Execution Graph IR (opt-in); measured 3.8x for four independent waits, 1.3x for a diamond, 1.0x for a chain.** Do not quote the ">70% time saved" of the architecture document | `scripts/dag_wave_benchmark.py` | CPU-bound Python gains about 1.1x |
 | CORD on external text (Round 54) | **On a public labelled set the authors did not write (deepset/prompt-injections), CORD's screen blocked 6.7% of attacks at first look and 10% after generic phrase additions, with 0 false blocks in 532 harmless texts.** Never quote the 95-100% of our own sets as detection of attacks in the wild | `scripts/measure_cord_external.py` | Persona and task-hijack text needs semantic judgment |
 | TOON / LoRA 1+4 (Round 54) | **Not built, by decision.** TOON used 15% more tokens than compact JSON on the runtime's payloads; no adapter weights exist and the development machine has no GPU. Do not claim either | `scripts/measure_toon_tokens.py`, `scripts/audit_master_architecture.py` | |
-| API origin protection (Round 53) | **Without an API token, the local API refuses requests from web pages of other sites and from non-loopback Host names; per-caller rate limiting is on in `delentia serve`.** | `rct_control_plane/api_auth.py`, `api_ratelimit.py` | Local protection; no host is deployed |
+| API origin protection (Round 53) | **Without an API token, the local API refuses requests from web pages of other sites and from non-loopback Host names; per-caller rate limiting is on in `delentia serve`.** | `rct_control_plane/api_auth.py`, `api_ratelimit.py` | Local protection; host deployment assurance requires separate evidence |
 
 ### Constitutional Security (Phase C)
 | Claim | Approved Wording | Source |
@@ -88,9 +96,9 @@ This file is the **single approved wording source** for every public-facing clai
 
 Use one of these **approved status phrases** in all public communications:
 
-- ✅ `"stable SDK (v2.0.0) — Phase A–D complete · Apache 2.0"`
-- ✅ `"v2.0.0 — open SDK layer of a production-derived constitutional AI system"`
-- ✅ `"7,820 tests passing · Apache 2.0 · Python 3.10+"`
+- ✅ `"Experimental, self-hosted AI agent runtime · Apache 2.0"`
+- ✅ `"Intent-centric runtime with RCT-7 design, policy controls, memory and feedback; full RCT-7 fidelity and capable-model value remain to be evaluated"`
+- ✅ `"Public CI reported 7,820 passed, 43 skipped, 1 xfailed on 2026-10-18 at 3dbed0d; see TESTING_CANONICAL.md"`
 - ✅ `"Delta-Memory: the delta log is 39% to 90% smaller than full snapshots (20 to 500 ticks, measured bytes, synthetic simulation) — reproducible with scripts/measure_delta_engine_real.py"`
 - ❌ Do NOT quote 91.5% or 95.3% for Delta-Memory: those were formula estimates
 - ❌ Do NOT use `"production-ready"` without qualification
@@ -105,13 +113,13 @@ Use one of these **approved status phrases** in all public communications:
 
 ### X (Twitter/X)
 - Max 280 chars; favor one clear claim + evidence link
-- Approved: `"7,820 tests passing · Apache 2.0 · Python 3.10+ · on GitHub: github.com/delentia-labs/delentia-os"`
+- Approved: `"Delentia OS: an experimental, self-hosted AI agent runtime. Source, scripted demo and limitations: github.com/delentia-labs/Delentia-OS"`
 - Approved: `"Delta-Memory: 39–90% smaller than full snapshots (20–500 ticks, measured bytes, synthetic) — python scripts/measure_delta_engine_real.py"`
 - Avoid: Thread of metrics without a reproducible evidence link
 
 ### Hacker News (Ask HN / Show HN)
 - Title must be factual; no superlatives
-- Approved title: `"Show HN: Delentia - a constitutional agent runtime with a deterministic FDIA gate (7,820 tests, Apache 2.0)"`
+- Approved title: `"Show HN: Delentia OS – an experimental self-hosted agent runtime with a scripted approval demo"`
 - First comment must include: SSOT test numbers + Colab link + scope boundary table
 
 ### Reddit (r/MachineLearning, r/LocalLLaMA, r/Python)
@@ -120,7 +128,7 @@ Use one of these **approved status phrases** in all public communications:
 
 ### LinkedIn
 - Professional framing; safe to include the test count (coverage % pending re-measurement, see §1)
-- Include FDIA equation description as "intent confidence scoring"
+- Describe FDIA as a conceptual framework with path-specific computational proxies and policy/approval controls; do not imply calibrated confidence
 - Appropriate: include business value + target audience (enterprise AI governance)
 
 ### Thai Communities (Pantip, Facebook, LINE Groups)
@@ -156,9 +164,9 @@ Use one of these **approved status phrases** in all public communications:
 | --- | --- |
 | Repository | `https://github.com/delentia-labs/delentia-os` |
 | Website | `https://delentia.com` |
-| Colab playground (no login needed) | `https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb` |
+| Colab playground (provider account requirements may apply) | `https://colab.research.google.com/github/delentia-labs/Delentia-OS/blob/main/notebooks/rct_playground.ipynb` |
 | CI badge (live status) | `https://github.com/delentia-labs/delentia-os/actions/workflows/ci.yml` |
-| Codecov (live coverage) | `https://app.codecov.io/gh/rctlabs/delentia-os` |
+| Codecov (live coverage) | `https://app.codecov.io/gh/delentia-labs/Delentia-OS` |
 | Testing SSOT | `https://github.com/delentia-labs/delentia-os/blob/main/docs/testing/TESTING_CANONICAL.md` |
 
 ---

@@ -1,0 +1,31 @@
+# Delentia Current Public Information
+
+ฉบับภาษาไทย v0.3 · 22 ตุลาคม 2026 · ข้อความสาธารณะที่ปรับจากนิยาม v0.3 ของผู้สร้าง
+
+## 1. Delentia คืออะไรในปัจจุบัน
+**Delentia OS คือโครงการโอเพนซอร์สสำหรับพัฒนา AI agent runtime แบบ self-hosted ที่ยึดเจตนาของผู้ใช้เป็นศูนย์กลาง** ภายในมีวงจร agent เครื่องมือ ความจำ ทักษะ การจัดตารางงาน และเอเจนต์ย่อย พร้อมกลไกจัดกระบวนการทำงานตาม RCT-7 ควบคุมการกระทำตาม FDIA/นโยบายของเจ้าของ และเก็บหลักฐานตรวจย้อนหลัง ผู้ใช้เลือกโมเดลและดูแลการติดตั้งเอง ชื่อ OS สื่อถึงการจัดระบบการทำงานของ agent บนระบบปฏิบัติการเดิม ปัจจุบันเป็นงานเชิงทดลอง มีโค้ดสาธารณะและการใช้งานภายใต้การดูแลบนเครื่องผู้สร้าง
+
+## 2. สร้างขึ้นจากคำถามอะไร
+อิทธิฤทธิ์ แซ่โง้ว ผู้สร้างซึ่งอธิบายตนเองว่าเป็น Thinker ยืนยันว่าโครงการ รวมทั้ง FDIA Equation และ RCT 7 Thinking เริ่มต้นเมื่อ **28 มิถุนายน 2568 (2025)** จากหน้ากระดาษและการสนทนากับ AI ทั่วไป โดยเริ่มกรอบ FDIA จากคำถาม **“อนาคตคืออะไร?”** และความเชื่อว่ามนุษย์มีบทบาทออกแบบอนาคตผ่านข้อมูล ประสบการณ์ เจตนา และการลงมือ ต่อมาจึงถามว่า **“ถ้าอยากให้ AI ทำงานตามวิธีคิดและเจตนาที่เราออกแบบ โดยมนุษย์ยังควบคุมการกระทำของมันได้ จะสร้างระบบเช่นนั้นอย่างไร?”** วันที่ **11 สิงหาคม 2568 (2025)** เป็นจุดเปลี่ยนและคำมั่นที่จะทำงานนี้ให้สำเร็จตามคำยืนยันของผู้สร้าง โดยแยกจากวันเริ่มต้น 28 มิถุนายน Delentia คือความพยายามแปลงกรอบคิดเหล่านี้เป็นกระบวนการและกลไกที่ตรวจได้
+
+## 3. FDIA และ RCT มีบทบาทอย่างไร
+**FDIA Equation — F = (D^I) × A** (ยังไม่มีชื่อเต็มทางการ): ต้นกำเนิดคือ Future (ผลที่เกิดจริง), Data (ข้อมูลและเงื่อนไขชีวิต), Intent (เจตนาที่ชัด ลึก และต่อเนื่อง), Architect (มนุษย์ผู้ออกแบบและรับผิดชอบ); ใน runtime ถูกนำมาตีความเป็นคะแนนประกอบการพิจารณาการกระทำ ร่วมกับนโยบาย สิทธิ์ และ approval ที่ตรวจสอบได้ การระงับ action เกิดจากโค้ดที่บังคับใช้กฎ ไม่ใช่สูตรลอย ๆ **RCT-7 — Reverse Component Thinking:** สังเกต → วิเคราะห์ → แยกองค์ประกอบ → คิดย้อนจากผลที่ต้องการ → ระบุเจตนาหลัก → ประกอบใหม่ → เทียบผลกับเจตนา ตามนิยามผู้สร้าง ต้องระบุสิ่งที่ยังไม่รู้ มีเส้นทางคิดย้อนที่ตรวจได้ แสดงแผนก่อนสร้างผลลัพธ์ และหยุดถามผู้ใช้เมื่อผลไม่ตรงเจตนา; runtime มีโครงแผนและตัวตรวจผลแล้ว แต่ความครบตามนิยามนี้และประโยชน์เชิงเปรียบเทียบยังต้องทดสอบ ทั้งสองเชื่อมกับแนวทาง **Delta → RCTDB → Intent Loop** เพื่อให้ข้อมูล ประสบการณ์ และผลย้อนกลับนำกลับมาใช้กับงานต่อไปตามเงื่อนไขของระบบ
+
+## 4. อะไรทำแล้วและมีหลักฐาน
+โค้ดสาธารณะมี governed loop, signed approvals, audit chain, memory และ episode journal; มี scripted demo ที่แทนเฉพาะโมเดลด้วยโปรแกรมกำหนดพฤติกรรม แต่ใช้เครื่องมือและ gate จริง เอกสารสถานะรายงาน scripted whole-job runs 12 workflows และ checkpoint CI วันที่ 18 ตุลาคม: **7,820 passed, 43 skipped, 1 xfailed** ที่ commit `3dbed0d` ทั้งหมดเป็นหลักฐานในขอบเขตที่รายงาน ไม่ใช่การรับรองความปลอดภัยทั้งระบบ
+
+## 5. อะไรยังต้องทดสอบ
+ยังต้องประเมินกับ capable models ตามเกณฑ์ที่กำหนด ทำ baseline/ablation เพื่อวัดคุณค่าของ RCT-7, numeric FDIA และ persistent-intent feedback ตรวจการติดตั้งและหลักฐานโดยคนนอก รวมถึงความทนทาน การกู้คืน และ witness บน deployment ที่จะเปิดให้ใช้ เอกสารสถานะที่ตรวจยังไม่รายงาน capable-model results ของ 12 workflows หรือ pilot ภายนอก และ Delta แต่ละส่วนมีขอบเขตการเชื่อมต่อแตกต่างกัน
+
+## 6. คนใหม่ควรเริ่มและช่วยตรวจที่ไหน
+เริ่มที่ [GitHub Delentia-OS](https://github.com/delentia-labs/Delentia-OS) → [สถานะและขอบเขต release](https://github.com/delentia-labs/Delentia-OS/blob/main/docs/release/RELEASE_LEVELS.md) → [คู่มือเดโมภาษาไทย](https://github.com/delentia-labs/Delentia-OS/blob/main/docs/demo/QUICKSTART_TH.md) ช่วยรัน scripted demo จาก version ที่ระบุ แล้วแจ้งขั้นตอน ผลที่คาด ผลที่พบ และ environment ผ่าน [Discussions](https://github.com/delentia-labs/Delentia-OS/discussions) หรือ [Issues](https://github.com/delentia-labs/Delentia-OS/issues) ช่องทางรายงานช่องโหว่ให้ใช้ [SECURITY.md](https://github.com/delentia-labs/Delentia-OS/blob/main/SECURITY.md)
+
+
+## Sources and scope
+
+- [Release levels](../release/RELEASE_LEVELS.md) and [readiness snapshot](../release/READINESS_SNAPSHOT.md)
+- [Dated test checkpoint](../testing/TESTING_CANONICAL.md)
+- [RCT-7 requirements and implementation](../concepts/rct-7-thinking.md), [FDIA semantics](../concepts/fdia.md) and [gate properties](../../research/GATE_PROPERTIES.md)
+- [Master workflows](../../research/MASTER_WORKFLOWS.md) and [research protocol](../../research/PROTOCOL.md)
+
+Implementation reference: `ec4059c803ba6b0faedab7266d8073a77d93eb3e`. The quoted CI count and workflow status are repository-reported checkpoints. New local smoke checks do not replace the full CI checkpoint or establish capable-model success. Origin dates are the creator's account, distinct from independent priority evidence. This page excludes the internal review inventory and private source paths.

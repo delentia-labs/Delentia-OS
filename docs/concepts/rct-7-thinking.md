@@ -1,279 +1,51 @@
-# RCT-7 Thinking Protocol
+# RCT-7 — Reverse Component Thinking
 
-> **RCT-7 Thinking** is the cognitive processing kernel at the heart of the RCT Platform.  
-> It is a 7-step structured reasoning protocol that transforms raw natural language input  
-> into a **verified, intent-preserved, FDIA-scored** execution plan.
+RCT-7 is the creator's structured method for understanding a request, planning work and comparing its result with intent. It is a design requirement; labels in a prompt, a successful compile or an attestation hash do not demonstrate that every requirement is implemented.
 
----
+## Requirements and inspected implementation
 
-## Overview
+The implementation references below describe `ec4059c803ba6b0faedab7266d8073a77d93eb3e`. This documentation update does not change the runtime.
 
-| Attribute | Value |
-|-----------|-------|
-| **Full name** | RCT-7 Thinking Protocol |
-| **Kernel coverage** | T1 – T9 |
-| **End-to-end accuracy** | 96.0% |
-| **FDIA gate position** | Step 7 (Compare) — score ≥ threshold required before execution |
-| **Variants** | RCT-O · RCT-S · RCT-I |
-| **Source** | [delentia.com/technology/rct-7-thinking](https://www.delentia.com/en/technology/rct-7-thinking) |
+| ID | Step | Required observable behaviour | Current evidence and gap |
+|---|---|---|---|
+| R1 | Observe | Record known facts, sources, unknowns and assumptions separately | `AlgorithmKernel41.algo_04_rct7` captures input; `data_evidence.assess` names missing evidence. A complete shared unknowns record is not established. |
+| R2 | Analyze | Connect the preliminary intent to context, relations and constraints | The compiler extracts type, scope and constraints. Classification alone does not establish all relationships. |
+| R3 | Deconstruct | Produce goal-dependent components with important dependencies, inputs and outputs | ALGO-04 reports extracted constraints. That does not establish a component/dependency plan covering every acceptance criterion. |
+| R4 | Reverse reasoning | An inspectable chain from desired result to necessary conditions and supporting evidence/actions | ALGO-04 step 4 reports risk and I/scope bonuses. This output is not a backward dependency chain. |
+| R5 | Identify core intent | Resolve intent and criteria; ask and wait when unresolved ambiguity affects the result | Compilation validation and classification clarification suggestions exist. A shared end-to-end clarification/resume path is not established by those fields. |
+| R6 | Reconstruct | Show the user a plan before producing the artifact, traceable to intent | `_format_rct7_plan` puts steps 1–6 in model context; that alone does not show a plan to the user. UI/CLI/API ordering needs separate coverage. |
+| R7 | Compare with intent | Compare result/effects to criteria; report mismatch, ask and pause before further work; retain original intent and confirmed revisions | `_verify_against_intent` uses similarity, refusal and grounding checks; failed verification suppresses positive learning. The inspected episode-end path does not implement the full mismatch/question/wait/resume contract. |
 
----
+Deconstruction should be deep enough to assign each criterion and retain material dependencies. It need not split every task into a fixed number of parts or into the smallest imaginable units. A backward chain is a visible planning artifact, not evidence of every internal LLM reasoning operation.
 
-## The 7 Steps
+## RCT-7 and the Constitutional Cycle
 
-RCT-7 maps naturally onto the JITNA kernel tiers (T1–T9):
+The episode lifecycle is **GUARD → THINK → ROUTE → ACT → COMPRESS → VERIFY → RECORD → LEARN**. RCT steps 1–6 participate in THINK; outcome comparison participates in VERIFY. The cycle includes policy enforcement, tool execution, compression, audit and feedback as well as reasoning. Logging and compression can occur repeatedly during execution.
 
-```
-T1──T2 ──────── Observe
-T2──T4 ──────── Analyze
-T3──T5 ──────── Deconstruct
-T4──T6 ──────── Reverse Reasoning
-T5──T6 ──────── Identify Core Intent
-T6──T8 ──────── Reconstruct
-T7──T9 ──────── Compare with Intent
-```
+A plan in the prompt is distinct from a plan visible to the user. Showing a plan does not add a new mandatory approval for every plan: action permissions continue to follow the owner's policy. An intent mismatch requiring clarification must actually wait; elapsed time is not confirmation.
 
----
+LEARN can store/retrieve experience and selected skills under runtime rules. It does not automatically train the main LLM. The algorithm adapter pipeline (`understand → recall → plan → act → verify → compress → record → evolve`) is a further implementation grouping, not a replacement definition of RCT-7 or the Constitutional Cycle.
 
-### Step 1 · Observe  `(T1–T2)`
+## Acceptance cases to cover
 
-**What:** Capture the raw input exactly as received — no interpretation yet.
+- Missing decision-critical data remains unknown; ask instead of fabricating it.
+- Changing the goal changes analysis/components while preserving source facts.
+- Backward links identify missing prerequisites; a risk report alone does not pass R4.
+- Ambiguous intent waits for clarification when the alternatives materially differ.
+- A visible plan event precedes the relevant artifact/effect on each supported entry point.
+- A language, format or constraint mismatch reports the difference and asks; no repair effect occurs on a path required to wait.
+- A confirmed change preserves the original intent and records a revision before replanning.
+- Correct short answers are assessed against criteria/evidence, rather than lexical overlap alone.
+- Restart during clarification preserves waiting state and does not trigger execution.
 
-**Purpose:** Establish an immutable ground truth of "what was said / requested."
+These are requirements and proposed regression cases, not a claim that this update implemented or passed them all. Inspect existing state, journal and entry-point paths before adding fields or modules.
 
-**Example:**
-```
-Input: "Allocate 200 resources to agent_B for defense"
-Observation: {raw_text, timestamp, sender_id, channel}
-```
+## Source and further reading
 
----
+- [Kernel implementation](../../rct_control_plane/algorithm_kernel_41.py), `algo_04_rct7` and `benchmark_result_against_intent`
+- [Governed loop](../../rct_control_plane/governed_autonomous_loop.py), `_on_episode_start`, `_format_rct7_plan`, `_verify_against_intent`, `_on_episode_end`
+- [Intent compiler](../../rct_control_plane/intent_compiler.py), [data evidence](../../rct_control_plane/data_evidence.py) and [grounding checks](../../rct_control_plane/verify_grounding.py)
+- [FDIA semantics](fdia.md), [gate properties](../../research/GATE_PROPERTIES.md), [research protocol](../../research/PROTOCOL.md)
+- [Current public information](../public/CURRENT_PUBLIC_INFORMATION_EN.md) and [release levels](../release/RELEASE_LEVELS.md)
 
-### Step 2 · Analyze  `(T2–T4)`
-
-**What:** Parse the observation into structured entities and constraints.
-
-**Purpose:** Surface implicit assumptions, ambiguous pronouns, and missing parameters.
-
-**Example:**
-```
-Parsed: {
-  action:    "allocate",
-  amount:    200,
-  target:    "agent_B",
-  goal:      "defense",
-  implicit:  ["requires budget_ok", "requires permission_grant"]
-}
-```
-
----
-
-### Step 3 · Deconstruct  `(T3–T5)`
-
-**What:** Break the analyzed intent into **atomic sub-tasks** — the smallest executable units.
-
-**Purpose:** Expose hidden dependencies and parallelization opportunities.
-
-**Example:**
-```
-Sub-tasks:
-  1. check_budget(amount=200)
-  2. verify_permissions(target=agent_B)
-  3. route_resources(resource_pool → agent_B)
-  4. log_audit(action, actor, timestamp)
-```
-
----
-
-### Step 4 · Reverse Reasoning  `(T4–T6)`
-
-**What:** Work **backward** from the desired outcome to validate that the sub-tasks actually produce it.
-
-**Purpose:** Detect logical gaps before execution (fail-fast guarantee).
-
-**Example:**
-```
-defense_achieved
-  ← resources_allocated_to_B
-    ← budget_ok
-      ← approval_granted
-        ← FDIA_score ≥ threshold   ← CRITICAL GATE
-```
-
-> If the backward chain breaks at any node, the plan is rejected before a single byte is sent.
-
----
-
-### Step 5 · Identify Core Intent  `(T5–T6)`
-
-**What:** Distil the single **primary intent type** from all parsed signals.
-
-**Purpose:** Resolve conflicts when multiple intent signals are present (e.g., PROTECT vs ACCUMULATE).
-
-**Intent types (NPCIntentType):**
-
-| Intent | Desire Weight | Typical trigger |
-|--------|--------------|-----------------|
-| `PROTECT`    | 0.75 | Defensive allocation, firewall rules |
-| `ACCUMULATE` | 0.80 | Resource gathering, caching |
-| `BELONG`     | 0.65 | Group join, coalition formation |
-| `DISCOVER`   | 0.55 | Exploration, knowledge queries |
-| `DOMINATE`   | 0.90 | Competitive override, force actions |
-| `NEUTRAL`    | 0.30 | Idle / no-preference tasks |
-
-**Example:**
-```
-Signals detected: [PROTECT(0.92), ACCUMULATE(0.41)]
-Core intent resolved: PROTECT  (highest confidence wins)
-```
-
----
-
-### Step 6 · Reconstruct  `(T6–T8)`
-
-**What:** Build the **final execution plan** from verified sub-tasks, ordered and signed.
-
-**Purpose:** Produce a deterministic, replayable action sequence (JITNA packet) with Ed25519 attestation.
-
-**Example:**
-```yaml
-execution_plan:
-  - step: validate_input
-  - step: fdia_check          # score must be ≥ 0.6
-  - step: allocate_resources
-  - step: ed25519_sign
-  - step: notify_stakeholders
-  - step: write_audit_log
-```
-
----
-
-### Step 7 · Compare with Intent  `(T7–T9)`
-
-**What:** Run the reconstructed plan through the **FDIA Scorer** and compare the result against the original intent.
-
-**Purpose:** Ensure the plan hasn't drifted from what was actually requested (constitutional alignment gate).
-
-**FDIA gate rule:**
-```
-score = FDIAScorer.score_action(agent_intent, plan_action, ...)
-if score < THRESHOLD (default 0.60):
-    REJECT — intent not preserved
-else:
-    APPROVE — sign and execute
-```
-
-**Example result:**
-```
-FDIA score: 0.847  ≥  threshold 0.600  ✅
-Decision: EXECUTE — plan signed with Ed25519
-```
-
----
-
-## Three Protocol Variants
-
-### RCT-O — Original (7 Steps)
-
-Full protocol as described above. Used for:
-- New/unfamiliar tasks
-- High-stakes decisions (Tier-6, Tier-8)
-- Any action touching financial, medical, or legal domains
-
-### RCT-S — Condensed (4 Steps)
-
-Skips the Deconstruct and Reverse Reasoning phases for low-risk tasks:
-
-```
-Observe → Analyze → Identify Core Intent → Compare with Intent
-```
-
-Used for:
-- Repeated/cached pattern tasks
-- Tier-S and Tier-4 decisions
-- High-throughput pipelines where T3–T5 are pre-validated
-
-### RCT-I — Interpretive
-
-Adds a meta-reasoning layer on top of RCT-O for **ambiguous or contradictory inputs**:
-
-```
-[Pre-step: Resolve Ambiguity]
-  → RCT-O (Steps 1–7)
-[Post-step: Uncertainty Quantification]
-```
-
-Used for:
-- Multi-lingual inputs with cultural context gaps
-- Contradictory stakeholder instructions
-- High-ambiguity enterprise workflows
-
----
-
-## FDIA Integration
-
-The FDIA equation anchors the protocol:
-
-$$F = D^I \times A$$
-
-| Symbol | Meaning in RCT-7 |
-|--------|-----------------|
-| **F** | Final execution score (must be ≥ threshold) |
-| **D** | Data quality of the reconstructed plan |
-| **I** | Intent precision — acts as **exponent** (with D in [0, 1] a larger I is stricter) |
-| **A** | Alignment gate — human approval factor (0 = hard block) |
-
-> **A = 0 is a veto** on every path that applies the gate: there, no plan step that needs approval executes without a valid signature (see `research/GATE_PROPERTIES.md` for the paths and their tests).
-
-```python
-from core.fdia.fdia import FDIAScorer, NPCAction, NPCIntentType  # from concepts/fdia.md
-
-scorer = FDIAScorer()
-score = scorer.score_action(
-    agent_intent=NPCIntentType.PROTECT,
-    action=NPCAction(action_id="plan_v1", action_type="cooperate", amount=200.0),
-    world_resources={"res_alpha": 500.0},
-    agent_reputation=0.85,
-    other_intents=[NPCIntentType.PROTECT],
-)
-# score in [0.0, 1.0] — deterministic, no side effects
-print(f"FDIA score: {score:.4f}")
-```
-
----
-
-## Kernel Tier Mapping
-
-```
-T1  — Observation kernel      (raw capture)
-T2  — Language kernel         (parsing, NLP)
-T3  — Decomposition kernel    (sub-task graph)
-T4  — Inference kernel        (constraint propagation)
-T5  — Intent kernel           (NPCIntentType resolution)
-T6  — Planning kernel         (JITNA packet construction)
-T7  — Evaluation kernel       (FDIA scoring)
-T8  — Signing kernel          (Ed25519 attestation)
-T9  — Execution kernel        (dispatch + audit)
-```
-
----
-
-## Performance Characteristics
-
-| Metric | Value |
-|--------|-------|
-| End-to-end accuracy (RCT-O) | **96.0%** |
-| Cold start latency | 3–5 s |
-| Warm recall latency | < 50 ms |
-| FDIA threshold (default) | 0.60 |
-| Intent type coverage | 6 types (NPCIntentType) |
-| Kernel tier coverage | T1–T9 (9 tiers) |
-
----
-
-## See Also
-
-- [FDIA Engine](fdia.md) — the scoring engine used in Step 7
-- [Intent Loop](intent-loop.md) — the runtime loop that applies RCT-7 repeatedly
-- [Architecture](architecture.md) — where RCT-7 sits in the full OS layer stack
-- [SignedAI Consensus](signedai.md) — the constitutional tier that wraps the execution gate
+No end-to-end RCT accuracy percentage, fixed universal threshold, tier mapping or protocol variant is asserted here without a scoped specification and run evidence.
