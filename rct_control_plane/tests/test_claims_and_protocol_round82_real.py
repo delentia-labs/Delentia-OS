@@ -30,10 +30,15 @@ def text(rel: str) -> str:
 def test_the_readme_does_not_promise_what_the_evidence_does_not_show():
     readme = text("README.md")
     assert "STABLE%20SDK" not in readme and "status-experimental" in readme
-    assert "runs at [delentia.com]" not in readme and "Enterprise** (not in this repository)" in readme
+    assert "runs at [delentia.com]" not in readme
+    assert "experimental, self-hosted AI agent runtime" in readme
+    assert "external pilot" in readme and "remain separate work" in readme
     assert "Constitutional AI guarantee" not in readme and "The system never acts without human approval" not in readme
     assert "higher = amplifies" not in readme and "even moderate Data quality produces excellent results" not in readme
-    assert "makes F *smaller* for the same D" in readme and "not a guarantee about every path" in readme
+    assert "increasing I lowers the score when 0 < D < 1" in readme
+    assert "increases it when D > 1" in readme
+    assert "Preventing a protected effect additionally requires the execution path to enforce its decision" in readme
+    assert "A passing score cannot replace a required signature" in readme
     assert "41 Production Algorithms" not in readme
 
 

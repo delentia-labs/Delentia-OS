@@ -65,7 +65,7 @@ The **Constitutional Cycle** describes the episode lifecycle:
 
 **GUARD → THINK → ROUTE → ACT → COMPRESS → VERIFY → RECORD → LEARN**
 
-These are functional stages: tool calls may repeat, compression happens during execution, and logging occurs throughout. Guarded or pending episodes can stop before completion. RCT planning participates in THINK and outcome comparison in VERIFY. A plan placed in a model prompt is not evidence that a user saw it.
+These are functional stages: tool calls may repeat, compression happens during execution, and logging occurs throughout. Guarded or pending episodes can stop before completion. RCT planning participates in THINK and outcome comparison in VERIFY. A plan placed in a model prompt is not evidence that a user saw it. An experimental [explicit acceptance-contract path](docs/concepts/intent-contracts.md) adds plan visibility and durable mismatch clarification for its documented CLI/API scope; the default path and full RCT fidelity remain separate work.
 
 LEARN includes runtime memory, selected reusable skills and feedback. It does not automatically fine-tune the main LLM's weights. Recording an episode, extracting a skill, retrieving it and demonstrating causal benefit are separate observations.
 

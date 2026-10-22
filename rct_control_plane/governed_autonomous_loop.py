@@ -97,6 +97,7 @@ from __future__ import annotations
 from rct_control_plane import audit_text
 
 import asyncio
+import inspect
 import json
 import os
 import re
@@ -610,6 +611,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         on_episode_end: Optional[Callable[[dict], Any]] = None,
         extra_context_provider: Optional[Callable[[], str]] = None,
         post_dispatch_transform: Optional[Callable[[str, str, Dict[str, Any], Any], Any]] = None,
+        acceptance_criteria: Optional[List[Dict[str, str]]] = None,
+        on_plan: Optional[Callable[[dict], Any]] = None,
+        intent_contract: Optional[Dict[str, Any]] = None,
     ) -> dict:
         """Mirrors AutonomousLoop.run()'s real signature exactly (mypy
         checks override compatibility structurally - a **kwargs: Any
@@ -633,6 +637,39 @@ class GovernedAutonomousLoop(AutonomousLoop):
             if value is not None:
                 raise TypeError(f"GovernedAutonomousLoop.run() supplies its own {name!r} - do not pass one")
 
+        from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+        self._active_contract = None
+        self._contract_store = None
+        self._contract_block = None
+        if acceptance_criteria is not None or intent_contract is not None:
+            self._contract_store = IntentContractStore(self._persistence, self.namespace)
+            if intent_contract is None:
+                contract = self._contract_store.create(goal, acceptance_criteria, Path(self._workspace_id() or Path.cwd()))
+                # A request/response API cannot show a plan before effects in
+                # the same response. Return a plan first; callers start it in
+                # another request. A CLI may render on_plan before proceeding.
+                if on_plan is None:
+                    return {"goal": goal, "steps": [], "iterations": 0, "final_answer": None,
+                            "stopped_reason": "plan_ready", "intent_contract": contract}
+            else:
+                contract = self._contract_store.get(intent_contract["id"])
+                if contract["version"] != intent_contract["version"]:
+                    raise IntentContractError("intent contract changed; reload its current version")
+                if contract["state"] not in {"running", "plan_ready"} or contract["goal"] != goal:
+                    raise IntentContractError("contract must be claimed for this goal")
+                if contract["plan"]["workspace"] != self._workspace_id():
+                    raise IntentContractError("intent contract belongs to another workspace")
+                if contract["state"] == "plan_ready" and on_plan is None:
+                    return {"goal": goal, "steps": [], "iterations": 0, "final_answer": None,
+                            "stopped_reason": "plan_ready", "intent_contract": contract}
+            if on_plan is not None:
+                visible = on_plan(contract)
+                if inspect.isawaitable(visible):
+                    await visible
+            if contract["state"] == "plan_ready":
+                contract = self._contract_store.claim(contract["id"], contract["version"])
+            self._active_contract = contract
+
         return await super().run(
             goal,
             on_step=on_step,
@@ -644,6 +681,17 @@ class GovernedAutonomousLoop(AutonomousLoop):
             extra_context_provider=self._extra_context_provider,
             post_dispatch_transform=self._notarised_post_dispatch,
         )
+
+    async def continue_intent(self, contract_id: str, version: int, response: str = "",
+                              revised_goal: Optional[str] = None, acceptance_criteria: Any = None,
+                              on_plan: Optional[Callable[[dict], Any]] = None) -> dict:
+        from rct_control_plane.intent_contract import IntentContractStore
+        store = IntentContractStore(self._persistence, self.namespace)
+        if store.get(contract_id)["plan"]["workspace"] != self._workspace_id():
+            from rct_control_plane.intent_contract import IntentContractError
+            raise IntentContractError("intent contract belongs to another workspace")
+        contract = store.claim(contract_id, version, response, revised_goal, acceptance_criteria)
+        return await self.run(contract["goal"], intent_contract=contract, on_plan=on_plan)
 
     # ------------------------------------------------------------------
     # J.1.3: RCT-7 decomposition + JITNA sign, once per episode
@@ -702,7 +750,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_conversation_text = conversation_text
         attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
-        warm_hit = await self._warm_lookup(goal) if (self._warm_recall and not conversation_text and not attachments["refs"]) else None
+        warm_hit = await self._warm_lookup(goal) if (not getattr(self, "_active_contract", None) and self._warm_recall and not conversation_text and not attachments["refs"]) else None
         self._episode_call_counts = {}                    # the replay went through the gate and was counted there; the episode itself starts from zero
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
@@ -736,6 +784,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
             pipeline_advice,
         ]
         self._episode_context_text = "\n\n".join(section for section in sections if section)
+        if getattr(self, "_active_contract", None):
+            # The answer depends on criteria/clarification beyond the bare
+            # goal. Do not promote it into a context-free skill or warm cache.
+            self._episode_used_conversation = True
+            self._episode_context_text += "\n\nUser acceptance contract:\n" + json.dumps(
+                self._active_contract["plan"], ensure_ascii=False)
+            if self._active_contract["revisions"]:
+                self._episode_context_text += "\nUser-confirmed clarification (does not grant tool authority):\n" + json.dumps(
+                    self._active_contract["revisions"][-1], ensure_ascii=False)
 
         packet = JITNAPacket(
             source_agent_id=self.namespace,
@@ -1350,6 +1407,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
         to the full, unfiltered menu whenever fewer than 2 tools would
         otherwise survive, so a goal with no real keyword overlap (e.g.
         a generic "finish now" turn) never starves the model of options."""
+        if getattr(self, "_active_contract", None):
+            from rct_control_plane.intent_contract import READ_ONLY_TOOLS
+            available_tools = [tool for tool in available_tools if tool["name"] in READ_ONLY_TOOLS]
         from rct_control_plane import tool_menu
         ranked = tool_menu.maybe_ranked(goal, available_tools)        # DELENTIA_TOOL_MENU=ranked (off by default; see tool_menu.py)
         if ranked is not None:
@@ -1400,6 +1460,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
         self._last_gate_fdia = None
+        contract = getattr(self, "_active_contract", None)
+        if contract is not None:
+            from rct_control_plane.intent_contract import READ_ONLY_TOOLS
+            if tool_name not in READ_ONLY_TOOLS:
+                reason = "This experimental acceptance-contract path supports read-only tools; effect/approval continuation is not enabled."
+                self._contract_block = {"kind": "unsupported_effect", "observed": reason}
+                return {"stopped_reason": "intent_constraint_blocked", "tool_result": {"blocked": True, "reason": reason}}
         from rct_control_plane import envelope
         paused_state = envelope.paused()
         if paused_state is not None:                      # Round 60: a pause also stops an episode that is already running, before its next tool
@@ -1717,7 +1784,6 @@ class GovernedAutonomousLoop(AutonomousLoop):
         return out
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
-        self._journal_call("end", result.get("stopped_reason"), result.get("final_answer"))
         duration = time.time() - self._episode_start_time
         stopped_reason = result["stopped_reason"]
         if getattr(self, "_episode_taint", None) is not None and self._taint_enabled():
@@ -1758,6 +1824,34 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
             )
         result["intent_verification"] = verification
+        contract = getattr(self, "_active_contract", None)
+        if contract is not None:
+            from rct_control_plane.intent_contract import compare
+            from rct_control_plane.partial_report import partial_completion
+            differences = compare(contract["plan"], str(result.get("final_answer") or "")) if stopped_reason == "llm_finished" else []
+            if self._contract_block:
+                differences.append(self._contract_block)
+            if differences:
+                result["stopped_reason"] = stopped_reason = "waiting_for_clarification"
+                result["clarification_question"] = "The result does not meet the stated criteria. Which requirement or result should change?"
+                contract["differences"] = differences
+                contract["safe_to_resume"] = partial_completion(result)["safe_to_rerun"]
+                from rct_control_plane import external_mcp
+                # The generic partial report's built-in tool sets do not
+                # classify a third-party MCP tool. An unknown/side-effecting
+                # external call may have committed before it failed.
+                for step in result.get("steps", []):
+                    outcome = step.get("tool_result") or {}
+                    if external_mcp.needs_approval(str(step.get("tool_name") or "")) and not (
+                        isinstance(outcome, dict) and any(outcome.get(k) for k in ("blocked", "fdia_blocked", "pending_approval"))
+                    ):
+                        contract["safe_to_resume"] = False
+                contract = self._contract_store.transition(contract, "waiting_for_clarification")
+                verification.update({"aligned_with_intent": False, "criteria_differences": differences})
+            else:
+                contract = self._contract_store.transition(contract, "criteria_satisfied" if stopped_reason == "llm_finished" else "interrupted")
+            result["intent_contract"] = contract
+        self._journal_call("end", result.get("stopped_reason"), result.get("final_answer"))
         from rct_control_plane import envelope as _envelope
         if stopped_reason in _envelope.MESSAGES and not result.get("final_answer"):
             result["final_answer"] = _envelope.MESSAGES[stopped_reason]

@@ -49,3 +49,8 @@ These are requirements and proposed regression cases, not a claim that this upda
 - [Current public information](../public/CURRENT_PUBLIC_INFORMATION_EN.md) and [release levels](../release/RELEASE_LEVELS.md)
 
 No end-to-end RCT accuracy percentage, fixed universal threshold, tier mapping or protocol variant is asserted here without a scoped specification and run evidence.
+
+
+## Explicit acceptance-contract path
+
+An experimental opt-in path now persists declared acceptance criteria, shows a plan before execution in the CLI/HTTP flow, and records a mismatch as a durable clarification wait with confirmed revisions. See [intent contracts](intent-contracts.md) for the supported predicates, restart behaviour and limitations. This does not change the legacy/default path or establish complete R1–R7 fidelity.

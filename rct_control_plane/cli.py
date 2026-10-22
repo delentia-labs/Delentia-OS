@@ -3661,7 +3661,8 @@ def workflow_run(yaml_path: str, poll_interval: float) -> None:
 @click.option("--max-iterations", default=5, show_default=True, help="Episode iteration cap.")
 @click.option("--max-seconds", default=120.0, show_default=True, help="Episode wall-clock budget in seconds.")
 @click.option("--namespace", default=None, help="Persistence/JITNA namespace (defaults to a fresh id per run).")
-def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str]) -> None:
+@click.option("--criteria-file", type=click.Path(exists=True, dir_okay=False), default=None, help="JSON acceptance criteria; show the plan before execution.")
+def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str], criteria_file: Optional[str] = None) -> None:
     """Run GOAL through the real, governed autonomous agent loop (Round 44
     Phase J.3) - FDIA gate, JITNA signing, RCT-7 decomposition, Delta
     persistence, and Skill Library retrieval/extraction all wired in
@@ -3681,9 +3682,20 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
     async def _run() -> dict:
         loop = build_governed_loop(_kernel, ns, max_iterations=max_iterations, max_seconds=max_seconds,
                                    persistence=_kernel._persistence, mcp_server=mcp)       # the one place a governed loop is built
+        if criteria_file:
+            import json
+            from pathlib import Path
+            criteria = json.loads(Path(criteria_file).read_text(encoding="utf-8"))
+            def show_plan(contract):
+                click.echo("Plan before execution:\n" + json.dumps(contract, ensure_ascii=False, indent=2))
+            return await loop.run(goal, acceptance_criteria=criteria, on_plan=show_plan)
         return await loop.run(goal)
 
-    result = asyncio.run(_run())
+    from rct_control_plane.intent_contract import IntentContractError
+    try:
+        result = asyncio.run(_run())
+    except (IntentContractError, ValueError, OSError) as exc:
+        raise click.ClickException(str(exc)) from exc
 
     click.echo(f"namespace: {ns}")
     click.echo(f"stopped_reason: {result['stopped_reason']}")
@@ -3697,8 +3709,56 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
             click.echo(f"  - {step['tool_name']}({step['tool_args']}) -> {tool_result}{suffix}")
     if result.get("final_answer"):
         click.echo(f"\nfinal_answer:\n{result['final_answer']}")
+    if result.get("intent_contract"):
+        import json
+        click.echo(json.dumps(result["intent_contract"], ensure_ascii=False, indent=2))
+    if result.get("clarification_question"):
+        click.echo(result["clarification_question"])
 
-    if result["stopped_reason"] == "fdia_blocked":
+    if result["stopped_reason"] in {"fdia_blocked", "waiting_for_clarification"}:
+        raise SystemExit(1)
+
+
+@cli.group("intent-contract")
+def intent_contract_group():
+    """Inspect or continue an explicit acceptance contract in its namespace."""
+
+
+@intent_contract_group.command("show")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+def intent_contract_show(contract_id: str, namespace: str) -> None:
+    import json
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.mcp_server import _kernel
+    try:
+        click.echo(json.dumps(IntentContractStore(_kernel._persistence, namespace).get(contract_id), ensure_ascii=False, indent=2))
+    except IntentContractError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@intent_contract_group.command("continue")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+@click.option("--version", type=int, required=True)
+@click.option("--response", default="", help="Required when waiting for clarification.")
+@click.option("--revised-goal", default=None)
+def intent_contract_continue(contract_id: str, namespace: str, version: int, response: str, revised_goal: Optional[str]) -> None:
+    import asyncio
+    import json
+    from rct_control_plane.agent_factory import build_governed_loop
+    from rct_control_plane.intent_contract import IntentContractError
+    from rct_control_plane.mcp_server import _kernel, mcp
+    async def run():
+        loop = build_governed_loop(_kernel, namespace, persistence=_kernel._persistence, mcp_server=mcp)
+        return await loop.continue_intent(contract_id, version, response, revised_goal, on_plan=lambda c: click.echo(
+            "Plan before execution:\n" + json.dumps(c["plan"], ensure_ascii=False, indent=2)))
+    try:
+        result = asyncio.run(run())
+    except IntentContractError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("stopped_reason") == "waiting_for_clarification":
         raise SystemExit(1)
 
 
