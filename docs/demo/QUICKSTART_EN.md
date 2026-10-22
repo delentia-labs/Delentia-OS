@@ -77,5 +77,5 @@ it let the model read the files in only 1 of 6 runs, until two reply-format prob
 ## Tested scope
 
 - Tested (a model that follows a script + real tools + separate processes): init, compare, taint, edit → approve (cannot be reused), memory across a restart, the answer checker.
-- Tested with the local qwen2.5:7b: it runs, it is safe, it reports truthfully, but it **does not pass** the correctness checks.
-- **Not tested:** a model that is good with tools (OpenRouter); three repeated runs from a clean start; the owner running it alone; a clean-machine install.
+- Reported local qwen2.5:7b runs reached the runtime and reported failures, but **did not pass** the correctness checks. These observations do not certify safety.
+- **Not established in this scope:** capable-model workflow results, outside reproduction and pilot readiness. See [release levels](../release/RELEASE_LEVELS.md) for reported G-install and owner-machine evidence. A developer cloud check is separate from independent reproduction.
