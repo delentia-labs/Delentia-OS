@@ -65,3 +65,5 @@ Evidence package แยกจาก git เก็บ full logs, JUnit, coverage,
 เป็น executable experimental system จริง: มี runtime, file effects, signatures, persistent state และauditที่ทดสอบได้. หลักฐานรอบนี้สนับสนุนกลไกเฉพาะscope ไม่ยืนยัน model capability, full RCT fidelity, scientific novelty, universal safety, weight training หรือ production readiness. ไม่ให้คะแนนรวมเปอร์เซ็นต์โดยไม่มีrubric.
 
 เหมาะสำหรับโพสต์แนะนำเชิงทดลองพร้อม scripted demo และข้อจำกัด หลัง review branch/ข้อความให้ตรงกัน. ยังไม่ผ่านเกณฑ์เปิด pilot/stable service: ต้องปิด blockers ของsurfaceที่จะเปิด, complete contract recovery/effects/entrypoints, capable-model development ตามงบที่อนุมัติภายหลัง, freeze/evaluation/ablation, external reproduction และ deployment privacy/auth/key/witness/backup/recovery/soak gates. ดูแผนรอบถัดไปที่ลิงก์ด้านบน.
+
+GitHub remote ระหว่างpushแจ้ง default branch vulnerabilities14รายการ (7high/6moderate/1low). ยังไม่ได้triageรายการจริงในรอบนี้; เป็นgateเพิ่มเติมก่อนpilot ไม่ใช่ข้อพิสูจน์ว่าโค้ดใหม่มีช่องโหว่14จุดหรือแก้เรียบร้อยแล้ว.

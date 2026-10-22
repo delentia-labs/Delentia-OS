@@ -72,3 +72,7 @@
 มี executable Python runtime, real file tools, policy/signatures, persistence และ audit ที่ตรวจพฤติกรรมจริงได้ จึงไม่ใช่แค่ภาพหน้าจอหรือเอกสารแนวคิด. ในการทดสอบ scripted ระบบและเครื่องมือทำงานจริง แต่คำตัดสินจากโมเดลถูกกำหนดด้วยโปรแกรม. สิ่งนี้ไม่ยืนยันว่าผู้ใช้ทั่วไปจะทำงานสำเร็จกับโมเดลใดก็ได้ ไม่ยืนยัน novel scientific law, complete safety, main-LLM self-training หรือ product readiness.
 
 คุณภาพควรสรุปจาก behaviour/evidence/failures และความตรงขอบเขต ไม่ให้คะแนนรวมเป็นเปอร์เซ็นต์โดยไม่มี rubric. ดู [release levels](../release/RELEASE_LEVELS.md), [research protocol](../../research/PROTOCOL.md) และ actual run artifacts ของ branch นี้ควบคู่.
+
+## Dependency review เพิ่มเติมจาก GitHub
+
+ระหว่าง push GitHub แจ้ง default branch มี14 vulnerabilities (7 high,6 moderate,1 low). นี่เป็นข้อความแจ้งของremote ไม่ใช่ dependency audit ที่ทำซ้ำครบในรอบนี้; ต้องเปิดรายการจริง ระบุ dependency/version/reachability แก้ตามdistributionที่จะเปิด แล้วรันlockfile/build/regressionก่อนpilot. ไม่อ้างว่ารอบนี้ปิดsecurity findingsทั้งหมด.
