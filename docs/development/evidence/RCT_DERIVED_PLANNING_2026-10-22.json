@@ -1,0 +1,92 @@
+{
+  "branch": "codex/rct-derived-planning-and-receipts-20261022",
+  "base_commit": "13c4860eb9672cc170ddc85758253f5872b74470",
+  "python_final": {
+    "passed": 7900,
+    "failed": 13,
+    "skipped": 59,
+    "xfailed": 1,
+    "warnings": 6861,
+    "seconds": 781.63,
+    "runner_exit_code": 1,
+    "failures": [
+      "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+      "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+      "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+      "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+      "rct_control_plane.tests.test_daaes_tc027_round85_real::test_a_careful_agent_that_looks_again_reports_the_current_price_and_the_browser_reaches_nothing_else",
+      "rct_control_plane.tests.test_daaes_tc027_round85_real::test_an_agent_that_answers_from_the_first_look_is_stale_and_the_oracle_knows_what_the_page_shows_now",
+      "rct_control_plane.tests.test_daaes_tc027_round85_real::test_the_case_runs_through_the_suite_runner_with_a_manifest",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function"
+    ],
+    "skip_reason_counts": {
+      "collection skipped": 1,
+      "could not import 'soundfile': No module named 'soundfile'": 1,
+      "could not import 'imageio_ffmpeg': No module named 'imageio_ffmpeg'": 2,
+      "sibling TypeScript checkout not present": 1,
+      "the browser did not start (it may be unable to run its sandbox here)": 16,
+      "needs a speech engine and a cached Whisper model": 3,
+      "no speech engine on this machine": 3,
+      "needs a cached Whisper model": 2,
+      "Windows Job Objects": 3,
+      "needs a speech engine and ffmpeg on this machine": 2,
+      "needs a speech engine": 1,
+      "paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1": 9,
+      "Hermes is not installed in this environment": 10,
+      "real v0.5.1 adapter weights not present in this environment": 1,
+      "set DELENTIA_REAL_SERVICES=1 and start the services (see the module docstring)": 4
+    },
+    "expected_failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_generate_image_produces_a_real_nonzero_byte_png",
+        "reason": "Real, understood gap (documented since commit 6c6aea1, 2026-09-23, reconfirmed in Round 43): delentia_generate_image needs the 'diffusion' extras group + real model weights, which are NOT installed in CI (ci.yml installs only requirements.txt) - the kernel's own DiffusionEngine honestly reports simulated=True/byte_size=0 rather than faking success. This is an Architect-level trade-off (heavier/slower CI job vs. accepting this documented gap), not something to silently work around - xfail keeps CI green while keeping this failure visible and accurate instead of a silent skip."
+      }
+    ]
+  },
+  "coverage": {
+    "covered": 90553,
+    "valid": 99303,
+    "line_rate": 0.9119,
+    "includes_test_modules": true
+  },
+  "targeted_final": {
+    "passed": 97,
+    "overlaps_full": true
+  },
+  "pipeline": {
+    "cases_passed": 21,
+    "checks_passed": 134,
+    "subagent_cases_executed": false
+  },
+  "javascript": {
+    "sdk": 73,
+    "fdia": 32,
+    "edge": 37,
+    "action": 11
+  },
+  "production_audit_total": {
+    "action": 0,
+    "sdk": 0,
+    "gui": 0
+  },
+  "paid_api_calls": 0,
+  "semantic_rct7_complete": false,
+  "production_or_pilot_ready": false,
+  "raw_evidence_sha256": {
+    "full-python-final.log": "59e4384ccbd1d41dd89ebee12f2641893dfc37a372887bd30efcf1cf6d052d4f",
+    "full-python-final.xml": "436ce92394394f02015f0ada7d981e9080bf37b0d3bd37b87cf8a6006c768021",
+    "coverage-final.xml": "d6c615f32f9e375408050c557ecb92bac86da23195ebc64ca786d3f708ba0d02",
+    "targeted-final.log": "39dd903898c2067a2ff164f100ef73e69e9e57224dba2ec45b4afb72d67751e2",
+    "pipeline.log": "123270cb4c2cb85f33352f71a22fd07ca06c5243eb0b49cf3865242e4b38d7c4",
+    "action-audit-after.json": "511c525db6d91ddbaa200e9a89bf126de4e63f4f7cdbb2f154d692ce4eb7f96a",
+    "sdk-audit-after.json": "12166a3c738b7c25ab261da603550ecfc8672665837419cd3acbbfe78656b71b",
+    "gui-audit.json": "464a2aca5787f2b38c1d1b75c0a5241fa9e169299da6401cb366bc55d66295bb",
+    "recording-validation.json": "a72822095089136fe32427d0f0db886b48aa41554ec9cad8fe44371330747829",
+    "derived-plan-demo.mp4": "db2030ab8fa2efa6604f67bba3618e916bb907cbfabd16246d2cc52fb2580cc8"
+  }
+}

@@ -58,3 +58,7 @@ An experimental opt-in path now persists declared acceptance criteria, shows a p
 ## Declared planning context follow-up
 
 The optional [declared RCT context](rct-declared-plans.md) adds typed reported facts/sources, unknowns/assumptions, criterion-linked component dependencies, and a durable critical-input wait before model/tools. Explicit answers produce a revised visible plan. This advances observable structure for R1/R3/R4/R5 on the documented CLI/API path. The context is supplied by the user; it does not establish autonomous semantic decomposition or complete RCT-7 across entry points. The historical base table above remains a dated inspection, not the latest implementation claim.
+
+## Criterion-derived plans and receipts
+
+The opt-in [criterion-derived compiler](rct-derived-plans.md) now produces predicate-specific prerequisites without a user-supplied graph or model call. Backward conditions include transitive dependencies. New contracts carry a checked plan digest and return their own committed transition receipt, avoiding a post-commit re-read race. These changes do not discover arbitrary semantic unknowns, grant signed effects, reconcile crashed writes or complete RCT-7 across entry points. See [remaining gates](../development/RCT_COMPLETION_NEXT_GATES_TH.md).

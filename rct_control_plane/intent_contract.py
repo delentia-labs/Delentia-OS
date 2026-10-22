@@ -6,6 +6,7 @@ A signature, a timeout and a model's success claim are not clarification.
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 import re
 import uuid
@@ -65,6 +66,10 @@ def _digest(path: Path) -> str:
 
 
 def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_context: Any = None) -> Dict[str, Any]:
+    from rct_control_plane.derived_plan import DERIVE_REQUEST, derive_context, annotate
+    derived = type(planning_context) is dict and planning_context == DERIVE_REQUEST and planning_context.get("derive_from_criteria") is True
+    if derived:
+        planning_context = derive_context(goal, criteria)
     conditions, snapshots = [], {}
     for c in criteria:
         condition = {"criterion_id": c["id"], "kind": c["kind"], "value": c["value"],
@@ -82,7 +87,15 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_c
     if planning_context is not None:
         from rct_control_plane.rct_plan import validate_context, apply_context
         apply_context(plan, validate_context(planning_context, {c["id"] for c in criteria}))
+        if derived:
+            annotate(plan)
     return plan
+
+
+def plan_digest(plan: dict) -> str:
+    """Binding material for review/reconciliation; NOT a signature or permission."""
+    return hashlib.sha256(json.dumps(plan, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+                                     allow_nan=False).encode("utf-8")).hexdigest()
 
 
 def compare(plan: Dict[str, Any], answer: str) -> List[Dict[str, Any]]:
@@ -140,6 +153,8 @@ class IntentContractStore:
             raise IntentContractError("intent contract text is erased or unavailable") from exc
         if not isinstance(data, dict) or not isinstance(data.get("plan"), dict):
             raise IntentContractError("intent contract text is erased or unavailable")
+        if "plan_sha256" in data and data["plan_sha256"] != plan_digest(data["plan"]):
+            raise IntentContractError("intent plan digest mismatch; execution refused")
         # Pre-versioned contracts from the first release are schema 1. Future
         # schemas must never silently run under older continuation semantics.
         version = data.get("schema_version", 1)
@@ -172,9 +187,13 @@ class IntentContractStore:
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
-                "revisions": [], "differences": [], "safe_to_resume": True}
+                "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
         if planning_context is not None:
             from rct_control_plane.rct_plan import validate_context
+            if plan.get("planning_origin") == "criterion_derived":
+                from rct_control_plane.derived_plan import derive_context
+                data["planning_request"] = {"derive_from_criteria": True}
+                planning_context = derive_context(goal, plan["criteria"])
             data["planning_context"] = validate_context(planning_context, {c["id"] for c in plan["criteria"]})
         state = "waiting_for_input" if plan.get("clarification_questions") else "plan_ready"
         with self.db._connect() as conn:
@@ -182,10 +201,14 @@ class IntentContractStore:
                          (contract_id, self.namespace, state, self._encode(data)))
         self.db.append_audit(entity_type="intent_contract", entity_id=contract_id, action=state, actor=self.namespace,
                              changes={"version": 1, "goal_sha256": hashlib.sha256(goal.encode()).hexdigest()})
-        return self.get(contract_id)
+        return copy.deepcopy({**data, "id": contract_id, "state": state, "version": 1})
 
     def transition(self, data: Dict[str, Any], state: str) -> Dict[str, Any]:
-        payload = {k: v for k, v in data.items() if k not in {"id", "state", "version"}}
+        # Freeze this writer's receipt before commit/audit. A second reader may
+        # advance the row immediately after commit; returning get() could then
+        # lend that later writer's running state/version to this caller.
+        payload = copy.deepcopy({k: v for k, v in data.items() if k not in {"id", "state", "version"}})
+        payload["plan_sha256"] = plan_digest(payload["plan"])
         with self.db._connect() as conn:
             changed = conn.execute("UPDATE intent_contracts SET state=?, version=version+1, payload=? "
                                    "WHERE id=? AND namespace=? AND version=? AND state=?",
@@ -195,7 +218,7 @@ class IntentContractStore:
         self.db.append_audit(entity_type="intent_contract", entity_id=data["id"], action=state, actor=self.namespace,
                              changes={"version": data["version"] + 1,
                                       "payload_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()})
-        return self.get(data["id"])
+        return {**payload, "id": data["id"], "state": state, "version": data["version"] + 1}
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
               criteria: Any = None, answers: Any = None) -> Dict[str, Any]:
@@ -234,7 +257,12 @@ class IntentContractStore:
             selected = validate_criteria(criteria) if criteria is not None else data["plan"]["criteria"]
             data["revisions"].append({"from_version": version, "goal": goal, "user_response": response, "criteria": selected})
             data["goal"] = goal
-            plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), data.get("planning_context"))
+            request = data.get("planning_request", data.get("planning_context"))
+            plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), request)
+            if data.get("planning_request"):
+                from rct_control_plane.derived_plan import derive_context
+                from rct_control_plane.rct_plan import validate_context
+                data["planning_context"] = validate_context(derive_context(goal, selected), {c["id"] for c in selected})
             for path, digest in data["plan"]["protected_sha256"].items():
                 if path in plan["protected_sha256"]:
                     plan["protected_sha256"][path] = digest

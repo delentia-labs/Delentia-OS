@@ -92,6 +92,17 @@ def apply_context(plan: dict, context: dict) -> None:
     for condition in plan["backward_chain"]["necessary_conditions"]:
         condition["components"] = [component for component in context["components"]
                                    if condition["criterion_id"] in component["criteria"]]
+        # Include transitive prerequisites, not just the last comparison node.
+        by_id = {component["id"]: component for component in context["components"]}
+        required = set()
+        def include(node):
+            if node not in required:
+                required.add(node)
+                for dependency in by_id[node]["depends_on"]:
+                    include(dependency)
+        for component in condition["components"]:
+            include(component["id"])
+        condition["prerequisites"] = [component for component in context["components"] if component["id"] in required]
     plan["clarification_questions"] = [{"id": u["id"], "question": u["question"]}
                                       for u in context["unknowns"] if u["critical"] and not u["answer"]]
     plan["limitations"] = "User-declared evidence and dependency graph, structurally validated; not an automatic semantic planner or truth oracle."

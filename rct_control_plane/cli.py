@@ -3663,8 +3663,9 @@ def workflow_run(yaml_path: str, poll_interval: float) -> None:
 @click.option("--namespace", default=None, help="Persistence/JITNA namespace (defaults to a fresh id per run).")
 @click.option("--criteria-file", type=click.Path(exists=True, dir_okay=False), default=None, help="JSON acceptance criteria; show the plan before execution.")
 @click.option("--planning-context-file", type=click.Path(exists=True, dir_okay=False), default=None, help="User-declared facts, unknowns and component graph JSON; requires criteria.")
+@click.option("--derive-plan", is_flag=True, help="Derive bounded prerequisites from criteria without a model; requires criteria.")
 def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str], criteria_file: Optional[str] = None,
-                  planning_context_file: Optional[str] = None) -> None:
+                  planning_context_file: Optional[str] = None, derive_plan: bool = False) -> None:
     """Run GOAL through the real, governed autonomous agent loop (Round 44
     Phase J.3) - FDIA gate, JITNA signing, RCT-7 decomposition, Delta
     persistence, and Skill Library retrieval/extraction all wired in
@@ -3682,6 +3683,8 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
     ns = namespace or f"cli-agent-{uuid.uuid4().hex[:8]}"
 
     async def _run() -> dict:
+        if derive_plan and planning_context_file:
+            raise click.ClickException("--derive-plan and --planning-context-file are mutually exclusive")
         loop = build_governed_loop(_kernel, ns, max_iterations=max_iterations, max_seconds=max_seconds,
                                    persistence=_kernel._persistence, mcp_server=mcp)       # the one place a governed loop is built
         if criteria_file:
@@ -3691,9 +3694,11 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
             def show_plan(contract):
                 click.echo("Plan before execution:\n" + json.dumps(contract, ensure_ascii=False, indent=2))
             context = json.loads(Path(planning_context_file).read_text(encoding="utf-8")) if planning_context_file else None
+            if derive_plan:
+                context = {"derive_from_criteria": True}
             return await loop.run(goal, acceptance_criteria=criteria, on_plan=show_plan, planning_context=context)
-        if planning_context_file:
-            raise click.ClickException("--planning-context-file requires --criteria-file")
+        if planning_context_file or derive_plan:
+            raise click.ClickException("planning options require --criteria-file")
         return await loop.run(goal)
 
     from rct_control_plane.intent_contract import IntentContractError

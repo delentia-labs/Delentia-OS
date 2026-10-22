@@ -1,5 +1,7 @@
 # แผนหลังรอบ declared plans และ runtime readiness
 
+สถานะรอบถัดมา: อ่าน [ผล criterion-derived plans/receipts และ dependency patches](RCT_DERIVED_PLANNING_RESULTS_2026-10-22_TH.md) และ [gates ล่าสุด](RCT_COMPLETION_NEXT_GATES_TH.md) ประกอบ รายการด้านล่างเก็บไว้ตาม checkpoint เดิม; follow-redirects1.16.1 มีแล้วและได้รับการอัปเดตทั้ง Action/SDK ในรอบใหม่ ไม่ได้อยู่ในสถานะรอแพตช์อีกต่อไป
+
 22 ตุลาคม 2026. ใช้ร่วมกับ [แผนเดิม](CODEX_NEXT_LEVEL_PLAN_TH.md). รอบนี้เดินงาน B และบางส่วน D พร้อมปิด SSHfailure; ไม่ได้ประกาศว่ารอบ A–F เสร็จทั้งหมด.
 
 ## สิ่งที่ส่งมอบรอบนี้
