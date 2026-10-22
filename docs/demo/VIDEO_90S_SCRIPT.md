@@ -1,27 +1,39 @@
-# 90-second evidence video — script and shot list
+# Scripted mechanism video — recording plan
 
-Purpose: show a stranger, in 90 seconds, something they can then reproduce themselves with one command. It uses the model-free demo, so what is shown is the gate, the signature wait and the
-audit chain, **not** a language model's ability — say so on screen. Nothing in it is edited to hide a failure; record in one take, terminal only, 120×30, dark theme, font ≥ 18 pt.
+Purpose: show the experimental runtime's files, gate, signature wait and audit behaviour. A fixed program replaces the model; this is not capable-model evidence. The times below are an editing outline, not a runtime promise. A recording has not been produced merely because this script exists.
 
-## Setup (before recording)
+## Before recording
+
+Choose either a source checkout or a published artifact in a fresh virtual environment. Record the actual source commit (if applicable), package version, date and environment. Do not assign a checkout SHA to an unrelated latest package.
+
+```bash
+pip install delentia-os
+pip show delentia-os
+delentia demo init
 ```
-pip install delentia-os        # in a fresh virtual environment; show the version line
-```
+
+Use the source-install instructions in the [README](../../README.md) when recording a checkout. Use a disposable demo folder and retain the original fixture bytes and full run reports. The demo's approver key lives on the same machine; it does not demonstrate production key custody.
 
 ## Shots
 
-| Time | What is on screen | Spoken line (EN) | Spoken line (TH) |
-|---|---|---|---|
-| 0:00–0:08 | Title card: "Delentia — a governed agent runtime. Experimental." | "This is an experimental runtime that puts a gate and a signature in front of an agent's actions." | "นี่คือรันไทม์เชิงทดลองที่วางประตูและลายเซ็นไว้หน้าการกระทำของเอเจนต์" |
-| 0:08–0:20 | `delentia demo run compare --scripted` finishing in ~5 s, five checks passing | "No model is used here: a fixed program stands in for it. The tools, the gate and the audit log are real." | "ไม่มีโมเดลในที่นี้: โปรแกรมที่กำหนดไว้ทำหน้าที่แทน เครื่องมือ ประตู และ audit log เป็นของจริง" |
-| 0:20–0:40 | `delentia demo run edit --scripted` stops with "waiting for a signature"; `ls` shows the result file does **not** exist yet | "The write is held. Nothing was written." | "การเขียนถูกพักไว้ ยังไม่มีการเขียนอะไร" |
-| 0:40–0:55 | `delentia demo approve <id> --scripted`; the file now exists | "A signed approval releases exactly that one action." | "ลายเซ็นปล่อยการกระทำนั้นเพียงหนึ่งอย่าง" |
-| 0:55–1:10 | `delentia audit-chain verify` → `chain: OK … signed`; then change one character in the database copy and verify again → fails and names the row | "Every step is in a hash chain. Change one character and the check fails." | "ทุกขั้นอยู่ใน hash chain แก้หนึ่งตัวอักษรแล้วตรวจจะไม่ผ่าน" |
-| 1:10–1:22 | A table card: measured / not yet. Measured: 7,820 tests on CI, gate properties, the injection measurement with a scripted hijacked model. Not yet: a capable model's results, a public host, an independent witness, any outside user | "What is measured, and what is not yet. We have no results yet with a capable model." | "สิ่งที่วัดแล้ว และสิ่งที่ยังไม่มี: ยังไม่มีผลกับโมเดลที่เก่ง" |
-| 1:22–1:30 | `pip install delentia-os` and the one command, the repository address | "Run it yourself: one command, five seconds." | "ลองเองได้: คำสั่งเดียว ห้าวินาที" |
+| Suggested position | Observable action | Narration scope |
+|---|---|---|
+| Introduction | Title: “Delentia OS · experimental · SCRIPTED MECHANISM DEMO” | The script replaces the model; files, tools, signatures and audit are real. |
+| Compare | `delentia demo run compare --scripted`; show the fixture oracle checks | Report actual pass/fail output. Do not promise a five-second run. |
+| Proposed edit | Save/hash `workspace/quotes/vendor_a.md` in the demo folder; run `delentia demo run edit --scripted` | Show `pending_approval` and prove this existing fixture's bytes have not changed. Reports/audit may still be written; say “the protected edit has not occurred”. |
+| Approval | Use the actual ID printed: `delentia demo approve ACTUAL_APPROVAL_ID --scripted` | Show the authorized fixture diff after the signature, not a claim that a new result file appears. |
+| Replay and audit | Try that same ID again, then `delentia demo status` | Show the actual refusal and chain/signature status for this demo's configuration. Do not verify a demo chain with a different host's key. |
+| Limits and close | Link source, release scope, quickstart and full run | These results concern the scripted mechanism. Capable-model, comparative and deployment results are separate. |
 
-## Rules for the recording
-* Show the real version number (`pip show delentia-os`) and the real date; do not splice takes.
-* Do not show any key, token or personal path; use a throw-away user folder.
-* Say "experimental" in the first ten seconds and show the "not yet" card; never say "secure", "certified", "tamper-proof" or "production-ready".
-* Put the exact commands in the video description so they can be copied.
+If demonstrating audit tampering, use only a disposable copy, verify it with the same run's public key/configuration, and retain the original evidence untouched. Do not edit the host database. Omit this shot if the verification setup has not been checked.
+
+## Recording rules
+
+- Keep the full, unredacted-by-editing sequence for review, but exclude credentials, private keys and personal data from anything shared.
+- Label a shorter cut “edited excerpt” and link the full run; disclose interventions and failed attempts.
+- Use the actual outputs and measured duration. Do not state “one command, five seconds”.
+- Read [release levels](../release/RELEASE_LEVELS.md) for current host/witness status rather than repeating stale “no host anywhere” statements.
+- Link the dated [test checkpoint](../testing/TESTING_CANONICAL.md); it is not a fresh full-CI run on the recording machine.
+- Do not claim complete RCT fidelity, calibrated safety, certified deployment, tamper-proof logs or automatic main-LLM training.
+
+See the [Thai quickstart](QUICKSTART_TH.md), [English quickstart](QUICKSTART_EN.md) and [current definitions](../public/CURRENT_PUBLIC_INFORMATION_EN.md).
