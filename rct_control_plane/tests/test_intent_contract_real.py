@@ -1,6 +1,7 @@
 """Contract acceptance, restart, isolation and ordering using real SQLite/tools."""
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 
@@ -52,6 +53,7 @@ def test_mismatch_persists_waits_for_a_real_answer_and_replans(tmp_path, world, 
     result = asyncio.run(loop.run("Give a Thai answer", acceptance_criteria=[{"kind": "language", "value": "th"}], on_plan=shown.append))
     assert result["stopped_reason"] == "waiting_for_clarification"
     assert result["intent_verification"]["aligned_with_intent"] is False
+    assert result["acceptance_verification"]["satisfied"] is False
     assert not result["skill_extracted"] and not result["partial_completion"]["finished"]
     assert result["growth"]["delta"] == 0
     c = result["intent_contract"]
@@ -64,6 +66,7 @@ def test_mismatch_persists_waits_for_a_real_answer_and_replans(tmp_path, world, 
     done = asyncio.run(fresh.continue_intent(c["id"], c["version"], "Keep Thai", revised_goal="Answer briefly in Thai", on_plan=shown.append))
     after = done["intent_contract"]
     assert after["state"] == "criteria_satisfied"
+    assert done["acceptance_verification"]["satisfied"] is True
     assert after["original_goal"] == "Give a Thai answer" and after["goal"] == "Answer briefly in Thai"
     assert after["revisions"][0]["user_response"] == "Keep Thai" and len(shown) == 2
     with pytest.raises(IntentContractError):
@@ -251,3 +254,89 @@ def test_competing_continuations_claim_only_once(tmp_path, world):
             return "refused"
     with ThreadPoolExecutor(max_workers=2) as pool:
         assert sorted(pool.map(claim, range(2))) == ["refused", "running"]
+
+
+def test_unicode_contains_accepts_canonical_equivalence_without_changing_thai(world):
+    from rct_control_plane.intent_contract import compare, build_plan, validate_criteria
+    plan = build_plan('ตอบภาษาไทย', validate_criteria([{'kind': 'contains', 'value': 'café น้ำ กำลัง'}]), world)
+    assert compare(plan, 'cafe\u0301 น้ำ กำลัง') == []
+    assert compare(plan, 'cafe น้ำ กาลัง')
+
+
+def test_schema_export_legacy_compatibility_and_future_schema_fail_closed(tmp_path, world):
+    store = IntentContractStore(ControlPlanePersistence(db_path=str(tmp_path / 'schema.db')), 'owner')
+    c = store.create('ข้อมูลภาษาไทย', [{'kind': 'contains', 'value': 'น้ำ'}], world)
+    exported = store.export(c['id'])
+    assert exported['contract']['schema_version'] == 1
+    assert exported['contains_personal_text'] and exported['executable'] is False
+    assert 'ข้อมูลภาษาไทย' in json.dumps(exported, ensure_ascii=False)
+    with pytest.raises(IntentContractError):
+        IntentContractStore(store.db, 'other').export(c['id'])
+    data = {k: v for k, v in c.items() if k not in {'id', 'state', 'version', 'schema_version'}}
+    with store.db._connect() as conn:
+        conn.execute('UPDATE intent_contracts SET payload=? WHERE id=?', (store._encode(data), c['id']))
+    assert store.get(c['id'])['schema_version'] == 1
+    data['schema_version'] = 999
+    with store.db._connect() as conn:
+        conn.execute('UPDATE intent_contracts SET payload=? WHERE id=?', (store._encode(data), c['id']))
+    with pytest.raises(IntentContractError, match='schema version'):
+        store.claim(c['id'], c['version'])
+
+
+@pytest.mark.parametrize('sealed', [True, False])
+def test_signed_erasure_scrubs_contract_projection_without_affecting_other_owner(tmp_path, world, monkeypatch, sealed):
+    from rct_control_plane import approvals, memory_erasure as er, memory_eventlog, audit_chain
+    monkeypatch.setenv('DELENTIA_MEMORY_SEAL', '1' if sealed else '0')
+    monkeypatch.setenv('DELENTIA_AUDIT_TEXT', 'sealed' if sealed else 'plain')
+    monkeypatch.setenv(er.KEYS_ENV, str(tmp_path / 'keys'))
+    db = ControlPlanePersistence(db_path=str(tmp_path / 'erase-contract.db'))
+    store = IntentContractStore(db, 'alice')
+    alice = store.create('ALICE-PRIVATE-น้ำ-ข้อมูล', [{'kind': 'contains', 'value': 'น้ำ'}], world)
+    bob_store = IntentContractStore(db, 'bob')
+    bob = bob_store.create('BOB-PRIVATE-ข้อมูล', [{'kind': 'contains', 'value': 'ข้อมูล'}], world)
+    key = tmp_path / 'outside' / 'approver.pem'
+    public = approvals.generate_approver_key(str(key))
+    monkeypatch.setenv('DELENTIA_APPROVER_PUBKEYS', public)
+    head = memory_eventlog.MemoryEventLog(db).head()['hash']
+    signature = er.sign_erase(str(key), 'alice', head)
+    before = bob_store.get(bob['id'])
+    er.erase_person(db, 'alice', 'owner requested erasure', signature['public_key'], signature['signature'])
+    with pytest.raises(IntentContractError, match='erased'):
+        store.get(alice['id'])
+    with pytest.raises(IntentContractError):
+        store.claim(alice['id'], alice['version'])
+    assert bob_store.get(bob['id']) == before
+    with db._connect() as conn:
+        row = conn.execute('SELECT payload,state FROM intent_contracts WHERE id=?', (alice['id'],)).fetchone()
+    assert tuple(row) == ('{}', 'erased')
+    assert 'ALICE-PRIVATE'.encode() not in Path(db.db_path).read_bytes()
+    assert not any(x['table'] == 'intent_contracts' for x in er.inventory(db, 'alice')['other_tables_with_this_person'])
+    with db._connect() as conn:
+        assert audit_chain.verify_audit_chain(conn).ok
+
+
+def test_backup_restore_requires_namespace_key_and_preserves_waiting(tmp_path, world, monkeypatch):
+    from rct_control_plane import backup, memory_erasure as er
+    home = tmp_path / 'backup-home'
+    home.mkdir()
+    monkeypatch.setenv('DELENTIA_HOME', str(home))
+    monkeypatch.setenv(er.KEYS_ENV, str(home / 'memory_keys'))
+    db = ControlPlanePersistence(db_path=str(home / 'agentic.db'))
+    store = IntentContractStore(db, 'alice')
+    c = store.create('ข้อมูลสำหรับ backup', [{'kind': 'language', 'value': 'th'}], world)
+    c = store.transition(store.claim(c['id'], c['version']), 'waiting_for_clarification')
+    plain_zip, keyed_zip = tmp_path / 'no-keys.zip', tmp_path / 'with-keys.zip'
+    backup.create_backup(str(plain_zip))
+    backup.create_backup(str(keyed_zip), include_keys=True)
+    restored = tmp_path / 'restore-no-keys'
+    backup.restore_backup(str(plain_zip), str(restored))
+    monkeypatch.setenv(er.KEYS_ENV, str(restored / 'home' / 'memory_keys'))
+    restored_store = IntentContractStore(ControlPlanePersistence(db_path=str(restored / 'home' / 'agentic.db')), 'alice')
+    with pytest.raises(IntentContractError, match='erased or unavailable'):
+        restored_store.get(c['id'])
+    keyed = tmp_path / 'restore-with-keys'
+    backup.restore_backup(str(keyed_zip), str(keyed))
+    monkeypatch.setenv(er.KEYS_ENV, str(keyed / 'home' / 'memory_keys'))
+    recovered = IntentContractStore(ControlPlanePersistence(db_path=str(keyed / 'home' / 'agentic.db')), 'alice').get(c['id'])
+    assert recovered['state'] == 'waiting_for_clarification'
+    assert recovered['original_goal'] == c['original_goal'] and recovered['version'] == c['version']

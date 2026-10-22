@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import uuid
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -17,6 +18,7 @@ from rct_control_plane import audit_text
 # Keep the first contract release on inspectable answer/read workflows. Pending
 # action approval/resume must carry the contract before enabling effect tools.
 READ_ONLY_TOOLS = frozenset({"delentia_read_repo_file", "delentia_search_repo_files", "delentia_recall", "delentia_search_sessions"})
+SCHEMA_VERSION = 1
 
 
 class IntentContractError(ValueError):
@@ -83,7 +85,9 @@ def compare(plan: Dict[str, Any], answer: str) -> List[Dict[str, Any]]:
     for c in plan["criteria"]:
         kind, expected = c["kind"], c["value"]
         if kind == "contains":
-            ok = expected.casefold() in answer.casefold()
+            # Canonically equivalent Unicode must not fail an exact-text
+            # criterion. NFC preserves Thai SARA AM; NFKC changes its spelling.
+            ok = unicodedata.normalize("NFC", expected).casefold() in unicodedata.normalize("NFC", answer).casefold()
         elif kind == "json_object":
             try:
                 ok = isinstance(json.loads(answer), dict)
@@ -123,20 +127,38 @@ class IntentContractStore:
                                (contract_id, self.namespace)).fetchone()
         if row is None:
             raise IntentContractError("intent contract not found")
+        if row[0] == "erased":
+            raise IntentContractError("intent contract text is erased or unavailable")
         try:
             data = audit_text.reveal(self.namespace, json.loads(row[2])["data"])
         except (ValueError, KeyError, TypeError) as exc:
             raise IntentContractError("intent contract text is erased or unavailable") from exc
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) or not isinstance(data.get("plan"), dict):
             raise IntentContractError("intent contract text is erased or unavailable")
+        # Pre-versioned contracts from the first release are schema 1. Future
+        # schemas must never silently run under older continuation semantics.
+        version = data.get("schema_version", 1)
+        if type(version) is not int or version != SCHEMA_VERSION:
+            raise IntentContractError("unsupported intent contract schema version")
+        data["schema_version"] = version
         return {**data, "id": contract_id, "state": row[0], "version": row[1]}
+
+    def export(self, contract_id: str) -> Dict[str, Any]:
+        """Explicit plaintext export for the owner; never includes keys.
+
+        This is a portable inspection artifact, not an import/execution token.
+        It contains personal text and must not be shared as a public run log.
+        """
+        return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
+                "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
     def create(self, goal: str, criteria: Any, root: Path) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
         plan = build_plan(goal, validate_criteria(criteria), root)
         contract_id = uuid.uuid4().hex
-        data = {"original_goal": goal, "goal": goal, "plan": plan, "revisions": [], "differences": [], "safe_to_resume": True}
+        data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
+                "revisions": [], "differences": [], "safe_to_resume": True}
         with self.db._connect() as conn:
             conn.execute("INSERT INTO intent_contracts VALUES (?, ?, 'plan_ready', 1, ?)",
                          (contract_id, self.namespace, self._encode(data)))

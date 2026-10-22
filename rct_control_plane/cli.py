@@ -3762,6 +3762,19 @@ def intent_contract_continue(contract_id: str, namespace: str, version: int, res
         raise SystemExit(1)
 
 
+@intent_contract_group.command("export")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+def intent_contract_export(contract_id: str, namespace: str) -> None:
+    """Export personal contract text as JSON to stdout; keep it private."""
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.mcp_server import _kernel
+    try:
+        click.echo(json.dumps(IntentContractStore(_kernel._persistence, namespace).export(contract_id), ensure_ascii=False, indent=2))
+    except IntentContractError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
 @cli.group("jury")
 def jury_group():
     """

@@ -1824,6 +1824,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 else {"applicable": False, "reason": f"episode ended with {stopped_reason}"}
             )
         result["intent_verification"] = verification
+        # Keep the decision's basis visible: grounding can support a short
+        # answer even when lexical overlap is zero. These are separate checks.
+        verification["lexical_threshold_met"] = (
+            verification.get("similarity_score") is not None
+            and verification["similarity_score"] >= verification.get("threshold", self._intent_verify_threshold)
+        )
+        verification["scope_note"] = "Heuristic alignment/grounding verdict, not semantic truth or full RCT-7 fidelity."
         contract = getattr(self, "_active_contract", None)
         if contract is not None:
             from rct_control_plane.intent_contract import compare
@@ -1850,6 +1857,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 verification.update({"aligned_with_intent": False, "criteria_differences": differences})
             else:
                 contract = self._contract_store.transition(contract, "criteria_satisfied" if stopped_reason == "llm_finished" else "interrupted")
+            result["acceptance_verification"] = {"evaluated": stopped_reason in {"llm_finished", "waiting_for_clarification"},
+                "satisfied": contract["state"] == "criteria_satisfied", "differences": differences,
+                "scope_note": "Declared predicates only; separate from intent_verification and model capability."}
             result["intent_contract"] = contract
         self._journal_call("end", result.get("stopped_reason"), result.get("final_answer"))
         from rct_control_plane import envelope as _envelope

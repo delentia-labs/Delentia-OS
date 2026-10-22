@@ -69,3 +69,15 @@ python scripts/demo_intent_contract.py --dir /path/to/a/new/disposable-demo-dire
 It uses a local **SCRIPTED** HTTP model, actual CLI processes, file reads, SQLite and acceptance checks. It intentionally produces a language mismatch, proves restart preserves waiting, refuses continuation without an answer, and then retains a confirmed revision. It has no paid calls and does not demonstrate capable-model success. Do not share its private key/data directory.
 
 Related: [RCT-7 requirements](rct-7-thinking.md), [FDIA semantics](fdia.md), [release levels](../release/RELEASE_LEVELS.md), [research protocol](../../research/PROTOCOL.md).
+
+## Lifecycle follow-up (22 October 2026)
+
+New payloads carry `schema_version: 1`. Pre-versioned payloads are read as schema 1; unsupported versions fail closed before continuation. This is compatibility for the first schema, not a general migration framework.
+
+`delentia intent-contract export ID --namespace NAME` explicitly prints personal plaintext to stdout, labelled `contains_personal_text: true` and `executable: false`. Keep exports private. They contain no namespace keys and cannot be imported as an execution permission.
+
+The existing **signed** person-erasure operation now scrubs the contract's mutable payload and marks it `erased`, even when sealing was disabled. It preserves rows and audit hashes, prevents later continuation/export, and leaves other namespaces intact. No automatic retention TTL or new unsigned erasure endpoint is enabled. Copies previously exported, backups with keys, and already-decrypted in-process data remain separate custody responsibilities.
+
+Backup/restore tests cover clarification waits: the default backup excludes namespace keys, so its contract payload cannot be decrypted on a fresh restore; an explicitly key-inclusive private backup can restore the wait. Such a backup can also defeat later crypto-erasure if retained and must be handled accordingly. A crashed `running` contract still requires reconciliation; it is never reset to ready by elapsed time.
+
+Text predicates use NFC canonical equivalence for `contains`; language remains a script heuristic. Result output separates `acceptance_verification` (declared predicates) from `intent_verification` (existing heuristic grounding/alignment). Neither claims full RCT-7 or semantic truth.

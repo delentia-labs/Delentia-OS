@@ -65,6 +65,7 @@ def main() -> int:
     with ScriptedModel(policy, model_id="scripted-contract-demo") as model:
         save_model_selection("openai-compat", model.model_id, path=root / "model.json", endpoint={
             "base_url": model.base_url, "kind": "local", "region": "", "operator": "scripted-demo"})
+        print("ขั้นที่ 1: ตั้งใจให้ scripted model ตอบอังกฤษ เพื่อทดสอบว่าระบบหยุดเมื่อผิดเกณฑ์ภาษาไทย (exit 1 คือผลที่คาดหวัง)", flush=True)
         command(["agent", "Read source.md and answer in Thai without changing the original", "--namespace", "demo-contract",
                  "--criteria-file", str(root / "criteria.json"), "--max-iterations", "4"], 1)
         store = IntentContractStore(ControlPlanePersistence(db_path=str(root / "data/agentic.db")), "demo-contract")
@@ -75,7 +76,9 @@ def main() -> int:
         print("CHECK: waiting persisted; no automatic repair; original file bytes unchanged.", flush=True)
         assert (root / "workspace/source.md").read_bytes() == before
         command(["intent-contract", "show", contract_id, "--namespace", "demo-contract"], 0)
+        print("ขั้นที่ 2: ทดลองส่งคำตอบว่าง ต้องถูกปฏิเสธและยังไม่เรียกโมเดลต่อ", flush=True)
         command(["intent-contract", "continue", contract_id, "--namespace", "demo-contract", "--version", str(c["version"])], 1)
+        print("ขั้นที่ 3: ส่งคำยืนยันภาษาไทย แสดงแผนใหม่ก่อนทำต่อ และตรวจว่าไฟล์ต้นฉบับไม่เปลี่ยน", flush=True)
         command(["intent-contract", "continue", contract_id, "--namespace", "demo-contract", "--version", str(c["version"]),
                  "--response", "Keep the Thai requirement; please answer in Thai"], 0)
         done = store.get(contract_id)
@@ -83,6 +86,7 @@ def main() -> int:
         assert done["original_goal"] == c["original_goal"]
         assert (root / "workspace/source.md").read_bytes() == before
         print("CHECK: original intent retained, confirmed revision stored, Thai criterion satisfied; source unchanged.", flush=True)
+        print("ผลสรุป: ผ่านเกณฑ์ที่ประกาศ เก็บเจตนาเดิมและคำยืนยันแล้ว; ไม่ใช่การยืนยันความจริงทุกข้อหรือ RCT-7 ครบทุกส่วน", flush=True)
         (root / "result.json").write_text(json.dumps({"label": "SCRIPTED", "model_calls": model.calls,
             "commands": ledger, "contract": done, "source_unchanged": True}, ensure_ascii=False, indent=2))
     print("LIMIT: script/language checks are not semantic truth or capable-model evidence.", flush=True)
