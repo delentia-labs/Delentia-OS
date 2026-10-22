@@ -1,0 +1,139 @@
+{
+  "branch": "codex/rct-domain-planning-provenance-20261022",
+  "base": "4044f1fcecfb9e66b6ffada8c9645e1b1b2c9e65",
+  "python": {
+    "passed": 7943,
+    "failed": 13,
+    "skipped": 59,
+    "xfailed": 1,
+    "warnings": 6863,
+    "seconds": 783.56,
+    "exit_code": 1,
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "message": "KeyError: 'status_code'"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_a_careful_agent_that_looks_again_reports_the_current_price_and_the_browser_reaches_nothing_else",
+        "message": "assert (False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_an_agent_that_answers_from_the_first_look_is_stale_and_the_oracle_knows_what_the_page_shows_now",
+        "message": "assert (not False and None == 120)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_the_case_runs_through_the_suite_runner_with_a_manifest",
+        "message": "assert (True and False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    ],
+    "skip_reasons": {
+      "collection skipped": 1,
+      "could not import 'soundfile': No module named 'soundfile'": 1,
+      "could not import 'imageio_ffmpeg': No module named 'imageio_ffmpeg'": 2,
+      "sibling TypeScript checkout not present": 1,
+      "the browser did not start (it may be unable to run its sandbox here)": 16,
+      "needs a speech engine and a cached Whisper model": 3,
+      "no speech engine on this machine": 3,
+      "needs a cached Whisper model": 2,
+      "Windows Job Objects": 3,
+      "needs a speech engine and ffmpeg on this machine": 2,
+      "needs a speech engine": 1,
+      "paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1": 9,
+      "Hermes is not installed in this environment": 10,
+      "real v0.5.1 adapter weights not present in this environment": 1,
+      "set DELENTIA_REAL_SERVICES=1 and start the services (see the module docstring)": 4
+    },
+    "expected_failure_reasons": [
+      "Real, understood gap (documented since commit 6c6aea1, 2026-09-23, reconfirmed in Round 43): delentia_generate_image needs the 'diffusion' extras group + real model weights, which are NOT installed in CI (ci.yml installs only requirements.txt) - the kernel's own DiffusionEngine honestly reports simulated=True/byte_size=0 rather than faking success. This is an Architect-level trade-off (heavier/slower CI job vs. accepting this documented gap), not something to silently work around - xfail keeps CI green while keeping this failure visible and accurate instead of a silent skip."
+    ]
+  },
+  "coverage": {
+    "rate": 0.9121,
+    "covered": 90782,
+    "valid": 99528,
+    "includes_test_modules": true
+  },
+  "focused_passed": 132,
+  "new_semantic_development_cases": 43,
+  "focused_overlaps_full": true,
+  "pipeline": {
+    "passed_cases": 21,
+    "passed_checks": 134,
+    "subagent_cases_run": false
+  },
+  "paid_api_calls": 0,
+  "semantic_rct7_complete": false,
+  "production_or_pilot_ready": false,
+  "configuration": {
+    "status": "saved",
+    "requires_publish": true,
+    "custom_allowed_domains": [
+      "dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com",
+      "example.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "ollama.com",
+      "openaipublic.blob.core.windows.net",
+      "registry.ollama.ai"
+    ],
+    "presets": [
+      "package_managers"
+    ],
+    "runtime_applied": false,
+    "model_download_verified": false,
+    "files_changed": [
+      "network.allowed_domains",
+      "start_skill"
+    ],
+    "secrets_added": false
+  },
+  "evidence_sha256": {
+    "full-python.log": "6160ac3099cf2ebcdde19b8790f300a08c2399b69c53154509cc5abb5e368982",
+    "full-python.xml": "ed32abc261698a68770d4757eea0872219b410448bbddb1d863d0b5ff0c88a31",
+    "coverage.xml": "7bdd8b20e1f41aa282e55d315398410e22e7574d5a0b4dce3b282ca4cd3bd4eb",
+    "targeted.log": "61808ec32717fe5f5bfe68536c948b36c283de7a2b0518a697cd7525d6804100",
+    "pipeline.log": "75a7b78c58fa9d484b72105d47020408b981d22c865245afe32e06f76c5511e2",
+    "semantic-cli-smoke.log": "8e42a763b969b4ff13f1ecdb8c5d955492ba3eb1e80d7f2c0ed3b329f3697e0b",
+    "semantic-cli-smoke.json": "7180504c299f737ae93085d5a4876cae8bbd81d0d483df233c975b4f767d03e7",
+    "preflight.json": "34e280c6077d9caa86ee5231a77442fe231b6868d86d0f47bf0cef5aec180076",
+    "wheel-smoke.log": "259030efd71ddf0ba300a31539a7d15592878bfc5d70847912ba4bb8d27e1e08",
+    "wheel-integrity.json": "effdee4e3d46df8ed0f77fe3ff0f41ff1aa1f5cf634e877770aac29c0b86f58b"
+  }
+}

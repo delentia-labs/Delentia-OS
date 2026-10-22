@@ -62,3 +62,7 @@ The optional [declared RCT context](rct-declared-plans.md) adds typed reported f
 ## Criterion-derived plans and receipts
 
 The opt-in [criterion-derived compiler](rct-derived-plans.md) now produces predicate-specific prerequisites without a user-supplied graph or model call. Backward conditions include transitive dependencies. New contracts carry a checked plan digest and return their own committed transition receipt, avoiding a post-commit re-read race. These changes do not discover arbitrary semantic unknowns, grant signed effects, reconcile crashed writes or complete RCT-7 across entry points. See [remaining gates](../development/RCT_COMPLETION_NEXT_GATES_TH.md).
+
+## Bounded bilingual task inference
+
+The experimental [bounded semantic planner](bounded-semantic-planner.md) infers different component dependencies for summary and budget-comparison goals, labels rule inference separately from reported source provenance, and discovers missing budget/source inputs in those tasks. Budget answers require explicit amount/currency; revisions can introduce a new durable initial-input wait. This remains a rule-based subset: it does not infer arbitrary necessary conditions, verify sources, provide a semantic result oracle or enable contract writes. See [current results/gaps](../development/BOUNDED_SEMANTIC_PLANNER_RESULTS_TH.md) and [all integration failure remedies](../development/INTEGRATION_FAILURE_CATALOG_TH.md).

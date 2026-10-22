@@ -702,6 +702,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
             from rct_control_plane.intent_contract import IntentContractError
             raise IntentContractError("intent contract belongs to another workspace")
         contract = store.claim(contract_id, version, response, revised_goal, acceptance_criteria, answers)
+        if contract["state"] == "waiting_for_input":
+            return {"goal": contract["goal"], "steps": [], "iterations": 0, "final_answer": None,
+                    "stopped_reason": "waiting_for_input", "intent_contract": contract,
+                    "clarification_question": "\n".join(q["question"] for q in contract["plan"]["clarification_questions"])}
         return await self.run(contract["goal"], intent_contract=contract, on_plan=on_plan)
 
     # ------------------------------------------------------------------

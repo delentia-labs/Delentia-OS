@@ -67,6 +67,10 @@ def _digest(path: Path) -> str:
 
 def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_context: Any = None) -> Dict[str, Any]:
     from rct_control_plane.derived_plan import DERIVE_REQUEST, derive_context, annotate
+    semantic_metadata = None
+    if isinstance(planning_context, dict) and "semantic_plan" in planning_context:
+        from rct_control_plane.semantic_plan import compile_request
+        planning_context, semantic_metadata = compile_request(goal, criteria, planning_context)
     derived = type(planning_context) is dict and planning_context == DERIVE_REQUEST and planning_context.get("derive_from_criteria") is True
     if derived:
         planning_context = derive_context(goal, criteria)
@@ -89,6 +93,9 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_c
         apply_context(plan, validate_context(planning_context, {c["id"] for c in criteria}))
         if derived:
             annotate(plan)
+        if semantic_metadata is not None:
+            from rct_control_plane.semantic_plan import annotate as annotate_semantic
+            annotate_semantic(plan, semantic_metadata)
     return plan
 
 
@@ -190,6 +197,10 @@ class IntentContractStore:
                 "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
         if planning_context is not None:
             from rct_control_plane.rct_plan import validate_context
+            if plan.get("planning_origin") == "bounded_semantic_rules":
+                from rct_control_plane.semantic_plan import context_from_plan
+                data["planning_request"] = copy.deepcopy(planning_context)
+                planning_context = context_from_plan(plan)
             if plan.get("planning_origin") == "criterion_derived":
                 from rct_control_plane.derived_plan import derive_context
                 data["planning_request"] = {"derive_from_criteria": True}
@@ -234,12 +245,19 @@ class IntentContractStore:
                 raise IntentContractError("answers must supply nonempty text for each critical unknown id")
             if revised_goal is not None or criteria is not None or response:
                 raise IntentContractError("answer critical inputs before revising intent")
+            if data["plan"].get("planning_origin") == "bounded_semantic_rules" and "budget" in answers:
+                from rct_control_plane.semantic_plan import validate_budget
+                validate_budget(answers["budget"])
             context = data["planning_context"]
             for unknown in context["unknowns"]:
                 if unknown["id"] in answers:
                     unknown["answer"] = answers[unknown["id"]].strip()
             data["revisions"].append({"from_version": version, "user_answers": answers, "provenance": "confirmed_user_input"})
+            semantic_metadata = data["plan"].get("semantic_planning")
             data["plan"] = build_plan(data["goal"], data["plan"]["criteria"], Path(data["plan"]["workspace"]), context)
+            if semantic_metadata is not None:
+                from rct_control_plane.semantic_plan import annotate as annotate_semantic
+                annotate_semantic(data["plan"], semantic_metadata)
             # Replanning must not reset preservation baselines.
             prior = self.get(contract_id)["plan"]["protected_sha256"]
             data["plan"]["protected_sha256"].update(prior)
@@ -260,14 +278,19 @@ class IntentContractStore:
             request = data.get("planning_request", data.get("planning_context"))
             plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), request)
             if data.get("planning_request"):
-                from rct_control_plane.derived_plan import derive_context
                 from rct_control_plane.rct_plan import validate_context
-                data["planning_context"] = validate_context(derive_context(goal, selected), {c["id"] for c in selected})
+                if plan.get("planning_origin") == "bounded_semantic_rules":
+                    from rct_control_plane.semantic_plan import context_from_plan
+                    context = context_from_plan(plan)
+                else:
+                    from rct_control_plane.derived_plan import derive_context
+                    context = derive_context(goal, selected)
+                data["planning_context"] = validate_context(context, {c["id"] for c in selected})
             for path, digest in data["plan"]["protected_sha256"].items():
                 if path in plan["protected_sha256"]:
                     plan["protected_sha256"][path] = digest
             data["plan"], data["differences"] = plan, []
-            return self.transition(data, "plan_ready")
+            return self.transition(data, "waiting_for_input" if plan.get("clarification_questions") else "plan_ready")
         elif response or revised_goal is not None or criteria is not None:
             raise IntentContractError("revise only after a clarification request")
         return self.transition(data, "running")

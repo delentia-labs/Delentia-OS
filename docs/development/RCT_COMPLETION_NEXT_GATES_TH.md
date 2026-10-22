@@ -1,5 +1,7 @@
 # แผนพัฒนา RCT-7 หลัง criterion-derived plans และ atomic receipts
 
+Checkpoint ถัดมา: เพิ่ม bounded Thai/English summary/budget task planner และ reported-source provenance แล้ว พร้อมเตรียม network draft โดยรักษารายการเดิม ดู [ผลและลำดับงานล่าสุด](BOUNDED_SEMANTIC_PLANNER_RESULTS_TH.md) และ [failure catalog13กรณี](INTEGRATION_FAILURE_CATALOG_TH.md). รายการ semantic/effect/pilot gates ด้านล่างยังไม่ถือว่าปิดทั้งหมด
+
 22 ตุลาคม 2026. ใช้ต่อจาก [แผน readiness](READINESS_NEXT_ROUNDS_TH.md). รายการด้านล่างเป็นงานที่ต้องทำและเกณฑ์รับงาน ไม่ใช่รายการที่ผ่านแล้ว การผ่าน unit tests หรือการมีชื่อ R1–R7 ไม่ทำให้ semantic RCT-7 สมบูรณ์
 
 ## A — ปิดข้อจำกัดเครื่อง integration

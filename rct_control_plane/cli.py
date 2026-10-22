@@ -3662,7 +3662,7 @@ def workflow_run(yaml_path: str, poll_interval: float) -> None:
 @click.option("--max-seconds", default=120.0, show_default=True, help="Episode wall-clock budget in seconds.")
 @click.option("--namespace", default=None, help="Persistence/JITNA namespace (defaults to a fresh id per run).")
 @click.option("--criteria-file", type=click.Path(exists=True, dir_okay=False), default=None, help="JSON acceptance criteria; show the plan before execution.")
-@click.option("--planning-context-file", type=click.Path(exists=True, dir_okay=False), default=None, help="User-declared facts, unknowns and component graph JSON; requires criteria.")
+@click.option("--planning-context-file", type=click.Path(exists=True, dir_okay=False), default=None, help="Declared context or bounded semantic_plan request JSON; requires criteria.")
 @click.option("--derive-plan", is_flag=True, help="Derive bounded prerequisites from criteria without a model; requires criteria.")
 def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str], criteria_file: Optional[str] = None,
                   planning_context_file: Optional[str] = None, derive_plan: bool = False) -> None:
@@ -3771,7 +3771,7 @@ def intent_contract_continue(contract_id: str, namespace: str, version: int, res
     except (IntentContractError, ValueError, OSError) as exc:
         raise click.ClickException(str(exc)) from exc
     click.echo(json.dumps(result, ensure_ascii=False, indent=2))
-    if result.get("stopped_reason") == "waiting_for_clarification":
+    if result.get("stopped_reason") in {"waiting_for_clarification", "waiting_for_input"}:
         raise SystemExit(1)
 
 
