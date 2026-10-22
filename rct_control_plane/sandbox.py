@@ -665,7 +665,10 @@ def ssh_command_line(settings: Dict[str, Any], command: str, timeout_seconds: fl
     workdir = shlex.quote(settings["workdir"]) if not settings["workdir"].startswith("~") else settings["workdir"]
     remote = (f"mkdir -p {workdir} && cd {workdir} && "
               f"if command -v timeout >/dev/null 2>&1; then timeout -k 2 {limit} sh -c {quoted}; else sh -c {quoted}; fi")
-    return [settings["bin"], "-T", "-p", settings["port"], "-i", settings["key"],
+    # This backend supplies all connection settings explicitly. User/system
+    # config may add ProxyCommand, identities or host rewrites; never inherit
+    # those ambient instructions (or depend on their filesystem permissions).
+    return [settings["bin"], "-F", os.devnull, "-T", "-p", settings["port"], "-i", settings["key"],
             "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", f"UserKnownHostsFile={settings['known_hosts']}", "-o", "GlobalKnownHostsFile=none",
             "-o", "IdentitiesOnly=yes", "-o", "IdentityAgent=none", "-o", "ForwardAgent=no", "-o", "ClearAllForwardings=yes", "-o", "ForwardX11=no",
             "-o", "PermitLocalCommand=no", "-o", "PasswordAuthentication=no", "-o", "KbdInteractiveAuthentication=no", "-o", "ProxyCommand=none",

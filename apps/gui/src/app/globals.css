@@ -5,6 +5,10 @@
 /* Round 51: the earlier multi-theme system, glass cards and its web-font import
    were only used by the pages that were removed. The Desk has one palette. */
 html, body { background: #0e1611; color: #e4eedd; color-scheme: dark; }
+:root {
+  --font-plex-thai: "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, system-ui, sans-serif;
+  --font-plex-mono: "IBM Plex Mono", "Noto Sans Thai", ui-monospace, monospace;
+}
 
 /* Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

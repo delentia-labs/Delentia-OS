@@ -17,7 +17,8 @@ from rct_control_plane import audit_text
 
 # Keep the first contract release on inspectable answer/read workflows. Pending
 # action approval/resume must carry the contract before enabling effect tools.
-READ_ONLY_TOOLS = frozenset({"delentia_read_repo_file", "delentia_search_repo_files", "delentia_recall", "delentia_search_sessions"})
+READ_ONLY_TOOLS = frozenset({"delentia_read_repo_file", "delentia_search_repo_files", "delentia_recall", "delentia_search_sessions",
+                             "delentia_expand_tool_output"})
 SCHEMA_VERSION = 1
 
 
@@ -63,7 +64,7 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path) -> Dict[str, Any]:
+def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_context: Any = None) -> Dict[str, Any]:
     conditions, snapshots = [], {}
     for c in criteria:
         condition = {"criterion_id": c["id"], "kind": c["kind"], "value": c["value"],
@@ -71,13 +72,17 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path) -> Dict[st
         if c["kind"] == "file_unchanged":
             snapshots[c["value"]] = _digest(_file(root, c["value"]))
         conditions.append(condition)
-    return {"goal": goal, "criteria": criteria, "knowns": ["user-supplied goal", "explicit acceptance criteria"],
+    plan = {"goal": goal, "criteria": criteria, "knowns": ["user-supplied goal", "explicit acceptance criteria"],
             "unknowns": ["whether the eventual output satisfies these criteria"],
             "components": [{"id": "produce", "output": "answer under the existing tool policy"},
                            {"id": "compare", "depends_on": ["produce"], "input": "answer and observed file bytes"}],
             "backward_chain": {"goal": goal, "necessary_conditions": conditions},
             "protected_sha256": snapshots, "workspace": str(root.resolve()),
             "limitations": "User-declared predicates, not a complete semantic decomposition. Language uses script checks."}
+    if planning_context is not None:
+        from rct_control_plane.rct_plan import validate_context, apply_context
+        apply_context(plan, validate_context(planning_context, {c["id"] for c in criteria}))
+    return plan
 
 
 def compare(plan: Dict[str, Any], answer: str) -> List[Dict[str, Any]]:
@@ -141,6 +146,15 @@ class IntentContractStore:
         if type(version) is not int or version != SCHEMA_VERSION:
             raise IntentContractError("unsupported intent contract schema version")
         data["schema_version"] = version
+        plan_version = data["plan"].get("plan_schema_version", 1)
+        if type(plan_version) is not int or plan_version not in (1, 2):
+            raise IntentContractError("unsupported planning schema version")
+        if plan_version == 2:
+            from rct_control_plane.rct_plan import validate_context
+            criteria = data["plan"].get("criteria", [])
+            if not criteria or any(not isinstance(c, dict) or "id" not in c for c in criteria):
+                raise IntentContractError("invalid stored planning criteria")
+            validate_context(data.get("planning_context"), {c["id"] for c in criteria})
         return {**data, "id": contract_id, "state": row[0], "version": row[1]}
 
     def export(self, contract_id: str) -> Dict[str, Any]:
@@ -152,17 +166,21 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
-        plan = build_plan(goal, validate_criteria(criteria), root)
+        plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
                 "revisions": [], "differences": [], "safe_to_resume": True}
+        if planning_context is not None:
+            from rct_control_plane.rct_plan import validate_context
+            data["planning_context"] = validate_context(planning_context, {c["id"] for c in plan["criteria"]})
+        state = "waiting_for_input" if plan.get("clarification_questions") else "plan_ready"
         with self.db._connect() as conn:
-            conn.execute("INSERT INTO intent_contracts VALUES (?, ?, 'plan_ready', 1, ?)",
-                         (contract_id, self.namespace, self._encode(data)))
-        self.db.append_audit(entity_type="intent_contract", entity_id=contract_id, action="plan_ready", actor=self.namespace,
+            conn.execute("INSERT INTO intent_contracts VALUES (?, ?, ?, 1, ?)",
+                         (contract_id, self.namespace, state, self._encode(data)))
+        self.db.append_audit(entity_type="intent_contract", entity_id=contract_id, action=state, actor=self.namespace,
                              changes={"version": 1, "goal_sha256": hashlib.sha256(goal.encode()).hexdigest()})
         return self.get(contract_id)
 
@@ -180,12 +198,31 @@ class IntentContractStore:
         return self.get(data["id"])
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
-              criteria: Any = None) -> Dict[str, Any]:
+              criteria: Any = None, answers: Any = None) -> Dict[str, Any]:
         if type(version) is not int or version < 1:
             raise IntentContractError("the current positive integer version is required")
         data = self.get(contract_id)
-        if data["version"] != version or data["state"] not in {"plan_ready", "waiting_for_clarification"}:
+        if data["version"] != version or data["state"] not in {"plan_ready", "waiting_for_clarification", "waiting_for_input"}:
             raise IntentContractError("intent contract is not ready at this version")
+        if data["state"] == "waiting_for_input":
+            questions = {q["id"] for q in data["plan"]["clarification_questions"]}
+            if (not isinstance(answers, dict) or set(answers) != questions
+                    or any(not isinstance(v, str) or not v.strip() or len(v) > 4000 for v in answers.values())):
+                raise IntentContractError("answers must supply nonempty text for each critical unknown id")
+            if revised_goal is not None or criteria is not None or response:
+                raise IntentContractError("answer critical inputs before revising intent")
+            context = data["planning_context"]
+            for unknown in context["unknowns"]:
+                if unknown["id"] in answers:
+                    unknown["answer"] = answers[unknown["id"]].strip()
+            data["revisions"].append({"from_version": version, "user_answers": answers, "provenance": "confirmed_user_input"})
+            data["plan"] = build_plan(data["goal"], data["plan"]["criteria"], Path(data["plan"]["workspace"]), context)
+            # Replanning must not reset preservation baselines.
+            prior = self.get(contract_id)["plan"]["protected_sha256"]
+            data["plan"]["protected_sha256"].update(prior)
+            return self.transition(data, "plan_ready")
+        if answers is not None:
+            raise IntentContractError("answers are accepted only while waiting for initial input")
         if data["state"] == "waiting_for_clarification":
             if not isinstance(response, str) or not response.strip() or len(response) > 10000:
                 raise IntentContractError("a nonempty user response is required before replanning")
@@ -197,7 +234,7 @@ class IntentContractStore:
             selected = validate_criteria(criteria) if criteria is not None else data["plan"]["criteria"]
             data["revisions"].append({"from_version": version, "goal": goal, "user_response": response, "criteria": selected})
             data["goal"] = goal
-            plan = build_plan(goal, selected, Path(data["plan"]["workspace"]))
+            plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), data.get("planning_context"))
             for path, digest in data["plan"]["protected_sha256"].items():
                 if path in plan["protected_sha256"]:
                     plan["protected_sha256"][path] = digest

@@ -86,3 +86,5 @@ Automated source inventory อ่านชื่อ algorithm ใน Master ไ�
 | LEARN | memory, selected skills, feedback/growth และ warm recall ตามเงื่อนไข | ค่า G/Δ ไม่ใช่คะแนน IQ หรือ main-model weight training; causal benefit ต้องวัดแยก |
 
 **ช่องว่างเพิ่มเติมจากการอ่าน:** เมื่อผลอ่านไฟล์ใหญ่ถูกย่อ ระบบบอกให้เรียก `delentia_expand_tool_output` แต่ read-only allowlist ของ contract รุ่นแรกยังไม่รวมเครื่องมือนี้. จึงไม่ควรประกาศ contract ว่ารองรับการอ่านหลักฐานครบจากไฟล์ใหญ่ทุกกรณี. ต้องทดสอบ namespace/episode binding และ preservation ของ original store ก่อนเพิ่มสิทธิ์ expand ไม่เปิดเครื่องมือเพียงเพราะชื่อดูอ่านอย่างเดียว. เดโม fixture เล็กที่อัดใหม่ไม่ใช้ compression จึงแยกจากสาเหตุ glyph หายสามข้อที่แก้แล้ว.
+
+อัปเดตจากรอบถัดมา: [declared planning context และ readiness results](RCT_PLAN_READINESS_RESULTS_2026-10-22_TH.md) เพิ่มโครงสร้าง facts/unknowns/components, initial-input wait และแก้ expansion/VERIFY input flow ตาม scope. Auditor ได้แก้ FDIA wording และ removed Layer2 claim แล้ว; ข้อสรุปเดิมเรื่อง full RCT/pilot ยังไม่ถือว่าปิดด้วยการมี schema.

@@ -117,10 +117,10 @@ def layer3() -> Finding:
 
 
 def layer3_name() -> Finding:
-    return Finding("§3 ALGO-01", "FDIA = 'Fundamental Decision Intelligence Analysis'", "DOC_WRONG",
-                   "The Architect's own documents (FDIA_Life_Equation.md; whitepaper foundation chapter) define F=D^I x A as "
-                   "Future Design Intelligence Algorithm: Future = Data driven by Intent, owned by an accountable Architect.",
-                   "Use the Architect's definition everywhere.")
+    return Finding("§3 ALGO-01", "FDIA has a settled expanded English name", "DOC_WRONG",
+                   "Creator-confirmed public information v0.3 (2026-10-22): FDIA Equation has no approved expanded name. "
+                   "F = Future, D = Data, I = Intent, A = Architect. Earlier expanded names are historical wording, not authority for a replacement.",
+                   "Use the current creator-confirmed definitions and separate concepts, estimators and execution controls.")
 
 
 def layer4() -> Finding:
@@ -292,6 +292,8 @@ CHECKS: List[Callable[[], Union[Finding, List[Finding]]]] = [layer1, layer2, lay
 def run_audit(doc_text: Optional[str] = None) -> List[Finding]:
     findings: List[Finding] = []
     for check in CHECKS:
+        if check == layer2_range and doc_text and not re.search(r"Layer\s*2[^\n]{0,120}ALGO.?14[^\n]{0,30}20", doc_text, re.I):
+            continue  # Do not flag a removed historical sentence as a current defect.
         result = check()
         findings.extend(result if isinstance(result, list) else [result])
     findings.extend(counts(doc_text))

@@ -52,7 +52,7 @@ def test_what_round_53_built_is_reported_as_real():
 
 def test_the_documents_wrong_statements_are_flagged_as_doc_wrong():
     assert audit.layer2_range().verdict == "DOC_WRONG"
-    assert audit.layer3_name().verdict == "DOC_WRONG" and "Future Design Intelligence" in audit.layer3_name().evidence
+    assert audit.layer3_name().verdict == "DOC_WRONG" and "no approved expanded name" in audit.layer3_name().evidence
     assert audit.jitna_terms().verdict == "DOC_WRONG" and "Header says so: True" in audit.jitna_terms().evidence
 
 
@@ -80,3 +80,9 @@ def test_the_real_document_when_present_parses_to_41_entries():
         return
     names = audit.doc_algorithm_names(audit.DEFAULT_DOC.read_text(encoding="utf-8"))
     assert len(names) == 41
+
+
+def test_removed_historical_layer_range_is_not_reported_again():
+    findings = audit.run_audit('Layer 2: Kernel Services & CORD (no algorithm range)')
+    assert not any(f.claim == "Layer 2 is 'ALGO-14 to ALGO-20'" for f in findings)
+    assert 'no approved expanded name' in audit.layer3_name().evidence

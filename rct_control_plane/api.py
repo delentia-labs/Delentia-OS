@@ -1864,7 +1864,9 @@ class ControlPlaneAPI:
             loop = build_governed_loop(shared_kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=shared_kernel._persistence, mcp_server=shared_mcp)
             try:
                 if "acceptance_criteria" in payload:
-                    result = await loop.run(goal, acceptance_criteria=payload["acceptance_criteria"])
+                    result = await loop.run(goal, acceptance_criteria=payload["acceptance_criteria"], planning_context=payload.get("planning_context"))
+                elif "planning_context" in payload:
+                    raise HTTPException(status_code=400, detail="planning_context requires acceptance_criteria")
                 else:
                     result = await loop.run(goal)
             except ValueError as e:
@@ -1943,7 +1945,7 @@ class ControlPlaneAPI:
                 if type(payload.get("version")) is not int:
                     raise IntentContractError("the current integer version is required")
                 result = await loop.continue_intent(contract_id, payload["version"], payload.get("response", ""),
-                                                    payload.get("revised_goal"), payload.get("acceptance_criteria"))
+                                                    payload.get("revised_goal"), payload.get("acceptance_criteria"), answers=payload.get("answers"))
                 if result.get("stopped_reason") == "llm_error":
                     raise HTTPException(status_code=502, detail="model unavailable while continuing intent contract")
                 return {**result, "namespace": namespace}

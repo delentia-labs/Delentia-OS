@@ -10,6 +10,7 @@
 
 import * as core from "@actions/core";
 import axios from "axios";
+import { gateFailure } from "./gate";
 
 interface CompileResponse {
   intent_id: string;
@@ -54,7 +55,7 @@ async function run(): Promise<void> {
         user_id: "github-action",
         user_tier: userTier,
       },
-      { headers, timeout: 30_000 }
+      { headers, timeout: 30_000, maxRedirects: 0 }
     );
 
     if (!compileRes.data.success) {
@@ -70,7 +71,7 @@ async function run(): Promise<void> {
     const evalRes = await axios.post<PolicyEvalResponse>(
       `${rctApiUrl}/v1/evaluate`,
       { intent_id, intent_type },
-      { headers, timeout: 30_000 }
+      { headers, timeout: 30_000, maxRedirects: 0 }
     );
 
     const {
@@ -106,19 +107,9 @@ async function run(): Promise<void> {
       for (const v of violations) core.error(v);
     }
 
-    // Gate logic
-    if (failOnReject && decision === "reject") {
-      core.setFailed(
-        `RCT Policy Gate: REJECTED — ${violations[0] ?? "policy violation"}`
-      );
-      return;
-    }
-
-    if (governance_score < minScore) {
-      core.setFailed(
-        `RCT Policy Gate: governance score ${governance_score.toFixed(3)} < minimum ${minScore}. ` +
-          `Triggered rules: ${triggered_rules.map((r) => r.name).join(", ")}`
-      );
+    const failure = gateFailure(decision, governance_score, minScore, failOnReject);
+    if (failure) {
+      core.setFailed(`RCT Policy Gate: ${failure}`);
       return;
     }
 

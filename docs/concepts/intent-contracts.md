@@ -81,3 +81,9 @@ The existing **signed** person-erasure operation now scrubs the contract's mutab
 Backup/restore tests cover clarification waits: the default backup excludes namespace keys, so its contract payload cannot be decrypted on a fresh restore; an explicitly key-inclusive private backup can restore the wait. Such a backup can also defeat later crypto-erasure if retained and must be handled accordingly. A crashed `running` contract still requires reconciliation; it is never reset to ready by elapsed time.
 
 Text predicates use NFC canonical equivalence for `contains`; language remains a script heuristic. Result output separates `acceptance_verification` (declared predicates) from `intent_verification` (existing heuristic grounding/alignment). Neither claims full RCT-7 or semantic truth.
+
+## Declared planning context and expansion
+
+Optional `planning_context` with explicit criteria now supports a validated reported-facts/unknowns/component graph and `waiting_for_input` before model/tools. See [declared RCT plans](rct-declared-plans.md) for CLI/API answer mapping and plan ordering. Contract payload schema remains1; enriched plans use plan schema2. This does not enable semantic planning by default or signed effects.
+
+The contract read-only menu now includes `delentia_expand_tool_output`. Governed dispatch requires ownership by the current namespace **and** an original id issued in this episode; another person's or a prior episode's id is refused. Re-read the evidence in a new episode. The raw owner MCP tool remains a separate trust boundary.

@@ -4,7 +4,7 @@
   "description": "GitHub Action — RCT Platform policy gate for AI-generated PRs",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && ncc build src/index.ts -o dist",
+    "build": "tsc --noEmit && ncc build src/index.ts -o dist --license licenses.txt",
     "test": "jest"
   },
   "license": "MIT",
