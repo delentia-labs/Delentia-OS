@@ -48,5 +48,5 @@ outputs:
     description: "Whether human approval is required (true/false)"
 
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"
