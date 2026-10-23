@@ -51,18 +51,60 @@ def _file(root: Path, relative: str) -> Path:
     from rct_control_plane.secret_paths import blocked_reason
     if not relative or Path(relative).is_absolute() or "\\" in relative or "\x00" in relative:
         raise IntentContractError("protected file must be a relative workspace path")
-    path = (root / relative).resolve()
-    if not path.is_relative_to(root.resolve()) or path == root.resolve():
-        raise IntentContractError("protected file escapes the workspace")
-    if blocked_reason(relative) or blocked_reason(path.relative_to(root.resolve()).as_posix()):
+    # Lexical policy only; actual acquisition must use no-follow descriptors.
+    parts = relative.split("/")
+    if any(part in {"", ".", ".."} for part in parts):
+        raise IntentContractError("protected file escapes the workspace or has ambiguous components")
+    if blocked_reason(relative):
         raise IntentContractError("protected file is not available through the workspace read policy")
-    return path
+    return root.joinpath(*parts)
 
 
-def _digest(path: Path) -> str:
-    if not path.is_file():
-        raise IntentContractError("a protected file must exist before the episode")
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _digest(root: Path, relative: str) -> str:
+    """Bounded regular-file hashing, refusing symlinks at every relative level.
+
+    Fail closed without POSIX no-follow support. This observes bytes, not an
+    atomic filesystem snapshot or proof of authorship.
+    """
+    import os
+    import stat
+    from rct_control_plane.verified_budget import supports_verified_reads
+    _file(root, relative)
+    if not supports_verified_reads():
+        raise IntentContractError("protected files require POSIX no-follow reading support")
+    limit = 64 * 1024 * 1024
+    try:
+        descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            parts = relative.split("/")
+            for part in parts[:-1]:
+                child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor)
+                os.close(descriptor)
+                descriptor = child
+            child = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=descriptor)
+            try:
+                before = os.fstat(child)
+                if not stat.S_ISREG(before.st_mode) or before.st_size > limit:
+                    raise IntentContractError("protected file must be regular and at most 64 MiB")
+                result = hashlib.sha256()
+                remaining = limit + 1
+                while remaining:
+                    block = os.read(child, min(remaining, 65536))
+                    if not block:
+                        break
+                    remaining -= len(block)
+                    result.update(block)
+                after = os.fstat(child)
+                if not remaining or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+                        after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+                    raise IntentContractError("protected file changed during reading or exceeds limit")
+                return result.hexdigest()
+            finally:
+                os.close(child)
+        finally:
+            os.close(descriptor)
+    except OSError as exc:
+        raise IntentContractError("protected file cannot be safely opened in the workspace") from exc
 
 
 def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_context: Any = None) -> Dict[str, Any]:
@@ -79,7 +121,7 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_c
         condition = {"criterion_id": c["id"], "kind": c["kind"], "value": c["value"],
                      "requires": "final answer" if c["kind"] != "file_unchanged" else "original workspace bytes"}
         if c["kind"] == "file_unchanged":
-            snapshots[c["value"]] = _digest(_file(root, c["value"]))
+            snapshots[c["value"]] = _digest(root, c["value"])
         conditions.append(condition)
     plan = {"goal": goal, "criteria": criteria, "knowns": ["user-supplied goal", "explicit acceptance criteria"],
             "unknowns": ["whether the eventual output satisfies these criteria"],
@@ -135,7 +177,7 @@ def compare(plan: Dict[str, Any], answer: str) -> List[Dict[str, Any]]:
             ok = (thai > 0 and thai >= latin / 3) if expected == "th" else (latin > 0 and thai == 0)
         else:
             try:
-                ok = _digest(_file(Path(plan["workspace"]), expected)) == plan["protected_sha256"][expected]
+                ok = _digest(Path(plan["workspace"]), expected) == plan["protected_sha256"][expected]
             except (IntentContractError, OSError):
                 ok = False
         if not ok:
