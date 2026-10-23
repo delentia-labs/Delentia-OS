@@ -1,0 +1,1498 @@
+{
+  "runtime_commit": "478b11a87a1b41e11a2fe3e152e0b662d1cf7d57",
+  "frontend_commit": "90fe7490ebb81b9d212c7ba033e406f42add8c80",
+  "full_python": {
+    "passed": 8018,
+    "failed": 15,
+    "skipped": 59,
+    "xfailed": 1,
+    "warnings": 6915,
+    "seconds": 715.35,
+    "exit": 1,
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "category": "model_missing",
+        "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "category": "native_dns",
+        "message": "KeyError: 'status_code'"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_a_careful_agent_that_looks_again_reports_the_current_price_and_the_browser_reaches_nothing_else",
+        "category": "browser_sandbox",
+        "message": "assert (False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_an_agent_that_answers_from_the_first_look_is_stale_and_the_oracle_knows_what_the_page_shows_now",
+        "category": "browser_sandbox",
+        "message": "assert (not False and None == 120)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_the_case_runs_through_the_suite_runner_with_a_manifest",
+        "category": "browser_sandbox",
+        "message": "assert (True and False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "category": "model_missing",
+        "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "category": "model_missing",
+        "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1792735607.8928225}]\nassert 'llm_error' == 'pending_approval'\n  \n  - pending_approval\n  + llm_error"
+      },
+      {
+        "test": "rct_control_plane.tests.test_regex_audit_round72_real::test_no_pattern_the_runtime_builds_or_writes_is_slow_on_hostile_text",
+        "category": "regex_timing",
+        "message": "AssertionError: [('rct_control_plane/dsl_parser.py:DSLParser.PARAMETER_PATTERN', 'assign', 0.604)]\nassert [{'pattern': ...: 0.604, ...}] == []\n  \n  Left contains one more item: {'pattern': '(\\\\w{1,64})\\\\s{0,20}=\\\\s{0,20}(.{1,2000}?)(?:,|\\\\n|$)', 'flags': 0, 'where': 'rct_control_plane/dsl_parser.py:DSLParser.PARAMETER_PATTERN', 'seconds': 0.604, ...}\n  Use -v to get more diff"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "category": "model_missing",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_regex_audit_round72_real::test_the_two_bounded_dsl_patterns_are_fast_and_still_read_ordinary_parameters",
+        "category": "regex_timing",
+        "message": "AssertionError: ('(\\\\w{1,64})\\\\s{0,20}=\\\\s{0,20}(.{1,2000}?)(?:,|\\\n  |$)', 'a=a=a')\nassert (1273.301806659 - 1272.77652458) < 0.5\n +  where 1273.301806659 = <built-in function perf_counter>()\n +    where <built-in function perf_counter> = time.perf_counter"
+      }
+    ],
+    "coverage_measured_this_run": false
+  },
+  "focused": {
+    "passed": 142,
+    "new_protected_file_tests": 17
+  },
+  "regex_isolated": {
+    "passed": 2,
+    "seconds": 15.13,
+    "full_suite_failures_not_removed": true
+  },
+  "codeql": {
+    "conclusion": "success",
+    "head_sha": "478b11a87a1b41e11a2fe3e152e0b662d1cf7d57",
+    "output": {
+      "annotations_count": 0,
+      "annotations_url": "https://api.github.com/repos/delentia-labs/Delentia-OS/check-runs/120265824195/annotations",
+      "summary": "[View all branch alerts](/delentia-labs/Delentia-OS/security/code-scanning?query=pr%3A168+tool%3ACodeQL+is%3Aopen).",
+      "text": null,
+      "title": "No new alerts in code changed by this pull request"
+    }
+  },
+  "ab": {
+    "baseline_sha": "26139b01a8bdd2b6d3d569c9a955db990e64d163",
+    "baseline_source_sha256": "fc7cebc334d719dff9cd413f4b79097afabe7dd9eecbdc4718873fd3fa3258bd",
+    "scope": "Paired offline execution regression on local files; no governed dispatch, persistence or model in this microbenchmark.",
+    "method": "72 generated cases, 3 timing repeats per arm, alternating arm order; integer-cent oracle. Reordered cohort is structural stress, not holdout. Repeats are not independent samples.",
+    "not_claimed": [
+      "general RCT accuracy",
+      "model capability",
+      "production latency",
+      "unattended readiness"
+    ],
+    "aggregate": {
+      "canonical": {
+        "A": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 0.948399
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 1.627826
+        }
+      },
+      "reordered": {
+        "A": {
+          "correct": 0,
+          "cases": 24,
+          "median_ms": 0.19325150000000002
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 1.5425835
+        }
+      },
+      "invalid_evidence": {
+        "A": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 0.037837499999999996
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 0.3132595
+        }
+      }
+    },
+    "rows": [
+      {
+        "case": "canonical-0",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.233239
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.860562
+          }
+        }
+      },
+      {
+        "case": "canonical-1",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.756421
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.987102
+          }
+        }
+      },
+      {
+        "case": "canonical-2",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.937284
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.626883
+          }
+        }
+      },
+      {
+        "case": "canonical-3",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.628025
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.029402
+          }
+        }
+      },
+      {
+        "case": "canonical-4",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.94498
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.097102
+          }
+        }
+      },
+      {
+        "case": "canonical-5",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.629672
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.005244
+          }
+        }
+      },
+      {
+        "case": "canonical-6",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.082558
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.761999
+          }
+        }
+      },
+      {
+        "case": "canonical-7",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.596401
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.974804
+          }
+        }
+      },
+      {
+        "case": "canonical-8",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.11201
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.624985
+          }
+        }
+      },
+      {
+        "case": "canonical-9",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.928861
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.184189
+          }
+        }
+      },
+      {
+        "case": "canonical-10",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.95823
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.688085
+          }
+        }
+      },
+      {
+        "case": "canonical-11",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.797436
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.92572
+          }
+        }
+      },
+      {
+        "case": "canonical-12",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.905622
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.51272
+          }
+        }
+      },
+      {
+        "case": "canonical-13",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.475759
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.894867
+          }
+        }
+      },
+      {
+        "case": "canonical-14",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.925352
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.724464
+          }
+        }
+      },
+      {
+        "case": "canonical-15",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.519108
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.969867
+          }
+        }
+      },
+      {
+        "case": "canonical-16",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.880334
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.484021
+          }
+        }
+      },
+      {
+        "case": "canonical-17",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.6314
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.177291
+          }
+        }
+      },
+      {
+        "case": "canonical-18",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.912335
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.585383
+          }
+        }
+      },
+      {
+        "case": "canonical-19",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.488214
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.908837
+          }
+        }
+      },
+      {
+        "case": "canonical-20",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.884276
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.493335
+          }
+        }
+      },
+      {
+        "case": "canonical-21",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.628769
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.951818
+          }
+        }
+      },
+      {
+        "case": "canonical-22",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.887455
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.450418
+          }
+        }
+      },
+      {
+        "case": "canonical-23",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.484762
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 0.890498
+          }
+        }
+      },
+      {
+        "case": "reordered-0",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.174076
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.534696
+          }
+        }
+      },
+      {
+        "case": "reordered-1",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.486137
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.206751
+          }
+        }
+      },
+      {
+        "case": "reordered-2",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.247512
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.69526
+          }
+        }
+      },
+      {
+        "case": "reordered-3",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.680838
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.223824
+          }
+        }
+      },
+      {
+        "case": "reordered-4",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.191446
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.694482
+          }
+        }
+      },
+      {
+        "case": "reordered-5",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.620264
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.21586
+          }
+        }
+      },
+      {
+        "case": "reordered-6",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.181685
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.770134
+          }
+        }
+      },
+      {
+        "case": "reordered-7",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.050439
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.265511
+          }
+        }
+      },
+      {
+        "case": "reordered-8",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.322073
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.292606
+          }
+        }
+      },
+      {
+        "case": "reordered-9",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.125557
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.196719
+          }
+        }
+      },
+      {
+        "case": "reordered-10",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.201005
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.592208
+          }
+        }
+      },
+      {
+        "case": "reordered-11",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.543117
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.212677
+          }
+        }
+      },
+      {
+        "case": "reordered-12",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.185239
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.45683
+          }
+        }
+      },
+      {
+        "case": "reordered-13",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.52552
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.174398
+          }
+        }
+      },
+      {
+        "case": "reordered-14",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.220897
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.789719
+          }
+        }
+      },
+      {
+        "case": "reordered-15",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.493056
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.174231
+          }
+        }
+      },
+      {
+        "case": "reordered-16",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.189822
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.480103
+          }
+        }
+      },
+      {
+        "case": "reordered-17",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.50288
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.195057
+          }
+        }
+      },
+      {
+        "case": "reordered-18",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.172332
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.54205
+          }
+        }
+      },
+      {
+        "case": "reordered-19",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.626464
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.173384
+          }
+        }
+      },
+      {
+        "case": "reordered-20",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.186365
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.467917
+          }
+        }
+      },
+      {
+        "case": "reordered-21",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.510296
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.210319
+          }
+        }
+      },
+      {
+        "case": "reordered-22",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.180934
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.448672
+          }
+        }
+      },
+      {
+        "case": "reordered-23",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.461884
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.163027
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-0",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.036724
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.240144
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-1",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.328775
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.067041
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-2",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.044707
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.343148
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-3",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.211417
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.03307
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-4",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.078587
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.413135
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-5",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.284728
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.038951
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-6",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.030197
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.348128
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-7",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.322286
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.074246
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-8",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.040122
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.27803
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-9",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.205122
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.022301
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-10",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.069822
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.3586
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-11",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.240168
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.028607
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-12",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.024364
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.21939
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-13",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.47406
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.0646
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-14",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.05954
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.219791
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-15",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.336564
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.026222
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-16",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.079058
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.422427
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-17",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.230784
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.03154
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-18",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.028234
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.382499
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-19",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.348372
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.069721
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-20",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.029516
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.251036
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-21",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.304233
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.026861
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-22",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.066875
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.405243
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-23",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.266187
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.030869
+          }
+        }
+      }
+    ]
+  },
+  "desk_http": {
+    "scope": "actual loopback HTTP only; not browser E2E or model evaluation",
+    "results": [
+      {
+        "url": "http://127.0.0.1:3011/",
+        "status": 200,
+        "content_type": "text/html",
+        "bytes": 30490
+      },
+      {
+        "url": "http://127.0.0.1:8011/health",
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 79
+      },
+      {
+        "url": "http://127.0.0.1:8011/v1/desk/overview",
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 569
+      },
+      {
+        "url": "http://127.0.0.1:8011/v1/desk/sessions",
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 15
+      },
+      {
+        "url": "http://127.0.0.1:8011/v1/desk/models",
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 189
+      },
+      {
+        "url": "http://127.0.0.1:8011/v1/desk/tools",
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 18694
+      }
+    ]
+  },
+  "desk_memory": {
+    "scope": "actual isolated Desk API memory lifecycle, not GUI browser E2E",
+    "thai_exact_roundtrip": true,
+    "revoked_hidden_from_active_list": true,
+    "synthetic_text": "ข้อมูลสังเคราะห์สำหรับทดสอบ: น้ำ กำลัง งบประมาณ 15,000.00 บาท",
+    "model_generation": false
+  },
+  "gui_after_upgrade": {
+    "next_version": "16.4.2",
+    "actual_static_http_status": 200,
+    "bytes": 30130,
+    "browser_e2e": false
+  },
+  "production_audit": {
+    "gui_before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 1,
+      "total": 1
+    },
+    "gui_after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "action": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "host_sample_window": {
+    "samples": 77,
+    "first": "2026-10-23T05:56:31.329918+00:00",
+    "last": "2026-10-23T06:09:14.780390+00:00",
+    "minimum_free_bytes": 15146668032,
+    "last_cgroup_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+    "not_72h_soak": true
+  },
+  "gui_browser_e2e": "blocked by Chromium sandbox; no screenshot/video produced",
+  "paid_api_used": false,
+  "raw_evidence_sha256": {
+    "full-python.xml": "c3b0562446926615555099ac98eada7e8501801b6b04fc37737a59a90c423421",
+    "full-python.log": "1fb6b1d8e738716be71316c57f15a90a0a6ad7ddea79add5c411214950f72a34",
+    "regression.log": "605c89c4dd13e0b22fbbe847b72c0b3c671c734b39c8293d6e12019f04ce0e20",
+    "mypy.log": "9d05d4e0b649827ec6c3bc6661ea6d3f4c95dd8c88224e86100045ff76d4da73",
+    "ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "ab.json": "44e02b44cda3d7f900854589ed94de684a04b0b8cd1afd2a37acce2ce8d47c4d",
+    "codeql-check-final.json": "eafcf908d5ab62a934b1c3fcc6861454ad9729c364f401b19b09bd9ad6a0df48",
+    "codeql-annotations-final.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "preflight-current.json": "74b3f02e07a940013a26ffc513bef136d4a10baed4d785ddca881831e10347ef",
+    "desk-http.json": "503d11854e08889dfb3d8e0807d0fb18ed333656b41aeccf4c6b8a1be4ca0f3e",
+    "desk-memory.json": "f7c3277af564a4969946597b3d2520526fbd5d87711b2229e3515c7cc7633781",
+    "gui-audit.json": "9c53e6883adf03a23f53bab5dd383d5bd94b6c5d027b9e08d977db31433bfcea",
+    "gui-audit-final.json": "464a2aca5787f2b38c1d1b75c0a5241fa9e169299da6401cb366bc55d66295bb",
+    "action-audit.json": "511c525db6d91ddbaa200e9a89bf126de4e63f4f7cdbb2f154d692ce4eb7f96a",
+    "gui-type-final.log": "f8c560557258b8f6ae1bc5c13dc157ff79acc9ac4380491250eebfe1ed74e41b",
+    "gui-lint-final.log": "86928244346deacca02d8b0a59ecc1c5233ad0c2592e485c4dd5d6248de803a7",
+    "gui-build-final.log": "b209362fb5aa527f8dcbb7d84eb16dfdf2ac9db924a7a27e0e4bab2562d87355",
+    "desk-http-after-upgrade.json": "369a55e62955bfeac1bed9a559f22826908d9e4a0b616fae518869a66fe27fc1",
+    "regex-isolated.log": "14546da69534d54f7b6ce41f51402c70a56c126c406cd2608b40ae9e7abf232c"
+  }
+}

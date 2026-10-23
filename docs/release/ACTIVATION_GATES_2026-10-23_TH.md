@@ -1,5 +1,7 @@
 # เกณฑ์ออกจาก experimental runtime ไปสู่การรับงานจริง
 
+อัปเดตต่อเนื่อง: ดู [protected files/host/Desk checkpoint](../development/PROTECTED_FILES_AND_DESK_FOLLOWUP_2026-10-23_TH.md) และ [typed scheduler results](../development/RCT_FRAMEWORK_AND_RUNTIME_RECOVERY_2026-10-23_TH.md). ตารางด้านล่างเป็น baseline เก่า: ตอนนี้มี generic scheduler substrate และ no-follow actual MCP acquisition สำหรับ verified_read แล้ว แต่ general planner, server profile, recovery และ pilot gates ยังไม่ปิด.
+
 ประเมิน23ตุลาคม2026เฉพาะ code/evidence รอบ verified-budget จาก base67bf57e. ใช้ [release levels เดิม](RELEASE_LEVELS.md) เป็นหลัก ไม่ยกระดับทั้งโครงการด้วยจำนวน tests หรือผล workflow เดียว สถานะ metในเอกสารเก่าผูกกับ checkpoint/hostเดิม ไม่ใช่หลักฐานว่า branch/host/profileใหม่นี้ผ่านแล้ว
 
 ## เป้าหมายแรกที่มีขอบเขตชัดเจน
