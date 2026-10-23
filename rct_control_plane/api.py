@@ -1912,7 +1912,11 @@ class ControlPlaneAPI:
             return result
 
         from .readonly_service import install_route
-        install_route(self.app, self._readonly_policy, run_governed_agent)
+        def readonly_loop(actor):
+            from rct_control_plane.agent_factory import build_governed_loop
+            from rct_control_plane.mcp_server import _kernel, mcp
+            return build_governed_loop(_kernel, actor, persistence=_kernel._persistence, mcp_server=mcp)
+        install_route(self.app, self._readonly_policy, readonly_loop)
 
         # Round 60 (D4): background jobs - the same governed episode, started in the background, with an id to ask about and cancel (jobs.py).
         job_state: Dict[str, Any] = {"service": None}

@@ -249,13 +249,15 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
                 "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
+        if service_binding is not None:
+            data["service_binding"] = copy.deepcopy(service_binding)
         if planning_context is not None:
             from rct_control_plane.rct_plan import validate_context
             if plan.get("planning_origin") == "bounded_semantic_rules":

@@ -1,0 +1,328 @@
+{
+  "BudgetRequest": {
+    "$defs": {
+      "QuoteEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "relative_path": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Relative Path",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "relative_path",
+          "sha256"
+        ],
+        "title": "QuoteEvidence",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": "1",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "executor_version": {
+        "const": "verified_budget_v1",
+        "title": "Executor Version",
+        "type": "string"
+      },
+      "workspace_id": {
+        "maxLength": 80,
+        "minLength": 1,
+        "title": "Workspace Id",
+        "type": "string"
+      },
+      "budget": {
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Budget",
+        "type": "string"
+      },
+      "evidence": {
+        "$ref": "#/$defs/QuoteEvidence"
+      }
+    },
+    "required": [
+      "schema_version",
+      "executor_version",
+      "workspace_id",
+      "budget",
+      "evidence"
+    ],
+    "title": "BudgetRequest",
+    "type": "object"
+  },
+  "ConfirmRequest": {
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": "1",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "version": {
+        "minimum": 1,
+        "title": "Version",
+        "type": "integer"
+      },
+      "plan_sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Plan Sha256",
+        "type": "string"
+      }
+    },
+    "required": [
+      "schema_version",
+      "version",
+      "plan_sha256"
+    ],
+    "title": "ConfirmRequest",
+    "type": "object"
+  },
+  "BudgetResult": {
+    "$defs": {
+      "PublicContract": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "plan_ready",
+              "waiting_for_input",
+              "running",
+              "waiting_for_clarification",
+              "criteria_satisfied",
+              "interrupted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "plan_sha256": {
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "policy_sha256": {
+            "title": "Policy Sha256",
+            "type": "string"
+          },
+          "plan": {
+            "additionalProperties": true,
+            "title": "Plan",
+            "type": "object"
+          },
+          "differences": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Differences",
+            "type": "array"
+          },
+          "receipts": {
+            "items": {
+              "$ref": "#/$defs/PublicReceipt"
+            },
+            "title": "Receipts",
+            "type": "array"
+          },
+          "execution_status": {
+            "enum": [
+              "not_started",
+              "partial",
+              "incomplete",
+              "complete"
+            ],
+            "title": "Execution Status",
+            "type": "string"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "actor",
+          "workspace_id",
+          "version",
+          "state",
+          "plan_sha256",
+          "policy_sha256",
+          "plan",
+          "differences",
+          "receipts",
+          "execution_status",
+          "report",
+          "verified"
+        ],
+        "title": "PublicContract",
+        "type": "object"
+      },
+      "PublicReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "run_version": {
+            "title": "Run Version",
+            "type": "integer"
+          },
+          "plan_sha256": {
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "previous_sha256": {
+            "title": "Previous Sha256",
+            "type": "string"
+          },
+          "output": {
+            "additionalProperties": true,
+            "title": "Output",
+            "type": "object"
+          },
+          "output_sha256": {
+            "title": "Output Sha256",
+            "type": "string"
+          },
+          "recorded_ns": {
+            "title": "Recorded Ns",
+            "type": "string"
+          },
+          "hashed_payload_json": {
+            "title": "Hashed Payload Json",
+            "type": "string"
+          },
+          "receipt_sha256": {
+            "title": "Receipt Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "component_id",
+          "contract_id",
+          "namespace",
+          "run_version",
+          "plan_sha256",
+          "ordinal",
+          "previous_sha256",
+          "output",
+          "output_sha256",
+          "recorded_ns",
+          "hashed_payload_json",
+          "receipt_sha256"
+        ],
+        "title": "PublicReceipt",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": "1",
+        "default": "1",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "executor_version": {
+        "const": "verified_budget_v1",
+        "default": "verified_budget_v1",
+        "title": "Executor Version",
+        "type": "string"
+      },
+      "verification_scope": {
+        "const": "document_bytes_and_same_currency_arithmetic",
+        "default": "document_bytes_and_same_currency_arithmetic",
+        "title": "Verification Scope",
+        "type": "string"
+      },
+      "contract": {
+        "$ref": "#/$defs/PublicContract"
+      }
+    },
+    "required": [
+      "contract"
+    ],
+    "title": "BudgetResult",
+    "type": "object"
+  },
+  "ServiceError": {
+    "additionalProperties": false,
+    "properties": {
+      "schema_version": {
+        "const": "1",
+        "default": "1",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "error": {
+        "enum": [
+          "unauthenticated",
+          "forbidden",
+          "not_found",
+          "conflict",
+          "invalid_request",
+          "unavailable",
+          "request_failed"
+        ],
+        "title": "Error",
+        "type": "string"
+      }
+    },
+    "required": [
+      "error"
+    ],
+    "title": "ServiceError",
+    "type": "object"
+  }
+}
