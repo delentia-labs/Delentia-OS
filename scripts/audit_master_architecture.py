@@ -118,9 +118,10 @@ def layer3() -> Finding:
 
 def layer3_name() -> Finding:
     return Finding("§3 ALGO-01", "FDIA = 'Fundamental Decision Intelligence Analysis'", "DOC_WRONG",
-                   "The Architect's own documents (FDIA_Life_Equation.md; whitepaper foundation chapter) define F=D^I x A as "
-                   "Future Design Intelligence Algorithm: Future = Data driven by Intent, owned by an accountable Architect.",
-                   "Use the Architect's definition everywhere.")
+                   "The creator confirmed on 2026-10-22 (U5 of the Current Public Information v0.3) that the FDIA Equation has NO official expanded name; "
+                   "any expanded name in a document, this one included, is a draft. The variables are Future, Data, Intent and Architect: F = (D^I) x A. "
+                   "(Round 53 of this audit wrongly gave 'Future Design Intelligence Algorithm' as the Architect's definition; that was an earlier draft name too.)",
+                   "Say 'FDIA Equation' and do not attach an expanded name.")
 
 
 def layer4() -> Finding:
