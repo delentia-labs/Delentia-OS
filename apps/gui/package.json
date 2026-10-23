@@ -12,7 +12,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "type-check": "tsc --noEmit",
-    "test:run-state": "node --experimental-strip-types --no-warnings src/lib/run-state.test.mjs"
+    "test:run-state": "node --experimental-strip-types --no-warnings src/lib/run-state.test.mjs",
+    "test:nav": "node --experimental-strip-types --no-warnings src/lib/nav-model.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
