@@ -2005,6 +2005,61 @@ def credentials_clear(provider: str) -> None:
     click.echo(f"{provider}: pool switched off (kept in the file under {provider}.cleared)")
 
 
+@cli.group("clarify")
+def clarify_group():
+    """Questions the system put to a person and is waiting on (Round 92). An answer is a new version of the intent; it is not an approval."""
+
+
+@clarify_group.command("list")
+@click.option("--status", default="PENDING", show_default=True, type=click.Choice(["PENDING", "ANSWERED", "CANCELLED", "EXPIRED", "ALL"], case_sensitive=False))
+@click.option("--namespace", default=None, help="Only this person's questions.")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_list(status: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """List the questions that are waiting (or answered, cancelled, expired)."""
+    from rct_control_plane.clarifications import ClarificationStore
+    rows = ClarificationStore(_audit_db(db)).list(namespace=namespace, status=status)
+    if not rows:
+        click.echo(f"No {status.lower()} questions.")
+        return
+    for c in rows:
+        click.echo(f"{c.clarification_id}  {c.status:<9} {c.namespace}  {c.kind}/{c.criterion}  v{c.intent_version}")
+        click.echo(f"    question : {c.question[:160]}")
+        if c.expected or c.observed:
+            click.echo(f"    expected : {c.expected[:100]}   observed: {c.observed[:100]}")
+
+
+@clarify_group.command("answer")
+@click.argument("clarification_id")
+@click.argument("answer_text")
+@click.option("--as", "as_namespace", default=None, help="The person answering (default: the question's own person; this CLI is the owner's tool).")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_answer(clarification_id: str, answer_text: str, as_namespace: Optional[str], db: Optional[str]) -> None:
+    """Answer a waiting question. The reply becomes version N+1 of the intent; the original stays."""
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    store = ClarificationStore(_audit_db(db))
+    current = store.get(clarification_id)
+    if current is None:
+        raise click.ClickException("no such question")
+    try:
+        done = store.answer(clarification_id, as_namespace or "owner", answer_text, as_owner=as_namespace is None)
+    except ClarificationError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"answered. intent version {done.new_intent_version}. The next episode gets this goal:\n\n{done.revised_goal()}")
+
+
+@clarify_group.command("cancel")
+@click.argument("clarification_id")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_cancel(clarification_id: str, db: Optional[str]) -> None:
+    """Withdraw a waiting question; nothing runs."""
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    try:
+        done = ClarificationStore(_audit_db(db)).cancel(clarification_id, "owner", as_owner=True)
+    except ClarificationError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"{done.clarification_id} {done.status}")
+
+
 @cli.group("approvals")
 def approvals_group():
     """

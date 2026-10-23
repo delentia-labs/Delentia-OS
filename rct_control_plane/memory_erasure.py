@@ -217,7 +217,7 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
 
 # columns that hold a person's words, and what an erased value looks like (so a reader that parses JSON still parses it)
 TEXT_COLUMNS = {"goal": ERASED_TEXT, "answer": ERASED_TEXT, "content": ERASED_TEXT, "message": ERASED_TEXT, "text": ERASED_TEXT, "reason": ERASED_TEXT, "note": ERASED_TEXT, "title": ERASED_TEXT,
-                "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]"}
+                "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]", "fields_json": "{}"}   # fields_json: clarifications.py (Round 92)
 NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures",
                 "episode_journal"}                      # hash-chained like the audit chain: its payload is sealed under the person's key, so destroying the key is the erasure (editing it would break the chain)
 NO_PERSONAL_TEXT = {"spend_ledger", "memory_vectors"}          # memory_vectors: sealed under the person's key and zeroed by scrub_tables (Round 68)                    # numbers per person per day: counted, not listed as holding words
