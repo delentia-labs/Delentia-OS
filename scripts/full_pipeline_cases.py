@@ -1089,6 +1089,77 @@ async def c26(env: Env, ok: Check) -> Dict[str, Any]:
     return {"children_tokens": (result.get("cost") or {}).get("children_tokens")}
 
 
+@case("C27", "W12 in dollars: three children call a paid-model endpoint that counts the money itself; the parent's ledger must equal that count", needs_subagents=True)
+async def c27(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    import fake_openrouter
+    from rct_control_plane import external_mcp as xm
+    from rct_control_plane.jitna_distributor import _dispatch_subagent
+    import rct_control_plane.jitna_distributor as dist
+    server = ROOT / "rct_control_plane" / "tests" / "fake_mcp_server.py"
+    config = env.work / "w12c_mcp_servers.json"
+    config.write_text(json.dumps({"servers": {"notes": {"command": "python", "args": [str(server)], "env_vars": ["FAKE_NOTES_FILE"],
+                                                        "read_only_tools": ["read_note", "fetch_page"], "timeout_s": 90}}}), encoding="utf-8")
+    model_id = "rehearsal/priced-model"
+    prices = {model_id: {"in": 0.3, "out": 1.5}}                         # dollars per million tokens: a call costs a fraction of a cent, so a $0.05 cap holds a few calls but not a flood
+    cap = 0.05
+    names = (xm.CONFIG_ENV, "FAKE_NOTES_FILE", "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_LLM_PROVIDER", "DELENTIA_LLM_MODEL",
+             "DELENTIA_OPENROUTER_BASE_URL", "OPENROUTER_API_KEY", "DELENTIA_RUN_LIVE_TESTS")
+    saved = {k: os.environ.get(k) for k in names}
+    original_dispatch = dist._dispatch_subagent
+    seen_env: List[Dict[str, str]] = []
+
+    async def recording(agent_id, goal, worktree, timeout, request_json=None, parent_public_key_hex=None, extra_env=None):
+        seen_env.append(dict(extra_env or {}))
+        return await _dispatch_subagent(agent_id, goal, worktree, timeout, request_json=request_json, parent_public_key_hex=parent_public_key_hex, extra_env=extra_env)
+
+    try:
+        with fake_openrouter.start(prices) as fake:
+            fake.policy = sm.delegator_and_service
+            os.environ.update({xm.CONFIG_ENV: str(config), "FAKE_NOTES_FILE": str(env.work / "w12c-notes.txt"), "DELENTIA_EPISODE_BUDGET_USD": str(cap),
+                               "DELENTIA_LLM_PROVIDER": "openrouter", "DELENTIA_LLM_MODEL": model_id, "DELENTIA_OPENROUTER_BASE_URL": fake.base_url,
+                               "OPENROUTER_API_KEY": fake.key, "DELENTIA_RUN_LIVE_TESTS": "1"})
+            os.environ.pop("DELENTIA_EPISODE_MAX_TOKENS", None)
+            xm.clear_cache()
+            dist._dispatch_subagent = recording                            # type: ignore[assignment]
+            loop = env.loop("w12c")
+            result = await loop.run("Do these in parallel and save the result as a note called ledger: Read the file pyproject.toml and tell me the project name; "
+                                    "Read the file README.md; Search the repository files for the word FDIA")
+            spawn = next((st for st in result.get("steps", []) if st.get("tool_name") == "delentia_spawn_subagents"), {})
+            subs = (spawn.get("tool_result") or {}).get("subagents") or []
+            ok("three children ran", len(subs) == 3, len(subs))
+            shares = [float(e.get("DELENTIA_EPISODE_BUDGET_USD", 0)) for e in seen_env]
+            ok("each child got its own dollar cap, and together they stay under 80% of the cap", len(shares) == 3 and all(x > 0 for x in shares) and sum(shares) <= cap * 0.8 + 1e-9, shares)
+            cost = result.get("cost") or {}
+            own, kids = float(cost.get("cost_usd") or 0.0), float(cost.get("children_cost_usd") or 0.0)
+            ok("the endpoint was really called by the children", fake.calls > 3, fake.calls)
+            ok("the parent's ledger (own + children) equals what the endpoint counted, to a millionth of a dollar", abs((own + kids) - fake.spent) < 1e-6, (own, kids, round(fake.spent, 8)))
+            ok("the whole episode, children included, stayed inside its one dollar cap", own + kids <= cap, (own + kids, cap))
+            ok("no child spent more than the cap it was given", all(float(s.get("spent_usd") or 0.0) <= sh + 1e-9 for s, sh in zip(subs, shares)) if subs else False,
+               [s.get("spent_usd") for s in subs])
+            # a cap too small to share: the spawn must refuse and the children must cost nothing
+            calls_before, spent_before = fake.calls, fake.spent
+            os.environ["DELENTIA_EPISODE_BUDGET_USD"] = "0.00005"
+            tight = env.loop("w12c-tight")
+            refused = await tight.run("Do these in parallel and save the result as a note called ledger2: Read the file pyproject.toml and tell me the project name; "
+                                      "Read the file README.md; Search the repository files for the word FDIA")
+            subs2 = []
+            for st in refused.get("steps", []):
+                if st.get("tool_name") == "delentia_spawn_subagents":
+                    subs2 = (st.get("tool_result") or {}).get("subagents") or []
+            ok("with almost nothing left no child is started", len(subs2) == 0, len(subs2))
+            ok("the tight episode never spent more than its tiny cap at the endpoint", fake.spent - spent_before <= 0.00005 + 1e-9, round(fake.spent - spent_before, 8))
+            return {"own_usd": own, "children_usd": kids, "endpoint_usd": round(fake.spent, 8), "calls": fake.calls, "tight_calls": fake.calls - calls_before}
+    finally:
+        dist._dispatch_subagent = original_dispatch                        # type: ignore[assignment]
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        xm.clear_cache()
+
+
 async def main_async(args: argparse.Namespace) -> int:
     import logging
     logging.disable(logging.WARNING)
