@@ -125,5 +125,6 @@ def make_server(root: Path, port: int, gateway: str, token_reader: Callable[[], 
 def serve_in_background(server: ThreadingHTTPServer) -> Tuple[threading.Thread, str]:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    host, port = server.server_address[:2]
-    return thread, f"http://{host}:{port}"
+    address = server.server_address
+    host = address[0].decode() if isinstance(address[0], bytes) else address[0]
+    return thread, f"http://{host}:{address[1]}"
