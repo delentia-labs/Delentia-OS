@@ -10,6 +10,8 @@ it is held:
   * an HTTP witness (the fdia Worker's /v1/audit/anchor, which refuses a rollback or a fork and keeps the refusal as evidence);
   * a GIT witness: an append-only file of signed heads in a git repository, committed and pushed to a remote the host cannot rewrite (a protected branch, or another
     machine). Anyone with read access can see the whole history, and a force-push shows up as a rewritten history;
+  * an RFC 3161 TIMESTAMP witness (Round 91, audit_witness_tsa.py): a public time-stamping authority (DigiCert, Sectigo, FreeTSA...) signs "this digest existed at this time";
+    the host cannot forge or back-date the token and anyone can check it with `openssl ts -verify`. Only a hash leaves the host;
   * more can be added (the shape is `publish(body)` and `fetch()`).
 
 With two witnesses an attacker has to compromise the host AND every witness before a rewritten log looks consistent; with none, "tamper-proof" is not a claim this system
@@ -18,7 +20,8 @@ with root could still rewrite unnoticed), and whether the witnesses agree with t
 DELENTIA_AUDIT_ANCHOR_URL / _KEY_ID pair still works as one HTTP witness):
 
     [{"type": "http", "name": "worker", "url": "https://witness.example.org", "key_id": "host-1"},
-     {"type": "git",  "name": "git-mirror", "path": "/srv/delentia-anchors", "remote": "origin", "branch": "main", "key_id": "host-1"}]
+     {"type": "git",  "name": "git-mirror", "path": "/srv/delentia-anchors", "remote": "origin", "branch": "main", "key_id": "host-1"},
+     {"type": "rfc3161", "name": "tsa", "url": "http://timestamp.digicert.com", "path": "/srv/delentia-timestamps", "key_id": "host-1"}]
 
 `export_proof` + scripts/verify_audit_bundle.py give the other half: a bundle of chain rows, signatures and anchors that a third party can verify with nothing but Python
 and the `cryptography` package (no database, no Delentia code), which is what an auditor needs.
@@ -72,6 +75,7 @@ class WitnessSpec:
     path: str = ""
     remote: str = ""
     branch: str = "main"
+    ca_file: str = ""    # rfc3161 only: the CA bundle a token must chain to (default: certifi's, which verifies the DigiCert and Sectigo tokens)
     pin: str = ""        # a commit of the ledger written down by an independent verifier: it must still be an ancestor of the branch (git witnesses only)
 
 
@@ -93,17 +97,24 @@ def specs_from_env() -> List[WitnessSpec]:
             raise WitnessError(f"{WITNESSES_ENV} must be a non-empty JSON list")
         out: List[WitnessSpec] = []
         for i, item in enumerate(items):
-            if not isinstance(item, dict) or item.get("type") not in ("http", "git") or not item.get("key_id"):
-                raise WitnessError(f"{WITNESSES_ENV}[{i}] needs a type (http or git) and a key_id")
+            if not isinstance(item, dict) or item.get("type") not in ("http", "git", "rfc3161") or not item.get("key_id"):
+                raise WitnessError(f"{WITNESSES_ENV}[{i}] needs a type (http, git or rfc3161) and a key_id")
             if item["type"] == "http" and not _https_or_loopback(str(item.get("url", ""))):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: an http witness needs an https url (plain http only for loopback)")
             if item["type"] == "git" and not item.get("path"):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: a git witness needs a path to its repository")
+            if item["type"] == "rfc3161":
+                from urllib.parse import urlsplit
+                parts = urlsplit(str(item.get("url", "")).strip())
+                if parts.scheme not in ("http", "https") or not parts.hostname or parts.username or parts.password:
+                    raise WitnessError(f"{WITNESSES_ENV}[{i}]: an rfc3161 witness needs the http(s) url of a time-stamping authority")
+                if not item.get("path"):
+                    raise WitnessError(f"{WITNESSES_ENV}[{i}]: an rfc3161 witness needs a path where its tokens are kept")
             if item.get("pin") and (item["type"] != "git" or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", str(item["pin"]))):
                 raise WitnessError(f"{WITNESSES_ENV}[{i}]: pin must be a full commit hash and only a git witness has one")
             out.append(WitnessSpec(type=item["type"], name=str(item.get("name") or f"{item['type']}-{i + 1}"), key_id=str(item["key_id"]), url=str(item.get("url", "")),
                                    path=str(item.get("path", "")), remote=str(item.get("remote", "")), branch=str(item.get("branch", "main")),
-                                   pin=str(item.get("pin", ""))))
+                                   ca_file=str(item.get("ca_file", "")), pin=str(item.get("pin", ""))))
         if len({s.name for s in out}) != len(out):
             raise WitnessError("witness names must be unique")
         return out
@@ -287,6 +298,9 @@ class GitWitness:
 
 
 def make(spec: WitnessSpec) -> Any:
+    if spec.type == "rfc3161":
+        from rct_control_plane.audit_witness_tsa import TimestampWitness
+        return TimestampWitness(spec)
     return HttpWitness(spec) if spec.type == "http" else GitWitness(spec)
 
 
@@ -370,8 +384,11 @@ def check_witnesses(conn: sqlite3.Connection, specs: Optional[List[WitnessSpec]]
             bad = [a for a in held.get("anchors", []) if "signature" in a and not verify_anchor_signature(a, public)]
             if bad:
                 problems.append(f"{len(bad)} anchor(s) at the witness do not verify with this host's public key (forged or from another key)")
-        report.append({"witness": spec.name, "reachable": True, "ok": not problems, "checked": result["checked"], "problems": problems,
-                       "highest_anchored": max((int(a["entries"]) for a in held.get("anchors", [])), default=0)})
+        entry = {"witness": spec.name, "reachable": True, "ok": not problems, "checked": result["checked"], "problems": problems,
+                 "highest_anchored": max((int(a["entries"]) for a in held.get("anchors", [])), default=0)}
+        if held.get("unchecked_signatures"):
+            entry["unchecked_signatures"] = int(held["unchecked_signatures"])      # time-stamp tokens read but not signature-checked (openssl missing)
+        report.append(entry)
     return report
 
 

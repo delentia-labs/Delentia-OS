@@ -558,6 +558,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._journal_step = 0
         self._journal_pending: Dict[str, int] = {}
         self._resumed_from: Optional[str] = None
+        self._resume_chain: Optional[Tuple[str, Dict[str, int], Dict[str, str]]] = None     # Round 91: root, call counts and interrupted keys, set only while resuming
         # Round 50 ROUTE (ALGO-21). The configured budget is kept so a FAST
         # episode's smaller cap never leaks into the next episode.
         self._route_enabled = route
@@ -730,7 +731,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_id = uuid.uuid4().hex
         self._journal_step = 0
         self._journal_pending = {}
-        self._journal_call("begin", goal, self._resumed_from)
+        from rct_control_plane import idempotency
+        chain = getattr(self, "_resume_chain", None) if self._resumed_from else None
+        root, counts, inherited = chain if chain else (self._episode_id, {}, {})
+        self._idem_issuer = idempotency.KeyIssuer(root, counts, inherited)
+        self._journal_call("begin", goal, self._resumed_from, root, counts)
         self._episode_notary_receipts = []
         self._episode_notary_gaps = []
         self._episode_guard = {}
@@ -2472,10 +2477,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
         previous_taint, previous_from = self._initial_taint, self._resumed_from
         self._initial_taint = ep.taint or self._initial_taint
         self._resumed_from = episode_id
+        self._resume_chain = episode_journal.chain_state(ep)
         try:
             result = await self.run(ep.goal, on_step=on_step)
         finally:
             self._initial_taint, self._resumed_from = previous_taint, previous_from
+            self._resume_chain = None
         result["resumed_from"] = episode_id
         result["resumed"] = True
         return result
@@ -2536,9 +2543,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 self._journal = episode_journal.EpisodeJournal(self._persistence)
             journal = self._journal
             if what == "begin":
-                journal.begin(self._episode_id, self.namespace, args[0], args[1])
+                journal.begin(self._episode_id, self.namespace, args[0], args[1], args[2] if len(args) > 2 else None, args[3] if len(args) > 3 else None)
             elif what == "intent":
-                journal.intent(self._episode_id, self.namespace, args[0], args[1], args[2], getattr(self, "_episode_taint", None))
+                journal.intent(self._episode_id, self.namespace, args[0], args[1], args[2], getattr(self, "_episode_taint", None), idem=args[3] if len(args) > 3 else None)
             elif what == "result":
                 journal.result(self._episode_id, self.namespace, args[0], args[1], args[2], getattr(self, "_episode_taint", None))
             elif what == "end":
@@ -2559,8 +2566,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if gate is None:
             self._journal_step += 1
             self._journal_pending[f"{tool_name}|{_sha(tool_args)}"] = self._journal_step
-            self._journal_call("intent", self._journal_step, tool_name, tool_args)
+            idem = self._issue_idempotency_key(tool_name, tool_args)
+            self._journal_call("intent", self._journal_step, tool_name, tool_args, idem)
         return gate
+
+    def _issue_idempotency_key(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
+        """Round 91 (idempotency.py): the key this call carries, remembered in the journal and made available to the code that talks to an external service for the duration of the call."""
+        from rct_control_plane import idempotency
+        issuer = getattr(self, "_idem_issuer", None)
+        if issuer is None or not idempotency.enabled():
+            idempotency.current_key.set(None)
+            return None
+        key = issuer.issue(tool_name, tool_args)
+        idempotency.current_key.set(key)
+        return str(key)
 
     async def _notarised_pre_dispatch_inner(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
@@ -2593,6 +2612,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
     ) -> Any:
         """The journal row for the result, then the notarised post-processing."""
         step = self._journal_pending.pop(f"{tool_name}|{_sha(tool_args)}", 0)
+        from rct_control_plane import idempotency
+        idempotency.current_key.set(None)
         out = await self._notarised_post_dispatch_inner(goal, tool_name, tool_args, tool_result)
         if step:
             self._journal_call("result", step, tool_name, out)

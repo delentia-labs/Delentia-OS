@@ -154,10 +154,11 @@ export function Button({ children, onClick, disabled, tone = "fern", type = "but
   );
 }
 
-export function fmtTime(iso: string | null | undefined): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+export function fmtTime(iso: string | number | null | undefined): string {
+  if (iso === null || iso === undefined || iso === "") return "-";
+  // The API gives some times as epoch SECONDS (approvals, cron); new Date(seconds) lands in January 1970.
+  const d = new Date(typeof iso === "number" ? (iso < 1e12 ? iso * 1000 : iso) : iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
   // Explicit day-month-year: the browser's default for a Thai locale is the Buddhist-era year
   // ("1/10/69"), which reads as 1969 or 2069 to anyone who does not expect it.
   return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });

@@ -10,7 +10,7 @@ import { desk, streamUrl, type SessionSummary } from "@/lib/desk-api";
 type Step = {
   iteration: number; kind: "tool" | "finish" | "blocked" | "pending" | "notary_down" | "unknown_tool";
   tool: string | null; args: Record<string, unknown>; thinking: string; result: string | null;
-  F?: number; reason?: string; did_you_mean?: string[];
+  F?: number; reason?: string; did_you_mean?: string[]; missing_data?: string[];
 };
 type Summary = {
   namespace: string; stopped_reason: string; iterations: number;
@@ -82,7 +82,15 @@ function StepView({ step }: { step: Step }) {
         </div>
       ) : null}
       {step.kind === "blocked" ? (
-        <p className="mt-1 text-dl-rust">✕ FDIA gate blocked {step.tool} (F {step.F ?? "-"}): {step.reason}</p>
+        <div className="mt-1">
+          <p className="text-dl-rust">✕ FDIA gate blocked {step.tool} (F {step.F ?? "-"}): {step.reason}</p>
+          {(step.missing_data ?? []).length > 0 ? (
+            <p className="mt-1 text-dl-muted">
+              What would let it through (add it on the <Link href="/memory" className="underline underline-offset-2">Memory</Link> page, or let verified work build up):{" "}
+              {(step.missing_data ?? []).join("; ")}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {step.kind === "pending" ? (
         <p className="mt-1 text-dl-amber">

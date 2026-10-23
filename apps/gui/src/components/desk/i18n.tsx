@@ -19,6 +19,7 @@ const DICT = {
   fdia: { en: "FDIA", th: "FDIA" },
   forge: { en: "Forge", th: "Forge" },
   hooks: { en: "Hooks", th: "Hooks" },
+  law: { en: "Law Pack", th: "ตัวบทกฎหมาย" },
   learning: { en: "Learning", th: "การเรียนรู้" },
   governance: { en: "Governance", th: "ธรรมาภิบาล" },
   signatures: { en: "Signatures", th: "ลายเซ็น" },

@@ -62,7 +62,7 @@ def step_payload(step: Any) -> Dict[str, Any]:
     extra: Dict[str, Any] = {}
     if isinstance(result, dict):
         if result.get("fdia_blocked"):
-            kind, extra = "blocked", {"F": result.get("F"), "reason": result.get("reason")}
+            kind, extra = "blocked", {"F": result.get("F"), "reason": result.get("reason"), "missing_data": list(result.get("missing_data") or [])}
         elif result.get("pending_approval"):
             kind, extra = "pending", {"reason": result.get("reason")}
         elif result.get("notary_unavailable"):

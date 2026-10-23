@@ -606,13 +606,18 @@ async def call_external_tool(tool_name: str, tool_args: Dict[str, Any], namespac
         return {"error": f"{parts[1]!r} is not an available tool of server {spec.name!r}" + (f" ({why[:300]})" if why else "")}
     if not isinstance(tool_args, dict):
         return {"error": "tool_args must be an object"}
+    # Round 91: a call that can change something carries the idempotency key the loop issued for it (idempotency.py), as MCP request meta. A server that honours it will not do the same
+    # call twice after a crash and a resume; one that ignores it is unaffected. Reads carry nothing.
+    from rct_control_plane import idempotency
+    key = idempotency.current_key.get()
+    extra: Dict[str, Any] = {"meta": {idempotency.META_KEY: key}} if key and parts[1] not in spec.read_only_tools else {}
     try:
         async def run() -> Any:
             async with _Session(spec) as session:
-                return await session.call_tool(parts[1], tool_args)
+                return await session.call_tool(parts[1], tool_args, **extra)
 
         async def on_session(session: Any) -> Any:
-            return await session.call_tool(parts[1], tool_args)
+            return await session.call_tool(parts[1], tool_args, **extra)
         if persistent_enabled(spec):
             result = await asyncio.wait_for(_pooled(spec, namespace, on_session), timeout=spec.timeout_s + 5.0)
         else:
