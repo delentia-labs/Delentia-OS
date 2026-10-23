@@ -641,6 +641,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
         from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
         self._active_contract = None
+        self._plan_callback = on_plan                # shown to the person before the first tool (RCT-7 R6); the episode-start hook reads it
         self._contract_store = None
         self._contract_block: Optional[Dict[str, Any]] = None
         self._budget_pipeline = None
@@ -815,6 +816,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         ]
         self._episode_context_text = "\n\n".join(section for section in sections if section)
         active_contract = getattr(self, "_active_contract", None)
+        plan_callback = getattr(self, "_plan_callback", None)
+        if plan_callback is not None and active_contract is None and not warm_hit and self._episode_rct7_steps:
+            # RCT-7 R6 (creator's definition v0.3): the person sees the plan BEFORE the first tool runs, not at the end of the episode. A contract run shows its own plan
+            # through the same callback (above); this is the plan of an ordinary run. Showing it is not asking for approval: approvals still follow the owner's policy.
+            from rct_control_plane import mismatch_rules
+            shown = plan_callback({"kind": "rct7_plan", "goal": goal, "steps": list(self._episode_rct7_steps), "route": dict(self._episode_route),
+                                   "conditions": mismatch_rules.conditions_for(goal)})
+            if inspect.isawaitable(shown):
+                await shown
         if active_contract is not None:
             # The answer depends on criteria/clarification beyond the bare
             # goal. Do not promote it into a context-free skill or warm cache.
@@ -1789,6 +1799,39 @@ class GovernedAutonomousLoop(AutonomousLoop):
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
+    def _ask_and_wait_stop(self, result: Dict[str, Any], stopped_reason: str, warm: bool) -> bool:
+        """RCT-7 R5/R7 (creator's definition v0.3): when the result does not match what the person asked, report the difference, stop and ask.
+
+        Only the requirements a person's own words state and a rule can test (mismatch_rules: language, JSON format, a file to save, a file not to change); never
+        similarity, and never a guess. Off unless DELENTIA_ASK_AND_WAIT=1 (the default is the Architect's to set after the false-pause measurement). The question goes
+        to the ClarificationStore; the answer becomes a new intent version and the next run is a NEW episode (the wrong result is not continued). An episode that
+        stopped here teaches nothing: no skill and no warm-cache answer. What was checked is always reported, so the Desk can show it."""
+        if os.environ.get("DELENTIA_ASK_AND_WAIT") != "1" or warm or stopped_reason != "llm_finished" or getattr(self, "_active_contract", None) is not None:
+            return False
+        from rct_control_plane import mismatch_rules
+        goal = str(result.get("goal") or "")
+        requirements = mismatch_rules.derive_requirements(goal)
+        if not requirements:
+            return False
+        workspace = self._workspace_id()
+        differences = mismatch_rules.check(requirements, result.get("final_answer"), result.get("steps"), Path(workspace) if workspace else None)
+        result["mismatch_check"] = {"requirements": [{"kind": r.kind, "value": r.value, "source": r.source} for r in requirements],
+                                    "differences": [d.as_dict() for d in differences],
+                                    "scope_note": "Rule-checkable requirements stated in the goal only; not similarity and not proof that the answer is right."}
+        if not differences:
+            return False
+        from rct_control_plane.clarifications import ClarificationStore
+        question = mismatch_rules.question_for(goal, differences)
+        first = differences[0]
+        made = ClarificationStore(self._persistence).create(
+            self.namespace, "mismatch", first.criterion, question, original_goal=goal,
+            expected="; ".join(d.expected for d in differences), observed="; ".join(d.observed for d in differences),
+            episode_id=str(self._episode_id or ""))
+        result["clarification_id"] = made.clarification_id
+        result["clarification_question"] = question
+        self._episode_used_conversation = True        # the answer is not context-free: it must not become a skill or a cached answer
+        return True
+
     def _verify_against_intent(self, goal: str, final_answer: Optional[str], steps: Optional[List[Dict[str, Any]]] = None, conversation: str = "") -> Dict[str, Any]:
         """Round 48 R1.2: RCT-7 step 7 ("benchmark with intent") inside the
         agent loop - previously only process_intent_deep_pipeline() did it.
@@ -1886,6 +1929,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             and verification["similarity_score"] >= verification.get("threshold", self._intent_verify_threshold)
         )
         verification["scope_note"] = "Heuristic alignment/grounding verdict, not semantic truth or full RCT-7 fidelity."
+        if self._ask_and_wait_stop(result, stopped_reason, warm):
+            result["stopped_reason"] = stopped_reason = "needs_clarification"
         contract = getattr(self, "_active_contract", None)
         if contract is not None:
             if self._contract_store is None:

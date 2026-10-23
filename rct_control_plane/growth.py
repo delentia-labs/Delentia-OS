@@ -40,6 +40,7 @@ _OTHER_OUTCOMES = {
     "fdia_blocked": (-1.0, True),
     "pending_approval": (0.0, False),
     "waiting_for_clarification": (0.0, False),
+    "needs_clarification": (0.0, False),          # RCT-7 R5/R7: the result did not match what was asked, so it stopped and asked (neither growth nor a violation)
     "guard_blocked": (0.0, False),
     "residency_blocked": (0.0, False),      # the policy refused the call: neither growth nor an agent violation
     "notary_unavailable": (0.0, False),
