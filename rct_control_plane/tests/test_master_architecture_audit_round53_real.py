@@ -52,7 +52,10 @@ def test_what_round_53_built_is_reported_as_real():
 
 def test_the_documents_wrong_statements_are_flagged_as_doc_wrong():
     assert audit.layer2_range().verdict == "DOC_WRONG"
-    assert audit.layer3_name().verdict == "DOC_WRONG" and "Future Design Intelligence" in audit.layer3_name().evidence
+    # Round 92: the creator confirmed FDIA has no official expanded name (U5, 2026-10-22), so the finding must say so and must not present another expanded name as the definition
+    name = audit.layer3_name()
+    assert name.verdict == "DOC_WRONG" and "NO official expanded name" in name.evidence
+    assert "is the Architect's definition" not in name.evidence and "define F=D^I x A as" not in name.evidence
     assert audit.jitna_terms().verdict == "DOC_WRONG" and "Header says so: True" in audit.jitna_terms().evidence
 
 
