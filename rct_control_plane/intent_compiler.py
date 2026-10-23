@@ -407,7 +407,9 @@ class IntentCompiler:
         
         # Extract keywords
         result.keywords = self._extract_keywords(text_lower)
-        
+        result.metadata["head"], result.metadata["later_action"] = self._head_kind(text_lower)
+        result.metadata["head_word"] = self._head_word(text_lower)
+
         # Extract entities
         result.entities = self._extract_entities(text, text_lower)
         
@@ -425,18 +427,39 @@ class IntentCompiler:
         pattern = r"(?<![a-z0-9])" + re.escape(keyword) + r"(?:s|es|ed|d|ing)?(?![a-z0-9])"
         return re.search(pattern, text) is not None
 
+    # Round 91 (research/intent_risk_criteria_r91.md): the verbs below name a change. Their bare form ("update the file") and their -ing form ("updating the file") ask for one; the other forms
+    # ("what changed", "the files that were updated", "the recent changes") usually DESCRIBE one that already happened, unless an action word stands just in front ("make the changes",
+    # "apply the updates", "commit these changes"). A description is not a request, so it must not make a read-only goal STRUCTURAL.
+    _CHANGE_VERBS = frozenset({"update", "change", "modify", "refactor", "upgrade", "bump", "transform"})
+    _ACTION_WORDS = frozenset({"make", "makes", "apply", "applies", "commit", "push", "save", "implement", "perform", "do", "please", "want", "need", "should", "must", "go", "let's", "lets",
+                               "write", "run", "release", "ship", "deploy", "merge", "revert", "undo"})
+
+    @classmethod
+    def _keyword_is_requested(cls, text: str, keyword: str) -> bool:
+        """True when `keyword` occurs in a form that asks for the change. Only the change verbs get this treatment; every other keyword is matched as before."""
+        if not keyword.isascii() or keyword not in cls._CHANGE_VERBS:
+            return True
+        for m in re.finditer(r"(?<![a-z0-9])" + re.escape(keyword) + r"(s|es|ed|d|ing)?(?![a-z0-9])", text):
+            suffix = m.group(1) or ""
+            if suffix in ("", "ing"):
+                return True
+            before = re.findall(r"[a-z']+", text[:m.start()])[-4:]
+            if any(word in cls._ACTION_WORDS for word in before):
+                return True
+        return False
+
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract action keywords from text"""
         keywords = []
         
         for _intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             for keyword in type_keywords:
-                if self._has_keyword(text, keyword):
+                if self._has_keyword(text, keyword) and self._keyword_is_requested(text, keyword):
                     keywords.append(keyword)
         
         # Add risk keywords
         for keyword in self.HIGH_RISK_KEYWORDS + self.MEDIUM_RISK_KEYWORDS:
-            if self._has_keyword(text, keyword):
+            if self._has_keyword(text, keyword) and self._keyword_is_requested(text, keyword):
                 keywords.append(keyword)
         
         # Add priority keywords
@@ -508,10 +531,98 @@ class IntentCompiler:
     # CLASSIFICATION & EXTRACTION
     # ========================================================================
     
+    # Round 91 (research/unknown_intent_criteria_r91.md, rule set H): the VERB THAT HEADS THE SENTENCE decides whether a goal asks for a change or asks a question; keywords later in the sentence do
+    # not ("Edit the README so it lists the new command" is not a query because it contains "list", "What did the last deploy change?" is not a deployment). Fixed lists, English only.
+    _POLITE_LEAD = re.compile(r"^(?:please\s+|kindly\s+|go ahead and\s+|can you\s+|could you\s+|would you\s+|i want you to\s+|i need you to\s+|i'd like you to\s+|let's\s+|lets\s+)+")
+    _ACTION_HEADS = frozenset({
+        "set", "edit", "rename", "add", "replace", "delete", "remove", "restart", "commit", "push", "merge", "increase", "raise", "decrease", "lower", "reduce", "install", "uninstall",
+        "run", "execute", "move", "copy", "send", "email", "write", "create", "update", "change", "modify", "disable", "enable", "kill", "stop", "start", "reset", "overwrite", "format",
+        "revert", "rollback", "tag", "publish", "archive", "append", "upgrade", "downgrade", "patch", "apply", "drop", "wipe", "truncate", "erase", "destroy", "transfer",
+        "withdraw", "pay", "deploy", "release", "ship", "migrate", "refactor", "rewrite", "clean", "purge", "restore", "backup", "build", "generate", "save", "store", "put", "insert",
+        "schedule", "cancel", "approve", "reject", "sign", "grant", "revoke", "rotate", "import", "export", "upload", "download", "sync", "trigger", "close", "lock", "unlock",
+    })
+    _READ_HEADS = frozenset({
+        "what", "whats", "when", "where", "who", "whom", "whose", "why", "how", "which", "is", "are", "was", "were", "does", "do", "did", "will", "has", "have", "show", "tell",
+        "list", "find", "count", "check", "compare", "explain", "describe", "summarise", "summarize", "read", "look", "estimate", "search", "display", "view", "calculate",
+        "compute", "measure", "give", "see",
+    })
+    _LATER_CLAUSE = re.compile(r"(?:[,;?!.]|\band\b|\bthen\b)\s+(?:(?:and|then|please)\s+)*([a-z']+)")
+
+    # Verbs that make something new (no existing target is needed): an action with one of these heads and no other type word is a BUILD_APP, not a REFACTOR of something that must already exist.
+    _CREATE_HEADS = frozenset({"create", "write", "save", "store", "put", "generate", "build", "insert"})
+
+    # Round 92 (research/independent_goals_criteria_r92.md): the same rule for Thai. Thai has no spaces, so the head is found by prefix after the polite lead, longest word first. The lists were built from
+    # development set A (goals written by qwen2.5:7b) and my own knowledge of Thai; the holdout set B (written by qwen3:8b, roles swapped) is run once. A question is also recognised by its closing
+    # words (คืออะไร, ไหม, หรือไม่ ...) when no action verb heads the sentence.
+    _THAI_LEAD = re.compile(r"^(?:\s|คุณช่วย|ช่วยกรุณา|กรุณา|โปรด|ช่วย|ขอให้|ผมอยากให้|ฉันอยากให้|ดิฉันอยากให้|ผมอยาก|ฉันอยาก|อยากให้|อยาก|ต้องการให้|ผมต้องการ|ฉันต้องการ|ต้องการ|รบกวน|ลอง|ให้)+")
+    _THAI_ACTION_HEADS = tuple(sorted({
+        "แก้ไข", "แก้", "เปลี่ยนชื่อ", "เปลี่ยนแปลง", "เปลี่ยน", "ย้าย", "ลบทิ้ง", "ลบ", "สร้าง", "เขียน", "เพิ่ม", "ส่งออก", "ส่ง", "รัน", "เรียกใช้", "ติดตั้ง", "ถอนการติดตั้ง", "ตั้งเวลา", "ตั้งค่า",
+        "ตั้งชื่อ", "ตั้ง", "คัดลอก", "ก๊อป", "บันทึก", "อัปเดต", "อัพเดต", "อัปเกรด", "อัพเกรด", "ปรับปรุง", "ปรับเปลี่ยน", "ปรับ", "ปิด", "เปิด", "หยุด", "เริ่ม", "ยกเลิก", "อนุมัติ", "ปฏิเสธ", "ดีพลอย",
+        "คอมมิต", "พุช", "รีเซ็ต", "รีสตาร์ท", "แทนที่", "อัปโหลด", "อัพโหลด", "ดาวน์โหลด", "สำรองข้อมูล", "สำรอง", "กู้คืน", "ผสาน", "นำเข้า", "ลงนาม", "ล้าง", "จัดเรียง", "แปลง", "ทำให้", "สั่ง", "จอง",
+        "ชำระ", "จ่าย", "โอน", "แชร์", "เผยแพร่", "โพสต์", "แนบ", "ใส่", "เติม", "ลง", "เก็บ", "ตั้งให้", "รวมไฟล์", "ปรับแต่ง", "ทำการ", "ลบออก", "เอา", "นำ", "ใช้คำสั่ง", "ประมวลผล",
+    }, key=len, reverse=True))
+    _THAI_CREATE_HEADS = ("สร้าง", "เขียน", "เพิ่ม", "บันทึก", "เก็บ", "เติม", "ใส่", "แนบ")
+    _THAI_READ_HEADS = tuple(sorted({
+        "ช่วยอธิบาย", "อธิบาย", "สรุป", "ค้นหา", "ค้น", "หา", "ดู", "แสดง", "บอก", "เปรียบเทียบ", "ตรวจสอบ", "ตรวจ", "อ่าน", "นับ", "คำนวณ", "ประเมิน", "วิเคราะห์", "ระบุ", "แนะนำ", "ตอบ", "เล่า",
+        "ยกตัวอย่าง", "ขอคำแนะนำ", "ขอข้อมูล", "ขอคำอธิบาย", "ขอความช่วยเหลือ", "ขอดู", "ขอรายละเอียด", "ขอสรุป", "ขอตัวอย่าง", "รายการ", "ลิสต์", "อะไร", "ทำไม", "อย่างไร", "ยังไง", "ใคร", "ที่ไหน",
+        "เมื่อไร", "เมื่อไหร่", "กี่", "เท่าไร", "เท่าไหร่", "มีอะไร", "มี", "คือ", "สามารถ", "อยากรู้", "อยากทราบ", "สงสัย", "ทราบ",
+    }, key=len, reverse=True))
+    _THAI_QUESTION_END = re.compile(r"(?:คืออะไร|อะไรบ้าง|อะไร|ทำไม|อย่างไร|ยังไง|ไหม|หรือไม่|หรือเปล่า|เท่าไร|เท่าไหร่|กี่|ใคร|ที่ไหน|เมื่อไร|เมื่อไหร่|ได้หรือไม่|\?)")
+    _THAI_LATER_ACTION = re.compile(r"(?:แล้วก็|แล้ว|จากนั้น|ต่อด้วย|และ|พร้อมทั้ง|พร้อมกับ)(?:ช่วย|ก็|ให้|ต่อ)?(" + "|".join(re.escape(w) for w in _THAI_ACTION_HEADS) + r")")
+
+    @classmethod
+    def _thai_head_kind(cls, text: str) -> "tuple[Optional[str], bool, str]":
+        """('action' | 'read' | None, a later clause starts with an action verb, the head verb) for a goal that starts in Thai."""
+        body = cls._THAI_LEAD.sub("", text.strip(), count=1)
+        head_word = ""
+        kind: Optional[str] = None
+        for w in cls._THAI_ACTION_HEADS:
+            if body.startswith(w):
+                kind, head_word = "action", w
+                break
+        if kind is None:
+            for w in cls._THAI_READ_HEADS:
+                if body.startswith(w):
+                    kind, head_word = "read", w
+                    break
+        if kind is None and cls._THAI_QUESTION_END.search(body):
+            kind = "read"
+        later = bool(cls._THAI_LATER_ACTION.search(body[len(head_word):] if head_word else body))
+        return kind, later, head_word
+
+    @classmethod
+    def _head_word(cls, text: str) -> str:
+        stripped = text.strip()
+        if re.match(r"[฀-๿]", cls._THAI_LEAD.sub("", stripped, count=1)[:1] or " "):
+            _kind, _later, word = cls._thai_head_kind(stripped)
+            return "create" if word in cls._THAI_CREATE_HEADS else word
+        m = re.match(r"[a-z']+", cls._POLITE_LEAD.sub("", stripped, count=1))
+        return m.group(0) if m else ""
+
+    @classmethod
+    def _head_kind(cls, text: str) -> "tuple[Optional[str], bool]":
+        """('action' | 'read' | None, whether a LATER clause starts with a state-changing verb) for a goal in lower case. English: the verb that heads the sentence. Thai: see _thai_head_kind. Other text has no head and is left to the keyword lists."""
+        if re.match(r"[฀-๿]", cls._THAI_LEAD.sub("", text.strip(), count=1)[:1] or " "):
+            kind, later, _word = cls._thai_head_kind(text)
+            return kind, later
+        head_text = cls._POLITE_LEAD.sub("", text.strip(), count=1)
+        m = re.match(r"[a-z']+", head_text)
+        if not m:
+            return None, False
+        word = m.group(0)
+        later = any(w in cls._ACTION_HEADS for w in cls._LATER_CLAUSE.findall(head_text[m.end():]))
+        if word in cls._ACTION_HEADS:
+            return "action", later
+        if word in cls._READ_HEADS:
+            return "read", later
+        return None, later
+
     def _classify_intent_type(self, lexical: LexicalResult) -> Optional[IntentType]:
         """Classify intent type based on keywords"""
+        head = lexical.metadata.get("head")
+        later = bool(lexical.metadata.get("later_action"))
         scores = {}
-        
+
         for intent_type, type_keywords in self.INTENT_TYPE_KEYWORDS.items():
             score = 0
             for keyword in type_keywords:
@@ -522,8 +633,17 @@ class IntentCompiler:
             if score > 0:
                 scores[intent_type] = score
         
+        if head == "action":
+            # the sentence asks for a change: a query word later in it does not turn it into a question; with no other type keyword it is a change to something that exists
+            non_query = {t: s for t, s in scores.items() if t != IntentType.QUERY}
+            if non_query:
+                return max(non_query, key=lambda k: non_query[k])
+            return IntentType.BUILD_APP if lexical.metadata.get("head_word") in self._CREATE_HEADS else IntentType.REFACTOR
+        if head == "read" and not later and not any(kw in lexical.keywords for kw in self.HIGH_RISK_KEYWORDS):
+            return IntentType.QUERY                         # a question that merely mentions a verb ("what did the last release change?") stays a question; a high-risk word keeps the old reading
+
         if not scores:
-            return None
+            return IntentType.REFACTOR if later else None     # a question followed by a request for a change, and no other type word: it asks for a change
 
         # Return type with highest score
         return max(scores, key=lambda k: scores[k])
@@ -596,21 +716,28 @@ class IntentCompiler:
         # Check for high-risk keywords
         if any(kw in lexical.keywords for kw in self.HIGH_RISK_KEYWORDS):
             return RiskProfile.SYSTEMIC
-        
+
+        head = lexical.metadata.get("head")
+        later = bool(lexical.metadata.get("later_action"))
+        if head == "read" and not later and intent_type == IntentType.QUERY:
+            return RiskProfile.LOW                       # Round 91: a plain question (no high-risk word, nothing asked for later in the sentence)
+        # a goal that asks for a change is never below STRUCTURAL, whatever its type keywords say
+        floor = RiskProfile.STRUCTURAL if (head == "action" or later) else RiskProfile.LOW
+
         # Check for medium-risk keywords
         if any(kw in lexical.keywords for kw in self.MEDIUM_RISK_KEYWORDS):
             return RiskProfile.STRUCTURAL
-        
+
         # Intent type-based risk
         high_risk_types = [IntentType.DEPLOY, IntentType.TRANSFORM]
         medium_risk_types = [IntentType.REFACTOR, IntentType.OPTIMIZE, IntentType.BUILD_APP]
-        
+
         if intent_type in high_risk_types:
             return RiskProfile.SYSTEMIC
         elif intent_type in medium_risk_types:
             return RiskProfile.STRUCTURAL
         else:
-            return RiskProfile.LOW
+            return floor
     
     def _determine_priority(self, lexical: LexicalResult) -> IntentPriority:
         """Determine priority based on keywords"""

@@ -247,7 +247,9 @@ def format_report(goal: str, result: Dict[str, Any], gates: List[Dict[str, Any]]
              f"**สถานะ:** {reason} — {STOP_TEXT.get(reason, reason)}", f"**จำนวนขั้น:** {result.get('iterations')} · เวลา {seconds:.1f} วินาที", ""]
     cost = result.get("cost") or {}
     if cost:
-        lines.append(f"**ต้นทุน:** prompt {cost.get('prompt_tokens')} · completion {cost.get('completion_tokens')} · {cost.get('cost_usd')} USD")
+        usd = cost.get("cost_usd")
+        money = "ไม่คิดเป็นเงิน (ไม่มีโมเดลที่คิดเงิน)" if usd is None else f"{usd} USD"        # Round 92: the report used to print "None USD"
+        lines.append(f"**ต้นทุน:** prompt {cost.get('prompt_tokens')} · completion {cost.get('completion_tokens')} · {money}")
     lines += ["", "## agent ทำอะไรบ้าง"] + [_step_line(s) for s in (result.get("steps") or [])]
     if result.get("approval_id"):
         lines.append(f"- **รออนุมัติ รหัส `{result['approval_id']}`** → `delentia demo approve {result['approval_id']}`")
@@ -319,8 +321,13 @@ async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_
         raise SystemExit(f"ไม่พบรายการรออนุมัติรหัส {approval_id}")
     if action.namespace != NAMESPACE:
         raise SystemExit("รายการนี้ไม่ใช่ของเดโม")
+    if action.status != "PENDING":                       # Round 92: reusing an approval used to end in a Python traceback (the refusal itself was right, the message was not)
+        raise SystemExit(f"รายการ {approval_id} อยู่ในสถานะ {action.status} แล้ว: ลายเซ็นใช้ได้ครั้งเดียว จึงไม่มีอะไรถูกรันซ้ำ (this approval is {action.status}; a signature works once, nothing was run again)")
     signed = approvals.sign_decision(str(p["approver_key"]), approval_id, action.action_sha256, "APPROVED")
-    store.decide(approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"])
+    try:
+        store.decide(approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"])
+    except approvals.ApprovalError as exc:
+        raise SystemExit(f"ไม่ได้อนุมัติ: {exc}") from exc
     loop = build_governed_loop(_kernel, NAMESPACE, max_iterations=max_iterations, max_seconds=max_seconds, persistence=_kernel._persistence, mcp_server=mcp)
     loop._fast_max_iterations = max_iterations
     if scripted:

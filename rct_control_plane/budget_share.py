@@ -82,4 +82,4 @@ def charge_children(outcomes: List[Dict[str, Any]], plan: ChildBudgetPlan, meter
             tokens += plan.per_child_tokens
     if meter is not None and hasattr(meter, "charge_children"):
         meter.charge_children(usd, tokens)
-    return {"charged_usd": round(usd, 6), "charged_tokens": tokens}
+    return {"charged_usd": round(usd, 12), "charged_tokens": tokens}

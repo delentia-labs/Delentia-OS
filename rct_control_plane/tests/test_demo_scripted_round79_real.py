@@ -88,3 +88,6 @@ class TestScriptedEditStopsForASignature:
         assert "quotes/vendor_a.md" in done.stdout and "ครบสมบูรณ์" in done.stdout and "None — None" not in done.stdout
         again = cli(["demo", "approve", approval, "--scripted", "--dir", str(root)], env)    # at most once
         assert again.returncode != 0 or "ไม่พบ" in (again.stdout + again.stderr) or "already" in (again.stdout + again.stderr).lower() or "ใช้ไปแล้ว" in (again.stdout + again.stderr)
+        # Round 92: the refusal is a plain message, not a Python traceback, and the file was not written a second time
+        assert "Traceback" not in again.stderr and "EXECUTED" in again.stderr and "ครั้งเดียว" in again.stderr, again.stderr[-600:]
+        assert "None USD" not in done.stdout

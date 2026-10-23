@@ -56,19 +56,25 @@ The agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and
 ---
 
 
-## What is RCT?
+## What is Delentia, and what are RCT-7 and the FDIA Equation?
 
-**Delentia OS** is the open SDK layer of the RCT Ecosystem — an experimental **Causal-Constraint AI Operating System SDK** built to test weight-level AI safety. This project is a research hobby experiment by a self-taught creator with a facilities management background (optimizing resource flow under hardware limits). **It is not a commercial enterprise product and is not yet production-stable for critical workloads.** 
+**Delentia OS is an experimental, open-source, self-hosted, intent-centric AI agent runtime.** The agent loop, tools, memory, skills, schedules and subagents live inside it, and every episode passes the fixed cycle shown above. You choose the model and you run the installation. It is a research project by one creator, not a commercial product, and it is not production-stable for critical workloads. It does not change a language model's weights: it governs what an agent is allowed to do and keeps evidence of what it did.
+
+The one-page definition, with the history and what is still to be tested: [`docs/public/CURRENT_PUBLIC_INFORMATION_EN.md`](docs/public/CURRENT_PUBLIC_INFORMATION_EN.md) ([ภาษาไทย](docs/public/CURRENT_PUBLIC_INFORMATION_TH.md)).
+
+Two ideas from the creator shape the design:
+
+- **FDIA Equation, `F = (D^I) × A`.** It began as a framework about the future: **F**uture (the outcome that actually happens), **D**ata (reality and experience, good and bad), **I**ntent (the exponent that gives the data direction) and **A**rchitect (the human who designs, decides and answers for the outcome). The equation has no official expanded name. In this runtime it is read as an admissibility score for an action, used together with the owner's policy and signed human approvals; the score alone is not what stops an action. Details and the open questions: [Semantic mapping](#the-fdia-equation).
+- **RCT-7, Reverse Component Thinking.** A way of working in seven steps: observe, analyze, deconstruct, reason backward from the wanted result, identify the core intent, reconstruct (show the plan before building), and compare the result with the intent (stop and ask when it does not match). **This is the design. The runtime implements parts of it; steps 4 to 7 do not yet meet the creator's definition.** The checklist, step by step: [`docs/public/RCT7_IMPLEMENTATION_STATUS.md`](docs/public/RCT7_IMPLEMENTATION_STATUS.md).
 
 It provides:
 
-- **Auditability** — every decision traces back to a signed evidence chain
-- **Governance** — multi-tier consensus prevents unilateral AI action  
-- **Interpretability** — the FDIA equation makes intent and confidence explicit
-- **Regional awareness** — built-in adapters for ASEAN, JP, KR, CN contexts
+- **Auditability** — every episode is written to a hash-chained, signed audit log (witnesses outside the machine are not set up yet, so see the table above for what that does and does not prove)
+- **Human authority** — anything that writes, sends or runs code waits for a signature from a person's own key
+- **Explicit intent** — the equation and the plan make what the agent is trying to do visible
+- **Regional awareness** — adapters and a data-residency policy for ASEAN, JP, KR, CN contexts
 
-The ecosystem is undergoing development at [delentia.com](https://delentia.com).  
-This SDK exposes the core components under Apache 2.0 to invite developer feedback.
+The project is developed in the open at [delentia.com](https://delentia.com) and in this repository; the code is Apache 2.0.
 
 🌐 **Website:** [delentia.com](https://delentia.com) · 🔗 **GitHub:** [github.com/delentia-labs](https://github.com/delentia-labs)
 
@@ -127,7 +133,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_protocol_v3.py` | — |
 | TOON Formatter (ALGO-42 compression engine) | ✅ `rct_control_plane/toon_formatter.py` | — |
 | CORD Security Engine (100 injection patterns) | ✅ `rct_control_plane/cord_security.py` | — |
-| ZK-FDIA (Zero-Knowledge Pedersen proofs) | ✅ `rct_control_plane/zk_fdia.py` | — |
+| ZK-FDIA: a hash commitment to an FDIA score (hides D, I, A; **not** a zero-knowledge proof, the verifier cannot check that the sealed F follows from them) | ✅ `rct_control_plane/zk_fdia.py` | — |
 | Helix-TTD (Topological drift detector) | ✅ `rct_control_plane/helix_ttd.py` | — |
 | PaymentEngine (Metered billing & trust gates) | ✅ `rct_control_plane/payment_engine.py` | — |
 | NodeNetwork (2/3 supermajority consensus) | ✅ `rct_control_plane/node_network.py` | — |
@@ -152,9 +158,9 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 
 | Product | Description | Link |
 |---------|-------------|------|
-| 🤖 **Delentia Platform** | Core intent-centric AI platform — full ecosystem access | [delentia.com/products/delentia-platform](https://delentia.com/en/products/delentia-platform) |
-| 🎨 **Delentia AI** | AI-powered creative studio — intent-driven content generation | [delentia.com/products/delentia-ai](https://delentia.com/en/products/delentia-ai) |
-| ✍️ **SignedAI** | Cryptographic verification layer — ED25519 signed AI outputs | [delentia.com/products/signed-ai](https://delentia.com/en/products/signed-ai) |
+| 🤖 **Delentia OS** (this repository) | The agent runtime: loop, tools, memory, skills, approvals, audit log | [Quick start](#try-it-in-two-minutes-no-model-no-api-key) |
+| 🛡️ **Delentia Guard** | A policy filter that sits in front of any MCP server and checks each tool call (npm `delentia-guard`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
+| 🔌 **Delentia MCP connector** | Six advisory tools hosted on Cloudflare Workers, reached through a stdio bridge (npm `delentia-mcp`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
 
 > SignedAI is the optional jury runner: models you name vote independently and the verdict is signed with Ed25519. It has been tested with scripted voters only and has not been shown to reduce hallucination.
 
@@ -164,14 +170,16 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 
 $$F = D^I \times A$$
 
-| Symbol | Meaning |
-|--------|---------|
-| **F** | **Future** — the desired output the AI must deliver |
-| **D** | Data quality — accuracy and completeness of inputs (0.0–1.0) |
-| **I** | Intent precision — the **exponent**. With D in [0, 1] a larger I makes F *smaller* for the same D: in the gate I acts as strictness (the clearer and more demanding the intent, the better the data has to be) |
-| **A** | **Architect** — Human-in-the-loop approval gate (0.0–1.0) |
+The equation has three layers that should not be mixed up: the **framework** (a way of thinking about the future), a **computational model** (an action score with defined ranges), and the **enforcement** (policy and signed approvals that the execution path actually checks). The first column is what the creator means; the second is what the runtime computes.
 
-> **Because D is in [0, 1], raising I lowers F for the same D** (0.8^2 = 0.64 < 0.8^1 = 0.8): a clearer, more demanding intent needs better data to pass.  
+| Symbol | Meaning in the framework | What the runtime computes |
+|--------|---------|---------|
+| **F** | **Future**: the outcome that actually happens, not a prediction | An action-admissibility score. It is not the future and not a calibrated probability |
+| **D** | **Data**: reality and experience, good and bad, constraints | A data-evidence score in [0, 1] built from the person's own files, memory, verified skills, track record and the clarity of the request |
+| **I** | **Intent**: the exponent that gives the data direction | A strictness value, about 0.5 to 2, from the kind and risk of the goal. With D in [0, 1] a larger I makes F *smaller* for the same D |
+| **A** | **Architect**: the human who designs, decides and answers for the outcome | The owner's policy plus a verifiable Ed25519 signature for protected actions |
+
+> **Because D is in [0, 1], raising I lowers F for the same D** (0.8^2 = 0.64 < 0.8^1 = 0.8): a clearer, more demanding intent needs better data to pass. This is a property of that range; for D > 1 the exponent amplifies instead, and for D = 1 it has no effect. If D > 0 and I = 0 the raw arithmetic gives D^0 = 1, so the runtime returns 0 for D ≤ 0 or I ≤ 0 as an added rule, not as a consequence of the exponent.  
 > **When A = 0, the formula gives F = 0 and the gate refuses — on every code path that applies the gate** (the paths and the tests that pin them are listed in [research/GATE_PROPERTIES.md](research/GATE_PROPERTIES.md)). This is an invariant of those paths, not a guarantee about every path or about what a model writes; maintenance routes that are not part of the governed loop are listed there too.
 
 ---
@@ -760,9 +768,9 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 ---
 
-## Enterprise Platform — v1.1.0 (Current SDK) · v5.5.0 (Private)
+## Earlier SDK milestones (historical)
 
-> **Note:** This section records the enterprise platform history. The public SDK versioning starts at `v1.0.0-alpha`. See [CHANGELOG.md](CHANGELOG.md) for SDK release notes.
+> **Note:** This section records earlier milestones and is kept for history. Current versions are on [PyPI](https://pypi.org/project/delentia-os/) and in [CHANGELOG.md](CHANGELOG.md); the status of each capability is in [RELEASE_LEVELS](docs/release/RELEASE_LEVELS.md).
 
 ✅ **7,820 Passed** (public CI, 2026-10-18; see TESTING_CANONICAL.md for the checkpoint and caveats) — Full delentia-os test suite  
 ✅ **Plan Engine** — `plan_engine.py` real Terraform-style pre-execution simulation logic *(corrected 2026-09-24: not currently wired to any real CLI command - `plan` isn't in `delentia --help`'s command list; the module itself is real)*  
@@ -859,31 +867,15 @@ Do **not** open public issues for security findings.
 ## 👤 About the Author
 
 **Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)**  
-*Architect & Sole Creator of RCT Platform and the RCT Ecosystem*
-
-> *"I'm a solo developer from Klong Toei, Bangkok. I believe AI governance should be a mathematical guarantee — not a setting you can turn off."*
+*Thinker and creator of Delentia*
 
 ### Origin Story
 
-In June 2025, I started asking a question no one had answered clearly: **Why does AI safety depend on configuration files instead of math?**
+The creator's account: the work, including the FDIA Equation and RCT 7 Thinking, began on **28 June 2025**, on paper and in conversations with ordinary AI chat. FDIA began with the question **"What is the future?"** and the belief that people help shape their future through the data and experience they have, their intent and what they do. Later came a second question: if an AI agent is to work through a way of thinking we design, how can a human keep authority over what it does?
 
-On August 11, 2025 — a personal turning point — I wrote the first version of the FDIA equation on paper:
+**11 August 2025** is a separate personal turning point and a commitment to carry the work through. It is not the date the equation was first written. No independent timestamp of the original paper exists, so the dates are the creator's account.
 
-```
-F = D^I × A
-```
-
-The insight: when `A = 0`, the output `F = 0` **by the properties of multiplication** — no code path can bypass it. That's a constitutional guarantee, not a setting.
-
-Over the next 10 months, working alone from a room in **Klong Toei, Bangkok**, I built that equation into:
-- A 11-layer constitutional AI operating system
-- 41 production algorithms (Tier 1–9)
-- The JITNA Protocol (RFC-001) — an open standard for AI-to-AI communication
-- SignedAI: optional jury runner with Ed25519-signed verdicts
-- **1,287 passing tests**, 92% coverage, with 0 skips
-- A 450+ page whitepaper documenting every decision
-
-This is not a research paper. It runs in production at [delentia.com](https://delentia.com).
+Delentia OS is where those questions became a runtime with inspectable code. What exists today, with the limits stated above: an agent runtime with a signed approval gate and an audit log; 41 algorithm modules, of which only some run inside the loop; the JITNA signed-packet format; an optional jury runner for several models; scripted demos; and a CI-verified test suite (see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)). It is experimental and runs on the creator's machine. It is not a running public service. The whitepapers are the history of the design, not evidence that every statement in them has been tested.
 
 | | |
 |---|---|
@@ -897,15 +889,15 @@ This is not a research paper. It runs in production at [delentia.com](https://de
 | **BIO** | [ittiritsaengow.link](https://ittiritsaengow.link) |
 | **Docs** | [delentia-labs.github.io/Delentia-OS](https://delentia-labs.github.io/Delentia-OS/) |
 | **Location** | Klong Toei, Bangkok, Thailand 🇹🇭 |
-| **Started** | June 2025 |
-| **Turning Point** | August 11, 2025 |
+| **Started** | 28 June 2025 (creator's account) |
+| **Turning point** | 11 August 2025 |
 
 ### Timeline
 
 | Period | Milestone |
 |--------|-----------|
-| Jun 2025 | First FDIA equation written |
-| Aug 11, 2025 | Commitment to build RCT OS |
+| 28 Jun 2025 | Start of the work, including the FDIA Equation and RCT 7 Thinking (creator's account) |
+| 11 Aug 2025 | A personal turning point and commitment to carry the work through |
 | Oct 2025 | JITNA Protocol RFC-001 drafted |
 | Dec 2025 | Foundation whitepaper (~100 pages) |
 | Jan 2026 | 41 algorithms complete |

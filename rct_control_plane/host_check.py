@@ -169,7 +169,7 @@ def _witness_check() -> Check:
         specs = audit_witness.specs_from_env()
     except (audit_witness.WitnessError, ValueError) as exc:
         return Check("H07", FAIL, "Anchoring (tier A3)", f"the witness list cannot be read ({exc}); nothing is anchored",
-                     f"fix {audit_witness.WITNESSES_ENV} (a JSON list of {{type: http|git, key_id, ...}})")
+                     f"fix {audit_witness.WITNESSES_ENV} (a JSON list of {{type: http|git|rfc3161, key_id, ...}})")
     if not os.environ.get("DELENTIA_AUDIT_SIGNING_KEY"):
         return Check("H07", WARN, "Anchoring (tier A3)", "anchoring needs the audit signing key (DELENTIA_AUDIT_SIGNING_KEY) and none is set",
                      "`delentia audit-chain keygen`, then register the public key with every witness")
@@ -178,11 +178,11 @@ def _witness_check() -> Check:
         return Check("H07", WARN, "Anchoring (tier A3)", "not scheduled: a host that rewrites its whole log would not be noticed",
                      f"set {audit_witness.WITNESSES_ENV} (see the runbook), or DELENTIA_AUDIT_ANCHOR_URL and DELENTIA_AUDIT_ANCHOR_KEY_ID for the one HTTP witness")
     if len(specs) == 1:
-        return Check("H07", WARN, "Anchoring (tier A3)", f"one witness ({specs[0].name}): its operator is one party you have to trust; a git witness on a remote this host cannot rewrite is the cheapest second one",
+        return Check("H07", WARN, "Anchoring (tier A3)", f"one witness ({specs[0].name}): its operator is one party you have to trust; a git witness on a remote this host cannot rewrite, or a public RFC 3161 time-stamping authority, is the cheapest second one",
                      f"add a second entry to {audit_witness.WITNESSES_ENV}")
     if len(kinds) == 1:
         return Check("H07", WARN, "Anchoring (tier A3)", f"{len(specs)} witnesses but all of one kind ({next(iter(kinds))}): one failure mode can take them all",
-                     "mix an http witness with a git witness")
+                     "mix kinds: an http witness, a git witness and an rfc3161 time-stamp")
     git_without_pin = [s.name for s in specs if s.type == "git" and not s.pin]
     detail = f"{len(specs)} independent witnesses ({', '.join(s.name for s in specs)}) receive the signed head"
     detail += ("; this check runs ON the host, so it is not proof against a host that is taken over: verify from another machine with scripts/verify_audit_bundle.py "

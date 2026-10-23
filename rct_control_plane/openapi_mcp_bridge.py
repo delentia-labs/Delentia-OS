@@ -105,6 +105,21 @@ def _python_type(name: str) -> Any:
     return _TYPES.get(name, str)
 
 
+_CTX = "mcp_ctx"
+_WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def idempotency_key_from(ctx: Any) -> Optional[str]:
+    """The key in the request's meta, if there is one and it has the shape the loop issues; anything else is ignored (a key is not trusted, only forwarded)."""
+    from rct_control_plane import idempotency
+    try:
+        meta = ctx.request_context.meta
+        value = (meta.get(idempotency.META_KEY) if hasattr(meta, "get") else getattr(meta, "model_extra", {}).get(idempotency.META_KEY)) if meta is not None else None
+    except Exception:                                                              # noqa: BLE001
+        return None
+    return value if idempotency.valid(value) else None
+
+
 def make_function(op: Dict[str, Any], call: Any) -> Any:
     """A function whose signature is the operation's parameters, so the MCP SDK derives the tool's input schema from it."""
     parameters = []
@@ -114,8 +129,13 @@ def make_function(op: Dict[str, Any], call: Any) -> Any:
     if op["body"]:
         parameters.append(inspect.Parameter("body", inspect.Parameter.KEYWORD_ONLY, annotation=Optional[dict], default=None))
 
+    # Round 91: the request's meta carries the idempotency key the agent's loop issued for this call (idempotency.py); the SDK injects the context, and it is not part of the tool's input schema.
+    from mcp.server.mcpserver import Context
+    parameters.append(inspect.Parameter(_CTX, inspect.Parameter.KEYWORD_ONLY, annotation=Context, default=None))
+
     def fn(**kwargs: Any) -> Any:
-        return call(op, kwargs)
+        ctx = kwargs.pop(_CTX, None)
+        return call(op, kwargs, idempotency_key_from(ctx))
     fn.__signature__ = inspect.Signature(parameters)                              # type: ignore[attr-defined]
     fn.__annotations__ = {p.name: p.annotation for p in parameters}
     fn.__name__ = op["name"]
@@ -164,9 +184,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     token = os.environ.get(args.auth_env) if args.auth_env else None
     client = httpx.Client(timeout=30.0, follow_redirects=False, trust_env=False)     # ONE client for the life of the bridge: building one per call costs ~200 ms (an SSL context, even for plain http)
 
-    def call(op: Dict[str, Any], arguments: Dict[str, Any]) -> Dict[str, Any]:
+    def call(op: Dict[str, Any], arguments: Dict[str, Any], idem: Optional[str] = None) -> Dict[str, Any]:
         method, url, query, body = build_request(base, op, arguments)
         headers = {"Authorization": f"Bearer {token}"} if token else {}
+        if idem and method in _WRITE_METHODS:
+            headers["Idempotency-Key"] = idem
         response = client.request(method, url, params=query, json=body, headers=headers)
         try:
             parsed: Any = response.json()

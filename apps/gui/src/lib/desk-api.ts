@@ -331,6 +331,13 @@ export interface FdiaEvaluateInput {
 }
 
 
+// ---- Law Packs (Round 91) ---------------------------------------------------------------------------
+export interface LawPackInfo { name: string; edition?: string; jurisdiction?: string; sections?: number; chunks?: number; embedded?: boolean; sha256?: string; verified?: boolean | null; reviewed_flags?: number; error?: string }
+export interface LawPacksState { packs: LawPackInfo[]; tool_listed: boolean; notice: string; max_chars: number }
+export interface LawPassage { section: string; text: string }
+export interface LawLookup { pack?: string; source?: string; notice?: string; passages?: LawPassage[]; error?: string }
+export interface LawCheck { check: { status: string; grounded: boolean; cited_sections: string[]; cites_unseen: string[]; unsupported_numbers: number[] }; passages: LawPassage[]; pack: string; notice: string }
+
 // ---- Hooks, the skill curator, memory suggestions, trajectories (Round 62) -------------------------
 export interface HookRecord {
   name: string; description: string; code_sha256: string; points: string[]; status: string; approval_id: string | null; created_at: number; activated_at: number | null;
@@ -476,6 +483,12 @@ export const desk = {
     call<{ saved: string; digest: string; rules: number } | PolicySavePending>("/v1/desk/fdia/policy", { method: "PUT", body: JSON.stringify({ policy, ...(approvalId ? { approval_id: approvalId } : {}) }) }),
   fdiaDisable: (approvalId?: string) =>
     call<{ archived_as: string } | PolicySavePending>("/v1/desk/fdia/policy/disable", { method: "POST", body: JSON.stringify(approvalId ? { approval_id: approvalId } : {}) }),
+  lawPacks: () => call<LawPacksState>("/v1/desk/law/packs"),
+  lawImport: (body: { name: string; text: string; edition: string; jurisdiction: string; source: string; embed: boolean; allow_flagged: boolean }) =>
+    call<{ name: string; sections: number; chunks: number; embedded: boolean; fingerprint: string; label: string; reviewed_flags: string[][] }>("/v1/desk/law/import", { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(900000) }),
+  lawArchive: (name: string) => call<{ archived: string }>("/v1/desk/law/archive", { method: "POST", body: JSON.stringify({ name }) }),
+  lawLookup: (pack: string, question: string) => call<LawLookup>("/v1/desk/law/lookup", { method: "POST", body: JSON.stringify({ pack, question, limit: 5 }), signal: AbortSignal.timeout(120000) }),
+  lawCheck: (pack: string, question: string, answer: string) => call<LawCheck>("/v1/desk/law/check", { method: "POST", body: JSON.stringify({ pack, question, answer }), signal: AbortSignal.timeout(120000) }),
   hooks: () => call<HooksState>("/v1/desk/hooks"),
   hook: (name: string) => call<HookRecord>(`/v1/desk/hooks/${encodeURIComponent(name)}`),
   hookPropose: (body: { name: string; code: string; description: string }) =>

@@ -44,6 +44,9 @@ def normalise_digits(text: str) -> str:
     """Thai numerals to ASCII digits, so that a section called ๓๗ in the statute and 37 in an answer are the same section and the number check compares like with like."""
     return text.translate(_THAI_DIGITS)
 _BARE_PAGE_NUMBER = re.compile(r"^[ \t]*\d{1,3}[ \t]*$")
+# Round 91: what the Royal Gazette repeats on every page, as `pdftotext` writes it (the tone mark of "หน้า" and "เล่ม" is often lost and left on a line of its own):
+# "หน้า 53", a line that is only combining marks, and "เล่ม 136 ตอนที่ 69 ก ราชกิจจานุเบกษา 27 พฤษภาคม 2562". The page numbers used to land inside sections and show up as "numbers that differ".
+_GAZETTE_HEADER = re.compile(r"^[ \t]*(?:หน.{0,2}า[ \t]*\d{1,4}|[\u0e31\u0e34-\u0e3a\u0e47-\u0e4e]{1,3}|[^\n]{0,24}ตอนที่[ \t]*\d{1,3}[^\n]{0,12}ราชกิจจานุเบกษา[^\n]{0,40})[ \t]*$")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 _WORD = re.compile(r"[A-Za-z]+|\d+|[฀-๿]+")
 
@@ -58,13 +61,29 @@ _SCALES = {"thousand": 1000, "million": 1_000_000, "billion": 1_000_000_000}
 # ----------------------------------------------------------------------------------------------------------------------------- building a pack
 def _strip_furniture(text: str) -> str:
     """Drop what a PDF repeats on every page (a running header, a bare page number): lines that occur four times or more and are short, and lines that are only a number."""
-    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    # Round 91: a PDF puts a form feed (a page break) in FRONT of the first line of a page, so a heading that opens a page ("\x0cมาตรา 2 ...") did not start a line and was never seen
+    # (the Royal Gazette PDF of the Thai PDPA lost 11 sections this way).
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    pages = text.split("\x0c")
+    furniture: set = set()
+    if len(pages) >= 4:
+        # Round 91: with page breaks known, a short line is furniture only if it opens or closes at least four pages AND most pages. Counting short lines anywhere deleted real text: "ตามพระราชบัญญัตินี้" ("under
+        # this Act"), a wrapped line that recurs through a statute, vanished from sections 42 and 44 of the Thai PDPA.
+        edge_counts: Dict[str, int] = {}
+        for page in pages:
+            page_lines = [ln.strip() for ln in page.split("\n") if ln.strip()]
+            for key in set(page_lines[:3] + page_lines[-3:]):
+                edge_counts[key] = edge_counts.get(key, 0) + 1
+        furniture = {k for k, n in edge_counts.items() if n >= max(4, int(0.6 * len(pages))) and len(k) < 120}      # a running header is on (nearly) every page
+    lines = text.replace("\x0c", "\n").split("\n")
     counts: Dict[str, int] = {}
-    for line in lines:
-        key = line.strip()
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-    kept = [ln for ln in lines if not _BARE_PAGE_NUMBER.match(ln) and not (len(ln.strip()) < 120 and counts.get(ln.strip(), 0) >= 4)]
+    if len(pages) < 4:
+        for line in lines:
+            key = line.strip()
+            if key:
+                counts[key] = counts.get(key, 0) + 1
+    kept = [ln for ln in lines if not _BARE_PAGE_NUMBER.match(ln) and not _GAZETTE_HEADER.match(ln) and ln.strip() not in furniture
+            and not (len(ln.strip()) < 120 and counts.get(ln.strip(), 0) >= 4)]
     return "\n".join(kept)
 
 
@@ -109,6 +128,13 @@ class LawPack:
         self.vectors = vectors
         self.embed_model = embed_model
         self.question_vectors = question_vectors           # per chunk, the embeddings of the questions the local model wrote for it (arm A4)
+        self.declared_fingerprint: Optional[str] = None    # what the file said at import; None for a pack imported before Round 91
+        self.reviewed_flags: List[List[str]] = []          # Round 91: [section, rule] the content screen flagged and the owner imported anyway after reading them
+
+    def fingerprint(self) -> str:
+        """SHA-256 of the sections as the agent would be shown them. A pack file whose text was edited after import no longer matches the fingerprint written into it."""
+        canon = json.dumps([[c["section"], c["text"]] for c in self.chunks], ensure_ascii=False, separators=(",", ":"))
+        return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 
     @property
     def sections(self) -> List[str]:
@@ -123,7 +149,7 @@ class LawPack:
     def to_json(self) -> Dict[str, Any]:
         from rct_control_plane import memory_embeddings as me
         return {"format": 1, "name": self.name, "edition": self.edition, "jurisdiction": self.jurisdiction, "source": self.source, "sha256": self.sha256,
-                "embed_model": self.embed_model, "chunks": self.chunks,
+                "embed_model": self.embed_model, "chunks": self.chunks, "chunks_sha256": self.fingerprint(), "reviewed_flags": self.reviewed_flags,
                 "vectors": [base64.b64encode(me.pack(v)).decode("ascii") for v in self.vectors] if self.vectors else None,
                 "question_vectors": [[base64.b64encode(me.pack(v)).decode("ascii") for v in qs] for qs in self.question_vectors] if self.question_vectors else None}
 
@@ -132,7 +158,10 @@ class LawPack:
         from rct_control_plane import memory_embeddings as me
         vectors = [list(me.unpack(base64.b64decode(v))) for v in data["vectors"]] if data.get("vectors") else None
         qvecs = [[list(me.unpack(base64.b64decode(v))) for v in qs] for qs in data["question_vectors"]] if data.get("question_vectors") else None
-        return cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
+        pack = cls(data["name"], data["edition"], data["jurisdiction"], data["source"], data["sha256"], data["chunks"], vectors, data.get("embed_model", ""), qvecs)
+        pack.declared_fingerprint = data.get("chunks_sha256")
+        pack.reviewed_flags = [list(map(str, f)) for f in (data.get("reviewed_flags") or [])]
+        return pack
 
 
 def screen_for_injection(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -148,6 +177,19 @@ def screen_for_injection(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str,
     return flagged
 
 
+def screen_details(sections: Sequence[Tuple[str, str]]) -> List[Tuple[str, str, str]]:
+    """(section, rule id, the words that matched) for the same sections `screen_for_injection` lists, so the owner can read what tripped the screen. Round 91: a real Thai statute trips it
+    (the Thai PDPA: 'ปิด ... คำสั่ง' in section 6, 'ทำลายข้อมูล' = destroy data in section 37, 'ไม่มีนโยบาย' = has no policy in section 29), because statutes legitimately speak of closing, destroying and cancelling."""
+    from rct_control_plane.injection_screen import InjectionScreen
+    screen = InjectionScreen()
+    out: List[Tuple[str, str, str]] = []
+    for number, body in sections:
+        for finding in screen.check(body, trusted=False):
+            if finding.severity == "hard":
+                out.append((number, finding.pattern_id, finding.excerpt))
+    return out
+
+
 def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source: str, embed: bool = True, embed_model: Optional[str] = None,
                allow_flagged: bool = False) -> LawPack:
     if not name.strip() or not re.fullmatch(r"[A-Za-z0-9._-]{1,60}", name):
@@ -155,14 +197,16 @@ def build_pack(name: str, text: str, *, edition: str, jurisdiction: str, source:
     if len(text) > MAX_PACK_CHARS:
         raise ValueError(f"the text is larger than {MAX_PACK_CHARS:,} characters: import one statute at a time")
     sections = split_sections(text)
-    flagged = [] if allow_flagged else screen_for_injection(sections)
-    if flagged:
-        raise ValueError(f"the content screen would block {len(flagged)} section(s) of this text ({', '.join(f'{s}:{r}' for s, r in flagged[:6])}): a statute should not contain instructions "
-                         "to a reader; check the file, or import with allow_flagged=True if you have read those sections and they are genuine")
+    details = screen_details(sections)
+    if details and not allow_flagged:
+        shown = "; ".join(f"section {s} {r}: \"{e}\"" for s, r, e in details[:8])
+        raise ValueError(f"the content screen flagged {len(details)} place(s) in this text ({shown}). A statute should not give instructions to a reader, but a real one does speak of closing, destroying "
+                         "and cancelling, so read those sections: if they are genuine statute text, import again with --allow-flagged (Desk: tick the box); the flags are then recorded in the pack")
     chunks = make_chunks(sections)
     if not chunks:
         raise ValueError("no sections were found: a section heading must start a line ('Section 12', 'Article 12' or 'มาตรา 12')")
     pack = LawPack(name, edition, jurisdiction, source, hashlib.sha256(text.encode("utf-8")).hexdigest(), chunks)
+    pack.reviewed_flags = [[s, r] for s, r, _e in details] if allow_flagged else []
     if embed:
         from rct_control_plane import memory_embeddings as me
         model_name = embed_model or me.model()
@@ -233,7 +277,79 @@ def load_pack(name: str) -> LawPack:
     path = packs_dir() / f"{name}.json"
     if not path.exists():
         raise FileNotFoundError(f"no law pack called {name!r} (import one with `delentia law import`)")
-    return LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    pack = LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    if pack.declared_fingerprint and pack.declared_fingerprint != pack.fingerprint():
+        raise ValueError(f"the pack file {name!r} was changed after it was imported (its text no longer matches its fingerprint): import it again from the source text")
+    return pack
+
+
+def verify_pack(name: str) -> Dict[str, Any]:
+    """Is the pack file still what was imported? `verified` is True/False, or None for a pack imported before fingerprints existed (it cannot be checked: import it again)."""
+    try:
+        path = packs_dir() / f"{name}.json"
+        pack = LawPack.from_json(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, ValueError, KeyError) as exc:
+        return {"name": name, "verified": False, "detail": f"unreadable ({type(exc).__name__})"}
+    if not pack.declared_fingerprint:
+        return {"name": name, "verified": None, "detail": "imported before fingerprints existed; it cannot be checked. Import it again from the source text."}
+    ok = pack.declared_fingerprint == pack.fingerprint()
+    return {"name": name, "verified": ok, "fingerprint": pack.declared_fingerprint[:16],
+            "detail": "the text is exactly what was imported" if ok else "the text was changed after import: do not rely on this pack"}
+
+
+def section_texts(pack: "LawPack") -> Dict[str, str]:
+    """Each section's text, put back together from its overlapping windows (consecutive windows share OVERLAP characters)."""
+    out: Dict[str, str] = {}
+    for c in pack.chunks:
+        out[c["section"]] = c["text"] if c["section"] not in out else out[c["section"]] + c["text"][OVERLAP:]
+    return out
+
+
+def _canon(text: str) -> str:
+    import unicodedata
+    folded = unicodedata.normalize("NFKC", normalise_digits(text)).replace("\u0e33", "\u0e32").replace("\u0e4d", "")      # Round 91: pdftotext drops the nikhahit of sara-am ("\u0e2d\u0e33\u0e19\u0e32\u0e08" -> "\u0e2d\u0e32\u0e19\u0e32\u0e08")
+    return re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", folded).lower()
+
+
+def compare_packs(a: "LawPack", b: "LawPack", threshold: float = 0.98) -> Dict[str, Any]:
+    """Two imports of the 'same' statute (say an unofficial translation or a wiki transcription against the Royal Gazette's own text): which sections exist in only one, which differ after
+    spacing, numerals and Unicode form are ignored, and above all which differ in a NUMBER (a fine, a number of days) because those are the differences that change an answer. It compares text,
+    it does not say which one is right: the owner reads the sections it lists."""
+    import difflib
+    ta, tb = section_texts(a), section_texts(b)
+    differing: List[Dict[str, Any]] = []
+    identical = 0
+    for number in sorted(set(ta) & set(tb), key=lambda n: (len(n), n)):
+        ca, cb = _canon(ta[number]), _canon(tb[number])
+        if ca == cb:
+            identical += 1
+            continue
+        matcher = difflib.SequenceMatcher(None, ca, cb, autojunk=False)
+        ratio = matcher.ratio()
+        first = next((op for op in matcher.get_opcodes() if op[0] != "equal"), None)
+        excerpt = {"a": ca[max(0, first[1] - 25):first[2] + 25], "b": cb[max(0, first[3] - 25):first[4] + 25]} if first else {}
+        nums_a, nums_b = sorted(set(re.findall(r"\d+(?:[.,]\d+)*", normalise_digits(ta[number])))), sorted(set(re.findall(r"\d+(?:[.,]\d+)*", normalise_digits(tb[number]))))
+        differing.append({"section": number, "similarity": round(ratio, 4), "below_threshold": ratio < threshold, "first_difference": excerpt,
+                          "numbers_only_in_a": sorted(set(nums_a) - set(nums_b)), "numbers_only_in_b": sorted(set(nums_b) - set(nums_a))})
+    return {"a": a.label(), "b": b.label(), "sections_a": len(ta), "sections_b": len(tb), "identical": identical, "only_in_a": sorted(set(ta) - set(tb), key=lambda n: (len(n), n)),
+            "only_in_b": sorted(set(tb) - set(ta), key=lambda n: (len(n), n)), "differing": differing, "threshold": threshold,
+            "sections_with_number_differences": [d["section"] for d in differing if d["numbers_only_in_a"] or d["numbers_only_in_b"]]}
+
+
+def archive_pack(name: str) -> Path:
+    """Take a pack out of use WITHOUT deleting it (the repository's Zero-Delete rule): the file moves to `law_packs/_archive/<name>.<timestamp>.json`, where nothing lists or loads it. Use it when an
+    import turned out to be wrong (a transcription that differs from the official text) so that the agent can no longer be shown it."""
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,60}", name):
+        raise ValueError("bad pack name")
+    source = packs_dir() / f"{name}.json"
+    if not source.exists():
+        raise FileNotFoundError(f"no law pack called {name!r}")
+    target_dir = packs_dir() / "_archive"
+    target_dir.mkdir(exist_ok=True)
+    target = target_dir / f"{name}.{time.strftime('%Y%m%dT%H%M%S')}.json"
+    source.replace(target)
+    _CACHE.pop(name, None)
+    return target
 
 
 def has_packs() -> bool:
@@ -269,8 +385,10 @@ def lookup(pack_name: str, question: str, limit: int = TOP_K) -> Dict[str, Any]:
         pack_name = names[0]
     try:
         pack = load_pack_cached(pack_name)
-    except (FileNotFoundError, ValueError):
+    except FileNotFoundError:
         return {"error": f"no law pack called {pack_name!r}; the packs are: {', '.join(names) or 'none imported'}"}
+    except ValueError as exc:
+        return {"error": str(exc)}
     hits = retrieve(pack, question, k=max(1, min(int(limit), 8)), arm="A0")
     return {"pack": pack.label(), "source": pack.source, "notice": DISCLAIMER,
             "how_to_answer": "Answer only from these passages and name the section (e.g. 'มาตรา 30' / 'section 30'). Use only numbers that appear in them. If they do not contain the answer, say it is not found in the supplied text.",
@@ -296,7 +414,8 @@ def list_packs() -> List[Dict[str, Any]]:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             out.append({"name": data["name"], "edition": data["edition"], "jurisdiction": data["jurisdiction"], "sections": len({c['section'] for c in data["chunks"]}),
-                        "chunks": len(data["chunks"]), "embedded": bool(data.get("vectors")), "sha256": data["sha256"][:12]})
+                        "chunks": len(data["chunks"]), "embedded": bool(data.get("vectors")), "sha256": data["sha256"][:12],
+                        "verified": verify_pack(path.stem)["verified"], "reviewed_flags": len(data.get("reviewed_flags") or [])})
         except Exception:                                    # noqa: BLE001 - one unreadable file must not hide the others
             out.append({"name": path.stem, "error": "unreadable"})
     return out
