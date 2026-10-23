@@ -67,8 +67,17 @@ html, body { background: #0e1611; color: #e4eedd; color-scheme: dark; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
 }
+/* A tool is running: the same bob, faster. */
+.desk-pixelmark-fast { animation-duration: 0.9s; }
+/* Something was stopped: the mark stops bobbing and is nudged off its line once. */
+.desk-pixelmark[data-mood="blocked"] { animation: desk-pixelmark-shake 0.5s ease-in-out 1; }
+@keyframes desk-pixelmark-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .desk-pixelmark { animation: none; }
+  .desk-pixelmark, .desk-pixelmark-fast, .desk-pixelmark[data-mood="blocked"] { animation: none; }
 }
 
 .desk-nav-link {

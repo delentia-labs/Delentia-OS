@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PixelMark } from "./mark";
+import { Inspector } from "./Inspector";
 import { useLang } from "./i18n";
 import { useDeskData } from "./ui";
 import { desk, streamUrl, type SessionSummary } from "@/lib/desk-api";
+import { deriveRun, type Mood, type RunEntry } from "@/lib/run-state";
 
 type Step = {
   iteration: number; kind: "tool" | "finish" | "blocked" | "pending" | "notary_down" | "unknown_tool";
@@ -35,14 +37,14 @@ function argsLine(args: Record<string, unknown>) {
   return s.length > 140 ? `${s.slice(0, 140)}…` : s;
 }
 
-function Banner({ version, model, tools, skills, chain, namespace }: {
+function Banner({ version, model, tools, skills, chain, namespace, mood }: {
   version?: string; model?: string; tools?: { count: number; approval: number; fdia: number };
-  skills?: number; chain?: string; namespace?: string;
+  skills?: number; chain?: string; namespace?: string; mood?: Mood;
 }) {
   return (
     <div className="grid gap-5 rounded-md border border-dl-fern/70 p-4 md:grid-cols-[auto_1fr]">
       <div className="flex flex-col items-start gap-3 md:border-r md:border-dl-rule md:pr-5">
-        <PixelMark />
+        <PixelMark mood={mood} />
         <div className="desk-mono text-[12px] leading-relaxed text-dl-muted">
           <p className="text-dl-leaf">{model ?? "model: -"}</p>
           <p>{namespace ? `session ${namespace}` : "new session"}</p>
@@ -151,6 +153,19 @@ export function DeskChat() {
   const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(0);
+  const [panel, setPanel] = useState<"run" | "session">("run");
+  const [panelOpen, setPanelOpen] = useState(true);
+  // Everything the Inspector and the mascot show is derived from the events above (lib/run-state.ts), not from the interface's own guesses.
+  const run = useMemo(() => deriveRun(entries as RunEntry[], running), [entries, running]);
+
+  useEffect(() => {
+    // Ctrl/Cmd+J toggles the right panel, as in other agent desktops.
+    const onKey = (ev: KeyboardEvent) => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "j") { ev.preventDefault(); setPanelOpen((v) => !v); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const health = useDeskData(() => desk.health(), [], 15000);
   const overview = useDeskData(() => desk.overview(), [], 20000);
@@ -273,6 +288,10 @@ export function DeskChat() {
               ? (entries.find((e) => e.kind === "user") as { text: string }).text
               : t("chat")}
           </h1>
+          <button onClick={() => setPanelOpen((v) => !v)} aria-pressed={panelOpen} title="Ctrl/Cmd+J"
+            className="desk-focus desk-mono ml-auto hidden rounded border border-dl-rule px-2 py-1 text-[12px] text-dl-muted hover:text-dl-text lg:block">
+            {panelOpen ? "▸ Inspector" : "◂ Inspector"}
+          </button>
           <label className="lg:hidden">
             <span className="sr-only">Mode</span>
             <select value={mode} onChange={(e) => setMode(e.target.value as "agent" | "standard")} disabled={running}
@@ -286,7 +305,7 @@ export function DeskChat() {
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6">
           <div className="mx-auto flex max-w-[980px] flex-col gap-4 rounded-md border border-dl-rule bg-[#0a110d] p-4">
             <Banner version={health.data?.version} model={modelLabel} tools={toolInfo} skills={overview.data?.skills}
-              chain={chainLine} namespace={namespace} />
+              chain={chainLine} namespace={namespace} mood={run.mood} />
 
             {entries.length === 0 ? (
               <p className="desk-mono text-[13px] text-dl-muted">
@@ -339,7 +358,16 @@ export function DeskChat() {
         </footer>
       </section>
 
-      <aside className="hidden w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 lg:flex">
+      <aside className={`hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 ${panelOpen ? "lg:flex" : ""}`}>
+        <div role="tablist" aria-label="Right panel" className="desk-mono flex overflow-hidden rounded border border-dl-rule text-[12px]">
+          {(["run", "session"] as const).map((p) => (
+            <button key={p} role="tab" aria-selected={panel === p} onClick={() => setPanel(p)}
+              className={`desk-focus flex-1 px-3 py-1 ${panel === p ? "bg-dl-pine text-dl-text" : "text-dl-muted hover:text-dl-text"}`}>
+              {p === "run" ? "Run" : "Session"}
+            </button>
+          ))}
+        </div>
+        {panel === "run" ? <Inspector run={run} running={running} elapsed={elapsed} /> : <>
         <div className="rounded-md border border-dl-rule p-3">
           <div className="desk-mono flex items-center justify-between text-[11px] text-dl-muted">
             <span>{t("models").toUpperCase()}</span>
@@ -390,6 +418,7 @@ export function DeskChat() {
             <p className="text-center text-[12px] text-dl-muted">{sessions.error ? "-" : "No sessions yet"}</p>
           )}
         </div>
+        </>}
       </aside>
     </div>
   );
