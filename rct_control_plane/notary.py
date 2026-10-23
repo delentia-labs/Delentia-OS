@@ -349,20 +349,47 @@ def anchor_once(db_path: str, key_id: str, private_key: Any, url: str,
     return {"anchored": True, "entries": body["entries"], "head": body["head"]}
 
 
-def start_anchor_loop(db_path: str, key_id: str, private_key: Any, url: str, every_seconds: float,
-                      on_result: Optional[Any] = None) -> threading.Event:
-    """Tier A3 on a schedule, run by the notary itself (it holds the key).
+def timestamp_once(db_path: str, key_id: str, private_key: Any, tsa_url: str, tokens_dir: str, last_entries: Optional[int] = None, ca_file: str = "") -> Dict[str, Any]:
+    """Round 91: the same signed head, time-stamped by a public RFC 3161 authority (audit_witness_tsa.py). The token is kept in `tokens_dir`, which should belong to the notary's OS user:
+    the agent's account cannot delete it. Never raises; the result says what happened."""
+    from rct_control_plane.audit_witness import WitnessSpec
+    from rct_control_plane.audit_witness_tsa import TimestampWitness
+    try:
+        body = sign_anchor(db_path, key_id, private_key)
+    except ValueError as exc:
+        return {"timestamped": False, "entries": last_entries, "reason": str(exc)}
+    if last_entries is not None and body["entries"] <= last_entries:
+        return {"timestamped": False, "entries": last_entries, "reason": "head unchanged since the last time-stamp"}
+    try:
+        outcome = TimestampWitness(WitnessSpec(type="rfc3161", name="notary-tsa", key_id=key_id, url=tsa_url, path=tokens_dir, ca_file=ca_file)).publish(body)
+    except Exception as exc:                                                       # noqa: BLE001 - an authority outage must not stop the notary
+        return {"timestamped": False, "entries": last_entries, "reason": f"{type(exc).__name__}: {str(exc)[:200]}"}
+    return {"timestamped": True, "entries": body["entries"], "head": body["head"], "note": outcome.get("note", "")}
+
+
+def start_anchor_loop(db_path: str, key_id: str, private_key: Any, url: Optional[str], every_seconds: float,
+                      on_result: Optional[Any] = None, timestamp_url: Optional[str] = None, timestamp_dir: Optional[str] = None,
+                      timestamp_ca: str = "") -> threading.Event:
+    """Tier A3 on a schedule, run by the notary itself (it holds the key): the head goes to the HTTP witness (`url`) and/or to an RFC 3161 authority (`timestamp_url`).
     Returns an Event; set it to stop the loop."""
     stop = threading.Event()
 
     def _loop() -> None:
         last: Optional[int] = None
+        last_ts: Optional[int] = None
         while not stop.is_set():
-            result = anchor_once(db_path, key_id, private_key, url, last)
-            if result.get("anchored"):
-                last = result["entries"]
-            if on_result is not None:
-                on_result(result)
+            if url:
+                result = anchor_once(db_path, key_id, private_key, url, last)
+                if result.get("anchored"):
+                    last = result["entries"]
+                if on_result is not None:
+                    on_result(result)
+            if timestamp_url and timestamp_dir:
+                ts = timestamp_once(db_path, key_id, private_key, timestamp_url, timestamp_dir, last_ts, timestamp_ca)
+                if ts.get("timestamped"):
+                    last_ts = ts["entries"]
+                if on_result is not None:
+                    on_result(ts)
             stop.wait(every_seconds)
 
     threading.Thread(target=_loop, name="notary-anchor", daemon=True).start()

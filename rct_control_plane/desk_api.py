@@ -1176,6 +1176,65 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         return _forge().run(name, args)
 
     # ------------------------------------------------------------------
+    # Round 91: Law Packs. The owner supplies the statute text; the page shows what is imported, runs retrieval (no model) and checks any answer against the passages.
+    # ------------------------------------------------------------------
+    @router.get("/law/packs")
+    async def law_packs() -> Dict[str, Any]:
+        from rct_control_plane import law_pack
+        return {"packs": law_pack.list_packs(), "tool_listed": law_pack.has_packs(), "notice": law_pack.DISCLAIMER, "max_chars": law_pack.MAX_PACK_CHARS}
+
+    @router.post("/law/import")
+    async def law_import(payload: Dict[str, Any]) -> Dict[str, Any]:
+        import asyncio
+        from rct_control_plane import law_pack
+        name, text = str(payload.get("name", "")).strip(), str(payload.get("text", ""))
+        edition, jurisdiction, source = str(payload.get("edition", "")).strip(), str(payload.get("jurisdiction", "")).strip(), str(payload.get("source", "")).strip()
+        if not (edition and jurisdiction and source):
+            raise HTTPException(status_code=400, detail="edition, jurisdiction and source are required: a pack must say which text it is and where it came from")
+        try:
+            pack = await asyncio.to_thread(law_pack.build_pack, name, text, edition=edition, jurisdiction=jurisdiction, source=source, embed=bool(payload.get("embed", True)),
+                                            allow_flagged=bool(payload.get("allow_flagged", False)))
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        law_pack.save_pack(pack)
+        return {"name": pack.name, "sections": len(pack.sections), "chunks": len(pack.chunks), "embedded": bool(pack.vectors), "fingerprint": pack.fingerprint()[:16],
+                "label": pack.label(), "reviewed_flags": pack.reviewed_flags}
+
+    @router.post("/law/archive")
+    async def law_archive(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Out of use, not deleted: the pack file moves to an archive folder."""
+        from rct_control_plane import law_pack
+        try:
+            target = law_pack.archive_pack(str(payload.get("name", "")).strip())
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"archived": target.name}
+
+    @router.post("/law/lookup")
+    async def law_lookup(payload: Dict[str, Any]) -> Dict[str, Any]:
+        import asyncio
+        from rct_control_plane import law_pack
+        question = str(payload.get("question", "")).strip()
+        if not question:
+            raise HTTPException(status_code=400, detail="a question is required")
+        return await asyncio.to_thread(law_pack.lookup, str(payload.get("pack", "")).strip(), question, int(payload.get("limit") or law_pack.TOP_K))
+
+    @router.post("/law/check")
+    async def law_check(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Paste an answer from anywhere: is it grounded in the passages this pack gives for the question? A check of text, not of truth."""
+        import asyncio
+        from rct_control_plane import law_pack
+        question, answer = str(payload.get("question", "")).strip(), str(payload.get("answer", "")).strip()
+        if not question or not answer:
+            raise HTTPException(status_code=400, detail="a question and an answer are required")
+        found = await asyncio.to_thread(law_pack.lookup, str(payload.get("pack", "")).strip(), question, 5)
+        if "error" in found:
+            raise HTTPException(status_code=400, detail=found["error"])
+        return {"check": law_pack.check_answer(answer, found["passages"], question), "passages": found["passages"], "pack": found["pack"], "notice": law_pack.DISCLAIMER}
+
+    # ------------------------------------------------------------------
     # Round 62: hooks, the skill curator, memory suggestions and trajectories. The owner's pages; nothing here can approve or sign.
     # ------------------------------------------------------------------
     def _hooks() -> Any:

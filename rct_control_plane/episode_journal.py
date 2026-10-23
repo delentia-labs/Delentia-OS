@@ -113,6 +113,7 @@ class JournalStep:
     preview: str = ""
     result_sha256: str = ""
     taint: Optional[str] = None
+    idem: Optional[str] = None      # Round 91: the idempotency key this call carried (idempotency.py), so a retry after a crash can carry the same one
 
 
 @dataclass
@@ -131,6 +132,8 @@ class JournalEpisode:
     started_at: float = 0.0
     last_at: float = 0.0
     resumed_from: Optional[str] = None
+    root: Optional[str] = None                                   # Round 91: the first episode of a chain of resumes (the key's root)
+    idem_base: Dict[str, int] = field(default_factory=dict)       # calls of each (tool, arguments) already made before this episode began
 
 
 class EpisodeJournal:
@@ -162,11 +165,11 @@ class EpisodeJournal:
                          (episode_id, namespace, seq, kind, body, prev, h, pid, _proc_start(pid), time.time()))
         return seq
 
-    def begin(self, episode_id: str, namespace: str, goal: str, resumed_from: Optional[str] = None) -> None:
-        self._append(episode_id, namespace, "begin", {"goal": goal, "resumed_from": resumed_from})
+    def begin(self, episode_id: str, namespace: str, goal: str, resumed_from: Optional[str] = None, root: Optional[str] = None, idem_base: Optional[Dict[str, int]] = None) -> None:
+        self._append(episode_id, namespace, "begin", {"goal": goal, "resumed_from": resumed_from, "root": root or episode_id, "idem_base": idem_base or {}})
 
-    def intent(self, episode_id: str, namespace: str, step: int, tool: str, args: Any, taint: Optional[str] = None) -> None:
-        self._append(episode_id, namespace, "intent", {"step": step, "tool": tool, "args": args, "taint": taint})
+    def intent(self, episode_id: str, namespace: str, step: int, tool: str, args: Any, taint: Optional[str] = None, idem: Optional[str] = None) -> None:
+        self._append(episode_id, namespace, "intent", {"step": step, "tool": tool, "args": args, "taint": taint, "idem": idem})
 
     def result(self, episode_id: str, namespace: str, step: int, tool: str, result: Any, taint: Optional[str] = None) -> None:
         text = json.dumps(result, ensure_ascii=False, default=str)
@@ -210,9 +213,11 @@ class EpisodeJournal:
                 ep.goal = str(audit_text.reveal(ep.namespace, data.get("goal")) or "")
                 ep.pid, ep.proc_started, ep.started_at = pid, started, float(created)
                 ep.resumed_from = data.get("resumed_from")
+                ep.root = data.get("root") or episode_id
+                ep.idem_base = {str(k): int(v) for k, v in (data.get("idem_base") or {}).items()}
             elif kind == "intent":
                 n = int(data.get("step", len(steps) + 1))
-                steps[n] = JournalStep(n=n, tool=str(data.get("tool")), args=audit_text.reveal(ep.namespace, data.get("args")), state="dangling", taint=data.get("taint"))
+                steps[n] = JournalStep(n=n, tool=str(data.get("tool")), args=audit_text.reveal(ep.namespace, data.get("args")), state="dangling", taint=data.get("taint"), idem=data.get("idem"))
                 ep.taint = data.get("taint") or ep.taint
             elif kind == "result":
                 n = int(data.get("step", len(steps)))
@@ -246,6 +251,20 @@ class EpisodeJournal:
         return out
 
 
+def chain_state(ep: JournalEpisode) -> "tuple[str, Dict[str, int], Dict[str, str]]":
+    """What a resumed episode needs so its keys continue the chain: the root episode, how many calls of each (tool, arguments) the chain has made (done or not), and the keys of the calls
+    that were interrupted (a retry of one of them carries the same key)."""
+    from rct_control_plane import idempotency
+    counts = dict(ep.idem_base)
+    inherited: Dict[str, str] = {}
+    for s in ep.steps:
+        slot = f"{s.tool}|{idempotency.args_sha(s.args)}"
+        counts[slot] = counts.get(slot, 0) + 1
+        if s.state == "dangling" and s.idem:
+            inherited[slot] = s.idem
+    return ep.root or ep.episode_id, counts, inherited
+
+
 def note_for(ep: JournalEpisode, side_effect_tools: frozenset, unknown_ok: bool) -> str:
     """The text a resumed episode is told: what already ran, in order, and what is uncertain. Facts only; it grants no permission."""
     lines = ["This request continues an episode that was interrupted (the process stopped before it finished). Facts from its journal, in order:"]
@@ -257,5 +276,7 @@ def note_for(ep: JournalEpisode, side_effect_tools: frozenset, unknown_ok: bool)
             lines.append(f"  step {s.n}: {s.tool} {json.dumps(s.args, ensure_ascii=False, default=str)[:200]} -> OUTCOME UNKNOWN (it was about to run or was running when the process stopped; this tool {kind})")
     if any(s.state == "dangling" and s.tool in side_effect_tools for s in ep.steps):
         lines.append("A step whose outcome is unknown may or may not have taken effect. Check with a read-only tool first. Do not repeat it blindly." + (" A person has said to go on." if unknown_ok else ""))
+        if any(s.state == "dangling" and s.tool in side_effect_tools and s.idem for s in ep.steps):
+            lines.append("If you do repeat such a step with exactly the same arguments, it is sent with the same idempotency key as before: a service that honours keys will not do it twice; one that ignores them will.")
     lines.append("Do not repeat the steps that are done. Continue toward the goal from here.")
     return "\n".join(lines)

@@ -4,14 +4,15 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x (alpha) | :white_check_mark: |
+| 2.3.x (alpha) | :white_check_mark: |
+| older | no |
 
 ## Reporting a Vulnerability
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
 Please report security vulnerabilities via email to:
-**security@delentia.com**
+**security@delentia.com** (copy **founder@delentia.com** if you do not get an acknowledgement)
 
 Include in your report:
 - Description of the vulnerability
