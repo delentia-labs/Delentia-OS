@@ -134,3 +134,23 @@ def test_the_launcher_script_loads_under_a_python_that_has_none_of_the_packages(
         "print('LOADED-WITHOUT-THE-PACKAGES')\n")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=str(tmp_path), timeout=60)
     assert "LOADED-WITHOUT-THE-PACKAGES" in out.stdout, (out.stdout[-400:], out.stderr[-800:])
+
+
+def test_a_link_inside_the_folder_that_points_outside_is_refused(tmp_path):
+    """resolve_static follows links and then checks the real location again; a link in the built folder must not let a request read what lies outside it."""
+    import os
+    out = tmp_path / "out"
+    out.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("outside the folder", encoding="utf-8")
+    try:
+        os.symlink(outside, out / "leak.txt")
+    except (OSError, NotImplementedError):
+        pytest.skip("this account may not create symbolic links")
+    assert dl.resolve_static(out, "/leak.txt") is None
+
+
+def test_header_values_that_are_not_plain_ascii_are_not_sent(served):
+    """_send only passes values made of plain characters; a value with a line break would start a second header."""
+    status, headers, _ = get(served, "/chat")
+    assert status == 200 and all("\r" not in v and "\n" not in v for v in headers.values())
