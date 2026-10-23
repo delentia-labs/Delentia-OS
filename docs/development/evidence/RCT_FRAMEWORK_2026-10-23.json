@@ -1,0 +1,1532 @@
+{
+  "implementation_sha": "d8065996c9c50a476cf3ee6c245faf414e1ac068",
+  "python": {
+    "passed": 8002,
+    "failed": 14,
+    "skipped": 59,
+    "xfailed": 1,
+    "seconds": 810.367,
+    "exit_code": 1,
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "message": "KeyError: 'status_code'"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_a_careful_agent_that_looks_again_reports_the_current_price_and_the_browser_reaches_nothing_else",
+        "message": "assert (False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_an_agent_that_answers_from_the_first_look_is_stale_and_the_oracle_knows_what_the_page_shows_now",
+        "message": "assert (not False and None == 120)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_the_case_runs_through_the_suite_runner_with_a_manifest",
+        "message": "assert (True and False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1792733170.022984}]\nassert 'llm_error' == 'pending_approval'\n  \n  - pending_approval\n  + llm_error"
+      },
+      {
+        "test": "rct_control_plane.tests.test_regex_audit_round72_real::test_no_pattern_the_runtime_builds_or_writes_is_slow_on_hostile_text",
+        "message": "AssertionError: [('rct_control_plane/dsl_parser.py:DSLParser.PARAMETER_PATTERN', 'assign', 0.5781)]\nassert [{'pattern': ... 0.5781, ...}] == []\n  \n  Left contains one more item: {'pattern': '(\\\\w{1,64})\\\\s{0,20}=\\\\s{0,20}(.{1,2000}?)(?:,|\\\\n|$)', 'flags': 0, 'where': 'rct_control_plane/dsl_parser.py:DSLParser.PARAMETER_PATTERN', 'seconds': 0.5781, ...}\n  Use -v to get more diff"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    ],
+    "same_failure_node_ids_as_previous_round": false
+  },
+  "coverage": {
+    "line_rate": 0.9126,
+    "includes_test_modules": true
+  },
+  "focused": {
+    "regression_passed": 192,
+    "checkpoint_passed": 60,
+    "counts_overlap_full_suite": true
+  },
+  "pipeline": {
+    "cases_passed": 21,
+    "cases_total": 21,
+    "checks_passed": 134,
+    "optional_subprocess_cases_run": false,
+    "scripted_model": true
+  },
+  "cli": {
+    "real_production_cases_passed": 2,
+    "generation_calls": 0,
+    "receipts_per_case": 7
+  },
+  "ab": {
+    "baseline_sha": "26139b01a8bdd2b6d3d569c9a955db990e64d163",
+    "baseline_source_sha256": "fc7cebc334d719dff9cd413f4b79097afabe7dd9eecbdc4718873fd3fa3258bd",
+    "scope": "Paired offline execution regression on local files; no governed dispatch, persistence or model in this microbenchmark.",
+    "method": "72 generated cases, 3 timing repeats per arm, alternating arm order; integer-cent oracle. Reordered cohort is structural stress, not holdout. Repeats are not independent samples.",
+    "not_claimed": [
+      "general RCT accuracy",
+      "model capability",
+      "production latency",
+      "unattended readiness"
+    ],
+    "aggregate": {
+      "canonical": {
+        "A": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 1.0646594999999999
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 1.9316485
+        }
+      },
+      "reordered": {
+        "A": {
+          "correct": 0,
+          "cases": 24,
+          "median_ms": 0.312636
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 1.992421
+        }
+      },
+      "invalid_evidence": {
+        "A": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 0.0302145
+        },
+        "B": {
+          "correct": 24,
+          "cases": 24,
+          "median_ms": 0.2533915
+        }
+      }
+    },
+    "rows": [
+      {
+        "case": "canonical-0",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.105399
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.849858
+          }
+        }
+      },
+      {
+        "case": "canonical-1",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.794269
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.015241
+          }
+        }
+      },
+      {
+        "case": "canonical-2",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.132069
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.095189
+          }
+        }
+      },
+      {
+        "case": "canonical-3",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.0167
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.383936
+          }
+        }
+      },
+      {
+        "case": "canonical-4",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.147908
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.191418
+          }
+        }
+      },
+      {
+        "case": "canonical-5",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.995446
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.098343
+          }
+        }
+      },
+      {
+        "case": "canonical-6",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.050822
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.833583
+          }
+        }
+      },
+      {
+        "case": "canonical-7",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.165017
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.051488
+          }
+        }
+      },
+      {
+        "case": "canonical-8",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.077423
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.807373
+          }
+        }
+      },
+      {
+        "case": "canonical-9",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.864069
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.042563
+          }
+        }
+      },
+      {
+        "case": "canonical-10",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.037404
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.849847
+          }
+        }
+      },
+      {
+        "case": "canonical-11",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.081287
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.145459
+          }
+        }
+      },
+      {
+        "case": "canonical-12",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.180208
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.128599
+          }
+        }
+      },
+      {
+        "case": "canonical-13",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.008101
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.08887
+          }
+        }
+      },
+      {
+        "case": "canonical-14",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.011109
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.900415
+          }
+        }
+      },
+      {
+        "case": "canonical-15",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.873179
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.008034
+          }
+        }
+      },
+      {
+        "case": "canonical-16",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.029926
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.941198
+          }
+        }
+      },
+      {
+        "case": "canonical-17",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.922099
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.028397
+          }
+        }
+      },
+      {
+        "case": "canonical-18",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.044061
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.832488
+          }
+        }
+      },
+      {
+        "case": "canonical-19",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.828371
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.053433
+          }
+        }
+      },
+      {
+        "case": "canonical-20",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.08398
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.2403
+          }
+        }
+      },
+      {
+        "case": "canonical-21",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.031429
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.075886
+          }
+        }
+      },
+      {
+        "case": "canonical-22",
+        "cohort": "canonical",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.099585
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.047074
+          }
+        }
+      },
+      {
+        "case": "canonical-23",
+        "cohort": "canonical",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.846881
+          },
+          "A": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.003455
+          }
+        }
+      },
+      {
+        "case": "reordered-0",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.2823
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.948436
+          }
+        }
+      },
+      {
+        "case": "reordered-1",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.175349
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.321751
+          }
+        }
+      },
+      {
+        "case": "reordered-2",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.301266
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.999141
+          }
+        }
+      },
+      {
+        "case": "reordered-3",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.92942
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.307354
+          }
+        }
+      },
+      {
+        "case": "reordered-4",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.283892
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 4.197055
+          }
+        }
+      },
+      {
+        "case": "reordered-5",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.699589
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.55334
+          }
+        }
+      },
+      {
+        "case": "reordered-6",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.478232
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 3.243922
+          }
+        }
+      },
+      {
+        "case": "reordered-7",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 3.018516
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.477795
+          }
+        }
+      },
+      {
+        "case": "reordered-8",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.502541
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 3.390896
+          }
+        }
+      },
+      {
+        "case": "reordered-9",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 3.043273
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.289808
+          }
+        }
+      },
+      {
+        "case": "reordered-10",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.308855
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.860613
+          }
+        }
+      },
+      {
+        "case": "reordered-11",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.829548
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.296412
+          }
+        }
+      },
+      {
+        "case": "reordered-12",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.316417
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.914602
+          }
+        }
+      },
+      {
+        "case": "reordered-13",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.985701
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.335316
+          }
+        }
+      },
+      {
+        "case": "reordered-14",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.336393
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.21298
+          }
+        }
+      },
+      {
+        "case": "reordered-15",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.92709
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.288102
+          }
+        }
+      },
+      {
+        "case": "reordered-16",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.410401
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.491216
+          }
+        }
+      },
+      {
+        "case": "reordered-17",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.872632
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.297841
+          }
+        }
+      },
+      {
+        "case": "reordered-18",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.317515
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.806677
+          }
+        }
+      },
+      {
+        "case": "reordered-19",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.827387
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.304887
+          }
+        }
+      },
+      {
+        "case": "reordered-20",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.322871
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.948883
+          }
+        }
+      },
+      {
+        "case": "reordered-21",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 1.85149
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.273077
+          }
+        }
+      },
+      {
+        "case": "reordered-22",
+        "cohort": "reordered",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.29105
+          },
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.074771
+          }
+        }
+      },
+      {
+        "case": "reordered-23",
+        "cohort": "reordered",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": true,
+            "correct": true,
+            "median_ms": 2.032907
+          },
+          "A": {
+            "accepted": false,
+            "correct": false,
+            "median_ms": 0.34529
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-0",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.029398
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.241111
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-1",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.33061
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.063669
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-2",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.108734
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.284088
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-3",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.222578
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.029696
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-4",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.066016
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.423992
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-5",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.271331
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.03034
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-6",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.028928
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.287754
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-7",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.31379
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.066764
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-8",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.034749
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.241417
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-9",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.250687
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.022708
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-10",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.068873
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.317691
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-11",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.233589
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.030089
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-12",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.02668
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.256096
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-13",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.320305
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.05766
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-14",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.035116
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.228848
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-15",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.210754
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.022865
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-16",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.064072
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.362022
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-17",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.225315
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.028897
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-18",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.025418
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.222606
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-19",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.314529
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.05869
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-20",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.028895
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.245697
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-21",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.21983
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.025119
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-22",
+        "cohort": "invalid_evidence",
+        "language": "en",
+        "outcomes": {
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.06688
+          },
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.320257
+          }
+        }
+      },
+      {
+        "case": "invalid_evidence-23",
+        "cohort": "invalid_evidence",
+        "language": "th",
+        "outcomes": {
+          "B": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.226595
+          },
+          "A": {
+            "accepted": false,
+            "correct": true,
+            "median_ms": 0.027787
+          }
+        }
+      }
+    ]
+  },
+  "disk_recovery": {
+    "before_free_bytes": 69242880,
+    "removed_incomplete_files": [
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-14",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-12",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-13",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-1",
+        "bytes": 58
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-3",
+        "bytes": 58
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-11",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-0",
+        "bytes": 50
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-9",
+        "bytes": 59
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-4",
+        "bytes": 59
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-15",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-7",
+        "bytes": 59
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-2",
+        "bytes": 58
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-5",
+        "bytes": 59
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial",
+        "bytes": 4683073952
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-10",
+        "bytes": 60
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-6",
+        "bytes": 59
+      },
+      {
+        "name": "sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730-partial-8",
+        "bytes": 59
+      }
+    ],
+    "removed_task_container": "codex-delentia-ollama-20261022-before-persistent-models",
+    "after_free_bytes": 16625254400
+  },
+  "wheel": {
+    "wheel": "delentia_os-2.3.1-py3-none-any.whl",
+    "sha256": "7b8ae40b4cdcb00bd6b56d88afb79a2a0cc712453558ee878387dde32ea2e685",
+    "source_sha": "d8065996c9c50a476cf3ee6c245faf414e1ac068",
+    "runtime_files_byte_matched": [
+      "rct_control_plane/component_execution.py",
+      "rct_control_plane/budget_execution.py",
+      "rct_control_plane/verified_budget.py",
+      "rct_control_plane/intent_contract.py",
+      "rct_control_plane/mcp_server.py",
+      "rct_control_plane/semantic_plan.py",
+      "rct_control_plane/governed_autonomous_loop.py"
+    ]
+  },
+  "codeql_baseline_alerts": [
+    {
+      "path": "rct_control_plane/intent_contract.py",
+      "start_line": 54,
+      "end_line": 54,
+      "annotation_level": "failure",
+      "title": "Uncontrolled data used in path expression",
+      "message": "This path depends on a [user-provided value](1).\nThis path depends on a [user-provided value](2)."
+    },
+    {
+      "path": "rct_control_plane/intent_contract.py",
+      "start_line": 63,
+      "end_line": 63,
+      "annotation_level": "failure",
+      "title": "Uncontrolled data used in path expression",
+      "message": "This path depends on a [user-provided value](1).\nThis path depends on a [user-provided value](2)."
+    },
+    {
+      "path": "rct_control_plane/intent_contract.py",
+      "start_line": 65,
+      "end_line": 65,
+      "annotation_level": "failure",
+      "title": "Uncontrolled data used in path expression",
+      "message": "This path depends on a [user-provided value](1).\nThis path depends on a [user-provided value](2)."
+    }
+  ],
+  "claims": {
+    "complete_general_rct7": false,
+    "capable_model_evaluated": false,
+    "production_ready": false,
+    "all_integration_prerequisites_ready": false
+  },
+  "evidence_sha256": {
+    "full-python.xml": "fa856abc5b0a13c699e434812cc24cb0486e39526cc86403d113888077a8365c",
+    "full-python.log": "19d93a6028005b877d9fed0bb455550cdb2bc1962620768b944e1088c24e15c0",
+    "targeted.xml": "3c5d3e9aa50d6a3ab63a09fbd01821ee6167cc601ca08f8b48c3479b01b57309",
+    "ab.json": "9301e83a37eb87ebba604325255200eac2a32800caac71f7fc68094c7d39e524",
+    "cli-smoke.json": "8b51cffa4f0c80aa27bc11f868b9d9dc340fc5e3a66d08548e0ba79288a5017f",
+    "pipeline.json": "2a96d1de37042dad7488a8635bd7a10c6ff10820fa2a91f34a0de9beeda4493b",
+    "disk-recovery.json": "37b74ecd995006360af9b5f254cf53494ffdc13c0ee7d32c67d7bab73c157356",
+    "host-after-recovery.json": "71492ab1d282899179c7e31b21d981a280b17a35cdd54ae2b94a5f97c72051fd"
+  },
+  "vfs_recovery": {
+    "driver": "vfs",
+    "before_free_bytes": 6528532480,
+    "after_free_bytes": 16614531072,
+    "removed_stopped_task_containers": [
+      "codex-delentia-ollama-20261022-before-proxy-refresh",
+      "codex-delentia-ollama-20261022-stale-route-1792733286"
+    ],
+    "model_files_downloaded": false,
+    "postgres_removed": false
+  },
+  "registry_probe": {
+    "exit_code": 0,
+    "http_status": "HTTP/1.1 200 OK",
+    "hostname_and_tls_verification_enabled": true,
+    "model_blob_downloaded": false
+  },
+  "regex_isolated_rerun": {
+    "passed": 1,
+    "seconds": 14.05,
+    "full_suite_failure_not_reclassified": true
+  },
+  "github_ci_observed": {
+    "sha": "d8065996c9c50a476cf3ee6c245faf414e1ac068",
+    "lint_type_check": "SUCCESS",
+    "python_312": "setup step Wait for Ollama and pull the real default model failed with exit 22; Run tests skipped",
+    "codeql_high_path_alerts": 3,
+    "all_checks_passed": false
+  },
+  "configuration": {
+    "start_skill_draft_saved": true,
+    "requires_publish": true,
+    "published_this_turn": false
+  }
+}

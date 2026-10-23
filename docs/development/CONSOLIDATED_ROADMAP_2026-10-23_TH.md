@@ -1,5 +1,7 @@
 # ข้อมูลรวมและแผนพัฒนา DELENTIA หลัง PR #168
 
+อัปเดต implementation รอบ typed scheduler และ runtime recovery: ดู [ผลพัฒนา/A-B/เหตุขัดข้อง](RCT_FRAMEWORK_AND_RUNTIME_RECOVERY_2026-10-23_TH.md) สำหรับ checkpoint d806599 และหลักฐานใหม่ ตารางด้านล่างคงเป็น baseline ตอนจัดทำแผน ไม่ควรใช้แทนผล follow-up
+
 จัดทำ 23 ตุลาคม 2026 ตามเวลา Asia/Bangkok จาก checkout `bdf1f3733d3b7af66ba6aa225b7c5a8597318dc5`, ผลทดสอบรอบ verified-budget และ GitHub API ที่ตรวจได้จริง เอกสารนี้เป็นแผนตรวจรับ ไม่ใช่รายงานว่าทำรายการในอนาคตเสร็จแล้ว
 
 ## 1. คำจำกัดความสถานะปัจจุบัน

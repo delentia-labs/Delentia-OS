@@ -1,5 +1,7 @@
 # Verified budget executor v1
 
+The typed-execution follow-up now compiles this workflow into a trusted handler DAG and uses dependency readiness rather than component serialization order. New plans bind the execution program in their digest. The governed MCP read requests descriptor-relative no-follow acquisition as well as the final freshness check. See [implementation, A/B scope and remaining gates](../development/RCT_FRAMEWORK_AND_RUNTIME_RECOVERY_2026-10-23_TH.md); older evidence below is a dated checkpoint, not a claim of general RCT completeness.
+
 Experimental, opt-in **read-only execution** of one pinned structured quote against a confirmed budget. It uses the normal governed loop, tool gate, MCP read, persistence and journal. The decision source is deterministic; it does not call the generation provider. Other requests keep the existing model decision path.
 
 ## Input and scope
@@ -19,7 +21,7 @@ Schema is strict: decimal total is a string with at most2decimal places, nonnega
 
 Only the pinned JSON and confirmed budget determine arithmetic. Additional reported facts are annotations, not independently verified inputs or a cross-source conflict check. This is not PDF/OCR extraction, comparison of multiple vendors or free-form financial advice.
 
-Verified freshness requires POSIX descriptor-relative no-follow support; unsupported platforms refuse before claim. Source acquisition still uses the existing MCP read policy. The *final freshness check* opens the source with no-follow directory descriptors and refuses symlinks/non-regular files. These checks do not certify the entire filesystem against a hostile concurrent writer; deployment must use an authorized isolated workspace, and the general MCP read path needs separate race-hardening review before untrusted multi-user exposure.
+Verified freshness requires POSIX descriptor-relative no-follow support; unsupported platforms refuse before claim. The verified executor requests the MCP tool's opt-in `verified_read` mode, which applies workspace/secret-path policy and opens the source with no-follow directory descriptors, refusing symlinks/non-regular files. The final freshness check uses the same bounded reader. These checks do not certify the entire filesystem against a hostile concurrent writer; deployment must use an authorized isolated workspace, and the general MCP read path needs separate race-hardening review before untrusted multi-user exposure.
 
 ## Executed component pipeline
 
