@@ -1481,6 +1481,14 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         with _connect() as conn:
             return {"witness": url, "key_id": key_id, **governance_view.check_witness(conn, reply.json())}
 
+    def _questions_pending() -> int:
+        """How many questions the system has put to a person and is waiting on (the Desk is the owner's, so all of them). An error here must not break the overview."""
+        try:
+            from rct_control_plane.clarifications import ClarificationStore
+            return len(ClarificationStore(_kernel()._persistence).list(namespace=None, status="PENDING", limit=500))
+        except Exception:                                    # noqa: BLE001
+            return 0
+
     @router.get("/overview")
     async def overview() -> Dict[str, Any]:
         from rct_control_plane import model_config
@@ -1499,6 +1507,7 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             "audit_verify": {"status": verify["last_status"], "output": verify["last_output"]} if verify else None,
             "sessions_total": sessions_total,
             "approvals_pending": len(pending),
+            "questions_pending": _questions_pending(),
             "skills": _skills().count(),
             "storage": data_home.describe(),
         }

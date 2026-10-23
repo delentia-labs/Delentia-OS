@@ -71,6 +71,8 @@ export interface Overview {
   audit_verify: { status: string; output: string | null } | null;
   sessions_total: number;
   approvals_pending: number;
+  /** Questions the system put to a person and is waiting on (clarifications). Absent on a host older than the question store. */
+  questions_pending?: number;
   skills: number;
 }
 export interface SessionSummary {
