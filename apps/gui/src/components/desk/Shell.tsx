@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity, BookOpen, Brain, FileCheck2, Hammer, Scale, Globe2, Clock, Cpu, FlaskConical, GitBranch, History, Layers, Link2, Menu, Radio,
   Settings, ShieldCheck, SquareTerminal, TrendingUp, UserCog, Wrench, X, Landmark, PenLine, Undo2, OctagonPause, Anchor, GraduationCap, Gavel,
@@ -11,6 +11,7 @@ import { DelentiaMark } from "./mark";
 import { LangProvider, useLang, type DictKey } from "./i18n";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
+import { loadLocalConfig } from "@/lib/local-config";
 
 // Order follows Hermes' dashboard (chat first), with Delentia's own pages
 // (approvals, audit, experiments) where Hermes has pairing, logs, analytics.
@@ -178,6 +179,18 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 }
 
 export function DeskShell({ children }: { children: React.ReactNode }) {
+  // Round 92: when the one-click launcher serves this page it also hands over the host address and the owner's token; nothing may call the API before that has been read.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void loadLocalConfig().finally(() => {
+      if (alive) setReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!ready) return <div className="h-screen w-screen" style={{ background: "var(--dl-ink)" }} />;
   return (
     <LangProvider>
       <ShellInner>{children}</ShellInner>
