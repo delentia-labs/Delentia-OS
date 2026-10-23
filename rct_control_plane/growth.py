@@ -39,6 +39,7 @@ _OTHER_OUTCOMES = {
     # (delta, governance_violation)
     "fdia_blocked": (-1.0, True),
     "pending_approval": (0.0, False),
+    "waiting_for_clarification": (0.0, False),
     "guard_blocked": (0.0, False),
     "residency_blocked": (0.0, False),      # the policy refused the call: neither growth nor an agent violation
     "notary_unavailable": (0.0, False),

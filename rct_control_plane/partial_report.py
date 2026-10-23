@@ -61,7 +61,7 @@ def partial_completion(result: Dict[str, Any]) -> Dict[str, Any]:
         else:
             errored_read += 1
     stopped = result.get("stopped_reason")
-    finished = bool(result.get("final_answer")) and not waiting and not refused and not unknown
+    finished = bool(result.get("final_answer")) and not waiting and not refused and not unknown and stopped not in {"waiting_for_clarification", "plan_ready"}
     safe = not ran_side and not unknown
     parts = []
     if finished:

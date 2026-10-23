@@ -1863,7 +1863,17 @@ class ControlPlaneAPI:
             from rct_control_plane.agent_factory import build_governed_loop
             loop = build_governed_loop(shared_kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=shared_kernel._persistence, mcp_server=shared_mcp)
             try:
-                result = await loop.run(goal)
+                if "acceptance_criteria" in payload:
+                    result = await loop.run(goal, acceptance_criteria=payload["acceptance_criteria"], planning_context=payload.get("planning_context"))
+                elif "planning_context" in payload:
+                    raise HTTPException(status_code=400, detail="planning_context requires acceptance_criteria")
+                else:
+                    result = await loop.run(goal)
+            except ValueError as e:
+                from rct_control_plane.intent_contract import IntentContractError
+                if isinstance(e, IntentContractError):
+                    raise HTTPException(status_code=400, detail=str(e)) from e
+                raise
             except httpx.TimeoutException as e:
                 # Real, confirmed failure mode (found running this
                 # endpoint's own J.4.3 real e2e check, scripts/
@@ -1914,6 +1924,33 @@ class ControlPlaneAPI:
 
         def _job_namespace(request: Request, payload: Optional[Dict[str, Any]] = None, query: Optional[str] = None) -> str:
             return getattr(request.state, "delentia_user", None) or (payload or {}).get("namespace") or query or "http-agent-default"
+
+        @self.app.get("/v1/agent/intent-contracts/{contract_id}", tags=["Kernel"])
+        async def get_intent_contract(contract_id: str, request: Request, namespace: Optional[str] = None):
+            from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+            from rct_control_plane.mcp_server import _kernel
+            try:
+                return IntentContractStore(_kernel._persistence, _job_namespace(request, query=namespace)).get(contract_id)
+            except IntentContractError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        @self.app.post("/v1/agent/intent-contracts/{contract_id}/continue", tags=["Kernel"])
+        async def continue_intent_contract(contract_id: str, payload: Dict[str, Any], request: Request):
+            from rct_control_plane.agent_factory import build_governed_loop
+            from rct_control_plane.intent_contract import IntentContractError
+            from rct_control_plane.mcp_server import _kernel, mcp
+            namespace = _job_namespace(request, payload)
+            loop = build_governed_loop(_kernel, namespace, persistence=_kernel._persistence, mcp_server=mcp)
+            try:
+                if type(payload.get("version")) is not int:
+                    raise IntentContractError("the current integer version is required")
+                result = await loop.continue_intent(contract_id, payload["version"], payload.get("response", ""),
+                                                    payload.get("revised_goal"), payload.get("acceptance_criteria"), answers=payload.get("answers"))
+                if result.get("stopped_reason") == "llm_error":
+                    raise HTTPException(status_code=502, detail="model unavailable while continuing intent contract")
+                return {**result, "namespace": namespace}
+            except IntentContractError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
 
         @self.app.post("/v1/agent/jobs", tags=["Kernel"], status_code=202)
         async def submit_agent_job(payload: Dict[str, Any], request: Request):
