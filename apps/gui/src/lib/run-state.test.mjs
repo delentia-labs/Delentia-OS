@@ -71,4 +71,13 @@ test("with several goals in one chat the Inspector shows the current run only", 
   assert.equal(r.mood, "waiting");
   assert.equal(r.verification.state, "unknown");           // the first run's verification is not carried over
 });
+test("a plan that arrived before the first tool is shown as such, and the THINK step says where it was shown", () => {
+  const planEntry = { kind: "plan", plan: { steps: ["Observe", "Analyze", "Reverse"], route: { path: "fast" } } };
+  const running = deriveRun([user, planEntry], true);
+  assert.deepEqual(running.plan, ["Observe", "Analyze", "Reverse"]);
+  assert.equal(running.cycle.find((c) => c.name === "THINK").status, "done");
+  assert.match(running.cycle.find((c) => c.name === "THINK").note, /shown before the first tool/);
+  const none = deriveRun([user, tool("x"), summary()], false);
+  assert.equal(none.plan, null);                                   // no plan event: nothing is claimed
+});
 console.log(`${n} tests passed`);

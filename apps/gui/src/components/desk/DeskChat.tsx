@@ -23,8 +23,10 @@ type Summary = {
   approval_id?: string | null; rct7_steps: string[];
 };
 type Fdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
+type PlanData = { steps: string[]; route?: { path?: string; reason?: string }; conditions?: { kind: string; value: string; from: string; checked_by: string }[] };
 type Entry =
   | { kind: "user"; text: string }
+  | { kind: "plan"; plan: PlanData }
   | { kind: "step"; step: Step }
   | { kind: "answer"; text: string }
   | { kind: "summary"; summary: Summary; fdia?: Fdia; seconds: number }
@@ -64,6 +66,27 @@ function Banner({ version, model, tools, skills, chain, namespace, mood }: {
         <p className="text-dl-muted">{chain ?? "-"}</p>
       </div>
     </div>
+  );
+}
+
+/** RCT-7 R6: the plan, shown BEFORE the first tool runs (it arrives as its own event ahead of the steps). Showing it is not asking for approval. */
+function PlanView({ plan }: { plan: PlanData }) {
+  const { steps, route, conditions } = plan;
+  return (
+    <details open className="desk-mono rounded border border-dl-rule bg-dl-panel2/40 px-3 py-2 text-[12px] text-dl-muted">
+      <summary className="desk-focus cursor-pointer text-dl-text">Plan before acting · RCT-7 · {steps.length} steps{route?.path ? ` · route ${route.path}` : ""}</summary>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+        {steps.map((t, i) => <li key={i}>{t}</li>)}
+      </ol>
+      {conditions && conditions.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-text">What your request requires of the result (read from your own words):</p>
+          <ul className="mt-1 space-y-0.5 pl-3">
+            {conditions.map((c, i) => <li key={i}><span className="text-dl-leaf">▸</span> {c.kind} = {c.value} <span className="text-dl-muted/80">· &ldquo;{c.from}&rdquo; · checked by: {c.checked_by}</span></li>)}
+          </ul>
+        </div>
+      ) : null}
+    </details>
   );
 }
 
@@ -223,6 +246,7 @@ export function DeskChat() {
         return;
       }
       if (ev.type === "start") setNamespace((ev.data as { namespace: string }).namespace);
+      else if (ev.type === "rct7_plan") setEntries((p) => [...p, { kind: "plan", plan: ev.data as PlanData }]);
       else if (ev.type === "step") setEntries((p) => [...p, { kind: "step", step: ev.data as Step }]);
       else if (ev.type === "answer") {
         const text = (ev.data as { text: string | null }).text;
@@ -318,6 +342,7 @@ export function DeskChat() {
             {entries.map((e, i) => (
               <div key={i}>
                 {e.kind === "user" ? <p className="desk-mono text-[14px] text-dl-text"><span className="text-dl-leaf">› </span>{e.text}</p> : null}
+                {e.kind === "plan" ? <PlanView plan={e.plan} /> : null}
                 {e.kind === "step" ? <StepView step={e.step} /> : null}
                 {e.kind === "answer" ? (
                   <div className="flex gap-3">

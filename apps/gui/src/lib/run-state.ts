@@ -15,8 +15,10 @@ export type RunSummary = {
   approval_id?: string | null; rct7_steps?: string[];
 };
 export type RunFdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
+export type RunPlan = { steps: string[]; route?: { path?: string; reason?: string } };
 export type RunEntry =
   | { kind: "user"; text: string }
+  | { kind: "plan"; plan: RunPlan }
   | { kind: "step"; step: RunStep }
   | { kind: "answer"; text: string }
   | { kind: "summary"; summary: RunSummary; fdia?: RunFdia; seconds: number }
@@ -32,6 +34,8 @@ export type RunState = {
   mood: Mood;
   cycle: { name: (typeof CYCLE)[number]; status: CycleStatus; note: string }[];
   gates: GateRow[];
+  /** The RCT-7 plan that arrived before the first tool (R6), or null when none was sent. */
+  plan: string[] | null;
   approvalId: string | null;
   verification: { state: "aligned" | "not_aligned" | "not_applicable" | "unknown"; score?: number };
   evidence: { signed: boolean; signatureHash: string | null; notaryReceipts: number | null; stoppedReason: string | null; seconds: number | null };
@@ -43,6 +47,8 @@ export function deriveRun(allEntries: RunEntry[], running: boolean): RunState {
   const lastUser = allEntries.map((e) => e.kind).lastIndexOf("user");
   const entries = lastUser >= 0 ? allEntries.slice(lastUser) : allEntries;
   const intent = (entries.find((e) => e.kind === "user") as { text: string } | undefined)?.text ?? null;
+  const planEntry = entries.find((e): e is Extract<RunEntry, { kind: "plan" }> => e.kind === "plan");
+  const plan = planEntry ? planEntry.plan.steps : null;
   const steps = entries.filter((e): e is { kind: "step"; step: RunStep } => e.kind === "step").map((e) => e.step);
   const summaryEntry = [...entries].reverse().find((e): e is Extract<RunEntry, { kind: "summary" }> => e.kind === "summary");
   const summary = summaryEntry?.summary;
@@ -66,7 +72,7 @@ export function deriveRun(allEntries: RunEntry[], running: boolean): RunState {
   const anyThinking = steps.some((s) => !!s.thinking);
   const cycle: RunState["cycle"] = [
     { name: "GUARD", status: !started ? "unknown" : cordStopped ? "blocked" : "done", note: cordStopped ? `CORD: ${(summary?.guard?.cord_findings ?? []).map((f) => f.pattern_id).join(", ")}` : started ? "the request was screened before the model saw it" : "" },
-    { name: "THINK", status: cordStopped ? "unknown" : summary?.rct7_steps?.length || anyThinking ? "done" : running && started ? "active" : "unknown", note: summary?.rct7_steps?.length ? `RCT-7 plan, ${summary.rct7_steps.length} steps` : "" },
+    { name: "THINK", status: cordStopped ? "unknown" : plan || summary?.rct7_steps?.length || anyThinking ? "done" : running && started ? "active" : "unknown", note: plan ? `RCT-7 plan, ${plan.length} steps, shown before the first tool` : summary?.rct7_steps?.length ? `RCT-7 plan, ${summary.rct7_steps.length} steps (shown at the end)` : "" },
     { name: "ROUTE", status: summary?.route?.path ? "done" : "unknown", note: summary?.route?.path ? `${summary.route.path}${summary.route.reason ? `: ${summary.route.reason}` : ""}` : "" },
     { name: "ACT", status: gates.some((g) => g.verdict === "blocked") ? "blocked" : gates.some((g) => g.verdict === "waiting") ? "active" : gates.length ? (running ? "active" : "done") : "unknown", note: gates.length ? `${gates.length} tool call${gates.length === 1 ? "" : "s"}` : "" },
     { name: "COMPRESS", status: "unknown", note: "the stream does not report it" },
@@ -85,7 +91,7 @@ export function deriveRun(allEntries: RunEntry[], running: boolean): RunState {
   else if (running) mood = last?.kind === "pending" ? "waiting" : last?.kind === "blocked" ? "blocked" : last && last.kind === "tool" ? "acting" : "thinking";
 
   return {
-    intent, mood, cycle, gates,
+    intent, mood, cycle, gates, plan,
     approvalId: summary?.approval_id ?? null,
     verification,
     evidence: {
