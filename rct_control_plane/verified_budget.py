@@ -10,7 +10,7 @@ import json
 import os
 import stat
 import time
-from decimal import Decimal, Context, localcontext
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
@@ -115,16 +115,17 @@ class BudgetPipeline:
         self.contract = contract;self.namespace = namespace
         self.plan = contract["plan"];self.binding = self.plan["semantic_planning"]["quote_evidence"]
         self.receipts = [];self.report = None;self.error = None
+        from rct_control_plane.budget_execution import compile_program, registry_for, validate_executor
+        from rct_control_plane.component_execution import ComponentScheduler
+        validate_executor(self.plan)
+        self.scheduler = ComponentScheduler(compile_program(self.plan), registry_for(self.plan),
+            {c["id"] for c in self.plan["criteria"]}, {u["id"]: u["answer"] for u in self.plan["unknowns"]},
+            self._record_completion)
 
     def complete(self, node_id, output):
-        graph = {node["id"]: node for node in self.plan["components"]}
-        done = {r["component_id"] for r in self.receipts}
-        node = graph[node_id]
-        if node_id in done or set(node["depends_on"]) - done:
-            raise ValueError("component prerequisites not completed")
-        answers = {u["id"]: u["answer"] for u in self.plan["unknowns"]}
-        if any(not answers.get(key) for key in node["requires"]):
-            raise ValueError("component critical input unavailable")
+        self.scheduler.record(node_id, output)
+
+    def _record_completion(self, node_id, output):
         receipt = {"component_id": node_id, "contract_id": self.contract["id"], "namespace": self.namespace,
             "run_version": self.contract["version"], "plan_sha256": self.contract["plan_sha256"],
             "ordinal": len(self.receipts) + 1, "previous_sha256": self.receipts[-1]["receipt_sha256"] if self.receipts else "0" * 64,
@@ -147,32 +148,17 @@ class BudgetPipeline:
             quote = Quote.model_validate(value)
             if quote.total_is_final is not True or Decimal(quote.total) > Decimal("1e15"):
                 raise ValueError("quote total/scope unresolved")
-            self.complete("inspect_sources", {"evidence_status": "observed_bytes", "relative_path": result["path"],
-                "sha256": self.binding["sha256"], "tool_result_sha256": digest(result)})
-            from rct_control_plane.semantic_plan import validate_budget
-            budget = next(u["answer"] for u in self.plan["unknowns"] if u["id"] == "budget")
-            validate_budget(budget)
-            import re
-            currency = re.search(r"THB|USD|EUR|บาท", budget, re.I)[0].upper().replace("บาท", "THB")
-            limit = Decimal(re.sub(r"THB|USD|EUR|บาท", "", budget, flags=re.I).strip().replace(",", ""))
-            if quote.currency != currency:
-                raise ValueError("currency mismatch; no implicit FX conversion")
-            total = Decimal(quote.total)
-            # Other application code may change Decimal's ambient precision,
-            # exponent limits or traps. Our bounded monetary subtraction must
-            # not inherit those settings or silently round a remaining amount.
-            with localcontext(Context(prec=40)):
-                self.report = {"quote_total": format(total, ".2f"), "budget_limit": format(limit, ".2f"),
-                    "currency": currency, "remaining": format(limit - total, ".2f"), "within_budget": total <= limit,
-                    "source": result["path"], "evidence_sha256": self.binding["sha256"]}
-            self.complete("compare_budget", self.report)
+            self.scheduler.observe("inspect_sources", {"evidence_status": "observed_bytes", "relative_path": result["path"],
+                "sha256": self.binding["sha256"], "tool_result_sha256": digest(result), "quote": quote.model_dump()})
+            self.scheduler.drain("compute")
+            self.report = self.scheduler.outputs.get("compare_budget")
         except (ValueError, TypeError, KeyError, StopIteration, ValidationError) as exc:
             self.error = str(exc)[:500]
 
     def decision(self):
         if not self.receipts and self.error is None:
             return {"action": "call_tool", "tool_name": "delentia_read_repo_file",
-                "tool_args": {"relative_path": self.binding["relative_path"], "max_bytes": MAX_BYTES},
+                "tool_args": {"relative_path": self.binding["relative_path"], "max_bytes": MAX_BYTES, "verified_read": True},
                 "reasoning": "Read the pinned quote through the governed tool before dependent computation."}
         return {"action": "finish", "final_answer": json.dumps(self.report if self.error is None else {"unresolved": self.error}, ensure_ascii=False, sort_keys=True),
                 "reasoning": "Deterministic decimal verification; no model generation.", "tool_name": None, "tool_args": {}}
@@ -186,14 +172,10 @@ class BudgetPipeline:
                 raise ValueError("source changed after observation")
             if digest(strict_json(answer)) != digest(self.report):
                 raise ValueError("answer differs from the verified arithmetic report")
-            self.complete("compose_answer", self.report)
-            for node in self.plan["components"]:
-                if node["id"].startswith("prepare_"):
-                    self.complete(node["id"], self.report)
-                elif node["id"].startswith("check_"):
-                    cid = node["id"].removeprefix("check_")
-                    if not any(d.get("criterion_id") == cid for d in differences):
-                        self.complete(node["id"], {"criterion_id": cid, "satisfied": True})
+            if differences:
+                raise ValueError("declared criteria not satisfied")
+            self.scheduler.drain("verify")
+            self.scheduler.require_complete()
             validate_receipts(self.plan, self.contract["id"], self.namespace, self.receipts)
             if len(self.receipts) != len(self.plan["components"]):
                 raise ValueError("not all planned components completed")

@@ -104,6 +104,9 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_c
                 if ".." in Path(relative).parts:
                     raise IntentContractError("verified quote path cannot contain parent traversal")
             annotate_semantic(plan, semantic_metadata)
+            if semantic_metadata.get("executor") == "verified_budget_v1":
+                from rct_control_plane.budget_execution import compile_program
+                plan["execution_program"] = compile_program(plan)
     return plan
 
 
@@ -170,6 +173,8 @@ class IntentContractStore:
             raise IntentContractError("intent contract text is erased or unavailable")
         if "plan_sha256" in data and data["plan_sha256"] != plan_digest(data["plan"]):
             raise IntentContractError("intent plan digest mismatch; execution refused")
+        from rct_control_plane.budget_execution import validate_executor
+        validate_executor(data["plan"])
         if "execution_receipts" in data:
             from rct_control_plane.verified_budget import validate_receipts
             try:

@@ -52,6 +52,9 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
     negated = re.search(r"(?:ไม่ต้อง|อย่า|ห้าม)\s*(?:เปรียบเทียบ|เทียบ|สรุป)|\b(?:do not|don't)\s+(?:compare|summari[sz]e)\b", text)
     if negated or (summarize and compare) or bool(summarize) == bool(compare and budget):
         raise IntentContractError("unsupported or ambiguous semantic goal; choose summary or budget comparison explicitly")
+    matched = summarize if summarize is not None else compare
+    if matched is None:
+        raise IntentContractError("semantic goal has no supported task match")
     task = "summary" if summarize else "budget_compare"
     if request.quote_evidence is not None and (task != "budget_compare" or not any(c["kind"] == "json_object" for c in criteria)):
         raise IntentContractError("verified quote execution requires budget comparison and a json_object criterion")
@@ -101,7 +104,7 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
     context["assumptions"].append("Task classification and dependency rules are bounded in scope; reported facts are not independently verified.")
     metadata = {"ruleset": RULESET, "task": task, "model_calls": 0, "semantic_completeness": False,
                 "goal_sha256": hashlib.sha256(goal.encode()).hexdigest(),
-                "classification": {"status": "rule_inferred", "matched_text": (summarize if summarize else compare).group()},
+                "classification": {"status": "rule_inferred", "matched_text": matched.group()},
                 "sources": provenance,
                 "limitations": ["No general semantic inference, verified-source acquisition or automatic discovery of every missing price/currency/scope detail.",
                                 "Final success still uses declared predicates and heuristic grounding, not a semantic budget oracle."]}
