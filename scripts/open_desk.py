@@ -23,9 +23,21 @@ import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
 
-from rct_control_plane import desk_launcher  # noqa: E402
+
+def _load_launcher():
+    """Load rct_control_plane/desk_launcher.py BY FILE, not as part of the package: importing the package pulls in pydantic and the rest, and the `python` that a double click finds first on this
+    machine was a different Python (3.12 without the packages) and failed with 'No module named pydantic' (found by the first real double click). The launcher itself needs only the standard library."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("desk_launcher", ROOT / "rct_control_plane" / "desk_launcher.py")
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["desk_launcher"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+desk_launcher = _load_launcher()
 
 
 def healthy(port: int) -> bool:
@@ -62,7 +74,8 @@ def main() -> int:
         say(f"     already running on port {api_port}")
     else:
         say(f"     not answering on port {api_port}: starting it (about 20 seconds)...")
-        subprocess.run([sys.executable, str(ROOT / "scripts" / "local_host.py"), "start", "--dir", str(host_dir)], check=False, capture_output=True, text=True)
+        host_python = cfg.get("python") if cfg.get("python") and Path(str(cfg.get("python"))).is_file() else sys.executable      # the Python the host was made with (it has the packages)
+        subprocess.run([host_python, str(ROOT / "scripts" / "local_host.py"), "start", "--dir", str(host_dir)], check=False, capture_output=True, text=True)
         for _ in range(60):
             if healthy(api_port):
                 break

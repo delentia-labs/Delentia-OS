@@ -107,3 +107,24 @@ def test_loopback_names_are_recognised_exactly():
         assert dl.is_loopback_host(ok), ok
     for bad in ("", "127.0.0.1.evil.com", "evil.com", "localhost.evil.com", "10.0.0.5:3010", "0.0.0.0"):
         assert not dl.is_loopback_host(bad), bad
+
+
+def test_the_launcher_script_loads_under_a_python_that_has_none_of_the_packages(tmp_path):
+    """Found by the first real double click: `python` was a 3.12 without pydantic and open_desk.py died on 'No module named pydantic', because importing the package pulled everything in. The script
+    now loads desk_launcher.py by file, so it needs only the standard library. Here the import of the heavy packages (and of the package itself) is made to fail, and the script must still load."""
+    import subprocess
+    import sys
+    from pathlib import Path
+    script = Path(__file__).resolve().parents[2] / "scripts" / "open_desk.py"
+    code = (
+        "import builtins, runpy, sys\n"
+        "real_import = builtins.__import__\n"
+        "def blocked(name, *a, **k):\n"
+        "    if name.split('.')[0] in ('pydantic', 'fastapi', 'numpy', 'rct_control_plane'):\n"
+        "        raise ModuleNotFoundError('No module named ' + name)\n"
+        "    return real_import(name, *a, **k)\n"
+        "builtins.__import__ = blocked\n"
+        f"runpy.run_path({str(script)!r}, run_name='not_main')\n"
+        "print('LOADED-WITHOUT-THE-PACKAGES')\n")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=str(tmp_path), timeout=60)
+    assert "LOADED-WITHOUT-THE-PACKAGES" in out.stdout, (out.stdout[-400:], out.stderr[-800:])
