@@ -424,6 +424,6 @@ def test_openssl_is_found_on_path_or_in_gits_folder_and_the_override_wins(monkey
     assert tsa.find_openssl() is None
     monkeypatch.delenv(tsa.OPENSSL_ENV)
     monkeypatch.setattr(tsa.shutil, "which", lambda name: None)
-    monkeypatch.setattr(tsa.os, "name", "nt")
+    monkeypatch.setattr(tsa, "_is_windows", lambda: True)                           # never patch os.name itself: pathlib would build WindowsPath on Linux
     monkeypatch.setattr(tsa, "_WINDOWS_OPENSSL", (str(fake),))
     assert tsa.find_openssl() == str(fake)                                         # PATH has none (a scheduled task), Git's copy is used

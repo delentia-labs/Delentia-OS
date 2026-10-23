@@ -116,6 +116,11 @@ OPENSSL_ENV = "DELENTIA_OPENSSL"
 _WINDOWS_OPENSSL = (r"C:\Program Files\Git\usr\bin\openssl.exe", r"C:\Program Files\Git\mingw64\bin\openssl.exe", r"C:\Program Files (x86)\Git\usr\bin\openssl.exe")
 
 
+def _is_windows() -> bool:
+    """A function of its own so that a test can pretend to be on Windows without changing the global `os.name` (which makes pathlib build WindowsPath on Linux and breaks the whole test run)."""
+    return os.name == "nt"
+
+
 def find_openssl() -> Optional[str]:
     """The openssl that checks a token's signature. DELENTIA_OPENSSL names one (or says "none" to switch the check off); otherwise the one on PATH, then, on Windows, the one that ships with Git for
     Windows (a scheduled task's PATH usually lacks Git's usr/bin, so `which` alone would leave every token unchecked on the very machine this was written for)."""
@@ -125,7 +130,7 @@ def find_openssl() -> Optional[str]:
     found = shutil.which("openssl")
     if found:
         return found
-    if os.name == "nt":
+    if _is_windows():
         for candidate in _WINDOWS_OPENSSL:
             if Path(candidate).is_file():
                 return candidate
