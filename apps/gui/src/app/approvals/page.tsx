@@ -5,6 +5,7 @@ import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { QuestionsSection } from "@/components/desk/Questions";
 import { desk, type PendingAction } from "@/lib/desk-api";
+import { parseSignedDecision } from "@/lib/signed-decision";
 
 function statusTone(s: string) {
   if (s === "PENDING") return "amber" as const;
@@ -14,6 +15,7 @@ function statusTone(s: string) {
 }
 
 function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void }) {
+  const { lang } = useLang();
   const [pasted, setPasted] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
@@ -21,21 +23,16 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
 
   const submit = async () => {
     setMessage(null);
-    let body: { decision?: string; public_key_hex?: string; signature_hex?: string };
-    try {
-      body = JSON.parse(pasted);
-    } catch {
-      setMessage({ tone: "err", text: "Paste the JSON printed by `delentia approvals sign` exactly as it is." });
+    const parsed = parseSignedDecision(pasted, lang);     // says exactly what is wrong (pasted twice, cut off, wrong length...)
+    if (!parsed.ok) {
+      setMessage({ tone: "err", text: parsed.message });
       return;
     }
-    if (!body.decision || !body.public_key_hex || !body.signature_hex) {
-      setMessage({ tone: "err", text: "The JSON needs decision, public_key_hex and signature_hex." });
-      return;
-    }
+    const body = parsed.body;
     setBusy(true);
     try {
-      await desk.decide(a.approval_id, { decision: body.decision, public_key_hex: body.public_key_hex, signature_hex: body.signature_hex });
-      setMessage({ tone: "ok", text: `Recorded: ${body.decision}.` });
+      await desk.decide(a.approval_id, body);
+      setMessage({ tone: "ok", text: lang === "th" ? `บันทึกแล้ว: ${body.decision}` : `Recorded: ${body.decision}.` });
       setPasted("");
       onChanged();
     } catch (err) {
@@ -108,7 +105,15 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
 export default function ApprovalsPage() {
   const { t, lang } = useLang();
   const [view, setView] = useState<"PENDING" | "ALL">("PENDING");
-  const list = useDeskData(() => desk.approvals(view), [view], 15000);
+  // "Waiting" = needs something from you: not yet signed, or signed but not yet run (it used to hide the second kind,
+  // so an approved action vanished from the default tab and the Run button was found only under "All").
+  const list = useDeskData(async () => {
+    if (view === "ALL") return desk.approvals("ALL");
+    const all = await desk.approvals("ALL");
+    return all.filter((a) => a.status === "PENDING" || (a.status === "APPROVED" && !a.executed_at));
+  }, [view], 15000);
+  const questions = useDeskData(() => desk.clarifications("PENDING"), [], 15000);
+  const nothingWaiting = !!list.data && !list.data.length && !(questions.data && questions.data.length);
 
   return (
     <>
@@ -127,9 +132,9 @@ export default function ApprovalsPage() {
           </div>
         } />
       <PageBody>
-        <QuestionsSection />
+        <QuestionsSection list={questions} />
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
-        {list.data && !list.data.length ? (
+        {nothingWaiting ? (
           <Empty title={view === "PENDING" ? "Nothing is waiting for you" : "No approvals yet"}>
             File writes and medium-risk commands pause here. No approver key configured means nothing can be approved: create one with <code>delentia approvals keygen</code>.
           </Empty>

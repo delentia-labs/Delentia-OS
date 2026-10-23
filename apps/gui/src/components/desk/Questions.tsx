@@ -65,10 +65,9 @@ function QuestionCard({ c, onChanged }: { c: Clarification; onChanged: () => voi
 
 /** Questions the system has put to the person and is waiting on. Approvals are separate (they need a signature);
  *  these need words. Questions about an acceptance contract are not listed here yet (they live in the contract store). */
-export function QuestionsSection() {
+export function QuestionsSection({ list }: { list: ReturnType<typeof useDeskData<Clarification[]>> }) {
   const { lang } = useLang();
   const th = lang === "th";
-  const list = useDeskData(() => desk.clarifications("PENDING"), [], 15000);
   if (list.error) return <ErrorNote error={list.error} onRetry={list.reload} />;
   if (!list.data || !list.data.length) return null;
   return (
