@@ -1,8 +1,8 @@
-# RCT-7 Thinking Protocol
+# RCT-7: Reverse Component Thinking
 
-> **RCT-7 Thinking** is the cognitive processing kernel at the heart of the RCT Platform.  
-> It is a 7-step structured reasoning protocol that transforms raw natural language input  
-> into a **verified, intent-preserved, FDIA-scored** execution plan.
+> **RCT-7** is the creator's way of working in seven steps: observe, analyze, deconstruct, reason backward from the wanted result, identify the core intent, reconstruct (show the plan before building) and compare the result with the intent (stop and ask when it does not match).
+
+> **Status, read this first.** This page describes the design. The runtime implements parts of it, and steps 4 to 7 do not yet meet the creator's definition. The step-by-step comparison of the definition with the code is in [RCT-7 implementation status](../public/RCT7_IMPLEMENTATION_STATUS.md). Figures that earlier versions of this page gave ("96.0% end-to-end accuracy", a scorer threshold of 0.60) came from a legacy scorer and were never a measurement of the agent runtime; they are withdrawn here. The FDIA gate of the agent loop is applied when a tool is about to run (the ACT step of the cycle), not at step 7 of RCT-7.
 
 ---
 
@@ -10,12 +10,11 @@
 
 | Attribute | Value |
 |-----------|-------|
-| **Full name** | RCT-7 Thinking Protocol |
-| **Kernel coverage** | T1 – T9 |
-| **End-to-end accuracy** | 96.0% |
-| **FDIA gate position** | Step 7 (Compare) — score ≥ threshold required before execution |
-| **Variants** | RCT-O · RCT-S · RCT-I |
-| **Source** | [delentia.com/technology/rct-7-thinking](https://www.delentia.com/en/technology/rct-7-thinking) |
+| **Full name** | RCT-7, Reverse Component Thinking |
+| **Defined by** | The creator. Seven steps, in the order above |
+| **Implementation** | Partial: see the status page. `algo_04_rct7` builds the representation; the governed loop puts steps 1 to 6 into the model's prompt and checks the outcome at the end |
+| **Kernel coverage** | T1 – T9 (mapping of the design onto the JITNA kernel tiers, below) |
+| **Variants** | RCT-O · RCT-S · RCT-I (design variants; not separately evaluated) |
 
 ---
 
@@ -150,11 +149,13 @@ execution_plan:
 
 ### Step 7 · Compare with Intent  `(T7–T9)`
 
-**What:** Run the reconstructed plan through the **FDIA Scorer** and compare the result against the original intent.
+**What (the creator's definition):** compare the result with the intent. If it does not match, report the difference, stop and ask the user, then analyse again with the answer.
 
-**Purpose:** Ensure the plan hasn't drifted from what was actually requested (constitutional alignment gate).
+**Status:** not implemented as defined. The agent runtime's end-of-episode check compares similarity and grounding and decides what may be learned; it does not stop and ask (see the [status page](../public/RCT7_IMPLEMENTATION_STATUS.md)).
 
-**FDIA gate rule:**
+**The rest of this step is the legacy design**, kept for history: it describes the NPC simulation scorer (`core/fdia/fdia.py`, see [FDIA](fdia.md)) with a 0.60 threshold, which is a different scorer from the one the agent loop uses (0.5, applied when a tool is about to run).
+
+**Legacy FDIA gate rule:**
 ```
 score = FDIAScorer.score_action(agent_intent, plan_action, ...)
 if score < THRESHOLD (default 0.60):
@@ -258,16 +259,15 @@ T9  — Execution kernel        (dispatch + audit)
 
 ---
 
-## Performance Characteristics
+## Legacy figures (not measurements of the agent runtime)
 
-| Metric | Value |
-|--------|-------|
-| End-to-end accuracy (RCT-O) | **96.0%** |
-| Cold start latency | 3–5 s |
-| Warm recall latency | < 50 ms |
-| FDIA threshold (default) | 0.60 |
-| Intent type coverage | 6 types (NPCIntentType) |
-| Kernel tier coverage | T1–T9 (9 tiers) |
+| Metric | Value | Status |
+|--------|-------|--------|
+| End-to-end accuracy (RCT-O) | 96.0% | Withdrawn: no reproducible measurement of the agent runtime stands behind it |
+| Cold start / warm recall latency | 3–5 s / < 50 ms | Synthetic benchmark of an earlier version, not re-measured |
+| Scorer threshold | 0.60 | The NPC simulation scorer's value; the agent loop's gate uses 0.5 |
+| Intent type coverage | 6 types (NPCIntentType) | NPC simulation intent types |
+| Kernel tier coverage | T1–T9 (9 tiers) | A mapping of the design, not a count of tested components |
 
 ---
 
