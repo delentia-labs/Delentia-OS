@@ -1,0 +1,160 @@
+{
+  "branch": "codex/rct-verified-budget-receipts-20261023",
+  "base": "67bf57e1b0952d16b4878391b1be16ab34d62755",
+  "python": {
+    "passed": 7975,
+    "failed": 13,
+    "skipped": 59,
+    "xfailed": 1,
+    "warnings": 6913,
+    "seconds": 716.22,
+    "exit_code": 1,
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "message": "KeyError: 'status_code'"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_a_careful_agent_that_looks_again_reports_the_current_price_and_the_browser_reaches_nothing_else",
+        "message": "assert (False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_an_agent_that_answers_from_the_first_look_is_stale_and_the_oracle_knows_what_the_page_shows_now",
+        "message": "assert (not False and None == 120)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_daaes_tc027_round85_real::test_the_case_runs_through_the_suite_runner_with_a_manifest",
+        "message": "assert (True and False)"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    ],
+    "skip_reasons": {
+      "collection skipped": 1,
+      "could not import 'soundfile': No module named 'soundfile'": 1,
+      "could not import 'imageio_ffmpeg': No module named 'imageio_ffmpeg'": 2,
+      "sibling TypeScript checkout not present": 1,
+      "the browser did not start (it may be unable to run its sandbox here)": 16,
+      "needs a speech engine and a cached Whisper model": 3,
+      "no speech engine on this machine": 3,
+      "needs a cached Whisper model": 2,
+      "Windows Job Objects": 3,
+      "needs a speech engine and ffmpeg on this machine": 2,
+      "needs a speech engine": 1,
+      "paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1": 9,
+      "Hermes is not installed in this environment": 10,
+      "real v0.5.1 adapter weights not present in this environment": 1,
+      "set DELENTIA_REAL_SERVICES=1 and start the services (see the module docstring)": 4
+    },
+    "expected_failure_reasons": [
+      "Real, understood gap (documented since commit 6c6aea1, 2026-09-23, reconfirmed in Round 43): delentia_generate_image needs the 'diffusion' extras group + real model weights, which are NOT installed in CI (ci.yml installs only requirements.txt) - the kernel's own DiffusionEngine honestly reports simulated=True/byte_size=0 rather than faking success. This is an Architect-level trade-off (heavier/slower CI job vs. accepting this documented gap), not something to silently work around - xfail keeps CI green while keeping this failure visible and accurate instead of a silent skip."
+    ]
+  },
+  "coverage": {
+    "rate": 0.9124,
+    "covered": 91151,
+    "valid": 99906,
+    "includes_test_modules": true
+  },
+  "focused_passed": 290,
+  "focused_overlaps_full": true,
+  "new_verified_budget_tests": 32,
+  "pipeline": {
+    "cases": 21,
+    "checks": 134,
+    "subagents_executed": false
+  },
+  "actual_cli": {
+    "cases": 2,
+    "receipts_per_case": 7,
+    "generation_calls_per_case": 0,
+    "scripted_model_used": false
+  },
+  "configuration": {
+    "status": "saved",
+    "requires_publish": true,
+    "fields_saved": [
+      "start_skill",
+      "environment_variables:DELENTIA_HOME"
+    ],
+    "network_changed": false,
+    "runtime_published": false,
+    "operator_directory": "/workspace/.delentia-cloud/operator",
+    "home_unchanged": true
+  },
+  "paid_api_calls": 0,
+  "full_general_rct7_complete": false,
+  "production_or_pilot_ready": false,
+  "interrupted_before_precision_fix": {
+    "completed": false,
+    "passed_before_interrupt": 5517,
+    "skipped_before_interrupt": 29,
+    "seconds": 252.51,
+    "exit_code": 2
+  },
+  "evidence_sha256": {
+    "full-python.log": "e7637cf79d7e52ff5fbe068e7f7d437549b17953fc0a5eb7bbc194fe6abd756d",
+    "full-python.xml": "8c12576193db0553cb8691abdde575f5d735b48a389fce8aee8df26b28b7024f",
+    "coverage.xml": "e3a41d1190cc91031594611064b032df5f9d1476498f269f3e5b1ddc1947342c",
+    "targeted.log": "c26ed2120538e8c59af3c09ae81bd345ed2ae05a338f8f8dd62cb0f5cad0670e",
+    "pipeline.log": "92fdd73f906ede65647966933dd428e877e2daf29515e504deadbaebdf103aa2",
+    "cli-smoke.json": "2b4336c54cfff6a834d1d0c88215d7d2a37cd62bb1b301f468b76f6392aa4303",
+    "cli-smoke.log": "3e40060c3b97a2838ec5b334b87ddd5b65728b1885ba890ee96b97e2c50ff137",
+    "preflight.json": "d3b6d9d9950d6e6b04f924cc069f968ab4ca1002efab150c613fb7afe0498878",
+    "wheel-smoke.log": "90f29c84838f82c35f4f5e80c3ee542b52ad4dc36319ddf0cbdb9f0c0b455dc1",
+    "wheel-integrity.json": "7471aeb0dbdbd4a103bf882a5f2e859c3a5efa6109863ccc9cba26bcdc324b00",
+    "operator-home-smoke.log": "0a7704f5b9e0a8947381ceef1dfd88435e6644d24ba0c84c77fb6df5b4700a19"
+  },
+  "publication_recheck": {
+    "passed": 32,
+    "warnings": 68,
+    "seconds": 2.0,
+    "scope": "verified-budget tests only; not a second full run"
+  },
+  "model_pull_followup": {
+    "model": "qwen2.5:7b",
+    "completed": false,
+    "tags_empty": true,
+    "cdn_probe_http_status": 206,
+    "failure": "proxy connection to official CDN: no route to host",
+    "paid_api": false,
+    "tls_verification_disabled": false
+  },
+  "review_base_observed": "19d5fe8230f5f32691ae6a410085707219dd20a1",
+  "merge_tree_conflicts_observed": false,
+  "combined_tree_tested": false
+}

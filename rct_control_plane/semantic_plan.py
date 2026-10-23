@@ -14,6 +14,7 @@ from decimal import Decimal
 
 from rct_control_plane.derived_plan import derive_context
 from rct_control_plane.rct_plan import Fact, PlanItem
+from rct_control_plane.verified_budget import QuoteEvidence
 
 RULESET = "bilingual-summary-budget-1"
 
@@ -31,6 +32,7 @@ def validate_budget(value: str) -> None:
 class SemanticInput(PlanItem):
     facts: list[Fact] = Field(default_factory=list, max_length=20)
     budget: str | None = Field(default=None, min_length=1, max_length=4000)
+    quote_evidence: QuoteEvidence | None = None
 
 
 def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dict, dict]:
@@ -51,6 +53,8 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
     if negated or (summarize and compare) or bool(summarize) == bool(compare and budget):
         raise IntentContractError("unsupported or ambiguous semantic goal; choose summary or budget comparison explicitly")
     task = "summary" if summarize else "budget_compare"
+    if request.quote_evidence is not None and (task != "budget_compare" or not any(c["kind"] == "json_object" for c in criteria)):
+        raise IntentContractError("verified quote execution requires budget comparison and a json_object criterion")
     if request.budget is not None:
         validate_budget(request.budget)
     context = derive_context(goal, criteria)
@@ -63,13 +67,15 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
         provenance.append({"fact_id": fid, "reported_id": fact.id, "status": "user_reported",
                            "source": fact.source, "text_sha256": hashlib.sha256(fact.text.encode()).hexdigest()})
     requires = []
-    if not source_ids:
+    if not source_ids and request.quote_evidence is None:
         context["unknowns"].append({"id": "source_text", "question": "ข้อมูลต้นทางที่จะสรุปหรือเทียบคืออะไร? / What source data should be used?",
                                    "critical": True, "answer": None})
         requires.append("source_text")
     components = [{"id": "inspect_sources", "action": "transform_answer",
         "description": "Inspect reported source data and distinguish its claims from verified observations.",
         "input_facts": source_ids, "requires": requires, "outputs": ["Source-linked claims and unresolved limitations"]}]
+    if request.quote_evidence is not None:
+        components[0].update(action="read", description="Read the pinned structured quote through the governed read tool; reported facts do not substitute for observed bytes.")
     dependency = "inspect_sources"
     if task == "budget_compare":
         context["unknowns"].append({"id": "budget", "question": "งบสูงสุดและสกุลเงินคืออะไร? / What is the budget limit and currency?",
@@ -86,6 +92,12 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
         if component["id"].startswith("prepare_"):
             component["depends_on"] = ["compose_answer"]
     context["components"] = components + context["components"]
+    if request.quote_evidence is not None:
+        for component in context["components"]:
+            if component["id"] == "compare_budget":
+                component["description"] = "Validate strict final-total JSON and compare with the confirmed same-currency budget using Decimal; no FX conversion."
+            elif component["id"] == "compose_answer":
+                component["description"] = "Serialize the canonical computed JSON report; never change its verified values."
     context["assumptions"].append("Task classification and dependency rules are bounded in scope; reported facts are not independently verified.")
     metadata = {"ruleset": RULESET, "task": task, "model_calls": 0, "semantic_completeness": False,
                 "goal_sha256": hashlib.sha256(goal.encode()).hexdigest(),
@@ -93,6 +105,10 @@ def compile_request(goal: str, criteria: list[dict], value: object) -> tuple[dic
                 "sources": provenance,
                 "limitations": ["No general semantic inference, verified-source acquisition or automatic discovery of every missing price/currency/scope detail.",
                                 "Final success still uses declared predicates and heuristic grounding, not a semantic budget oracle."]}
+    if request.quote_evidence is not None:
+        metadata["quote_evidence"] = request.quote_evidence.model_dump()
+        metadata["executor"] = "verified_budget_v1"
+        metadata["limitations"] = ["Observed document bytes and exact same-currency arithmetic; not external vendor truth, completeness of the vendor's claims, FX conversion or effect authorization."]
     return context, metadata
 
 
@@ -100,6 +116,8 @@ def annotate(plan: dict, metadata: dict) -> None:
     plan["planning_origin"] = "bounded_semantic_rules"
     plan["semantic_planning"] = metadata
     plan["limitations"] = "Bounded summary/budget task rules; source claims are reported, not verified. No general semantic RCT-7 or effect authorization."
+    if metadata.get("executor") == "verified_budget_v1":
+        plan["limitations"] = "Pinned observed JSON bytes, exact same-currency arithmetic and dependency-enforced receipts only; not vendor truth, general semantic RCT-7, FX or effect approval."
 
 
 def context_from_plan(plan: dict) -> dict:

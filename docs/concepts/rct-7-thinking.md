@@ -66,3 +66,7 @@ The opt-in [criterion-derived compiler](rct-derived-plans.md) now produces predi
 ## Bounded bilingual task inference
 
 The experimental [bounded semantic planner](bounded-semantic-planner.md) infers different component dependencies for summary and budget-comparison goals, labels rule inference separately from reported source provenance, and discovers missing budget/source inputs in those tasks. Budget answers require explicit amount/currency; revisions can introduce a new durable initial-input wait. This remains a rule-based subset: it does not infer arbitrary necessary conditions, verify sources, provide a semantic result oracle or enable contract writes. See [current results/gaps](../development/BOUNDED_SEMANTIC_PLANNER_RESULTS_TH.md) and [all integration failure remedies](../development/INTEGRATION_FAILURE_CATALOG_TH.md).
+
+## Verified read-only execution follow-up
+
+The opt-in [verified budget executor](verified-budget-executor.md) now runs one pinned structured quote workflow through real governed reads, exact same-currency arithmetic and dependency-enforced component receipts without generation calls. It adds an executable/verified subset beyond prompt-only plans. Other task graphs, general semantic understanding, contract-aware effects/recovery and public activation remain separate gates. See [2026-10-23 results](../development/VERIFIED_BUDGET_RESULTS_2026-10-23_TH.md) and [activation assessment](../release/ACTIVATION_GATES_2026-10-23_TH.md).

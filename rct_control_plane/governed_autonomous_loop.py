@@ -642,6 +642,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._active_contract = None
         self._contract_store = None
         self._contract_block = None
+        self._budget_pipeline = None
         if planning_context is not None and acceptance_criteria is None and intent_contract is None:
             raise IntentContractError("planning_context requires explicit acceptance_criteria")
         if acceptance_criteria is not None or intent_contract is not None:
@@ -680,6 +681,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
             if contract["state"] == "plan_ready":
                 contract = self._contract_store.claim(contract["id"], contract["version"])
             self._active_contract = contract
+            if contract["plan"].get("semantic_planning", {}).get("executor") == "verified_budget_v1":
+                from rct_control_plane.verified_budget import BudgetPipeline
+                self._budget_pipeline = BudgetPipeline(contract, self.namespace)
 
         return await super().run(
             goal,
@@ -692,6 +696,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
             extra_context_provider=self._extra_context_provider,
             post_dispatch_transform=self._notarised_post_dispatch,
         )
+
+    async def _decide_action(self, goal, history, available_tools, extra_context):
+        pipeline = getattr(self, "_budget_pipeline", None)
+        if pipeline is not None:
+            return pipeline.decision()
+        return await super()._decide_action(goal, history, available_tools, extra_context)
 
     async def continue_intent(self, contract_id: str, version: int, response: str = "",
                               revised_goal: Optional[str] = None, acceptance_criteria: Any = None,
@@ -1877,6 +1887,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
             differences = compare(contract["plan"], str(result.get("final_answer") or "")) if stopped_reason == "llm_finished" else []
             if self._contract_block:
                 differences.append(self._contract_block)
+            pipeline = getattr(self, "_budget_pipeline", None)
+            if pipeline is not None:
+                semantic_differences = pipeline.finish(str(result.get("final_answer") or ""), differences) if stopped_reason == "llm_finished" else []
+                differences.extend(semantic_differences)
+                contract["execution_receipts"] = pipeline.receipts
+                contract["execution_report"] = pipeline.report
+                contract["execution_status"] = "complete" if stopped_reason == "llm_finished" and not differences else "incomplete"
+                result["executor"] = "verified_budget_v1"
+                result["semantic_verification"] = {"evaluated": stopped_reason == "llm_finished",
+                    "satisfied": stopped_reason == "llm_finished" and not differences,
+                    "differences": list(differences),
+                    "scope_note": "Pinned observed JSON, exact same-currency arithmetic and component receipts; not external vendor truth or effect approval."}
             if differences:
                 result["stopped_reason"] = stopped_reason = "waiting_for_clarification"
                 result["clarification_question"] = "The result does not meet the stated criteria. Which requirement or result should change?"
@@ -1898,7 +1920,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 contract = self._contract_store.transition(contract, "criteria_satisfied" if stopped_reason == "llm_finished" else "interrupted")
             result["acceptance_verification"] = {"evaluated": stopped_reason in {"llm_finished", "waiting_for_clarification"},
                 "satisfied": contract["state"] == "criteria_satisfied", "differences": differences,
-                "scope_note": "Declared predicates only; separate from intent_verification and model capability."}
+                "scope_note": ("Declared predicates plus pinned quote arithmetic/component receipts; not external truth or effect approval."
+                               if pipeline is not None else "Declared predicates only; separate from intent_verification and model capability.")}
             result["intent_contract"] = contract
         self._journal_call("end", result.get("stopped_reason"), result.get("final_answer"))
         from rct_control_plane import envelope as _envelope
@@ -2584,6 +2607,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         tool_result = await self._hooks_transform(tool_name, tool_result)
         if is_external_content(tool_name) and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             tool_result = await self._second_opinion_on_result(tool_name, tool_result)
+        pipeline = getattr(self, "_budget_pipeline", None)
+        if pipeline is not None:
+            pipeline.observe(tool_name, tool_args, tool_result)
+            contract = self._active_contract
+            contract["execution_receipts"] = pipeline.receipts
+            contract["execution_report"] = pipeline.report
+            contract["execution_status"] = "partial"
+            self._active_contract = self._contract_store.transition(contract, "running")
         if self._compress_tool_outputs and not (isinstance(tool_result, dict) and tool_result.get("withheld_by_cord")):
             return self._compress_tool_output(goal, tool_name, tool_args, tool_result)
         return tool_result

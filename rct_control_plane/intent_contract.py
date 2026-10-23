@@ -95,6 +95,14 @@ def build_plan(goal: str, criteria: List[Dict[str, str]], root: Path, planning_c
             annotate(plan)
         if semantic_metadata is not None:
             from rct_control_plane.semantic_plan import annotate as annotate_semantic
+            if "quote_evidence" in semantic_metadata:
+                from rct_control_plane.verified_budget import supports_verified_reads
+                if not supports_verified_reads():
+                    raise IntentContractError("verified quote execution requires POSIX no-follow reading support")
+                relative = semantic_metadata["quote_evidence"]["relative_path"]
+                _file(root, relative)
+                if ".." in Path(relative).parts:
+                    raise IntentContractError("verified quote path cannot contain parent traversal")
             annotate_semantic(plan, semantic_metadata)
     return plan
 
@@ -162,6 +170,12 @@ class IntentContractStore:
             raise IntentContractError("intent contract text is erased or unavailable")
         if "plan_sha256" in data and data["plan_sha256"] != plan_digest(data["plan"]):
             raise IntentContractError("intent plan digest mismatch; execution refused")
+        if "execution_receipts" in data:
+            from rct_control_plane.verified_budget import validate_receipts
+            try:
+                validate_receipts(data["plan"], contract_id, self.namespace, data["execution_receipts"])
+            except (ValueError, TypeError, KeyError) as exc:
+                raise IntentContractError("invalid stored execution receipts") from exc
         # Pre-versioned contracts from the first release are schema 1. Future
         # schemas must never silently run under older continuation semantics.
         version = data.get("schema_version", 1)
@@ -253,6 +267,8 @@ class IntentContractStore:
                 if unknown["id"] in answers:
                     unknown["answer"] = answers[unknown["id"]].strip()
             data["revisions"].append({"from_version": version, "user_answers": answers, "provenance": "confirmed_user_input"})
+            for key in ("execution_receipts", "execution_report", "execution_status"):
+                data.pop(key, None)
             semantic_metadata = data["plan"].get("semantic_planning")
             data["plan"] = build_plan(data["goal"], data["plan"]["criteria"], Path(data["plan"]["workspace"]), context)
             if semantic_metadata is not None:
@@ -275,6 +291,8 @@ class IntentContractStore:
             selected = validate_criteria(criteria) if criteria is not None else data["plan"]["criteria"]
             data["revisions"].append({"from_version": version, "goal": goal, "user_response": response, "criteria": selected})
             data["goal"] = goal
+            for key in ("execution_receipts", "execution_report", "execution_status"):
+                data.pop(key, None)
             request = data.get("planning_request", data.get("planning_context"))
             plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), request)
             if data.get("planning_request"):
