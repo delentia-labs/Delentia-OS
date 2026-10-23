@@ -117,9 +117,11 @@ def make_server(root: Path, port: int, gateway: str, token_reader: Callable[[], 
                 ctype += "; charset=utf-8"
             self._send(200, file.read_bytes(), ctype, {"Cache-Control": "no-cache"})
 
-    server = ThreadingHTTPServer((host, port), Handler)
-    server.daemon_threads = True
-    return server
+    class ExclusiveServer(ThreadingHTTPServer):
+        allow_reuse_address = False                       # on Windows SO_REUSEADDR lets a second program take a port that is already in use; a busy port must be reported as busy
+        daemon_threads = True
+
+    return ExclusiveServer((host, port), Handler)
 
 
 def serve_in_background(server: ThreadingHTTPServer) -> Tuple[threading.Thread, str]:

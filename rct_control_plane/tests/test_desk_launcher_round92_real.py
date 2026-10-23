@@ -102,6 +102,12 @@ def test_a_missing_token_file_gives_an_empty_token_not_an_error(tmp_path):
         server.shutdown()
 
 
+def test_a_busy_port_is_reported_as_busy_not_shared(served, tmp_path):
+    """A leftover dev server on the same port made the first real double click ambiguous. Two servers on one port must not both start (on Windows the default would let the second one in)."""
+    with pytest.raises(OSError):
+        dl.make_server(tmp_path, served, "http://127.0.0.1:8000", lambda: "x")
+
+
 def test_loopback_names_are_recognised_exactly():
     for ok in ("127.0.0.1", "127.0.0.1:3010", "localhost", "localhost:3010", "[::1]:3010", "LOCALHOST"):
         assert dl.is_loopback_host(ok), ok
