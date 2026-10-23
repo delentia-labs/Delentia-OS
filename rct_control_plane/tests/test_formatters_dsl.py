@@ -40,6 +40,10 @@ def _make_console(width: int = 120, force_terminal: bool = False) -> tuple[Conso
     console = Console(
         file=buf,
         width=width,
+        # Rich treats TERM=dumb as 80x25 when only one dimension is
+        # supplied. These tests specify a virtual console, not the runner's
+        # terminal; pin both dimensions so the requested layout is exercised.
+        height=40,
         no_color=True,
         highlight=False,
         force_terminal=force_terminal,
