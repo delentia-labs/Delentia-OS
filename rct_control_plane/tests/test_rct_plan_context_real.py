@@ -81,12 +81,13 @@ def test_same_reported_facts_support_different_explicit_goal_plans(tmp_path):
     assert a['planning_origin'] == b['planning_origin'] == 'user_declared'
 
 
-def test_contract_expands_omitted_thai_passage_through_real_mcp(tmp_path, monkeypatch):
+@pytest.mark.parametrize('newline', ['\n', '\r\n'])
+def test_contract_expands_omitted_thai_passage_through_real_mcp(tmp_path, monkeypatch, newline):
     root = tmp_path / 'workspace';root.mkdir()
     target = 'ราคาจริง 12,345 บาท น้ำ กำลัง'
     text = '\n'.join(f'line {i}: unrelated build detail ' + ('abc ' * 20) for i in range(400))
     text = text.replace('line 200:', target + '\nline 200:')
-    (root / 'source.md').write_text(text)
+    (root / 'source.md').write_text(text, encoding='utf-8', newline=newline)
     monkeypatch.setattr(mcp_server, 'REPO_ROOT', root)
     loop = _loop(tmp_path, 'expand-owner', kernel=_FakeKernel(), mcp=mcp_server.mcp)
     monkeypatch.setattr(mcp_server._kernel, '_persistence', loop._persistence)
@@ -104,7 +105,7 @@ def test_contract_expands_omitted_thai_passage_through_real_mcp(tmp_path, monkey
     result = asyncio.run(loop.run('Read source.md and answer in Thai', acceptance_criteria=[{'kind': 'contains', 'value': target}], on_plan=lambda c: None))
     assert result['intent_contract']['state'] == 'criteria_satisfied', result
     assert [s['tool_name'] for s in result['steps'][:2]] == ['delentia_read_repo_file', 'delentia_expand_tool_output']
-    assert (root / 'source.md').read_text() == text
+    assert (root / 'source.md').read_text(encoding='utf-8') == text
 
 
 @pytest.mark.parametrize('same_namespace', [True, False])

@@ -367,3 +367,39 @@ def test_killed_worker_status_and_no_automatic_replay(service, tmp_path, boundar
         if process.is_alive():
             process.kill()
         process.join(5)
+
+
+def test_unsupported_platform_has_explicit_api_error(service, monkeypatch):
+    from rct_control_plane import verified_budget
+    client, body, calls, _ = service
+    plan = post(client, body).json()['contract']
+    calls.clear()
+    monkeypatch.setattr(verified_budget, 'supports_verified_reads', lambda: False)
+    for response in (post(client, body), confirm(client, plan)):
+        assert response.status_code == 501
+        assert response.json() == {'schema_version': '1', 'error': 'unsupported_platform'}
+    assert not calls
+    # Reading already persisted status does not need source acquisition.
+    assert status(client, plan).status_code == 200
+
+
+def test_desk_receipt_and_verdict_snapshot_matches_persisted_execution(service, tmp_path):
+    import copy
+    from rct_control_plane.desk_agent_stream import contract_snapshot_events
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    client, body, _, _ = service
+    plan = post(client, body).json()['contract']
+    assert confirm(client, plan).status_code == 200
+    store = IntentContractStore(_loop(tmp_path, 'alice')._persistence, 'alice')
+    raw = store.get(plan['id'])
+    events = contract_snapshot_events(raw, 'alice')
+    assert [e['type'] for e in events] == ['plan'] + ['receipt'] * 5 + ['verdict']
+    assert events[-1]['data']['satisfied']
+    assert events[-1]['data']['method'] == 'document_bytes_and_same_currency_arithmetic'
+    assert contract_snapshot_events(raw, 'alice') == events
+    assert all(isinstance(e['data']['recorded_ns'], str) for e in events if e['type'] == 'receipt')
+    missing = copy.deepcopy(raw)
+    missing['execution_receipts'].pop()
+    assert not contract_snapshot_events(missing, 'alice')[-1]['data']['satisfied']
+    with pytest.raises(IntentContractError):
+        contract_snapshot_events(raw, 'bob')

@@ -313,6 +313,7 @@
           "conflict",
           "invalid_request",
           "unavailable",
+          "unsupported_platform",
           "request_failed"
         ],
         "title": "Error",

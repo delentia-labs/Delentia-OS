@@ -77,12 +77,12 @@ class BudgetResult(PlanItem):
 
 class ServiceError(PlanItem):
     schema_version: Literal["1"] = "1"
-    error: Literal["unauthenticated", "forbidden", "not_found", "conflict", "invalid_request", "unavailable", "request_failed"]
+    error: Literal["unauthenticated", "forbidden", "not_found", "conflict", "invalid_request", "unavailable", "unsupported_platform", "request_failed"]
 
 
 def error_response(status):
     code = {401: "unauthenticated", 403: "forbidden", 404: "not_found", 409: "conflict",
-            400: "invalid_request", 422: "invalid_request", 503: "unavailable"}.get(status, "request_failed")
+            400: "invalid_request", 422: "invalid_request", 503: "unavailable", 501: "unsupported_platform"}.get(status, "request_failed")
     headers = {"WWW-Authenticate": "Bearer"} if status == 401 else None
     return JSONResponse(ServiceError(error=code).model_dump(), status, headers=headers)
 
@@ -222,6 +222,9 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
     @app.post(ROUTE, response_model=BudgetResult)
     async def budget(payload: BudgetRequest, request: Request):
         actor = authorize(request)
+        from rct_control_plane.verified_budget import supports_verified_reads
+        if not supports_verified_reads():
+            raise HTTPException(501, "verified reads require a POSIX backend with no-follow support")
         if (payload.workspace_id != policy.workspace_id
                 or payload.evidence.relative_path not in policy.actor_files[actor]):
             raise HTTPException(403, "workspace/file not authorized")
@@ -251,6 +254,9 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
     @app.post(ROUTE + "/{contract_id}/confirm", response_model=BudgetResult)
     async def confirm(contract_id: str, payload: ConfirmRequest, request: Request):
         actor = authorize(request)
+        from rct_control_plane.verified_budget import supports_verified_reads
+        if not supports_verified_reads():
+            raise HTTPException(501, "verified reads require a POSIX backend with no-follow support")
         loop, store = backend(actor)
         contract = authorized_contract(store, contract_id, actor)
         if (contract["version"] != payload.version or contract["plan_sha256"] != payload.plan_sha256
