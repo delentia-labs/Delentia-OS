@@ -60,6 +60,15 @@ html, body { background: #0e1611; color: #e4eedd; color-scheme: dark; }
   letter-spacing: 0;
   margin: 0;
   user-select: none;
+  animation: desk-pixelmark-bob 3.6s ease-in-out infinite;
+}
+/* A slow bob so the mark is never perfectly still. Off when the user asks for less motion. */
+@keyframes desk-pixelmark-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .desk-pixelmark { animation: none; }
 }
 
 .desk-nav-link {
