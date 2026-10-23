@@ -115,7 +115,7 @@ export default function MemoryPage() {
             <label className="block">
               <span className="text-[13px] text-dl-muted">{lang === "th" ? "สิ่งที่ agent ควรรู้" : "What the agent should know"}</span>
               <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={5} disabled={busy} maxLength={4000}
-                placeholder="The staging database is stg-db-1; deploys go through the blue-green pipeline and migrations are reviewed first."
+                placeholder={lang === "th" ? "ตัวอย่าง: งบประมาณของโครงการคือ 15,000 บาท และต้องตรวจสอบก่อนอนุมัติ" : "The staging database is stg-db-1; deploys go through the blue-green pipeline and migrations are reviewed first."}
                 className="desk-focus desk-mono mt-2 w-full rounded border border-dl-rule bg-dl-ink p-2 text-[13px] text-dl-text placeholder:text-dl-muted/50" />
             </label>
             <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -123,7 +123,7 @@ export default function MemoryPage() {
                 className="desk-focus desk-mono rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-xs text-dl-text">
                 {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
-              <Button onClick={add} disabled={busy || !content.trim()}>{busy ? "Saving…" : "Remember"}</Button>
+              <Button onClick={add} disabled={busy || !content.trim()}>{busy ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "บันทึกความจำ" : "Remember")}</Button>
             </div>
             {hints ? (
               <div role="group" aria-label="This may replace" className="mt-3 space-y-2 rounded border border-dl-amber/50 p-3">
@@ -142,7 +142,7 @@ export default function MemoryPage() {
             ) : null}
             {note ? <p role="status" className={`mt-3 text-[13px] ${note.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{note.text}</p> : null}
             <p className="mt-4 text-[12px] leading-relaxed text-dl-muted">
-              Memories are stored on this machine in RCTDB (SQLite). Do not store secrets here: recalled text is placed in the model&apos;s prompt.
+              {lang === "th" ? "ความจำเก็บอยู่บนเครื่องนี้ใน RCTDB (SQLite) อย่าบันทึกข้อมูลลับ: ข้อความที่เรียกคืนจะถูกส่งเป็นข้อมูลให้โมเดล" : "Memories are stored on this machine in RCTDB (SQLite). Do not store secrets here: recalled text is placed in the model’s prompt."}
             </p>
           </Panel>
 
