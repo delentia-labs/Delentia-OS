@@ -1,5 +1,7 @@
 # ขอบเขต review และแผนพัฒนาถัดไปของ Codex
 
+สำหรับการจัดลำดับ implementation rounds หลังเปิด PR #168 ใช้ [ข้อมูลรวมและ roadmap](CONSOLIDATED_ROADMAP_2026-10-23_TH.md) เป็นดัชนีหลัก มี dependency ระหว่างงาน เส้นทางบริการ read-only/agent ทั่วไป และเกณฑ์ตรวจรับ เอกสารนี้เก็บ commit inventory และ backlog ประกอบการ review
+
 23 ตุลาคม 2026 — branch `codex/rct-verified-budget-receipts-20261023` สืบต่อจาก `67bf57e` ไม่ merge main และไม่รวมการพัฒนาของ Claude ที่ไม่ได้อยู่ใน ancestry นี้ Git push ไม่เท่ากับ deploy หรืออนุมัติ production
 
 ## งานสะสมที่ต้อง review เมื่อเทียบกับ main
