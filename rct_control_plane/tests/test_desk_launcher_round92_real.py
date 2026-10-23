@@ -154,3 +154,14 @@ def test_header_values_that_are_not_plain_ascii_are_not_sent(served):
     """_send only passes values made of plain characters; a value with a line break would start a second header."""
     status, headers, _ = get(served, "/chat")
     assert status == 200 and all("\r" not in v and "\n" not in v for v in headers.values())
+
+
+def test_a_page_added_while_the_launcher_runs_is_found(served, tmp_path):
+    """The Desk is rebuilt while the launcher keeps serving (it was, in this very round); the table of files is rebuilt on a miss, at most once a second."""
+    import time
+    out = tmp_path / "out"
+    assert get(served, "/fresh")[0] == 404
+    (out / "fresh.html").write_text("<html>fresh page</html>", encoding="utf-8")
+    time.sleep(1.1)
+    status, _, body = get(served, "/fresh")
+    assert status == 200 and b"fresh page" in body

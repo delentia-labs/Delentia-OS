@@ -20,9 +20,10 @@ import mimetypes
 import os
 import re
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 from urllib.parse import unquote, urlsplit
 
 LOCAL_PATH = "/__delentia_local.json"
@@ -45,21 +46,43 @@ def resolve_static(root: Path, url_path: str) -> Optional[Path]:
     if "\x00" in clean:
         return None
     relative = clean.lstrip("/")
-    base = os.path.realpath(str(root))
     candidates = [relative] if relative else ["index.html"]
     if relative:
         candidates += [relative + ".html", relative.rstrip("/") + "/index.html"]
-    for candidate in candidates:
-        # normalise first, then require the result to stay under the folder; do it again after following links
-        full = os.path.normpath(os.path.join(base, candidate))
-        if full != base and not full.startswith(base + os.sep):
-            return None                                      # the path climbed out of the folder
-        real = os.path.realpath(full)
-        if real != base and not real.startswith(base + os.sep):
-            return None                                      # a link inside the folder points outside it
-        if os.path.isfile(real):
-            return Path(real)
+    # The request text is only ever used as a KEY into a table of the files that really are under `root`
+    # (found by walking the folder, links that leave it left out). It never reaches a file-system call, so
+    # there is no path to climb out with, whatever the text says.
+    for refresh in (False, True):
+        index = _file_index(root, refresh)
+        for candidate in candidates:
+            found = index.get(candidate)
+            if found is not None and os.path.isfile(found):
+                return Path(found)
     return None
+
+
+_INDEX_CACHE: Dict[str, Tuple[float, Dict[str, str]]] = {}
+_INDEX_LOCK = threading.Lock()
+
+
+def _file_index(root: Path, refresh: bool) -> Dict[str, str]:
+    """{url-style relative path: real file} for every file under `root`. Rebuilt when asked, and at most once a second, so a Desk that is rebuilt while this runs is picked up."""
+    base = os.path.realpath(str(root))
+    now = time.monotonic()
+    with _INDEX_LOCK:
+        cached = _INDEX_CACHE.get(base)
+        if cached is not None and (not refresh or now - cached[0] < 1.0):
+            return cached[1]
+        index: Dict[str, str] = {}
+        for dirpath, _dirnames, filenames in os.walk(base):
+            for name in filenames:
+                full = os.path.join(dirpath, name)
+                real = os.path.realpath(full)
+                if not real.startswith(base + os.sep):
+                    continue                                 # a link inside the folder that points outside it is not served
+                index[os.path.relpath(full, base).replace(os.sep, "/")] = real
+        _INDEX_CACHE[base] = (now, index)
+        return index
 
 
 def make_server(root: Path, port: int, gateway: str, token_reader: Callable[[], str], host: str = "127.0.0.1") -> ThreadingHTTPServer:
