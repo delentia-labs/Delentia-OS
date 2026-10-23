@@ -30,6 +30,8 @@
 
 ### 1. ทำ integration host ให้ทำซ้ำได้
 
+- ตรวจ GitHub dependency alerts บน default branch ใหม่: push วันที่ 23 ตุลาคมรายงาน 47 รายการ (7 critical / 25 high / 15 moderate) ต้องทำ inventory แยก manifest/version/reachability/fix และรันทดสอบหลังแก้ ตัวเลขนี้เป็น server summary ของ default branch ไม่ใช่ audit ของ branch นี้ และไม่ถูกปิดด้วยผล npm audit เฉพาะ GUI/Action/SDK ก่อนหน้า
+
 - แก้ proxy route ของ Ollama container แล้วตรวจ official model digest, tags และ inference จริง ก่อนรัน model integration ทั้ง 9 กรณี การ probe HTTP 206 อย่างเดียวไม่ถือว่าติดตั้งสำเร็จ
 - ทำ browser sandbox ให้ใช้ได้บน target host โดยรักษา sandbox ตรวจ user namespace/SUID helper ตามข้อจำกัด host แล้วรัน TC027 ทั้ง 3 กรณีและ browser tests ที่ถูก skip
 - แก้ native DNS/egress ให้ web-crawl tool ใช้ได้โดยรักษา SSRF และ DNS-pinning policy การ curl ผ่าน proxy ไม่ใช่หลักฐานของ native resolver
