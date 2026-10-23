@@ -30,7 +30,11 @@ This file is the **single approved wording source** for every public-facing clai
 | Algorithms | **41-algorithm framework** | `README.md`, `lib/site-config.ts` |
 | Genome subsystems | **7 Genome subsystems** | `README.md` |
 | SDK license | **Apache 2.0** | `LICENSE`, `pyproject.toml` |
-| Status | **stable SDK (v2.0.0)** | `CHANGELOG.md`, `_version.py` |
+| Status | **experimental** open-source, self-hosted agent runtime; capabilities by release level (L0/L1 today), see `RELEASE_LEVELS.md`. Do not say "stable SDK" or "production-derived" (the v2.0.0 wording that stood here is withdrawn 2026-10-23: it contradicted the release levels) | `docs/release/RELEASE_LEVELS.md`, `CHANGELOG.md` |
+| What Delentia is | **An experimental, open-source, self-hosted, intent-centric AI agent runtime** with its own agent loop, tools, memory, skills, scheduling and subagents, RCT-7 workflow structure, FDIA/owner-policy controls and auditable records | `docs/public/CURRENT_PUBLIC_INFORMATION_EN.md` (creator-confirmed 2026-10-22) |
+| FDIA Equation | **`F = (D^I) × A`, the creator's framework (Future, Data, Intent, Architect). It has no official expanded name.** In the runtime it is an action-admissibility score used together with the owner's policy and signed approvals. Do not say it proves safety, guarantees an outcome, or that A = 0 suppresses a model's output; a protected effect stops only where the execution path enforces the decision | `docs/concepts/fdia.md`, `research/GATE_PROPERTIES.md` |
+| RCT-7 | **Reverse Component Thinking, the creator's seven-step way of working. The runtime implements parts of it; steps 4 to 7 do not yet meet the creator's definition.** Do not claim the runtime "passes" RCT-7 | `docs/public/RCT7_IMPLEMENTATION_STATUS.md` |
+| Project start | **28 June 2025 (the creator's account); 11 August 2025 is a separate personal turning point.** Neither is an independently timestamped date | `docs/public/CURRENT_PUBLIC_INFORMATION_EN.md` |
 | HexaCore roles | **9 roles (v2.3)** — 3 Western + 3 Eastern + 1 Thai + 1 Local + 1 LPU | `signedai/core/registry.py` |
 | Control plane modules | **22 modules** | `rct_control_plane/` |
 
@@ -88,9 +92,10 @@ This file is the **single approved wording source** for every public-facing clai
 
 Use one of these **approved status phrases** in all public communications:
 
-- ✅ `"stable SDK (v2.0.0) — Phase A–D complete · Apache 2.0"`
-- ✅ `"v2.0.0 — open SDK layer of a production-derived constitutional AI system"`
-- ✅ `"7,820 tests passing · Apache 2.0 · Python 3.10+"`
+- ✅ `"Experimental, self-hosted, intent-centric AI agent runtime · Apache 2.0"`
+- ✅ `"Delentia OS: a governed agent runtime that stops and asks for a signature before it writes, sends or runs code (experimental)"`
+- ✅ `"7,820 tests passing (public CI run 39122730330, 2026-10-18) · Apache 2.0 · Python 3.10+"`
+- ❌ Do NOT use `"stable SDK"` or `"production-derived"` (withdrawn 2026-10-23)
 - ✅ `"Delta-Memory: the delta log is 39% to 90% smaller than full snapshots (20 to 500 ticks, measured bytes, synthetic simulation) — reproducible with scripts/measure_delta_engine_real.py"`
 - ❌ Do NOT quote 91.5% or 95.3% for Delta-Memory: those were formula estimates
 - ❌ Do NOT use `"production-ready"` without qualification

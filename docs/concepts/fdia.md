@@ -1,6 +1,10 @@
-# FDIA Engine
+# The FDIA Equation and the code that applies it
 
-**The mathematical core of constitutional AI decision-making.**
+The **FDIA Equation** is the creator's framework `F = (D^I) × A` (Future, Data, Intent, Architect). It has no official expanded name. This page is about how the runtime reads it. The creator's own account is in [Current public information](../public/CURRENT_PUBLIC_INFORMATION_EN.md).
+
+> **Two different things in this repository carry the name FDIA.**
+> 1. The **equation as the agent runtime reads it**: `fdia_score(D, I, A)` in `rct_control_plane/governed_autonomous_loop.py`, where D comes from the person's own data (`data_evidence.py`), I from the kind and risk of the goal, and A from the owner's policy and signed approvals. This is the one the agent's gate uses.
+> 2. **`core/fdia/fdia.py`, `FDIAScorer`**: a scorer for non-player-character actions in a simulation (weights, resources, reputation). It is older, it is not the equation above, and the code example further down this page is about it.
 
 ---
 
@@ -8,12 +12,14 @@
 
 $$F = D^I \times A$$
 
-| Symbol | Full Name | Range | Role |
-|--------|-----------|-------|------|
-| **F** | Future | 0.0–1.0 | Output score — the "goodness" of the AI action |
-| **D** | Data quality | 0.0–1.0 | How accurate and complete the input data is |
-| **I** | Intent precision | 0.5–2.0 | The **exponent**: with D in [0, 1] a larger I lowers F, so I acts as strictness (clearer, more demanding intent needs better data) |
-| **A** | Architect | 0.0–1.0 | Human-in-the-loop approval gate |
+| Symbol | In the framework | In the runtime | Range in the runtime |
+|--------|------------------|----------------|----------------------|
+| **F** | **Future**: the outcome that actually happens | An action-admissibility score. It is not the future and not a calibrated probability | not capped at 1: for D > 1 it can exceed 1 |
+| **D** | **Data**: reality and experience, good and bad, constraints | Data evidence about the goal (files, memory, verified skills, track record, clarity of the request) | [0, 1] for the gate; the numeric helper accepts larger values |
+| **I** | **Intent**: the exponent that gives the data direction | A strictness value from the kind and risk of the goal. With D in [0, 1] a larger I lowers F | about 0.5 to 2 |
+| **A** | **Architect**: the human who designs, decides and answers for the outcome | The owner's policy and a verifiable Ed25519 signature for protected actions | 0 or 1, plus the number of signatures a rule requires |
+
+Domain rules the code adds to the arithmetic: if D ≤ 0 or I ≤ 0 the score is 0 (raw arithmetic would give D^0 = 1 for I = 0); the loop refuses a risky tool call when F is below 0.5. A score that clears the threshold does not override an owner's deny rule or a pending approval.
 
 ### Why I is an exponent
 
@@ -36,7 +42,7 @@ The exponent design is intentional:
 ```python
 from core.fdia.fdia import FDIAScorer, FDIAWeights, NPCAction, NPCIntentType
 
-# Default weights (production-calibrated)
+# Default weights (the simulation scorer's own defaults; not calibrated on real agent actions)
 scorer = FDIAScorer(weights=FDIAWeights())
 
 # Score a single AI action
