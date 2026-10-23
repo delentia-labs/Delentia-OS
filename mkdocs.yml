@@ -104,6 +104,10 @@ extra:
 
 nav:
   - Home: index.md
+  - What Delentia is:
+    - English: public/CURRENT_PUBLIC_INFORMATION_EN.md
+    - ภาษาไทย: public/CURRENT_PUBLIC_INFORMATION_TH.md
+    - RCT-7 implementation status: public/RCT7_IMPLEMENTATION_STATUS.md
   - Whitepaper 3.0:
     - English: whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md
     - ภาษาไทย: whitepaper/DELENTIA_WHITEPAPER_3.0_TH.md
