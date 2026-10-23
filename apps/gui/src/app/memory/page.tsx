@@ -12,6 +12,7 @@ export default function MemoryPage() {
   const { lang } = useLang();
   const [namespace, setNamespace] = useState<string>("");
   const [showRevoked, setShowRevoked] = useState(false);
+  const [memoryRevision, setMemoryRevision] = useState(0);
   const list = useDeskData(() => desk.memories(namespace || undefined, showRevoked), [namespace, showRevoked], 20000);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -29,10 +30,11 @@ export default function MemoryPage() {
     setNote(null);
     try {
       const r = await desk.remember(content.trim(), kind, namespace || undefined);
-      setNote({ tone: "ok", text: `Stored in namespace ${r.namespace}.` });
+      setNote({ tone: "ok", text: lang === "th" ? `บันทึกใน namespace ${r.namespace} แล้ว` : `Stored in namespace ${r.namespace}.` });
       setContent("");
       setHints(null);
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -66,6 +68,7 @@ export default function MemoryPage() {
       setNote({ tone: "ok", text: lang === "th" ? `แทนที่แล้ว: ${r.old_id} ถูกเก็บไว้แต่ agent ไม่ใช้อีก${r.pin_moved ? " และกฎที่ปักหมุดย้ายมาที่ความจำใหม่" : ""}` : `Replaced: ${r.old_id} is kept on disk but no longer used${r.pin_moved ? "; the pinned rule moved to the new memory" : ""}.` });
       after?.();
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -80,6 +83,7 @@ export default function MemoryPage() {
       await desk.pinMemory(m.id, !m.pinned_at, m.namespace);
       setNote({ tone: "ok", text: m.pinned_at ? (lang === "th" ? "เลิกปักหมุดแล้ว" : "Unpinned.") : (lang === "th" ? "ปักหมุดแล้ว: ทุก episode จะเห็นกฎนี้ ไม่ว่าเป้าหมายจะเป็นอะไร (สูงสุด 5 ข้อต่อคน)" : "Pinned: every episode is shown this rule, whatever the goal (at most 5 per person).") });
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -96,6 +100,7 @@ export default function MemoryPage() {
       setRevoking(null);
       setReason("");
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -211,7 +216,7 @@ export default function MemoryPage() {
             ))}
           </div>
         </div>
-        <div className="mt-6"><TimeTravel namespace={namespace} /></div>
+        <div className="mt-6"><TimeTravel namespace={namespace} refreshVersion={memoryRevision} /></div>
       </PageBody>
     </>
   );
