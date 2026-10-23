@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DeskError } from "@/lib/desk-api";
+import { CONNECTION_CHANGED_EVENT } from "@/lib/delentia-client";
 
 /** Fetch runtime data, optionally re-polling. Errors are kept, never replaced
  *  by placeholder data. */
@@ -10,21 +11,39 @@ export function useDeskData<T>(load: () => Promise<T>, deps: unknown[] = [], int
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const loadRef = useRef(load);
+  const requestVersion = useRef(0);
   useEffect(() => {
     loadRef.current = load;
   });
 
   const reload = useCallback(async () => {
+    const version = ++requestVersion.current;
     try {
       const next = await loadRef.current();
+      if (version !== requestVersion.current) return;
       setData(next);
       setError(null);
     } catch (err) {
+      if (version !== requestVersion.current) return;
       setError(err instanceof DeskError || err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const changed = () => {
+      setData(null);
+      setError(null);
+      setLoading(true);
+      void reload();
+    };
+    window.addEventListener(CONNECTION_CHANGED_EVENT, changed);
+    return () => {
+      window.removeEventListener(CONNECTION_CHANGED_EVENT, changed);
+      requestVersion.current += 1;
+    };
+  }, [reload]);
 
   useEffect(() => {
     reload();

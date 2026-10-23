@@ -41,8 +41,8 @@ export default function SettingsPage() {
     setTest(null);
     const health = await getHealthStatus(gateway.trim() || DEFAULT_GATEWAY);
     setTest(health.version === "offline"
-      ? { tone: "rust", text: `${gateway} is not reachable. Start it with \`delentia serve\`.` }
-      : { tone: "leaf", text: `Reachable: ${health.service} v${health.version} (${health.status})` });
+      ? { tone: "rust", text: lang === "th" ? `เชื่อมต่อ ${gateway} ไม่ได้ เริ่ม API ด้วย delentia serve` : `${gateway} is not reachable. Start it with \`delentia serve\`.` }
+      : { tone: "leaf", text: `${lang === "th" ? "เชื่อมต่อสำเร็จ" : "Reachable"}: ${health.service || "Delentia API"} v${health.version} (${health.status})` });
     setTesting(false);
   };
 
@@ -56,7 +56,7 @@ export default function SettingsPage() {
         <div className="max-w-xl space-y-6">
           <Panel title="API">
             <label className="block">
-              <span className="text-[13px] text-dl-muted">Gateway address</span>
+              <span className="text-[13px] text-dl-muted">{lang === "th" ? "ที่อยู่ Gateway" : "Gateway address"}</span>
               <input value={gateway} onChange={(e) => setGateway(e.target.value)} spellCheck={false}
                 className="desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text" />
             </label>
@@ -64,15 +64,15 @@ export default function SettingsPage() {
               <span className="text-[13px] text-dl-muted">API token (<Code>DELENTIA_API_TOKEN</Code>)</span>
               <div className="mt-1 flex gap-2">
                 <input value={token} onChange={(e) => setToken(e.target.value)} type={show ? "text" : "password"} autoComplete="off" spellCheck={false}
-                  placeholder="only needed when the API is not on localhost"
+                  placeholder={lang === "th" ? "ใช้เมื่อ API ต้องการ token" : "only needed when the API requires a token"}
                   className="desk-focus desk-mono w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50" />
-                <Button tone="ghost" onClick={() => setShow((v) => !v)}>{show ? "Hide" : "Show"}</Button>
+                <Button tone="ghost" onClick={() => setShow((v) => !v)}>{show ? (lang === "th" ? "ซ่อน" : "Hide") : (lang === "th" ? "แสดง" : "Show")}</Button>
               </div>
             </label>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Button onClick={save}>Save</Button>
-              <Button tone="ghost" onClick={check} disabled={testing}>{testing ? "Checking…" : "Test connection"}</Button>
-              {saved ? <Badge tone="leaf">saved</Badge> : null}
+              <Button onClick={save}>{lang === "th" ? "บันทึก" : "Save"}</Button>
+              <Button tone="ghost" onClick={check} disabled={testing}>{testing ? (lang === "th" ? "กำลังตรวจสอบ…" : "Checking…") : (lang === "th" ? "ทดสอบการเชื่อมต่อ" : "Test connection")}</Button>
+              {saved ? <Badge tone="leaf">{lang === "th" ? "บันทึกแล้ว" : "saved"}</Badge> : null}
             </div>
             {test ? <p role="status" className={`mt-3 text-[13px] ${test.tone === "leaf" ? "text-dl-leaf" : "text-dl-rust"}`}>{test.text}</p> : null}
           </Panel>
