@@ -1324,6 +1324,11 @@ class ControlPlaneAPI:
                     # (agent_factory, like every other entry point) and streams
                     # its steps; tools, FDIA gate and approvals are real.
                     if mode == "agent":
+                        if (("acceptance_criteria" in payload and not isinstance(payload["acceptance_criteria"], list))
+                                or ("planning_context" in payload and "acceptance_criteria" not in payload)):
+                            await websocket.send_text(json.dumps({"type": "error",
+                                "data": "contract planning requires an explicit acceptance_criteria list"}))
+                            continue
                         from rct_control_plane.desk_agent_stream import agent_events
                         from rct_control_plane.mcp_server import _kernel as shared_kernel
                         from rct_control_plane.mcp_server import mcp as shared_mcp
@@ -1334,7 +1339,9 @@ class ControlPlaneAPI:
                         async for event in agent_events(intent_text, kernel=shared_kernel, mcp_server=shared_mcp,
                                                         max_iterations=max_iterations,
                                                         namespace=(websocket.scope.get("state") or {}).get("delentia_user"),
-                                                        structured=bool(payload.get("structured"))):
+                                                        structured=bool(payload.get("structured")),
+                                                        acceptance_criteria=payload.get("acceptance_criteria"),
+                                                        planning_context=payload.get("planning_context")):
                             await websocket.send_text(json.dumps(event, default=str))
                         continue
 

@@ -20,7 +20,22 @@ from __future__ import annotations
 import asyncio
 import os
 import json
-from typing import Any, AsyncGenerator, Callable, Dict, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, Optional, Literal
+
+from pydantic import Field
+from rct_control_plane.rct_plan import PlanItem
+
+
+class ContractEvent(PlanItem):
+    schema_version: Literal["1"]
+    type: Literal["plan", "waiting_for_input", "receipt", "verdict"]
+    event_id: str
+    sequence: int = Field(ge=1)
+    contract_id: str
+    contract_version: int = Field(ge=1)
+    plan_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    data: dict[str, Any]
+
 
 _RESULT_PREVIEW_CHARS = 400
 
@@ -107,9 +122,15 @@ async def agent_events(
     max_seconds: float = 600.0,
     loop_factory: Optional[Callable[..., Any]] = None,
     structured: bool = False,
+    acceptance_criteria: Optional[list[dict[str, str]]] = None,
+    planning_context: Any = None,
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """structured=False: the original token/fdia/done events. structured=True
     (the redesigned Desk): start, step, answer, summary, fdia, done."""
+    contract_requested = acceptance_criteria is not None or planning_context is not None
+    if contract_requested and not structured:
+        yield {"type": "error", "data": "contract planning requires structured=true"}
+        return
     from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.governed_autonomous_loop import fdia_score
 
@@ -137,20 +158,43 @@ async def agent_events(
 
     async def _run() -> Dict[str, Any]:
         try:
+            if contract_requested:
+                # No on_plan callback: return the persisted plan before any
+                # execution. A later authorized REST confirmation is required.
+                return dict(await loop.run(goal, on_step=_on_step,
+                    acceptance_criteria=acceptance_criteria, planning_context=planning_context))
             return dict(await loop.run(goal, on_step=_on_step))
         finally:
             await queue.put(None)
 
     task = asyncio.create_task(_run())
-    while True:
-        event = await queue.get()
-        if event is None:
-            break
-        yield event
     try:
+        while True:
+            event = await queue.get()
+            if event is None:
+                break
+            yield event
         result = await task
     except Exception as exc:  # the model backend can time out on CPU
         yield {"type": "error", "data": f"agent episode failed: {exc}"}
+        return
+    finally:
+        # Closing the stream must not leave a detached agent task. A tool
+        # already executing in a worker thread still needs reconciliation.
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    if contract_requested:
+        contract = result.get("intent_contract")
+        if contract is not None:
+            for event in contract_snapshot_events(contract, namespace):
+                yield event
+        yield {"type": "done", "data": {"hexa_role": "AGENT", "trace_id": namespace,
+            "stopped_reason": result.get("stopped_reason"), "completed": False}}
         return
 
     D = getattr(loop, "_episode_D", None)
@@ -183,3 +227,46 @@ async def agent_events(
     }}
     yield {"type": "done", "data": {"hexa_role": "AGENT", "trace_id": namespace,
                                     "stopped_reason": result.get("stopped_reason")}}
+
+
+def contract_snapshot_events(contract: dict, actor: str) -> list[dict]:
+    """Versioned persisted snapshot events; not a live/durable event journal.
+
+    Caller must authorize the contract for this actor before invoking. Stable
+    IDs allow UI deduplication. Sequence is local to this snapshot, not global.
+    """
+    from rct_control_plane.verified_budget import validate_receipts
+    receipts = contract.get("execution_receipts", [])
+    if receipts:
+        validate_receipts(contract["plan"], contract["id"], actor, receipts)
+    executor = contract["plan"].get("semantic_planning", {}).get("executor")
+    satisfied = contract["state"] == "criteria_satisfied"
+    if executor == "verified_budget_v1":
+        satisfied = (satisfied and contract.get("execution_status") == "complete"
+                     and len(receipts) == len(contract["plan"]["components"]))
+    events: list[dict] = []
+
+    def emit(kind, data, suffix=None):
+        events.append(ContractEvent.model_validate({"schema_version": "1", "type": kind,
+            "event_id": f"{contract['id']}:{suffix or str(contract['version']) + ':' + kind}",
+            "sequence": len(events) + 1, "contract_id": contract["id"],
+            "contract_version": contract["version"], "plan_sha256": contract["plan_sha256"],
+            "data": data}).model_dump())
+
+    emit("plan", {"actor": actor, "state": contract["state"],
+                  "plan": {k: v for k, v in contract["plan"].items() if k != "workspace"}})
+    if contract["state"] in {"plan_ready", "waiting_for_input", "waiting_for_clarification"}:
+        emit("waiting_for_input", {"reason": contract["state"],
+             "questions": contract["plan"].get("clarification_questions", []),
+             "differences": contract.get("differences", [])})
+    for receipt in receipts:
+        payload = {k: v for k, v in receipt.items() if k != "receipt_sha256"}
+        emit("receipt", {**receipt, "recorded_ns": str(receipt["recorded_ns"]),
+            "hashed_payload_json": json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                                                separators=(",", ":"), allow_nan=False)},
+             "receipt:" + receipt["receipt_sha256"])
+    emit("verdict", {"state": contract["state"], "satisfied": satisfied,
+        "method": "document_bytes_and_same_currency_arithmetic" if executor == "verified_budget_v1" else "declared_predicates",
+        "differences": contract.get("differences", []),
+        "execution_status": contract.get("execution_status", "not_started")})
+    return events
