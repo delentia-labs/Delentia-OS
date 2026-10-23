@@ -1,0 +1,329 @@
+{
+  "implementation_commit": "9b2519963b509b9dcc71bbab0acd45853e32a5cc",
+  "test_results": {
+    "tc027": {
+      "passed": 5,
+      "seconds": 87.57
+    },
+    "browser_read_and_action": {
+      "passed": 67,
+      "seconds": 164.33
+    },
+    "static_export": {
+      "passed": 1,
+      "seconds": 1.19
+    },
+    "full_python_rerun": false
+  },
+  "gui": {
+    "passed": true,
+    "failure": null,
+    "checks": [
+      "01-offline-detected",
+      "02-connected",
+      "03-thai-memory",
+      "04-persisted-after-reload",
+      "05-revoked-hidden",
+      "06-revoked-audit-visible"
+    ],
+    "page_errors": [],
+    "sandbox": "Sandbox Status\nLayer 1 Sandbox\tNamespace\nPID namespaces\tYes\nNetwork namespaces\tYes\nSeccomp-BPF sandbox\tYes\nSeccomp-BPF sandbox supports TSYNC\tYes\nPtrace Protection with Yama LSM (Broker)\tNo\nPtrace Protection with Yama LSM (Non-broker)\tNo\n\nYou are adequately sandboxed.",
+    "frames": [
+      {
+        "file": "frame-00000.png",
+        "seconds": 1.6471226339999703,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00001.png",
+        "seconds": 2.2003479559998596,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00002.png",
+        "seconds": 2.7519074990000263,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00003.png",
+        "seconds": 3.302119520999895,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00004.png",
+        "seconds": 3.8667109600000913,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00005.png",
+        "seconds": 4.416739076999875,
+        "stage": "settings"
+      },
+      {
+        "file": "frame-00006.png",
+        "seconds": 4.985840777999783,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00007.png",
+        "seconds": 5.534974003000116,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00008.png",
+        "seconds": 6.08443188199999,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00009.png",
+        "seconds": 6.634402439000041,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00010.png",
+        "seconds": 7.184546735999902,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00011.png",
+        "seconds": 7.737334569999803,
+        "stage": "connect"
+      },
+      {
+        "file": "frame-00012.png",
+        "seconds": 8.319031200999689,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00013.png",
+        "seconds": 8.878737525999895,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00014.png",
+        "seconds": 9.444785237999895,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00015.png",
+        "seconds": 10.005889830999877,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00016.png",
+        "seconds": 10.573135687000104,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00017.png",
+        "seconds": 11.138018459999785,
+        "stage": "remember"
+      },
+      {
+        "file": "frame-00018.png",
+        "seconds": 11.766186868999739,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00019.png",
+        "seconds": 12.329884515999765,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00020.png",
+        "seconds": 12.887265825999748,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00021.png",
+        "seconds": 13.436160509999809,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00022.png",
+        "seconds": 13.986578333000125,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00023.png",
+        "seconds": 14.55526992499972,
+        "stage": "reload"
+      },
+      {
+        "file": "frame-00024.png",
+        "seconds": 15.106723458000033,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00025.png",
+        "seconds": 15.674417068999901,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00026.png",
+        "seconds": 16.238815384999725,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00027.png",
+        "seconds": 16.80473313399989,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00028.png",
+        "seconds": 17.37029017499981,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00029.png",
+        "seconds": 17.923132329000055,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00030.png",
+        "seconds": 18.489650353999878,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00031.png",
+        "seconds": 19.05542087799995,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00032.png",
+        "seconds": 19.622831704999953,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00033.png",
+        "seconds": 20.188633304999712,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00034.png",
+        "seconds": 20.758177026999874,
+        "stage": "revoke"
+      },
+      {
+        "file": "frame-00035.png",
+        "seconds": 21.328401214999758,
+        "stage": "revoke"
+      }
+    ],
+    "scope": "real GUI Settings/Memory with real isolated local API; no model generation, not RCT contract/chat E2E",
+    "synthetic_text": "ข้อมูลสาธิต: น้ำ กำลัง งบประมาณ 15,000.00 บาท — ไม่ใช่ข้อมูลลูกค้า (รอบ 06:41:23)"
+  },
+  "gateway_race": {
+    "passed": true,
+    "old_failure_intercepted": true,
+    "new_api_real": true
+  },
+  "preflight": {
+    "format": "delentia-runtime-readiness-1",
+    "ready": false,
+    "checks": {
+      "ollama_model": {
+        "ready": false,
+        "requested": "qwen2.5:7b",
+        "installed": [],
+        "action": "Install the real required model via the official registry; check blob/CDN access, disk and manifest checksums."
+      },
+      "public_dns": {
+        "ready": false,
+        "error": "gaierror",
+        "action": "Provide working host DNS and allowed public egress for the DNS-pinned crawler. Proxy-only HTTP does not establish this capability."
+      },
+      "browser_sandbox": {
+        "ready": true,
+        "exit_code": 0,
+        "action": "Use a host with usable Chromium sandbox: root-owned 4755 helper or permitted user namespaces. Never use --no-sandbox."
+      },
+      "ssh_config": {
+        "ready": true,
+        "exit_code": 0,
+        "action": "Explicit isolated config; no connection attempted."
+      }
+    },
+    "note": "This is preflight, not a replacement for the integration tests or model capability evaluation."
+  },
+  "video": {
+    "filename": "DELENTIA_DESK_REAL_GUI_DEMO_2026-10-23.mp4",
+    "sha256": "999fa9359d802c529a5ff0a430affff0bb9186ef207f837ca4a1823a2fd12a3b",
+    "format": {
+      "duration": "20.900000",
+      "size": "222950"
+    }
+  },
+  "browser": {
+    "chromium": "154.0.8037.57",
+    "playwright": "1.56.0",
+    "image": "sha256:efa697fa03944f7359f5b4c203d2050bd862320999752a550914b92c5566f9a9",
+    "uid": 1000,
+    "privileged": false,
+    "sandbox_disabled": false,
+    "docker_network": "host for local test fixtures"
+  },
+  "source_sha256": {
+    "apps/gui/src/app/settings/page.tsx": "9d4a1af3787d19850da5079be3dfe4b3299835c03525710c8580159da06d4b85",
+    "apps/gui/src/app/memory/page.tsx": "44b7e3a4f0203672790a08238b683834b9cf9f5bcc9fbd7c34e778c0c68e1574",
+    "apps/gui/src/components/desk/ui.tsx": "f4420c28c3a13b8cb7cc413324f17c7e743c862796b62e9a14613ed9d09a8eb6",
+    "apps/gui/src/components/desk/memory/TimeTravel.tsx": "1d3d8b1b5595e7c5454d7cf113202c69fba09167e6a7a0c9885158b2a97154d7",
+    "apps/gui/src/lib/delentia-client.ts": "07b78c06b38d0820e60f8a22b5071b78b892e25995b8ce9a39029ed831dbc5f4",
+    "scripts/serve_desk_static.py": "b60efcddaa8e4c005854ad70c0a5a6be404aa1ff2fc784efab2480ef4f33d749",
+    "scripts/record_desk_browser_demo.py": "a8d52f63cf4fc1f893a793245277ce3a2376686fefe7d8072fccb9141b1feea0",
+    "scripts/check_desk_gateway_race.py": "7beae53bac523a77a5783aa73335c26b65b6d9e4591b94ebe01bc35f72524cc3",
+    "scripts/encode_desk_capture.py": "67977955338f69b00f02c276c5ef8b712c1aa6114f20470eab5207f76fd4c874"
+  },
+  "evidence_sha256": {
+    "browser-integration.xml": "7238d288a2dfeceefd61737dd96d9e03881615666febac85a3bf94fd8ecd7bcc",
+    "browser-regression.xml": "3f7b7148c70537f112156a59d48a9c14f78bf9dbc89a40eb680e18d625b3671d",
+    "static-test.log": "f337c54db7c713c03da26183cb1d60a103149e31343ada205a7ec4b6aa361232",
+    "preflight.json": "45e1569ef165238706a50538a740a79ad1e89fab3061402e54596859c17df568",
+    "gui-build-final.log": "972f711c39e51568645cb40b2c8cadd00e2bf346bc46ffd9da6ddcadf370d1f1",
+    "gateway-race.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "recording-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "seccomp-profile.json": "cc3e61cabda6bbc1e53e54d27ba4d55a9d3be829b6dd1a596f4a7b31b1cc7849"
+  },
+  "frame_sha256": {
+    "frame-00000.png": "d0f55ebb8919ca99aac17d9918dcd8b2d8f90f24e509775911dfc2e37f4157ed",
+    "frame-00001.png": "44de002482762bd680831d8f973068426c1fd52c553a355390fbe63905b416af",
+    "frame-00002.png": "44de002482762bd680831d8f973068426c1fd52c553a355390fbe63905b416af",
+    "frame-00003.png": "44de002482762bd680831d8f973068426c1fd52c553a355390fbe63905b416af",
+    "frame-00004.png": "44de002482762bd680831d8f973068426c1fd52c553a355390fbe63905b416af",
+    "frame-00005.png": "44de002482762bd680831d8f973068426c1fd52c553a355390fbe63905b416af",
+    "frame-00006.png": "0c82b7535ecd8a967dd55ce6b9eed6d523189c24d16b8570505c7bbbcc4b216e",
+    "frame-00007.png": "167cd48c026cbdf7c9e6113c8dd9880ebdf955ae25c861b193e06bd4ab440028",
+    "frame-00008.png": "167cd48c026cbdf7c9e6113c8dd9880ebdf955ae25c861b193e06bd4ab440028",
+    "frame-00009.png": "167cd48c026cbdf7c9e6113c8dd9880ebdf955ae25c861b193e06bd4ab440028",
+    "frame-00010.png": "167cd48c026cbdf7c9e6113c8dd9880ebdf955ae25c861b193e06bd4ab440028",
+    "frame-00011.png": "94bd96d74d3345a2972aa24db6adc390c62c87d4621193dfaf9bc1562c25d4eb",
+    "frame-00012.png": "94bd96d74d3345a2972aa24db6adc390c62c87d4621193dfaf9bc1562c25d4eb",
+    "frame-00013.png": "020d5c7ef6615e671b972b209ab7256e448fbd80daf5f1591c63f0339a923132",
+    "frame-00014.png": "020d5c7ef6615e671b972b209ab7256e448fbd80daf5f1591c63f0339a923132",
+    "frame-00015.png": "020d5c7ef6615e671b972b209ab7256e448fbd80daf5f1591c63f0339a923132",
+    "frame-00016.png": "020d5c7ef6615e671b972b209ab7256e448fbd80daf5f1591c63f0339a923132",
+    "frame-00017.png": "020d5c7ef6615e671b972b209ab7256e448fbd80daf5f1591c63f0339a923132",
+    "frame-00018.png": "3b04362349ac0eb79f7fc9339220165c9f75d0a9fe0e3ab3a7a506fa56b00218",
+    "frame-00019.png": "0362bab5b4477fcf5c27a1a9e5494887d97a6ca96bb24e17432f43dc00322614",
+    "frame-00020.png": "0362bab5b4477fcf5c27a1a9e5494887d97a6ca96bb24e17432f43dc00322614",
+    "frame-00021.png": "0362bab5b4477fcf5c27a1a9e5494887d97a6ca96bb24e17432f43dc00322614",
+    "frame-00022.png": "0362bab5b4477fcf5c27a1a9e5494887d97a6ca96bb24e17432f43dc00322614",
+    "frame-00023.png": "0362bab5b4477fcf5c27a1a9e5494887d97a6ca96bb24e17432f43dc00322614",
+    "frame-00024.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00025.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00026.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00027.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00028.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00029.png": "54eb529da60e0748a11d4c5056895e8c9a1fdf6ee96f673c0c6d8330b5ca3bf0",
+    "frame-00030.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191",
+    "frame-00031.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191",
+    "frame-00032.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191",
+    "frame-00033.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191",
+    "frame-00034.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191",
+    "frame-00035.png": "d42a46cd47e2ef289f501f1f2b9b407eb38b76714ed5adbcc835e77ad3658191"
+  },
+  "paid_api_used": false,
+  "published": false,
+  "cloud_startup_draft_saved": true,
+  "cloud_published_or_fresh_restore_verified": false
+}

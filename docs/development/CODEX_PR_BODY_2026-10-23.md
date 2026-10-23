@@ -17,7 +17,7 @@ Python runtime checkpoint: 478b11a87a1b41e11a2fe3e152e0b662d1cf7d57. Frontend de
 - Ruff CI scope and Mypy CI-tools environment: passed, 260 source files.
 - GitHub aggregate CodeQL at 478b11a: success, no annotations, “No new alerts in code changed by this pull request”; Python/Rust/JavaScript/Actions analyses all passed. Repository alert inventory API returns 403. Latest pushed revision requires its own checks.
 - GUI after dependency update: npm ci, type-check, lint, production build, production audit and actual static HTTP smoke passed.
-- Actual isolated Desk API: health/overview/sessions/models/tools return 200; synthetic Thai memory round-trip and revoke pass. Browser E2E/video remain blocked by host sandbox; HTTP smoke is not GUI E2E.
+- Actual isolated Desk API: health/overview/sessions/models/tools return 200; synthetic Thai memory round-trip and revoke pass. The subsequent sandboxed-browser follow-up below adds real GUI evidence; it does not validate Desk contract/chat lifecycle.
 - Earlier scripted pipeline, production CLI and wheel evidence remains linked in the previous checkpoint report; those results are not relabeled as reruns of this revision.
 
 ## Paired execution A/B
@@ -42,3 +42,19 @@ Detailed results, raw A/B outcomes and next gates:
 Latest follow-up and all 15 failure identifiers:
 - docs/development/PROTECTED_FILES_AND_DESK_FOLLOWUP_2026-10-23_TH.md
 - docs/development/evidence/PROTECTED_FILES_AND_DESK_2026-10-23.json
+
+## Sandboxed browser and real Desk follow-up
+Implementation 9b2519963b509b9dcc71bbab0acd45853e32a5cc (after 8a822cd): fixed missing health service labels, Thai controls, stale connection responses/sidebar status and delayed Memory history refresh. Added static-export routing, browser race regression, real GUI capture and timestamp-preserving video encoding utilities.
+
+A non-root browser container using Playwright's seccomp profile reports namespace/PID/network namespaces and Seccomp-BPF enabled. No --no-sandbox, privileged container or TLS bypass. The existing browser tool uses an adapter that preserves its URL fence/DNS-pin arguments and cleans up task containers after caller death.
+
+- TC027: 5 passed, including the 3 previously sandbox-blocked failures.
+- Browser read/action: 67 passed; static route/header regression: 1 passed.
+- GUI type-check/lint/build and Ruff passed.
+- Real Settings/Memory GUI: 6 checkpoints passed with zero JavaScript page errors. Separate delayed-old-gateway failure regression passed against a real new local API.
+- Actual captured-frame video: 20.9 seconds, synthetic Thai data, no model generation; screenshots reviewed. Private DB/keys excluded.
+- No full Python rerun for this frontend/host follow-up. Native DNS and required model remain unavailable; current disk is below the model headroom guard. Desk RCT contract lifecycle, server read-only profile and pilot gates remain open.
+
+Details and machine-readable evidence:
+- docs/development/SANDBOXED_BROWSER_AND_REAL_DESK_DEMO_2026-10-23_TH.md
+- docs/development/evidence/SANDBOXED_BROWSER_AND_DESK_2026-10-23.json
