@@ -431,6 +431,10 @@ class ControlPlaneAPI:
         # token it proved it holds. Off unless DELENTIA_RATE_LIMIT is set (`delentia serve` sets it).
         self.app.add_middleware(RateLimitMiddleware)
         self.app.add_middleware(ApiTokenMiddleware)
+        from .readonly_service import ReadOnlyBoundary, load_policy, readonly_lifespan
+        self._readonly_policy = load_policy()
+        if self._readonly_policy is not None:
+            self.app.add_middleware(ReadOnlyBoundary, policy=self._readonly_policy)
         
         # Track uptime
         self._start_time: float = time.time()
@@ -450,6 +454,8 @@ class ControlPlaneAPI:
         from .mcp_gateway import mcp_router
         self.app.include_router(mcp_router)
         self._register_routes()
+        if self._readonly_policy is not None:
+            self.app.router.lifespan_context = readonly_lifespan
     
     def _register_routes(self):
         """Register all API routes"""
@@ -1904,6 +1910,9 @@ class ControlPlaneAPI:
                 )
             result["namespace"] = namespace
             return result
+
+        from .readonly_service import install_route
+        install_route(self.app, self._readonly_policy, run_governed_agent)
 
         # Round 60 (D4): background jobs - the same governed episode, started in the background, with an id to ask about and cancel (jobs.py).
         job_state: Dict[str, Any] = {"service": None}

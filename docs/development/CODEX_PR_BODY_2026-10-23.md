@@ -58,3 +58,9 @@ A non-root browser container using Playwright's seccomp profile reports namespac
 Details and machine-readable evidence:
 - docs/development/SANDBOXED_BROWSER_AND_REAL_DESK_DEMO_2026-10-23_TH.md
 - docs/development/evidence/SANDBOXED_BROWSER_AND_DESK_2026-10-23.json
+
+### Read-only API planning boundary checkpoint
+
+Adds an opt-in operator-configured, single-workspace profile allowing only health and a versioned budget-plan endpoint. Named token actors receive exact file grants; generic agent/MCP/jobs/continuation/WebSocket routes and general background lifecycle are disabled. The endpoint deliberately returns `plan_ready` before execution: authorized confirmation, public contract/error schemas, recovery and Desk integration remain follow-up work. No production-readiness claim.
+
+Validation: 79 targeted tests passed (25 new profile cases plus existing verified-budget/auth regressions), CI-scope Ruff passed, Mypy passed 261 source files. No new full suite or model evaluation. Details: `docs/development/READONLY_PROFILE_AND_RCT_NEXT_STEPS_2026-10-23_TH.md`.
