@@ -2434,8 +2434,12 @@
 <ul>
 <li>ทดสอบแล้ว (โมเดลจำลองที่ทำตามสคริปต์ + เครื่องมือจริง + กระบวนการแยกกัน): init, compare, taint, edit→approve ใช้ซ้ำไม่ได้, ความจำข้ามการเปิดใหม่, ตัวตรวจเฉลย</li>
 <li>ทดสอบแล้วกับ qwen2.5:7b ในเครื่อง: รันได้ ปลอดภัย รายงานตามจริง แต่ <strong>ไม่ผ่าน</strong> เกณฑ์ตอบถูก</li>
-<li><strong>ยังไม่ได้ทดสอบ:</strong> โมเดลที่เก่งเรื่องเครื่องมือ (OpenRouter) รันซ้ำ 3 ครั้งจากสถานะเริ่มต้น เจ้าของรันเอง ติดตั้งบนเครื่องสะอาด</li>
+<li>ทดสอบแล้ว (2026-10-23): ติดตั้ง <code>delentia-os</code> 2.3.1 จาก PyPI ใน Python venv ใหม่ แล้วรัน <code>demo init → compare → edit → approve --scripted</code> ในโฟลเดอร์ใหม่ ผลทั้งหมดอยู่ที่ <a href="../EVIDENCE_RUN_R92/">EVIDENCE_RUN_R92.md</a></li>
+<li><strong>ยังไม่ได้ทดสอบ:</strong> โมเดลที่เก่งเรื่องเครื่องมือ (OpenRouter) รันซ้ำ 3 ครั้งจากสถานะเริ่มต้น เจ้าของรันเอง; ติดตั้งบนเครื่องที่ไม่เคยมี Delentia หรือบน macOS/Linux; คนนอกรันตามคู่มือนี้ด้วยตัวเอง</li>
 </ul>
+<blockquote>
+<p><strong>ข้อควรระวัง:</strong> <code>demo init</code> <strong>ไม่เขียนทับ</strong> โฟลเดอร์เดิม ถ้า <code>~/delentia-demo</code> มีอยู่แล้วและเคยแก้ไฟล์ตัวอย่างไปแล้ว (เช่น เคย <code>demo approve</code>) การรัน <code>compare</code> ครั้งต่อไปจะขึ้น "ไม่ผ่าน: ไฟล์ต้นฉบับไม่ถูกแก้" เพราะไฟล์ไม่ตรงกับตอน init เพื่อเริ่มจากสถานะสะอาด ใช้โฟลเดอร์ใหม่: <code>delentia demo init --dir &lt;โฟลเดอร์ใหม่&gt;</code> และใส่ <code>--dir &lt;โฟลเดอร์ใหม่&gt;</code> ในคำสั่ง <code>demo run</code> / <code>demo approve</code> / <code>demo status</code> ด้วย</p>
+</blockquote>
 
 
 

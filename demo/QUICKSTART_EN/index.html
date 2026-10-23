@@ -2434,8 +2434,12 @@ it let the model read the files in only 1 of 6 runs, until two reply-format prob
 <ul>
 <li>Tested (a model that follows a script + real tools + separate processes): init, compare, taint, edit → approve (cannot be reused), memory across a restart, the answer checker.</li>
 <li>Tested with the local qwen2.5:7b: it runs, it is safe, it reports truthfully, but it <strong>does not pass</strong> the correctness checks.</li>
-<li><strong>Not tested:</strong> a model that is good with tools (OpenRouter); three repeated runs from a clean start; the owner running it alone; a clean-machine install.</li>
+<li>Tested (2026-10-23): <code>delentia-os</code> 2.3.1 installed from PyPI into a new Python venv, then <code>demo init -&gt; compare -&gt; edit -&gt; approve --scripted</code> in a new folder. Everything it printed is in <a href="../EVIDENCE_RUN_R92/">EVIDENCE_RUN_R92.md</a>.</li>
+<li><strong>Not tested:</strong> a model that is good with tools (OpenRouter); three repeated runs from a clean start; the owner running it alone; an install on a machine that never had Delentia, or on macOS/Linux; an outside person following this page alone.</li>
 </ul>
+<blockquote>
+<p><strong>Caution:</strong> <code>demo init</code> never overwrites. If <code>~/delentia-demo</code> already exists and its sample files were changed before (for example by an earlier <code>demo approve</code>), the next <code>compare</code> reports "not passed: the original file was not modified", because the files no longer match what <code>init</code> recorded. For a clean start use a new folder: <code>delentia demo init --dir &lt;new folder&gt;</code> and pass the same <code>--dir &lt;new folder&gt;</code> to <code>demo run</code>, <code>demo approve</code> and <code>demo status</code>.</p>
+</blockquote>
 
 
 
