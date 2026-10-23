@@ -78,4 +78,7 @@ it let the model read the files in only 1 of 6 runs, until two reply-format prob
 
 - Tested (a model that follows a script + real tools + separate processes): init, compare, taint, edit → approve (cannot be reused), memory across a restart, the answer checker.
 - Tested with the local qwen2.5:7b: it runs, it is safe, it reports truthfully, but it **does not pass** the correctness checks.
-- **Not tested:** a model that is good with tools (OpenRouter); three repeated runs from a clean start; the owner running it alone; a clean-machine install.
+- Tested (2026-10-23): `delentia-os` 2.3.1 installed from PyPI into a new Python venv, then `demo init -> compare -> edit -> approve --scripted` in a new folder. Everything it printed is in [EVIDENCE_RUN_R92.md](EVIDENCE_RUN_R92.md).
+- **Not tested:** a model that is good with tools (OpenRouter); three repeated runs from a clean start; the owner running it alone; an install on a machine that never had Delentia, or on macOS/Linux; an outside person following this page alone.
+
+> **Caution:** `demo init` never overwrites. If `~/delentia-demo` already exists and its sample files were changed before (for example by an earlier `demo approve`), the next `compare` reports "not passed: the original file was not modified", because the files no longer match what `init` recorded. For a clean start use a new folder: `delentia demo init --dir <new folder>` and pass the same `--dir <new folder>` to `demo run`, `demo approve` and `demo status`.
