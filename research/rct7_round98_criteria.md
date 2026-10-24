@@ -60,3 +60,15 @@ be measured: when an episode stops to ask, the harness answers from a fixed poli
 * Cost and tokens of every round are summed (a stop is not free); the row records questions asked, their kinds, rounds, and whether the episode ended unresolved.
 * Pass: tests with the real harness, the real governed loop and a scripted judge show: a question is answered and the episode finishes and is graded; costs add up over rounds; the round limit holds;
   person off leaves rows unchanged; the identity changes when the person or the judge setting does.
+
+## T. Thai sets for the judge, the critic and the chain (written before the cases and before any run, 2026-10-24, round 99)
+The English dev sets say nothing about the language the Architect actually writes in. Same code, same prompts, same keep rules; only the language of the cases changes.
+* Cases (`research/rct7_round99_cases_th.py`, author-written, DEV, not independent evidence): 41 Thai requests (20 unclear, 21 clear), 39 Thai request/answer pairs (19 meet, 20 do not, in a way no
+  rule reads) and 10 scripted Thai episodes (5 faithful, 5 with one invented fact). None repeats a request of the English sets.
+* Measured with the same models as the English run (qwen3:8b, qwen2.5:7b, llama3.2:3b), thinking off, one run each, cite guard on and off on the very same replies.
+* **Reported, not passed or failed:** recall and false pauses per model next to the English numbers. **Rule for the wording of the documents:** if for a model Thai recall is below 0.80 or false
+  pauses above 0.15 where the English numbers were not, the documents say that model-assisted parts are not validated for Thai with that model. Nothing is switched on either way (all are opt-in).
+* The cite guard for Thai: an unknown's `about` (>= 3 characters) must occur in the request. Thai is written without spaces, so a model that quotes a different word boundary than the request
+  uses is dropped by the guard; the measurement reports how many Thai unknowns the guard dropped that the same reply would have kept without it (the guard's price in Thai).
+* The chain's verifier compares quotes after whitespace folding; Thai has few spaces, so a model that adds or removes a space inside a Thai quote still fails verification. Reported as
+  `quote_not_found` counts on the faithful Thai episodes.
