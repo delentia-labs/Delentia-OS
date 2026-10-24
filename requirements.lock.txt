@@ -41,7 +41,7 @@ build==1.5.0
 CacheControl==0.14.4
 cachetools==6.2.6
 catalogue==2.0.10
-certifi==2026.2.25
+certifi==2026.10.19  # Dependabot critical (emSign root CAs with compromised intermediate keys), fixed 2026.10.19
 cffi==2.0.0
 charset-normalizer==3.4.5
 click==8.5.0
@@ -186,7 +186,7 @@ paginate==0.5.7
 pandas==3.0.3
 pathspec==1.0.4
 peft==0.19.1
-pillow==12.3.0  # Round 44 item E: real Dependabot fix version (was 12.1.1, vulnerable)
+pillow==13.0.0  # Dependabot: 39 open alerts, all fixed in 13.0.0 (streamlit>=1.66 is needed: 1.64 caps pillow<13)
 pip-api==0.0.34
 pip-requirements-parser==32.0.1
 pip_audit==2.10.0
