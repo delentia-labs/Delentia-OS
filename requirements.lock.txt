@@ -171,7 +171,7 @@ openai==2.34.0
 openai-whisper==20250625
 opencv-python==5.0.0.93
 opencv-python-headless==5.0.0.93
-opentelemetry-api==1.44.0
+opentelemetry-api==1.45.1
 opentelemetry-exporter-otlp==1.44.0
 opentelemetry-exporter-otlp-proto-common==1.44.0
 opentelemetry-exporter-otlp-proto-grpc==1.44.0
@@ -258,7 +258,7 @@ ruff==0.15.21
 safetensors==0.8.0
 scikit-learn==1.8.0
 scipy==1.17.1
-setuptools==83.0.0
+setuptools==84.1.0
 sgmllib3k==1.0.0
 shellingham==1.5.4
 six==1.17.0
