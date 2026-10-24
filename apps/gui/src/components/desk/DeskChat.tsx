@@ -22,7 +22,7 @@ type Summary = {
   notary: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps: string[];
   usage?: { calls?: number; prompt_tokens?: number; completion_tokens?: number; cached_prompt_tokens?: number; cost_usd?: number | null; cost_known?: boolean };
-  conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string }[];
+  conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string; evidence?: { measure?: string; path?: string; step?: number; tool?: string }[] }[];
   clarification_id?: string | null; clarification_question?: string | null;
 };
 type Fdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
@@ -184,7 +184,7 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
             {summary.conditions_report.map((c, i) => (
               <li key={i}>
                 <span className={c.status === "met" ? "text-dl-leaf" : c.status === "broken" ? "text-dl-rust" : "text-dl-amber"}>{c.status === "met" ? "✓ met" : c.status === "broken" ? "✕ broken" : "? not judged"}</span>
-                {" "}{c.kind} = {c.value}{c.observed ? ` · ${c.observed}` : ""}
+                {" "}{c.kind} = {c.value}{c.observed ? ` · ${c.observed}` : ""}{c.evidence?.length ? ` · seen: ${c.evidence.map((e) => e.measure ?? `step ${e.step} wrote ${e.path}`).join(", ")}` : ""}
               </li>
             ))}
           </ul>
