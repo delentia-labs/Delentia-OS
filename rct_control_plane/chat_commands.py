@@ -127,6 +127,39 @@ def _skip(ctx: Dict[str, Any], arg: str) -> str:
     return "Okay, I will not keep that."
 
 
+def _questions(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.clarifications import ClarificationStore
+    waiting = ClarificationStore(ctx["persistence"]).list(namespace=ctx["namespace"], status="PENDING", limit=10)
+    if not waiting:
+        return "Nothing is waiting for your answer."
+    lines = [f"{c.clarification_id}: {_clip(c.question, 160)}" for c in waiting]
+    return "Waiting for your answer (reply with /answer <id> <your answer>):\n" + "\n".join(lines)
+
+
+def _answer(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    parts = arg.split(None, 1)
+    if len(parts) < 2:
+        return "Say which question and what you answer: /answer <id> <your answer>."
+    try:
+        done = ClarificationStore(ctx["persistence"]).answer(parts[0], ctx["namespace"], parts[1])
+    except ClarificationError as exc:
+        return str(exc).capitalize() + "."
+    return (f"Noted as version {done.new_intent_version} of your request. To run it again with your answer, send the same request again (it is attached once); "
+            f"to keep the result as it is, send /accept {done.clarification_id}.")
+
+
+def _accept(ctx: Dict[str, Any], arg: str) -> str:
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    if not arg.strip():
+        return "Say which one: /accept <id>."
+    try:
+        ClarificationStore(ctx["persistence"]).accept(arg.split()[0], ctx["namespace"])
+    except ClarificationError as exc:
+        return str(exc).capitalize() + "."
+    return "Okay, I will keep the result as it is. Nothing was run again."
+
+
 COMMANDS: Dict[str, tuple] = {
     "help": (_help, "this list"),
     "whoami": (_whoami, "who the agent thinks you are"),
@@ -138,6 +171,9 @@ COMMANDS: Dict[str, tuple] = {
     "suggestions": (_suggestions, "things I offered to remember for you"),
     "remember": (_remember, "keep a suggestion: /remember <id>"),
     "skip": (_skip, "throw a suggestion away: /skip <id>"),
+    "questions": (_questions, "questions I am waiting on you for"),
+    "answer": (_answer, "answer one: /answer <id> <your answer>"),
+    "accept": (_accept, "keep a result as it is: /accept <id>"),
 }
 _ALIASES: Dict[str, Callable[..., str]] = {"start": _help}
 

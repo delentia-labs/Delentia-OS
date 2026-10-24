@@ -31,7 +31,7 @@ TTL_ENV = "DELENTIA_CLARIFICATION_TTL_SECONDS"
 DEFAULT_TTL_SECONDS = 7 * 24 * 3600
 
 KINDS = ("before_act", "mismatch")                       # R5: not clear enough to act / R7: the result does not match the intent
-CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact")
+CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact", "length", "item_count")
 STATUSES = ("PENDING", "ANSWERED", "CANCELLED", "EXPIRED")
 SEALED_FIELDS = ("original_goal", "question", "expected", "observed", "answer")
 
@@ -49,10 +49,17 @@ CREATE TABLE IF NOT EXISTS clarifications (
     answered_by        TEXT,
     created_at         REAL NOT NULL,
     answered_at        REAL,
-    expires_at         REAL NOT NULL
+    expires_at         REAL NOT NULL,
+    continued_at       REAL,
+    continued_as       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_clarifications_ns_status ON clarifications(namespace, status, created_at);
 """
+
+
+# The revised goal carries the person's answer under this marker, so a rule that reads requirements from words can tell the original request from the update.
+UPDATE_MARK = "--- Update from the person (intent version "
+ANSWER_LABEL = "Person's answer: "
 
 
 class ClarificationError(ValueError):
@@ -97,13 +104,15 @@ class Clarification:
             "intent_version": self.intent_version, "new_intent_version": self.new_intent_version, "status": self.status, "question": self.question,
             "expected": self.expected, "observed": self.observed, "answer": self.answer, "original_goal": self.original_goal,
             "answered_by": self.answered_by, "created_at": self.created_at, "answered_at": self.answered_at, "expires_at": self.expires_at,
+            "continued_as": self.extra.get("continued_as"), "continued_at": self.extra.get("continued_at"),
         }
 
     def revised_goal(self) -> str:
         """The goal for the NEXT episode: the original words, then what the person said when asked. The original is never overwritten; this is a new version that cites it."""
         if self.status != "ANSWERED":
             raise ClarificationError("only an answered clarification has a revised goal")
-        return f"{self.original_goal}\n\nUpdate from the person (intent version {self.new_intent_version}), in answer to \"{self.question}\": {self.answer}"
+        return (f"{self.original_goal}\n\n{UPDATE_MARK}{self.new_intent_version}) ---\n"
+                f"Question asked: {self.question}\n{ANSWER_LABEL}{self.answer}")
 
 
 class ClarificationStore:
@@ -111,6 +120,10 @@ class ClarificationStore:
         self._persistence = persistence
         with self._persistence._connect() as conn:
             conn.executescript(_SCHEMA)
+            have = {r[1] for r in conn.execute("PRAGMA table_info(clarifications)").fetchall()}
+            for column, kind in (("continued_at", "REAL"), ("continued_as", "TEXT")):
+                if column not in have:                                # a store created before round 97
+                    conn.execute(f"ALTER TABLE clarifications ADD COLUMN {column} {kind}")
 
     # ------------------------------------------------------------------ writing
     def create(self, namespace: str, kind: str, criterion: str, question: str, *, original_goal: str = "", expected: str = "", observed: str = "",
@@ -163,6 +176,56 @@ class ClarificationStore:
             raise ClarificationError("this question was just closed by someone else")
         self._audit(ns, clarification_id, "answered", {"answered_by": caller, "new_intent_version": new_version, "answer": text})
         return self.get(clarification_id)                             # type: ignore[return-value]
+
+    def accept(self, clarification_id: str, caller: str, *, as_owner: bool = False) -> Clarification:
+        """The person closes an ANSWERED question without running anything again: the result stays as it was and the answer is not used for a later request."""
+        row = self._row(clarification_id)
+        if row is None:
+            raise ClarificationError("no such question")
+        if caller != row["namespace"] and not as_owner:
+            raise ClarificationError("this question belongs to someone else")
+        with self._persistence._connect() as conn:
+            changed = conn.execute("UPDATE clarifications SET continued_at = ?, continued_as = 'accepted' "
+                                   "WHERE clarification_id = ? AND status IN ('ANSWERED', 'PENDING') AND continued_at IS NULL", (_now(), clarification_id)).rowcount
+            if changed == 1 and row["status"] == "PENDING":
+                conn.execute("UPDATE clarifications SET status = 'ANSWERED', answered_by = ?, answered_at = ?, new_intent_version = ? WHERE clarification_id = ?",
+                             (caller, _now(), int(row["intent_version"]) + 1, clarification_id))
+        if changed != 1:
+            raise ClarificationError(f"this question is {row['status']} and was already used or closed; it cannot be accepted again")
+        self._audit(row["namespace"], clarification_id, "accepted", {"accepted_by": caller, "note": "the result was accepted as it is; nothing was run again"})
+        return self.get(clarification_id)                             # type: ignore[return-value]
+
+    def claim_for_goal(self, namespace: str, goal: str) -> Optional[Clarification]:
+        """An answered question sticks to the exact request it was asked about. When the SAME person sends that request again, the episode runs on the revised intent
+        (the original words plus the person's answer) and the answer is used once. Exact match after whitespace is normalised: never similarity, so a different request is never
+        changed by an old answer. Returns the claimed question, or None."""
+        wanted = " ".join(str(goal or "").split())
+        if not wanted:
+            return None
+        self._expire_stale()
+        with self._persistence._connect() as conn:
+            conn.row_factory = _dict_row
+            rows = conn.execute("SELECT * FROM clarifications WHERE namespace = ? AND status = 'ANSWERED' AND continued_at IS NULL ORDER BY answered_at DESC LIMIT 20",
+                                (namespace,)).fetchall()
+        for row in rows:
+            obj = self._to_obj(row)
+            if " ".join(obj.original_goal.split()) != wanted:
+                continue
+            with self._persistence._connect() as conn:
+                changed = conn.execute("UPDATE clarifications SET continued_at = ?, continued_as = 'rerun' "
+                                       "WHERE clarification_id = ? AND status = 'ANSWERED' AND continued_at IS NULL", (_now(), obj.clarification_id)).rowcount
+            if changed == 1:                                          # the first run to claim it wins; a second one starts from the plain goal
+                self._audit(namespace, obj.clarification_id, "continued", {"note": "the person sent the same request again; the episode runs on the revised intent"})
+                return obj
+        return None
+
+    def release(self, clarification_id: str) -> None:
+        """Give an answer back when the episode that claimed it ended for a reason that is not the person's (the model was unreachable): they should not have to answer again."""
+        with self._persistence._connect() as conn:
+            conn.execute("UPDATE clarifications SET continued_at = NULL, continued_as = NULL WHERE clarification_id = ? AND continued_as = 'rerun'", (clarification_id,))
+        row = self._row(clarification_id)
+        if row is not None:
+            self._audit(row["namespace"], clarification_id, "released", {"note": "the episode ended before it could use the answer; the answer is available again"})
 
     def cancel(self, clarification_id: str, caller: str, *, as_owner: bool = False) -> Clarification:
         row = self._row(clarification_id)
@@ -235,7 +298,8 @@ class ClarificationStore:
             clarification_id=row["clarification_id"], namespace=row["namespace"], kind=row["kind"], criterion=row["criterion"], intent_version=int(row["intent_version"]),
             status=row["status"], created_at=row["created_at"], expires_at=row["expires_at"], episode_id=row["episode_id"], new_intent_version=row["new_intent_version"],
             answered_by=row["answered_by"], answered_at=row["answered_at"], original_goal=str(fields.get("original_goal") or ""), question=str(fields.get("question") or ""),
-            expected=str(fields.get("expected") or ""), observed=str(fields.get("observed") or ""), answer=str(fields.get("answer") or ""))
+            expected=str(fields.get("expected") or ""), observed=str(fields.get("observed") or ""), answer=str(fields.get("answer") or ""),
+            extra={"continued_as": row.get("continued_as"), "continued_at": row.get("continued_at")})
 
     def _audit(self, namespace: str, clarification_id: str, action: str, changes: Dict[str, Any]) -> None:
         try:

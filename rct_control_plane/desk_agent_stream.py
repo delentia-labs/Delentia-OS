@@ -141,6 +141,10 @@ async def agent_events(
     factory = loop_factory or build_governed_loop
     loop = factory(kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds,
                    mcp_server=mcp_server)
+    try:
+        loop._interactive = True                # the Desk has a person in front of it: RCT-7 stop-and-ask applies
+    except Exception:
+        pass
 
     queue: "asyncio.Queue[Optional[Dict[str, Any]]]" = asyncio.Queue()
     if structured:
@@ -156,6 +160,15 @@ async def agent_events(
         if text:
             await queue.put({"type": "token", "data": text})
 
+    async def _on_plan(plan: Dict[str, Any]) -> None:
+        """RCT-7 R6: the plan of an ordinary run, sent before the first tool runs (type rct7_plan, not the contract's `plan` envelope)."""
+        if structured:
+            await queue.put({"type": "rct7_plan", "data": {"goal": plan.get("goal"), "steps": plan.get("steps", []), "route": plan.get("route", {}), "conditions": plan.get("conditions", [])}})
+            return
+        steps = plan.get("steps") or []
+        lines = [f"  {i}. {t}" for i, t in enumerate(steps, 1)]
+        await queue.put({"type": "token", "data": "Plan before acting:\n" + "\n".join(lines) + "\n\n"})
+
     async def _run() -> Dict[str, Any]:
         try:
             if contract_requested:
@@ -163,6 +176,14 @@ async def agent_events(
                 # execution. A later authorized REST confirmation is required.
                 return dict(await loop.run(goal, on_step=_on_step,
                     acceptance_criteria=acceptance_criteria, planning_context=planning_context))
+            # The plan callback goes only to a loop whose run() takes one (every real loop does; a minimal stand-in need not).
+            import inspect
+            try:
+                takes_plan = "on_plan" in inspect.signature(loop.run).parameters
+            except (TypeError, ValueError):
+                takes_plan = False
+            if takes_plan:
+                return dict(await loop.run(goal, on_step=_on_step, on_plan=_on_plan))
             return dict(await loop.run(goal, on_step=_on_step))
         finally:
             await queue.put(None)
@@ -215,6 +236,10 @@ async def agent_events(
             "approval_id": result.get("approval_id"),
             "rct7_steps": [] if blocked else list(getattr(loop, "_episode_rct7_steps", []) or []),
             "experiment": result.get("experiment"),
+            "conditions_report": result.get("conditions_report") or [],
+            "usage": result.get("cost") or {},
+            "clarification_id": result.get("clarification_id"),
+            "clarification_question": result.get("clarification_question"),
         }}
     else:
         answer = result.get("final_answer") or "(ไม่มีคำตอบสุดท้าย)"

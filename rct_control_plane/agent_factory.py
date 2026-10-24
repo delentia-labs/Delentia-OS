@@ -50,6 +50,7 @@ def build_governed_loop(
     conversation_turns: Optional[int] = None,
     initial_taint: Optional[str] = None,
     llm_provider: Any = None,
+    interactive: bool = False,
 ) -> "GovernedAutonomousLoop":
     from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
 
@@ -64,7 +65,7 @@ def build_governed_loop(
             from rct_control_plane.llm_provider import get_default_provider
             llm_provider = get_default_provider(profile=profile)
 
-    return GovernedAutonomousLoop(
+    loop = GovernedAutonomousLoop(
         mcp_server=mcp_server,
         persistence=persistence if persistence is not None else kernel._persistence,
         kernel=kernel,
@@ -75,6 +76,8 @@ def build_governed_loop(
         conversation_turns=conversation_turns,
         initial_taint=initial_taint,
     )
+    loop._interactive = interactive            # a person is looking at this episode (Desk, chat): the stop-and-ask of RCT-7 R5/R7 applies
+    return loop
 
 
 def allowed_senders(channel: str) -> Optional[set]:

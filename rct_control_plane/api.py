@@ -1309,12 +1309,15 @@ class ControlPlaneAPI:
                     # 1. CORD Security Scan
                     from rct_control_plane.mcp_gateway import cord_engine
                     cord_res = cord_engine.check(intent_text)
-                    
-                    if not cord_res.is_clean:
+
+                    # Only a HARD finding ends the request here, as in the governed loop and in /v1/kernel/execute. A SOFT one (CORD-E002: the text's letter entropy is
+                    # elevated) is recorded by the loop and the request goes on: ordinary long Thai sentences cross that soft line, and used to be announced as an attack with A = 0.
+                    from rct_control_plane.cord_security import CORDVerdict as _CORDVerdict
+                    if cord_res.verdict == _CORDVerdict.REJECTED:
                         # Stream security intercept message
                         await websocket.send_text(json.dumps({
                             "type": "token",
-                            "data": f"❌ [SECURITY INTERCEPT] ตรวจพบการโจมตีหรือข้อความผิดปกติโดย CORD Security Shield: {cord_res.verdict}\n\nคำสั่งนี้ถูกระงับการทำงานตามหลักการความปลอดภัยกติกา (Constitutional Invariants) ระบบตัดสิทธิการประมวลผลทันที (A = 0)"
+                            "data": f"❌ [SECURITY INTERCEPT] ตรวจพบการโจมตีหรือข้อความผิดปกติโดย CORD Security Shield: {cord_res.verdict.value}\n\nคำสั่งนี้ถูกระงับการทำงานตามหลักการความปลอดภัยกติกา (Constitutional Invariants) ระบบตัดสิทธิการประมวลผลทันที (A = 0)"
                         }))
                         await websocket.send_text(json.dumps({
                             "type": "fdia",
@@ -2192,6 +2195,19 @@ class ControlPlaneAPI:
             who, owner = _clarification_scope(request)
             try:
                 done = ClarificationStore(shared_kernel._persistence).answer(clarification_id, who, str(payload.get("answer", "")), as_owner=owner)
+            except ClarificationError as e:
+                raise _clarification_error(e) from e
+            return done.to_dict()
+
+        @self.app.post("/v1/agent/clarifications/{clarification_id}/accept", tags=["Kernel"])
+        async def accept_clarification(clarification_id: str, request: Request):
+            """The person closes a question by accepting the result as it is: nothing runs again and the answer is not attached to a later request."""
+            from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            who, owner = _clarification_scope(request)
+            try:
+                done = ClarificationStore(shared_kernel._persistence).accept(clarification_id, who, as_owner=owner)
             except ClarificationError as e:
                 raise _clarification_error(e) from e
             return done.to_dict()
