@@ -1,0 +1,254 @@
+{
+  "kind": "result",
+  "labels_sha256": "471ac6879a23c20f9783c7a1292bd1dc56a31a61378c463624c9395065362c3a",
+  "counts": {
+    "M": 24,
+    "N": 8,
+    "?": 8
+  },
+  "items": 40,
+  "labelled_by": "Ittirit (the Architect), 2026-10-24",
+  "sealed_at": "2026-10-24T18:44:40",
+  "items_data": {
+    "1": {
+      "request": "What is the largest planet in the solar system?",
+      "answer": "Jupiter.",
+      "label": "M",
+      "note": ""
+    },
+    "2": {
+      "request": "List the days of the week that start with T",
+      "answer": "Tuesday and Thursday.",
+      "label": "M",
+      "note": ""
+    },
+    "3": {
+      "request": "Convert 2 hours to minutes",
+      "answer": "2 hours is 90 minutes.",
+      "label": "N",
+      "note": ""
+    },
+    "4": {
+      "request": "Write a one-line greeting for a new colleague named Mali",
+      "answer": "Welcome to the team, Mali!",
+      "label": "?",
+      "note": ""
+    },
+    "5": {
+      "request": "แปลเป็นอังกฤษ: \"วันนี้ฝนตก\"",
+      "answer": "It is raining today.",
+      "label": "M",
+      "note": ""
+    },
+    "6": {
+      "request": "Name two programming languages and one use of each",
+      "answer": "Python and Rust.",
+      "label": "N",
+      "note": ""
+    },
+    "7": {
+      "request": "Add 15 and 27",
+      "answer": "42",
+      "label": "M",
+      "note": ""
+    },
+    "8": {
+      "request": "Give a synonym for \"happy\"",
+      "answer": "Joyful.",
+      "label": "M",
+      "note": ""
+    },
+    "9": {
+      "request": "Summarize in one sentence: The server crashed at noon, the team restarted it, and no data was lost.",
+      "answer": "The server crashed at noon but was restarted by the team without losing any data.",
+      "label": "?",
+      "note": ""
+    },
+    "10": {
+      "request": "Which is bigger, 9/10 or 4/5?",
+      "answer": "4/5 is bigger.",
+      "label": "N",
+      "note": ""
+    },
+    "11": {
+      "request": "อธิบายว่า DNS คืออะไรในสองประโยค",
+      "answer": "DNS แปลงชื่อเว็บไซต์เป็นหมายเลข IP เพื่อให้คอมพิวเตอร์ติดต่อกันได้ ถ้าไม่มี DNS เราต้องจำตัวเลข IP ของทุกเว็บไซต์เอง",
+      "label": "M",
+      "note": ""
+    },
+    "12": {
+      "request": "Write a Python expression that doubles x",
+      "answer": "x * 2",
+      "label": "M",
+      "note": ""
+    },
+    "13": {
+      "request": "What is the chemical symbol for gold?",
+      "answer": "Go.",
+      "label": "?",
+      "note": ""
+    },
+    "14": {
+      "request": "List three things you can recycle",
+      "answer": "Paper, glass and aluminium cans.",
+      "label": "M",
+      "note": ""
+    },
+    "15": {
+      "request": "Translate \"see you tomorrow\" into Spanish",
+      "answer": "Hasta mañana.",
+      "label": "M",
+      "note": ""
+    },
+    "16": {
+      "request": "Explain what an API is, for a child",
+      "answer": "An API is a set of rules that lets one program ask another program for something, like ordering from a menu.",
+      "label": "M",
+      "note": ""
+    },
+    "17": {
+      "request": "How many sides does a hexagon have?",
+      "answer": "A hexagon is a shape that appears in honeycombs.",
+      "label": "?",
+      "note": ""
+    },
+    "18": {
+      "request": "Name the three states of matter",
+      "answer": "Solid, liquid and gas.",
+      "label": "M",
+      "note": ""
+    },
+    "19": {
+      "request": "Write the date 2026-10-24 in the form DD/MM/YYYY",
+      "answer": "24/10/2026",
+      "label": "M",
+      "note": ""
+    },
+    "20": {
+      "request": "ตอบว่าเมืองหลวงของฝรั่งเศสคืออะไร",
+      "answer": "ปารีส",
+      "label": "?",
+      "note": ""
+    },
+    "21": {
+      "request": "Give two advantages and one disadvantage of remote work",
+      "answer": "Advantages: flexible hours and no commute.",
+      "label": "N",
+      "note": ""
+    },
+    "22": {
+      "request": "Is a tomato a fruit or a vegetable botanically?",
+      "answer": "Botanically it is a fruit.",
+      "label": "M",
+      "note": ""
+    },
+    "23": {
+      "request": "Subtract 8 from 20",
+      "answer": "28",
+      "label": "N",
+      "note": ""
+    },
+    "24": {
+      "request": "Reply with a polite refusal to a meeting invitation",
+      "answer": "Thank you for the invitation. Unfortunately I cannot attend, but please share the notes afterwards.",
+      "label": "M",
+      "note": ""
+    },
+    "25": {
+      "request": "What does \"CPU\" stand for?",
+      "answer": "Central Processing Unit.",
+      "label": "M",
+      "note": ""
+    },
+    "26": {
+      "request": "Write two sentences about the moon",
+      "answer": "The moon orbits the Earth. It is about a quarter of Earth's diameter.",
+      "label": "M",
+      "note": ""
+    },
+    "27": {
+      "request": "Name the capital of Australia",
+      "answer": "Sydney.",
+      "label": "N",
+      "note": ""
+    },
+    "28": {
+      "request": "Summarize: \"Revenue rose 10% in Q3 while costs stayed flat.\"",
+      "answer": "Revenue grew by 10% in the third quarter and costs did not change.",
+      "label": "?",
+      "note": ""
+    },
+    "29": {
+      "request": "List the first five letters of the alphabet",
+      "answer": "A, B, C, D, E",
+      "label": "M",
+      "note": ""
+    },
+    "30": {
+      "request": "ตอบเป็นภาษาไทย: 7 คูณ 6 เท่ากับเท่าไร",
+      "answer": "42",
+      "label": "?",
+      "note": ""
+    },
+    "31": {
+      "request": "Explain recursion in one sentence",
+      "answer": "Recursion is when a function calls itself to solve a smaller version of the same problem.",
+      "label": "M",
+      "note": ""
+    },
+    "32": {
+      "request": "Give the plural of \"child\"",
+      "answer": "Childs.",
+      "label": "N",
+      "note": ""
+    },
+    "33": {
+      "request": "What colour do you get mixing blue and yellow?",
+      "answer": "Green.",
+      "label": "M",
+      "note": ""
+    },
+    "34": {
+      "request": "Write a subject line for an email announcing a price change",
+      "answer": "Our prices are changing from 1 November.",
+      "label": "?",
+      "note": ""
+    },
+    "35": {
+      "request": "Give three examples of renewable energy",
+      "answer": "Solar, wind and coal.",
+      "label": "N",
+      "note": ""
+    },
+    "36": {
+      "request": "Sort alphabetically: pear, apple, fig",
+      "answer": "apple, fig, pear",
+      "label": "M",
+      "note": ""
+    },
+    "37": {
+      "request": "Tell me the main idea of this sentence: \"Regular sleep improves memory and mood.\"",
+      "answer": "Regular sleep helps both memory and mood.",
+      "label": "M",
+      "note": ""
+    },
+    "38": {
+      "request": "Name the largest ocean",
+      "answer": "The Pacific Ocean is the largest and also the deepest.",
+      "label": "M",
+      "note": ""
+    },
+    "39": {
+      "request": "Write one sentence using the word \"because\"",
+      "answer": "I stayed home because it was raining.",
+      "label": "M",
+      "note": ""
+    },
+    "40": {
+      "request": "Give me the square root of 81",
+      "answer": "9",
+      "label": "M",
+      "note": ""
+    }
+  }
+}
