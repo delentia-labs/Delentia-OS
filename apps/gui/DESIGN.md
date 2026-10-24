@@ -37,9 +37,13 @@ to Tailwind as `dl-*` (`bg-dl-panel`, `text-dl-leaf/70`, ...).
 | amber | `#E4B54A` | waiting for a human (approvals, pending) |
 | rust | `#E2694C` | blocked or broken (FDIA block, broken chain) |
 
-Type: IBM Plex Mono for the terminal, navigation and data; IBM Plex Sans Thai
-for explanations (Thai and English). Uppercase is used only for the main
-menu, as in Hermes.
+Type (Round 96, the Architect's choice from the specimen page): Prompt for
+Thai and for the interface; JetBrains Mono for English, numbers, code, the
+terminal, navigation and data (`desk-mono`; Thai inside falls back to Prompt);
+Sarabun for long documents the system writes for a person to read (`desk-doc`:
+chat answers, statute passages, reports). Uppercase is used only for the main
+menu, as in Hermes. The three CSS variables are `--font-th`, `--font-mono-en`
+and `--font-doc`, set in `src/app/layout.tsx`.
 
 ## Pages
 

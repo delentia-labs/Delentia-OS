@@ -40,8 +40,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        mono: ["var(--font-plex-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
-        thai: ["var(--font-plex-thai)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono-en)", "var(--font-th)", "ui-monospace", "monospace"],
+        thai: ["var(--font-th)", "system-ui", "sans-serif"],
+        doc: ["var(--font-doc)", "var(--font-th)", "system-ui", "sans-serif"],
       },
     },
   },
