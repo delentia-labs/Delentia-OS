@@ -51,6 +51,7 @@ class SlackGateway:
         from rct_control_plane.agent_factory import build_governed_loop
 
         loop = build_governed_loop(self._kernel, namespace=namespace)
+        loop._interactive = True                   # a person is on the other end: RCT-7 stop-and-ask applies
         return await loop.run(goal)
 
     async def handle_message(
@@ -80,6 +81,9 @@ class SlackGateway:
             return {"channel_id": channel_id, "namespace": namespace, "goal": text, "command": True, "reply_text": command_reply}
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = str(result.get("final_answer") or result.get("stopped_reason", "(no response)"))
+        if result.get("stopped_reason") == "needs_clarification" and result.get("clarification_question"):
+            from rct_control_plane.gateways.common import clarification_reply
+            reply_text = clarification_reply(result)
         return {
             "channel_id": channel_id,
             "namespace": namespace,

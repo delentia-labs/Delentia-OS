@@ -31,6 +31,8 @@ def namespace_for(channel: str, sender_id: Any) -> str:
 def reply_text_for(result: Dict[str, Any]) -> str:
     """What to tell the person. The loop's answer when there is one; for a request that stopped, the reason in words."""
     answer = result.get("final_answer")
+    if result.get("stopped_reason") == "needs_clarification" and result.get("clarification_question"):
+        return clarification_reply(result)
     if answer:
         from rct_control_plane import memory_nudge
         return str(answer) + memory_nudge.nudge_text(result.get("memory_nudge") or [])
@@ -45,6 +47,19 @@ def reply_text_for(result: Dict[str, Any]) -> str:
     if reason in ("fdia_blocked", "guard_blocked"):
         return "This request was refused by the safety checks. Nothing was changed."
     return f"({reason})"
+
+
+def clarification_reply(result: Dict[str, Any]) -> str:
+    """The episode stopped to ask (RCT-7 R5/R7). The person gets the QUESTION, not the held-back answer as if it were the result; the answer it had is shown after it, marked as not used."""
+    question = str(result.get("clarification_question") or "")
+    cid = result.get("clarification_id")
+    held = str(result.get("final_answer") or "")
+    text = question
+    if cid:
+        text += f"\n\n(id {cid}) Reply /answer {cid} <your answer>, then send the same request again. To keep the result as it is: /accept {cid}."
+    if held and held != question:
+        text += "\n\nThe answer I had (not used): " + (held if len(held) <= 500 else held[:499] + "…")
+    return text
 
 
 async def handle_incoming(
@@ -78,7 +93,9 @@ async def handle_incoming(
 
 async def dispatch_governed(kernel: Any, goal: str, namespace: str) -> Dict[str, Any]:
     from rct_control_plane.agent_factory import build_governed_loop
-    return await build_governed_loop(kernel, namespace=namespace).run(goal)
+    loop = build_governed_loop(kernel, namespace=namespace)
+    loop._interactive = True                    # a person is on the other end of the chat: RCT-7 stop-and-ask applies
+    return await loop.run(goal)
 
 
 def split_for_channel(text: str, limit: int) -> list:
