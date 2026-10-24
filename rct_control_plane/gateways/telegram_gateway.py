@@ -172,6 +172,9 @@ class TelegramGateway:
 
         result = await self._dispatch_to_autonomous_loop(text, namespace)
         reply_text = result.get("final_answer") or result.get("stopped_reason", "(no response)")
+        if result.get("stopped_reason") == "needs_clarification" and result.get("clarification_question"):
+            from rct_control_plane.gateways.common import clarification_reply
+            reply_text = clarification_reply(result)
         from rct_control_plane import memory_nudge
         spoken_note: Optional[str] = "not a voice note"
         if self.is_configured():

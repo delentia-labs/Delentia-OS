@@ -91,6 +91,9 @@ class DiscordGateway:
             return {"channel_id": channel_id, "namespace": namespace, "goal": content, "command": True, "reply_text": command_reply}
         result = await self._dispatch_to_autonomous_loop(content, namespace)
         reply_text = str(result.get("final_answer") or result.get("stopped_reason", "(no response)"))
+        if result.get("stopped_reason") == "needs_clarification" and result.get("clarification_question"):
+            from rct_control_plane.gateways.common import clarification_reply
+            reply_text = clarification_reply(result)
         return {
             "channel_id": channel_id,
             "namespace": namespace,

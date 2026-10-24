@@ -687,6 +687,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 from rct_control_plane.verified_budget import BudgetPipeline
                 self._budget_pipeline = BudgetPipeline(contract, self.namespace)
 
+        self._claimed_clarification: Optional[str] = None
+        self._start_stop_extra: Optional[Dict[str, Any]] = None
+        if self._active_contract is None and not self._resumed_from:
+            claimed = self._claim_answered_clarification(goal)
+            if claimed is not None:
+                self._claimed_clarification = claimed.clarification_id
+                goal = claimed.revised_goal()         # RCT-7 R5: the person answered; the same request now runs on the revised intent (the original words are kept inside it)
+
         return await super().run(
             goal,
             on_step=on_step,
@@ -698,6 +706,26 @@ class GovernedAutonomousLoop(AutonomousLoop):
             extra_context_provider=self._extra_context_provider,
             post_dispatch_transform=self._notarised_post_dispatch,
         )
+
+    def _claim_answered_clarification(self, goal: str) -> Any:
+        """RCT-7 R5/R7, the end of the wait: the person was asked, answered, and now sends the same request again. Exact match on the words they sent, once, never an error."""
+        if os.environ.get("DELENTIA_CLARIFICATION_ATTACH", "1").strip().lower() in ("0", "off", "false"):
+            return None
+        try:
+            from rct_control_plane.clarifications import ClarificationStore
+            return ClarificationStore(self._persistence).claim_for_goal(self.namespace, goal)
+        except Exception:
+            return None
+
+    def _release_claimed_clarification(self) -> None:
+        cid = getattr(self, "_claimed_clarification", None)
+        if not cid:
+            return
+        try:
+            from rct_control_plane.clarifications import ClarificationStore
+            ClarificationStore(self._persistence).release(cid)
+        except Exception:
+            pass
 
     async def _decide_action(self, goal, history, available_tools, extra_context):
         pipeline = getattr(self, "_budget_pipeline", None)
@@ -745,6 +773,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_evidence = []
         self._warm_info = {}
         self._episode_used_conversation = False
+        self._episode_parts, self._episode_unknowns = [], []
         if self._initial_taint:
             self._start_tainted(self._initial_taint)
         self._meter = None                         # a loop that is reused must not report the previous episode's cost for one that never started
@@ -777,16 +806,26 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_data = evidence.to_dict()
         self._episode_D, self._episode_I = D, I
         conversation_text = self._conversation_context(goal)
-        self._episode_used_conversation = bool(conversation_text)
+        claimed = bool(getattr(self, "_claimed_clarification", None))
+        self._episode_used_conversation = bool(conversation_text) or claimed       # the person's answer is not context-free: never a skill or a cached answer
         self._episode_conversation_text = conversation_text
         attachments = self._attachments(goal)
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
-        warm_hit = await self._warm_lookup(goal) if (not getattr(self, "_active_contract", None) and self._warm_recall and not conversation_text and not attachments["refs"]) else None
+        warm_hit = await self._warm_lookup(goal) if (not getattr(self, "_active_contract", None) and self._warm_recall and not conversation_text and not claimed and not attachments["refs"]) else None
         self._episode_call_counts = {}                    # the replay went through the gate and was counted there; the episode itself starts from zero
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self._research is not None and not self._research.plan:
             self._episode_rct7_steps = []                  # research arm without the plan: no RCT-7 plan anywhere (prompt, JITNA packet, audit row)
+        from rct_control_plane import mismatch_rules
+        workspace = self._workspace_id()
+        self._episode_parts = mismatch_rules.parts_of(goal)
+        self._episode_unknowns = mismatch_rules.unknowns_for(goal, Path(workspace) if workspace else None, bool(conversation_text))
+        asked = None if (warm_hit or getattr(self, "_active_contract", None) is not None) else self._ask_before_acting(goal)
+        if asked is not None:
+            self._episode_rct7_steps, self._episode_context_text = [], ""
+            self._episode_route = {"enabled": self._route_enabled, "skipped": "needs_clarification"}
+            return asked
         if self.max_iterations != self._applied_max_iterations:
             self._configured_max_iterations = self.max_iterations  # changed by a caller since the last episode
         self.max_iterations = self._configured_max_iterations
@@ -822,7 +861,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             # through the same callback (above); this is the plan of an ordinary run. Showing it is not asking for approval: approvals still follow the owner's policy.
             from rct_control_plane import mismatch_rules
             shown = plan_callback({"kind": "rct7_plan", "goal": goal, "steps": list(self._episode_rct7_steps), "route": dict(self._episode_route),
-                                   "conditions": mismatch_rules.conditions_for(goal)})
+                                   "conditions": mismatch_rules.conditions_for(goal), "parts": list(self._episode_parts), "unknowns": list(self._episode_unknowns)})
             if inspect.isawaitable(shown):
                 await shown
         if active_contract is not None:
@@ -1799,6 +1838,20 @@ class GovernedAutonomousLoop(AutonomousLoop):
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
+    def _ask_before_acting(self, goal: str) -> Optional[Dict[str, Any]]:
+        """RCT-7 R5 for what a rule can see (round 97): the request names a file that exists nowhere, or is a bare reference with nothing to refer to. With DELENTIA_ASK_AND_WAIT=1 the
+        episode stops BEFORE the first model call and the person is asked; without the flag the unknowns are only listed in the plan. A request the person already answered is not asked again."""
+        if os.environ.get("DELENTIA_ASK_AND_WAIT") != "1" or not self._episode_unknowns:
+            return None
+        from rct_control_plane import mismatch_rules
+        from rct_control_plane.clarifications import ClarificationStore
+        question = mismatch_rules.question_for_unknowns(goal, self._episode_unknowns)
+        made = ClarificationStore(self._persistence).create(self.namespace, "before_act", "unclear_intent", question, original_goal=goal,
+                                                            expected="; ".join(u["detail"] for u in self._episode_unknowns), observed="", episode_id=str(self._episode_id or ""))
+        self._start_stop_extra = {"clarification_id": made.clarification_id, "clarification_question": question, "unknowns": list(self._episode_unknowns)}
+        self._episode_used_conversation = True
+        return {"stopped_reason": "needs_clarification", "final_answer": question}
+
     def _ask_and_wait_stop(self, result: Dict[str, Any], stopped_reason: str, warm: bool) -> bool:
         """RCT-7 R5/R7 (creator's definition v0.3): when the result does not match what the person asked, report the difference, stop and ask.
 
@@ -1929,8 +1982,22 @@ class GovernedAutonomousLoop(AutonomousLoop):
             and verification["similarity_score"] >= verification.get("threshold", self._intent_verify_threshold)
         )
         verification["scope_note"] = "Heuristic alignment/grounding verdict, not semantic truth or full RCT-7 fidelity."
+        extra = getattr(self, "_start_stop_extra", None)
+        if extra:
+            result.update(extra)
+            self._start_stop_extra = None
         if self._ask_and_wait_stop(result, stopped_reason, warm):
             result["stopped_reason"] = stopped_reason = "needs_clarification"
+        if getattr(self, "_episode_rct7_steps", None) is not None and (self._episode_rct7_steps or getattr(self, "_episode_parts", None)):
+            from rct_control_plane import mismatch_rules as _mr
+            result["rct7_plan"] = {"steps": list(self._episode_rct7_steps), "route": dict(getattr(self, "_episode_route", {}) or {}), "conditions": _mr.conditions_for(result.get("goal") or ""),
+                                   "parts": list(getattr(self, "_episode_parts", []) or []), "unknowns": list(getattr(self, "_episode_unknowns", []) or []),
+                                   "scope_note": "R1 unknowns, R3 parts and R4 conditions come from the request's own words by rule; they are not a model's understanding."}
+        claimed_id = getattr(self, "_claimed_clarification", None)
+        if claimed_id:
+            result["continues_clarification"] = claimed_id
+            if stopped_reason in ("llm_error", "notary_unavailable"):
+                self._release_claimed_clarification()         # the episode never got to use the answer: the person does not have to answer again
         contract = getattr(self, "_active_contract", None)
         if contract is not None:
             if self._contract_store is None:
