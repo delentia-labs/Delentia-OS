@@ -23,6 +23,7 @@ export const getGateway = (): string => {
 // script on the origin (CodeQL js/clear-text-storage-of-sensitive-data).
 let sessionApiKey: string | null = null;
 let legacyKeyForgotten = false;
+export const CONNECTION_CHANGED_EVENT = "delentia:connection-changed";
 
 /** Remove an API key an older version saved in clear text. */
 export function forgetStoredApiKey(): void {
@@ -33,6 +34,9 @@ export function forgetStoredApiKey(): void {
 
 export function setSessionApiKey(key: string): void {
   sessionApiKey = key || null;
+  // Settings saves the gateway first. Refresh consumers even if the token
+  // itself is unchanged; their previous requests belong to the old gateway.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(CONNECTION_CHANGED_EVENT));
 }
 
 export function getSessionApiKey(): string | null {

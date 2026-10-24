@@ -28,8 +28,8 @@ def tools():
 
 @pytest.fixture(autouse=True)
 def _menu_env_off(monkeypatch):
-    monkeypatch.delenv(tool_menu.MENU_ENV, raising=False)
-    monkeypatch.delenv(tool_menu.FORMAT_ENV, raising=False)
+    monkeypatch.setenv(tool_menu.MENU_ENV, "full")             # Round 96: unset now means 'on for a local model', so these tests force the old default explicitly
+    monkeypatch.setenv(tool_menu.FORMAT_ENV, "full")
     monkeypatch.delenv(tool_menu.TOP_K_ENV, raising=False)
 
 

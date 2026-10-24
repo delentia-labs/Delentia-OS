@@ -2162,6 +2162,52 @@ class ControlPlaneAPI:
             loop = build_governed_loop(shared_kernel, namespace=ep.namespace, mcp_server=shared_mcp)
             return await loop.resume_interrupted(episode_id, allow_unknown=bool((payload or {}).get("allow_unknown", False)))
 
+        # Round 92 (P1 of the ask-and-wait design): questions the system put to a person and is waiting on. A person sees and answers only their own; the owner sees all and may answer for anyone.
+        # No tool of the model reaches these routes: a model that could answer its own question would turn the wait into nothing.
+        def _clarification_scope(request: Request):
+            from rct_control_plane import api_tokens
+            person = getattr(request.state, "delentia_user", None)
+            owner = (not person) or api_tokens.is_owner(person)
+            return (person or "owner"), owner
+
+        def _clarification_error(exc: Exception) -> HTTPException:
+            text = str(exc)
+            code = 404 if ("no such" in text or "someone else" in text) else ( (400 if ("empty" in text or "required" in text) else 409))
+            return HTTPException(status_code=code, detail=text)
+
+        @self.app.get("/v1/agent/clarifications", tags=["Kernel"])
+        async def list_clarifications(request: Request, status: str = "PENDING", namespace: Optional[str] = None, limit: int = 50):
+            from rct_control_plane.clarifications import ClarificationStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            who, owner = _clarification_scope(request)
+            rows = ClarificationStore(shared_kernel._persistence).list(namespace=namespace if owner else who, status=status, limit=limit)
+            return [c.to_dict() for c in rows]
+
+        @self.app.post("/v1/agent/clarifications/{clarification_id}/answer", tags=["Kernel"])
+        async def answer_clarification(clarification_id: str, request: Request, payload: Dict[str, Any]):
+            from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            who, owner = _clarification_scope(request)
+            try:
+                done = ClarificationStore(shared_kernel._persistence).answer(clarification_id, who, str(payload.get("answer", "")), as_owner=owner)
+            except ClarificationError as e:
+                raise _clarification_error(e) from e
+            return done.to_dict()
+
+        @self.app.post("/v1/agent/clarifications/{clarification_id}/cancel", tags=["Kernel"])
+        async def cancel_clarification(clarification_id: str, request: Request):
+            from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+            from rct_control_plane.mcp_server import _kernel as shared_kernel
+
+            who, owner = _clarification_scope(request)
+            try:
+                done = ClarificationStore(shared_kernel._persistence).cancel(clarification_id, who, as_owner=owner)
+            except ClarificationError as e:
+                raise _clarification_error(e) from e
+            return done.to_dict()
+
         # ---------------------------------------------------------------------
         # LoRA Forge Universal Multimodal Training Service
         # ---------------------------------------------------------------------
