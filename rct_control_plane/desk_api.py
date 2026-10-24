@@ -1378,6 +1378,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             return Response(content=host_metrics.to_prometheus(found), media_type="text/plain; version=0.0.4")
         return found
 
+    @router.get("/rct7/stats")
+    async def rct7_stats_view(days: float = 14.0, namespace: Optional[str] = None) -> Dict[str, Any]:
+        """RCT-7 stop-and-ask in numbers (rct7_stats.py): how often it asked and what people did with the questions. Owner only (the Desk is the owner's); read-only."""
+        from rct_control_plane import rct7_stats
+        return rct7_stats.collect(_kernel()._persistence, days=max(0.1, min(float(days), 365.0)), namespace=namespace)
+
     @router.get("/governance")
     async def governance_overview() -> Dict[str, Any]:
         from rct_control_plane import governance_view

@@ -26,6 +26,7 @@ authority resolver (token -> person, role), canonicalisation of arguments, the F
 
 | Tool | Effect class | What it can touch | Who decides | Person scope |
 |---|---|---|---|---|
+| `delentia_ask_user` | compute | ends the episode with one question to the person (only where a person is present and stop-and-ask is on); nothing is read, written or sent | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_assemble_nodes` | compute | the kernel's built-in analysis algorithms, by name; no files | FDIA gate; reviewed inert | person-neutral (reviewed) |
 | `delentia_autonomous_loop` | delegate | starts another governed loop as the asking person (nesting limited to 2) | FDIA gate; a signature once the episode has read outside text | pinned to the asker (the loop overwrites its namespace argument) |
 | `delentia_browse_page` | egress | one public page in a headless browser, name resolved once and pinned, every other host cut off; read-only | FDIA gate; only an address the person wrote or the agent saw; taints the episode | person-neutral (reviewed) |
