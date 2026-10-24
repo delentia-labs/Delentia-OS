@@ -206,6 +206,7 @@ async def run_once(sheet: Path, provider: Any, model: str, again: bool = False, 
         seconds.append(time.time() - started)
     entry = {"model": model, "provider": provider_kind, "prompt_version": rct7_judge_prompt_version(), "labels_sha256": sealed["labels_sha256"], "repeat": bool(prior),
              "when": time.strftime("%Y-%m-%dT%H:%M:%S"), "median_seconds": round(sorted(seconds)[len(seconds) // 2], 2), "result": score(sealed, verdicts),
+             "verdicts": {str(n): v for n, v in sorted(verdicts.items())},        # per item, so a result can be read by group afterwards without a second run (round 99: the first run kept only totals)
              "cite_guard": rct7_judge.cite_guard_on()}
     _, runs_path = _paths(sheet)
     runs.append(entry)

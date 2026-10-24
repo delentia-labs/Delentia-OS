@@ -114,3 +114,15 @@ for 3B in English). The cite guard changes at most one case per model (no price 
   (Claude's reading of his notes, fixed before the run).
 * **Secondary (post-hoc, stratified, reported next to the primary and never instead of it):** found per class (INFO 7, BOTH 15, APPROVAL 11, PLAN_ONLY 1) and false stops on B. No prompt change
   follows from this run; a second run on the same labels is refused by the runner.
+
+### H1.1 Result of the registered runs (2026-10-24, same day; files `research/results_round99/holdout1_sealed.json` and `holdout1_runs.json`)
+Registered (first run of each model, prompt version 8292fc3416cc, cite guard on, thinking off):
+* qwen3:8b: found **29/34 = 0.853** (95% 0.70-0.94), false stops **4/25 = 0.16** (95% 0.06-0.35): the rule (found >= 0.80 and false stops <= 0.15) is **NOT met, by one case**.
+* qwen2.5:7b: found 18/34 = 0.529 (0.37-0.69), false stops 3/25 = 0.12: **NOT met** (recall).
+A repeat (same prompt and labels, run only to keep per-item verdicts, which the first run did not store) gave exactly the same totals for both models: the verdicts are stable at temperature 0.
+**The expectation written before the run was partly wrong:** it said a clarity judge would not stop the APPROVAL requests. qwen3:8b stopped 9 of 11 of them and 13 of 15 BOTH, because most of those requests are in fact
+under-specified ("Delete the duplicate entries": which entries?). The recall problem is only for qwen2.5:7b (APPROVAL 7/11, BOTH 8/15); qwen3:8b's miss list is 25 (Remove John), 36 (Notify the team), 44 (thank-you note),
+47 (Update the README), 15 (poem). **The failure of the rule for qwen3:8b is on the other side:** its four false stops (19 Approve the pending request, 24 Find the cheapest option, 39 Look up the latest version,
+60 Make the logo bigger) are all requests for which the Architect's note says the missing piece comes from context or can be looked up (a pending request exists, research it, the latest version is known, a logo exists).
+The judge sees only the sentence (as the sheet told the labeller to assume); the Architect's notes show that in real use the agent has context. No prompt is changed because of this run (a second look is refused);
+the hypothesis "tell the judge what the agent can look up and what the chat already holds" needs a NEW sealed set with the context written next to each request.
