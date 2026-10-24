@@ -64,7 +64,7 @@ _LANG_TARGET = re.compile(
     r"|\b(?:answer|reply|respond|write)\s+(?:only\s+)?(?:in\s+)?(thai|english)\b"         # answer in Thai
     r"|(?:สรุป|รายงาน|อธิบาย|ตอบ)\s*(?:เป็น)?\s*(ไทย|อังกฤษ)\b"                           # ตอบไทย
     r"|\b(thai|english)\s+(?:is|will be)\s+(?:fine|ok|okay)\b"                       # English is fine
-    r"|(?:ภาษา)?\s*(ไทย|อังกฤษ)\s*ก็ได้",                                              # อังกฤษก็ได้
+    r"|(?:ภาษา)?\s{0,6}(ไทย|อังกฤษ)\s{0,6}ก็ได้",                                              # อังกฤษก็ได้
     re.IGNORECASE,
 )
 _JSON = re.compile(r"\b(?:as|in|return|returns|output|respond with|reply with)\s+(?:a\s+|valid\s+)*json\b|(?:เป็น|ในรูป|รูปแบบ)\s*json\b", re.IGNORECASE)
@@ -174,7 +174,7 @@ def _derive_one(goal: str) -> List[Requirement]:
 _FENCE = re.compile(r"```.*?```", re.DOTALL)
 _INLINE = re.compile(r"`[^`\n]*`")
 _URL = re.compile(r"https?://\S+")
-_PATHLIKE = re.compile(r"[\w./\\-]+\.[A-Za-z0-9]{1,6}\b")
+_PATHLIKE = re.compile(r"[\w./\\-]{1,120}\.[A-Za-z0-9]{1,6}\b")             # a run is bounded: an unbounded one is quadratic on a long word
 
 
 def prose_of(answer: str) -> str:
@@ -379,8 +379,8 @@ _LINE_ITEM = re.compile(r"^\s*(?:\d{1,2}[.)]|[-*•])\s+(.+?)\s*$")
 _NUMBERED_INLINE = re.compile(
     r"(?:\bstep\s*(\d{1,2})\s*[:.\-–]?|ขั้นที่\s*(\d{1,2})|ข้อที่?\s*(\d{1,2})|\((\d{1,2})\)|(?<![\w.])(\d{1,2})\))\s*", re.IGNORECASE)
 _SEQUENCE_SPLIT = re.compile(
-    r"(?:[,.;]\s*|\s+)(?:and\s+then|then|finally|lastly|next|after\s+that|second(?:ly)?|third(?:ly)?|fourth)\b,?\s+"
-    r"|\s+(?:จากนั้น|ต่อจากนั้น|หลังจากนั้น)\s*|\s+แล้ว\s+", re.IGNORECASE)
+    r"(?:[,.;]\s{0,6}|(?<=\S)\s{1,6})(?:and\s{1,6}then|then|finally|lastly|next|after\s{1,6}that|second(?:ly)?|third(?:ly)?|fourth)\b,?\s{1,6}"
+    r"|(?<=\S)\s{1,6}(?:จากนั้น|ต่อจากนั้น|หลังจากนั้น)\s{0,6}|(?<=\S)\s{1,6}แล้ว\s{1,6}", re.IGNORECASE)               # bounded and anchored after a non-space: linear on a long run of spaces
 _LEAD_ORDINAL = re.compile(r"^(?:first(?:ly)?|ก่อนอื่น|เริ่มจาก|เริ่มด้วย)[,:]?\s*", re.IGNORECASE)
 _CONDITION_LEAD = re.compile(r"^\s*(?:if|when|unless|whenever|หาก|ถ้า|เมื่อ)\b", re.IGNORECASE)
 MAX_PARTS = 12

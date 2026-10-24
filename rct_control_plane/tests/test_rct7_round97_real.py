@@ -336,3 +336,19 @@ def test_the_report_shows_the_writes_behind_a_file_requirement(tmp_path):
     assert by["required_artifact"]["status"] == "met" and by["required_artifact"]["evidence"] == [{"step": 1, "tool": "delentia_write_repo_file", "path": "report.md"}]
     assert by["forbidden_effect"]["status"] == "broken"
     assert [w["path"] for w in by["forbidden_effect"]["evidence"]] == ["report.md", "config.yaml"]     # a write that waited for a signature did not go through, so it is not listed
+
+
+def test_no_pattern_of_the_rules_is_slow_on_hostile_text():
+    """The regex audit found three quadratic patterns in this module (a long run of spaces, a long Thai word); they are bounded now and pinned here by their own timing."""
+    import re
+    import time
+    hostile = {"spaces": " " * 20000, "word": "ก" * 20000, "then": "then " * 4000, "lead": "a" + " " * 20000, "dots": "a." * 10000}
+    for name in dir(mismatch_rules):
+        pattern = getattr(mismatch_rules, name)
+        if not isinstance(pattern, re.Pattern):
+            continue
+        for label, text in hostile.items():
+            started = time.time()
+            pattern.search(text)
+            pattern.findall(text)
+            assert time.time() - started < 1.0, (name, label)
