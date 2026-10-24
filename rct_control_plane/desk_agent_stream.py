@@ -238,6 +238,9 @@ async def agent_events(
             "experiment": result.get("experiment"),
             "conditions_report": result.get("conditions_report") or [],
             "usage": result.get("cost") or {},
+            "semantic_check": result.get("semantic_check"),
+            "rct7_chain": result.get("rct7_chain"),
+            "judge": result.get("judge"),
             "clarification_id": result.get("clarification_id"),
             "clarification_question": result.get("clarification_question"),
         }}

@@ -31,7 +31,7 @@ TTL_ENV = "DELENTIA_CLARIFICATION_TTL_SECONDS"
 DEFAULT_TTL_SECONDS = 7 * 24 * 3600
 
 KINDS = ("before_act", "mismatch")                       # R5: not clear enough to act / R7: the result does not match the intent
-CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact", "length", "item_count")
+CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact", "length", "item_count", "model_unclear", "semantic")
 STATUSES = ("PENDING", "ANSWERED", "CANCELLED", "EXPIRED")
 SEALED_FIELDS = ("original_goal", "question", "expected", "observed", "answer")
 
