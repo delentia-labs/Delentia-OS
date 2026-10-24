@@ -269,7 +269,7 @@ def step_texts(steps: Optional[List[Dict[str, Any]]]) -> List[str]:
 
 
 _NUMBER = re.compile(r"\d[\d,]{0,15}(?:\.\d{1,6}){0,3}")          # 1,204 / 0.75 / 0.1.0
-_FILELIKE = re.compile(r"[\w./-]{1,100}\.[A-Za-z]{1,6}\b")
+_FILELIKE = re.compile(r"[\w/-]{1,100}(?:\.[\w-]{1,60}){0,3}\.[A-Za-z]{1,6}\b")      # parts are delimited by "/" and "."; no class contains its own delimiter
 _URL = re.compile(r"https?://[^\s)\]>\"']{1,200}")
 _WORD = re.compile(r"[A-Za-z]{4,}")
 _STOP = frozenset("that this with from have were been which their there about would could should into than then also each both when where while these those what your only some most more many such over under".split())

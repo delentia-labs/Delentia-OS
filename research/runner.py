@@ -312,11 +312,10 @@ class Harness:
             os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/,ops/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
-        for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
-            os.environ.pop(name, None)
-        if self.tool_menu == "ranked":                                         # the same menu for every arm of a run; recorded in every row
-            os.environ["DELENTIA_TOOL_MENU"] = "ranked"
-            os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
+        # Round 96: unset now means 'ranked and compact for a local Ollama model', so the 'default' arm of an experiment (the full menu) must say `full` out loud.
+        ranked = self.tool_menu == "ranked"                                    # the same menu for every arm of a run; recorded in every row
+        os.environ["DELENTIA_TOOL_MENU"] = "ranked" if ranked else "full"
+        os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact" if ranked else "full"
         os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
         # Round 98: the model-assisted RCT-7 parts are side calls too: off unless the run says so, the same for every arm, and recorded in the identity.
         for name in ("DELENTIA_RCT7_JUDGE", "DELENTIA_RCT7_CHAIN", "DELENTIA_ASK_AND_WAIT"):

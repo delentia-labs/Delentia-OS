@@ -12,7 +12,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "type-check": "tsc --noEmit",
-    "test:unit": "node --experimental-strip-types --no-warnings src/lib/signed-decision.test.mjs"
+    "test:unit": "node --experimental-strip-types --no-warnings src/lib/signed-decision.test.mjs",
+    "test:run-state": "node --experimental-strip-types --no-warnings src/lib/run-state.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

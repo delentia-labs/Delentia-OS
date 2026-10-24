@@ -59,11 +59,10 @@ async def run(provider: Any, goals: List[Dict[str, Any]], arms: List[str], tools
     from rct_control_plane import autonomous_loop, tool_menu
     decide = decide or autonomous_loop.decide_next_action
     out: Dict[str, Any] = {}
+    before = _os.environ.get(tool_menu.FORMAT_ENV)
     for arm in arms:
-        if arm == "ranked+compact":
-            _os.environ[tool_menu.FORMAT_ENV] = "compact"
-        else:
-            _os.environ.pop(tool_menu.FORMAT_ENV, None)
+        # Round 96: unset is no longer 'full', so each arm names its format.
+        _os.environ[tool_menu.FORMAT_ENV] = "compact" if arm == "ranked+compact" else "full"
         rows = []
         for item in goals:
             menu = menu_for(arm if arm != "ranked+compact" else "ranked", item["goal"], tools)
@@ -75,12 +74,15 @@ async def run(provider: Any, goals: List[Dict[str, Any]], arms: List[str], tools
                 verdict, error = "error", f"{type(exc).__name__}: {exc}"[:120]
             rows.append({"goal": item["goal"], "needs": item["needs"], "menu_tools": len(menu), "verdict": verdict, "error": error,
                          "chose": decision.get("tool_name") if error is None else None})
-        _os.environ.pop(tool_menu.FORMAT_ENV, None)
         right = sum(r["verdict"] == "right" for r in rows)
         out[arm] = {"right": right, "of": len(rows), "accuracy": round(right / len(rows), 3) if rows else 0.0,
                     "unparsed": sum(r["verdict"] == "unparsed" for r in rows), "finished_without_tool": sum(r["verdict"] == "finished_without_tool" for r in rows),
                     "wrong_tool": sum(r["verdict"] == "wrong_tool" for r in rows), "errors": sum(r["verdict"] == "error" for r in rows),
                     "median_menu_tools": sorted(r["menu_tools"] for r in rows)[len(rows) // 2] if rows else 0, "rows": rows}
+    if before is None:
+        _os.environ.pop(tool_menu.FORMAT_ENV, None)           # leave the environment as it was found
+    else:
+        _os.environ[tool_menu.FORMAT_ENV] = before
     return out
 
 
