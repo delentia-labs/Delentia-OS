@@ -368,7 +368,7 @@ def coverage_gaps(answer: str, claims: Any) -> List[str]:
     """The model chooses which claims to list, so it can leave out the one that is invented (measured: a local 7B model left out 2 of 5 invented facts). The code therefore checks the other
     direction too: every clause of the answer that has a content word must share most of its content words with the claims the model listed, or it is reported as a gap. A clause
     nothing in the chain speaks about is exactly the one that has no evidence."""
-    claim_words = set()
+    claim_words: set = set()
     for c in (claims if isinstance(claims, list) else []):
         if isinstance(c, dict):
             claim_words.update(w.casefold() for w in _WORD.findall(str(c.get("claim") or "")))

@@ -1,0 +1,151 @@
+{
+  "model": "qwen3:8b",
+  "set": "DEV (author-written; not a claim)",
+  "prompt_version": 2,
+  "judge": {
+    "cases": 40,
+    "guard_on": {
+      "found": 20,
+      "of": 20,
+      "recall": 1.0,
+      "false_pauses": 0,
+      "of_clear": 20,
+      "false_pause_rate": 0.0,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 20,
+      "of": 20,
+      "recall": 1.0,
+      "false_pauses": 0,
+      "of_clear": 20,
+      "false_pause_rate": 0.0,
+      "malformed": 0
+    },
+    "median_seconds": 2.4,
+    "misses_with_guard": [],
+    "false_pauses_with_guard": []
+  },
+  "critic": {
+    "cases": 40,
+    "guard_on": {
+      "found": 17,
+      "of": 20,
+      "recall": 0.85,
+      "false_stops": 0,
+      "of_meeting": 20,
+      "false_stop_rate": 0.0,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 17,
+      "of": 20,
+      "recall": 0.85,
+      "false_stops": 0,
+      "of_meeting": 20,
+      "false_stop_rate": 0.0,
+      "malformed": 0
+    },
+    "median_seconds": 2.3
+  },
+  "chain": {
+    "episodes": 10,
+    "faithful_claims": 7,
+    "faithful_verified": 7,
+    "faithful_verified_rate": 1.0,
+    "invented_episodes": 5,
+    "invented_flagged": 4,
+    "invented_omitted_by_the_model": 1,
+    "rows": [
+      {
+        "episode": "F1",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 9.1
+      },
+      {
+        "episode": "F2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "verified"
+        ],
+        "seconds": 9.2
+      },
+      {
+        "episode": "F3",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 6.2
+      },
+      {
+        "episode": "F4",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 6.1
+      },
+      {
+        "episode": "F5",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 5.4
+      },
+      {
+        "episode": "X1",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "no_evidence"
+        ],
+        "seconds": 9.0
+      },
+      {
+        "episode": "X2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "verified"
+        ],
+        "seconds": 8.7
+      },
+      {
+        "episode": "X3",
+        "error": "",
+        "statuses": [
+          "token_unsupported"
+        ],
+        "seconds": 5.7
+      },
+      {
+        "episode": "X4",
+        "error": "",
+        "statuses": [
+          "verified",
+          "no_evidence"
+        ],
+        "seconds": 6.3
+      },
+      {
+        "episode": "X5",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "no_evidence"
+        ],
+        "seconds": 7.6
+      }
+    ]
+  }
+}
