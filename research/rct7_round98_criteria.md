@@ -35,3 +35,15 @@ the code is worth keeping and which guard to turn on, never a claim. The claim n
 ## Not claimed
 That any of this makes the runtime understand intent. It says how often a model's flag, constrained to cite the request, agreed with one author's labels, and that a citation either appears
 verbatim in the evidence or it does not.
+
+## A. the agent's own question (R5 mid-episode): the tool `delentia_ask_user` (written before the code, same day)
+The proposers above ask before the work starts or after it ends. A model that is already working can find, halfway, that it needs something only the person knows (which of two files, which
+date). Today it can only guess or give up. The tool lets it ask once.
+* Visible and effective only where the stop-and-ask applies (a person is present and the setting is on); never in a job, a schedule, a webhook, a subagent or the API, where it is not even in the menu.
+* At most one question per episode. A second call, or a call where nobody can answer, returns a plain note ("state your assumption and go on") and the episode continues.
+* The call ends the episode at once: no tool runs after it. The person gets the question (marked as written by the model, and as untrusted if the episode had read outside text); the answer is
+  added to the request exactly like any other answer, so sending the same request again continues with it. A chain of questions keeps every earlier answer.
+* The per-person brake covers it: a person who keeps dismissing model questions is not asked by the model any more (the tool then returns the "go on" note).
+* The tool is classified for the taint gate (inert: it only ends the episode), for person scope (person-neutral), for the effect inventory and for the tool menu; the repository's own audits must pass.
+* Pass: a scripted model that calls it is stopped with a stored question and no later tool ran; the same model in a job gets the note and finishes; the second call gets the note; the answer
+  reaches the next episode's goal; a chain of two questions keeps both answers; the menu has it only when it applies.

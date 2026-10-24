@@ -66,6 +66,7 @@ HINTS: Dict[str, str] = {
     "delentia_list_capabilities": "capabilities features available registered abilities what can you do | ความสามารถ ทำอะไรได้",
     "delentia_generate_image": "draw picture image generate illustration logo art photo render | วาดภาพ สร้างภาพ รูปภาพ",
     "delentia_expand_tool_output": "expand full original compressed shortened output complete text again earlier result | ขยาย ข้อความเต็ม ผลลัพธ์ที่ถูกย่อ",
+    "delentia_ask_user": "ask question clarify which one missing unknown need answer from the person confirm | ถาม คำถาม ไม่ชัด ขาดข้อมูล ยืนยัน อันไหน",
     "delentia_list_forged_tools": "forged custom tools we wrote created switched on active list our own | เครื่องมือที่สร้างเอง เครื่องมือที่เปิด",
     "delentia_run_forged_tool": "run use forged custom tool we created our own slugify median function | ใช้เครื่องมือที่สร้างเอง",
     "delentia_crystallize_keywords": "keywords key terms extract tag important words entropy phrases | คำสำคัญ สกัดคำ แท็ก",

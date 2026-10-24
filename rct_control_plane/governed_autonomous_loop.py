@@ -341,6 +341,7 @@ TAINT_GATED_TOOLS = frozenset({
 # INERT = reviewed by a person and judged unable to cause a side effect or move data out (it reads, computes, or writes only a bounded scratch/exchange artefact).
 # A new tool that is in none of the three fails tests/test_tool_classification_round60_real.py, so the decision cannot be forgotten.
 TAINT_INERT_TOOLS = frozenset({
+    "delentia_ask_user",                  # Round 98: ends the episode with a question to the person; it reads nothing, writes nothing, sends nothing
     "delentia_assemble_nodes", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_crystallize_keywords", "delentia_verify_intent_conservation",
     "delentia_cron_list", "delentia_daemon_status", "delentia_list_capabilities", "delentia_list_exchange_files", "delentia_list_forged_tools", "delentia_list_worktrees",
     "delentia_query_audit_log", "delentia_query_intents", "delentia_read_repo_file", "delentia_search_repo_files", "delentia_expand_tool_output",
@@ -357,6 +358,7 @@ OWNER_ONLY_TOOLS = frozenset({"delentia_query_audit_log", "delentia_query_intent
 # neither returns nor acts on another person's requests, memories or reminders. A new tool must be put in one of the three (tests/test_person_scope_round61_real.py), so "does this show one
 # person what another person did?" is asked once for every tool, not discovered later (the first audit found three tools that did and two that ran as the owner).
 PERSON_NEUTRAL_TOOLS = frozenset({
+    "delentia_ask_user",
     "delentia_assemble_nodes", "delentia_browse_page", "delentia_browser_act", "delentia_check_ground_truth_claim", "delentia_compress_intent_delta", "delentia_convert_content", "delentia_crawl_url",
     "delentia_create_worktree", "delentia_crystallize_keywords", "delentia_daemon_status", "delentia_delegate", "delentia_describe_image", "delentia_expand_tool_output",
     "delentia_export_session_state", "delentia_generate_image", "delentia_import_session_state", "delentia_list_capabilities", "delentia_list_exchange_files",
@@ -700,7 +702,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             on_step=on_step,
             on_answer_token=on_answer_token,
             on_episode_start=self._on_episode_start,
-            tool_filter=self._tool_filter,
+            tool_filter=self._menu_filter,
             pre_dispatch_gate=self._notarised_pre_dispatch,
             on_episode_end=self._on_episode_end,
             extra_context_provider=self._extra_context_provider,
@@ -774,6 +776,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._warm_info = {}
         self._episode_used_conversation = False
         self._episode_parts, self._episode_unknowns = [], []
+        self._asked_user_this_episode = False
         if self._initial_taint:
             self._start_tainted(self._initial_taint)
         self._meter = None                         # a loop that is reused must not report the previous episode's cost for one that never started
@@ -1480,6 +1483,22 @@ class GovernedAutonomousLoop(AutonomousLoop):
     # ------------------------------------------------------------------
     # J.1.4(a): keyword-overlap pre-filtering of the tool menu
     # ------------------------------------------------------------------
+    def _ask_user_available(self) -> bool:
+        """The agent may ask the person one question per episode, only where a person is present and the stop-and-ask is on, never in a contract run, and not for a person who keeps dismissing model questions."""
+        return (self._ask_and_wait_enabled() and not getattr(self, "_asked_user_this_episode", False) and getattr(self, "_active_contract", None) is None
+                and not self._judge_paused_for_person())
+
+    def _menu_filter(self, goal: str, available_tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """The menu for this goal; `delentia_ask_user` is in it only where it can work (and stays in it whatever the ranking does)."""
+        everything = available_tools
+        allowed = self._ask_user_available()
+        base = [t for t in available_tools if t["name"] != "delentia_ask_user"]
+        shown = self._tool_filter(goal, base)
+        if allowed:
+            asker = [t for t in everything if t["name"] == "delentia_ask_user"]
+            shown = [*shown, *asker]
+        return shown
+
     def _tool_filter(self, goal: str, available_tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Real keyword-overlap scoring between the goal and each tool's
         name+description - not an embedding model (J.1.4 chose this as
@@ -1539,6 +1558,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return None, str(exc)
 
     async def _pre_dispatch_gate(
+        self, goal: str, tool_name: str, tool_args: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Every call is judged first (policy, FDIA, taint, forbidden paths) by `_judge_tool_call`. The agent's own question is turned into a stop-and-ask only AFTER the gate allowed it: a policy
+        that allows reads only must refuse the question tool like any other tool (the repository's gate-property test found the first version answering it before the policy was consulted)."""
+        gate = await self._judge_tool_call(goal, tool_name, tool_args)
+        if tool_name == "delentia_ask_user" and gate is None:
+            return self._ask_user_gate(goal, tool_args)
+        return gate
+
+    async def _judge_tool_call(
         self, goal: str, tool_name: str, tool_args: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
         self._last_gate_fdia = None
@@ -1842,6 +1871,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
     # Set by an entry point where a person is looking at the screen (the Desk stream, the chat gateways). A job, a schedule, a webhook, a subagent or the HTTP API never sets it.
     _interactive: bool = False
+    _asked_user_this_episode: bool = False
 
     def _ask_and_wait_enabled(self) -> bool:
         """RCT-7 R5/R7 stop-and-ask (DELENTIA_ASK_AND_WAIT). The Architect's decision (2026-10-24): ON where a person is present, OFF where nobody is waiting, because a question to
@@ -1885,7 +1915,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         try:
             from rct_control_plane.clarifications import ClarificationStore
             rows = [c for c in ClarificationStore(self._persistence).list(namespace=self.namespace, status="ALL", limit=60)
-                    if c.criterion in ("model_unclear", "semantic") and c.status in ("ANSWERED", "CANCELLED")]
+                    if c.criterion in ("model_unclear", "semantic", "agent_question") and c.status in ("ANSWERED", "CANCELLED")]
             recent = rows[:10]
             if len(recent) < 5:
                 return False
@@ -1901,6 +1931,30 @@ class GovernedAutonomousLoop(AutonomousLoop):
                                            changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500]}, ("verdict",)))
         except Exception:
             pass
+
+    def _ask_user_gate(self, goal: str, tool_args: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """The agent's own question (round 98, R5 mid-episode). Where it can be asked, it ends the episode at once and the person is asked; anywhere else None is returned and the tool answers with a plain
+        note ("state your assumption"). The question is the model's text, so it is shown as such, and as untrusted when the episode had read outside text."""
+        if not self._ask_user_available():
+            return None
+        question = " ".join(str(tool_args.get("question") or "").split())[:400]
+        if not question:
+            return None
+        self._asked_user_this_episode = True
+        from rct_control_plane.clarifications import UPDATE_MARK, ClarificationStore
+        thai = bool(re.search(r"[\u0e00-\u0e7f]", goal))
+        tainted = getattr(self, "_episode_taint", None) is not None
+        head = ("ผู้ช่วย (โมเดล) ขอถามก่อนทำต่อ" if thai else "The agent (a model) asks before going on") + (
+            (" — ข้อความนี้เขียนหลังอ่านเนื้อหาจากภายนอก จึงไม่ควรเชื่อโดยไม่ตรวจ" if thai else " (it read outside text in this episode: treat the question as untrusted)") if tainted else "")
+        why = " ".join(str(tool_args.get("why") or "").split())[:200]
+        text = "\n".join([head + ":", f"- {question}", *([f"({why})"] if why else []),
+                          "ตอบ แล้วส่งคำขอเดิมอีกครั้ง" if thai else "Answer, then send the same request again."])
+        made = ClarificationStore(self._persistence).create(self.namespace, "before_act", "agent_question", text, original_goal=goal, expected=why, observed="",
+                                                            episode_id=str(self._episode_id or ""), intent_version=goal.count(UPDATE_MARK) + 1)
+        self._start_stop_extra = {"clarification_id": made.clarification_id, "clarification_question": text}
+        self._episode_used_conversation = True
+        self._judge_audit("agent_question", goal, {"question_sha256": _sha(question), "tainted": tainted})
+        return {"stopped_reason": "needs_clarification", "tool_result": {"asked": True, "clarification_id": made.clarification_id, "question": question}}
 
     async def _judge_before_acting(self, goal: str, has_conversation: bool) -> Optional[Dict[str, Any]]:
         """RCT-7 R1/R5 with a model (DELENTIA_RCT7_JUDGE=propose; only where the stop-and-ask applies). The model PROPOSES questions about what the request leaves out; each must cite words of
