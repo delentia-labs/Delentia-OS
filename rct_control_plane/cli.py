@@ -2047,6 +2047,22 @@ def clarify_answer(clarification_id: str, answer_text: str, as_namespace: Option
     click.echo(f"answered. intent version {done.new_intent_version}. The next episode gets this goal:\n\n{done.revised_goal()}")
 
 
+@clarify_group.command("stats")
+@click.option("--days", default=14.0, show_default=True, type=float, help="How far back to count.")
+@click.option("--namespace", default=None, help="Only this person.")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_stats(days: float, namespace: Optional[str], as_json: bool, db: Optional[str]) -> None:
+    """How often the system stopped to ask, and what the person did with each question (answered / kept as it was / cancelled / expired). Read-only."""
+    from rct_control_plane import rct7_stats
+    stats = rct7_stats.collect(_audit_db(db), days=days, namespace=namespace)
+    if as_json:
+        click.echo(json.dumps(stats, ensure_ascii=False, indent=2))
+        return
+    for line in rct7_stats.render(stats):
+        click.echo(line)
+
+
 @clarify_group.command("cancel")
 @click.argument("clarification_id")
 @click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")

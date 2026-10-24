@@ -822,6 +822,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_parts = mismatch_rules.parts_of(goal)
         self._episode_unknowns = mismatch_rules.unknowns_for(goal, Path(workspace) if workspace else None, bool(conversation_text))
         asked = None if (warm_hit or getattr(self, "_active_contract", None) is not None) else self._ask_before_acting(goal)
+        if asked is None and not warm_hit and getattr(self, "_active_contract", None) is None:
+            asked = await self._judge_before_acting(goal, bool(conversation_text))
         if asked is not None:
             self._episode_rct7_steps, self._episode_context_text = [], ""
             self._episode_route = {"enabled": self._route_enabled, "skipped": "needs_clarification"}
@@ -1851,6 +1853,133 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return False
         return bool(self._interactive)
 
+    # ------------------------------------------------------------------------------------------------ round 98: a model as PROPOSER (rct7_judge.py)
+    def _judge_provider(self) -> Any:
+        """(provider, settle): the model that reviews. The `judge` profile when one was chosen (guarded by the sovereignty policy and the circuit breaker, metered on its own and charged to
+        the episode afterwards), otherwise the agent's own metered model. A test may hand one in as `_judge_provider_override`."""
+        override = getattr(self, "_judge_provider_override", None)
+        if override is not None:
+            return override, (lambda: None)
+        from rct_control_plane import rct7_judge
+        if not rct7_judge.profile_configured():
+            return getattr(self, "_llm_provider", None), (lambda: None)
+        from rct_control_plane.llm_provider import MeteredProvider, OllamaProvider, OpenRouterProvider, get_default_provider
+        from rct_control_plane.provider_breaker import wrap as with_circuit_breaker
+        from rct_control_plane.residency import guard_provider
+        raw = get_default_provider(profile=rct7_judge.PROFILE)
+        prices = (0.0, 0.0) if isinstance(raw, OllamaProvider) else None
+        if isinstance(raw, OpenRouterProvider):
+            from rct_control_plane.model_config import lookup_openrouter_prices
+            prices = lookup_openrouter_prices(raw.model)
+        metered = MeteredProvider(guard_provider(with_circuit_breaker(raw), self._persistence, self.namespace), max_cost_usd=self._max_episode_cost_usd, max_tokens_total=8000,
+                                  prompt_price_per_mtok=prices[0] if prices else None, completion_price_per_mtok=prices[1] if prices else None)
+
+        def settle() -> None:
+            meter = getattr(self, "_meter", None)
+            if meter is not None and hasattr(meter, "charge_children"):
+                meter.charge_children(metered.cost_usd if metered.cost_known else 0.0, int(metered.prompt_tokens) + int(metered.completion_tokens))
+        return metered, settle
+
+    def _judge_paused_for_person(self) -> bool:
+        """False-pause control: if most of what the model proposed to this person lately was cancelled or kept as it was, stop proposing (they are being asked for nothing)."""
+        try:
+            from rct_control_plane.clarifications import ClarificationStore
+            rows = [c for c in ClarificationStore(self._persistence).list(namespace=self.namespace, status="ALL", limit=60)
+                    if c.criterion in ("model_unclear", "semantic") and c.status in ("ANSWERED", "CANCELLED")]
+            recent = rows[:10]
+            if len(recent) < 5:
+                return False
+            unhelpful = sum(1 for c in recent if c.status == "CANCELLED" or (c.extra or {}).get("continued_as") == "accepted")
+            return unhelpful / len(recent) >= 0.6
+        except Exception:
+            return False
+
+    def _judge_audit(self, what: str, subject: str, verdict: Dict[str, Any]) -> None:
+        try:
+            from rct_control_plane import audit_text
+            self._persistence.append_audit(entity_type="governed_loop_judge", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action=what, actor=self.namespace,
+                                           changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500]}, ("verdict",)))
+        except Exception:
+            pass
+
+    async def _judge_before_acting(self, goal: str, has_conversation: bool) -> Optional[Dict[str, Any]]:
+        """RCT-7 R1/R5 with a model (DELENTIA_RCT7_JUDGE=propose; only where the stop-and-ask applies). The model PROPOSES questions about what the request leaves out; each must cite words of
+        the request (rct7_judge's cite guard). Not for a request that carries outside text, that the person already answered, or that only means something inside a conversation. Fail open."""
+        from rct_control_plane import rct7_judge
+        from rct_control_plane.clarifications import UPDATE_MARK, ClarificationStore
+        if rct7_judge.mode() != "propose" or not self._ask_and_wait_enabled() or has_conversation or getattr(self, "_claimed_clarification", None):
+            return None
+        if getattr(self, "_episode_taint", None) is not None or UPDATE_MARK in goal or self._judge_paused_for_person():
+            return None
+        provider, settle = self._judge_provider()
+        if provider is None:
+            return None
+        store = ClarificationStore(self._persistence)
+        wanted = " ".join(goal.split())
+        for waiting in store.list(namespace=self.namespace, status="PENDING", limit=20):
+            if waiting.criterion == "model_unclear" and " ".join(waiting.original_goal.split()) == wanted:
+                store.accept(waiting.clarification_id, self.namespace)       # the same request sent again without an answer: the person means it as it is
+                self._judge_audit("insisted", goal, {"clarification_id": waiting.clarification_id})
+                return None
+        verdict = await rct7_judge.judge_request(provider, goal)
+        settle()
+        self._judge_audit("request", goal, verdict.to_dict())
+        if verdict.clear is not False or not verdict.unknowns:
+            return None
+        thai = bool(re.search(r"[\u0e00-\u0e7f]", goal))
+        head = "ผู้ช่วย (โมเดล) เสนอให้ถามก่อนเริ่ม ซึ่งอาจผิดได้:" if thai else "A model that read your request proposes to ask before starting (it can be wrong):"
+        tail = ("ตอบคำถาม แล้วส่งคำขอเดิมอีกครั้ง หรือส่งคำขอเดิมซ้ำโดยไม่ตอบถ้าต้องการให้ทำตามที่เขียน" if thai
+                else "Answer, then send the same request again; or send it again without answering if you mean it as written.")
+        question = "\n".join([head, *[f"- {u.question}" for u in verdict.unknowns], tail])
+        made = store.create(self.namespace, "before_act", "model_unclear", question, original_goal=goal,
+                            expected="; ".join(u.about for u in verdict.unknowns), observed="", episode_id=str(self._episode_id or ""))
+        self._start_stop_extra = {"clarification_id": made.clarification_id, "clarification_question": question, "judge": verdict.to_dict()}
+        self._episode_used_conversation = True
+        return {"stopped_reason": "needs_clarification", "final_answer": question}
+
+    async def _judge_after_acting(self, result: Dict[str, Any], stopped_reason: str, warm: bool) -> bool:
+        """RCT-7 R7 with a model: where the rules found no difference, does the answer meet the request? Only an unmet part that cites the request can stop the episode."""
+        from rct_control_plane import rct7_judge
+        if (rct7_judge.mode() != "propose" or not self._ask_and_wait_enabled() or warm or stopped_reason != "llm_finished" or getattr(self, "_active_contract", None) is not None
+                or getattr(self, "_episode_taint", None) is not None or not result.get("final_answer") or self._judge_paused_for_person()):
+            return False
+        provider, settle = self._judge_provider()
+        if provider is None:
+            return False
+        goal = str(result.get("goal") or "")
+        verdict = await rct7_judge.judge_result(provider, goal, str(result.get("final_answer")))
+        settle()
+        result["semantic_check"] = {**verdict.to_dict(), "scope_note": "A model's judgement, constrained to cite the request; not proof that the answer is right or wrong."}
+        self._judge_audit("result", goal, verdict.to_dict())
+        if verdict.meets is not False or not verdict.unmet:
+            return False
+        from rct_control_plane.clarifications import ClarificationStore
+        thai = bool(re.search(r"[\u0e00-\u0e7f]", goal))
+        head = "ผู้ช่วย (โมเดล) เทียบผลกับคำขอแล้วคิดว่าบางส่วนยังไม่ตรง ซึ่งอาจผิดได้:" if thai else "A model compared the result with your request and thinks these parts are not met (it can be wrong):"
+        tail = "ต้องการให้ทำอย่างไรต่อ (ทำใหม่, ยอมรับผลนี้, หรือเปลี่ยนสิ่งที่ขอ)" if thai else "What should happen next: redo it, accept this result, or change what you asked for?"
+        question = "\n".join([head, *[f"- {u.part}: {u.why}" if u.why else f"- {u.part}" for u in verdict.unmet], tail])
+        made = ClarificationStore(self._persistence).create(self.namespace, "mismatch", "semantic", question, original_goal=goal,
+                                                            expected="; ".join(u.part for u in verdict.unmet), observed="(see the model's note)", episode_id=str(self._episode_id or ""))
+        result["clarification_id"] = made.clarification_id
+        result["clarification_question"] = question
+        self._episode_used_conversation = True
+        return True
+
+    async def _evidence_chain(self, result: Dict[str, Any], stopped_reason: str, warm: bool) -> None:
+        """RCT-7 R4 as evidence: the tokens of the answer traced to a step (no model), and with DELENTIA_RCT7_CHAIN=cite the model's cited claims checked by code. Information only."""
+        from rct_control_plane import rct7_judge
+        if warm or stopped_reason != "llm_finished" or not result.get("final_answer") or not result.get("steps") or getattr(self, "_active_contract", None) is not None:
+            return
+        goal = str(result.get("goal") or "")
+        chain = rct7_judge.baseline_chain(goal, str(result["final_answer"]), result.get("steps"))
+        if rct7_judge.chain_mode() == "cite":
+            provider, settle = self._judge_provider()
+            if provider is not None:
+                chain["cited"] = await rct7_judge.cite_claims(provider, goal, str(result["final_answer"]), result.get("steps"))
+                settle()
+                self._judge_audit("chain", goal, {"verified": chain["cited"].get("verified"), "unverified": chain["cited"].get("unverified"), "error": chain["cited"].get("error")})
+        result["rct7_chain"] = chain
+
     def _ask_before_acting(self, goal: str) -> Optional[Dict[str, Any]]:
         """RCT-7 R5 for what a rule can see (round 97): the request names a file that exists nowhere, or is a bare reference with nothing to refer to. With DELENTIA_ASK_AND_WAIT=1 the
         episode stops BEFORE the first model call and the person is asked; without the flag the unknowns are only listed in the plan. A request the person already answered is not asked again."""
@@ -2008,6 +2137,12 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._start_stop_extra = None
         if self._ask_and_wait_stop(result, stopped_reason, warm):
             result["stopped_reason"] = stopped_reason = "needs_clarification"
+        elif await self._judge_after_acting(result, stopped_reason, warm):
+            result["stopped_reason"] = stopped_reason = "needs_clarification"
+        try:
+            await self._evidence_chain(result, stopped_reason, warm)
+        except Exception:                                    # evidence is information: a failure here must never change an episode's outcome
+            pass
         if getattr(self, "_episode_rct7_steps", None) is not None and (self._episode_rct7_steps or getattr(self, "_episode_parts", None)):
             from rct_control_plane import mismatch_rules as _mr
             result["rct7_plan"] = {"steps": list(self._episode_rct7_steps), "route": dict(getattr(self, "_episode_route", {}) or {}), "conditions": _mr.conditions_for(result.get("goal") or ""),
