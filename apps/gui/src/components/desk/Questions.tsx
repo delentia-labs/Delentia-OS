@@ -103,7 +103,7 @@ export function AnsweredSection({ list }: { list: ReturnType<typeof useDeskData<
 
 /** Questions the system has put to the person and is waiting on. Approvals are separate (they need a signature);
  *  these need words. Questions about an acceptance contract are not listed here yet (they live in the contract store). */
-export function QuestionsSection({ list }: { list: ReturnType<typeof useDeskData<Clarification[]>> }) {
+export function QuestionsSection({ list, alsoReload }: { list: ReturnType<typeof useDeskData<Clarification[]>>; alsoReload?: () => void }) {
   const { lang } = useLang();
   const th = lang === "th";
   if (list.error) return <ErrorNote error={list.error} onRetry={list.reload} />;
@@ -114,7 +114,7 @@ export function QuestionsSection({ list }: { list: ReturnType<typeof useDeskData
         {th ? `คำถามที่รอคำตอบจากคุณ (${list.data.length})` : `Questions waiting for you (${list.data.length})`}
       </h2>
       <div className="grid gap-5 xl:grid-cols-2">
-        {list.data.map((c) => <QuestionCard key={c.clarification_id} c={c} onChanged={list.reload} />)}
+        {list.data.map((c) => <QuestionCard key={c.clarification_id} c={c} onChanged={() => { list.reload(); alsoReload?.(); }} />)}
       </div>
     </section>
   );

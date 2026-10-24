@@ -114,7 +114,7 @@ export default function ApprovalsPage() {
   }, [view], 15000);
   const questions = useDeskData(() => desk.clarifications("PENDING"), [], 15000);
   const answered = useDeskData(() => desk.clarifications("ANSWERED"), [], 15000);
-  const nothingWaiting = !!list.data && !list.data.length && !(questions.data && questions.data.length);
+  const nothingWaiting = !!list.data && !list.data.length && !(questions.data && questions.data.length) && !(answered.data && answered.data.some((c) => !c.continued_as));
 
   return (
     <>
@@ -133,7 +133,7 @@ export default function ApprovalsPage() {
           </div>
         } />
       <PageBody>
-        <QuestionsSection list={questions} />
+        <QuestionsSection list={questions} alsoReload={answered.reload} />
         <AnsweredSection list={answered} />
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
         {nothingWaiting ? (
