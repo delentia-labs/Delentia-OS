@@ -1838,10 +1838,23 @@ class GovernedAutonomousLoop(AutonomousLoop):
     }
     _DEFAULT_INCOMPLETE_SIGNAL = (-0.5, False)
 
+    # Set by an entry point where a person is looking at the screen (the Desk stream, the chat gateways). A job, a schedule, a webhook, a subagent or the HTTP API never sets it.
+    _interactive: bool = False
+
+    def _ask_and_wait_enabled(self) -> bool:
+        """RCT-7 R5/R7 stop-and-ask (DELENTIA_ASK_AND_WAIT). The Architect's decision (2026-10-24): ON where a person is present, OFF where nobody is waiting, because a question to
+        nobody would sit until it expires. `interactive` (the default) = only loops an entry point marked interactive; `1`/`on` = every loop; `0`/`off` = none."""
+        mode = (os.environ.get("DELENTIA_ASK_AND_WAIT") or "interactive").strip().lower()
+        if mode in ("1", "on", "true", "all"):
+            return True
+        if mode in ("0", "off", "false", "none"):
+            return False
+        return bool(self._interactive)
+
     def _ask_before_acting(self, goal: str) -> Optional[Dict[str, Any]]:
         """RCT-7 R5 for what a rule can see (round 97): the request names a file that exists nowhere, or is a bare reference with nothing to refer to. With DELENTIA_ASK_AND_WAIT=1 the
         episode stops BEFORE the first model call and the person is asked; without the flag the unknowns are only listed in the plan. A request the person already answered is not asked again."""
-        if os.environ.get("DELENTIA_ASK_AND_WAIT") != "1" or not self._episode_unknowns:
+        if not self._ask_and_wait_enabled() or not self._episode_unknowns:
             return None
         from rct_control_plane import mismatch_rules
         from rct_control_plane.clarifications import ClarificationStore
@@ -1859,7 +1872,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         similarity, and never a guess. Off unless DELENTIA_ASK_AND_WAIT=1 (the default is the Architect's to set after the false-pause measurement). The question goes
         to the ClarificationStore; the answer becomes a new intent version and the next run is a NEW episode (the wrong result is not continued). An episode that
         stopped here teaches nothing: no skill and no warm-cache answer. What was checked is always reported, so the Desk can show it."""
-        if os.environ.get("DELENTIA_ASK_AND_WAIT") != "1" or warm or stopped_reason != "llm_finished" or getattr(self, "_active_contract", None) is not None:
+        if not self._ask_and_wait_enabled() or warm or stopped_reason != "llm_finished" or getattr(self, "_active_contract", None) is not None:
             return False
         from rct_control_plane import mismatch_rules
         goal = str(result.get("goal") or "")

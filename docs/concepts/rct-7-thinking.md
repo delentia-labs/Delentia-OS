@@ -151,7 +151,7 @@ execution_plan:
 
 **What (the creator's definition):** compare the result with the intent. If it does not match, report the difference, stop and ask the user, then analyse again with the answer.
 
-**Status:** partly implemented. For seven kinds of requirement that a rule can read from the request (answer language, JSON format, a file to save, a file not to change, a word limit, a character limit, a list length), a difference stops the episode and asks (off by default: `DELENTIA_ASK_AND_WAIT=1`). The general check at the end of an episode still only compares similarity and grounding and decides what may be learned; it does not stop and ask (see the [status page](../public/RCT7_IMPLEMENTATION_STATUS.md)).
+**Status:** partly implemented. For seven kinds of requirement that a rule can read from the request (answer language, JSON format, a file to save, a file not to change, a word limit, a character limit, a list length), a difference stops the episode and asks (on in the Desk and chat channels, off for jobs, schedules, webhooks and the API; `DELENTIA_ASK_AND_WAIT=1` or `=off` overrides). The general check at the end of an episode still only compares similarity and grounding and decides what may be learned; it does not stop and ask (see the [status page](../public/RCT7_IMPLEMENTATION_STATUS.md)).
 
 **The rest of this step is the legacy design**, kept for history: it describes the NPC simulation scorer (`core/fdia/fdia.py`, see [FDIA](fdia.md)) with a 0.60 threshold, which is a different scorer from the one the agent loop uses (0.5, applied when a tool is about to run).
 

@@ -141,6 +141,10 @@ async def agent_events(
     factory = loop_factory or build_governed_loop
     loop = factory(kernel, namespace, max_iterations=max_iterations, max_seconds=max_seconds,
                    mcp_server=mcp_server)
+    try:
+        loop._interactive = True                # the Desk has a person in front of it: RCT-7 stop-and-ask applies
+    except Exception:
+        pass
 
     queue: "asyncio.Queue[Optional[Dict[str, Any]]]" = asyncio.Queue()
     if structured:

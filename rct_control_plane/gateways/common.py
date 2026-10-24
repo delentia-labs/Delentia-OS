@@ -93,7 +93,9 @@ async def handle_incoming(
 
 async def dispatch_governed(kernel: Any, goal: str, namespace: str) -> Dict[str, Any]:
     from rct_control_plane.agent_factory import build_governed_loop
-    return await build_governed_loop(kernel, namespace=namespace).run(goal)
+    loop = build_governed_loop(kernel, namespace=namespace)
+    loop._interactive = True                    # a person is on the other end of the chat: RCT-7 stop-and-ask applies
+    return await loop.run(goal)
 
 
 def split_for_channel(text: str, limit: int) -> list:

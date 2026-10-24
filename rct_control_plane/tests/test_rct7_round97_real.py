@@ -352,3 +352,60 @@ def test_no_pattern_of_the_rules_is_slow_on_hostile_text():
             pattern.search(text)
             pattern.findall(text)
             assert time.time() - started < 1.0, (name, label)
+
+
+# ------------------------------------------------------------------------------------------------------------------- the Architect's default: ask where a person is present
+def _run_with_mode(env, monkeypatch, mode, interactive, goal=GOAL_TH, answer=ENGLISH):
+    if mode is None:
+        monkeypatch.delenv("DELENTIA_ASK_AND_WAIT", raising=False)
+    else:
+        monkeypatch.setenv("DELENTIA_ASK_AND_WAIT", mode)
+    script = [finish(answer)]
+
+    async def decide(goal_, history, available_tools, llm_provider=None, **kwargs):
+        return dict(script.pop(0))
+    monkeypatch.setattr(autonomous_loop, "decide_next_action", decide)
+    loop = _loop(env.root, f"mode-{mode}-{interactive}", mcp=_FakeMCP())
+    loop._interactive = interactive
+    return asyncio.run(loop.run(goal))
+
+
+def test_by_default_a_loop_with_a_person_present_stops_to_ask_and_a_loop_without_one_does_not(env, monkeypatch):
+    assert _run_with_mode(env, monkeypatch, None, True)["stopped_reason"] == "needs_clarification"
+    assert _run_with_mode(env, monkeypatch, None, False)["stopped_reason"] == "llm_finished"          # a job or a schedule: nobody is waiting, so nothing is asked
+
+
+def test_the_explicit_settings_still_override_the_default(env, monkeypatch):
+    assert _run_with_mode(env, monkeypatch, "1", False)["stopped_reason"] == "needs_clarification"    # everywhere
+    assert _run_with_mode(env, monkeypatch, "off", True)["stopped_reason"] == "llm_finished"          # nowhere
+
+
+def test_the_default_applies_before_acting_too(env, monkeypatch):
+    request = "Read config.yaml and tell me the port"
+    assert _run_with_mode(env, monkeypatch, None, True, goal=request, answer="x")["stopped_reason"] == "needs_clarification"
+    assert _run_with_mode(env, monkeypatch, None, False, goal=request, answer="x")["stopped_reason"] == "llm_finished"
+
+
+def test_the_entry_points_with_a_person_mark_their_loop_and_the_others_do_not(env, monkeypatch):
+    from rct_control_plane import agent_factory
+    from rct_control_plane.desk_agent_stream import agent_events
+    made = []
+
+    def factory(kernel, namespace, **kwargs):
+        loop = _loop(env.root, "marked", mcp=_FakeMCP())
+        made.append(loop)
+        return loop
+    monkeypatch.delenv("DELENTIA_ASK_AND_WAIT", raising=False)
+    script = [finish(ENGLISH)]
+
+    async def decide(goal_, history, available_tools, llm_provider=None, **kwargs):
+        return dict(script.pop(0))
+    monkeypatch.setattr(autonomous_loop, "decide_next_action", decide)
+
+    async def run():
+        return [e async for e in agent_events(GOAL_TH, kernel=None, namespace="desk-test", loop_factory=factory, structured=True)]
+    summary = next(e["data"] for e in asyncio.run(run()) if e["type"] == "summary")
+    assert made[0]._interactive is True and summary["stopped_reason"] == "needs_clarification"          # the Desk, with the variable unset
+    assert agent_factory.build_governed_loop.__defaults__ is not None
+    import inspect
+    assert inspect.signature(agent_factory.build_governed_loop).parameters["interactive"].default is False   # an API call, a job, a subagent: never marked

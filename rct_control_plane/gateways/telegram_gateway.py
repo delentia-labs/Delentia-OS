@@ -116,6 +116,7 @@ class TelegramGateway:
         from rct_control_plane.agent_factory import build_governed_loop
 
         loop = build_governed_loop(self._kernel, namespace=namespace)
+        loop._interactive = True                   # a person is on the other end: RCT-7 stop-and-ask applies
         return await loop.run(goal)
 
     async def handle_update(self, update: Dict[str, Any]) -> Optional[Dict[str, Any]]:
