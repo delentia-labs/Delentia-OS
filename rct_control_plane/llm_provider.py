@@ -678,16 +678,18 @@ class MeteredProvider(LLMProvider):
         self._record(full, "".join(chunks))
 
     def summary(self) -> dict:
+        # These values cross signed child/parent accounting boundaries. Keep
+        # sub-microdollar precision; six-place display rounding accumulates.
         return {
             "model": self.model,
             "calls": self.calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "cached_prompt_tokens": self.cached_prompt_tokens,
-            "children_cost_usd": round(self.children_cost_usd, 6),
+            "children_cost_usd": round(self.children_cost_usd, 12),
             "children_tokens": self.children_tokens,
             "cache_hit_rate": round(self.cached_prompt_tokens / self.prompt_tokens, 4) if self.prompt_tokens else None,
-            "cost_usd": round(self.cost_usd, 6) if self.cost_known else None,
+            "cost_usd": round(self.cost_usd, 12) if self.cost_known else None,
             "cost_known": self.cost_known,
             "max_cost_usd": self.max_cost_usd,
             "max_tokens_total": self.max_tokens_total,

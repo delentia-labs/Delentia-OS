@@ -33,6 +33,20 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 HERE = ROOT / "research"
+HARNESS_ENV_KEYS = (
+    "USERPROFILE", "HOME", "DELENTIA_HOME", "DELENTIA_REPO_ROOT",
+    "DELENTIA_RESEARCH_MODE", "DELENTIA_SHARED_MEMORY", "DELENTIA_CRAWL_ALLOW_PRIVATE",
+    "DELENTIA_LLM_RETRY_BACKOFF", "DELENTIA_APPROVERS_FILE", "DELENTIA_UNTRUSTED_PATHS",
+    "DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT", "DELENTIA_MEMORY_POLICY",
+    "DELENTIA_WARM_RECALL", "DELENTIA_ALGORITHM_PIPELINE", "DELENTIA_STARTER_SKILLS",
+    "DELENTIA_FDIA_POLICY", "DELENTIA_JURY_CONFIG", "DELENTIA_HOME_REGION",
+    "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_NOTARY_URL",
+    "DELENTIA_NOTARY_TOKEN", "DELENTIA_PARALLEL_TOOLS", "DELENTIA_API_TOKEN",
+    "DELENTIA_OWNER_NOTIFY", "DELENTIA_CORD_SECOND_OPINION", "DELENTIA_MEMORY_EMBED",
+    "DELENTIA_MEMORY_EMBED_MODEL", "DELENTIA_MEMORY_QUESTIONS", "DELENTIA_MEMORY_QUERY_EXPANSION",
+    "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_FALLBACK_MODELS", "DELENTIA_MODEL_CONFIG",
+    "DELENTIA_LLM_PROVIDER", "DELENTIA_LLM_MODEL",
+)
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "rct_control_plane" / "tests"))
 
@@ -230,6 +244,9 @@ class Harness:
         self.kernel: Any = None
         self.mcp: Any = None
         self.tool_schema_hash = ""
+        self._previous_repo_root: Optional[Path] = None
+        self._previous_repo_env: Optional[str] = None
+        self._previous_environment: Dict[str, Optional[str]] = {}
 
     # ----------------------------------------------------------------- budget, menu and identity (Round 82)
     def remaining_budget(self) -> Optional[float]:
@@ -262,6 +279,15 @@ class Harness:
 
     # ----------------------------------------------------------------- setup
     def start(self) -> None:
+        # File tools and grounding share a module-level root. Preserve it before
+        # this run changes the environment, including on the first MCP import.
+        loaded_mcp = sys.modules.get("rct_control_plane.mcp_server")
+        self._previous_environment = {name: os.environ.get(name) for name in HARNESS_ENV_KEYS}
+        self._previous_repo_env = os.environ.get("DELENTIA_REPO_ROOT")
+        self._previous_repo_root = (
+            loaded_mcp.REPO_ROOT if loaded_mcp is not None
+            else Path(self._previous_repo_env or ROOT).resolve()
+        )
         work = self.work
         home_dir = work / "userhome"
         home_dir.mkdir(parents=True, exist_ok=True)
@@ -331,10 +357,25 @@ class Harness:
         self.kernel, self.mcp = _kernel, mcp
 
     def close(self) -> None:
-        if self.model is not None:
-            self.model.__exit__(None, None, None)
-        if self.sink is not None:
-            self.sink.close()
+        try:
+            if self.model is not None:
+                self.model.__exit__(None, None, None)
+        finally:
+            try:
+                if self.sink is not None:
+                    self.sink.close()
+            finally:
+                if self._previous_repo_root is not None:
+                    loaded_mcp = sys.modules.get("rct_control_plane.mcp_server")
+                    if loaded_mcp is not None:
+                        loaded_mcp.REPO_ROOT = self._previous_repo_root
+                    for name, previous in self._previous_environment.items():
+                        if previous is None:
+                            os.environ.pop(name, None)
+                        else:
+                            os.environ[name] = previous
+                    self._previous_environment.clear()
+                    self._previous_repo_root = None
 
     # ----------------------------------------------------------------- episodes
     def preload(self, namespace: str, seed: int) -> None:

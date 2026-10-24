@@ -12,6 +12,7 @@ export default function MemoryPage() {
   const { lang } = useLang();
   const [namespace, setNamespace] = useState<string>("");
   const [showRevoked, setShowRevoked] = useState(false);
+  const [memoryRevision, setMemoryRevision] = useState(0);
   const list = useDeskData(() => desk.memories(namespace || undefined, showRevoked), [namespace, showRevoked], 20000);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -29,10 +30,11 @@ export default function MemoryPage() {
     setNote(null);
     try {
       const r = await desk.remember(content.trim(), kind, namespace || undefined);
-      setNote({ tone: "ok", text: `Stored in namespace ${r.namespace}.` });
+      setNote({ tone: "ok", text: lang === "th" ? `บันทึกใน namespace ${r.namespace} แล้ว` : `Stored in namespace ${r.namespace}.` });
       setContent("");
       setHints(null);
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -66,6 +68,7 @@ export default function MemoryPage() {
       setNote({ tone: "ok", text: lang === "th" ? `แทนที่แล้ว: ${r.old_id} ถูกเก็บไว้แต่ agent ไม่ใช้อีก${r.pin_moved ? " และกฎที่ปักหมุดย้ายมาที่ความจำใหม่" : ""}` : `Replaced: ${r.old_id} is kept on disk but no longer used${r.pin_moved ? "; the pinned rule moved to the new memory" : ""}.` });
       after?.();
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -80,6 +83,7 @@ export default function MemoryPage() {
       await desk.pinMemory(m.id, !m.pinned_at, m.namespace);
       setNote({ tone: "ok", text: m.pinned_at ? (lang === "th" ? "เลิกปักหมุดแล้ว" : "Unpinned.") : (lang === "th" ? "ปักหมุดแล้ว: ทุก episode จะเห็นกฎนี้ ไม่ว่าเป้าหมายจะเป็นอะไร (สูงสุด 5 ข้อต่อคน)" : "Pinned: every episode is shown this rule, whatever the goal (at most 5 per person).") });
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       fail(err);
     } finally {
@@ -96,6 +100,7 @@ export default function MemoryPage() {
       setRevoking(null);
       setReason("");
       list.reload();
+      setMemoryRevision((revision) => revision + 1);
     } catch (err) {
       setNote({ tone: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -115,7 +120,7 @@ export default function MemoryPage() {
             <label className="block">
               <span className="text-[13px] text-dl-muted">{lang === "th" ? "สิ่งที่ agent ควรรู้" : "What the agent should know"}</span>
               <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={5} disabled={busy} maxLength={4000}
-                placeholder="The staging database is stg-db-1; deploys go through the blue-green pipeline and migrations are reviewed first."
+                placeholder={lang === "th" ? "ตัวอย่าง: งบประมาณของโครงการคือ 15,000 บาท และต้องตรวจสอบก่อนอนุมัติ" : "The staging database is stg-db-1; deploys go through the blue-green pipeline and migrations are reviewed first."}
                 className="desk-focus desk-mono mt-2 w-full rounded border border-dl-rule bg-dl-ink p-2 text-[13px] text-dl-text placeholder:text-dl-muted/50" />
             </label>
             <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -123,7 +128,7 @@ export default function MemoryPage() {
                 className="desk-focus desk-mono rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-xs text-dl-text">
                 {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
-              <Button onClick={add} disabled={busy || !content.trim()}>{busy ? "Saving…" : "Remember"}</Button>
+              <Button onClick={add} disabled={busy || !content.trim()}>{busy ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "บันทึกความจำ" : "Remember")}</Button>
             </div>
             {hints ? (
               <div role="group" aria-label="This may replace" className="mt-3 space-y-2 rounded border border-dl-amber/50 p-3">
@@ -142,7 +147,7 @@ export default function MemoryPage() {
             ) : null}
             {note ? <p role="status" className={`mt-3 text-[13px] ${note.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{note.text}</p> : null}
             <p className="mt-4 text-[12px] leading-relaxed text-dl-muted">
-              Memories are stored on this machine in RCTDB (SQLite). Do not store secrets here: recalled text is placed in the model&apos;s prompt.
+              {lang === "th" ? "ความจำเก็บอยู่บนเครื่องนี้ใน RCTDB (SQLite) อย่าบันทึกข้อมูลลับ: ข้อความที่เรียกคืนจะถูกส่งเป็นข้อมูลให้โมเดล" : "Memories are stored on this machine in RCTDB (SQLite). Do not store secrets here: recalled text is placed in the model’s prompt."}
             </p>
           </Panel>
 
@@ -211,7 +216,7 @@ export default function MemoryPage() {
             ))}
           </div>
         </div>
-        <div className="mt-6"><TimeTravel namespace={namespace} /></div>
+        <div className="mt-6"><TimeTravel namespace={namespace} refreshVersion={memoryRevision} /></div>
       </PageBody>
     </>
   );
