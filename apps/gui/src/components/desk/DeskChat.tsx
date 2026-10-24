@@ -21,6 +21,7 @@ type Summary = {
   guard: { cord_verdict?: string; cord_findings?: { pattern_id: string }[] };
   notary: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps: string[];
+  usage?: { calls?: number; prompt_tokens?: number; completion_tokens?: number; cached_prompt_tokens?: number; cost_usd?: number | null; cost_known?: boolean };
   conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string }[];
   clarification_id?: string | null; clarification_question?: string | null;
 };
@@ -157,6 +158,9 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
     fdia?.signed ? "JITNA signed" : null,
     summary.notary?.enabled ? `notary ${summary.notary.receipts}` : null,
     `${summary.iterations} steps`,
+    summary.usage && (summary.usage.prompt_tokens || summary.usage.completion_tokens)
+      ? `${((summary.usage.prompt_tokens ?? 0) + (summary.usage.completion_tokens ?? 0)).toLocaleString("en-US")} tokens${summary.usage.cost_known && summary.usage.cost_usd ? ` · $${summary.usage.cost_usd.toFixed(4)}` : ""}`
+      : null,
     `${Math.round(seconds)} s`,
   ].filter(Boolean);
   return (

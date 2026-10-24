@@ -15,6 +15,7 @@ export type RunSummary = {
   approval_id?: string | null; rct7_steps?: string[];
   /** Set when the episode stopped to ask the person (RCT-7 R5/R7). */
   clarification_id?: string | null; clarification_question?: string | null;
+  usage?: { prompt_tokens?: number; completion_tokens?: number; cost_usd?: number | null; cost_known?: boolean };
 };
 export type RunFdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
 export type RunPlan = { steps: string[]; route?: { path?: string; reason?: string } };

@@ -41,9 +41,9 @@ function QuestionCard({ c, onChanged }: { c: Clarification; onChanged: () => voi
     <Panel title={th ? KIND[c.kind].th : KIND[c.kind].en} aside={<Badge tone="amber">{c.status}</Badge>}>
       <p className="text-sm text-dl-text">{c.question}</p>
       <div className="mt-3">
-        <Row label={th ? "เป้าหมายเดิม" : "Original goal"}>{c.original_goal}</Row>
-        {c.expected ? <Row label={th ? "ที่คาดไว้" : "Expected"}>{c.expected}</Row> : null}
-        {c.observed ? <Row label={th ? "ที่เห็นจริง" : "Observed"}>{c.observed}</Row> : null}
+        <Row wrap label={th ? "เป้าหมายเดิม" : "Original goal"}>{c.original_goal}</Row>
+        {c.expected ? <Row wrap label={th ? "ที่คาดไว้" : "Expected"}>{c.expected}</Row> : null}
+        {c.observed ? <Row wrap label={th ? "ที่เห็นจริง" : "Observed"}>{c.observed}</Row> : null}
         <Row label={th ? "เกณฑ์" : "Criterion"}>{c.criterion}</Row>
         <Row label={th ? "ถามเมื่อ" : "Asked"}>{fmtTime(c.created_at)}</Row>
         <Row label={th ? "หมดอายุ" : "Expires"}>{fmtTime(c.expires_at)}</Row>
@@ -76,8 +76,8 @@ function AnsweredCard({ c, onChanged }: { c: Clarification; onChanged: () => voi
   };
   return (
     <Panel title={th ? "ตอบแล้ว รอคุณส่งคำขอเดิมอีกครั้ง" : "Answered: waiting for you to send the request again"} aside={<Badge tone="leaf">v{c.new_intent_version ?? "?"}</Badge>}>
-      <Row label={th ? "เป้าหมายเดิม" : "Original goal"}>{c.original_goal}</Row>
-      <Row label={th ? "คำตอบของคุณ" : "Your answer"}>{c.answer}</Row>
+      <Row wrap label={th ? "เป้าหมายเดิม" : "Original goal"}>{c.original_goal}</Row>
+      <Row wrap label={th ? "คำตอบของคุณ" : "Your answer"}>{c.answer}</Row>
       <p className="mt-2 text-[12px] text-dl-muted">{th ? "ส่งคำขอเดิมอีกครั้ง (คำตอบจะแนบให้หนึ่งครั้ง) หรือเลือกเก็บผลเดิมไว้" : "Send the same request again (your answer is attached once), or keep the result as it is."}</p>
       <div className="mt-2 flex gap-2">
         <a className="desk-focus inline-flex items-center rounded border border-dl-leaf/60 px-3 py-1.5 text-[13px] text-dl-leaf hover:bg-dl-pine/30" href={`/chat?goal=${encodeURIComponent(c.original_goal)}`}>{th ? "เปิดในแชท" : "Open in chat"}</a>
