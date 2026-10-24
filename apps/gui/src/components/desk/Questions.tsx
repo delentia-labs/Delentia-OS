@@ -39,7 +39,7 @@ function QuestionCard({ c, onChanged }: { c: Clarification; onChanged: () => voi
 
   return (
     <Panel title={th ? KIND[c.kind].th : KIND[c.kind].en} aside={<Badge tone="amber">{c.status}</Badge>}>
-      <p className="text-sm text-dl-text">{c.question}</p>
+      <p className="whitespace-pre-wrap text-sm text-dl-text">{c.question}</p>
       <div className="mt-3">
         <Row wrap label={th ? "เป้าหมายเดิม" : "Original goal"}>{c.original_goal}</Row>
         {c.expected ? <Row wrap label={th ? "ที่คาดไว้" : "Expected"}>{c.expected}</Row> : null}
