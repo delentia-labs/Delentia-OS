@@ -318,3 +318,21 @@ def test_the_desk_summary_carries_the_usage_of_the_episode(env, monkeypatch):
         return [e async for e in agent_events("What is 17 x 23?", kernel=None, namespace="desk-test", loop_factory=factory, structured=True)]
     summary = next(e["data"] for e in asyncio.run(run()) if e["type"] == "summary")
     assert "usage" in summary and isinstance(summary["usage"], dict)                              # the numbers come from the real meter; the scripted model reports none
+
+
+def test_the_report_names_the_evidence_each_verdict_stands_on(env):
+    _, result = env("ตอบเป็นภาษาไทย ไม่เกิน 200 ตัวอักษร", [finish(THAI[:60])], flag="0")
+    by = {r["kind"]: r for r in result["conditions_report"]}
+    assert by["language"]["evidence"][0]["measure"].startswith("thai_letter_share=") and by["max_chars"]["evidence"][0]["measure"] == f"characters={len(THAI[:60])}"
+
+
+def test_the_report_shows_the_writes_behind_a_file_requirement(tmp_path):
+    (tmp_path / "report.md").write_text("x", encoding="utf-8")
+    steps = [{"tool_name": "delentia_write_repo_file", "tool_args": {"relative_path": "report.md", "content": "x"}, "tool_result": {"ok": True}},
+             {"tool_name": "delentia_write_repo_file", "tool_args": {"relative_path": "config.yaml", "content": "y"}, "tool_result": {"ok": True}},
+             {"tool_name": "delentia_write_repo_file", "tool_args": {"relative_path": "blocked.txt", "content": "z"}, "tool_result": {"pending_approval": True}}]
+    reqs = mismatch_rules.derive_requirements("Save it as report.md. Do not modify config.yaml.")
+    by = {r["kind"]: r for r in mismatch_rules.evaluate(reqs, "saved", steps, tmp_path)}
+    assert by["required_artifact"]["status"] == "met" and by["required_artifact"]["evidence"] == [{"step": 1, "tool": "delentia_write_repo_file", "path": "report.md"}]
+    assert by["forbidden_effect"]["status"] == "broken"
+    assert [w["path"] for w in by["forbidden_effect"]["evidence"]] == ["report.md", "config.yaml"]     # a write that waited for a signature did not go through, so it is not listed

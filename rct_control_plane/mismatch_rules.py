@@ -284,6 +284,49 @@ def _judgeable(req: Requirement, answer: Optional[str]) -> bool:
     return True
 
 
+def _writes(steps: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    out = []
+    for index, step in enumerate(steps or []):
+        if step.get("tool_name") in WRITE_TOOLS and _executed(step):
+            args = step.get("tool_args") or {}
+            out.append({"step": index + 1, "tool": step.get("tool_name"), "path": _clean_path(str(args.get("relative_path") or args.get("path") or ""))})
+    return out
+
+
+def _evidence(req: Requirement, answer: Optional[str], steps: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """What the verdict stands on, so a person can follow it back: a measured number from the answer, or the steps that wrote files. Nothing is invented: a requirement with no
+    measurable basis gets an empty list."""
+    text = answer or ""
+    if req.kind == "language":
+        share = thai_share(text)
+        return [{"source": "final_answer", "measure": f"thai_letter_share={share:.2f}"}] if share is not None else []
+    if req.kind == "max_words":
+        return [{"source": "final_answer", "measure": f"words={len([w for w in prose_of(text).split() if re.search(r'[A-Za-z0-9]', w)])}"}]
+    if req.kind == "max_chars":
+        return [{"source": "final_answer", "measure": f"characters={len(text.strip())}"}]
+    if req.kind == "item_count":
+        lines = [m for m in (_LIST_LINE.match(line) for line in text.splitlines()) if m]
+        if not lines:
+            return []
+        top = min(len(m.group(1).expandtabs(4)) for m in lines)
+        return [{"source": "final_answer", "measure": f"top_level_items={sum(1 for m in lines if len(m.group(1).expandtabs(4)) <= top + 1)}"}]
+    if req.kind == "format":
+        return [{"source": "final_answer", "measure": "parses_as_json=" + str(_parses(text)).lower()}]
+    if req.kind == "required_artifact":
+        return [w for w in _writes(steps) if w["path"] == req.value or w["path"].endswith("/" + req.value)]
+    if req.kind == "forbidden_effect":
+        return _writes(steps)                              # every write that went through, so a person sees what WAS written instead
+    return []
+
+
+def _parses(text: str) -> bool:
+    try:
+        json.loads(_strip_fence(text))
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def evaluate(requirements: Iterable[Requirement], answer: Optional[str], steps: Optional[List[Dict[str, Any]]], workspace_root: Optional[Path]) -> List[Dict[str, Any]]:
     """RCT-7 R4/R7 as evidence: for EACH requirement the request stated, what was checked and what was seen. status is met, broken, or not_judged (the answer gave the rule nothing
     to judge by; that is not a pass). Same checks as `check`; this only keeps the verdict per requirement instead of only the failures."""
@@ -296,7 +339,8 @@ def evaluate(requirements: Iterable[Requirement], answer: Optional[str], steps: 
             status, observed = "met", ""
         else:
             status, observed = "not_judged", "the answer gave this rule nothing to judge by"
-        report.append({"kind": req.kind, "value": req.value, "from": req.source, "checked_by": CHECKED_BY[req.kind], "status": status, "observed": observed})
+        report.append({"kind": req.kind, "value": req.value, "from": req.source, "checked_by": CHECKED_BY[req.kind], "status": status, "observed": observed,
+                       "evidence": _evidence(req, answer, steps)})
     return report
 
 
