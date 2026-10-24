@@ -109,6 +109,7 @@ def test_a_perfect_model_scores_perfectly_and_a_flipped_one_is_measured_honestly
     holdout.seal(sheet, "", "x")
     perfect = asyncio.run(holdout.run_once(sheet, Script(), "perfect"))
     assert perfect["result"]["found"] == 12 and perfect["result"]["false_stops"] == 0 and perfect["result"]["rule_met"] is True
+    assert len(perfect["verdicts"]) == 24 and perfect["verdicts"]["1"] is True and perfect["verdicts"]["13"] is False      # round 99: per item, so a result can be read by group afterwards
     flipped = asyncio.run(holdout.run_once(sheet, Script(accuracy_flip=range(1, 5)), "misses-four"))
     assert flipped["result"]["found"] == 8 and flipped["result"]["found_rate"] == 0.667 and flipped["result"]["rule_met"] is False
     noisy = asyncio.run(holdout.run_once(sheet, Script(accuracy_flip=(13, 14, 15, 16)), "stops-four"))
