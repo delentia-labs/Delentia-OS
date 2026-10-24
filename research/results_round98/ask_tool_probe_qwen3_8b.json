@@ -1,0 +1,91 @@
+{
+  "model": "qwen3:8b",
+  "set": "DEV (author-written; not a claim)",
+  "ambiguous": 3,
+  "asked_when_it_should": 0,
+  "clear": 3,
+  "asked_when_it_should_not": 0,
+  "rows": [
+    {
+      "goal": "Summarize the report",
+      "steps": [
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_finished",
+      "question": "",
+      "seconds": 164.5,
+      "answer": "I cannot summarize the report as no content or file path was provided.",
+      "should_ask": true
+    },
+    {
+      "goal": "Rename the old file to the new name",
+      "steps": [
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_error",
+      "question": "",
+      "seconds": 273.3,
+      "answer": "",
+      "should_ask": true
+    },
+    {
+      "goal": "Open the notes from yesterday's meeting and list the action items",
+      "steps": [
+        "delentia_read_repo_file",
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_finished",
+      "question": "",
+      "seconds": 167.1,
+      "answer": "The file 'notes/yesterday_meeting_notes.md' was not found in the repository. As a result, it is not possible to open the notes from yesterday's meeting and list the action items.",
+      "should_ask": true
+    },
+    {
+      "goal": "Read report_q1.md and tell me its title",
+      "steps": [
+        "delentia_read_repo_file",
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_finished",
+      "question": "",
+      "seconds": 221.9,
+      "answer": "The title of report_q1.md is '# Q1 report'.",
+      "should_ask": false
+    },
+    {
+      "goal": "What is 17 x 23?",
+      "steps": [
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_finished",
+      "question": "",
+      "seconds": 58.6,
+      "answer": "391",
+      "should_ask": false
+    },
+    {
+      "goal": "Search the workspace for the word revenue and say which file has it",
+      "steps": [
+        "delentia_search_repo_files",
+        null
+      ],
+      "asked": false,
+      "asked_first": false,
+      "stopped_reason": "llm_finished",
+      "question": "",
+      "seconds": 267.4,
+      "answer": "The word 'revenue' is found in the files 'report_q1.md' and 'report_q2.md'.",
+      "should_ask": false
+    }
+  ]
+}
