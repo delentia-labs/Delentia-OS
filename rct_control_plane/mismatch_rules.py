@@ -194,8 +194,12 @@ def thai_share(answer: str) -> Optional[float]:
 
 def _strip_fence(answer: str) -> str:
     text = (answer or "").strip()
-    m = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
-    return m.group(1) if m else text
+    if len(text) >= 6 and text.startswith("```") and text.endswith("```"):
+        inner = text[3:-3].lstrip()
+        if inner[:4].lower() == "json":
+            inner = inner[4:]
+        return inner.strip()
+    return text
 
 
 def _executed(step: Dict[str, Any]) -> bool:
@@ -375,7 +379,7 @@ def conditions_for(goal: str) -> List[Dict[str, str]]:
 
 
 # ---------------------------------------------------------------------------------------------------------------- R3: the parts the person listed
-_LINE_ITEM = re.compile(r"^\s*(?:\d{1,2}[.)]|[-*•])\s+(.+?)\s*$")
+_LINE_ITEM = re.compile(r"^[ \t]{0,40}(?:\d{1,2}[.)]|[-*•])[ \t]{1,40}(\S[^\n]*)$")
 _NUMBERED_INLINE = re.compile(
     r"(?:\bstep\s*(\d{1,2})\s*[:.\-–]?|ขั้นที่\s*(\d{1,2})|ข้อที่?\s*(\d{1,2})|\((\d{1,2})\)|(?<![\w.])(\d{1,2})\))\s*", re.IGNORECASE)
 _SEQUENCE_SPLIT = re.compile(
@@ -417,7 +421,7 @@ def parts_of(goal: str) -> List[str]:
 
 
 # ---------------------------------------------------------------------------------------------------------------- R1: what is not known
-_PATH_TOKEN = r"((?:[\w.-]+/)*[\w][\w.-]*\.[A-Za-z][A-Za-z0-9]{0,5})(?![\w.])"        # the extension starts with a letter: not v1.2.3
+_PATH_TOKEN = r"((?:[\w-]{1,60}(?:\.[\w-]{1,60}){0,2}/){0,6}[\w-]{1,100}(?:\.[\w-]{1,60}){0,3}\.[A-Za-z][A-Za-z0-9]{0,5})(?![\w.])"        # the extension starts with a letter: not v1.2.3
 _NOT_A_FILE = re.compile(r"^(?:e\.g|i\.e|etc|vs|u\.s|a\.m|p\.m)$|^[\w-]+\.(?:com|org|net|io|dev|ai|co|th|app|gov|edu|info)(?:/|$)", re.IGNORECASE)   # abbreviations and web addresses
 _READ_VERB = re.compile(
     r"\b(?:read|open|edit|update|modify|change|summari[sz]e|review|check|look\s+at|analy[sz]e|refactor|fix|translate|parse|inspect|load|show\s+me|cat)\b"

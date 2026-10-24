@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Mood } from "@/lib/run-state";
 
 /**
  * The Delentia mark, drawn from the Architect's logo
@@ -105,20 +106,35 @@ export function nextIdleStep(roll: number, look: Look, waitRoll: number): { acti
 
 const BLINK_MS = 140;
 
-/** Pixel-art mark for the chat banner (the spot Hermes gives its ASCII art). It keeps moving while the
- *  page is open: it blinks (sometimes twice), glances left and right, and bobs gently. Nothing moves
- *  when the user prefers reduced motion, and the loop pauses while the tab is hidden. */
-export function PixelMark() {
-  const [closed, setClosed] = useState(false);
-  const [look, setLook] = useState<Look>(0);
+// Eyes for the states the runtime reports. Each is a small pixel pattern drawn over the same body, so the mark is
+// always recognisably the Delentia mark; only the eyes say what the agent is doing.
+const EYE_ROWS = (from: number) => pixels(OPEN, (cell, row) => (cell === "E" && row >= from ? "E" : null));
+const EYES_HAPPY: Pixel[] = [                       // two arcs, ^ ^ : the work is done
+  [7, 3], [6, 4], [8, 4], [5, 5], [9, 5], [18, 3], [17, 4], [19, 4], [16, 5], [20, 5],
+].map(([x, y]) => ({ x, y, fill: MARK.eye }));
+const RUST = "#E2694C";
+const EYES_FROWN: Pixel[] = EYE_ROWS(4).map((p) => ({ ...p, fill: RUST }));       // the top of each eye is cut off: something was stopped
+const EYES_LOOK_UP = EYES_OPEN;                     // moved up one pixel with a transform
+
+const REDUCED = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Pixel-art mark. With no `mood` it idles (blinks, glances, bobs). With a mood it shows what the agent is really doing, and the
+ *  mood comes from the runtime's own events (see lib/run-state.ts), never from the interface guessing:
+ *  thinking = eyes scan slowly, acting = scan fast and bob fast, waiting = looking up for a human, blocked = a rust frown, done = ^ ^.
+ *  Nothing moves under prefers-reduced-motion (the mood is still shown by the eyes), and the loops pause while the tab is hidden. */
+export function PixelMark({ mood = "idle", size = 130 }: { mood?: Mood; size?: number }) {
+  // The animation state remembers which mood it belongs to, so a mood change starts from a neutral face without setting state inside the effect.
+  const [anim, setAnim] = useState<{ mood: Mood; closed: boolean; look: Look }>({ mood, closed: false, look: 0 });
+  const closed = anim.mood === mood && anim.closed;
+  const look: Look = anim.mood === mood ? anim.look : 0;
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (REDUCED()) return;
+    const setClosed = (value: boolean) => setAnim((a) => ({ mood, closed: value, look: a.mood === mood ? a.look : 0 }));
+    const setLook = (value: Look) => setAnim((a) => ({ mood, closed: a.mood === mood ? a.closed : false, look: value }));
     let alive = true;
     let timer: number | undefined;
     let current: Look = 0;
-
     const later = (fn: () => void, ms: number) => {
       timer = window.setTimeout(() => { if (alive) fn(); }, ms);
     };
@@ -126,26 +142,45 @@ export function PixelMark() {
       setClosed(true);
       later(() => { setClosed(false); then(); }, BLINK_MS);
     };
-    const step = () => {
-      if (document.hidden) { later(step, 1000); return; }
-      const plan = nextIdleStep(Math.random(), current, Math.random());
-      const done = () => later(step, plan.waitMs);
-      if (plan.action === "blink") blink(done);
-      else if (plan.action === "double_blink") blink(() => later(() => blink(done), BLINK_MS));
-      else { current = plan.look; setLook(plan.look); done(); }
-    };
-    later(step, 900);                                   // the first blink comes soon after the page opens, as before
-    return () => { alive = false; window.clearTimeout(timer); };
-  }, []);
 
-  const eyes = closed ? EYES_CLOSED : EYES_OPEN;
+    if (mood === "idle") {
+      const step = () => {
+        if (document.hidden) { later(step, 1000); return; }
+        const plan = nextIdleStep(Math.random(), current, Math.random());
+        const done = () => later(step, plan.waitMs);
+        if (plan.action === "blink") blink(done);
+        else if (plan.action === "double_blink") blink(() => later(() => blink(done), BLINK_MS));
+        else { current = plan.look; setLook(plan.look); done(); }
+      };
+      later(step, 900);                              // the first blink comes soon after the page opens
+    } else if (mood === "thinking" || mood === "acting") {
+      const every = mood === "acting" ? 260 : 650;   // scanning left and right: faster while a tool is running
+      const step = () => {
+        if (!document.hidden) { current = current === -1 ? 1 : -1; setLook(current); }
+        later(step, every);
+      };
+      later(step, every);
+    } else if (mood === "waiting") {
+      const step = () => {
+        if (document.hidden) { later(step, 1000); return; }
+        blink(() => later(step, 3200));              // a slow blink while it waits for a person
+      };
+      later(step, 2200);
+    }
+    return () => { alive = false; window.clearTimeout(timer); };
+  }, [mood]);
+
+  const eyes = mood === "done" ? EYES_HAPPY : mood === "blocked" ? EYES_FROWN : closed ? EYES_CLOSED : mood === "waiting" ? EYES_LOOK_UP : EYES_OPEN;
+  const up = mood === "waiting" && !closed ? -1 : 0;
+  const fast = mood === "acting" ? " desk-pixelmark-fast" : "";
   // Drawn as square pixels (crisp edges) rather than half-block characters:
   // font glyphs leave gaps between text rows at small sizes.
   return (
-    <svg viewBox="0 0 26 28" width={130} height={140} role="img" aria-label="Delentia" shapeRendering="crispEdges" className="desk-pixelmark">
+    <svg viewBox="0 0 26 28" width={size} height={Math.round(size * 28 / 26)} role="img" aria-label={`Delentia, ${mood}`} data-mood={mood}
+      shapeRendering="crispEdges" className={`desk-pixelmark${fast}`}>
       <g>
         {BODY_PIXELS.map((c) => <rect key={`b${c.x}-${c.y}`} x={c.x} y={c.y} width={1.02} height={1.02} fill={c.fill} />)}
-        <g style={{ transform: `translateX(${look}px)`, transition: "transform 120ms steps(2, end)" }}>
+        <g style={{ transform: `translate(${look}px, ${up}px)`, transition: "transform 120ms steps(2, end)" }}>
           {eyes.map((c) => <rect key={`e${c.x}-${c.y}`} x={c.x} y={c.y} width={1.02} height={1.02} fill={c.fill} />)}
         </g>
       </g>
