@@ -524,6 +524,13 @@ class AutonomousLoop:
         tools = await self._mcp.list_tools()
         return [{"name": t.name, "description": t.description, "input_schema": t.input_schema} for t in tools]
 
+    async def _decide_action(self, goal, history, available_tools, extra_context):
+        """Overridable decision source; execution still goes through this loop's gates."""
+        kwargs = {"extra_context": extra_context} if extra_context else {}
+        if self._llm_provider is not None:
+            return await decide_next_action(goal, history, available_tools, self._llm_provider, **kwargs)
+        return await decide_next_action(goal, history, available_tools, **kwargs)
+
     async def run(
         self,
         goal: str,
@@ -652,14 +659,7 @@ class AutonomousLoop:
             # call before it is made; the episode then ends cleanly with
             # stopped_reason "budget_exceeded" instead of raising.
             async def _decide() -> Dict[str, Any]:
-                if self._llm_provider is not None and extra_context:
-                    return await decide_next_action(goal, history, iteration_tools, self._llm_provider,
-                                                    extra_context=extra_context)
-                if self._llm_provider is not None:
-                    return await decide_next_action(goal, history, iteration_tools, self._llm_provider)
-                if extra_context:
-                    return await decide_next_action(goal, history, iteration_tools, extra_context=extra_context)
-                return await decide_next_action(goal, history, iteration_tools)
+                return await self._decide_action(goal, history, iteration_tools, extra_context)
 
             try:
                 retries = max(0, int(os.environ.get(LLM_RETRIES_ENV, "2")))

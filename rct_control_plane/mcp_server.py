@@ -532,13 +532,27 @@ def _resolve_within_repo(relative_path: str) -> Path:
 
 
 @mcp.tool()
-async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000) -> dict:
+async def delentia_read_repo_file(relative_path: str, max_bytes: int = 200_000, verified_read: bool = False) -> dict:
     """Read a text file from the workspace folder by its relative path (for example 'quotes/vendor_a.md'). Real, read-only access to any file inside this
     kernel's own repo (Round 32) - closes the gap where Round 31's file tools were scoped
     only to the exchange/ bridge directory. Bounded to max_bytes to avoid
     dumping huge binaries/model weights into an MCP response. Write/patch
     access is deliberately NOT included this round (higher blast radius,
     needs its own explicit sign-off - see Round 32 synthesis)."""
+    if verified_read:
+        # The verified executor must acquire bytes with the same no-follow
+        # guarantees as its final freshness check, not resolve then read.
+        from rct_control_plane.verified_budget import MAX_BYTES, current_bytes
+        if type(max_bytes) is not int or not 1 <= max_bytes <= MAX_BYTES:
+            return {"error": "verified read limit must be between 1 and 20000 bytes"}
+        try:
+            raw = current_bytes(REPO_ROOT, relative_path)
+            if len(raw) > max_bytes:
+                return {"error": "verified source exceeds requested limit"}
+            return {"path": relative_path, "content_text": raw.decode("utf-8"), "truncated": False,
+                    "read_method": "descriptor_relative_no_follow"}
+        except (OSError, ValueError):
+            return {"error": "verified source unavailable under workspace read policy"}
     try:
         resolved = _resolve_within_repo(relative_path)
     except PathTraversalError as e:
