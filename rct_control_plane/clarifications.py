@@ -31,7 +31,7 @@ TTL_ENV = "DELENTIA_CLARIFICATION_TTL_SECONDS"
 DEFAULT_TTL_SECONDS = 7 * 24 * 3600
 
 KINDS = ("before_act", "mismatch")                       # R5: not clear enough to act / R7: the result does not match the intent
-CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact", "length", "item_count")
+CRITERIA = ("unclear_intent", "language", "format", "forbidden_effect", "required_artifact", "length", "item_count", "model_unclear", "semantic", "agent_question")
 STATUSES = ("PENDING", "ANSWERED", "CANCELLED", "EXPIRED")
 SEALED_FIELDS = ("original_goal", "question", "expected", "observed", "answer")
 
@@ -202,6 +202,7 @@ class ClarificationStore:
         wanted = " ".join(str(goal or "").split())
         if not wanted:
             return None
+        wanted = " ".join(wanted.split(UPDATE_MARK.strip())[0].split())          # the person sends the plain request; the stored one may already carry earlier answers
         self._expire_stale()
         with self._persistence._connect() as conn:
             conn.row_factory = _dict_row
@@ -209,7 +210,7 @@ class ClarificationStore:
                                 (namespace,)).fetchall()
         for row in rows:
             obj = self._to_obj(row)
-            if " ".join(obj.original_goal.split()) != wanted:
+            if " ".join(obj.original_goal.split(UPDATE_MARK.strip())[0].split()) != wanted:
                 continue
             with self._persistence._connect() as conn:
                 changed = conn.execute("UPDATE clarifications SET continued_at = ?, continued_as = 'rerun' "

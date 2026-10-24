@@ -1,11 +1,11 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-10-19 02:01:09Z",
+  "generated_at": "2026-10-24 05:28:03Z",
   "offline": false,
   "git": {
-    "sha": "368a3f93945c8f960ce98f2d02e32c4db984e6bf",
-    "short": "368a3f9",
-    "branch": "round90/gaps-agent-law-tool-readiness",
+    "sha": "548002992f17ace247f06fef8e03bbf78d073082",
+    "short": "5480029",
+    "branch": "round98/ask-user-tool",
     "dirty": true
   },
   "canonical_checkpoint": {
@@ -17,18 +17,18 @@
     "last_updated": "2026-10-18"
   },
   "latest_completed_ci_on_main": {
-    "run": "39122730330",
-    "conclusion": "success",
-    "sha": "3dbed0d",
-    "created_at": "2026-10-18T11:18:54Z"
+    "run": "40059441296",
+    "conclusion": "failure",
+    "sha": "ac215fc",
+    "created_at": "2026-10-24T03:43:06Z"
   },
   "tools": {
-    "count": 49,
+    "count": 50,
     "taint_source": 9,
     "taint_gated": 18,
-    "taint_inert": 22,
+    "taint_inert": 23,
     "owner_only": 3,
-    "person_neutral": 38,
+    "person_neutral": 39,
     "unclassified_for_taint": []
   },
   "gates": {
@@ -128,5 +128,5 @@
     "live_runner": 7,
     "live_result_with_a_capable_model": 0
   },
-  "canonical_matches_latest_ci": true
+  "canonical_matches_latest_ci": false
 }

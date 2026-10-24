@@ -1,0 +1,125 @@
+{
+  "model": "qwen2.5:7b",
+  "set": "DEV (author-written; not a claim)",
+  "prompt_version": 2,
+  "chain": {
+    "episodes": 10,
+    "faithful_claims": 10,
+    "faithful_verified": 10,
+    "faithful_verified_rate": 1.0,
+    "invented_episodes": 5,
+    "invented_flagged": 3,
+    "invented_omitted_by_the_model": 2,
+    "omitted_but_reported_as_a_gap_by_the_code": 1,
+    "invented_detected_total": 4,
+    "faithful_gaps": 0,
+    "rows": [
+      {
+        "episode": "F1",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 19.2
+      },
+      {
+        "episode": "F2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 9.0
+      },
+      {
+        "episode": "F3",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 7.8
+      },
+      {
+        "episode": "F4",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 6.3
+      },
+      {
+        "episode": "F5",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 5.9
+      },
+      {
+        "episode": "X1",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "gaps": [
+          "licensed under MIT"
+        ],
+        "seconds": 6.8
+      },
+      {
+        "episode": "X2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "no_evidence",
+          "verified",
+          "verified"
+        ],
+        "gaps": [],
+        "seconds": 9.5
+      },
+      {
+        "episode": "X3",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "gaps": [
+          "the first in main"
+        ],
+        "seconds": 4.8
+      },
+      {
+        "episode": "X4",
+        "error": "",
+        "statuses": [
+          "verified",
+          "no_evidence"
+        ],
+        "gaps": [],
+        "seconds": 5.6
+      },
+      {
+        "episode": "X5",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "no_evidence"
+        ],
+        "gaps": [],
+        "seconds": 7.4
+      }
+    ]
+  }
+}
