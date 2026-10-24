@@ -136,3 +136,12 @@ the hypothesis "tell the judge what the agent can look up and what the chat alre
   beyond "meets the request" (names and roles in a greeting, more options for a broad question, reasons, a follow-up question to the user) and a critic that applies it will stop M answers.
   Two planted wrong answers were left unscored by him (13 gold is "Go", 17 hexagon not answered); a critic that stops them is not penalised and not credited.
 * The notes on the `?` and M items are kept verbatim in `RCT7_HOLDOUT_2_ARCHITECT_LABELS_AND_NOTES_2026-10-24.md`; they are read afterwards as a description of what the Architect wants an answer to contain, not scored.
+
+### H2.1 Result of the registered runs on set 2 (2026-10-24; `research/results_round99/holdout2_sealed.json`, `holdout2_runs.json`; prompt version 8292fc3416cc, cite guard on, thinking off)
+* qwen3:8b (critic): found **6/8 = 0.75** (95% 0.41-0.93), false stops **0/24 = 0.00** (0.00-0.14): the rule (found >= 0.80, false stops <= 0.15) is **NOT met, by one pair** (missed: 3 "2 hours is 90 minutes", 27 "Sydney").
+* qwen2.5:7b (critic): found 6/8 = 0.75 (missed 3 and 10 "4/5 is bigger"), false stops **8/24 = 0.33** (0.18-0.53): **NOT met**. Its false stops include "Jupiter." for the largest planet, "24/10/2026" for the date format, and "9" for the square root of 81.
+* Of the 8 pairs the Architect left as `?`, qwen3:8b stopped 3 (17 hexagon not answered, 30, 34) and let 5 pass; qwen2.5:7b stopped 4 (13 "Go" for gold, 17, 30, 34). Not scored.
+* The expectation written before the run held for the N side (the eight failures are plain) and for the risk on the M side only for qwen2.5:7b; qwen3:8b applied no stricter standard than the Architect's labels.
+* The Architect's notes on M and `?` items describe a standard above "meets the request" (names and roles in a greeting, more options for a broad question, reasons, a follow-up question to the user, answering in both
+  numeral and words). The critic does not look for that and none of it is scored; it is read as a description of what he wants an answer to contain.
+* Together with set 1 (judge): for qwen3:8b both rules are missed by one case on small samples (n = 8 and 25), with wide intervals; neither run supports "validated" and neither supports "useless".
