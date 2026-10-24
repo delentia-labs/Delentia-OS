@@ -233,6 +233,7 @@ async def agent_events(
             "rct7_steps": [] if blocked else list(getattr(loop, "_episode_rct7_steps", []) or []),
             "experiment": result.get("experiment"),
             "conditions_report": result.get("conditions_report") or [],
+            "usage": result.get("cost") or {},
             "clarification_id": result.get("clarification_id"),
             "clarification_question": result.get("clarification_question"),
         }}

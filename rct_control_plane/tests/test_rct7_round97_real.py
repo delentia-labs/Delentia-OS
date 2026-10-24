@@ -301,3 +301,20 @@ def test_the_desk_summary_carries_the_conditions_report_and_the_question(env, mo
     assert summary["stopped_reason"] == "needs_clarification" and summary["clarification_id"]
     assert "ไม่ตรงกับที่คุณขอ" in summary["clarification_question"]
     assert summary["conditions_report"][0]["kind"] == "language" and summary["conditions_report"][0]["status"] == "broken"
+
+
+def test_the_desk_summary_carries_the_usage_of_the_episode(env, monkeypatch):
+    from rct_control_plane.desk_agent_stream import agent_events
+    script = [finish(ENGLISH)]
+
+    async def decide(goal_, history, available_tools, llm_provider=None, **kwargs):
+        return dict(script.pop(0))
+    monkeypatch.setattr(autonomous_loop, "decide_next_action", decide)
+
+    def factory(kernel, namespace, **kwargs):
+        return _loop(env.root, "r97u", mcp=_FakeMCP())
+
+    async def run():
+        return [e async for e in agent_events("What is 17 x 23?", kernel=None, namespace="desk-test", loop_factory=factory, structured=True)]
+    summary = next(e["data"] for e in asyncio.run(run()) if e["type"] == "summary")
+    assert "usage" in summary and isinstance(summary["usage"], dict)                              # the numbers come from the real meter; the scripted model reports none
