@@ -12,6 +12,7 @@ import { LangProvider, useLang, type DictKey } from "./i18n";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
 import { loadLocalConfig } from "@/lib/local-config";
+import { GROUPS, SIMPLE, groupOf, parseMode, type DeskMode, type NavItem } from "@/lib/nav-model";
 
 // Order follows Hermes' dashboard (chat first), with Delentia's own pages
 // (approvals, audit, experiments) where Hermes has pairing, logs, analytics.
@@ -49,7 +50,7 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function SystemPanel() {
+function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode) => void }) {
   const { t, lang, setLang } = useLang();
   const health = useDeskData(() => desk.health(), [], 15000);
   const overview = useDeskData(() => desk.overview(), [], 15000);
@@ -102,7 +103,15 @@ function SystemPanel() {
           </dd>
         </div>
       </dl>
-      <div className="desk-mono mt-4 flex items-center justify-between text-[11px] text-dl-muted">
+      <div role="group" aria-label="Menu" className="desk-mono mt-4 flex overflow-hidden rounded border border-dl-rule text-[11px] text-dl-muted">
+        {(["simple", "advanced"] as const).map((m) => (
+          <button key={m} onClick={() => setMode(m)} aria-pressed={mode === m}
+            className={`desk-focus flex-1 px-2 py-1 ${mode === m ? "bg-dl-pine text-dl-text" : "hover:text-dl-text"}`}>
+            {t(`mode_${m}` as DictKey)}
+          </button>
+        ))}
+      </div>
+      <div className="desk-mono mt-3 flex items-center justify-between text-[11px] text-dl-muted">
         <Link href="/settings" className="desk-focus inline-flex items-center gap-1.5 hover:text-dl-text">
           <Settings className="h-3.5 w-3.5" aria-hidden /> {t("settings")}
         </Link>
@@ -119,22 +128,52 @@ function SystemPanel() {
   );
 }
 
-function Nav({ onNavigate }: { onNavigate?: () => void }) {
+const ICON_OF: Record<string, typeof Activity> = Object.fromEntries(PRIMARY.map((p) => [p.href, p.icon]));
+
+function NavLink({ item, pathname, onNavigate }: { item: NavItem; pathname: string; onNavigate?: () => void }) {
+  const { t } = useLang();
+  const Icon = ICON_OF[item.href] ?? Activity;
+  return (
+    <li>
+      <Link href={item.href} onClick={onNavigate} aria-current={isActive(pathname, item.href) ? "page" : undefined} className="desk-nav-link">
+        <Icon className="h-4 w-4 shrink-0" aria-hidden />
+        {t(item.key)}
+      </Link>
+    </li>
+  );
+}
+
+/** Simple mode: Status and five pages, flat. Advanced: Status, then five groups (the group that holds the current page is open; the others are folded). */
+function Nav({ mode, onNavigate }: { mode: DeskMode; onNavigate?: () => void }) {
   const pathname = usePathname() || "/";
   const { t } = useLang();
+  const activeGroup = groupOf(pathname);
+  const [opened, setOpened] = useState<Record<string, boolean>>({ work: true });
 
   return (
     <nav aria-label="Desk" className="min-h-0 flex-1 overflow-y-auto py-3">
       <ul>
-        {PRIMARY.map(({ href, key, icon: Icon }) => (
-          <li key={href}>
-            <Link href={href} onClick={onNavigate} aria-current={isActive(pathname, href) ? "page" : undefined} className="desk-nav-link">
-              <Icon className="h-4 w-4 shrink-0" aria-hidden />
-              {t(key)}
-            </Link>
-          </li>
-        ))}
+        <NavLink item={{ href: "/", key: "status" }} pathname={pathname} onNavigate={onNavigate} />
       </ul>
+      {mode === "simple" ? (
+        <ul>
+          {SIMPLE.map((item) => <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />)}
+        </ul>
+      ) : (
+        GROUPS.map((g) => {
+          const isOpen = g.id === activeGroup || !!opened[g.id];
+          return (
+            <section key={g.id} className="mt-2">
+              <button type="button" aria-expanded={isOpen} onClick={() => setOpened((o) => ({ ...o, [g.id]: !isOpen }))}
+                className="desk-focus desk-mono flex w-full items-center justify-between px-5 py-1.5 text-[11px] uppercase tracking-[0.1em] text-dl-muted hover:text-dl-text">
+                <span>{t(`group_${g.id}` as DictKey)}</span>
+                <span aria-hidden>{isOpen ? "▾" : "▸"}</span>
+              </button>
+              {isOpen ? <ul>{g.items.map((item) => <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />)}</ul> : null}
+            </section>
+          );
+        })
+      )}
     </nav>
   );
 }
@@ -150,14 +189,24 @@ function Brand() {
   );
 }
 
+const MODE_KEY = "delentia_desk_mode";
+
 function ShellInner({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  // Simple is the default (a first visit, a cleared browser, or a browser that refuses storage all start in Simple).
+  const [mode, setModeState] = useState<DeskMode>(() => {
+    try { return parseMode(window.localStorage.getItem(MODE_KEY)); } catch { return "simple"; }
+  });
+  const setMode = (m: DeskMode) => {
+    setModeState(m);
+    try { window.localStorage.setItem(MODE_KEY, m); } catch { /* the choice just is not remembered */ }
+  };
   return (
     <div className="desk-root flex h-screen w-screen overflow-hidden">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-dl-rule bg-dl-panel md:flex">
         <Brand />
-        <Nav />
-        <SystemPanel />
+        <Nav mode={mode} />
+        <SystemPanel mode={mode} setMode={setMode} />
       </aside>
 
       {open ? (
@@ -169,8 +218,8 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <Nav onNavigate={() => setOpen(false)} />
-            <SystemPanel />
+            <Nav mode={mode} onNavigate={() => setOpen(false)} />
+            <SystemPanel mode={mode} setMode={setMode} />
           </div>
           <button aria-label="Close menu" className="flex-1 bg-black/50" onClick={() => setOpen(false)} />
         </div>
