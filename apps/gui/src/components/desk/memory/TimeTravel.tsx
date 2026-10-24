@@ -6,11 +6,11 @@ import { Badge, Button, Empty, ErrorNote, Panel, fmtTime, useDeskData } from "@/
 import { desk, type MemoryAt } from "@/lib/desk-api";
 
 /** Round 67: the memory event log as a history. Pick an event and see what the agent's memory held right after it. */
-export function TimeTravel({ namespace }: { namespace: string }) {
+export function TimeTravel({ namespace, refreshVersion = 0 }: { namespace: string; refreshVersion?: number }) {
   const { lang } = useLang();
   const th = lang === "th";
-  const history = useDeskData(() => desk.memoryHistory(namespace || undefined, 200), [namespace], 30000);
-  const status = useDeskData(() => desk.memoryLog().catch(() => null), [], 60000);   // owner only: a person gets a 403, which simply hides the line
+  const history = useDeskData(() => desk.memoryHistory(namespace || undefined, 200), [namespace, refreshVersion], 30000);
+  const status = useDeskData(() => desk.memoryLog().catch(() => null), [refreshVersion], 60000);   // owner only: a person gets a 403, which simply hides the line
   const [picked, setPicked] = useState<number | null>(null);
   const [state, setState] = useState<{ seq: number; memories: MemoryAt[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
