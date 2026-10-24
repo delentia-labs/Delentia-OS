@@ -13,6 +13,8 @@ export type RunSummary = {
   guard?: { cord_verdict?: string; cord_findings?: { pattern_id: string }[] };
   notary?: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps?: string[];
+  /** Set when the episode stopped to ask the person (RCT-7 R5/R7). */
+  clarification_id?: string | null; clarification_question?: string | null;
 };
 export type RunFdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
 export type RunPlan = { steps: string[]; route?: { path?: string; reason?: string } };
@@ -87,7 +89,7 @@ export function deriveRun(allEntries: RunEntry[], running: boolean): RunState {
   const last = steps[steps.length - 1];
   let mood: Mood = "idle";
   if (errored || cordStopped || gates.some((g) => g.verdict === "blocked" && !running)) mood = "blocked";
-  else if (finished && !running) mood = summary?.approval_id || gates.some((g) => g.verdict === "waiting") ? "waiting" : "done";
+  else if (finished && !running) mood = summary?.approval_id || summary?.clarification_id || gates.some((g) => g.verdict === "waiting") ? "waiting" : "done";
   else if (running) mood = last?.kind === "pending" ? "waiting" : last?.kind === "blocked" ? "blocked" : last && last.kind === "tool" ? "acting" : "thinking";
 
   return {

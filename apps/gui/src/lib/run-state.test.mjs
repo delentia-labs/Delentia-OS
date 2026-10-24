@@ -48,6 +48,10 @@ test("a step that waits for a signature is a waiting mood, running or finished",
   assert.equal(r.mood, "waiting");
   assert.equal(r.approvalId, "c689e67b86bb");
 });
+test("an episode that stopped to ask the person is a waiting mood", () => {
+  const r = deriveRun([user, summary({ stopped_reason: "needs_clarification", clarification_id: "cb78c18f54ff", clarification_question: "which file?" })], false);
+  assert.equal(r.mood, "waiting");
+});
 test("CORD stopping the request blocks GUARD and the mood", () => {
   const r = deriveRun([user, summary({ stopped_reason: "goal_blocked", guard: { cord_verdict: "rejected", cord_findings: [{ pattern_id: "CORD-I001" }] } })], false);
   assert.equal(r.mood, "blocked");

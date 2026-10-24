@@ -21,6 +21,8 @@ type Summary = {
   guard: { cord_verdict?: string; cord_findings?: { pattern_id: string }[] };
   notary: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps: string[];
+  conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string }[];
+  clarification_id?: string | null; clarification_question?: string | null;
 };
 type Fdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
 type PlanData = { steps: string[]; route?: { path?: string; reason?: string }; conditions?: { kind: string; value: string; from: string; checked_by: string }[];
@@ -170,6 +172,26 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
             {summary.rct7_steps.map((s, i) => <li key={i}>{s}</li>)}
           </ol>
         </details>
+      ) : null}
+      {summary.conditions_report?.length ? (
+        <details className="mt-1" open={summary.conditions_report.some((c) => c.status === "broken")}>
+          <summary className="desk-focus cursor-pointer hover:text-dl-text">What your request required, and what was seen ({summary.conditions_report.length})</summary>
+          <ul className="mt-1 space-y-0.5 pl-4">
+            {summary.conditions_report.map((c, i) => (
+              <li key={i}>
+                <span className={c.status === "met" ? "text-dl-leaf" : c.status === "broken" ? "text-dl-rust" : "text-dl-amber"}>{c.status === "met" ? "✓ met" : c.status === "broken" ? "✕ broken" : "? not judged"}</span>
+                {" "}{c.kind} = {c.value}{c.observed ? ` · ${c.observed}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      {summary.clarification_question ? (
+        <div className="mt-2 rounded border border-dl-amber/60 bg-dl-amber/5 px-3 py-2 text-dl-text">
+          <p className="text-dl-amber">The system stopped and is asking you</p>
+          <p className="mt-1 whitespace-pre-wrap">{summary.clarification_question}</p>
+          <p className="mt-1 text-dl-muted">Answer it in <Link href="/approvals" className="underline underline-offset-2">Approvals</Link>, then send the same request again; your answer is attached once.</p>
+        </div>
       ) : null}
       {summary.approval_id ? (
         <p className="text-dl-amber">approval {summary.approval_id} · <Link href="/approvals" className="underline underline-offset-2">sign it in Approvals</Link></p>
