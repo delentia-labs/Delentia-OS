@@ -121,6 +121,15 @@ def _the_default_owner_policy_is_off_unless_a_test_asks(monkeypatch):
     yield
 
 
+# ── The ranked, compact tool menu is a default for a local model (Round 96) ────
+# A test written before that expects the full menu; it runs with the menu forced to full. A test of the default removes both variables with monkeypatch.delenv.
+@pytest.fixture(autouse=True)
+def _the_tool_menu_is_full_unless_a_test_asks(monkeypatch):
+    monkeypatch.setenv("DELENTIA_TOOL_MENU", "full")
+    monkeypatch.setenv("DELENTIA_TOOL_MENU_FORMAT", "full")
+    yield
+
+
 # ── Optional shuffling to expose order dependence (Round 60) ───────────────────
 # `pytest --shuffle-seed=N` runs modules, classes and the tests inside them in a seeded random order (no extra package needed; the same seed gives the same order).
 def pytest_addoption(parser):
