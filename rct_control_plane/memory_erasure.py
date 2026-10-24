@@ -199,11 +199,13 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
                 cols = [r[1] for r in conn.execute(f'PRAGMA table_info("{table}")')]
                 if "namespace" in cols:
                     carrying = [c for c in cols if c in TEXT_COLUMNS]
+                    if table == "intent_contracts":
+                        carrying.append("payload")
                     n = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE namespace = ?', (namespace,)).fetchone()[0]
                     erased = 0
                     if carrying:
                         probe = " AND ".join(f'(COALESCE("{c}", \'\') IN (\'\', ?))' for c in carrying)
-                        erased = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE namespace = ? AND {probe}', [namespace] + [TEXT_COLUMNS[c] for c in carrying]).fetchone()[0]
+                        erased = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE namespace = ? AND {probe}', [namespace] + [TEXT_COLUMNS.get(c, "{}") for c in carrying]).fetchone()[0]
                     if n - erased > 0:
                         other.append({"table": table, "rows": int(n - erased)})
             except sqlite3.Error:
@@ -217,7 +219,7 @@ def inventory(persistence: Any, namespace: str) -> Dict[str, Any]:
 
 # columns that hold a person's words, and what an erased value looks like (so a reader that parses JSON still parses it)
 TEXT_COLUMNS = {"goal": ERASED_TEXT, "answer": ERASED_TEXT, "content": ERASED_TEXT, "message": ERASED_TEXT, "text": ERASED_TEXT, "reason": ERASED_TEXT, "note": ERASED_TEXT, "title": ERASED_TEXT,
-                "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]"}
+                "context": "{}", "value": "{}", "tool_args_json": "{}", "result_json": "{}", "tools": "[]", "fields_json": "{}"}   # fields_json: clarifications.py (Round 92)
 NEVER_SCRUB = {"audit_trail", "audit_chain", "memory_events", "memory_checkpoints", "memories", "pending_action_signatures",
                 "episode_journal"}                      # hash-chained like the audit chain: its payload is sealed under the person's key, so destroying the key is the erasure (editing it would break the chain)
 NO_PERSONAL_TEXT = {"spend_ledger", "memory_vectors"}          # memory_vectors: sealed under the person's key and zeroed by scrub_tables (Round 68)                    # numbers per person per day: counted, not listed as holding words
@@ -253,6 +255,14 @@ def scrub_tables(conn: sqlite3.Connection, namespace: str) -> Dict[str, Any]:
     done: List[Dict[str, Any]] = []
     for entry in _namespaced_tables(conn):
         table, cols = entry["table"], entry["columns"]
+        if table == "intent_contracts":
+            # Unlike chained audit payloads this is a mutable projection.
+            # Scrub even when sealing was disabled and revoke continuation.
+            count = conn.execute("UPDATE intent_contracts SET payload='{}', state='erased', version=version+1 "
+                                 "WHERE namespace=? AND state != 'erased'", (namespace,)).rowcount
+            if count:
+                done.append({"table": table, "rows": int(count), "columns": ["payload"]})
+            continue
         if table == "pending_actions":
             conn.execute("UPDATE pending_actions SET status = 'EXPIRED' WHERE namespace = ? AND status = 'PENDING'", (namespace,))
         if not cols:

@@ -109,3 +109,20 @@ def test_the_subagent_tool_uses_the_plan_and_charges_back():
     from rct_control_plane import mcp_server
     source = inspect.getsource(mcp_server.delentia_spawn_subagents)
     assert "plan_child_budgets" in source and "charge_children" in source and "child_env" in source
+
+
+def test_child_transport_does_not_round_each_small_charge_to_microdollars():
+    # Three signed child summaries used to each round 0.0000004 to zero.
+    # The parent then undercounted by 0.0000012 (> the C27 tolerance).
+    import json
+    parent = _meter(cost_cap=1.0)
+    plan = budget_share.plan_child_budgets(3, meter=parent)
+    outcomes = []
+    for _ in range(3):
+        child = _meter(cost_cap=1.0, spent_usd=0.0000004)
+        transported = json.loads(json.dumps(child.summary()))
+        outcomes.append({'jitna': {'response_verified': True},
+                         'spent_usd': transported['cost_usd'], 'tokens_used': 1})
+    charged = budget_share.charge_children(outcomes, plan, meter=parent)
+    assert charged['charged_usd'] == pytest.approx(0.0000012, abs=1e-12)
+    assert parent.summary()['children_cost_usd'] == pytest.approx(0.0000012, abs=1e-12)

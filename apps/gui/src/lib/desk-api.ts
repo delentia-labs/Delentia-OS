@@ -71,6 +71,8 @@ export interface Overview {
   audit_verify: { status: string; output: string | null } | null;
   sessions_total: number;
   approvals_pending: number;
+  /** Questions the system put to a person and is waiting on (clarifications). Absent on a host older than the question store. */
+  questions_pending?: number;
   skills: number;
 }
 export interface SessionSummary {
@@ -193,6 +195,13 @@ export interface PendingAction {
   action_sha256: string; reason: string; status: string; created_at: string; decided_at: string | null;
   approver_public_key: string | null; executed_at: string | null;
   required_signatures?: number; signatures_collected?: number; approver_roles?: string[] | null; policy_rule?: string | null;
+}
+/** A question the system put to a person (rct_control_plane/clarifications.py). Times are epoch seconds. */
+export interface Clarification {
+  clarification_id: string; namespace: string; episode_id: string | null; kind: "before_act" | "mismatch"; criterion: string;
+  intent_version: number; new_intent_version: number | null; status: "PENDING" | "ANSWERED" | "CANCELLED" | "EXPIRED";
+  question: string; expected: string; observed: string; answer: string; original_goal: string;
+  answered_by: string | null; created_at: number; answered_at: number | null; expires_at: number;
 }
 export interface Health { status: string; version?: string }
 export interface SubagentRun {
@@ -516,6 +525,11 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  clarifications: (status = "PENDING") => call<Clarification[]>(`/v1/agent/clarifications?status=${status}`),
+  answerClarification: (id: string, answer: string) =>
+    call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/answer`, { method: "POST", body: JSON.stringify({ answer }) }),
+  cancelClarification: (id: string) =>
+    call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/cancel`, { method: "POST", body: JSON.stringify({}) }),
 };
 
 /** WebSocket URL for the chat stream (the token rides in the query string

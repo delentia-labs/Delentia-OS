@@ -86,9 +86,12 @@ def test_a_row_records_the_menu_the_runtime_used_and_a_mismatch_fails_the_manipu
         row = asyncio.run(harness.run_episode(arm, one_static_task, split="dev", rep=0, namespace=ns, skill_db=str(tmp_path / "s1.db"), seed=1))
         assert row["tool_menu"] == "ranked" and row["menu_effective"] == "ranked"
         assert all(c["ok"] for c in row["manipulation_checks"] if c["check"].startswith("tool menu"))
-        monkeypatch.delenv("DELENTIA_TOOL_MENU", raising=False)                                # the old bug, reproduced on purpose after start()
-        row2 = asyncio.run(harness.run_episode(arm, one_static_task, split="dev", rep=1, namespace="research-menu-2", skill_db=str(tmp_path / "s2.db"), seed=1))
-        assert row2["menu_effective"] == "default" and row2["manipulation_ok"] is False
+        # Undo this injected fault before close restores the caller's settings;
+        # a test-level undo afterwards would reintroduce the run's ranked menu.
+        with monkeypatch.context() as fault:
+            fault.delenv("DELENTIA_TOOL_MENU", raising=False)
+            row2 = asyncio.run(harness.run_episode(arm, one_static_task, split="dev", rep=1, namespace="research-menu-2", skill_db=str(tmp_path / "s2.db"), seed=1))
+            assert row2["menu_effective"] == "default" and row2["manipulation_ok"] is False
     finally:
         harness.close()
 
