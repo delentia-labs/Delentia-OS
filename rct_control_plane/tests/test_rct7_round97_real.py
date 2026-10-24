@@ -261,3 +261,43 @@ def test_chat_commands_list_answer_and_accept_only_the_senders_own_questions(env
     assert "version 2" in reply and "send the same request again" in reply
     assert "Say which" in chat_commands.handle(K, "telegram", "1", "telegram-1", "/answer")
     assert "Okay" in chat_commands.handle(K, "telegram", "1", "telegram-1", f"/accept {cid}")
+
+
+# ------------------------------------------------------------------------------------------------------------------- R4/R7 as evidence: a verdict per requirement
+def test_every_finished_episode_reports_each_requirement_with_its_verdict_even_without_the_flag(env):
+    _, result = env("Answer in Thai in under 200 characters", [finish(THAI[:80])], flag="0")
+    report = {r["kind"]: r for r in result["conditions_report"]}
+    assert report["language"]["status"] == "met" and report["max_chars"]["status"] == "met"
+    assert result["stopped_reason"] == "llm_finished"                                            # information only: nothing stopped
+
+
+def test_a_broken_requirement_is_reported_and_a_short_answer_is_not_a_pass(env):
+    _, broken = env("ตอบเป็นภาษาไทย", [finish(ENGLISH)], flag="0")
+    assert broken["conditions_report"][0]["status"] == "broken" and broken["conditions_report"][0]["observed"] == "English"
+    _, short = env("ตอบเป็นภาษาไทย 17 x 23 เท่าไร", [finish("391")], flag="0", name="r97g")
+    assert short["conditions_report"][0]["status"] == "not_judged"                              # "391" has no script: not judged, and not claimed as met
+
+
+def test_a_request_with_no_stated_requirement_has_no_report(env):
+    _, result = env("What is 17 x 23?", [finish("391")], flag="0")
+    assert "conditions_report" not in result
+
+
+def test_the_desk_summary_carries_the_conditions_report_and_the_question(env, monkeypatch):
+    from rct_control_plane.desk_agent_stream import agent_events
+    monkeypatch.setenv("DELENTIA_ASK_AND_WAIT", "1")
+    script = [finish(ENGLISH)]
+
+    async def decide(goal_, history, available_tools, llm_provider=None, **kwargs):
+        return dict(script.pop(0))
+    monkeypatch.setattr(autonomous_loop, "decide_next_action", decide)
+
+    def factory(kernel, namespace, **kwargs):
+        return _loop(env.root, "r97s", mcp=_FakeMCP())
+
+    async def run():
+        return [e async for e in agent_events(GOAL_TH, kernel=None, namespace="desk-test", loop_factory=factory, structured=True)]
+    summary = next(e["data"] for e in asyncio.run(run()) if e["type"] == "summary")
+    assert summary["stopped_reason"] == "needs_clarification" and summary["clarification_id"]
+    assert "ไม่ตรงกับที่คุณขอ" in summary["clarification_question"]
+    assert summary["conditions_report"][0]["kind"] == "language" and summary["conditions_report"][0]["status"] == "broken"

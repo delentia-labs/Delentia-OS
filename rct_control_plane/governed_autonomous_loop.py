@@ -1982,6 +1982,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
             and verification["similarity_score"] >= verification.get("threshold", self._intent_verify_threshold)
         )
         verification["scope_note"] = "Heuristic alignment/grounding verdict, not semantic truth or full RCT-7 fidelity."
+        if stopped_reason == "llm_finished" and not warm and getattr(self, "_active_contract", None) is None:
+            # RCT-7 R4/R7 as evidence, whether or not the wait-and-ask flag is on: each requirement the request stated, what was checked, what was seen. Information only.
+            from rct_control_plane import mismatch_rules as _mrules
+            _reqs = _mrules.derive_requirements(str(result.get("goal") or ""))
+            if _reqs:
+                _ws = self._workspace_id()
+                result["conditions_report"] = _mrules.evaluate(_reqs, result.get("final_answer"), result.get("steps"), Path(_ws) if _ws else None)
         extra = getattr(self, "_start_stop_extra", None)
         if extra:
             result.update(extra)

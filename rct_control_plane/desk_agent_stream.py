@@ -232,6 +232,9 @@ async def agent_events(
             "approval_id": result.get("approval_id"),
             "rct7_steps": [] if blocked else list(getattr(loop, "_episode_rct7_steps", []) or []),
             "experiment": result.get("experiment"),
+            "conditions_report": result.get("conditions_report") or [],
+            "clarification_id": result.get("clarification_id"),
+            "clarification_question": result.get("clarification_question"),
         }}
     else:
         answer = result.get("final_answer") or "(ไม่มีคำตอบสุดท้าย)"

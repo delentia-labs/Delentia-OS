@@ -272,6 +272,34 @@ def check(requirements: Iterable[Requirement], answer: Optional[str], steps: Opt
     return found
 
 
+def _judgeable(req: Requirement, answer: Optional[str]) -> bool:
+    """Can this requirement be judged from this answer at all? A short answer has no script to read, Thai has no words to count, prose has no list lines to count."""
+    text = answer or ""
+    if req.kind == "language":
+        return thai_share(text) is not None
+    if req.kind == "max_words":
+        return (thai_share(text) or 0.0) < THAI_MIN_SHARE
+    if req.kind == "item_count":
+        return any(_LIST_LINE.match(line) for line in text.splitlines())
+    return True
+
+
+def evaluate(requirements: Iterable[Requirement], answer: Optional[str], steps: Optional[List[Dict[str, Any]]], workspace_root: Optional[Path]) -> List[Dict[str, Any]]:
+    """RCT-7 R4/R7 as evidence: for EACH requirement the request stated, what was checked and what was seen. status is met, broken, or not_judged (the answer gave the rule nothing
+    to judge by; that is not a pass). Same checks as `check`; this only keeps the verdict per requirement instead of only the failures."""
+    report: List[Dict[str, Any]] = []
+    for req in requirements:
+        differences = check([req], answer, steps, workspace_root)
+        if differences:
+            status, observed = "broken", differences[0].observed
+        elif _judgeable(req, answer):
+            status, observed = "met", ""
+        else:
+            status, observed = "not_judged", "the answer gave this rule nothing to judge by"
+        report.append({"kind": req.kind, "value": req.value, "from": req.source, "checked_by": CHECKED_BY[req.kind], "status": status, "observed": observed})
+    return report
+
+
 def question_for(goal: str, differences: List[Difference]) -> str:
     """The question put to the person, in the language of their goal. It states the difference and asks what to do; it does not propose a silent fix."""
     thai = bool(_THAI.search(goal or ""))
