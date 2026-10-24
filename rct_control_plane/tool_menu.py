@@ -11,7 +11,8 @@ and a goal with no shared word gets all of it. This module adds two opt-in thing
     scored from its own name and description like any other.
   * `format_menu(compact=True)`: the arguments as `name(type)*` instead of the full JSON schema (the `*` marks required ones).
 
-Both are OFF by default: `DELENTIA_TOOL_MENU=ranked` and `DELENTIA_TOOL_MENU_FORMAT=compact`. What is measured offline (scripts/measure_tool_menu.py):
+Both are ON by default for a local Ollama model since Round 96 (the Architect's decision, after the measurements in ranked_enabled()'s docstring) and OFF for every other provider; set
+`DELENTIA_TOOL_MENU=ranked|full` and `DELENTIA_TOOL_MENU_FORMAT=compact|full` to force either way. What is measured offline (scripts/measure_tool_menu.py):
 whether the tools a goal needs survive the cut, and how many tokens go. What is NOT measured until a real model runs: whether a model chooses better from
 the smaller menu (the point of the exercise), which is why they stay off until the paid test's A/B says so.
 """
@@ -191,12 +192,29 @@ def format_menu(tools: Sequence[Dict[str, Any]], compact: bool = False) -> str:
     return "\n".join(lines)
 
 
+def _model_is_local() -> bool:
+    """True when the model that will be asked is served by Ollama on this machine (the provider the configuration resolves to: argument, env, config, builtin)."""
+    try:
+        from rct_control_plane import model_config
+        return model_config.resolve_model_selection().provider == "ollama"
+    except Exception:                                    # noqa: BLE001 - an unreadable configuration must never break a prompt
+        return False
+
+
 def ranked_enabled() -> bool:
-    return (os.environ.get(MENU_ENV) or "").strip().lower() == "ranked"
+    """DELENTIA_TOOL_MENU=ranked forces it, any other value (for example `full`) forces the full menu. Unset: ON for a local Ollama model, OFF otherwise.
+    Why local: measured on this machine (scripts/measure_prompt_cost.py, 49 tools), the full menu is 7,688 prompt tokens per model call against 1,023 ranked, and a local CPU
+    model reads about 66 tokens a second, so the full menu costs about two minutes per call; a 4-call episode is 44,427 tokens (full menu, output compressed) against 17,767 (ranked,
+    compressed). Two small models also chose the right tool more often from the ranked menu (qwen3:8b 21 of 31 against 16 of 31). Hosted models stay on the full menu until a capable
+    model's A/B says otherwise."""
+    value = (os.environ.get(MENU_ENV) or "").strip().lower()
+    return value == "ranked" if value else _model_is_local()
 
 
 def compact_enabled() -> bool:
-    return (os.environ.get(FORMAT_ENV) or "").strip().lower() == "compact"
+    """DELENTIA_TOOL_MENU_FORMAT=compact forces the short argument format, any other value forces the full schema. Unset: follows ranked_enabled() (on for a local model)."""
+    value = (os.environ.get(FORMAT_ENV) or "").strip().lower()
+    return value == "compact" if value else _model_is_local()
 
 
 def top_k() -> int:
