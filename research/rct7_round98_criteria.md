@@ -104,3 +104,13 @@ The Thai trigram test was first applied twice: the answer's phrases against the 
 Reading, by the rule of T: for the two 7-8B models Thai is not worse than English except qwen2.5:7b's judge (16/20 = 0.80, exactly at the rule and 2 below its English run). For llama3.2:3b Thai
 false pauses are 0.29 and false stops 0.47, far over 0.15: **the documents say that the model-assisted parts are not validated for Thai with a 3B model** (they were already advised against
 for 3B in English). The cite guard changes at most one case per model (no price in Thai measured). Nothing is switched on by any of this (all opt-in), and the cases are the author's.
+
+## H1. The Architect's holdout, set 1 (60 requests; sealed 2026-10-24 17:59, labels hash 6ee37ed0c338...; added BEFORE the first model run)
+* **Primary, as registered:** the judge's `found` over all 34 requests labelled A and `false stops` over the 25 labelled B; rule found >= 0.80 and false stops <= 0.15; one run per model.
+  Request 4 is `?` and is not scored. Models: qwen3:8b and qwen2.5:7b (thinking off). llama3.2:3b is not run (the 3B model failed the English and Thai DEV rules).
+* **Why the primary rule is expected not to be met, written before the run:** the sheet said A = "ask first because information that is needed is missing". The Architect's notes show that
+  22 of his 34 A are that, but 12 are requests that are understandable as they stand and that he wants a PLAN AND A CONFIRMATION for because of their consequence (delete, send, pay, open
+  permissions, publish, overwrite) or an outline before creative work. A clarity judge has no reason to stop those. The classes are in `research/rct7_holdout1_reason_classes_r99.json`
+  (Claude's reading of his notes, fixed before the run).
+* **Secondary (post-hoc, stratified, reported next to the primary and never instead of it):** found per class (INFO 7, BOTH 15, APPROVAL 11, PLAN_ONLY 1) and false stops on B. No prompt change
+  follows from this run; a second run on the same labels is refused by the runner.
