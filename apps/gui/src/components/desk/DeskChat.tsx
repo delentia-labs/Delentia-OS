@@ -23,7 +23,8 @@ type Summary = {
   approval_id?: string | null; rct7_steps: string[];
 };
 type Fdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
-type PlanData = { steps: string[]; route?: { path?: string; reason?: string }; conditions?: { kind: string; value: string; from: string; checked_by: string }[] };
+type PlanData = { steps: string[]; route?: { path?: string; reason?: string }; conditions?: { kind: string; value: string; from: string; checked_by: string }[];
+  parts?: string[]; unknowns?: { kind: string; value: string; detail: string }[] };
 type Entry =
   | { kind: "user"; text: string }
   | { kind: "plan"; plan: PlanData }
@@ -72,12 +73,26 @@ function Banner({ version, model, tools, skills, chain, namespace, mood }: {
 /** RCT-7 R6: the plan, shown BEFORE the first tool runs (it arrives as its own event ahead of the steps). Showing it is not asking for approval. */
 function PlanView({ plan }: { plan: PlanData }) {
   const { steps, route, conditions } = plan;
+  const parts = plan.parts && plan.parts.length > 1 ? plan.parts : [];
+  const unknowns = plan.unknowns ?? [];
   return (
     <details open className="desk-mono rounded border border-dl-rule bg-dl-panel2/40 px-3 py-2 text-[12px] text-dl-muted">
       <summary className="desk-focus cursor-pointer text-dl-text">Plan before acting · RCT-7 · {steps.length} steps{route?.path ? ` · route ${route.path}` : ""}</summary>
       <ol className="mt-1 list-decimal space-y-0.5 pl-5">
         {steps.map((t, i) => <li key={i}>{t}</li>)}
       </ol>
+      {parts.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-text">The parts you listed ({parts.length}), in your order:</p>
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5">{parts.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        </div>
+      ) : null}
+      {unknowns.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-amber">Not known before starting (found by rule, not by a model):</p>
+          <ul className="mt-1 space-y-0.5 pl-3">{unknowns.map((u, i) => <li key={i}><span className="text-dl-amber">?</span> {u.detail}</li>)}</ul>
+        </div>
+      ) : null}
       {conditions && conditions.length ? (
         <div className="mt-2 border-t border-dl-rule pt-2">
           <p className="text-dl-text">What your request requires of the result (read from your own words):</p>
@@ -167,6 +182,15 @@ export function DeskChat() {
   const { t } = useLang();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
+  // "Open in chat" from a question that was answered puts the original request in the box; the person still presses Enter (nothing is sent on its own).
+  useEffect(() => {
+    let wanted: string | null = null;
+    try { wanted = new URLSearchParams(window.location.search).get("goal"); } catch { /* no window: nothing to prefill */ }
+    if (!wanted) return;
+    const text = wanted.slice(0, 4000);
+    const timer = setTimeout(() => setInput(text), 0);          // after hydration, so the server HTML and the first client render agree
+    return () => clearTimeout(timer);
+  }, []);
   const [mode, setMode] = useState<"agent" | "standard">("agent");
   const [budget, setBudget] = useState(5);
   const [running, setRunning] = useState(false);
