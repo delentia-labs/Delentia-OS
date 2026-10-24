@@ -306,3 +306,18 @@ def test_round67_the_memory_history_and_time_travel_endpoints(desk, monkeypatch)
     assert set(now) == {first, second} and now[first]["revoked_reason"] == "outdated"
     status = client.get("/v1/desk/memories/log").json()
     assert status["enabled"] is True and status["chain"]["ok"] and status["anchors"]["ok"]
+
+
+def test_overview_counts_the_questions_waiting_for_a_person(desk, monkeypatch):
+    """Round 93: the sidebar showed only approvals; a question the system put to a person (ClarificationStore) was invisible there."""
+    client, persistence, _ = desk
+    import rct_control_plane.api as api_module
+    from rct_control_plane.clarifications import ClarificationStore
+    monkeypatch.setattr(api_module, "_DAEMON_SCHEDULER", None)
+    assert client.get("/v1/desk/overview").json()["questions_pending"] == 0
+    store = ClarificationStore(persistence)
+    first = store.create("alice", "before_act", "unclear_intent", "Which month?", original_goal="summarise the report")
+    store.create("bob", "mismatch", "language", "Translate?", original_goal="answer in Thai", expected="th", observed="en")
+    assert client.get("/v1/desk/overview").json()["questions_pending"] == 2          # the Desk is the owner's: everyone's questions
+    store.cancel(first.clarification_id, "alice")
+    assert client.get("/v1/desk/overview").json()["questions_pending"] == 1          # a cancelled question is not waiting any more

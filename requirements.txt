@@ -72,10 +72,12 @@ starlette>=1.0.1  # PYSEC-2026 starlette advisories (fixed 1.0.1+)
 # failure (see pyproject.toml's `diffusion` extra comment) - torchvision
 # 0.27.1's own flexible pillow constraint let pip resolve straight to
 # 12.3.0. Declared explicitly here so a fresh environment gets it too.
-pillow>=12.2.0  # PYSEC-2026 pillow advisories (fixed 12.2.0/12.3.0)
+pillow>=13.0.0; python_version >= "3.11"  # PYSEC-2026 pillow advisories fixed in 13.0.0, which needs Python 3.11+
+pillow>=12.2.0; python_version < "3.11"  # 3.10 cannot install 13.x: it keeps the last 12.x (its open advisories cannot be fixed there)
 
 # ── Plan 20: RCT Benchmark Command Center Dashboard ──────────────────────────
-streamlit>=1.32.0          # War Room UI
+streamlit>=1.66.1; python_version >= "3.11"  # War Room UI (1.66 allows pillow<14; 1.64 required pillow<13)
+streamlit>=1.32.0; python_version < "3.11"
 plotly>=5.18.0             # Interactive charts (line, bar, gauge)
 pandas>=2.0.0              # Data aggregation and tabular display
 watchdog>=4.0.0            # File-system monitoring (live log refresh)

@@ -2005,6 +2005,61 @@ def credentials_clear(provider: str) -> None:
     click.echo(f"{provider}: pool switched off (kept in the file under {provider}.cleared)")
 
 
+@cli.group("clarify")
+def clarify_group():
+    """Questions the system put to a person and is waiting on (Round 92). An answer is a new version of the intent; it is not an approval."""
+
+
+@clarify_group.command("list")
+@click.option("--status", default="PENDING", show_default=True, type=click.Choice(["PENDING", "ANSWERED", "CANCELLED", "EXPIRED", "ALL"], case_sensitive=False))
+@click.option("--namespace", default=None, help="Only this person's questions.")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_list(status: str, namespace: Optional[str], db: Optional[str]) -> None:
+    """List the questions that are waiting (or answered, cancelled, expired)."""
+    from rct_control_plane.clarifications import ClarificationStore
+    rows = ClarificationStore(_audit_db(db)).list(namespace=namespace, status=status)
+    if not rows:
+        click.echo(f"No {status.lower()} questions.")
+        return
+    for c in rows:
+        click.echo(f"{c.clarification_id}  {c.status:<9} {c.namespace}  {c.kind}/{c.criterion}  v{c.intent_version}")
+        click.echo(f"    question : {c.question[:160]}")
+        if c.expected or c.observed:
+            click.echo(f"    expected : {c.expected[:100]}   observed: {c.observed[:100]}")
+
+
+@clarify_group.command("answer")
+@click.argument("clarification_id")
+@click.argument("answer_text")
+@click.option("--as", "as_namespace", default=None, help="The person answering (default: the question's own person; this CLI is the owner's tool).")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_answer(clarification_id: str, answer_text: str, as_namespace: Optional[str], db: Optional[str]) -> None:
+    """Answer a waiting question. The reply becomes version N+1 of the intent; the original stays."""
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    store = ClarificationStore(_audit_db(db))
+    current = store.get(clarification_id)
+    if current is None:
+        raise click.ClickException("no such question")
+    try:
+        done = store.answer(clarification_id, as_namespace or "owner", answer_text, as_owner=as_namespace is None)
+    except ClarificationError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"answered. intent version {done.new_intent_version}. The next episode gets this goal:\n\n{done.revised_goal()}")
+
+
+@clarify_group.command("cancel")
+@click.argument("clarification_id")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes).")
+def clarify_cancel(clarification_id: str, db: Optional[str]) -> None:
+    """Withdraw a waiting question; nothing runs."""
+    from rct_control_plane.clarifications import ClarificationError, ClarificationStore
+    try:
+        done = ClarificationStore(_audit_db(db)).cancel(clarification_id, "owner", as_owner=True)
+    except ClarificationError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"{done.clarification_id} {done.status}")
+
+
 @cli.group("approvals")
 def approvals_group():
     """
@@ -3766,7 +3821,11 @@ def workflow_run(yaml_path: str, poll_interval: float) -> None:
 @click.option("--max-iterations", default=5, show_default=True, help="Episode iteration cap.")
 @click.option("--max-seconds", default=120.0, show_default=True, help="Episode wall-clock budget in seconds.")
 @click.option("--namespace", default=None, help="Persistence/JITNA namespace (defaults to a fresh id per run).")
-def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str]) -> None:
+@click.option("--criteria-file", type=click.Path(exists=True, dir_okay=False), default=None, help="JSON acceptance criteria; show the plan before execution.")
+@click.option("--planning-context-file", type=click.Path(exists=True, dir_okay=False), default=None, help="Declared context or bounded semantic_plan request JSON; requires criteria.")
+@click.option("--derive-plan", is_flag=True, help="Derive bounded prerequisites from criteria without a model; requires criteria.")
+def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace: Optional[str], criteria_file: Optional[str] = None,
+                  planning_context_file: Optional[str] = None, derive_plan: bool = False) -> None:
     """Run GOAL through the real, governed autonomous agent loop (Round 44
     Phase J.3) - FDIA gate, JITNA signing, RCT-7 decomposition, Delta
     persistence, and Skill Library retrieval/extraction all wired in
@@ -3784,11 +3843,29 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
     ns = namespace or f"cli-agent-{uuid.uuid4().hex[:8]}"
 
     async def _run() -> dict:
+        if derive_plan and planning_context_file:
+            raise click.ClickException("--derive-plan and --planning-context-file are mutually exclusive")
         loop = build_governed_loop(_kernel, ns, max_iterations=max_iterations, max_seconds=max_seconds,
                                    persistence=_kernel._persistence, mcp_server=mcp)       # the one place a governed loop is built
+        if criteria_file:
+            import json
+            from pathlib import Path
+            criteria = json.loads(Path(criteria_file).read_text(encoding="utf-8"))
+            def show_plan(contract):
+                click.echo("Plan before execution:\n" + json.dumps(contract, ensure_ascii=False, indent=2))
+            context = json.loads(Path(planning_context_file).read_text(encoding="utf-8")) if planning_context_file else None
+            if derive_plan:
+                context = {"derive_from_criteria": True}
+            return await loop.run(goal, acceptance_criteria=criteria, on_plan=show_plan, planning_context=context)
+        if planning_context_file or derive_plan:
+            raise click.ClickException("planning options require --criteria-file")
         return await loop.run(goal)
 
-    result = asyncio.run(_run())
+    from rct_control_plane.intent_contract import IntentContractError
+    try:
+        result = asyncio.run(_run())
+    except (IntentContractError, ValueError, OSError) as exc:
+        raise click.ClickException(str(exc)) from exc
 
     click.echo(f"namespace: {ns}")
     click.echo(f"stopped_reason: {result['stopped_reason']}")
@@ -3802,9 +3879,73 @@ def agent_command(goal: str, max_iterations: int, max_seconds: float, namespace:
             click.echo(f"  - {step['tool_name']}({step['tool_args']}) -> {tool_result}{suffix}")
     if result.get("final_answer"):
         click.echo(f"\nfinal_answer:\n{result['final_answer']}")
+    if result.get("intent_contract"):
+        import json
+        click.echo(json.dumps(result["intent_contract"], ensure_ascii=False, indent=2))
+    if result.get("clarification_question"):
+        click.echo(result["clarification_question"])
 
-    if result["stopped_reason"] == "fdia_blocked":
+    if result["stopped_reason"] in {"fdia_blocked", "waiting_for_clarification", "waiting_for_input"}:
         raise SystemExit(1)
+
+
+@cli.group("intent-contract")
+def intent_contract_group():
+    """Inspect or continue an explicit acceptance contract in its namespace."""
+
+
+@intent_contract_group.command("show")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+def intent_contract_show(contract_id: str, namespace: str) -> None:
+    import json
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.mcp_server import _kernel
+    try:
+        click.echo(json.dumps(IntentContractStore(_kernel._persistence, namespace).get(contract_id), ensure_ascii=False, indent=2))
+    except IntentContractError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@intent_contract_group.command("continue")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+@click.option("--version", type=int, required=True)
+@click.option("--response", default="", help="Required when waiting for clarification.")
+@click.option("--revised-goal", default=None)
+@click.option("--answers-file", type=click.Path(exists=True, dir_okay=False), default=None, help="JSON mapping of critical unknown ids to user answers.")
+def intent_contract_continue(contract_id: str, namespace: str, version: int, response: str, revised_goal: Optional[str], answers_file: Optional[str] = None) -> None:
+    import asyncio
+    import json
+    from rct_control_plane.agent_factory import build_governed_loop
+    from rct_control_plane.intent_contract import IntentContractError
+    from rct_control_plane.mcp_server import _kernel, mcp
+    async def run():
+        from pathlib import Path
+        answers = json.loads(Path(answers_file).read_text(encoding="utf-8")) if answers_file else None
+        loop = build_governed_loop(_kernel, namespace, persistence=_kernel._persistence, mcp_server=mcp)
+        return await loop.continue_intent(contract_id, version, response, revised_goal, on_plan=lambda c: click.echo(
+            "Plan before execution:\n" + json.dumps(c["plan"], ensure_ascii=False, indent=2)), answers=answers)
+    try:
+        result = asyncio.run(run())
+    except (IntentContractError, ValueError, OSError) as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("stopped_reason") in {"waiting_for_clarification", "waiting_for_input"}:
+        raise SystemExit(1)
+
+
+@intent_contract_group.command("export")
+@click.argument("contract_id")
+@click.option("--namespace", required=True)
+def intent_contract_export(contract_id: str, namespace: str) -> None:
+    """Export personal contract text as JSON to stdout; keep it private."""
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.mcp_server import _kernel
+    try:
+        click.echo(json.dumps(IntentContractStore(_kernel._persistence, namespace).export(contract_id), ensure_ascii=False, indent=2))
+    except IntentContractError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 @cli.group("jury")
