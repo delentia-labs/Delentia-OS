@@ -21,6 +21,12 @@ type Summary = {
   guard: { cord_verdict?: string; cord_findings?: { pattern_id: string }[] };
   notary: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps: string[];
+  semantic_check?: { meets?: boolean | null; unmet?: { part: string; why: string }[]; dropped?: number } | null;
+  judge?: { clear?: boolean | null; unknowns?: { question: string; about: string }[] } | null;
+  rct7_chain?: {
+    claims: { kind?: string; token?: string; support?: string; step?: number }[]; supported: number; unsupported: number;
+    cited?: { claims: { claim: string; status: string }[]; verified: number; unverified: number; error?: string };
+  } | null;
   usage?: { calls?: number; prompt_tokens?: number; completion_tokens?: number; cached_prompt_tokens?: number; cost_usd?: number | null; cost_known?: boolean };
   conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string; evidence?: { measure?: string; path?: string; step?: number; tool?: string }[] }[];
   clarification_id?: string | null; clarification_question?: string | null;
@@ -188,6 +194,32 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
               </li>
             ))}
           </ul>
+        </details>
+      ) : null}
+      {summary.semantic_check && summary.semantic_check.meets !== undefined && summary.semantic_check.meets !== null ? (
+        <p className={summary.semantic_check.meets ? "text-dl-leaf" : "text-dl-amber"}>
+          {summary.semantic_check.meets ? "✓ a model compared the answer with your request and found it met" : "? a model compared the answer with your request and thinks part of it is not met"} (a model&apos;s judgement, not proof)
+        </p>
+      ) : null}
+      {summary.rct7_chain && summary.rct7_chain.claims.length ? (
+        <details className="mt-1">
+          <summary className="desk-focus cursor-pointer hover:text-dl-text">
+            Evidence for the facts in the answer ({summary.rct7_chain.supported} traced to a step or to your request, {summary.rct7_chain.unsupported} not found in any step)
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-4">
+            {summary.rct7_chain.claims.map((c, i) => (
+              <li key={i}>
+                <span className={c.support === "unsupported" ? "text-dl-rust" : "text-dl-leaf"}>{c.support === "unsupported" ? "✕" : "✓"}</span>
+                {" "}{c.token} · {c.support === "step" ? `step ${c.step}` : c.support === "request" ? "your request" : "not found"}
+              </li>
+            ))}
+          </ul>
+          {summary.rct7_chain.cited ? (
+            <p className="mt-1">
+              Model-cited claims checked by code: {summary.rct7_chain.cited.verified} verified, {summary.rct7_chain.cited.unverified} not verified
+              {summary.rct7_chain.cited.error ? ` (${summary.rct7_chain.cited.error})` : ""}
+            </p>
+          ) : null}
         </details>
       ) : null}
       {summary.clarification_question ? (
