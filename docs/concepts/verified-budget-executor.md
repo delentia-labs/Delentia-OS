@@ -1,6 +1,6 @@
 # Verified budget executor v1
 
-The typed-execution follow-up now compiles this workflow into a trusted handler DAG and uses dependency readiness rather than component serialization order. New plans bind the execution program in their digest. The governed MCP read requests descriptor-relative no-follow acquisition as well as the final freshness check. See [implementation, A/B scope and remaining gates](../development/RCT_FRAMEWORK_AND_RUNTIME_RECOVERY_2026-10-23_TH.md); older evidence below is a dated checkpoint, not a claim of general RCT completeness.
+The typed-execution follow-up now compiles this workflow into a trusted handler DAG and uses dependency readiness rather than component serialization order. New plans bind the execution program in their digest. The governed MCP read requests descriptor-relative no-follow acquisition as well as the final freshness check. See the implementation, A/B scope and remaining gates note (`docs/development/RCT_FRAMEWORK_AND_RUNTIME_RECOVERY_2026-10-23_TH.md`, still on the draft branch of PR #168 and not yet in this site); older evidence below is a dated checkpoint, not a claim of general RCT completeness.
 
 Experimental, opt-in **read-only execution** of one pinned structured quote against a confirmed budget. It uses the normal governed loop, tool gate, MCP read, persistence and journal. The decision source is deterministic; it does not call the generation provider. Other requests keep the existing model decision path.
 
@@ -50,4 +50,4 @@ The current fixed handler pipeline enforces dependencies for this compiled workf
 - intent_verification remains the independent legacy heuristic and can disagree with a correct derived numeric report. It is not the typed arithmetic oracle. Public profile/UI must present these scopes explicitly.
 - Metered generation calls/tokens are zero in the actual CLI and installed-wheel smoke. Runs with zero generation calls must not be treated as model capability evaluation or model accuracy evidence.
 
-See [tests](../../rct_control_plane/tests/test_verified_budget_real.py), [implementation](../../rct_control_plane/verified_budget.py), [results](../development/VERIFIED_BUDGET_RESULTS_2026-10-23_TH.md) and [activation gates](../release/ACTIVATION_GATES_2026-10-23_TH.md).
+See the tests (`rct_control_plane/tests/test_verified_budget_real.py`), the implementation (`rct_control_plane/verified_budget.py`), the results note (`docs/development/VERIFIED_BUDGET_RESULTS_2026-10-23_TH.md`) and the activation gates note (`docs/release/ACTIVATION_GATES_2026-10-23_TH.md`); the two notes are still on the draft branch of PR #168 and not yet in this site.

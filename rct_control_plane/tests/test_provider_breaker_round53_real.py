@@ -152,6 +152,7 @@ def test_wrapping_twice_does_not_stack_breakers():
 
 def test_a_dead_model_endpoint_stops_costing_every_episode_a_full_retry_cycle(tmp_path, monkeypatch):
     monkeypatch.setenv("DELENTIA_LLM_RETRY_BACKOFF", "0")
+    monkeypatch.setenv(pb.RECOVERY_ENV, "120")                       # this test is about an OPEN circuit; the 0.3 s window of the other tests let a slow CI worker see it half-open (a probe call reached the endpoint)
     monkeypatch.setattr("rct_control_plane.llm_provider.get_default_provider", lambda *a, **k: flaky)
     flaky = Flaky()
     first = asyncio.run(_loop(tmp_path, "b1", mcp=_FakeMCP()).run("say hello"))

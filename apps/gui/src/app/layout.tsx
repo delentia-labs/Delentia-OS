@@ -2,21 +2,32 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { DeskShell } from "@/components/desk/Shell";
-import { IBM_Plex_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
+import { JetBrains_Mono, Prompt, Sarabun } from "next/font/google";
 
-// Round 50 redesign: one family, two cuts. Plex Mono carries the terminal,
-// navigation and data; Plex Sans Thai carries explanations in Thai and English.
-const plexMono = IBM_Plex_Mono({
+// Round 96: three roles, chosen by the Architect from the specimen page.
+//   Prompt          Thai (and the Latin letters inside Thai text): the interface.
+//   JetBrains Mono  English, numbers, code, terminal output, navigation, data.
+//   Sarabun         documents the system writes for a person to read at length
+//                   (answers, statute passages, reports): class "desk-doc".
+// JetBrains Mono has no Thai letters, so Thai inside a mono block falls back to Prompt.
+const fontMono = JetBrains_Mono({
   weight: ["400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-plex-mono",
+  variable: "--font-mono-en",
   display: "swap",
 });
 
-const plexThai = IBM_Plex_Sans_Thai({
+const fontThai = Prompt({
+  weight: ["300", "400", "500", "600"],
+  subsets: ["thai", "latin"],
+  variable: "--font-th",
+  display: "swap",
+});
+
+const fontDoc = Sarabun({
   weight: ["400", "500", "600"],
   subsets: ["thai", "latin"],
-  variable: "--font-plex-thai",
+  variable: "--font-doc",
   display: "swap",
 });
 
@@ -29,7 +40,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" suppressHydrationWarning>
-      <body className={`${plexMono.variable} ${plexThai.variable} antialiased`} style={{ background: "var(--dl-ink)" }}>
+      <body className={`${fontMono.variable} ${fontThai.variable} ${fontDoc.variable} antialiased`} style={{ background: "var(--dl-ink)" }}>
         <DeskShell>{children}</DeskShell>
         <CommandPalette />
       </body>

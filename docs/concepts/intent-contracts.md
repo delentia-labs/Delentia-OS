@@ -68,7 +68,7 @@ python scripts/demo_intent_contract.py --dir /path/to/a/new/disposable-demo-dire
 
 It uses a local **SCRIPTED** HTTP model, actual CLI processes, file reads, SQLite and acceptance checks. It intentionally produces a language mismatch, proves restart preserves waiting, refuses continuation without an answer, and then retains a confirmed revision. It has no paid calls and does not demonstrate capable-model success. Do not share its private key/data directory.
 
-Related: [RCT-7 requirements](rct-7-thinking.md), [FDIA semantics](fdia.md), [release levels](../release/RELEASE_LEVELS.md), [research protocol](../../research/PROTOCOL.md).
+Related: [RCT-7 requirements](rct-7-thinking.md), [FDIA semantics](fdia.md), [release levels](../release/RELEASE_LEVELS.md), research protocol (`research/PROTOCOL.md` in the repository).
 
 ## Lifecycle follow-up (22 October 2026)
 
@@ -84,6 +84,6 @@ Text predicates use NFC canonical equivalence for `contains`; language remains a
 
 ## Declared planning context and expansion
 
-Optional `planning_context` with explicit criteria now supports a validated reported-facts/unknowns/component graph and `waiting_for_input` before model/tools. See [declared RCT plans](rct-declared-plans.md) for CLI/API answer mapping and plan ordering. Contract payload schema remains1; enriched plans use plan schema2. This does not enable semantic planning by default or signed effects.
+Optional `planning_context` with explicit criteria now supports a validated reported-facts/unknowns/component graph and `waiting_for_input` before model/tools. See the declared RCT plans note (`docs/concepts/rct-declared-plans.md`, still on the draft branch of PR #168 and not yet in this site) for CLI/API answer mapping and plan ordering. Contract payload schema remains1; enriched plans use plan schema2. This does not enable semantic planning by default or signed effects.
 
 The contract read-only menu now includes `delentia_expand_tool_output`. Governed dispatch requires ownership by the current namespace **and** an original id issued in this episode; another person's or a prior episode's id is refused. Re-read the evidence in a new episode. The raw owner MCP tool remains a separate trust boundary.

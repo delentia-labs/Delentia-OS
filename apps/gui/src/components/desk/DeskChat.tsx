@@ -303,7 +303,7 @@ export function DeskChat() {
                 {e.kind === "answer" ? (
                   <div className="flex gap-3">
                     <span className="desk-mono select-none text-dl-rule">⋮</span>
-                    <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-dl-text">{e.text}</p>
+                    <p className="desk-doc whitespace-pre-wrap break-words text-[14px] leading-relaxed text-dl-text">{e.text}</p>
                   </div>
                 ) : null}
                 {e.kind === "summary" ? <SummaryView summary={e.summary} fdia={e.fdia} seconds={e.seconds} /> : null}
