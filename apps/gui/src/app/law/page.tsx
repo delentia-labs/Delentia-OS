@@ -111,7 +111,7 @@ export default function LawPage() {
                 <div className="mt-4 space-y-2">
                   <p className="text-[12px] text-dl-muted">{found.pack}</p>
                   {found.passages.map((p, i) => (
-                    <div key={i} className="rounded border border-dl-rule bg-dl-ink/40 px-3 py-2"><p className="desk-mono text-[12px] text-dl-fern">{T("Section", "มาตรา")} {p.section}</p><p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-dl-text">{p.text}</p></div>
+                    <div key={i} className="rounded border border-dl-rule bg-dl-ink/40 px-3 py-2"><p className="desk-mono text-[12px] text-dl-fern">{T("Section", "มาตรา")} {p.section}</p><p className="desk-doc mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-dl-text">{p.text}</p></div>
                   ))}
                   <label className="block pt-2"><span className={label}>{T("Paste an answer from anywhere to check it against these passages", "วางคำตอบจากที่ใดก็ได้เพื่อตรวจกับท่อนเหล่านี้")}</span><textarea value={answer} onChange={(e) => setAnswer(e.target.value)} rows={4} className={field} aria-label="Answer to check" /></label>
                   <Button onClick={doCheck} disabled={busy || !answer.trim()}>{T("Check the answer", "ตรวจคำตอบ")}</Button>

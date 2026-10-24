@@ -409,3 +409,19 @@ def test_the_entry_points_with_a_person_mark_their_loop_and_the_others_do_not(en
     assert agent_factory.build_governed_loop.__defaults__ is not None
     import inspect
     assert inspect.signature(agent_factory.build_governed_loop).parameters["interactive"].default is False   # an API call, a job, a subagent: never marked
+
+
+def test_the_patterns_codeql_flagged_are_linear_on_hostile_text():
+    """CodeQL reported three polynomial patterns (a fenced answer, a list line, a file name). They are rewritten so that every string has one parse; this pins their timing on the inputs it named."""
+    import re
+    import time
+    hostile = ["```" + " " * 20000, "* " + " " * 20000, "* a" + " " * 20000, "-" * 20000, "0" * 20000, "a." * 10000, "a/" * 10000, ("a" * 50 + "/") * 400, "0" * 5000 + "-" * 5000]
+    path = re.compile(mismatch_rules._PATH_TOKEN)
+    started = time.time()
+    for text in hostile:
+        mismatch_rules._strip_fence(text)
+        mismatch_rules.parts_of(text)
+        path.findall(text)
+        mismatch_rules.unknowns_for("read " + text, None, False)
+    assert time.time() - started < 3.0
+    assert mismatch_rules._strip_fence("```json\n{\"a\": 1}\n```") == '{"a": 1}' and mismatch_rules._strip_fence("```\n[1]\n```") == "[1]" and mismatch_rules._strip_fence(" plain ") == "plain"

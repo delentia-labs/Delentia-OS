@@ -305,11 +305,10 @@ class Harness:
             os.environ["DELENTIA_UNTRUSTED_PATHS"] = "quotes/,tickets/,ops/"
         else:
             os.environ.pop("DELENTIA_UNTRUSTED_PATHS", None)
-        for name in ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT"):
-            os.environ.pop(name, None)
-        if self.tool_menu == "ranked":                                         # the same menu for every arm of a run; recorded in every row
-            os.environ["DELENTIA_TOOL_MENU"] = "ranked"
-            os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact"
+        # Round 96: unset now means 'ranked and compact for a local Ollama model', so the 'default' arm of an experiment (the full menu) must say `full` out loud.
+        ranked = self.tool_menu == "ranked"                                    # the same menu for every arm of a run; recorded in every row
+        os.environ["DELENTIA_TOOL_MENU"] = "ranked" if ranked else "full"
+        os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact" if ranked else "full"
         os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
         # Round 82: DELENTIA_TOOL_MENU used to be in this list, so a ranked run set it above and cleared it here: every row said "ranked" and the runtime built the full menu.
         # Side calls (a second-opinion classifier, embeddings, store-time questions, fallback models, algorithm calls that use a model) are off in a research run: they would

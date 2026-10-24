@@ -28,8 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from rct_control_plane import rct7_judge
 
 RULE = {"found_at_least": 0.80, "false_stops_at_most": 0.15}
-_ROW = re.compile(r"^\|\s*(\d{1,4})\s*\|(.*)\|\s*$")
-_COMPACT = re.compile(r"([ABMNabmn?])\s*[:=]\s*([\d,\s\-]+)")
+_COMPACT = re.compile(r"([ABMNabmn?])[ \t]{0,5}[:=][ \t]{0,5}(\d[\d, \t-]{0,2000})")        # the digits start the group, so the spaces before them have one owner
 
 
 def wilson(successes: int, total: int, z: float = 1.96) -> Tuple[float, float]:
@@ -47,14 +46,18 @@ def parse_sheet(text: str) -> Dict[int, Dict[str, str]]:
     """The rows of a sheet: number -> {request, answer?, label, note}. A table with three or four cells after the number is read as a request sheet or a result sheet."""
     rows: Dict[int, Dict[str, str]] = {}
     for line in text.splitlines():
-        m = _ROW.match(line.strip())
-        if not m:
+        line = line.strip()
+        if not (line.startswith("|") and line.endswith("|")) or len(line) > 20000:     # plain string handling, no pattern that could backtrack on a long line
             continue
-        cells = [c.strip() for c in m.group(2).split("|")]
+        first, _, rest = line[1:-1].partition("|")
+        number = first.strip()
+        if not (number.isdigit() and len(number) <= 4):
+            continue
+        cells = [c.strip() for c in rest.split("|")]
         if len(cells) == 3:
-            rows[int(m.group(1))] = {"request": cells[0], "label": cells[1].upper(), "note": cells[2]}
+            rows[int(number)] = {"request": cells[0], "label": cells[1].upper(), "note": cells[2]}
         elif len(cells) == 4:
-            rows[int(m.group(1))] = {"request": cells[0], "answer": cells[1], "label": cells[2].upper(), "note": cells[3]}
+            rows[int(number)] = {"request": cells[0], "answer": cells[1], "label": cells[2].upper(), "note": cells[3]}
     return rows
 
 
