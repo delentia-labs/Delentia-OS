@@ -551,14 +551,60 @@ class IntentCompiler:
     # Verbs that make something new (no existing target is needed): an action with one of these heads and no other type word is a BUILD_APP, not a REFACTOR of something that must already exist.
     _CREATE_HEADS = frozenset({"create", "write", "save", "store", "put", "generate", "build", "insert"})
 
+    # Round 92 (research/independent_goals_criteria_r92.md): the same rule for Thai. Thai has no spaces, so the head is found by prefix after the polite lead, longest word first. The lists were built from
+    # development set A (goals written by qwen2.5:7b) and my own knowledge of Thai; the holdout set B (written by qwen3:8b, roles swapped) is run once. A question is also recognised by its closing
+    # words (คืออะไร, ไหม, หรือไม่ ...) when no action verb heads the sentence.
+    _THAI_LEAD = re.compile(r"^(?:\s|คุณช่วย|ช่วยกรุณา|กรุณา|โปรด|ช่วย|ขอให้|ผมอยากให้|ฉันอยากให้|ดิฉันอยากให้|ผมอยาก|ฉันอยาก|อยากให้|อยาก|ต้องการให้|ผมต้องการ|ฉันต้องการ|ต้องการ|รบกวน|ลอง|ให้)+")
+    _THAI_ACTION_HEADS = tuple(sorted({
+        "แก้ไข", "แก้", "เปลี่ยนชื่อ", "เปลี่ยนแปลง", "เปลี่ยน", "ย้าย", "ลบทิ้ง", "ลบ", "สร้าง", "เขียน", "เพิ่ม", "ส่งออก", "ส่ง", "รัน", "เรียกใช้", "ติดตั้ง", "ถอนการติดตั้ง", "ตั้งเวลา", "ตั้งค่า",
+        "ตั้งชื่อ", "ตั้ง", "คัดลอก", "ก๊อป", "บันทึก", "อัปเดต", "อัพเดต", "อัปเกรด", "อัพเกรด", "ปรับปรุง", "ปรับเปลี่ยน", "ปรับ", "ปิด", "เปิด", "หยุด", "เริ่ม", "ยกเลิก", "อนุมัติ", "ปฏิเสธ", "ดีพลอย",
+        "คอมมิต", "พุช", "รีเซ็ต", "รีสตาร์ท", "แทนที่", "อัปโหลด", "อัพโหลด", "ดาวน์โหลด", "สำรองข้อมูล", "สำรอง", "กู้คืน", "ผสาน", "นำเข้า", "ลงนาม", "ล้าง", "จัดเรียง", "แปลง", "ทำให้", "สั่ง", "จอง",
+        "ชำระ", "จ่าย", "โอน", "แชร์", "เผยแพร่", "โพสต์", "แนบ", "ใส่", "เติม", "ลง", "เก็บ", "ตั้งให้", "รวมไฟล์", "ปรับแต่ง", "ทำการ", "ลบออก", "เอา", "นำ", "ใช้คำสั่ง", "ประมวลผล",
+    }, key=len, reverse=True))
+    _THAI_CREATE_HEADS = ("สร้าง", "เขียน", "เพิ่ม", "บันทึก", "เก็บ", "เติม", "ใส่", "แนบ")
+    _THAI_READ_HEADS = tuple(sorted({
+        "ช่วยอธิบาย", "อธิบาย", "สรุป", "ค้นหา", "ค้น", "หา", "ดู", "แสดง", "บอก", "เปรียบเทียบ", "ตรวจสอบ", "ตรวจ", "อ่าน", "นับ", "คำนวณ", "ประเมิน", "วิเคราะห์", "ระบุ", "แนะนำ", "ตอบ", "เล่า",
+        "ยกตัวอย่าง", "ขอคำแนะนำ", "ขอข้อมูล", "ขอคำอธิบาย", "ขอความช่วยเหลือ", "ขอดู", "ขอรายละเอียด", "ขอสรุป", "ขอตัวอย่าง", "รายการ", "ลิสต์", "อะไร", "ทำไม", "อย่างไร", "ยังไง", "ใคร", "ที่ไหน",
+        "เมื่อไร", "เมื่อไหร่", "กี่", "เท่าไร", "เท่าไหร่", "มีอะไร", "มี", "คือ", "สามารถ", "อยากรู้", "อยากทราบ", "สงสัย", "ทราบ",
+    }, key=len, reverse=True))
+    _THAI_QUESTION_END = re.compile(r"(?:คืออะไร|อะไรบ้าง|อะไร|ทำไม|อย่างไร|ยังไง|ไหม|หรือไม่|หรือเปล่า|เท่าไร|เท่าไหร่|กี่|ใคร|ที่ไหน|เมื่อไร|เมื่อไหร่|ได้หรือไม่|\?)")
+    _THAI_LATER_ACTION = re.compile(r"(?:แล้วก็|แล้ว|จากนั้น|ต่อด้วย|และ|พร้อมทั้ง|พร้อมกับ)(?:ช่วย|ก็|ให้|ต่อ)?(" + "|".join(re.escape(w) for w in _THAI_ACTION_HEADS) + r")")
+
+    @classmethod
+    def _thai_head_kind(cls, text: str) -> "tuple[Optional[str], bool, str]":
+        """('action' | 'read' | None, a later clause starts with an action verb, the head verb) for a goal that starts in Thai."""
+        body = cls._THAI_LEAD.sub("", text.strip(), count=1)
+        head_word = ""
+        kind: Optional[str] = None
+        for w in cls._THAI_ACTION_HEADS:
+            if body.startswith(w):
+                kind, head_word = "action", w
+                break
+        if kind is None:
+            for w in cls._THAI_READ_HEADS:
+                if body.startswith(w):
+                    kind, head_word = "read", w
+                    break
+        if kind is None and cls._THAI_QUESTION_END.search(body):
+            kind = "read"
+        later = bool(cls._THAI_LATER_ACTION.search(body[len(head_word):] if head_word else body))
+        return kind, later, head_word
+
     @classmethod
     def _head_word(cls, text: str) -> str:
-        m = re.match(r"[a-z']+", cls._POLITE_LEAD.sub("", text.strip(), count=1))
+        stripped = text.strip()
+        if re.match(r"[฀-๿]", cls._THAI_LEAD.sub("", stripped, count=1)[:1] or " "):
+            _kind, _later, word = cls._thai_head_kind(stripped)
+            return "create" if word in cls._THAI_CREATE_HEADS else word
+        m = re.match(r"[a-z']+", cls._POLITE_LEAD.sub("", stripped, count=1))
         return m.group(0) if m else ""
 
     @classmethod
     def _head_kind(cls, text: str) -> "tuple[Optional[str], bool]":
-        """('action' | 'read' | None, whether a LATER clause starts with a state-changing verb) for an English goal in lower case. Thai and other text has no head and is left to the keyword lists."""
+        """('action' | 'read' | None, whether a LATER clause starts with a state-changing verb) for a goal in lower case. English: the verb that heads the sentence. Thai: see _thai_head_kind. Other text has no head and is left to the keyword lists."""
+        if re.match(r"[฀-๿]", cls._THAI_LEAD.sub("", text.strip(), count=1)[:1] or " "):
+            kind, later, _word = cls._thai_head_kind(text)
+            return kind, later
         head_text = cls._POLITE_LEAD.sub("", text.strip(), count=1)
         m = re.match(r"[a-z']+", head_text)
         if not m:

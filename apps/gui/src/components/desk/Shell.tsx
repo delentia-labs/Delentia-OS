@@ -85,6 +85,18 @@ function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode)
           </dd>
         </div>
         <div className="flex justify-between gap-2">
+          <dt className="text-dl-muted">{t("questions")}</dt>
+          <dd>
+            {o && (o.questions_pending ?? 0) > 0 ? (
+              <Link href="/approvals" className="desk-focus text-dl-amber underline underline-offset-2">
+                {o.questions_pending} {t("pending")}
+              </Link>
+            ) : (
+              <span className="text-dl-text">{o ? 0 : "-"}</span>
+            )}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-2">
           <dt className="text-dl-muted">{t("chain")}</dt>
           <dd className={chain === "FAILED" ? "text-dl-rust" : "text-dl-text"} title={o?.audit_verify?.output ?? undefined}>
             {!o || !o.audit_verify ? "-" : chain === "SUCCESS" ? t("verified") : chain === "FAILED" ? t("broken") : t("not_checked")}

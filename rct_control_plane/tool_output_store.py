@@ -48,6 +48,12 @@ class ToolOutputStore:
             row = conn.execute("SELECT content FROM tool_output_originals WHERE id = ?", (original_id,)).fetchone()
         return row[0] if row else None
 
+    def belongs_to(self, original_id: str, namespace: str) -> bool:
+        """Ownership check at the governed dispatch boundary, not an ID secret."""
+        with self._persistence._connect() as conn:
+            return conn.execute("SELECT 1 FROM tool_output_originals WHERE id=? AND namespace=?",
+                                (original_id, namespace)).fetchone() is not None
+
     def expand(self, original_id: str, start_line: Optional[int] = None, end_line: Optional[int] = None,
                query: Optional[str] = None, max_chars: int = MAX_EXPAND_CHARS) -> Dict[str, Any]:
         """A 1-based line range, or the lines matching `query` (case-insensitive,
