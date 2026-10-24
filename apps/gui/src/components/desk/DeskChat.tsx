@@ -21,10 +21,22 @@ type Summary = {
   guard: { cord_verdict?: string; cord_findings?: { pattern_id: string }[] };
   notary: { enabled?: boolean; receipts?: number };
   approval_id?: string | null; rct7_steps: string[];
+  semantic_check?: { meets?: boolean | null; unmet?: { part: string; why: string }[]; dropped?: number } | null;
+  judge?: { clear?: boolean | null; unknowns?: { question: string; about: string }[] } | null;
+  rct7_chain?: {
+    claims: { kind?: string; token?: string; support?: string; step?: number }[]; supported: number; unsupported: number;
+    cited?: { claims: { claim: string; status: string }[]; verified: number; unverified: number; error?: string };
+  } | null;
+  usage?: { calls?: number; prompt_tokens?: number; completion_tokens?: number; cached_prompt_tokens?: number; cost_usd?: number | null; cost_known?: boolean };
+  conditions_report?: { kind: string; value: string; from: string; status: "met" | "broken" | "not_judged"; observed: string; evidence?: { measure?: string; path?: string; step?: number; tool?: string }[] }[];
+  clarification_id?: string | null; clarification_question?: string | null;
 };
 type Fdia = { D: number | null; I: number | null; A: number; F: number | null; signed: boolean; signature_hash: string };
+type PlanData = { steps: string[]; route?: { path?: string; reason?: string }; conditions?: { kind: string; value: string; from: string; checked_by: string }[];
+  parts?: string[]; unknowns?: { kind: string; value: string; detail: string }[] };
 type Entry =
   | { kind: "user"; text: string }
+  | { kind: "plan"; plan: PlanData }
   | { kind: "step"; step: Step }
   | { kind: "answer"; text: string }
   | { kind: "summary"; summary: Summary; fdia?: Fdia; seconds: number }
@@ -64,6 +76,41 @@ function Banner({ version, model, tools, skills, chain, namespace, mood }: {
         <p className="text-dl-muted">{chain ?? "-"}</p>
       </div>
     </div>
+  );
+}
+
+/** RCT-7 R6: the plan, shown BEFORE the first tool runs (it arrives as its own event ahead of the steps). Showing it is not asking for approval. */
+function PlanView({ plan }: { plan: PlanData }) {
+  const { steps, route, conditions } = plan;
+  const parts = plan.parts && plan.parts.length > 1 ? plan.parts : [];
+  const unknowns = plan.unknowns ?? [];
+  return (
+    <details open className="desk-mono rounded border border-dl-rule bg-dl-panel2/40 px-3 py-2 text-[12px] text-dl-muted">
+      <summary className="desk-focus cursor-pointer text-dl-text">Plan before acting · RCT-7 · {steps.length} steps{route?.path ? ` · route ${route.path}` : ""}</summary>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+        {steps.map((t, i) => <li key={i}>{t}</li>)}
+      </ol>
+      {parts.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-text">The parts you listed ({parts.length}), in your order:</p>
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5">{parts.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        </div>
+      ) : null}
+      {unknowns.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-amber">Not known before starting (found by rule, not by a model):</p>
+          <ul className="mt-1 space-y-0.5 pl-3">{unknowns.map((u, i) => <li key={i}><span className="text-dl-amber">?</span> {u.detail}</li>)}</ul>
+        </div>
+      ) : null}
+      {conditions && conditions.length ? (
+        <div className="mt-2 border-t border-dl-rule pt-2">
+          <p className="text-dl-text">What your request requires of the result (read from your own words):</p>
+          <ul className="mt-1 space-y-0.5 pl-3">
+            {conditions.map((c, i) => <li key={i}><span className="text-dl-leaf">▸</span> {c.kind} = {c.value} <span className="text-dl-muted/80">· &ldquo;{c.from}&rdquo; · checked by: {c.checked_by}</span></li>)}
+          </ul>
+        </div>
+      ) : null}
+    </details>
   );
 }
 
@@ -117,6 +164,9 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
     fdia?.signed ? "JITNA signed" : null,
     summary.notary?.enabled ? `notary ${summary.notary.receipts}` : null,
     `${summary.iterations} steps`,
+    summary.usage && (summary.usage.prompt_tokens || summary.usage.completion_tokens)
+      ? `${((summary.usage.prompt_tokens ?? 0) + (summary.usage.completion_tokens ?? 0)).toLocaleString("en-US")} tokens${summary.usage.cost_known && summary.usage.cost_usd ? ` · $${summary.usage.cost_usd.toFixed(4)}` : ""}`
+      : null,
     `${Math.round(seconds)} s`,
   ].filter(Boolean);
   return (
@@ -133,6 +183,52 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
           </ol>
         </details>
       ) : null}
+      {summary.conditions_report?.length ? (
+        <details className="mt-1" open={summary.conditions_report.some((c) => c.status === "broken")}>
+          <summary className="desk-focus cursor-pointer hover:text-dl-text">What your request required, and what was seen ({summary.conditions_report.length})</summary>
+          <ul className="mt-1 space-y-0.5 pl-4">
+            {summary.conditions_report.map((c, i) => (
+              <li key={i}>
+                <span className={c.status === "met" ? "text-dl-leaf" : c.status === "broken" ? "text-dl-rust" : "text-dl-amber"}>{c.status === "met" ? "✓ met" : c.status === "broken" ? "✕ broken" : "? not judged"}</span>
+                {" "}{c.kind} = {c.value}{c.observed ? ` · ${c.observed}` : ""}{c.evidence?.length ? ` · seen: ${c.evidence.map((e) => e.measure ?? `step ${e.step} wrote ${e.path}`).join(", ")}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      {summary.semantic_check && summary.semantic_check.meets !== undefined && summary.semantic_check.meets !== null ? (
+        <p className={summary.semantic_check.meets ? "text-dl-leaf" : "text-dl-amber"}>
+          {summary.semantic_check.meets ? "✓ a model compared the answer with your request and found it met" : "? a model compared the answer with your request and thinks part of it is not met"} (a model&apos;s judgement, not proof)
+        </p>
+      ) : null}
+      {summary.rct7_chain && summary.rct7_chain.claims.length ? (
+        <details className="mt-1">
+          <summary className="desk-focus cursor-pointer hover:text-dl-text">
+            Evidence for the facts in the answer ({summary.rct7_chain.supported} traced to a step or to your request, {summary.rct7_chain.unsupported} not found in any step)
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-4">
+            {summary.rct7_chain.claims.map((c, i) => (
+              <li key={i}>
+                <span className={c.support === "unsupported" ? "text-dl-rust" : "text-dl-leaf"}>{c.support === "unsupported" ? "✕" : "✓"}</span>
+                {" "}{c.token} · {c.support === "step" ? `step ${c.step}` : c.support === "request" ? "your request" : "not found"}
+              </li>
+            ))}
+          </ul>
+          {summary.rct7_chain.cited ? (
+            <p className="mt-1">
+              Model-cited claims checked by code: {summary.rct7_chain.cited.verified} verified, {summary.rct7_chain.cited.unverified} not verified
+              {summary.rct7_chain.cited.error ? ` (${summary.rct7_chain.cited.error})` : ""}
+            </p>
+          ) : null}
+        </details>
+      ) : null}
+      {summary.clarification_question ? (
+        <div className="mt-2 rounded border border-dl-amber/60 bg-dl-amber/5 px-3 py-2 text-dl-text">
+          <p className="text-dl-amber">The system stopped and is asking you</p>
+          <p className="mt-1 whitespace-pre-wrap">{summary.clarification_question}</p>
+          <p className="mt-1 text-dl-muted">Answer it in <Link href="/approvals" className="underline underline-offset-2">Approvals</Link>, then send the same request again; your answer is attached once.</p>
+        </div>
+      ) : null}
       {summary.approval_id ? (
         <p className="text-dl-amber">approval {summary.approval_id} · <Link href="/approvals" className="underline underline-offset-2">sign it in Approvals</Link></p>
       ) : null}
@@ -144,6 +240,15 @@ export function DeskChat() {
   const { t } = useLang();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
+  // "Open in chat" from a question that was answered puts the original request in the box; the person still presses Enter (nothing is sent on its own).
+  useEffect(() => {
+    let wanted: string | null = null;
+    try { wanted = new URLSearchParams(window.location.search).get("goal"); } catch { /* no window: nothing to prefill */ }
+    if (!wanted) return;
+    const text = wanted.slice(0, 4000);
+    const timer = setTimeout(() => setInput(text), 0);          // after hydration, so the server HTML and the first client render agree
+    return () => clearTimeout(timer);
+  }, []);
   const [mode, setMode] = useState<"agent" | "standard">("agent");
   const [budget, setBudget] = useState(5);
   const [running, setRunning] = useState(false);
@@ -223,6 +328,7 @@ export function DeskChat() {
         return;
       }
       if (ev.type === "start") setNamespace((ev.data as { namespace: string }).namespace);
+      else if (ev.type === "rct7_plan") setEntries((p) => [...p, { kind: "plan", plan: ev.data as PlanData }]);
       else if (ev.type === "step") setEntries((p) => [...p, { kind: "step", step: ev.data as Step }]);
       else if (ev.type === "answer") {
         const text = (ev.data as { text: string | null }).text;
@@ -318,6 +424,7 @@ export function DeskChat() {
             {entries.map((e, i) => (
               <div key={i}>
                 {e.kind === "user" ? <p className="desk-mono text-[14px] text-dl-text"><span className="text-dl-leaf">› </span>{e.text}</p> : null}
+                {e.kind === "plan" ? <PlanView plan={e.plan} /> : null}
                 {e.kind === "step" ? <StepView step={e.step} /> : null}
                 {e.kind === "answer" ? (
                   <div className="flex gap-3">

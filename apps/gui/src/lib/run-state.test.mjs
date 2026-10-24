@@ -48,6 +48,10 @@ test("a step that waits for a signature is a waiting mood, running or finished",
   assert.equal(r.mood, "waiting");
   assert.equal(r.approvalId, "c689e67b86bb");
 });
+test("an episode that stopped to ask the person is a waiting mood", () => {
+  const r = deriveRun([user, summary({ stopped_reason: "needs_clarification", clarification_id: "cb78c18f54ff", clarification_question: "which file?" })], false);
+  assert.equal(r.mood, "waiting");
+});
 test("CORD stopping the request blocks GUARD and the mood", () => {
   const r = deriveRun([user, summary({ stopped_reason: "goal_blocked", guard: { cord_verdict: "rejected", cord_findings: [{ pattern_id: "CORD-I001" }] } })], false);
   assert.equal(r.mood, "blocked");
@@ -70,5 +74,14 @@ test("with several goals in one chat the Inspector shows the current run only", 
   assert.deepEqual(r.gates, [{ tool: "delentia_write_repo_file", verdict: "waiting" }]);
   assert.equal(r.mood, "waiting");
   assert.equal(r.verification.state, "unknown");           // the first run's verification is not carried over
+});
+test("a plan that arrived before the first tool is shown as such, and the THINK step says where it was shown", () => {
+  const planEntry = { kind: "plan", plan: { steps: ["Observe", "Analyze", "Reverse"], route: { path: "fast" } } };
+  const running = deriveRun([user, planEntry], true);
+  assert.deepEqual(running.plan, ["Observe", "Analyze", "Reverse"]);
+  assert.equal(running.cycle.find((c) => c.name === "THINK").status, "done");
+  assert.match(running.cycle.find((c) => c.name === "THINK").note, /shown before the first tool/);
+  const none = deriveRun([user, tool("x"), summary()], false);
+  assert.equal(none.plan, null);                                   // no plan event: nothing is claimed
 });
 console.log(`${n} tests passed`);
