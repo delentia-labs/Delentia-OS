@@ -145,3 +145,16 @@ the hypothesis "tell the judge what the agent can look up and what the chat alre
 * The Architect's notes on M and `?` items describe a standard above "meets the request" (names and roles in a greeting, more options for a broad question, reasons, a follow-up question to the user, answering in both
   numeral and words). The critic does not look for that and none of it is scored; it is read as a description of what he wants an answer to contain.
 * Together with set 1 (judge): for qwen3:8b both rules are missed by one case on small samples (n = 8 and 25), with wide intervals; neither run supports "validated" and neither supports "useless".
+
+## H3. Set 3 (two axes plus the context the agent has) and the context-aware judge — FROZEN 2026-10-24, before the Architect has labelled a single item
+* Sheet: `RCT7_HOLDOUT_3_TWO_AXES_SHEET_FOR_THE_ARCHITECT.md` (60 requests; 16 sentences twice, without and with context; `research/holdout3_sheet_r99.py` builds it, the pairs are in `RCT7_HOLDOUT_3_PAIRS_SIDECAR.json`).
+  Q = ask for missing information first? C = show a plan and wait for a human confirmation first? Y / N / ? on each.
+* **The context-aware judge prompt is fixed now:** `rct_control_plane/rct7_judge.SYSTEM_REQUEST_CTX`, version hash **5dbf3fa34125**; the original judge prompt version stays **8292fc3416cc**. A test pins both hashes.
+  A change to the context prompt after this point is a new version and a new registered run, never a retry. The cite guard is unchanged (the question's `about` must occur in the REQUEST).
+* **Registered runs after sealing (qwen3:8b and qwen2.5:7b, thinking off, one run each per variant):** `plain` (sentence only) and `context` (sentence + context line), both scored on axis Q with the rule
+  found >= 0.80 and false stops <= 0.15 (Y plays "should ask", N plays "may go ahead", ? is not scored). `python -m research.rct7_holdout_twoaxis seal|run|report`.
+* **The context hypothesis, registered:** the context judge is better than the plain one for a model if its false stops are lower by at least 2 items and its found count is lower by at most 1.
+  If that does not hold, the hypothesis that giving the judge the context helps is not supported on this set, and nothing is wired into the loop.
+* **A second, descriptive reading of the pairs (about the Architect, not about a model):** for each of the 16 sentences, whether his Q on the with-context row differs from his Q on the no-context row. Expected: where the
+  context supplies the missing piece, Y becomes N. Reported as counts; no threshold.
+* The C axis is counted and kept for the owner-calibration plan (`DELENTIA_ROUND99_PLAN_...md`); no judge answers it yet.
