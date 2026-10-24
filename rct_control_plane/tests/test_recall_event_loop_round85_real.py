@@ -51,6 +51,9 @@ def test_a_slow_embedding_call_does_not_freeze_the_event_loop(memory, monkeypatc
     monkeypatch.setattr(memory_embeddings, "enabled", lambda: True)
     monkeypatch.setattr(memory_embeddings, "similarities", slow)
 
+    # Warm the code path first: the first call on a cold CI worker imports and compiles on the loop (0.7 s was seen on Python 3.12 in CI), which is not the embedding call.
+    asyncio.run(memory.recall_scored("what is the price", limit=3))
+
     async def go():
         return await _longest_gap_while(memory.recall_scored("what is the price", limit=3))
     results, longest = asyncio.run(go())
