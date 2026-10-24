@@ -126,3 +126,13 @@ under-specified ("Delete the duplicate entries": which entries?). The recall pro
 60 Make the logo bigger) are all requests for which the Architect's note says the missing piece comes from context or can be looked up (a pending request exists, research it, the latest version is known, a logo exists).
 The judge sees only the sentence (as the sheet told the labeller to assume); the Architect's notes show that in real use the agent has context. No prompt is changed because of this run (a second look is refused);
 the hypothesis "tell the judge what the agent can look up and what the chat already holds" needs a NEW sealed set with the context written next to each request.
+
+## H2. The Architect's holdout, set 2 (R7: 40 request/answer pairs; sealed 2026-10-24 18:44, labels hash 471ac6879a23...; added BEFORE the first model run)
+* **Primary, as registered:** the critic's `found` over the 8 pairs labelled N (the answer does not meet the request: 3, 6, 10, 21, 23, 27, 32, 35) and `false stops` over the 24 labelled M; rule found >= 0.80
+  (at least 7 of 8) and false stops <= 0.15 (at most 3 of 24). The 8 pairs labelled `?` (4, 9, 13, 17, 20, 28, 30, 34) are not scored. One run per model (qwen3:8b, qwen2.5:7b; thinking off); the runner now keeps
+  per-item verdicts, so no repeat is needed.
+* **Expectation written before the run:** the eight N are plain factual or completeness failures (90 minutes for 2 hours, 4/5 bigger, 28 for 20-8, Sydney, "Childs", coal as renewable, one language
+  and no use each, an advantage without the disadvantage), so a critic that reads the request should find most of them; the risk is on the M side: the Architect's notes show a standard of answer that goes
+  beyond "meets the request" (names and roles in a greeting, more options for a broad question, reasons, a follow-up question to the user) and a critic that applies it will stop M answers.
+  Two planted wrong answers were left unscored by him (13 gold is "Go", 17 hexagon not answered); a critic that stops them is not penalised and not credited.
+* The notes on the `?` and M items are kept verbatim in `RCT7_HOLDOUT_2_ARCHITECT_LABELS_AND_NOTES_2026-10-24.md`; they are read afterwards as a description of what the Architect wants an answer to contain, not scored.
