@@ -90,3 +90,17 @@ The Thai trigram test was first applied twice: the answer's phrases against the 
   rejected phrases are Thai glue words the model adds when it explains English evidence in Thai (เท่ากับ, ได้แก่, ชั่วโมง, เก็บไว้, สองที่อยู่ใน); no evidence can contain them.
 * **Decision:** the claim-versus-quote test is removed (every invented fact it flagged was already flagged another way); the gap check, which compares Thai with Thai, stays. The fresh set
   is now seen and counts as development data for any further change.
+
+### T.3 Final Thai numbers (after the change in T.2; thinking off, one run each, DEV, not a claim; files in `research/results_round99/`)
+| | qwen3:8b | qwen2.5:7b | llama3.2:3b |
+|---|---|---|---|
+| judge: found / false pauses (Thai) | 20/20 / 0 of 21 | 16/20 / 0 of 21 | 14/20 / **6 of 21** |
+| judge: English (round 98) | 20/20 / 0 | 18/20 / 0 | 10/20 / 2 |
+| critic: found / false stops (Thai) | 19/20 / 0 of 19 | 20/20 / 1 of 19 | 17/20 / **9 of 19** |
+| critic: English (round 98) | 17/20 / 0 | 19/20 / 1 | 17/20 / 4 |
+| chain, 10 dev episodes: faithful claims verified; invented facts reported | 10/10; 5/5 | 8/10; 4/5 | 3/6; 5/5 |
+| chain, 6 fresh episodes: faithful claims verified; invented facts reported | 6/6; 3/3 | 6/7; 3/3 | 4/5; 3/3 |
+| faithful episodes with a gap (dev / fresh) | 0 / 0 | 0 / 0 | 1 / 3 |
+Reading, by the rule of T: for the two 7-8B models Thai is not worse than English except qwen2.5:7b's judge (16/20 = 0.80, exactly at the rule and 2 below its English run). For llama3.2:3b Thai
+false pauses are 0.29 and false stops 0.47, far over 0.15: **the documents say that the model-assisted parts are not validated for Thai with a 3B model** (they were already advised against
+for 3B in English). The cite guard changes at most one case per model (no price in Thai measured). Nothing is switched on by any of this (all opt-in), and the cases are the author's.
