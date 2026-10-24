@@ -414,6 +414,35 @@ def verify_claims(claims: Any, steps: Optional[List[Dict[str, Any]]], request: s
     return out
 
 
+# Round 99 (found by the first Thai run: an invented Thai phrase was never reported, because every word test above reads [A-Za-z]{4,}). Thai has no word boundaries a regex can use, so a Thai
+# phrase (a run of 4 or more Thai characters between spaces and punctuation) is checked by its character trigrams. Used ONLY by the gap check below: the answer's phrases against the
+# model's own listed claims (Thai against Thai). It is NOT used to compare a claim with its quote: tried first, it rejected faithful claims because a Thai answer about English evidence
+# is full of Thai glue words the evidence cannot contain ("equals", "namely", "hour", "keep"): 4 of 10 and 3 of 6 faithful claims were rejected (research/rct7_round98_criteria.md T.2).
+_THAI_RUN = re.compile(r"[฀-๿]{4,}")
+THAI_GAP_MIN_COVERAGE = 0.5         # a phrase of the answer: at least this share of its trigrams must occur in the listed claims
+_THAI_MIN_PHRASE = 6                # shorter runs are too small to judge by trigrams
+
+
+def _thai_trigrams(text: str) -> set:
+    grams: set = set()
+    for run in _THAI_RUN.findall(text or ""):
+        for index in range(len(run) - 2):
+            grams.add(run[index:index + 3])
+    return grams
+
+
+def _thai_phrases_missing(text: str, known: set, minimum: float) -> List[str]:
+    """The Thai phrases of `text` whose trigrams are mostly absent from `known` (the evidence the phrase has to come from)."""
+    missing: List[str] = []
+    for run in _THAI_RUN.findall(text or ""):
+        if len(run) < _THAI_MIN_PHRASE:
+            continue
+        grams = [run[index:index + 3] for index in range(len(run) - 2)]
+        if sum(1 for g in grams if g in known) / len(grams) < minimum:
+            missing.append(run[:80])
+    return missing
+
+
 _CLAUSE = re.compile(r"[^.;!?\n,]{1,300}")
 
 
@@ -425,13 +454,17 @@ def coverage_gaps(answer: str, claims: Any) -> List[str]:
     for c in (claims if isinstance(claims, list) else []):
         if isinstance(c, dict):
             claim_words.update(w.casefold() for w in _WORD.findall(str(c.get("claim") or "")))
+    claim_grams: set = set()
+    for c in (claims if isinstance(claims, list) else []):
+        if isinstance(c, dict):
+            claim_grams |= _thai_trigrams(_norm(str(c.get("claim") or "")))
     gaps: List[str] = []
     for match in _CLAUSE.finditer(answer or ""):
         clause = match.group(0).strip()
         words = [w.casefold() for w in _WORD.findall(clause) if w.casefold() not in _STOP]
-        if not words:
-            continue
-        if sum(1 for w in words if w in claim_words) / len(words) < 0.5:
+        if words and sum(1 for w in words if w in claim_words) / len(words) < 0.5:
+            gaps.append(clause[:160])
+        elif _thai_phrases_missing(_norm(clause), claim_grams, THAI_GAP_MIN_COVERAGE):
             gaps.append(clause[:160])
     return gaps[:8]
 

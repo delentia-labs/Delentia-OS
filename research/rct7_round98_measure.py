@@ -39,14 +39,16 @@ SET = {"lang": "en"}
 
 
 def _REQUESTS():
-    return cases_th.CASES if SET["lang"] == "th" else request_cases.CASES
+    return cases_th.CASES if SET["lang"].startswith("th") else request_cases.CASES
 
 
 def _CRITIC():
-    return cases_th.CRITIC if SET["lang"] == "th" else cases.CRITIC
+    return cases_th.CRITIC if SET["lang"].startswith("th") else cases.CRITIC
 
 
 def _EPISODES():
+    if SET["lang"] == "th-fresh":
+        return cases_th.EPISODES_FRESH
     return cases_th.EPISODES if SET["lang"] == "th" else cases.EPISODES
 
 
@@ -122,12 +124,12 @@ async def measure_chain(rec: Recorder) -> Dict[str, Any]:
                 invented_flagged_by_gap += int(gap)
             elif any(c["status"] != "verified" for c in hit):
                 invented_flagged += 1
-        rows.append({"episode": name, "error": result.get("error"), "statuses": [c["status"] for c in claims], "gaps": result.get("gaps", []), "seconds": rec.seconds})
+        rows.append({"episode": name, "faithful": invented is None, "error": result.get("error"), "statuses": [c["status"] for c in claims], "claims": [{"claim": c["claim"], "status": c["status"], "unsupported": c.get("unsupported")} for c in claims], "gaps": result.get("gaps", []), "seconds": rec.seconds})
     return {"episodes": len(rows), "faithful_claims": faithful_claims, "faithful_verified": faithful_verified,
             "faithful_verified_rate": round(faithful_verified / faithful_claims, 3) if faithful_claims else None,
             "invented_episodes": invented_total, "invented_flagged": invented_flagged, "invented_omitted_by_the_model": invented_omitted,
             "omitted_but_reported_as_a_gap_by_the_code": invented_flagged_by_gap, "invented_detected_total": invented_flagged + invented_flagged_by_gap,
-            "faithful_gaps": sum(len(r["gaps"]) for r in rows if r["episode"].startswith("F")), "rows": rows}
+            "faithful_gaps": sum(len(r["gaps"]) for r in rows if r["faithful"]), "rows": rows}
 
 
 async def run(model: str, only: str = "") -> Dict[str, Any]:
@@ -147,7 +149,7 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", default="")
     ap.add_argument("--only", default="", choices=("", "judge", "critic", "chain"))
-    ap.add_argument("--lang", default="en", choices=("en", "th"))
+    ap.add_argument("--lang", default="en", choices=("en", "th", "th-fresh"))
     args = ap.parse_args()
     SET["lang"] = args.lang
     result = asyncio.run(run(args.model, args.only))

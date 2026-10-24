@@ -72,3 +72,21 @@ The English dev sets say nothing about the language the Architect actually write
   uses is dropped by the guard; the measurement reports how many Thai unknowns the guard dropped that the same reply would have kept without it (the guard's price in Thai).
 * The chain's verifier compares quotes after whitespace folding; Thai has few spaces, so a model that adds or removes a space inside a Thai quote still fails verification. Reported as
   `quote_not_found` counts on the faithful Thai episodes.
+
+### T.1 First Thai result and the defect it showed (added after the run, 2026-10-24)
+qwen3:8b, thinking off, Thai sets: judge 20/20 found, 0/21 false pauses (cite guard on and off identical); critic 19/20 found, 0/19 false stops; chain: 11/11 claims of the faithful episodes
+verified, but only **3/5 invented facts detected** (the English run: 5/5; the keep rule is >= 4/5). Cause found by reading the code, not by tuning: `verify_claims`' coverage test and
+`coverage_gaps` both read words with `[A-Za-z]{4,}`, so a Thai phrase has no words at all and an invented Thai phrase can never be reported as a gap or as weak support.
+**Change made AFTER seeing this (ADDED_AFTER):** Thai runs (4 or more Thai characters in a row, i.e. one phrase between spaces) are checked by character trigrams, in the claim-versus-quote
+coverage and in the answer-versus-claims gap check. The 10 episodes above are now DEV for this change. Six more were written BEFORE the change (`EPISODES_FRESH`, 3 faithful, 3 invented)
+and are run once with it. **Keep rule for the change:** on the 6 fresh episodes at least 2 of 3 invented facts reported (as an unverified claim or as a gap) and 0 gaps on the 3 faithful ones;
+the English results (cases, 128 chain tests) must not change.
+
+### T.2 What the check did to faithful claims, and what was kept (added after the second run, 2026-10-24)
+The Thai trigram test was first applied twice: the answer's phrases against the listed claims (the gap check) and each claim's phrases against its quote (a new claim status). Second run
+(qwen3:8b), 10 development episodes and the 6 fresh ones:
+* invented facts reported (a model-listed claim without evidence, or a gap): development 5/5 (was 3/5), fresh 3/3 (rule: at least 2 of 3); faithful episodes with a gap: 0 of 8 (rule: 0).
+* **but** the claim-versus-quote test rejected faithful claims: 4 of 10 on the development set and 3 of 6 on the fresh set (the first run verified 11/11), against the keep rule of 80%. The
+  rejected phrases are Thai glue words the model adds when it explains English evidence in Thai (เท่ากับ, ได้แก่, ชั่วโมง, เก็บไว้, สองที่อยู่ใน); no evidence can contain them.
+* **Decision:** the claim-versus-quote test is removed (every invented fact it flagged was already flagged another way); the gap check, which compares Thai with Thai, stays. The fresh set
+  is now seen and counts as development data for any further change.

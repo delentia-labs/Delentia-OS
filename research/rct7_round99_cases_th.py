@@ -120,3 +120,21 @@ EPISODES: List[Tuple[str, str, List[Dict[str, Any]], str, Any]] = [
     ("X5", "ค่าตั้งเป็นอย่างไร", [_read("config.ini", "timeout=30\nretries=5")],
      "timeout เท่ากับ 30 retries เท่ากับ 5 และระดับล็อกเป็น debug", "debug"),
 ]
+
+# ---------------------------------------------------------------------------------------------------------------------- K2: written AFTER the first Thai run and BEFORE the fix it led to
+# The first run showed that the chain's coverage checks read only Latin words ([A-Za-z]{4,}), so an invented Thai phrase was invisible to them. These six were written before the fix was
+# written, so the fix is not tuned on them. (name, request, steps, answer, invented_fact or None)
+EPISODES_FRESH: List[Tuple[str, str, List[Dict[str, Any]], str, Any]] = [
+    ("G1", "บริการนี้ใช้ฐานข้อมูลอะไรและมีกี่ตาราง", [_read("schema.md", "ใช้ SQLite มี 4 ตาราง: users, orders, items, logs")],
+     "บริการนี้ใช้ SQLite และมี 4 ตาราง ได้แก่ users, orders, items และ logs", None),
+    ("G2", "ไฟล์ตั้งค่าบอกอะไรเกี่ยวกับการสำรองข้อมูล", [_read("backup.conf", "interval=24h\nkeep=7")],
+     "สำรองข้อมูลทุก 24 ชั่วโมง และเก็บไว้ 7 ชุด", None),
+    ("G3", "สรุปรายงานเดือนนี้", [_read("report.txt", "ยอดขาย 120 ชิ้น ลูกค้าใหม่ 15 ราย")],
+     "ยอดขายเดือนนี้ 120 ชิ้น และมีลูกค้าใหม่ 15 ราย", None),
+    ("H1", "บริการนี้ใช้ฐานข้อมูลอะไรและมีกี่ตาราง", [_read("schema.md", "ใช้ SQLite มี 4 ตาราง: users, orders, items, logs")],
+     "บริการนี้ใช้ SQLite และมี 4 ตาราง และทุกตารางถูกเข้ารหัสด้วย AES", "เข้ารหัสด้วย AES"),
+    ("H2", "ไฟล์ตั้งค่าบอกอะไรเกี่ยวกับการสำรองข้อมูล", [_read("backup.conf", "interval=24h\nkeep=7")],
+     "สำรองข้อมูลทุก 24 ชั่วโมง เก็บไว้ 7 ชุด และส่งสำเนาไปยังคลาวด์ทุกคืน", "ส่งสำเนาไปยังคลาวด์"),
+    ("H3", "สรุปรายงานเดือนนี้", [_read("report.txt", "ยอดขาย 120 ชิ้น ลูกค้าใหม่ 15 ราย")],
+     "ยอดขายเดือนนี้ 120 ชิ้น มีลูกค้าใหม่ 15 ราย เพิ่มขึ้นจากเดือนก่อนอย่างมาก", "เพิ่มขึ้นจากเดือนก่อน"),
+]
