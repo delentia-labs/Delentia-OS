@@ -63,7 +63,7 @@ def test_all_three_arms_run_on_the_holdout_goals_and_count_what_the_model_saw(to
     assert set(result) == set(mtc.ARMS) and all(r["of"] == len(DATA["holdout"]) for r in result.values())
     assert result["ranked"]["median_menu_tools"] < result["default"]["median_menu_tools"]
     assert result["ranked+compact"]["median_menu_tools"] == result["ranked"]["median_menu_tools"]
-    assert os.environ.get(tool_menu.FORMAT_ENV) is None
+    assert os.environ.get(tool_menu.FORMAT_ENV) == "full"          # the conftest value, restored: the measurement leaves the environment as it found it
 
 
 def test_a_model_that_loses_the_end_of_a_long_menu_does_better_with_the_ranked_one_and_the_adoption_rule_says_so(tools):
