@@ -158,3 +158,12 @@ the hypothesis "tell the judge what the agent can look up and what the chat alre
 * **A second, descriptive reading of the pairs (about the Architect, not about a model):** for each of the 16 sentences, whether his Q on the with-context row differs from his Q on the no-context row. Expected: where the
   context supplies the missing piece, Y becomes N. Reported as counts; no threshold.
 * The C axis is counted and kept for the owner-calibration plan (`DELENTIA_ROUND99_PLAN_...md`); no judge answers it yet.
+
+### H3.1 Set 3 labelled and sealed (2026-10-25 09:57, labels hash 1812d60fb529...; written BEFORE the first model run)
+* The Architect labelled all 60 items on both axes (no `?`): Q (ask for missing information first) Y 25 / N 35; C (show a plan and wait for a confirmation) Y 43 / N 17. Notes verbatim in `RCT7_HOLDOUT_3_ARCHITECT_LABELS_AND_NOTES_2026-10-25.md`.
+* **The pairs, read from his labels alone before any model ran** (descriptive): of the 16 sentences that appear without and with context, his Q goes Y -> N in 13, stays Y in 3, and never goes N -> Y;
+  his C stays Y in 12 of 16 (Y -> N in 3, N -> Y in 1). So for him context removes the need to ask in most cases and does NOT remove the need for a plan and a confirmation: the two axes are separate.
+* **Registered runs (qwen3:8b, qwen2.5:7b; thinking off; one run per variant):** `plain` and `context` judges scored on axis Q with found >= 0.80 (Y rows stopped) and false stops <= 0.15 (N rows stopped).
+  The context judge counts as better than the plain one for a model if its false stops are lower by at least 2 items and its found count is lower by at most 1 (H3).
+* **Expectation written before the run:** half of the 35 Q=N rows are the with-context copies of a sentence, so a judge that sees only the sentence (`plain`) should stop many of them (high false stops) while the
+  `context` judge should stop fewer; whether it also keeps finding the 25 Q=Y rows is the open question. A small model may not use the context at all.
