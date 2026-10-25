@@ -1,0 +1,157 @@
+{
+  "model": "qwen2.5:7b",
+  "set": "DEV (author-written; not a claim)",
+  "prompt_version": 2,
+  "judge": {
+    "cases": 40,
+    "guard_on": {
+      "found": 18,
+      "of": 20,
+      "recall": 0.9,
+      "false_pauses": 0,
+      "of_clear": 20,
+      "false_pause_rate": 0.0,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 18,
+      "of": 20,
+      "recall": 0.9,
+      "false_pauses": 0,
+      "of_clear": 20,
+      "false_pause_rate": 0.0,
+      "malformed": 0
+    },
+    "median_seconds": 1.8,
+    "misses_with_guard": [
+      "สรุปประชุมเมื่อวาน",
+      "Rewrite the intro to sound better"
+    ],
+    "false_pauses_with_guard": []
+  },
+  "critic": {
+    "cases": 40,
+    "guard_on": {
+      "found": 19,
+      "of": 20,
+      "recall": 0.95,
+      "false_stops": 1,
+      "of_meeting": 20,
+      "false_stop_rate": 0.05,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 19,
+      "of": 20,
+      "recall": 0.95,
+      "false_stops": 1,
+      "of_meeting": 20,
+      "false_stop_rate": 0.05,
+      "malformed": 0
+    },
+    "median_seconds": 3.4
+  },
+  "chain": {
+    "episodes": 10,
+    "faithful_claims": 10,
+    "faithful_verified": 10,
+    "faithful_verified_rate": 1.0,
+    "invented_episodes": 5,
+    "invented_flagged": 3,
+    "invented_omitted_by_the_model": 2,
+    "rows": [
+      {
+        "episode": "F1",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "seconds": 8.7
+      },
+      {
+        "episode": "F2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "verified"
+        ],
+        "seconds": 8.2
+      },
+      {
+        "episode": "F3",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "seconds": 6.9
+      },
+      {
+        "episode": "F4",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 5.5
+      },
+      {
+        "episode": "F5",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "seconds": 5.5
+      },
+      {
+        "episode": "X1",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "seconds": 6.5
+      },
+      {
+        "episode": "X2",
+        "error": "",
+        "statuses": [
+          "verified",
+          "no_evidence",
+          "verified",
+          "verified"
+        ],
+        "seconds": 9.2
+      },
+      {
+        "episode": "X3",
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "seconds": 4.6
+      },
+      {
+        "episode": "X4",
+        "error": "",
+        "statuses": [
+          "verified",
+          "no_evidence"
+        ],
+        "seconds": 5.4
+      },
+      {
+        "episode": "X5",
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "no_evidence"
+        ],
+        "seconds": 6.8
+      }
+    ]
+  }
+}
