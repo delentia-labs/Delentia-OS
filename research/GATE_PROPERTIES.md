@@ -198,7 +198,7 @@ A rule pinned by a person or the owner is shown to every episode of that person 
 With `plan_first` listing a kind (delete, outward, money, permissions, publish, restore/cancel, move/shut down, document edit), an action of that kind is recorded as a numbered step and NOT run; the episode waits as ONE pending plan whose digest binds the steps, the policy and the workspace; one approver signature runs exactly the recorded steps, in order, byte for byte, each judged again by the rules no signature can lift; a plan edited after it was made, an unsigned plan, a changed policy or a failing step runs nothing beyond the problem; a denied path is a refusal, not a step; a small edit of a file the request names runs without a signature only when the owner's signed policy says so and nothing was read from outside, a checkpoint exists and the path is not denied; with the feature off nothing changes.
 
 - **Assumes:** The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).
-- **Not covered:** A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; chat channels get the question, not the plan, before the first tool.
+- **Not covered:** A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; a chat channel is shown the plan only when the episode ends (it gets no plan before the first tool), and signing is never done from a chat.
 - **Pinned by:**
   - `test_plan_approval_loop_round101_real.py::test_effects_of_a_planned_kind_become_one_pending_plan_and_nothing_effectful_runs`
   - `test_plan_approval_loop_round101_real.py::test_one_signature_runs_the_steps_exactly_once_in_order`
@@ -216,6 +216,9 @@ With `plan_first` listing a kind (delete, outward, money, permissions, publish, 
   - `test_plan_approval_loop_round101_real.py::test_after_reading_outside_text_the_edit_asks_again`
   - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_not_lifted_by_the_flag`
   - `test_plan_approval_loop_round101_real.py::test_no_checkpoint_no_autorun`
+  - `test_plan_approval_loop_round101_real.py::test_the_notary_records_each_step_before_it_runs_and_its_result_after`
+  - `test_plan_approval_loop_round101_real.py::test_a_notary_that_cannot_record_a_step_stops_the_run_at_that_step`
+  - `test_plan_approval_loop_round101_real.py::test_a_chat_channel_is_shown_the_plan_the_id_and_that_nothing_ran`
   - `test_plan_approval_round101_real.py::test_any_change_to_the_plan_breaks_its_digest`
 
 ## Threats (Protocol section 12)

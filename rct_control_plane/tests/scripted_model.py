@@ -82,6 +82,18 @@ def competent(req: Request) -> str:
     return _finish("None of the available tools can do that, so I am not going to guess.")
 
 
+def planner(req: Request) -> str:
+    """Round 101: asks, one after the other, for every `write a note to <path>` named in the goal, the way a model would when a plan is being built; each proposed step shows up in the
+    history as `plan_step`. When the steps are done it says what the plan contains. After a person confirmed the plan it only reports."""
+    paths = re.findall(r"write a note to ([\w./\\-]+\.\w+)", req.goal, flags=re.I)
+    if req.resumed or "A human confirmed the plan" in req.prompt:
+        return _finish("The confirmed plan was carried out.")
+    done = req.prompt.count("plan_step")
+    if done < len(paths):
+        return _call("delentia_write_repo_file", {"relative_path": paths[done], "content_text": f"note {done + 1}: written after the plan was confirmed\n"}, "a step of the plan")
+    return _finish(f"My plan has {len(paths)} step(s): " + ", ".join(paths) + ". Nothing has run yet; it waits for your confirmation.")
+
+
 def spawner(req: Request) -> str:
     """Splits 'A; B; C' goals into parallel subagents, then reports what came back."""
     goal = req.goal

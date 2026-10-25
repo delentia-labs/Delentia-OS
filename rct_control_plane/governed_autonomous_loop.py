@@ -2931,6 +2931,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 halted = f"step {step.get('n')}: the agent is paused"
             if halted:
                 break
+            from rct_control_plane.notary import NotaryUnavailable
+            try:
+                # Like a single tool call: the record of what is about to run comes first, and a notary that cannot be reached stops the run here (nothing from this step on runs).
+                await self._notarise("plan_step", approval_id=getattr(action, "approval_id", ""), step=step.get("n"), tool_name=step.get("tool"), args_sha256=_sha(args))
+            except NotaryUnavailable as exc:
+                halted = f"step {step.get('n')}: the notary cannot be reached ({exc}); this step and the ones after it did not run"
+                break
             A, a_reason, outcome = await self._execute_approved(str(step.get("tool") or ""), args, action.goal)
             await self._notarise_best_effort("plan_step_result", approval_id=getattr(action, "approval_id", ""), step=step.get("n"), tool_name=step.get("tool"), result_sha256=_sha(outcome))
             failed = A <= 0.0 or (isinstance(outcome, dict) and bool(outcome.get("error") or outcome.get("fdia_blocked") or outcome.get("blocked_reason")))

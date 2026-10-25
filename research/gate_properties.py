@@ -184,9 +184,12 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{PLANLOOP}::test_after_reading_outside_text_the_edit_asks_again",
                f"{PLANLOOP}::test_a_denied_path_is_not_lifted_by_the_flag",
                f"{PLANLOOP}::test_no_checkpoint_no_autorun",
+               f"{PLANLOOP}::test_the_notary_records_each_step_before_it_runs_and_its_result_after",
+               f"{PLANLOOP}::test_a_notary_that_cannot_record_a_step_stops_the_run_at_that_step",
+               f"{PLANLOOP}::test_a_chat_channel_is_shown_the_plan_the_id_and_that_nothing_ran",
                f"{PLANPURE}::test_any_change_to_the_plan_breaks_its_digest"],
      "assumes": "The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).",
-     "not_covered": "A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; chat channels get the question, not the plan, before the first tool."},
+     "not_covered": "A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; a chat channel is shown the plan only when the episode ends (it gets no plan before the first tool), and signing is never done from a chat."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 

@@ -1,0 +1,1710 @@
+{
+  "threshold": 0.5,
+  "requests": 30,
+  "judged_by_gate": 24,
+  "summary": {
+    "cold": {
+      "judged": 24,
+      "stopped": 6
+    },
+    "warm1": {
+      "judged": 24,
+      "stopped": 2
+    },
+    "warm2": {
+      "judged": 24,
+      "stopped": 0
+    }
+  },
+  "rows": [
+    {
+      "id": "g01",
+      "workflow": "W01",
+      "goal": "Fix the failing test in tests/test_app.py by correcting src/app.py",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "DEBUG",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.736,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.816,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.977,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g02",
+      "workflow": "W01",
+      "goal": "Add a docstring to the handler function in src/app.py",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g03",
+      "workflow": "W01",
+      "goal": "Rename the function handler to handle_event in src/app.py",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g04",
+      "workflow": "W01",
+      "goal": "แก้ไฟล์ src/app.py ให้ handler คืนค่า status ด้วย",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g05",
+      "workflow": "W01",
+      "goal": "Run the unit tests with pytest and tell me which fail",
+      "tool": "delentia_run_sandboxed_command",
+      "judged_by_gate": true,
+      "intent_type": "TEST",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.405,
+        "F": 0.37,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "name the file or object the action applies to",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.517,
+        "F": 0.484,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "name the file or object the action applies to",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.767,
+        "F": 0.748,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": [
+          "name the file or object the action applies to"
+        ]
+      }
+    },
+    {
+      "id": "g06",
+      "workflow": "W02",
+      "goal": "Compare the vendor quotes in the quotes folder and write the cheapest option to docs/summary.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g07",
+      "workflow": "W02",
+      "goal": "เปรียบเทียบใบเสนอราคาในโฟลเดอร์ quotes แล้วบันทึกผลลง docs/summary.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "QUERY",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g08",
+      "workflow": "W02",
+      "goal": "Read quotes/q1.txt and quotes/q2.txt and tell me which is cheaper",
+      "tool": "delentia_read_repo_file",
+      "judged_by_gate": false,
+      "intent_type": "QUERY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.736,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.816,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.977,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g09",
+      "workflow": "W03",
+      "goal": "Summarise https://example.com/pricing and save the summary to docs/pricing.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "QUERY",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g10",
+      "workflow": "W03",
+      "goal": "Look up the latest released version of the requests library and write it to docs/versions.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g11",
+      "workflow": "W05",
+      "goal": "Every morning at 8 read docs/notes.md and write a one-line digest to docs/digest.md",
+      "tool": "delentia_cron_create",
+      "judged_by_gate": false,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g12",
+      "workflow": "W05",
+      "goal": "ตั้งเตือนทุกวันจันทร์ 9 โมงให้อ่าน docs/notes.md",
+      "tool": "delentia_cron_create",
+      "judged_by_gate": false,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g13",
+      "workflow": "W06",
+      "goal": "Remember that the staging database is orion-stage",
+      "tool": "delentia_remember",
+      "judged_by_gate": false,
+      "intent_type": "QUERY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.51,
+        "F": 0.668,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.623,
+        "F": 0.752,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.873,
+        "F": 0.921,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g14",
+      "workflow": "W06",
+      "goal": "What is the staging database?",
+      "tool": "delentia_recall",
+      "judged_by_gate": false,
+      "intent_type": "QUERY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.51,
+        "F": 0.668,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.623,
+        "F": 0.752,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.873,
+        "F": 0.921,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.7,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g15",
+      "workflow": "W07",
+      "goal": "Create a new file docs/plan.md with a three-step plan for the release",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.0,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.682,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.932,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g16",
+      "workflow": "W07",
+      "goal": "Continue the release plan in docs/plan.md and tick off step one",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "STRATEGY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.3,
+        "F": 0.486,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "files named in the goal that are not in the workspace: docs/plan.md",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.412,
+        "F": 0.588,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "files named in the goal that are not in the workspace: docs/plan.md",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.662,
+        "F": 0.781,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": [
+          "files named in the goal that are not in the workspace: docs/plan.md"
+        ]
+      }
+    },
+    {
+      "id": "g17",
+      "workflow": "W09",
+      "goal": "Write a status note to docs/status.md saying the service is back",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g18",
+      "workflow": "W10",
+      "goal": "Read inbox/email1.txt and summarise it",
+      "tool": "delentia_read_repo_file",
+      "judged_by_gate": false,
+      "intent_type": "QUERY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.736,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.816,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.977,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g19",
+      "workflow": "W10",
+      "goal": "Read inbox/email1.txt and reply with the delivery date",
+      "tool": "delentia_save_exchange_file",
+      "judged_by_gate": true,
+      "intent_type": "QUERY",
+      "I": 0.6,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.736,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.816,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.977,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g20",
+      "workflow": "W11",
+      "goal": "Export a short report of what you did today to exchange/report.txt",
+      "tool": "delentia_save_exchange_file",
+      "judged_by_gate": true,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.42,
+        "F": 0.385,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.532,
+        "F": 0.5,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.782,
+        "F": 0.763,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g21",
+      "workflow": "W12",
+      "goal": "Do these in parallel: read pyproject.toml, read README.md, search the repository for FDIA",
+      "tool": "delentia_spawn_subagents",
+      "judged_by_gate": true,
+      "intent_type": "QUERY",
+      "I": 0.8,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.664,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.762,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.97,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g22",
+      "workflow": "W01",
+      "goal": "Delete the old file docs/old.md",
+      "tool": "delentia_run_sandboxed_command",
+      "judged_by_gate": true,
+      "intent_type": "TRANSFORM",
+      "I": 1.5,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.465,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.601,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.944,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g23",
+      "workflow": "W01",
+      "goal": "Update the README with install instructions",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "REFACTOR",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.405,
+        "F": 0.37,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "name the file or object the action applies to",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.517,
+        "F": 0.484,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "name the file or object the action applies to",
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.767,
+        "F": 0.748,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.35,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": [
+          "name the file or object the action applies to"
+        ]
+      }
+    },
+    {
+      "id": "g24",
+      "workflow": "W07",
+      "goal": "Create a script scripts/backup.sh that copies docs to backup",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.42,
+        "F": 0.385,
+        "stops": true,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.532,
+        "F": 0.5,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.782,
+        "F": 0.763,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.4,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g25",
+      "workflow": "W02",
+      "goal": "Save the three cheapest quotes to docs/shortlist.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g26",
+      "workflow": "W09",
+      "goal": "Write the error you saw to docs/incident.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.57,
+        "F": 0.539,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.682,
+        "F": 0.657,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.932,
+        "F": 0.926,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.9,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g27",
+      "workflow": "W01",
+      "goal": "Add a unit test for handler to tests/test_app.py",
+      "tool": "delentia_patch_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "TEST",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.6,
+        "F": 0.57,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.713,
+        "F": 0.689,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.963,
+        "F": 0.959,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 1.0,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g28",
+      "workflow": "W08",
+      "goal": "Read docs/notes.md and write the release manager's name to docs/owner.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.585,
+        "F": 0.554,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.698,
+        "F": 0.673,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.948,
+        "F": 0.942,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g29",
+      "workflow": "W04",
+      "goal": "Read inbox/email1.txt and save the sender's request to docs/request.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "QUERY",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.585,
+        "F": 0.554,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.698,
+        "F": 0.673,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.948,
+        "F": 0.942,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "g30",
+      "workflow": "W08",
+      "goal": "บันทึกชื่อผู้จัดการรุ่นจาก docs/notes.md ลงไฟล์ docs/owner.md",
+      "tool": "delentia_write_repo_file",
+      "judged_by_gate": true,
+      "intent_type": "BUILD_APP",
+      "I": 1.1,
+      "clarity": 1.0,
+      "cold": {
+        "D": 0.585,
+        "F": 0.554,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.0
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal",
+          "no verified track record yet for this goal"
+        ]
+      },
+      "warm1": {
+        "D": 0.698,
+        "F": 0.673,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 0.0,
+          "skills": 0.0,
+          "record": 0.75
+        },
+        "missing": [
+          "no stored memory relevant to this goal (store facts about it with delentia_remember)",
+          "no verified past solution for a similar goal"
+        ]
+      },
+      "warm2": {
+        "D": 0.948,
+        "F": 0.942,
+        "stops": false,
+        "parts": {
+          "clarity": 1.0,
+          "grounding": 0.95,
+          "memory": 1.0,
+          "skills": 1.0,
+          "record": 0.75
+        },
+        "missing": []
+      }
+    }
+  ]
+}

@@ -33,6 +33,12 @@ def reply_text_for(result: Dict[str, Any]) -> str:
     answer = result.get("final_answer")
     if result.get("stopped_reason") == "needs_clarification" and result.get("clarification_question"):
         return clarification_reply(result)
+    plan = result.get("plan_approval")
+    if result.get("stopped_reason") == "pending_approval" and isinstance(plan, dict) and plan.get("text"):
+        # Round 101: a plan waits for one confirmation. The person reads the numbered steps; signing is never done from a chat (it happens on the Desk or with `delentia approvals sign`).
+        approval = result.get("approval_id")
+        suffix = f" (id {approval})" if approval else ""
+        return f"{plan['text']}" + chr(10) * 2 + f"Nothing has run. This plan needs your confirmation{suffix}: open Approvals in the Desk, or sign it with delentia approvals sign."
     if answer:
         from rct_control_plane import memory_nudge
         return str(answer) + memory_nudge.nudge_text(result.get("memory_nudge") or [])

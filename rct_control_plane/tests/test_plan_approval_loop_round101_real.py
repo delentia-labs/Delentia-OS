@@ -93,8 +93,8 @@ def approver(tmp_path):
     return str(key)
 
 
-def mk(tmp_path, name, mcp, policy):
-    loop = _loop(tmp_path, name, kernel=_FakeKernel(), mcp=mcp, policy=policy)
+def mk(tmp_path, name, mcp, policy, **kwargs):
+    loop = _loop(tmp_path, name, kernel=_FakeKernel(), mcp=mcp, policy=policy, **kwargs)
     real = loop._assess_data
 
     def assess(goal, clarity, compile_result):
@@ -387,3 +387,77 @@ def test_the_policy_history_names_plan_first_and_autorun_changes_as_loosening():
     on = make_policy(small_edit_autorun=True).to_dict()
     assert any("without a signature" in line for line in hist.loosened(off, on))
     assert not hist.loosened(on, off)
+
+
+# ------------------------------------------------------------------ what a chat channel is told
+def test_a_chat_channel_is_shown_the_plan_the_id_and_that_nothing_ran(tmp_path, decide):
+    from rct_control_plane.gateways.common import reply_text_for
+    decide([CRON, WRITE, FINISH])
+    mcp = Tools()
+    loop = mk(tmp_path, "chat1", mcp, make_policy(plan_first=["delete", "document_edit"]))
+    result = run(loop)
+    text = reply_text_for(result)
+    assert "delentia_cron_delete" in text and "delentia_write_repo_file" in text
+    assert result["approval_id"] in text and "Nothing has run" in text
+    assert mcp.dispatched == []
+
+
+def test_without_a_plan_the_chat_reply_is_what_it_was(tmp_path, decide):
+    from rct_control_plane.gateways.common import reply_text_for
+    decide([CRON, FINISH])
+    result = run(mk(tmp_path, "chat2", Tools(), make_policy()))
+    assert "needs a human approval" in reply_text_for(result)
+
+
+# ------------------------------------------------------------------ each step is recorded by the notary before it runs
+@pytest.fixture
+def notary_server(tmp_path):
+    import threading
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from rct_control_plane import notary
+    key = Ed25519PrivateKey.generate()
+    store = notary.NotaryStore(str(tmp_path / "notary" / "notary.db"), key, "notary-test")
+    server = notary.make_server(store, port=0, token="t101")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+    server.server_close()
+
+
+def test_the_notary_records_each_step_before_it_runs_and_its_result_after(tmp_path, decide, approver, notary_server):
+    from rct_control_plane.notary import NotaryClient
+    decide([CRON, WRITE, FINISH])
+    mcp = Tools()
+    loop = mk(tmp_path, "nt1", mcp, make_policy(plan_first=["delete", "document_edit"]), notary=NotaryClient(notary_server, "t101"))
+    result = run(loop)
+    store = loop._pending_actions()
+    sign(store, store.get(result["approval_id"]), approver)
+    asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
+    kinds = [r["kind"] for r in loop._episode_notary_receipts]
+    tail = kinds[kinds.index("plan_step"):]
+    assert tail[:4] == ["plan_step", "plan_step_result", "plan_step", "plan_step_result"], kinds
+    assert len(mcp.dispatched) == 2
+
+
+def test_a_notary_that_cannot_record_a_step_stops_the_run_at_that_step(tmp_path, decide, approver, notary_server):
+    from rct_control_plane.notary import NotaryClient, NotaryUnavailable
+    decide([CRON, WRITE, FINISH])
+    mcp = Tools()
+    client = NotaryClient(notary_server, "t101")
+    loop = mk(tmp_path, "nt2", mcp, make_policy(plan_first=["delete", "document_edit"]), notary=client)
+    result = run(loop)
+    store = loop._pending_actions()
+    sign(store, store.get(result["approval_id"]), approver)
+    real_append, seen = client.append, {"steps": 0}
+
+    async def flaky(record):
+        if record.get("kind") == "plan_step":
+            seen["steps"] += 1
+            if seen["steps"] == 2:
+                raise NotaryUnavailable("down")
+        return await real_append(record)
+
+    client.append = flaky
+    outcome = asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
+    assert dispatched_names(mcp) == ["delentia_cron_delete"], "the second step must not run when it could not be recorded"
+    assert outcome["executed_result"]["halted"] and "notary" in outcome["executed_result"]["halted"]
