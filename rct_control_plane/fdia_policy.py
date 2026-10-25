@@ -155,10 +155,18 @@ class Policy:
     default_role: str = "developer"
     principals: Dict[str, str] = field(default_factory=dict)
     jury_by_risk: Dict[str, str] = field(default_factory=dict)
+    # Round 101 (the Architect's answers Q1 and Q2 of the plan-approval note). Both are part of the owner's SIGNED policy, so changing them needs the same approver signature as any
+    # policy change, and both are left out of the policy's dictionary (and so of its digest) while they are at their defaults: a policy written before them keeps the digest it had.
+    plan_first: List[str] = field(default_factory=list)          # kinds of action that are PROPOSED as a plan and confirmed once before anything runs (plan_approval.KINDS)
+    small_edit_autorun: bool = False                              # a write/patch of ONE file that the request names, inside the workspace, with a checkpoint to go back to, runs without a signature
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
         data["roles"] = {"default_role": data.pop("default_role"), "principals": data.pop("principals")}
+        if not data.get("plan_first"):
+            data.pop("plan_first", None)
+        if not data.get("small_edit_autorun"):
+            data.pop("small_edit_autorun", None)
         return data
 
     def digest(self) -> str:
@@ -458,7 +466,25 @@ def validate_policy(data: Any) -> Tuple[Optional[Policy], List[str]]:
                 break
     elif jury_by_risk_raw:
         errors.append("jury_by_risk must be an object")
+    plan_first: List[str] = []
+    raw_plan_first = data.get("plan_first", [])
+    if isinstance(raw_plan_first, list):
+        from rct_control_plane import plan_approval
+        for kind in raw_plan_first[:20]:
+            if isinstance(kind, str) and kind.strip().lower() in plan_approval.KINDS:
+                if kind.strip().lower() not in plan_first:
+                    plan_first.append(kind.strip().lower())
+            else:
+                errors.append(f"plan_first: {str(kind)[:30]!r} is not one of {', '.join(plan_approval.KINDS)}")
+                break
+    elif raw_plan_first:
+        errors.append("plan_first must be a list of kinds of action")
+    raw_autorun = data.get("small_edit_autorun", False)
+    if not isinstance(raw_autorun, bool):
+        errors.append("small_edit_autorun must be true or false")
+        raw_autorun = False
     policy = Policy(
+        plan_first=plan_first, small_edit_autorun=raw_autorun,
         version=str(data.get("version", "1.0.0"))[:20], policy_id=str(data.get("policy_id", "owner-policy"))[:64],
         policy_name=str(data.get("policy_name", "Owner policy"))[:120],
         default_fallback_A=_number(data.get("default_fallback_A"), "default_fallback_A", errors, 0.0),

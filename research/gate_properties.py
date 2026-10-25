@@ -27,6 +27,8 @@ ERASE = "test_memory_erasure_round67_real.py"
 ERASE2 = "test_erasure_tables_round68_real.py"
 GOALCTX = "test_fdia_goal_context_round68_real.py"
 DEFAULT = "test_default_policy_round69_real.py"
+PLANLOOP = "test_plan_approval_loop_round101_real.py"
+PLANPURE = "test_plan_approval_round101_real.py"
 PINNED = "test_pinned_rules_round70_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
@@ -78,8 +80,9 @@ PROPERTIES: List[Dict[str, object]] = [
                "test_signed_approval_resume_real.py::test_editing_the_db_status_is_not_enough_to_execute"],
      "assumes": "The digest is recomputed at execution from the stored fields.", "not_covered": "Someone who can rewrite both the row and re-sign with a trusted key."},
     {"id": "P6", "name": "Every entrant path uses the gate",
-     "statement": "Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and resume after claim); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.",
+     "statement": "Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and the runner of an approved action that resume reaches only after the claim, for one action or for a confirmed plan); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.",
      "tests": [f"{NEW}::test_p6_only_the_known_choke_points_call_a_tool",
+               f"{NEW}::test_p6_the_approved_action_runner_is_reached_only_from_resume_and_the_plan_runner",
                f"{NEW}::test_p6_a_batch_is_gated_call_by_call_before_any_of_it_runs",
                "test_agent_factory_governance_real.py::test_no_production_module_constructs_a_plain_autonomous_loop",
                "test_person_scope_round61_real.py::test_every_exposed_tool_has_a_person_scope",
@@ -160,6 +163,30 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{PINNED}::test_the_log_replays_to_the_table_including_pins_after_a_random_workload"],
      "assumes": "The person (or owner) chose what to pin; a pinned rule is advice to the model in its prompt, it is never a permission: the approval, the policy and the taint gates still decide every call.",
      "not_covered": "A model can ignore a rule it is shown (nothing here measures obedience); more than 8 pinned rules (the default since Round 87; it was 5): only the newest 8 are shown, and the prompt says how many are not; a rule that is not pinned relies on similarity search (29 of 40 shown in the Round 70 measurement)."},
+    {"id": "P15", "name": "An action of a kind the owner wants planned does nothing until the person confirms the whole plan once",
+     "statement": "With `plan_first` listing a kind (delete, outward, money, permissions, publish, restore/cancel, move/shut down, document edit), an action of that kind is recorded as a numbered step and NOT run; the episode waits as ONE pending plan whose digest "
+                  "binds the steps, the policy and the workspace; one approver signature runs exactly the recorded steps, in order, byte for byte, each judged again by the rules no signature can lift; a plan edited after it was made, an unsigned plan, "
+                  "a changed policy or a failing step runs nothing beyond the problem; a denied path is a refusal, not a step; a small edit of a file the request names runs without a signature only when the owner's signed policy says so and nothing was read from outside, "
+                  "a checkpoint exists and the path is not denied; with the feature off nothing changes.",
+     "tests": [f"{PLANLOOP}::test_effects_of_a_planned_kind_become_one_pending_plan_and_nothing_effectful_runs",
+               f"{PLANLOOP}::test_one_signature_runs_the_steps_exactly_once_in_order",
+               f"{PLANLOOP}::test_resume_without_a_signature_runs_nothing",
+               f"{PLANLOOP}::test_a_plan_edited_in_the_database_is_refused",
+               f"{PLANLOOP}::test_a_plan_whose_digest_does_not_match_its_content_runs_nothing",
+               f"{PLANLOOP}::test_changing_the_policy_after_the_plan_was_made_stops_the_resume",
+               f"{PLANLOOP}::test_the_first_failing_step_ends_the_run_and_later_steps_do_not_run",
+               f"{PLANLOOP}::test_a_denied_path_is_a_refusal_not_a_plan_step",
+               f"{PLANLOOP}::test_without_plan_first_the_first_effect_stops_for_its_own_signature_as_before",
+               f"{PLANLOOP}::test_an_effect_inside_a_batch_is_refused_and_nothing_in_the_batch_runs",
+               f"{PLANLOOP}::test_no_effect_of_a_planned_kind_is_dispatched_before_the_confirmation",
+               f"{PLANLOOP}::test_mutation_if_the_interception_is_defeated_the_invariant_test_would_fail",
+               f"{PLANLOOP}::test_a_small_edit_of_the_named_file_runs_without_a_signature_when_the_policy_says_so",
+               f"{PLANLOOP}::test_after_reading_outside_text_the_edit_asks_again",
+               f"{PLANLOOP}::test_a_denied_path_is_not_lifted_by_the_flag",
+               f"{PLANLOOP}::test_no_checkpoint_no_autorun",
+               f"{PLANPURE}::test_any_change_to_the_plan_breaks_its_digest"],
+     "assumes": "The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).",
+     "not_covered": "A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; chat channels get the question, not the plan, before the first tool."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 

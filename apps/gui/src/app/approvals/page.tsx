@@ -14,6 +14,52 @@ function statusTone(s: string) {
   return "muted" as const;
 }
 
+const KIND_LABEL: Record<string, { en: string; th: string }> = {
+  delete: { en: "delete", th: "ลบ" },
+  outward: { en: "send out", th: "ส่งออกนอก" },
+  money: { en: "move money", th: "เงิน" },
+  permissions: { en: "change permissions or users", th: "สิทธิ์/ผู้ใช้" },
+  publish: { en: "publish or deploy", th: "เผยแพร่" },
+  restore_cancel: { en: "cancel, restore or roll back", th: "ยกเลิก/กู้คืน/ย้อนกลับ" },
+  move_shutdown: { en: "move or shut down", th: "ย้าย/ปิดระบบ" },
+  document_edit: { en: "edit documents", th: "แก้เอกสาร" },
+};
+
+type PlanStep = { n: number; tool: string; kind: string; why?: string; args?: Record<string, unknown> };
+
+function shortArgs(args: Record<string, unknown> | undefined): string {
+  if (!args) return "";
+  const text = JSON.stringify(args);
+  return text.length > 140 ? `${text.slice(0, 140)}…` : text;
+}
+
+// A plan is shown as the numbered steps it will run, in order, with the kind of each: confirming it once runs exactly these.
+function PlanSteps({ a, lang }: { a: PendingAction; lang: "th" | "en" }) {
+  const plan = (a.tool_args as { plan?: { steps?: PlanStep[]; counts?: Record<string, number>; digest?: string } }).plan;
+  const steps = plan?.steps ?? [];
+  return (
+    <div className="mt-3 rounded border border-dl-rule bg-dl-ink p-3">
+      <p className="text-[13px] font-medium text-dl-text">
+        {lang === "th" ? `แผนนี้มี ${steps.length} ขั้น — ยืนยันครั้งเดียว แล้วระบบทำตามลำดับนี้เท่านั้น` : `This plan has ${steps.length} step(s). Confirm once and the system runs exactly these, in this order.`}
+      </p>
+      <ol className="mt-2 space-y-2">
+        {steps.map((step) => (
+          <li key={step.n} className="text-[13px] leading-relaxed text-dl-text">
+            <span className="desk-mono text-dl-muted">{step.n}.</span>{" "}
+            <Badge tone={step.kind === "document_edit" ? "muted" : "amber"}>{(KIND_LABEL[step.kind]?.[lang]) ?? step.kind}</Badge>{" "}
+            <span className="desk-mono">{step.tool}</span>
+            <div className="desk-mono ml-5 break-all text-[12px] text-dl-muted">{shortArgs(step.args)}</div>
+            {step.why ? <div className="ml-5 text-[12px] text-dl-muted">{step.why}</div> : null}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-2 text-[12px] text-dl-muted">
+        {lang === "th" ? "ถ้าขั้นใดล้มเหลวหรือถูกกฎปฏิเสธ ขั้นที่เหลือจะไม่ถูกรัน" : "If a step fails or a rule refuses it, the steps after it do not run."}
+      </p>
+    </div>
+  );
+}
+
 function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void }) {
   const { lang } = useLang();
   const [pasted, setPasted] = useState("");
@@ -59,6 +105,7 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
   return (
     <Panel title={`${a.tool_name}`} aside={<Badge tone={statusTone(a.status)}>{a.status}</Badge>}>
       <p className="text-sm text-dl-text">{a.goal}</p>
+      {a.tool_name === "delentia_plan" ? <PlanSteps a={a} lang={lang as "th" | "en"} /> : null}
       <pre className="desk-mono mt-3 max-h-48 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">
         {JSON.stringify(a.tool_args, null, 2)}
       </pre>

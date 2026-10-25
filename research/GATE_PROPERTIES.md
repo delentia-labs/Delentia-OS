@@ -76,12 +76,13 @@ Changing the arguments, goal, tool or namespace of a stored action after it was 
 
 ### P6 - Every entrant path uses the gate
 
-Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and resume after claim); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.
+Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and the runner of an approved action that resume reaches only after the claim, for one action or for a confirmed plan); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.
 
 - **Assumes:** Static check of the two loop modules; an external process that talks to the tool server directly (the raw /mcp gateway) is the owner's route and is covered by the route test.
 - **Not covered:** No model checking of the approval flow as a state machine (Protocol 13 suggests it; not done).
 - **Pinned by:**
   - `test_gate_properties_round65_real.py::test_p6_only_the_known_choke_points_call_a_tool`
+  - `test_gate_properties_round65_real.py::test_p6_the_approved_action_runner_is_reached_only_from_resume_and_the_plan_runner`
   - `test_gate_properties_round65_real.py::test_p6_a_batch_is_gated_call_by_call_before_any_of_it_runs`
   - `test_agent_factory_governance_real.py::test_no_production_module_constructs_a_plain_autonomous_loop`
   - `test_person_scope_round61_real.py::test_every_exposed_tool_has_a_person_scope`
@@ -191,6 +192,31 @@ A rule pinned by a person or the owner is shown to every episode of that person 
   - `test_pinned_rules_round70_real.py::test_erasing_a_person_stops_their_rules_from_being_shown`
   - `test_pinned_rules_round70_real.py::test_pins_follow_the_person_and_not_somebody_else`
   - `test_pinned_rules_round70_real.py::test_the_log_replays_to_the_table_including_pins_after_a_random_workload`
+
+### P15 - An action of a kind the owner wants planned does nothing until the person confirms the whole plan once
+
+With `plan_first` listing a kind (delete, outward, money, permissions, publish, restore/cancel, move/shut down, document edit), an action of that kind is recorded as a numbered step and NOT run; the episode waits as ONE pending plan whose digest binds the steps, the policy and the workspace; one approver signature runs exactly the recorded steps, in order, byte for byte, each judged again by the rules no signature can lift; a plan edited after it was made, an unsigned plan, a changed policy or a failing step runs nothing beyond the problem; a denied path is a refusal, not a step; a small edit of a file the request names runs without a signature only when the owner's signed policy says so and nothing was read from outside, a checkpoint exists and the path is not denied; with the feature off nothing changes.
+
+- **Assumes:** The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).
+- **Not covered:** A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; chat channels get the question, not the plan, before the first tool.
+- **Pinned by:**
+  - `test_plan_approval_loop_round101_real.py::test_effects_of_a_planned_kind_become_one_pending_plan_and_nothing_effectful_runs`
+  - `test_plan_approval_loop_round101_real.py::test_one_signature_runs_the_steps_exactly_once_in_order`
+  - `test_plan_approval_loop_round101_real.py::test_resume_without_a_signature_runs_nothing`
+  - `test_plan_approval_loop_round101_real.py::test_a_plan_edited_in_the_database_is_refused`
+  - `test_plan_approval_loop_round101_real.py::test_a_plan_whose_digest_does_not_match_its_content_runs_nothing`
+  - `test_plan_approval_loop_round101_real.py::test_changing_the_policy_after_the_plan_was_made_stops_the_resume`
+  - `test_plan_approval_loop_round101_real.py::test_the_first_failing_step_ends_the_run_and_later_steps_do_not_run`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_a_refusal_not_a_plan_step`
+  - `test_plan_approval_loop_round101_real.py::test_without_plan_first_the_first_effect_stops_for_its_own_signature_as_before`
+  - `test_plan_approval_loop_round101_real.py::test_an_effect_inside_a_batch_is_refused_and_nothing_in_the_batch_runs`
+  - `test_plan_approval_loop_round101_real.py::test_no_effect_of_a_planned_kind_is_dispatched_before_the_confirmation`
+  - `test_plan_approval_loop_round101_real.py::test_mutation_if_the_interception_is_defeated_the_invariant_test_would_fail`
+  - `test_plan_approval_loop_round101_real.py::test_a_small_edit_of_the_named_file_runs_without_a_signature_when_the_policy_says_so`
+  - `test_plan_approval_loop_round101_real.py::test_after_reading_outside_text_the_edit_asks_again`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_not_lifted_by_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_no_checkpoint_no_autorun`
+  - `test_plan_approval_round101_real.py::test_any_change_to_the_plan_breaks_its_digest`
 
 ## Threats (Protocol section 12)
 

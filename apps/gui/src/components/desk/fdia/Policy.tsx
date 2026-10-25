@@ -15,6 +15,17 @@ export const EMPTY_POLICY: FdiaPolicy = {
   rules: [], blocked_action_patterns: [], require_human_dual_signoff: [], roles: { default_role: "developer", principals: {} }, jury_by_risk: {},
 };
 
+const PLAN_KINDS: { id: string; en: string; th: string }[] = [
+  { id: "delete", en: "delete", th: "ลบ" },
+  { id: "outward", en: "send out", th: "ส่งออกนอก" },
+  { id: "money", en: "move money", th: "เงิน" },
+  { id: "permissions", en: "change permissions or users", th: "สิทธิ์/ผู้ใช้" },
+  { id: "publish", en: "publish or deploy", th: "เผยแพร่" },
+  { id: "restore_cancel", en: "cancel, restore or roll back", th: "ยกเลิก/กู้คืน/ย้อนกลับ" },
+  { id: "move_shutdown", en: "move or shut down", th: "ย้าย/ปิดระบบ" },
+  { id: "document_edit", en: "edit documents", th: "แก้เอกสาร" },
+];
+
 const NEW_RULE: FdiaRule = {
   rule_id: "", intent_patterns: [], action_type: "ALLOW", description: "", assigned_A: 1, require_human_confirmation: false,
   denied_paths: [], allowed_roles: [], human_approver_role: [], required_signatures: 1, jury_tier: "",
@@ -275,6 +286,37 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
           </p>
         </Panel>
       </div>
+
+      <Panel title={T("Confirm as a plan first", "ยืนยันเป็นแผนก่อนลงมือ")}>
+        <p className="mb-2 text-[12px] leading-relaxed text-dl-muted">
+          {T("For the kinds you tick, the agent does not run the action. It lists it as a numbered step of ONE plan, and you confirm the whole plan once; one signature then runs exactly those steps in order, and the rest stop at the first step that fails or is refused. Reading and searching are not affected.",
+             "กับชนิดที่คุณติ๊ก เอเจนต์จะไม่รันการกระทำ แต่จดเป็นขั้นที่ 1, 2, 3 ของแผนเดียว แล้วคุณยืนยันทั้งแผนครั้งเดียว ลายเซ็นเดียวรันเฉพาะขั้นเหล่านั้นตามลำดับ และหยุดที่ขั้นแรกที่ล้มเหลวหรือถูกปฏิเสธ การอ่าน/ค้นหาไม่ได้รับผลกระทบ")}
+        </p>
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          {PLAN_KINDS.map((kind) => {
+            const on = (draft.plan_first ?? []).includes(kind.id);
+            return (
+              <label key={kind.id} className="flex items-center gap-2 text-[13px] text-dl-text">
+                <input type="checkbox" checked={on} aria-label={`Plan first: ${kind.en}`}
+                  onChange={() => { const current = draft.plan_first ?? []; set({ plan_first: on ? current.filter((x) => x !== kind.id) : [...current, kind.id] }); }} />
+                {T(kind.en, kind.th)}
+              </label>
+            );
+          })}
+        </div>
+        <label className="mt-3 flex items-start gap-2 text-[13px] text-dl-text">
+          <input type="checkbox" className="mt-1" checked={!!draft.small_edit_autorun} aria-label="Small edit of a named file runs without a signature"
+            onChange={(e) => set({ small_edit_autorun: e.target.checked })} />
+          <span>
+            {T("A small edit of ONE file that my request names runs without a signature",
+               "แก้ไฟล์เล็กๆ ที่คำขอของฉันระบุชื่อเอง รันได้โดยไม่ต้องเซ็น")}
+            <span className="block text-[12px] text-dl-muted">
+              {T("Only inside the workspace, never a secret file, never after the agent read text from outside, and only while a checkpoint can bring the old content back. Switching this on loosens the gate: the policy history names it, and a host that requires signed policy changes asks for your approver signature when you save.",
+                 "เฉพาะในโฟลเดอร์งาน ไม่ใช่ไฟล์ลับ ไม่ใช่หลังจากเอเจนต์อ่านข้อความจากภายนอก และเฉพาะเมื่อมี checkpoint ย้อนกลับได้ การเปิดข้อนี้ผ่อนกฎ ประวัตินโยบายจะระบุไว้ และโฮสต์ที่บังคับให้เซ็นเมื่อแก้นโยบายจะขอลายเซ็นผู้อนุมัติตอนบันทึก")}
+            </span>
+          </span>
+        </label>
+      </Panel>
 
       <Panel title={T("Approvers you trust", "ผู้อนุมัติที่คุณไว้ใจ")}>
         {state.approvers.length ? (

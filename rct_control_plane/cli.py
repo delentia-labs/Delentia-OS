@@ -2219,6 +2219,32 @@ def approvals_list(status: str, db: Optional[str], output: str) -> None:
         click.echo(f"    digest : {a.action_sha256}")
 
 
+@approvals_group.command("suggest")
+@click.option("--min", "minimum", default=5, show_default=True, type=int, help="How many clean approvals of the same kind before it is mentioned.")
+@click.option("--namespace", default=None, help="Only this person's approvals.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def approvals_suggest(minimum: int, namespace: Optional[str], db: Optional[str], output: str) -> None:
+    """Kinds of action you approved many times without a problem, and the one change that would ask less often. It only suggests: nothing is changed."""
+    from rct_control_plane import approval_suggestions, fdia_policy
+    try:
+        policy = fdia_policy.load_policy()
+    except (OSError, ValueError):
+        policy = None
+    found = approval_suggestions.suggest(_approval_store(db), namespace=namespace, minimum=minimum,
+                                         small_edit_autorun=bool(getattr(policy, "small_edit_autorun", False)))
+    if output == "json":
+        click.echo(json.dumps(found, indent=2, default=str))
+        return
+    if not found:
+        click.echo(f"Nothing to suggest: no kind of action has {minimum} clean approvals and no rejection.")
+        return
+    for item in found:
+        click.echo(f"{item['class']}: approved and run {item['approved_and_executed']} times, never rejected")
+        click.echo("    " + (f"suggestion: set {item['proposal']['change']} = true. {item['proposal']['meaning']}" if item["proposal"] else (item["why_not"] or "already set")))
+    click.echo("This is a suggestion only. A change that loosens the gate needs an approver signature (delentia fdia).")
+
+
 @approvals_group.command("reconcile")
 @click.option("--older-than", "older_than", type=float, default=None, help="Seconds an approved action may stay 'executing' before it is called unknown (default 900).")
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")

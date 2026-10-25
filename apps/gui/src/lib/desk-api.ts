@@ -324,6 +324,10 @@ export interface FdiaPolicy {
   version: string; policy_id: string; policy_name: string; default_fallback_A: number; custom_safety_threshold: number;
   rules: FdiaRule[]; blocked_action_patterns: string[]; require_human_dual_signoff: string[];
   roles: { default_role: string; principals: Record<string, string> }; jury_by_risk: Record<string, string>;
+  /** Round 101: kinds of action confirmed once as a whole plan before anything runs; absent = none. */
+  plan_first?: string[];
+  /** Round 101: an edit of one file the request names runs without a signature (a loosening: named in the policy history). */
+  small_edit_autorun?: boolean;
 }
 export interface FdiaToolInfo { name: string; description: string; built_in: "always a signature" | "FDIA gate" | "open" }
 export interface FdiaState {

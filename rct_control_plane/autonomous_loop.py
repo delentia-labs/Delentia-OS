@@ -738,6 +738,18 @@ class AutonomousLoop:
             # see the arguments that will actually run.
             tool_args = self._scope_tool_args(tool_name, decision.get("tool_args") or {})
 
+            # Round 101: plan-first. An effect of a kind the owner wants confirmed as a PLAN is recorded as a proposal and not run; the episode goes on.
+            proposed = await _maybe_await(self._plan_intercept(goal, tool_name, tool_args, decision.get("reasoning") or ""))
+            if proposed is not None:
+                step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args, tool_result=proposed["tool_result"], llm_reasoning=decision["reasoning"])
+                history.append(step)
+                self._persist_step(step)
+                await _notify(step)
+                if proposed.get("stopped_reason"):
+                    stopped_reason = proposed["stopped_reason"]
+                    break
+                continue
+
             # Round 23 Phase 12 Task 26: real approval-gate for
             # medium-risk sandboxed commands - halt BEFORE dispatch,
             # never execute the command while pending.
@@ -809,6 +821,15 @@ class AutonomousLoop:
             await _maybe_await(on_episode_end(result))
         return result
 
+    def _plan_first_kind(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
+        """Round 101: the kind of action (delete, outward, ...) the owner wants confirmed as a plan, or None. The base loop has no such rule."""
+        return None
+
+    async def _plan_intercept(self, goal: str, tool_name: str, tool_args: Dict[str, Any], reasoning: str = "") -> Optional[Dict[str, Any]]:
+        """Round 101: None = not a planned action (the normal path follows). A dict with a `stopped_reason` ends the episode (a hard refusal); one without it records a proposal and the episode
+        continues. The base loop never proposes."""
+        return None
+
     async def _run_tool_batch(
         self, i: int, goal: str, decision: Dict[str, Any], history: list, available_tools: List[Dict[str, Any]],
         pre_dispatch_gate: Optional[Callable[..., Any]], post_dispatch_transform: Optional[Callable[..., Any]],
@@ -844,6 +865,10 @@ class AutonomousLoop:
         for call in calls:
             args = self._scope_tool_args(call.tool_name, call.tool_args)
             note = f"[batch {call.id}]"
+            if self._plan_first_kind(call.tool_name, args) is not None:
+                # Round 101: a call that changes something and belongs to a kind the owner wants planned is proposed on its own, never inside a batch; nothing in this batch has run.
+                await record(call.tool_name, args, {"plan_refused": "while plans are on, an action that changes something is requested alone, not inside a batch; nothing in this batch was run"}, note)
+                return None
             if call.tool_name == "delentia_run_sandboxed_command":
                 from rct_control_plane.sandbox import classify_command_risk
                 if classify_command_risk(args.get("command", "")) == "needs_approval":

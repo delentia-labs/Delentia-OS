@@ -168,4 +168,9 @@ def loosened(before: Dict[str, Any], after: Dict[str, Any]) -> List[str]:
         out.append("the fallback for an action no rule covers is higher")
     if float(after.get("custom_safety_threshold", 0.5) or 0) < float(before.get("custom_safety_threshold", 0.5) or 0):
         out.append("the safety threshold is lower")
+    # Round 101 (plan-first): fewer kinds confirmed as a plan, or small edits of a named file allowed without a signature, make the gate easier to pass.
+    for kind in sorted(set(before.get("plan_first") or []) - set(after.get("plan_first") or [])):
+        out.append(f"{kind} actions are no longer confirmed as a plan first")
+    if bool(after.get("small_edit_autorun")) and not bool(before.get("small_edit_autorun")):
+        out.append("a small edit of a file the request names now runs without a signature")
     return out
