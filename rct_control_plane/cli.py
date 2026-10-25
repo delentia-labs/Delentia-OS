@@ -2290,6 +2290,33 @@ def approvals_sign(approval_id: str, digest: str, key_path: str, decision: str) 
     click.echo(json.dumps(signed, indent=2))
 
 
+def _describe_action(action: Any) -> str:
+    """What a person must read before signing. A plan is shown as its numbered steps (the first 200 characters of its JSON told nobody anything); a policy change says what it signs."""
+    import re as _re
+    lines = [f"  tool    : {action.tool_name}", f"  asked by: {action.namespace}", f"  goal    : {str(action.goal)[:300]}"]
+    if action.tool_name == "delentia_plan":
+        from rct_control_plane import plan_approval
+        plan = (action.tool_args or {}).get("plan") or {}
+        thai = bool(_re.search(r"[\u0e00-\u0e7f]", str(action.goal)))
+        lines.append("  PLAN (one signature runs exactly these steps, in this order):")
+        lines += ["    " + line for line in plan_approval.render(plan, "th" if thai else "en").splitlines()]
+        lines.append(f"  plan digest: {str(plan.get('digest'))[:16]}...")
+    elif action.tool_name == "fdia_policy_change":
+        lines.append(f"  this signs the owner policy with digest {str((action.tool_args or {}).get('policy_sha256'))[:16]}... ({(action.tool_args or {}).get('rules')} rules). Read it in the Desk (FDIA / Policy) first.")
+    elif action.tool_name == "passkey_enroll":
+        args = action.tool_args or {}
+        lines.append(f"  this lets a device named {args.get('name')!r} approve actions from now on (role: {args.get('role') or 'none'}; limits: {json.dumps(args.get('scope') or {}, ensure_ascii=False) or 'none'}).")
+        lines.append("  Sign it ONLY if you just added that device yourself on your own machine. You can remove it again at any time.")
+    else:
+        lines.append(f"  arguments: {json.dumps(action.tool_args, ensure_ascii=False)[:600]}")
+    lines.append(f"  why it waits: {str(action.reason or '')[:400]}")
+    if action.required_signatures and action.required_signatures > 1:
+        lines.append(f"  needs {action.required_signatures} signatures from distinct keys ({getattr(action, 'signatures_collected', 0)} so far)")
+    if action.approver_roles:
+        lines.append(f"  needs an approver with the role: {' or '.join(action.approver_roles)}")
+    return "\n".join(lines)
+
+
 def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional[str]) -> None:
     from rct_control_plane.approvals import ApprovalError, sign_decision
     store = _approval_store(db)
@@ -2297,7 +2324,8 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
     if action is None:
         click.echo(click.style(f"Error: no pending action {approval_id!r}", fg="red"), err=True)
         sys.exit(1)
-    click.echo(f"{decision.lower()}: {action.tool_name} {json.dumps(action.tool_args)[:200]}")
+    click.echo(f"{decision.lower()}: {approval_id}")
+    click.echo(_describe_action(action))
     try:
         signed = sign_decision(key_path, approval_id, action.action_sha256, decision)
         decided = store.decide(approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
@@ -2305,7 +2333,9 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     click.echo(f"{approval_id} is now {decided.status}")
-    if decided.status == "APPROVED":
+    if decided.status == "APPROVED" and action.tool_name == "passkey_enroll":
+        click.echo("Now open the Desk -> Settings -> Approval devices and press Activate.")
+    elif decided.status == "APPROVED":
         click.echo(f"Resume it with: POST /v1/agent/approvals/{approval_id}/resume")
 
 
@@ -2316,6 +2346,50 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
 def approvals_approve(approval_id: str, key_path: str, db: Optional[str]) -> None:
     """Sign and record approval of one paused action (local DB)."""
     _decide_locally(approval_id, key_path, "APPROVED", db)
+
+
+def _host_database(host_dir: Optional[str]) -> Optional[str]:
+    """The database of the host made by scripts/local_host.py (its folder holds host.json and home/), or None."""
+    base = Path(host_dir).expanduser() if host_dir else Path(os.environ.get("USERPROFILE") or Path.home()) / "delentia-host"
+    candidate = base / "home" / "agentic.db"
+    return str(candidate) if (base / "host.json").exists() and candidate.exists() else None
+
+
+@approvals_group.command("review")
+@click.option("--key", "key_path", envvar="DELENTIA_APPROVER_KEY_FILE", required=True, help="Approver private key (PEM). May be set once in DELENTIA_APPROVER_KEY_FILE.")
+@click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
+@click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
+def approvals_review(key_path: str, host_dir: Optional[str], db: Optional[str]) -> None:
+    """Go through everything that waits for you: read each one in plain words, then approve, reject or skip. Nothing to copy, no id to type. The signing is the same as `approve`."""
+    from rct_control_plane.approvals import ApprovalError, sign_decision
+    # An explicit --db wins; so does an explicit --host-dir; a DELENTIA_HOME set in the environment means "this home", never the host folder by guess; only with none of them is the default host folder looked for.
+    chosen = db or (_host_database(host_dir) if (host_dir or not os.environ.get("DELENTIA_HOME")) else None)
+    store = _approval_store(chosen)
+    click.echo(f"database: {chosen or 'the default (DELENTIA_HOME)'}")
+    waiting = sorted(store.list(status="PENDING", limit=100), key=lambda a: a.created_at)         # oldest first
+    if not waiting:
+        click.echo("Nothing is waiting for you.")
+        return
+    done = {"approved": 0, "rejected": 0, "skipped": 0}
+    for number, action in enumerate(waiting, 1):
+        click.echo("")
+        click.echo(click.style(f"[{number}/{len(waiting)}] {action.approval_id}", bold=True))
+        click.echo(_describe_action(action))
+        answer = click.prompt("approve = a, reject = r, skip = s", type=click.Choice(["a", "r", "s"]), default="s", show_default=True)
+        if answer == "s":
+            done["skipped"] += 1
+            continue
+        decision = "APPROVED" if answer == "a" else "REJECTED"
+        try:
+            signed = sign_decision(key_path, action.approval_id, action.action_sha256, decision)
+            decided = store.decide(action.approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
+        except ApprovalError as exc:
+            click.echo(click.style(f"  not recorded: {exc}", fg="red"))
+            continue
+        done["approved" if decision == "APPROVED" else "rejected"] += 1
+        click.echo(f"  recorded: {decided.status}" + ("  (now press Run the approved action in the Desk, Approvals page)" if decided.status == "APPROVED" else ""))
+    click.echo("")
+    click.echo(f"approved {done['approved']}, rejected {done['rejected']}, skipped {done['skipped']}")
 
 
 @approvals_group.command("reject")

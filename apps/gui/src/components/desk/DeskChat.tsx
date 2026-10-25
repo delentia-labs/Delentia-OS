@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PixelMark } from "./mark";
 import { Inspector } from "./Inspector";
 import { useLang } from "./i18n";
+import { describeReason } from "@/lib/reason-text";
 import { useDeskData } from "./ui";
 import { desk, streamUrl, type SessionSummary } from "@/lib/desk-api";
 import { deriveRun, type Mood, type RunEntry } from "@/lib/run-state";
@@ -155,6 +156,8 @@ function StepView({ step }: { step: Step }) {
 }
 
 function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia; seconds: number }) {
+  const { lang } = useLang();
+  const why = describeReason(summary.stopped_reason, lang);
   const v = summary.verification;
   const parts = [
     summary.stopped_reason,
@@ -171,6 +174,9 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
   ].filter(Boolean);
   return (
     <div className="desk-mono text-[12px] text-dl-muted">
+      {summary.stopped_reason !== "llm_finished" ? (
+        <p className="mb-1 font-sans text-[13px] text-dl-text"><strong>{why.label}</strong>: {why.what} {why.next}</p>
+      ) : null}
       <p>── {parts.join(" · ")}</p>
       {summary.guard?.cord_verdict === "rejected" ? (
         <p className="text-dl-rust">GUARD stopped this request (CORD: {(summary.guard.cord_findings ?? []).map((f) => f.pattern_id).join(", ")})</p>
@@ -237,7 +243,7 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
 }
 
 export function DeskChat() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
   // "Open in chat" from a question that was answered puts the original request in the box; the person still presses Enter (nothing is sent on its own).
@@ -516,7 +522,7 @@ export function DeskChat() {
                 <li key={s.id}>
                   <Link href={`/sessions?id=${s.id}`} className="desk-focus block rounded px-2 py-1.5 hover:bg-dl-pine/40">
                     <p className="truncate text-[12px] text-dl-text">{s.goal ?? s.namespace}</p>
-                    <p className="desk-mono text-[10px] text-dl-muted">{s.stopped_reason} · {s.route ?? "-"}</p>
+                    <p className="desk-mono text-[10px] text-dl-muted">{describeReason(s.stopped_reason, lang).label} · {s.route ?? "-"}</p>
                   </Link>
                 </li>
               ))}

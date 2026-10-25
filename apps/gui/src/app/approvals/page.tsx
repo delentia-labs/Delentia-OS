@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { AnsweredSection, QuestionStatsPanel, QuestionsSection } from "@/components/desk/Questions";
+import { useDeviceProblem } from "@/components/desk/ApprovalDevices";
 import { desk, type PendingAction } from "@/lib/desk-api";
 import { parseSignedDecision } from "@/lib/signed-decision";
+import { ceremonyMessage, getAssertion } from "@/lib/webauthn";
 
 function statusTone(s: string) {
   if (s === "PENDING") return "amber" as const;
@@ -60,8 +62,10 @@ function PlanSteps({ a, lang }: { a: PendingAction; lang: "th" | "en" }) {
   );
 }
 
-function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void }) {
+function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (notice?: string) => void; devices: number }) {
   const { lang } = useLang();
+  const th = lang === "th";
+  const deviceProblem = useDeviceProblem();
   const [pasted, setPasted] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
@@ -83,6 +87,33 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
       onChanged();
     } catch (err) {
       setMessage({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Confirm (or refuse) with this computer's own device: Windows Hello asks the person, the server checks the answer belongs to THIS action and THIS decision.
+  // An approved action is then run at once, so one touch is enough; an action that still needs more signatures just waits.
+  const withDevice = async (decision: "APPROVED" | "REJECTED") => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const asked = await desk.deviceOptions(a.approval_id, decision);
+      const assertion = await getAssertion(asked.options);
+      const decided = await desk.deviceDecide(a.approval_id, decision, assertion);
+      if (decided.status === "APPROVED") {
+        await desk.resume(a.approval_id);
+        onChanged(th ? "ยืนยันแล้ว และรันงานนี้หนึ่งครั้งแล้ว ดูผลที่หน้า Sessions" : "Confirmed, and the action ran once. See Sessions.");
+        return;
+      } else if (decided.status === "REJECTED") {
+        onChanged(th ? "ปฏิเสธแล้ว งานนี้จะไม่ถูกรัน" : "Refused. The action will not run.");
+        return;
+      } else {
+        setMessage({ tone: "ok", text: th ? `บันทึกลายเซ็นแล้ว (${decided.signatures} จาก ${decided.required}) ต้องรอผู้เซ็นคนถัดไป` : `Recorded (${decided.signatures} of ${decided.required}). Waiting for the next signer.` });
+      }
+      onChanged();
+    } catch (err) {
+      setMessage({ tone: "err", text: ceremonyMessage(err, lang as "th" | "en") });
     } finally {
       setBusy(false);
     }
@@ -126,8 +157,24 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
               This action needs {a.required_signatures} signatures from distinct keys ({a.signatures_collected ?? 0} collected). Each signer repeats the steps below; it runs only after the last one.
             </p>
           ) : null}
+          {devices > 0 ? (
+            <div className="rounded border border-dl-fern/50 bg-dl-pine/20 p-3">
+              <p className="text-[13px] leading-relaxed text-dl-text">
+                {th ? "ยืนยันด้วยเครื่องนี้ (Windows Hello / ลายนิ้วมือ / มือถือ): อ่านรายละเอียดด้านบนให้ครบก่อน แล้วกดปุ่ม เครื่องจะถามตัวคุณ" : "Confirm with this computer (Windows Hello / fingerprint / phone): read the details above first, then press the button; the device asks you."}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button onClick={() => withDevice("APPROVED")} disabled={busy || !!deviceProblem}>{busy ? (th ? "รอเครื่องยืนยัน…" : "Waiting for the device…") : th ? "อนุมัติด้วยเครื่องนี้" : "Approve with this device"}</Button>
+                <Button tone="ghost" onClick={() => withDevice("REJECTED")} disabled={busy || !!deviceProblem}>{th ? "ปฏิเสธด้วยเครื่องนี้" : "Refuse with this device"}</Button>
+              </div>
+              {deviceProblem ? <p className="mt-2 text-[12px] text-dl-amber">{deviceProblem}</p> : null}
+            </div>
+          ) : (
+            <p className="text-[13px] leading-relaxed text-dl-muted">
+              {th ? "อยากยืนยันด้วยปุ่มและ Windows Hello แทนการพิมพ์คำสั่ง? เพิ่มเครื่องนี้ที่หน้า Settings → อุปกรณ์ยืนยัน (ทำครั้งเดียว) หรือดับเบิลคลิก SIGN_PENDING.bat เพื่อเซ็นทีละรายการ" : "Prefer a button and Windows Hello over typing a command? Add this computer once under Settings → Approval devices, or double-click SIGN_PENDING.bat to sign one at a time."}
+            </p>
+          )}
           <p className="text-[13px] leading-relaxed text-dl-muted">
-            Sign on the device that holds your approver key (it never needs to be on this machine), then paste the printed JSON:
+            {th ? "หรือเซ็นด้วยกุญแจ approver บนเครื่องที่เก็บกุญแจไว้ (ไม่จำเป็นต้องเป็นเครื่องนี้) แล้ววาง JSON ที่พิมพ์ออกมา:" : "Or sign on the device that holds your approver key (it never needs to be on this machine), then paste the printed JSON:"}
           </p>
           <Code>{signCmd}</Code>
           <label className="block">
@@ -138,7 +185,12 @@ function ActionCard({ a, onChanged }: { a: PendingAction; onChanged: () => void 
           <Button onClick={submit} disabled={busy || !pasted.trim()}>Submit signed decision</Button>
         </div>
       ) : null}
-      {a.status === "APPROVED" ? (
+      {a.status === "APPROVED" && a.tool_name === "passkey_enroll" ? (
+        <p className="mt-4 text-[13px] leading-relaxed text-dl-muted">
+          {th ? "ผู้อนุมัติเซ็นรับรองเครื่องนี้แล้ว ไปที่ Settings → อุปกรณ์ยืนยัน แล้วกด “เปิดใช้”" : "An approver has signed for this device. Go to Settings → Approval devices and press Activate."}
+        </p>
+      ) : null}
+      {a.status === "APPROVED" && a.tool_name !== "passkey_enroll" ? (
         <div className="mt-4">
           <Button tone="amber" onClick={run} disabled={busy}>{busy ? "Running…" : "Run the approved action"}</Button>
           <p className="mt-2 text-[12px] text-dl-muted">Runs exactly once; the signature is checked again first.</p>
@@ -159,17 +211,24 @@ export default function ApprovalsPage() {
     const all = await desk.approvals("ALL");
     return all.filter((a) => a.status === "PENDING" || (a.status === "APPROVED" && !a.executed_at));
   }, [view], 15000);
+  const deviceList = useDeskData(() => desk.devices(), [], 30000);
+  const activeDevices = deviceList.data?.devices.filter((d) => d.status === "ACTIVE").length ?? 0;
   const questions = useDeskData(() => desk.clarifications("PENDING"), [], 15000);
   const questionStats = useDeskData(() => desk.rct7Stats(14), [], 60000);
   const answered = useDeskData(() => desk.clarifications("ANSWERED"), [], 15000);
+  const [notice, setNotice] = useState<string | null>(null);
+  const done = (text?: string) => {
+    if (text) setNotice(text);
+    list.reload();
+  };
   const nothingWaiting = !!list.data && !list.data.length && !(questions.data && questions.data.length) && !(answered.data && answered.data.some((c) => !c.continued_as));
 
   return (
     <>
       <PageHeader title={t("approvals")}
         lead={lang === "th"
-          ? "action ที่ agent หยุดรอมนุษย์ (เช่น การเขียนไฟล์): อนุมัติได้ด้วยลายเซ็น Ed25519 ของคุณเท่านั้น และรันได้ครั้งเดียว ตรงตัวแปร A ในสมการ FDIA"
-          : "Actions the agent paused for a human (file writes, for example). Only your Ed25519 signature approves them, and each runs once: the A in FDIA."}
+          ? "งานที่ agent หยุดรอมนุษย์เพราะเสี่ยงจริง (ลบ ส่งออก เงิน เผยแพร่ แผนหลายขั้น): ยืนยันได้ด้วยเครื่องของคุณ (Windows Hello) หรือลายเซ็นกุญแจ approver ทุกครั้งถูกบันทึกและรันได้ครั้งเดียว ตรงตัวแปร A ในสมการ FDIA"
+          : "Actions the agent paused for a person because they are really risky (delete, send out, money, publish, multi-step plans). Confirm with your device (Windows Hello) or an approver-key signature; each is recorded and runs once: the A in FDIA."}
         actions={
           <div role="group" aria-label="Filter" className="desk-mono flex overflow-hidden rounded border border-dl-rule text-[12px]">
             {(["PENDING", "ALL"] as const).map((v) => (
@@ -184,6 +243,7 @@ export default function ApprovalsPage() {
         <QuestionsSection list={questions} alsoReload={answered.reload} />
         <AnsweredSection list={answered} />
         <QuestionStatsPanel stats={questionStats} />
+        {notice ? <p role="status" className="mb-3 rounded border border-dl-leaf/50 bg-dl-pine/20 px-4 py-3 text-sm text-dl-leaf">{notice}</p> : null}
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
         {nothingWaiting ? (
           <Empty title={view === "PENDING" ? "Nothing is waiting for you" : "No approvals yet"}>
@@ -191,7 +251,7 @@ export default function ApprovalsPage() {
           </Empty>
         ) : null}
         <div className="grid gap-5 xl:grid-cols-2">
-          {list.data?.map((a) => <ActionCard key={a.approval_id} a={a} onChanged={list.reload} />)}
+          {list.data?.map((a) => <ActionCard key={a.approval_id} a={a} onChanged={done} devices={activeDevices} />)}
         </div>
       </PageBody>
     </>

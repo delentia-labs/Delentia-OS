@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { describeReason } from "@/lib/reason-text";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk, type CronJob, type CronPreview } from "@/lib/desk-api";
 
@@ -88,7 +89,7 @@ function Jobs() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-dl-text">{j.name}</span>
                 <Badge tone={j.enabled ? "leaf" : "muted"}>{j.enabled ? "on" : "off"}</Badge>
-                {j.last_status ? <Badge tone={j.last_status === "llm_finished" ? "leaf" : j.last_status === "pending_approval" ? "amber" : "rust"}>{j.last_status}</Badge> : null}
+                {j.last_status ? <Badge tone={describeReason(j.last_status, lang).tone === "muted" ? "rust" : describeReason(j.last_status, lang).tone}>{describeReason(j.last_status, lang).label}</Badge> : null}
                 {j.fail_streak ? <Badge tone="rust">{j.fail_streak} failed in a row</Badge> : null}
               </div>
               <p className="desk-mono mt-1 text-[12px] text-dl-muted">{j.schedule_meaning} · next {when(j.next_run_at)} · {j.run_count} run(s){j.deliver ? ` · to ${j.deliver.channel}:${j.deliver.to}` : ""}</p>

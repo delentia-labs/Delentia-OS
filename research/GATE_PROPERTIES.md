@@ -235,6 +235,30 @@ With `thin_data_asks` in the owner's policy, a call whose evidence is thin (0 < 
   - `test_plan_approval_loop_round101_real.py::test_a_thin_evidence_step_becomes_a_step_of_the_plan`
   - `test_plan_approval_loop_round101_real.py::test_the_flag_is_validated_left_out_at_its_default_and_named_as_a_loosening`
 
+### P17 - A device can approve only what an existing approver let it approve, and only that action and that decision
+
+A passkey becomes a trusted approver only after an Ed25519 approver signed for that exact device (a device can not enrol another device). A confirmation on the device is bound to one action and one decision (the challenge is the hash of the approval message), is refused if replayed, if the site, the user-check or the signature is wrong, or if the device is revoked; the stored confirmation is re-checked at execution, a revoked device voids what it approved and has not run, and roles, distinct signers and scope (kinds, people, folders) apply to a device as to a key.
+
+- **Assumes:** The browser and the operating system do what the WebAuthn standard says (user verification, a key that never leaves the device); the page was opened at localhost or at the site name the owner configured; the first approver key is the owner's.
+- **Not covered:** A device signs a digest, not what is on the screen: a compromised Desk could show a harmless plan next to the digest of a harmful one (answer: a second signer, or the plan read on a second channel); a passkey synced to a cloud account is only as safe as that account (`backup_eligible` is recorded); software authenticators in the tests are not hardware; a laptop that is unlocked and left alone can be used by whoever sits at it.
+- **Pinned by:**
+  - `test_passkeys_round101_real.py::test_a_device_is_trusted_only_after_an_existing_approver_signed_for_it`
+  - `test_passkeys_round101_real.py::test_a_device_cannot_enroll_another_device`
+  - `test_passkeys_round101_real.py::test_the_signature_covers_this_exact_device`
+  - `test_passkeys_round101_real.py::test_a_confirmation_for_one_decision_cannot_be_used_for_the_other`
+  - `test_passkeys_round101_real.py::test_a_confirmation_for_one_action_cannot_be_used_for_another`
+  - `test_passkeys_round101_real.py::test_every_way_a_confirmation_can_be_wrong_is_refused`
+  - `test_passkeys_round101_real.py::test_a_replayed_confirmation_is_refused_by_the_counter`
+  - `test_passkeys_round101_real.py::test_revoking_a_device_voids_what_it_approved_and_has_not_run`
+  - `test_passkeys_round101_real.py::test_editing_the_stored_confirmation_does_not_get_an_action_run`
+  - `test_passkeys_round101_real.py::test_changing_the_action_after_the_confirmation_voids_it`
+  - `test_passkeys_round101_real.py::test_a_role_the_action_asks_for_is_enforced_for_a_device`
+  - `test_passkeys_round101_real.py::test_two_signatures_need_two_different_devices`
+  - `test_passkeys_round101_real.py::test_scope_limits_the_kinds_and_people_a_device_may_approve`
+  - `test_passkeys_round101_real.py::test_a_plan_can_only_be_approved_by_a_device_whose_scope_covers_every_step`
+  - `test_passkeys_round101_real.py::test_the_ed25519_path_is_unchanged`
+  - `test_passkeys_desk_api_round101_real.py::test_a_person_token_cannot_reach_the_device_routes`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |

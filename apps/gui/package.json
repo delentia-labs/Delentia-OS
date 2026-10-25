@@ -14,7 +14,10 @@
     "type-check": "tsc --noEmit",
     "test:unit": "node --experimental-strip-types --no-warnings src/lib/signed-decision.test.mjs",
     "test:run-state": "node --experimental-strip-types --no-warnings src/lib/run-state.test.mjs",
-    "test:nav": "node --experimental-strip-types --no-warnings src/lib/nav-model.test.mjs"
+    "test:nav": "node --experimental-strip-types --no-warnings src/lib/nav-model.test.mjs",
+    "test": "npm run test:unit && npm run test:run-state && npm run test:nav && npm run test:reason && npm run test:webauthn",
+    "test:reason": "node --experimental-strip-types --no-warnings src/lib/reason-text.test.mjs",
+    "test:webauthn": "node --experimental-strip-types --no-warnings src/lib/webauthn.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

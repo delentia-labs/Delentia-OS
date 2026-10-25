@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { CycleStrip } from "@/components/desk/CycleStrip";
 import { useLang } from "@/components/desk/i18n";
-import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, reasonTone, useDeskData } from "@/components/desk/ui";
+import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
+import { describeReason } from "@/lib/reason-text";
 import { desk, type SessionEvent } from "@/lib/desk-api";
 
 function EventLine({ e }: { e: SessionEvent }) {
@@ -168,7 +169,7 @@ function SessionsInner() {
                   className="desk-focus block w-full border-b border-dl-rule/60 px-4 py-3 text-left hover:bg-dl-pine/30 aria-[current=true]:bg-dl-pine/50">
                   <p className="truncate text-sm text-dl-text">{s.goal ?? s.namespace}</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <Badge tone={reasonTone(s.stopped_reason)}>{s.stopped_reason}</Badge>
+                    <Badge tone={describeReason(s.stopped_reason, lang).tone}>{describeReason(s.stopped_reason, lang).label}</Badge>
                     <span className="desk-mono text-[11px] text-dl-muted">{s.route ?? "-"} · {fmtTime(s.started_at)}</span>
                   </div>
                 </button>

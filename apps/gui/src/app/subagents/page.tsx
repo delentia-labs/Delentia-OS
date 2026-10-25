@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { describeReason } from "@/lib/reason-text";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 
@@ -66,7 +67,7 @@ export default function SubagentsPage() {
                 {r.error ? <p className="text-sm text-dl-rust">{r.error}</p> : null}
                 <div className="mt-3">
                   <Row label="Agent">{r.agent_id}</Row>
-                  <Row label="Ended with">{r.stopped_reason ?? "-"}</Row>
+                  <Row label={lang === "th" ? "จบด้วย" : "Ended with"}>{r.stopped_reason ? describeReason(r.stopped_reason, lang).label : "-"}</Row>
                   <Row label="Steps">{r.iterations ?? "-"}</Row>
                   <Row label="Request packet">{r.jitna?.request_packet_id ? `${r.jitna.request_packet_id.slice(0, 13)}…` : "unsigned (older run)"}</Row>
                   <Row label="Request hash">{r.jitna?.request_hash ? `${r.jitna.request_hash.slice(0, 16)}…` : "-"}</Row>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { describeReason } from "@/lib/reason-text";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 
@@ -106,7 +107,7 @@ export default function LearningPage() {
                     {t.recent.map((r) => (
                       <li key={r.id} className="text-[13px] text-dl-text">
                         <span className="desk-mono text-[11px] text-dl-muted">{fmtTime(new Date(r.at * 1000).toISOString())}</span> {r.goal} <span className="text-dl-muted">→ {r.tools.join(", ") || T("no tool", "ไม่ใช้ tool")}</span>{" "}
-                        <Badge tone={r.verified ? "leaf" : "muted"}>{r.verified ? T("verified", "ตรวจผ่าน") : r.stopped_reason}</Badge>{r.tainted ? <> <Badge tone="amber">{T("outside text", "ข้อความนอก")}</Badge></> : null}
+                        <Badge tone={r.verified ? "leaf" : "muted"}>{r.verified ? T("verified", "ตรวจผ่าน") : describeReason(r.stopped_reason, lang).label}</Badge>{r.tainted ? <> <Badge tone="amber">{T("outside text", "ข้อความนอก")}</Badge></> : null}
                       </li>
                     ))}
                   </ul>

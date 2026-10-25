@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge, Button, Code, PageBody, PageHeader, Panel } from "@/components/desk/ui";
 import { useLang } from "@/components/desk/i18n";
+import { ApprovalDevices } from "@/components/desk/ApprovalDevices";
 import { forgetStoredApiKey, getGateway, getHealthStatus, getSessionApiKey, setSessionApiKey } from "@/lib/delentia-client";
 
 const DEFAULT_GATEWAY = "http://localhost:8000";
@@ -53,7 +54,8 @@ export default function SettingsPage() {
           ? "ที่อยู่ของ Delentia API และ token สำหรับเรียกใช้ token เก็บไว้ในหน่วยความจำของหน้าต่างนี้เท่านั้น ไม่ถูกเขียนลงดิสก์"
           : "Where the Delentia API lives and the token used to call it. The token is kept in this window's memory only, never written to disk."} />
       <PageBody>
-        <div className="max-w-xl space-y-6">
+        <div className="max-w-2xl space-y-6">
+          <ApprovalDevices />
           <Panel title="API">
             <label className="block">
               <span className="text-[13px] text-dl-muted">{lang === "th" ? "ที่อยู่ Gateway" : "Gateway address"}</span>
@@ -80,7 +82,7 @@ export default function SettingsPage() {
           <Panel title={lang === "th" ? "อยู่ที่อื่น" : "Configured elsewhere"}>
             <ul className="space-y-2 text-sm leading-relaxed text-dl-muted">
               <li>Model and provider: the <Code>Models</Code> page, or <Code>delentia model set</Code>.</li>
-              <li>Who may approve actions: <Code>delentia approvals keygen</Code> and <Code>DELENTIA_APPROVER_PUBKEYS</Code>.</li>
+              <li>Who may approve actions: devices above, or an approver key (<Code>delentia approvals keygen</Code>, <Code>DELENTIA_APPROVER_PUBKEYS</Code>).</li>
               <li>Chat channels and their allowlists: the <Code>Channels</Code> page shows them; they are set by environment variables.</li>
               <li>Pipeline and warm recall: <Code>DELENTIA_ALGORITHM_PIPELINE</Code>, <Code>DELENTIA_WARM_RECALL</Code> (on under <Code>delentia serve</Code>).</li>
             </ul>

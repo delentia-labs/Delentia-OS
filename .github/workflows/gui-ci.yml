@@ -42,6 +42,10 @@ jobs:
         working-directory: apps/gui
         run: npm run lint
 
+      - name: Unit tests (pure helpers: signed decision, run state, navigation, reason text, WebAuthn encoding)
+        working-directory: apps/gui
+        run: npm test
+
       - name: Build (static export)
         working-directory: apps/gui
         run: npm run build

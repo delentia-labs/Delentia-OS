@@ -112,6 +112,9 @@ def main() -> int:
         say(f"     port {args.port} is busy ({exc}). Close the other Desk window or use --port 3011.")
         return 6
     thread, url = desk_launcher.serve_in_background(server)
+    # Round 101: the page is opened as "localhost", not as the number 127.0.0.1. A browser will not let a page at an IP address use a passkey (the site name of a passkey must be a name), and the
+    # launcher accepts both names. The server still listens on the loopback address only.
+    url = url.replace("//127.0.0.1:", "//localhost:", 1)
     say(f"     the Desk is at {url}")
     if not args.no_browser:
         webbrowser.open(url)

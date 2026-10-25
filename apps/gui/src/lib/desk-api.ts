@@ -190,6 +190,12 @@ export interface DaemonTask {
   last_run_at: string | null; run_count: number; last_status: string; last_output: string | null;
 }
 export interface DaemonStatus { running: boolean; uptime_seconds: number | null; tasks: DaemonTask[] }
+/** An approval device: a passkey (Windows Hello, a phone, a security key) that may confirm actions. Only public facts; the private key never leaves the device. */
+export interface ApprovalDevice {
+  id: string; signer: string; name: string; role: string | null; scope: { kinds?: string[]; namespaces?: string[]; workspaces?: string[] };
+  status: "PENDING" | "ACTIVE" | "REVOKED"; alg: string; backup_eligible: boolean; created_at: number; activated_at: number | null; last_used_at: number | null; revoked_at: number | null;
+}
+export interface DeviceList { rp_id: string; devices: ApprovalDevice[]; enrollments_waiting: { approval_id: string; name: string | null; status: string; created_at: string }[] }
 export interface PendingAction {
   approval_id: string; namespace: string; goal: string; tool_name: string; tool_args: Record<string, unknown>;
   action_sha256: string; reason: string; status: string; created_at: string; decided_at: string | null;
@@ -541,6 +547,18 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  devices: () => call<DeviceList>("/v1/desk/passkeys"),
+  deviceBegin: (name: string, role?: string) =>
+    call<{ enrollment_id: string; options: Record<string, unknown> }>("/v1/desk/passkeys/register/begin", { method: "POST", body: JSON.stringify({ name, role: role || null }) }),
+  deviceFinish: (enrollmentId: string, credential: Record<string, unknown>) =>
+    call<{ approval_id: string; action_sha256: string; credential: string; how: string }>("/v1/desk/passkeys/register/finish", { method: "POST", body: JSON.stringify({ enrollment_id: enrollmentId, credential }) }),
+  deviceActivate: (approvalId: string) =>
+    call<ApprovalDevice>("/v1/desk/passkeys/register/activate", { method: "POST", body: JSON.stringify({ approval_id: approvalId }) }),
+  deviceRevoke: (id: string) => call<ApprovalDevice>(`/v1/desk/passkeys/${encodeURIComponent(id)}/revoke`, { method: "POST", body: JSON.stringify({}) }),
+  deviceOptions: (approvalId: string, decision: "APPROVED" | "REJECTED") =>
+    call<{ options: Record<string, unknown>; decision: string; action_sha256: string }>(`/v1/desk/approvals/${encodeURIComponent(approvalId)}/passkey/options`, { method: "POST", body: JSON.stringify({ decision }) }),
+  deviceDecide: (approvalId: string, decision: "APPROVED" | "REJECTED", assertion: Record<string, unknown>) =>
+    call<{ approval_id: string; status: string; signatures: number; required: number }>(`/v1/desk/approvals/${encodeURIComponent(approvalId)}/passkey/decide`, { method: "POST", body: JSON.stringify({ decision, assertion }) }),
   rct7Stats: (days = 14) => call<Rct7Stats>(`/v1/desk/rct7/stats?days=${days}`),
   clarifications: (status = "PENDING") => call<Clarification[]>(`/v1/agent/clarifications?status=${status}`),
   answerClarification: (id: string, answer: string) =>

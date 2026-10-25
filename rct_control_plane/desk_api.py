@@ -891,7 +891,13 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     def _approver_summary() -> List[Dict[str, Any]]:
         from rct_control_plane.approvals import trusted_approver_keys, trusted_approver_roles
         roles = trusted_approver_roles()
-        return [{"name": name, "role": roles.get(key), "key_prefix": key[:12]} for key, name in trusted_approver_keys().items()]
+        listed = [{"name": name, "role": roles.get(key), "key_prefix": key[:12], "scheme": "ed25519"} for key, name in trusted_approver_keys().items()]
+        try:
+            from rct_control_plane.passkeys import PasskeyStore
+            listed += [{"name": c.name, "role": c.role, "key_prefix": c.credential_id[:12], "scheme": "passkey"} for c in PasskeyStore(_kernel()._persistence).active()]
+        except Exception:                                       # noqa: BLE001 - the policy page must open even if devices can't be read
+            pass
+        return listed
 
     @router.get("/fdia")
     async def fdia_state() -> Dict[str, Any]:
@@ -1518,5 +1524,100 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             "skills": _skills().count(),
             "storage": data_home.describe(),
         }
+
+    # ------------------------------------------------------------------ Round 101: approval devices (passkeys) and approving from the Desk
+    def _pk_stores() -> Any:
+        from rct_control_plane.approvals import PendingActionStore
+        from rct_control_plane.passkeys import PasskeyStore
+        persistence = _kernel()._persistence
+        return PendingActionStore(persistence), PasskeyStore(persistence)
+
+    def _pk_fail(exc: Exception) -> HTTPException:
+        return HTTPException(status_code=400, detail=str(exc))
+
+    @router.get("/passkeys")
+    async def passkey_list() -> Dict[str, Any]:
+        """The devices that may approve, and the enrollments still waiting for an approver's signature."""
+        from rct_control_plane import passkeys
+        store, pk_store = _pk_stores()
+        waiting = [{"approval_id": a.approval_id, "name": (a.tool_args or {}).get("name"), "status": a.status, "created_at": a.created_at}
+                   for a in store.list(status=None, limit=100) if a.tool_name == passkeys.ENROLL_TOOL and a.status in ("PENDING", "APPROVED")]
+        return {"rp_id": passkeys.rp_id(), "devices": [c.summary() for c in pk_store.list()], "enrollments_waiting": waiting}
+
+    @router.post("/passkeys/register/begin")
+    async def passkey_register_begin(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane import passkeys
+        _, pk_store = _pk_stores()
+        try:
+            return pk_store.begin_registration(str(payload.get("name") or ""), payload.get("role"), payload.get("scope") if isinstance(payload.get("scope"), dict) else {})
+        except passkeys.PasskeyError as exc:
+            raise _pk_fail(exc) from exc
+
+    @router.post("/passkeys/register/finish")
+    async def passkey_register_finish(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """The browser made the credential. It is stored as PENDING and a request is created that an existing approver signs (`delentia approvals review`, or the Approvals page)."""
+        from rct_control_plane import passkeys
+        store, pk_store = _pk_stores()
+        try:
+            info = pk_store.finish_registration(str(payload.get("enrollment_id") or ""), payload.get("credential") or {})
+            action = passkeys.create_enrollment_action(store, info)
+        except passkeys.PasskeyError as exc:
+            raise _pk_fail(exc) from exc
+        _kernel()._persistence.append_audit(entity_type="passkey", entity_id=info["credential_id"][:24], action="enrollment_requested", actor="desk",
+                                            changes={"name": info["name"], "role": info.get("role"), "approval_id": action.approval_id})
+        return {"approval_id": action.approval_id, "action_sha256": action.action_sha256, "credential": info["credential_id"][:16],
+                "how": "an existing approver must sign this once (SIGN_PENDING.bat, or delentia approvals review); then press Activate"}
+
+    @router.post("/passkeys/register/activate")
+    async def passkey_register_activate(payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane import passkeys
+        store, pk_store = _pk_stores()
+        try:
+            cred = passkeys.activate_enrollment(store, pk_store, str(payload.get("approval_id") or ""))
+        except passkeys.PasskeyError as exc:
+            raise _pk_fail(exc) from exc
+        _kernel()._persistence.append_audit(entity_type="passkey", entity_id=cred.credential_id[:24], action="activated", actor="desk", changes={"name": cred.name, "role": cred.role, "scope": cred.scope})
+        return cred.summary()
+
+    @router.post("/passkeys/{credential_id}/revoke")
+    async def passkey_revoke(credential_id: str) -> Dict[str, Any]:
+        """Removing authority is always allowed to the owner: every approval this device signed that has not run yet becomes void."""
+        from rct_control_plane import passkeys
+        _, pk_store = _pk_stores()
+        match = next((c for c in pk_store.list() if c.credential_id.startswith(credential_id) or c.signer_key.endswith(credential_id)), None)
+        if match is None:
+            raise HTTPException(status_code=404, detail="no such device")
+        try:
+            cred = pk_store.revoke(match.credential_id)
+        except passkeys.PasskeyError as exc:
+            raise _pk_fail(exc) from exc
+        _kernel()._persistence.append_audit(entity_type="passkey", entity_id=cred.credential_id[:24], action="revoked", actor="desk", changes={"name": cred.name})
+        return cred.summary()
+
+    @router.post("/approvals/{approval_id}/passkey/options")
+    async def approval_passkey_options(approval_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """What the browser asks the device to confirm: the challenge is the hash of the approval message for THIS action and THIS decision."""
+        from rct_control_plane import passkeys
+        store, pk_store = _pk_stores()
+        action = store.get(approval_id)
+        if action is None or action.status != "PENDING":
+            raise HTTPException(status_code=404, detail="no such waiting action")
+        decision = str(payload.get("decision") or "APPROVED").upper()
+        if decision not in ("APPROVED", "REJECTED"):
+            raise HTTPException(status_code=400, detail="decision must be APPROVED or REJECTED")
+        try:
+            return {"options": pk_store.request_options(action.action_sha256, approval_id, decision), "decision": decision, "action_sha256": action.action_sha256}
+        except passkeys.PasskeyError as exc:
+            raise _pk_fail(exc) from exc
+
+    @router.post("/approvals/{approval_id}/passkey/decide")
+    async def approval_passkey_decide(approval_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        from rct_control_plane.approvals import ApprovalError
+        store, _ = _pk_stores()
+        try:
+            decided = store.decide_with_passkey(approval_id, str(payload.get("decision") or "APPROVED"), payload.get("assertion") or {})
+        except ApprovalError as exc:
+            raise _pk_fail(exc) from exc
+        return {"approval_id": approval_id, "status": decided.status, "signatures": decided.signatures_collected, "required": decided.required_signatures}
 
     return router
