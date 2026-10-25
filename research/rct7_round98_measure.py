@@ -17,6 +17,7 @@ from rct_control_plane import rct7_judge
 from rct_control_plane.llm_provider import OllamaProvider
 from research import rct7_model_judge_cases as request_cases
 from research import rct7_round98_cases as cases
+from research import rct7_round99_cases_th as cases_th
 
 
 class Recorder:
@@ -34,9 +35,26 @@ class Recorder:
         return self.reply
 
 
+SET = {"lang": "en"}
+
+
+def _REQUESTS():
+    return cases_th.CASES if SET["lang"].startswith("th") else request_cases.CASES
+
+
+def _CRITIC():
+    return cases_th.CRITIC if SET["lang"].startswith("th") else cases.CRITIC
+
+
+def _EPISODES():
+    if SET["lang"] == "th-fresh":
+        return cases_th.EPISODES_FRESH
+    return cases_th.EPISODES if SET["lang"] == "th" else cases.EPISODES
+
+
 async def measure_judge(rec: Recorder) -> Dict[str, Any]:
     rows: List[Dict[str, Any]] = []
-    for request, must_ask in request_cases.CASES:
+    for request, must_ask in _REQUESTS():
         try:
             await rct7_judge.judge_request(rec, request)
             reply, seconds = rec.reply, rec.seconds
@@ -64,7 +82,7 @@ async def measure_judge(rec: Recorder) -> Dict[str, Any]:
 
 async def measure_critic(rec: Recorder) -> Dict[str, Any]:
     rows: List[Dict[str, Any]] = []
-    for request, answer, meets in cases.CRITIC:
+    for request, answer, meets in _CRITIC():
         try:
             await rct7_judge.judge_result(rec, request, answer)
             reply, seconds = rec.reply, rec.seconds
@@ -91,7 +109,7 @@ async def measure_chain(rec: Recorder) -> Dict[str, Any]:
     faithful_claims = faithful_verified = 0
     invented_total = invented_flagged = invented_omitted = invented_flagged_by_gap = 0
     rows: List[Dict[str, Any]] = []
-    for name, request, steps, answer, invented in cases.EPISODES:
+    for name, request, steps, answer, invented in _EPISODES():
         result = await rct7_judge.cite_claims(rec, request, answer, steps)
         claims = result.get("claims", [])
         if invented is None:
@@ -106,17 +124,17 @@ async def measure_chain(rec: Recorder) -> Dict[str, Any]:
                 invented_flagged_by_gap += int(gap)
             elif any(c["status"] != "verified" for c in hit):
                 invented_flagged += 1
-        rows.append({"episode": name, "error": result.get("error"), "statuses": [c["status"] for c in claims], "gaps": result.get("gaps", []), "seconds": rec.seconds})
+        rows.append({"episode": name, "faithful": invented is None, "error": result.get("error"), "statuses": [c["status"] for c in claims], "claims": [{"claim": c["claim"], "status": c["status"], "unsupported": c.get("unsupported")} for c in claims], "gaps": result.get("gaps", []), "seconds": rec.seconds})
     return {"episodes": len(rows), "faithful_claims": faithful_claims, "faithful_verified": faithful_verified,
             "faithful_verified_rate": round(faithful_verified / faithful_claims, 3) if faithful_claims else None,
             "invented_episodes": invented_total, "invented_flagged": invented_flagged, "invented_omitted_by_the_model": invented_omitted,
             "omitted_but_reported_as_a_gap_by_the_code": invented_flagged_by_gap, "invented_detected_total": invented_flagged + invented_flagged_by_gap,
-            "faithful_gaps": sum(len(r["gaps"]) for r in rows if r["episode"].startswith("F")), "rows": rows}
+            "faithful_gaps": sum(len(r["gaps"]) for r in rows if r["faithful"]), "rows": rows}
 
 
 async def run(model: str, only: str = "") -> Dict[str, Any]:
     rec = Recorder(OllamaProvider(model=model))
-    out: Dict[str, Any] = {"model": model, "set": "DEV (author-written; not a claim)", "prompt_version": 2}
+    out: Dict[str, Any] = {"model": model, "set": "DEV (author-written; not a claim)", "lang": SET["lang"], "prompt_version": 2}
     if only in ("", "judge"):
         out["judge"] = await measure_judge(rec)
     if only in ("", "critic"):
@@ -131,7 +149,9 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", default="")
     ap.add_argument("--only", default="", choices=("", "judge", "critic", "chain"))
+    ap.add_argument("--lang", default="en", choices=("en", "th", "th-fresh"))
     args = ap.parse_args()
+    SET["lang"] = args.lang
     result = asyncio.run(run(args.model, args.only))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if args.out:

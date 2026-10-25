@@ -1,0 +1,166 @@
+{
+  "model": "llama3.2:3b",
+  "set": "DEV (author-written; not a claim)",
+  "lang": "th-fresh",
+  "prompt_version": 2,
+  "chain": {
+    "episodes": 6,
+    "faithful_claims": 5,
+    "faithful_verified": 4,
+    "faithful_verified_rate": 0.8,
+    "invented_episodes": 3,
+    "invented_flagged": 1,
+    "invented_omitted_by_the_model": 2,
+    "omitted_but_reported_as_a_gap_by_the_code": 2,
+    "invented_detected_total": 3,
+    "faithful_gaps": 3,
+    "rows": [
+      {
+        "episode": "G1",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "บริการนี้ใช้ SQLite และมี 4 ตาราง",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "บริการนี้ใช้ SQLite และมี 4 ตาราง ได้แก่ users",
+          "orders",
+          "items และ logs"
+        ],
+        "seconds": 3.0
+      },
+      {
+        "episode": "G2",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "สำรองข้อมูลทุก 24 ชั่วโมง",
+            "status": "verified",
+            "unsupported": null
+          },
+          {
+            "claim": "เก็บไว้ 7 ชุด",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 3.2
+      },
+      {
+        "episode": "G3",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "no_evidence",
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "ยอดขายเดือนนี้ 120 ชิ้น",
+            "status": "no_evidence",
+            "unsupported": null
+          },
+          {
+            "claim": "มีลูกค้าใหม่ 15 ราย",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 2.9
+      },
+      {
+        "episode": "H1",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "บริการนี้ใช้ SQLite และมี 4 ตาราง",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "บริการนี้ใช้ SQLite และมี 4 ตาราง และทุกตารางถูกเข้ารหัสด้วย AES"
+        ],
+        "seconds": 2.7
+      },
+      {
+        "episode": "H2",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "verified",
+          "verified",
+          "no_evidence",
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "สำรองข้อมูลทุก 24 ชั่วโมง",
+            "status": "verified",
+            "unsupported": null
+          },
+          {
+            "claim": "เก็บไว้ 7 ชุด",
+            "status": "verified",
+            "unsupported": null
+          },
+          {
+            "claim": "และส่งสำเนาไปยังคลาวด์ทุกคืน",
+            "status": "no_evidence",
+            "unsupported": null
+          },
+          {
+            "claim": "สำเนาไปยังคลาวด์ทุกคืน",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 5.5
+      },
+      {
+        "episode": "H3",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "no_evidence",
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "ยอดขายเดือนนี้ 120 ชิ้น",
+            "status": "no_evidence",
+            "unsupported": null
+          },
+          {
+            "claim": "มีลูกค้าใหม่ 15 ราย",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "ยอดขายเดือนนี้ 120 ชิ้น มีลูกค้าใหม่ 15 ราย เพิ่มขึ้นจากเดือนก่อนอย่างมาก"
+        ],
+        "seconds": 3.0
+      }
+    ]
+  }
+}

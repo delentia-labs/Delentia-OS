@@ -396,5 +396,5 @@ def test_a_faithful_answer_has_no_gaps_and_an_empty_list_leaves_every_clause_a_g
     answer = "report.csv is 1,204 bytes and notes.txt is 88 bytes."
     assert rct7_judge.coverage_gaps(answer, [{"claim": "report.csv is 1,204 bytes and notes.txt is 88 bytes"}]) == []
     assert rct7_judge.coverage_gaps("The service listens on port 8080 behind a proxy.", []) == ["The service listens on port 8080 behind a proxy"]
-    assert rct7_judge.coverage_gaps("ตอบเป็นภาษาไทยทั้งหมด", []) == []                      # no Latin words to count: nothing is claimed about it
+    assert rct7_judge.coverage_gaps("ตอบเป็นภาษาไทยทั้งหมด", []) == ["ตอบเป็นภาษาไทยทั้งหมด"]      # round 99: a Thai phrase counts (trigrams); before, Thai text had no words to count and was never a gap
     assert rct7_judge.coverage_gaps("", None) == [] and rct7_judge.coverage_gaps("x", "not a list") == []

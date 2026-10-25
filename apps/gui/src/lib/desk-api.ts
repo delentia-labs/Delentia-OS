@@ -205,6 +205,14 @@ export interface Clarification {
   /** "rerun" once the same request was sent again with the answer attached, "accepted" when the person kept the result; null while neither happened. */
   continued_as?: "rerun" | "accepted" | null; continued_at?: number | null;
 }
+/** One kind of question in the stop-and-ask statistics (rct_control_plane/rct7_stats.py). */
+export interface Rct7Bucket { asked: number; answered: number; kept: number; cancelled: number; expired: number; waiting: number; kept_or_cancelled_share: number | null }
+/** How often the system stopped to ask and what people did with the questions. Read-only; `hint` is the module's own reading, `scope_note` says what the numbers are not. */
+export interface Rct7Stats {
+  days: number; namespace: string | null; episodes: number; stopped_to_ask: number; asked_per_100_episodes: number | null;
+  total: { asked: number; answered: number; kept: number; cancelled: number; expired: number; waiting: number };
+  by_kind: Record<string, Rct7Bucket>; kept_or_cancelled_share: number | null; model_judge_calls: Record<string, number>; hint: string; scope_note: string;
+}
 export interface Health { status: string; version?: string }
 export interface SubagentRun {
   id: string; created_at: string; agent_id: string; goal: string; success: boolean;
@@ -531,6 +539,7 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  rct7Stats: (days = 14) => call<Rct7Stats>(`/v1/desk/rct7/stats?days=${days}`),
   clarifications: (status = "PENDING") => call<Clarification[]>(`/v1/agent/clarifications?status=${status}`),
   answerClarification: (id: string, answer: string) =>
     call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/answer`, { method: "POST", body: JSON.stringify({ answer }) }),

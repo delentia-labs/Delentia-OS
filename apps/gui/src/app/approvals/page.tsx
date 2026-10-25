@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
-import { AnsweredSection, QuestionsSection } from "@/components/desk/Questions";
+import { AnsweredSection, QuestionStatsPanel, QuestionsSection } from "@/components/desk/Questions";
 import { desk, type PendingAction } from "@/lib/desk-api";
 import { parseSignedDecision } from "@/lib/signed-decision";
 
@@ -160,6 +160,7 @@ export default function ApprovalsPage() {
     return all.filter((a) => a.status === "PENDING" || (a.status === "APPROVED" && !a.executed_at));
   }, [view], 15000);
   const questions = useDeskData(() => desk.clarifications("PENDING"), [], 15000);
+  const questionStats = useDeskData(() => desk.rct7Stats(14), [], 60000);
   const answered = useDeskData(() => desk.clarifications("ANSWERED"), [], 15000);
   const nothingWaiting = !!list.data && !list.data.length && !(questions.data && questions.data.length) && !(answered.data && answered.data.some((c) => !c.continued_as));
 
@@ -182,6 +183,7 @@ export default function ApprovalsPage() {
       <PageBody>
         <QuestionsSection list={questions} alsoReload={answered.reload} />
         <AnsweredSection list={answered} />
+        <QuestionStatsPanel stats={questionStats} />
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
         {nothingWaiting ? (
           <Empty title={view === "PENDING" ? "Nothing is waiting for you" : "No approvals yet"}>

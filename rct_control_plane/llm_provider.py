@@ -71,6 +71,7 @@ class LLMUsage:
 class LLMProvider(ABC):
     # Round 50: set by complete() when the backend reports usage.
     last_usage: Optional[LLMUsage] = None
+    last_served_by: Optional[str] = None      # Round 100: the upstream provider that answered the last call, when the backend says (OpenRouter does)
 
     @abstractmethod
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
@@ -218,6 +219,75 @@ def _wants_cache_control(model: str, system_prompt: str) -> bool:
     return str(model).startswith(("anthropic/", "google/")) and len(system_prompt) >= CACHE_CONTROL_MIN_CHARS
 
 
+# Round 100: which upstream provider serves a model behind OpenRouter. Without these settings OpenRouter may route the same model id to a different provider on each call (different
+# quantization, context window, speed, data policy), which makes a measurement unrepeatable and leaves the data policy to the account page alone. Every setting is OFF unless named, and an
+# unusable value is ignored with a warning (never sent), so a typo cannot silently widen where a prompt goes.
+PROVIDER_ORDER_ENV = "DELENTIA_OPENROUTER_PROVIDER_ORDER"            # "anthropic,google-vertex": try these in order
+PROVIDER_ONLY_ENV = "DELENTIA_OPENROUTER_PROVIDER_ONLY"              # only these providers
+PROVIDER_IGNORE_ENV = "DELENTIA_OPENROUTER_PROVIDER_IGNORE"          # never these
+PROVIDER_FALLBACKS_ENV = "DELENTIA_OPENROUTER_ALLOW_FALLBACKS"       # 0 | 1 (OpenRouter's own default is 1; with an order set and this unset we send 0: a pinned order that silently falls back is not pinned)
+PROVIDER_DATA_ENV = "DELENTIA_OPENROUTER_DATA_COLLECTION"            # deny | allow
+PROVIDER_ZDR_ENV = "DELENTIA_OPENROUTER_ZDR"                         # 1: only zero-data-retention endpoints
+PROVIDER_REQUIRE_PARAMS_ENV = "DELENTIA_OPENROUTER_REQUIRE_PARAMETERS"   # 1: only providers that support every parameter we send (JSON mode, max tokens)
+PROVIDER_QUANT_ENV = "DELENTIA_OPENROUTER_QUANTIZATIONS"             # "fp8,bf16,fp16"
+_PROVIDER_SLUG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,63}$")
+_QUANTIZATIONS = ("int4", "int8", "fp4", "mxfp4", "nvfp4", "fp6", "fp8", "mxfp8", "fp16", "bf16", "fp32", "unknown")
+
+
+def _env_list(name: str, valid: Any) -> list:
+    out = []
+    for raw in (os.environ.get(name) or "").split(","):
+        item = raw.strip()
+        if not item:
+            continue
+        if valid(item):
+            out.append(item)
+        else:
+            logging.getLogger(__name__).warning("%s: %r is not a valid value and was ignored", name, item[:40])
+    return out
+
+
+def _env_flag(name: str) -> Optional[bool]:
+    raw = (os.environ.get(name) or "").strip().lower()
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    if raw in ("0", "false", "no", "off"):
+        return False
+    return None
+
+
+def openrouter_provider_preferences() -> dict:
+    """The `provider` object for an OpenRouter request, from the DELENTIA_OPENROUTER_* settings above; {} when none is set (the request is then exactly what it always was)."""
+    prefs: dict = {}
+    order = _env_list(PROVIDER_ORDER_ENV, _PROVIDER_SLUG.match)
+    only = _env_list(PROVIDER_ONLY_ENV, _PROVIDER_SLUG.match)
+    ignore = _env_list(PROVIDER_IGNORE_ENV, _PROVIDER_SLUG.match)
+    quant = _env_list(PROVIDER_QUANT_ENV, lambda x: x in _QUANTIZATIONS)
+    if order:
+        prefs["order"] = order[:10]
+    if only:
+        prefs["only"] = only[:10]
+    if ignore:
+        prefs["ignore"] = ignore[:10]
+    if quant:
+        prefs["quantizations"] = quant
+    fallbacks = _env_flag(PROVIDER_FALLBACKS_ENV)
+    if fallbacks is not None:
+        prefs["allow_fallbacks"] = fallbacks
+    elif order or only:
+        prefs["allow_fallbacks"] = False
+    data = (os.environ.get(PROVIDER_DATA_ENV) or "").strip().lower()
+    if data in ("deny", "allow"):
+        prefs["data_collection"] = data
+    elif data:
+        logging.getLogger(__name__).warning("%s: %r is not deny or allow and was ignored", PROVIDER_DATA_ENV, data[:20])
+    if _env_flag(PROVIDER_ZDR_ENV):
+        prefs["zdr"] = True
+    if _env_flag(PROVIDER_REQUIRE_PARAMS_ENV):
+        prefs["require_parameters"] = True
+    return prefs
+
+
 def _build_openrouter_payload(
     model: str, prompt: str, system_prompt: Optional[str], temperature: float,
     max_tokens: int, json_mode: bool, compat: CompatProfile,
@@ -240,6 +310,9 @@ def _build_openrouter_payload(
                compat.max_tokens_field: max_tokens}
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
+    prefs = openrouter_provider_preferences()
+    if prefs:
+        payload["provider"] = prefs
     return payload
 
 
@@ -356,6 +429,8 @@ class OpenRouterProvider(LLMProvider):
                     _NO_JSON_MODE.add(self.model)
             response.raise_for_status()
             data, text = reply_text(response)
+        served = data.get("provider")
+        self.last_served_by = served[:80] if isinstance(served, str) else None          # Round 100: which upstream provider answered (OpenRouter reports it), so a run can say what it measured
         usage = data.get("usage") or {}
         cost = usage.get("cost")
         details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
@@ -653,6 +728,10 @@ class MeteredProvider(LLMProvider):
     @property
     def model(self) -> str:
         return str(getattr(self._inner, "model", "?"))
+
+    @property
+    def last_served_by(self) -> Optional[str]:       # type: ignore[override]
+        return getattr(self._inner, "last_served_by", None)
 
     def _price(self, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
         if self.prompt_price_per_mtok is None or self.completion_price_per_mtok is None:

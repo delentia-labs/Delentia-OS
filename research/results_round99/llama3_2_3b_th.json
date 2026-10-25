@@ -1,0 +1,280 @@
+{
+  "model": "llama3.2:3b",
+  "set": "DEV (author-written; not a claim)",
+  "lang": "th",
+  "prompt_version": 2,
+  "judge": {
+    "cases": 41,
+    "guard_on": {
+      "found": 14,
+      "of": 20,
+      "recall": 0.7,
+      "false_pauses": 6,
+      "of_clear": 21,
+      "false_pause_rate": 0.286,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 15,
+      "of": 20,
+      "recall": 0.75,
+      "false_pauses": 6,
+      "of_clear": 21,
+      "false_pause_rate": 0.286,
+      "malformed": 0
+    },
+    "median_seconds": 1.3,
+    "misses_with_guard": [
+      "รวมสาขาเข้าด้วยกัน",
+      "เช็คว่าตัวเลขตรงกันไหม",
+      "ตั้งเวลาสำรองข้อมูล",
+      "เอาไฟล์นั้นไปไว้ที่เดิม",
+      "สรุปให้ผู้บริหารหน่อย",
+      "อัปเดตเอกสารตามที่คุยกัน"
+    ],
+    "false_pauses_with_guard": [
+      "บอกสีหลักสามสี",
+      "สรุปข้อความนี้ใน 2 ประโยค: คณะกรรมการประชุมวันจันทร์และอนุมัติงบประมาณ จากนั้นหารือแผนจ้างงานซึ่งเลื่อนไปมีนาคมเพราะผู้สมัครสองคนถอนตัว",
+      "อธิบายว่า hash chain คืออะไรในหนึ่งย่อหน้า",
+      "วันที่ 2026-10-24 ตรงกับวันอะไร",
+      "ค้นหาคำว่า invoice ในโฟลเดอร์ project แล้วบอกว่าอยู่ไฟล์ไหน",
+      "เปลี่ยนคำว่า 'สวัสดี' ในประโยค 'สวัสดีครับทุกคน' เป็น 'ยินดีต้อนรับ'"
+    ]
+  },
+  "critic": {
+    "cases": 39,
+    "guard_on": {
+      "found": 17,
+      "of": 20,
+      "recall": 0.85,
+      "false_stops": 9,
+      "of_meeting": 19,
+      "false_stop_rate": 0.474,
+      "malformed": 0
+    },
+    "guard_off": {
+      "found": 18,
+      "of": 20,
+      "recall": 0.9,
+      "false_stops": 10,
+      "of_meeting": 19,
+      "false_stop_rate": 0.526,
+      "malformed": 0
+    },
+    "median_seconds": 1.7
+  },
+  "chain": {
+    "episodes": 10,
+    "faithful_claims": 6,
+    "faithful_verified": 3,
+    "faithful_verified_rate": 0.5,
+    "invented_episodes": 5,
+    "invented_flagged": 4,
+    "invented_omitted_by_the_model": 1,
+    "omitted_but_reported_as_a_gap_by_the_code": 1,
+    "invented_detected_total": 5,
+    "faithful_gaps": 1,
+    "rows": [
+      {
+        "episode": "F1",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "quote_not_found",
+          "quote_not_found"
+        ],
+        "claims": [
+          {
+            "claim": "โปรเจกต์ชื่อ sample-service",
+            "status": "quote_not_found",
+            "unsupported": null
+          },
+          {
+            "claim": "เวอร์ชัน 0.1.0",
+            "status": "quote_not_found",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 4.4
+      },
+      {
+        "episode": "F2",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "เป็นบริการออกใบแจ้งหนี้",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "เป็นบริการออกใบแจ้งหนี้ ใช้พอร์ต 8080"
+        ],
+        "seconds": 2.3
+      },
+      {
+        "episode": "F3",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "พบ 3 ที่ สองที่อยู่ใน app.py และหนึ่งที่อยู่ใน utils.py",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 3.1
+      },
+      {
+        "episode": "F4",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "quote_not_found"
+        ],
+        "claims": [
+          {
+            "claim": "report.csv ขนาด 1,204 ไบต์ และ notes.txt ขนาด 88 ไบต์",
+            "status": "quote_not_found",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 3.7
+      },
+      {
+        "episode": "F5",
+        "faithful": true,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "timeout เท่ากับ 30 และ retries เท่ากับ 5",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 1.9
+      },
+      {
+        "episode": "X1",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "quote_not_found"
+        ],
+        "claims": [
+          {
+            "claim": "โปรเจกต์ชื่อ sample-service ใช้สัญญาอนุญาต MIT",
+            "status": "quote_not_found",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "โปรเจกต์ชื่อ sample-service เวอร์ชัน 0"
+        ],
+        "seconds": 2.9
+      },
+      {
+        "episode": "X2",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "verified"
+        ],
+        "claims": [
+          {
+            "claim": "เป็นบริการออกใบแจ้งหนี้",
+            "status": "verified",
+            "unsupported": null
+          }
+        ],
+        "gaps": [
+          "เป็นบริการออกใบแจ้งหนี้ เขียนด้วยภาษา Go ใช้พอร์ต 8080"
+        ],
+        "seconds": 2.3
+      },
+      {
+        "episode": "X3",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "no_evidence",
+          "no_evidence"
+        ],
+        "claims": [
+          {
+            "claim": "พบ 3 ที่",
+            "status": "no_evidence",
+            "unsupported": null
+          },
+          {
+            "claim": "ที่แรกอยู่ใน main.py",
+            "status": "no_evidence",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 1.9
+      },
+      {
+        "episode": "X4",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "quote_not_found"
+        ],
+        "claims": [
+          {
+            "claim": "report.csv ขนาด 1,204 ไบต์ และแก้ไขล่าสุดเมื่อวาน",
+            "status": "quote_not_found",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 3.0
+      },
+      {
+        "episode": "X5",
+        "faithful": false,
+        "error": "",
+        "statuses": [
+          "verified",
+          "weak_support",
+          "no_evidence"
+        ],
+        "claims": [
+          {
+            "claim": "timeout เท่ากับ 30",
+            "status": "verified",
+            "unsupported": null
+          },
+          {
+            "claim": "timeout เท่ากับ 5",
+            "status": "weak_support",
+            "unsupported": null
+          },
+          {
+            "claim": "ระดับล็อกเป็น debug",
+            "status": "no_evidence",
+            "unsupported": null
+          }
+        ],
+        "gaps": [],
+        "seconds": 3.5
+      }
+    ]
+  }
+}

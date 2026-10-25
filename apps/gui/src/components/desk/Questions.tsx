@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, ErrorNote, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
-import { desk, type Clarification } from "@/lib/desk-api";
+import { desk, type Clarification, type Rct7Stats } from "@/lib/desk-api";
 
 const KIND = {
   before_act: { en: "Asked before acting", th: "ถามก่อนลงมือ" },
@@ -117,5 +117,52 @@ export function QuestionsSection({ list, alsoReload }: { list: ReturnType<typeof
         {list.data.map((c) => <QuestionCard key={c.clarification_id} c={c} onChanged={() => { list.reload(); alsoReload?.(); }} />)}
       </div>
     </section>
+  );
+}
+
+const pct = (x: number | null) => (x === null ? "-" : `${Math.round(x * 100)}%`);
+
+/** The stop-and-ask in numbers (read-only): how many questions, and what people did with them. `kept + cancelled` is only a PROXY for a question that was not needed, and the module says so;
+ *  the panel shows that sentence and the module's own hint instead of a verdict of its own. */
+export function QuestionStatsPanel({ stats }: { stats: ReturnType<typeof useDeskData<Rct7Stats>> }) {
+  const { lang } = useLang();
+  const th = lang === "th";
+  if (stats.error) return <ErrorNote error={stats.error} onRetry={stats.reload} />;
+  const d = stats.data;
+  if (!d) return null;
+  const kinds = Object.entries(d.by_kind).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <Panel title={th ? `สถิติการหยุดถาม ${d.days} วันล่าสุด` : `Stop-and-ask, last ${d.days} days`} className="mb-6">
+      {d.total.asked === 0 ? (
+        <p className="text-[13px] text-dl-muted">{th ? `ยังไม่เคยหยุดถามเลยใน ${d.episodes} งาน` : `It has not stopped to ask in ${d.episodes} episodes.`}</p>
+      ) : (
+        <>
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            <Row label={th ? "งานทั้งหมด" : "Episodes"}>{d.episodes}</Row>
+            <Row label={th ? "หยุดถาม" : "Stopped to ask"}>{d.stopped_to_ask}{d.asked_per_100_episodes !== null ? ` (${d.asked_per_100_episodes} ${th ? "ต่อ 100 งาน" : "per 100 episodes"})` : ""}</Row>
+            <Row label={th ? "ตอบแล้ว" : "Answered"}>{d.total.answered}</Row>
+            <Row label={th ? "รับตามที่เป็น" : "Kept as it was"}>{d.total.kept}</Row>
+            <Row label={th ? "ยกเลิก" : "Cancelled"}>{d.total.cancelled}</Row>
+            <Row label={th ? "หมดอายุ / รออยู่" : "Expired / waiting"}>{d.total.expired} / {d.total.waiting}</Row>
+            <Row label={th ? "รับตามที่เป็น + ยกเลิก (ตัวแทนของคำถามที่ไม่จำเป็น)" : "Kept + cancelled (a proxy for an unneeded question)"}>{pct(d.kept_or_cancelled_share)}</Row>
+          </div>
+          {kinds.length ? (
+            <table className="mt-3 w-full text-left text-[12px]">
+              <caption className="sr-only">{th ? "แยกตามชนิดคำถาม" : "By kind of question"}</caption>
+              <thead className="text-dl-muted"><tr><th scope="col" className="py-1 pr-3">{th ? "ชนิด" : "Kind"}</th><th scope="col" className="pr-3">{th ? "ถาม" : "Asked"}</th><th scope="col" className="pr-3">{th ? "ตอบ" : "Answered"}</th><th scope="col" className="pr-3">{th ? "รับตามเดิม" : "Kept"}</th><th scope="col" className="pr-3">{th ? "ยกเลิก" : "Cancelled"}</th><th scope="col">{th ? "รับ+ยกเลิก" : "Kept+cancelled"}</th></tr></thead>
+              <tbody>
+                {kinds.map(([key, b]) => (
+                  <tr key={key} className="border-t border-dl-rule/60">
+                    <td className="desk-mono py-1 pr-3">{key}</td><td className="pr-3">{b.asked}</td><td className="pr-3">{b.answered}</td><td className="pr-3">{b.kept}</td><td className="pr-3">{b.cancelled}</td><td>{pct(b.kept_or_cancelled_share)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+          <p className="mt-3 text-[13px] text-dl-text">{d.hint}</p>
+          <p className="mt-1 text-[11px] text-dl-muted">{d.scope_note}</p>
+        </>
+      )}
+    </Panel>
   );
 }
