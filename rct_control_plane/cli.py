@@ -2097,8 +2097,11 @@ def approvals_group():
 
 def _approval_store(db: Optional[str]):
     from rct_control_plane.approvals import PendingActionStore
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    return PendingActionStore(ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence())
+    # Round 101: the database the server and the loops write pending actions to (agentic.db). The default used to be control_plane.db, so `delentia approvals list|approve|sign` on a host showed
+    # "No pending actions" for an action that was waiting, unless --db was given.
+    return PendingActionStore(ControlPlanePersistence(db_path=db or agentic_db_path()))
 
 
 @cli.group("episodes")
@@ -4747,8 +4750,9 @@ def backup_restore(path: str, to: str, force: bool) -> None:
 def host_metrics_cmd(fmt: str) -> None:
     """The host as an operator watches it: process, system, work in flight, spend, witness lag. A figure that cannot be read here is null and named."""
     from rct_control_plane import host_metrics
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    found = host_metrics.collect(ControlPlanePersistence())
+    found = host_metrics.collect(ControlPlanePersistence(db_path=agentic_db_path()))      # Round 101: where the spend ledger and the audit rows are, not the older control-plane file
     click.echo(host_metrics.to_prometheus(found) if fmt == "prometheus" else json.dumps(found, indent=2, default=str))
 
 

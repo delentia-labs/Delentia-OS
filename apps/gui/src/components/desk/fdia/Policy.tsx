@@ -360,7 +360,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
         {waiting ? (
           <div className="mt-4 rounded border border-dl-amber/60 bg-dl-amber/10 p-3 text-[13px] leading-relaxed text-dl-text">
             <p>{T("Waiting for a signature. Request ", "รอลายเซ็น คำขอ ")}<Code>{waiting.info.approval_id}</Code> {T("is bound to this exact policy.", "ผูกกับนโยบายฉบับนี้เท่านั้น")}</p>
-            <p className="mt-1 text-dl-muted">{T("On the machine that holds the approver key: ", "บนเครื่องที่มีกุญแจผู้อนุมัติ: ")}<Code>delentia approvals approve {waiting.info.approval_id} --key &lt;key&gt;</Code></p>
+            <p className="mt-1 text-dl-muted">{T("On the machine that holds the approver key: ", "บนเครื่องที่มีกุญแจผู้อนุมัติ: ")}<Code>delentia approvals approve {waiting.info.approval_id} --key &lt;key&gt;{waiting.info.db ? ` --db ${waiting.info.db}` : ""}</Code></p>
             <div className="mt-2 flex gap-2">
               <Button onClick={waiting.kind === "save" ? save : disable} disabled={busy}>{T("It is signed: apply", "เซ็นแล้ว: ใช้เลย")}</Button>
               <Button tone="ghost" onClick={() => setWaiting(null)}>{T("Forget this request", "ยกเลิกคำขอนี้")}</Button>

@@ -1003,7 +1003,8 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             record = store.create(namespace=owner, goal=f"Owner policy change: {tool_name}", tool_name=tool_name, tool_args=args,
                                   reason="changing the rules for A needs a human signature", approver_roles=roles or None)
             return {"pending_signature": True, "approval_id": record.approval_id, "action_sha256": record.action_sha256, "args": args,
-                    "how": f"sign it on the machine that holds the approver key: delentia approvals approve {record.approval_id} --key <key>; "
+                    "db": str(getattr(_kernel()._persistence, "db_path", "")),
+                    "how": f"sign it on the machine that holds the approver key: delentia approvals approve {record.approval_id} --key <key> --db {getattr(_kernel()._persistence, 'db_path', '<this server database>')}; "
                            "then send the same request again with approval_id"}
         existing = store.get(approval_id)
         if existing is None or existing.tool_name != tool_name or existing.tool_args != args:

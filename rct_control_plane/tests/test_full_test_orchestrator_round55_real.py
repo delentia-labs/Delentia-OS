@@ -378,3 +378,31 @@ def test_the_tool_choice_stage_reports_t10_in_the_table_and_the_per_model_matrix
     assert report["stopped"] is None and "judged" in report["results"]["cheap/model"]["toolchoice"]
     table = orch.table(report)
     assert "| T10 |" in table and "default 20/31, ranked+compact 22/31, median menu 28 -> 7 tools -> PASS" in table
+
+
+# ------------------------------------------------------------------ Round 101: the account refuses, and a ceiling inside the stage
+def test_the_children_also_get_a_daily_ceiling_equal_to_the_whole_budget():
+    calls = []
+    a, est = plan()
+    orch.run_plan(a, PRICES, est, runner=fake_runner(calls=calls), spend_probe=Meter(0.0), env=GOOD_ENV)
+    assert float(calls[0][1]["DELENTIA_DAILY_BUDGET_USD"]) == pytest.approx(a.budget_usd)
+
+
+@pytest.mark.parametrize("line", ["model endpoint answered HTTP 402", "model endpoint answered HTTP 401", "Insufficient credits", "402 Payment Required"])
+def test_an_account_refusal_stops_the_run_at_once_instead_of_failing_every_stage(line):
+    calls = []
+
+    def refusing(cmd, env, timeout):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 1, stdout="stage output\n" + line, stderr="")
+
+    a, est = plan()
+    report = orch.run_plan(a, PRICES, est, runner=refusing, spend_probe=Meter(0.0), env=GOOD_ENV)
+    assert report["stopped"] and "refused" in report["stopped"] and len(calls) == 1
+
+
+def test_a_run_that_has_spent_more_than_its_whole_budget_stops_even_when_each_stage_looked_small():
+    a, est = plan(budget_usd=0.5)
+    # each probe adds 0.4: a stage looks like 0.4, under 1.5 x its estimate here, but the run total passes 0.5 after the first stage
+    report = orch.run_plan(a, PRICES, orch.estimate(a.models, PRICES, 1) | {"total_with_margin": 100.0}, runner=fake_runner(), spend_probe=Meter(0.4), env=GOOD_ENV)
+    assert report["stopped"] and "budget" in report["stopped"]

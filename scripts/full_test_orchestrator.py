@@ -139,6 +139,15 @@ def leaked(text: str, key: Optional[str]) -> bool:
     return bool(text) and ((bool(key) and key in text) or bool(KEY_LOOKING.search(text)))
 
 
+# Round 101: what a stage prints when the account itself refuses (no credit, a revoked key). Every later stage would only fail the same way, so the run stops and says why.
+REFUSED_BY_ACCOUNT = re.compile(r"model endpoint answered HTTP (401|402|403)|Insufficient credits|Payment Required", re.IGNORECASE)
+
+
+def account_refusal(text: str) -> Optional[str]:
+    found = REFUSED_BY_ACCOUNT.search(text or "")
+    return found.group(0) if found else None
+
+
 # ------------------------------------------------------------------ prices and spend
 
 CATALOG: Dict[str, Dict[str, Any]] = {}      # OpenRouter's public model list, filled by --live-prices
@@ -278,7 +287,9 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
         child_env = dict(env)
         child_env.update({"DELENTIA_LLM_PROVIDER": "openrouter", "DELENTIA_LLM_MODEL": model, "DELENTIA_HOME": str(work / "home"),
                           "DELENTIA_MODEL_CONFIG": str(work / "model.json"), "DELENTIA_EPISODE_BUDGET_USD": f"{max(0.02, min(0.5, args.budget_usd * 0.05)):.4f}",
-                          "DELENTIA_EPISODE_MAX_TOKENS": "60000", "PYTHONIOENCODING": "utf-8"})
+                          "DELENTIA_EPISODE_MAX_TOKENS": "60000", "PYTHONIOENCODING": "utf-8",
+                          # Round 101: a ceiling INSIDE the stage's processes (the spend ledger in their shared home), not only a check after the stage has ended
+                          "DELENTIA_DAILY_BUDGET_USD": f"{args.budget_usd:.4f}"})
         model_result: Dict[str, Any] = {}
         report["results"][model] = model_result
         for stage in stages_for(model, prices, work, args.tier):
@@ -294,6 +305,10 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
                 return report
             spent = round(after - before, 4)
             model_result[stage["name"]] = {"exit": proc.returncode, "spent_usd": spent}
+            refusal = account_refusal(output)
+            if refusal and proc.returncode != 0:
+                report["stopped"] = f"the account refused the calls during {stage['name']} on {model} ({refusal}): out of credit or a revoked key; nothing more was run"
+                return report
             if stage["name"] == "k15":
                 rates = parse_k15(output)
                 model_result["k15"]["rates"] = rates
@@ -308,6 +323,9 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
                 model_result["toolchoice"]["judged"] = json.loads(extra).get(model, {}).get("judged", {})
             if spent > per_stage_cap * MARGIN:
                 report["stopped"] = f"{stage['name']} on {model} spent ${spent} > 1.5 x its estimate ${round(per_stage_cap, 4)}"
+                return report
+            if after - start_spend > args.budget_usd:
+                report["stopped"] = f"the whole run has spent ${round(after - start_spend, 4)}, more than its budget ${args.budget_usd}, after {stage['name']} on {model}"
                 return report
     jury = getattr(args, "jury_models", None)
     if jury and args.tier == "B":

@@ -1792,7 +1792,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
             return ""
         return ("Plan mode: the owner wants these kinds of action confirmed by the person ONCE, as a whole plan, before any of them runs: " + ", ".join(kinds) + ". Ask for such an action as usual: it is "
                 "recorded as a numbered step and NOT run (the reply says proposed). Ask for the steps in the order they should run, then finish with a short answer that says what the plan does. "
-                "Reading and searching run normally and may be used to prepare the plan. Do not ask for an action twice.")
+                "Reading and searching run normally and may be used to prepare the plan. Do not ask for an action twice. In your final answer say that these steps are PROPOSED and wait for the person's confirmation: "
+                "do not say they were done.")
 
     async def _plan_intercept(self, goal: str, tool_name: str, tool_args: Dict[str, Any], reasoning: str = "") -> Optional[Dict[str, Any]]:
         """None: not a planned action, the normal path follows. A gate result with a stopped_reason: a hard refusal (the floor, the owner's denied path, FDIA, the pause). Otherwise the action is
@@ -1868,8 +1869,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
         result["iterations"] = len(result["steps"])
         result["stopped_reason"] = "pending_approval"
         result["plan_approval"] = {"digest": plan["digest"], "steps": len(plan["steps"]), "counts": plan["counts"], "text": text, "required_signatures": required}
-        if not result.get("final_answer"):
-            result["final_answer"] = text
+        own = str(result.get("final_answer") or "").strip()
+        # Found by a real model (qwen3:8b, Round 101): after PROPOSING a step it wrote "Draft saved to hello.txt". Nothing had been saved. What the person is shown first is the plan and the fact that nothing has
+        # run; the model's own summary is kept below it, labelled, because it may speak as if the steps were done.
+        note = "ยังไม่มีอะไรถูกรัน: รอการยืนยันของคุณก่อน" if thai else "Nothing has run yet: this waits for your confirmation."
+        blank = chr(10) * 2
+        label = "สรุปของเอเจนต์เอง เขียนก่อนยืนยัน อาจพูดเหมือนทำเสร็จแล้ว" if thai else "The agent's own summary, written before the confirmation; it may speak as if the steps were done"
+        result["final_answer"] = text + blank + note + ((blank + "(" + label + ": " + own[:600] + ")") if own else "")
+        result["agent_summary_before_confirmation"] = own
         try:
             self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{plan['digest'][:16]}", action="plan_proposed", actor=self.namespace,
                                            changes={"plan_digest": plan["digest"], "steps": len(plan["steps"]), "counts": plan["counts"], "required_signatures": required})

@@ -47,6 +47,8 @@ _TRANSIENT_HTTP_STATUS = (408, 409, 425, 429, 500, 502, 503, 504)
 
 
 def _is_transient_llm_error(exc: BaseException) -> bool:
+    if getattr(exc, "transient", False) is True:        # llm_provider.LLMReplyError: a 200 that carried no usable reply
+        return True
     try:
         import httpx
     except ImportError:     # pragma: no cover
@@ -54,6 +56,23 @@ def _is_transient_llm_error(exc: BaseException) -> bool:
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in _TRANSIENT_HTTP_STATUS
     return isinstance(exc, (httpx.TransportError, asyncio.TimeoutError, ConnectionError))
+
+
+RETRY_AFTER_CAP_SECONDS = 30.0
+
+
+def _retry_delay(exc: BaseException, backoff: float, attempt: int) -> float:
+    """Seconds to wait before the next try: the fixed backoff, or the endpoint's own Retry-After (capped) when it sent one with a 429/503. A rate limit that says "in 20 seconds" is not
+    answered by three tries within three seconds."""
+    delay = backoff * attempt
+    try:
+        headers = getattr(getattr(exc, "response", None), "headers", None)
+        value = headers.get("retry-after") if headers is not None else None
+        if value is not None:
+            delay = max(delay, min(float(value), RETRY_AFTER_CAP_SECONDS))
+    except (TypeError, ValueError, AttributeError):
+        pass
+    return delay
 
 
 def _describe_llm_error(exc: BaseException) -> str:
@@ -203,10 +222,35 @@ def reconstruct_full_history_text(history: List[LoopStep], delta_engine: Optiona
     return "\n".join(lines)
 
 
+_REASONING_TAGS = ("think", "thinking", "reasoning")
+
+
+def _strip_reasoning(text: str) -> str:
+    """A reasoning model puts its thinking in <think>...</think> before the answer, and that thinking can contain braces. Removed before the JSON is looked for. An opening tag that is never
+    closed means the reply was cut off while thinking: there is no answer after it. Plain string search, no pattern that can backtrack."""
+    low = text.lower()
+    kept: List[str] = []
+    i = 0
+    while True:
+        starts = [(low.find(f"<{tag}>", i), tag) for tag in _REASONING_TAGS]
+        starts = [(pos, tag) for pos, tag in starts if pos >= 0]
+        if not starts:
+            kept.append(text[i:])
+            break
+        pos, tag = min(starts)
+        kept.append(text[i:pos])
+        close = low.find(f"</{tag}>", pos)
+        if close < 0:
+            break
+        i = close + len(tag) + 3
+    return "".join(kept)
+
+
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     """Best-effort real JSON extraction from an LLM response that may
     wrap the JSON in prose or markdown fences - a small local model
     does not always follow format="json" perfectly."""
+    text = _strip_reasoning(text)
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -674,7 +718,7 @@ class AutonomousLoop:
                     except Exception as exc:    # noqa: BLE001 - any provider failure ends the episode, not the caller
                         if attempt < retries and _is_transient_llm_error(exc):
                             attempt += 1
-                            await asyncio.sleep(backoff * attempt)
+                            await asyncio.sleep(_retry_delay(exc, backoff, attempt))
                             continue
                         llm_error = _describe_llm_error(exc)
                         stopped_reason = "llm_error"
@@ -718,6 +762,8 @@ class AutonomousLoop:
                         final_answer = await self._stream_final_answer(goal, history, on_answer_token)
                     except (BudgetExceededError, ResidencyViolation):
                         pass  # keep the answer from the decision call rather than spend past the budget
+                    except Exception:  # noqa: BLE001 - Round 101: a broken stream (a malformed event, a dropped connection) must not lose an answer the decision call already gave
+                        pass
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)

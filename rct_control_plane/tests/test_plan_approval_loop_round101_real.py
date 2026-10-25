@@ -486,3 +486,14 @@ def test_loosening_from_the_argaware_starter_to_planfirst_is_named_correctly():
     names = ["delentia_read_repo_file", "delentia_write_repo_file", "delentia_run_sandboxed_command"]
     lines = hist.loosened(fp.template("argaware", names), fp.template("planfirst", names))
     assert any("without a signature" in line for line in lines), lines
+
+
+# ------------------------------------------------------------------ what the person reads when a plan waits (found with a real model)
+def test_the_answer_says_nothing_has_run_and_keeps_the_agents_own_summary_labelled(tmp_path, decide):
+    decide([CRON, {"action": "finish", "reasoning": "done", "final_answer": "I deleted job-7 for you.", "tool_name": None, "tool_args": {}}])
+    mcp = Tools()
+    result = run(mk(tmp_path, "ans1", mcp, make_policy(plan_first=["delete"])))
+    answer = result["final_answer"]
+    assert answer.index("Plan:") < answer.index("Nothing has run yet") < answer.index("I deleted job-7")
+    assert "written before the confirmation" in answer and result["agent_summary_before_confirmation"] == "I deleted job-7 for you."
+    assert mcp.dispatched == []

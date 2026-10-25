@@ -385,7 +385,7 @@ export interface ForgeState {
   gaps: ForgeGap[]; proposals: ForgeProposal[]; tools: ForgeTool[];
   limits: { allowed_imports: string[]; min_asserts: number; run_timeout_s: number; max_code_chars: number };
 }
-export interface PolicySavePending { pending_signature: true; approval_id: string; action_sha256: string; how: string }
+export interface PolicySavePending { pending_signature: true; approval_id: string; action_sha256: string; how: string; db?: string }
 
 export const desk = {
   health: () => call<Health>("/health"),
