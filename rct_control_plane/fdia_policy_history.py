@@ -173,4 +173,6 @@ def loosened(before: Dict[str, Any], after: Dict[str, Any]) -> List[str]:
         out.append(f"{kind} actions are no longer confirmed as a plan first")
     if bool(after.get("small_edit_autorun")) and not bool(before.get("small_edit_autorun")):
         out.append("a small edit of a file the request names now runs without a signature")
+    if bool(after.get("thin_data_asks")) and not bool(before.get("thin_data_asks")):
+        out.append("a request backed by thin evidence is now put to a person instead of being refused (a person's signature can now allow what the data gate used to refuse)")
     return out

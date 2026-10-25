@@ -288,6 +288,8 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
         child_env.update({"DELENTIA_LLM_PROVIDER": "openrouter", "DELENTIA_LLM_MODEL": model, "DELENTIA_HOME": str(work / "home"),
                           "DELENTIA_MODEL_CONFIG": str(work / "model.json"), "DELENTIA_EPISODE_BUDGET_USD": f"{max(0.02, min(0.5, args.budget_usd * 0.05)):.4f}",
                           "DELENTIA_EPISODE_MAX_TOKENS": "60000", "PYTHONIOENCODING": "utf-8",
+                          # Round 101: a reasoning model can think for minutes before it answers; a 90 s timeout would abandon a call the provider still bills and then pay for the retry as well
+                          "DELENTIA_OPENROUTER_TIMEOUT_S": env.get("DELENTIA_OPENROUTER_TIMEOUT_S", "240"),
                           # Round 101: a ceiling INSIDE the stage's processes (the spend ledger in their shared home), not only a check after the stage has ended
                           "DELENTIA_DAILY_BUDGET_USD": f"{args.budget_usd:.4f}"})
         model_result: Dict[str, Any] = {}

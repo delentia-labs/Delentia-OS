@@ -190,6 +190,17 @@ PROPERTIES: List[Dict[str, object]] = [
                f"{PLANPURE}::test_any_change_to_the_plan_breaks_its_digest"],
      "assumes": "The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).",
      "not_covered": "A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; a chat channel is shown the plan only when the episode ends (it gets no plan before the first tool), and signing is never done from a chat."},
+    {"id": "P16", "name": "Thin evidence is a question for a person, never an approval and never a silent refusal of what a person could decide",
+     "statement": "With `thin_data_asks` in the owner's policy, a call whose evidence is thin (0 < F < the threshold, A > 0) waits for a person's signature with the numbers shown instead of being refused; the action runs only after the signature, "
+                  "and with the flag off the old refusal is unchanged. No data or no intent (D = 0 or I = 0, so F = 0) and a call a rule, a denied path or the safety floor forbids (A = 0) are still refused whatever the flag says.",
+     "tests": [f"{PLANLOOP}::test_thin_evidence_is_put_to_the_person_with_the_numbers_and_runs_only_after_a_signature",
+               f"{PLANLOOP}::test_without_the_flag_thin_evidence_is_still_refused_as_before",
+               f"{PLANLOOP}::test_no_data_or_no_intent_is_still_a_refusal_even_with_the_flag",
+               f"{PLANLOOP}::test_a_denied_path_is_still_a_refusal_even_with_the_flag",
+               f"{PLANLOOP}::test_a_thin_evidence_step_becomes_a_step_of_the_plan",
+               f"{PLANLOOP}::test_the_flag_is_validated_left_out_at_its_default_and_named_as_a_loosening"],
+     "assumes": "The owner chose to switch the flag on in a signed policy; D comes from data_evidence.py (the files a request names, memory, skills, record), which is lexical and was written by the author.",
+     "not_covered": "Whether a person reading the numbers decides better than the gate did: nothing here measures that. A person who signs everything makes this a rubber stamp; `delentia approvals suggest` and the approval statistics are how to notice. In a job, schedule or webhook nobody is there to answer, so the episode waits."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 

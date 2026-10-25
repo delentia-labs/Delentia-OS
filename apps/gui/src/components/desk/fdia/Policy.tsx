@@ -317,6 +317,18 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
             </span>
           </span>
         </label>
+        <label className="mt-3 flex items-start gap-2 text-[13px] text-dl-text">
+          <input type="checkbox" className="mt-1" checked={!!draft.thin_data_asks} aria-label="Thin evidence asks me instead of being refused"
+            onChange={(e) => set({ thin_data_asks: e.target.checked })} />
+          <span>
+            {T("When the evidence behind a request is thin, ask me (with the numbers) instead of refusing it",
+               "เมื่อหลักฐานที่รองรับคำขอบางเกินไป ให้ถามฉัน (พร้อมตัวเลข) แทนที่จะปฏิเสธเลย")}
+            <span className="block text-[12px] text-dl-muted">
+              {T("No data or no intent (D or I = 0) is still refused, and so is anything a rule, a denied path or the safety floor forbids. Only your signature allows the action. Switching this on loosens the gate and is named in the policy history.",
+                 "ไม่มีข้อมูลหรือไม่มีเจตนา (D หรือ I = 0) ยังถูกปฏิเสธ รวมถึงสิ่งที่กฎ พาธต้องห้าม หรือพื้นความปลอดภัยห้ามไว้ มีเพียงลายเซ็นของคุณที่อนุญาตให้ทำได้ การเปิดข้อนี้ผ่อนกฎและถูกระบุในประวัตินโยบาย")}
+            </span>
+          </span>
+        </label>
       </Panel>
 
       <Panel title={T("Approvers you trust", "ผู้อนุมัติที่คุณไว้ใจ")}>

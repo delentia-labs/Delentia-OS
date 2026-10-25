@@ -221,6 +221,20 @@ With `plan_first` listing a kind (delete, outward, money, permissions, publish, 
   - `test_plan_approval_loop_round101_real.py::test_a_chat_channel_is_shown_the_plan_the_id_and_that_nothing_ran`
   - `test_plan_approval_round101_real.py::test_any_change_to_the_plan_breaks_its_digest`
 
+### P16 - Thin evidence is a question for a person, never an approval and never a silent refusal of what a person could decide
+
+With `thin_data_asks` in the owner's policy, a call whose evidence is thin (0 < F < the threshold, A > 0) waits for a person's signature with the numbers shown instead of being refused; the action runs only after the signature, and with the flag off the old refusal is unchanged. No data or no intent (D = 0 or I = 0, so F = 0) and a call a rule, a denied path or the safety floor forbids (A = 0) are still refused whatever the flag says.
+
+- **Assumes:** The owner chose to switch the flag on in a signed policy; D comes from data_evidence.py (the files a request names, memory, skills, record), which is lexical and was written by the author.
+- **Not covered:** Whether a person reading the numbers decides better than the gate did: nothing here measures that. A person who signs everything makes this a rubber stamp; `delentia approvals suggest` and the approval statistics are how to notice. In a job, schedule or webhook nobody is there to answer, so the episode waits.
+- **Pinned by:**
+  - `test_plan_approval_loop_round101_real.py::test_thin_evidence_is_put_to_the_person_with_the_numbers_and_runs_only_after_a_signature`
+  - `test_plan_approval_loop_round101_real.py::test_without_the_flag_thin_evidence_is_still_refused_as_before`
+  - `test_plan_approval_loop_round101_real.py::test_no_data_or_no_intent_is_still_a_refusal_even_with_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_still_a_refusal_even_with_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_a_thin_evidence_step_becomes_a_step_of_the_plan`
+  - `test_plan_approval_loop_round101_real.py::test_the_flag_is_validated_left_out_at_its_default_and_named_as_a_loosening`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |

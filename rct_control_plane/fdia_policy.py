@@ -158,6 +158,9 @@ class Policy:
     # Round 101 (the Architect's answers Q1 and Q2 of the plan-approval note). Both are part of the owner's SIGNED policy, so changing them needs the same approver signature as any
     # policy change, and both are left out of the policy's dictionary (and so of its digest) while they are at their defaults: a policy written before them keeps the digest it had.
     plan_first: List[str] = field(default_factory=list)          # kinds of action that are PROPOSED as a plan and confirmed once before anything runs (plan_approval.KINDS)
+    # Round 101 (the Architect asked for the D gate to follow "the principle with the highest effectiveness"): where the evidence behind a request is THIN (0 < F < threshold) the call is put to a
+    # person as a question that shows the numbers, instead of being refused outright. D = 0 or I = 0 (no data, no intent) still means F = 0 and still blocks; only a person's signature supplies A.
+    thin_data_asks: bool = False
     small_edit_autorun: bool = False                              # a write/patch of ONE file that the request names, inside the workspace, with a checkpoint to go back to, runs without a signature
 
     def to_dict(self) -> Dict[str, Any]:
@@ -167,6 +170,8 @@ class Policy:
             data.pop("plan_first", None)
         if not data.get("small_edit_autorun"):
             data.pop("small_edit_autorun", None)
+        if not data.get("thin_data_asks"):
+            data.pop("thin_data_asks", None)
         return data
 
     def digest(self) -> str:
@@ -483,8 +488,12 @@ def validate_policy(data: Any) -> Tuple[Optional[Policy], List[str]]:
     if not isinstance(raw_autorun, bool):
         errors.append("small_edit_autorun must be true or false")
         raw_autorun = False
+    raw_thin = data.get("thin_data_asks", False)
+    if not isinstance(raw_thin, bool):
+        errors.append("thin_data_asks must be true or false")
+        raw_thin = False
     policy = Policy(
-        plan_first=plan_first, small_edit_autorun=raw_autorun,
+        plan_first=plan_first, small_edit_autorun=raw_autorun, thin_data_asks=raw_thin,
         version=str(data.get("version", "1.0.0"))[:20], policy_id=str(data.get("policy_id", "owner-policy"))[:64],
         policy_name=str(data.get("policy_name", "Owner policy"))[:120],
         default_fallback_A=_number(data.get("default_fallback_A"), "default_fallback_A", errors, 0.0),
@@ -680,7 +689,7 @@ def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
     extra: Dict[str, Any] = {}
     if planfirst:
         # The Architect's answer to Q1/Q2 (2026-10-25): every kind except editing documents is confirmed once as a plan; a small edit of a file the request names runs without a signature.
-        extra = {"plan_first": list(PLANFIRST_KINDS), "small_edit_autorun": True}
+        extra = {"plan_first": list(PLANFIRST_KINDS), "small_edit_autorun": True, "thin_data_asks": True}
     return {
         **extra,
         "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Plan-first starter" if planfirst else ("Strict starter" if strict else ("Argument-aware starter" if argaware else ("Careful starter" if careful else "Balanced starter"))),

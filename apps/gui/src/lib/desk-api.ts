@@ -336,6 +336,8 @@ export interface FdiaPolicy {
   plan_first?: string[];
   /** Round 101: an edit of one file the request names runs without a signature (a loosening: named in the policy history). */
   small_edit_autorun?: boolean;
+  /** Round 101: thin evidence (0 < F < threshold) is put to a person with the numbers instead of being refused; no data or no intent still blocks. */
+  thin_data_asks?: boolean;
 }
 export interface FdiaToolInfo { name: string; description: string; built_in: "always a signature" | "FDIA gate" | "open" }
 export interface FdiaState {

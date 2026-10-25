@@ -804,6 +804,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         kernel = self._get_kernel()
         clarity, I, compile_result = kernel.synthesize_fdia_inputs(goal)
         memories = await self._recall_for_goal(goal) if self._memory_in_prompt else []
+        self._episode_recalled_for_judge = list(memories)
         skills = self._retrieve_skills_counted(goal)
         evidence = self._assess_data(goal, clarity, compile_result)
         self._episode_intent = self._describe_intent(compile_result)
@@ -1701,6 +1702,26 @@ class GovernedAutonomousLoop(AutonomousLoop):
             },
         )
 
+        if blocked and A > 0.0 and F > 0.0 and getattr(policy, "thin_data_asks", False) and judged:
+            # Round 101: thin evidence (0 < F < threshold) is a question for the person, with the numbers, not a refusal. No data or no intent (F = 0) and A = 0 are still refusals.
+            missing_data = list((self._episode_data or {}).get("missing", []))[:3]
+            required, roles, rule_id = 1, [], "thin_data"
+            if policy_eval is not None and policy_eval.needs_signature:
+                required, roles, rule_id = max(1, int(policy_eval.required_signatures or 1)), list(policy_eval.approver_roles or []), policy_eval.rule_id
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_fdia_gate", entity_id=f"{self.namespace}-{tool_name}-thin", action="thin_data_asked", actor=self.namespace,
+                                               changes={"tool_name": tool_name, "D": self._episode_D, "I": self._episode_I, "F": F, "threshold": threshold, "missing": missing_data})
+            except Exception:
+                pass
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {
+                    "pending_approval": True, "tool_name": tool_name, "tool_args": tool_args,
+                    "reason": f"the evidence behind this request is thin (D={self._episode_D}, I={self._episode_I}, F={F} is below {threshold}); you decide. Missing: " + ("; ".join(missing_data) or "no stored memory, skill or record for this goal"),
+                    "thin_data": {"D": self._episode_D, "I": self._episode_I, "F": F, "threshold": threshold, "missing": missing_data},
+                    "approval_policy": {"rule_id": rule_id, "required_signatures": required, "approver_roles": roles, "policy_digest": policy.digest()},
+                },
+            }
         if blocked:
             return self._gate_refusal(tool_name, A, a_reason if A <= 0.0 else
                                       f"F = {F} is below the FDIA threshold {threshold} (D={self._episode_D}, I={self._episode_I})",
@@ -2064,11 +2085,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         except Exception:
             return False
 
-    def _judge_audit(self, what: str, subject: str, verdict: Dict[str, Any]) -> None:
+    def _judge_audit(self, what: str, subject: str, verdict: Dict[str, Any], extra: Optional[Dict[str, Any]] = None) -> None:
         try:
             from rct_control_plane import audit_text
             self._persistence.append_audit(entity_type="governed_loop_judge", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action=what, actor=self.namespace,
-                                           changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500]}, ("verdict",)))
+                                           changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500], **(extra or {})}, ("verdict",)))
         except Exception:
             pass
 
@@ -2115,9 +2136,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 store.accept(waiting.clarification_id, self.namespace)       # the same request sent again without an answer: the person means it as it is
                 self._judge_audit("insisted", goal, {"clarification_id": waiting.clarification_id})
                 return None
-        verdict = await rct7_judge.judge_request(provider, goal)
+        context = None
+        from rct_control_plane import judge_context
+        if judge_context.enabled():
+            # Round 101: the variant measured on the Architect's set 3 (the judge sees what the agent already has). Opt-in; the text is built from this person's own things and file NAMES only.
+            context = judge_context.gather(self, goal)
+        verdict = await rct7_judge.judge_request(provider, goal, context)
         settle()
-        self._judge_audit("request", goal, verdict.to_dict())
+        self._judge_audit("request", goal, verdict.to_dict(), {"context_sha256": _sha(context), "prompt_version": rct7_judge.context_prompt_version()} if context is not None else None)
         if verdict.clear is not False or not verdict.unknowns:
             return None
         thai = bool(re.search(r"[\u0e00-\u0e7f]", goal))

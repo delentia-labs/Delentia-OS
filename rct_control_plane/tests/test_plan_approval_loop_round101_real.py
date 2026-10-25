@@ -468,7 +468,7 @@ def test_the_planfirst_starter_is_the_argaware_starter_plus_every_kind_but_docum
     names = ["delentia_read_repo_file", "delentia_write_repo_file", "delentia_patch_repo_file", "delentia_run_sandboxed_command", "delentia_cron_delete", "delentia_save_exchange_file"]
     base = fp.template("argaware", names)
     plan = fp.template("planfirst", names)
-    assert plan["plan_first"] == ["delete", "outward", "money", "permissions", "publish", "restore_cancel", "move_shutdown"]
+    assert plan["plan_first"] == ["delete", "outward", "money", "permissions", "publish", "restore_cancel", "move_shutdown"] and plan["thin_data_asks"] is True
     assert "document_edit" not in plan["plan_first"] and plan["small_edit_autorun"] is True
     assert plan["rules"] == base["rules"], "the per-call rules are exactly the argaware ones"
     parsed, errors = fp.validate_policy(plan)
@@ -497,3 +497,70 @@ def test_the_answer_says_nothing_has_run_and_keeps_the_agents_own_summary_labell
     assert answer.index("Plan:") < answer.index("Nothing has run yet") < answer.index("I deleted job-7")
     assert "written before the confirmation" in answer and result["agent_summary_before_confirmation"] == "I deleted job-7 for you."
     assert mcp.dispatched == []
+
+
+# ------------------------------------------------------------------ thin evidence is a question for the person, not a refusal (opt-in, on in the plan-first starter)
+def mk_thin(tmp_path, name, mcp, policy, D, I):
+    loop = _loop(tmp_path, name, kernel=_FakeKernel(D=D, I=I), mcp=mcp, policy=policy)
+    real = loop._assess_data
+
+    def assess(goal, clarity, compile_result):
+        evidence = real(goal, clarity, compile_result)
+        evidence.D = D
+        return evidence
+
+    loop._assess_data = assess
+    return loop
+
+
+def test_thin_evidence_is_put_to_the_person_with_the_numbers_and_runs_only_after_a_signature(tmp_path, decide, approver):
+    decide([WRITE, FINISH])
+    mcp = Tools()
+    loop = mk_thin(tmp_path, "thin1", mcp, make_policy(thin_data_asks=True), D=0.6, I=1.6)
+    result = run(loop)
+    assert result["stopped_reason"] == "pending_approval" and mcp.dispatched == []
+    shown = result["steps"][-1]["tool_result"]
+    assert shown["thin_data"]["F"] < shown["thin_data"]["threshold"] and "thin" in shown["reason"] and shown["thin_data"]["D"] == 0.6
+    store = loop._pending_actions()
+    sign(store, store.get(result["approval_id"]), approver)
+    asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
+    assert dispatched_names(mcp) == ["delentia_write_repo_file"]
+
+
+def test_without_the_flag_thin_evidence_is_still_refused_as_before(tmp_path, decide):
+    decide([WRITE, FINISH])
+    mcp = Tools()
+    result = run(mk_thin(tmp_path, "thin2", mcp, make_policy(), D=0.6, I=1.6))
+    assert result["stopped_reason"] == "fdia_blocked" and mcp.dispatched == []
+
+
+@pytest.mark.parametrize("D,I", [(0.0, 1.0), (0.6, 0.0)])
+def test_no_data_or_no_intent_is_still_a_refusal_even_with_the_flag(tmp_path, decide, D, I):
+    decide([WRITE, FINISH])
+    mcp = Tools()
+    result = run(mk_thin(tmp_path, f"thin3-{D}-{I}", mcp, make_policy(thin_data_asks=True), D=D, I=I))
+    assert result["stopped_reason"] == "fdia_blocked" and mcp.dispatched == []
+
+
+def test_a_denied_path_is_still_a_refusal_even_with_the_flag(tmp_path, decide):
+    decide([call("delentia_write_repo_file", {"relative_path": ".env", "content_text": "x=1"}), FINISH])
+    mcp = Tools()
+    result = run(mk_thin(tmp_path, "thin4", mcp, make_policy(thin_data_asks=True), D=0.6, I=1.6))
+    assert result["stopped_reason"] == "fdia_blocked" and mcp.dispatched == []
+
+
+def test_a_thin_evidence_step_becomes_a_step_of_the_plan(tmp_path, decide):
+    decide([CRON, FINISH])
+    mcp = Tools()
+    result = run(mk_thin(tmp_path, "thin5", mcp, make_policy(plan_first=["delete"], thin_data_asks=True), D=0.6, I=1.6))
+    assert result["stopped_reason"] == "pending_approval" and result["plan_approval"]["steps"] == 1 and mcp.dispatched == []
+
+
+def test_the_flag_is_validated_left_out_at_its_default_and_named_as_a_loosening():
+    from rct_control_plane import fdia_policy_history as hist
+    assert "thin_data_asks" not in make_policy().to_dict()
+    assert make_policy(thin_data_asks=True).to_dict()["thin_data_asks"] is True
+    parsed, errors = fp.validate_policy({"rules": [READ], "thin_data_asks": "yes"})
+    assert parsed is None and any("thin_data_asks" in e for e in errors)
+    assert any("thin evidence" in line for line in hist.loosened(make_policy().to_dict(), make_policy(thin_data_asks=True).to_dict()))
+    assert fp.template("planfirst", ["delentia_read_repo_file"])["thin_data_asks"] is True
