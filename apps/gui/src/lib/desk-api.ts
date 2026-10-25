@@ -202,6 +202,8 @@ export interface Clarification {
   intent_version: number; new_intent_version: number | null; status: "PENDING" | "ANSWERED" | "CANCELLED" | "EXPIRED";
   question: string; expected: string; observed: string; answer: string; original_goal: string;
   answered_by: string | null; created_at: number; answered_at: number | null; expires_at: number;
+  /** "rerun" once the same request was sent again with the answer attached, "accepted" when the person kept the result; null while neither happened. */
+  continued_as?: "rerun" | "accepted" | null; continued_at?: number | null;
 }
 /** One kind of question in the stop-and-ask statistics (rct_control_plane/rct7_stats.py). */
 export interface Rct7Bucket { asked: number; answered: number; kept: number; cancelled: number; expired: number; waiting: number; kept_or_cancelled_share: number | null }
@@ -537,6 +539,8 @@ export const desk = {
   clarifications: (status = "PENDING") => call<Clarification[]>(`/v1/agent/clarifications?status=${status}`),
   answerClarification: (id: string, answer: string) =>
     call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/answer`, { method: "POST", body: JSON.stringify({ answer }) }),
+  acceptClarification: (id: string) =>
+    call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/accept`, { method: "POST", body: JSON.stringify({}) }),
   cancelClarification: (id: string) =>
     call<Clarification>(`/v1/agent/clarifications/${encodeURIComponent(id)}/cancel`, { method: "POST", body: JSON.stringify({}) }),
 };

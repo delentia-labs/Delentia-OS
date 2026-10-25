@@ -91,7 +91,7 @@ export function Badge({ tone = "muted", children, title }: { tone?: Tone; childr
 
 export function Panel({ title, children, className = "", aside }: { title?: string; children: React.ReactNode; className?: string; aside?: React.ReactNode }) {
   return (
-    <section className={`rounded-md border border-dl-rule bg-dl-panel ${className}`}>
+    <section className={`min-w-0 rounded-md border border-dl-rule bg-dl-panel ${className}`}>
       {title ? (
         <div className="flex items-center justify-between gap-3 border-b border-dl-rule px-4 py-2.5">
           <h2 className="desk-mono text-[13px] font-medium text-dl-text">{title}</h2>
@@ -103,11 +103,12 @@ export function Panel({ title, children, className = "", aside }: { title?: stri
   );
 }
 
-export function Row({ label, children }: { label: string; children: React.ReactNode }) {
+/** `wrap` lets a long value (a request, an expected/observed pair) use several lines instead of being cut off. */
+export function Row({ label, children, wrap = false }: { label: string; children: React.ReactNode; wrap?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-dl-rule/60 py-2 last:border-0">
-      <span className="text-sm text-dl-muted">{label}</span>
-      <span className="desk-mono min-w-0 truncate text-right text-sm text-dl-text">{children}</span>
+    <div className="flex min-w-0 items-baseline justify-between gap-4 border-b border-dl-rule/60 py-2 last:border-0">
+      <span className="shrink-0 text-sm text-dl-muted">{label}</span>
+      <span className={`desk-mono min-w-0 text-right text-sm text-dl-text ${wrap ? "break-words" : "truncate"}`}>{children}</span>
     </div>
   );
 }
