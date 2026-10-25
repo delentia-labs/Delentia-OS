@@ -244,6 +244,7 @@ A passkey becomes a trusted approver only after an Ed25519 approver signed for t
 - **Pinned by:**
   - `test_passkeys_round101_real.py::test_a_device_is_trusted_only_after_an_existing_approver_signed_for_it`
   - `test_passkeys_round101_real.py::test_a_device_cannot_enroll_another_device`
+  - `test_passkeys_round101_real.py::test_a_device_is_refused_at_once_when_asked_to_approve_the_enrolment_of_a_device`
   - `test_passkeys_round101_real.py::test_the_signature_covers_this_exact_device`
   - `test_passkeys_round101_real.py::test_a_confirmation_for_one_decision_cannot_be_used_for_the_other`
   - `test_passkeys_round101_real.py::test_a_confirmation_for_one_action_cannot_be_used_for_another`

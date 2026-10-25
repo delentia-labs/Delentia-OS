@@ -208,6 +208,7 @@ PROPERTIES: List[Dict[str, object]] = [
                   "a revoked device voids what it approved and has not run, and roles, distinct signers and scope (kinds, people, folders) apply to a device as to a key.",
      "tests": [f"{PASSKEY}::test_a_device_is_trusted_only_after_an_existing_approver_signed_for_it",
                f"{PASSKEY}::test_a_device_cannot_enroll_another_device",
+               f"{PASSKEY}::test_a_device_is_refused_at_once_when_asked_to_approve_the_enrolment_of_a_device",
                f"{PASSKEY}::test_the_signature_covers_this_exact_device",
                f"{PASSKEY}::test_a_confirmation_for_one_decision_cannot_be_used_for_the_other",
                f"{PASSKEY}::test_a_confirmation_for_one_action_cannot_be_used_for_another",

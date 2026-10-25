@@ -1591,7 +1591,9 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         """Removing authority is always allowed to the owner: every approval this device signed that has not run yet becomes void."""
         from rct_control_plane import passkeys
         _, pk_store = _pk_stores()
-        match = next((c for c in pk_store.list() if c.credential_id.startswith(credential_id) or c.signer_key.endswith(credential_id)), None)
+        # The Desk sends the 16-character id from the list; a shorter prefix could match a different device, so it is refused as "not found".
+        matches = [c for c in pk_store.list() if len(credential_id) >= 16 and c.credential_id.startswith(credential_id)]
+        match = matches[0] if len(matches) == 1 else None
         if match is None:
             raise HTTPException(status_code=404, detail="no such device")
         try:

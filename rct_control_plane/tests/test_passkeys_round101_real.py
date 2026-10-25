@@ -127,7 +127,11 @@ def test_a_device_cannot_enroll_another_device(world):
     begun = world["passkeys"].begin_registration("phone")
     info = world["passkeys"].finish_registration(begun["enrollment_id"], second.create(begun["options"]))
     action = passkeys.create_enrollment_action(world["approvals"], info)
-    world["approvals"].decide_with_passkey(action.approval_id, "APPROVED", confirm(world, action, first))
+    with pytest.raises(ApprovalError, match="can not approve the enrolment"):            # the first layer: the decision itself is refused
+        world["approvals"].decide_with_passkey(action.approval_id, "APPROVED", confirm(world, action, first))
+    # the second layer, in case a passkey signature got recorded some other way (here: through the lower-level call): activation still refuses it
+    cred, stored = world["passkeys"].verify_new(action.approval_id, action.action_sha256, "APPROVED", confirm(world, action, first))
+    world["approvals"].decide(action.approval_id, "APPROVED", cred.signer_key, stored)
     with pytest.raises(PasskeyError, match="approver key, not of another device"):
         passkeys.activate_enrollment(world["approvals"], world["passkeys"], action.approval_id)
     assert world["passkeys"].get(info["credential_id"]).status == "PENDING"
@@ -404,3 +408,14 @@ def test_a_plan_confirmed_on_a_device_runs_in_the_governed_loop(tmp_path):
     assert mcp.dispatched == []
     outcome = asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
     assert dispatched_names(mcp) == ["delentia_cron_delete"] and outcome["executed_result"]["executed"] == 1
+
+
+def test_a_device_is_refused_at_once_when_asked_to_approve_the_enrolment_of_a_device(world):
+    device, _, _ = enroll(world, name="first")
+    other = VirtualAuthenticator()
+    begun = world["passkeys"].begin_registration("second", None, None)
+    finished = world["passkeys"].finish_registration(begun["enrollment_id"], other.create(begun["options"]))
+    pending = passkeys.create_enrollment_action(world["approvals"], finished)
+    with pytest.raises(ApprovalError, match="can not approve the enrolment"):
+        world["approvals"].decide_with_passkey(pending.approval_id, "APPROVED", confirm(world, pending, device))
+    assert world["approvals"].get(pending.approval_id).status == "PENDING"          # nothing was recorded

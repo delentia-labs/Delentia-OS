@@ -461,6 +461,8 @@ class PendingActionStore:
         decision = decision.strip().upper()
         if decision not in DECISIONS:
             raise ApprovalError(f"decision must be one of {DECISIONS}")
+        if action.tool_name == passkeys.ENROLL_TOOL and decision == "APPROVED":
+            raise ApprovalError("a device can not approve the enrolment of a device: it needs the signature of an approver key (SIGN_PENDING.bat, or `delentia approvals approve`)")
         try:
             cred, stored = passkeys.PasskeyStore(self._persistence).verify_new(approval_id, action.action_sha256, decision, assertion)
         except passkeys.PasskeyError as exc:

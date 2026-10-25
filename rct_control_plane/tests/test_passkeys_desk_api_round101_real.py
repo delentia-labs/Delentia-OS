@@ -145,3 +145,11 @@ def test_the_cli_says_what_enrolling_a_device_means(desk):
     finished = client.post("/v1/desk/passkeys/register/finish", json={"enrollment_id": begun["enrollment_id"], "credential": VirtualAuthenticator().create(begun["options"])}).json()
     text = cli._describe_action(PendingActionStore(persistence).get(finished["approval_id"]))
     assert "phone" in text and "ONLY if you just added" in text
+
+
+def test_a_short_prefix_never_revokes_a_device_by_accident(desk):
+    client, persistence, key = desk
+    device, summary = add_device(client, persistence, key)
+    assert client.post(f"/v1/desk/passkeys/{summary['id'][:6]}/revoke").status_code == 404
+    assert client.get("/v1/desk/passkeys").json()["devices"][0]["status"] == "ACTIVE"
+    assert client.post(f"/v1/desk/passkeys/{summary['id']}/revoke").json()["status"] == "REVOKED"

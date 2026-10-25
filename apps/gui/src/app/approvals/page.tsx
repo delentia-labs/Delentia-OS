@@ -157,7 +157,12 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
               This action needs {a.required_signatures} signatures from distinct keys ({a.signatures_collected ?? 0} collected). Each signer repeats the steps below; it runs only after the last one.
             </p>
           ) : null}
-          {devices > 0 ? (
+          {a.tool_name === "passkey_enroll" ? (
+            <p className="text-[13px] leading-relaxed text-dl-amber">
+              {th ? "เครื่องใหม่ต้องให้ผู้อนุมัติเดิมเซ็นรับรอง (ใช้กุญแจ approver ไม่ใช่เครื่องนี้): ดับเบิลคลิก SIGN_PENDING.bat แล้วกลับไปกด “เปิดใช้” ที่หน้าตั้งค่า"
+                : "A new device needs an existing approver to sign for it (with the approver key, not with a device): double-click SIGN_PENDING.bat, then press Activate under Settings."}
+            </p>
+          ) : devices > 0 ? (
             <div className="rounded border border-dl-fern/50 bg-dl-pine/20 p-3">
               <p className="text-[13px] leading-relaxed text-dl-text">
                 {th ? "ยืนยันด้วยเครื่องนี้ (Windows Hello / ลายนิ้วมือ / มือถือ): อ่านรายละเอียดด้านบนให้ครบก่อน แล้วกดปุ่ม เครื่องจะถามตัวคุณ" : "Confirm with this computer (Windows Hello / fingerprint / phone): read the details above first, then press the button; the device asks you."}
