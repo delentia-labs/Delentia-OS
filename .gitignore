@@ -234,3 +234,6 @@ yolov8n.pt
 
 # Round 63: raw traces of research runs (regenerate with research/rehearse.py); summaries are committed as RESULTS_*.md
 research/runs/
+
+# Round 101: the built Desk copied in by scripts/package_desk.py (a build product, not source)
+rct_control_plane/desk_ui/

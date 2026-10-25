@@ -250,13 +250,55 @@ def format_output(data: Any, format: OutputFormat) -> None:
 
 # CLI Commands
 
-@click.group()
-@click.version_option(version=PACKAGE_VERSION, prog_name="rct")
+# Round 101 (UX audit): `delentia --help` listed 63 commands in one alphabetical block, with round numbers in the descriptions and the oldest commands next to the ones a new person needs. The commands are now
+# grouped by what a person is trying to do; nothing is renamed or removed (every command still works under its own name).
+_HELP_SECTIONS = (
+    ("Start here", ("setup", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
+    ("Everyday", ("model", "memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
+    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "host-check", "host-metrics")),
+    ("Connect and extend", ("mcp", "acp", "webhook", "forge", "search-status", "jitna", "intent-contract")),
+    ("Measure and research", ("experiments", "growth", "trajectories", "algorithms", "metrics")),
+    ("Older commands (still work)", ("adapter", "audit", "build", "compile", "evaluate", "governance", "init", "list", "logs", "replay", "reset", "start", "status", "timeline", "workflow", "version")),
+)
+
+
+def _plain_help(command: click.Command) -> str:
+    """The first sentence of a command's description, without the round number the developers tagged it with, never cut in the middle of a word."""
+    import re as _re
+    text = " ".join((command.help or command.short_help or "").split())
+    text = _re.sub(r"\s*\((?:Round|Rounds) [^)]*\)", "", text)
+    sentence = _re.split(r"(?<=\.)\s", text, maxsplit=1)[0]
+    return sentence if len(sentence) <= 100 else sentence[:97].rsplit(" ", 1)[0].rstrip(",;:-") + "..."
+
+
+class _SectionedGroup(click.Group):
+    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        shown = set()
+        for title, names in _HELP_SECTIONS:
+            rows = []
+            for name in names:
+                command = self.get_command(ctx, name)
+                if command is None or command.hidden:
+                    continue
+                shown.add(name)
+                rows.append((name, _plain_help(command)))
+            if rows:
+                with formatter.section(title):
+                    formatter.write_dl(rows)
+        rest = [(n, _plain_help(c)) for n in self.list_commands(ctx) if n not in shown for c in [self.get_command(ctx, n)] if c is not None and not c.hidden]
+        if rest:
+            with formatter.section("More"):
+                formatter.write_dl(rest)
+
+
+@click.group(cls=_SectionedGroup)
+@click.version_option(version=PACKAGE_VERSION, prog_name="delentia")
 def cli():
     """
-    RCT Control Plane CLI
-    
-    Command-line interface for Control Plane operations.
+    Delentia: a governed autonomous agent.
+
+    New here?  `delentia setup` checks this machine and makes a first configuration,
+    `delentia serve` starts the agent, `delentia desk` opens it in your browser.
     """
     # _configure_encoding() already existed, already had 3 passing unit tests
     # (TestConfigureEncoding in tests/test_cli_coverage_gaps.py), but was never
@@ -3412,6 +3454,58 @@ def notary_check_anchors(url: str, key_id: str, db: str) -> None:
     click.echo(json.dumps(report))
     if not report["ok"]:
         sys.exit(1)
+
+
+@cli.command("desk")
+@click.option("--gateway", default="http://127.0.0.1:8000", show_default=True, help="Where `delentia serve` is listening.")
+@click.option("--token-file", type=click.Path(dir_okay=False), default=None, help="A file holding the API token (default: the DELENTIA_API_TOKEN environment variable, or none on a loopback host).")
+@click.option("--port", default=3010, show_default=True, type=int, help="Where the Desk pages are served (127.0.0.1 only).")
+@click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
+def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser: bool) -> None:
+    """Open the Desk (the web pages) against a running `delentia serve`, with no token to paste.
+
+    It serves the built pages on this machine only, hands the address and the token to the page without putting the token in the address, and opens your browser at http://localhost:PORT
+    (a passkey, such as Windows Hello, needs the name localhost, not 127.0.0.1)."""
+    import time
+    import urllib.request
+    import webbrowser
+    from rct_control_plane import desk_assets, desk_launcher
+    root = desk_assets.find_desk_root()
+    if root is None:
+        click.echo(click.style(desk_assets.missing_message(), fg="red"), err=True)
+        sys.exit(4)
+    try:
+        with urllib.request.urlopen(gateway.rstrip("/") + "/health", timeout=3) as response:        # noqa: S310 - the owner's own host
+            healthy = json.loads(response.read()).get("status") == "healthy"
+    except Exception:                                           # noqa: BLE001
+        healthy = False
+    if not healthy:
+        click.echo(click.style(f"Nothing answers at {gateway}. Start the agent first, in another window:  delentia serve", fg="red"), err=True)
+        sys.exit(3)
+
+    def read_token() -> str:
+        if token_file:
+            return Path(token_file).read_text(encoding="utf-8").strip() if Path(token_file).is_file() else ""
+        return (os.getenv("DELENTIA_API_TOKEN") or "").strip()
+
+    try:
+        server = desk_launcher.make_server(root, port, gateway.rstrip("/"), read_token)
+    except OSError as exc:
+        click.echo(click.style(f"Port {port} is busy ({exc}). Close the other Desk window or use --port {port + 1}.", fg="red"), err=True)
+        sys.exit(6)
+    thread, url = desk_launcher.serve_in_background(server)
+    url = url.replace("//127.0.0.1:", "//localhost:", 1)
+    click.echo(f"The Desk is at {url}")
+    if not no_browser:
+        webbrowser.open(url)
+    click.echo("Leave this window open while you use the Desk. Press Ctrl+C to close the Desk page; the agent keeps running.")
+    try:
+        while thread.is_alive():
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.shutdown()
 
 
 @cli.command("serve")

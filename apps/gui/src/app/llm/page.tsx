@@ -82,8 +82,8 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
       ) : null}
       {message ? <p role="status" className={`mb-3 text-[13px] ${message.tone === "leaf" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
       {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
-      {list.loading && !list.data ? <p className="desk-mono text-sm text-dl-muted">Loading the catalog…</p> : null}
-      {list.data?.catalog && !list.data.catalog.length ? <Empty title="No models found" /> : null}
+      {list.loading && !list.data ? <p className="desk-mono text-sm text-dl-muted">{lang === "th" ? "กำลังโหลดรายการโมเดล…" : "Loading the catalog…"}</p> : null}
+      {list.data?.catalog && !list.data.catalog.length ? <Empty title={lang === "th" ? "ไม่พบโมเดล" : "No models found"} /> : null}
       <ul className="divide-y divide-dl-rule/60">
         {list.data?.catalog?.map((m) => (
           <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
@@ -93,8 +93,8 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
             </div>
             <div className="flex items-center gap-2">
               {m.supports_tools ? <Badge tone="fern">tools</Badge> : null}
-              {sel && sel.model === m.id && sel.provider === provider ? <Badge tone="leaf">in use</Badge> : (
-                <Button onClick={() => choose(m.id)} disabled={saving !== null}>{saving === m.id ? "Saving…" : "Use this model"}</Button>
+              {sel && sel.model === m.id && sel.provider === provider ? <Badge tone="leaf">{lang === "th" ? "ใช้อยู่" : "in use"}</Badge> : (
+                <Button onClick={() => choose(m.id)} disabled={saving !== null}>{saving === m.id ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "ใช้โมเดลนี้" : "Use this model")}</Button>
               )}
             </div>
           </li>

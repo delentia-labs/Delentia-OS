@@ -124,7 +124,7 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
     setMessage(null);
     try {
       await desk.resume(a.approval_id);
-      setMessage({ tone: "ok", text: "Ran the approved action once and continued the episode. See Sessions." });
+      setMessage({ tone: "ok", text: th ? "รันงานที่อนุมัติแล้วหนึ่งครั้ง ดูผลที่หน้าเซสชัน" : "Ran the approved action once and continued the episode. See Sessions." });
       onChanged();
     } catch (err) {
       setMessage({ tone: "err", text: err instanceof Error ? err.message : String(err) });
@@ -141,13 +141,13 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
         {JSON.stringify(a.tool_args, null, 2)}
       </pre>
       <div className="mt-3">
-        <Row label="Why it waits">{a.reason}</Row>
-        {a.required_signatures && a.required_signatures > 1 ? <Row label="Signatures">{a.signatures_collected ?? 0} of {a.required_signatures} (distinct keys)</Row> : null}
-        {a.approver_roles?.length ? <Row label="Roles asked for">{a.approver_roles.join(", ")}</Row> : null}
-        {a.policy_rule ? <Row label="Owner policy rule">{a.policy_rule}</Row> : null}
-        <Row label="Action digest (SHA-256)">{`${a.action_sha256.slice(0, 20)}…`}</Row>
-        <Row label="Requested">{fmtTime(a.created_at)}</Row>
-        {a.approver_public_key ? <Row label="Signed by key">{`${a.approver_public_key.slice(0, 16)}…`}</Row> : null}
+        <Row label={th ? "ทำไมจึงรอ" : "Why it waits"}>{a.reason}</Row>
+        {a.required_signatures && a.required_signatures > 1 ? <Row label={th ? "ลายเซ็น" : "Signatures"}>{a.signatures_collected ?? 0} {th ? "จาก" : "of"} {a.required_signatures} {th ? "(ต้องเป็นคนละกุญแจ/เครื่อง)" : "(distinct keys)"}</Row> : null}
+        {a.approver_roles?.length ? <Row label={th ? "บทบาทที่ต้องการ" : "Roles asked for"}>{a.approver_roles.join(", ")}</Row> : null}
+        {a.policy_rule ? <Row label={th ? "กฎของเจ้าของที่ใช้" : "Owner policy rule"}>{a.policy_rule}</Row> : null}
+        <Row label={th ? "รหัสของงาน (SHA-256)" : "Action digest (SHA-256)"}>{`${a.action_sha256.slice(0, 20)}…`}</Row>
+        <Row label={th ? "ขอเมื่อ" : "Requested"}>{fmtTime(a.created_at)}</Row>
+        {a.approver_public_key ? <Row label={th ? "เซ็นด้วยกุญแจ" : "Signed by key"}>{`${a.approver_public_key.slice(0, 16)}…`}</Row> : null}
       </div>
 
       {a.status === "PENDING" ? (
@@ -182,7 +182,7 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
             <textarea value={pasted} onChange={(e) => setPasted(e.target.value)} rows={4} placeholder='{"public_key_hex": "…", "signature_hex": "…", "decision": "APPROVED"}'
               className="desk-focus desk-mono mt-2 w-full rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-text placeholder:text-dl-muted/50" />
           </label>
-          <Button onClick={submit} disabled={busy || !pasted.trim()}>Submit signed decision</Button>
+          <Button onClick={submit} disabled={busy || !pasted.trim()}>{th ? "ส่งลายเซ็น" : "Submit signed decision"}</Button>
         </div>
       ) : null}
       {a.status === "APPROVED" && a.tool_name === "passkey_enroll" ? (
@@ -192,8 +192,8 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
       ) : null}
       {a.status === "APPROVED" && a.tool_name !== "passkey_enroll" ? (
         <div className="mt-4">
-          <Button tone="amber" onClick={run} disabled={busy}>{busy ? "Running…" : "Run the approved action"}</Button>
-          <p className="mt-2 text-[12px] text-dl-muted">Runs exactly once; the signature is checked again first.</p>
+          <Button tone="amber" onClick={run} disabled={busy}>{busy ? (th ? "กำลังรัน…" : "Running…") : (th ? "รันงานที่อนุมัติแล้ว" : "Run the approved action")}</Button>
+          <p className="mt-2 text-[12px] text-dl-muted">{th ? "รันครั้งเดียวเท่านั้น และตรวจลายเซ็นอีกรอบก่อนรัน" : "Runs exactly once; the signature is checked again first."}</p>
         </div>
       ) : null}
       {message ? <p role="status" className={`mt-3 text-[13px] ${message.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
@@ -234,7 +234,7 @@ export default function ApprovalsPage() {
             {(["PENDING", "ALL"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
                 className={`desk-focus px-3 py-1 ${view === v ? "bg-dl-pine text-dl-text" : "text-dl-muted hover:text-dl-text"}`}>
-                {v === "PENDING" ? "Waiting" : "All"}
+                {v === "PENDING" ? (lang === "th" ? "รออยู่" : "Waiting") : (lang === "th" ? "ทั้งหมด" : "All")}
               </button>
             ))}
           </div>
@@ -246,8 +246,10 @@ export default function ApprovalsPage() {
         {notice ? <p role="status" className="mb-3 rounded border border-dl-leaf/50 bg-dl-pine/20 px-4 py-3 text-sm text-dl-leaf">{notice}</p> : null}
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
         {nothingWaiting ? (
-          <Empty title={view === "PENDING" ? "Nothing is waiting for you" : "No approvals yet"}>
-            File writes and medium-risk commands pause here. No approver key configured means nothing can be approved: create one with <code>delentia approvals keygen</code>.
+          <Empty title={view === "PENDING" ? (lang === "th" ? "ไม่มีอะไรรอคุณอยู่" : "Nothing is waiting for you") : (lang === "th" ? "ยังไม่มีรายการอนุมัติ" : "No approvals yet")}>
+            {lang === "th"
+              ? <>งานที่เสี่ยง (เช่น แก้ไฟล์ ลบ ส่งออก) จะมาหยุดรอที่นี่ ถ้ายังไม่มีผู้อนุมัติ จะไม่มีใครอนุมัติได้ ดูวิธีตั้งที่หน้า Settings หรือสร้างกุญแจด้วย <code>delentia approvals keygen</code></>
+              : <>File writes and medium-risk commands pause here. No approver key configured means nothing can be approved: add a device under Settings, or create a key with <code>delentia approvals keygen</code>.</>}
           </Empty>
         ) : null}
         <div className="grid gap-5 xl:grid-cols-2">

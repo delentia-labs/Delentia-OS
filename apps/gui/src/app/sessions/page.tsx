@@ -156,8 +156,8 @@ function SessionsInner() {
     <>
       <PageHeader title={t("sessions")}
         lead={lang === "th"
-          ? "ทุก episode ของ agent ที่ถูกบันทึกใน audit trail: ผ่านวงจรแต่ละขั้นอย่างไร, ค่า FDIA, แผน RCT-7 และทุก tool call"
-          : "Every agent episode in the audit trail: how it went through each step of the cycle, its FDIA values, RCT-7 plan and every tool call."} />
+          ? "ประวัติทุกครั้งที่เอเจนต์ทำงาน: ทำอะไร ผ่านด่านความปลอดภัยอย่างไร ใช้เครื่องมืออะไรบ้าง และจบอย่างไร (อ่านจากบันทึกที่ตรวจสอบได้)"
+          : "A history of everything the agent did: what it did, how it passed the safety checks, which tools it used and how it ended (read from the verifiable record)."} />
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <div className="max-h-[40vh] shrink-0 overflow-y-auto border-b border-dl-rule lg:max-h-none lg:w-[380px] lg:border-b-0 lg:border-r">
           {list.error ? <div className="p-4"><ErrorNote error={list.error} onRetry={list.reload} /></div> : null}
@@ -178,7 +178,7 @@ function SessionsInner() {
           </ul>
         </div>
         <PageBody>
-          {selected ? <Detail id={selected} /> : <Empty title="Choose a session">Pick one from the list to see how it went through the Constitutional Cycle.</Empty>}
+          {selected ? <Detail id={selected} /> : <Empty title={lang === "th" ? "เลือกรายการทางซ้าย" : "Choose a session"}>{lang === "th" ? "เลือกหนึ่งรายการเพื่อดูว่าเอเจนต์ทำอะไรไปบ้างและผ่านด่านไหน" : "Pick one from the list to see what the agent did and which checks it passed."}</Empty>}
         </PageBody>
       </div>
     </>

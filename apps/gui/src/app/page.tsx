@@ -6,6 +6,7 @@ import { CycleStrip } from "@/components/desk/CycleStrip";
 import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 import { describeReason } from "@/lib/reason-text";
+import { describeCheck } from "@/lib/readiness-text";
 
 // Round 101 (UX audit): the home page answers three questions in this order: does anything need me, what did the agent last do (in words), and is the system healthy.
 // The technical rows (hash chain, A1/A2/A3, daemon) are still here, folded under "Details", with their labels in both languages.
@@ -16,6 +17,7 @@ export default function StatusPage() {
   const overview = useDeskData(() => desk.overview(), [], 15000);
   const sessions = useDeskData(() => desk.sessions(20), [], 20000);
   const audit = useDeskData(() => desk.audit(), [], 60000);
+  const readiness = useDeskData(() => desk.readiness(), [], 20000);
   const latest = sessions.data?.sessions[0];
   const latestDetail = useDeskData(() => (latest ? desk.session(latest.id) : Promise.resolve(null)), [latest?.id]);
 
@@ -39,6 +41,33 @@ export default function StatusPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           <div className="space-y-6">
+            {readiness.data && !readiness.data.all_done ? (
+              <Panel title={readiness.data.ready ? T("One more step", "อีกขั้นเดียว") : T("Getting started", "เริ่มต้นใช้งาน")}
+                aside={<Badge tone={readiness.data.ready ? "leaf" : "amber"}>{readiness.data.checks.filter((c) => c.ok).length} / {readiness.data.checks.length}</Badge>}>
+                <ol className="space-y-3">
+                  {readiness.data.checks.map((c) => {
+                    const d = describeCheck(c, lang);
+                    return (
+                      <li key={c.id} className="flex gap-3 text-sm">
+                        <span aria-hidden className={`mt-0.5 desk-mono ${c.ok ? "text-dl-leaf" : "text-dl-amber"}`}>{c.ok ? "✓" : "○"}</span>
+                        <div className="min-w-0">
+                          <p className={c.ok ? "text-dl-muted" : "font-medium text-dl-text"}>{d.label}</p>
+                          {!c.ok ? (
+                            <>
+                              <p className="mt-0.5 text-[13px] text-dl-muted">{d.what}</p>
+                              <p className="mt-0.5 text-[13px] text-dl-text">
+                                {d.next}{" "}
+                                {d.href ? <Link href={d.href} className="desk-focus text-dl-leaf underline">{T("Open", "เปิด")}</Link> : null}
+                              </p>
+                            </>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </Panel>
+            ) : null}
             <Panel title={T("Needs you", "ต้องการคุณ")}>
               {o ? (
                 waiting > 0 ? (

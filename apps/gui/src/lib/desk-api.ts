@@ -5,11 +5,17 @@
  * what failed; nothing is simulated.
  */
 import { getApiKey, getGateway } from "./delentia-client";
+import { httpMessage } from "./http-message";
 
 export class DeskError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
   }
+}
+
+/** The page's language, as the language switch set it on the document. */
+function thai(): boolean {
+  return typeof document !== "undefined" && document.documentElement.lang !== "en";
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -22,12 +28,14 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     res = await fetch(`${gateway}${path}`, { ...init, headers, signal: init.signal ?? AbortSignal.timeout(20000) });
   } catch {
-    throw new DeskError(`The Delentia API at ${gateway} is not reachable. Start it with \`delentia serve\`.`);
+    throw new DeskError(thai()
+      ? `ติดต่อ Delentia API ที่ ${gateway} ไม่ได้ ให้เปิดโปรแกรมเอเจนต์ก่อน (คำสั่ง \`delentia serve\`) แล้วลองใหม่`
+      : `The Delentia API at ${gateway} is not reachable. Start it with \`delentia serve\`.`);
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const detail = typeof body?.detail === "string" ? body.detail : res.statusText;
-    throw new DeskError(`${res.status}: ${detail}`, res.status);
+    throw new DeskError(httpMessage(res.status, detail, thai()), res.status);
   }
   return res.json() as Promise<T>;
 }
@@ -196,6 +204,10 @@ export interface ApprovalDevice {
   status: "PENDING" | "ACTIVE" | "REVOKED"; alg: string; backup_eligible: boolean; created_at: number; activated_at: number | null; last_used_at: number | null; revoked_at: number | null;
 }
 export interface DeviceList { rp_id: string; devices: ApprovalDevice[]; enrollments_waiting: { approval_id: string; name: string | null; status: string; created_at: string }[] }
+export interface Readiness {
+  ready: boolean; all_done: boolean;
+  checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number }[];
+}
 export interface PendingAction {
   approval_id: string; namespace: string; goal: string; tool_name: string; tool_args: Record<string, unknown>;
   action_sha256: string; reason: string; status: string; created_at: string; decided_at: string | null;
@@ -547,6 +559,7 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  readiness: () => call<Readiness>("/v1/desk/readiness"),
   devices: () => call<DeviceList>("/v1/desk/passkeys"),
   deviceBegin: (name: string, role?: string) =>
     call<{ enrollment_id: string; options: Record<string, unknown> }>("/v1/desk/passkeys/register/begin", { method: "POST", body: JSON.stringify({ name, role: role || null }) }),

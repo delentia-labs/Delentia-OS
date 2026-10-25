@@ -25,6 +25,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def _load_module(name: str):
+    """Load rct_control_plane/<name>.py BY FILE (see _load_launcher for why)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, ROOT / "rct_control_plane" / f"{name}.py")
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def _load_launcher():
     """Load rct_control_plane/desk_launcher.py BY FILE, not as part of the package: importing the package pulls in pydantic and the rest, and the `python` that a double click finds first on this
     machine was a different Python (3.12 without the packages) and failed with 'No module named pydantic' (found by the first real double click). The launcher itself needs only the standard library."""
@@ -38,6 +49,7 @@ def _load_launcher():
 
 
 desk_launcher = _load_launcher()
+desk_assets = _load_module("desk_assets")
 
 
 def healthy(port: int) -> bool:
@@ -88,7 +100,10 @@ def main() -> int:
     say("2/3  The Desk (the web pages)")
     gui = ROOT / "apps" / "gui"
     out = gui / "out"
-    if args.build or not (out / "index.html").is_file():
+    found = desk_assets.find_desk_root()              # pages built here, else the pages that ship inside the package
+    if found is not None and not args.build:
+        out = found
+    if args.build or found is None:
         npm = shutil.which("npm")
         if not npm:
             say("     the Desk has not been built and `npm` (Node.js) was not found. Install Node.js 20 or newer from nodejs.org, then run this again.")
@@ -99,7 +114,7 @@ def main() -> int:
             say("     the build failed (the lines above say why). Nothing was changed on the host.")
             return 5
     else:
-        say("     already built (use --build after you update the code)")
+        say(f"     already built ({out}); use --build after you update the code")
 
     say("3/3  Opening")
 

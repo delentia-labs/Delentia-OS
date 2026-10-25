@@ -12,6 +12,7 @@ import { LangProvider, useLang, type DictKey } from "./i18n";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
 import { loadLocalConfig } from "@/lib/local-config";
+import { MODE_EVENT, MODE_KEY } from "./mode";
 import { GROUPS, SIMPLE, groupOf, parseMode, type DeskMode, type NavItem } from "@/lib/nav-model";
 
 // Order follows Hermes' dashboard (chat first), with Delentia's own pages
@@ -189,8 +190,6 @@ function Brand() {
   );
 }
 
-const MODE_KEY = "delentia_desk_mode";
-
 function ShellInner({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   // Simple is the default (a first visit, a cleared browser, or a browser that refuses storage all start in Simple).
@@ -200,6 +199,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const setMode = (m: DeskMode) => {
     setModeState(m);
     try { window.localStorage.setItem(MODE_KEY, m); } catch { /* the choice just is not remembered */ }
+    window.dispatchEvent(new Event(MODE_EVENT));            // pages that read the mode (the chat welcome) follow the sidebar at once
   };
   return (
     <div className="desk-root flex h-screen w-screen overflow-hidden">

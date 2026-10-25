@@ -132,6 +132,10 @@ where = ["."]
 include = ["core*", "signedai*", "rct_control_plane*", "microservices*"]
 exclude = ["tests*", "*.tests*", "docs*", "examples*", "benchmark*", "notebooks*", "site*"]
 
+# Round 101: the built Desk (web pages) rides inside the package; scripts/package_desk.py puts it in rct_control_plane/desk_ui before the build.
+[tool.setuptools.package-data]
+rct_control_plane = ["desk_ui/**/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["microservices", "core/tests", "rct_control_plane/tests", "signedai/tests", "tests", "tests/hypothesis"]
 python_files = ["test_*.py", "*_test.py"]

@@ -7,6 +7,10 @@ import { desk, type ReplaceHint } from "@/lib/desk-api";
 import { TimeTravel } from "@/components/desk/memory/TimeTravel";
 
 const KINDS = ["fact", "preference", "goal", "event", "skill", "conversation"];
+const KIND_LABEL: Record<string, { en: string; th: string }> = {
+  fact: { en: "fact", th: "ข้อเท็จจริง" }, preference: { en: "preference", th: "ความชอบ" }, goal: { en: "goal", th: "เป้าหมาย" },
+  event: { en: "event", th: "เหตุการณ์" }, skill: { en: "skill", th: "วิธีทำ" }, conversation: { en: "conversation", th: "บทสนทนา" },
+};
 
 export default function MemoryPage() {
   const { lang } = useLang();
@@ -112,7 +116,7 @@ export default function MemoryPage() {
     <>
       <PageHeader title={lang === "th" ? "ความจำ" : "Memory"}
         lead={lang === "th"
-          ? "ข้อมูลของคุณที่ agent รู้ นี่คือ D ในสมการ FDIA: ยิ่งมีข้อมูลที่เกี่ยวข้องกับเป้าหมาย ค่า D ยิ่งสูง และงานเสี่ยงสูงจึงผ่านเกตได้ ความจำที่เกี่ยวข้องถูกดึงเข้า prompt อัตโนมัติและถูกใช้โดยอัลกอริทึม retrieval"
+          ? "สิ่งที่เอเจนต์รู้เกี่ยวกับคุณและงานของคุณ ยิ่งมีข้อมูลที่เกี่ยวข้อง เอเจนต์ยิ่งทำงานแม่นและทำงานที่เสี่ยงได้ง่ายขึ้น (นี่คือ D ในสมการ FDIA) ความจำที่เกี่ยวข้องจะถูกส่งให้โมเดลอ่านอัตโนมัติ"
           : "What the agent knows about your world. This is D in the FDIA equation: the more relevant data you hold for a goal, the higher D, and the more risky work can pass the gate. Relevant memories reach the prompt automatically and feed the retrieval algorithms."} />
       <PageBody>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
@@ -126,7 +130,7 @@ export default function MemoryPage() {
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Memory type"
                 className="desk-focus desk-mono rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-xs text-dl-text">
-                {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+                {KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k][lang === "th" ? "th" : "en"]}</option>)}
               </select>
               <Button onClick={add} disabled={busy || !content.trim()}>{busy ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "บันทึกความจำ" : "Remember")}</Button>
             </div>
@@ -169,7 +173,7 @@ export default function MemoryPage() {
             </div>
             {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
             {list.data && !list.data.memories.length ? (
-              <Empty title="Nothing remembered yet">Add a fact on the left, or ask the agent to remember something in Chat.</Empty>
+              <Empty title={lang === "th" ? "ยังไม่มีอะไรในความจำ" : "Nothing remembered yet"}>{lang === "th" ? "เพิ่มข้อมูลทางซ้าย หรือสั่งให้เอเจนต์จำบางอย่างที่หน้าแชต" : "Add a fact on the left, or ask the agent to remember something in Chat."}</Empty>
             ) : null}
             {list.data?.memories.map((m) => (
               <Panel key={m.id} title={m.pinned_at ? `${m.memory_type} · ${lang === "th" ? "กฎที่ปักหมุด" : "pinned rule"}` : m.memory_type} aside={<span className="desk-mono text-[11px] text-dl-muted">{m.namespace} · used {m.accessed_count}×</span>}>

@@ -11,6 +11,7 @@ signed endpoints (/v1/agent/approvals); nothing here can approve anything.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sqlite3
@@ -1524,6 +1525,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             "skills": _skills().count(),
             "storage": data_home.describe(),
         }
+
+    @router.get("/readiness")
+    async def readiness() -> Dict[str, Any]:
+        """Can this be used yet? A few plain checks (a model that answers, someone who can approve, a first request); no setting is changed and no secret is returned."""
+        from rct_control_plane import readiness as readiness_module
+        return await asyncio.to_thread(readiness_module.report, _kernel()._persistence)
 
     # ------------------------------------------------------------------ Round 101: approval devices (passkeys) and approving from the Desk
     def _pk_stores() -> Any:
