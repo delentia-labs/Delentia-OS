@@ -489,7 +489,7 @@ export const desk = {
   remember: (content: string, memoryType = "fact", namespace?: string) =>
     call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
   fdia: () => call<FdiaState>("/v1/desk/fdia"),
-  fdiaTemplate: (name: "balanced" | "strict" | "careful" | "argaware") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
+  fdiaTemplate: (name: "balanced" | "strict" | "careful" | "argaware" | "planfirst") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
   fdiaValidate: (policy: FdiaPolicy) =>
     call<{ valid: boolean; errors: string[]; digest: string | null }>("/v1/desk/fdia/validate", { method: "POST", body: JSON.stringify({ policy }) }),
   fdiaEvaluate: (body: FdiaEvaluateInput) =>

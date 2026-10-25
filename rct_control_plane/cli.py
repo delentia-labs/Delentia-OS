@@ -4178,7 +4178,7 @@ def fdia_validate(policy_file: str) -> None:
 
 
 @fdia_group.command("template")
-@click.argument("name", type=click.Choice(["balanced", "strict", "careful", "argaware"]))
+@click.argument("name", type=click.Choice(["balanced", "strict", "careful", "argaware", "planfirst"]))
 @click.option("--out", "out_path", type=click.Path(dir_okay=False), default=None, help="Write the starter here instead of printing it.")
 def fdia_template(name: str, out_path: Optional[str]) -> None:
     """A starter policy that classifies every real tool."""

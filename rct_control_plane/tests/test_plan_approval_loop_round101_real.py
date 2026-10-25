@@ -461,3 +461,28 @@ def test_a_notary_that_cannot_record_a_step_stops_the_run_at_that_step(tmp_path,
     outcome = asyncio.run(loop.resume(result["approval_id"], continue_episode=False))
     assert dispatched_names(mcp) == ["delentia_cron_delete"], "the second step must not run when it could not be recorded"
     assert outcome["executed_result"]["halted"] and "notary" in outcome["executed_result"]["halted"]
+
+
+# ------------------------------------------------------------------ the plan-first starter (the Architect's answer to Q1 and Q2)
+def test_the_planfirst_starter_is_the_argaware_starter_plus_every_kind_but_document_edits():
+    names = ["delentia_read_repo_file", "delentia_write_repo_file", "delentia_patch_repo_file", "delentia_run_sandboxed_command", "delentia_cron_delete", "delentia_save_exchange_file"]
+    base = fp.template("argaware", names)
+    plan = fp.template("planfirst", names)
+    assert plan["plan_first"] == ["delete", "outward", "money", "permissions", "publish", "restore_cancel", "move_shutdown"]
+    assert "document_edit" not in plan["plan_first"] and plan["small_edit_autorun"] is True
+    assert plan["rules"] == base["rules"], "the per-call rules are exactly the argaware ones"
+    parsed, errors = fp.validate_policy(plan)
+    assert parsed is not None, errors
+    assert parsed.plan_first == plan["plan_first"] and parsed.small_edit_autorun is True
+
+
+def test_the_planfirst_starter_can_never_be_the_default_without_a_signed_file(monkeypatch):
+    monkeypatch.setenv(fp.DEFAULT_ENV, "planfirst")
+    assert fp.default_template_name() == "argaware", "an unknown or file-only starter falls back to argaware"
+
+
+def test_loosening_from_the_argaware_starter_to_planfirst_is_named_correctly():
+    from rct_control_plane import fdia_policy_history as hist
+    names = ["delentia_read_repo_file", "delentia_write_repo_file", "delentia_run_sandboxed_command"]
+    lines = hist.loosened(fp.template("argaware", names), fp.template("planfirst", names))
+    assert any("without a signature" in line for line in lines), lines

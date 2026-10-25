@@ -514,7 +514,8 @@ def load_policy(path: Optional[Path] = None) -> Optional[Policy]:
 # ------------------------------------------------------------------ Round 68: the argument-aware starter is the default
 
 DEFAULT_ENV = "DELENTIA_FDIA_POLICY_DEFAULT"          # argaware (when unset) | careful | balanced | strict | none
-_TEMPLATES = ("argaware", "careful", "balanced", "strict")
+_TEMPLATES = ("argaware", "careful", "balanced", "strict")        # the starters that may be the DEFAULT; "planfirst" is only ever written into a signed file
+PLANFIRST_KINDS = ("delete", "outward", "money", "permissions", "publish", "restore_cancel", "move_shutdown")
 _default_cache: Dict[Any, Optional["Policy"]] = {}
 
 
@@ -644,7 +645,8 @@ def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
     """Starter policies. `tool_names` are the real tool names, so every tool is classified and the zero-trust
     fallback never blocks a tool the owner simply forgot."""
     strict = name == "strict"
-    argaware = name == "argaware"
+    planfirst = name == "planfirst"                      # Round 101: the argument-aware starter + the owner's plan-first kinds (never the default: it is written into a file and signed)
+    argaware = name in ("argaware", "planfirst")
     careful = name == "careful" or argaware
     special = {"run_sandboxed_command", "synthesize_function", "write_repo_file", "patch_repo_file", "save_exchange_file"}
     # Round 65 (scripts/calibrate_fdia_round65.py): with the balanced starter, the actions that reach beyond this machine or start other agents (fetching an address the
@@ -675,8 +677,13 @@ def template(name: str, tool_names: List[str]) -> Dict[str, Any]:
         if present:
             rules.insert(3, {"rule_id": "R-REACH", "description": "Reaching beyond this machine, starting other agents or scheduling later work needs a human signature.",
                              "intent_patterns": present, "action_type": "REQUIRE_HUMAN_SIGNATURE", "required_signatures": 1})
+    extra: Dict[str, Any] = {}
+    if planfirst:
+        # The Architect's answer to Q1/Q2 (2026-10-25): every kind except editing documents is confirmed once as a plan; a small edit of a file the request names runs without a signature.
+        extra = {"plan_first": list(PLANFIRST_KINDS), "small_edit_autorun": True}
     return {
-        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Strict starter" if strict else ("Argument-aware starter" if argaware else ("Careful starter" if careful else "Balanced starter")),
+        **extra,
+        "version": "1.0.0", "policy_id": f"template-{name}", "policy_name": "Plan-first starter" if planfirst else ("Strict starter" if strict else ("Argument-aware starter" if argaware else ("Careful starter" if careful else "Balanced starter"))),
         "default_fallback_A": 0, "custom_safety_threshold": 0.6 if strict else 0.5, "rules": rules,
         "blocked_action_patterns": ["*drop_database*", "*export_credentials*", "*exfiltrate*"],
         "require_human_dual_signoff": ["deploy_to_production", "grant_admin_privilege"] if strict else [],

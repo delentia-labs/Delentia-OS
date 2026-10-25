@@ -924,8 +924,8 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     @router.get("/fdia/template/{name}")
     async def fdia_template(name: str) -> Dict[str, Any]:
         from rct_control_plane import fdia_policy
-        if name not in ("balanced", "strict", "careful", "argaware"):
-            raise HTTPException(status_code=404, detail="templates: balanced, strict, careful, argaware")
+        if name not in ("balanced", "strict", "careful", "argaware", "planfirst"):
+            raise HTTPException(status_code=404, detail="templates: balanced, strict, careful, argaware, planfirst")
         return {"policy": fdia_policy.template(name, [t["name"] for t in await _tool_gate_labels()])}
 
     @router.post("/fdia/validate")
