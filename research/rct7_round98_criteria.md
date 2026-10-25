@@ -47,3 +47,16 @@ date). Today it can only guess or give up. The tool lets it ask once.
 * The tool is classified for the taint gate (inert: it only ends the episode), for person scope (person-neutral), for the effect inventory and for the tool menu; the repository's own audits must pass.
 * Pass: a scripted model that calls it is stopped with a stored question and no later tool ran; the same model in a job gets the note and finishes; the second call gets the note; the answer
   reaches the next episode's goal; a chain of two questions keeps both answers; the menu has it only when it applies.
+
+## P. the simulated person for the research arms (written before the code)
+The arms of a controlled run are not interactive, so the judge, the critic and the question tool are never exercised there, and a question would count as a failure. The simulated person is what lets them
+be measured: when an episode stops to ask, the harness answers from a fixed policy and runs the same request again, exactly as a person would through the Desk.
+* The person only ANSWERS. It never decides for the system, never approves anything, never changes a setting. Deterministic: the same question and task give the same answer.
+* Policies: `insist` (the default; for tasks that are fully specified, which every task of the generated domains is): "the request is complete as written, do it as written, do not ask again".
+  Because the task is fully specified, **every question is a needless one by construction**, so the number of questions per 100 episodes is the false-pause rate on real tasks, with no labeller.
+  `facts` (for a task that deliberately withholds something): answers with the hidden fact when the question mentions its keyword, otherwise insists.
+* At most two rounds of question and answer per episode; an episode still waiting after that is recorded as unresolved and graded as it is.
+* Every arm of a run gets the same person. Off by default; with it off a row and the run identity are exactly what they were before.
+* Cost and tokens of every round are summed (a stop is not free); the row records questions asked, their kinds, rounds, and whether the episode ended unresolved.
+* Pass: tests with the real harness, the real governed loop and a scripted judge show: a question is answered and the episode finishes and is graded; costs add up over rounds; the round limit holds;
+  person off leaves rows unchanged; the identity changes when the person or the judge setting does.

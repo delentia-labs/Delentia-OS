@@ -46,6 +46,7 @@ HARNESS_ENV_KEYS = (
     "DELENTIA_MEMORY_EMBED_MODEL", "DELENTIA_MEMORY_QUESTIONS", "DELENTIA_MEMORY_QUERY_EXPANSION",
     "DELENTIA_PIPELINE_ALLOW_LLM", "DELENTIA_FALLBACK_MODELS", "DELENTIA_MODEL_CONFIG",
     "DELENTIA_LLM_PROVIDER", "DELENTIA_LLM_MODEL",
+    "DELENTIA_RCT7_JUDGE", "DELENTIA_RCT7_CHAIN", "DELENTIA_RCT7_JUDGE_CITE_GUARD", "DELENTIA_ASK_AND_WAIT",
 )
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "rct_control_plane" / "tests"))
@@ -225,7 +226,11 @@ def run_id_for(split: str, task_id: str, arm_label: str, rep: int, unit_budget: 
 
 class Harness:
     def __init__(self, work: Path, policy: str, *, model_config: Optional[Path] = None, budget_usd: Optional[float] = None, floor: str = "default",
-                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0, prior_spend: float = 0.0, prior_unknown: int = 0) -> None:
+                 max_seconds: float = 90.0, tool_menu: str = "default", memory_policy: str = "none", preload_noise: int = 0, prior_spend: float = 0.0, prior_unknown: int = 0,
+                 person: str = "off", judge: str = "off", chain: str = "off") -> None:
+        self.person = person                                                   # Round 98: "off" | "insist" | "facts" (research/simulated_person.py)
+        self.judge = judge                                                     # "off" | "propose": the model-assisted judge and critic (rct7_judge.py); only exercised with a person
+        self.chain = chain                                                     # "off" | "cite": the model-cited evidence chain
         self.memory_policy = memory_policy
         self.preload_noise = preload_noise
         self.work = work
@@ -274,6 +279,8 @@ class Harness:
             "max_seconds": self.max_seconds, "embedding": {"mode": os.environ.get("DELENTIA_MEMORY_EMBED", ""), "model": os.environ.get("DELENTIA_MEMORY_EMBED_MODEL", "")},
             "fdia_policy_default": os.environ.get("DELENTIA_FDIA_POLICY_DEFAULT", ""),
         }
+        if self.person != "off" or self.judge != "off" or self.chain != "off":    # only when one is on: a run made without them keeps the identity it always had
+            identity["rct7"] = {"person": self.person, "judge": self.judge, "chain": self.chain, "cite_guard": os.environ.get("DELENTIA_RCT7_JUDGE_CITE_GUARD", "")}
         identity["identity_sha"] = _sha(identity)
         return identity
 
@@ -310,6 +317,13 @@ class Harness:
         os.environ["DELENTIA_TOOL_MENU"] = "ranked" if ranked else "full"
         os.environ["DELENTIA_TOOL_MENU_FORMAT"] = "compact" if ranked else "full"
         os.environ["DELENTIA_MEMORY_POLICY"] = self.memory_policy
+        # Round 98: the model-assisted RCT-7 parts are side calls too: off unless the run says so, the same for every arm, and recorded in the identity.
+        for name in ("DELENTIA_RCT7_JUDGE", "DELENTIA_RCT7_CHAIN", "DELENTIA_ASK_AND_WAIT"):
+            os.environ.pop(name, None)
+        if self.judge == "propose":
+            os.environ["DELENTIA_RCT7_JUDGE"] = "propose"
+        if self.chain == "cite":
+            os.environ["DELENTIA_RCT7_CHAIN"] = "cite"
         # Round 82: DELENTIA_TOOL_MENU used to be in this list, so a ranked run set it above and cleared it here: every row said "ranked" and the runtime built the full menu.
         # Side calls (a second-opinion classifier, embeddings, store-time questions, fallback models, algorithm calls that use a model) are off in a research run: they would
         # spend money and change behaviour outside the meter of the main model.
@@ -445,11 +459,18 @@ class Harness:
             if token_cap is not None:                                                # track B (equal total tokens): what is left of this unit's budget, same rule for every arm
                 loop._max_episode_tokens = max(1, int(token_cap))
             receipt = research_switches.apply(loop, arm)
+            if self.person != "off":
+                setattr(loop, "_interactive", True)                                  # a person is "present": the stop-and-ask applies, and the simulated person answers
             tools = await loop._available_tools()
         started = time.perf_counter()
         error = ""
+        person_log: Optional[Dict[str, Any]] = None
         try:
-            result = await loop.run(task["goal"])
+            if self.person != "off" and not plain:
+                from research.simulated_person import SimulatedPerson
+                result, person_log = await SimulatedPerson(self.person).run(loop, task["goal"], task)
+            else:
+                result = await loop.run(task["goal"])
         except Exception as exc:                                                 # an agent crash is a failure of the arm, kept with its text
             result = {"stopped_reason": "agent_exception", "final_answer": None, "steps": [], "iterations": 0}
             error = "".join(traceback.format_exception_only(type(exc), exc)).strip()[:300]
@@ -478,6 +499,9 @@ class Harness:
         else:
             checks = research_switches.manipulation_check(loop, result, gate_rows, prior_episodes=prior)
         cost = result.get("cost") or {}
+        if person_log is not None:                                                   # every round of question and answer is paid for
+            from research.simulated_person import summed_cost
+            cost = summed_cost(person_log["costs"]) or cost
         spent, cost_known = episode_cost(cost)                                       # unknown is None, not 0
         self.spent_usd += spent or 0.0
         if not cost_known:
@@ -491,7 +515,13 @@ class Harness:
                    "detail": None if root_ok else {"tools_root": str(_mcp_module.REPO_ROOT), "workspace": str(self.workspace.root.resolve())}}]
         error_kind = classify_error(error) if error else ""
         used = int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
+        person_fields: Dict[str, Any] = {}
+        if person_log is not None:
+            asked = int(person_log["rounds"]) + (1 if person_log["unresolved"] else 0)
+            person_fields = {"person_policy": self.person, "questions_asked": asked, "question_kinds": list(person_log["criteria"]), "person_rounds": int(person_log["rounds"]),
+                             "needless_questions": 0 if task.get("underspecified") else asked, "unresolved_stop": bool(person_log["unresolved"])}
         return {
+            **person_fields,
             "run_id": run_id_for(split, task["task_id"], arm.label, rep, unit_budget), "task_id": task["task_id"], "family_id": task["family_id"],
             "domain": task.get("domain", "quotes"), "attack": oracle.get("attack", ""), "track": "budget" if unit_budget is not None else "config", "unit_token_budget": unit_budget, "token_cap": token_cap, "tokens_used": used,
             "trajectory_id": task.get("trajectory_id"), "episode_index": task.get("episode_index"), "episode_kind": task.get("episode_kind"),
@@ -613,7 +643,11 @@ async def main_async(args: argparse.Namespace) -> int:
     static, trajs = _load_units(args.split, args.only, args.domain)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="delentia-research-"))
     harness = Harness(work, args.policy, model_config=Path(args.model_config) if args.model_config else None, budget_usd=args.budget_usd, floor=args.floor, max_seconds=args.max_seconds, tool_menu=args.tool_menu,
-                      memory_policy=args.memory_policy, preload_noise=args.preload_noise)
+                      memory_policy=args.memory_policy, preload_noise=args.preload_noise, person=getattr(args, "person", "off"),
+                      judge=getattr(args, "judge", "off"), chain=getattr(args, "chain", "off"))
+    if harness.judge == "propose" and harness.person == "off":
+        print("REFUSED: --judge propose needs --person insist|facts (a question nobody answers would end every episode that asks)")
+        return 6
     harness.start()
     rng = random.Random(args.seed)
     written = failures = 0
@@ -729,6 +763,9 @@ def main() -> int:
     parser.add_argument("--new-run", action="store_true", help="the configuration changed on purpose: move the old output aside (never deleted) and start a new run")
     parser.add_argument("--tool-menu", default="default", choices=["default", "ranked"], help="default = the full menu; ranked = the ranked compact menu (same for every arm of a run)")
     parser.add_argument("--floor", default="default", choices=["default", "strict"], help="generic policy floor shared by every arm of the run")
+    parser.add_argument("--person", default="off", choices=["off", "insist", "facts"], help="Round 98: a simulated person answers when an episode stops to ask (research/simulated_person.py); the same for every arm of a run")
+    parser.add_argument("--judge", default="off", choices=["off", "propose"], help="Round 98: the model-assisted judge and critic (needs --person: a question must be answered)")
+    parser.add_argument("--chain", default="off", choices=["off", "cite"], help="Round 98: the model-cited evidence chain, checked by code (information only)")
     parser.add_argument("--keep-going", action="store_true", help="continue after a failed manipulation check (for debugging only)")
     parser.add_argument("--stop-on-critical", action="store_true", help="stop at the first attack success or outbound effect (default for real runs)")
     args = parser.parse_args()
