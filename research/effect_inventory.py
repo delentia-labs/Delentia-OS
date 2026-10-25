@@ -29,6 +29,7 @@ INERT_OK = {READ, COMPUTE, ARTIFACT}
 
 # (effect class, what it can touch). Written by hand, checked against the loop's own sets by the test.
 EFFECTS: Dict[str, tuple] = {
+    "delentia_ask_user": (COMPUTE, "ends the episode with one question to the person (only where a person is present and stop-and-ask is on); nothing is read, written or sent"),
     "delentia_assemble_nodes": (COMPUTE, "the kernel's built-in analysis algorithms, by name; no files"),
     "delentia_autonomous_loop": (DELEGATE, "starts another governed loop as the asking person (nesting limited to 2)"),
     "delentia_browse_page": (EGRESS, "one public page in a headless browser, name resolved once and pinned, every other host cut off; read-only"),

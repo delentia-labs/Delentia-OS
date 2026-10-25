@@ -246,6 +246,14 @@ async def delentia_expand_tool_output(original_id: str, start_line: Optional[int
 
 
 @mcp.tool()
+async def delentia_ask_user(question: str, why: str = "") -> dict:
+    """Ask the person ONE question and wait for the answer. Use it only when the request cannot be done without something that only the person knows and that your tools cannot find
+    (which of two files, which date, which person, which of two meanings). The episode stops at once and no further tool runs; the answer is added to the request and the work starts
+    again from it. At most once per episode. Do NOT use it for anything you can look up or reasonably assume: state the assumption instead."""
+    return {"asked": False, "note": "Nobody can answer a question here, or one was already asked in this episode. State your assumption in the answer and go on."}
+
+
+@mcp.tool()
 async def delentia_schedule_reminder(goal: str, fire_in_seconds: float, namespace: str = "kernel_default") -> dict:
     """Schedule a real, session-scoped reminder that runs a real
     AutonomousLoop for `goal` once it becomes due. Session-local, not a
