@@ -45,7 +45,7 @@ export default function IdentityPage() {
             </div>
             <Panel title={`People (${d.users.length})`}>
               {!d.users.length ? <p className="text-sm text-dl-muted">No per-person tokens. {d.note}</p> : (
-                <div className="overflow-x-auto">
+                <div tabIndex={0} className="overflow-x-auto">
                   <table className="w-full min-w-[420px] text-left text-[13px]">
                     <thead className="desk-mono text-[11px] text-dl-muted">
                       <tr><th className="pb-2 font-normal">Name</th><th className="pb-2 font-normal">State</th><th className="pb-2 font-normal">Role</th><th className="pb-2 font-normal">Created</th></tr>

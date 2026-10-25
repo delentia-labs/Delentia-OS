@@ -12,7 +12,7 @@ function Runs({ id }: { id: string }) {
   if (runs.error) return <ErrorNote error={runs.error} />;
   if (!runs.data) return <p className="desk-mono text-sm text-dl-muted">Loading…</p>;
   return (
-    <div className="overflow-x-auto">
+    <div tabIndex={0} className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-[12px]">
         <thead className="desk-mono text-[11px] text-dl-muted">
           <tr><th className="pb-2 pr-3 font-normal">Run</th>{METRICS.map((m) => <th key={m} className="pb-2 pr-3 font-normal">{m}</th>)}</tr>

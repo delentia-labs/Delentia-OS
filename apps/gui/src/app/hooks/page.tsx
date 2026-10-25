@@ -49,7 +49,7 @@ function HookCard({ h, T, reload, say }: { h: HookRecord; T: T; reload: () => vo
         <div className="space-y-3 border-t border-dl-rule px-3 py-3">
           <p className="text-[13px] text-dl-muted">{h.description || T("(no description)", "(ไม่มีคำอธิบาย)")}</p>
           {(h.verification.problems ?? []).length ? <ul className="list-disc pl-5 text-[13px] text-dl-rust">{(h.verification.problems ?? []).map((x) => <li key={x}>{x}</li>)}</ul> : null}
-          {code !== null ? <pre className="desk-mono max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{code}</pre> : null}
+          {code !== null ? <pre tabIndex={0} className="desk-mono max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{code}</pre> : null}
           <Row label={T("Hash a person signs", "hash ที่คนเซ็น")}>{h.code_sha256.slice(0, 24)}…</Row>
           {h.approval ? <Row label={T("Signature", "ลายเซ็น")}>{h.approval.status} · {h.approval.signatures_collected}/{h.approval.required_signatures}</Row> : null}
           <div className="flex flex-wrap items-center gap-2">

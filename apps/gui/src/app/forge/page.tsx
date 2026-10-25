@@ -106,8 +106,8 @@ function ProposalCard({ p, T, reload, say }: { p: ForgeProposal; T: T; reload: (
           ) : p.verification.passed ? <p className="text-[13px] text-dl-leaf">{T("Static check passed and the smoke test ran in a separate process.", "ผ่านการตรวจโค้ดและ smoke test รันใน process แยกแล้ว")}</p> : null}
           {detail ? (
             <div className="grid gap-3 lg:grid-cols-2">
-              <div><p className={label}>{T("Code", "โค้ด")}</p><pre className="desk-mono mt-1 max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{detail.code}</pre></div>
-              <div><p className={label}>{T("Smoke test", "smoke test")}</p><pre className="desk-mono mt-1 max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{detail.smoke_test}</pre></div>
+              <div><p className={label}>{T("Code", "โค้ด")}</p><pre tabIndex={0} className="desk-mono mt-1 max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{detail.code}</pre></div>
+              <div><p className={label}>{T("Smoke test", "smoke test")}</p><pre tabIndex={0} className="desk-mono mt-1 max-h-64 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] leading-relaxed text-dl-text">{detail.smoke_test}</pre></div>
             </div>
           ) : null}
           <Row label={T("Hash a person signs (code + test)", "hash ที่คนเซ็น (โค้ด + เทส)")}>{p.code_sha256.slice(0, 24)}…</Row>
@@ -148,7 +148,7 @@ function ToolCard({ name, spec, calls, active, T, reload, say }: { name: string;
           <Button onClick={run}>{T("Try", "ลอง")}</Button><Button tone="amber" onClick={off}>{T("Turn off", "ปิด")}</Button>
         </div>
       ) : null}
-      {out ? <pre className="desk-mono mt-2 max-h-40 overflow-auto rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-text">{out}</pre> : null}
+      {out ? <pre tabIndex={0} className="desk-mono mt-2 max-h-40 overflow-auto rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-text">{out}</pre> : null}
     </div>
   );
 }

@@ -84,7 +84,7 @@ export default function CheckpointsPage() {
             ) : null}
             {open ? (
               <Panel title={`Diff of #${open.id}`} aside={<Button tone="ghost" onClick={() => setOpen(null)}>Close</Button>}>
-                <pre className="desk-mono max-h-96 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{open.diff}</pre>
+                <pre tabIndex={0} className="desk-mono max-h-96 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{open.diff}</pre>
               </Panel>
             ) : null}
           </div>

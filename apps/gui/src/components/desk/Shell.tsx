@@ -191,6 +191,7 @@ function Brand() {
 }
 
 function ShellInner({ children }: { children: React.ReactNode }) {
+  const { lang } = useLang();
   const [open, setOpen] = useState(false);
   // Simple is the default (a first visit, a cleared browser, or a browser that refuses storage all start in Simple).
   const [mode, setModeState] = useState<DeskMode>(() => {
@@ -203,7 +204,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   };
   return (
     <div className="desk-root flex h-screen w-screen overflow-hidden">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-dl-rule bg-dl-panel md:flex">
+      <aside aria-label={lang === "th" ? "เมนู Delentia" : "Delentia menu"} className="hidden w-64 shrink-0 flex-col border-r border-dl-rule bg-dl-panel md:flex">
         <Brand />
         <Nav mode={mode} />
         <SystemPanel mode={mode} setMode={setMode} />

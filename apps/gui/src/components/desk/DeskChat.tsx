@@ -523,7 +523,7 @@ export function DeskChat() {
         </footer>
       </section>
 
-      <aside className={`hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 ${panelOpen ? "lg:flex" : ""}`}>
+      <aside aria-label={lang === "th" ? "รายละเอียดการทำงานและเซสชัน" : "Run details and sessions"} className={`hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 ${panelOpen ? "lg:flex" : ""}`}>
         <div role="tablist" aria-label="Right panel" className="desk-mono flex overflow-hidden rounded border border-dl-rule text-[12px]">
           {(["run", "session"] as const).map((p) => (
             <button key={p} role="tab" aria-selected={panel === p} onClick={() => setPanel(p)}

@@ -77,7 +77,7 @@ export default function SignaturesPage() {
               <p className="text-sm text-dl-muted">No approver key is configured, so nothing that needs a human can be approved (it fails closed). Make a key on your own device with <Code>delentia approvals keygen</Code> and add only its public key to <Code>{keys.data.file}</Code>.</p>
             ) : null}
             {keys.data?.keys.length ? (
-              <div className="overflow-x-auto">
+              <div tabIndex={0} className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-left text-[13px]">
                   <thead className="desk-mono text-[11px] text-dl-muted">
                     <tr><th className="pb-2 font-normal">Name</th><th className="pb-2 font-normal">Role</th><th className="pb-2 font-normal">Key (SHA-256 prefix)</th><th className="pb-2 font-normal">Signed</th><th className="pb-2 font-normal">Refused</th><th className="pb-2 font-normal">Last used</th></tr>

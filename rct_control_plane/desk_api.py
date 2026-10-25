@@ -1526,6 +1526,25 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
             "storage": data_home.describe(),
         }
 
+    @router.get("/update")
+    async def update_state() -> Dict[str, Any]:
+        """Is there a newer version? Asks the package index at most once a day (and never when switched off); never an error: an unreachable index is status 'unknown'."""
+        from rct_control_plane import update_check
+        return await asyncio.to_thread(update_check.check)
+
+    @router.post("/update/check")
+    async def update_check_now() -> Dict[str, Any]:
+        from rct_control_plane import update_check
+        return await asyncio.to_thread(update_check.check, True)
+
+    @router.post("/update/switch")
+    async def update_switch(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Turn the daily check on or off. Applying an update is NOT done here: it replaces the running program, so it is a command for the person at the keyboard (`delentia update --apply`)."""
+        from rct_control_plane import update_check
+        update_check.set_enabled(bool(payload.get("enabled")))
+        _kernel()._persistence.append_audit(entity_type="update_check", entity_id="switch", action="set", actor="desk", changes={"enabled": bool(payload.get("enabled"))})
+        return await asyncio.to_thread(update_check.check)
+
     @router.get("/readiness")
     async def readiness() -> Dict[str, Any]:
         """Can this be used yet? A few plain checks (a model that answers, someone who can approve, a first request); no setting is changed and no secret is returned."""
@@ -1549,7 +1568,9 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         store, pk_store = _pk_stores()
         waiting = [{"approval_id": a.approval_id, "name": (a.tool_args or {}).get("name"), "status": a.status, "created_at": a.created_at}
                    for a in store.list(status=None, limit=100) if a.tool_name == passkeys.ENROLL_TOOL and a.status in ("PENDING", "APPROVED")]
-        return {"rp_id": passkeys.rp_id(), "devices": [c.summary() for c in pk_store.list()], "enrollments_waiting": waiting}
+        from rct_control_plane import first_device
+        return {"rp_id": passkeys.rp_id(), "devices": [c.summary() for c in pk_store.list()], "enrollments_waiting": waiting,
+                "first_device": first_device.FirstDeviceStore(_kernel()._persistence).status()}
 
     @router.post("/passkeys/register/begin")
     async def passkey_register_begin(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -1564,9 +1585,23 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
     async def passkey_register_finish(payload: Dict[str, Any]) -> Dict[str, Any]:
         """The browser made the credential. It is stored as PENDING and a request is created that an existing approver signs (`delentia approvals review`, or the Approvals page)."""
         from rct_control_plane import passkeys
+        from rct_control_plane import first_device
         store, pk_store = _pk_stores()
+        code = str(payload.get("first_device_code") or "").strip()
+        first = first_device.FirstDeviceStore(_kernel()._persistence)
+        if code:
+            # The very first device: the one-time code the person read on the terminal stands in for the signature that nobody can give yet (see first_device.py).
+            try:
+                first.check(code)
+            except first_device.FirstDeviceError as exc:
+                raise _pk_fail(exc) from exc
         try:
             info = pk_store.finish_registration(str(payload.get("enrollment_id") or ""), payload.get("credential") or {})
+            if code:
+                cred = pk_store.activate(info["credential_id"], "first-device-code")
+                first.consume()
+                _kernel()._persistence.append_audit(entity_type="passkey", entity_id=cred.credential_id[:24], action="first_device_activated", actor="desk", changes={"name": cred.name})
+                return {"first_device": True, "activated": True, "device": cred.summary()}
             action = passkeys.create_enrollment_action(store, info)
         except passkeys.PasskeyError as exc:
             raise _pk_fail(exc) from exc

@@ -26,7 +26,7 @@ function EvolutionPanel({ e }: { e: Evolution }) {
               </div>
             ))}
           </div>
-          <div className="overflow-x-auto">
+          <div tabIndex={0} className="overflow-x-auto">
             <table className="desk-mono w-full text-left text-[12px]">
               <thead className="text-dl-muted"><tr>
                 <th className="py-1 pr-3 font-normal">goal</th><th className="pr-3 font-normal">runs</th><th className="pr-3 font-normal">steps</th>
@@ -58,7 +58,7 @@ function ProfilePanel({ p }: { p: IntentProfile }) {
     <Panel title={`Your intents · ${p.namespace}`} aside={<span className="desk-mono text-[11px] text-dl-muted">{p.episodes} episodes</span>}>
       {!p.episodes ? <p className="text-sm text-dl-muted">No episodes recorded for this user yet.</p> : (
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="overflow-x-auto">
+          <div tabIndex={0} className="overflow-x-auto">
             <table className="desk-mono w-full text-left text-[12px]">
               <thead className="text-dl-muted"><tr>
                 <th className="py-1 pr-3 font-normal">kind</th><th className="pr-3 font-normal">episodes</th><th className="pr-3 font-normal">verified</th>

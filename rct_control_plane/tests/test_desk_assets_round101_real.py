@@ -57,7 +57,7 @@ def _fake_desk(tmp_path):
 def _run_desk(tmp_path, gateway, port, extra_env=None):
     env = {**os.environ, "PYTHONPATH": str(ROOT), "PYTHONUTF8": "1", "DELENTIA_HOME": str(tmp_path / "home"), "DELENTIA_DESK_DIR": str(_fake_desk(tmp_path)),
            "DELENTIA_API_TOKEN": "owner-token-for-the-test", **(extra_env or {})}
-    return subprocess.Popen([sys.executable, "-m", "rct_control_plane.cli", "desk", "--no-browser", "--port", str(port), "--gateway", gateway],
+    return subprocess.Popen([sys.executable, "-m", "rct_control_plane.cli", "desk", "--no-browser", "--port", str(port), "--gateway", gateway, "--wait-seconds", "0"],
                             env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(tmp_path))
 
 

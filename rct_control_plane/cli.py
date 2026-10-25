@@ -253,8 +253,8 @@ def format_output(data: Any, format: OutputFormat) -> None:
 # Round 101 (UX audit): `delentia --help` listed 63 commands in one alphabetical block, with round numbers in the descriptions and the oldest commands next to the ones a new person needs. The commands are now
 # grouped by what a person is trying to do; nothing is renamed or removed (every command still works under its own name).
 _HELP_SECTIONS = (
-    ("Start here", ("setup", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
-    ("Everyday", ("model", "memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
+    ("Start here", ("setup", "launch", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
+    ("Everyday", ("update", "model","memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
     ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "host-check", "host-metrics")),
     ("Connect and extend", ("mcp", "acp", "webhook", "forge", "search-status", "jitna", "intent-contract")),
     ("Measure and research", ("experiments", "growth", "trajectories", "algorithms", "metrics")),
@@ -2434,6 +2434,31 @@ def approvals_review(key_path: str, host_dir: Optional[str], db: Optional[str]) 
     click.echo(f"approved {done['approved']}, rejected {done['rejected']}, skipped {done['skipped']}")
 
 
+@approvals_group.command("first-device-code")
+@click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
+@click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
+def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> None:
+    """Print a one-time code that lets the FIRST approval device (Windows Hello) be added from the Desk, with no key to create.
+
+    Only works while nobody can approve yet. Valid 10 minutes, 5 tries, used once. Type it into Desk -> Settings -> Approval devices while adding your computer."""
+    from rct_control_plane import first_device
+    chosen = db or (_host_database(host_dir) if (host_dir or not os.environ.get("DELENTIA_HOME")) else None)
+    store = _approval_store(chosen)
+    try:
+        issued = first_device.FirstDeviceStore(store._persistence).issue()
+    except first_device.FirstDeviceError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    minutes = issued["ttl_seconds"] // 60
+    click.echo("")
+    click.echo(f"   Your one-time code:   {click.style(issued['display'], bold=True, fg='green')}")
+    click.echo("")
+    click.echo(f"   Valid for {minutes} minutes, 5 tries, one use. Only you see this: it is not stored anywhere in clear.")
+    click.echo("   Next: open the Desk (`delentia desk`) -> Settings -> Approval devices -> type a name for this computer, type the code, press Add this device.")
+    click.echo("   Windows Hello will ask for your face, fingerprint or PIN, and this computer becomes your first approver.")
+    click.echo(f"   database: {chosen or 'the default (DELENTIA_HOME)'}")
+
+
 @approvals_group.command("reject")
 @click.argument("approval_id")
 @click.option("--key", "key_path", required=True, help="Approver private key (PEM).")
@@ -3456,12 +3481,85 @@ def notary_check_anchors(url: str, key_id: str, db: str) -> None:
         sys.exit(1)
 
 
+@cli.command("update")
+@click.option("--apply", "apply_update", is_flag=True, default=False, help="Download the newest version, verify its SHA-256 and install it (asks first; close the agent before).")
+@click.option("--yes", is_flag=True, default=False, help="Do not ask for confirmation with --apply.")
+@click.option("--turn-off", is_flag=True, default=False, help="Stop checking for new versions (also: DELENTIA_UPDATE_CHECK=off).")
+@click.option("--turn-on", is_flag=True, default=False, help="Check for new versions again.")
+@click.option("--find-links", default=None, help="A folder of wheel files to install from instead of the internet (offline updates).")
+def update_command(apply_update: bool, yes: bool, turn_off: bool, turn_on: bool, find_links: Optional[str]) -> None:
+    """Is there a newer Delentia? With --apply, install it.
+
+    The check asks the public package index (pypi.org) at most once a day and sends nothing about you; see the guide for what the server can see."""
+    from rct_control_plane import update_check
+    if turn_off or turn_on:
+        update_check.set_enabled(turn_on and not turn_off)
+        click.echo("Checking for new versions is now " + ("on." if update_check.enabled() else "off."))
+        return
+    state = update_check.check(force=True)
+    if state["status"] == "disabled":
+        click.echo("Checking for new versions is off (`delentia update --turn-on` to enable).")
+        return
+    if state["status"] == "unknown":
+        click.echo(f"You have {state['current']}. The newest version could not be determined right now ({state.get('error') or 'no answer'}).")
+        return
+    if state["status"] == "current":
+        click.echo(f"You have {state['current']}, the newest version.")
+        return
+    latest = state["latest"]
+    click.echo(f"A newer version is available: {latest['version']} (you have {state['current']}).")
+    click.echo(f"What changed: {state['releases_url']}")
+    if not apply_update:
+        click.echo("Close the agent (and the Desk), then run:  delentia update --apply")
+        return
+    if not yes and not click.confirm(f"Install {latest['version']} now? The file is checked against the SHA-256 the index published first", default=False):
+        click.echo("Nothing was changed.")
+        return
+    try:
+        done = update_check.apply(state, find_links=find_links)
+    except update_check.UpdateError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"Installed {done['installed']} (was {done['previous']}). {done['note']}")
+
+
+@cli.command("launch")
+@click.option("--api-port", default=8000, show_default=True, type=int)
+@click.option("--desk-port", default=3010, show_default=True, type=int)
+@click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
+@click.option("--stop", "stop_it", is_flag=True, default=False, help="Stop what `delentia launch` started.")
+def launch_command(api_port: int, desk_port: int, no_browser: bool, stop_it: bool) -> None:
+    """One double click: start the agent and the Desk in the background and open the Desk in your browser.
+
+    `delentia launch --stop` ends what this started (and only that). Logs: the `logs` folder of your Delentia home."""
+    import webbrowser
+    from rct_control_plane import launcher, update_check
+    if stop_it:
+        launcher.stop(click.echo)
+        return
+    try:
+        result = launcher.launch(api_port, desk_port, say=click.echo)
+    except RuntimeError as exc:
+        if not launcher.has_console():                          # started by a double click (pythonw): there is no window to print in, so say it in one
+            launcher.message_box("Delentia could not start", str(exc))
+        else:
+            click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"The Desk is at {result['url']}")
+    line = update_check.banner_line(update_check.cached_state())                # the Desk page does the real (once a day) check; starting never waits for the internet
+    if line:
+        click.echo(line)
+    if not no_browser:
+        webbrowser.open(result["url"])
+
+
 @cli.command("desk")
 @click.option("--gateway", default="http://127.0.0.1:8000", show_default=True, help="Where `delentia serve` is listening.")
 @click.option("--token-file", type=click.Path(dir_okay=False), default=None, help="A file holding the API token (default: the DELENTIA_API_TOKEN environment variable, or none on a loopback host).")
 @click.option("--port", default=3010, show_default=True, type=int, help="Where the Desk pages are served (127.0.0.1 only).")
 @click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
-def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser: bool) -> None:
+@click.option("--wait-seconds", default=20.0, show_default=True, type=float, help="How long to wait for the agent to answer (it may have only just started).")
+def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser: bool, wait_seconds: float) -> None:
     """Open the Desk (the web pages) against a running `delentia serve`, with no token to paste.
 
     It serves the built pages on this machine only, hands the address and the token to the page without putting the token in the address, and opens your browser at http://localhost:PORT
@@ -3474,11 +3572,17 @@ def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser:
     if root is None:
         click.echo(click.style(desk_assets.missing_message(), fg="red"), err=True)
         sys.exit(4)
-    try:
-        with urllib.request.urlopen(gateway.rstrip("/") + "/health", timeout=3) as response:        # noqa: S310 - the owner's own host
-            healthy = json.loads(response.read()).get("status") == "healthy"
-    except Exception:                                           # noqa: BLE001
-        healthy = False
+    healthy = False
+    deadline = time.monotonic() + max(0.0, wait_seconds)
+    while True:
+        try:
+            with urllib.request.urlopen(gateway.rstrip("/") + "/health", timeout=3) as response:    # noqa: S310 - the owner's own host
+                healthy = json.loads(response.read()).get("status") == "healthy"
+        except Exception:                                       # noqa: BLE001
+            healthy = False
+        if healthy or time.monotonic() >= deadline:
+            break
+        time.sleep(1.0)                                         # a server that has only just started answers a moment late
     if not healthy:
         click.echo(click.style(f"Nothing answers at {gateway}. Start the agent first, in another window:  delentia serve", fg="red"), err=True)
         sys.exit(3)
@@ -3496,6 +3600,10 @@ def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser:
     thread, url = desk_launcher.serve_in_background(server)
     url = url.replace("//127.0.0.1:", "//localhost:", 1)
     click.echo(f"The Desk is at {url}")
+    from rct_control_plane import update_check
+    notice = update_check.banner_line(update_check.cached_state())              # from the last check: never waits for the internet
+    if notice:
+        click.echo(notice)
     if not no_browser:
         webbrowser.open(url)
     click.echo("Leave this window open while you use the Desk. Press Ctrl+C to close the Desk page; the agent keeps running.")
@@ -3549,6 +3657,10 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
     click.echo("  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+    from rct_control_plane import update_check
+    update_notice = update_check.banner_line(update_check.cached_state())      # last known answer; the Desk refreshes it, this line never waits for the internet
+    if update_notice:
+        click.echo("  " + update_notice)
     click.echo("  Intent Loop: 41-algorithm pipeline and warm recall on (DELENTIA_ALGORITHM_PIPELINE=0 / DELENTIA_WARM_RECALL=0 to turn off)")
 
     # Round 36: real uvicorn serving is the only path that enables the

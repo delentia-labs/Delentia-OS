@@ -34,6 +34,8 @@ export function ApprovalDevices() {
   const list = useDeskData(() => desk.devices(), [], 10000);
   const problem = useDeviceProblem();
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const firstOpen = !!list.data?.first_device?.open;             // nobody can approve yet: the first device is added with a one-time code
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
@@ -43,8 +45,16 @@ export function ApprovalDevices() {
     try {
       const begun = await desk.deviceBegin(name.trim());
       const credential = await createCredential(begun.options);        // Windows Hello / Touch ID / phone asks the person here
-      await desk.deviceFinish(begun.enrollment_id, credential);
+      const finished = await desk.deviceFinish(begun.enrollment_id, credential, firstOpen ? code.trim() : undefined);
       setName("");
+      setCode("");
+      if ("activated" in finished && finished.activated) {
+        setMessage({ tone: "ok", text: th
+          ? "เครื่องนี้เป็นผู้อนุมัติคนแรกแล้ว ต่อไปนี้กด “อนุมัติด้วยเครื่องนี้” ในหน้าอนุมัติได้เลย (เครื่องถัดไปต้องให้เครื่องนี้หรือกุญแจ approver เซ็นรับรองก่อน)"
+          : "This computer is now your first approver. You can press “Approve with this device” on the Approvals page. Any further device needs an existing approver's signature." });
+        list.reload();
+        return;
+      }
       setMessage({ tone: "ok", text: th
         ? "เครื่องนี้ถูกเพิ่มแล้ว แต่ยังใช้ไม่ได้ ต้องให้ผู้อนุมัติเดิม (คนที่มีกุญแจ approver) เซ็นรับรองเครื่องนี้หนึ่งครั้ง: ดับเบิลคลิก SIGN_PENDING.bat แล้วกลับมากด “เปิดใช้”"
         : "The device is added but cannot approve yet. An existing approver (the holder of the approver key) must sign for it once: double-click SIGN_PENDING.bat, then come back and press Activate." });
@@ -122,13 +132,31 @@ export function ApprovalDevices() {
         </p>
       ) : null}
 
+      {firstOpen ? (
+        <div className="mt-4 rounded border border-dl-amber/50 bg-dl-amber/5 p-3 text-[13px] leading-relaxed text-dl-text">
+          <p className="font-medium">{th ? "ยังไม่มีผู้อนุมัติ: เพิ่มเครื่องแรกด้วยรหัสครั้งเดียว" : "Nobody can approve yet: add the first device with a one-time code"}</p>
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-dl-muted">
+            <li>{th ? <>ในเทอร์มินัลบนเครื่องนี้ พิมพ์ <Code>delentia approvals first-device-code</Code> จะได้รหัส 8 ตัว (ใช้ได้ 10 นาที ลองได้ 5 ครั้ง)</> : <>In a terminal on this computer run <Code>delentia approvals first-device-code</Code> to get an 8-character code (valid 10 minutes, 5 tries).</>}</li>
+            <li>{th ? "พิมพ์ชื่อเครื่องและรหัสด้านล่าง แล้วกด เพิ่มเครื่องนี้ Windows Hello จะถามตัวคุณ" : "Type a name and the code below, then press Add this device. Windows Hello asks you."}</li>
+          </ol>
+          {list.data?.first_device.code_waiting ? <p className="mt-1 text-dl-leaf">{th ? "มีรหัสรออยู่แล้ว" : "A code is waiting."}</p> : null}
+        </div>
+      ) : null}
+
       <div className="mt-5 flex flex-wrap items-end gap-3">
         <label className="block">
           <span className="text-[13px] text-dl-muted">{th ? "ชื่อเครื่องนี้" : "A name for this device"}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder={th ? "เช่น โน้ตบุ๊กของฉัน" : "for example: my laptop"}
             className="desk-focus mt-1 block w-64 rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50" />
         </label>
-        <Button onClick={add} disabled={busy || !name.trim() || !!problem}>{busy ? (th ? "รอการยืนยันจากเครื่อง…" : "Waiting for the device…") : th ? "เพิ่มเครื่องนี้" : "Add this device"}</Button>
+        {firstOpen ? (
+          <label className="block">
+            <span className="text-[13px] text-dl-muted">{th ? "รหัสครั้งเดียว" : "One-time code"}</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} maxLength={12} autoComplete="off" spellCheck={false} placeholder="ABCD-EFGH"
+              className="desk-focus desk-mono mt-1 block w-40 rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm uppercase text-dl-text placeholder:text-dl-muted/50" />
+          </label>
+        ) : null}
+        <Button onClick={add} disabled={busy || !name.trim() || !!problem || (firstOpen && code.trim().length < 8)}>{busy ? (th ? "รอการยืนยันจากเครื่อง…" : "Waiting for the device…") : th ? "เพิ่มเครื่องนี้" : "Add this device"}</Button>
       </div>
       {message ? <p role="status" className={`mt-3 text-[13px] leading-relaxed ${message.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
       <p className="mt-4 text-[12px] leading-relaxed text-dl-muted">

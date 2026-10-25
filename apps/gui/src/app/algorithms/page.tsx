@@ -42,7 +42,7 @@ export default function AlgorithmsPage() {
               if (!rows.length) return null;
               return (
                 <Panel key={stage} title={stage} aside={<span className="desk-mono text-[11px] text-dl-muted">{rows.length} algorithms</span>}>
-                  <div className="overflow-x-auto">
+                  <div tabIndex={0} className="overflow-x-auto">
                     <table className="desk-mono w-full text-left text-[12px]">
                       <thead className="text-dl-muted"><tr>
                         <th className="py-1 pr-3 font-normal">id</th><th className="pr-3 font-normal">algorithm</th><th className="pr-3 font-normal">needs</th>

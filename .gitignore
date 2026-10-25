@@ -237,3 +237,8 @@ research/runs/
 
 # Round 101: the built Desk copied in by scripts/package_desk.py (a build product, not source)
 rct_control_plane/desk_ui/
+
+# Round 101C: installer build products
+installer/windows/stage/
+installer/windows/output/
+installer/windows/wheel_build/

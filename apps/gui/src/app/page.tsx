@@ -7,6 +7,7 @@ import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtT
 import { desk } from "@/lib/desk-api";
 import { describeReason } from "@/lib/reason-text";
 import { describeCheck } from "@/lib/readiness-text";
+import { UpdateBanner } from "@/components/desk/UpdatePanel";
 
 // Round 101 (UX audit): the home page answers three questions in this order: does anything need me, what did the agent last do (in words), and is the system healthy.
 // The technical rows (hash chain, A1/A2/A3, daemon) are still here, folded under "Details", with their labels in both languages.
@@ -37,6 +38,7 @@ export default function StatusPage() {
         lead={T("What needs you, what the agent did last, and whether everything is working.", "สิ่งที่ต้องการคุณ สิ่งที่เอเจนต์ทำล่าสุด และระบบทำงานปกติหรือไม่")}
       />
       <PageBody>
+        <UpdateBanner />
         {health.error ? <div className="mb-6"><ErrorNote error={health.error} onRetry={health.reload} /></div> : null}
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
@@ -137,7 +139,7 @@ export default function StatusPage() {
 
             <Panel title={T("Recent requests", "คำขอล่าสุด")}>
               {sessions.error ? <ErrorNote error={sessions.error} onRetry={sessions.reload} /> : sessions.data?.sessions.length ? (
-                <div className="overflow-x-auto">
+                <div tabIndex={0} className="overflow-x-auto">
                   <table className="w-full min-w-[480px] text-left text-sm">
                     <thead className="desk-mono text-[11px] text-dl-muted">
                       <tr><th className="pb-2 font-normal">{T("Request", "คำขอ")}</th><th className="pb-2 font-normal">{T("How it ended", "จบอย่างไร")}</th><th className="pb-2 font-normal">{T("When", "เมื่อไร")}</th></tr>

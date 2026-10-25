@@ -260,6 +260,23 @@ A passkey becomes a trusted approver only after an Ed25519 approver signed for t
   - `test_passkeys_round101_real.py::test_the_ed25519_path_is_unchanged`
   - `test_passkeys_desk_api_round101_real.py::test_a_person_token_cannot_reach_the_device_routes`
 
+### P18 - The first approver is made only by a person at the keyboard, only while nobody can approve
+
+The one-time code that lets the first approval device be added without a signature exists only while no approver key and no active device exist, is shown once to the person who runs the command and stored only as a hash, lasts ten minutes, allows five wrong tries and one use, is refused to the agent's shell (the sandbox marks every command it runs and refuses the command text), and stops working the moment an approver exists. Every device after the first still needs an approver's signature (P17).
+
+- **Assumes:** The person runs the command in a terminal they opened themselves and reads the code from that screen; the browser and Windows Hello behave as the standard says.
+- **Not covered:** The agent runs under the same Windows account as the person, so refusing its shell is a safety catch, not a wall: a program that can read the terminal's output or drive the keyboard is not stopped by it. Anyone who can open the web page can use up the five tries and make a code stop working (a denial, not a way in). A person who is shown a code by someone else and types it in makes that device the approver.
+- **Pinned by:**
+  - `test_first_device_round101_real.py::test_a_code_is_issued_only_while_nobody_can_approve`
+  - `test_first_device_round101_real.py::test_the_agents_shell_can_not_ask_for_a_code`
+  - `test_first_device_round101_real.py::test_the_code_is_stored_hashed_and_a_status_never_shows_it`
+  - `test_first_device_round101_real.py::test_five_wrong_tries_cancel_the_code_even_for_the_right_one`
+  - `test_first_device_round101_real.py::test_a_code_expires_after_ten_minutes_and_a_new_one_replaces_the_old`
+  - `test_first_device_round101_real.py::test_the_first_device_becomes_an_approver_at_once_with_the_right_code_and_can_approve`
+  - `test_first_device_round101_real.py::test_without_a_code_the_first_device_is_only_pending_and_can_not_approve`
+  - `test_first_device_round101_real.py::test_the_code_is_used_up_and_a_second_device_needs_a_signature_as_before`
+  - `test_first_device_round101_real.py::test_the_command_prints_a_code_for_a_person_and_refuses_for_the_agent`
+
 ## Threats (Protocol section 12)
 
 | Threat | Tests |

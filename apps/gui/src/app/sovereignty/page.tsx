@@ -112,7 +112,7 @@ export default function SovereigntyPage() {
             <PolicyForm key={JSON.stringify(d.policy)} info={d} onSaved={s.reload} lang={lang} />
             <Panel title="Decisions" aside={<span className="desk-mono text-[11px] text-dl-muted">allowed {d.counts.allow} · redacted {d.counts.redact} · blocked {d.counts.block}</span>}>
               {d.decisions.length ? (
-                <div className="overflow-x-auto">
+                <div tabIndex={0} className="overflow-x-auto">
                   <table className="desk-mono w-full text-left text-[12px]">
                     <thead className="text-dl-muted"><tr>
                       <th className="py-1 pr-3 font-normal">when</th><th className="pr-3 font-normal">user</th><th className="pr-3 font-normal">decision</th>

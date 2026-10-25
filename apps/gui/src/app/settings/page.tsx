@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Badge, Button, Code, PageBody, PageHeader, Panel } from "@/components/desk/ui";
 import { useLang } from "@/components/desk/i18n";
 import { ApprovalDevices } from "@/components/desk/ApprovalDevices";
+import { UpdatePanel } from "@/components/desk/UpdatePanel";
 import { forgetStoredApiKey, getGateway, getHealthStatus, getSessionApiKey, setSessionApiKey } from "@/lib/delentia-client";
 
 const DEFAULT_GATEWAY = "http://localhost:8000";
@@ -56,6 +57,7 @@ export default function SettingsPage() {
       <PageBody>
         <div className="max-w-2xl space-y-6">
           <ApprovalDevices />
+          <UpdatePanel />
           <Panel title="API">
             <label className="block">
               <span className="text-[13px] text-dl-muted">{lang === "th" ? "ที่อยู่ Gateway" : "Gateway address"}</span>

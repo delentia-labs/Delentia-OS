@@ -69,7 +69,8 @@ export function PageHeader({ title, lead, actions }: { title: string; lead?: Rea
 }
 
 export function PageBody({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">{children}</div>;
+  // tabIndex: a scrolling area a keyboard user can not reach can not be scrolled (WCAG 2.1.1; found by axe on every page whose body holds no button or link).
+  return <div tabIndex={0} className="desk-focus min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">{children}</div>;
 }
 
 type Tone = "leaf" | "fern" | "amber" | "rust" | "muted";

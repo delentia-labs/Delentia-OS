@@ -63,7 +63,7 @@ function Detail({ id, onClose }: { id: number; onClose: () => void }) {
           </div>
           <details>
             <summary className="desk-focus desk-mono cursor-pointer text-[12px] text-dl-leaf">What was recorded (the exact JSON)</summary>
-            <pre className="desk-mono mt-2 max-h-72 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{JSON.stringify(d.changes, null, 2)}</pre>
+            <pre tabIndex={0} className="desk-mono mt-2 max-h-72 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{JSON.stringify(d.changes, null, 2)}</pre>
           </details>
           {d.related.length ? (
             <div>

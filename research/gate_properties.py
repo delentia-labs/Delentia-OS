@@ -30,6 +30,7 @@ DEFAULT = "test_default_policy_round69_real.py"
 PLANLOOP = "test_plan_approval_loop_round101_real.py"
 PLANPURE = "test_plan_approval_round101_real.py"
 PASSKEY = "test_passkeys_round101_real.py"
+FIRSTDEV = "test_first_device_round101_real.py"
 PINNED = "test_pinned_rules_round70_real.py"
 
 PROPERTIES: List[Dict[str, object]] = [
@@ -226,6 +227,22 @@ PROPERTIES: List[Dict[str, object]] = [
      "assumes": "The browser and the operating system do what the WebAuthn standard says (user verification, a key that never leaves the device); the page was opened at localhost or at the site name the owner configured; the first approver key is the owner's.",
      "not_covered": "A device signs a digest, not what is on the screen: a compromised Desk could show a harmless plan next to the digest of a harmful one (answer: a second signer, or the plan read on a second channel); "
                     "a passkey synced to a cloud account is only as safe as that account (`backup_eligible` is recorded); software authenticators in the tests are not hardware; a laptop that is unlocked and left alone can be used by whoever sits at it."},
+    {"id": "P18", "name": "The first approver is made only by a person at the keyboard, only while nobody can approve",
+     "statement": "The one-time code that lets the first approval device be added without a signature exists only while no approver key and no active device exist, is shown once to the person who runs the command and stored only as a hash, "
+                  "lasts ten minutes, allows five wrong tries and one use, is refused to the agent's shell (the sandbox marks every command it runs and refuses the command text), and stops working the moment an approver exists. "
+                  "Every device after the first still needs an approver's signature (P17).",
+     "tests": [f"{FIRSTDEV}::test_a_code_is_issued_only_while_nobody_can_approve",
+               f"{FIRSTDEV}::test_the_agents_shell_can_not_ask_for_a_code",
+               f"{FIRSTDEV}::test_the_code_is_stored_hashed_and_a_status_never_shows_it",
+               f"{FIRSTDEV}::test_five_wrong_tries_cancel_the_code_even_for_the_right_one",
+               f"{FIRSTDEV}::test_a_code_expires_after_ten_minutes_and_a_new_one_replaces_the_old",
+               f"{FIRSTDEV}::test_the_first_device_becomes_an_approver_at_once_with_the_right_code_and_can_approve",
+               f"{FIRSTDEV}::test_without_a_code_the_first_device_is_only_pending_and_can_not_approve",
+               f"{FIRSTDEV}::test_the_code_is_used_up_and_a_second_device_needs_a_signature_as_before",
+               f"{FIRSTDEV}::test_the_command_prints_a_code_for_a_person_and_refuses_for_the_agent"],
+     "assumes": "The person runs the command in a terminal they opened themselves and reads the code from that screen; the browser and Windows Hello behave as the standard says.",
+     "not_covered": "The agent runs under the same Windows account as the person, so refusing its shell is a safety catch, not a wall: a program that can read the terminal's output or drive the keyboard is not stopped by it. "
+                    "Anyone who can open the web page can use up the five tries and make a code stop working (a denial, not a way in). A person who is shown a code by someone else and types it in makes that device the approver."},
     # Round 66: the properties above are checked by named cases; these two tests check them over SEQUENCES (research/approval_model_check.py) and against an attacker that adapts
 ]
 

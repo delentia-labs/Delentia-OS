@@ -63,7 +63,7 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
       {preview ? (
         <div className="mt-4 space-y-2 rounded border border-dl-amber/60 p-3">
           <p className="text-sm text-dl-text">{preview.name}: {preview.description}</p>
-          <pre className="desk-mono max-h-64 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">{preview.instructions}</pre>
+          <pre tabIndex={0} className="desk-mono max-h-64 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">{preview.instructions}</pre>
           {preview.screen_findings.length ? <p className="text-[13px] text-dl-rust">The injection screen found {preview.screen_findings.join(", ")}: the import will be refused.</p> : <p className="text-[12px] text-dl-muted">The injection screen found nothing (which does not mean there is nothing).</p>}
           <Button tone="amber" onClick={confirm} disabled={busy}>I have read it and trust it: import</Button>
         </div>
@@ -93,7 +93,7 @@ export default function SkillsPage() {
             <Panel key={s.id} title={s.problem_statement}
               aside={s.archived ? <Badge tone="rust">archived</Badge> : s.governance_violation ? <Badge tone="rust">violation</Badge> : s.bundled ? <Badge tone="leaf">bundled starter</Badge> : s.imported ? <Badge tone="amber">imported</Badge> : <Badge tone="leaf">growth {fmtNum(s.growth_ratio)}</Badge>}>
               {stepChain(s.solution) ? <p className="desk-mono mb-2 text-[12px] text-dl-text">{stepChain(s.solution)}</p> : null}
-              <pre className="desk-mono max-h-40 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">
+              <pre tabIndex={0} className="desk-mono max-h-40 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">
                 {typeof s.solution === "string" ? s.solution : JSON.stringify(s.solution, null, 2)}
               </pre>
               <p className="desk-mono mt-2 text-[11px] text-dl-muted">

@@ -137,7 +137,7 @@ function ActionCard({ a, onChanged, devices }: { a: PendingAction; onChanged: (n
     <Panel title={`${a.tool_name}`} aside={<Badge tone={statusTone(a.status)}>{a.status}</Badge>}>
       <p className="text-sm text-dl-text">{a.goal}</p>
       {a.tool_name === "delentia_plan" ? <PlanSteps a={a} lang={lang as "th" | "en"} /> : null}
-      <pre className="desk-mono mt-3 max-h-48 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">
+      <pre tabIndex={0} className="desk-mono mt-3 max-h-48 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">
         {JSON.stringify(a.tool_args, null, 2)}
       </pre>
       <div className="mt-3">

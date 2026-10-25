@@ -203,7 +203,11 @@ export interface ApprovalDevice {
   id: string; signer: string; name: string; role: string | null; scope: { kinds?: string[]; namespaces?: string[]; workspaces?: string[] };
   status: "PENDING" | "ACTIVE" | "REVOKED"; alg: string; backup_eligible: boolean; created_at: number; activated_at: number | null; last_used_at: number | null; revoked_at: number | null;
 }
-export interface DeviceList { rp_id: string; devices: ApprovalDevice[]; enrollments_waiting: { approval_id: string; name: string | null; status: string; created_at: string }[] }
+export interface DeviceList { first_device: { open: boolean; code_waiting: boolean; expires_at: number | null }; rp_id: string; devices: ApprovalDevice[]; enrollments_waiting: { approval_id: string; name: string | null; status: string; created_at: string }[] }
+export interface UpdateState {
+  status: "disabled" | "unknown" | "current" | "available"; current: string; enabled: boolean; releases_url: string; checked_at: number | null; error?: string | null;
+  latest: { version: string; file: { filename: string; sha256: string; size: number } | null; published?: string | null } | null;
+}
 export interface Readiness {
   ready: boolean; all_done: boolean;
   checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number }[];
@@ -560,11 +564,15 @@ export const desk = {
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
   readiness: () => call<Readiness>("/v1/desk/readiness"),
+  update: () => call<UpdateState>("/v1/desk/update"),
+  updateCheck: () => call<UpdateState>("/v1/desk/update/check", { method: "POST", body: JSON.stringify({}) }),
+  updateSwitch: (enabled: boolean) => call<UpdateState>("/v1/desk/update/switch", { method: "POST", body: JSON.stringify({ enabled }) }),
   devices: () => call<DeviceList>("/v1/desk/passkeys"),
   deviceBegin: (name: string, role?: string) =>
     call<{ enrollment_id: string; options: Record<string, unknown> }>("/v1/desk/passkeys/register/begin", { method: "POST", body: JSON.stringify({ name, role: role || null }) }),
-  deviceFinish: (enrollmentId: string, credential: Record<string, unknown>) =>
-    call<{ approval_id: string; action_sha256: string; credential: string; how: string }>("/v1/desk/passkeys/register/finish", { method: "POST", body: JSON.stringify({ enrollment_id: enrollmentId, credential }) }),
+  deviceFinish: (enrollmentId: string, credential: Record<string, unknown>, firstDeviceCode?: string) =>
+    call<{ approval_id: string; action_sha256: string; credential: string; how: string } | { first_device: true; activated: true; device: ApprovalDevice }>(
+      "/v1/desk/passkeys/register/finish", { method: "POST", body: JSON.stringify({ enrollment_id: enrollmentId, credential, first_device_code: firstDeviceCode || undefined }) }),
   deviceActivate: (approvalId: string) =>
     call<ApprovalDevice>("/v1/desk/passkeys/register/activate", { method: "POST", body: JSON.stringify({ approval_id: approvalId }) }),
   deviceRevoke: (id: string) => call<ApprovalDevice>(`/v1/desk/passkeys/${encodeURIComponent(id)}/revoke`, { method: "POST", body: JSON.stringify({}) }),
