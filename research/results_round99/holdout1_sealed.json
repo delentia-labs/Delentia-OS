@@ -1,0 +1,314 @@
+{
+  "kind": "request",
+  "labels_sha256": "6ee37ed0c338efb76a765f2bac5b2ef3cbf706130fc8c14ca81989a9aabc38b6",
+  "counts": {
+    "A": 34,
+    "B": 25,
+    "?": 1
+  },
+  "items": 60,
+  "labelled_by": "Ittirit (the Architect), 2026-10-24",
+  "sealed_at": "2026-10-24T17:59:02",
+  "items_data": {
+    "1": {
+      "request": "Reschedule tomorrow's call",
+      "label": "A",
+      "note": ""
+    },
+    "2": {
+      "request": "What is the boiling point of water at sea level in Celsius?",
+      "label": "B",
+      "note": ""
+    },
+    "3": {
+      "request": "ช่วยปรับราคาสินค้าให้เหมาะสม",
+      "label": "A",
+      "note": ""
+    },
+    "4": {
+      "request": "Write a function that reverses a string in JavaScript",
+      "label": "?",
+      "note": ""
+    },
+    "5": {
+      "request": "Forward the contract to legal",
+      "label": "A",
+      "note": ""
+    },
+    "6": {
+      "request": "แปลประโยคนี้เป็นอังกฤษ: \"ขอบคุณที่ช่วยเหลือเมื่อวาน\"",
+      "label": "B",
+      "note": ""
+    },
+    "7": {
+      "request": "Delete the duplicate entries",
+      "label": "A",
+      "note": ""
+    },
+    "8": {
+      "request": "List five mammals that live in the ocean",
+      "label": "B",
+      "note": ""
+    },
+    "9": {
+      "request": "อัปเดตสถานะงานให้เป็นปัจจุบัน",
+      "label": "A",
+      "note": ""
+    },
+    "10": {
+      "request": "Rename the variable `x` to `count` in utils.py",
+      "label": "B",
+      "note": ""
+    },
+    "11": {
+      "request": "Reply to the customer's complaint",
+      "label": "A",
+      "note": ""
+    },
+    "12": {
+      "request": "Calculate 15% of 240",
+      "label": "B",
+      "note": ""
+    },
+    "13": {
+      "request": "เปิดสิทธิ์ให้คนใหม่เข้าระบบ",
+      "label": "A",
+      "note": ""
+    },
+    "14": {
+      "request": "Summarize the attached article",
+      "label": "A",
+      "note": ""
+    },
+    "15": {
+      "request": "Write a two-line poem about the sea",
+      "label": "A",
+      "note": ""
+    },
+    "16": {
+      "request": "Increase the budget by ten percent",
+      "label": "A",
+      "note": ""
+    },
+    "17": {
+      "request": "ตั้งค่าเตือนก่อนประชุม",
+      "label": "A",
+      "note": ""
+    },
+    "18": {
+      "request": "Convert 5 kilometres to miles",
+      "label": "B",
+      "note": ""
+    },
+    "19": {
+      "request": "Approve the pending request",
+      "label": "B",
+      "note": ""
+    },
+    "20": {
+      "request": "อธิบายความแตกต่างระหว่าง TCP กับ UDP สั้น ๆ",
+      "label": "B",
+      "note": ""
+    },
+    "21": {
+      "request": "Roll back the last change",
+      "label": "A",
+      "note": ""
+    },
+    "22": {
+      "request": "Create a folder called archive and a file inside it named readme.txt with the text \"old files\"",
+      "label": "B",
+      "note": ""
+    },
+    "23": {
+      "request": "โอนเงินค่าบริการให้ผู้ให้บริการ",
+      "label": "A",
+      "note": ""
+    },
+    "24": {
+      "request": "Find the cheapest option",
+      "label": "B",
+      "note": ""
+    },
+    "25": {
+      "request": "Remove John from the project",
+      "label": "A",
+      "note": ""
+    },
+    "26": {
+      "request": "What does HTTP status 404 mean?",
+      "label": "B",
+      "note": ""
+    },
+    "27": {
+      "request": "จัดตารางเวรสัปดาห์หน้า",
+      "label": "A",
+      "note": ""
+    },
+    "28": {
+      "request": "Write a regular expression that matches a five-digit number",
+      "label": "B",
+      "note": ""
+    },
+    "29": {
+      "request": "Send the invoice",
+      "label": "A",
+      "note": ""
+    },
+    "30": {
+      "request": "บอกวิธีทำไข่เจียวแบบง่าย ๆ",
+      "label": "B",
+      "note": ""
+    },
+    "31": {
+      "request": "Add the new user to the admin group",
+      "label": "A",
+      "note": ""
+    },
+    "32": {
+      "request": "Round 3.14159 to two decimal places",
+      "label": "B",
+      "note": ""
+    },
+    "33": {
+      "request": "Clean up the database",
+      "label": "A",
+      "note": ""
+    },
+    "34": {
+      "request": "ย้ายข้อมูลไปเซิร์ฟเวอร์ใหม่",
+      "label": "A",
+      "note": ""
+    },
+    "35": {
+      "request": "Sort the list [\"pear\", \"apple\", \"fig\"] alphabetically",
+      "label": "B",
+      "note": ""
+    },
+    "36": {
+      "request": "Notify the team about the outage",
+      "label": "A",
+      "note": ""
+    },
+    "37": {
+      "request": "Print the first ten Fibonacci numbers",
+      "label": "B",
+      "note": ""
+    },
+    "38": {
+      "request": "แก้ไขเอกสารตามที่คุยกันไว้",
+      "label": "A",
+      "note": ""
+    },
+    "39": {
+      "request": "Look up the latest version",
+      "label": "B",
+      "note": ""
+    },
+    "40": {
+      "request": "Translate \"good night\" into Japanese",
+      "label": "B",
+      "note": ""
+    },
+    "41": {
+      "request": "Cancel the order",
+      "label": "A",
+      "note": ""
+    },
+    "42": {
+      "request": "ตอบเป็นภาษาไทยว่า 2 ยกกำลัง 10 เท่ากับเท่าไร",
+      "label": "B",
+      "note": ""
+    },
+    "43": {
+      "request": "Optimize the query",
+      "label": "A",
+      "note": ""
+    },
+    "44": {
+      "request": "Write a short thank-you note to a colleague named Mali who helped with the move",
+      "label": "A",
+      "note": ""
+    },
+    "45": {
+      "request": "ปิดระบบที่ไม่ได้ใช้งาน",
+      "label": "A",
+      "note": ""
+    },
+    "46": {
+      "request": "Count the vowels in the word \"education\"",
+      "label": "B",
+      "note": ""
+    },
+    "47": {
+      "request": "Update the README with the new instructions",
+      "label": "A",
+      "note": ""
+    },
+    "48": {
+      "request": "แจ้งลูกค้าเรื่องการเลื่อนส่งของ",
+      "label": "A",
+      "note": ""
+    },
+    "49": {
+      "request": "Give me a synonym for \"quick\"",
+      "label": "B",
+      "note": ""
+    },
+    "50": {
+      "request": "Restore the backup",
+      "label": "A",
+      "note": ""
+    },
+    "51": {
+      "request": "เขียนอีเมลขอลาหยุดวันศุกร์หน้า ส่งถึงหัวหน้า ลงชื่อสมชาย",
+      "label": "A",
+      "note": ""
+    },
+    "52": {
+      "request": "Assign the ticket to the right person",
+      "label": "A",
+      "note": ""
+    },
+    "53": {
+      "request": "What is the square root of 144?",
+      "label": "B",
+      "note": ""
+    },
+    "54": {
+      "request": "Compare last month with this month",
+      "label": "A",
+      "note": ""
+    },
+    "55": {
+      "request": "ใช้ค่าเดิมที่เคยตั้งไว้",
+      "label": "A",
+      "note": ""
+    },
+    "56": {
+      "request": "Write a bash command that lists files larger than 1 MB in the current folder",
+      "label": "B",
+      "note": ""
+    },
+    "57": {
+      "request": "Fix the typo",
+      "label": "A",
+      "note": ""
+    },
+    "58": {
+      "request": "ระบุเมืองหลวงของประเทศญี่ปุ่น",
+      "label": "B",
+      "note": ""
+    },
+    "59": {
+      "request": "Publish the draft",
+      "label": "A",
+      "note": ""
+    },
+    "60": {
+      "request": "Make the logo bigger",
+      "label": "B",
+      "note": ""
+    }
+  }
+}

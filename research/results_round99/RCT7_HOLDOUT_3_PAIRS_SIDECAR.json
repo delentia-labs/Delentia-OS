@@ -1,0 +1,70 @@
+{
+  "written": "2026-10-24 by Claude, before any label or model run; which rows are the same sentence with and without context (the first number of each pair is not necessarily the no-context row: see the sheet)",
+  "pairs": {
+    "Make the chart bigger": [
+      1,
+      45
+    ],
+    "Publish the draft": [
+      3,
+      39
+    ],
+    "Restore the backup": [
+      4,
+      40
+    ],
+    "ตั้งเตือนก่อนประชุม": [
+      5,
+      7
+    ],
+    "Approve the pending request": [
+      6,
+      8
+    ],
+    "Clean up the folder": [
+      10,
+      56
+    ],
+    "Send the report to the client": [
+      12,
+      54
+    ],
+    "Cancel the order": [
+      14,
+      16
+    ],
+    "สรุปการประชุม": [
+      17,
+      34
+    ],
+    "Look up the latest version": [
+      21,
+      32
+    ],
+    "Add the new user to the team group": [
+      25,
+      53
+    ],
+    "Delete the duplicate files": [
+      27,
+      50
+    ],
+    "Update the README": [
+      28,
+      31
+    ],
+    "Rename the file to final": [
+      33,
+      35
+    ],
+    "Pay the supplier invoice": [
+      37,
+      59
+    ],
+    "ย้ายนัดพรุ่งนี้": [
+      46,
+      57
+    ]
+  },
+  "items": 60
+}
