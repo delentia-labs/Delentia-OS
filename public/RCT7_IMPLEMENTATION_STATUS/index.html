@@ -2436,8 +2436,8 @@
 <td>R1</td>
 <td>Observe</td>
 <td>Collect what is known <strong>and what is unknown</strong></td>
-<td>Always lists two kinds of unknown, by rule: a file the request tells the agent to read or edit that exists nowhere in the workspace, and a bare reference ("fix it") with no earlier conversation. With the flag, the episode stops before the first model call and asks. Unknowns the words do not show are not found</td>
-<td>Partial (rule-visible unknowns only)</td>
+<td>Always lists two kinds of unknown, by rule: a file the request tells the agent to read or edit that exists nowhere in the workspace, and a bare reference ("fix it") with no earlier conversation. With the flag, the episode stops before the first model call and asks. Unknowns the words do not show are not found by rule. <strong>Opt-in, off by default</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): a model proposes questions, each of which must cite words of the request (a question about something the request never mentions is dropped); it can only ask, never act. On the author's own 40 requests local 7-8B models found 18-20 of 20 with 0 false pauses; a 3B model found 10 of 20. A holdout labelled by someone else has not been run</td>
+<td>Partial (rules by default; model-proposed unknowns opt-in, not yet validated on a holdout)</td>
 </tr>
 <tr>
 <td>R2</td>
@@ -2457,14 +2457,14 @@
 <td>R4</td>
 <td>Reverse reasoning</td>
 <td>An inspectable chain from the wanted result back to the necessary conditions and the evidence or actions that support them</td>
-<td>Shows, before the first tool, the conditions the result must satisfy (read from the request) with how each will be checked. It is a list of checkable conditions, not a backward chain with evidence. A risk score is not a backward chain</td>
+<td>Shows, before the first tool, the conditions the result must satisfy (read from the request) with how each will be checked. Every finished episode also carries an evidence chain without a model: each number, file name or address of the answer traced to the step that returned it, to the request, or reported as found nowhere. <strong>Opt-in</strong> (<code>DELENTIA_RCT7_CHAIN=cite</code>): a model lists the answer's claims with a quote from a step; the code accepts a claim only if the quote occurs verbatim in that step, its numbers and names are covered, and every clause of the answer is covered by some claim. It is a chain over facts that have tokens or quotes, not over every kind of reasoning</td>
 <td>Partial</td>
 </tr>
 <tr>
 <td>R5</td>
 <td>Identify core intent</td>
 <td>When the intent is not clear, <strong>ask the user and wait</strong></td>
-<td>A question store (sealed per person, survives a restart, answered once, the answer is a new intent version, the original is kept). The loop asks for the rule-visible unknowns above, and for a result that breaks a stated requirement. The answer attaches to the same request once, when the person sends it again; "accept" closes it without running anything. General "the intent is unclear" needs a model</td>
+<td>A question store (sealed per person, survives a restart, answered once, the answer is a new intent version, the original is kept). The loop asks for the rule-visible unknowns above, and for a result that breaks a stated requirement. The answer attaches to the same request once, when the person sends it again; "accept" closes it without running anything. General "the intent is unclear" is the opt-in model proposal above, with a per-person brake: if most of what the model proposed to a person was dismissed, it stops proposing to them</td>
 <td>Partial</td>
 </tr>
 <tr>
@@ -2478,7 +2478,7 @@
 <td>R7</td>
 <td>Compare with intent</td>
 <td>If the result does not match, <strong>report the difference, stop and ask</strong>, then analyse again with the answer</td>
-<td>For the seven kinds above, a difference stops the episode with a question that states expected and observed; nothing is learned from it. The end-of-episode similarity/grounding check still only decides whether the episode may become a skill</td>
+<td>For the seven kinds above, a difference stops the episode with a question that states expected and observed; nothing is learned from it. The end-of-episode similarity/grounding check still only decides whether the episode may become a skill. <strong>Opt-in</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): where the rules found no difference a model may judge that the answer misses a part of the request, and the part must be cited from the request; on the author's own 40 pairs 17-19 of 20 unmet answers were found with 0-1 false stops (7-8B models)</td>
 <td>Partial</td>
 </tr>
 </tbody>
