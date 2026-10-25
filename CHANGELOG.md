@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.1] - 2026-10-13
 
+### Added
+- The Desk (the web pages) is inside the package, and `delentia desk` opens it against a running `delentia serve` with no token to paste. 2.3.0 shipped without any web pages.
+- Approve a risky action from the Desk with a device you own (Windows Hello, a fingerprint, a phone: passkey / WebAuthn). A device becomes an approver only after an existing approver signed for it; a confirmation is bound to one action and one decision; roles, scope, expiry and at-most-once apply as for a key. Tested with a software authenticator, not yet with a real Windows Hello.
+- `GET /v1/desk/readiness` and a "Getting started" panel: whether a model answers, whether anyone can approve, whether a first request ran.
+- Plain-language text (Thai and English) for every stop reason and API error; a welcome with example requests on the empty chat; `delentia --help` grouped by what a person is doing.
+
 ### Changed
 - OpenCV is an optional extra (`pip install delentia-os[video]`); the video algorithm imports it on first use. The install is about 113 MB smaller.
 - `faiss-cpu` is an optional extra (`pip install delentia-os[vector]`). Without it the vector index uses an exact numpy search with the same neighbours and scores for cosine, dot and euclidean; IVF and HNSW indexes say to install the extra. `get_stats()['engine']` reports which engine answered.

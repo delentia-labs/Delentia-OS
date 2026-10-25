@@ -147,7 +147,8 @@ def render(facts: Dict[str, Any], steps: List[Step]) -> str:
                       f"DELENTIA_AUDIT_SIGNING_KEY={facts['home']}/keys/audit-signer.pem"]
     left = [s for s in steps if s.action == "needs-you"]
     lines += ["", ("Still for you: " + ", ".join(s.title.lower() for s in left)) if left else "Nothing is waiting for you in this list.",
-              "Then: `delentia host-check --local` lists what else to look at; `delentia serve` starts it (or `delentia demo init` for a guided first task)."]
+              "Then: `delentia serve` starts the agent, and in a second window `delentia desk` opens it in your browser (or `delentia demo init` for a guided first task). "
+              "`delentia host-check --local` lists what else to look at."]
     return "\n".join(lines)
 
 
