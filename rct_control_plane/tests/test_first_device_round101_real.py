@@ -240,3 +240,25 @@ def test_over_http_two_devices_with_the_same_code_at_the_same_moment_leave_one_a
     answers = _race(2, lambda i: client.post("/v1/desk/passkeys/register/finish", json=prepared[i]).status_code)
     assert sorted(answers) == [200, 400], answers
     assert [d["status"] for d in client.get("/v1/desk/passkeys").json()["devices"] if d["status"] == "ACTIVE"] == ["ACTIVE"]
+
+
+def test_more_requests_than_tries_at_once_never_leave_the_right_code_without_a_winner(tmp_path):
+    """Found by CI on Python 3.10: with 8 right-code requests at once only 5 can hold a try; the other 3 used to CANCEL the code, which also cancelled the 5 that held one, so nobody got in. The extra
+    requests are refused and nothing else changes: exactly one device is made, every time. A barrier starts all 8 together, 25 rounds, because one round hits the bad ordering only sometimes."""
+    import threading
+    for round_number in range(25):
+        persistence = ControlPlanePersistence(db_path=str(tmp_path / f"many{round_number}.db"))
+        issued = FirstDeviceStore(persistence).issue()
+        barrier = threading.Barrier(8)
+
+        def use(_i):
+            store = FirstDeviceStore(persistence)
+            barrier.wait()
+            try:
+                code_id = store.check(issued["display"])
+            except FirstDeviceError:
+                return False
+            return store.consume(code_id)
+
+        outcomes = _race(8, use)
+        assert outcomes.count(True) == 1, (round_number, outcomes)
