@@ -146,10 +146,10 @@ WORKFLOWS: List[Dict[str, object]] = [
 READINESS: Dict[str, Dict[str, object]] = {
     "W01": {"e2e": True, "live_runner": "research/daaes/tc003.py (run_live) and research/daaes/benchmark.py", "missing": "a model that can write the patch (qwen3:8b: 0 of 4 in every arm)"},
     "W02": {"e2e": True, "live_runner": "research/runner.py (--policy real) and `delentia demo run`", "missing": "a capable model; the sealed test split has not been opened"},
-    "W03": {"e2e": True, "live_runner": None, "missing": "a live model with browse tools; the scripted run covers a crawl, an obeying model, an invented link and a price that changed, not a search-then-read loop"},
+    "W03": {"e2e": True, "live_runner": "research/live_workflows.py (run_w03; `python -m research.live_workflows run W03`)", "missing": "a live result with a capable model; the runner reads one named page twice (the price changes between looks), it is not a search-then-read loop over the open web"},
     "W04": {"e2e": True, "live_runner": "research/runner.py (tickets domain, no chat channel)", "missing": "a live model behind a real chat channel; the scripted run uses the gateway entry with a recording tool world (the runtime has no tool that sends mail, so no reply to a third party exists to sign)"},
     "W05": {"e2e": True, "live_runner": "scripts/autonomy_drill.py (scripted model)", "missing": "the same drill with a real model and a host that stays on for 8 hours, then 7 days"},
-    "W06": {"e2e": True, "live_runner": None, "missing": "a live model behind a real signed webhook; a duplicate-delivery run on the host"},
+    "W06": {"e2e": True, "live_runner": "research/live_workflows.py (run_w06; `python -m research.live_workflows run W06`)", "missing": "a live result with a capable model; a duplicate-delivery run on the host through the real HTTP route"},
     "W07": {"e2e": True, "live_runner": "research/daaes/tc006.py (run_tc006 with provider=) through `python -m research.daaes live --case TC-006`", "missing": "a capable model (the live path is rehearsed against a fake paid endpoint, with the budget guard and a sealed bundle; no language model has run it)"},
     "W08": {"e2e": True, "live_runner": "scripts/measure_repeat_goal.py", "missing": "the forged-tool half of the job in the same run (C20 covers it separately); then the same ten requests with a live model"},
     "W09": {"e2e": True, "live_runner": None, "missing": "TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part"},

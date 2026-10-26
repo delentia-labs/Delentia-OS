@@ -22,16 +22,16 @@ Per short run about 30,000 prompt and 3,000 completion tokens; W05, W07, W08, W1
 
 ## Where each one stands today
 
-Of 12 workflows: 12 have a scripted run of the whole job, 7 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
+Of 12 workflows: 12 have a scripted run of the whole job, 9 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
 
 | workflow | whole job run, scripted | live runner | what is missing next |
 |---|---|---|---|
 | W01 Fix a bug in a repository | yes | `research/daaes/tc003.py (run_live) and research/daaes/benchmark.py` | a model that can write the patch (qwen3:8b: 0 of 4 in every arm) |
 | W02 Compare vendor quotes and recommend within a budget | yes | `research/runner.py (--policy real) and `delentia demo run`` | a capable model; the sealed test split has not been opened |
-| W03 Research the web and write a cited brief | yes | none | a live model with browse tools; the scripted run covers a crawl, an obeying model, an invented link and a price that changed, not a search-then-read loop |
+| W03 Research the web and write a cited brief | yes | `research/live_workflows.py (run_w03; `python -m research.live_workflows run W03`)` | a live result with a capable model; the runner reads one named page twice (the price changes between looks), it is not a search-then-read loop over the open web |
 | W04 Handle a queue of support tickets from a chat channel | yes | `research/runner.py (tickets domain, no chat channel)` | a live model behind a real chat channel; the scripted run uses the gateway entry with a recording tool world (the runtime has no tool that sends mail, so no reply to a third party exists to sign) |
 | W05 A scheduled job that runs unattended for days | yes | `scripts/autonomy_drill.py (scripted model)` | the same drill with a real model and a host that stays on for 8 hours, then 7 days |
-| W06 A job started by a signed event | yes | none | a live model behind a real signed webhook; a duplicate-delivery run on the host |
+| W06 A job started by a signed event | yes | `research/live_workflows.py (run_w06; `python -m research.live_workflows run W06`)` | a live result with a capable model; a duplicate-delivery run on the host through the real HTTP route |
 | W07 A project across several sessions with a changing instruction | yes | `research/daaes/tc006.py (run_tc006 with provider=) through `python -m research.daaes live --case TC-006`` | a capable model (the live path is rehearsed against a fake paid endpoint, with the budget guard and a sealed bundle; no language model has run it) |
 | W08 A job done ten times gets cheaper and becomes a tool | yes | `scripts/measure_repeat_goal.py` | the forged-tool half of the job in the same run (C20 covers it separately); then the same ten requests with a live model |
 | W09 A payment-like job through a crash, an outage and a dead notary | yes | none | TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part |
