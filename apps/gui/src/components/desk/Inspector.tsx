@@ -32,7 +32,7 @@ const GATE: Record<GateRow["verdict"], { glyph: string; tone: string; en: string
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-dl-rule pt-3">
-      <h3 className="desk-mono mb-2 text-[11px] uppercase tracking-[0.08em] text-dl-muted">{title}</h3>
+      <h2 className="desk-mono mb-2 text-[11px] uppercase tracking-[0.08em] text-dl-muted">{title}</h2>
       {children}
     </section>
   );
@@ -47,7 +47,7 @@ export function Inspector({ run, running, elapsed }: { run: RunState; running: b
   const mood = MOOD_TEXT[run.mood];
 
   return (
-    <div className="space-y-4" aria-label={L("Execution inspector", "ตัวตรวจการทำงาน")}>
+    <section className="space-y-4" aria-label={L("Execution inspector", "ตัวตรวจการทำงาน")}>
       <div className="flex items-center gap-3">
         <PixelMark mood={run.mood} size={56} />
         <div className="min-w-0">
@@ -122,6 +122,6 @@ export function Inspector({ run, running, elapsed }: { run: RunState; running: b
           <Link href="/sessions" className="underline underline-offset-2">{L("Replay in Sessions", "เปิดดูใน Sessions")}</Link>
         </p>
       </Section>
-    </div>
+    </section>
   );
 }

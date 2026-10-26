@@ -8,6 +8,7 @@ const STAGES = ["understand", "recall", "plan", "act", "verify", "compress", "re
 
 export default function AlgorithmsPage() {
   const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const p = useDeskData(() => desk.pipeline(), [], 20000);
   const data = p.data;
 
@@ -27,9 +28,9 @@ export default function AlgorithmsPage() {
         {data ? (
           <div className="space-y-6">
             <Panel title="Pipeline" aside={data.enabled ? <Badge tone="leaf">on</Badge> : <Badge tone="amber">off</Badge>}>
-              <Row label="Algorithms with an adapter">{data.algorithms} of 41</Row>
-              <Row label="Episodes recorded">{data.runs.length}</Row>
-              <Row label="Latest total time">{data.runs[0] ? `${fmtNum(data.runs[0].total_ms, 0)} ms` : "-"}</Row>
+              <Row label={L("Algorithms with an adapter", "อัลกอริทึมที่มีตัวต่อ")}>{data.algorithms} {L("of", "จาก")} 41</Row>
+              <Row label={L("Episodes recorded", "episode ที่บันทึก")}>{data.runs.length}</Row>
+              <Row label={L("Latest total time", "เวลารวมล่าสุด")}>{data.runs[0] ? `${fmtNum(data.runs[0].total_ms, 0)} ms` : "-"}</Row>
               {!data.enabled ? (
                 <p className="mt-3 text-[13px] leading-relaxed text-dl-muted">
                   The pipeline runs around every episode when <Code>DELENTIA_ALGORITHM_PIPELINE=1</Code>. <Code>delentia serve</Code> turns it on; it is off for one-off CLI runs and tests.
@@ -41,12 +42,12 @@ export default function AlgorithmsPage() {
               const rows = data.adapters.filter((a) => a.stage === stage);
               if (!rows.length) return null;
               return (
-                <Panel key={stage} title={stage} aside={<span className="desk-mono text-[11px] text-dl-muted">{rows.length} algorithms</span>}>
-                  <div className="overflow-x-auto">
+                <Panel key={stage} title={stage} aside={<span className="desk-mono text-[11px] text-dl-muted">{rows.length} {L("algorithms", "อัลกอริทึม")}</span>}>
+                  <div tabIndex={0} className="overflow-x-auto">
                     <table className="desk-mono w-full text-left text-[12px]">
                       <thead className="text-dl-muted"><tr>
-                        <th className="py-1 pr-3 font-normal">id</th><th className="pr-3 font-normal">algorithm</th><th className="pr-3 font-normal">needs</th>
-                        <th className="pr-3 font-normal">ran / skipped / failed</th><th className="pr-3 font-normal">mean ms</th><th className="font-normal">effect</th>
+                        <th className="py-1 pr-3 font-normal">id</th><th className="pr-3 font-normal">{L("algorithm", "อัลกอริทึม")}</th><th className="pr-3 font-normal">{L("needs", "ต้องใช้")}</th>
+                        <th className="pr-3 font-normal">{L("ran / skipped / failed", "รัน / ข้าม / ล้มเหลว")}</th><th className="pr-3 font-normal">{L("mean ms", "ms เฉลี่ย")}</th><th className="font-normal">{L("effect", "ผลที่เกิด")}</th>
                       </tr></thead>
                       <tbody>
                         {rows.map((a) => {
@@ -57,13 +58,13 @@ export default function AlgorithmsPage() {
                               <td className="pr-3 text-dl-text">{a.name}</td>
                               <td className="pr-3">
                                 <span className="inline-flex gap-1">
-                                  {a.needs_llm ? <Badge tone="amber">model</Badge> : null}
-                                  {a.needs_network ? <Badge tone="amber">network</Badge> : null}
-                                  {a.writes_files ? <Badge tone="amber">files</Badge> : null}
+                                  {a.needs_llm ? <Badge tone="amber">{L("model", "โมเดล")}</Badge> : null}
+                                  {a.needs_network ? <Badge tone="amber">{L("network", "เครือข่าย")}</Badge> : null}
+                                  {a.writes_files ? <Badge tone="amber">{L("files", "ไฟล์")}</Badge> : null}
                                   {!a.needs_llm && !a.needs_network && !a.writes_files ? <span className="text-dl-muted">-</span> : null}
                                 </span>
                               </td>
-                              <td className="pr-3">{s ? `${s.ok} / ${s.na} / ${s.err}` : <span className="text-dl-muted">not recorded</span>}</td>
+                              <td className="pr-3">{s ? `${s.ok} / ${s.na} / ${s.err}` : <span className="text-dl-muted">{L("not recorded", "ยังไม่ได้บันทึก")}</span>}</td>
                               <td className="pr-3">{s?.ms != null ? fmtNum(s.ms) : "-"}</td>
                               <td className="max-w-[44ch] text-dl-muted">{s?.effect ?? ""}</td>
                             </tr>
@@ -76,12 +77,12 @@ export default function AlgorithmsPage() {
               );
             })}
 
-            <Panel title="Recent pipeline runs">
+            <Panel title={L("Recent pipeline runs", "การรันไปป์ไลน์ล่าสุด")}>
               {data.runs.length ? (
                 <table className="desk-mono w-full text-left text-[12px]">
                   <thead className="text-dl-muted"><tr>
-                    <th className="py-1 pr-3 font-normal">when</th><th className="pr-3 font-normal">user</th><th className="pr-3 font-normal">ran</th>
-                    <th className="pr-3 font-normal">skipped</th><th className="pr-3 font-normal">failed</th><th className="pr-3 font-normal">ms</th><th className="font-normal">advice lines</th>
+                    <th className="py-1 pr-3 font-normal">{L("when", "เมื่อ")}</th><th className="pr-3 font-normal">{L("user", "ผู้ใช้")}</th><th className="pr-3 font-normal">{L("ran", "รัน")}</th>
+                    <th className="pr-3 font-normal">{L("skipped", "ข้าม")}</th><th className="pr-3 font-normal">{L("failed", "ล้มเหลว")}</th><th className="pr-3 font-normal">ms</th><th className="font-normal">{L("advice lines", "บรรทัดคำแนะนำ")}</th>
                   </tr></thead>
                   <tbody>
                     {data.runs.map((r) => (
@@ -93,7 +94,7 @@ export default function AlgorithmsPage() {
                     ))}
                   </tbody>
                 </table>
-              ) : <p className="text-sm text-dl-muted">No pipeline run recorded yet.</p>}
+              ) : <p className="text-sm text-dl-muted">{L("No pipeline run recorded yet.", "ยังไม่มีการรันไปป์ไลน์ที่บันทึกไว้")}</p>}
             </Panel>
           </div>
         ) : null}

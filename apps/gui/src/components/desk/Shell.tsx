@@ -12,6 +12,7 @@ import { LangProvider, useLang, type DictKey } from "./i18n";
 import { useDeskData } from "./ui";
 import { desk } from "@/lib/desk-api";
 import { loadLocalConfig } from "@/lib/local-config";
+import { MODE_EVENT, MODE_KEY } from "./mode";
 import { GROUPS, SIMPLE, groupOf, parseMode, type DeskMode, type NavItem } from "@/lib/nav-model";
 
 // Order follows Hermes' dashboard (chat first), with Delentia's own pages
@@ -103,7 +104,7 @@ function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode)
           </dd>
         </div>
       </dl>
-      <div role="group" aria-label="Menu" className="desk-mono mt-4 flex overflow-hidden rounded border border-dl-rule text-[11px] text-dl-muted">
+      <div role="group" aria-label={lang === "th" ? "โหมดการแสดงผล" : "Display mode"} className="desk-mono mt-4 flex overflow-hidden rounded border border-dl-rule text-[11px] text-dl-muted">
         {(["simple", "advanced"] as const).map((m) => (
           <button key={m} onClick={() => setMode(m)} aria-pressed={mode === m}
             className={`desk-focus flex-1 px-2 py-1 ${mode === m ? "bg-dl-pine text-dl-text" : "hover:text-dl-text"}`}>
@@ -112,13 +113,14 @@ function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode)
         ))}
       </div>
       <div className="desk-mono mt-3 flex items-center justify-between text-[11px] text-dl-muted">
-        <Link href="/settings" className="desk-focus inline-flex items-center gap-1.5 hover:text-dl-text">
+        {/* min 24 x 24 CSS px: WCAG 2.2 target size (measured before: the link was 46 x 17 and the language buttons 29 x 20) */}
+        <Link href="/settings" className="desk-focus inline-flex min-h-[24px] items-center gap-1.5 py-1 hover:text-dl-text">
           <Settings className="h-3.5 w-3.5" aria-hidden /> {t("settings")}
         </Link>
-        <div role="group" aria-label="Language" className="flex overflow-hidden rounded border border-dl-rule">
+        <div role="group" aria-label={lang === "th" ? "ภาษา" : "Language"} className="flex overflow-hidden rounded border border-dl-rule">
           {(["th", "en"] as const).map((l) => (
             <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l}
-              className={`desk-focus px-2 py-0.5 uppercase ${lang === l ? "bg-dl-pine text-dl-text" : "hover:text-dl-text"}`}>
+              className={`desk-focus min-h-[24px] min-w-[24px] px-2.5 py-1 uppercase ${lang === l ? "bg-dl-pine text-dl-text" : "hover:text-dl-text"}`}>
               {l}
             </button>
           ))}
@@ -189,9 +191,8 @@ function Brand() {
   );
 }
 
-const MODE_KEY = "delentia_desk_mode";
-
 function ShellInner({ children }: { children: React.ReactNode }) {
+  const { lang } = useLang();
   const [open, setOpen] = useState(false);
   // Simple is the default (a first visit, a cleared browser, or a browser that refuses storage all start in Simple).
   const [mode, setModeState] = useState<DeskMode>(() => {
@@ -200,10 +201,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const setMode = (m: DeskMode) => {
     setModeState(m);
     try { window.localStorage.setItem(MODE_KEY, m); } catch { /* the choice just is not remembered */ }
+    window.dispatchEvent(new Event(MODE_EVENT));            // pages that read the mode (the chat welcome) follow the sidebar at once
   };
   return (
-    <div className="desk-root flex h-screen w-screen overflow-hidden">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-dl-rule bg-dl-panel md:flex">
+    <div className="desk-root flex h-screen w-full overflow-hidden">
+      <aside aria-label={lang === "th" ? "เมนู Delentia" : "Delentia menu"} className="hidden w-64 shrink-0 flex-col border-r border-dl-rule bg-dl-panel md:flex">
         <Brand />
         <Nav mode={mode} />
         <SystemPanel mode={mode} setMode={setMode} />
@@ -214,25 +216,26 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <div className="flex w-72 flex-col border-r border-dl-rule bg-dl-panel">
             <div className="flex items-center justify-between pr-3">
               <Brand />
-              <button onClick={() => setOpen(false)} aria-label="Close menu" className="desk-focus p-2 text-dl-muted">
+              <button onClick={() => setOpen(false)} aria-label={lang === "th" ? "ปิดเมนู" : "Close menu"} className="desk-focus p-2 text-dl-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <Nav mode={mode} onNavigate={() => setOpen(false)} />
             <SystemPanel mode={mode} setMode={setMode} />
           </div>
-          <button aria-label="Close menu" className="flex-1 bg-black/50" onClick={() => setOpen(false)} />
+          <button aria-label={lang === "th" ? "ปิดเมนู" : "Close menu"} className="flex-1 bg-black/50" onClick={() => setOpen(false)} />
         </div>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-dl-rule bg-dl-panel px-4 py-2.5 md:hidden">
-          <button onClick={() => setOpen(true)} aria-label="Open menu" className="desk-focus text-dl-muted">
+        {/* a <header> (the page's banner landmark) so the phone-width bar is not content outside every landmark */}
+        <header className="flex items-center gap-3 border-b border-dl-rule bg-dl-panel px-4 py-2.5 md:hidden">
+          <button onClick={() => setOpen(true)} aria-label={lang === "th" ? "เปิดเมนู" : "Open menu"} className="desk-focus text-dl-muted">
             <Menu className="h-5 w-5" />
           </button>
           <DelentiaMark size={22} />
           <span className="desk-mono text-sm tracking-[0.14em]">DELENTIA</span>
-        </div>
+        </header>
         <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       </div>
     </div>

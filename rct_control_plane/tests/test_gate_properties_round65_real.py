@@ -359,8 +359,29 @@ def test_p6_only_the_known_choke_points_call_a_tool():
                 sites.setdefault(module, []).append(getattr(owner, "name", "?"))
     assert {m: sorted(v) for m, v in sites.items()} == {
         "autonomous_loop.py": ["invoke", "run"],          # the single-call path (after pre_dispatch_gate) and the DAG batch path (every call gated first)
-        "governed_autonomous_loop.py": ["_warm_lookup", "resume"],   # warm recall replays read-only evidence; resume runs an approved action after claim_for_execution
+        "governed_autonomous_loop.py": ["_execute_approved", "_warm_lookup"],   # warm recall replays read-only evidence; _execute_approved runs ONE approved action (Round 101: resume and a confirmed plan both reach it, only after claim_for_execution)
     }
+
+
+def test_p6_the_approved_action_runner_is_reached_only_from_resume_and_the_plan_runner():
+    """Round 101: `_execute_approved` calls the tool server for an action a person approved. It must be reachable only from `resume` (after claim_for_execution) and from `_execute_plan` (which only resume calls)."""
+    import ast
+    from pathlib import Path
+    root = Path(approvals.__file__).resolve().parent
+    tree = ast.parse((root / "governed_autonomous_loop.py").read_text(encoding="utf-8"))
+    parents = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parents[child] = node
+    callers = {"_execute_approved": set(), "_execute_plan": set()}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in callers:
+            owner = node
+            while owner in parents and not isinstance(owner, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                owner = parents[owner]
+            callers[node.func.attr].add(getattr(owner, "name", "?"))
+    assert callers["_execute_approved"] == {"resume", "_execute_plan"}
+    assert callers["_execute_plan"] == {"resume"}
 
 
 def test_p6_a_batch_is_gated_call_by_call_before_any_of_it_runs(tmp_path, monkeypatch):
@@ -538,7 +559,7 @@ def test_the_property_table_is_current_and_every_test_it_names_exists():
     assert gate_properties.missing_tests() == []
     committed = (gate_properties.ROOT / "research" / "GATE_PROPERTIES.md").read_bytes().decode("utf-8").replace("\r\n", "\n")
     assert committed == gate_properties.render(), "run: python research/gate_properties.py"
-    assert [p["id"] for p in gate_properties.PROPERTIES] == [f"P{i}" for i in range(1, 15)]      # Round 67 added P11 (memory history) and P12 (erasure); Round 69 P13 (the default policy); Round 70 P14 (pinned rules)
+    assert [p["id"] for p in gate_properties.PROPERTIES] == [f"P{i}" for i in range(1, 19)]      # Round 101 added P15 (plan-first approval), P16 (thin evidence asks), P17 (approval devices) and P18 (the first approver); Round 67 added P11 (memory history) and P12 (erasure); Round 69 P13 (the default policy); Round 70 P14 (pinned rules)
 
 
 # ------------------------------------------------------------------------------------------------ found by the FDIA calibration (scripts/calibrate_fdia_round65.py)

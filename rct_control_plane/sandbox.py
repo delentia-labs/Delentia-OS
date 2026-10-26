@@ -302,7 +302,9 @@ _KEY_MATERIAL_PATTERN = re.compile(
     r"|\.claude-mem\b|delentia_api_token|delentia_audit_signing_key|delentia_approver_pubkeys"
     r"|openrouter_api_key|python_kernel_token|zuplo_shared_secret|_secret\b"
     # Round 50 (A2): the notary's key, log and token belong to another process.
-    r"|notary)",
+    r"|notary"
+    # Round 101: commands only the person at the keyboard may run (the one-time code that makes the first approval device; applying an update of the program itself).
+    r"|first-device|first_device|update\s{1,20}--apply)",
     re.IGNORECASE,
 )
 _ENV_DUMP_PATTERN = re.compile(r"^\s*(printenv|env|set)\s*$|^\s*printenv\b", re.IGNORECASE)
@@ -476,7 +478,9 @@ _SECRET_ENV_NAME = re.compile(r"(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|SIG
 
 
 def scrubbed_environment() -> Dict[str, str]:
-    return {k: v for k, v in os.environ.items() if not _SECRET_ENV_NAME.search(k)}
+    env = {k: v for k, v in os.environ.items() if not _SECRET_ENV_NAME.search(k)}
+    env["DELENTIA_AGENT_SHELL"] = "1"            # Round 101: a command run for the agent says so; the commands only a person may run refuse to start when they see it
+    return env
 
 
 def _run_local(command: str, timeout_seconds: float) -> SandboxResult:

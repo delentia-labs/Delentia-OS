@@ -1160,6 +1160,87 @@ async def c27(env: Env, ok: Check) -> Dict[str, Any]:
         xm.clear_cache()
 
 
+@case("C28", "Plan-first: the owner lists the kinds of action to confirm as a plan; the agent lists the steps, nothing runs, ONE signature runs exactly those steps in order")
+async def c28(env: Env, ok: Check) -> Dict[str, Any]:
+    import scripted_model as sm
+    from rct_control_plane import approvals, audit_chain, fdia_policy
+    notes: Dict[str, Any] = {}
+    policy_file = env.work / "fdia_policy_c28.json"
+    approvers_file = Path(os.environ["DELENTIA_APPROVERS_FILE"])
+    old_env = {k: os.environ.get(k) for k in (fdia_policy.POLICY_ENV, approvals.APPROVERS_ENV)}
+    key = env.work / "keys" / "c28.pem"
+    public = approvals.generate_approver_key(str(key))
+    approvers_file.write_text(json.dumps([{"name": "c28", "public_key_hex": public}]), encoding="utf-8")
+    os.environ.pop(approvals.APPROVERS_ENV, None)
+    os.environ[fdia_policy.POLICY_ENV] = str(policy_file)
+    original = env.model.policy
+    try:
+        policy_file.write_text(json.dumps({"rules": [
+            {"rule_id": "R-READ", "intent_patterns": ["read_*", "search_*", "recall"], "action_type": "ALLOW"},
+            {"rule_id": "R-WRITE", "intent_patterns": ["write_repo_file", "patch_repo_file"], "action_type": "REQUIRE_HUMAN_SIGNATURE"}],
+            "plan_first": ["document_edit"]}), encoding="utf-8")
+        env.model.policy = sm.planner
+        env.model.reset()
+        store = approvals.PendingActionStore(env.kernel._persistence)
+        loop = env.loop("c28")
+        first, second = env.repo / "docs" / "plan_one.md", env.repo / "docs" / "plan_two.md"
+        paused = await loop.run("Write a note to docs/plan_one.md and write a note to docs/plan_two.md")
+        ok("the episode waits for a person instead of acting", paused["stopped_reason"] == "pending_approval", paused["stopped_reason"])
+        ok("nothing was written before the confirmation", not first.exists() and not second.exists())
+        pending = store.get(paused["approval_id"])
+        plan = (pending.tool_args or {}).get("plan") or {}
+        ok("the pending action is ONE plan of two numbered steps in the order asked", pending.tool_name == "delentia_plan"
+           and [s.get("n") for s in plan.get("steps", [])] == [1, 2]
+           and [s["args"].get("relative_path") for s in plan.get("steps", [])] == ["docs/plan_one.md", "docs/plan_two.md"], pending.tool_args)
+        ok("the plan carries a digest that matches its content and is bound to the policy and the workspace", bool(plan.get("digest"))
+           and pending.policy_digest and pending.workspace, (plan.get("digest"), pending.policy_digest, pending.workspace))
+        ok("the answer the person reads is the plan, in words", "plan" in str(paused.get("final_answer") or "").lower() and paused.get("plan_approval", {}).get("steps") == 2,
+           paused.get("final_answer"))
+        try:
+            await loop.resume(pending.approval_id, continue_episode=False)
+            refused_unsigned = False
+        except approvals.ApprovalError:
+            refused_unsigned = True
+        ok("without a signature nothing runs", refused_unsigned and not first.exists() and not second.exists())
+        signed = approvals.sign_decision(str(key), pending.approval_id, pending.action_sha256, "APPROVED")
+        ok("one signature approves the whole plan", store.decide(pending.approval_id, "APPROVED", signed["public_key_hex"], signed["signature_hex"]).status == "APPROVED")
+        outcome = await loop.resume(pending.approval_id, continue_episode=False)
+        ok("after the signature both files exist, written by the confirmed steps", first.exists() and second.exists()
+           and first.read_text(encoding="utf-8").startswith("note 1") and second.read_text(encoding="utf-8").startswith("note 2"),
+           [p.exists() for p in (first, second)])
+        ok("the run reports two of two steps with no halt", outcome["executed_result"].get("executed") == 2 and not outcome["executed_result"].get("halted"), outcome["executed_result"])
+        try:
+            await loop.resume(pending.approval_id, continue_episode=False)
+            twice = True
+        except approvals.ApprovalError:
+            twice = False
+        ok("the plan cannot be run a second time", not twice)
+        actions = [r["action"] for r in env.audit_rows("governed_loop_plan")]
+        ok("the audit trail has the proposed steps, the plan and its execution", actions.count("step_proposed") >= 2 and "plan_proposed" in actions and "plan_executed" in actions, actions)
+        with env.kernel._persistence._connect() as conn:
+            report = audit_chain.verify_audit_chain(conn, env.audit_pub)
+        ok("the signed audit chain still verifies after the plan", report.ok, report.to_dict())
+        # a second plan whose first step fails: the second step must not run
+        env.model.reset()
+        third, fourth = env.repo / "docs" / "plan_three.md", env.repo / "docs" / "credentials.json"
+        paused2 = await env.loop("c28b").run("Write a note to docs/plan_three.md and write a note to docs/credentials.json")
+        ok("a step on a path the owner never allows is refused outright, it is not made a plan step", paused2["stopped_reason"] == "fdia_blocked" and not third.exists() and not fourth.exists(),
+           paused2["stopped_reason"])
+        ok("and the earlier proposed step is dropped with the episode, saying so", (paused2.get("plan_discarded") or {}).get("steps") == 1, [paused2.get("plan_discarded"), [(st.get("tool_name"), st.get("tool_result")) for st in paused2.get("steps", [])]])
+        notes["plan_digest"] = plan.get("digest")
+        notes["rows"] = actions
+    finally:
+        env.model.policy = original
+        for name, value in old_env.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+        approvers_file.write_text("[]", encoding="utf-8")
+        policy_file.unlink(missing_ok=True)
+    return notes
+
+
 async def main_async(args: argparse.Namespace) -> int:
     import logging
     logging.disable(logging.WARNING)

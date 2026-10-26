@@ -12,6 +12,8 @@ on:
       - "signedai/**"
       - "microservices/**"
       - "scripts/check_installed_wheel.py"
+      - "scripts/package_desk.py"
+      - "apps/gui/**"
       - ".github/workflows/package-check.yml"
   push:
     branches: [main]
@@ -33,11 +35,25 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build the Desk and put it inside the package
+        run: python scripts/package_desk.py
       - name: Build the wheel
         run: |
           python -m pip install --upgrade pip build twine
           python -m build --wheel
           twine check dist/*.whl
+      - name: The wheel carries the Desk
+        run: |
+          python - <<'EOF'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          desk = [n for n in names if n.startswith("rct_control_plane/desk_ui/")]
+          assert "rct_control_plane/desk_ui/index.html" in desk and len(desk) > 20, f"the wheel has {len(desk)} Desk files"
+          print("the wheel carries", len(desk), "Desk files")
+          EOF
       - name: Install it into an empty virtual environment
         run: |
           python -m venv /tmp/clean

@@ -250,13 +250,55 @@ def format_output(data: Any, format: OutputFormat) -> None:
 
 # CLI Commands
 
-@click.group()
-@click.version_option(version=PACKAGE_VERSION, prog_name="rct")
+# Round 101 (UX audit): `delentia --help` listed 63 commands in one alphabetical block, with round numbers in the descriptions and the oldest commands next to the ones a new person needs. The commands are now
+# grouped by what a person is trying to do; nothing is renamed or removed (every command still works under its own name).
+_HELP_SECTIONS = (
+    ("Start here", ("setup", "launch", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
+    ("Everyday", ("update", "model","memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
+    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "host-check", "host-metrics")),
+    ("Connect and extend", ("mcp", "acp", "webhook", "forge", "search-status", "jitna", "intent-contract")),
+    ("Measure and research", ("experiments", "growth", "trajectories", "algorithms", "metrics")),
+    ("Older commands (still work)", ("adapter", "audit", "build", "compile", "evaluate", "governance", "init", "list", "logs", "replay", "reset", "start", "status", "timeline", "workflow", "version")),
+)
+
+
+def _plain_help(command: click.Command) -> str:
+    """The first sentence of a command's description, without the round number the developers tagged it with, never cut in the middle of a word."""
+    import re as _re
+    text = " ".join((command.help or command.short_help or "").split())
+    text = _re.sub(r"\s*\((?:Round|Rounds) [^)]*\)", "", text)
+    sentence = _re.split(r"(?<=\.)\s", text, maxsplit=1)[0]
+    return sentence if len(sentence) <= 100 else sentence[:97].rsplit(" ", 1)[0].rstrip(",;:-") + "..."
+
+
+class _SectionedGroup(click.Group):
+    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        shown = set()
+        for title, names in _HELP_SECTIONS:
+            rows = []
+            for name in names:
+                command = self.get_command(ctx, name)
+                if command is None or command.hidden:
+                    continue
+                shown.add(name)
+                rows.append((name, _plain_help(command)))
+            if rows:
+                with formatter.section(title):
+                    formatter.write_dl(rows)
+        rest = [(n, _plain_help(c)) for n in self.list_commands(ctx) if n not in shown for c in [self.get_command(ctx, n)] if c is not None and not c.hidden]
+        if rest:
+            with formatter.section("More"):
+                formatter.write_dl(rest)
+
+
+@click.group(cls=_SectionedGroup)
+@click.version_option(version=PACKAGE_VERSION, prog_name="delentia")
 def cli():
     """
-    RCT Control Plane CLI
-    
-    Command-line interface for Control Plane operations.
+    Delentia: a governed autonomous agent.
+
+    New here?  `delentia setup` checks this machine and makes a first configuration,
+    `delentia serve` starts the agent, `delentia desk` opens it in your browser.
     """
     # _configure_encoding() already existed, already had 3 passing unit tests
     # (TestConfigureEncoding in tests/test_cli_coverage_gaps.py), but was never
@@ -2097,8 +2139,11 @@ def approvals_group():
 
 def _approval_store(db: Optional[str]):
     from rct_control_plane.approvals import PendingActionStore
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    return PendingActionStore(ControlPlanePersistence(db_path=db) if db else ControlPlanePersistence())
+    # Round 101: the database the server and the loops write pending actions to (agentic.db). The default used to be control_plane.db, so `delentia approvals list|approve|sign` on a host showed
+    # "No pending actions" for an action that was waiting, unless --db was given.
+    return PendingActionStore(ControlPlanePersistence(db_path=db or agentic_db_path()))
 
 
 @cli.group("episodes")
@@ -2219,6 +2264,32 @@ def approvals_list(status: str, db: Optional[str], output: str) -> None:
         click.echo(f"    digest : {a.action_sha256}")
 
 
+@approvals_group.command("suggest")
+@click.option("--min", "minimum", default=5, show_default=True, type=int, help="How many clean approvals of the same kind before it is mentioned.")
+@click.option("--namespace", default=None, help="Only this person's approvals.")
+@click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
+@click.option("--output", "-o", type=click.Choice(["json", "table"]), default="table")
+def approvals_suggest(minimum: int, namespace: Optional[str], db: Optional[str], output: str) -> None:
+    """Kinds of action you approved many times without a problem, and the one change that would ask less often. It only suggests: nothing is changed."""
+    from rct_control_plane import approval_suggestions, fdia_policy
+    try:
+        policy = fdia_policy.load_policy()
+    except (OSError, ValueError):
+        policy = None
+    found = approval_suggestions.suggest(_approval_store(db), namespace=namespace, minimum=minimum,
+                                         small_edit_autorun=bool(getattr(policy, "small_edit_autorun", False)))
+    if output == "json":
+        click.echo(json.dumps(found, indent=2, default=str))
+        return
+    if not found:
+        click.echo(f"Nothing to suggest: no kind of action has {minimum} clean approvals and no rejection.")
+        return
+    for item in found:
+        click.echo(f"{item['class']}: approved and run {item['approved_and_executed']} times, never rejected")
+        click.echo("    " + (f"suggestion: set {item['proposal']['change']} = true. {item['proposal']['meaning']}" if item["proposal"] else (item["why_not"] or "already set")))
+    click.echo("This is a suggestion only. A change that loosens the gate needs an approver signature (delentia fdia).")
+
+
 @approvals_group.command("reconcile")
 @click.option("--older-than", "older_than", type=float, default=None, help="Seconds an approved action may stay 'executing' before it is called unknown (default 900).")
 @click.option("--db", default=None, help="Persistence DB (default: the kernel's).")
@@ -2261,6 +2332,33 @@ def approvals_sign(approval_id: str, digest: str, key_path: str, decision: str) 
     click.echo(json.dumps(signed, indent=2))
 
 
+def _describe_action(action: Any) -> str:
+    """What a person must read before signing. A plan is shown as its numbered steps (the first 200 characters of its JSON told nobody anything); a policy change says what it signs."""
+    import re as _re
+    lines = [f"  tool    : {action.tool_name}", f"  asked by: {action.namespace}", f"  goal    : {str(action.goal)[:300]}"]
+    if action.tool_name == "delentia_plan":
+        from rct_control_plane import plan_approval
+        plan = (action.tool_args or {}).get("plan") or {}
+        thai = bool(_re.search(r"[\u0e00-\u0e7f]", str(action.goal)))
+        lines.append("  PLAN (one signature runs exactly these steps, in this order):")
+        lines += ["    " + line for line in plan_approval.render(plan, "th" if thai else "en").splitlines()]
+        lines.append(f"  plan digest: {str(plan.get('digest'))[:16]}...")
+    elif action.tool_name == "fdia_policy_change":
+        lines.append(f"  this signs the owner policy with digest {str((action.tool_args or {}).get('policy_sha256'))[:16]}... ({(action.tool_args or {}).get('rules')} rules). Read it in the Desk (FDIA / Policy) first.")
+    elif action.tool_name == "passkey_enroll":
+        args = action.tool_args or {}
+        lines.append(f"  this lets a device named {args.get('name')!r} approve actions from now on (role: {args.get('role') or 'none'}; limits: {json.dumps(args.get('scope') or {}, ensure_ascii=False) or 'none'}).")
+        lines.append("  Sign it ONLY if you just added that device yourself on your own machine. You can remove it again at any time.")
+    else:
+        lines.append(f"  arguments: {json.dumps(action.tool_args, ensure_ascii=False)[:600]}")
+    lines.append(f"  why it waits: {str(action.reason or '')[:400]}")
+    if action.required_signatures and action.required_signatures > 1:
+        lines.append(f"  needs {action.required_signatures} signatures from distinct keys ({getattr(action, 'signatures_collected', 0)} so far)")
+    if action.approver_roles:
+        lines.append(f"  needs an approver with the role: {' or '.join(action.approver_roles)}")
+    return "\n".join(lines)
+
+
 def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional[str]) -> None:
     from rct_control_plane.approvals import ApprovalError, sign_decision
     store = _approval_store(db)
@@ -2268,7 +2366,8 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
     if action is None:
         click.echo(click.style(f"Error: no pending action {approval_id!r}", fg="red"), err=True)
         sys.exit(1)
-    click.echo(f"{decision.lower()}: {action.tool_name} {json.dumps(action.tool_args)[:200]}")
+    click.echo(f"{decision.lower()}: {approval_id}")
+    click.echo(_describe_action(action))
     try:
         signed = sign_decision(key_path, approval_id, action.action_sha256, decision)
         decided = store.decide(approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
@@ -2276,7 +2375,9 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
         click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
         sys.exit(1)
     click.echo(f"{approval_id} is now {decided.status}")
-    if decided.status == "APPROVED":
+    if decided.status == "APPROVED" and action.tool_name == "passkey_enroll":
+        click.echo("Now open the Desk -> Settings -> Approval devices and press Activate.")
+    elif decided.status == "APPROVED":
         click.echo(f"Resume it with: POST /v1/agent/approvals/{approval_id}/resume")
 
 
@@ -2287,6 +2388,75 @@ def _decide_locally(approval_id: str, key_path: str, decision: str, db: Optional
 def approvals_approve(approval_id: str, key_path: str, db: Optional[str]) -> None:
     """Sign and record approval of one paused action (local DB)."""
     _decide_locally(approval_id, key_path, "APPROVED", db)
+
+
+def _host_database(host_dir: Optional[str]) -> Optional[str]:
+    """The database of the host made by scripts/local_host.py (its folder holds host.json and home/), or None."""
+    base = Path(host_dir).expanduser() if host_dir else Path(os.environ.get("USERPROFILE") or Path.home()) / "delentia-host"
+    candidate = base / "home" / "agentic.db"
+    return str(candidate) if (base / "host.json").exists() and candidate.exists() else None
+
+
+@approvals_group.command("review")
+@click.option("--key", "key_path", envvar="DELENTIA_APPROVER_KEY_FILE", required=True, help="Approver private key (PEM). May be set once in DELENTIA_APPROVER_KEY_FILE.")
+@click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
+@click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
+def approvals_review(key_path: str, host_dir: Optional[str], db: Optional[str]) -> None:
+    """Go through everything that waits for you: read each one in plain words, then approve, reject or skip. Nothing to copy, no id to type. The signing is the same as `approve`."""
+    from rct_control_plane.approvals import ApprovalError, sign_decision
+    # An explicit --db wins; so does an explicit --host-dir; a DELENTIA_HOME set in the environment means "this home", never the host folder by guess; only with none of them is the default host folder looked for.
+    chosen = db or (_host_database(host_dir) if (host_dir or not os.environ.get("DELENTIA_HOME")) else None)
+    store = _approval_store(chosen)
+    click.echo(f"database: {chosen or 'the default (DELENTIA_HOME)'}")
+    waiting = sorted(store.list(status="PENDING", limit=100), key=lambda a: a.created_at)         # oldest first
+    if not waiting:
+        click.echo("Nothing is waiting for you.")
+        return
+    done = {"approved": 0, "rejected": 0, "skipped": 0}
+    for number, action in enumerate(waiting, 1):
+        click.echo("")
+        click.echo(click.style(f"[{number}/{len(waiting)}] {action.approval_id}", bold=True))
+        click.echo(_describe_action(action))
+        answer = click.prompt("approve = a, reject = r, skip = s", type=click.Choice(["a", "r", "s"]), default="s", show_default=True)
+        if answer == "s":
+            done["skipped"] += 1
+            continue
+        decision = "APPROVED" if answer == "a" else "REJECTED"
+        try:
+            signed = sign_decision(key_path, action.approval_id, action.action_sha256, decision)
+            decided = store.decide(action.approval_id, decision, signed["public_key_hex"], signed["signature_hex"])
+        except ApprovalError as exc:
+            click.echo(click.style(f"  not recorded: {exc}", fg="red"))
+            continue
+        done["approved" if decision == "APPROVED" else "rejected"] += 1
+        click.echo(f"  recorded: {decided.status}" + ("  (now press Run the approved action in the Desk, Approvals page)" if decided.status == "APPROVED" else ""))
+    click.echo("")
+    click.echo(f"approved {done['approved']}, rejected {done['rejected']}, skipped {done['skipped']}")
+
+
+@approvals_group.command("first-device-code")
+@click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
+@click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
+def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> None:
+    """Print a one-time code that lets the FIRST approval device (Windows Hello) be added from the Desk, with no key to create.
+
+    Only works while nobody can approve yet. Valid 10 minutes, 5 tries, used once. Type it into Desk -> Settings -> Approval devices while adding your computer."""
+    from rct_control_plane import first_device
+    chosen = db or (_host_database(host_dir) if (host_dir or not os.environ.get("DELENTIA_HOME")) else None)
+    store = _approval_store(chosen)
+    try:
+        issued = first_device.FirstDeviceStore(store._persistence).issue()
+    except first_device.FirstDeviceError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    minutes = issued["ttl_seconds"] // 60
+    click.echo("")
+    click.echo(f"   Your one-time code:   {click.style(issued['display'], bold=True, fg='green')}")
+    click.echo("")
+    click.echo(f"   Valid for {minutes} minutes, 5 tries, one use. Only you see this: it is not stored anywhere in clear.")
+    click.echo("   Next: open the Desk (`delentia desk`) -> Settings -> Approval devices -> type a name for this computer, type the code, press Add this device.")
+    click.echo("   Windows Hello will ask for your face, fingerprint or PIN, and this computer becomes your first approver.")
+    click.echo(f"   database: {chosen or 'the default (DELENTIA_HOME)'}")
 
 
 @approvals_group.command("reject")
@@ -3311,6 +3481,141 @@ def notary_check_anchors(url: str, key_id: str, db: str) -> None:
         sys.exit(1)
 
 
+@cli.command("update")
+@click.option("--apply", "apply_update", is_flag=True, default=False, help="Download the newest version, verify its SHA-256 and install it (asks first; close the agent before).")
+@click.option("--yes", is_flag=True, default=False, help="Do not ask for confirmation with --apply.")
+@click.option("--turn-off", is_flag=True, default=False, help="Stop checking for new versions (also: DELENTIA_UPDATE_CHECK=off).")
+@click.option("--turn-on", is_flag=True, default=False, help="Check for new versions again.")
+@click.option("--find-links", default=None, help="A folder of wheel files to install from instead of the internet (offline updates).")
+def update_command(apply_update: bool, yes: bool, turn_off: bool, turn_on: bool, find_links: Optional[str]) -> None:
+    """Is there a newer Delentia? With --apply, install it.
+
+    The check asks the public package index (pypi.org) at most once a day and sends nothing about you; see the guide for what the server can see."""
+    from rct_control_plane import update_check
+    if turn_off or turn_on:
+        update_check.set_enabled(turn_on and not turn_off)
+        click.echo("Checking for new versions is now " + ("on." if update_check.enabled() else "off."))
+        return
+    state = update_check.check(force=True)
+    if state["status"] == "disabled":
+        click.echo("Checking for new versions is off (`delentia update --turn-on` to enable).")
+        return
+    if state["status"] == "unknown":
+        click.echo(f"You have {state['current']}. The newest version could not be determined right now ({state.get('error') or 'no answer'}).")
+        return
+    if state["status"] == "current":
+        click.echo(f"You have {state['current']}, the newest version.")
+        return
+    latest = state["latest"]
+    click.echo(f"A newer version is available: {latest['version']} (you have {state['current']}).")
+    click.echo(f"What changed: {state['releases_url']}")
+    if not apply_update:
+        click.echo("Close the agent (and the Desk), then run:  delentia update --apply")
+        return
+    if not yes and not click.confirm(f"Install {latest['version']} now? The file is checked against the SHA-256 the index published first", default=False):
+        click.echo("Nothing was changed.")
+        return
+    try:
+        done = update_check.apply(state, find_links=find_links)
+    except update_check.UpdateError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"Installed {done['installed']} (was {done['previous']}). {done['note']}")
+
+
+@cli.command("launch")
+@click.option("--api-port", default=8000, show_default=True, type=int)
+@click.option("--desk-port", default=3010, show_default=True, type=int)
+@click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
+@click.option("--stop", "stop_it", is_flag=True, default=False, help="Stop what `delentia launch` started.")
+def launch_command(api_port: int, desk_port: int, no_browser: bool, stop_it: bool) -> None:
+    """One double click: start the agent and the Desk in the background and open the Desk in your browser.
+
+    `delentia launch --stop` ends what this started (and only that). Logs: the `logs` folder of your Delentia home."""
+    import webbrowser
+    from rct_control_plane import launcher, update_check
+    if stop_it:
+        launcher.stop(click.echo)
+        return
+    try:
+        result = launcher.launch(api_port, desk_port, say=click.echo)
+    except RuntimeError as exc:
+        if not launcher.has_console():                          # started by a double click (pythonw): there is no window to print in, so say it in one
+            launcher.message_box("Delentia could not start", str(exc))
+        else:
+            click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
+    click.echo(f"The Desk is at {result['url']}")
+    line = update_check.banner_line(update_check.cached_state())                # the Desk page does the real (once a day) check; starting never waits for the internet
+    if line:
+        click.echo(line)
+    if not no_browser:
+        webbrowser.open(result["url"])
+
+
+@cli.command("desk")
+@click.option("--gateway", default="http://127.0.0.1:8000", show_default=True, help="Where `delentia serve` is listening.")
+@click.option("--token-file", type=click.Path(dir_okay=False), default=None, help="A file holding the API token (default: the DELENTIA_API_TOKEN environment variable, or none on a loopback host).")
+@click.option("--port", default=3010, show_default=True, type=int, help="Where the Desk pages are served (127.0.0.1 only).")
+@click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
+@click.option("--wait-seconds", default=20.0, show_default=True, type=float, help="How long to wait for the agent to answer (it may have only just started).")
+def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser: bool, wait_seconds: float) -> None:
+    """Open the Desk (the web pages) against a running `delentia serve`, with no token to paste.
+
+    It serves the built pages on this machine only, hands the address and the token to the page without putting the token in the address, and opens your browser at http://localhost:PORT
+    (a passkey, such as Windows Hello, needs the name localhost, not 127.0.0.1)."""
+    import time
+    import urllib.request
+    import webbrowser
+    from rct_control_plane import desk_assets, desk_launcher
+    root = desk_assets.find_desk_root()
+    if root is None:
+        click.echo(click.style(desk_assets.missing_message(), fg="red"), err=True)
+        sys.exit(4)
+    healthy = False
+    deadline = time.monotonic() + max(0.0, wait_seconds)
+    while True:
+        try:
+            with urllib.request.urlopen(gateway.rstrip("/") + "/health", timeout=3) as response:    # noqa: S310 - the owner's own host
+                healthy = json.loads(response.read()).get("status") == "healthy"
+        except Exception:                                       # noqa: BLE001
+            healthy = False
+        if healthy or time.monotonic() >= deadline:
+            break
+        time.sleep(1.0)                                         # a server that has only just started answers a moment late
+    if not healthy:
+        click.echo(click.style(f"Nothing answers at {gateway}. Start the agent first, in another window:  delentia serve", fg="red"), err=True)
+        sys.exit(3)
+
+    def read_token() -> str:
+        if token_file:
+            return Path(token_file).read_text(encoding="utf-8").strip() if Path(token_file).is_file() else ""
+        return (os.getenv("DELENTIA_API_TOKEN") or "").strip()
+
+    try:
+        server = desk_launcher.make_server(root, port, gateway.rstrip("/"), read_token)
+    except OSError as exc:
+        click.echo(click.style(f"Port {port} is busy ({exc}). Close the other Desk window or use --port {port + 1}.", fg="red"), err=True)
+        sys.exit(6)
+    thread, url = desk_launcher.serve_in_background(server)
+    url = url.replace("//127.0.0.1:", "//localhost:", 1)
+    click.echo(f"The Desk is at {url}")
+    from rct_control_plane import update_check
+    notice = update_check.banner_line(update_check.cached_state())              # from the last check: never waits for the internet
+    if notice:
+        click.echo(notice)
+    if not no_browser:
+        webbrowser.open(url)
+    click.echo("Leave this window open while you use the Desk. Press Ctrl+C to close the Desk page; the agent keeps running.")
+    try:
+        while thread.is_alive():
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.shutdown()
+
+
 @cli.command("serve")
 @click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
 @click.option("--port", "-p", default=8000, show_default=True, type=int, help="Bind port.")
@@ -3352,6 +3657,10 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     click.echo(f"  Swagger: http://{host}:{port}/docs")
     click.echo(f"  Health: http://{host}:{port}/health")
     click.echo("  Daemon: reminder polling + gateways active (GET /v1/daemon/status)")
+    from rct_control_plane import update_check
+    update_notice = update_check.banner_line(update_check.cached_state())      # last known answer; the Desk refreshes it, this line never waits for the internet
+    if update_notice:
+        click.echo("  " + update_notice)
     click.echo("  Intent Loop: 41-algorithm pipeline and warm recall on (DELENTIA_ALGORITHM_PIPELINE=0 / DELENTIA_WARM_RECALL=0 to turn off)")
 
     # Round 36: real uvicorn serving is the only path that enables the
@@ -4152,7 +4461,7 @@ def fdia_validate(policy_file: str) -> None:
 
 
 @fdia_group.command("template")
-@click.argument("name", type=click.Choice(["balanced", "strict", "careful", "argaware"]))
+@click.argument("name", type=click.Choice(["balanced", "strict", "careful", "argaware", "planfirst"]))
 @click.option("--out", "out_path", type=click.Path(dir_okay=False), default=None, help="Write the starter here instead of printing it.")
 def fdia_template(name: str, out_path: Optional[str]) -> None:
     """A starter policy that classifies every real tool."""
@@ -4721,8 +5030,9 @@ def backup_restore(path: str, to: str, force: bool) -> None:
 def host_metrics_cmd(fmt: str) -> None:
     """The host as an operator watches it: process, system, work in flight, spend, witness lag. A figure that cannot be read here is null and named."""
     from rct_control_plane import host_metrics
+    from rct_control_plane.data_home import agentic_db_path
     from rct_control_plane.persistence import ControlPlanePersistence
-    found = host_metrics.collect(ControlPlanePersistence())
+    found = host_metrics.collect(ControlPlanePersistence(db_path=agentic_db_path()))      # Round 101: where the spend ledger and the audit rows are, not the older control-plane file
     click.echo(host_metrics.to_prometheus(found) if fmt == "prometheus" else json.dumps(found, indent=2, default=str))
 
 

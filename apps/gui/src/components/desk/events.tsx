@@ -3,21 +3,22 @@
 import { useEffect, useState } from "react";
 import { Badge, Button, Code, ErrorNote, Panel, Row, fmtTime, useDeskData } from "./ui";
 import { desk, type GovCategory, type GovEvent, type GovEventDetail } from "@/lib/desk-api";
+import { useLang } from "./i18n";
 
-const CATEGORIES: { id: GovCategory; label: string; hint: string }[] = [
-  { id: "attention", label: "Needs attention", hint: "blocked goals, withheld results, jury refusals, approvals, policy and token changes, blocked tool calls" },
-  { id: "all", label: "Everything", hint: "every audit row" },
-  { id: "blocked", label: "Blocked goals", hint: "goals CORD or the jury stopped before the model saw them" },
-  { id: "screening", label: "Injection screen", hint: "tool results screened for hidden instructions, and the small model's second opinion" },
-  { id: "gate", label: "FDIA gate", hint: "F = D^I x A for every risky tool call" },
-  { id: "approvals", label: "Approvals", hint: "actions waiting for, or signed by, a human" },
-  { id: "jury", label: "Jury", hint: "multi-model verdicts" },
-  { id: "policy", label: "Policy", hint: "changes to the owner's policy" },
-  { id: "sovereignty", label: "Sovereignty", hint: "model calls the data-residency policy allowed, redacted or blocked" },
-  { id: "identity", label: "Identity", hint: "tokens created or revoked" },
-  { id: "notary", label: "Notary", hint: "receipts from the separate notary process, and gaps" },
-  { id: "episodes", label: "Episodes", hint: "start and end of every run" },
-  { id: "steps", label: "Run steps", hint: "each step the agent took, the Intent Loop pillars, the algorithm pipeline" },
+const CATEGORIES: { id: GovCategory; label: string; hint: string; labelTh: string; hintTh: string }[] = [
+  { id: "attention", labelTh: "ต้องสนใจ", hintTh: "เป้าหมายที่ถูกบล็อก ผลที่ถูกกัก คณะลูกขุนปฏิเสธ การอนุมัติ การเปลี่ยนนโยบายและโทเคน การเรียกเครื่องมือที่ถูกบล็อก", label: "Needs attention", hint: "blocked goals, withheld results, jury refusals, approvals, policy and token changes, blocked tool calls" },
+  { id: "all", labelTh: "ทั้งหมด", hintTh: "ทุกแถวของบันทึกตรวจสอบ", label: "Everything", hint: "every audit row" },
+  { id: "blocked", labelTh: "เป้าหมายที่ถูกบล็อก", hintTh: "เป้าหมายที่ CORD หรือคณะลูกขุนหยุดไว้ก่อนที่โมเดลจะเห็น", label: "Blocked goals", hint: "goals CORD or the jury stopped before the model saw them" },
+  { id: "screening", labelTh: "ตัวคัดกรองการแทรกคำสั่ง", hintTh: "ผลเครื่องมือที่ถูกคัดกรองหาคำสั่งซ่อน และความเห็นที่สองของโมเดลเล็ก", label: "Injection screen", hint: "tool results screened for hidden instructions, and the small model's second opinion" },
+  { id: "gate", labelTh: "ด่าน FDIA", hintTh: "F = D^I x A ของทุกการเรียกเครื่องมือที่เสี่ยง", label: "FDIA gate", hint: "F = D^I x A for every risky tool call" },
+  { id: "approvals", labelTh: "การอนุมัติ", hintTh: "การกระทำที่รอ หรือได้รับลายเซ็นจากมนุษย์แล้ว", label: "Approvals", hint: "actions waiting for, or signed by, a human" },
+  { id: "jury", labelTh: "คณะลูกขุน", hintTh: "คำตัดสินของหลายโมเดล", label: "Jury", hint: "multi-model verdicts" },
+  { id: "policy", labelTh: "นโยบาย", hintTh: "การเปลี่ยนนโยบายของเจ้าของ", label: "Policy", hint: "changes to the owner's policy" },
+  { id: "sovereignty", labelTh: "อธิปไตยข้อมูล", hintTh: "การเรียกโมเดลที่นโยบายถิ่นที่อยู่ของข้อมูลอนุญาต ปกปิด หรือบล็อก", label: "Sovereignty", hint: "model calls the data-residency policy allowed, redacted or blocked" },
+  { id: "identity", labelTh: "ตัวตน", hintTh: "โทเคนที่สร้างหรือเพิกถอน", label: "Identity", hint: "tokens created or revoked" },
+  { id: "notary", labelTh: "Notary", hintTh: "ใบรับจากโปรเซส notary ที่แยกต่างหาก และช่องว่าง", label: "Notary", hint: "receipts from the separate notary process, and gaps" },
+  { id: "episodes", labelTh: "Episode", hintTh: "จุดเริ่มและจุดจบของทุกการรัน", label: "Episodes", hint: "start and end of every run" },
+  { id: "steps", labelTh: "ขั้นของการรัน", hintTh: "ทุกขั้นที่เอเจนต์ทำ เสาหลักทั้งห้าของ Intent Loop และไปป์ไลน์อัลกอริทึม", label: "Run steps", hint: "each step the agent took, the Intent Loop pillars, the algorithm pipeline" },
 ];
 
 function tone(e: GovEvent): "leaf" | "amber" | "rust" | "muted" {
@@ -30,6 +31,8 @@ function tone(e: GovEvent): "leaf" | "amber" | "rust" | "muted" {
 }
 
 function Detail({ id, onClose }: { id: number; onClose: () => void }) {
+  const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const [d, setD] = useState<GovEventDetail | null>(null);
   const [err, setErr] = useState("");
   useEffect(() => {
@@ -38,42 +41,42 @@ function Detail({ id, onClose }: { id: number; onClose: () => void }) {
     return () => { live = false; };
   }, [id]);
   return (
-    <Panel title={`Audit row #${id}`} aside={<Button tone="ghost" onClick={onClose}>Close</Button>}>
+    <Panel title={`${L("Audit row", "แถวบันทึกตรวจสอบ")} #${id}`} aside={<Button tone="ghost" onClick={onClose}>{L("Close", "ปิด")}</Button>}>
       {err ? <ErrorNote error={err} /> : null}
       {d ? (
         <div className="space-y-3">
           <p className="text-sm text-dl-text">{d.summary}</p>
           <div>
-            <Row label="Type">{d.entity_type}</Row>
-            <Row label="Action">{d.action}</Row>
-            <Row label="Actor">{d.actor ?? "-"}</Row>
-            <Row label="When">{fmtTime(d.at)}</Row>
+            <Row label={L("Type", "ชนิด")}>{d.entity_type}</Row>
+            <Row label={L("Action", "การกระทำ")}>{d.action}</Row>
+            <Row label={L("Actor", "ผู้กระทำ")}>{d.actor ?? "-"}</Row>
+            <Row label={L("When", "เมื่อ")}>{fmtTime(d.at)}</Row>
             {d.chain ? (
               <>
-                <Row label="Chain position">#{d.chain.seq}</Row>
-                <Row label="Row hash">
-                  {d.chain.row_hash.slice(0, 20)}… {d.chain.recomputed_matches ? <Badge tone="leaf">recomputed: matches</Badge> : <Badge tone="rust">recomputed: DIFFERENT, the row was edited</Badge>}
+                <Row label={L("Chain position", "ตำแหน่งในโซ่")}>#{d.chain.seq}</Row>
+                <Row label={L("Row hash", "แฮชของแถว")}>
+                  {d.chain.row_hash.slice(0, 20)}… {d.chain.recomputed_matches ? <Badge tone="leaf">{L("recomputed: matches", "คำนวณใหม่: ตรงกัน")}</Badge> : <Badge tone="rust">{L("recomputed: DIFFERENT, the row was edited", "คำนวณใหม่: ต่างกัน แถวถูกแก้")}</Badge>}
                 </Row>
-                <Row label="Previous hash">{d.chain.prev_hash.slice(0, 20)}…</Row>
-                <Row label="Signature">{d.chain.signed ? `Ed25519, key ${d.chain.signer_fingerprint ?? "?"}` : "not signed"}</Row>
+                <Row label={L("Previous hash", "แฮชก่อนหน้า")}>{d.chain.prev_hash.slice(0, 20)}…</Row>
+                <Row label={L("Signature", "ลายเซ็น")}>{d.chain.signed ? `Ed25519, ${L("key", "กุญแจ")} ${d.chain.signer_fingerprint ?? "?"}` : L("not signed", "ไม่มีลายเซ็น")}</Row>
               </>
             ) : (
-              <Row label="Chain position">before the chain existed (cannot be verified)</Row>
+              <Row label={L("Chain position", "ตำแหน่งในโซ่")}>{L("before the chain existed (cannot be verified)", "ก่อนที่จะมีโซ่ (ตรวจไม่ได้)")}</Row>
             )}
           </div>
           <details>
-            <summary className="desk-focus desk-mono cursor-pointer text-[12px] text-dl-leaf">What was recorded (the exact JSON)</summary>
-            <pre className="desk-mono mt-2 max-h-72 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{JSON.stringify(d.changes, null, 2)}</pre>
+            <summary className="desk-focus desk-mono cursor-pointer text-[12px] text-dl-leaf">{L("What was recorded (the exact JSON)", "สิ่งที่บันทึกไว้ (JSON ตามจริง)")}</summary>
+            <pre tabIndex={0} className="desk-mono mt-2 max-h-72 overflow-auto rounded border border-dl-rule bg-dl-ink p-3 text-[12px] text-dl-muted">{JSON.stringify(d.changes, null, 2)}</pre>
           </details>
           {d.related.length ? (
             <div>
-              <p className="desk-mono text-[11px] text-dl-muted">Other rows about the same thing</p>
+              <p className="desk-mono text-[11px] text-dl-muted">{L("Other rows about the same thing", "แถวอื่นเกี่ยวกับเรื่องเดียวกัน")}</p>
               <ul className="desk-mono mt-1 text-[12px] text-dl-muted">
                 {d.related.map((r) => <li key={r.id}>#{r.id} {r.entity_type} · {r.action} · {fmtTime(r.at)}</li>)}
               </ul>
             </div>
           ) : null}
-          <p className="text-[12px] text-dl-muted">Check the whole chain yourself: <Code>delentia audit-chain verify</Code></p>
+          <p className="text-[12px] text-dl-muted">{L("Check the whole chain yourself: ", "ตรวจทั้งโซ่ด้วยตัวเอง: ")}<Code>delentia audit-chain verify</Code></p>
         </div>
       ) : null}
     </Panel>
@@ -82,6 +85,8 @@ function Detail({ id, onClose }: { id: number; onClose: () => void }) {
 
 /** The audit trail as people read it: filter by what happened, search, page back, open one row to see its place in the hash chain. */
 export function EventExplorer({ initial = "attention", title = "Events" }: { initial?: GovCategory; title?: string }) {
+  const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const [category, setCategory] = useState<GovCategory>(initial);
   const [query, setQuery] = useState("");
   const [applied, setApplied] = useState("");
@@ -111,28 +116,29 @@ export function EventExplorer({ initial = "attention", title = "Events" }: { ini
     }
   };
 
-  const hint = CATEGORIES.find((c) => c.id === category)?.hint;
+  const picked = CATEGORIES.find((c) => c.id === category);
+  const hint = lang === "th" ? picked?.hintTh : picked?.hint;
 
   return (
     <div className="space-y-4">
       <Panel title={title}
         aside={<form onSubmit={(e) => { e.preventDefault(); setApplied(query); }} className="flex gap-2">
-          <label className="sr-only" htmlFor="ev-q">Search</label>
-          <input id="ev-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="search tool, actor, id…" maxLength={80}
+          <label className="sr-only" htmlFor="ev-q">{L("Search", "ค้นหา")}</label>
+          <input id="ev-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L("search tool, actor, id…", "ค้นหาเครื่องมือ ผู้กระทำ รหัส…")} maxLength={80}
             className="desk-focus desk-mono w-44 rounded border border-dl-rule bg-dl-ink px-2 py-1 text-[12px] text-dl-text placeholder:text-dl-muted/50" />
-          <Button type="submit" tone="ghost">Search</Button>
+          <Button type="submit" tone="ghost">{L("Search", "ค้นหา")}</Button>
         </form>}>
-        <div role="group" aria-label="Category" className="mb-3 flex flex-wrap gap-1.5">
+        <div role="group" aria-label={L("Category", "หมวด")} className="mb-3 flex flex-wrap gap-1.5">
           {CATEGORIES.map((c) => (
             <button key={c.id} onClick={() => setCategory(c.id)} aria-pressed={category === c.id}
               className={`desk-focus desk-mono rounded border px-2 py-1 text-[11px] ${category === c.id ? "border-dl-fern bg-dl-pine text-dl-text" : "border-dl-rule text-dl-muted hover:text-dl-text"}`}>
-              {c.label}
+              {lang === "th" ? c.labelTh : c.label}
             </button>
           ))}
         </div>
         {hint ? <p className="mb-3 text-[12px] text-dl-muted">{hint}</p> : null}
         {error ? <ErrorNote error={error} onRetry={first.reload} /> : null}
-        {!error && !rows.length && first.data ? <p className="text-sm text-dl-muted">Nothing recorded in this view yet.</p> : null}
+        {!error && !rows.length && first.data ? <p className="text-sm text-dl-muted">{L("Nothing recorded in this view yet.", "ยังไม่มีอะไรบันทึกในมุมมองนี้")}</p> : null}
         <ul className="divide-y divide-dl-rule/60">
           {rows.map((e) => (
             <li key={e.id}>

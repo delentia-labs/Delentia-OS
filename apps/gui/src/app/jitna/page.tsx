@@ -89,7 +89,7 @@ export default function JitnaPage() {
                 <p className="text-[13px] leading-relaxed text-dl-muted">
                   {T("Signing needs a private key, which this page never touches. On the machine that holds the key:", "การเซ็นต้องใช้กุญแจส่วนตัว ซึ่งหน้านี้ไม่แตะต้อง บนเครื่องที่เก็บกุญแจ:")}
                 </p>
-                <pre className="desk-mono mt-2 overflow-x-auto rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">{`delentia jitna keygen --out ~/.delentia/keys/jitna.pem
+                <pre tabIndex={0} className="desk-mono mt-2 overflow-x-auto rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">{`delentia jitna keygen --out ~/.delentia/keys/jitna.pem
 delentia jitna pack --language intent.txt \\
   --source planner --target worker \\
   --key ~/.delentia/keys/jitna.pem -o task.jitna`}</pre>

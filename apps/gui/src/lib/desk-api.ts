@@ -5,11 +5,17 @@
  * what failed; nothing is simulated.
  */
 import { getApiKey, getGateway } from "./delentia-client";
+import { httpMessage } from "./http-message";
 
 export class DeskError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
   }
+}
+
+/** The page's language, as the language switch set it on the document. */
+function thai(): boolean {
+  return typeof document !== "undefined" && document.documentElement.lang !== "en";
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -22,12 +28,14 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     res = await fetch(`${gateway}${path}`, { ...init, headers, signal: init.signal ?? AbortSignal.timeout(20000) });
   } catch {
-    throw new DeskError(`The Delentia API at ${gateway} is not reachable. Start it with \`delentia serve\`.`);
+    throw new DeskError(thai()
+      ? `ติดต่อ Delentia API ที่ ${gateway} ไม่ได้ ให้เปิดโปรแกรมเอเจนต์ก่อน (คำสั่ง \`delentia serve\`) แล้วลองใหม่`
+      : `The Delentia API at ${gateway} is not reachable. Start it with \`delentia serve\`.`);
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const detail = typeof body?.detail === "string" ? body.detail : res.statusText;
-    throw new DeskError(`${res.status}: ${detail}`, res.status);
+    throw new DeskError(httpMessage(res.status, detail, thai()), res.status);
   }
   return res.json() as Promise<T>;
 }
@@ -190,6 +198,20 @@ export interface DaemonTask {
   last_run_at: string | null; run_count: number; last_status: string; last_output: string | null;
 }
 export interface DaemonStatus { running: boolean; uptime_seconds: number | null; tasks: DaemonTask[] }
+/** An approval device: a passkey (Windows Hello, a phone, a security key) that may confirm actions. Only public facts; the private key never leaves the device. */
+export interface ApprovalDevice {
+  id: string; signer: string; name: string; role: string | null; scope: { kinds?: string[]; namespaces?: string[]; workspaces?: string[] };
+  status: "PENDING" | "ACTIVE" | "REVOKED"; alg: string; backup_eligible: boolean; created_at: number; activated_at: number | null; last_used_at: number | null; revoked_at: number | null;
+}
+export interface DeviceList { first_device: { open: boolean; code_waiting: boolean; expires_at: number | null }; rp_id: string; devices: ApprovalDevice[]; enrollments_waiting: { approval_id: string; name: string | null; status: string; created_at: string }[] }
+export interface UpdateState {
+  status: "disabled" | "unknown" | "current" | "available"; current: string; enabled: boolean; releases_url: string; checked_at: number | null; error?: string | null;
+  latest: { version: string; file: { filename: string; sha256: string; size: number } | null; published?: string | null } | null;
+}
+export interface Readiness {
+  ready: boolean; all_done: boolean;
+  checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number }[];
+}
 export interface PendingAction {
   approval_id: string; namespace: string; goal: string; tool_name: string; tool_args: Record<string, unknown>;
   action_sha256: string; reason: string; status: string; created_at: string; decided_at: string | null;
@@ -332,6 +354,12 @@ export interface FdiaPolicy {
   version: string; policy_id: string; policy_name: string; default_fallback_A: number; custom_safety_threshold: number;
   rules: FdiaRule[]; blocked_action_patterns: string[]; require_human_dual_signoff: string[];
   roles: { default_role: string; principals: Record<string, string> }; jury_by_risk: Record<string, string>;
+  /** Round 101: kinds of action confirmed once as a whole plan before anything runs; absent = none. */
+  plan_first?: string[];
+  /** Round 101: an edit of one file the request names runs without a signature (a loosening: named in the policy history). */
+  small_edit_autorun?: boolean;
+  /** Round 101: thin evidence (0 < F < threshold) is put to a person with the numbers instead of being refused; no data or no intent still blocks. */
+  thin_data_asks?: boolean;
 }
 export interface FdiaToolInfo { name: string; description: string; built_in: "always a signature" | "FDIA gate" | "open" }
 export interface FdiaState {
@@ -389,7 +417,7 @@ export interface ForgeState {
   gaps: ForgeGap[]; proposals: ForgeProposal[]; tools: ForgeTool[];
   limits: { allowed_imports: string[]; min_asserts: number; run_timeout_s: number; max_code_chars: number };
 }
-export interface PolicySavePending { pending_signature: true; approval_id: string; action_sha256: string; how: string }
+export interface PolicySavePending { pending_signature: true; approval_id: string; action_sha256: string; how: string; db?: string }
 
 export const desk = {
   health: () => call<Health>("/health"),
@@ -493,7 +521,7 @@ export const desk = {
   remember: (content: string, memoryType = "fact", namespace?: string) =>
     call<{ memory_id: string; namespace: string }>("/v1/desk/memories", { method: "POST", body: JSON.stringify({ content, memory_type: memoryType, namespace }) }),
   fdia: () => call<FdiaState>("/v1/desk/fdia"),
-  fdiaTemplate: (name: "balanced" | "strict" | "careful" | "argaware") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
+  fdiaTemplate: (name: "balanced" | "strict" | "careful" | "argaware" | "planfirst") => call<{ policy: FdiaPolicy }>(`/v1/desk/fdia/template/${name}`),
   fdiaValidate: (policy: FdiaPolicy) =>
     call<{ valid: boolean; errors: string[]; digest: string | null }>("/v1/desk/fdia/validate", { method: "POST", body: JSON.stringify({ policy }) }),
   fdiaEvaluate: (body: FdiaEvaluateInput) =>
@@ -535,6 +563,23 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  readiness: () => call<Readiness>("/v1/desk/readiness"),
+  update: () => call<UpdateState>("/v1/desk/update"),
+  updateCheck: () => call<UpdateState>("/v1/desk/update/check", { method: "POST", body: JSON.stringify({}) }),
+  updateSwitch: (enabled: boolean) => call<UpdateState>("/v1/desk/update/switch", { method: "POST", body: JSON.stringify({ enabled }) }),
+  devices: () => call<DeviceList>("/v1/desk/passkeys"),
+  deviceBegin: (name: string, role?: string) =>
+    call<{ enrollment_id: string; options: Record<string, unknown> }>("/v1/desk/passkeys/register/begin", { method: "POST", body: JSON.stringify({ name, role: role || null }) }),
+  deviceFinish: (enrollmentId: string, credential: Record<string, unknown>, firstDeviceCode?: string) =>
+    call<{ approval_id: string; action_sha256: string; credential: string; how: string } | { first_device: true; activated: true; device: ApprovalDevice }>(
+      "/v1/desk/passkeys/register/finish", { method: "POST", body: JSON.stringify({ enrollment_id: enrollmentId, credential, first_device_code: firstDeviceCode || undefined }) }),
+  deviceActivate: (approvalId: string) =>
+    call<ApprovalDevice>("/v1/desk/passkeys/register/activate", { method: "POST", body: JSON.stringify({ approval_id: approvalId }) }),
+  deviceRevoke: (id: string) => call<ApprovalDevice>(`/v1/desk/passkeys/${encodeURIComponent(id)}/revoke`, { method: "POST", body: JSON.stringify({}) }),
+  deviceOptions: (approvalId: string, decision: "APPROVED" | "REJECTED") =>
+    call<{ options: Record<string, unknown>; decision: string; action_sha256: string }>(`/v1/desk/approvals/${encodeURIComponent(approvalId)}/passkey/options`, { method: "POST", body: JSON.stringify({ decision }) }),
+  deviceDecide: (approvalId: string, decision: "APPROVED" | "REJECTED", assertion: Record<string, unknown>) =>
+    call<{ approval_id: string; status: string; signatures: number; required: number }>(`/v1/desk/approvals/${encodeURIComponent(approvalId)}/passkey/decide`, { method: "POST", body: JSON.stringify({ decision, assertion }) }),
   rct7Stats: (days = 14) => call<Rct7Stats>(`/v1/desk/rct7/stats?days=${days}`),
   clarifications: (status = "PENDING") => call<Clarification[]>(`/v1/agent/clarifications?status=${status}`),
   answerClarification: (id: string, answer: string) =>

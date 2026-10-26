@@ -65,7 +65,7 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
     <Panel title={provider === "ollama" ? (lang === "th" ? "โมเดลบนเครื่องนี้ (Ollama)" : "Models on this machine (Ollama)") : "OpenRouter"}
       aside={provider === "openrouter" ? (
         <label className="desk-mono flex items-center gap-1.5 text-[12px] text-dl-muted">
-          <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} className="accent-[var(--dl-leaf)]" /> free only
+          <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} className="accent-[var(--dl-leaf)]" /> {lang === "th" ? "เฉพาะที่ฟรี" : "free only"}
         </label>
       ) : undefined}>
       {provider === "openrouter" ? (
@@ -82,8 +82,8 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
       ) : null}
       {message ? <p role="status" className={`mb-3 text-[13px] ${message.tone === "leaf" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
       {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
-      {list.loading && !list.data ? <p className="desk-mono text-sm text-dl-muted">Loading the catalog…</p> : null}
-      {list.data?.catalog && !list.data.catalog.length ? <Empty title="No models found" /> : null}
+      {list.loading && !list.data ? <p className="desk-mono text-sm text-dl-muted">{lang === "th" ? "กำลังโหลดรายการโมเดล…" : "Loading the catalog…"}</p> : null}
+      {list.data?.catalog && !list.data.catalog.length ? <Empty title={lang === "th" ? "ไม่พบโมเดล" : "No models found"} /> : null}
       <ul className="divide-y divide-dl-rule/60">
         {list.data?.catalog?.map((m) => (
           <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
@@ -93,8 +93,8 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
             </div>
             <div className="flex items-center gap-2">
               {m.supports_tools ? <Badge tone="fern">tools</Badge> : null}
-              {sel && sel.model === m.id && sel.provider === provider ? <Badge tone="leaf">in use</Badge> : (
-                <Button onClick={() => choose(m.id)} disabled={saving !== null}>{saving === m.id ? "Saving…" : "Use this model"}</Button>
+              {sel && sel.model === m.id && sel.provider === provider ? <Badge tone="leaf">{lang === "th" ? "ใช้อยู่" : "in use"}</Badge> : (
+                <Button onClick={() => choose(m.id)} disabled={saving !== null}>{saving === m.id ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "ใช้โมเดลนี้" : "Use this model")}</Button>
               )}
             </div>
           </li>
@@ -297,6 +297,7 @@ function EndpointPanel({ setup, onSaved, lang }: { setup: ModelSetup; onSaved: (
 
 export default function ModelsPage() {
   const { t, lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const [picked, setMode] = useState<Mode | null>(null);
   const setup = useDeskData(() => desk.modelSetup(), []);
   const data = setup.data;
@@ -316,20 +317,20 @@ export default function ModelsPage() {
           <div className="grid gap-6 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <div className="space-y-6">
               <Panel title={lang === "th" ? "ที่ใช้อยู่ตอนนี้" : "In use now"}>
-                <Row label="Model">{data.selection.model}</Row>
-                <Row label="Provider">{data.selection.provider}</Row>
-                <Row label="Chosen by">{data.selection.model_source}</Row>
+                <Row label={L("Model", "โมเดล")}>{data.selection.model}</Row>
+                <Row label={L("Provider", "ผู้ให้บริการ")}>{data.selection.provider}</Row>
+                <Row label={L("Chosen by", "เลือกโดย")}>{data.selection.model_source}</Row>
                 {data.endpoint && data.selection.provider === "openai-compat" ? (
                   <>
-                    <Row label="Address"><span className="break-all">{data.endpoint.base_url}</span></Row>
-                    <Row label="Data is processed">{data.endpoint.kind === "local" ? "on this machine / network" : data.endpoint.kind === "in_region" ? `inside ${data.endpoint.region}` : "elsewhere / unknown"}</Row>
+                    <Row label={L("Address", "ที่อยู่")}><span className="break-all">{data.endpoint.base_url}</span></Row>
+                    <Row label={L("Data is processed", "ข้อมูลถูกประมวลผลที่")}>{data.endpoint.kind === "local" ? L("on this machine / network", "บนเครื่องนี้ / เครือข่ายนี้") : data.endpoint.kind === "in_region" ? `${L("inside", "ภายใน")} ${data.endpoint.region}` : L("elsewhere / unknown", "ที่อื่น / ไม่ทราบ")}</Row>
                   </>
                 ) : null}
                 {data.credential_env ? (
-                  <Row label={`Key (${data.credential_env})`}>{data.credential_present ? <Badge tone="leaf">present</Badge> : <Badge tone="amber">not set</Badge>}</Row>
+                  <Row label={`${L("Key", "กุญแจ")} (${data.credential_env})`}>{data.credential_present ? <Badge tone="leaf">{L("present", "มีแล้ว")}</Badge> : <Badge tone="amber">{L("not set", "ยังไม่ได้ตั้ง")}</Badge>}</Row>
                 ) : null}
                 {data.profiles && Object.keys(data.profiles).length ? (
-                  <Row label="Profiles">{Object.entries(data.profiles).map(([name, p]) => `${name}: ${p.model}`).join(", ")}</Row>
+                  <Row label={L("Profiles", "โปรไฟล์")}>{Object.entries(data.profiles).map(([name, p]) => `${name}: ${p.model}`).join(", ")}</Row>
                 ) : null}
                 <div className="mt-3"><Verdict v={data.endpoint_verdict} lang={lang} /></div>
               </Panel>

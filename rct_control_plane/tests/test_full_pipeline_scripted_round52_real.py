@@ -20,7 +20,7 @@ from rct_control_plane.autonomous_loop import _describe_llm_error, _is_transient
 ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Round 69: C17-C24 were run by hand in Rounds 54-68 and asserted nowhere; Round 68 broke C20 (the Tool Forge lost the words of a goal when experiments were named by a hash) and nothing noticed.
-CASE_CODES = [f"C{i:02d}" for i in range(1, 28)]
+CASE_CODES = [f"C{i:02d}" for i in range(1, 29)]
 
 
 @pytest.fixture(scope="module")

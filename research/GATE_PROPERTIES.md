@@ -76,12 +76,13 @@ Changing the arguments, goal, tool or namespace of a stored action after it was 
 
 ### P6 - Every entrant path uses the gate
 
-Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and resume after claim); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.
+Only four code sites hand a call to the tool server (the single-call path, the batch path, warm replay of read-only evidence, and the runner of an approved action that resume reaches only after the claim, for one action or for a confirmed plan); a batch is held whole when one call needs a signature; no module builds an ungoverned loop.
 
 - **Assumes:** Static check of the two loop modules; an external process that talks to the tool server directly (the raw /mcp gateway) is the owner's route and is covered by the route test.
 - **Not covered:** No model checking of the approval flow as a state machine (Protocol 13 suggests it; not done).
 - **Pinned by:**
   - `test_gate_properties_round65_real.py::test_p6_only_the_known_choke_points_call_a_tool`
+  - `test_gate_properties_round65_real.py::test_p6_the_approved_action_runner_is_reached_only_from_resume_and_the_plan_runner`
   - `test_gate_properties_round65_real.py::test_p6_a_batch_is_gated_call_by_call_before_any_of_it_runs`
   - `test_agent_factory_governance_real.py::test_no_production_module_constructs_a_plain_autonomous_loop`
   - `test_person_scope_round61_real.py::test_every_exposed_tool_has_a_person_scope`
@@ -191,6 +192,90 @@ A rule pinned by a person or the owner is shown to every episode of that person 
   - `test_pinned_rules_round70_real.py::test_erasing_a_person_stops_their_rules_from_being_shown`
   - `test_pinned_rules_round70_real.py::test_pins_follow_the_person_and_not_somebody_else`
   - `test_pinned_rules_round70_real.py::test_the_log_replays_to_the_table_including_pins_after_a_random_workload`
+
+### P15 - An action of a kind the owner wants planned does nothing until the person confirms the whole plan once
+
+With `plan_first` listing a kind (delete, outward, money, permissions, publish, restore/cancel, move/shut down, document edit), an action of that kind is recorded as a numbered step and NOT run; the episode waits as ONE pending plan whose digest binds the steps, the policy and the workspace; one approver signature runs exactly the recorded steps, in order, byte for byte, each judged again by the rules no signature can lift; a plan edited after it was made, an unsigned plan, a changed policy or a failing step runs nothing beyond the problem; a denied path is a refusal, not a step; a small edit of a file the request names runs without a signature only when the owner's signed policy says so and nothing was read from outside, a checkpoint exists and the path is not denied; with the feature off nothing changes.
+
+- **Assumes:** The owner listed the kinds in a policy that a person signed; the kind of a shell command or an external tool is read from its words (a heuristic: an action it cannot place is not planned, it falls back to the ordinary per-call gate).
+- **Not covered:** A plan lists what the model asked for, not what it will mean in the world; steps that depend on the result of an earlier step are not re-planned (the run stops at the first failure); the system has no tool that pays or sends a message, so those kinds cover external tools only; a chat channel is shown the plan only when the episode ends (it gets no plan before the first tool), and signing is never done from a chat.
+- **Pinned by:**
+  - `test_plan_approval_loop_round101_real.py::test_effects_of_a_planned_kind_become_one_pending_plan_and_nothing_effectful_runs`
+  - `test_plan_approval_loop_round101_real.py::test_one_signature_runs_the_steps_exactly_once_in_order`
+  - `test_plan_approval_loop_round101_real.py::test_resume_without_a_signature_runs_nothing`
+  - `test_plan_approval_loop_round101_real.py::test_a_plan_edited_in_the_database_is_refused`
+  - `test_plan_approval_loop_round101_real.py::test_a_plan_whose_digest_does_not_match_its_content_runs_nothing`
+  - `test_plan_approval_loop_round101_real.py::test_changing_the_policy_after_the_plan_was_made_stops_the_resume`
+  - `test_plan_approval_loop_round101_real.py::test_the_first_failing_step_ends_the_run_and_later_steps_do_not_run`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_a_refusal_not_a_plan_step`
+  - `test_plan_approval_loop_round101_real.py::test_without_plan_first_the_first_effect_stops_for_its_own_signature_as_before`
+  - `test_plan_approval_loop_round101_real.py::test_an_effect_inside_a_batch_is_refused_and_nothing_in_the_batch_runs`
+  - `test_plan_approval_loop_round101_real.py::test_no_effect_of_a_planned_kind_is_dispatched_before_the_confirmation`
+  - `test_plan_approval_loop_round101_real.py::test_mutation_if_the_interception_is_defeated_the_invariant_test_would_fail`
+  - `test_plan_approval_loop_round101_real.py::test_a_small_edit_of_the_named_file_runs_without_a_signature_when_the_policy_says_so`
+  - `test_plan_approval_loop_round101_real.py::test_after_reading_outside_text_the_edit_asks_again`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_not_lifted_by_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_no_checkpoint_no_autorun`
+  - `test_plan_approval_loop_round101_real.py::test_the_notary_records_each_step_before_it_runs_and_its_result_after`
+  - `test_plan_approval_loop_round101_real.py::test_a_notary_that_cannot_record_a_step_stops_the_run_at_that_step`
+  - `test_plan_approval_loop_round101_real.py::test_a_chat_channel_is_shown_the_plan_the_id_and_that_nothing_ran`
+  - `test_plan_approval_round101_real.py::test_any_change_to_the_plan_breaks_its_digest`
+
+### P16 - Thin evidence is a question for a person, never an approval and never a silent refusal of what a person could decide
+
+With `thin_data_asks` in the owner's policy, a call whose evidence is thin (0 < F < the threshold, A > 0) waits for a person's signature with the numbers shown instead of being refused; the action runs only after the signature, and with the flag off the old refusal is unchanged. No data or no intent (D = 0 or I = 0, so F = 0) and a call a rule, a denied path or the safety floor forbids (A = 0) are still refused whatever the flag says.
+
+- **Assumes:** The owner chose to switch the flag on in a signed policy; D comes from data_evidence.py (the files a request names, memory, skills, record), which is lexical and was written by the author.
+- **Not covered:** Whether a person reading the numbers decides better than the gate did: nothing here measures that. A person who signs everything makes this a rubber stamp; `delentia approvals suggest` and the approval statistics are how to notice. In a job, schedule or webhook nobody is there to answer, so the episode waits.
+- **Pinned by:**
+  - `test_plan_approval_loop_round101_real.py::test_thin_evidence_is_put_to_the_person_with_the_numbers_and_runs_only_after_a_signature`
+  - `test_plan_approval_loop_round101_real.py::test_without_the_flag_thin_evidence_is_still_refused_as_before`
+  - `test_plan_approval_loop_round101_real.py::test_no_data_or_no_intent_is_still_a_refusal_even_with_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_a_denied_path_is_still_a_refusal_even_with_the_flag`
+  - `test_plan_approval_loop_round101_real.py::test_a_thin_evidence_step_becomes_a_step_of_the_plan`
+  - `test_plan_approval_loop_round101_real.py::test_the_flag_is_validated_left_out_at_its_default_and_named_as_a_loosening`
+
+### P17 - A device can approve only what an existing approver let it approve, and only that action and that decision
+
+A passkey becomes a trusted approver only after an Ed25519 approver signed for that exact device (a device can not enrol another device). A confirmation on the device is bound to one action and one decision (the challenge is the hash of the approval message), is refused if replayed, if the site, the user-check or the signature is wrong, or if the device is revoked; the stored confirmation is re-checked at execution, a revoked device voids what it approved and has not run, and roles, distinct signers and scope (kinds, people, folders) apply to a device as to a key.
+
+- **Assumes:** The browser and the operating system do what the WebAuthn standard says (user verification, a key that never leaves the device); the page was opened at localhost or at the site name the owner configured; the first approver key is the owner's.
+- **Not covered:** A device signs a digest, not what is on the screen: a compromised Desk could show a harmless plan next to the digest of a harmful one (answer: a second signer, or the plan read on a second channel); a passkey synced to a cloud account is only as safe as that account (`backup_eligible` is recorded); software authenticators in the tests are not hardware; a laptop that is unlocked and left alone can be used by whoever sits at it.
+- **Pinned by:**
+  - `test_passkeys_round101_real.py::test_a_device_is_trusted_only_after_an_existing_approver_signed_for_it`
+  - `test_passkeys_round101_real.py::test_a_device_cannot_enroll_another_device`
+  - `test_passkeys_round101_real.py::test_a_device_is_refused_at_once_when_asked_to_approve_the_enrolment_of_a_device`
+  - `test_passkeys_round101_real.py::test_the_signature_covers_this_exact_device`
+  - `test_passkeys_round101_real.py::test_a_confirmation_for_one_decision_cannot_be_used_for_the_other`
+  - `test_passkeys_round101_real.py::test_a_confirmation_for_one_action_cannot_be_used_for_another`
+  - `test_passkeys_round101_real.py::test_every_way_a_confirmation_can_be_wrong_is_refused`
+  - `test_passkeys_round101_real.py::test_a_replayed_confirmation_is_refused_by_the_counter`
+  - `test_passkeys_round101_real.py::test_revoking_a_device_voids_what_it_approved_and_has_not_run`
+  - `test_passkeys_round101_real.py::test_editing_the_stored_confirmation_does_not_get_an_action_run`
+  - `test_passkeys_round101_real.py::test_changing_the_action_after_the_confirmation_voids_it`
+  - `test_passkeys_round101_real.py::test_a_role_the_action_asks_for_is_enforced_for_a_device`
+  - `test_passkeys_round101_real.py::test_two_signatures_need_two_different_devices`
+  - `test_passkeys_round101_real.py::test_scope_limits_the_kinds_and_people_a_device_may_approve`
+  - `test_passkeys_round101_real.py::test_a_plan_can_only_be_approved_by_a_device_whose_scope_covers_every_step`
+  - `test_passkeys_round101_real.py::test_the_ed25519_path_is_unchanged`
+  - `test_passkeys_desk_api_round101_real.py::test_a_person_token_cannot_reach_the_device_routes`
+
+### P18 - The first approver is made only by a person at the keyboard, only while nobody can approve
+
+The one-time code that lets the first approval device be added without a signature exists only while no approver key and no active device exist, is shown once to the person who runs the command and stored only as a hash, lasts ten minutes, allows five wrong tries and one use, is refused to the agent's shell (the sandbox marks every command it runs and refuses the command text), and stops working the moment an approver exists. Every device after the first still needs an approver's signature (P17).
+
+- **Assumes:** The person runs the command in a terminal they opened themselves and reads the code from that screen; the browser and Windows Hello behave as the standard says.
+- **Not covered:** The agent runs under the same Windows account as the person, so refusing its shell is a safety catch, not a wall: a program that can read the terminal's output or drive the keyboard is not stopped by it. Anyone who can open the web page can use up the five tries and make a code stop working (a denial, not a way in). A person who is shown a code by someone else and types it in makes that device the approver.
+- **Pinned by:**
+  - `test_first_device_round101_real.py::test_a_code_is_issued_only_while_nobody_can_approve`
+  - `test_first_device_round101_real.py::test_the_agents_shell_can_not_ask_for_a_code`
+  - `test_first_device_round101_real.py::test_the_code_is_stored_hashed_and_a_status_never_shows_it`
+  - `test_first_device_round101_real.py::test_five_wrong_tries_cancel_the_code_even_for_the_right_one`
+  - `test_first_device_round101_real.py::test_a_code_expires_after_ten_minutes_and_a_new_one_replaces_the_old`
+  - `test_first_device_round101_real.py::test_the_first_device_becomes_an_approver_at_once_with_the_right_code_and_can_approve`
+  - `test_first_device_round101_real.py::test_without_a_code_the_first_device_is_only_pending_and_can_not_approve`
+  - `test_first_device_round101_real.py::test_the_code_is_used_up_and_a_second_device_needs_a_signature_as_before`
+  - `test_first_device_round101_real.py::test_the_command_prints_a_code_for_a_person_and_refuses_for_the_agent`
 
 ## Threats (Protocol section 12)
 

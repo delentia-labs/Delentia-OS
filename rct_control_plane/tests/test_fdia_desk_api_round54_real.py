@@ -132,7 +132,7 @@ def test_approvers_are_listed_with_roles_but_never_with_full_keys(client, tmp_pa
     public = approvals.generate_approver_key(str(path))
     (tmp_path / "approvers.json").write_text(json.dumps([{"name": "alice", "public_key_hex": public, "role": "Security_Admin"}]), encoding="utf-8")
     approvers = state(client)["approvers"]
-    assert approvers == [{"name": "alice", "role": "Security_Admin", "key_prefix": public[:12]}]
+    assert approvers == [{"name": "alice", "role": "Security_Admin", "key_prefix": public[:12], "scheme": "ed25519"}]
     assert public not in json.dumps(state(client))
 
 

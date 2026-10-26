@@ -32,6 +32,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build the Desk and put it inside the package (so `pip install` brings the web pages)
+        run: python scripts/package_desk.py
+
       - name: Build sdist + wheel
         id: build
         run: |

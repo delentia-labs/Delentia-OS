@@ -15,6 +15,17 @@ export const EMPTY_POLICY: FdiaPolicy = {
   rules: [], blocked_action_patterns: [], require_human_dual_signoff: [], roles: { default_role: "developer", principals: {} }, jury_by_risk: {},
 };
 
+const PLAN_KINDS: { id: string; en: string; th: string }[] = [
+  { id: "delete", en: "delete", th: "ลบ" },
+  { id: "outward", en: "send out", th: "ส่งออกนอก" },
+  { id: "money", en: "move money", th: "เงิน" },
+  { id: "permissions", en: "change permissions or users", th: "สิทธิ์/ผู้ใช้" },
+  { id: "publish", en: "publish or deploy", th: "เผยแพร่" },
+  { id: "restore_cancel", en: "cancel, restore or roll back", th: "ยกเลิก/กู้คืน/ย้อนกลับ" },
+  { id: "move_shutdown", en: "move or shut down", th: "ย้าย/ปิดระบบ" },
+  { id: "document_edit", en: "edit documents", th: "แก้เอกสาร" },
+];
+
 const NEW_RULE: FdiaRule = {
   rule_id: "", intent_patterns: [], action_type: "ALLOW", description: "", assigned_A: 1, require_human_confirmation: false,
   denied_paths: [], allowed_roles: [], human_approver_role: [], required_signatures: 1, jury_tier: "",
@@ -130,7 +141,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
   const blocksEverything = draft.rules.length === 0 && draft.default_fallback_A <= 0;
   const needsConfirm = blocksEverything || draft.default_fallback_A > 0;
 
-  const fromTemplate = async (name: "balanced" | "strict" | "careful" | "argaware") => {
+  const fromTemplate = async (name: "balanced" | "strict" | "careful" | "argaware" | "planfirst") => {
     setBusy(true); setMessage(null);
     try { setDraft((await desk.fdiaTemplate(name)).policy); setUnderstand(false); }
     catch (err) { setMessage({ tone: "rust", text: err instanceof Error ? err.message : String(err) }); }
@@ -197,6 +208,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
           <Button tone="ghost" onClick={() => fromTemplate("strict")} disabled={busy}>{T("Start from: strict (jury on shell, threshold 0.6)", "เริ่มจาก: strict (jury กับ shell, เกณฑ์ 0.6)")}</Button>
           <Button tone="ghost" onClick={() => fromTemplate("careful")} disabled={busy}>{T("Start from: careful (asks before reaching out)", "เริ่มจาก: careful (ถามก่อนออกไปข้างนอก)")}</Button>
           <Button tone="ghost" onClick={() => fromTemplate("argaware")} disabled={busy}>{T("Start from: argument-aware (inspection runs, the rest asks)", "เริ่มจาก: argument-aware (ดูอย่างเดียวรันได้ ที่เหลือถาม)")}</Button>
+          <Button tone="ghost" onClick={() => fromTemplate("planfirst")} disabled={busy}>{T("Start from: plan-first (argument-aware + confirm a plan once for delete, send out, money, permissions, publish, undo, move/shut down; small named-file edits run)", "เริ่มจาก: plan-first (argument-aware + ยืนยันเป็นแผนครั้งเดียวสำหรับลบ ส่งออก เงิน สิทธิ์ เผยแพร่ ย้อนกลับ ย้าย/ปิดระบบ; แก้ไฟล์เล็กที่ระบุชื่อรันได้)")}</Button>
           <Button tone="ghost" onClick={() => setDraft(EMPTY_POLICY)} disabled={busy}>{T("Empty", "ว่าง")}</Button>
           {state.exists ? <Button tone="amber" onClick={disable} disabled={busy}>{T("Turn the policy off (file kept)", "ปิดนโยบาย (เก็บไฟล์ไว้)")}</Button> : null}
         </div>
@@ -276,6 +288,49 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
         </Panel>
       </div>
 
+      <Panel title={T("Confirm as a plan first", "ยืนยันเป็นแผนก่อนลงมือ")}>
+        <p className="mb-2 text-[12px] leading-relaxed text-dl-muted">
+          {T("For the kinds you tick, the agent does not run the action. It lists it as a numbered step of ONE plan, and you confirm the whole plan once; one signature then runs exactly those steps in order, and the rest stop at the first step that fails or is refused. Reading and searching are not affected.",
+             "กับชนิดที่คุณติ๊ก เอเจนต์จะไม่รันการกระทำ แต่จดเป็นขั้นที่ 1, 2, 3 ของแผนเดียว แล้วคุณยืนยันทั้งแผนครั้งเดียว ลายเซ็นเดียวรันเฉพาะขั้นเหล่านั้นตามลำดับ และหยุดที่ขั้นแรกที่ล้มเหลวหรือถูกปฏิเสธ การอ่าน/ค้นหาไม่ได้รับผลกระทบ")}
+        </p>
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          {PLAN_KINDS.map((kind) => {
+            const on = (draft.plan_first ?? []).includes(kind.id);
+            return (
+              <label key={kind.id} className="flex items-center gap-2 text-[13px] text-dl-text">
+                <input type="checkbox" checked={on} aria-label={`Plan first: ${kind.en}`}
+                  onChange={() => { const current = draft.plan_first ?? []; set({ plan_first: on ? current.filter((x) => x !== kind.id) : [...current, kind.id] }); }} />
+                {T(kind.en, kind.th)}
+              </label>
+            );
+          })}
+        </div>
+        <label className="mt-3 flex items-start gap-2 text-[13px] text-dl-text">
+          <input type="checkbox" className="mt-1" checked={!!draft.small_edit_autorun} aria-label="Small edit of a named file runs without a signature"
+            onChange={(e) => set({ small_edit_autorun: e.target.checked })} />
+          <span>
+            {T("A small edit of ONE file that my request names runs without a signature",
+               "แก้ไฟล์เล็กๆ ที่คำขอของฉันระบุชื่อเอง รันได้โดยไม่ต้องเซ็น")}
+            <span className="block text-[12px] text-dl-muted">
+              {T("Only inside the workspace, never a secret file, never after the agent read text from outside, and only while a checkpoint can bring the old content back. Switching this on loosens the gate: the policy history names it, and a host that requires signed policy changes asks for your approver signature when you save.",
+                 "เฉพาะในโฟลเดอร์งาน ไม่ใช่ไฟล์ลับ ไม่ใช่หลังจากเอเจนต์อ่านข้อความจากภายนอก และเฉพาะเมื่อมี checkpoint ย้อนกลับได้ การเปิดข้อนี้ผ่อนกฎ ประวัตินโยบายจะระบุไว้ และโฮสต์ที่บังคับให้เซ็นเมื่อแก้นโยบายจะขอลายเซ็นผู้อนุมัติตอนบันทึก")}
+            </span>
+          </span>
+        </label>
+        <label className="mt-3 flex items-start gap-2 text-[13px] text-dl-text">
+          <input type="checkbox" className="mt-1" checked={!!draft.thin_data_asks} aria-label="Thin evidence asks me instead of being refused"
+            onChange={(e) => set({ thin_data_asks: e.target.checked })} />
+          <span>
+            {T("When the evidence behind a request is thin, ask me (with the numbers) instead of refusing it",
+               "เมื่อหลักฐานที่รองรับคำขอบางเกินไป ให้ถามฉัน (พร้อมตัวเลข) แทนที่จะปฏิเสธเลย")}
+            <span className="block text-[12px] text-dl-muted">
+              {T("No data or no intent (D or I = 0) is still refused, and so is anything a rule, a denied path or the safety floor forbids. Only your signature allows the action. Switching this on loosens the gate and is named in the policy history.",
+                 "ไม่มีข้อมูลหรือไม่มีเจตนา (D หรือ I = 0) ยังถูกปฏิเสธ รวมถึงสิ่งที่กฎ พาธต้องห้าม หรือพื้นความปลอดภัยห้ามไว้ มีเพียงลายเซ็นของคุณที่อนุญาตให้ทำได้ การเปิดข้อนี้ผ่อนกฎและถูกระบุในประวัตินโยบาย")}
+            </span>
+          </span>
+        </label>
+      </Panel>
+
       <Panel title={T("Approvers you trust", "ผู้อนุมัติที่คุณไว้ใจ")}>
         {state.approvers.length ? (
           <ul className="divide-y divide-dl-rule/60">
@@ -317,7 +372,7 @@ export function Policy({ state, draft, setDraft, dirty, reload, message, setMess
         {waiting ? (
           <div className="mt-4 rounded border border-dl-amber/60 bg-dl-amber/10 p-3 text-[13px] leading-relaxed text-dl-text">
             <p>{T("Waiting for a signature. Request ", "รอลายเซ็น คำขอ ")}<Code>{waiting.info.approval_id}</Code> {T("is bound to this exact policy.", "ผูกกับนโยบายฉบับนี้เท่านั้น")}</p>
-            <p className="mt-1 text-dl-muted">{T("On the machine that holds the approver key: ", "บนเครื่องที่มีกุญแจผู้อนุมัติ: ")}<Code>delentia approvals approve {waiting.info.approval_id} --key &lt;key&gt;</Code></p>
+            <p className="mt-1 text-dl-muted">{T("On the machine that holds the approver key: ", "บนเครื่องที่มีกุญแจผู้อนุมัติ: ")}<Code>delentia approvals approve {waiting.info.approval_id} --key &lt;key&gt;{waiting.info.db ? ` --db ${waiting.info.db}` : ""}</Code></p>
             <div className="mt-2 flex gap-2">
               <Button onClick={waiting.kind === "save" ? save : disable} disabled={busy}>{T("It is signed: apply", "เซ็นแล้ว: ใช้เลย")}</Button>
               <Button tone="ghost" onClick={() => setWaiting(null)}>{T("Forget this request", "ยกเลิกคำขอนี้")}</Button>

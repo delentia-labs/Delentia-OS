@@ -12,7 +12,7 @@ function Runs({ id }: { id: string }) {
   if (runs.error) return <ErrorNote error={runs.error} />;
   if (!runs.data) return <p className="desk-mono text-sm text-dl-muted">Loading…</p>;
   return (
-    <div className="overflow-x-auto">
+    <div tabIndex={0} className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-[12px]">
         <thead className="desk-mono text-[11px] text-dl-muted">
           <tr><th className="pb-2 pr-3 font-normal">Run</th>{METRICS.map((m) => <th key={m} className="pb-2 pr-3 font-normal">{m}</th>)}</tr>
@@ -32,6 +32,7 @@ function Runs({ id }: { id: string }) {
 
 export default function ExperimentsPage() {
   const { t, lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const list = useDeskData(() => desk.experiments(), [], 30000);
   const [open, setOpen] = useState<string | null>(null);
   return (
@@ -42,14 +43,14 @@ export default function ExperimentsPage() {
           : "Every episode is an RCTDB experiment run, grouped by goal, so you can see whether repeating a goal really gets better (finish-line criterion 6: measurable learning)."} />
       <PageBody>
         {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
-        {list.data && !list.data.experiments.length ? <Empty title="No experiments yet">Each agent episode adds a run here.</Empty> : null}
+        {list.data && !list.data.experiments.length ? <Empty title={L("No experiments yet", "ยังไม่มีการทดลอง")}>{L("Each agent episode adds a run here.", "ทุก episode ของเอเจนต์จะเพิ่มหนึ่งรายการที่นี่")}</Empty> : null}
         <div className="space-y-4">
           {list.data?.experiments.map((e) => (
             <Panel key={e.id} title={e.name}
-              aside={<button onClick={() => setOpen(open === e.id ? null : e.id)} aria-expanded={open === e.id} className="desk-focus desk-mono text-[11px] text-dl-leaf underline">{open === e.id ? "hide runs" : `${e.runs} runs`}</button>}>
+              aside={<button onClick={() => setOpen(open === e.id ? null : e.id)} aria-expanded={open === e.id} className="desk-focus desk-mono text-[11px] text-dl-leaf underline">{open === e.id ? L("hide runs", "ซ่อนการรัน") : `${e.runs} ${L("runs", "การรัน")}`}</button>}>
               <p className="desk-mono text-[12px] text-dl-muted">
-                {e.runs} runs · last {fmtTime(e.last_run)}
-                {e.compare ? "" : " · needs two runs to compare"}
+                {e.runs} {L("runs", "การรัน")} · {L("last", "ล่าสุด")} {fmtTime(e.last_run)}
+                {e.compare ? "" : ` · ${L("needs two runs to compare", "ต้องมีสองการรันจึงเทียบได้")}`}
               </p>
               {e.compare && Object.keys(e.compare).length ? (
                 <ul className="desk-mono mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[12px]">

@@ -47,6 +47,8 @@ _TRANSIENT_HTTP_STATUS = (408, 409, 425, 429, 500, 502, 503, 504)
 
 
 def _is_transient_llm_error(exc: BaseException) -> bool:
+    if getattr(exc, "transient", False) is True:        # llm_provider.LLMReplyError: a 200 that carried no usable reply
+        return True
     try:
         import httpx
     except ImportError:     # pragma: no cover
@@ -54,6 +56,23 @@ def _is_transient_llm_error(exc: BaseException) -> bool:
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in _TRANSIENT_HTTP_STATUS
     return isinstance(exc, (httpx.TransportError, asyncio.TimeoutError, ConnectionError))
+
+
+RETRY_AFTER_CAP_SECONDS = 30.0
+
+
+def _retry_delay(exc: BaseException, backoff: float, attempt: int) -> float:
+    """Seconds to wait before the next try: the fixed backoff, or the endpoint's own Retry-After (capped) when it sent one with a 429/503. A rate limit that says "in 20 seconds" is not
+    answered by three tries within three seconds."""
+    delay = backoff * attempt
+    try:
+        headers = getattr(getattr(exc, "response", None), "headers", None)
+        value = headers.get("retry-after") if headers is not None else None
+        if value is not None:
+            delay = max(delay, min(float(value), RETRY_AFTER_CAP_SECONDS))
+    except (TypeError, ValueError, AttributeError):
+        pass
+    return delay
 
 
 def _describe_llm_error(exc: BaseException) -> str:
@@ -203,10 +222,35 @@ def reconstruct_full_history_text(history: List[LoopStep], delta_engine: Optiona
     return "\n".join(lines)
 
 
+_REASONING_TAGS = ("think", "thinking", "reasoning")
+
+
+def _strip_reasoning(text: str) -> str:
+    """A reasoning model puts its thinking in <think>...</think> before the answer, and that thinking can contain braces. Removed before the JSON is looked for. An opening tag that is never
+    closed means the reply was cut off while thinking: there is no answer after it. Plain string search, no pattern that can backtrack."""
+    low = text.lower()
+    kept: List[str] = []
+    i = 0
+    while True:
+        starts = [(low.find(f"<{tag}>", i), tag) for tag in _REASONING_TAGS]
+        starts = [(pos, tag) for pos, tag in starts if pos >= 0]
+        if not starts:
+            kept.append(text[i:])
+            break
+        pos, tag = min(starts)
+        kept.append(text[i:pos])
+        close = low.find(f"</{tag}>", pos)
+        if close < 0:
+            break
+        i = close + len(tag) + 3
+    return "".join(kept)
+
+
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     """Best-effort real JSON extraction from an LLM response that may
     wrap the JSON in prose or markdown fences - a small local model
     does not always follow format="json" perfectly."""
+    text = _strip_reasoning(text)
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -674,7 +718,7 @@ class AutonomousLoop:
                     except Exception as exc:    # noqa: BLE001 - any provider failure ends the episode, not the caller
                         if attempt < retries and _is_transient_llm_error(exc):
                             attempt += 1
-                            await asyncio.sleep(backoff * attempt)
+                            await asyncio.sleep(_retry_delay(exc, backoff, attempt))
                             continue
                         llm_error = _describe_llm_error(exc)
                         stopped_reason = "llm_error"
@@ -718,6 +762,8 @@ class AutonomousLoop:
                         final_answer = await self._stream_final_answer(goal, history, on_answer_token)
                     except (BudgetExceededError, ResidencyViolation):
                         pass  # keep the answer from the decision call rather than spend past the budget
+                    except Exception:  # noqa: BLE001 - Round 101: a broken stream (a malformed event, a dropped connection) must not lose an answer the decision call already gave
+                        pass
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
                                  tool_result=None, llm_reasoning=decision["reasoning"])
                 history.append(step)
@@ -737,6 +783,18 @@ class AutonomousLoop:
             # Scoped before the governance gate, so the gate, the notary and the step record all
             # see the arguments that will actually run.
             tool_args = self._scope_tool_args(tool_name, decision.get("tool_args") or {})
+
+            # Round 101: plan-first. An effect of a kind the owner wants confirmed as a PLAN is recorded as a proposal and not run; the episode goes on.
+            proposed = await _maybe_await(self._plan_intercept(goal, tool_name, tool_args, decision.get("reasoning") or ""))
+            if proposed is not None:
+                step = LoopStep(iteration=i, tool_name=tool_name, tool_args=tool_args, tool_result=proposed["tool_result"], llm_reasoning=decision["reasoning"])
+                history.append(step)
+                self._persist_step(step)
+                await _notify(step)
+                if proposed.get("stopped_reason"):
+                    stopped_reason = proposed["stopped_reason"]
+                    break
+                continue
 
             # Round 23 Phase 12 Task 26: real approval-gate for
             # medium-risk sandboxed commands - halt BEFORE dispatch,
@@ -809,6 +867,15 @@ class AutonomousLoop:
             await _maybe_await(on_episode_end(result))
         return result
 
+    def _plan_first_kind(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
+        """Round 101: the kind of action (delete, outward, ...) the owner wants confirmed as a plan, or None. The base loop has no such rule."""
+        return None
+
+    async def _plan_intercept(self, goal: str, tool_name: str, tool_args: Dict[str, Any], reasoning: str = "") -> Optional[Dict[str, Any]]:
+        """Round 101: None = not a planned action (the normal path follows). A dict with a `stopped_reason` ends the episode (a hard refusal); one without it records a proposal and the episode
+        continues. The base loop never proposes."""
+        return None
+
     async def _run_tool_batch(
         self, i: int, goal: str, decision: Dict[str, Any], history: list, available_tools: List[Dict[str, Any]],
         pre_dispatch_gate: Optional[Callable[..., Any]], post_dispatch_transform: Optional[Callable[..., Any]],
@@ -844,6 +911,10 @@ class AutonomousLoop:
         for call in calls:
             args = self._scope_tool_args(call.tool_name, call.tool_args)
             note = f"[batch {call.id}]"
+            if self._plan_first_kind(call.tool_name, args) is not None:
+                # Round 101: a call that changes something and belongs to a kind the owner wants planned is proposed on its own, never inside a batch; nothing in this batch has run.
+                await record(call.tool_name, args, {"plan_refused": "while plans are on, an action that changes something is requested alone, not inside a batch; nothing in this batch was run"}, note)
+                return None
             if call.tool_name == "delentia_run_sandboxed_command":
                 from rct_control_plane.sandbox import classify_command_risk
                 if classify_command_risk(args.get("command", "")) == "needs_approval":

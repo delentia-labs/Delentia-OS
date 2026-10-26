@@ -168,6 +168,15 @@ def action_digest(approval_id: str, namespace: str, goal: str, tool_name: str, t
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _is_passkey(key: str) -> bool:
+    return isinstance(key, str) and key.startswith("passkey:")
+
+
+def _fingerprint(key: str) -> str:
+    """A short, stable name for a signer's key: the first 16 hex of the SHA-256 of an Ed25519 public key, or of the passkey's identifier."""
+    return hashlib.sha256(key.encode("utf-8") if _is_passkey(key) else bytes.fromhex(key)).hexdigest()[:16]
+
+
 def approval_message(approval_id: str, action_sha256: str, decision: str) -> bytes:
     decision = decision.strip().upper()
     if decision not in DECISIONS:
@@ -400,6 +409,7 @@ class PendingActionStore:
         self._check_signature(action, decision, public_key_hex, signature_hex)
         if decision == "APPROVED":
             self._check_role(action, public_key_hex)
+            self._check_scope(action, public_key_hex)
         now = _now()
         with self._persistence._connect() as conn:
             if decision == "REJECTED":
@@ -427,10 +437,10 @@ class PendingActionStore:
                         "WHERE approval_id = ? AND status = 'PENDING'", (now, first[0], first[1], approval_id))
         self._persistence.append_audit(
             entity_type="pending_action_decided", entity_id=approval_id, action=decision.lower(),
-            actor=f"approver:{trusted_approver_keys().get(public_key_hex, '?')}:{public_key_hex[:16]}",
+            actor=f"approver:{self._signer_info(public_key_hex)[0] or '?'}:{public_key_hex[:24]}",
             changes={"action_sha256": action.action_sha256, "tool_name": action.tool_name,
-                     "signature_hex": signature_hex, "approver_public_key": public_key_hex,
-                     "approver_role": trusted_approver_roles().get(public_key_hex),
+                     "signature_hex": signature_hex, "approver_public_key": public_key_hex, "scheme": "passkey" if _is_passkey(public_key_hex) else "ed25519",
+                     "approver_role": self._signer_info(public_key_hex)[1],
                      "required_signatures": action.required_signatures, "policy_rule": action.policy_rule},
         )
         decided = self.get(approval_id)
@@ -439,18 +449,37 @@ class PendingActionStore:
             self._record_architect_decision(decided, public_key_hex)
         return decided
 
+    def decide_with_passkey(self, approval_id: str, decision: str, assertion: Dict[str, Any]) -> PendingAction:
+        """Round 101: a decision confirmed on a device (Windows Hello, a security key, a phone). The assertion is checked against THIS action and THIS decision (passkeys.py), then the decision is recorded
+        by the same code path as an Ed25519 signature: roles, distinct signers, scope, expiry, at-most-once, audit and the RCTDB copy all apply unchanged."""
+        from rct_control_plane import passkeys
+        action = self.get(approval_id)
+        if action is None:
+            raise ApprovalError(f"no pending action {approval_id!r}")
+        if action.status != "PENDING":
+            raise ApprovalError(f"action {approval_id} is already {action.status}" if action.status != "EXPIRED" else f"action {approval_id} expired before it was decided; ask for it again")
+        decision = decision.strip().upper()
+        if decision not in DECISIONS:
+            raise ApprovalError(f"decision must be one of {DECISIONS}")
+        if action.tool_name == passkeys.ENROLL_TOOL and decision == "APPROVED":
+            raise ApprovalError("a device can not approve the enrolment of a device: it needs the signature of an approver key (SIGN_PENDING.bat, or `delentia approvals approve`)")
+        try:
+            cred, stored = passkeys.PasskeyStore(self._persistence).verify_new(approval_id, action.action_sha256, decision, assertion)
+        except passkeys.PasskeyError as exc:
+            raise ApprovalError(str(exc)) from exc
+        return self.decide(approval_id, decision, cred.signer_key, stored)
+
     def _record_architect_decision(self, action: PendingAction, last_key: str) -> None:
         """RCTDB's architect_decisions collection is where the human's sign-offs belong (the A in F = D^I x A). Until Round 56
         nothing wrote a signed approval there. Each row keeps the action's digest, who signed (name, role, key fingerprint) and
         the outcome; never the signature secret, and the arguments only as a hash."""
         try:
-            keys, roles = trusted_approver_keys(), trusted_approver_roles()
             with self._persistence._connect() as conn:
                 rows = conn.execute("SELECT public_key, decided_at FROM pending_action_signatures WHERE approval_id = ? ORDER BY decided_at",
                                     (action.approval_id,)).fetchall()
-            signers = [{"name": keys.get(pk), "role": roles.get(pk), "key_fingerprint": hashlib.sha256(bytes.fromhex(pk)).hexdigest()[:16], "at": at}
-                       for pk, at in rows] or [{"name": keys.get(last_key), "role": roles.get(last_key),
-                                                "key_fingerprint": hashlib.sha256(bytes.fromhex(last_key)).hexdigest()[:16], "at": action.decided_at}]
+            signers = [{"name": self._signer_info(pk)[0], "role": self._signer_info(pk)[1], "key_fingerprint": _fingerprint(pk), "scheme": "passkey" if _is_passkey(pk) else "ed25519", "at": at}
+                       for pk, at in rows] or [{"name": self._signer_info(last_key)[0], "role": self._signer_info(last_key)[1],
+                                                "key_fingerprint": _fingerprint(last_key), "scheme": "passkey" if _is_passkey(last_key) else "ed25519", "at": action.decided_at}]
             self._persistence.save_architect_decision(
                 f"approval-{action.approval_id}", "signed_approval" if action.status == "APPROVED" else "signed_rejection",
                 f"{action.tool_name}: {action.status.lower()} by {len(signers)} signature(s)",
@@ -461,17 +490,50 @@ class PendingActionStore:
         except Exception:           # the signed decision itself is already stored and audited; this is its RCTDB copy
             pass
 
-    @staticmethod
-    def _check_role(action: PendingAction, public_key_hex: str) -> None:
+    def _signer_info(self, key: str) -> Any:
+        """(name, role) of a signer: an Ed25519 key from the approvers file/environment, or a passkey registered in the database."""
+        if _is_passkey(key):
+            try:
+                from rct_control_plane import passkeys
+                cred = passkeys.PasskeyStore(self._persistence).get_by_signer(key)
+                return (cred.name, cred.role) if cred else (None, None)
+            except Exception:                                   # noqa: BLE001 - naming a signer must never break a decision
+                return (None, None)
+        return trusted_approver_keys().get(key), trusted_approver_roles().get(key)
+
+    def _check_scope(self, action: PendingAction, key: str) -> None:
+        """A passkey may be limited to some kinds of action, people and workspaces (passkeys.check_scope). An Ed25519 key has no scope field yet."""
+        if not _is_passkey(key):
+            return
+        from rct_control_plane import passkeys
+        cred = passkeys.PasskeyStore(self._persistence).get_by_signer(key)
+        if cred is None:
+            raise ApprovalError("signing device is not a trusted approver")
+        try:
+            passkeys.check_scope(cred, action)
+        except passkeys.PasskeyError as exc:
+            raise ApprovalError(str(exc)) from exc
+
+    def _check_role(self, action: PendingAction, public_key_hex: str) -> None:
         if not action.approver_roles:
             return
-        role = trusted_approver_roles().get(public_key_hex)
+        role = self._signer_info(public_key_hex)[1]
         if role not in action.approver_roles:
             held = f"role {role!r}" if role else "no role"
             raise ApprovalError(f"this action needs an approver with the role {' or '.join(action.approver_roles)}; "
                                 f"the signing key has {held}")
 
     def _check_signature(self, action: PendingAction, decision: str, public_key_hex: str, signature_hex: str) -> None:
+        if _is_passkey(public_key_hex):
+            recomputed = action_digest(action.approval_id, action.namespace, action.goal, action.tool_name, action.tool_args, action.policy_digest, action.workspace)
+            if recomputed != action.action_sha256:
+                raise ApprovalError("stored action does not match its digest (the record was altered)")
+            from rct_control_plane import passkeys
+            try:
+                passkeys.PasskeyStore(self._persistence).verify_stored(public_key_hex, action.approval_id, action.action_sha256, decision.strip().upper(), signature_hex)
+            except passkeys.PasskeyError as exc:
+                raise ApprovalError(str(exc)) from exc
+            return
         trusted = trusted_approver_keys()
         if not trusted:
             raise ApprovalError(
@@ -529,6 +591,7 @@ class PendingActionStore:
         for key, signature in signers.items():
             self._check_signature(action, "APPROVED", key, signature)
             self._check_role(action, key)
+            self._check_scope(action, key)
         with self._persistence._connect() as conn:
             claimed = conn.execute(
                 "UPDATE pending_actions SET status = 'EXECUTING', claimed_at = ? WHERE approval_id = ? AND status = 'APPROVED'",

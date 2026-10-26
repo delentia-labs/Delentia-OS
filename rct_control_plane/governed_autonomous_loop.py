@@ -782,6 +782,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._meter = None                         # a loop that is reused must not report the previous episode's cost for one that never started
         budget_share.current_meter.set(None)
         self._episode_call_counts: Dict[str, int] = {}
+        self._plan_proposals: List[Dict[str, Any]] = []     # Round 101: effects of a planned kind that were asked for and NOT run
+        self._plan_goal = goal
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
 
         blocked = await self._envelope_blocked(goal)
@@ -802,6 +804,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         kernel = self._get_kernel()
         clarity, I, compile_result = kernel.synthesize_fdia_inputs(goal)
         memories = await self._recall_for_goal(goal) if self._memory_in_prompt else []
+        self._episode_recalled_for_judge = list(memories)
         skills = self._retrieve_skills_counted(goal)
         evidence = self._assess_data(goal, clarity, compile_result)
         self._episode_intent = self._describe_intent(compile_result)
@@ -854,6 +857,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._format_route(self._episode_route),
             self._format_rct7_plan(self._episode_rct7_steps) if self._rct7_in_prompt else "",
             self._generic_plan_text(),
+            self._plan_mode_text(),
             self._format_memories(memories) if self._memory_in_prompt else "",
             self._format_similar_skills(skills),
             pipeline_advice,
@@ -1698,6 +1702,26 @@ class GovernedAutonomousLoop(AutonomousLoop):
             },
         )
 
+        if blocked and A > 0.0 and F > 0.0 and getattr(policy, "thin_data_asks", False) and judged:
+            # Round 101: thin evidence (0 < F < threshold) is a question for the person, with the numbers, not a refusal. No data or no intent (F = 0) and A = 0 are still refusals.
+            missing_data = list((self._episode_data or {}).get("missing", []))[:3]
+            required, roles, rule_id = 1, [], "thin_data"
+            if policy_eval is not None and policy_eval.needs_signature:
+                required, roles, rule_id = max(1, int(policy_eval.required_signatures or 1)), list(policy_eval.approver_roles or []), policy_eval.rule_id
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_fdia_gate", entity_id=f"{self.namespace}-{tool_name}-thin", action="thin_data_asked", actor=self.namespace,
+                                               changes={"tool_name": tool_name, "D": self._episode_D, "I": self._episode_I, "F": F, "threshold": threshold, "missing": missing_data})
+            except Exception:
+                pass
+            return {
+                "stopped_reason": "pending_approval",
+                "tool_result": {
+                    "pending_approval": True, "tool_name": tool_name, "tool_args": tool_args,
+                    "reason": f"the evidence behind this request is thin (D={self._episode_D}, I={self._episode_I}, F={F} is below {threshold}); you decide. Missing: " + ("; ".join(missing_data) or "no stored memory, skill or record for this goal"),
+                    "thin_data": {"D": self._episode_D, "I": self._episode_I, "F": F, "threshold": threshold, "missing": missing_data},
+                    "approval_policy": {"rule_id": rule_id, "required_signatures": required, "approver_roles": roles, "policy_digest": policy.digest()},
+                },
+            }
         if blocked:
             return self._gate_refusal(tool_name, A, a_reason if A <= 0.0 else
                                       f"F = {F} is below the FDIA threshold {threshold} (D={self._episode_D}, I={self._episode_I})",
@@ -1709,7 +1733,17 @@ class GovernedAutonomousLoop(AutonomousLoop):
             if jury_refusal is not None:
                 return jury_refusal
 
-        if policy_eval is not None and policy_eval.needs_signature:
+        autorun = False
+        if tool_name in ("delentia_write_repo_file", "delentia_patch_repo_file") and self._small_edit_ok(goal, tool_name, tool_args):
+            # Round 101 (Q1, the owner's decision): one named file, inside the workspace, nothing read from outside, a checkpoint to go back to. A policy that SAYS so runs it without a
+            # signature; every refusal above (denied path, blocked pattern, FDIA threshold, taint, hooks) has already been applied and still stands.
+            autorun = True
+            try:
+                self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{tool_name}", action="small_edit_autorun", actor=self.namespace,
+                                               changes={"tool_name": tool_name, "args_sha256": _sha(tool_args), "policy_digest": policy.digest() if policy is not None else None})
+            except Exception:
+                pass
+        if policy_eval is not None and policy_eval.needs_signature and not autorun:
             return {
                 "stopped_reason": "pending_approval",
                 "tool_result": {
@@ -1719,7 +1753,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                                         "approver_roles": policy_eval.approver_roles, "policy_digest": policy_eval.policy_digest},
                 },
             }
-        if needs_signature_always(tool_name):
+        if needs_signature_always(tool_name) and not autorun:
             return {
                 "stopped_reason": "pending_approval",
                 "tool_result": {
@@ -1742,6 +1776,133 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 "missing_data": missing or [], "policy": policy_info,
             },
         }
+
+    # ------------------------------------------------------------------
+    # Round 101: plan-first (plan_approval.py). The owner lists the kinds of action that are confirmed ONCE, as a whole plan, before anything runs.
+    # ------------------------------------------------------------------
+    def _plan_first_kinds(self) -> set:
+        policy, _error = self._active_policy()
+        return set(getattr(policy, "plan_first", None) or ()) if policy is not None else set()
+
+    def _small_edit_ok(self, goal: str, tool_name: str, tool_args: Dict[str, Any]) -> bool:
+        """Q1: only when the owner's policy says so AND every condition of plan_approval.small_edit_ok holds."""
+        policy, _error = self._active_policy()
+        if policy is None or not getattr(policy, "small_edit_autorun", False):
+            return False
+        from rct_control_plane import checkpoints, plan_approval, secret_paths
+        args = tool_args if isinstance(tool_args, dict) else {}
+        paths = [str(args[k]) for k in ("relative_path", "path", "file", "filename", "file_name") if isinstance(args.get(k), str) and args[k].strip()]
+        secret = any(secret_paths.blocked_reason(path) for path in paths)
+        return plan_approval.small_edit_ok(goal, tool_name, args, tainted=getattr(self, "_episode_taint", None) is not None, checkpoint_ready=checkpoints.enabled(), secret=secret)
+
+    def _plan_first_kind(self, tool_name: str, tool_args: Dict[str, Any]) -> Optional[str]:
+        kinds = self._plan_first_kinds()
+        if not kinds:
+            return None
+        from rct_control_plane import plan_approval
+        kind = plan_approval.action_kind(tool_name, tool_args)
+        if kind is None or kind not in kinds:
+            return None
+        if tool_name in plan_approval.WRITE_TOOLS and self._small_edit_ok(getattr(self, "_plan_goal", ""), tool_name, tool_args):
+            return None                                    # a small named-file edit goes through the normal gate, where the autorun applies
+        return kind
+
+    def _plan_mode_text(self) -> str:
+        kinds = sorted(self._plan_first_kinds())
+        if not kinds:
+            return ""
+        return ("Plan mode: the owner wants these kinds of action confirmed by the person ONCE, as a whole plan, before any of them runs: " + ", ".join(kinds) + ". Ask for such an action as usual: it is "
+                "recorded as a numbered step and NOT run (the reply says proposed). Ask for the steps in the order they should run, then finish with a short answer that says what the plan does. "
+                "Reading and searching run normally and may be used to prepare the plan. Do not ask for an action twice. In your final answer say that these steps are PROPOSED and wait for the person's confirmation: "
+                "do not say they were done.")
+
+    async def _plan_intercept(self, goal: str, tool_name: str, tool_args: Dict[str, Any], reasoning: str = "") -> Optional[Dict[str, Any]]:
+        """None: not a planned action, the normal path follows. A gate result with a stopped_reason: a hard refusal (the floor, the owner's denied path, FDIA, the pause). Otherwise the action is
+        recorded as the next step of the plan and the episode goes on; nothing is run and nothing is signed here."""
+        kind = self._plan_first_kind(tool_name, tool_args)
+        if kind is None:
+            return None
+        from rct_control_plane import plan_approval
+        proposals: List[Dict[str, Any]] = self._plan_proposals
+        if tool_name == "delentia_run_sandboxed_command":
+            from rct_control_plane.sandbox import classify_command_risk
+            if classify_command_risk(tool_args.get("command", "")) == "denied":
+                return None                                # the normal path refuses it, with the reason
+        if not plan_approval.args_fit(tool_args):
+            return {"tool_result": {"plan_refused": "the arguments are too long to be confirmed whole; split this into smaller steps"}}
+        if len(proposals) >= plan_approval.MAX_STEPS:
+            return {"tool_result": {"plan_refused": f"a plan holds at most {plan_approval.MAX_STEPS} steps; finish now and ask for the rest in a new plan"}}
+        gate = await self._pre_dispatch_gate(goal, tool_name, tool_args)
+        if gate is not None and gate.get("stopped_reason") != "pending_approval":
+            return gate
+        wanted = ((gate or {}).get("tool_result") or {}).get("approval_policy") or {}
+        roles = [str(r) for r in (wanted.get("approver_roles") or [])]
+        merged = self._plan_merge_roles(proposals, roles)
+        if merged is None:
+            return {"tool_result": {"plan_refused": "this step needs different approvers than the steps already in the plan; finish this plan and ask for it in the next one"}}
+        step_no = len(proposals) + 1
+        proposals.append({"tool_name": tool_name, "tool_args": tool_args, "reasoning": reasoning, "kind": kind, "required_signatures": int(wanted.get("required_signatures") or 1),
+                          "approver_roles": roles, "rule_id": wanted.get("rule_id"), "reason": ((gate or {}).get("tool_result") or {}).get("reason") or "a plan step"})
+        try:
+            self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{tool_name}", action="step_proposed", actor=self.namespace,
+                                           changes={"step": step_no, "tool_name": tool_name, "kind": kind, "args_sha256": _sha(tool_args)})
+        except Exception:
+            pass
+        return {"tool_result": {"proposed": True, "plan_step": step_no, "kind": kind,
+                                "note": "Recorded as a step of the plan. Nothing was run. The person confirms the whole plan once; then the steps run in this order."}}
+
+    @staticmethod
+    def _plan_merge_roles(proposals: List[Dict[str, Any]], new_roles: List[str]) -> Optional[List[str]]:
+        """Roles that may sign the whole plan: the roles every step that names roles accepts. None when no role satisfies all of them."""
+        current: Optional[set] = None
+        for item in [*proposals, {"approver_roles": new_roles}]:
+            roles = set(item.get("approver_roles") or [])
+            if roles:
+                current = roles if current is None else current & roles
+                if not current:
+                    return None
+        return sorted(current) if current else []
+
+    def _finalize_plan(self, result: Dict[str, Any]) -> None:
+        """At the end of an episode that proposed steps: the steps become ONE pending action (the plan) and the episode waits for the person. An episode that stopped for any other reason
+        than finishing or running out of steps discards its proposals (nothing ran), and says so."""
+        proposals = list(getattr(self, "_plan_proposals", None) or [])
+        self._plan_proposals = []
+        if not proposals:
+            return
+        from rct_control_plane import plan_approval
+        reason = result.get("stopped_reason")
+        if reason not in ("llm_finished", "max_iterations_reached", "max_seconds_exceeded"):
+            result["plan_discarded"] = {"steps": len(proposals), "reason": f"the episode ended with {reason}; nothing in the plan ran"}
+            return
+        policy, _error = self._active_policy()
+        plan = plan_approval.build_plan(result["goal"], proposals, policy_digest=policy.digest() if policy is not None else None, workspace=self._workspace_id())
+        required = max(int(p.get("required_signatures") or 1) for p in proposals)
+        roles = self._plan_merge_roles(proposals, []) or []
+        thai = bool(re.search(r"[\u0e00-\u0e7f]", str(result["goal"])))
+        text = plan_approval.render(plan, "th" if thai else "en")
+        step = LoopStep(iteration=len(result.get("steps") or []) + 1, tool_name=plan_approval.PLAN_TOOL, tool_args={"plan": plan},
+                        tool_result={"pending_approval": True, "reason": f"a plan of {len(plan['steps'])} step(s) waits for one confirmation",
+                                     "approval_policy": {"rule_id": "plan_first", "required_signatures": required, "approver_roles": roles, "policy_digest": plan["policy_digest"] or None}},
+                        llm_reasoning="plan for confirmation")
+        self._persist_step(step)
+        result.setdefault("steps", []).append(vars(step))
+        result["iterations"] = len(result["steps"])
+        result["stopped_reason"] = "pending_approval"
+        result["plan_approval"] = {"digest": plan["digest"], "steps": len(plan["steps"]), "counts": plan["counts"], "text": text, "required_signatures": required}
+        own = str(result.get("final_answer") or "").strip()
+        # Found by a real model (qwen3:8b, Round 101): after PROPOSING a step it wrote "Draft saved to hello.txt". Nothing had been saved. What the person is shown first is the plan and the fact that nothing has
+        # run; the model's own summary is kept below it, labelled, because it may speak as if the steps were done.
+        note = "ยังไม่มีอะไรถูกรัน: รอการยืนยันของคุณก่อน" if thai else "Nothing has run yet: this waits for your confirmation."
+        blank = chr(10) * 2
+        label = "สรุปของเอเจนต์เอง เขียนก่อนยืนยัน อาจพูดเหมือนทำเสร็จแล้ว" if thai else "The agent's own summary, written before the confirmation; it may speak as if the steps were done"
+        result["final_answer"] = text + blank + note + ((blank + "(" + label + ": " + own[:600] + ")") if own else "")
+        result["agent_summary_before_confirmation"] = own
+        try:
+            self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{plan['digest'][:16]}", action="plan_proposed", actor=self.namespace,
+                                           changes={"plan_digest": plan["digest"], "steps": len(plan["steps"]), "counts": plan["counts"], "required_signatures": required})
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Round 54: SignedAI jury before an action the owner's policy marks
@@ -1924,11 +2085,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         except Exception:
             return False
 
-    def _judge_audit(self, what: str, subject: str, verdict: Dict[str, Any]) -> None:
+    def _judge_audit(self, what: str, subject: str, verdict: Dict[str, Any], extra: Optional[Dict[str, Any]] = None) -> None:
         try:
             from rct_control_plane import audit_text
             self._persistence.append_audit(entity_type="governed_loop_judge", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action=what, actor=self.namespace,
-                                           changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500]}, ("verdict",)))
+                                           changes=audit_text.protect(self.namespace, {"subject_sha256": _sha(subject), "verdict": json.dumps(verdict, ensure_ascii=False)[:1500], **(extra or {})}, ("verdict",)))
         except Exception:
             pass
 
@@ -1975,9 +2136,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 store.accept(waiting.clarification_id, self.namespace)       # the same request sent again without an answer: the person means it as it is
                 self._judge_audit("insisted", goal, {"clarification_id": waiting.clarification_id})
                 return None
-        verdict = await rct7_judge.judge_request(provider, goal)
+        context = None
+        from rct_control_plane import judge_context
+        if judge_context.enabled():
+            # Round 101: the variant measured on the Architect's set 3 (the judge sees what the agent already has). Opt-in; the text is built from this person's own things and file NAMES only.
+            context = judge_context.gather(self, goal)
+        verdict = await rct7_judge.judge_request(provider, goal, context)
         settle()
-        self._judge_audit("request", goal, verdict.to_dict())
+        self._judge_audit("request", goal, verdict.to_dict(), {"context_sha256": _sha(context), "prompt_version": rct7_judge.context_prompt_version()} if context is not None else None)
         if verdict.clear is not False or not verdict.unknowns:
             return None
         thai = bool(re.search(r"[\u0e00-\u0e7f]", goal))
@@ -2123,6 +2289,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
     async def _on_episode_end(self, result: Dict[str, Any]) -> None:
         duration = time.time() - self._episode_start_time
+        self._finalize_plan(result)                         # Round 101: before anything reads the stopped reason
         stopped_reason = result["stopped_reason"]
         if getattr(self, "_episode_taint", None) is not None and self._taint_enabled():
             # Round 58, answer channel: after reading text from outside, an address in the answer must have come from the person or from a page (answer_guard.py).
@@ -2709,36 +2876,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         store.check_context(existing, self._workspace_id(), current_policy.digest() if current_policy is not None else None)
         action = store.claim_for_execution(approval_id)
 
-        A, a_reason = self._authorization_signal(action.tool_name, action.tool_args)
-        policy, policy_error = self._active_policy()
-        if policy_error:
-            A, a_reason = 0.0, f"the owner policy could not be loaded (fail closed): {policy_error}"
-        elif policy is not None and A > 0.0:
-            # A signature satisfies "needs a human"; it does not lift a blocked pattern, a denied path or a refused role.
-            from rct_control_plane import fdia_policy
-            again = fdia_policy.evaluate(policy, action.tool_name, action.tool_args, principal=self.namespace, approved=True, context={"goal": action.goal})
-            if again.A <= 0.0:
-                A, a_reason = 0.0, f"owner policy {again.rule_id}: {again.reason}"
-        if A <= 0.0:
-            tool_result: Dict[str, Any] = {"fdia_blocked": True, "reason": a_reason}
-        elif action.tool_name == "delentia_run_sandboxed_command":
-            # Called directly with approved=True: the MCP tool deliberately
-            # has no such flag, so the model can never approve itself.
-            from rct_control_plane.sandbox import run_sandboxed
-            sandboxed = run_sandboxed(
-                action.tool_args.get("command", ""),
-                timeout_seconds=float(action.tool_args.get("timeout_seconds", 10.0)),
-                approved=True,
-            )
-            tool_result = {"stdout": sandboxed.stdout, "stderr": sandboxed.stderr,
-                           "exit_code": sandboxed.exit_code, "timed_out": sandboxed.timed_out,
-                           "blocked_reason": sandboxed.blocked_reason}
+        from rct_control_plane import plan_approval
+        if action.tool_name == plan_approval.PLAN_TOOL:
+            A, a_reason, tool_result = await self._execute_plan(action)
         else:
-            try:
-                raw = await self._mcp.call_tool(action.tool_name, action.tool_args)
-                tool_result = json.loads(raw.content[0].text)
-            except Exception as exc:
-                tool_result = {"error": str(exc)}
+            A, a_reason, tool_result = await self._execute_approved(action.tool_name, action.tool_args, action.goal)
 
         store.mark_executed(approval_id, tool_result)
         await self._notarise_best_effort("approved_action_result", approval_id=approval_id,
@@ -2755,14 +2897,94 @@ class GovernedAutonomousLoop(AutonomousLoop):
                                    "executed_result": tool_result, "continuation": None}
         if continue_episode:
             summary = json.dumps(tool_result, default=str)[:500]
-            self._resume_note = (
-                "A human approved and the system has now executed, exactly once, an action you requested "
-                f"earlier: {action.tool_name} with arguments {json.dumps(action.tool_args, default=str)[:300]}. "
-                f"Result: {summary}. Do not request that action again; continue toward the goal from here."
-            )
+            if action.tool_name == "delentia_plan":
+                self._resume_note = (
+                    "A human confirmed the plan you proposed and the system has now run its steps, in order, exactly once "
+                    f"(executed {tool_result.get('executed')} of {tool_result.get('planned')}; halted: {tool_result.get('halted') or 'no'}). "
+                    f"Result: {summary}. Do not request those actions again; report what happened and continue toward the goal only if something is left."
+                )
+            else:
+                self._resume_note = (
+                    "A human approved and the system has now executed, exactly once, an action you requested "
+                    f"earlier: {action.tool_name} with arguments {json.dumps(action.tool_args, default=str)[:300]}. "
+                    f"Result: {summary}. Do not request that action again; continue toward the goal from here."
+                )
             outcome["continuation"] = await self.run(action.goal, on_step=on_step)
         return outcome
 
+
+    async def _execute_approved(self, tool_name: str, tool_args: Dict[str, Any], goal: str) -> Tuple[float, str, Dict[str, Any]]:
+        """Runs ONE action a person approved. The refusals that no signature can lift (the floor, a denied path, a blocked pattern, a policy that cannot be loaded) are applied again here."""
+        A, a_reason = self._authorization_signal(tool_name, tool_args)
+        policy, policy_error = self._active_policy()
+        if policy_error:
+            A, a_reason = 0.0, f"the owner policy could not be loaded (fail closed): {policy_error}"
+        elif policy is not None and A > 0.0:
+            # A signature satisfies "needs a human"; it does not lift a blocked pattern, a denied path or a refused role.
+            from rct_control_plane import fdia_policy
+            again = fdia_policy.evaluate(policy, tool_name, tool_args, principal=self.namespace, approved=True, context={"goal": goal})
+            if again.A <= 0.0:
+                A, a_reason = 0.0, f"owner policy {again.rule_id}: {again.reason}"
+        if A <= 0.0:
+            return A, a_reason, {"fdia_blocked": True, "reason": a_reason}
+        if tool_name == "delentia_run_sandboxed_command":
+            # Called directly with approved=True: the MCP tool deliberately
+            # has no such flag, so the model can never approve itself.
+            from rct_control_plane.sandbox import run_sandboxed
+            sandboxed = run_sandboxed(
+                tool_args.get("command", ""),
+                timeout_seconds=float(tool_args.get("timeout_seconds", 10.0)),
+                approved=True,
+            )
+            return A, a_reason, {"stdout": sandboxed.stdout, "stderr": sandboxed.stderr,
+                                 "exit_code": sandboxed.exit_code, "timed_out": sandboxed.timed_out,
+                                 "blocked_reason": sandboxed.blocked_reason}
+        try:
+            raw = await self._mcp.call_tool(tool_name, tool_args)
+            return A, a_reason, json.loads(raw.content[0].text)
+        except Exception as exc:
+            return A, a_reason, {"error": str(exc)}
+
+    async def _execute_plan(self, action: Any) -> Tuple[float, str, Dict[str, Any]]:
+        """Round 101: runs the steps of a confirmed plan, in order, exactly as recorded. Each step is judged again by the rules no signature can lift; the first step that is refused, fails or
+        meets a pause ends the run (the steps after it do not run). A plan whose digest does not match its content runs nothing."""
+        from rct_control_plane import envelope as _envelope
+        from rct_control_plane import plan_approval
+        plan = (action.tool_args or {}).get("plan")
+        if not isinstance(plan, dict) or not plan_approval.plan_digest_ok(plan):
+            reason = "the plan does not match its own digest; nothing ran"
+            return 0.0, reason, {"plan_refused": reason, "executed": 0, "steps": []}
+        done: List[Dict[str, Any]] = []
+        halted: Optional[str] = None
+        for step in plan.get("steps") or []:
+            args = step.get("args") if isinstance(step.get("args"), dict) else {}
+            if args.get("_truncated"):
+                halted = f"step {step.get('n')}: its arguments were not stored whole"
+            elif _envelope.paused() is not None:
+                halted = f"step {step.get('n')}: the agent is paused"
+            if halted:
+                break
+            from rct_control_plane.notary import NotaryUnavailable
+            try:
+                # Like a single tool call: the record of what is about to run comes first, and a notary that cannot be reached stops the run here (nothing from this step on runs).
+                await self._notarise("plan_step", approval_id=getattr(action, "approval_id", ""), step=step.get("n"), tool_name=step.get("tool"), args_sha256=_sha(args))
+            except NotaryUnavailable as exc:
+                halted = f"step {step.get('n')}: the notary cannot be reached ({exc}); this step and the ones after it did not run"
+                break
+            A, a_reason, outcome = await self._execute_approved(str(step.get("tool") or ""), args, action.goal)
+            await self._notarise_best_effort("plan_step_result", approval_id=getattr(action, "approval_id", ""), step=step.get("n"), tool_name=step.get("tool"), result_sha256=_sha(outcome))
+            failed = A <= 0.0 or (isinstance(outcome, dict) and bool(outcome.get("error") or outcome.get("fdia_blocked") or outcome.get("blocked_reason")))
+            done.append({"n": step.get("n"), "tool": step.get("tool"), "kind": step.get("kind"), "ran": A > 0.0, "result": outcome})
+            if failed:
+                halted = f"step {step.get('n')}: {a_reason if A <= 0.0 else 'it failed'}"
+                break
+        summary = {"plan_digest": plan.get("digest"), "planned": len(plan.get("steps") or []), "executed": len([d for d in done if d["ran"]]), "halted": halted, "steps": done}
+        try:
+            self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{str(plan.get('digest'))[:16]}", action="plan_executed", actor=self.namespace,
+                                           changes={"plan_digest": plan.get("digest"), "planned": summary["planned"], "executed": summary["executed"], "halted": halted})
+        except Exception:
+            pass
+        return (0.0 if halted else 1.0), (halted or "every step ran as confirmed"), summary
 
     async def resume_interrupted(self, episode_id: str, allow_unknown: bool = False, on_step: Optional[Callable[[LoopStep], Any]] = None) -> Dict[str, Any]:
         """Round 84: continue an episode that was cut off (episode_journal.py). A NEW governed episode runs the original goal, told which steps already ran; nothing is replayed.

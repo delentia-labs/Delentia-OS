@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"   # the unit tests run TypeScript with node --experimental-strip-types (Node 22.6 or newer)
 
       - name: Build the SDK packages the GUI depends on
         run: |
@@ -42,12 +42,20 @@ jobs:
         working-directory: apps/gui
         run: npm run lint
 
+      - name: "Unit tests (pure helpers - signed decision, run state, navigation, reason text, WebAuthn encoding)"
+        working-directory: apps/gui
+        run: npm test
+
       - name: Build (static export)
         working-directory: apps/gui
         run: npm run build
         env:
           NEXT_PUBLIC_GATEWAY: http://localhost:8000
           NEXT_PUBLIC_API_KEY: ci-placeholder-key
+
+      - name: "Accessibility in a real browser (axe, every page, Thai and English, phone and desktop width)"
+        working-directory: apps/gui
+        run: npm run test:e2e
 
   rust:
     name: Rust (Tauri backend)

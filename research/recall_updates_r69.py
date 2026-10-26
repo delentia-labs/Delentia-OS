@@ -29,7 +29,7 @@ def main() -> int:
     h.verify_frozen()
     d = h.dataset()
     updates, background = d["h3"]["updates"], d["h1"]["distractors"]
-    texts, order = [], []
+    texts = []
     for u in updates:
         texts += [u["old"], u["new"]]
     texts += list(background)

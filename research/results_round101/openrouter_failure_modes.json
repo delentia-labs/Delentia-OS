@@ -1,0 +1,181 @@
+[
+  {
+    "scenario": "clean",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.26,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "a normal answer: the control"
+  },
+  {
+    "scenario": "fenced_json",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "the JSON arrives inside a markdown fence with a sentence before it"
+  },
+  {
+    "scenario": "think_tags",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "a reasoning model puts <think>...</think> before the JSON"
+  },
+  {
+    "scenario": "content_none",
+    "result": "raised",
+    "error": "LLMReplyError: the endpoint answered with an empty message",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "HTTP 200 and message.content is null (a tool-call-only or refused reply)"
+  },
+  {
+    "scenario": "content_parts",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "content is a list of parts instead of a string"
+  },
+  {
+    "scenario": "error_in_200",
+    "result": "raised",
+    "error": "LLMReplyError: the endpoint answered without a reply (502 Provider returned error)",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "HTTP 200 whose body is an error object and has no choices (an upstream provider failed)"
+  },
+  {
+    "scenario": "empty_choices",
+    "result": "raised",
+    "error": "LLMReplyError: the endpoint answered without a reply",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "HTTP 200 with an empty choices list"
+  },
+  {
+    "scenario": "no_usage",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=0, completion_tokens=0, cost_usd=None, cached_tokens=0)",
+    "why": "no usage block at all (cost unknown to the meter)"
+  },
+  {
+    "scenario": "usage_cost_string",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": false,
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=None, cached_tokens=0)",
+    "why": "usage.cost arrives as a string"
+  },
+  {
+    "scenario": "truncated_length",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": true,
+    "seconds": 0.01,
+    "requests": 2,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "finish_reason=length with the JSON cut off"
+  },
+  {
+    "scenario": "not_json",
+    "result": "decision",
+    "action": "finish",
+    "parse_error": true,
+    "seconds": 0.01,
+    "requests": 2,
+    "last_usage": "LLMUsage(prompt_tokens=100, completion_tokens=20, cost_usd=0.0002, cached_tokens=0)",
+    "why": "plain prose, no JSON at all"
+  },
+  {
+    "scenario": "http_402",
+    "result": "raised",
+    "error": "HTTPStatusError: Client error '402 Payment Required' for url 'http://127.0.0.1:60216/api/v1/chat/completions'\nFor more information check:",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "402: the account is out of credit"
+  },
+  {
+    "scenario": "http_429_then_ok",
+    "result": "raised",
+    "error": "HTTPStatusError: Client error '429 Too Many Requests' for url 'http://127.0.0.1:60220/api/v1/chat/completions'\nFor more information check",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "429 with Retry-After: 1 on the first call, fine on the second"
+  },
+  {
+    "scenario": "http_429_always",
+    "result": "raised",
+    "error": "HTTPStatusError: Client error '429 Too Many Requests' for url 'http://127.0.0.1:60224/api/v1/chat/completions'\nFor more information check",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "429 on every call"
+  },
+  {
+    "scenario": "http_503_then_ok",
+    "result": "raised",
+    "error": "HTTPStatusError: Server error '503 Service Unavailable' for url 'http://127.0.0.1:60228/api/v1/chat/completions'\nFor more information che",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "503 once, then fine"
+  },
+  {
+    "scenario": "http_500_always",
+    "result": "raised",
+    "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:60232/api/v1/chat/completions'\nFor more information c",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "500 on every call"
+  },
+  {
+    "scenario": "html_body",
+    "result": "raised",
+    "error": "LLMReplyError: the endpoint answered with a body that is not JSON (a gateway page?)",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "a gateway answers 200 with an HTML page"
+  },
+  {
+    "scenario": "http_400_other",
+    "result": "raised",
+    "error": "HTTPStatusError: Client error '400 Bad Request' for url 'http://127.0.0.1:60240/api/v1/chat/completions'\nFor more information check: http",
+    "seconds": 0.01,
+    "requests": 2,
+    "last_usage": "None",
+    "why": "400 for a reason other than response_format"
+  },
+  {
+    "scenario": "http_401",
+    "result": "raised",
+    "error": "HTTPStatusError: Client error '401 Unauthorized' for url 'http://127.0.0.1:60245/api/v1/chat/completions'\nFor more information check: htt",
+    "seconds": 0.0,
+    "requests": 1,
+    "last_usage": "None",
+    "why": "401: the key was revoked"
+  }
+]

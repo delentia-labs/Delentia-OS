@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PixelMark } from "./mark";
 import { Inspector } from "./Inspector";
 import { useLang } from "./i18n";
+import { useDeskMode } from "./mode";
+import { describeReason } from "@/lib/reason-text";
 import { useDeskData } from "./ui";
 import { desk, streamUrl, type SessionSummary } from "@/lib/desk-api";
 import { deriveRun, type Mood, type RunEntry } from "@/lib/run-state";
@@ -155,6 +157,8 @@ function StepView({ step }: { step: Step }) {
 }
 
 function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia; seconds: number }) {
+  const { lang } = useLang();
+  const why = describeReason(summary.stopped_reason, lang);
   const v = summary.verification;
   const parts = [
     summary.stopped_reason,
@@ -171,6 +175,9 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
   ].filter(Boolean);
   return (
     <div className="desk-mono text-[12px] text-dl-muted">
+      {summary.stopped_reason !== "llm_finished" ? (
+        <p className="mb-1 font-sans text-[13px] text-dl-text"><strong>{why.label}</strong>: {why.what} {why.next}</p>
+      ) : null}
       <p>── {parts.join(" · ")}</p>
       {summary.guard?.cord_verdict === "rejected" ? (
         <p className="text-dl-rust">GUARD stopped this request (CORD: {(summary.guard.cord_findings ?? []).map((f) => f.pattern_id).join(", ")})</p>
@@ -236,8 +243,50 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
   );
 }
 
+// What a person sees on the empty chat in Simple mode: what this is, what it will and will not do on its own, and four requests to start from (clicking one only fills the box).
+const STARTERS: { th: string; en: string }[] = [
+  { th: "อ่านไฟล์ README.md แล้วสรุปเป็นหนึ่งประโยค", en: "Read README.md and summarise it in one sentence" },
+  { th: "ค้นหาไฟล์ที่พูดถึงเรื่องการอนุมัติ แล้วบอกชื่อไฟล์", en: "Find the files that mention approvals and list their names" },
+  { th: "จำไว้ว่าฉันชอบให้ตอบสั้น ๆ และเป็นภาษาไทย", en: "Remember that I like short answers" },
+  { th: "ตรวจว่าบันทึกการทำงานของระบบยังสมบูรณ์ไหม", en: "Check that the record of what the system did is intact" },
+];
+
+function Welcome({ lang, model, tools, approvalsWaiting, onPick }: {
+  lang: "th" | "en"; model?: string; tools?: number; approvalsWaiting?: number; onPick: (text: string) => void;
+}) {
+  const th = lang === "th";
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-[17px] font-medium text-dl-text">{th ? "สั่งงานเอเจนต์ได้เลย" : "Ask the agent to do something"}</h2>
+        <p className="mt-1 text-[14px] leading-relaxed text-dl-muted">
+          {th
+            ? "พิมพ์สิ่งที่ต้องการเป็นภาษาธรรมดา ระบบจะวางแผน ลงมือทำ แล้วรายงานผล งานที่เสี่ยง เช่น ลบ ส่งออกนอก หรือแก้ไฟล์ จะหยุดถามคุณก่อนเสมอ ไม่มีอะไรเกิดขึ้นลับหลัง และทุกขั้นถูกบันทึกไว้"
+            : "Write what you want in plain words. The system makes a plan, does it, and reports back. Anything risky (deleting, sending out, changing files) stops and asks you first. Nothing happens behind your back, and every step is recorded."}
+        </p>
+      </div>
+      <div>
+        <p className="text-[12px] text-dl-muted">{th ? "ลองเริ่มจากตัวอย่าง (กดเพื่อใส่ในช่อง แล้วกด Enter เอง)" : "Start from an example (click to fill the box, then press Enter yourself)"}</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {STARTERS.map((s) => (
+            <button key={s.en} type="button" onClick={() => onPick(th ? s.th : s.en)}
+              className="desk-focus rounded border border-dl-rule px-3 py-1.5 text-left text-[13px] text-dl-text hover:border-dl-fern hover:bg-dl-pine/30">
+              {th ? s.th : s.en}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-[12px] text-dl-muted">
+        {th ? "โมเดลที่ใช้" : "Model"}: {model ?? "-"} · {th ? "งานที่รอให้คุณอนุมัติ" : "waiting for your approval"}: {approvalsWaiting ?? 0}
+        {tools ? ` · ${tools} ${th ? "เครื่องมือ" : "tools"}` : ""}
+      </p>
+    </div>
+  );
+}
+
 export function DeskChat() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const deskMode = useDeskMode();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
   // "Open in chat" from a question that was answered puts the original request in the box; the person still presses Enter (nothing is sent on its own).
@@ -377,12 +426,13 @@ export function DeskChat() {
   };
 
   const apiUp = !health.error && !!health.data;
+  const thai = lang === "th";
   const statusParts = [
-    running ? `working ${Math.round(elapsed)} s` : "ready",
-    modelLabel ?? "model -",
-    mode === "agent" ? `agent · ${budget} steps` : "chat · no tools",
+    running ? (thai ? `กำลังทำงาน ${Math.round(elapsed)} วินาที` : `working ${Math.round(elapsed)} s`) : (thai ? "พร้อม" : "ready"),
+    modelLabel ?? (thai ? "ยังไม่มีโมเดล" : "model -"),
+    mode === "agent" ? (thai ? `เอเจนต์ · ไม่เกิน ${budget} ขั้น` : `agent · ${budget} steps`) : (thai ? "แชต · ไม่ใช้เครื่องมือ" : "chat · no tools"),
     lastFdia && typeof lastFdia.F === "number" ? `F ${lastFdia.F.toFixed(2)}` : null,
-    `${overview.data?.sessions_total ?? "-"} sessions`,
+    thai ? `สั่งงานแล้ว ${overview.data?.sessions_total ?? "-"} ครั้ง` : `${overview.data?.sessions_total ?? "-"} sessions`,
   ].filter(Boolean);
 
   return (
@@ -396,28 +446,36 @@ export function DeskChat() {
           </h1>
           <button onClick={() => setPanelOpen((v) => !v)} aria-pressed={panelOpen} title="Ctrl/Cmd+J"
             className="desk-focus desk-mono ml-auto hidden rounded border border-dl-rule px-2 py-1 text-[12px] text-dl-muted hover:text-dl-text lg:block">
-            {panelOpen ? "▸ Inspector" : "◂ Inspector"}
+            {panelOpen ? "▸ " : "◂ "}{lang === "th" ? "ตัวตรวจ" : "Inspector"}
           </button>
           <label className="lg:hidden">
-            <span className="sr-only">Mode</span>
+            <span className="sr-only">{lang === "th" ? "โหมด" : "Mode"}</span>
             <select value={mode} onChange={(e) => setMode(e.target.value as "agent" | "standard")} disabled={running}
               className="desk-focus desk-mono rounded border border-dl-rule bg-dl-ink px-2 py-1 text-[12px] text-dl-text">
-              <option value="agent">Agent</option>
-              <option value="standard">Chat</option>
+              <option value="agent">{lang === "th" ? "เอเจนต์ (ลงมือจริง)" : "Agent"}</option>
+              <option value="standard">{lang === "th" ? "แชต (ไม่ใช้เครื่องมือ)" : "Chat"}</option>
             </select>
           </label>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6">
           <div className="mx-auto flex max-w-[980px] flex-col gap-4 rounded-md border border-dl-rule bg-[#0a110d] p-4">
-            <Banner version={health.data?.version} model={modelLabel} tools={toolInfo} skills={overview.data?.skills}
-              chain={chainLine} namespace={namespace} mood={run.mood} />
+            {entries.length === 0 && deskMode === "simple" ? (
+              <div className="grid gap-5 md:grid-cols-[auto_1fr]">
+                <div className="flex flex-col items-start gap-3"><PixelMark mood={run.mood} /></div>
+                <Welcome lang={lang as "th" | "en"} model={modelLabel} tools={toolInfo?.count} approvalsWaiting={overview.data?.approvals_pending}
+                  onPick={(text) => { setInput(text); document.getElementById("desk-input")?.focus(); }} />
+              </div>
+            ) : (
+              <Banner version={health.data?.version} model={modelLabel} tools={toolInfo} skills={overview.data?.skills}
+                chain={chainLine} namespace={namespace} mood={run.mood} />
+            )}
 
-            {entries.length === 0 ? (
+            {entries.length === 0 && deskMode === "advanced" ? (
               <p className="desk-mono text-[13px] text-dl-muted">
                 {mode === "agent"
-                  ? "Agent mode runs real tools. Every risky action passes the FDIA gate; file writes wait for your signed approval."
-                  : "Chat mode is a conversation with the local model. It runs no tools."}
+                  ? (lang === "th" ? "โหมดเอเจนต์ใช้เครื่องมือจริง ทุกการกระทำเสี่ยงผ่านด่าน FDIA และการเขียนไฟล์ต้องรอลายเซ็นของคุณ" : "Agent mode runs real tools. Every risky action passes the FDIA gate; file writes wait for your signed approval.")
+                  : (lang === "th" ? "โหมดแชตคือการคุยกับโมเดลในเครื่อง ไม่ใช้เครื่องมือ" : "Chat mode is a conversation with the local model. It runs no tools.")}
               </p>
             ) : null}
 
@@ -443,7 +501,7 @@ export function DeskChat() {
               <textarea id="desk-input" rows={1} value={input} disabled={running}
                 onChange={(ev) => setInput(ev.target.value)}
                 onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(); } }}
-                placeholder={running ? "" : "Type a goal and press Enter"}
+                placeholder={running ? "" : lang === "th" ? "พิมพ์งานที่ต้องการ แล้วกด Enter" : "Type what you want done and press Enter"}
                 className="desk-focus min-h-[1.75rem] flex-1 resize-none bg-transparent py-1 text-dl-text placeholder:text-dl-muted/60 focus:outline-none" />
               {running ? <span className="desk-cursor mt-1.5" aria-hidden /> : null}
             </form>
@@ -460,12 +518,12 @@ export function DeskChat() {
             </span>
           ))}
           {running ? (
-            <button onClick={stop} className="desk-focus ml-auto rounded border border-dl-rust/60 px-2 py-0.5 text-dl-rust">Stop</button>
+            <button onClick={stop} className="desk-focus ml-auto rounded border border-dl-rust/60 px-2 py-0.5 text-dl-rust">{thai ? "หยุด" : "Stop"}</button>
           ) : null}
         </footer>
       </section>
 
-      <aside className={`hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 ${panelOpen ? "lg:flex" : ""}`}>
+      <aside aria-label={lang === "th" ? "รายละเอียดการทำงานและเซสชัน" : "Run details and sessions"} className={`hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto border-l border-dl-rule bg-dl-panel p-4 ${panelOpen ? "lg:flex" : ""}`}>
         <div role="tablist" aria-label="Right panel" className="desk-mono flex overflow-hidden rounded border border-dl-rule text-[12px]">
           {(["run", "session"] as const).map((p) => (
             <button key={p} role="tab" aria-selected={panel === p} onClick={() => setPanel(p)}
@@ -488,8 +546,8 @@ export function DeskChat() {
           <span className="desk-mono text-[11px] text-dl-muted">MODE</span>
           <select value={mode} onChange={(e) => setMode(e.target.value as "agent" | "standard")} disabled={running}
             className="desk-focus desk-mono mt-1.5 w-full rounded border border-dl-rule bg-dl-ink px-2 py-1 text-[13px] text-dl-text">
-            <option value="agent">Agent (governed, real tools)</option>
-            <option value="standard">Chat (no tools)</option>
+            <option value="agent">{lang === "th" ? "เอเจนต์ (ควบคุมด้วยด่านความปลอดภัย ใช้เครื่องมือจริง)" : "Agent (governed, real tools)"}</option>
+            <option value="standard">{lang === "th" ? "แชต (ไม่ใช้เครื่องมือ)" : "Chat (no tools)"}</option>
           </select>
         </label>
 
@@ -516,13 +574,13 @@ export function DeskChat() {
                 <li key={s.id}>
                   <Link href={`/sessions?id=${s.id}`} className="desk-focus block rounded px-2 py-1.5 hover:bg-dl-pine/40">
                     <p className="truncate text-[12px] text-dl-text">{s.goal ?? s.namespace}</p>
-                    <p className="desk-mono text-[10px] text-dl-muted">{s.stopped_reason} · {s.route ?? "-"}</p>
+                    <p className="desk-mono text-[10px] text-dl-muted">{describeReason(s.stopped_reason, lang).label} · {s.route ?? "-"}</p>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-center text-[12px] text-dl-muted">{sessions.error ? "-" : "No sessions yet"}</p>
+            <p className="text-center text-[12px] text-dl-muted">{sessions.error ? "-" : thai ? "ยังไม่มีเซสชัน" : "No sessions yet"}</p>
           )}
         </div>
         </>}

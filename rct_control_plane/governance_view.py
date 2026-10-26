@@ -74,6 +74,8 @@ def _short(text: Any, n: int = 90) -> str:
 
 def fingerprint(public_key_hex: str) -> str:
     try:
+        if str(public_key_hex).startswith("passkey:"):          # a device (Round 101): named by the hash of its identifier
+            return hashlib.sha256(public_key_hex.encode("utf-8")).hexdigest()[:16]
         return hashlib.sha256(bytes.fromhex(public_key_hex)).hexdigest()[:16]
     except ValueError:
         return "invalid"
@@ -291,11 +293,21 @@ def approver_keys(conn: sqlite3.Connection) -> Dict[str, Any]:
             "roles_held": sorted({k["role"] for k in listed if k["role"]})}
 
 
+def _devices(persistence: Any) -> Dict[str, Any]:
+    """Approval devices by signer key (all states: a revoked device that signed something is still named in the ledger)."""
+    try:
+        from rct_control_plane import passkeys
+        return {c.signer_key: c for c in passkeys.PasskeyStore(persistence).list()}
+    except Exception:                                           # noqa: BLE001 - the ledger must open even when this table is missing
+        return {}
+
+
 def signature_ledger(persistence: Any, status: Optional[str] = None, limit: int = 50) -> Dict[str, Any]:
     """Every action that needed a human, with each signature on it re-verified now against the action's digest."""
     from rct_control_plane import approvals
     store = approvals.PendingActionStore(persistence)
     keys, roles, _problem = _approvers()
+    devices = _devices(persistence)
     out: List[Dict[str, Any]] = []
     with persistence._connect() as conn:
         for action in store.list(status=status, limit=limit):
@@ -306,12 +318,21 @@ def signature_ledger(persistence: Any, status: Optional[str] = None, limit: int 
                 decision = "REJECTED"
             signers = []
             for pk, sig, when in sigs:
+                device = devices.get(pk) if pk.startswith("passkey:") else None
                 try:
-                    ok = approvals.verify_signature(pk, approvals.approval_message(action.approval_id, action.action_sha256, decision), sig or "")
+                    if device is not None:
+                        # the signature itself is checked even if the device was revoked since (that is shown by key_still_trusted); a revoked device does not make an old record "forged"
+                        from rct_control_plane import passkeys
+                        blob = json.loads(bytes.fromhex(sig or "").decode("utf-8"))
+                        passkeys._verify_assertion(device, passkeys.approval_challenge(action.approval_id, action.action_sha256, decision), blob, check_counter=False)
+                        ok = True
+                    else:
+                        ok = approvals.verify_signature(pk, approvals.approval_message(action.approval_id, action.action_sha256, decision), sig or "")
                 except Exception:           # noqa: BLE001 - a broken row is shown as not verified
                     ok = False
-                signers.append({"name": keys.get(pk), "role": roles.get(pk), "key_fingerprint": fingerprint(pk), "at": when,
-                                "signature_prefix": (sig or "")[:16], "verifies_now": ok, "key_still_trusted": pk in keys, "decision": decision})
+                signers.append({"name": device.name if device else keys.get(pk), "role": device.role if device else roles.get(pk), "key_fingerprint": fingerprint(pk), "at": when,
+                                "signature_prefix": (sig or "")[:16], "verifies_now": ok, "scheme": "passkey" if device or pk.startswith("passkey:") else "ed25519",
+                                "key_still_trusted": (device.status == "ACTIVE") if device else (pk in keys), "decision": decision})
             needed_roles = list(action.approver_roles or [])
             covered = {s["role"] for s in signers if s["verifies_now"] and decision == "APPROVED"}
             out.append({"approval_id": action.approval_id, "tool_name": action.tool_name, "goal": _short(action.goal, 140), "namespace": action.namespace,

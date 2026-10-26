@@ -165,7 +165,7 @@ class Rig:
                 if event in ("sign1", "sign2", "sign_bad", "reject1"):
                     key = "1" if event in ("sign1", "reject1", "sign_bad") else "2"
                     decision = "REJECTED" if event == "reject1" else "APPROVED"
-                    current = self.store.get(action.approval_id)
+                    self.store.get(action.approval_id)
                     if event == "sign_bad":
                         signed = approvals.sign_decision(self.keys["x"][0], action.approval_id, action.action_sha256, decision)     # a key nobody trusts
                         pub, sig = signed["public_key_hex"], signed["signature_hex"]

@@ -37,6 +37,8 @@ delentia demo status                        # the audit chain: how many rows, ho
 
 Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT.md) (a real run).
 
+Prefer a web page to a terminal? In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). Releases after 2.3.0 carry the pages inside the package (2.3.0 does not have them); a source checkout builds them once with `python scripts/package_desk.py` (Node.js 20 or newer). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai).
+
 `--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It is there so that you can see the mechanism without installing a model; it says nothing about how good any model is, and every report says so on its first line. To use a real model: `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
 
 ## What is measured, and what is not

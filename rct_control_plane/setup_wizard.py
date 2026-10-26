@@ -95,7 +95,8 @@ def make_plan(facts: Dict[str, Any], *, provider: Optional[str] = None, model: O
         steps.append(Step("approver_key", "Who may sign risky actions", "do", "create an approver key ON THIS MACHINE (a single-person trial only: the agent runs as the same user and could read it)"))
     else:
         steps.append(Step("approver_key", "Who may sign risky actions", "needs-you", "create the approver key on ANOTHER device (`delentia approvals keygen`) and put its public key on this machine's approvers list; "
-                          "until then nothing that needs a signature can run (fail closed). For a one-person trial, re-run with --approver-key-here"))
+                          "until then nothing that needs a signature can run (fail closed). For a one-person trial, re-run with --approver-key-here. "
+                          "Or, with the Desk open, add this computer's Windows Hello as the first approver with a one-time code: `delentia approvals first-device-code`"))
     # 4 recall
     steps.append(Step("embedding", "Recall by meaning", "info", (f"`auto` will use {facts['embedding_auto_would_use']}" if facts["embedding_auto_would_use"]
                       else "no embedding model is installed, so memories are found by shared words (`ollama pull bge-m3` reads Thai; `ollama pull nomic-embed-text` is smaller and better on English)")))
@@ -147,7 +148,8 @@ def render(facts: Dict[str, Any], steps: List[Step]) -> str:
                       f"DELENTIA_AUDIT_SIGNING_KEY={facts['home']}/keys/audit-signer.pem"]
     left = [s for s in steps if s.action == "needs-you"]
     lines += ["", ("Still for you: " + ", ".join(s.title.lower() for s in left)) if left else "Nothing is waiting for you in this list.",
-              "Then: `delentia host-check --local` lists what else to look at; `delentia serve` starts it (or `delentia demo init` for a guided first task)."]
+              "Then: `delentia serve` starts the agent, and in a second window `delentia desk` opens it in your browser (or `delentia demo init` for a guided first task). "
+              "`delentia host-check --local` lists what else to look at."]
     return "\n".join(lines)
 
 

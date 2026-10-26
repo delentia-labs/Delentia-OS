@@ -347,6 +347,38 @@ def openrouter_base_url() -> str:
 _NO_JSON_MODE: set = set()
 
 
+class LLMReplyError(RuntimeError):
+    """Round 101: the endpoint answered, but not with a usable reply: HTTP 200 whose body is an error object, no choices, a null or empty message, a page of HTML. OpenRouter documents
+    that an upstream provider's failure can come back as a 200, and it is usually gone on the next call, so the loop treats this like a 503 (retries, then ends the episode with the reason)
+    instead of ending the episode on the first TypeError/KeyError."""
+
+    transient = True
+
+
+def reply_text(response: Any) -> Any:
+    """(data, text) from a chat-completions response. Raises LLMReplyError (transient) with a short reason that never contains the request or a key."""
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise LLMReplyError("the endpoint answered with a body that is not JSON (a gateway page?)") from exc
+    if not isinstance(data, dict):
+        raise LLMReplyError("the endpoint answered with JSON that is not an object")
+    error = data.get("error")
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        detail = ""
+        if isinstance(error, dict):
+            detail = f" ({str(error.get('code') or '')} {str(error.get('message') or '')[:120]})".replace("  ", " ")
+        raise LLMReplyError("the endpoint answered without a reply" + (detail if error else ""))
+    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, list):                          # some providers answer with a list of parts
+        content = "".join(str(part.get("text") or "") for part in content if isinstance(part, dict))
+    if not isinstance(content, str) or not content.strip():
+        raise LLMReplyError("the endpoint answered with an empty message")
+    return data, content
+
+
 class OpenRouterProvider(LLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-sonnet-5",
                  compat: Optional[CompatProfile] = None):
@@ -389,12 +421,14 @@ class OpenRouterProvider(LLMProvider):
         async with http_client.async_client(timeout=openrouter_timeout_s()) as client:
             response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
             if getattr(response, "status_code", 200) == 400 and "response_format" in payload:
-                # This model (or the upstream provider it was routed to) does not take JSON mode: remember that and ask again without it.
-                _NO_JSON_MODE.add(self.model)
+                # This model (or the upstream provider it was routed to) does not take JSON mode: ask again without it. It is remembered only if that second call works: a 400 for another
+                # reason (a prompt that is too long, say) must not switch JSON mode off for this model for the rest of the process.
                 payload.pop("response_format")
                 response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
+                if getattr(response, "status_code", 200) < 400:
+                    _NO_JSON_MODE.add(self.model)
             response.raise_for_status()
-            data = response.json()
+            data, text = reply_text(response)
         served = data.get("provider")
         self.last_served_by = served[:80] if isinstance(served, str) else None          # Round 100: which upstream provider answered (OpenRouter reports it), so a run can say what it measured
         usage = data.get("usage") or {}
@@ -402,7 +436,7 @@ class OpenRouterProvider(LLMProvider):
         details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
         self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0),
                                    float(cost) if isinstance(cost, (int, float)) else None, int((details or {}).get("cached_tokens") or 0))
-        return data["choices"][0]["message"]["content"]
+        return text
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
@@ -439,8 +473,12 @@ class OpenRouterProvider(LLMProvider):
                             break
                         if not data:
                             continue
-                        chunk = json.loads(data)
-                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        try:
+                            chunk = json.loads(data)
+                        except ValueError:
+                            continue                                  # a malformed event is skipped, not fatal (Round 101)
+                        choices = chunk.get("choices") if isinstance(chunk, dict) else None
+                        delta = (choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}).get("delta", {})
                         text = delta.get("content")
                         if text:
                             yield text
@@ -505,11 +543,11 @@ class OpenAICompatibleProvider(LLMProvider):
         async with http_client.async_client(timeout=self.timeout) as client:
             response = await self.post_json(client, f"{self.base_url}/chat/completions", payload)
             response.raise_for_status()
-            data = response.json()
+            data, text = reply_text(response)
         usage = data.get("usage") or {}
         # A self-hosted or national endpoint reports no price; unknown cost stays None.
         self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), None)
-        return data["choices"][0]["message"]["content"]
+        return text
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
