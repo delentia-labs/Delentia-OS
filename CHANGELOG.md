@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.0] - Unreleased
+## [2.4.0] - 2026-10-26
 
 The first release that can be installed by double-clicking (Windows) and used from a web page. Everything below is **not** in 2.3.1: the 2.3.1 that is on PyPI (published 2026-10-16) is the 2.3.0 runtime with OpenCV and faiss made optional, and nothing else (see the 2.3.1 section; an earlier version of this file listed the Desk and the passkeys under 2.3.1 by mistake). 270 commits separate the two.
 
