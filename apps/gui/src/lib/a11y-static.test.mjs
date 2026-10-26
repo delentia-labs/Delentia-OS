@@ -41,4 +41,34 @@ test("every <img> has an alt text", () => {
 test("the mascot's motion stops under prefers-reduced-motion", () => {
   assert.match(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /prefers-reduced-motion: reduce[\s\S]*animation: none/);
 });
+test("no box is sized w-screen: 100vw includes the scrollbar, so a page that scrolls would overflow sideways by the scrollbar's width (measured: 6 px on three pages at 375 px)", () => {
+  const bad = lines.filter((l) => /\bw-screen\b/.test(l.text) && !/h-screen w-screen" style=/.test(l.text));
+  assert.deepEqual(bad.map((l) => `${l.f}:${l.i}`), []);
+});
+test("the bar shown at phone width is a <header>, so it is not content outside every landmark (axe: region)", () => {
+  const shell = fs.readFileSync(path.join(root, "components/desk/Shell.tsx"), "utf8");
+  assert.match(shell, /<header className="[^"]*md:hidden"/);
+});
+test("the menu buttons are named in the page's language, not always in English", () => {
+  const bad = lines.filter((l) => /aria-label="(Open|Close) menu"/.test(l.text));
+  assert.deepEqual(bad.map((l) => `${l.f}:${l.i}`), []);
+});
+test("a section title inside the inspector is a second-level heading (the page title is the first; axe: heading-order)", () => {
+  const inspector = fs.readFileSync(path.join(root, "components/desk/Inspector.tsx"), "utf8");
+  assert.doesNotMatch(inspector, /<h3\b/);
+});
+test("the small controls of the side panel are at least 24 x 24 CSS px (WCAG 2.2 target size; measured before: 46 x 17 and 29 x 20)", () => {
+  const shell = fs.readFileSync(path.join(root, "components/desk/Shell.tsx"), "utf8");
+  assert.match(shell, /href="\/settings" className="[^"]*min-h-\[24px\]/);
+  assert.match(shell, /key=\{l\} onClick=\{\(\) => setLang\(l\)\}[^>]*min-h-\[24px\]/);
+});
+test("the scrolling page body is a named region (a screen reader hears the page title, not the first words of its text)", () => {
+  const ui = fs.readFileSync(path.join(root, "components/desk/ui.tsx"), "utf8");
+  assert.match(ui, /<div tabIndex=\{0\} role="region" aria-labelledby="desk-page-title"[^>]*overflow-y-auto/);
+  assert.match(ui, /<h1 id="desk-page-title"/);
+});
+test("the two groups of the side panel are named for what they are, in the page's language", () => {
+  const shell = fs.readFileSync(path.join(root, "components/desk/Shell.tsx"), "utf8");
+  assert.doesNotMatch(shell, /role="group" aria-label="(Menu|Language)"/);
+});
 console.log(`${n} tests passed`);

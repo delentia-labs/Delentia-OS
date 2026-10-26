@@ -60,7 +60,7 @@ export function PageHeader({ title, lead, actions }: { title: string; lead?: Rea
   return (
     <header className="flex flex-wrap items-end justify-between gap-4 border-b border-dl-rule px-6 py-5 md:px-8">
       <div className="min-w-0">
-        <h1 className="desk-mono text-xl font-semibold tracking-wide text-dl-text">{title}</h1>
+        <h1 id="desk-page-title" className="desk-mono text-xl font-semibold tracking-wide text-dl-text">{title}</h1>
         {lead ? <p className="mt-1 max-w-[70ch] text-sm leading-relaxed text-dl-muted">{lead}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -70,7 +70,8 @@ export function PageHeader({ title, lead, actions }: { title: string; lead?: Rea
 
 export function PageBody({ children }: { children: React.ReactNode }) {
   // tabIndex: a scrolling area a keyboard user can not reach can not be scrolled (WCAG 2.1.1; found by axe on every page whose body holds no button or link).
-  return <div tabIndex={0} className="desk-focus min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">{children}</div>;
+  // role + name: a screen reader that lands here (the Tab walk does) hears the page's title, not the first lines of its text (measured: the stop was announced as "สถิติการหยุดถาม 14 ...").
+  return <div tabIndex={0} role="region" aria-labelledby="desk-page-title" className="desk-focus min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">{children}</div>;
 }
 
 type Tone = "leaf" | "fern" | "amber" | "rust" | "muted";

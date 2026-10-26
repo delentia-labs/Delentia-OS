@@ -32,7 +32,7 @@ const GATE: Record<GateRow["verdict"], { glyph: string; tone: string; en: string
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-dl-rule pt-3">
-      <h3 className="desk-mono mb-2 text-[11px] uppercase tracking-[0.08em] text-dl-muted">{title}</h3>
+      <h2 className="desk-mono mb-2 text-[11px] uppercase tracking-[0.08em] text-dl-muted">{title}</h2>
       {children}
     </section>
   );
