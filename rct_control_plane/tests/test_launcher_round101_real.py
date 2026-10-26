@@ -121,3 +121,113 @@ def test_launch_starts_the_agent_and_the_desk_finds_them_again_and_stops_exactly
 def test_the_message_box_helper_never_raises_and_is_a_no_op_off_windows():
     assert launcher.message_box("t", "x") in (True, False) if os.name != "nt" else True
     assert launcher.has_console() is True
+
+
+# ---------------------------------------------------------------- Round 101D gap T5: two clicks at once
+
+_LOCK_WORKER = """
+import sys, time
+sys.path.insert(0, sys.argv[1])
+from pathlib import Path
+from rct_control_plane import launcher
+counter = Path(sys.argv[3])
+with launcher.launch_lock(Path(sys.argv[2]), 120):
+    value = int(counter.read_text() or "0")                 # read, wait, write: without a lock the processes overwrite each other
+    time.sleep(0.15)
+    counter.write_text(str(value + 1))
+"""
+
+
+def test_six_processes_that_take_the_launch_lock_at_once_never_overlap(tmp_path):
+    counter = tmp_path / "count.txt"
+    counter.write_text("0")
+    workers = [subprocess.Popen([sys.executable, "-c", _LOCK_WORKER, str(ROOT), str(tmp_path / "run"), str(counter)]) for _ in range(6)]
+    assert [w.wait(timeout=120) for w in workers] == [0] * 6
+    assert counter.read_text() == "6"                           # every increment survived: nobody was inside at the same time
+    assert not (tmp_path / "run" / "launch.lock").exists()
+
+
+def test_a_lock_left_by_a_process_that_died_is_taken_over_at_once(tmp_path):
+    gone = subprocess.Popen([sys.executable, "-c", "pass"])
+    gone.wait()
+    (tmp_path / "run").mkdir()
+    (tmp_path / "run" / "launch.lock").write_text(f"{gone.pid} {time.time()}", encoding="ascii")
+    started = time.monotonic()
+    with launcher.launch_lock(tmp_path / "run", 5):
+        assert (tmp_path / "run" / "launch.lock").exists()
+    assert time.monotonic() - started < 3 and not (tmp_path / "run" / "launch.lock").exists()
+
+
+def test_an_old_lock_and_an_unreadable_lock_do_not_block_forever(tmp_path):
+    (tmp_path / "run").mkdir()
+    lock = tmp_path / "run" / "launch.lock"
+    lock.write_text(f"{os.getpid()} {time.time() - 5000}", encoding="ascii")        # held by a live process, but far older than any start
+    with launcher.launch_lock(tmp_path / "run", 5, stale_after=600):
+        pass
+    lock.write_text("garbage")
+    os.utime(lock, (time.time() - 5000, time.time() - 5000))
+    with launcher.launch_lock(tmp_path / "run", 5, stale_after=600):
+        pass
+
+
+def test_a_live_lock_is_waited_for_and_then_said_in_words(tmp_path):
+    (tmp_path / "run").mkdir()
+    (tmp_path / "run" / "launch.lock").write_text(f"{os.getpid()} {time.time()}", encoding="ascii")        # this very process is alive and the lock is fresh
+    with pytest.raises(RuntimeError, match="another start of Delentia is still in progress"):
+        with launcher.launch_lock(tmp_path / "run", 0.6):
+            pytest.fail("must not get in")
+    assert (tmp_path / "run" / "launch.lock").exists()          # a refused waiter does not remove the holder's lock
+
+
+def test_two_threads_that_launch_at_once_start_the_agent_once(tmp_path, monkeypatch):
+    desk = tmp_path / "desk"
+    desk.mkdir()
+    (desk / "index.html").write_text("x", encoding="utf-8")
+    monkeypatch.setenv(desk_assets.ENV, str(desk))
+    up: set = set()
+    started: list = []
+
+    def fake_start(argv, log, pid):
+        time.sleep(0.4)                                         # a start takes a while; the other click arrives meanwhile
+        started.append("serve" if "serve" in argv else "desk")
+        up.add("serve" if "serve" in argv else "desk")
+        return 1
+
+    monkeypatch.setattr(launcher, "healthy", lambda url, timeout=2.0: ("8000" in url and "serve" in up) or ("3010" in url and "desk" in up))
+    monkeypatch.setattr(launcher, "start_detached", fake_start)
+    results: list = []
+    threads = [threading.Thread(target=lambda: results.append(launcher.launch(8000, 3010, wait_seconds=5, say=lambda *_: None))) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert sorted(started) == ["desk", "serve"]                 # one agent and one page, not two of each
+    assert sorted(len(r["started"]) for r in results) == [0, 2]
+    assert sorted(len(r["already"]) for r in results) == [0, 2]
+
+
+def test_two_real_launch_commands_at_once_start_one_agent(tmp_path):
+    desk = tmp_path / "desk"
+    desk.mkdir()
+    (desk / "index.html").write_text("<html><title>Delentia Desk</title></html>", encoding="utf-8")
+    api, page = _free_port(), _free_port()
+    env = {**os.environ, "PYTHONPATH": str(ROOT), "PYTHONUTF8": "1", "DELENTIA_HOME": str(tmp_path / "home"), "DELENTIA_DESK_DIR": str(desk), "DELENTIA_UPDATE_CHECK": "off"}
+    env.pop("DELENTIA_API_TOKEN", None)
+    outputs: list = []
+
+    def run(*args):
+        outputs.append(subprocess.run([sys.executable, "-m", "rct_control_plane.cli", "launch", "--no-browser", "--api-port", str(api), "--desk-port", str(page), *args],
+                                      env=env, capture_output=True, text=True, timeout=300, cwd=str(tmp_path)))
+
+    try:
+        threads = [threading.Thread(target=run) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=320)
+        assert [o.returncode for o in outputs] == [0, 0], [o.stderr + o.stdout for o in outputs]
+        assert sum("Starting the agent" in o.stdout for o in outputs) == 1          # exactly one of the two clicks started it
+        assert launcher.healthy(f"http://127.0.0.1:{api}/health") and launcher.healthy(f"http://127.0.0.1:{page}/")
+        assert not (tmp_path / "home" / "run" / "launch.lock").exists()
+    finally:
+        subprocess.run([sys.executable, "-m", "rct_control_plane.cli", "launch", "--stop"], env=env, capture_output=True, text=True, timeout=120, cwd=str(tmp_path))

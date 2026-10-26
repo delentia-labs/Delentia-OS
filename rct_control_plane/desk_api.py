@@ -1592,14 +1592,15 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         if code:
             # The very first device: the one-time code the person read on the terminal stands in for the signature that nobody can give yet (see first_device.py).
             try:
-                first.check(code)
+                code_id = first.check(code)
             except first_device.FirstDeviceError as exc:
                 raise _pk_fail(exc) from exc
         try:
             info = pk_store.finish_registration(str(payload.get("enrollment_id") or ""), payload.get("credential") or {})
             if code:
+                if not first.consume(code_id):                  # exactly one request can use the code up; a second one at the same moment is refused and its device stays pending
+                    raise HTTPException(status_code=400, detail="that code was just used by another request; ask for a new one if you still need it")
                 cred = pk_store.activate(info["credential_id"], "first-device-code")
-                first.consume()
                 _kernel()._persistence.append_audit(entity_type="passkey", entity_id=cred.credential_id[:24], action="first_device_activated", actor="desk", changes={"name": cred.name})
                 return {"first_device": True, "activated": True, "device": cred.summary()}
             action = passkeys.create_enrollment_action(store, info)

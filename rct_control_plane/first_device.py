@@ -111,20 +111,29 @@ class FirstDeviceStore:
         open_now = nobody_can_approve(self._persistence)
         return {"open": open_now, "code_waiting": bool(row) and open_now, "expires_at": float(row[3]) if row and open_now else None}
 
-    def check(self, code: str) -> None:
-        """Raises unless `code` is the live code and nobody can approve yet. A wrong code counts; the fifth wrong one cancels the code. A right code is NOT used up here (see consume)."""
+    def check(self, code: str) -> int:
+        """Returns the id of the live code if `code` is right and nobody can approve yet; raises otherwise. A try is RESERVED before the code is compared (one atomic update), so any number of
+        guesses at the same moment can never get more than MAX_ATTEMPTS comparisons. A right code is not used up here: `consume(id)` does that, once."""
         if not nobody_can_approve(self._persistence):
             raise FirstDeviceError("someone can already approve here: a first device needs no code any more, and a new device needs an approver's signature")
         row = self._active()
         if row is None:
             raise FirstDeviceError("there is no live code: run `delentia approvals first-device-code` on this computer and use the code within 10 minutes")
-        if not hmac.compare_digest(_hash(row[1], code), row[2]):
-            attempts = int(row[4]) + 1
-            with self._persistence._connect() as conn:
-                conn.execute("UPDATE first_device_codes SET attempts = ?, state = CASE WHEN ? >= ? THEN 'LOCKED' ELSE state END WHERE id = ?", (attempts, attempts, MAX_ATTEMPTS, row[0]))
-            left = max(0, MAX_ATTEMPTS - attempts)
-            raise FirstDeviceError("that code is not right" + (f" ({left} tries left)" if left else "; the code is cancelled, ask for a new one"))
-
-    def consume(self) -> None:
         with self._persistence._connect() as conn:
-            conn.execute("UPDATE first_device_codes SET state = 'USED' WHERE state = 'ACTIVE'")
+            reserved = conn.execute("UPDATE first_device_codes SET attempts = attempts + 1 WHERE id = ? AND state = 'ACTIVE' AND attempts < ?", (row[0], MAX_ATTEMPTS)).rowcount == 1
+            used = conn.execute("SELECT attempts FROM first_device_codes WHERE id = ?", (row[0],)).fetchone()
+            if not reserved or (used and int(used[0]) >= MAX_ATTEMPTS and not hmac.compare_digest(_hash(row[1], code), row[2])):
+                conn.execute("UPDATE first_device_codes SET state = 'LOCKED' WHERE id = ? AND state = 'ACTIVE'", (row[0],))
+        if not reserved:
+            raise FirstDeviceError("there is no live code: the tries are used up; run `delentia approvals first-device-code` for a new one")
+        if not hmac.compare_digest(_hash(row[1], code), row[2]):
+            left = max(0, MAX_ATTEMPTS - int(used[0] if used else MAX_ATTEMPTS))
+            raise FirstDeviceError("that code is not right" + (f" ({left} tries left)" if left else "; the code is cancelled, ask for a new one"))
+        return int(row[0])
+
+    def consume(self, code_id: Optional[int] = None) -> bool:
+        """Use the code up. True for exactly one caller, however many ask at once."""
+        with self._persistence._connect() as conn:
+            if code_id is None:
+                return conn.execute("UPDATE first_device_codes SET state = 'USED' WHERE state = 'ACTIVE'").rowcount >= 1
+            return conn.execute("UPDATE first_device_codes SET state = 'USED' WHERE id = ? AND state = 'ACTIVE'", (code_id,)).rowcount == 1

@@ -187,3 +187,56 @@ def test_the_command_prints_a_code_for_a_person_and_refuses_for_the_agent(tmp_pa
     agent = subprocess.run([sys.executable, "-m", "rct_control_plane.cli", "approvals", "first-device-code", "--db", str(tmp_path / "cli2.db")],
                            env={**env, first_device.AGENT_SHELL_ENV: "1"}, capture_output=True, text=True, timeout=180, cwd=str(tmp_path))
     assert agent.returncode == 1 and "person at the keyboard" in agent.stderr and "one-time code" not in agent.stdout
+
+
+# ------------------------------------------------------------------ races (Round 101D, gap T6)
+def _race(workers, fn):
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(fn, range(workers)))
+
+
+def test_twenty_guesses_at_the_same_moment_get_at_most_five_comparisons_and_the_right_code_is_then_dead(tmp_path):
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "race.db"))
+    issued = FirstDeviceStore(persistence).issue()
+
+    def guess(i):
+        try:
+            FirstDeviceStore(persistence).check(f"WRONG{i:03d}")
+            return "accepted"
+        except FirstDeviceError as exc:
+            return "wrong" if "not right" in str(exc) else "closed"
+
+    outcomes = _race(20, guess)
+    assert "accepted" not in outcomes and outcomes.count("wrong") <= first_device.MAX_ATTEMPTS, outcomes
+    with pytest.raises(FirstDeviceError):
+        FirstDeviceStore(persistence).check(issued["code"])                  # the tries are used up, so even the right code is refused now
+
+
+def test_two_requests_with_the_right_code_at_the_same_moment_make_exactly_one_first_device(tmp_path):
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "race2.db"))
+    issued = FirstDeviceStore(persistence).issue()
+
+    def use(i):
+        store = FirstDeviceStore(persistence)
+        try:
+            code_id = store.check(issued["display"])
+        except FirstDeviceError:
+            return False
+        return store.consume(code_id)
+
+    outcomes = _race(8, use)
+    assert outcomes.count(True) == 1, outcomes
+
+
+def test_over_http_two_devices_with_the_same_code_at_the_same_moment_leave_one_active_device(desk):
+    client, persistence = desk
+    issued = FirstDeviceStore(persistence).issue()
+    prepared = []
+    for name in ("first", "second"):
+        device = VirtualAuthenticator()
+        begun = client.post("/v1/desk/passkeys/register/begin", json={"name": name}).json()
+        prepared.append({"enrollment_id": begun["enrollment_id"], "credential": device.create(begun["options"]), "first_device_code": issued["display"]})
+    answers = _race(2, lambda i: client.post("/v1/desk/passkeys/register/finish", json=prepared[i]).status_code)
+    assert sorted(answers) == [200, 400], answers
+    assert [d["status"] for d in client.get("/v1/desk/passkeys").json()["devices"] if d["status"] == "ACTIVE"] == ["ACTIVE"]

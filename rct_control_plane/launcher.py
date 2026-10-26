@@ -9,6 +9,7 @@ Standard library only.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import signal
@@ -17,7 +18,7 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 API_PORT = 8000
 DESK_PORT = 3010
@@ -52,10 +53,14 @@ def pid_alive(pid: int) -> bool:
         return bool(ok) and code.value == 259                                               # STILL_ACTIVE
     try:
         os.kill(pid, 0)
-        return True
     except ProcessLookupError:
         return False
     except PermissionError:
+        return True
+    try:                                                                                   # a finished child nobody has collected yet is a zombie: it answers kill(0) but is not running
+        with open(f"/proc/{pid}/stat", "rb") as handle:
+            return handle.read().rsplit(b")", 1)[1].split()[0] != b"Z"
+    except (OSError, IndexError):
         return True
 
 
@@ -106,12 +111,63 @@ def wait_healthy(url: str, seconds: float) -> bool:
     return False
 
 
+def _lock_holder_gone(path: Path, stale_after: float) -> bool:
+    """True when the process that wrote the lock has ended, or the lock is older than any start should take."""
+    try:
+        pid_text, stamp = path.read_text(encoding="ascii").split()
+        return not pid_alive(int(pid_text)) or time.time() - float(stamp) > stale_after
+    except FileNotFoundError:
+        return False                                            # released while we looked: just try to take it
+    except (OSError, ValueError):
+        try:
+            return time.time() - path.stat().st_mtime > stale_after       # unreadable or half-written: only age decides
+        except OSError:
+            return False
+
+
+@contextlib.contextmanager
+def launch_lock(run: Path, wait_seconds: float, stale_after: float = 600.0) -> Iterator[None]:
+    """Only one start at a time. Two double clicks at once used to find nothing running and START TWO agents (the second one failed on the port or, worse, the first one's pid record was overwritten and
+    `--stop` could no longer end it). The second click now waits here, then finds what the first started. A lock left by a process that died, or older than `stale_after`, is taken over."""
+    run.mkdir(parents=True, exist_ok=True)
+    path = run / "launch.lock"
+    deadline = time.monotonic() + wait_seconds
+    while True:
+        try:
+            descriptor = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            if _lock_holder_gone(path, stale_after):
+                taken = path.with_name(f"launch.lock.stale-{os.getpid()}")
+                try:
+                    os.replace(str(path), str(taken))          # rename is atomic: of several takers only one moves the stale file
+                    taken.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                continue
+            if time.monotonic() > deadline:
+                raise RuntimeError(f"another start of Delentia is still in progress ({path}). Wait a minute, or delete that file if you are sure nothing is starting") from None
+            time.sleep(0.2)
+            continue
+        with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+            handle.write(f"{os.getpid()} {time.time()}")
+        break
+    try:
+        yield
+    finally:
+        path.unlink(missing_ok=True)
+
+
 def launch(api_port: int = API_PORT, desk_port: int = DESK_PORT, wait_seconds: float = 120.0, say=print) -> Dict[str, Any]:
     """Start (or find) the agent and the Desk. Returns {"url", "started": [...], "already": [...]}; raises RuntimeError with a sentence a person can act on."""
     from rct_control_plane import desk_assets
     if desk_assets.find_desk_root() is None:                    # say so BEFORE starting anything: a missing page is not worth a started agent
         raise RuntimeError(desk_assets.missing_message())
     base = home()
+    with launch_lock(base / "run", wait_seconds + 90.0):
+        return _launch_locked(base, api_port, desk_port, wait_seconds, say)
+
+
+def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: float, say) -> Dict[str, Any]:
     logs, run = base / "logs", base / "run"
     started: List[str] = []
     already: List[str] = []
