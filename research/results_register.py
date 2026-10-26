@@ -85,12 +85,15 @@ class RegisterError(ValueError):
     """An entry the register refuses, with the reason."""
 
 
+TEXT_SUFFIXES = (".md", ".json", ".jsonl", ".txt", ".py", ".csv", ".yml", ".yaml")
+
+
 def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
+    """SHA-256 of the file. A text file is hashed with its line endings made LF first: git on Windows may check the same file out with CRLF, and the same content must have the same hash on every machine."""
+    data = Path(path).read_bytes()
+    if Path(path).suffix.lower() in TEXT_SUFFIXES:
+        data = data.replace(bytes([13, 10]), bytes([10]))
+    return hashlib.sha256(data).hexdigest()
 
 
 def _git(*args: str, cwd: Optional[Path] = None) -> Optional[str]:

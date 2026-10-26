@@ -178,3 +178,19 @@ def test_the_cli_takes_metrics_and_a_comparison_from_json_files(world, tmp_path,
     assert code == 0
     last = rr.read_entries(world["register"])[-1]
     assert last["arm"] == "d0" and last["n"] == 4 and last["metrics"]["model_calls"] == 5 and last["compare"]["baseline_id"] == base["id"]
+
+
+def test_a_text_file_has_the_same_hash_with_lf_and_crlf_line_endings(tmp_path):
+    lf, crlf, binary = tmp_path / "a.md", tmp_path / "b.md", tmp_path / "c.bin"
+    lf.write_bytes(b"one\ntwo\n")
+    crlf.write_bytes(b"one\r\ntwo\r\n")
+    assert rr.sha256_file(lf) == rr.sha256_file(crlf)
+    binary.write_bytes(b"one\r\ntwo\r\n")
+    other = tmp_path / "d.bin"
+    other.write_bytes(b"one\ntwo\n")
+    assert rr.sha256_file(binary) != rr.sha256_file(other)                  # a binary file is hashed exactly as it is
+
+
+def test_the_committed_register_is_intact():
+    """The register in the repository must verify against the files it names; a changed result or rule file fails here."""
+    assert rr.verify() == []
