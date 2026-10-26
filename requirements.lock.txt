@@ -79,7 +79,7 @@ fastjsonschema==2.21.2
 fastparquet==2026.5.0
 feedfinder2==0.0.4
 feedparser==6.0.12
-filelock==3.25.2
+filelock==4.2.1
 fonttools==4.63.0
 frozenlist==1.8.0
 fsspec==2026.6.0
