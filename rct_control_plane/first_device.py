@@ -122,7 +122,9 @@ class FirstDeviceStore:
         with self._persistence._connect() as conn:
             reserved = conn.execute("UPDATE first_device_codes SET attempts = attempts + 1 WHERE id = ? AND state = 'ACTIVE' AND attempts < ?", (row[0], MAX_ATTEMPTS)).rowcount == 1
             used = conn.execute("SELECT attempts FROM first_device_codes WHERE id = ?", (row[0],)).fetchone()
-            if not reserved or (used and int(used[0]) >= MAX_ATTEMPTS and not hmac.compare_digest(_hash(row[1], code), row[2])):
+            # Only a WRONG guess that uses up the last try cancels the code. A request that could not get a try is just refused: cancelling the code for it would also cancel a request that already
+            # holds a try and has the right code (found by CI on Python 3.10: with more than five requests at once, nobody got in).
+            if reserved and used and int(used[0]) >= MAX_ATTEMPTS and not hmac.compare_digest(_hash(row[1], code), row[2]):
                 conn.execute("UPDATE first_device_codes SET state = 'LOCKED' WHERE id = ? AND state = 'ACTIVE'", (row[0],))
         if not reserved:
             raise FirstDeviceError("there is no live code: the tries are used up; run `delentia approvals first-device-code` for a new one")
