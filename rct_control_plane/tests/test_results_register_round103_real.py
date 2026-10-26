@@ -120,3 +120,61 @@ def test_a_register_line_that_is_not_json_is_reported_not_skipped(world):
     world["register"].write_text("{not json}\n", encoding="utf-8")
     with pytest.raises(rr.RegisterError, match="not JSON"):
         rr.read_entries(world["register"])
+
+
+# ------------------------------------------------------------------ speed, behaviour and A/B beside the verdict
+def test_an_entry_keeps_the_arm_the_seed_n_the_metrics_and_who_served_the_call(world):
+    e = _add(world, arm="d0", seed=7, n=40, metrics={"latency_p50_s": 2.5, "latency_p95_s": 7.1, "model_calls": 12, "prompt_tokens": 9000, "x_cache_hit_rate": 0.4}, served_by=["Anthropic", "Anthropic"])
+    assert e["arm"] == "d0" and e["seed"] == 7 and e["n"] == 40 and e["served_by"] == ["Anthropic"]
+    assert e["metrics"]["latency_p95_s"] == 7.1 and e["metrics"]["x_cache_hit_rate"] == 0.4
+    text = rr.render(world["register"])
+    assert "p50 2.5 s, p95 7.1 s, 12 calls" in text and "9000 / 0" in text and "/ d0" in text
+
+
+@pytest.mark.parametrize("bad", [{"latency": 1.0}, {"model_calls": float("nan")}, {"model_calls": "many"}, {"model_calls": True}, {"prompt_tokens": float("inf")}])
+def test_a_metric_outside_the_vocabulary_or_not_a_finite_number_is_refused(world, bad):
+    with pytest.raises(rr.RegisterError):
+        _add(world, metrics=bad)
+    assert rr.read_entries(world["register"]) == []
+
+
+def test_metrics_and_hard_failures_are_taken_from_a_runner_result_file_and_a_typed_value_wins(world):
+    world["result"].write_text(json.dumps({"hard_failures": ["a", "b"], "metrics": {"model_calls": 9, "latency_p50_s": 1.5, "served_by": ["x"], "cost_usd": 0.01}}), encoding="utf-8")
+    os.utime(world["result"], (world["criteria"].stat().st_atime, world["criteria"].stat().st_mtime + 3600))
+    e = _add(world, metrics={"model_calls": 10})
+    assert e["metrics"] == {"model_calls": 10, "latency_p50_s": 1.5, "hard_failures": 2}            # words outside the vocabulary in the FILE are ignored, in what a person types they are refused
+    assert _add(world, from_result=False)["metrics"] == {}
+
+
+def test_a_comparison_needs_an_existing_baseline_and_an_effect_inside_its_interval(world):
+    base = _add(world, arm="b0")
+    good = _add(world, arm="d0", compare={"baseline_id": base["id"], "effect": 0.12, "ci_low": 0.02, "ci_high": 0.21, "n": 40, "paired": True, "method": "paired bootstrap"})
+    assert good["compare"]["effect"] == 0.12 and "vs R0001: +0.12 [0.02, 0.21] n=40" in rr.render(world["register"])
+    for bad in ({"baseline_id": "R0099", "effect": 0.1}, {"baseline_id": base["id"], "effect": 0.5, "ci_low": 0.0, "ci_high": 0.2},
+                {"baseline_id": base["id"], "effect": 0.1, "ci_low": 0.0}, {"baseline_id": base["id"], "effect": 0.1, "paired": True}, {"baseline_id": base["id"], "effect": 0.1, "colour": "red"},
+                {"baseline_id": base["id"]}):
+        with pytest.raises(rr.RegisterError):
+            _add(world, compare=bad)
+    assert len(rr.read_entries(world["register"])) == 2
+
+
+def test_verify_finds_a_comparison_with_something_that_is_not_an_earlier_entry(world):
+    _add(world)
+    line = json.loads(world["register"].read_text(encoding="utf-8").splitlines()[0])
+    line["id"], line["compare"] = "R0002", {"baseline_id": "R0007", "effect": 0.1}
+    with open(world["register"], "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(line) + "\n")
+    assert any("not an earlier entry" in p for p in rr.verify(world["register"], root=world["repo"]))
+
+
+def test_the_cli_takes_metrics_and_a_comparison_from_json_files(world, tmp_path, monkeypatch):
+    monkeypatch.setattr(rr, "REGISTER", world["register"])
+    monkeypatch.setattr(rr, "RENDERED", tmp_path / "R.md")
+    base = _add(world, arm="b0")
+    (tmp_path / "m.json").write_text(json.dumps({"latency_p50_s": 3.0, "model_calls": 5}), encoding="utf-8")
+    (tmp_path / "c.json").write_text(json.dumps({"baseline_id": base["id"], "effect": -0.1}), encoding="utf-8")
+    code = rr.main(["add", "--stage", "P4", "--model", "m", "--provider", "ollama", "--criteria", str(world["criteria"]), "--result", str(world["result"]), "--verdict", "fail",
+                    "--arm", "d0", "--n", "4", "--metrics-json", str(tmp_path / "m.json"), "--compare-json", str(tmp_path / "c.json")])
+    assert code == 0
+    last = rr.read_entries(world["register"])[-1]
+    assert last["arm"] == "d0" and last["n"] == 4 and last["metrics"]["model_calls"] == 5 and last["compare"]["baseline_id"] == base["id"]
