@@ -123,3 +123,40 @@ def test_the_package_is_set_up_to_carry_the_pages_and_the_builds_put_them_there(
     for workflow in ("release.yml", "package-check.yml"):
         assert "scripts/package_desk.py" in (ROOT / ".github" / "workflows" / workflow).read_text(encoding="utf-8"), workflow
     assert (ROOT / "scripts" / "package_desk.py").is_file()
+
+
+# ---------------------------------------------------------------- Round 101E: the Desk build downloads fonts, a network blip must not fail a release
+def _package_desk():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("package_desk", ROOT / "scripts" / "package_desk.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_a_failed_desk_build_is_tried_again_and_a_later_success_counts():
+    import subprocess
+    module = _package_desk()
+    calls, waited = [], []
+
+    def flaky(cmd, cwd, env=None):
+        calls.append(1)
+        if len(calls) < 3:
+            raise subprocess.CalledProcessError(1, cmd)
+
+    module.run_retrying(["npm", "run", "build"], ROOT, None, attempts=3, delay=7, runner=flaky, sleep=waited.append)
+    assert len(calls) == 3 and waited == [7, 7]
+
+
+def test_a_build_that_keeps_failing_is_reported_after_the_last_attempt_not_hidden():
+    import subprocess
+    module = _package_desk()
+    calls = []
+
+    def always(cmd, cwd, env=None):
+        calls.append(1)
+        raise subprocess.CalledProcessError(1, cmd)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        module.run_retrying(["npm"], ROOT, None, attempts=3, delay=0, runner=always, sleep=lambda s: None)
+    assert len(calls) == 3

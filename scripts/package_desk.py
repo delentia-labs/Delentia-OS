@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,6 +24,20 @@ DEST = ROOT / "rct_control_plane" / "desk_ui"
 def run(cmd: list, cwd: Path, env: dict | None = None) -> None:
     print("+", " ".join(cmd), f"(in {cwd.relative_to(ROOT)})", flush=True)
     subprocess.run(cmd, cwd=str(cwd), check=True, env={**os.environ, **(env or {})})
+
+
+def run_retrying(cmd: list, cwd: Path, env: dict | None = None, attempts: int = 3, delay: float = 30.0, runner=run, sleep=time.sleep) -> None:
+    """The Desk build downloads its three Google fonts while it builds (next/font/google), and Turbopack reports a failed download as a plain "module not found". A network blip must not fail a release or a
+    package check, so the build is tried again; any other failure fails again the same way each time and is still reported after the last attempt."""
+    for attempt in range(1, attempts + 1):
+        try:
+            runner(cmd, cwd, env)
+            return
+        except subprocess.CalledProcessError:
+            if attempt == attempts:
+                raise
+            print(f"the build failed (attempt {attempt} of {attempts}); trying again in {int(delay)} seconds (it downloads fonts while it builds)", flush=True)
+            sleep(delay)
 
 
 def main() -> int:
@@ -40,7 +55,7 @@ def main() -> int:
             run([npm, "run", "build"], folder)
         run([npm, "ci"], GUI)
         # The page asks the API where it is at run time (the launcher hands it over); this is only the fallback when nothing does.
-        run([npm, "run", "build"], GUI, {"NEXT_PUBLIC_GATEWAY": "http://localhost:8000"})
+        run_retrying([npm, "run", "build"], GUI, {"NEXT_PUBLIC_GATEWAY": "http://localhost:8000"})
     out = GUI / "out"
     if not (out / "index.html").is_file():
         print(f"{out} has no index.html: the build did not produce the Desk.", file=sys.stderr)
