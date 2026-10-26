@@ -2,7 +2,15 @@
 
 The installer is called `Delentia-Setup-<version>.exe` and works like any other program: double-click, press Next until it finishes.
 
-**Status, plainly:** the scripts and files that build the installer are in `installer/windows/`, and everything that can be tested without the compiler has been tested, but **the real `.exe` has not been built yet**. It needs the installer compiler (Inno Setup) and a portable Python, which must be downloaded and are waiting for the owner's permission (see "Building the installer"). So this page has two parts: "For users" (once a file exists) and "For whoever builds it".
+## Download
+
+**[Download Delentia-Setup.exe](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe)** (always the newest release) · [all releases and versioned files](https://github.com/delentia-labs/Delentia-OS/releases) · [checksums](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt)
+
+* The installer is attached to the first release that carries it (**2.4.0**). Until that release exists the link answers *404*. Releases 2.3.1 and earlier have no installer and no Desk pages: use `pip install delentia-os`.
+* **Which version is it?** The installer has the number of the runtime inside it (`Delentia-Setup-2.4.0.exe` installs 2.4.0; `delentia --version` says 2.4.0). "*Public Technical Preview 0.1*" is the name of the milestone this release belongs to, not a version number: see [the versioning policy](../release/VERSIONING_POLICY.md).
+* **Check the file before you run it:** in PowerShell, `Get-FileHash .\Delentia-Setup.exe -Algorithm SHA256` must print the value next to `Delentia-Setup.exe` in `SHA256SUMS.txt`.
+
+**Status, plainly:** the installer has been built with the real compiler and installed, started, checked and uninstalled on the author's own machine (results at the end of this page), and CI repeats it on a clean GitHub Windows runner (first run 2026-10-26: installer exit 0, the post-install check 6 of 6, uninstall clean). It has **not** been tried on a computer that is not the author's, it is **not code-signed** (SmartScreen will warn) and it has not been tried offline. This page has two parts: "For users" and "For whoever builds it".
 
 ## For users
 
@@ -11,13 +19,14 @@ The installer is called `Delentia-Setup-<version>.exe` and works like any other 
 2. Windows may show "Windows protected your PC" (SmartScreen) because the file is not code-signed yet. Press **More info → Run anyway** if you downloaded it from the official release page and its SHA-256 matches the one announced.
 3. Press Next. You may choose a desktop icon.
 4. The installer copies files, then downloads and installs the parts Delentia needs. **It needs the internet and takes 3-10 minutes.** If it fails, a window says why and where the log (`install.log`) is; connect and run the installer again.
-5. Tick "Open Delentia now" on the last page.
+5. When it says it is finished, open the Start menu and start **Delentia**.
 
 ### Use
-Start menu → **Delentia** has three entries (green icon with eyes):
+Start menu → **Delentia** has four entries (green icon with eyes):
 * **Delentia** starts the program (no black window) and opens it in your browser at `http://localhost:3010`. The first start takes 20-60 seconds.
 * **Stop Delentia** stops what Delentia started (and only that).
 * **Update Delentia** checks for and installs a newer version (always asks first). See `UPDATES_EN.md`.
+* **Check Delentia installation** tests that the program starts and answers on this computer (it uses a throw-away data folder, never yours) and writes `check_install_report.txt`: send that file to whoever is helping you if something is wrong.
 
 First do `FIRST_APPROVER_EN.md` (set up your first approver), then choose a model on the **Models** page.
 
@@ -66,7 +75,7 @@ python installer/windows/build_installer.py --python-embed <python-3.12.10-embed
 
 ### Checked and not checked
 * Checked by automatic tests: the staged layout (portable Python configured so pip and packages are visible, the wheel, the install script), the Inno Setup script (per-user install, no start-up entry, no registry, three shortcuts, never touches `.delentia`, errors shown in a window), the logo files at the sizes the compiler requires, and the `launch` command (start, find again, stop only what it started), run for real with `pythonw` (no black window).
-* **Checked for real (2026-10-26, on the builder's machine, Windows 11, normal internet):** the real Inno Setup 6.7.3 compile succeeded in 6 seconds and made `Delentia-Setup-2.3.1.exe`, **15.3 MB**. A silent install (`/VERYSILENT`) took **87 seconds** and used 264 MB, created 4 Start-menu entries (Delentia / Stop / Update / Check Delentia installation) and **no start-up entry**. Start-up on custom ports (8123/3123, temporary data folder) took 10 seconds and the Desk page talked to the installed agent. Uninstalling removed the folder, the shortcuts and the registry key, and the real `~/.delentia` listing was identical before and after.
+* **Checked for real (2026-10-26, on the builder's machine, Windows 11, normal internet):** the real Inno Setup 6.7.3 compile succeeded in 6 seconds and made `Delentia-Setup-2.3.1.exe` (the number this branch carried then; the version audit of the same day showed that 2.3.1 is a different, already published release, so the same build is now `Delentia-Setup-2.4.0.exe`), **15.3 MB**. A silent install (`/VERYSILENT`) took **87 seconds** and used 264 MB, created 4 Start-menu entries (Delentia / Stop / Update / Check Delentia installation) and **no start-up entry**. Start-up on custom ports (8123/3123, temporary data folder) took 10 seconds and the Desk page talked to the installed agent. Uninstalling removed the folder, the shortcuts and the registry key, and the real `~/.delentia` listing was identical before and after.
 * **Defects the real install found (fixed, with tests):** (1) a dependency published as source only (`robotexclusionrulesparser`) can not be built in the portable Python because pip's isolated build does not work there ("Cannot import setuptools.build_meta"); setuptools and wheel are now installed first and the build uses `--no-build-isolation`; (2) an unwritable pip cache made the install fail, so all three pip steps use `--no-cache-dir`; (3) a silent install whose parts failed used to end with exit code 0 (success). It now ends with a non-zero code (measured with the real compiler: `RaiseException` and `Abort` leave 0, only `ExitProcess` at the very end changes it).
 * **Post-install check:** Start -> Delentia -> *Check Delentia installation* (or run `python\python.exe check_install.py` in the install folder). Six checks: the installer's files and log, the version, the Desk inside the package, the libraries, start on free ports then answer and stop, nothing left running. It uses a throw-away data folder, never touches your real data, and writes `check_install_report.txt` that can be sent to whoever helps.
 * **Not checked:** a clean machine that never had Python or Node (the builder's machine was used), SmartScreen/antivirus behaviour (the installer is not code-signed and will show a warning), the offline build (`--offline-wheels`), `delentia update --apply` against the real PyPI (waits for the 2.3.1 release), installing over an older version.

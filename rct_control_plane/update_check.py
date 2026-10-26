@@ -174,7 +174,7 @@ def check(force: bool = False, now: Optional[float] = None, fetch: Optional[Call
     if not latest:
         return {**base, "status": "unknown", "latest": None, "checked_at": checked_at, "error": error}
     available = is_newer(str(latest["version"]), current)
-    return {**base, "status": "available" if available else "current", "latest": latest, "checked_at": checked_at, "error": error}
+    return {**base, "status": "available" if available else "current", "ahead": is_newer(current, str(latest["version"])), "latest": latest, "checked_at": checked_at, "error": error}
 
 
 def banner_line(state: Dict[str, Any]) -> Optional[str]:
@@ -236,4 +236,4 @@ def cached_state() -> Dict[str, Any]:
     if not base["enabled"] or not isinstance(saved, dict) or not saved.get("latest") or saved.get("for_version") != current:
         return {**base, "status": "unknown", "latest": None, "checked_at": None}
     latest = saved["latest"]
-    return {**base, "status": "available" if is_newer(str(latest["version"]), current) else "current", "latest": latest, "checked_at": saved.get("checked_at")}
+    return {**base, "status": "available" if is_newer(str(latest["version"]), current) else "current", "ahead": is_newer(current, str(latest["version"])), "latest": latest, "checked_at": saved.get("checked_at")}

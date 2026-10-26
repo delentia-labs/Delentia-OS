@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "about": "Which numbers belong to which part of Delentia and where each one is kept. It records WHERE a number lives, not the number: the numbers are read from their sources by scripts/check_versions.py, so this file cannot disagree with them. Policy: docs/release/VERSIONING_POLICY.md.",
+  "milestone": {
+    "name": "Delentia OS — Public Technical Preview 0.1",
+    "id": "preview-0.1",
+    "status": "planned",
+    "release_level": "L1",
+    "meaning": "Anyone can install the runtime (pip or the Windows installer) and run it on their own machine with a model of their choice, supervised, and can check what it did. A milestone is a label for what has been opened to whom. It is not a package version and is never used as a git tag (release.yml and trigger-ecosystem-release.yml act on v* tags).",
+    "opens": ["pip install delentia-os", "the Windows installer (Delentia-Setup.exe)", "the scripted demos", "the Desk on the owner's own machine"],
+    "stays_closed": ["a shared or public host", "other people using a chat channel", "any claim that a capable model has driven the agent"],
+    "gates": {
+      "G-install": "met (CI: the built wheel installs and starts in an empty environment)",
+      "G-tests": "met (CI, three Python versions)",
+      "G-claims": "met (check_claim_sync; website claims lint)",
+      "G-mediation": "met (six doors, with a mutation test)",
+      "G-approval": "met (model check, crash windows with real processes)",
+      "G-operator": "met as text; no operator other than the author has used it",
+      "G-installer": "built, installed, checked and uninstalled on the author's machine and on a clean GitHub Windows runner (PR #195, 2026-10-26); someone else's computer, SmartScreen and an offline install are not yet checked",
+      "G-windows-hello": "not yet tested with a real device",
+      "G-model": "not met (no capable model has driven the loop; this belongs to L2, not to this milestone)"
+    }
+  },
+  "components": {
+    "python_runtime": {
+      "distribution": "PyPI: delentia-os",
+      "source": {"file": "pyproject.toml", "kind": "toml"},
+      "version_rule": "SemVer. Only ever goes up. One number: every release of the runtime, its CLI, its API and the Desk it carries has it."
+    },
+    "desk": {
+      "distribution": "inside the Python package (rct_control_plane/desk_ui)",
+      "version_rule": "the Desk is built into the wheel, so it has the runtime's number and no number of its own; apps/gui/package.json is a private build file, not a release number"
+    },
+    "windows_installer": {
+      "distribution": "GitHub Release asset: Delentia-Setup-<runtime version>.exe, and the fixed name Delentia-Setup.exe for the latest release",
+      "version_rule": "the runtime version it installs (the first three numbers); the fourth number of the Windows file version is the installer's own revision, 0 unless the installer was rebuilt without a runtime change",
+      "must_equal_runtime": true
+    },
+    "typescript_sdk": {
+      "distribution": "npm: @delentia/delentia-os",
+      "source": {"file": "sdk-typescript/package.json", "kind": "json", "key": "version"},
+      "version_rule": "SemVer of its own public API; moves only when the SDK changes; released by an sdk-v* tag"
+    },
+    "fdia_wasm": {
+      "distribution": "npm: @delentia/fdia-wasm",
+      "source": {"file": "sdk-typescript/packages/fdia-wasm/package.json", "kind": "json", "key": "version"},
+      "version_rule": "SemVer of its own; released by an sdk-v* tag"
+    },
+    "rct_edge": {
+      "distribution": "npm: @delentia/rct-edge",
+      "source": {"file": "sdk-typescript/packages/rct-edge/package.json", "kind": "json", "key": "version"},
+      "version_rule": "SemVer of its own; released by an sdk-v* tag"
+    },
+    "policy_gate_action": {
+      "distribution": "GitHub Action in this repository (github-action/)",
+      "source": {"file": "github-action/package.json", "kind": "json", "key": "version"},
+      "version_rule": "SemVer of its own"
+    },
+    "mcp_connector": {
+      "distribution": "npm: delentia-mcp (repository delentia-labs/delentia-mcp, not this one)",
+      "version_rule": "its own package.json in that repository; this repository does not read it. Its MCP protocol revision is declared there, not here"
+    },
+    "tauri_desktop_shell": {
+      "distribution": "not distributed",
+      "source": {"file": "apps/gui/src-tauri/tauri.conf.json", "kind": "json", "key": "version"},
+      "version_rule": "no release exists; its number is not a release number and makes no claim"
+    }
+  }
+}

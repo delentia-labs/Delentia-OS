@@ -202,7 +202,9 @@ def test_the_check_script_is_packed_and_has_a_shortcut(iss):
 def _fake_installed_app(tmp_path, log_tail="done"):
     app = tmp_path / "app"
     (app / "wheel").mkdir(parents=True)
-    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").write_bytes(b"x")
+    from rct_control_plane._version import PACKAGE_VERSION
+    # the version of the code under test, so the check "installed version = the installer's wheel" never depends on a hard-coded number
+    (app / "wheel" / f"delentia_os-{PACKAGE_VERSION}-py3-none-any.whl").write_bytes(b"x")
     (app / "install.log").write_text(f"preparing pip\ninstalling\n[date] {log_tail}\n", encoding="utf-8")
     return app
 
@@ -224,11 +226,60 @@ def test_the_check_script_says_fail_and_exits_non_zero_when_the_installers_log_d
 
 def test_the_check_script_starts_the_program_on_free_ports_answers_and_stops_everything(tmp_path):
     app = _fake_installed_app(tmp_path)
-    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").unlink()
-    from rct_control_plane._version import PACKAGE_VERSION
-    (app / "wheel" / f"delentia_os-{PACKAGE_VERSION}-py3-none-any.whl").write_bytes(b"x")
     result = _run_check(tmp_path, app)
     assert result.returncode == 0, result.stdout + result.stderr
     for number in "123456":
         assert f"PASS  {number}" in result.stdout, result.stdout
     assert "Result: ALL PASSED" in result.stdout and "ผลการตรวจ: ผ่านทั้งหมด" in (app / "check_install_report.txt").read_text(encoding="utf-8")
+
+
+# ------------------------------------------------------------------ Round 102: the installer has the runtime's number, plus a revision
+@pytest.mark.parametrize("version,revision,expected", [("2.4.0", 0, "2.4.0.0"), ("2.4.0", 3, "2.4.0.3"), ("2.4.0rc1", 0, "2.4.0.0"), ("10.20.30", 65535, "10.20.30.65535")])
+def test_the_windows_file_version_is_the_runtime_version_and_an_installer_revision(builder, version, revision, expected):
+    assert builder.file_version(version, revision) == expected
+
+
+@pytest.mark.parametrize("bad", ["garbage", "2.4", ""])
+def test_a_version_that_is_not_x_y_z_is_refused(builder, bad):
+    with pytest.raises(SystemExit):
+        builder.file_version(bad)
+
+
+def test_an_installer_revision_out_of_the_windows_range_is_refused(builder):
+    for bad in (-1, 65536):
+        with pytest.raises(SystemExit):
+            builder.file_version("2.4.0", bad)
+
+
+def test_the_script_gives_the_file_a_version_a_product_name_and_never_the_name_of_a_milestone(iss):
+    setup = iss.split("[Setup]", 1)[1].split("[Languages]", 1)[0]
+    for line in ("VersionInfoVersion={#FileVersion}", "VersionInfoProductVersion={#AppVersion}", "VersionInfoProductName=Delentia", "AppVersion={#AppVersion}"):
+        assert line in setup, line
+    assert "Preview" not in setup and "0.1" not in setup.replace("0.0.0", "")
+
+
+def test_a_build_also_makes_the_fixed_name_copy_and_the_checksums_the_readme_links_to(builder, tmp_path, monkeypatch):
+    import subprocess
+    get_pip = tmp_path / "get-pip.py"
+    get_pip.write_text("x", encoding="utf-8")
+    wheel = _wheel(tmp_path, "9.9.9")
+    out = tmp_path / "out"
+    fake_iscc = tmp_path / "ISCC.exe"
+    fake_iscc.write_bytes(b"x")
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        out.mkdir(exist_ok=True)
+        (out / "Delentia-Setup-9.9.9.exe").write_bytes(b"installer bytes")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+    monkeypatch.setattr(sys, "argv", ["build_installer.py", "--python-embed", str(_embed_zip(tmp_path)), "--get-pip", str(get_pip), "--wheel", str(wheel), "--iscc", str(fake_iscc),
+                                      "--stage-dir", str(tmp_path / "stage"), "--out", str(out), "--installer-revision", "2"])
+    assert builder.main() == 0
+    assert "/DFileVersion=9.9.9.2" in seen["cmd"] and "/DAppVersion=9.9.9" in seen["cmd"]
+    assert (out / "Delentia-Setup.exe").read_bytes() == b"installer bytes"
+    sums = (out / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines()
+    digest = hashlib.sha256(b"installer bytes").hexdigest()
+    assert sums == [f"{digest}  Delentia-Setup-9.9.9.exe", f"{digest}  Delentia-Setup.exe"]

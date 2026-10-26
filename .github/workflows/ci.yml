@@ -203,6 +203,10 @@ jobs:
         run: |
           ruff check core/ signedai/ rct_control_plane/ microservices/ --output-format=github
 
+      - name: Version numbers agree
+        # pyproject.toml, the fallback in _version.py, the changelog, the README and docs/release/compatibility.json (scripts/check_versions.py, docs/release/VERSIONING_POLICY.md)
+        run: python scripts/check_versions.py
+
       - name: Ruff format check
         # Report only — does not block CI (legacy codebase has many unformatted files)
         run: |

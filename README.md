@@ -3,8 +3,8 @@
 [![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
 [![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
 [![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
-[![Version](https://img.shields.io/badge/version-2.3.0-blue)](CHANGELOG.md)
 [![PyPI](https://img.shields.io/pypi/v/delentia-os?label=PyPI)](https://pypi.org/project/delentia-os/)
+[![Windows installer](https://img.shields.io/github/v/release/delentia-labs/Delentia-OS?label=Windows%20installer&logo=windows)](https://github.com/delentia-labs/Delentia-OS/releases/latest)
 [![npm](https://img.shields.io/badge/npm-%40delentia%2Fdelentia--os-cb3837?logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
@@ -24,6 +24,16 @@ Delentia OS is an agent runtime. An agent here is not a loop that does whatever 
 
 Why you might care: the model can be wrong, or be talked into something by text it reads on a web page. The runtime does not rely on the model behaving. Text from outside (a web page, a file in an untrusted folder, a message) marks the episode as *tainted*, and from then on anything that could send or change something needs a human signature, whatever the model says.
 
+## Install
+
+**Windows, no Python needed:** [**Download Delentia-Setup.exe**](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe), double-click it, then start **Delentia** from the Start menu. It installs for your account only (no administrator rights, nothing starts by itself, uninstalling never touches your data in `%USERPROFILE%\.delentia`) and needs the internet while installing (it fetches the Python packages). The program is **not code-signed yet**, so Windows SmartScreen will warn; check the download against the published checksum first ([`SHA256SUMS.txt`](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt)). Step by step, and what to do if something is wrong: [English](docs/demo/INSTALL_WINDOWS_EN.md) · [ภาษาไทย](docs/demo/INSTALL_WINDOWS_TH.md).
+
+> The installer is attached to the first release that carries it (**2.4.0**). Until that release exists the link above answers *404*: use `pip` below, or the [releases page](https://github.com/delentia-labs/Delentia-OS/releases). Release 2.3.1 and earlier have no installer and no Desk pages.
+
+**Any system with Python 3.10 or newer:** `pip install delentia-os` (then `delentia setup`, `delentia serve`, `delentia desk`). Optional extras: `delentia-os[video]` (OpenCV), `delentia-os[vector]` (faiss).
+
+**Versions:** the package follows [Semantic Versioning](https://semver.org/) and only goes up. "*Public Technical Preview 0.1*" is the name of a milestone (what is opened to whom, see [`docs/release/RELEASE_LEVELS.md`](docs/release/RELEASE_LEVELS.md)), not a version number: the installer, the Desk and the package all carry the same number, shown by `delentia --version`. How numbers are chosen and what each part of the ecosystem is called: [`docs/release/VERSIONING_POLICY.md`](docs/release/VERSIONING_POLICY.md).
+
 ## Try it in two minutes: no model, no API key
 
 ```bash
@@ -37,7 +47,7 @@ delentia demo status                        # the audit chain: how many rows, ho
 
 Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT.md) (a real run).
 
-Prefer a web page to a terminal? In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). Releases after 2.3.0 carry the pages inside the package (2.3.0 does not have them); a source checkout builds them once with `python scripts/package_desk.py` (Node.js 20 or newer). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai).
+Prefer a web page to a terminal? In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). Release 2.4.0 and later carry the pages inside the package (2.3.0 and 2.3.1 do not have them); a source checkout builds them once with `python scripts/package_desk.py` (Node.js 20 or newer). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai).
 
 `--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It is there so that you can see the mechanism without installing a model; it says nothing about how good any model is, and every report says so on its first line. To use a real model: `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
 
@@ -45,7 +55,7 @@ Prefer a web page to a terminal? In one window run `delentia serve`, in another 
 
 | Measured (and where) | Not yet |
 |---|---|
-| The public test suite: 7,820 passed, 43 skipped, 0 failed, 91.37% coverage ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/39122730330)) | A strong hosted model driving the runtime for days with real users |
+| The public test suite: 8,585 passed, 46 skipped, 0 failed, 91.79% coverage ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/40166394493)) | A strong hosted model driving the runtime for days with real users |
 | The gate, the approvals and the taint rule against a scripted attacker (a hijacked model: 18 harmful side effects without the gate, 0 with it) | Independent witnesses for the audit chain: until they exist, the log is hash-chained and signed, **not** tamper-proof |
 | Local small models: they complete some simple tasks, not reliably (3 of 5 and 0 of 5 on a probe) | A public hosted service. Nothing here runs anywhere except on your machine |
 
@@ -151,7 +161,7 @@ If you're arriving from social media or seeing RCT Platform for the first time a
 | Docker Compose + full infra | ❌ | ✅ |
 | Private test suite (count not published) | ❌ | ✅ private |
 
-> **Status: experimental.** The SDK surface is versioned and the full suite is **7,820 passed, 43 skipped, 0 failed** (CI, 2026-10-18, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm. A passing suite is evidence about the code, not about how well a model uses it: no capable hosted model has driven the agent yet (see the table above).  
+> **Status: experimental.** The SDK surface is versioned and the full suite is **8,585 passed, 46 skipped, 0 failed** (CI, 2026-10-25, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm. A passing suite is evidence about the code, not about how well a model uses it: no capable hosted model has driven the agent yet (see the table above).  
 > **Enterprise** (not in this repository) means a separate proprietary layer; this repository does not offer it as a running service — contact for licensing or a design-partner conversation.
 
 ---
@@ -212,7 +222,7 @@ For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│               DELENTIA OS SDK v2.3.0                     │
+│               DELENTIA OS SDK                            │
 │         Intent-Centric AI Operating System               │
 └──────────────────────────────────────────────────────────┘
 
@@ -774,7 +784,7 @@ Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.y
 
 > **Note:** This section records earlier milestones and is kept for history. Current versions are on [PyPI](https://pypi.org/project/delentia-os/) and in [CHANGELOG.md](CHANGELOG.md); the status of each capability is in [RELEASE_LEVELS](docs/release/RELEASE_LEVELS.md).
 
-✅ **7,820 Passed** (public CI, 2026-10-18; see TESTING_CANONICAL.md for the checkpoint and caveats) — Full delentia-os test suite  
+✅ **8,585 Passed** (public CI, 2026-10-25; see TESTING_CANONICAL.md for the checkpoint and caveats) — Full delentia-os test suite  
 ✅ **Plan Engine** — `plan_engine.py` real Terraform-style pre-execution simulation logic *(corrected 2026-09-24: not currently wired to any real CLI command - `plan` isn't in `delentia --help`'s command list; the module itself is real)*  
 ✅ **Policy Governance** — `approval_gateway.py` real omni-channel human approval logic, plus the real `delentia governance` command (shows governance violations from the audit log) *(corrected 2026-09-24: `rct policy` doesn't exist as a command; `approval_gateway.py` isn't currently wired to any CLI command either)*  
 ✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  

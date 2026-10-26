@@ -1,26 +1,26 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-10-24 05:28:03Z",
+  "generated_at": "2026-10-26 03:57:34Z",
   "offline": false,
   "git": {
-    "sha": "548002992f17ace247f06fef8e03bbf78d073082",
-    "short": "5480029",
-    "branch": "round98/ask-user-tool",
+    "sha": "7475caa4c865f8c913e685012228a9c84c1c0132",
+    "short": "7475caa",
+    "branch": "round102/versioning-and-installer-release",
     "dirty": true
   },
   "canonical_checkpoint": {
-    "passed": "7,820",
-    "skipped": "43",
-    "coverage": "91.37",
-    "ci_run": "39122730330",
-    "commit": "3dbed0d",
-    "last_updated": "2026-10-18"
+    "passed": "8,585",
+    "skipped": "46",
+    "coverage": "91.79",
+    "ci_run": "40166394493",
+    "commit": "eb96355",
+    "last_updated": "2026-10-25"
   },
   "latest_completed_ci_on_main": {
-    "run": "40059441296",
-    "conclusion": "failure",
-    "sha": "ac215fc",
-    "created_at": "2026-10-24T03:43:06Z"
+    "run": "40166394493",
+    "conclusion": "success",
+    "sha": "eb96355",
+    "created_at": "2026-10-25T05:40:36Z"
   },
   "tools": {
     "count": 50,
@@ -76,6 +76,12 @@
         "status_text": "met (text); no operator other than the author has used it; a backup taken before an erasure still holds that person's words (see section 8 of the contract and `delentia backup erasure-check`)"
       },
       {
+        "gate": "G-installer",
+        "needed_for": "L1 (a download is offered)",
+        "status_word": "partly / see text",
+        "status_text": "built, installed, checked and uninstalled on the author's own machine **and on a clean GitHub Windows runner** (workflow run 40266296420, 2026-10-26: installer exit 0, post-install check 6 of 6, uninstall left nothing); **a computer that is not the author's, a real SmartScreen check and an offline install are not done**; not code-signed"
+      },
+      {
         "gate": "G-model",
         "needed_for": "L2",
         "status_word": "not met",
@@ -120,7 +126,7 @@
     ],
     "met": 6,
     "not_met": 6,
-    "partly": 2
+    "partly": 3
   },
   "master_workflows": {
     "workflows": 12,
@@ -128,5 +134,5 @@
     "live_runner": 7,
     "live_result_with_a_capable_model": 0
   },
-  "canonical_matches_latest_ci": false
+  "canonical_matches_latest_ci": true
 }

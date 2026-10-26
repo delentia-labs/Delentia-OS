@@ -1577,7 +1577,7 @@ def version_command(output: str) -> None:
         "version": pkg_ver,
         "package": "delentia-os",
         "name": "delentia-os",
-        "description": "Constitutional AI Operating System SDK",
+        "description": "Governed, self-hosted AI agent runtime",
         "python": python_ver,
         "license": "Apache-2.0",
         "homepage": "https://delentia.com",
@@ -3504,7 +3504,10 @@ def update_command(apply_update: bool, yes: bool, turn_off: bool, turn_on: bool,
         click.echo(f"You have {state['current']}. The newest version could not be determined right now ({state.get('error') or 'no answer'}).")
         return
     if state["status"] == "current":
-        click.echo(f"You have {state['current']}, the newest version.")
+        if state.get("ahead") and state.get("latest"):
+            click.echo(f"You have {state['current']}. The newest released version is {state['latest']['version']}, so this is a build that has not been released yet (a test or pre-release build). Nothing to update.")
+        else:
+            click.echo(f"You have {state['current']}, the newest version.")
         return
     latest = state["latest"]
     click.echo(f"A newer version is available: {latest['version']} (you have {state['current']}).")
