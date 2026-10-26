@@ -68,6 +68,7 @@ function PolicyForm({ info, onSaved, lang }: { info: SovereigntyInfo; onSaved: (
 
 export default function SovereigntyPage() {
   const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const s = useDeskData(() => desk.sovereignty(), [], 20000);
   const d = s.data;
   return (
@@ -86,37 +87,37 @@ export default function SovereigntyPage() {
               </div>
             ) : null}
             <div className="grid gap-6 xl:grid-cols-2">
-              <Panel title="Policy" aside={d.enforced ? <Badge tone="leaf">enforced</Badge> : <Badge tone="amber">not set</Badge>}>
+              <Panel title={L("Policy", "นโยบาย")} aside={d.enforced ? <Badge tone="leaf">{L("enforced", "บังคับใช้")}</Badge> : <Badge tone="amber">{L("not set", "ยังไม่ได้ตั้ง")}</Badge>}>
                 {d.policy ? (
                   <>
-                    <Row label="Home region">{d.policy.home_region}</Row>
-                    <Row label="Regions a call may reach">{d.policy.allowed_regions.join(", ")}</Row>
-                    <Row label="Cross-border calls">{d.policy.allow_cross_border ? <Badge tone="amber">allowed</Badge> : <Badge tone="leaf">not allowed</Badge>}</Row>
-                    <Row label="Personal data in a cross-border call">{d.policy.pii_policy}</Row>
-                    <Row label="Legal basis recorded">{d.policy.legal_basis || "-"}</Row>
+                    <Row label={L("Home region", "ภูมิภาคหลัก")}>{d.policy.home_region}</Row>
+                    <Row label={L("Regions a call may reach", "ภูมิภาคที่การเรียกไปถึงได้")}>{d.policy.allowed_regions.join(", ")}</Row>
+                    <Row label={L("Cross-border calls", "การเรียกข้ามพรมแดน")}>{d.policy.allow_cross_border ? <Badge tone="amber">{L("allowed", "อนุญาต")}</Badge> : <Badge tone="leaf">{L("not allowed", "ไม่อนุญาต")}</Badge>}</Row>
+                    <Row label={L("Personal data in a cross-border call", "ข้อมูลส่วนบุคคลในการเรียกข้ามพรมแดน")}>{d.policy.pii_policy}</Row>
+                    <Row label={L("Legal basis recorded", "ฐานทางกฎหมายที่บันทึกไว้")}>{d.policy.legal_basis || "-"}</Row>
                   </>
-                ) : <p className="text-sm text-dl-muted">No policy: nothing stops a prompt from going wherever the selected model runs.</p>}
+                ) : <p className="text-sm text-dl-muted">{L("No policy: nothing stops a prompt from going wherever the selected model runs.", "ยังไม่มีนโยบาย: ไม่มีอะไรหยุดคำสั่งไม่ให้ไปถึงที่ที่โมเดลที่เลือกทำงานอยู่")}</p>}
                 <p className="desk-mono mt-3 text-[11px] text-dl-muted">{d.config_path}</p>
               </Panel>
-              <Panel title="Selected model" aside={d.would_be_allowed === null ? undefined : d.would_be_allowed ? <Badge tone="leaf">allowed</Badge> : <Badge tone="rust">would be blocked</Badge>}>
-                <Row label="Model">{d.model}</Row>
-                <Row label="Processes data">{d.hosting.kind} · {d.hosting.region}</Row>
-                <Row label="Operator">{d.hosting.operator || "-"}</Row>
+              <Panel title={L("Selected model", "โมเดลที่เลือก")} aside={d.would_be_allowed === null ? undefined : d.would_be_allowed ? <Badge tone="leaf">{L("allowed", "อนุญาต")}</Badge> : <Badge tone="rust">{L("would be blocked", "จะถูกบล็อก")}</Badge>}>
+                <Row label={L("Model", "โมเดล")}>{d.model}</Row>
+                <Row label={L("Processes data", "ประมวลผลข้อมูลที่")}>{d.hosting.kind} · {d.hosting.region}</Row>
+                <Row label={L("Operator", "ผู้ให้บริการ")}>{d.hosting.operator || "-"}</Row>
                 {d.reason ? <p className="mt-2 text-[13px] leading-relaxed text-dl-muted">{d.reason}</p> : null}
                 {d.hosting.note ? <p className="mt-1 text-[12px] text-dl-muted">{d.hosting.note}</p> : null}
                 <p className="mt-3 text-[12px] leading-relaxed text-dl-muted">
-                  Plug in your own AI: <Code>delentia model set &lt;model&gt; --provider openai-compat --base-url &lt;url&gt; --kind in_region --region TH</Code>
+                  {L("Plug in your own AI: ", "เสียบ AI ของตนเอง: ")}<Code>delentia model set &lt;model&gt; --provider openai-compat --base-url &lt;url&gt; --kind in_region --region TH</Code>
                 </p>
               </Panel>
             </div>
             <PolicyForm key={JSON.stringify(d.policy)} info={d} onSaved={s.reload} lang={lang} />
-            <Panel title="Decisions" aside={<span className="desk-mono text-[11px] text-dl-muted">allowed {d.counts.allow} · redacted {d.counts.redact} · blocked {d.counts.block}</span>}>
+            <Panel title={L("Decisions", "การตัดสิน")} aside={<span className="desk-mono text-[11px] text-dl-muted">{L("allowed", "อนุญาต")} {d.counts.allow} · {L("redacted", "ปกปิด")} {d.counts.redact} · {L("blocked", "บล็อก")} {d.counts.block}</span>}>
               {d.decisions.length ? (
                 <div tabIndex={0} className="overflow-x-auto">
                   <table className="desk-mono w-full text-left text-[12px]">
                     <thead className="text-dl-muted"><tr>
-                      <th className="py-1 pr-3 font-normal">when</th><th className="pr-3 font-normal">user</th><th className="pr-3 font-normal">decision</th>
-                      <th className="pr-3 font-normal">endpoint</th><th className="pr-3 font-normal">personal data</th><th className="font-normal">why</th>
+                      <th className="py-1 pr-3 font-normal">{L("when", "เมื่อ")}</th><th className="pr-3 font-normal">{L("user", "ผู้ใช้")}</th><th className="pr-3 font-normal">{L("decision", "การตัดสิน")}</th>
+                      <th className="pr-3 font-normal">{L("endpoint", "ปลายทาง")}</th><th className="pr-3 font-normal">{L("personal data", "ข้อมูลส่วนบุคคล")}</th><th className="font-normal">{L("why", "เหตุผล")}</th>
                     </tr></thead>
                     <tbody>
                       {d.decisions.map((x) => (
@@ -124,14 +125,14 @@ export default function SovereigntyPage() {
                           <td className="py-1.5 pr-3 text-dl-muted">{fmtTime(x.at)}</td><td className="pr-3">{x.namespace}</td>
                           <td className="pr-3"><Badge tone={TONE[x.action as keyof typeof TONE] ?? "muted"}>{x.action}</Badge></td>
                           <td className="pr-3">{x.hosting ? `${x.hosting.kind} · ${x.hosting.region}` : "-"}</td>
-                          <td className="pr-3">{x.pii && Object.keys(x.pii).length ? Object.entries(x.pii).map(([k, n]) => `${k}×${n}`).join(", ") : "none"}</td>
+                          <td className="pr-3">{x.pii && Object.keys(x.pii).length ? Object.entries(x.pii).map(([k, n]) => `${k}×${n}`).join(", ") : L("none", "ไม่มี")}</td>
                           <td className="max-w-[48ch] text-dl-muted">{x.reason}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="text-sm text-dl-muted">No model call has been checked yet. With a policy set, every call the agent makes is recorded here.</p>}
+              ) : <p className="text-sm text-dl-muted">{L("No model call has been checked yet. With a policy set, every call the agent makes is recorded here.", "ยังไม่มีการเรียกโมเดลที่ถูกตรวจ เมื่อตั้งนโยบายแล้ว ทุกการเรียกของเอเจนต์จะถูกบันทึกไว้ที่นี่")}</p>}
             </Panel>
           </div>
         ) : null}

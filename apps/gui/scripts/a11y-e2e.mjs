@@ -14,8 +14,20 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, all) => (
 const OUT = path.resolve(args.out || "out");
 const WIDTHS = (args.widths || "375,1280").split(",").map(Number);
 const LANGS = (args.langs || "th,en").split(",");
+const GATEWAY = args.gateway || "";                                 // an agent that is running: pages then show real data, not only their "cannot reach the agent" states
+const COVERAGE = "th-coverage" in args;                           // report (do not fail on) the English-only text of the Thai interface, page by page
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// visible text nodes with at least MIN_WORDS words of three or more English letters and no Thai letter; code, pre, kbd and hidden text are not counted
+const MIN_WORDS = Number(args["min-words"] || 2);
+const ENGLISH_ONLY = String.raw`(() => { const MIN_WORDS = ` + MIN_WORDS + String.raw`; const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) { const text = n.textContent.replace(/\s+/g, " ").trim(); if (!text) continue; const el = n.parentElement;
+    if (!el || el.closest("code, pre, kbd, script, style, noscript, [aria-hidden=true]")) continue;
+    const cs = getComputedStyle(el); if (cs.display === "none" || cs.visibility === "hidden") continue;
+    if (/[\u0E00-\u0E7F]/.test(text)) continue;
+    if (text.split(" ").filter((x) => /[A-Za-z]{3,}/.test(x)).length >= MIN_WORDS) out.push(text.slice(0, 220)); }
+  return out; })()`;
 
 function findBrowser() {
   const candidates = [
@@ -99,13 +111,14 @@ async function main() {
   const { child, cdp } = await launch(findBrowser(), profile);
   const routes = routesOf(OUT);
   const problems = [];
+  const coverage = [];
   let loads = 0;
   try {
     await cdp.send("Page.enable");
     let loaded = null;
     cdp.on((m) => { if (m.method === "Page.loadEventFired" && loaded) loaded(); });
     for (const lang of LANGS) {
-      const { identifier } = await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: `try { localStorage.setItem("delentia-desk-lang", "${lang}"); localStorage.setItem("delentia_desk_mode", "advanced"); } catch (e) {}` });
+      const { identifier } = await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: `try { localStorage.setItem("delentia-desk-lang", "${lang}"); localStorage.setItem("delentia_desk_mode", "advanced"); ${GATEWAY ? `localStorage.setItem("delentia_gateway", "${GATEWAY}");` : ""} } catch (e) {}` });
       for (const width of WIDTHS) {
         await cdp.send("Emulation.setDeviceMetricsOverride", { width, height: 800, deviceScaleFactor: 1, mobile: false });
         for (const route of routes) {
@@ -119,6 +132,10 @@ async function main() {
             expression: `axe.run(document, { runOnly: { type: "tag", values: ${JSON.stringify(TAGS)} } }).then((r) => ({ overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, lang: document.documentElement.lang, v: r.violations.map((x) => ({ id: x.id, impact: x.impact, n: x.nodes.length, sample: x.nodes[0].target.join(" ").slice(0, 90) })) }))`,
           });
           const r = result.result.value;
+          if (COVERAGE && lang === "th") {
+            const cov = await cdp.send("Runtime.evaluate", { returnByValue: true, expression: ENGLISH_ONLY });
+            coverage.push({ route, width, lines: cov.result.value || [] });
+          }
           loads++;
           if (!r) { problems.push(`${lang}/${width} ${route}: axe did not run (${JSON.stringify(result.exceptionDetails || {}).slice(0, 120)})`); continue; }
           if (r.overflow > 0) problems.push(`${lang}/${width} ${route}: scrolls sideways by ${r.overflow}px`);
@@ -133,6 +150,13 @@ async function main() {
     child.kill();
     server.close();
     try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* a browser still holds a file: the temp folder is left to the system */ }
+  }
+  if (COVERAGE) {
+    const rows = coverage.filter((c) => c.width === Math.max(...WIDTHS)).sort((a, b) => b.lines.length - a.lines.length);
+    console.log("English-only text in the Thai interface (visible text with two or more English words and no Thai letter), per page:");
+    for (const c of rows) console.log(`  ${String(c.lines.length).padStart(3)}  ${c.route}` + (c.lines.length ? `   e.g. ${JSON.stringify(c.lines.slice(0, 2))}` : ""));
+    if (args["th-coverage-json"]) fs.writeFileSync(args["th-coverage-json"], JSON.stringify(Object.fromEntries(rows.map((c) => [c.route, c.lines])), null, 1));
+    console.log(`  total ${rows.reduce((n, c) => n + c.lines.length, 0)} in ${rows.length} pages`);
   }
   console.log(`${loads} page loads (${routes.length} pages x ${LANGS.join("/")} x ${WIDTHS.join("/")} px)`);
   if (problems.length) {

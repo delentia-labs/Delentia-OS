@@ -11,6 +11,7 @@ const DEFAULT_GATEWAY = "http://localhost:8000";
 
 export default function SettingsPage() {
   const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const [gateway, setGateway] = useState(DEFAULT_GATEWAY);
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
@@ -65,7 +66,7 @@ export default function SettingsPage() {
                 className="desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text" />
             </label>
             <label className="mt-4 block">
-              <span className="text-[13px] text-dl-muted">API token (<Code>DELENTIA_API_TOKEN</Code>)</span>
+              <span className="text-[13px] text-dl-muted">{L("API token (", "โทเคน API (")}<Code>DELENTIA_API_TOKEN</Code>)</span>
               <div className="mt-1 flex gap-2">
                 <input value={token} onChange={(e) => setToken(e.target.value)} type={show ? "text" : "password"} autoComplete="off" spellCheck={false}
                   placeholder={lang === "th" ? "ใช้เมื่อ API ต้องการ token" : "only needed when the API requires a token"}
@@ -83,10 +84,10 @@ export default function SettingsPage() {
 
           <Panel title={lang === "th" ? "อยู่ที่อื่น" : "Configured elsewhere"}>
             <ul className="space-y-2 text-sm leading-relaxed text-dl-muted">
-              <li>Model and provider: the <Code>Models</Code> page, or <Code>delentia model set</Code>.</li>
-              <li>Who may approve actions: devices above, or an approver key (<Code>delentia approvals keygen</Code>, <Code>DELENTIA_APPROVER_PUBKEYS</Code>).</li>
-              <li>Chat channels and their allowlists: the <Code>Channels</Code> page shows them; they are set by environment variables.</li>
-              <li>Pipeline and warm recall: <Code>DELENTIA_ALGORITHM_PIPELINE</Code>, <Code>DELENTIA_WARM_RECALL</Code> (on under <Code>delentia serve</Code>).</li>
+              <li>{L("Model and provider: the ", "โมเดลและผู้ให้บริการ: หน้า ")}<Code>Models</Code>{L(" page, or ", " หรือคำสั่ง ")}<Code>delentia model set</Code>.</li>
+              <li>{L("Who may approve actions: devices above, or an approver key (", "ใครอนุมัติการกระทำได้: อุปกรณ์ด้านบน หรือกุญแจผู้อนุมัติ (")}<Code>delentia approvals keygen</Code>, <Code>DELENTIA_APPROVER_PUBKEYS</Code>).</li>
+              <li>{L("Chat channels and their allowlists: the ", "ช่องแชทและรายชื่อที่อนุญาต: หน้า ")}<Code>Channels</Code>{L(" page shows them; they are set by environment variables.", " แสดงให้ดู ตั้งค่าด้วยตัวแปรสภาพแวดล้อม")}</li>
+              <li>{L("Pipeline and warm recall: ", "ไปป์ไลน์และการเรียกคืนแบบอุ่น: ")}<Code>DELENTIA_ALGORITHM_PIPELINE</Code>, <Code>DELENTIA_WARM_RECALL</Code> {L("(on under ", "(เปิดอยู่เมื่อใช้ ")}<Code>delentia serve</Code>).</li>
             </ul>
           </Panel>
         </div>

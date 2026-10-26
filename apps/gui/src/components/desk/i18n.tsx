@@ -51,7 +51,7 @@ const DICT = {
   running: { en: "running", th: "ทำงาน" },
   stopped: { en: "stopped", th: "หยุด" },
   pending: { en: "pending", th: "รออนุมัติ" },
-  chain: { en: "Audit chain", th: "Audit chain" },
+  chain: { en: "Audit chain", th: "โซ่บันทึกตรวจสอบ" },
   verified: { en: "verified", th: "ตรวจผ่าน" },
   broken: { en: "BROKEN", th: "เสียหาย" },
   not_checked: { en: "not checked yet", th: "ยังไม่ได้ตรวจ" },

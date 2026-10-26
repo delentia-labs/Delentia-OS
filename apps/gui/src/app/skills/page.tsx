@@ -16,6 +16,8 @@ function stepChain(solution: unknown): string | null {
 
 
 function ImportPanel({ onDone }: { onDone: () => void }) {
+  const { lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const [text, setText] = useState("");
   const [source, setSource] = useState("");
   const [preview, setPreview] = useState<{ name: string; description: string; instructions: string; screen_findings: string[]; source: string } | null>(null);
@@ -50,22 +52,22 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <Panel title="Import a skill (SKILL.md)" className="mb-6">
+    <Panel title={L("Import a skill (SKILL.md)", "นำเข้าสกิล (SKILL.md)")} className="mb-6">
       <p className="mb-3 text-[13px] leading-relaxed text-dl-muted">
-        Skills in the open SKILL.md format (the one Hermes and other agents share). The model will read the text as guidance, so you read it first: the injection screen catches only some
-        phrasings and is not the control, you are. The agent cannot import skills itself. Every tool a skill mentions still passes the same gates.
+        {L("Skills in the open SKILL.md format (the one Hermes and other agents share). The model will read the text as guidance, so you read it first: the injection screen catches only some phrasings and is not the control, you are. The agent cannot import skills itself. Every tool a skill mentions still passes the same gates.",
+           "สกิลในรูปแบบเปิด SKILL.md (รูปแบบที่ Hermes และเอเจนต์อื่นใช้ร่วมกัน) โมเดลจะอ่านข้อความนี้เป็นแนวทาง คุณจึงต้องอ่านก่อน: ตัวคัดกรองการแทรกคำสั่งจับได้เพียงบางสำนวนและไม่ใช่การควบคุมหลัก คุณต่างหากคือการควบคุม เอเจนต์นำเข้าสกิลเองไม่ได้ และเครื่องมือทุกตัวที่สกิลกล่าวถึงยังผ่านประตูตรวจชุดเดิม")}
       </p>
       <textarea value={text} onChange={(e) => { setText(e.target.value); setPreview(null); }} rows={7} maxLength={40000} placeholder={"---\nname: weekly-report\ndescription: Build the weekly status report\n---\n# Steps ..."}
         className="desk-focus desk-mono w-full rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-text placeholder:text-dl-muted/50" />
-      <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="where it came from (a URL or a name)" maxLength={200}
+      <input value={source} onChange={(e) => setSource(e.target.value)} placeholder={L("where it came from (a URL or a name)", "มาจากที่ไหน (ที่อยู่เว็บหรือชื่อ)")} maxLength={200}
         className="desk-focus desk-mono mt-2 w-full rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-[12px] text-dl-text" />
-      <div className="mt-3"><Button onClick={show} disabled={busy || !text.trim()}>Show what would be imported</Button></div>
+      <div className="mt-3"><Button onClick={show} disabled={busy || !text.trim()}>{L("Show what would be imported", "แสดงสิ่งที่จะนำเข้า")}</Button></div>
       {preview ? (
         <div className="mt-4 space-y-2 rounded border border-dl-amber/60 p-3">
           <p className="text-sm text-dl-text">{preview.name}: {preview.description}</p>
           <pre tabIndex={0} className="desk-mono max-h-64 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">{preview.instructions}</pre>
-          {preview.screen_findings.length ? <p className="text-[13px] text-dl-rust">The injection screen found {preview.screen_findings.join(", ")}: the import will be refused.</p> : <p className="text-[12px] text-dl-muted">The injection screen found nothing (which does not mean there is nothing).</p>}
-          <Button tone="amber" onClick={confirm} disabled={busy}>I have read it and trust it: import</Button>
+          {preview.screen_findings.length ? <p className="text-[13px] text-dl-rust">{L("The injection screen found", "ตัวคัดกรองการแทรกคำสั่งพบ")} {preview.screen_findings.join(", ")}{L(": the import will be refused.", ": จะปฏิเสธการนำเข้า")}</p> : <p className="text-[12px] text-dl-muted">{L("The injection screen found nothing (which does not mean there is nothing).", "ตัวคัดกรองการแทรกคำสั่งไม่พบอะไร (ซึ่งไม่ได้แปลว่าไม่มี)")}</p>}
+          <Button tone="amber" onClick={confirm} disabled={busy}>{L("I have read it and trust it: import", "ฉันอ่านแล้วและเชื่อถือ: นำเข้า")}</Button>
         </div>
       ) : null}
       {message ? <p role="status" className={`mt-3 text-[13px] ${message.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
@@ -75,6 +77,7 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
 
 export default function SkillsPage() {
   const { t, lang } = useLang();
+  const L = (en: string, thai: string) => (lang === "th" ? thai : en);
   const skills = useDeskData(() => desk.skills(), []);
   return (
     <>
@@ -86,12 +89,12 @@ export default function SkillsPage() {
         <ImportPanel onDone={skills.reload} />
         {skills.error ? <ErrorNote error={skills.error} onRetry={skills.reload} /> : null}
         {skills.data && !skills.data.skills.length ? (
-          <Empty title="No skills learned yet">A skill is kept when a verified episode shows real growth. Run the same kind of goal a few times in Chat and check Experiments.</Empty>
+          <Empty title={L("No skills learned yet", "ยังไม่มีสกิลที่เรียนรู้")}>{L("A skill is kept when a verified episode shows real growth. Run the same kind of goal a few times in Chat and check Experiments.", "สกิลจะถูกเก็บเมื่อ episode ที่ตรวจผ่านแสดงการเติบโตจริง ลองสั่งเป้าหมายแบบเดียวกันหลายครั้งในแชท แล้วดูหน้าการทดลอง")}</Empty>
         ) : null}
         <div className="grid gap-4 xl:grid-cols-2">
           {skills.data?.skills.map((s) => (
             <Panel key={s.id} title={s.problem_statement}
-              aside={s.archived ? <Badge tone="rust">archived</Badge> : s.governance_violation ? <Badge tone="rust">violation</Badge> : s.bundled ? <Badge tone="leaf">bundled starter</Badge> : s.imported ? <Badge tone="amber">imported</Badge> : <Badge tone="leaf">growth {fmtNum(s.growth_ratio)}</Badge>}>
+              aside={s.archived ? <Badge tone="rust">{L("archived", "เก็บเข้าคลัง")}</Badge> : s.governance_violation ? <Badge tone="rust">{L("violation", "ผิดกฎ")}</Badge> : s.bundled ? <Badge tone="leaf">{L("bundled starter", "สกิลเริ่มต้นที่แถมมา")}</Badge> : s.imported ? <Badge tone="amber">{L("imported", "นำเข้า")}</Badge> : <Badge tone="leaf">{L("growth", "การเติบโต")} {fmtNum(s.growth_ratio)}</Badge>}>
               {stepChain(s.solution) ? <p className="desk-mono mb-2 text-[12px] text-dl-text">{stepChain(s.solution)}</p> : null}
               <pre tabIndex={0} className="desk-mono max-h-40 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">
                 {typeof s.solution === "string" ? s.solution : JSON.stringify(s.solution, null, 2)}
