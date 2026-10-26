@@ -202,7 +202,9 @@ def test_the_check_script_is_packed_and_has_a_shortcut(iss):
 def _fake_installed_app(tmp_path, log_tail="done"):
     app = tmp_path / "app"
     (app / "wheel").mkdir(parents=True)
-    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").write_bytes(b"x")
+    from rct_control_plane._version import PACKAGE_VERSION
+    # the version of the code under test, so the check "installed version = the installer's wheel" never depends on a hard-coded number
+    (app / "wheel" / f"delentia_os-{PACKAGE_VERSION}-py3-none-any.whl").write_bytes(b"x")
     (app / "install.log").write_text(f"preparing pip\ninstalling\n[date] {log_tail}\n", encoding="utf-8")
     return app
 
@@ -224,9 +226,6 @@ def test_the_check_script_says_fail_and_exits_non_zero_when_the_installers_log_d
 
 def test_the_check_script_starts_the_program_on_free_ports_answers_and_stops_everything(tmp_path):
     app = _fake_installed_app(tmp_path)
-    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").unlink()
-    from rct_control_plane._version import PACKAGE_VERSION
-    (app / "wheel" / f"delentia_os-{PACKAGE_VERSION}-py3-none-any.whl").write_bytes(b"x")
     result = _run_check(tmp_path, app)
     assert result.returncode == 0, result.stdout + result.stderr
     for number in "123456":
