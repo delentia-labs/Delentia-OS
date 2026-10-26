@@ -1577,7 +1577,7 @@ def version_command(output: str) -> None:
         "version": pkg_ver,
         "package": "delentia-os",
         "name": "delentia-os",
-        "description": "Constitutional AI Operating System SDK",
+        "description": "Governed, self-hosted AI agent runtime",
         "python": python_ver,
         "license": "Apache-2.0",
         "homepage": "https://delentia.com",

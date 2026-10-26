@@ -18,7 +18,7 @@ import importlib.metadata as _metadata
 # day, but kept in step with pyproject.toml's own bumps (2026-09-25:
 # 2.2.6 -> 2.3.0, see CLAUDE.md item G) so the rare fallback path isn't
 # badly stale either.
-_FALLBACK_VERSION = "2.3.1"
+_FALLBACK_VERSION = "2.4.0"
 
 try:
     PACKAGE_VERSION = _metadata.version("delentia-os")

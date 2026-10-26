@@ -50,10 +50,10 @@ delentia version
 ┌─────────────┬──────────────────────────────────────────────┐
 │ Field       │ Value                                        │
 ├─────────────┼──────────────────────────────────────────────┤
-│ version     │ 2.2.6                                        │
+│ version     │ 2.4.0                                        │
 │ package     │ delentia-os                                  │
 │ name        │ delentia-os                                  │
-│ description │ Constitutional AI Operating System SDK       │
+│ description │ Governed, self-hosted AI agent runtime       │
 │ python      │ 3.13.14                                      │
 │ license     │ Apache-2.0                                   │
 │ homepage    │ https://delentia.com                         │

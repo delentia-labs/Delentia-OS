@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -68,6 +69,16 @@ def wheel_version(wheel: Path) -> str:
     if len(parts) < 5 or not wheel.name.endswith(".whl") or not wheel.name.startswith("delentia_os-"):
         raise SystemExit(f"{wheel.name} is not a delentia_os wheel")
     return parts[1]
+
+
+def file_version(version: str, revision: int = 0) -> str:
+    """The four-number Windows file version: the runtime's X.Y.Z (a pre-release suffix such as rc1 is dropped) and the installer revision."""
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)", version)
+    if not m:
+        raise SystemExit(f"{version!r} does not start with X.Y.Z")
+    if not 0 <= revision <= 65535:
+        raise SystemExit("the installer revision must be between 0 and 65535")
+    return f"{m.group(1)}.{m.group(2)}.{m.group(3)}.{revision}"
 
 
 def find_iscc(given: Optional[str]) -> Optional[Path]:
@@ -134,6 +145,7 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=HERE / "output")
     ap.add_argument("--offline-wheels", action="store_true")
     ap.add_argument("--stage-only", action="store_true")
+    ap.add_argument("--installer-revision", type=int, default=0, help="the fourth number of the Windows file version: 0, or higher when the installer was rebuilt without a runtime change")
     args = ap.parse_args()
     for label, p in (("--python-embed", args.python_embed), ("--get-pip", args.get_pip)):
         if not p.is_file():
@@ -152,13 +164,20 @@ def main() -> int:
         print("The Inno Setup compiler (ISCC.exe) was not found. Install Inno Setup 6 (jrsoftware.org/isinfo.php) or pass --iscc <path>. The files are staged; nothing else was done.", file=sys.stderr)
         return 3
     args.out.mkdir(parents=True, exist_ok=True)
-    cmd = [str(iscc), f"/DAppVersion={version}", f"/DWheelName={wheel.name}", f"/DStageDir={args.stage_dir}", f"/O{args.out}", str(HERE / "delentia.iss")]
+    cmd = [str(iscc), f"/DAppVersion={version}", f"/DFileVersion={file_version(version, args.installer_revision)}", f"/DWheelName={wheel.name}", f"/DStageDir={args.stage_dir}", f"/O{args.out}", str(HERE / "delentia.iss")]
     subprocess.run(cmd, check=True, cwd=str(HERE))
     exe = args.out / f"Delentia-Setup-{version}.exe"
     if not exe.is_file():
         print("the compiler finished but the installer is not where it should be", file=sys.stderr)
         return 4
-    print(f"built {exe}  ({exe.stat().st_size / 1e6:.1f} MB)  sha256 {sha256(exe)}")
+    # the same file under a fixed name, so that a link which never changes (releases/latest/download/Delentia-Setup.exe) always reaches the newest installer, and the checksums of both
+    alias = args.out / "Delentia-Setup.exe"
+    shutil.copyfile(exe, alias)
+    digest = sha256(exe)
+    sums = [f"{digest}  {exe.name}", f"{sha256(alias)}  {alias.name}"]
+    (args.out / "SHA256SUMS.txt").write_text("\n".join(sums) + "\n", encoding="utf-8", newline="\n")
+    print(f"built {exe}  ({exe.stat().st_size / 1e6:.1f} MB)  sha256 {digest}")
+    print(f"      and {alias.name} (same file, fixed name) and SHA256SUMS.txt")
     return 0
 
 

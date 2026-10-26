@@ -151,6 +151,8 @@ nav:
   - Operating it:
     - Operator contract: operators/OPERATOR_CONTRACT.md
     - Release levels: release/RELEASE_LEVELS.md
+    - Versioning policy: release/VERSIONING_POLICY.md
+    - Release history: release/RELEASE_HISTORY.md
     - Assurance case (one property): assurance/ASSURANCE_CASE.md
   - Testing: testing.md
   - Changelog: changelog.md

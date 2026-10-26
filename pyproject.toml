@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "delentia-os"
-version = "2.3.1"
-description = "Delentia OS — Constitutional AI Operating System SDK"
+version = "2.4.0"
+description = "Delentia OS: a governed, self-hosted AI agent runtime (experimental)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [
@@ -17,7 +17,7 @@ maintainers = [
 requires-python = ">=3.10"
 keywords = ["ai", "constitutional-ai", "intent-loop", "signedai", "fdia", "delentia", "recot"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",

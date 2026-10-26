@@ -5,13 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.1] - 2026-10-13
+## [2.4.0] - Unreleased
+
+The first release that can be installed by double-clicking (Windows) and used from a web page. Everything below is **not** in 2.3.1: the 2.3.1 that is on PyPI (published 2026-10-16) is the 2.3.0 runtime with OpenCV and faiss made optional, and nothing else (see the 2.3.1 section; an earlier version of this file listed the Desk and the passkeys under 2.3.1 by mistake). 270 commits separate the two.
+
+Release level: L0 and L1 of `docs/release/RELEASE_LEVELS.md` (read the code, run it supervised on your own machine). Milestone label: *Public Technical Preview 0.1*, which is a label for what is opened to whom and not a version (see `docs/release/VERSIONING_POLICY.md`). It is declared by the owner when the gates in `docs/release/compatibility.json` say so, not by this file.
 
 ### Added
-- The Desk (the web pages) is inside the package, and `delentia desk` opens it against a running `delentia serve` with no token to paste. 2.3.0 shipped without any web pages.
-- Approve a risky action from the Desk with a device you own (Windows Hello, a fingerprint, a phone: passkey / WebAuthn). A device becomes an approver only after an existing approver signed for it; a confirmation is bound to one action and one decision; roles, scope, expiry and at-most-once apply as for a key. Tested with a software authenticator, not yet with a real Windows Hello.
-- `GET /v1/desk/readiness` and a "Getting started" panel: whether a model answers, whether anyone can approve, whether a first request ran.
-- Plain-language text (Thai and English) for every stop reason and API error; a welcome with example requests on the empty chat; `delentia --help` grouped by what a person is doing.
+- **The Desk is inside the package.** `pip install delentia-os` brings the web pages; `delentia desk` opens them against a running `delentia serve` with no token to paste. `delentia launch` starts the agent and the Desk in the background and opens the browser (`--stop` ends exactly what it started; two clicks at once start one agent).
+- **A Windows installer** (`Delentia-Setup-<version>.exe`, also published under the fixed name `Delentia-Setup.exe`): per-user, no administrator rights, no start-up entry, a portable Python inside, Start-menu entries (Delentia, Stop, Update, Check installation); uninstalling never touches `%USERPROFILE%\.delentia`. A silent install whose parts could not be installed ends with a non-zero exit code. Not code-signed: Windows SmartScreen will warn. Built and run on the author's machine only; a clean machine is not yet tested.
+- **Approve with a device you own** (Windows Hello, a fingerprint, a phone: passkey / WebAuthn). A device becomes an approver only after an existing approver signed for it; a confirmation is bound to one action and one decision; roles, scope, expiry and at-most-once apply as for a key. Tested with a software authenticator, not yet with a real Windows Hello.
+- **The first approver without a key command:** `delentia approvals first-device-code` prints a one-time code (10 minutes, 5 tries, once) that the Desk accepts while nobody can approve yet.
+- **Update notices:** `delentia update` checks PyPI once a day (nothing about you is sent; `--turn-off`, `DELENTIA_UPDATE_CHECK=off`, `DELENTIA_OFFLINE=1`); `delentia update --apply` downloads the release, checks its SHA-256 against the index and installs it, asking first. There is deliberately no "update now" button in the web page.
+- **Plan-first approval** (off until the owner writes it into his policy): the agent proposes a numbered plan and one signature runs exactly that plan; `small_edit_autorun` and `thin_data_asks` let a small named-file edit run, and a thinly-evidenced call ask, instead of being refused. Starter policy `planfirst`. `delentia approvals suggest` proposes asking less after five clean approvals and applies nothing.
+- **RCT-7 questions:** where a person is present the agent stops and asks when a requirement of the request would be broken or something it cannot find is named; `delentia_ask_user` (tool 50); the plan is shown before the first tool in the Desk; opt-in judge, critic and cite-and-verify evidence chain (propose-only, checked by code). `delentia clarify stats`.
+- **Law Pack:** the owner supplies the text of a statute and the agent answers only from it with section numbers (`delentia law`, `delentia_law_lookup`, Desk page).
+- Intent contracts and the verified-budget read-only service profile (`delentia intent-contract`), the episode journal (`delentia episodes`), host metrics (`delentia host-metrics`), owner-policy history (`delentia fdia history|diff|explain`), idempotency keys for calls that change something, RFC 3161 time-stamps for the audit witness and the notary, a versioned verified delta log, memory valid-from/valid-to, pinned rules shown to every episode (cap 8), shared spending cap for subagents.
+- `GET /v1/desk/readiness` and a "Getting started" panel: whether a model answers, whether anyone can approve, whether a first request ran. Plain-language text (Thai and English) for every stop reason and API error; Thai/English for the Advanced pages (1,124 English-only strings measured in the Thai interface before, 629 after; the rest is mostly names, model ids and server-built text); `delentia --help` grouped by what a person is doing.
+- CI: a real-browser accessibility check of every page (axe-core, Thai and English, 375 and 1280 px), version-consistency checks (`scripts/check_versions.py`), a Windows installer build.
+
+### Changed
+- `Development Status` is **3 - Alpha** (2.3.1 and earlier said Production/Stable, which the README never claimed). PyPI keeps the old classifier on old releases; it cannot be edited after the fact.
+- The Desk's root is `w-full` (it scrolled sideways by the scrollbar's width), the phone-width bar is a `<header>`, controls are at least 24 x 24 px, the scrolling page body is a named region.
+
+### Fixed
+- A Linux zombie process was reported as running by the launcher; two simultaneous `delentia launch` started two agents; the first-device code could be guessed more than five times by simultaneous requests.
+- The installer could not install a dependency that is published as source only, failed when pip's cache was not writable, and exited 0 after a failed install.
+- The release workflow can no longer publish "nothing" silently: `scripts/check_versions.py` fails a tag whose number is already on PyPI or is not the package version.
+
+## [2.3.1] - 2026-10-16
+
+Published to PyPI and as a GitHub Release on 2026-10-16 (the tag's changelog dated it 2026-10-13). This is the 2.3.0 runtime with two heavy dependencies made optional. It has **no** Desk pages, launcher, passkeys, installer or plan-first approval; those are in 2.4.0.
 
 ### Changed
 - OpenCV is an optional extra (`pip install delentia-os[video]`); the video algorithm imports it on first use. The install is about 113 MB smaller.

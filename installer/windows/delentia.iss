@@ -1,6 +1,8 @@
 ; Delentia for Windows: a per-user installer (no administrator rights).
 ; Built by installer/windows/build_installer.py, which stages the files and calls the Inno Setup compiler:
-;   ISCC.exe /DAppVersion=2.3.1 /DWheelName=delentia_os-2.3.1-py3-none-any.whl /DStageDir=<stage folder> delentia.iss
+;   ISCC.exe /DAppVersion=2.4.0 /DFileVersion=2.4.0.0 /DWheelName=delentia_os-2.4.0-py3-none-any.whl /DStageDir=<stage folder> delentia.iss
+; Version: the installer has the number of the runtime it installs (AppVersion). The Windows file version is that number plus an installer revision (FileVersion, 0 unless the installer was rebuilt
+; without a runtime change). It never carries the name of a milestone: "Technical Preview 0.1" is a label for what is opened to whom (docs/release/VERSIONING_POLICY.md), not a version.
 ;
 ; What it installs: a private copy of Python (the "embeddable" package from python.org), the Delentia wheel, and the packages Delentia needs (pip downloads them while installing, unless an offline "wheels" folder is staged).
 ; Where: %LOCALAPPDATA%\Programs\Delentia. Your own data (memory, audit record, keys) lives in %USERPROFILE%\.delentia and is NEVER touched by install or uninstall.
@@ -8,6 +10,9 @@
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
+#endif
+#ifndef FileVersion
+  #define FileVersion "0.0.0.0"
 #endif
 #ifndef WheelName
   #define WheelName "delentia_os-0.0.0-py3-none-any.whl"
@@ -21,6 +26,11 @@ AppId={{B7A1C3E4-5D26-4F0A-9E31-D3E71A7E0101}
 AppName=Delentia
 AppVersion={#AppVersion}
 AppVerName=Delentia {#AppVersion}
+VersionInfoVersion={#FileVersion}
+VersionInfoProductVersion={#AppVersion}
+VersionInfoProductName=Delentia
+VersionInfoCompany=Delentia Labs
+VersionInfoDescription=Delentia Setup
 AppPublisher=Delentia Labs
 AppPublisherURL=https://delentia.com
 AppSupportURL=https://github.com/delentia-labs/Delentia-OS/issues

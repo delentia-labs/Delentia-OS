@@ -1,0 +1,137 @@
+name: Windows installer
+
+# Builds Delentia-Setup-<version>.exe on a Windows runner, installs it silently, runs the post-install check, uninstalls it,
+# and (for a release) attaches it to the GitHub Release as Delentia-Setup-<version>.exe and as the fixed name Delentia-Setup.exe,
+# with SHA256SUMS.txt. The README links to .../releases/latest/download/Delentia-Setup.exe.
+#
+#   * pull request touching the installer, the Desk packaging or pyproject.toml: build + smoke test only (nothing is published)
+#   * release.yml (a v* tag): the same, then upload to the release
+#   * by hand (Actions > Windows installer > Run workflow): build + smoke test; give a tag to attach the result to that release
+#
+# The inputs the installer needs are fetched here and recorded in the installer's SOURCES.json: the portable Python is pinned by SHA-256;
+# get-pip.py is fetched from bootstrap.pypa.io (it changes with each pip release, so its hash is recorded, not pinned); Inno Setup comes from Chocolatey.
+# The installer is NOT code-signed: Windows SmartScreen will warn. That is stated in the README.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "the release tag to attach the installer to (empty: build and test only)"
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "release tag to attach the installer to, for example v2.4.0 (empty: build and test only)"
+        type: string
+        required: false
+        default: ""
+  pull_request:
+    paths:
+      - "installer/**"
+      - "scripts/package_desk.py"
+      - "scripts/check_versions.py"
+      - "pyproject.toml"
+      - ".github/workflows/windows-installer.yml"
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_EMBED_URL: https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip
+  PYTHON_EMBED_SHA256: 4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3
+  GET_PIP_URL: https://bootstrap.pypa.io/get-pip.py
+
+jobs:
+  build:
+    name: Build, install, check, uninstall
+    runs-on: windows-latest
+    permissions:
+      contents: write          # only used to attach files to a release when a tag is given
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build the Desk and the wheel (the wheel carries the Desk)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip build
+          python scripts/package_desk.py
+          python -m build --wheel --outdir dist
+          Get-ChildItem dist
+
+      - name: The wheel is the version the repository says (and the tag, when there is one)
+        shell: pwsh
+        run: |
+          $wheel = (Get-ChildItem dist -Filter "delentia_os-*.whl" | Select-Object -First 1).FullName
+          if ("${{ inputs.tag }}" -ne "") { python scripts/check_versions.py --wheel $wheel --tag "${{ inputs.tag }}" } else { python scripts/check_versions.py --wheel $wheel }
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Fetch the portable Python (pinned by SHA-256) and get-pip.py
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force inputs | Out-Null
+          Invoke-WebRequest -Uri $env:PYTHON_EMBED_URL -OutFile inputs/python-embed.zip
+          $got = (Get-FileHash inputs/python-embed.zip -Algorithm SHA256).Hash.ToLower()
+          if ($got -ne $env:PYTHON_EMBED_SHA256) { Write-Error "the portable Python is $got, not the pinned $($env:PYTHON_EMBED_SHA256)"; exit 1 }
+          Invoke-WebRequest -Uri $env:GET_PIP_URL -OutFile inputs/get-pip.py
+          (Get-FileHash inputs/get-pip.py -Algorithm SHA256).Hash.ToLower() | Write-Host
+
+      - name: Install the Inno Setup compiler
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y }
+          Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $wheel = (Get-ChildItem dist -Filter "delentia_os-*.whl" | Select-Object -First 1).FullName
+          python installer/windows/build_installer.py --python-embed inputs/python-embed.zip --get-pip inputs/get-pip.py --wheel $wheel
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem installer/windows/output
+
+      - name: Install it silently, run the post-install check, uninstall
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem installer/windows/output -Filter "Delentia-Setup-*.exe" | Select-Object -First 1).FullName
+          $app = Join-Path $env:RUNNER_TEMP "delentia-app"
+          $p = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$app","/LOG=$env:RUNNER_TEMP\setup.log" -Wait -PassThru
+          Write-Host "installer exit code: $($p.ExitCode)"
+          if (Test-Path "$app\install.log") { Get-Content "$app\install.log" -Tail 8 }
+          if ($p.ExitCode -ne 0) { exit 1 }
+          & "$app\python\python.exe" "$app\check_install.py"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$app\check_install_report.txt"; exit 1 }
+          $u = Start-Process -FilePath "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait -PassThru
+          Start-Sleep -Seconds 5
+          if (Test-Path "$app\python\python.exe") { Write-Error "the uninstall left the program behind"; exit 1 }
+          Write-Host "installed, checked, uninstalled"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            installer/windows/output/Delentia-Setup-*.exe
+            installer/windows/output/Delentia-Setup.exe
+            installer/windows/output/SHA256SUMS.txt
+          retention-days: 14
+
+      - name: Attach to the release
+        if: ${{ inputs.tag != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = Get-ChildItem installer/windows/output -File | ForEach-Object { $_.FullName }
+          gh release upload "${{ inputs.tag }}" @files --clobber --repo "${{ github.repository }}"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
