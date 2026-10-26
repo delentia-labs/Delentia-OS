@@ -215,6 +215,7 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     timestamp: str
+    milestone: Optional[Dict[str, str]] = None        # the stage label (e.g. Public Technical Preview 0.1), only once the owner has declared it; never a version
 
 
 # ---- Feature Flags models ----
@@ -472,10 +473,12 @@ class ControlPlaneAPI:
         @self.app.get("/health", response_model=HealthResponse)
         async def health():
             """Health check endpoint"""
+            from rct_control_plane._version import milestone_for_health
             return HealthResponse(
                 status="healthy",
                 version=PACKAGE_VERSION,
-                timestamp=datetime.utcnow().isoformat()
+                timestamp=datetime.utcnow().isoformat(),
+                milestone=milestone_for_health(),
             )
         
         @self.app.get("/health/detailed", response_model=DetailedHealthResponse)

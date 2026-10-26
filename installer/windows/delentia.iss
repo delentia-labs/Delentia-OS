@@ -2,7 +2,9 @@
 ; Built by installer/windows/build_installer.py, which stages the files and calls the Inno Setup compiler:
 ;   ISCC.exe /DAppVersion=2.4.0 /DFileVersion=2.4.0.0 /DWheelName=delentia_os-2.4.0-py3-none-any.whl /DStageDir=<stage folder> delentia.iss
 ; Version: the installer has the number of the runtime it installs (AppVersion). The Windows file version is that number plus an installer revision (FileVersion, 0 unless the installer was rebuilt
-; without a runtime change). It never carries the name of a milestone: "Technical Preview 0.1" is a label for what is opened to whom (docs/release/VERSIONING_POLICY.md), not a version.
+; without a runtime change). The name of the milestone ("Public Technical Preview 0.1") is a label for what is opened to whom (docs/release/VERSIONING_POLICY.md), not a version: it is never in the file
+; name, AppVersion or the Windows file version. Once the owner has declared the milestone, build_installer.py writes milestone.iss (UTF-8 with a byte-order mark, because the Thai text must not travel on a
+; command line) and the label is shown, in English and Thai, in the installer's welcome page and in the program's comments.
 ;
 ; What it installs: a private copy of Python (the "embeddable" package from python.org), the Delentia wheel, and the packages Delentia needs (pip downloads them while installing, unless an offline "wheels" folder is staged).
 ; Where: %LOCALAPPDATA%\Programs\Delentia. Your own data (memory, audit record, keys) lives in %USERPROFILE%\.delentia and is NEVER touched by install or uninstall.
@@ -20,6 +22,11 @@
 #ifndef StageDir
   #define StageDir "stage"
 #endif
+#define MilestoneEN ""
+#define MilestoneTH ""
+#ifexist AddBackslash(StageDir) + "milestone.iss"
+  #include AddBackslash(StageDir) + "milestone.iss"
+#endif
 
 [Setup]
 AppId={{B7A1C3E4-5D26-4F0A-9E31-D3E71A7E0101}
@@ -32,6 +39,9 @@ VersionInfoProductName=Delentia
 VersionInfoCompany=Delentia Labs
 VersionInfoDescription=Delentia Setup
 AppPublisher=Delentia Labs
+#if MilestoneEN != ""
+AppComments={#MilestoneEN} / {#MilestoneTH}
+#endif
 AppPublisherURL=https://delentia.com
 AppSupportURL=https://github.com/delentia-labs/Delentia-OS/issues
 AppUpdatesURL=https://github.com/delentia-labs/Delentia-OS/releases
@@ -56,6 +66,11 @@ RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+
+#if MilestoneEN != ""
+[Messages]
+WelcomeLabel2=This will install Delentia {#AppVersion} on your computer.%n%n{#MilestoneEN}%n{#MilestoneTH}%n%nThis build is not code-signed yet, so Windows may warn you. Close other programs before you continue.%n%nการติดตั้งนี้ยังไม่ได้ลงนามรหัสโปรแกรม Windows จึงอาจแสดงคำเตือน ปิดโปรแกรมอื่นก่อนดำเนินการต่อ
+#endif
 
 [Tasks]
 Name: "desktopicon"; Description: "Put a Delentia icon on the desktop"; GroupDescription: "Shortcuts:"; Flags: unchecked

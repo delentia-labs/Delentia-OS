@@ -146,6 +146,58 @@ def _hashes(workspace: Path) -> Dict[str, str]:
     return {rel: hashlib.sha256((workspace / rel).read_bytes()).hexdigest() for rel in QUOTES if (workspace / rel).is_file()}
 
 
+def changed_originals(root: Path) -> List[str]:
+    """The sample quotes whose content is no longer what `demo init` wrote (missing counts as changed). An approved `edit` demo changes vendor_a on purpose; a later `compare` would then
+    report two failed checks that are not a fault of the system, only of the folder (found 2026-10-26 on a folder last used on 2026-10-16)."""
+    p = paths(root)
+    try:
+        originals = json.loads(p["originals"].read_text(encoding="utf-8")) if p["originals"].exists() else {}
+    except (OSError, ValueError):
+        originals = {}
+    now = _hashes(p["workspace"])
+    return [rel for rel in QUOTES if originals.get(rel) is not None and now.get(rel) != originals.get(rel)]
+
+
+def reset(root: Path) -> Dict[str, Any]:
+    """Put the sample quotes back as `demo init` wrote them. Nothing is deleted: the changed files are copied to results/restored-<time>/ first, together with the old originals.json."""
+    p = paths(root)
+    changed = changed_originals(root)
+    backup: Optional[Path] = None
+    if changed:
+        backup = p["results"] / f"restored-{time.strftime('%Y%m%d-%H%M%S')}"
+        backup.mkdir(parents=True, exist_ok=True)
+        for rel in changed:
+            src = p["workspace"] / rel
+            if src.is_file():
+                (backup / rel).parent.mkdir(parents=True, exist_ok=True)
+                (backup / rel).write_bytes(src.read_bytes())
+        if p["originals"].exists():
+            (backup / "originals.json").write_bytes(p["originals"].read_bytes())
+    for rel in changed:
+        vendor, price, days = QUOTES[rel]
+        target = p["workspace"] / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(_quote_text(vendor, price, days), encoding="utf-8")
+    p["originals"].write_text(json.dumps(_hashes(p["workspace"]), indent=2), encoding="utf-8")        # the baseline is what init would write today
+    return {"root": str(root), "restored": changed, "backup": str(backup) if backup else None}
+
+
+NEEDS_CLEAN_QUOTES = ("compare", "budget", "edit")
+
+
+def refuse_if_changed(root: Path, goal_or_key: str, goal: str) -> None:
+    """The checks of compare / budget / edit say 'the original files were not changed'. If an earlier run changed them, say so before the run instead of reporting two failures afterwards."""
+    key = goal_or_key.strip().lower()
+    if key not in NEEDS_CLEAN_QUOTES and "quotes/vendor_" not in goal:
+        return
+    changed = changed_originals(root)
+    if changed:
+        raise SystemExit("ไฟล์ตัวอย่างในโฟลเดอร์เดโมนี้ถูกแก้ไปแล้ว (" + ", ".join(changed) + ") มักเกิดจากเดโม `edit` ที่อนุมัติไปก่อนหน้านี้ ซึ่งแก้ไฟล์จริงตามที่ตั้งใจ\n"
+                         "ถ้ารันต่อ ผลตรวจ 'ตารางมีราคาครบ' และ 'ไฟล์ต้นฉบับไม่ถูกแก้' จะไม่ผ่านโดยไม่ใช่ความผิดของระบบ\n"
+                         "แก้: `delentia demo reset` (เก็บสำเนาไฟล์ที่ถูกแก้ไว้ใน results/ ไม่ลบอะไร) หรือใช้โฟลเดอร์ใหม่ `--dir <โฟลเดอร์ใหม่>`\n"
+                         "The sample files in this demo folder were changed by an earlier run (usually an approved `edit` demo). Run `delentia demo reset` (it keeps a copy of the changed files) or use a new --dir.")
+
+
 def configure_env(root: Path) -> Dict[str, Path]:
     """Points this process at the demo folder. Must run before the kernel/tools are imported (they read these at import)."""
     quiet_startup()
@@ -275,6 +327,7 @@ async def run_goal(root: Path, goal_or_key: str, *, max_iterations: int = 8, max
     from rct_control_plane.agent_factory import build_governed_loop
     from rct_control_plane.mcp_server import _kernel, mcp
     goal = resolve_goal(goal_or_key)
+    refuse_if_changed(root, goal_or_key, goal)
     loop = build_governed_loop(_kernel, NAMESPACE, max_iterations=max_iterations, max_seconds=max_seconds, persistence=_kernel._persistence, mcp_server=mcp)
     loop._fast_max_iterations = max_iterations                       # the FAST route would cap a three-file task at three steps
     if scripted:
@@ -343,7 +396,8 @@ async def approve(root: Path, approval_id: str, *, max_iterations: int = 8, max_
     view = dict(result.get("continuation") or {})                    # resume() returns {executed_result, continuation}: the report shows the continued episode
     view.setdefault("stopped_reason", "llm_finished" if view.get("final_answer") else "approved_and_executed")
     view.setdefault("iterations", len(view.get("steps") or []))
-    report = format_report(action.goal, view, [], [{"check": "หลังอนุมัติ ไฟล์ที่เปลี่ยนคือ: " + (", ".join(changed) or "ไม่มี"), "ok": True}], audit, seconds, "สคริปต์ (ไม่ใช่โมเดลจริง)" if scripted else "-") + note
+    report = format_report(action.goal, view, [], [{"check": "หลังอนุมัติ ไฟล์ที่เปลี่ยนคือ: " + (", ".join(changed) or "ไม่มี"), "ok": True}], audit, seconds, "สคริปต์ (ไม่ใช่โมเดลจริง)" if scripted else "-") + note + (
+        "\n> ไฟล์ตัวอย่างถูกแก้แล้ว (ตามที่อนุมัติ) ก่อนรันเดโมอื่นที่ใช้ใบเสนอราคา ให้รัน `delentia demo reset` (เก็บสำเนาไฟล์ที่แก้ไว้ใน results/ ไม่ลบอะไร)\n" if changed else "")
     out = p["results"] / f"{time.strftime('%Y%m%d-%H%M%S')}-approve-{approval_id}.md"
     out.write_text(report, encoding="utf-8")
     return {"result": result, "report": report, "report_path": str(out), "changed": changed, "audit": audit}

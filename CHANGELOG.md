@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - Unreleased
+
+The stage label beside the version, in two languages, and a fix for the sample-quotes demo. Nothing else in the runtime changed.
+
+### Added
+- **The stage label, in English and Thai** ("Public Technical Preview 0.1" / "รุ่นทดลองเชิงเทคนิคสำหรับสาธารณะ 0.1"). It is a label for what has been opened to whom, never a version: the file name, the Windows file version, PyPI and every tag carry only the package number. `rct_control_plane/_version.py` holds it (`MILESTONE`, with `declared` False), `/health` reports it, the Desk shows it in the side bar and on the Status page, and the Windows installer shows it on its welcome page and in the program's comments. All three show it ONLY after the owner has declared the milestone; before that nothing changes. `scripts/check_versions.py` now fails if the code and `docs/release/compatibility.json` disagree about the label or about whether it was declared.
+- `delentia demo reset`: puts the sample quotes back as `demo init` wrote them. Nothing is deleted: a copy of every changed file (and of the old baseline) is kept under `results/restored-<time>/`.
+
+### Fixed
+- `delentia demo run compare|budget|edit` on a folder whose sample quotes an earlier run had changed (an approved `edit` demo changes `vendor_a.md` on purpose) used to print two failed checks ("price table complete", "original files unchanged") that were not a fault of the system. It now stops BEFORE the run, names the changed files and says to run `delentia demo reset` or to use a new `--dir`; the report of an approved edit says the same.
+
 ## [2.4.0] - 2026-10-26
 
 The first release that can be installed by double-clicking (Windows) and used from a web page. Everything below is **not** in 2.3.1: the 2.3.1 that is on PyPI (published 2026-10-16) is the 2.3.0 runtime with OpenCV and faiss made optional, and nothing else (see the 2.3.1 section; an earlier version of this file listed the Desk and the passkeys under 2.3.1 by mistake). 270 commits separate the two.

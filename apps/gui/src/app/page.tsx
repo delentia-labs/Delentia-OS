@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLang } from "@/components/desk/i18n";
+import { milestoneLine } from "@/lib/milestone";
 import { CycleStrip } from "@/components/desk/CycleStrip";
 import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
@@ -168,6 +169,9 @@ export default function StatusPage() {
               <div className="mt-3 grid gap-4 md:grid-cols-2">
                 <div>
                   <Row label="API">{health.data ? `v${health.data.version ?? "?"} · ${health.data.status}` : "-"}</Row>
+                  {milestoneLine(health.data?.milestone, lang) && (
+                    <Row label={T("Release stage", "ช่วงเปิดตัว")}>{milestoneLine(health.data?.milestone, lang)?.both}</Row>
+                  )}
                   <Row label={T("Model chosen by", "โมเดลเลือกโดย")}>{o ? o.model.model_source : "-"}</Row>
                   <Row label="Daemon">{o ? (o.daemon.running ? `${T("running", "ทำงาน")} · ${o.daemon.tasks} ${T("tasks", "งาน")}` : T("stopped", "หยุด")) : "-"}</Row>
                   <Row label={T("Episodes recorded", "episode ที่บันทึก")}>{o?.sessions_total ?? "-"}</Row>

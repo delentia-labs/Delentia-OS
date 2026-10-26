@@ -91,6 +91,21 @@ def find_iscc(given: Optional[str]) -> Optional[Path]:
     return None
 
 
+def write_milestone(stage_dir: Path) -> Optional[Dict[str, str]]:
+    """Once the owner has declared the milestone (rct_control_plane/_version.py), write the label in both languages into the staged folder for the Inno script to include. The file is UTF-8 with a byte-order
+    mark so that the Thai text is read as Thai; nothing Thai travels on the compiler's command line. Before the declaration no file is written and the installer shows no label."""
+    sys.path.insert(0, str(ROOT))
+    from rct_control_plane._version import milestone_labels
+    labels = milestone_labels()
+    target = Path(stage_dir) / "milestone.iss"
+    if labels is None:
+        if target.exists():
+            target.unlink()
+        return None
+    target.write_text(f'#undef MilestoneEN\n#undef MilestoneTH\n#define MilestoneEN "{labels["en"]}"\n#define MilestoneTH "{labels["th"]}"\n', encoding="utf-8-sig")
+    return labels
+
+
 def build_wheel(out_dir: Path) -> Path:
     subprocess.run([sys.executable, str(ROOT / "scripts" / "package_desk.py")], check=True, cwd=str(ROOT))
     subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", str(out_dir)], check=True, cwd=str(ROOT))
@@ -155,6 +170,8 @@ def main() -> int:
     version = wheel_version(wheel)
     used = stage(args.python_embed, args.get_pip, wheel, args.stage_dir, args.offline_wheels)
     print(f"staged {args.stage_dir} for Delentia {version}")
+    ms_label = write_milestone(args.stage_dir)
+    print(f"  milestone label: {ms_label['both'] if ms_label else '(not declared: the installer shows none)'}")
     for k in ("python_embed", "get_pip", "wheel"):
         print(f"  {k}: {used[k]['file']}  sha256 {used[k]['sha256']}")
     if args.stage_only:

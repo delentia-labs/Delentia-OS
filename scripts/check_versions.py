@@ -156,6 +156,7 @@ def check(root: Path = ROOT, tag: Optional[str] = None, wheel: Optional[str] = N
         for key in ("name", "id", "release_level"):
             if not mile.get(key):
                 problems.append(f"compatibility.json: milestone has no '{key}'")
+        problems.extend(_milestone_problems(root, mile))
         if mile.get("id") and re.fullmatch(r"v?\d+\.\d+\.\d+.*", str(mile["id"])):
             problems.append("compatibility.json: the milestone id looks like a package version; a milestone is a label, never a version (it would collide with the v* release tags)")
 
@@ -180,6 +181,35 @@ def check(root: Path = ROOT, tag: Optional[str] = None, wheel: Optional[str] = N
             newest = max((v for v in published if parse(v)), key=lambda v: parse(v), default=None)  # type: ignore[arg-type,return-value]
             if newest and not is_newer(version, newest) and version not in published:
                 problems.append(f"{version} is not newer than {newest}, the newest on PyPI: package versions only go up")
+    return problems
+
+
+def _milestone_problems(root: Path, mile: Dict[str, Any]) -> List[str]:
+    """The milestone label shown by the Desk and the installer lives in rct_control_plane/_version.py; the manifest says whether it has been declared. They must agree, or the Desk would tell people the product
+    is in a stage the documents say it is not in (or the reverse)."""
+    path = root / "rct_control_plane" / "_version.py"
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    block = re.search(r"MILESTONE\s*=\s*\{(.*?)\n\}", text, re.S)
+    if not block:
+        return ["rct_control_plane/_version.py has no MILESTONE block"]
+    body = block.group(1)
+    found: Dict[str, str] = {}
+    for key in ("id", "number", "release_level", "name_en", "name_th"):
+        m = re.search(rf'"{key}":\s*"([^"]*)"', body)
+        found[key] = m.group(1) if m else ""
+    declared = bool(re.search(r'"declared":\s*True', body))
+    problems: List[str] = []
+    if found["id"] != mile.get("id"):
+        problems.append(f"_version.py MILESTONE id {found['id']!r} is not compatibility.json's {mile.get('id')!r}")
+    if found["release_level"] != mile.get("release_level"):
+        problems.append(f"_version.py MILESTONE release level {found['release_level']!r} is not compatibility.json's {mile.get('release_level')!r}")
+    name = str(mile.get("name", ""))
+    if found["name_en"] not in name or found["number"] not in name:
+        problems.append(f"compatibility.json milestone name {name!r} does not contain _version.py's {found['name_en']!r} and {found['number']!r}")
+    if not found["name_th"].strip():
+        problems.append("_version.py MILESTONE has no Thai name: the label is shown in both languages")
+    if declared != (mile.get("status") == "declared"):
+        problems.append(f"_version.py MILESTONE declared={declared} but compatibility.json says status {mile.get('status')!r}")
     return problems
 
 

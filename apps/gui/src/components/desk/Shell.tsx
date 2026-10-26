@@ -14,6 +14,7 @@ import { desk } from "@/lib/desk-api";
 import { loadLocalConfig } from "@/lib/local-config";
 import { MODE_EVENT, MODE_KEY } from "./mode";
 import { GROUPS, SIMPLE, groupOf, parseMode, type DeskMode, type NavItem } from "@/lib/nav-model";
+import { milestoneLine } from "@/lib/milestone";
 
 // Order follows Hermes' dashboard (chat first), with Delentia's own pages
 // (approvals, audit, experiments) where Hermes has pairing, logs, analytics.
@@ -57,6 +58,7 @@ function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode)
   const overview = useDeskData(() => desk.overview(), [], 15000);
   const up = !health.error && !!health.data;
   const o = overview.data;
+  const milestone = milestoneLine(health.data?.milestone, lang);
   const chain = o?.audit_verify?.status;
 
   return (
@@ -69,6 +71,12 @@ function SystemPanel({ mode, setMode }: { mode: DeskMode; setMode: (m: DeskMode)
             {health.loading && !health.data ? "…" : up ? `${t("api_up")} v${health.data?.version ?? "?"}` : t("api_down")}
           </dd>
         </div>
+        {milestone && (
+          <div className="flex justify-between gap-2">
+            <dt className="text-dl-muted">{lang === "th" ? "ช่วงเปิดตัว" : "Release stage"}</dt>
+            <dd className="text-right text-dl-text" title={milestone.secondary}>{milestone.primary}</dd>
+          </div>
+        )}
         <div className="flex justify-between gap-2">
           <dt className="text-dl-muted">{t("daemon")}</dt>
           <dd className="text-dl-text">{o ? (o.daemon.running ? t("running") : t("stopped")) : "-"}</dd>
