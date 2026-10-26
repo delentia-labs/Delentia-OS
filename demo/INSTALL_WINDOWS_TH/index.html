@@ -2197,6 +2197,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../release/VERSIONING_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/RELEASE_HISTORY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../assurance/ASSURANCE_CASE/" class="md-nav__link">
         
   
@@ -2328,31 +2384,39 @@
 
 <h1 id="delentia-windows">ติดตั้ง Delentia บน Windows ด้วยการดับเบิลคลิก<a class="headerlink" href="#delentia-windows" title="Permanent link">&para;</a></h1>
 <p>ไฟล์ติดตั้งชื่อ <code>Delentia-Setup-&lt;เวอร์ชัน&gt;.exe</code> ใช้เหมือนโปรแกรมทั่วไป: ดับเบิลคลิก กด Next จนจบ</p>
-<p><strong>สถานะตรงไปตรงมา:</strong> สคริปต์และไฟล์ทั้งหมดที่ใช้สร้างตัวติดตั้งอยู่ใน <code>installer/windows/</code> และทดสอบส่วนที่ทดสอบได้แล้ว แต่ <strong>ยังไม่เคยสร้างไฟล์ <code>.exe</code> จริง</strong> เพราะต้องมีโปรแกรมสร้างตัวติดตั้ง (Inno Setup) และ Python ฉบับพกพา ซึ่งต้องดาวน์โหลดและรอการอนุญาตของเจ้าของ (ดูหัวข้อ "สร้างตัวติดตั้ง") ส่วนด้านล่างจึงแบ่งเป็น "สำหรับผู้ใช้" (เมื่อมีไฟล์ให้ดาวน์โหลดแล้ว) และ "สำหรับผู้สร้างไฟล์"</p>
-<h2 id="_1">สำหรับผู้ใช้<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h3 id="_2">ติดตั้ง<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h2 id="_1">ดาวน์โหลด<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><strong><a href="https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe">ดาวน์โหลด Delentia-Setup.exe</a></strong> (รุ่นล่าสุดเสมอ) · <a href="https://github.com/delentia-labs/Delentia-OS/releases">ทุกรุ่นและไฟล์ที่ระบุเวอร์ชัน</a> · <a href="https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt">ค่าตรวจสอบ (checksum)</a></p>
+<ul>
+<li>ตัวติดตั้งแนบอยู่กับรุ่นแรกที่มีมัน (<strong>2.4.0</strong>) ก่อนมีรุ่นนั้นลิงก์จะขึ้น <em>404</em> รุ่น 2.3.1 และก่อนหน้าไม่มีตัวติดตั้งและไม่มีหน้าเว็บ Desk: ใช้ <code>pip install delentia-os</code></li>
+<li><strong>เวอร์ชันอะไร?</strong> ตัวติดตั้งใช้เลขเดียวกับ runtime ที่อยู่ข้างใน (<code>Delentia-Setup-2.4.0.exe</code> ติดตั้ง 2.4.0 และ <code>delentia --version</code> ตอบ 2.4.0) ส่วน "<em>Public Technical Preview 0.1</em>" คือชื่อ milestone ที่รุ่นนี้สังกัด ไม่ใช่เลขเวอร์ชัน ดู <a href="../../release/VERSIONING_POLICY_TH/">นโยบายเวอร์ชัน</a></li>
+<li><strong>ตรวจไฟล์ก่อนรัน:</strong> ใน PowerShell คำสั่ง <code>Get-FileHash .\Delentia-Setup.exe -Algorithm SHA256</code> ต้องพิมพ์ค่าเดียวกับที่อยู่ข้าง <code>Delentia-Setup.exe</code> ใน <code>SHA256SUMS.txt</code></li>
+</ul>
+<p><strong>สถานะตรงไปตรงมา:</strong> สร้างตัวติดตั้งด้วยคอมไพเลอร์จริง แล้วติดตั้ง เปิด ตรวจ และถอนบนเครื่องของผู้สร้างแล้ว (ผลอยู่ท้ายหน้านี้) และ CI ทำซ้ำบนเครื่อง Windows สะอาดของ GitHub (รันครั้งแรก 2026-10-26: ตัวติดตั้งจบด้วยรหัส 0, ตรวจหลังติดตั้งผ่าน 6 จาก 6, ถอนแล้วสะอาด) แต่ <strong>ยังไม่เคยลองบนคอมพิวเตอร์ที่ไม่ใช่ของผู้สร้าง</strong> <strong>ยังไม่ได้ลงนามรหัสโปรแกรม</strong> (SmartScreen จะเตือน) และยังไม่เคยลองแบบออฟไลน์ ส่วนด้านล่างแบ่งเป็น "สำหรับผู้ใช้" และ "สำหรับผู้สร้างไฟล์"</p>
+<h2 id="_2">สำหรับผู้ใช้<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">ติดตั้ง<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <ol>
 <li>ดับเบิลคลิก <code>Delentia-Setup-&lt;เวอร์ชัน&gt;.exe</code> (ไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ ติดตั้งให้เฉพาะบัญชีของคุณ)</li>
 <li>Windows อาจขึ้นหน้าต่าง "Windows protected your PC" (SmartScreen) เพราะไฟล์ยังไม่ได้ลงนามรหัสโปรแกรม (code signing) กด <strong>More info → Run anyway</strong> ถ้าคุณโหลดจากหน้าปล่อยเวอร์ชันอย่างเป็นทางการ และตรวจ SHA-256 ตรงกับที่ประกาศ</li>
 <li>กด Next ตามขั้นตอน เลือกได้ว่าจะวางไอคอนบนเดสก์ท็อปหรือไม่</li>
 <li>ตัวติดตั้งคัดลอกไฟล์ แล้วดาวน์โหลดและติดตั้งส่วนประกอบที่ Delentia ต้องใช้ <strong>ต้องต่ออินเทอร์เน็ต ใช้เวลา 3-10 นาที</strong> ถ้าล้มเหลวจะมีหน้าต่างบอกสาเหตุและที่เก็บบันทึก (<code>install.log</code>) ต่อเน็ตแล้วรันตัวติดตั้งซ้ำ</li>
-<li>ติ๊ก "Open Delentia now" ที่หน้าสุดท้าย</li>
+<li>เมื่อบอกว่าเสร็จแล้ว เปิดเมนู Start แล้วเริ่ม <strong>Delentia</strong></li>
 </ol>
-<h3 id="_3">ใช้งาน<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>เมนู Start → <strong>Delentia</strong> มี 3 รายการ (ไอคอนสีเขียวมีตา):
+<h3 id="_4">ใช้งาน<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>เมนู Start → <strong>Delentia</strong> มี 4 รายการ (ไอคอนสีเขียวมีตา):
 * <strong>Delentia</strong> เปิดโปรแกรม (ไม่มีหน้าต่างดำ) แล้วเบราว์เซอร์เปิดหน้า Delentia ที่ <code>http://localhost:3010</code> ครั้งแรกรอราว 20-60 วินาที
 * <strong>Stop Delentia</strong> ปิดสิ่งที่ Delentia เปิดไว้ (และเฉพาะสิ่งนั้น)
-* <strong>Update Delentia</strong> ตรวจและติดตั้งเวอร์ชันใหม่ (ถามก่อนเสมอ) ดู <code>UPDATES_TH.md</code></p>
+* <strong>Update Delentia</strong> ตรวจและติดตั้งเวอร์ชันใหม่ (ถามก่อนเสมอ) ดู <code>UPDATES_TH.md</code>
+* <strong>Check Delentia installation</strong> ทดสอบว่าโปรแกรมเริ่มและตอบได้บนเครื่องนี้ (ใช้โฟลเดอร์ข้อมูลชั่วคราว ไม่ใช่ของคุณ) แล้วเขียน <code>check_install_report.txt</code> ถ้ามีอะไรผิด ให้ส่งไฟล์นี้ให้คนที่ช่วยคุณ</p>
 <p>ครั้งแรกให้ทำ <code>FIRST_APPROVER_TH.md</code> (ตั้งผู้อนุมัติคนแรก) แล้วตั้งโมเดลที่หน้า <strong>โมเดล</strong></p>
-<h3 id="_4">ข้อมูลของคุณอยู่ที่ไหน<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h3 id="_5">ข้อมูลของคุณอยู่ที่ไหน<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li>โปรแกรมอยู่ที่ <code>%LOCALAPPDATA%\Programs\Delentia</code></li>
 <li><strong>ข้อมูลของคุณ</strong> (ความจำ บันทึกการทำงาน กุญแจ การตั้งค่า) อยู่ที่ <code>%USERPROFILE%\.delentia</code> ตัวติดตั้งและตัวถอนการติดตั้ง <strong>ไม่แตะโฟลเดอร์นี้เลย</strong> การอัปเดตก็ไม่แตะ</li>
 <li>ไม่มีบริการที่ทำงานเองตอนเปิดเครื่อง ไม่มี start-up entry ไม่มีงานตั้งเวลาของระบบ Delentia ทำงานเมื่อคุณคลิกเท่านั้น</li>
 </ul>
-<h3 id="_5">ถอนการติดตั้ง<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h3 id="_6">ถอนการติดตั้ง<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <p>Settings → Apps → Delentia → Uninstall (หรือ Control Panel) ระบบสั่งหยุดสิ่งที่เปิดไว้แล้วลบโฟลเดอร์โปรแกรม ข้อมูลของคุณยังอยู่ (ลบเองได้ถ้าต้องการ ซึ่งจะลบความจำและบันทึกถาวร)</p>
-<h3 id="_6">ถ้าติดปัญหา<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="_7">ถ้าติดปัญหา<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2379,7 +2443,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="_7">สำหรับผู้สร้างไฟล์ติดตั้ง (เจ้าของ)<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_8">สำหรับผู้สร้างไฟล์ติดตั้ง (เจ้าของ)<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="3">ต้องดาวน์โหลด 3 อย่าง (รอการอนุญาตของคุณ)<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2412,7 +2476,7 @@
 </tbody>
 </table>
 <p>สคริปต์ <strong>ไม่ดาวน์โหลดอะไรเอง</strong> รับเฉพาะไฟล์ที่คุณให้ และพิมพ์ SHA-256 ของแต่ละไฟล์ให้เทียบกับที่เว็บเจ้าของไฟล์ประกาศ (บันทึกใน <code>SOURCES.json</code> ในตัวติดตั้งด้วย)</p>
-<h3 id="_8">คำสั่งสร้าง<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">คำสั่งสร้าง<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python installer/windows/build_installer.py --python-embed &lt;python-3.12.10-embed-amd64.zip&gt; --get-pip &lt;get-pip.py&gt;
 </span></code></pre></div>
 * ไม่ระบุ <code>--wheel</code> จะ build wheel ให้เอง (รัน <code>scripts/package_desk.py</code> ก่อน เพื่อให้หน้าเว็บอยู่ในแพ็กเกจ ต้องมี Node.js 20+)
@@ -2427,10 +2491,10 @@
 <li>ถอนการติดตั้ง ตรวจว่าโฟลเดอร์ <code>.delentia</code> ยังอยู่</li>
 <li>ลงนามรหัสโปรแกรม (ใบรับรอง code signing) เมื่อจะแจกคนทั่วไป เพื่อไม่ให้ขึ้นคำเตือน SmartScreen</li>
 </ol>
-<h3 id="_9">สิ่งที่ตรวจแล้วและที่ยังไม่ตรวจ<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="_10">สิ่งที่ตรวจแล้วและที่ยังไม่ตรวจ<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <ul>
 <li>ตรวจแล้ว (เทสต์อัตโนมัติ): การจัดไฟล์ (Python พกพาตั้งค่า <code>._pth</code> ให้เห็น pip และแพ็กเกจ, wheel, สคริปต์ติดตั้ง), สคริปต์ Inno Setup (ติดตั้งแบบรายบัญชี ไม่มี start-up entry ไม่มีรีจิสทรี ไอคอน 3 รายการ ไม่แตะ <code>.delentia</code> แจ้งข้อผิดพลาดเป็นหน้าต่าง), ภาพโลโก้ขนาดถูกต้อง, คำสั่ง <code>launch</code> (เปิด/หาเจอซ้ำ/หยุดเฉพาะที่เปิด) รันจริงด้วย <code>pythonw</code> (ไม่มีหน้าต่างดำ)</li>
-<li><strong>ตรวจจริงแล้ว (2026-10-26 บนเครื่องผู้สร้าง, Windows 11, อินเทอร์เน็ตปกติ):</strong> คอมไพล์ด้วย Inno Setup 6.7.3 จริงสำเร็จใน 6 วินาที ได้ <code>Delentia-Setup-2.3.1.exe</code> ขนาด <strong>15.3 MB</strong> ติดตั้งแบบเงียบ (<code>/VERYSILENT</code>) ใช้เวลา <strong>87 วินาที</strong> ได้ไฟล์ 264 MB, สร้างไอคอนใน Start Menu 4 รายการ (Delentia / Stop / Update / Check Delentia installation), <strong>ไม่มี start-up entry</strong>, เปิดแล้วหน้า Desk คุยกับเอเจนต์ที่ติดตั้งนั้นเองบนพอร์ตที่กำหนด (ทดลองพอร์ต 8123/3123 กับโฟลเดอร์ข้อมูลชั่วคราว) ในเวลา 10 วินาที, ถอนการติดตั้งแล้วโฟลเดอร์ ไอคอน และรีจิสทรีหายหมด และรายการไฟล์ใน <code>~/.delentia</code> ของจริงเหมือนเดิมทุกชื่อ</li>
+<li><strong>ตรวจจริงแล้ว (2026-10-26 บนเครื่องผู้สร้าง, Windows 11, อินเทอร์เน็ตปกติ):</strong> คอมไพล์ด้วย Inno Setup 6.7.3 จริงสำเร็จใน 6 วินาที ได้ <code>Delentia-Setup-2.3.1.exe</code> (เลขที่สาขานี้ใช้ในตอนนั้น ภายหลังการตรวจเวอร์ชันวันเดียวกันพบว่า 2.3.1 เป็นรุ่นอื่นที่เผยแพร่ไปแล้ว จึงเปลี่ยนเป็น <code>Delentia-Setup-2.4.0.exe</code>) ขนาด <strong>15.3 MB</strong> ติดตั้งแบบเงียบ (<code>/VERYSILENT</code>) ใช้เวลา <strong>87 วินาที</strong> ได้ไฟล์ 264 MB, สร้างไอคอนใน Start Menu 4 รายการ (Delentia / Stop / Update / Check Delentia installation), <strong>ไม่มี start-up entry</strong>, เปิดแล้วหน้า Desk คุยกับเอเจนต์ที่ติดตั้งนั้นเองบนพอร์ตที่กำหนด (ทดลองพอร์ต 8123/3123 กับโฟลเดอร์ข้อมูลชั่วคราว) ในเวลา 10 วินาที, ถอนการติดตั้งแล้วโฟลเดอร์ ไอคอน และรีจิสทรีหายหมด และรายการไฟล์ใน <code>~/.delentia</code> ของจริงเหมือนเดิมทุกชื่อ</li>
 <li><strong>ข้อบกพร่องที่การติดตั้งจริงพบ (แก้แล้ว มีเทสต์):</strong> (1) ส่วนประกอบที่เผยแพร่เป็นซอร์สอย่างเดียว (<code>robotexclusionrulesparser</code>) สร้างไม่ได้ใน Python พกพาเพราะ pip สร้างแบบแยกสภาพแวดล้อมไม่ได้ ("Cannot import setuptools.build_meta") ตอนนี้ลง setuptools+wheel ก่อนแล้วสร้างด้วย <code>--no-build-isolation</code>; (2) แคชของ pip ที่เขียนไม่ได้ทำให้ติดตั้งล้ม ตอนนี้ใช้ <code>--no-cache-dir</code> ทั้งสามขั้น; (3) การติดตั้งแบบเงียบที่ส่วนประกอบลงไม่สำเร็จเคยจบด้วยรหัส 0 (ผ่าน) ตอนนี้จบด้วยรหัสที่ไม่ใช่ 0 (วัดจากคอมไพเลอร์จริง: <code>RaiseException</code> กับ <code>Abort</code> ไม่เปลี่ยนรหัส ต้องใช้ <code>ExitProcess</code> ตอนท้าย)</li>
 <li><strong>สคริปต์ตรวจหลังติดตั้ง:</strong> ทางลัด Start → Delentia → <em>Check Delentia installation</em> (หรือรัน <code>python\python.exe check_install.py</code> ในโฟลเดอร์ติดตั้ง) ตรวจ 6 ข้อ (ไฟล์และบันทึกของตัวติดตั้ง, เวอร์ชัน, หน้า Desk อยู่ในแพ็กเกจ, ไลบรารี, เริ่มบนพอร์ตว่างแล้วตอบ/หยุดได้, ไม่มีอะไรค้าง) ใช้โฟลเดอร์ข้อมูลชั่วคราว ไม่แตะข้อมูลจริง และเขียนรายงาน <code>check_install_report.txt</code> ที่ส่งให้คนช่วยดูได้</li>
 <li><strong>ยังไม่ตรวจ:</strong> เครื่องสะอาดที่ไม่เคยมี Python/Node (ที่ตรวจคือเครื่องผู้สร้าง), SmartScreen/ไวรัส (ตัวติดตั้งยังไม่ได้ลงนามรหัส จะขึ้นคำเตือน), การติดตั้งแบบออฟไลน์ (<code>--offline-wheels</code>), การอัปเดตด้วย <code>delentia update --apply</code> จาก PyPI จริง (รอปล่อย 2.3.1), การติดตั้งทับเวอร์ชันเก่า</li>

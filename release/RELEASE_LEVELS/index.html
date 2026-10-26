@@ -18,7 +18,7 @@
         <link rel="prev" href="../../operators/OPERATOR_CONTRACT/">
       
       
-        <link rel="next" href="../../assurance/ASSURANCE_CASE/">
+        <link rel="next" href="../VERSIONING_POLICY/">
       
       
         
@@ -2240,6 +2240,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#milestones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Milestones
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-gates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2276,6 +2287,62 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSIONING_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_HISTORY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2461,6 +2528,26 @@
 </tr>
 </tbody>
 </table>
+<h2 id="milestones">Milestones<a class="headerlink" href="#milestones" title="Permanent link">&para;</a></h2>
+<p>A milestone is a named point on this ladder that the owner declares. It is a label for <em>what is opened to whom</em>, never a version number and never a git tag (see <a href="../VERSIONING_POLICY/">VERSIONING_POLICY.md</a>); its record is <code>docs/release/compatibility.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Milestone</th>
+<th>Level</th>
+<th>Opens</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Public Technical Preview 0.1</em></td>
+<td><strong>L1</strong></td>
+<td><code>pip install delentia-os</code>, the Windows installer download, the scripted demos, the Desk on your own machine</td>
+<td>planned; the owner declares it when the gates for L0 and L1 below, and G-installer, say so</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-gates">The gates<a class="headerlink" href="#the-gates" title="Permanent link">&para;</a></h2>
 <p>A gate is <strong>met</strong> only when the named evidence exists and can be re-checked. Status as of 2026-10-19 (the numbers behind each line are in <code>docs/release/READINESS_SNAPSHOT.md</code>, generated from the commit, the CI run and the evidence bundles).</p>
 <table>
@@ -2514,6 +2601,12 @@
 <td>L1</td>
 <td>The operator contract exists and its commands exist (<code>docs/operators/OPERATOR_CONTRACT.md</code>)</td>
 <td>met (text); no operator other than the author has used it; a backup taken before an erasure still holds that person's words (see section 8 of the contract and <code>delentia backup erasure-check</code>)</td>
+</tr>
+<tr>
+<td>G-installer</td>
+<td>L1 (a download is offered)</td>
+<td>The Windows installer installs, starts, passes <code>check_install.py</code> and uninstalls without touching <code>~/.delentia</code> on a <strong>clean</strong> machine; the release carries its checksum</td>
+<td>built, installed, checked and uninstalled on the author's own machine <strong>and on a clean GitHub Windows runner</strong> (workflow run 40266296420, 2026-10-26: installer exit 0, post-install check 6 of 6, uninstall left nothing); <strong>a computer that is not the author's, a real SmartScreen check and an offline install are not done</strong>; not code-signed</td>
 </tr>
 <tr>
 <td>G-model</td>
@@ -2645,13 +2738,13 @@
         
         
           
-          <a href="../../assurance/ASSURANCE_CASE/" class="md-footer__link md-footer__link--next" aria-label="Next: Assurance case (one property)">
+          <a href="../VERSIONING_POLICY/" class="md-footer__link md-footer__link--next" aria-label="Next: Versioning policy">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Assurance case (one property)
+                Versioning policy
               </div>
             </div>
             <div class="md-footer__button md-icon">
