@@ -112,6 +112,31 @@ def test_a_new_installed_version_does_not_trust_an_old_answer(index, monkeypatch
     assert index.hits == 2 and state["status"] == "current"
 
 
+def test_a_build_ahead_of_the_index_is_current_and_says_it_is_ahead(index, monkeypatch):
+    """Round 102: a build newer than the newest release (a test or pre-release build) must not be told it is 'the newest version'."""
+    monkeypatch.setattr(update_check, "current_version", lambda: "99.0.0")
+    state = update_check.check(force=True)
+    assert state["status"] == "current" and state["ahead"] is True
+    assert update_check.cached_state()["ahead"] is True
+
+
+def test_a_build_equal_to_or_behind_the_index_is_not_ahead(index, monkeypatch):
+    monkeypatch.setattr(update_check, "current_version", lambda: "9.9.9")
+    assert update_check.check(force=True)["ahead"] is False                         # equal to the index (9.9.9)
+    monkeypatch.setattr(update_check, "current_version", lambda: "2.3.1")
+    assert update_check.check(force=True)["ahead"] is False                         # behind: an update is available, not ahead
+
+
+def test_the_update_command_does_not_call_an_unreleased_build_the_newest_version(index, monkeypatch):
+    from click.testing import CliRunner
+    from rct_control_plane.cli import cli
+    monkeypatch.setattr(update_check, "current_version", lambda: "99.0.0")
+    out = CliRunner().invoke(cli, ["update"]).output
+    assert "has not been released yet" in out and "the newest version." not in out and "9.9.9" in out
+    monkeypatch.setattr(update_check, "current_version", lambda: "9.9.9")
+    assert "the newest version." in CliRunner().invoke(cli, ["update"]).output
+
+
 def test_a_failure_is_unknown_not_an_error_and_the_last_good_answer_is_kept(index):
     update_check.check(now=1_000_000.0)
     index.status = 500

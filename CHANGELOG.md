@@ -32,6 +32,7 @@ Release level: L0 and L1 of `docs/release/RELEASE_LEVELS.md` (read the code, run
 - A Linux zombie process was reported as running by the launcher; two simultaneous `delentia launch` started two agents; the first-device code could be guessed more than five times by simultaneous requests.
 - The installer could not install a dependency that is published as source only, failed when pip's cache was not writable, and exited 0 after a failed install.
 - The release workflow can no longer publish "nothing" silently: `scripts/check_versions.py` fails a tag whose number is already on PyPI or is not the package version.
+- `delentia update` no longer tells a build that is newer than the newest release (a test or pre-release build) that it is "the newest version"; it says the build has not been released yet.
 
 ## [2.3.1] - 2026-10-16
 
