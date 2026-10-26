@@ -91,12 +91,21 @@ def find_iscc(given: Optional[str]) -> Optional[Path]:
     return None
 
 
-def write_milestone(stage_dir: Path) -> Optional[Dict[str, str]]:
+def _load_version_module() -> Any:
+    """rct_control_plane/_version.py by its file path. Importing it as `rct_control_plane._version` would run the package's __init__, which needs the project's dependencies; the installer job
+    runs this script with a plain Python that has none (found by the CI of the PR that added the label)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("delentia_version_for_installer", ROOT / "rct_control_plane" / "_version.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def write_milestone(stage_dir: Path, version_module: Any = None) -> Optional[Dict[str, str]]:
     """Once the owner has declared the milestone (rct_control_plane/_version.py), write the label in both languages into the staged folder for the Inno script to include. The file is UTF-8 with a byte-order
     mark so that the Thai text is read as Thai; nothing Thai travels on the compiler's command line. Before the declaration no file is written and the installer shows no label."""
-    sys.path.insert(0, str(ROOT))
-    from rct_control_plane._version import milestone_labels
-    labels = milestone_labels()
+    labels = (version_module or _load_version_module()).milestone_labels()
     target = Path(stage_dir) / "milestone.iss"
     if labels is None:
         if target.exists():

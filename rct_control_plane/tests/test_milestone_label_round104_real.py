@@ -144,13 +144,24 @@ def test_a_missing_milestone_block_is_refused(tree):
 def test_the_installer_gets_the_label_in_a_utf8_file_only_after_the_declaration(tmp_path, monkeypatch):
     stage = tmp_path / "stage"
     stage.mkdir()
-    assert bi.write_milestone(stage) is None and not (stage / "milestone.iss").exists()
+    assert bi.write_milestone(stage) is None and not (stage / "milestone.iss").exists()          # the module it loads by path: the real, undeclared one
     monkeypatch.setitem(_version.MILESTONE, "declared", True)
-    labels = bi.write_milestone(stage)
+    labels = bi.write_milestone(stage, version_module=_version)
     raw = (stage / "milestone.iss").read_bytes()
     assert raw.startswith(b"\xef\xbb\xbf") and labels["en"] in raw.decode("utf-8-sig") and labels["th"] in raw.decode("utf-8-sig")      # a byte-order mark, so the Thai text is read as Thai
     monkeypatch.setitem(_version.MILESTONE, "declared", False)
-    assert bi.write_milestone(stage) is None and not (stage / "milestone.iss").exists()                                  # a stale file from an earlier build is removed
+    assert bi.write_milestone(stage, version_module=_version) is None and not (stage / "milestone.iss").exists()          # a stale file from an earlier build is removed
+
+
+def test_the_builder_reads_the_version_file_without_importing_the_package():
+    """The installer job runs build_installer.py with a plain Python: it must not need pydantic and the rest."""
+    import subprocess
+    code = ("import sys; sys.modules['rct_control_plane'] = None; "          # importing the package would now fail
+            "import importlib.util as u; s = u.spec_from_file_location('b', r'%s'); m = u.module_from_spec(s); s.loader.exec_module(m); "
+            "v = m._load_version_module(); print(v.MILESTONE['id'], v.milestone_labels())" % (ROOT / "installer" / "windows" / "build_installer.py"))
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=str(ROOT))
+    assert out.returncode == 0, out.stderr[-600:]
+    assert out.stdout.strip() == "preview-0.1 None"
 
 
 def test_the_installer_script_shows_the_label_without_putting_it_in_a_version_or_a_file_name():

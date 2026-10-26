@@ -53,7 +53,8 @@ def milestone_for_health() -> "dict[str, str] | None":
     labels = milestone_labels()
     if labels is None:
         return None
-    return {"id": MILESTONE["id"], "number": MILESTONE["number"], "release_level": MILESTONE["release_level"], "name_en": MILESTONE["name_en"], "name_th": MILESTONE["name_th"], **labels}
+    return {"id": str(MILESTONE["id"]), "number": str(MILESTONE["number"]), "release_level": str(MILESTONE["release_level"]), "name_en": str(MILESTONE["name_en"]),
+            "name_th": str(MILESTONE["name_th"]), **labels}
 
 
 def get_package_version() -> str:
