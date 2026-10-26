@@ -30,6 +30,7 @@ import argparse
 import datetime as _dt
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -148,10 +149,62 @@ def result_defaults(result: Path) -> Dict[str, Any]:
     return found
 
 
+# The settings that change what a measurement means. Only these are recorded, only their names are read from the environment, and a name that looks like a secret is never recorded.
+CONFIG_ENV = ("DELENTIA_TOOL_MENU", "DELENTIA_TOOL_MENU_FORMAT", "DELENTIA_OLLAMA_THINK", "DELENTIA_OLLAMA_NUM_CTX", "DELENTIA_PROMPT_LAYOUT", "DELENTIA_ASK_AND_WAIT", "DELENTIA_WARM_RECALL",
+              "DELENTIA_PARALLEL_TOOLS", "DELENTIA_FDIA_POLICY_DEFAULT", "DELENTIA_TAINT_GATE", "DELENTIA_UNTRUSTED_PATHS", "DELENTIA_VERIFY_GROUNDING", "DELENTIA_VERIFY_V2", "DELENTIA_VERIFY_V3",
+              "DELENTIA_RCT7_JUDGE", "DELENTIA_RCT7_CHAIN", "DELENTIA_RCT7_JUDGE_CONTEXT", "DELENTIA_MEMORY_EMBED", "DELENTIA_MEMORY_EMBED_MODEL", "DELENTIA_MEMORY_POLICY", "DELENTIA_MAX_PINNED_SHOWN",
+              "DELENTIA_EPISODE_BUDGET_USD", "DELENTIA_EPISODE_MAX_TOKENS", "DELENTIA_DAILY_BUDGET_USD", "DELENTIA_OPENROUTER_PROVIDER_ORDER", "DELENTIA_OPENROUTER_PROVIDER_ONLY",
+              "DELENTIA_OPENROUTER_PROVIDER_IGNORE", "DELENTIA_OPENROUTER_ALLOW_FALLBACKS", "DELENTIA_OPENROUTER_DATA_COLLECTION", "DELENTIA_OPENROUTER_ZDR", "DELENTIA_OPENROUTER_REQUIRE_PARAMETERS",
+              "DELENTIA_OPENROUTER_QUANTIZATIONS", "DELENTIA_OPENROUTER_TIMEOUT_S", "DELENTIA_RESEARCH_MODE")
+SECRETISH = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")
+
+
+def config_snapshot() -> Dict[str, Any]:
+    """What was switched on when a run happened: the settings above that are set, the package version, the interpreter and the platform, and a hash of all of it. Never a value whose name looks like a secret."""
+    import platform
+    env = {k: os.environ[k] for k in CONFIG_ENV if os.environ.get(k) is not None and not any(w in k for w in SECRETISH)}
+    try:
+        from rct_control_plane._version import PACKAGE_VERSION as version
+    except Exception:                                                # noqa: BLE001 - a register must still work from a bare checkout
+        version = "unknown"
+    snap: Dict[str, Any] = {"env": dict(sorted(env.items())), "package_version": version, "python": platform.python_version(), "platform": f"{platform.system()} {platform.machine()}"}
+    snap["sha256"] = hashlib.sha256(json.dumps(snap, sort_keys=True).encode("utf-8")).hexdigest()
+    return snap
+
+
+def result_extras(result: Path) -> Dict[str, Any]:
+    """The failure label and the configuration a runner wrote into its own result file (taken at RUN time, which is worth more than a snapshot taken when somebody registers it)."""
+    try:
+        data = json.loads(Path(result).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    extras: Dict[str, Any] = {}
+    if isinstance(data.get("failure_label"), str):
+        extras["failure_label"] = data["failure_label"]
+    if isinstance(data.get("config"), dict):
+        extras["config"] = data["config"]
+    return extras
+
+
+def clean_failure_label(label: Optional[str], verdict: str) -> Optional[str]:
+    """A label comes from the project's own taxonomy (research/failure_taxonomy.py). A pass has none; a fail without one is stored as such, never guessed."""
+    if label in (None, ""):
+        return None
+    from research.failure_taxonomy import LABELS
+    if label not in LABELS:
+        raise RegisterError(f"failure label {label!r} is not one of {', '.join(LABELS)}")
+    if verdict == "pass" and label != "none":
+        raise RegisterError("a passing entry cannot carry a failure label")
+    return label
+
+
 def add_entry(*, stage: str, model: str, provider: str, criteria: Path, result: Path, verdict: str, est_usd: float = 0.0,
               actual_usd: Optional[float] = None, note: str = "", replaces: Optional[str] = None, register: Optional[Path] = None,
               now: Optional[_dt.datetime] = None, metrics: Optional[Dict[str, Any]] = None, arm: str = "", compare: Optional[Dict[str, Any]] = None,
-              seed: Optional[int] = None, n: Optional[int] = None, served_by: Optional[List[str]] = None, from_result: bool = True) -> Dict[str, Any]:
+              seed: Optional[int] = None, n: Optional[int] = None, served_by: Optional[List[str]] = None, from_result: bool = True,
+              failure_label: Optional[str] = None, config: Optional[Dict[str, Any]] = None, artifacts: Optional[List[Path]] = None) -> Dict[str, Any]:
     register = register or REGISTER
     if verdict not in VERDICTS:
         raise RegisterError(f"verdict must be one of {', '.join(VERDICTS)}, not {verdict!r}")
@@ -173,6 +226,19 @@ def add_entry(*, stage: str, model: str, provider: str, criteria: Path, result: 
     cmp_block = clean_compare(compare, [str(e.get("id")) for e in existing])
     if n is not None and n < 0:
         raise RegisterError("n cannot be negative")
+    extras = result_extras(result) if from_result else {}
+    flabel = clean_failure_label(failure_label if failure_label is not None else extras.get("failure_label"), verdict)
+    if config is not None:
+        cfg: Dict[str, Any] = {**config, "source": "given"}
+    elif "config" in extras:
+        cfg = {**extras["config"], "source": "recorded_by_the_runner"}
+    else:
+        cfg = {**config_snapshot(), "source": "taken_at_registration"}             # weaker: the environment of the person registering, not of the run
+    files: List[Dict[str, Any]] = []
+    for art in artifacts or []:
+        if not Path(art).is_file():
+            raise RegisterError(f"the artifact {art} does not exist")
+        files.append({"file": _rel(Path(art)), "sha256": sha256_file(Path(art))})
     ct, rt = _commit_time(criteria), result.stat().st_mtime
     after = bool(ct is not None and ct > rt + 1.0) or ct is None
     when = (now or _dt.datetime.now(_dt.timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -198,6 +264,9 @@ def add_entry(*, stage: str, model: str, provider: str, criteria: Path, result: 
         "metrics": clean,
         "served_by": sorted(set(served_by or [])),
         "compare": cmp_block,
+        "failure_label": flabel,
+        "config": cfg,
+        "artifacts": files,
     }
     register.parent.mkdir(parents=True, exist_ok=True)
     with open(register, "a", encoding="utf-8", newline="\n") as fh:
@@ -217,8 +286,8 @@ def verify(register: Optional[Path] = None, root: Path = ROOT) -> List[str]:
         if base is not None and base not in seen:
             problems.append(f"{e.get('id')}: it compares with {base}, which is not an earlier entry")
         seen.add(e.get("id"))
-        for key in ("criteria", "result"):
-            ref = e.get(key) or {}
+        refs = [("criteria", e.get("criteria") or {}), ("result", e.get("result") or {})] + [("artifact", a) for a in (e.get("artifacts") or [])]
+        for key, ref in refs:
             path = (root / ref.get("file", "")) if not Path(ref.get("file", "")).is_absolute() else Path(ref["file"])
             if not path.is_file():
                 problems.append(f"{e.get('id')}: the {key} file {ref.get('file')} is missing")
@@ -232,7 +301,7 @@ def render(register: Optional[Path] = None) -> str:
     replaced = {e["replaces"] for e in entries if e.get("replaces")}
     lines = ["# Results register", "",
              "Generated by `python -m research.results_register render` from `RESULTS_REGISTER.jsonl` (append-only). A row marked **late rule** had its criteria committed after the result was written: it is a description, not a pre-registered test.", "",
-             "| id | date | stage | model / arm | verdict | cost (est / actual) | speed | tokens in / out | A/B | commit | rule | note |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| id | date | stage | model / arm | verdict | failure | cost (est / actual) | speed | tokens in / out | A/B | commit / config | rule | note |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for e in entries:
         cost = f"${e['estimated_usd']:.4f} / " + ("n/a" if e.get("actual_usd") is None else f"${e['actual_usd']:.4f}")
         rule = "**late rule**" if e["criteria"].get("criteria_after_result") else "before"
@@ -243,7 +312,9 @@ def render(register: Optional[Path] = None) -> str:
         c = e.get("compare")
         ab = "-" if not c else f"vs {c['baseline_id']}: {c['effect']:+g}" + (f" [{c['ci_low']:g}, {c['ci_high']:g}]" if c.get("ci_low") is not None else "") + (f" n={c['n']}" if c.get("n") else "")
         who = f"`{e['model']}`" + (f" / {e['arm']}" if e.get("arm") else "")
-        lines.append(f"| {e['id']} | {e['date']} | {e['stage']} | {who} | {status} | {cost} | {speed} | {tokens} | {ab} | `{e['commit'][:7]}`{'+dirty' if e.get('tree_dirty') else ''} | {rule} | {e.get('note', '')} |")
+        cfg = e.get("config") or {}
+        cfgtxt = "-" if not cfg.get("sha256") else f"`{cfg['sha256'][:7]}` ({cfg.get('source', '?').replace('_', ' ')})"
+        lines.append(f"| {e['id']} | {e['date']} | {e['stage']} | {who} | {status} | {e.get('failure_label') or '-'} | {cost} | {speed} | {tokens} | {ab} | `{e['commit'][:7]}`{'+dirty' if e.get('tree_dirty') else ''} / {cfgtxt} | {rule} | {e.get('note', '')} |")
     paid = sum(e["actual_usd"] for e in entries if e.get("actual_usd"))
     lines += ["", f"Entries: {len(entries)}. Total actual cost registered: ${paid:.4f}."]
     return "\n".join(lines) + "\n"
@@ -268,6 +339,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     a.add_argument("--n", type=int, default=None, help="how many units (episodes, items, runs) the verdict stands on")
     a.add_argument("--metrics-json", type=Path, default=None, help="a JSON object of numbers from the vocabulary; overrides what the result file carries")
     a.add_argument("--compare-json", type=Path, default=None, help='{"baseline_id": "R0003", "effect": 0.12, "ci_low": 0.02, "ci_high": 0.21, "n": 40, "paired": true, "method": "paired bootstrap"}')
+    a.add_argument("--failure-label", default=None, help="one label of research/failure_taxonomy.py; taken from the result file when the runner wrote one")
+    a.add_argument("--artifact", type=Path, action="append", default=[], help="a file to link and hash (per-item results, a log, a ledger); repeatable")
     a.add_argument("--served-by", default="", help="comma-separated upstream providers that answered (OpenRouter reports them)")
     sub.add_parser("render")
     sub.add_parser("verify")
@@ -278,7 +351,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 return None if path is None else json.loads(Path(path).read_text(encoding="utf-8"))
             e = add_entry(stage=args.stage, model=args.model, provider=args.provider, criteria=args.criteria, result=args.result, verdict=args.verdict,
                           est_usd=args.est_usd, actual_usd=args.actual_usd, note=args.note, replaces=args.replaces, arm=args.arm, seed=args.seed, n=args.n,
-                          metrics=_load(args.metrics_json), compare=_load(args.compare_json), served_by=[s for s in args.served_by.split(",") if s.strip()])
+                          metrics=_load(args.metrics_json), compare=_load(args.compare_json), served_by=[s for s in args.served_by.split(",") if s.strip()], failure_label=args.failure_label, artifacts=args.artifact)
             print(f"registered {e['id']}: {e['stage']} {e['model']} {e['verdict']}" + ("  (the criteria were committed after the result: marked as a late rule)" if e["criteria"]["criteria_after_result"] else ""))
             return 0
         if args.cmd == "render":

@@ -194,3 +194,42 @@ def test_a_text_file_has_the_same_hash_with_lf_and_crlf_line_endings(tmp_path):
 def test_the_committed_register_is_intact():
     """The register in the repository must verify against the files it names; a changed result or rule file fails here."""
     assert rr.verify() == []
+
+
+# ------------------------------------------------------------------ failure label, configuration, linked artifacts
+def test_the_register_takes_the_label_and_the_configuration_a_runner_wrote_and_marks_the_source(world):
+    world["result"].write_text(json.dumps({"failure_label": "leakage", "config": {"env": {"DELENTIA_TOOL_MENU": "full"}, "sha256": "abc"}}), encoding="utf-8")
+    e = _add(world, verdict="fail")
+    assert e["failure_label"] == "leakage" and e["config"]["source"] == "recorded_by_the_runner" and e["config"]["env"]["DELENTIA_TOOL_MENU"] == "full"
+    other = _add(world, verdict="fail", from_result=False)
+    assert other["failure_label"] is None and other["config"]["source"] == "taken_at_registration" and other["config"]["sha256"]
+
+
+def test_a_label_outside_the_taxonomy_or_on_a_pass_is_refused(world):
+    with pytest.raises(rr.RegisterError, match="not one of"):
+        _add(world, verdict="fail", failure_label="vibes")
+    with pytest.raises(rr.RegisterError, match="passing entry"):
+        _add(world, verdict="pass", failure_label="leakage")
+    assert _add(world, verdict="pass", failure_label="none")["failure_label"] == "none"
+
+
+def test_the_snapshot_never_records_a_secret_and_its_hash_follows_the_settings(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "secret-value")
+    monkeypatch.setenv("DELENTIA_API_TOKEN", "secret-token")
+    monkeypatch.setenv("DELENTIA_TOOL_MENU", "ranked")
+    first = rr.config_snapshot()
+    assert "secret" not in json.dumps(first) and first["env"]["DELENTIA_TOOL_MENU"] == "ranked"
+    monkeypatch.setenv("DELENTIA_TOOL_MENU", "full")
+    assert rr.config_snapshot()["sha256"] != first["sha256"]
+
+
+def test_linked_artifacts_are_hashed_and_verify_finds_one_that_changed(world, tmp_path):
+    items = world["repo"] / "items.json"
+    items.write_text(json.dumps([{"n": 1, "ok": True}]), encoding="utf-8")
+    e = _add(world, artifacts=[items])
+    assert e["artifacts"][0]["sha256"] == rr.sha256_file(items)
+    assert all("artifact" not in p for p in rr.verify(world["register"], root=world["repo"]))
+    items.write_text(json.dumps([{"n": 1, "ok": False}]), encoding="utf-8")
+    assert any("artifact file" in p and "changed" in p for p in rr.verify(world["register"], root=world["repo"]))
+    with pytest.raises(rr.RegisterError, match="does not exist"):
+        _add(world, artifacts=[tmp_path / "nope.json"])
