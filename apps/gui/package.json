@@ -20,7 +20,8 @@
     "test:readiness": "node --experimental-strip-types --no-warnings src/lib/readiness-text.test.mjs",
     "test:a11y": "node --experimental-strip-types --no-warnings src/lib/a11y-static.test.mjs",
     "test:http": "node --experimental-strip-types --no-warnings src/lib/http-message.test.mjs",
-    "test:webauthn": "node --experimental-strip-types --no-warnings src/lib/webauthn.test.mjs"
+    "test:webauthn": "node --experimental-strip-types --no-warnings src/lib/webauthn.test.mjs",
+    "test:e2e": "node scripts/a11y-e2e.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

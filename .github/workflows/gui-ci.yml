@@ -53,6 +53,10 @@ jobs:
           NEXT_PUBLIC_GATEWAY: http://localhost:8000
           NEXT_PUBLIC_API_KEY: ci-placeholder-key
 
+      - name: "Accessibility in a real browser (axe, every page, Thai and English, phone and desktop width)"
+        working-directory: apps/gui
+        run: npm run test:e2e
+
   rust:
     name: Rust (Tauri backend)
     runs-on: ubuntu-latest
