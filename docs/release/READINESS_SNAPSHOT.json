@@ -1,10 +1,10 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-10-26 03:49:39Z",
+  "generated_at": "2026-10-26 03:57:34Z",
   "offline": false,
   "git": {
-    "sha": "a8cd35c0929d2ec35badbc68f25d4dbdb493787e",
-    "short": "a8cd35c",
+    "sha": "7475caa4c865f8c913e685012228a9c84c1c0132",
+    "short": "7475caa",
     "branch": "round102/versioning-and-installer-release",
     "dirty": true
   },
@@ -79,7 +79,7 @@
         "gate": "G-installer",
         "needed_for": "L1 (a download is offered)",
         "status_word": "partly / see text",
-        "status_text": "built and run on the author's own machine and, in CI, on a clean Windows runner (once the workflow has run); **a computer that is not the author's and a real SmartScreen/offline check are not done**; not code-signed"
+        "status_text": "built, installed, checked and uninstalled on the author's own machine **and on a clean GitHub Windows runner** (workflow run 40266296420, 2026-10-26: installer exit 0, post-install check 6 of 6, uninstall left nothing); **a computer that is not the author's, a real SmartScreen check and an offline install are not done**; not code-signed"
       },
       {
         "gate": "G-model",

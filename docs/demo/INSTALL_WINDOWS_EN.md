@@ -10,7 +10,7 @@ The installer is called `Delentia-Setup-<version>.exe` and works like any other 
 * **Which version is it?** The installer has the number of the runtime inside it (`Delentia-Setup-2.4.0.exe` installs 2.4.0; `delentia --version` says 2.4.0). "*Public Technical Preview 0.1*" is the name of the milestone this release belongs to, not a version number: see [the versioning policy](../release/VERSIONING_POLICY.md).
 * **Check the file before you run it:** in PowerShell, `Get-FileHash .\Delentia-Setup.exe -Algorithm SHA256` must print the value next to `Delentia-Setup.exe` in `SHA256SUMS.txt`.
 
-**Status, plainly:** the installer has been built with the real compiler and installed, started, checked and uninstalled on the author's own machine (results at the end of this page), and CI repeats that on a clean Windows runner. It has **not** been tried on a clean computer of someone else, it is **not code-signed** (SmartScreen will warn) and it has not been tried offline. This page has two parts: "For users" and "For whoever builds it".
+**Status, plainly:** the installer has been built with the real compiler and installed, started, checked and uninstalled on the author's own machine (results at the end of this page), and CI repeats it on a clean GitHub Windows runner (first run 2026-10-26: installer exit 0, the post-install check 6 of 6, uninstall clean). It has **not** been tried on a computer that is not the author's, it is **not code-signed** (SmartScreen will warn) and it has not been tried offline. This page has two parts: "For users" and "For whoever builds it".
 
 ## For users
 

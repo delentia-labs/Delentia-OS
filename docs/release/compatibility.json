@@ -16,7 +16,7 @@
       "G-mediation": "met (six doors, with a mutation test)",
       "G-approval": "met (model check, crash windows with real processes)",
       "G-operator": "met as text; no operator other than the author has used it",
-      "G-installer": "built and run on the author's machine only; a clean machine, SmartScreen and an offline install are not yet checked",
+      "G-installer": "built, installed, checked and uninstalled on the author's machine and on a clean GitHub Windows runner (PR #195, 2026-10-26); someone else's computer, SmartScreen and an offline install are not yet checked",
       "G-windows-hello": "not yet tested with a real device",
       "G-model": "not met (no capable model has driven the loop; this belongs to L2, not to this milestone)"
     }
