@@ -144,3 +144,36 @@ def test_the_guides_link_only_to_guides_that_exist():
     for path in DEMO.glob("*.md"):
         for target in re.findall(r"`([A-Z_]+_(?:TH|EN)\.md)`", _read(path)):
             assert (DEMO / target).is_file(), f"{path.name} points at {target}, which does not exist"
+
+
+# ------------------------------------------------------------------ the Tools page in Thai (Round 101E)
+def test_every_tool_the_agent_can_call_has_a_thai_line_on_the_tools_page_and_no_line_is_for_a_tool_that_does_not_exist():
+    import asyncio
+    from rct_control_plane.mcp_server import mcp
+    names = {t.name for t in asyncio.run(mcp.list_tools())}
+    lines = set(re.findall(r"^\s{2}(delentia_\w+): ", _read(LIB / "tool-text.ts"), re.M))
+    assert names - lines == set(), f"tools with no Thai line (add them to apps/gui/src/lib/tool-text.ts): {sorted(names - lines)}"
+    assert lines - names == set(), f"Thai lines for tools that do not exist: {sorted(lines - names)}"
+
+
+def test_every_governance_control_has_a_thai_name_and_a_thai_way_to_change_it_and_none_is_for_a_control_that_does_not_exist():
+    ids = set(re.findall(r'add\("(\w+)"', _read(ROOT / "rct_control_plane" / "governance_view.py")))
+    table = _read(LIB / "governance-text.ts")
+    entries = dict(re.findall(r'^\s{2}(\w+): \{ name: "([^"]+)"', table, re.M))
+    fixes = dict(re.findall(r'^\s{2}(\w+): \{ name: "[^"]+", fix: "([^"]*)"', table, re.M))
+    assert len(ids) >= 30                                                # the pattern still finds the controls
+    assert ids - set(entries) == set(), f"controls with no Thai name (add them to apps/gui/src/lib/governance-text.ts): {sorted(ids - set(entries))}"
+    assert set(entries) - ids == set(), f"Thai texts for controls that do not exist: {sorted(set(entries) - ids)}"
+    # a control the server tells a person how to change must tell them in Thai too (and one it does not, must not invent one): compared on the real controls of an empty host
+    import sqlite3
+    import tempfile
+    from rct_control_plane import governance_view
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        conn = sqlite3.connect(os.path.join(tmp, "g.db"))
+        try:
+            controls, _gaps = governance_view._controls(conn)
+        finally:
+            conn.close()
+    assert len(controls) >= 28
+    for c in controls:
+        assert bool(c["how_to_change"]) == bool(fixes.get(c["id"])), f"{c['id']}: English way to change it {'exists' if c['how_to_change'] else 'is empty'}, Thai {'exists' if fixes.get(c['id']) else 'is empty'}"
