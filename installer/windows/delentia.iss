@@ -58,12 +58,14 @@ Source: "{#StageDir}\get-pip.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\install_runtime.cmd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\SOURCES.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "delentia.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "check_install.py"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; pythonw.exe has no console window: the shortcut just opens the Desk in the browser (an error, if any, is shown in a message box).
 Name: "{group}\Delentia"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m rct_control_plane.cli launch"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\delentia.ico"; Comment: "Start Delentia and open it in your browser"
 Name: "{group}\Stop Delentia"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m rct_control_plane.cli launch --stop"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\delentia.ico"; Comment: "Stop what Delentia started"
 Name: "{group}\Update Delentia"; Filename: "{app}\python\python.exe"; Parameters: "-m rct_control_plane.cli update --apply"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\delentia.ico"; Comment: "Check for a newer version and install it (asks first)"
+Name: "{group}\Check Delentia installation"; Filename: "{app}\python\python.exe"; Parameters: """{app}\check_install.py"" --pause"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\delentia.ico"; Comment: "Test that Delentia starts and answers on this computer (writes a report you can send to someone who helps)"
 Name: "{autodesktop}\Delentia"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m rct_control_plane.cli launch"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\delentia.ico"; Tasks: desktopicon
 
 [UninstallRun]
@@ -73,8 +75,30 @@ Filename: "{app}\python\pythonw.exe"; Parameters: "-m rct_control_plane.cli laun
 Type: filesandordirs; Name: "{app}"
 
 [Code]
+procedure ExitProcess(uExitCode: Integer); external 'ExitProcess@kernel32.dll stdcall';
+
 var
   RuntimeFailed: Boolean;
+  RuntimeCode: Integer;
+
+{ A silent install (/SILENT or /VERYSILENT) shows no message and, without this, ends with exit code 0 even when the parts could not be installed (measured: RaiseException and Abort both leave 0).
+  WizardSilent is false under /VERYSILENT in Inno 6.7, so the command line is read. }
+function IsSilentRun: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if (CompareText(ParamStr(I), '/VERYSILENT') = 0) or (CompareText(ParamStr(I), '/SILENT') = 0) then
+      Result := True;
+end;
+
+procedure DeinitializeSetup();
+begin
+  { the very last step: the uninstaller and its registry entry already exist, so a failed install can be re-run or removed as usual }
+  if RuntimeFailed and IsSilentRun then
+    ExitProcess(RuntimeCode);
+end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
@@ -89,6 +113,8 @@ begin
     if (not Exec(ExpandConstant('{cmd}'), Command, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode)) or (ResultCode <> 0) then
     begin
       RuntimeFailed := True;
+      RuntimeCode := ResultCode;
+      if RuntimeCode = 0 then RuntimeCode := 10;
       MsgBox('Delentia was copied, but its parts could not be installed (code ' + IntToStr(ResultCode) + ').' + #13#10 + #13#10 +
              'The most common reason is no internet connection. Connect, then run this installer again.' + #13#10 +
              'The details are in: ' + ExpandConstant('{app}\install.log'), mbError, MB_OK);

@@ -38,10 +38,15 @@ set "PY=%APP%python\python.exe"
 set OFFLINE=
 if exist "%APP%wheels" set OFFLINE=--no-index --find-links "%APP%wheels"
 echo [%date% %time%] preparing pip > "%LOG%"
-"%PY%" "%APP%get-pip.py" --no-warn-script-location %OFFLINE% >> "%LOG%" 2>&1
+"%PY%" "%APP%get-pip.py" --no-warn-script-location --no-cache-dir %OFFLINE% >> "%LOG%" 2>&1
 if errorlevel 1 exit /b 11
+rem Some dependencies are published as source only. pip builds those in an isolated environment, and the embeddable Python (which ignores the paths pip hands to the build step) can not use it:
+rem "Cannot import setuptools.build_meta". So the build tools go in first and the build uses them (--no-build-isolation).
+echo [%date% %time%] installing the build tools >> "%LOG%"
+"%PY%" -m pip install --no-warn-script-location --disable-pip-version-check --no-cache-dir %OFFLINE% setuptools wheel >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 14
 echo [%date% %time%] installing %1 >> "%LOG%"
-"%PY%" -m pip install --no-warn-script-location --disable-pip-version-check %OFFLINE% "%APP%wheel\%~1" >> "%LOG%" 2>&1
+"%PY%" -m pip install --no-warn-script-location --disable-pip-version-check --no-cache-dir --no-build-isolation %OFFLINE% "%APP%wheel\%~1" >> "%LOG%" 2>&1
 if errorlevel 1 exit /b 12
 "%PY%" -c "import rct_control_plane.cli" >> "%LOG%" 2>&1
 if errorlevel 1 exit /b 13

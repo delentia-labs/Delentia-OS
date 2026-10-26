@@ -171,3 +171,64 @@ def test_the_logo_files_exist_with_the_sizes_the_compiler_requires(iss):
 def test_the_app_id_is_a_guid_and_the_version_comes_from_the_build(iss):
     assert re.search(r"AppId=\{\{[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}\}", iss)
     assert "AppVersion={#AppVersion}" in iss and "OutputBaseFilename=Delentia-Setup-{#AppVersion}" in iss
+
+
+# ------------------------------------------------------------------ Round 101E: what the first real build and install showed
+def test_source_only_dependencies_build_with_the_build_tools_installed_first_because_the_embeddable_python_cannot_isolate_a_build(builder, tmp_path):
+    """Measured on the first real install: robotexclusionrulesparser is published as source only, pip's isolated build fails in the embeddable Python ("Cannot import setuptools.build_meta")."""
+    stage_dir, *_ = _stage(builder, tmp_path)
+    text = (stage_dir / "install_runtime.cmd").read_text(encoding="ascii")
+    tools = text.index("setuptools wheel")
+    main = text.rindex("--no-build-isolation")                 # the last mention is the install itself; the first is the comment
+    assert tools < main and "exit /b 14" in text and "Cannot import setuptools.build_meta" in text
+    assert text.count("--no-cache-dir") == 3                    # get-pip, the tools, the wheel: an unwritable pip cache must never stop an install
+
+
+def test_a_silent_install_that_could_not_install_its_parts_does_not_end_with_exit_code_zero(iss):
+    """Measured with the real compiler: RaiseException and Abort both leave exit code 0; only ExitProcess from DeinitializeSetup gives a non-zero code, with the uninstaller still in place."""
+    code = iss.split("[Code]", 1)[1]
+    assert "ExitProcess@kernel32.dll" in code and "procedure DeinitializeSetup" in code and "ExitProcess(RuntimeCode)" in code
+    assert "ParamStr" in code and "/VERYSILENT" in code and "WizardSilent" not in code.replace("WizardSilent is false", "")      # WizardSilent is false under /VERYSILENT in Inno 6.7
+    assert "RuntimeCode := ResultCode" in code and "RuntimeCode = 0 then RuntimeCode := 10" in code
+
+
+def test_the_check_script_is_packed_and_has_a_shortcut(iss):
+    assert 'Source: "check_install.py"' in iss
+    icons = iss.split("[Icons]", 1)[1].split("[UninstallRun]", 1)[0]
+    line = next(entry for entry in icons.splitlines() if "Check Delentia installation" in entry)
+    assert "python.exe" in line and "pythonw" not in line and "check_install.py" in line and "--pause" in line      # it shows its result, so it needs a console window
+
+
+def _fake_installed_app(tmp_path, log_tail="done"):
+    app = tmp_path / "app"
+    (app / "wheel").mkdir(parents=True)
+    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").write_bytes(b"x")
+    (app / "install.log").write_text(f"preparing pip\ninstalling\n[date] {log_tail}\n", encoding="utf-8")
+    return app
+
+
+def _run_check(tmp_path, app, *extra):
+    import subprocess
+    env = {**os.environ, "PYTHONPATH": str(ROOT), "DELENTIA_DESK_DIR": str(tmp_path / "desk")}
+    (tmp_path / "desk").mkdir(exist_ok=True)
+    (tmp_path / "desk" / "index.html").write_text("<html><title>Delentia Desk</title></html>", encoding="utf-8")
+    return subprocess.run([sys.executable, str(WIN / "check_install.py"), "--app-dir", str(app), "--python", sys.executable, *extra],
+                          env=env, capture_output=True, text=True, timeout=300, encoding="utf-8", errors="replace")
+
+
+def test_the_check_script_says_fail_and_exits_non_zero_when_the_installers_log_does_not_end_with_done(tmp_path):
+    result = _run_check(tmp_path, _fake_installed_app(tmp_path, log_tail="ERROR: Could not install packages"), "--no-start")
+    assert result.returncode == 1 and "FAIL  1" in result.stdout and "does not end with 'done'" in result.stdout
+    assert "Result: 1 FAILED" in result.stdout and (tmp_path / "app" / "check_install_report.txt").is_file()
+
+
+def test_the_check_script_starts_the_program_on_free_ports_answers_and_stops_everything(tmp_path):
+    app = _fake_installed_app(tmp_path)
+    (app / "wheel" / "delentia_os-2.3.1-py3-none-any.whl").unlink()
+    from rct_control_plane._version import PACKAGE_VERSION
+    (app / "wheel" / f"delentia_os-{PACKAGE_VERSION}-py3-none-any.whl").write_bytes(b"x")
+    result = _run_check(tmp_path, app)
+    assert result.returncode == 0, result.stdout + result.stderr
+    for number in "123456":
+        assert f"PASS  {number}" in result.stdout, result.stdout
+    assert "Result: ALL PASSED" in result.stdout and "ผลการตรวจ: ผ่านทั้งหมด" in (app / "check_install_report.txt").read_text(encoding="utf-8")
