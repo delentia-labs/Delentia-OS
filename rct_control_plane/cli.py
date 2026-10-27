@@ -5610,6 +5610,19 @@ def demo_init(root: Optional[str]) -> None:
     click.echo("ต่อไป: delentia demo run compare --scripted  (ไม่ต้องมีโมเดล)  หรือ  delentia model show  แล้ว  delentia demo run compare")
 
 
+@demo_group.command("reset")
+@_DEMO_ROOT_OPTION
+def demo_reset(root: Optional[str]) -> None:
+    """Put the sample quotes back as `demo init` wrote them (a copy of any changed file is kept in results/; nothing is deleted)."""
+    from rct_control_plane import demo as demo_module
+    out = demo_module.reset(_demo_root(root))
+    if not out["restored"]:
+        click.echo("ไฟล์ตัวอย่างยังเหมือนตอน init ไม่ต้องทำอะไร")
+        return
+    click.echo("คืนไฟล์ตัวอย่างแล้ว: " + ", ".join(out["restored"]))
+    click.echo(f"สำเนาไฟล์ที่ถูกแก้เก็บไว้ที่ {out['backup']}")
+
+
 @demo_group.command("run")
 @click.argument("goal")
 @_DEMO_ROOT_OPTION

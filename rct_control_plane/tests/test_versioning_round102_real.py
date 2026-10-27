@@ -232,7 +232,7 @@ def test_the_readme_download_link_names_the_file_the_build_makes():
     assert "releases/latest/download/Delentia-Setup.exe" in readme and "releases/latest/download/SHA256SUMS.txt" in readme
     builder = (ROOT / "installer" / "windows" / "build_installer.py").read_text(encoding="utf-8")
     assert '"Delentia-Setup.exe"' in builder and '"SHA256SUMS.txt"' in builder
-    assert "2.4.0" in readme and "404" in readme                                    # the link's honest limit is written next to it
+    assert "every release from **2.4.0** on" in readme and "404" not in readme       # the installer exists since 2.4.0, so the old "this link answers 404 until the first release" caveat must be gone
     assert "Releases after 2.3.0" not in readme
 
 

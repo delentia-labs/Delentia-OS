@@ -14,7 +14,8 @@ The rules that decide the numbers: [VERSIONING_POLICY.md](VERSIONING_POLICY.md).
 | 2.2.1 … 2.2.6 | 2026-06-06 02:44, 02:47, 02:51, 03:08, 03:13, 03:43 | PyPI, GitHub | six uploads in one hour: the release pipeline (publishing tokens) was being repaired; the changelog has an entry only for 2.2.6 | **5 - Production/Stable** from 2.2.1 |
 | 2.3.0 | 2026-10-13 04:13 | PyPI, GitHub | **the first release that contains the governed agent runtime** (agent loop, tools, gate, approvals, audit chain, memory, channels); earlier PyPI releases were the SDK only. No Desk pages | 5 - Production/Stable |
 | 2.3.1 | 2026-10-16 03:16 | PyPI, GitHub | 2.3.0 with OpenCV and faiss-cpu made optional extras; one dependency-export fix. **No Desk, launcher, passkeys, plan-first approval or installer** | 5 - Production/Stable |
-| **2.4.0** | *planned* | | the Desk inside the package, `delentia launch`, the Windows installer, approving with a device, plan-first approval, update notices, RCT-7 questions, Law Pack, and 270 other commits since 2.3.1 (see `CHANGELOG.md`) | **3 - Alpha** |
+| **2.4.0** | 2026-10-26 11:06 | PyPI, GitHub (tag `v2.4.0` on 623f480) | the Desk inside the package, `delentia launch`, the Windows installer, approving with a device, plan-first approval, update notices, RCT-7 questions, Law Pack, and 270 other commits since 2.3.1 (see `CHANGELOG.md`). Installed in an empty environment from PyPI and the installer downloaded from the release and compared with `SHA256SUMS.txt` on the day of release | 3 - Alpha |
+| *2.4.1* | *planned* | | the bilingual stage label beside the version (shown only after the owner declares the stage) and `delentia demo reset`; the release that declares *Public Technical Preview 0.1* is the first to carry the label | 3 - Alpha |
 
 ## Other packages
 
@@ -23,13 +24,13 @@ The rules that decide the numbers: [VERSIONING_POLICY.md](VERSIONING_POLICY.md).
 | npm `@delentia/delentia-os` (TypeScript SDK) | 1.3.0, 1.4.0 (latest 1.4.0) | released by `sdk-v*` tags; moves only when the SDK changes |
 | npm `delentia-mcp` (MCP connector, repository `delentia-labs/delentia-mcp`) | 2.0.0, 2.1.0, 2.1.1, 2.1.2 (latest 2.1.2) | its own repository and release process |
 | `@delentia/fdia-wasm`, `@delentia/rct-edge` | 1.0.0 in the repository | released by `sdk-v*` tags |
-| Windows installer | none published yet | first with 2.4.0; the file name carries the runtime version |
+| Windows installer | `Delentia-Setup-2.4.0.exe` and `Delentia-Setup.exe` (15,183,013 bytes) with `SHA256SUMS.txt`, attached to the release of 2.4.0 | the file name carries the runtime version; not code-signed |
 
 ## Milestones (labels, not versions)
 
 | Milestone | Release level | Status |
 |---|---|---|
-| *Public Technical Preview 0.1* | L1 | planned; declared by the owner when the gates in `docs/release/compatibility.json` say so |
+| *Public Technical Preview 0.1* / *รุ่นทดลองเชิงเทคนิคสำหรับสาธารณะ 0.1* | L1 | planned; declared by the owner when the gates in `docs/release/compatibility.json` say so. The releases that belong to it: from the first one that carries the label (2.4.1 or later) until the next label is declared |
 
 ## Corrections
 

@@ -235,7 +235,7 @@ export interface Rct7Stats {
   total: { asked: number; answered: number; kept: number; cancelled: number; expired: number; waiting: number };
   by_kind: Record<string, Rct7Bucket>; kept_or_cancelled_share: number | null; model_judge_calls: Record<string, number>; hint: string; scope_note: string;
 }
-export interface Health { status: string; version?: string }
+export interface Health { status: string; version?: string; milestone?: import("./milestone").Milestone | null }
 export interface SubagentRun {
   id: string; created_at: string; agent_id: string; goal: string; success: boolean;
   stopped_reason: string | null; iterations: number | null; final_answer: string | null;
