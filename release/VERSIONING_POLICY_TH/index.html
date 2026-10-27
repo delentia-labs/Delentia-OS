@@ -2491,6 +2491,8 @@
 </blockquote>
 <ul>
 <li>ป้ายนี้ <strong>ไม่ใช่เวอร์ชันและไม่รีเซ็ตเวอร์ชันใด</strong></li>
+<li><strong>ป้ายแสดงเป็นสองภาษา ข้างเลขเวอร์ชัน และหลังประกาศเท่านั้น</strong>: อังกฤษ <em>Public Technical Preview 0.1</em> ไทย <em>รุ่นทดลองเชิงเทคนิคสำหรับสาธารณะ 0.1</em> เก็บใน <code>rct_control_plane/_version.py</code> (<code>MILESTONE</code>) <code>/health</code> รายงานป้ายนี้ หน้า Desk แสดงที่แถบข้างและหน้า Status (ภาษาของหน้าจอเป็นข้อความหลัก อีกภาษาอยู่ใน tooltip) ตัวติดตั้ง Windows แสดงทั้งสองภาษาในหน้าต้อนรับและในคำอธิบายโปรแกรม (Add or remove programs) ก่อนประกาศไม่มีที่ไหนแสดงอะไร ป้ายเดินทางไปกับแพ็กเกจ จึง <strong>ประกาศด้วยการปล่อยรุ่น</strong>: ตั้ง <code>declared</code> เป็น <code>True</code> ใน <code>_version.py</code> และ <code>status</code> เป็น <code>declared</code> ใน <code>docs/release/compatibility.json</code> ใน commit เดียวกัน (<code>scripts/check_versions.py</code> ล้มถ้าแก้ที่เดียว) แล้วปล่อยรุ่นตามปกติ</li>
+<li>รุ่นไหนสังกัดป้ายไหน เก็บใน <a href="../RELEASE_HISTORY/">RELEASE_HISTORY.md</a>: ป้าย <em>Preview 0.1</em> ครอบคลุมรุ่นตั้งแต่รุ่นแรกที่มีป้ายไปจนกว่าจะประกาศป้ายถัดไป</li>
 <li><strong>เจ้าของเป็นผู้ประกาศ ไม่ใช่การ build</strong>: <code>status</code> ใน <code>docs/release/compatibility.json</code> เป็น <code>planned</code> จนกว่าเจ้าของจะเปลี่ยนเป็น <code>declared</code> พร้อมใส่ commit และค่าแฮชของสิ่งที่ทดสอบ ปล่อยรุ่นก่อนประกาศ milestone ได้ (เป็นรุ่นธรรมดา)</li>
 <li>gate ที่ยังไม่ผ่านเขียนว่าไม่ผ่าน ไม่ปัดขึ้น ตอนนี้ที่ยังไม่ผ่าน: ตัวติดตั้งทดสอบบนเครื่องสะอาด/SmartScreen/โหมดออฟไลน์, Windows Hello จริง (และ G-model เป็นของ L2 ไม่ใช่ milestone นี้)</li>
 <li>ป้ายถัดไปเป็นแผนเท่านั้น: 0.2 External Validation Preview, 0.3 Research Evidence Preview, 1.0 Validated Research Baseline ตาม gate ไม่ใช่ตามวันที่ และไม่เปลี่ยนเลขแพ็กเกจใด ๆ</li>
@@ -2499,7 +2501,7 @@
 <ul>
 <li>ชื่อไฟล์ <code>Delentia-Setup-&lt;เวอร์ชัน runtime&gt;.exe</code> + สำเนาชื่อคงที่ <code>Delentia-Setup.exe</code> + <code>SHA256SUMS.txt</code></li>
 <li>ลิงก์ใน README: <code>https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe</code> (ใช้ได้เมื่อมี release ที่แนบตัวติดตั้ง คือ 2.4.0 เป็นต้นไป)</li>
-<li>ไม่ใส่ชื่อ milestone ในตัวไฟล์ และ <strong>ยังไม่ลงนามรหัสโปรแกรม</strong> SmartScreen จะเตือน (README บอกไว้ข้างลิงก์)</li>
+<li>ไม่ใส่ชื่อ milestone ในชื่อไฟล์ <code>AppVersion</code> หรือเลขเวอร์ชันไฟล์ของ Windows เมื่อประกาศช่วงนี้แล้ว <strong>หน้าต้อนรับและคำอธิบายโปรแกรมแสดงชื่อนี้</strong> เป็นอังกฤษและไทย (ข้อความมาจากไฟล์ UTF-8 ที่ <code>build_installer.py</code> เขียน ภาษาไทยจึงไม่เดินทางผ่านบรรทัดคำสั่ง) และ <strong>ยังไม่ลงนามรหัสโปรแกรม</strong> SmartScreen จะเตือน (README บอกไว้ข้างลิงก์ดาวน์โหลด)</li>
 <li>ติดตั้งแล้วแพ็กเกจที่ runtime พึ่งพามาจาก PyPI ตอนติดตั้ง (ไม่ใช่สำเนาสภาพแวดล้อมทั้งหมดที่ตรึงไว้)</li>
 </ul>
 <h2 id="push-tag">ขั้นตอนปล่อยรุ่น (เจ้าของเป็นผู้ push tag)<a class="headerlink" href="#push-tag" title="Permanent link">&para;</a></h2>
