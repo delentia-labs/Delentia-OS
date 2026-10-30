@@ -1,0 +1,247 @@
+{
+  "url": "http://127.0.0.1:42319/skills",
+  "lang": "en",
+  "loaded": [
+    {
+      "family": "Prompt",
+      "weight": 300,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "300",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 300,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "300",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 400,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "400",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 400,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "400",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 500,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "500",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 500,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "500",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 600,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "600",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Prompt",
+      "weight": 600,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Prompt",
+          "weight": "600",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 400,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "400",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 400,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "400",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 500,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "500",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 500,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "500",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 600,
+      "text": "ภาษาไทย",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "600",
+          "status": "loaded",
+          "unicodeRange": "U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC"
+        }
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "weight": 600,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "Sarabun",
+          "weight": "600",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "JetBrains Mono",
+      "weight": 400,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "JetBrains Mono",
+          "weight": "400",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "JetBrains Mono",
+      "weight": 500,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "JetBrains Mono",
+          "weight": "500",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    },
+    {
+      "family": "JetBrains Mono",
+      "weight": 600,
+      "text": "Hello",
+      "faces": [
+        {
+          "family": "JetBrains Mono",
+          "weight": "600",
+          "status": "loaded",
+          "unicodeRange": "U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+        }
+      ]
+    }
+  ],
+  "resources": [
+    "http://127.0.0.1:42319/_next/static/media/prompt-latin-400-normal.0zpvvdo9ujyfn.woff2",
+    "http://127.0.0.1:42319/_next/static/media/jetbrains-mono-latin-600-normal.2mm922pe315l1.woff2",
+    "http://127.0.0.1:42319/_next/static/media/jetbrains-mono-latin-400-normal.3crsbyy6lh6yf.woff2",
+    "http://127.0.0.1:42319/_next/static/media/jetbrains-mono-latin-500-normal.2h52d08o60qht.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-thai-300-normal.1pudutrv3j0no.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-latin-300-normal.2aje4j_3a3k1x.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-thai-400-normal.2p9s5k9w7i8gs.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-thai-500-normal.1-vib-rgthywe.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-latin-500-normal.0fhu4_s9po5k-.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-thai-600-normal.3e-jdjqt5bkyy.woff2",
+    "http://127.0.0.1:42319/_next/static/media/prompt-latin-600-normal.2o8sscn2_ujbc.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-thai-400-normal.0yet8anlobxb1.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-latin-400-normal.07mswom_4mc_x.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-thai-500-normal.1gv71jut0wx-x.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-latin-500-normal.32gctdbbsc194.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-thai-600-normal.1gyhu3zfs25zt.woff2",
+    "http://127.0.0.1:42319/_next/static/media/sarabun-latin-600-normal.2-x2_a_dkwuju.woff2"
+  ],
+  "externalFonts": []
+}
