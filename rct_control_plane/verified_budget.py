@@ -141,6 +141,23 @@ def validate_receipts(plan, contract_id, namespace, receipts):
         outputs[node["id"]] = normalized
         run_version = data["run_version"]
         completed.add(node["id"]);previous = receipt["receipt_sha256"]
+    return outputs
+
+
+def validate_stored_execution(contract, contract_id, namespace):
+    """Bind the public report/completion projection to validated history.
+
+    No source reread or replay of user effects occurs during status lookup.
+    """
+    receipts = contract["execution_receipts"]
+    outputs = validate_receipts(contract["plan"], contract_id, namespace, receipts)
+    report = contract.get("execution_report")
+    expected = outputs.get("compare_budget")
+    if report is not None and (expected is None or digest(report) != digest(expected)):
+        raise ValueError("stored report differs from recorded computation")
+    if contract.get("execution_status") == "complete" and (
+            len(receipts) != len(contract["plan"]["components"]) or expected is None or report is None):
+        raise ValueError("stored completion lacks full receipts/report")
 
 
 class BudgetPipeline:

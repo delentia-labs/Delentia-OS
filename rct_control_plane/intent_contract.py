@@ -218,9 +218,9 @@ class IntentContractStore:
         from rct_control_plane.budget_execution import validate_executor
         validate_executor(data["plan"])
         if "execution_receipts" in data:
-            from rct_control_plane.verified_budget import validate_receipts
+            from rct_control_plane.verified_budget import validate_stored_execution
             try:
-                validate_receipts(data["plan"], contract_id, self.namespace, data["execution_receipts"])
+                validate_stored_execution(data, contract_id, self.namespace)
             except (ValueError, TypeError, KeyError) as exc:
                 raise IntentContractError("invalid stored execution receipts") from exc
         # Pre-versioned contracts from the first release are schema 1. Future
