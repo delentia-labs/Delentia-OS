@@ -73,3 +73,25 @@ Runtime source 0c871825 บน main dc0b2df: **9,076 passed / 12 failed / 45 ski
 12 failures ยังเป็น 9 model prerequisites, 1 crawler/native DNS และ 2 installer checker ที่ #202 แก้แยกไว้ Jobs branch อิสระนี้ยังไม่รวม #202/#203/atomic-contract patch จึงไม่อ้างว่า failures เหล่านั้นถูกปิดใน branch นี้
 
 Combined integration checkout ใช้ #203 + atomic runtime ade30b9a + jobs 0c871825 + installer 9c90ee1f ที่ local merge commit 641e2e42 ไม่มีการ merge เข้า main ผล combined suite บันทึกเพิ่มเมื่อจบ ห้ามบวกจำนวน focused/full ที่ทับซ้อนกัน และไม่ย้ายตัวเลข cloud นี้ไป canonical main checkpoint
+
+## Combined integration ที่ส่งให้ Claude
+
+- Full combined runtime ที่ 641e2e42: **9,101 passed / 12 failed / 45 skipped / 1 xfailed**, 8998 warnings, 572.21s
+- Installer failures สองกรณีผ่านแล้วบน combined tree; failures 12 กรณีของ run นี้เป็น model 9 + DNS 1 + obsolete audit-hook tests 2 (ไม่ใช่ environment ทั้งหมด)
+- แก้ tests สองกรณีให้ตรวจ post-atomic-commit interleaving และเพิ่ม isolation tests ว่าอีก connection เห็นเพียง state ที่ commit แล้ว พร้อม partial-chain failure rollback test ไม่ลดเกณฑ์ writer receipt
+- Final combined regression ที่ **51713f9168ec7311b3fea89a249f2a3783631825**: **348 passed**, 272 warnings, 28.63s รวม jobs/webhook/journal/idempotency/contracts/erasure/audit/installer ไม่มี failures ในชุดนี้
+- ไม่ได้รัน full suite ใหม่หลังการแก้เฉพาะ test hooks จึงเก็บ raw full result 12 failures ตามจริง ไม่หักแล้วแต่งเป็น full result 10 failures
+- Branch สำหรับ reproduce/GUI E2E: `codex/combined-lifecycle-check-20261030` (push แล้ว แต่ไม่ใช่ main/release และไม่มี integration PR ให้ merge ซ้ำ)
+- ผลเครื่องอ่านได้: `evidence/JOB_OWNERSHIP_2026-10-30.json`; logs/XML อยู่ `/workspace/delentia-jobs-evidence-20261030/`
+
+Atomic contract audit/erasure อยู่ PR #204 ต่อจาก #203; jobs patch นี้คือ PR #205 แยกจาก main เมื่อ #203 merge ต้อง retarget #204 และ push validation commit ใหม่ก่อนอ้าง full CI ของ base main
+
+## สิ่งที่ยังต้องทำตามแผนเดิม
+
+1. รอ Python CI matrices ของ #202/#203/#205 ให้จบและ review; ไม่ merge โดยอัตโนมัติ
+2. Claude ใช้ combined SHA ทำ Desk accessibility/reconnect/video และ W09/W12 live runners พร้อม raw outcomes
+3. ตัดสิน deployment limits/clock policy, drain workers รุ่นเก่า, load/concurrency และ cancel ของ thread/external effects ก่อน production host
+4. Job audit ยัง best-effort, metadata tombstone ยังไม่มี automatic expiry และ off-host backups ยังต้อง erasure-check; atomic contract transaction ไม่ใช่คำรับรองทุก store
+5. Model/DNS prerequisites ใน cloud, capable-model holdout, domain verifiers และ off-host restore/witness/notary-user/72h soak/outside review ยังไม่มีหลักฐานครบจากรอบนี้
+
+สถานะหลัง patch: supervised experimental runtime ที่มี durable job ownership และ scoped outcome projection เพิ่มขึ้น มีหลักฐาน retry/cancellation/atomic-contract boundaries ที่ตรวจซ้ำได้ ยังไม่รับรอง general autonomous RCT-7, distributed exactly-once effects หรือ L2 pilot readiness
