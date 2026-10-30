@@ -29,6 +29,7 @@ class BudgetRequest(PlanItem):
     workspace_id: str = Field(min_length=1, max_length=80)
     budget: str = Field(min_length=1, max_length=100)
     evidence: QuoteEvidence
+    request_id: str | None = Field(default=None, min_length=1, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
 
 class ConfirmRequest(PlanItem):
@@ -180,7 +181,7 @@ def public_result(contract, actor, policy):
 def install_route(app, policy: ServicePolicy | None, loop_factory):
     if policy is None:
         return
-    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore, IntentRequestConflict
     policy_path = os.environ.get("DELENTIA_READONLY_POLICY")
     policy_hash = digest(policy.model_dump())
 
@@ -239,10 +240,13 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         binding = {"profile": "readonly_budget_v1", "actor": actor, "workspace_id": policy.workspace_id,
                    "workspace_root": str(Path(policy.workspace_root).resolve()),
                    "executor": "verified_budget_v1", "policy_sha256": policy_hash}
-        contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
-            Path(policy.workspace_root), {"semantic_plan": {
-                "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
-            }}, service_binding=binding)
+        try:
+            contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
+                Path(policy.workspace_root), {"semantic_plan": {
+                    "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
+                }}, service_binding=binding, request_id=payload.request_id)
+        except IntentRequestConflict:
+            raise HTTPException(409, "request_id conflicts with an existing request") from None
         return public_result(contract, actor, policy)
 
     @app.get(ROUTE + "/{contract_id}", response_model=BudgetResult)
