@@ -138,3 +138,15 @@ def test_other_connection_sees_previous_version_until_transition_audit_commits(s
     claimed = store.claim(contract['id'], contract['version'])
     assert seen == [contract]
     assert store.get(contract['id']) == claimed
+
+
+def test_partial_audit_chain_failure_rolls_back_plan_key_and_trail(store, tmp_path):
+    with store.db._connect() as conn:
+        conn.execute("CREATE TRIGGER fail_chain BEFORE INSERT ON audit_chain BEGIN SELECT RAISE(ABORT, 'injected chain append failure'); END")
+    with pytest.raises(sqlite3.Error):
+        create(store, tmp_path)
+    with store.db._connect() as conn:
+        assert conn.execute('SELECT COUNT(*) FROM intent_contracts').fetchone()[0] == 0
+        assert conn.execute('SELECT COUNT(*) FROM intent_request_keys').fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM audit_trail WHERE entity_type='intent_contract'").fetchone()[0] == 0
+        assert conn.execute('SELECT COUNT(*) FROM audit_chain').fetchone()[0] == 0
