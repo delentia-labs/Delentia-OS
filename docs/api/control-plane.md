@@ -168,3 +168,17 @@ with httpx.Client(base_url="http://localhost:8000") as client:
 ## Authentication
 
 The SDK control plane has no authentication by default — it is intended for local development and reference use. For production deployments in the Enterprise stack, JWT-based auth and mTLS are added at the Gateway layer.
+
+## Read-only budget request retries
+
+The opt-in `/v1/agent/readonly/budget` create request accepts an optional
+`request_id` (1–128 ASCII letters, digits, `.`, `_`, `:`, `-`). Reusing the key
+with identical input returns the actor's current persisted contract. Reusing it
+with changed input or policy binding returns 409. Without a key, each request
+creates a new plan. Authorization and file grants are checked on every retry.
+This does not confirm a plan or replay execution. The updated wire schema is
+[readonly-budget-v1.schema.json](readonly-budget-v1.schema.json).
+
+See the [lifecycle audit and recovery plan](../development/LIFECYCLE_REVIEW_2026-10-30_TH.md)
+for transaction boundaries, outstanding job ownership/cancel findings and the
+separate roles of request idempotency and tool-effect idempotency.
