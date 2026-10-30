@@ -168,8 +168,10 @@ class ComponentScheduler:
         validated = self._registry[node.handler].output_model.model_validate(output).model_dump()
         if node.criteria:
             criterion = node.criteria[0]
-            if validated.get("criterion_id") != criterion or validated.get("satisfied") is not True:
-                raise VerificationRejected(criterion, validated)
+            if (not isinstance(output, dict) or output.get("criterion_id") != criterion
+                    or output.get("satisfied") is not True
+                    or validated.get("criterion_id") != criterion or validated.get("satisfied") is not True):
+                raise VerificationRejected(criterion, output if isinstance(output, dict) else validated)
         self.on_complete(node.id, copy.deepcopy(validated))
         self._outputs[node.id] = copy.deepcopy(validated)
         self._verified.update(node.criteria)

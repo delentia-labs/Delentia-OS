@@ -88,7 +88,12 @@ def validate_receipts(plan, contract_id, namespace, receipts):
         raise IntentContractError("invalid execution receipt list")
     import re
     graph = {node["id"]: node for node in plan["components"]}
-    completed = set();previous = "0" * 64;run_version = None
+    from rct_control_plane.budget_execution import compile_program, registry_for
+    program = compile_program(plan)
+    handlers = registry_for(plan)
+    typed_nodes = {node["id"]: node for node in program["nodes"]}
+    outputs: dict[str, dict] = {}
+    completed: set[str] = set();previous = "0" * 64;run_version = None
     for receipt in receipts:
         if not isinstance(receipt, dict):
             raise IntentContractError("invalid execution receipt")
@@ -106,6 +111,34 @@ def validate_receipts(plan, contract_id, namespace, receipts):
             raise IntentContractError("execution receipt binding or dependency mismatch")
         if run_version is not None and data["run_version"] != run_version:
             raise IntentContractError("execution receipts belong to different claims")
+        typed = typed_nodes[node["id"]]
+        handler = handlers[typed["handler"]]
+        try:
+            normalized = handler.output_model.model_validate(data["output"]).model_dump()
+            if digest(normalized) != data["output_sha256"]:
+                raise ValueError("receipt output is not canonical typed data")
+            if typed["phase"] == "observation":
+                binding = plan["semantic_planning"]["quote_evidence"]
+                if (normalized["relative_path"] != binding["relative_path"] or normalized["sha256"] != binding["sha256"]
+                        or not re.fullmatch(r"[0-9a-f]{64}", normalized["tool_result_sha256"])):
+                    raise ValueError("receipt source differs from pinned evidence")
+            elif typed["criteria"]:
+                if (normalized.get("criterion_id") != typed["criteria"][0]
+                        or data["output"].get("satisfied") is not True):
+                    raise ValueError("receipt does not verify its criterion")
+            else:
+                # Only the fixed, application-owned budget arithmetic/copy
+                # handlers are replayed. Never re-read files or run criterion
+                # handlers here: these are historical receipts, not a new run.
+                payload = {**typed["parameters"], **{port: outputs[parent] for port, parent in typed["inputs"].items()}}
+                if handler.run is None:
+                    raise ValueError("receipt handler has no implementation")
+                expected = handler.run(handler.input_model.model_validate(payload))
+                if digest(expected) != data["output_sha256"]:
+                    raise ValueError("receipt output differs from its recorded inputs")
+        except (ValueError, KeyError, TypeError) as exc:
+            raise IntentContractError("execution receipt semantic or type mismatch") from exc
+        outputs[node["id"]] = normalized
         run_version = data["run_version"]
         completed.add(node["id"]);previous = receipt["receipt_sha256"]
 
@@ -170,7 +203,10 @@ class BudgetPipeline:
             raw = current_bytes(Path(self.plan["workspace"]), self.binding["relative_path"])
             if hashlib.sha256(raw).hexdigest() != self.binding["sha256"]:
                 raise ValueError("source changed after observation")
-            if digest(strict_json(answer)) != digest(self.report):
+            authoritative = self.scheduler.outputs.get("compare_budget")
+            if authoritative is None or digest(self.report) != digest(authoritative):
+                raise ValueError("report differs from completed computation")
+            if digest(strict_json(answer)) != digest(authoritative):
                 raise ValueError("answer differs from the verified arithmetic report")
             if differences:
                 raise ValueError("declared criteria not satisfied")
