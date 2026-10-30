@@ -175,8 +175,8 @@ def test_the_cli_refuses_a_paid_run_and_names_the_reason(tmp_path, monkeypatch):
     assert "OPENROUTER_API_KEY" in str(exc.value)
 
 
-def test_the_registered_runners_are_the_two_workflows_that_had_none():
-    assert sorted(lw.RUNNERS) == ["W03", "W06"]
+def test_the_registered_runners_are_the_workflows_that_had_none():
+    assert sorted(lw.RUNNERS) == ["W03", "W06", "W12"]          # Round 103 added W03 and W06, Round 105 adds W12
     json.dumps(sorted(lw.RUNNERS))
 
 

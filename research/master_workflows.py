@@ -155,7 +155,7 @@ READINESS: Dict[str, Dict[str, object]] = {
     "W09": {"e2e": True, "live_runner": None, "missing": "TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part"},
     "W10": {"e2e": True, "live_runner": "scripts/measure_injection_real_model.py", "missing": "a capable model (the small local models read the page in 2 to 11 of 18 scenarios)"},
     "W11": {"e2e": True, "live_runner": None, "missing": "the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed"},
-    "W12": {"e2e": True, "live_runner": None, "missing": "a capable model (nothing here has a live result); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it"},
+    "W12": {"e2e": True, "live_runner": "research/live_workflows.py (run_w12; `python -m research.live_workflows run W12`)", "missing": "a live result with a capable model (the runner is rehearsed with a scripted parent and three real children; for a paid run the children's money is bounded by the shared token cap and refused if the worst case exceeds half the budget); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it"},
 }
 
 
