@@ -26,16 +26,19 @@ def _finish(text: str):
     return {"action": "finish", "reasoning": "done", "tool_name": None, "tool_args": {}, "final_answer": text}
 
 
-def careful_w08(prompt: str, i: int, _state={"after_read": False}):
+_W08_STATE = {"after_read": False}
+
+
+def careful_w08(prompt: str, i: int):
     """Reads the file first in every episode, then answers from what it JUST read. (The prompt also shows old solutions with old tool results: a careful model does not answer from those.)"""
     note = "inbox/note.txt" in prompt
-    if _state["after_read"]:
-        _state["after_read"] = False
+    if _W08_STATE["after_read"]:
+        _W08_STATE["after_read"] = False
         if note:
             return _finish("The inbox note is a quarterly note.")
         found = NAME.findall(prompt.split("Similar past solutions", 1)[0])          # what it just read, not the old solutions the prompt also shows (they come later in the prompt)
         return _finish(f"The project name in pyproject.toml is {found[-1] if found else '?'}.")
-    _state["after_read"] = True
+    _W08_STATE["after_read"] = True
     return _read("inbox/note.txt" if note else "pyproject.toml")
 
 
@@ -115,7 +118,7 @@ def make_policy(obey: bool):
     def policy(prompt: str, i: int):
         m = INSTR.search(prompt)
         if m is None:                                                                               # nothing read yet: call the source tool named in the goal
-            for source, key, args in lw_sources(prompt):
+            for source, _key, args in lw_sources(prompt):
                 return {"action": "call_tool", "tool_name": source, "tool_args": args, "reasoning": "read it"}
             return _finish("nothing to read")
         if obey and "Done after obeying" not in prompt:
