@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 import os
 from abc import ABC, abstractmethod
@@ -683,6 +684,11 @@ def _count_tokens(text: str) -> int:
         return max(1, -(-len(text) // 4))
 
 
+def _good_amount(x: Any) -> bool:
+    """A real, finite, non-negative number (not a bool, not a string). Anything else must never be used to compute a limit."""
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x >= 0
+
+
 class MeteredProvider(LLMProvider):
     """Round 50 (Round 48 end-point criterion 7, "know the cost in
     advance"): wraps one episode's provider, adds up what each call used,
@@ -698,15 +704,23 @@ class MeteredProvider(LLMProvider):
                  prompt_price_per_mtok: Optional[float] = None,
                  completion_price_per_mtok: Optional[float] = None):
         self._inner = inner
+        # a budget that is not a real number cannot be enforced: it is treated as a budget of nothing, so every call is refused with the reason (never as "no limit")
+        self.budget_problem: Optional[str] = None
+        if max_cost_usd is not None and not _good_amount(max_cost_usd):
+            self.budget_problem, max_cost_usd = f"the cost budget {max_cost_usd!r} is not a finite, non-negative number", 0.0
+        if max_tokens_total is not None and not _good_amount(max_tokens_total):
+            self.budget_problem, max_tokens_total = f"the token budget {max_tokens_total!r} is not a finite, non-negative number", 0
         self.max_cost_usd = max_cost_usd
         self.max_tokens_total = max_tokens_total
         # a local Ollama model and the model-free demo's script cost nothing; any other provider without a price is still refused under a dollar budget
         if (isinstance(inner, OllamaProvider) or getattr(inner, "free_of_charge", False)) \
                 and prompt_price_per_mtok is None and completion_price_per_mtok is None:
             prompt_price_per_mtok = completion_price_per_mtok = 0.0
-        self.prompt_price_per_mtok = prompt_price_per_mtok
-        self.completion_price_per_mtok = completion_price_per_mtok
+        # a price that is NaN, negative, infinite or not a number is an UNKNOWN price (refused under a dollar budget), never a number to compute with
+        self.prompt_price_per_mtok = prompt_price_per_mtok if _good_amount(prompt_price_per_mtok) else None
+        self.completion_price_per_mtok = completion_price_per_mtok if _good_amount(completion_price_per_mtok) else None
         self.calls = 0
+        self.uncertain_calls = 0
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.cached_prompt_tokens = 0
@@ -740,6 +754,12 @@ class MeteredProvider(LLMProvider):
                 + completion_tokens * self.completion_price_per_mtok) / 1_000_000
 
     def _check_budget(self, prompt_text: str, max_tokens: int) -> None:
+        if self.budget_problem:
+            self.refused = f"budget: {self.budget_problem}, so the call cannot be checked"
+            raise BudgetExceededError(self.refused)
+        if (self.max_cost_usd is not None or self.max_tokens_total is not None) and not (isinstance(max_tokens, int) and not isinstance(max_tokens, bool) and max_tokens >= 0):
+            self.refused = f"budget: the output limit {max_tokens!r} of this call is not a whole number, so its worst case cannot be computed"
+            raise BudgetExceededError(self.refused)
         worst_prompt = _count_tokens(prompt_text)
         if self.max_tokens_total is not None:
             used = self.prompt_tokens + self.completion_tokens + self.children_tokens
@@ -762,8 +782,8 @@ class MeteredProvider(LLMProvider):
         self._inner.last_usage = None
         if usage is None or (usage.prompt_tokens == 0 and usage.completion_tokens == 0 and usage.cost_usd is None):
             usage = LLMUsage(_count_tokens(prompt_text), _count_tokens(completion_text), None)
-        cost = usage.cost_usd if usage.cost_usd is not None else self._price(usage.prompt_tokens,
-                                                                               usage.completion_tokens)
+        reported = usage.cost_usd if _good_amount(usage.cost_usd) else None        # a NaN or negative cost from a provider would poison or shrink the total: the price-based estimate is used
+        cost = reported if reported is not None else self._price(usage.prompt_tokens, usage.completion_tokens)
         self.calls += 1
         self.prompt_tokens += usage.prompt_tokens
         self.completion_tokens += usage.completion_tokens
@@ -774,12 +794,29 @@ class MeteredProvider(LLMProvider):
             self.cost_usd += cost
         self.last_usage = LLMUsage(usage.prompt_tokens, usage.completion_tokens, cost, usage.cached_tokens)
 
+    def _record_uncertain(self, prompt_text: str, partial_text: str = "") -> None:
+        """The call raised after the request may have reached the provider. It counts as a call; its prompt (and any text already received) counts as used, at the price when it is known."""
+        used_in, used_out = _count_tokens(prompt_text), _count_tokens(partial_text) if partial_text else 0
+        self.calls += 1
+        self.uncertain_calls += 1
+        self.prompt_tokens += used_in
+        self.completion_tokens += used_out
+        estimate = self._price(used_in, used_out)
+        if estimate is None:
+            self.cost_known = False
+        else:
+            self.cost_usd += estimate
+
     async def complete(self, prompt: str, system_prompt: Optional[str] = None,
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         full = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         self._check_budget(full, max_tokens)
-        result = await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
+        try:
+            result = await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
+        except BaseException:
+            self._record_uncertain(full)
+            raise
         self._record(full, result)
         return result
 
@@ -788,9 +825,13 @@ class MeteredProvider(LLMProvider):
         full = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         self._check_budget(full, max_tokens)
         chunks = []
-        async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
-            chunks.append(chunk)
-            yield chunk
+        try:
+            async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
+                chunks.append(chunk)
+                yield chunk
+        except BaseException:
+            self._record_uncertain(full, "".join(chunks))
+            raise
         self._inner.last_usage = None  # streamed responses carry no usage here; estimate instead
         self._record(full, "".join(chunks))
 
@@ -800,6 +841,7 @@ class MeteredProvider(LLMProvider):
         return {
             "model": self.model,
             "calls": self.calls,
+            "uncertain_calls": self.uncertain_calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "cached_prompt_tokens": self.cached_prompt_tokens,
