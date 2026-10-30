@@ -22,7 +22,7 @@ Per short run about 30,000 prompt and 3,000 completion tokens; W05, W07, W08, W1
 
 ## Where each one stands today
 
-Of 12 workflows: 12 have a scripted run of the whole job, 9 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
+Of 12 workflows: 12 have a scripted run of the whole job, 10 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
 
 | workflow | whole job run, scripted | live runner | what is missing next |
 |---|---|---|---|
@@ -37,7 +37,7 @@ Of 12 workflows: 12 have a scripted run of the whole job, 9 have a live runner (
 | W09 A payment-like job through a crash, an outage and a dead notary | yes | none | TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part |
 | W10 Hostile content, a stranger, and two signatures | yes | `scripts/measure_injection_real_model.py` | a capable model (the small local models read the page in 2 to 11 of 18 scenarios) |
 | W11 Prove what happened, hand it over, forget a person | yes | none | the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed |
-| W12 Delegate in parallel and use an outside service | yes | none | a capable model (nothing here has a live result); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it |
+| W12 Delegate in parallel and use an outside service | yes | `research/live_workflows.py (run_w12; `python -m research.live_workflows run W12`)` | a live result with a capable model (the runner is rehearsed with a scripted parent and three real children; for a paid run the children's money is bounded by the shared token cap and refused if the worst case exceeds half the budget); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it |
 
 ## The workflows
 
