@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import math
 import os
 import threading
 import time
@@ -26,6 +27,24 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from rct_control_plane.llm_provider import LLMProvider, LLMUsage
+
+
+def _is_number(x: Any) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def good_price(x: Any) -> bool:
+    """A price in USD per million tokens: a real, finite, non-negative number. NaN, a negative, infinity, a string or a bool is malformed (every comparison with NaN is False, so a NaN
+    worst case would pass every limit; a negative price would make the reservation shrink)."""
+    return _is_number(x) and math.isfinite(x) and x >= 0
+
+
+def good_cost(x: Any) -> bool:
+    return good_price(x)
+
+
+def _good_int(x: Any, minimum: int) -> bool:
+    return isinstance(x, int) and not isinstance(x, bool) and x >= minimum
 
 
 class BudgetExceeded(RuntimeError):
@@ -48,6 +67,16 @@ class BudgetPolicy:
     on_budget_exceeded: str = "stop"
 
     def validate(self) -> "BudgetPolicy":
+        for name in ("total_usd", "warning_usd", "stop_new_runs_usd", "reserve_usd", "max_cost_per_run_usd"):      # type and sign first: a string or NaN must not reach a comparison
+            if not good_price(getattr(self, name)):
+                raise ValueError(f"{name} must be a finite, non-negative number (got {getattr(self, name)!r})")
+        if not self.total_usd > 0 or not self.max_cost_per_run_usd > 0:
+            raise ValueError("total_usd and max_cost_per_run_usd must be greater than zero")
+        for name in ("max_llm_calls_per_run", "max_input_tokens_per_run", "max_output_tokens_per_run", "max_agent_steps"):
+            if not _good_int(getattr(self, name), 1):
+                raise ValueError(f"{name} must be a whole number of at least 1 (got {getattr(self, name)!r})")
+        if not _good_int(self.max_retries_per_tool, 0):
+            raise ValueError(f"max_retries_per_tool must be a whole number, zero or more (got {self.max_retries_per_tool!r})")
         if self.automatic_fallback:
             raise ValueError("automatic paid fallback is not allowed in an experiment: a model change mid-run invalidates the comparison")
         if self.on_budget_exceeded != "stop":
@@ -151,7 +180,7 @@ class ExperimentLedger:
             self.refuse(f"no new runs: ${self.committed:.4f} spent or reserved reached the stop-new-runs line (${self.policy.stop_new_runs_usd})")
         if self.committed + self.policy.max_cost_per_run_usd > self.policy.total_usd - self.policy.reserve_usd:
             self.refuse(f"no new runs: another run could cost ${self.policy.max_cost_per_run_usd} and would cut into the ${self.policy.reserve_usd} reserve")
-        self.state["runs"][run_id] = {"cost_usd": 0.0, "reserved_usd": 0.0, "calls": 0, "input_tokens": 0, "output_tokens": 0, "status": "running"}
+        self.state["runs"][run_id] = {"cost_usd": 0.0, "reserved_usd": 0.0, "calls": 0, "inflight": 0, "uncertain_calls": 0, "input_tokens": 0, "output_tokens": 0, "status": "running"}
         self.save()
         return RunBudget(self, run_id)
 
@@ -172,9 +201,16 @@ class RunBudget:
         p, run, led = self.ledger.policy, self.run, self.ledger
         if price_in_per_mtok is None or price_out_per_mtok is None:
             led.refuse("the price of this model is unknown, so the call cannot be checked against the budget (fail closed)")
+        if not good_price(price_in_per_mtok) or not good_price(price_out_per_mtok):
+            led.refuse(f"the price of this model is malformed (in {price_in_per_mtok!r}, out {price_out_per_mtok!r}): it must be a finite, non-negative number, so the call cannot be checked (fail closed)")
+        if not _good_int(prompt_tokens, 0) or not _good_int(max_output_tokens, 1):
+            led.refuse(f"the size of this call is malformed (prompt {prompt_tokens!r}, output limit {max_output_tokens!r}): the worst case cannot be computed (fail closed)")
         worst = (prompt_tokens * price_in_per_mtok + max_output_tokens * price_out_per_mtok) / 1_000_000
-        if run["calls"] + 1 > p.max_llm_calls_per_run:
-            led.refuse(f"run {self.run_id}: call {run['calls'] + 1} exceeds the limit of {p.max_llm_calls_per_run} model calls")
+        run.setdefault("inflight", 0)
+        run.setdefault("uncertain_calls", 0)
+        started = run["calls"] + run["inflight"]                       # calls STARTED, not only finished: four callers at once must not all pass a limit of two
+        if started + 1 > p.max_llm_calls_per_run:
+            led.refuse(f"run {self.run_id}: call {started + 1} exceeds the limit of {p.max_llm_calls_per_run} model calls")
         if run["input_tokens"] + prompt_tokens > p.max_input_tokens_per_run or run["output_tokens"] + max_output_tokens > p.max_output_tokens_per_run:
             led.refuse(f"run {self.run_id}: this call could exceed the run's token limits")
         if run["cost_usd"] + run["reserved_usd"] + worst > p.max_cost_per_run_usd:
@@ -182,6 +218,7 @@ class RunBudget:
         if led.committed + worst > p.total_usd - p.reserve_usd:
             led.refuse(f"experiment: ${led.committed:.4f} committed + up to ${worst:.4f} would cut into the ${p.reserve_usd} reserve")
         run["reserved_usd"] += worst
+        run["inflight"] += 1
         led.state["reserved_usd"] += worst
         led.save()
         return worst
@@ -192,8 +229,14 @@ class RunBudget:
 
     def _after_call(self, reserved: float, prompt_tokens: int, completion_tokens: int, cost_usd: float) -> None:
         run, led = self.run, self.ledger
+        if not good_cost(cost_usd):                                    # NaN, negative or infinite: it would poison or shrink the total, so the worst case that was reserved is what was spent
+            cost_usd = reserved
+            run["cost_replaced_by_worst_case"] = int(run.get("cost_replaced_by_worst_case", 0)) + 1
+        prompt_tokens = prompt_tokens if _good_int(prompt_tokens, 0) else 0
+        completion_tokens = completion_tokens if _good_int(completion_tokens, 0) else 0
         run["reserved_usd"] = max(0.0, run["reserved_usd"] - reserved)
         led.state["reserved_usd"] = max(0.0, led.state["reserved_usd"] - reserved)
+        run["inflight"] = max(0, int(run.get("inflight", 0)) - 1)
         run["cost_usd"] += cost_usd
         run["calls"] += 1
         run["input_tokens"] += prompt_tokens
@@ -202,6 +245,17 @@ class RunBudget:
         if led.committed >= led.policy.warning_usd and not any(w["line"] == "warning" for w in led.state["warnings"]):
             led.state["warnings"].append({"line": "warning", "at": time.time(), "committed_usd": round(led.committed, 6)})
         led.save()
+
+    def uncertain(self, reserved: float, prompt_tokens: int) -> None:
+        """The call raised after the request may have reached the provider (a dropped connection, a timeout, a cancelled task). It is counted as a call and its input tokens as used, and its
+        reservation STAYS: the guard errs towards having spent it. A failing paid endpoint therefore reaches the call limit instead of being retried for free."""
+        with self.ledger.locked():
+            run = self.run
+            run["inflight"] = max(0, int(run.get("inflight", 0)) - 1)
+            run["calls"] += 1
+            run["uncertain_calls"] = int(run.get("uncertain_calls", 0)) + 1
+            run["input_tokens"] += prompt_tokens if _good_int(prompt_tokens, 0) else 0
+            self.ledger.save()
 
     def finish(self, status: str = "finished") -> None:
         with self.ledger.locked():
@@ -232,12 +286,13 @@ class GuardedProvider(LLMProvider):
         try:
             out = await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
         except BaseException:
-            # the request may have reached the provider: the reservation STAYS counted (the guard errs towards having spent it)
+            # the request may have reached the provider: the reservation STAYS counted and the call counts (the guard errs towards having spent it)
+            self._budget.uncertain(reserved, tokens_in)
             raise
         usage: Optional[LLMUsage] = self._inner.last_usage
         used_in = usage.prompt_tokens if usage and usage.prompt_tokens else tokens_in
         used_out = usage.completion_tokens if usage and usage.completion_tokens else _count_tokens(out)
-        cost = usage.cost_usd if usage and usage.cost_usd is not None else (used_in * (self._pin or 0.0) + used_out * (self._pout or 0.0)) / 1_000_000
+        cost = usage.cost_usd if usage and usage.cost_usd is not None else (used_in * (self._pin or 0.0) + used_out * (self._pout or 0.0)) / 1_000_000      # a malformed value is replaced in after_call
         self._budget.after_call(reserved, used_in, used_out, cost)
         self.last_usage = LLMUsage(used_in, used_out, cost)
         return out
