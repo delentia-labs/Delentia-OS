@@ -217,7 +217,7 @@ class IntentContractStore:
             raise IntentContractError("intent plan digest mismatch; execution refused")
         from rct_control_plane.budget_execution import validate_executor
         validate_executor(data["plan"])
-        if "execution_receipts" in data:
+        if any(key in data for key in ("execution_receipts", "execution_report", "execution_status")):
             from rct_control_plane.verified_budget import validate_stored_execution
             try:
                 validate_stored_execution(data, contract_id, self.namespace)
