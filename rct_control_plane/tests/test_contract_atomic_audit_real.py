@@ -110,3 +110,31 @@ def test_audit_failure_during_http_claim_never_dispatches_read(http_service, mon
         assert confirm(client, plan).status_code == 503
     assert status(client, plan).json()['contract'] == plan
     assert confirm(client, plan).json()['contract']['verified']
+
+
+def test_other_connection_cannot_see_unaudited_new_contract(store, tmp_path, monkeypatch):
+    original = store.db._append_audit
+    seen = []
+    def audit(conn, entity_type, entity_id, action, actor, changes):
+        assert conn.in_transaction
+        with store.db._connect() as reader:
+            seen.append(reader.execute('SELECT id FROM intent_contracts WHERE id=?', (entity_id,)).fetchone())
+        return original(conn, entity_type, entity_id, action, actor, changes)
+    monkeypatch.setattr(store.db, '_append_audit', audit)
+    contract = create(store, tmp_path)
+    assert seen == [None]
+    assert store.get(contract['id']) == contract
+
+
+def test_other_connection_sees_previous_version_until_transition_audit_commits(store, tmp_path, monkeypatch):
+    contract = create(store, tmp_path)
+    original = store.db._append_audit
+    seen = []
+    def audit(conn, entity_type, entity_id, action, actor, changes):
+        assert conn.in_transaction
+        seen.append(store.get(entity_id))
+        return original(conn, entity_type, entity_id, action, actor, changes)
+    monkeypatch.setattr(store.db, '_append_audit', audit)
+    claimed = store.claim(contract['id'], contract['version'])
+    assert seen == [contract]
+    assert store.get(contract['id']) == claimed
