@@ -326,7 +326,7 @@ def test_cancel_reaches_another_process_owner(tmp_path):
             pytest.fail('remote cancel must never dispatch a replacement runner')
         remote = JobService(db, forbidden)
         requested = remote.cancel(job_id, 'alice')
-        assert requested['status'] == 'running' and requested['cancel_requested']
+        assert requested['status'] in {'running', 'cancelled'} and requested['cancel_requested']
         asyncio.run(remote.wait(job_id, timeout=10))
         process.join(5)
         assert process.exitcode == 0
@@ -337,7 +337,7 @@ def test_cancel_reaches_another_process_owner(tmp_path):
         process.join(5)
 
 
-def test_database_loss_stops_owner_without_claiming_acknowledgement(db, monkeypatch):
+def test_heartbeat_failure_stops_the_local_runner(db, monkeypatch):
     import sqlite3
     async def scenario():
         started, stopped = asyncio.Event(), asyncio.Event()

@@ -6,10 +6,10 @@ cancel. A job is the same governed episode run in the background of the API proc
 
   * `submit` answers immediately with an id (HTTP 202); the episode runs through `GovernedAutonomousLoop` exactly like every other entry point (GUARD, the taint gate, the owner's policy,
     approvals, the safety envelope's pause and limits), in the caller's own namespace taken from the server-side identity;
-  * the row (`agent_jobs`) survives a restart. A job that was running when the process died cannot be resumed (the loop's state lives in the process) and is marked `interrupted`, never
-    `running` forever; one that stopped for a signature is `done` with `stopped_reason = pending_approval` and carries the approval id;
+  * the row (`agent_jobs`) survives a restart. Only jobs with a dead/expired owner (or legacy unowned rows) are marked `interrupted`; constructing another service does not reset a live owner. No interrupted job is replayed automatically; one that stopped for a signature is `done` with `stopped_reason = pending_approval` and carries the approval id;
   * limits: at most DELENTIA_MAX_JOBS_PER_USER (default 3) running per person and DELENTIA_MAX_JOBS (default 8) in all; a goal over 4,000 characters is refused;
-  * `cancel` stops the episode at its next await (a model call in flight is abandoned; a tool already executing in a worker thread finishes, because it cannot be recalled) and records it;
+  * `cancel` persists a request for the owning worker; `cancelled` is written after that worker acknowledges cancellation. It stops the episode at its next await (a model call in flight is abandoned; a tool already executing in a worker thread finishes, because it cannot be recalled) and records it;
+  * `status=done` still means the runner returned; additive `task_outcome` and `verification_scope` distinguish waiting, unverified completion and scoped verification.
   * what a person can see is their own jobs only.
 
 Apache 2.0 - Delentia Labs
