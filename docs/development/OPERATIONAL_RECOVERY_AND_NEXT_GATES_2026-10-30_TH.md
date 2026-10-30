@@ -4,7 +4,7 @@
 
 ต่อจาก PR #207 checkpoint `d9962cd3` บน branch `codex/job-operational-recovery-20261030` พัฒนา clock fencing, SQLite failure handling, upgrade/drain preflight และ functional capacity/cancel tests ไม่แก้ research/Desk, episode journal, resume หรือ idempotency ของ Claude ไม่เปิด paid API หรือ write workflow เพิ่ม
 
-Code checkpoint คือ `ad70eea1` ผล full suite และ file hashes จะบันทึกใน evidence ประกอบเมื่อรันเสร็จ ตัวเลข local/cloud ไม่ใช่ public checkpoint ของ main
+Code checkpoint คือ `ad70eea1` ผล full suite และ file hashes บันทึกใน [evidence JSON](evidence/JOB_OPERATIONAL_RECOVERY_2026-10-30.json) ตัวเลข local/cloud ไม่ใช่ public checkpoint ของ main
 
 ## Clock policy ที่เพิ่ม
 
@@ -87,3 +87,14 @@ Claude มี PR #209 สำหรับ holdout set 4: 60 requests และ la
 | 8 | External pilot | target-host load/clock/DB/upgrade drills, retention policy, off-host restore, scheduled independent witness, notary แยก user, soak 72h และ outside review |
 
 ยังไม่เปิด generic write workflow และไม่รับรอง production/autonomous general RCT-7 สิ่งที่พิสูจน์รอบนี้คือ clock/DB failure behavior ของ background runtime ภายใต้ scenarios ที่ระบุ
+
+## ผลตรวจหลังพัฒนา
+
+- Full Python ของ runtime checkpoint `ad70eea1`: **9,146 passed / 10 failed / 45 skipped / 1 xfailed**, 9043 warnings, **594.82 วินาที** รายชื่อ 10 failures ตรงกับ full suite ก่อนรอบนี้: 9 Ollama model-unavailable และ 1 native DNS crawler
+- Focused regression **73 passed** ใน 6.95 วินาที รวม 16 added scenarios (11 operational, 4 preflight และ 1 clock fault หลังอ่าน evidence) นับซ้อนใน full suite ไม่บวกยอด
+- Ruff และ Linux Mypy พร้อม check-untyped-defs ของ 6 source files ผ่าน; MkDocs strict ผ่าน ไม่มี paid API calls
+- GUI source ไม่เปลี่ยน: static build ผ่านด้วย webpack, unit/helper tests ผ่าน, TypeScript และ lint ผ่าน ใช้ Node 24.19.0 และ dependencies ของ cloud ที่มีอยู่ ขณะที่ CI ใช้ Node22/default build จึงไม่ใช่การ reproduce CI แบบ environment เดียวกัน
+- รัน accessibility script เดิมผ่าน sandbox-enabled non-root Chromium container: **112 page loads = 28 pages × ไทย/อังกฤษ × 375/1280px**, ไม่พบ axe violation/sideways scroll ใน states ที่ API ไม่พร้อม ผลนี้ไม่ปิด root cause ของ CI failure เดิมหรือ Desk contract E2E
+- เก็บ passive screen capture ช่วงท้าย 18 frames ที่ 1 fps เป็นวิดีโอ 18 วินาที `DESK_ACCESSIBILITY_CAPTURE_NO_API.mp4` ใน cloud evidence directory ภาพแสดง API unavailable ไม่มี model output ไม่ใช่ full-workflow demo สำหรับอ้าง capability
+
+Raw logs/XML/video อยู่ที่ `/workspace/delentia-operational-evidence-20261030/` พร้อม checksums ใน evidence JSON ไม่เพิ่ม binary recording ลง git ไม่มีการ merge PR หรือแก้ public checkpoint ของ Claude

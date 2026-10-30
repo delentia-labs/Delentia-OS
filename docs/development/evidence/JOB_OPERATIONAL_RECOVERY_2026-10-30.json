@@ -1,0 +1,122 @@
+{
+  "source_commit": "ad70eea12011ade3d9838d893439c5943c11a8a9",
+  "files": {
+    "rct_control_plane/job_clock.py": "6d22b9fa01f30d0df7b0ac758214f026e733d7ad392827ba504aceef31323ed2",
+    "rct_control_plane/job_ownership.py": "49d41276dd1fe4b905cd67ecba8deb57deaa98dbdf186085112d8a73ef405758",
+    "rct_control_plane/job_preflight.py": "8d8d3fe7854612e1ed2b80658e343dab5c774a39530e2d1c02e8241f8bed4791",
+    "rct_control_plane/jobs.py": "cb49d9facf0bb6710950ec2a7f9ccf88d69b725e241743985022d1882af00c16",
+    "rct_control_plane/readonly_jobs.py": "77178dd59db6a05dbc38e74e9d912cb560c1e0faa6405d6cbef9cee9d25aca86",
+    "rct_control_plane/readonly_service.py": "a8f1001c5a8cfa699e8bc5d16caa515a9bc8679bf3fc0e8da06003ae9038a966",
+    "rct_control_plane/tests/test_job_operational_failures_real.py": "43800be2ec7f460be1d2fcc68144a535549b4049efb14d56553f03f93e893996",
+    "rct_control_plane/tests/test_job_preflight_real.py": "aa6e72e74ff2804614afa6d39d5e6ed7d6859fff229f2be4043f29edb16397e3",
+    "rct_control_plane/tests/test_readonly_jobs_real.py": "b704e5ad84db9807745977104f1c912104c79bf909f105d4e24677b54cb287b9"
+  },
+  "paid_calls": 0,
+  "observed_at_utc": "2026-10-30T06:05:53.913423+00:00",
+  "main_observed": "368537d5bef45c1c8def0283646b588fe3197c60",
+  "public_main_ci_checkpoint": false,
+  "full_suite": {
+    "passed": 9146,
+    "failed": 10,
+    "skipped": 45,
+    "xfailed": 1,
+    "warnings": 9043,
+    "seconds": 594.82,
+    "failure_names_unchanged_from_previous_full": true,
+    "failures": [
+      "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+      "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+      "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+      "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function"
+    ],
+    "failure_categories": {
+      "ollama_model_unavailable": 9,
+      "native_dns": 1
+    }
+  },
+  "focused": {
+    "passed": 73,
+    "warnings": 61,
+    "seconds": 6.95,
+    "added_scenarios": 16,
+    "counts_overlap_full_suite": true
+  },
+  "checks": {
+    "ruff": "passed",
+    "linux_mypy_six_files_check_untyped_defs": "passed",
+    "mkdocs_strict": "passed"
+  },
+  "gui": {
+    "source_changed": false,
+    "build": "passed using webpack; CI default build configuration differs",
+    "dependencies": "existing task-owned node_modules; SDK source comparison equal",
+    "node": "24.19.0; CI uses Node22",
+    "unit_helpers": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "accessibility": {
+      "page_loads": 112,
+      "pages": 28,
+      "languages": [
+        "th",
+        "en"
+      ],
+      "widths": [
+        375,
+        1280
+      ],
+      "axe_violations": 0,
+      "sideways_scroll_failures": 0,
+      "browser": "task-owned Chromium container, non-root user, sandbox enabled",
+      "api_state": "unavailable",
+      "ci_previous_failure_root_cause_proven": false,
+      "desk_contract_e2e_verified": false
+    }
+  },
+  "video": {
+    "file": "DESK_ACCESSIBILITY_CAPTURE_NO_API.mp4",
+    "seconds": 18,
+    "frames": 18,
+    "sampling_fps": 1,
+    "scope": "passive screen capture of final portion of accessibility navigation; API unavailable; no model; not full contract E2E"
+  },
+  "handoff": {
+    "budget_findings_comment": "https://github.com/delentia-labs/Delentia-OS/pull/206#issuecomment-6515998534",
+    "budget_findings_closed": false,
+    "claude_files_modified": false,
+    "episode_journal_resume_idempotency_changed": false
+  },
+  "pull_request": "https://github.com/delentia-labs/Delentia-OS/pull/210",
+  "artifacts_sha256": {
+    "full.xml": "dc578280439f046e6033ac864c4488c2605f2b40994a9a9f5fb83dcdb17d9282",
+    "full.log": "6664b8652b5b154e38baff22855fb4f6c433b934bcbeab1cae577d31f37b9b23",
+    "focused.xml": "c679f885f205d31512dc19575acd59603d9731d927cab15e27329a9e06af3b0f",
+    "focused.log": "32f4873604bde92a4245ac13ae318f59052253a2661130d6dd01312a5c65bda1",
+    "mypy.log": "ab35ee42183d4d6d3ba483825ab037d18a5a15622d03be01d82220b1564851ff",
+    "mkdocs.log": "dfedf6b3125b10b4a26c1ca7942850e9e8de996c3fd7940e29c0826e12c876ff",
+    "gui-build.log": "13d9e90a61b737ebcb6496500c6723f7a1466a5c842d7c0057b2f994c122b413",
+    "gui-a11y.log": "ea59caa68dd9e4d52510dc45b9b9d46e0dcd6ee7f37cdce371091e08950eaa13",
+    "gui-unit.log": "6e6bb999c60660d7489d02d3e659765f5fd62eb07187805c812abde608519c58",
+    "gui-types.log": "f8c560557258b8f6ae1bc5c13dc157ff79acc9ac4380491250eebfe1ed74e41b",
+    "gui-lint.log": "86928244346deacca02d8b0a59ecc1c5233ad0c2592e485c4dd5d6248de803a7",
+    "DESK_ACCESSIBILITY_CAPTURE_NO_API.mp4": "62d366eaad126dfd766f92b135b8287c344bc078c6d6dac655d716822bab25ab",
+    "desk-capture/frames.json": "cec324c3315497430fc058c0c8307718276bb34626441d5618b3c63381f16104",
+    "preflight-demo.json": "22e1921605d5ed87728fc55f09db3d32fbb0fd2b8290e3ccd6007a647ae079be"
+  },
+  "remaining_gates": [
+    "budget guard findings fixed/rehearsed by Claude",
+    "final revision review/full CI after stacked PR retarget",
+    "model/provider/pricing/budget authorization and exact-config rehearsal",
+    "real model canary and capability/holdout raw outcomes",
+    "Desk contract lifecycle E2E/reconnect/video",
+    "metadata retention/erasure active-job races and old-backup policy",
+    "target-host load/clock/DB/kernel-ENOSPC/upgrade/restore/witness/notary/72h-soak/outside-review",
+    "workflow-specific signed effects and crash reconciliation before writes"
+  ]
+}
