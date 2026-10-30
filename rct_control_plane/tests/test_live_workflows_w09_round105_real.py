@@ -102,3 +102,19 @@ def test_with_the_notary_down_the_first_tool_call_fails_closed_and_no_order_is_s
     result = lw.run_w09(None, tmp_path / "w09", kill_point="notary_down", scripted=True, wait_seconds=240)
     assert result["passed"], {k: result.get(k) for k in ("hard_failures", "checks")}
     assert result["checks"]["notary_down.fails_closed"] is True
+
+
+# ------------------------------------------------------------------ the guard in front of a paid run
+def test_a_paid_w09_run_counts_every_episode_the_children_could_spend():
+    """W09 starts a model-driven episode up to six times (run + resume at three kill points). One cap against half the budget would under-count by six."""
+    with pytest.raises(SystemExit) as why:
+        lw.w12_child_env("openrouter", "v/m", 240_000, 1.0, 0.1, 0.5, episodes=6)          # 6 x 240k tokens at $0.5/M = $0.72 > half of $1.00
+    assert "6 episode(s)" in str(why.value) and "more than half" in str(why.value)
+    assert lw.w12_child_env("openrouter", "v/m", 240_000, 1.0, 0.1, 0.5, episodes=1)["DELENTIA_LLM_MODEL"] == "v/m"          # one episode: $0.12, fine
+
+
+def test_the_cli_refuses_a_paid_w09_run_without_a_key_and_prices(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("DELENTIA_RUN_LIVE_TESTS", raising=False)
+    with pytest.raises(SystemExit):
+        lw.main(["run", "W09", "--provider", "openrouter", "--model", "v/m", "--out", str(tmp_path)])

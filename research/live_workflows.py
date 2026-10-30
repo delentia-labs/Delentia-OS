@@ -436,16 +436,16 @@ def run_w12(provider: Any, home: Path, *, child_env: Optional[Dict[str, str]] = 
                    children_tokens=int((obs.get("cost") or {}).get("children_tokens") or 0))
 
 
-def w12_child_env(kind: str, model: str, token_cap: int, budget_usd: float, price_in: Optional[float], price_out: Optional[float]) -> Dict[str, str]:
+def w12_child_env(kind: str, model: str, token_cap: int, budget_usd: float, price_in: Optional[float], price_out: Optional[float], episodes: int = 1) -> Dict[str, str]:
     """The model the three CHILD processes will use, built from the environment. The children's money cannot be seen by the parent's in-process budget guard, so the worst case they could spend
     (the whole shared token cap at the dearer of the two prices) must fit in half the budget, or the run is refused before anything is sent."""
     env = {"DELENTIA_LLM_PROVIDER": kind, "DELENTIA_LLM_MODEL": model}
     if kind == "openrouter":
         if price_in is None or price_out is None or budget_usd <= 0:
             raise SystemExit("a paid W12 run needs --price-in, --price-out and --budget-usd")
-        worst = token_cap * max(price_in, price_out) / 1_000_000.0
+        worst = episodes * token_cap * max(price_in, price_out) / 1_000_000.0                  # W09 starts a model-driven episode up to six times (run + resume at three kill points)
         if worst > budget_usd * 0.5:
-            raise SystemExit(f"refused: the children together could spend up to ${worst:.3f} (the whole {token_cap:,}-token cap at ${max(price_in, price_out)}/M) "
+            raise SystemExit(f"refused: the children together could spend up to ${worst:.3f} ({episodes} episode(s) of the whole {token_cap:,}-token cap at ${max(price_in, price_out)}/M) "
                              f"which is more than half of the ${budget_usd} budget; lower --token-cap")
     return env
 
@@ -710,13 +710,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--price-in", type=float, default=None)
     r.add_argument("--price-out", type=float, default=None)
     r.add_argument("--max-calls", type=int, default=30)
-    r.add_argument("--token-cap", type=int, default=W12_TOKEN_CAP, help="W12 only: the one token cap the parent and its three children share")
+    r.add_argument("--token-cap", type=int, default=W12_TOKEN_CAP, help="W12 and W09: the token cap of one model-driven episode (W12: shared by the parent and its children)")
+    r.add_argument("--kill-point", default="all", choices=["all", *W09_SCENARIOS], help="W09 only")
+    r.add_argument("--scripted", action="store_true", help="W09 only: a scripted model instead of the model under test (rehearsal, no cost)")
     args = ap.parse_args(argv)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     extra: Dict[str, Any] = {}
     if args.workflow == "W12":
         extra = {"child_env": w12_child_env(args.provider, args.model, args.token_cap, args.budget_usd, args.price_in, args.price_out), "token_cap": args.token_cap}
+    if args.workflow == "W09":
+        episodes = 1 if args.kill_point == "notary_down" else (6 if args.kill_point == "all" else 2)
+        extra = {"kill_point": args.kill_point, "scripted": args.scripted, "token_cap": args.token_cap,
+                 "child_env": {} if args.scripted else w12_child_env(args.provider, args.model, args.token_cap, args.budget_usd, args.price_in, args.price_out, episodes=episodes)}
     guard = _provider(args.provider, args.model, out, args.budget_usd, args.price_in, args.price_out, args.max_calls)
     result = RUNNERS[args.workflow](guard, out / f".work-{args.workflow}-{time.time_ns()}", **extra)
     result["guard_refused"] = getattr(guard, "refused", None)
