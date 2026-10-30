@@ -84,7 +84,8 @@ class Server:
     """`delentia serve` as a child process on a free loopback port; stopped on exit."""
 
     def __init__(self, box: Sandbox, extra_env: Optional[Dict[str, str]] = None):
-        self.box, self.port, self.extra_env, self.proc = box, free_port(), extra_env, None
+        self.box, self.port, self.extra_env = box, free_port(), extra_env
+        self.proc: Optional[subprocess.Popen[bytes]] = None
         self.log = box.root / f"serve-{self.port}.log"
 
     def __enter__(self) -> "Server":
