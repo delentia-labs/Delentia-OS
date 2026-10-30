@@ -39,7 +39,7 @@ def main() -> int:
     report_file = Path(args.keep_report) if args.keep_report else work / "report.json"
     with fake_openrouter.start(prices) as fake:
         os.environ.update({"DELENTIA_OPENROUTER_BASE_URL": fake.base_url, "OPENROUTER_API_KEY": fake.key, "DELENTIA_RUN_LIVE_TESTS": "1"})
-        code = orch.main(["--tier", "A", "--models", "rehearsal/model", "--budget-usd", "5", "--prices-file", str(prices_file), "--live-prices",
+        code = orch.main(["--tier", "A", "--models", "rehearsal/model", "--budget-usd", "5", "--prices-file", str(prices_file), "--live-prices", "--no-freeze",
                           "--execute", "--out", str(report_file)])
         spent_by_fake = round(fake.spent, 4)
         calls = fake.calls

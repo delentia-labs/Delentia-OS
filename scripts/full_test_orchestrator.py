@@ -132,6 +132,11 @@ def refusals(args: argparse.Namespace, est: Dict[str, Any], env: Dict[str, str])
             problems.append("the jury must come from at least three vendors (T6 asks for a multi-vendor jury)")
     if len(args.models) > MAX_MODELS[args.tier]:
         problems.append(f"tier {args.tier} runs at most {MAX_MODELS[args.tier]} model(s)")
+    if getattr(args, "require_freeze", False):          # Round 106: a real run measures the configuration that was written down, not whatever is checked out today
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from research import paid_run_freeze
+        for difference in paid_run_freeze.check_for_run(getattr(args, "freeze_file", None), list(args.models), getattr(args, "prices_loaded", {}), float(args.budget_usd or 0.0)):
+            problems.append("freeze: " + difference)
     return problems
 
 
@@ -398,6 +403,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--prices-file", default=None, help='JSON {"model-id": {"in": usd_per_Mtok, "out": usd_per_Mtok}}')
     ap.add_argument("--live-prices", action="store_true", help="read prices from OpenRouter's public model list")
     ap.add_argument("--execute", action="store_true", help="really run (spends money); without it only the plan is printed")
+    ap.add_argument("--freeze-file", default=None, help="Round 106: the file written by `python -m research.paid_run_freeze write ...`; a real run is refused without it, or when anything differs from it")
+    ap.add_argument("--no-freeze", action="store_true", help="only for the free rehearsal against the fake endpoint: skips the freeze check")
     ap.add_argument("--out", default=None, help="write the JSON report here")
     args = ap.parse_args(argv)
     from_list: Dict[str, Dict[str, float]] = {}
@@ -422,6 +429,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"  jury (T6): ~${est['jury_usd']}" if est.get("jury_usd") is not None else "  T6 (multi-vendor jury) not planned: pass --jury-models (four models, three vendors) to run scripts/measure_jury.py; otherwise NOT RUN.")
     for warning in capability_warnings(args.models + (args.jury_models or [])):
         print(f"  note: {warning}")
+    args.require_freeze = not args.no_freeze
+    args.prices_loaded = prices
     problems = refusals(args, est, os.environ)
     if not args.execute:
         print("\nDRY RUN: nothing was sent and nothing was spent. A real run would be refused for now:" if problems else "\nDRY RUN: nothing was sent. All checks pass; add --execute to run.")
