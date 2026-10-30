@@ -122,7 +122,8 @@ def test_lease_loss_reconciles_without_dispatch(background):
     service, started, gate = pause(client)
     job_id = submit(client, plan).json()['job_id']
     assert started.wait(5)
-    service.jobs._ownership.clock = lambda: time.time() + 3600
+    with service.db._connect() as conn:
+        conn.execute('UPDATE agent_job_owners SET lease_until=0 WHERE job_id=?', (job_id,))
     observed = get(client, job_id).json()
     assert observed['status'] == 'interrupted' and not observed['verified']
     assert observed['contract']['state'] == 'interrupted'
@@ -165,7 +166,7 @@ def test_policy_change_before_worker_dispatch_blocks_execution(background, tmp_p
     assert not observed['contract']['receipts']
 
 
-@pytest.mark.parametrize('loss', ['policy', 'lease', 'actor'])
+@pytest.mark.parametrize('loss', ['policy', 'lease', 'actor', 'worker_clock'])
 def test_revocation_after_source_read_cannot_commit_receipts(background, monkeypatch, tmp_path, loss):
     from rct_control_plane import mcp_server
     client, body, _, _ = background
@@ -192,16 +193,23 @@ def test_revocation_after_source_read_cannot_commit_receipts(background, monkeyp
         policy = json.loads(policy_text)
         policy['policy_version'] = 99
         policy_path.write_text(json.dumps(policy), encoding='utf-8')
+    elif loss == 'worker_clock':
+        service.jobs._ownership.clock = lambda: time.time() + 3600
     elif loss == 'actor':
         from rct_control_plane import api_tokens
         token_path = api_tokens.tokens_path()
         token_text = token_path.read_text(encoding='utf-8')
         assert api_tokens.revoke('alice')
     else:
-        service.jobs._ownership.clock = lambda: time.time() + 3600
+        with service.db._connect() as conn:
+            conn.execute('UPDATE agent_job_owners SET lease_until=0 WHERE job_id=?', (job_id,))
     client.portal.call(gate.set)
     client.portal.call(service.jobs.wait, job_id, 5)
     policy_path.write_text(policy_text, encoding='utf-8')
+    if loss == 'worker_clock':
+        assert get(client, job_id).status_code == 503
+        assert not service.store.get(plan['id']).get('execution_receipts', [])
+        return
     if loss == 'actor':
         assert get(client, job_id).status_code == 401
         token_path.write_text(token_text, encoding='utf-8')

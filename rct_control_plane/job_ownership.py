@@ -35,40 +35,59 @@ def host_identity() -> str:
 
 
 class Ownership:
-    def __init__(self, persistence: Any, *, clock: Callable[[], float] = time.time, lease_seconds: float = 30.0):
+    def __init__(self, persistence: Any, *, clock: Callable[[], float] = time.time, lease_seconds: float = 30.0, monotonic_clock: Callable[[], float] | None = None):
         if not 3 <= lease_seconds <= 3600:
             raise ValueError('job lease must be between 3 and 3600 seconds')
         self.db = persistence
         self.clock = clock
         self.lease_seconds = lease_seconds
+        from rct_control_plane.job_clock import LeaseClock
+        # Custom wall clocks are test injection. Pair one with a monotonic
+        # clock to exercise drift; normal production always checks both.
+        monotonic_clock = monotonic_clock or (time.monotonic if clock is time.time else None)
+        self._clock_guard = LeaseClock(clock(), monotonic_clock)
         self.token = uuid.uuid4().hex
         self.host = host_identity()
         self.pid = os.getpid()
         self.started = _proc_start(self.pid)
         with self.db._connect() as conn:
             conn.executescript(SCHEMA)
+            conn.execute('BEGIN IMMEDIATE')
+            columns = {row[1] for row in conn.execute('PRAGMA table_info(agent_job_owners)')}
+            if 'heartbeat_wall' not in columns:
+                conn.execute('ALTER TABLE agent_job_owners ADD COLUMN heartbeat_wall REAL')
+            legacy = conn.execute("SELECT 1 FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
+                "WHERE j.status IN ('queued','running') AND o.heartbeat_wall IS NULL LIMIT 1").fetchone()
+            if legacy is not None:
+                import sqlite3
+                raise sqlite3.OperationalError('drain legacy job workers before upgrading clock fencing')
+
+    def now(self) -> float:
+        return self._clock_guard.check(self.clock())
 
     def insert(self, conn, job_id):
-        conn.execute('INSERT INTO agent_job_owners (job_id,token,host,pid,process_started,lease_until) VALUES (?,?,?,?,?,?)',
-                     (job_id, self.token, self.host, self.pid, self.started, self.clock() + self.lease_seconds))
+        conn.execute('INSERT INTO agent_job_owners (job_id,token,host,pid,process_started,lease_until,heartbeat_wall) VALUES (?,?,?,?,?,?,?)',
+                     (job_id, self.token, self.host, self.pid, self.started, self.now() + self.lease_seconds, self.now()))
 
     def recover(self):
-        now = self.clock()
+        now = self.now()
         with self.db._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
-            rows = conn.execute("SELECT j.id,o.token,o.host,o.pid,o.process_started,o.lease_until,j.namespace FROM agent_jobs j "
+            rows = conn.execute("SELECT j.id,o.token,o.host,o.pid,o.process_started,o.lease_until,j.namespace,o.heartbeat_wall FROM agent_jobs j "
                 "LEFT JOIN agent_job_owners o ON o.job_id=j.id WHERE j.status IN ('queued','running')").fetchall()
-            for job_id, token, host, pid, started, until, namespace in rows:
-                dead = token is None or until <= now or (host == self.host and not _alive(pid, started))
+            for job_id, token, host, pid, started, until, namespace, heartbeat in rows:
+                from rct_control_plane.job_clock import CLOCK_TOLERANCE_SECONDS
+                rollback = heartbeat is not None and heartbeat > now + CLOCK_TOLERANCE_SECONDS
+                dead = rollback or token is None or until <= now or (host == self.host and not _alive(pid, started))
                 if not dead:
                     continue
                 conn.execute("UPDATE agent_jobs SET status='interrupted',finished_at=?,error=? WHERE id=? AND status IN ('queued','running')",
                     (now, 'the server restarted or the job owner lease was lost; execution outcome must be inspected', job_id))
                 conn.execute("UPDATE agent_job_owners SET task_outcome='interrupted' WHERE job_id=?", (job_id,))
-                self.db._append_audit(conn, "agent_job", job_id, "interrupted", namespace, {"reason": "owner_lost"})
+                self.db._append_audit(conn, "agent_job", job_id, "interrupted", namespace, {"reason": "clock_rollback" if rollback else "owner_lost"})
 
     def pulse(self, job_id):
-        now = self.clock()
+        now = self.now()
         with self.db._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
             row = conn.execute("SELECT o.cancel_requested,j.namespace FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
@@ -76,8 +95,8 @@ class Ownership:
                 (job_id, self.token, now)).fetchone()
             if row is None:
                 return 'lost'
-            conn.execute('UPDATE agent_job_owners SET lease_until=? WHERE job_id=? AND token=?',
-                         (now + self.lease_seconds, job_id, self.token))
+            conn.execute('UPDATE agent_job_owners SET lease_until=?,heartbeat_wall=? WHERE job_id=? AND token=?',
+                         (now + self.lease_seconds, now, job_id, self.token))
             return 'cancel' if row[0] else 'ok'
 
     def update(self, job_id, fields, *, outcome=None, scope=None):
@@ -86,7 +105,7 @@ class Ownership:
             conn.execute('BEGIN IMMEDIATE')
             row = conn.execute("SELECT o.cancel_requested,j.namespace FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
                 "WHERE o.job_id=? AND o.token=? AND o.lease_until>? AND j.status IN ('queued','running')",
-                (job_id, self.token, self.clock())).fetchone()
+                (job_id, self.token, self.now())).fetchone()
             if row is None:
                 return False
             if fields.get('status') == 'done' and row[0]:
