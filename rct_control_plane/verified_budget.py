@@ -83,7 +83,7 @@ def current_bytes(root: Path, relative: str) -> bytes:
 
 
 def validate_receipts(plan, contract_id, namespace, receipts):
-    from rct_control_plane.intent_contract import IntentContractError, plan_digest
+    from rct_control_plane.intent_contract import IntentContractError, compare, plan_digest
     if not isinstance(receipts, list) or len(receipts) > 50:
         raise IntentContractError("invalid execution receipt list")
     import re
@@ -126,6 +126,14 @@ def validate_receipts(plan, contract_id, namespace, receipts):
                 if (normalized.get("criterion_id") != typed["criteria"][0]
                         or data["output"].get("satisfied") is not True):
                     raise ValueError("receipt does not verify its criterion")
+                criterion = next(c for c in plan["criteria"] if c["id"] == typed["criteria"][0])
+                if criterion["kind"] in {"contains", "language", "json_object"}:
+                    # Recheck only pure criteria against the recorded report.
+                    # Calling the live handler would also evaluate file predicates
+                    # against today's filesystem, changing historical semantics.
+                    report = outputs[typed["inputs"]["report"]]
+                    if compare({"criteria": [criterion]}, json.dumps(report, ensure_ascii=False)):
+                        raise ValueError("historical criterion is not satisfied by its recorded report")
             else:
                 # Only the fixed, application-owned budget arithmetic/copy
                 # handlers are replayed. Never re-read files or run criterion
