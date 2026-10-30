@@ -205,7 +205,7 @@ class RunBudget:
             led.refuse(f"the price of this model is malformed (in {price_in_per_mtok!r}, out {price_out_per_mtok!r}): it must be a finite, non-negative number, so the call cannot be checked (fail closed)")
         if not _good_int(prompt_tokens, 0) or not _good_int(max_output_tokens, 1):
             led.refuse(f"the size of this call is malformed (prompt {prompt_tokens!r}, output limit {max_output_tokens!r}): the worst case cannot be computed (fail closed)")
-        price_in, price_out = float(price_in_per_mtok), float(price_out_per_mtok)      # checked above: finite and not negative
+        price_in, price_out = float(price_in_per_mtok or 0.0), float(price_out_per_mtok or 0.0)      # checked above (refuse raised otherwise): finite and not negative
         worst = (prompt_tokens * price_in + max_output_tokens * price_out) / 1_000_000
         run.setdefault("inflight", 0)
         run.setdefault("uncertain_calls", 0)
