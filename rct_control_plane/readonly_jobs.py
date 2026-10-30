@@ -90,7 +90,7 @@ class BudgetJobs:
         row = conn.execute("SELECT 1 FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
             "WHERE o.job_id=? AND o.token=? AND o.lease_until>? AND o.cancel_requested=0 "
             "AND j.namespace=? AND j.status='running'",
-            (binding['job_id'], self.jobs._ownership.token, self.jobs._ownership.clock(), self.actor)).fetchone()
+            (binding['job_id'], self.jobs._ownership.token, self.jobs._ownership.now(), self.actor)).fetchone()
         if row is None:
             raise asyncio.CancelledError()
 

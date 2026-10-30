@@ -307,7 +307,14 @@ async def readonly_lifespan(app):
         waits = []
         for actor, service in services.items():
             for job_id in list(service.jobs._tasks):
-                service.jobs.cancel(job_id, actor)
+                try:
+                    service.jobs.cancel(job_id, actor)
+                except sqlite3.Error:
+                    # DB/clock loss cannot prevent local shutdown. Durable
+                    # status remains uncertain until a healthy observer recovers.
+                    task = service.jobs._tasks.get(job_id)
+                    if task is not None:
+                        task.cancel()
                 waits.append(service.jobs.wait(job_id, timeout=5.0))
         if waits:
             await asyncio.gather(*waits, return_exceptions=True)

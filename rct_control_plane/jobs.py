@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import sqlite3
 import os
 import time
 import uuid
@@ -71,7 +73,7 @@ class JobOwnershipLost(JobError):
 
 
 class JobService:
-    def __init__(self, persistence: Any, runner: Callable[..., Any], *, clock: Callable[[], float] = time.time, lease_seconds: float = 30.0):
+    def __init__(self, persistence: Any, runner: Callable[..., Any], *, clock: Callable[[], float] = time.time, lease_seconds: float = 30.0, monotonic_clock: Optional[Callable[[], float]] = None):
         """`runner(namespace, goal, max_iterations, max_seconds, on_step)` is an async callable returning the episode's result dict (the API passes one that builds the governed loop)."""
         self._p = persistence
         self._runner = runner
@@ -79,7 +81,7 @@ class JobService:
         with self._p._connect() as conn:
             conn.executescript(SCHEMA)
         from rct_control_plane.job_ownership import Ownership
-        self._ownership = Ownership(persistence, clock=clock, lease_seconds=lease_seconds)
+        self._ownership = Ownership(persistence, clock=clock, lease_seconds=lease_seconds, monotonic_clock=monotonic_clock)
         self._ownership.recover()
 
     # ---------------------------------------------------------------- read
@@ -183,13 +185,22 @@ class JobService:
                          approval_id=result.get("approval_id"), steps=int(result.get("iterations") or steps["n"]),
                          cost_json=json.dumps(result.get("cost")) if result.get("cost") else None), outcome=outcome, scope=scope)
         except asyncio.CancelledError:
-            self._ownership.update(job_id, dict(status="cancelled", finished_at=time.time(), stopped="cancelled"), outcome="cancelled")
+            try:
+                self._ownership.update(job_id, dict(status="cancelled", finished_at=time.time(), stopped="cancelled"), outcome="cancelled")
+            except sqlite3.Error:
+                logging.getLogger("delentia.jobs").exception("job %s cancellation could not be persisted", job_id)
             raise
+        except sqlite3.Error:
+            # No fallback state can be trusted when persistence itself failed.
+            # Stop locally; a healthy observer later interrupts the lost lease.
+            logging.getLogger("delentia.jobs").exception("job %s persistence unavailable", job_id)
         except JobOwnershipLost:
             pass
         except Exception as exc:                                       # noqa: BLE001 - recorded, never raised into the server
-            finished_by_me = self._ownership.update(job_id, dict(status="failed", finished_at=time.time(), stopped="exception", error=f"{type(exc).__name__}: the details are in the server log"), outcome="failed")
-            import logging
+            try:
+                finished_by_me = self._ownership.update(job_id, dict(status="failed", finished_at=time.time(), stopped="exception", error=f"{type(exc).__name__}: the details are in the server log"), outcome="failed")
+            except sqlite3.Error:
+                logging.getLogger("delentia.jobs").exception("job %s failure could not be persisted", job_id)
             logging.getLogger("delentia.jobs").exception("job %s failed", job_id)
         finally:
             watcher.cancel()
@@ -199,14 +210,14 @@ class JobService:
                 pass
             self._tasks.pop(job_id, None)
             if on_done is not None and finished_by_me:
-                finished = self.get(job_id)
-                if finished is not None and finished["status"] in ("done", "failed"):
-                    try:
+                try:
+                    finished = self.get(job_id)
+                    if finished is not None and finished["status"] in ("done", "failed"):
                         outcome = on_done(finished)
                         if asyncio.iscoroutine(outcome):
                             await outcome
-                    except Exception:                                  # noqa: BLE001 - a delivery problem never changes the job
-                        pass
+                except Exception:                                      # noqa: BLE001 - a delivery problem never changes the job
+                    logging.getLogger("delentia.jobs").exception("job %s result delivery failed", job_id)
 
     def cancel(self, job_id: str, namespace: str) -> Dict[str, Any]:
         job = self.get(job_id, namespace)
