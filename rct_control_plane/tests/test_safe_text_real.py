@@ -105,3 +105,20 @@ def test_adversarial_inputs_stay_fast(name):
     started = time.perf_counter()
     FUNCTIONS[name](payload)
     assert time.perf_counter() - started < 1.0, f"{name} took {time.perf_counter() - started:.2f}s"
+
+
+@pytest.mark.parametrize('tail', ['', '$(last)'])
+def test_backticks_do_not_rescan_the_same_dollar_free_suffix(tail):
+    class SearchBudget(str):
+        searched = 0
+
+        def find(self, sub, start=0, end=None):
+            stop = len(self) if end is None else end
+            if sub == '$(':
+                self.searched += stop - start
+            return super().find(sub, start, stop)
+
+    command = SearchBudget('`x`' * 2000 + tail)
+    assert st.substitutions(command) == ['x'] * 2000 + (['last'] if tail else [])
+    # A deterministic work bound, independent of concurrent test-worker timing.
+    assert command.searched <= 2 * len(command)
