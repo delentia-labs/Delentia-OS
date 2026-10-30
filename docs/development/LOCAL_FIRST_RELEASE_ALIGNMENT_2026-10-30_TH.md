@@ -72,3 +72,19 @@ Codex ดู CLI/setup/config และ installed-wheel/local lifecycle tests; C
 ก่อน paid call ยังต้อง model ID/provider/routing และวงเงินจริงที่ Architect กำหนด Defaults/estimates ไม่ใช่ authorization ไม่ส่ง keys ในแชท ไม่มี paid calls ในรอบนี้
 
 คู่มือผู้ติดตั้งของ branch นี้: [SELF_INSTALL_PREVIEW_TH](../demo/SELF_INSTALL_PREVIEW_TH.md) ผลทดสอบจริงและ hashes บันทึกใน evidence ประกอบ PR ไม่เปลี่ยน release gate status อัตโนมัติ
+
+## ผลตรวจของ implementation รอบนี้
+
+- Integrate main `d1376d21` และ fix เดิม #202 ใน branch `codex/local-first-onboarding-20261030`, PR #212 ที่ target main โดยตรง
+- Full Python หลังตรวจ test services: **9,085 passed / 10 failed / 45 skipped / 1 xfailed / 0 setup errors**, 627.19 วินาที เหลือ 9 missing-Ollama-model และ 1 native-DNS crawler; ไม่ทำให้ผ่านโดยข้าม tests/sandbox/SSRF
+- Focused **219 passed** รวม 8 added onboarding cases; PostgreSQL/installer recovery **37 passed**; หลังแก้ type annotation ของ checker มี regression **16 passed** จำนวนซ้อนกัน ไม่บวกยอด Full run เริ่มจาก runtime base cf8d8b89 และ follow-up a49237d8 เปลี่ยนเพียง annotation ไม่มี runtime logic ใหม่
+- Ruff, Linux Mypy 5 files, MkDocs strict, claim sync และ version checks ผ่าน
+- Wheel local 2.4.1 (ยังไม่ release) มี Desk assets 233 files, ติดตั้ง venv ว่างจริง, pip check clean, install contract ผ่าน **6/6 groups** รวม scripted demo/API/memory/restart/package read-only
+- Installed launch เริ่ม API/Desk/readiness HTTP200, Thai memory roundtrip และ stop ปิดสอง ports ได้ ไม่ใช่หลักฐานการคลิก contract chat E2E หรือ real model
+- Synthetic 2.4.0 → 2.4.1-local → 2.4.0 → uninstall → 2.4.1-local คง memory และ model config ที่ pin path ไว้ได้; local backup/verify/restore ไป directory ใหม่อ่าน memory/model ได้เมื่อรวม synthetic keys ไม่รับรอง arbitrary schema rollback, off-host restore หรือ erased-data reconciliation
+- CI package check ของ head a49237d8 ผ่านที่ run 41016750394 ก่อนหน้านี้ build/package Desk เคย fail และ signed log download ถูก Forbidden; run เดิมภายหลัง rerun ผ่าน ยังไม่ทราบสาเหตุเดิม ไม่อ้างว่าแก้จากการคาดเดา
+- รอบ full ก่อนแก้ prerequisites ได้ 9077 passed/11 failed/7 setup errors: task PG/Ollama containers หยุดพร้อมกัน exit255, OOMKilled=false เวลา 06:17:48 UTC ไม่พบเหตุระดับแพลตฟอร์มที่ยืนยันได้ รันใหม่หลัง start/health check และรวม #202 แล้ว จึงใช้ผลหลังแก้เป็นหลัก Docker/PostgreSQL เป็น test harness ไม่ใช่ dependency ของ demo ปกติ
+
+หลักฐานและ hashes: [LOCAL_FIRST_INSTALL_VALIDATION](evidence/LOCAL_FIRST_INSTALL_VALIDATION_2026-10-30.json) และ [release scope](evidence/SELF_INSTALL_RELEASE_SCOPE_2026-10-30.json) ไม่ใช้ยอด cloud แทน main CI checkpoint ไม่มี paid model calls, merge main, release tag, package publish หรือ marketing post ในรอบนี้
+
+Windows CI ของ head a49237d8 ผ่าน Build/install/check/uninstall แล้ว ยังไม่แทน manual Desk/SmartScreen/ผู้ใช้ภายนอกติดตั้งเอง macOS ยังไม่มี native evidence ในรอบนี้ ยอด test ต่างจาก PR #210 เพราะ PR นี้ทดสอบ main-based scope โดยไม่รวม jobs stack ไม่ใช่หลักฐานว่างานเก่าถูกลบ งานเหล่านั้นยังอยู่ใน PR ของตน

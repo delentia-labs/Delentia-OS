@@ -1,0 +1,177 @@
+{
+  "schema_version": "1",
+  "purpose": "local/self-managed OSS installation evidence; not a managed-host readiness certificate or public main test checkpoint",
+  "observed_at_utc": "2026-10-30T06:59:19.365413+00:00",
+  "main_integrated": "d1376d21f6dd88b3fa98a9263525859d27916c4b",
+  "runtime_base_checkpoint": "cf8d8b899fa7b937123584bb03bd3b93c7b24535",
+  "typing_only_followup": "a49237d8ec0b22e4d918bcd678a3acdbd4ec0673",
+  "typing_followup_note": "only checker subprocess attribute annotation changed; no runtime logic change; 16 checks rerun afterwards",
+  "source_sha256": {
+    "rct_control_plane/cli.py": "879def2400437ca824f68d6d0486e792e4c982850e31f7e7c8f99f5ae2de58e8",
+    "rct_control_plane/setup_wizard.py": "ccc7706ea5fbce1ac7b94cfdc949e45c60b5c32c48fb530e59684b236e4eed94",
+    "rct_control_plane/model_config.py": "9a64e5848f2c49c954c7e5c224c435d38c6197b8f601c2bfdc2989d95215ebb3",
+    "installer/windows/check_install.py": "1ece441377167b467e196fa8bf280c623a22f393b470f552d4ea82073cddb153",
+    "scripts/check_installed_wheel.py": "efaf4594a8e86dd0fe606e298efdf0cb000aa5c1f2e833c83068ab70fc2f6f39",
+    "rct_control_plane/tests/test_local_first_onboarding_real.py": "05c8cc13da0d39b0079b66efcd30bf5d68f34d387e692486d6ea35185c188106"
+  },
+  "paid_calls": 0,
+  "full_suite": {
+    "passed": 9085,
+    "failed": 10,
+    "skipped": 45,
+    "xfailed": 1,
+    "setup_errors": 0,
+    "warnings": 8995,
+    "seconds": 627.19,
+    "failures": [
+      "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+      "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+      "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+      "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+      "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function"
+    ],
+    "failure_categories": {
+      "ollama_model_unavailable": 9,
+      "native_dns": 1
+    }
+  },
+  "focused": {
+    "passed": 219,
+    "seconds": 17.6,
+    "added_tests": 8,
+    "counts_overlap_full": true
+  },
+  "post_typing_regression": {
+    "passed": 16,
+    "seconds": 5.8
+  },
+  "recovered_pg_and_installer": {
+    "passed": 37,
+    "seconds": 9.04
+  },
+  "clean_wheel": {
+    "python": "3.12",
+    "version": "2.4.1 local unreleased build",
+    "empty_venv": true,
+    "pip_check": "passed",
+    "desk_files": 233,
+    "sha256": "8cefe81c7c913e1a53c3e6868f80ef87a644ea11fdd4657ff18b84b3dc1c6cd9",
+    "install_contract_groups": {
+      "imports": true,
+      "cli": true,
+      "demo": true,
+      "serve": true,
+      "memory": true,
+      "readonly": true
+    }
+  },
+  "installed_launch": {
+    "api_health": "200",
+    "desk_html": "200",
+    "readiness": "200",
+    "thai_memory_roundtrip": true,
+    "ports_closed_after_stop": true,
+    "real_model_or_contract_chat_e2e": false
+  },
+  "upgrade_rollback_uninstall": {
+    "passed": true,
+    "versions": [
+      "2.4.0",
+      "2.4.1-local",
+      "2.4.0",
+      "uninstalled",
+      "2.4.1-local"
+    ],
+    "synthetic_memory_retained": true,
+    "explicit_model_config_retained": true,
+    "arbitrary_schema_rollback_verified": false
+  },
+  "local_backup_restore": {
+    "passed": true,
+    "synthetic_data_and_keys_only": true,
+    "restored_memory_and_model_config_readable": true,
+    "off_host_restore_or_erasure_reconciliation": false,
+    "archive_is_private_and_not_committed": true
+  },
+  "checks": {
+    "ruff": "passed",
+    "mypy_linux_five_files": "passed",
+    "mkdocs_strict": "passed",
+    "claim_sync": "passed",
+    "versions": "passed"
+  },
+  "test_host_incident": {
+    "initial_full_result": {
+      "passed": 9077,
+      "failed": 11,
+      "setup_errors": 7,
+      "seconds": 692.47
+    },
+    "pg_ollama_container_finished_at_utc": "2026-10-30T06:17:48.40884764Z",
+    "exit_code": 255,
+    "oom_killed": false,
+    "platform_root_cause_known": false,
+    "recovery": "restarted task-owned containers; PG health checked; incorporated existing PR202 interpreter fix; reran full suite",
+    "normal_user_install_requires_test_postgres_or_docker": false
+  },
+  "github": {
+    "pull_request": 212,
+    "base": "main",
+    "existing_installer_fix_included": 202,
+    "package_ci_latest": {
+      "run": 41016750394,
+      "sha": "a49237d8ec0b22e4d918bcd678a3acdbd4ec0673",
+      "conclusion": "success"
+    },
+    "earlier_package_failure": {
+      "run": 41015817508,
+      "step": "Build the Desk and put it inside the package",
+      "log_access": "Forbidden",
+      "root_cause_known": false,
+      "latest_run_conclusion": "success after rerun"
+    },
+    "windows_installer_ci_latest": {
+      "sha": "a49237d8ec0b22e4d918bcd678a3acdbd4ec0673",
+      "conclusion": "success",
+      "scope": "build/install/check/uninstall on Windows runner; not manual GUI or SmartScreen validation"
+    }
+  },
+  "remaining_before_paid": [
+    "budget guard fixes in Claude lane and exact-config rehearsal",
+    "final experiment model/provider/pricing/settings/roles/code pin",
+    "Architect budget authorization and provider-side cap",
+    "real usage/bill/raw outcomes canary"
+  ],
+  "remaining_before_self_install_marketing": [
+    "review/final CI and released artifacts/checksums",
+    "platform-specific self-install first-run evidence",
+    "real capable-model installed workflow and honest scope claims",
+    "local Desk workflow video and privacy/troubleshooting support",
+    "independent users following self-install instructions"
+  ],
+  "shared_host_gates_are_separate_future_scope": true,
+  "artifact_sha256": {
+    "full.xml": "9460d67dc4e9e395ff1a752fe46a9bb4516701692fa53a62f358828d3f5b4a2d",
+    "full.log": "f2dc92eee3be8c7bcbd0bb2cf96d337172270865a7fdc6fb0134768e7312ed8f",
+    "focused.xml": "b86e195958d12e56b3de46658705ace23a31b97cc0455fe7ab4a250955064074",
+    "focused.log": "dbc351e416333a81ad4cc30bd340ea56ee9433c07698d102592596d3c3d03add",
+    "final-typing-regression.xml": "67b1ed5f100fb5f45ab098686a776fb4e0c3fee2929604749f628a66ee42b617",
+    "final-typing-regression.log": "b336e0d23377f3b8083d94ed8ba1bd7dbcf35192048e55b439cf78d2a024a864",
+    "recovered-prerequisites.xml": "546ed24a2691c261897f00f0ca9747591ee7157fc06ccc23bd8102690d0af872",
+    "recovered-prerequisites.log": "cf6f788293387666833d40077634f83dd7b64b9d7885be682d7b7cadc0ddcc59",
+    "install-contract-final.json": "e9ccacf6cfc9b19bdfaf4eec98b8b45efa8b03a07767d2716dbce155f8554caf",
+    "installed-launch.json": "92b4eac03d66dd1e641c67ac83e18ddb488ae8196ac5bb085b1a308fe35ae9d6",
+    "upgrade-rollback-uninstall.json": "7009201785afc61dd5147d33692e3e161b1cba48be68f2ffba7aabe1d4cc1080",
+    "local-backup-restore.json": "0f21e97db664a58a7631a272afb5c5289c96f566a181b1c7732c2f4fc55a6178",
+    "pip-check-final.log": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09",
+    "claims.log": "e056a1db8def3aea9382f803a27e265cac79f49d46205a2b98f8e4d14d2bd386",
+    "versions.log": "06c877cf81b60eb6e6d4d5409bcda54aae68e173668726128e53caf2c73891e4",
+    "mypy-final.log": "f71fd45e46b8ad146f6c11d08d913876e9db2aca1a8691ecb0ccf61c52b0e5f6",
+    "mkdocs-final.log": "5a4b5bb6b4ae581c58f98ae75b90bf7a68850e3f7e9fdba464b5a374e811c46a"
+  }
+}

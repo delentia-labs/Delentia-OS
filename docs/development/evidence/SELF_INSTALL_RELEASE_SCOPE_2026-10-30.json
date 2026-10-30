@@ -10,13 +10,14 @@
   "creator_paid_evaluation_authorized": false,
   "release_claims": "mechanisms and workflows actually demonstrated; no general RCT-7 or production guarantee",
   "main_integrated": "d1376d21f6dd88b3fa98a9263525859d27916c4b",
-  "code_checkpoint": "24db856cb55283772989d58b825b686d69625af6",
+  "code_checkpoint": "a49237d8ec0b22e4d918bcd678a3acdbd4ec0673",
   "source_sha256": {
     "rct_control_plane/cli.py": "879def2400437ca824f68d6d0486e792e4c982850e31f7e7c8f99f5ae2de58e8",
     "rct_control_plane/setup_wizard.py": "ccc7706ea5fbce1ac7b94cfdc949e45c60b5c32c48fb530e59684b236e4eed94",
     "rct_control_plane/model_config.py": "9a64e5848f2c49c954c7e5c224c435d38c6197b8f601c2bfdc2989d95215ebb3",
-    "scripts/check_installed_wheel.py": "caa017ed3bd98e37afdae0e993264bde56165a2d0eccdfa43d6ea55facb48708",
-    "rct_control_plane/tests/test_local_first_onboarding_real.py": "05c8cc13da0d39b0079b66efcd30bf5d68f34d387e692486d6ea35185c188106"
+    "scripts/check_installed_wheel.py": "efaf4594a8e86dd0fe606e298efdf0cb000aa5c1f2e833c83068ab70fc2f6f39",
+    "rct_control_plane/tests/test_local_first_onboarding_real.py": "05c8cc13da0d39b0079b66efcd30bf5d68f34d387e692486d6ea35185c188106",
+    "installer/windows/check_install.py": "1ece441377167b467e196fa8bf280c623a22f393b470f552d4ea82073cddb153"
   },
   "local_wheel": {
     "version": "2.4.1 unreleased local build",
@@ -27,7 +28,7 @@
   },
   "platform_evidence": {
     "Linux": "local wheel validated in this cloud, not every Linux/VPS distribution",
-    "Windows": "prior installer evidence exists; current artifact native validation required",
+    "Windows": "PR212 a49237d8 Windows CI build/install/check/uninstall passed; manual SmartScreen/outside-user first-run not verified",
     "macOS": "native install not validated this round"
   },
   "before_paid_research": [
@@ -48,5 +49,7 @@
     "central host restore/witness/notary separation",
     "central host 72h soak/outside pilot"
   ],
-  "paid_calls": 0
+  "paid_calls": 0,
+  "wheel_code_checkpoint": "24db856cb55283772989d58b825b686d69625af6",
+  "includes_existing_installer_fix_pr": 202
 }
