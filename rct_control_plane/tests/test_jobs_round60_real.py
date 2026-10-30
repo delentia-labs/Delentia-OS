@@ -116,7 +116,7 @@ class TestLifecycle:
         asyncio.run(scenario())
         with persistence._connect() as conn:
             actions = [r[0] for r in conn.execute("SELECT action FROM audit_trail WHERE entity_type = 'agent_job' ORDER BY id")]
-        assert actions == ["submitted", "finished"]
+        assert actions == ["submitted", "started", "finished"]
 
 
 # ------------------------------------------------------------------ cancel
