@@ -182,3 +182,14 @@ This does not confirm a plan or replay execution. The updated wire schema is
 See the [lifecycle audit and recovery plan](../development/LIFECYCLE_REVIEW_2026-10-30_TH.md)
 for transaction boundaries, outstanding job ownership/cancel findings and the
 separate roles of request idempotency and tool-effect idempotency.
+
+### Contract audit and erased request keys
+
+Contract creation/state transitions use the existing transactional audit primitive:
+state/version, request mapping and audit-chain entries commit together or roll back.
+A failed audit write cannot leave a successfully claimed contract ready to dispatch.
+Erasure scrubs the stored request fingerprint while retaining a hashed-key replay
+tombstone. Retrying an erased/unavailable intent returns conflict; it does not
+reconstruct the old request. Tombstones currently have no automatic expiry.
+See [atomic contract audit](../development/ATOMIC_CONTRACT_AUDIT_2026-10-30_TH.md)
+for SQLite scope, metadata retention limits and the dependency on PR #203.
