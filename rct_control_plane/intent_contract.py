@@ -201,6 +201,14 @@ class IntentContractStore:
                          "key_sha256 TEXT NOT NULL, request_sha256 TEXT NOT NULL, contract_id TEXT NOT NULL, "
                          "PRIMARY KEY(namespace, key_sha256))")
 
+    def _request_contract(self, contract_id: str) -> Dict[str, Any]:
+        try:
+            return self.get(contract_id)
+        except IntentContractError as exc:
+            # Preserve the reserved key; erasure/corruption must never turn a
+            # retry into a fresh intent or restore the erased person's words.
+            raise IntentRequestConflict("request_id belongs to an unavailable contract") from exc
+
     def _encode(self, data: Dict[str, Any]) -> str:
         protected = audit_text.protect(self.namespace, {"data": data}, ("data",))
         if audit_text.sealing_on() and not audit_text.is_sealed_value(protected["data"]):
@@ -274,7 +282,7 @@ class IntentContractStore:
             if prior is not None:
                 if prior[0] != request_hash:
                     raise IntentRequestConflict("request_id already belongs to different input")
-                return self.get(prior[1])
+                return self._request_contract(prior[1])
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
@@ -311,10 +319,10 @@ class IntentContractStore:
                 if key_hash is not None:
                     conn.execute("INSERT INTO intent_request_keys VALUES (?, ?, ?, ?)",
                                  (self.namespace, key_hash, request_hash, contract_id))
+                self.db._append_audit(conn, "intent_contract", contract_id, state, self.namespace,
+                                      {"version": 1, "goal_sha256": hashlib.sha256(goal.encode()).hexdigest()})
         if existing_id is not None:
-            return self.get(existing_id)
-        self.db.append_audit(entity_type="intent_contract", entity_id=contract_id, action=state, actor=self.namespace,
-                             changes={"version": 1, "goal_sha256": hashlib.sha256(goal.encode()).hexdigest()})
+            return self._request_contract(existing_id)
         return copy.deepcopy({**data, "id": contract_id, "state": state, "version": 1})
 
     def transition(self, data: Dict[str, Any], state: str) -> Dict[str, Any]:
@@ -329,9 +337,9 @@ class IntentContractStore:
                                    (state, self._encode(payload), data["id"], self.namespace, data["version"], data["state"])).rowcount
             if changed != 1:
                 raise IntentContractError("intent contract changed; reload its current version")
-        self.db.append_audit(entity_type="intent_contract", entity_id=data["id"], action=state, actor=self.namespace,
-                             changes={"version": data["version"] + 1,
-                                      "payload_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()})
+            self.db._append_audit(conn, "intent_contract", data["id"], state, self.namespace,
+                                  {"version": data["version"] + 1,
+                                   "payload_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()})
         return {**payload, "id": data["id"], "state": state, "version": data["version"] + 1}
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
