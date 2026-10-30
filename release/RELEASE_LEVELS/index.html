@@ -2549,7 +2549,7 @@
 </tbody>
 </table>
 <h2 id="the-gates">The gates<a class="headerlink" href="#the-gates" title="Permanent link">&para;</a></h2>
-<p>A gate is <strong>met</strong> only when the named evidence exists and can be re-checked. Status as of 2026-10-19 (the numbers behind each line are in <code>docs/release/READINESS_SNAPSHOT.md</code>, generated from the commit, the CI run and the evidence bundles).</p>
+<p>A gate is <strong>met</strong> only when the named evidence exists and can be re-checked. Status as of 2026-10-30 (the numbers behind each line are in <code>docs/release/READINESS_SNAPSHOT.md</code>, generated from the commit, the CI run and the evidence bundles).</p>
 <table>
 <thead>
 <tr>
@@ -2564,19 +2564,19 @@
 <td>G-install</td>
 <td>L0</td>
 <td>A clean-wheel install imports, runs the CLI and the scripted demos, starts the server, keeps memory across restarts, and works with a read-only package folder (<code>scripts/check_installed_wheel.py</code>, CI job <em>Package check</em>)</td>
-<td>met: Windows locally, and the <em>Package check</em> job in CI installs the built wheel in an empty Linux environment on every change</td>
+<td>met: Windows locally, and the <em>Package check</em> job in CI installs the built wheel in an empty Linux environment on every change; the published 2.4.0 was also installed from the real PyPI in an empty virtual environment on 2026-10-26 (<code>pip check</code> clean, the model-free demo 5 of 5 checks)</td>
 </tr>
 <tr>
 <td>G-tests</td>
 <td>L0</td>
 <td>The public test suite passes on three Python versions (CI)</td>
-<td>met (7,820 passed on main at 3dbed0d, 2026-10-18, Python 3.10/3.11/3.12)</td>
+<td>met (9,069 passed, 46 skipped, 0 failed, 91.95% coverage on main at dc0b2df, 2026-10-30, CI run 40989051697, Lint and Python 3.10/3.11/3.12 green; the run before it, 2026-10-25, gave 8,585). A full local run on that commit gave 8,968 passed, 141 skipped, 11 failed: 9 need a running Ollama (they pass with it on) and 2 were the third-party Hermes agent losing a scripted file write about one run in five (now retried; a real regression still fails every attempt); that is one machine, not a public number</td>
 </tr>
 <tr>
 <td>G-claims</td>
 <td>L0</td>
 <td>Every public number is a measured one and <code>check_claim_sync</code> passes; withdrawn claims stay withdrawn</td>
-<td>met for the repository; the website was rewritten and merged on 2026-10-19 with a claims lint in CI, blog bodies and a few glossary pages still carry old wording</td>
+<td>met for the repository; the website was rewritten and merged on 2026-10-19 with a claims lint in CI, and on 2026-10-30 it also has a version lint (it names only versions PyPI has) and the public test count of the 2026-10-25 run (checked on the live pages); blog bodies keep their original text under a correction notice, and a few glossary pages still carry old wording</td>
 </tr>
 <tr>
 <td>G-evidence</td>
@@ -2606,25 +2606,25 @@
 <td>G-installer</td>
 <td>L1 (a download is offered)</td>
 <td>The Windows installer installs, starts, passes <code>check_install.py</code> and uninstalls without touching <code>~/.delentia</code> on a <strong>clean</strong> machine; the release carries its checksum</td>
-<td>built, installed, checked and uninstalled on the author's own machine <strong>and on a clean GitHub Windows runner</strong> (workflow run 40266296420, 2026-10-26: installer exit 0, post-install check 6 of 6, uninstall left nothing); <strong>a computer that is not the author's, a real SmartScreen check and an offline install are not done</strong>; not code-signed</td>
+<td>built, installed, checked and uninstalled on the author's own machine <strong>and on a clean GitHub Windows runner</strong> (workflow run 40266296420, 2026-10-26: installer exit 0, post-install check 6 of 6, uninstall left nothing); release 2.4.0 carries <code>Delentia-Setup-2.4.0.exe</code>, <code>Delentia-Setup.exe</code> and <code>SHA256SUMS.txt</code>, and the README link downloads the file whose SHA-256 equals its line; <strong>a computer that is not the author's, a real SmartScreen check and an offline install are not done</strong>; not code-signed</td>
 </tr>
 <tr>
 <td>G-model</td>
 <td>L2</td>
 <td>A capable model drives the loop: the capability screen passes (K.1.5 ≥ 90% on the 5-goal and 17-goal batteries)</td>
-<td><strong>not met</strong> (local 8B qwen3: 5 of 5 simple goals in one run, 84-508 s per goal; the 17-goal battery and a capability screen of stronger models have not been run)</td>
+<td><strong>not met</strong> (local 8B qwen3: 5 of 5 simple goals in one run, 84-508 s per goal; the 17-goal battery and a capability screen of stronger models have not been run; the whole paid path was rehearsed on 2026-10-30 against a fake endpoint at $0 and the meter equalled the endpoint's charge, and a dry run with live prices puts the 21-model screen at about <span class="arithmatex">\(3.01 (\)</span>4.51 with a 1.5x margin); it is refused until a key is set)</td>
 </tr>
 <tr>
 <td>G-host</td>
 <td>L2</td>
 <td>A Linux host runs for 72 hours without manual intervention: no crash, no unexplained pending items, backups taken, one restore performed from an off-host copy</td>
-<td><strong>not met</strong> (the owner's PC runs the host: starts at logon, a real Restart passed on 2026-10-19, a 6-hour soak was clean; no Linux host, no 72-hour run)</td>
+<td><strong>not met</strong> (the owner's PC runs the host: starts at logon, a real Restart passed on 2026-10-19, a 6-hour soak was clean; on 2026-10-30 it was updated to main with the audit chain verified before and after and authentication checked on the running host; no Linux host, no 72-hour run)</td>
 </tr>
 <tr>
 <td>G-witness</td>
 <td>L2</td>
 <td>At least one independent witness holds a recent signed head and <code>check-witnesses</code> passes from a machine that is not the host</td>
-<td><strong>not met</strong> (the Worker holds one anchor of the host notary's head from 2026-10-17; the public ledger repository is empty; anchoring is not scheduled; no check from a second machine)</td>
+<td><strong>not met</strong> (the Worker holds one anchor of the host notary's head from 2026-10-17; the public ledger repository is empty; anchoring is not scheduled (the host's configured key id <code>host-1</code> is not registered at the Worker); an RFC 3161 witness and the notary's own time-stamps exist and were tested against real authorities but are not scheduled; no check from a second machine)</td>
 </tr>
 <tr>
 <td>G-notary-user</td>
