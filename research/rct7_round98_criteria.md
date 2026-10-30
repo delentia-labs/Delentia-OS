@@ -174,3 +174,21 @@ the hypothesis "tell the judge what the agent can look up and what the chat alre
 * qwen2.5:7b: plain found 19/25 (0.76), false stops 13/35 (0.371); with context found 4/25 (0.16), false stops 2/35 (0.057). H3: false stops -11 but found -15 -> **context judge is NOT better**: the 7B model answers "no question needed" almost everywhere once a context line is present, including the rows that have no context.
 * The pairs (16 sentences that appear with and without a context line): the Architect changed his own Q answer in 13 of 16 pairs when the context supplied the missing piece; the plain judge never changed (it ignores what the agent can see); the qwen3:8b context judge followed him in several pairs and not in others (kept asking about 'Delete the duplicate files' and 'Send the report to the client' where the previous step / chat made the target clear).
 * Scope: 60 rows, one run each at temperature 0, one labeller; the judge prompt version `5dbf3fa34125` was frozen before any label existed. Not a claim about a capable model. The Architect's C axis (confirm a plan) was Y for 43 of 60 and is not a target of the judge at all; it is the data for the plan-approval design (Q2).
+
+## H4. Set 4 (fresh requests, each with the context the BUILDER produces) — FROZEN 2026-10-30, before any label or model run exists
+
+Why: set 3's context lines were written by hand. Set 4 shows the judge the text `rct_control_plane/judge_context.build` produces for a described state, and shows the Architect the SAME text. The design and the
+reasons are in `DELENTIA_DESIGN_NOTE_JUDGE_CONTEXT_AND_SET4_2026-10-25.md` (section 4); this section fixes what is measured.
+
+1. **60 fresh requests** (`research/holdout4_sheet_r105.py`; none equal to, or closer than 0.85 string similarity to, a request of sets 1-3; checked by a test). Written by the author, 30 meant to need a
+   question (the missing piece is in neither the shown context nor reachable by a lookup the context lists) and 30 meant not to (the piece is in the context or can be looked up). The author's intent is
+   stored beside the sheet and is NOT the label: the Architect labels, and the agreement between his labels and the author's intent is reported afterwards as a description of the author, not as a score.
+2. **The context is the builder's own**: every state is data (earlier chat, tools waiting for approval, standing rules, memories, file names, tool names) and the sheet and the runs use
+   `judge_context.build(...)` of that data. In the markdown sheet a line break of that text is written as the single character U+23CE; the runner turns it back before the judge sees it.
+3. **Labels**: Q axis only (ask for missing information? Y / N / ?). The C axis is not asked; every C is recorded as `?`. Labels are sealed by hash before any model runs (`rct7_holdout_twoaxis seal`).
+4. **Runs**: the plain judge and the context judge, once each per model, same rule as H3 (a repeat needs `--again` and is marked). Models: the ones that ran set 3 (qwen3:8b, qwen2.5:7b) and later a capable model.
+5. **Rules, registered now**:
+   * H3 rule again: the context judge counts as better only if its false stops are lower by at least 2 items AND its found count is lower by at most 1.
+   * The original rule (found >= 0.80 and false stops <= 0.15 on Q) is reported beside it.
+   * Nothing is wired as a default on any outcome of local models alone (the switch stays an environment variable of the host).
+6. **Not claimed**: that the product's judge stops less in use; that a model other than the ones run does the same; anything about axis C.
