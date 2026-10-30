@@ -66,35 +66,41 @@ def _row(r: Any) -> Dict[str, Any]:
     return d
 
 
+class JobOwnershipLost(JobError):
+    pass
+
+
 class JobService:
-    def __init__(self, persistence: Any, runner: Callable[..., Any]):
+    def __init__(self, persistence: Any, runner: Callable[..., Any], *, clock: Callable[[], float] = time.time, lease_seconds: float = 30.0):
         """`runner(namespace, goal, max_iterations, max_seconds, on_step)` is an async callable returning the episode's result dict (the API passes one that builds the governed loop)."""
         self._p = persistence
         self._runner = runner
         self._tasks: Dict[str, "asyncio.Task[Any]"] = {}
         with self._p._connect() as conn:
             conn.executescript(SCHEMA)
-            # A previous process died with these running: they cannot continue, and must not look alive.
-            conn.execute("UPDATE agent_jobs SET status = 'interrupted', finished_at = ?, error = 'the server restarted while this job was running' WHERE status IN ('queued', 'running')",
-                         (time.time(),))
+        from rct_control_plane.job_ownership import Ownership
+        self._ownership = Ownership(persistence, clock=clock, lease_seconds=lease_seconds)
+        self._ownership.recover()
 
     # ---------------------------------------------------------------- read
 
     def get(self, job_id: str, namespace: Optional[str] = None) -> Optional[Dict[str, Any]]:
         import sqlite3
+        self._ownership.recover()
         with self._p._connect() as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute("SELECT * FROM agent_jobs WHERE id = ?", (job_id,)).fetchone()
         if row is None or (namespace is not None and row["namespace"] != namespace):
             return None
-        return _row(row)
+        return self._ownership.decorate(_row(row))
 
     def list(self, namespace: str, limit: int = 20) -> List[Dict[str, Any]]:
         import sqlite3
+        self._ownership.recover()
         with self._p._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("SELECT * FROM agent_jobs WHERE namespace = ? ORDER BY created_at DESC LIMIT ?", (namespace, max(1, min(int(limit), 100)))).fetchall()
-        return [_row(r) for r in rows]
+        return [self._ownership.decorate(_row(r)) for r in rows]
 
     def _live_counts(self, namespace: str) -> tuple:
         with self._p._connect() as conn:
@@ -110,12 +116,21 @@ class JobService:
         except Exception:
             pass
 
-    def _update(self, job_id: str, **fields: Any) -> None:
-        if not fields:
-            return
-        names = ", ".join(f"{k} = ?" for k in fields)
-        with self._p._connect() as conn:
-            conn.execute(f"UPDATE agent_jobs SET {names} WHERE id = ?", (*fields.values(), job_id))   # nosec B608 - column names come from this module's own keyword names
+    def _update(self, job_id: str, **fields: Any) -> bool:
+        return self._ownership.update(job_id, fields)
+
+    async def _watch_owner(self, job_id: str) -> None:
+        while True:
+            await asyncio.sleep(1.0)
+            try:
+                state = self._ownership.pulse(job_id)
+            except Exception:  # loss of the lease database must stop the local runner
+                state = "lost"
+            if state != "ok":
+                task = self._tasks.get(job_id)
+                if task is not None:
+                    task.cancel()
+                return
 
     def submit(self, namespace: str, goal: str, max_iterations: int = 5, max_seconds: float = 120.0, initial_taint: Optional[str] = None,
                on_done: Optional[Callable[[Dict[str, Any]], Any]] = None) -> Dict[str, Any]:
@@ -125,50 +140,72 @@ class JobService:
             raise JobError("a goal is required")
         if len(goal) > MAX_GOAL_CHARS:
             raise JobError(f"the goal is longer than {MAX_GOAL_CHARS} characters")
-        mine, everyone = self._live_counts(namespace)
-        if mine >= _int_env("DELENTIA_MAX_JOBS_PER_USER", 3):
-            raise JobError("you already have the most jobs running that you are allowed; wait for one to finish or cancel one")
-        if everyone >= _int_env("DELENTIA_MAX_JOBS", 8):
-            raise JobError("the server is running as many jobs as it is allowed; try again shortly")
+        loop = asyncio.get_running_loop()
+        self._ownership.recover()
         job_id = f"job-{uuid.uuid4().hex[:12]}"
         with self._p._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            mine = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE namespace=? AND status IN ('queued','running')", (namespace,)).fetchone()[0]
+            everyone = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE status IN ('queued','running')").fetchone()[0]
+            if mine >= _int_env("DELENTIA_MAX_JOBS_PER_USER", 3):
+                raise JobError("you already have the most jobs running that you are allowed; wait for one to finish or cancel one")
+            if everyone >= _int_env("DELENTIA_MAX_JOBS", 8):
+                raise JobError("the server is running as many jobs as it is allowed; try again shortly")
             conn.execute("INSERT INTO agent_jobs (id, namespace, goal, status, created_at) VALUES (?, ?, ?, 'queued', ?)", (job_id, namespace, goal, time.time()))
+            self._ownership.insert(conn, job_id)
         self._audit("submitted", job_id, namespace, {"goal_chars": len(goal)})
-        self._tasks[job_id] = asyncio.get_running_loop().create_task(self._run(job_id, namespace, goal, max(1, min(int(max_iterations), 25)), max(5.0, min(float(max_seconds), 1800.0)),
+        self._tasks[job_id] = loop.create_task(self._run(job_id, namespace, goal, max(1, min(int(max_iterations), 25)), max(5.0, min(float(max_seconds), 1800.0)),
                                                                                initial_taint, on_done))
         return self.get(job_id) or {"id": job_id}
 
     async def _run(self, job_id: str, namespace: str, goal: str, max_iterations: int, max_seconds: float, initial_taint: Optional[str] = None,
                    on_done: Optional[Callable[[Dict[str, Any]], Any]] = None) -> None:
-        self._update(job_id, status="running", started_at=time.time())
+        watcher = asyncio.create_task(self._watch_owner(job_id))
+        finished_by_me = False
         steps = {"n": 0}
 
         async def on_step(step: Any) -> None:
             steps["n"] += 1
-            self._update(job_id, steps=steps["n"], last_tool=str(getattr(step, "tool_name", None) or "")[:80] or None)
+            if not self._update(job_id, steps=steps["n"], last_tool=str(getattr(step, "tool_name", None) or "")[:80] or None):
+                raise JobOwnershipLost("job ownership lost")
         try:
+            if not self._update(job_id, status="running", started_at=time.time()):
+                return
+            if self._ownership.pulse(job_id) != "ok":
+                raise asyncio.CancelledError()
             if initial_taint is None:
                 result = await self._runner(namespace, goal, max_iterations, max_seconds, on_step)
             else:
                 result = await self._runner(namespace, goal, max_iterations, max_seconds, on_step, initial_taint=initial_taint)
             stopped = str(result.get("stopped_reason") or "unknown")
             answer = result.get("final_answer")
-            self._update(job_id, status="done", finished_at=time.time(), stopped=stopped, answer=(str(answer)[:MAX_RESULT_CHARS] if answer else None),
+            from rct_control_plane.job_ownership import result_outcome
+            outcome, scope = result_outcome(result, namespace)
+            finished_by_me = self._ownership.update(job_id, dict(status="done", finished_at=time.time(), stopped=stopped, answer=(str(answer)[:MAX_RESULT_CHARS] if answer else None),
                          approval_id=result.get("approval_id"), steps=int(result.get("iterations") or steps["n"]),
-                         cost_json=json.dumps(result.get("cost")) if result.get("cost") else None)
-            self._audit("finished", job_id, namespace, {"stopped_reason": stopped})
+                         cost_json=json.dumps(result.get("cost")) if result.get("cost") else None), outcome=outcome, scope=scope)
+            if finished_by_me:
+                self._audit("finished", job_id, namespace, {"stopped_reason": stopped})
         except asyncio.CancelledError:
-            self._update(job_id, status="cancelled", finished_at=time.time(), stopped="cancelled")
-            self._audit("cancelled", job_id, namespace)
+            if self._ownership.update(job_id, dict(status="cancelled", finished_at=time.time(), stopped="cancelled"), outcome="cancelled"):
+                self._audit("cancelled", job_id, namespace)
             raise
+        except JobOwnershipLost:
+            pass
         except Exception as exc:                                       # noqa: BLE001 - recorded, never raised into the server
-            self._update(job_id, status="failed", finished_at=time.time(), stopped="exception", error=f"{type(exc).__name__}: the details are in the server log")
-            self._audit("failed", job_id, namespace, {"error_type": type(exc).__name__})
+            finished_by_me = self._ownership.update(job_id, dict(status="failed", finished_at=time.time(), stopped="exception", error=f"{type(exc).__name__}: the details are in the server log"), outcome="failed")
+            if finished_by_me:
+                self._audit("failed", job_id, namespace, {"error_type": type(exc).__name__})
             import logging
             logging.getLogger("delentia.jobs").exception("job %s failed", job_id)
         finally:
+            watcher.cancel()
+            try:
+                await watcher
+            except asyncio.CancelledError:
+                pass
             self._tasks.pop(job_id, None)
-            if on_done is not None:
+            if on_done is not None and finished_by_me:
                 finished = self.get(job_id)
                 if finished is not None and finished["status"] in ("done", "failed"):
                     try:
@@ -184,12 +221,10 @@ class JobService:
             raise JobError("no such job")
         if job["status"] not in LIVE:
             return job
+        self._ownership.request_cancel(job_id, namespace)
         task = self._tasks.get(job_id)
-        if task is not None:
+        if task is not None and job["status"] == "running":
             task.cancel()
-        else:                                                           # queued/running in a process that is gone
-            self._update(job_id, status="cancelled", finished_at=time.time(), stopped="cancelled")
-            self._audit("cancelled", job_id, namespace)
         return self.get(job_id) or job
 
     async def wait(self, job_id: str, timeout: float = 60.0) -> None:
@@ -200,3 +235,11 @@ class JobService:
                 await asyncio.wait_for(asyncio.shield(task), timeout=timeout)
             except (asyncio.CancelledError, asyncio.TimeoutError):
                 pass
+        else:
+            deadline = asyncio.get_running_loop().time() + timeout
+            while True:
+                job = self.get(job_id)
+                remaining = deadline - asyncio.get_running_loop().time()
+                if job is None or job["status"] not in LIVE or remaining <= 0:
+                    return
+                await asyncio.sleep(min(1.0, remaining))
