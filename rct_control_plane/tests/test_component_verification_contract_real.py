@@ -193,3 +193,15 @@ def test_failed_verification_cannot_be_reset_through_public_status():
         scheduler.failed = None
     with pytest.raises(ValueError):
         scheduler.require_complete()
+
+
+def test_literal_true_schema_cannot_coerce_numeric_one_to_a_verdict():
+    from typing import Literal
+    class StrictSuccess(CriterionVerification):
+        satisfied: Literal[True]
+    scheduler = ComponentScheduler({'schema_version': 1, 'nodes': [
+        {'id': 'check', 'handler': 'check', 'phase': 'verify', 'criteria': ['C1']}]},
+        {'check': Handler(Empty, StrictSuccess, 'verify', lambda i: {'criterion_id': 'C1', 'satisfied': 1})},
+        ['C1'], {}, lambda *a: pytest.fail('coerced verdict cannot create receipt'))
+    with pytest.raises(VerificationRejected):
+        scheduler.drain('verify')
