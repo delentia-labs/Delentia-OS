@@ -255,7 +255,7 @@ def format_output(data: Any, format: OutputFormat) -> None:
 _HELP_SECTIONS = (
     ("Start here", ("setup", "launch", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
     ("Everyday", ("update", "model","memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
-    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "host-check", "host-metrics")),
+    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "state-log", "host-check", "host-metrics")),
     ("Connect and extend", ("mcp", "acp", "webhook", "forge", "search-status", "jitna", "intent-contract")),
     ("Measure and research", ("experiments", "growth", "trajectories", "algorithms", "metrics")),
     ("Older commands (still work)", ("adapter", "audit", "build", "compile", "evaluate", "governance", "init", "list", "logs", "replay", "reset", "start", "status", "timeline", "workflow", "version")),
@@ -2144,6 +2144,83 @@ def _approval_store(db: Optional[str]):
     # Round 101: the database the server and the loops write pending actions to (agentic.db). The default used to be control_plane.db, so `delentia approvals list|approve|sign` on a host showed
     # "No pending actions" for an action that was waiting, unless --db was given.
     return PendingActionStore(ControlPlanePersistence(db_path=db or agentic_db_path()))
+
+
+@cli.group("state-log")
+def state_log_group() -> None:
+    """The durable, verified history of a person's agent state, one version per episode (Round 106). Numbers and hashes only."""
+
+
+def _state_log(namespace: str, db: Optional[str]):
+    from rct_control_plane import agent_state_log
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    persistence = ControlPlanePersistence(db_path=db or agentic_db_path())
+    log = agent_state_log.AgentStateLog.for_namespace(namespace, persistence)
+    if log is None:
+        raise click.ClickException("this database has no file, so there is no state log")
+    return log, persistence
+
+
+@state_log_group.command("list")
+@click.option("--db", default=None, help="Persistence DB (default: the one the agent writes, agentic.db).")
+def state_log_list(db: Optional[str]) -> None:
+    """The state logs on this host (named by a hash, so the list does not say who is who)."""
+    from rct_control_plane import agent_state_log
+    from rct_control_plane.data_home import agentic_db_path
+    from rct_control_plane.persistence import ControlPlanePersistence
+    rows = agent_state_log.list_logs(ControlPlanePersistence(db_path=db or agentic_db_path()))
+    if not rows:
+        click.echo("No state logs yet (an episode writes one version).")
+    for r in rows:
+        click.echo(f"{r['name']}  {r.get('versions', '?')} version(s)  {r.get('bytes', 0)} bytes" + (f"  {r['error']}" if r.get("error") else ""))
+
+
+@state_log_group.command("show")
+@click.option("--namespace", required=True, help="The person's namespace.")
+@click.option("--db", default=None)
+def state_log_show(namespace: str, db: Optional[str]) -> None:
+    """The latest state: episodes, how they stopped, tool calls, spend, growth, the memory and audit heads."""
+    log, _p = _state_log(namespace, db)
+    click.echo(json.dumps(log.show(), indent=2, ensure_ascii=False))
+
+
+@state_log_group.command("at")
+@click.argument("version", type=int)
+@click.option("--namespace", required=True)
+@click.option("--db", default=None)
+def state_log_at(version: int, namespace: str, db: Optional[str]) -> None:
+    """The state after episode number VERSION, rebuilt and checked."""
+    log, _p = _state_log(namespace, db)
+    try:
+        click.echo(json.dumps(log.at(version), indent=2, ensure_ascii=False))
+    except Exception as exc:                            # noqa: BLE001 - a damaged or missing version is reported, not hidden
+        raise click.ClickException(f"{type(exc).__name__}: {exc}")
+
+
+@state_log_group.command("diff")
+@click.argument("version_a", type=int)
+@click.argument("version_b", type=int)
+@click.option("--namespace", required=True)
+@click.option("--db", default=None)
+def state_log_diff(version_a: int, version_b: int, namespace: str, db: Optional[str]) -> None:
+    """What changed between two episodes."""
+    from rct_control_plane.algo_25_delta_block import DeltaEngine
+    log, _p = _state_log(namespace, db)
+    ops = DeltaEngine().structural_ops(log.at(version_a), log.at(version_b))
+    click.echo(json.dumps(ops, indent=2, ensure_ascii=False))
+
+
+@state_log_group.command("verify")
+@click.option("--namespace", required=True)
+@click.option("--db", default=None)
+def state_log_verify(namespace: str, db: Optional[str]) -> None:
+    """Replay every version, check every hash and every anchor written into the audit chain. Exit 1 when anything does not hold."""
+    log, persistence = _state_log(namespace, db)
+    report = log.verify(persistence)
+    click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+    if not report.get("ok"):
+        raise SystemExit(1)
 
 
 @cli.group("episodes")

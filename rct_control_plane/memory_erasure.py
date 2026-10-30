@@ -345,6 +345,7 @@ def erase_person(persistence: Any, namespace: str, reason: str, public_key_hex: 
     after = inventory(persistence, namespace)
     return {"erased": True, "vacuumed": vacuumed, "namespace": namespace, "key_destroyed": destroyed, "table_rows_scrubbed": int(scrubbed), "other_tables_scrubbed": scrubbed_tables["tables"],
             "before": before, "after": after,
+            "state_log": "the person's agent-state log (agent_state_log.py) holds numbers and hashes only, no personal text, so there is nothing in it to erase; it is kept",
             "not_erased": {"plaintext_events_in_the_chain": after["plaintext_events"], "other_tables": after["other_tables_with_this_person"],
                            "plain_audit_rows": after["plain_audit_rows"], "experiments_named_by_goal": after["experiments_named_by_goal"],
                            "skills_database": "learned skills live in a separate file and are shared knowledge; not scrubbed",

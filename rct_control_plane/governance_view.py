@@ -571,6 +571,13 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
          else "off: a crash loses what an episode had done and a restart can repeat a side effect"), "unset DELENTIA_EPISODE_JOURNAL=off",
         detail_th=(f"เปิด: เจตนาของทุกขั้นถูกเขียนก่อนรันเครื่องมือ; มี {unfinished} episode ที่เริ่มแล้วยังไม่จบ (ตัวที่กำลังรันก็นับ; `delentia episodes list` บอกว่าตัวไหนถูกขัดจริง)" if journal_on
                    else "ปิด: ถ้าล่มจะเสียสิ่งที่ episode ทำไปแล้ว และการรีสตาร์ทอาจทำผลข้างเคียงซ้ำ"))
+    from rct_control_plane import agent_state_log
+    state_on = agent_state_log.enabled()
+    add("state_log", "A person's agent history is kept as verified versions (the Delta log)", state_on,
+        (f"on: one version per episode (numbers and hashes only, no text); every {agent_state_log.anchor_every() or 'no'}th head is written into the audit chain; `delentia state-log verify --namespace <person>` replays and checks it" if state_on
+         else "off: nothing keeps the history of what the agent was at each episode; a counter in a table can be edited without a trace"), "unset DELENTIA_STATE_LOG=off",
+        detail_th=(f"เปิด: หนึ่งเวอร์ชันต่อหนึ่ง episode (เก็บเฉพาะตัวเลขและแฮช ไม่มีข้อความ); ทุกเวอร์ชันที่ {agent_state_log.anchor_every() or 'ไม่มี'} จะเขียนหัวบันทึกลงห่วงโซ่ตรวจสอบ; `delentia state-log verify --namespace <คน>` เล่นย้อนและตรวจ" if state_on
+                   else "ปิด: ไม่มีอะไรเก็บประวัติว่าเอเจนต์เป็นอย่างไรในแต่ละ episode ตัวนับในตารางแก้ได้โดยไม่เหลือร่องรอย"))
     from rct_control_plane import audit_text
     add("audit_text_sealed", "A person's words are sealed in the audit chain (so they can be erased)", audit_text.sealing_on(),
         "the goal, the model's reasoning and tool arguments are written under the person's own key; the chain holds ciphertext and hashes" if audit_text.sealing_on()
