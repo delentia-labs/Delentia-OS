@@ -100,3 +100,52 @@ def test_contract_lookup_cannot_present_inconsistent_stored_report_as_complete(t
     store.transition(contract, 'criteria_satisfied')
     with pytest.raises(IntentContractError, match='invalid stored execution receipts'):
         store.get(contract['id'])
+
+
+@pytest.mark.parametrize('kind,value', [('contains', 'missing business condition'), ('language', 'th')])
+def test_historical_pure_verdict_must_match_recorded_report(tmp_path, world, kind, value):
+    from rct_control_plane.intent_contract import plan_digest
+    contract = completed(tmp_path, world)
+    plan = copy.deepcopy(contract['plan'])
+    receipts = copy.deepcopy(contract['execution_receipts'])
+    # A coherent local hash chain is not proof of criterion satisfaction.
+    # Keep the typed graph and report intact, but bind an unsatisfied criterion.
+    plan['criteria'][0]['kind'] = kind
+    plan['criteria'][0]['value'] = value
+    for receipt in receipts:
+        receipt['plan_sha256'] = plan_digest(plan)
+    rehash(receipts)
+    with pytest.raises(IntentContractError, match='semantic or type mismatch'):
+        validate_receipts(plan, contract['id'], 'verified', receipts)
+
+
+def test_changed_budget_after_clarification_invalidates_history_and_stale_versions(tmp_path, world):
+    loop, context, criteria = budget_tests.setup(
+        tmp_path, world, budget=None,
+        extra_criteria=[{'kind': 'contains', 'value': 'missing business condition'}],
+    )
+    waiting = asyncio.run(loop.run('เทียบราคากับงบ', acceptance_criteria=criteria, planning_context=context))['intent_contract']
+    ready = asyncio.run(loop.continue_intent(waiting['id'], waiting['version'], answers={'budget': '15000 THB'}))['intent_contract']
+    failed = asyncio.run(loop.continue_intent(ready['id'], ready['version']))['intent_contract']
+    assert failed['state'] == 'waiting_for_clarification'
+    assert failed['execution_report']['within_budget'] is True
+    old_receipts = copy.deepcopy(failed['execution_receipts'])
+    store = IntentContractStore(loop._persistence, 'verified')
+    replanned = store.claim(failed['id'], failed['version'], response='ตรวจ JSON แล้วถามงบใหม่', criteria=[{'kind': 'json_object'}])
+    assert replanned['state'] == 'waiting_for_input'
+    assert all(key not in replanned for key in ('execution_receipts', 'execution_report', 'execution_status'))
+    with pytest.raises(IntentContractError):
+        store.claim(waiting['id'], waiting['version'], answers={'budget': '15000 THB'})
+    changed = store.claim(replanned['id'], replanned['version'], answers={'budget': '10000 THB'})
+    assert changed['state'] == 'plan_ready'
+    assert all(key not in changed for key in ('execution_receipts', 'execution_report', 'execution_status'))
+    with pytest.raises(IntentContractError):
+        validate_receipts(changed['plan'], changed['id'], 'verified', old_receipts)
+    with pytest.raises(IntentContractError):
+        store.claim(replanned['id'], replanned['version'], answers={'budget': '15000 THB'})
+    final = asyncio.run(loop.continue_intent(changed['id'], changed['version']))['intent_contract']
+    assert final['state'] == 'criteria_satisfied'
+    assert final['execution_report']['within_budget'] is False
+    assert final['execution_report']['remaining'] == '-2500.00'
+    assert final['execution_report']['budget_limit'] == '10000.00'
+    assert final['execution_receipts'][0]['run_version'] > old_receipts[0]['run_version']
