@@ -70,4 +70,8 @@ POSIX verified-read backend ที่ไม่รองรับจะตอบ 
 
 ทดสอบเฉพาะส่วนใหม่ 22 กรณีผ่าน รวม real `AlgorithmKernel41` ที่ตั้ง provider ให้ล้มทันทีหากมี generation, duplicate admission สอง API instances, stale/foreign confirmation, cancellation, policy/actor/lease loss หลังอ่าน source, unsupported backend, incompatible jury/pipeline และ audit rollback ผลนี้เป็น cloud engineering result ไม่ใช่ public CI checkpoint ของ main.
 
-ผล full suite และ checksum ของไฟล์ที่ทดสอบบันทึกใน evidence JSON ประกอบ PR; ห้ามใช้ผลก่อนการแก้ transaction guard เป็นผลของ revision สุดท้าย รายละเอียดการไปสู่ paid evaluation และ pilot อยู่ใน [แผนก่อนใช้ OpenRouter](PREPAID_EVALUATION_AND_MARKETING_GATES_2026-10-30_TH.md).
+Full suite ของ source checkpoint `d635c698` ได้ **9,130 passed / 10 failed / 45 skipped / 1 xfailed**, 558.56 วินาที: 9 failures มาจาก Ollama ไม่มีโมเดลและ endpoint ตอบ 404; อีก 1 crawler failure ยืนยันด้วย MCP โดยตรงว่า native DNS ล้มเหลวและ `url_safety` ปฏิเสธก่อน fetch ไม่ลดการป้องกันเพื่อให้ผ่าน
+
+ระหว่างรัน main รวม #200/#201 เป็น `368537d5` จึง merge dependency updates นี้เข้า branch หลัง full suite แล้ว ทั้งสอง package versions (`nltk=3.10.4`, `msgpack=1.2.3`) มีอยู่ใน environment ที่ใช้ full suite อยู่ก่อนแล้ว ไฟล์ runtime/tests ที่ตรวจ hash ตรงกับ checkpoint ที่ทดสอบทั้งหมด ผล full suite ไม่ได้รันซ้ำทั้งชุดหลัง merge เฉพาะ dependency manifests; มี regression หลัง merge แยกต่างหาก **147 passed** ใน 7.84 วินาที ครอบคลุม bounded jobs, ownership/cancel, HTTP authorization/idempotency, atomic audit และ receipt lifecycle
+
+ผล full suite และ checksum ของไฟล์ที่ทดสอบบันทึกใน [evidence JSON](evidence/BOUNDED_JOBS_2026-10-30.json) ประกอบ PR; ห้ามใช้ผลก่อนการแก้ transaction guard เป็นผลของ revision สุดท้าย รายละเอียดการไปสู่ paid evaluation และ pilot อยู่ใน [แผนก่อนใช้ OpenRouter](PREPAID_EVALUATION_AND_MARKETING_GATES_2026-10-30_TH.md).

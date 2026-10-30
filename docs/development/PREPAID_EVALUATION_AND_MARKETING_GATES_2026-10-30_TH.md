@@ -100,3 +100,11 @@ bounded budget workflow เป็นหนึ่ง domain การเปิด
 | E | Recovery/retention/load และ pilot checklist | Windows install, host/model/browser และ demo | independent operational evidence ก่อนรับ external users |
 
 ข้อมูลที่ยังต้องได้รับก่อนจ่ายเงินจริงคือ model ID และ provider/routing ที่อนุญาต, วงเงินรวมสูงสุดและ reserve, workflow/roles ที่จะเปิด, รวมถึง combined SHA/GUI evidence จาก Claude ไม่ต้องส่ง token, API key หรือ `.env`.
+
+## อัปเดตระหว่างรอบนี้
+
+GitHub main ขยับเป็น `368537d5` หลัง merge dependency PR #200/#201 (NLTK/msgpack) และ branch Codex รวมการเปลี่ยนแปลงแล้ว Claude เปิด PR #206 (`85281fba`) สำหรับ W12 live runner; ไฟล์ที่ประกาศใน PR ไม่ซ้อนกับ PR #207 ของ Codex ยังไม่ถือว่ารวม W12 นี้เข้ากับ backend ใหม่หรือรันทดสอบ combined W12 แล้ว
+
+W12 ใช้ children แยก OS processes ตาม PR #206 จึงต้องตรวจ shared token/cost cap และ provider-side limit ของทั้ง parent และ children ก่อน paid run ไม่อนุมานว่า parent budget guard เห็นค่าใช้จ่าย children ทั้งหมด ไม่เปลี่ยน runner ของ Claude ใน PR นี้
+
+GitHub push banner รายงาน 4 low vulnerabilities บน default branch ณ รอบนี้ แต่ Dependabot inventory API ตอบ 403 (`Resource not accessible by integration`) จึงยังแจกแจง package/version/fix จาก API ไม่ได้ ต้องให้ผู้มีสิทธิ์ตรวจ inventory ก่อนปิด security finding ห้ามใช้ตัวเลข 47 รายการในรายงานเก่าเป็นยอดปัจจุบัน หรืออ้างว่าปัจจุบันไม่มีช่องโหว่จากผล scan ที่ผ่านบางชุด
