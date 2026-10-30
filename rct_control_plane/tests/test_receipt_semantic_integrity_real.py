@@ -88,13 +88,14 @@ def test_report_and_answer_cannot_drift_together_from_completed_arithmetic(tmp_p
     assert [r['component_id'] for r in pipeline.receipts] == ['inspect_sources', 'compare_budget']
 
 
-@pytest.mark.parametrize('mutation', ['wrong_report', 'missing_report', 'incomplete_receipts'])
+@pytest.mark.parametrize('mutation', ['wrong_report', 'missing_report', 'incomplete_receipts', 'missing_receipts'])
 def test_contract_lookup_cannot_present_inconsistent_stored_report_as_complete(tmp_path, world, mutation):
     contract = completed(tmp_path, world)
     from rct_control_plane.tests.test_governed_autonomous_loop_real import _loop
     store = IntentContractStore(_loop(tmp_path, 'verified')._persistence, 'verified')
     if mutation == 'wrong_report': contract['execution_report']['remaining'] = '999999.00'
     elif mutation == 'missing_report': contract.pop('execution_report')
+    elif mutation == 'missing_receipts': contract.pop('execution_receipts')
     else: contract['execution_receipts'] = contract['execution_receipts'][:1]
     store.transition(contract, 'criteria_satisfied')
     with pytest.raises(IntentContractError, match='invalid stored execution receipts'):
