@@ -146,7 +146,6 @@ def test_cold_worker_busy_response_can_retry_same_key(service):
 def test_killed_create_recovers_without_orphan_or_duplicate(service, tmp_path, boundary):
     import multiprocessing
     import time
-    from rct_control_plane.persistence import ControlPlanePersistence
     client, body, _, _ = service
     body['request_id'] = 'kill-create'
     marker = tmp_path / 'reached'
@@ -162,12 +161,12 @@ def test_killed_create_recovers_without_orphan_or_duplicate(service, tmp_path, b
                 return value
             IntentContractStore._encode = encode
         else:
-            original_audit = ControlPlanePersistence.append_audit
-            def audit(db, *args, **kwargs):
-                if kwargs.get('entity_type') == 'intent_contract':
-                    pause()
-                return original_audit(db, *args, **kwargs)
-            ControlPlanePersistence.append_audit = audit
+            original_create = IntentContractStore.create
+            def create(store, *args, **kwargs):
+                result = original_create(store, *args, **kwargs)
+                pause()  # transaction committed, before sending the HTTP reply
+                return result
+            IntentContractStore.create = create
         post(client, body)
     process = multiprocessing.get_context('fork').Process(target=worker)
     process.start()
@@ -185,6 +184,7 @@ def test_killed_create_recovers_without_orphan_or_duplicate(service, tmp_path, b
         with store.db._connect() as conn:
             assert conn.execute('SELECT COUNT(*) FROM intent_contracts').fetchone()[0] == 1
             assert conn.execute('SELECT COUNT(*) FROM intent_request_keys').fetchone()[0] == 1
+            assert conn.execute("SELECT COUNT(*) FROM audit_trail WHERE entity_type='intent_contract'").fetchone()[0] == 1
     finally:
         if process.is_alive():
             process.kill()
