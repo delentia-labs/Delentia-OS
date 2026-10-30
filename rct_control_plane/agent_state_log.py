@@ -150,7 +150,7 @@ def summarise(loop: Any, result: Dict[str, Any], stopped_reason: str, verified: 
     growth = result.get("growth") or {}
     if growth.get("G") is not None:
         summary["growth_G"] = growth["G"]
-    persistence = getattr(loop, "_persistence", None)
+    persistence: Any = getattr(loop, "_persistence")      # noqa: B009 - the loop always has one; a missing one is caught below and the part is left out
     try:
         from rct_control_plane import audit_chain, memory_eventlog
         with persistence._connect() as conn:

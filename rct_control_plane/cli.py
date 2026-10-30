@@ -2195,7 +2195,7 @@ def state_log_at(version: int, namespace: str, db: Optional[str]) -> None:
     try:
         click.echo(json.dumps(log.at(version), indent=2, ensure_ascii=False))
     except Exception as exc:                            # noqa: BLE001 - a damaged or missing version is reported, not hidden
-        raise click.ClickException(f"{type(exc).__name__}: {exc}")
+        raise click.ClickException(f"{type(exc).__name__}: {exc}") from exc
 
 
 @state_log_group.command("diff")
