@@ -56,21 +56,22 @@ class Ownership:
         now = self.clock()
         with self.db._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
-            rows = conn.execute("SELECT j.id,o.token,o.host,o.pid,o.process_started,o.lease_until FROM agent_jobs j "
+            rows = conn.execute("SELECT j.id,o.token,o.host,o.pid,o.process_started,o.lease_until,j.namespace FROM agent_jobs j "
                 "LEFT JOIN agent_job_owners o ON o.job_id=j.id WHERE j.status IN ('queued','running')").fetchall()
-            for job_id, token, host, pid, started, until in rows:
+            for job_id, token, host, pid, started, until, namespace in rows:
                 dead = token is None or until <= now or (host == self.host and not _alive(pid, started))
                 if not dead:
                     continue
                 conn.execute("UPDATE agent_jobs SET status='interrupted',finished_at=?,error=? WHERE id=? AND status IN ('queued','running')",
                     (now, 'the server restarted or the job owner lease was lost; execution outcome must be inspected', job_id))
                 conn.execute("UPDATE agent_job_owners SET task_outcome='interrupted' WHERE job_id=?", (job_id,))
+                self.db._append_audit(conn, "agent_job", job_id, "interrupted", namespace, {"reason": "owner_lost"})
 
     def pulse(self, job_id):
         now = self.clock()
         with self.db._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
-            row = conn.execute("SELECT o.cancel_requested FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
+            row = conn.execute("SELECT o.cancel_requested,j.namespace FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
                 "WHERE o.job_id=? AND o.token=? AND o.lease_until>? AND j.status IN ('queued','running')",
                 (job_id, self.token, now)).fetchone()
             if row is None:
@@ -83,7 +84,7 @@ class Ownership:
         import asyncio
         with self.db._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
-            row = conn.execute("SELECT o.cancel_requested FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
+            row = conn.execute("SELECT o.cancel_requested,j.namespace FROM agent_job_owners o JOIN agent_jobs j ON j.id=o.job_id "
                 "WHERE o.job_id=? AND o.token=? AND o.lease_until>? AND j.status IN ('queued','running')",
                 (job_id, self.token, self.clock())).fetchone()
             if row is None:
@@ -95,13 +96,20 @@ class Ownership:
             if outcome is not None:
                 conn.execute('UPDATE agent_job_owners SET task_outcome=?,verification_scope=? WHERE job_id=? AND token=?',
                              (outcome, scope, job_id, self.token))
+            status = fields.get('status')
+            if status is not None:
+                action = {"done": "finished", "running": "started"}.get(status, status)
+                self.db._append_audit(conn, "agent_job", job_id, action, row[1], {"task_outcome": outcome, "stopped_reason": fields.get('stopped')})
             return True
 
     def request_cancel(self, job_id, namespace):
         with self.db._connect() as conn:
-            conn.execute('UPDATE agent_job_owners SET cancel_requested=1 WHERE job_id=? AND EXISTS '
+            conn.execute('BEGIN IMMEDIATE')
+            changed = conn.execute('UPDATE agent_job_owners SET cancel_requested=1 WHERE job_id=? AND cancel_requested=0 AND EXISTS '
                 "(SELECT 1 FROM agent_jobs WHERE id=? AND namespace=? AND status IN ('queued','running'))",
-                (job_id, job_id, namespace))
+                (job_id, job_id, namespace)).rowcount
+            if changed:
+                self.db._append_audit(conn, "agent_job", job_id, "cancel_requested", namespace, {})
 
     def decorate(self, job):
         with self.db._connect() as conn:

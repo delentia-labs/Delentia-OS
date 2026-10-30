@@ -110,12 +110,6 @@ class JobService:
 
     # ---------------------------------------------------------------- write
 
-    def _audit(self, action: str, job_id: str, namespace: str, extra: Optional[Dict[str, Any]] = None) -> None:
-        try:
-            self._p.append_audit(entity_type="agent_job", entity_id=job_id, action=action, actor=namespace, changes=extra or {})
-        except Exception:
-            pass
-
     def _update(self, job_id: str, **fields: Any) -> bool:
         return self._ownership.update(job_id, fields)
 
@@ -133,7 +127,7 @@ class JobService:
                 return
 
     def submit(self, namespace: str, goal: str, max_iterations: int = 5, max_seconds: float = 120.0, initial_taint: Optional[str] = None,
-               on_done: Optional[Callable[[Dict[str, Any]], Any]] = None) -> Dict[str, Any]:
+               on_done: Optional[Callable[[Dict[str, Any]], Any]] = None, *, _admit: Optional[Callable[[Any, str], Optional[str]]] = None) -> Dict[str, Any]:
         """`initial_taint` starts the episode already tainted (a webhook payload is text from outside); `on_done(job)` is awaited when the job ends."""
         goal = str(goal or "").strip()
         if not goal:
@@ -145,15 +139,19 @@ class JobService:
         job_id = f"job-{uuid.uuid4().hex[:12]}"
         with self._p._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
-            mine = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE namespace=? AND status IN ('queued','running')", (namespace,)).fetchone()[0]
-            everyone = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE status IN ('queued','running')").fetchone()[0]
-            if mine >= _int_env("DELENTIA_MAX_JOBS_PER_USER", 3):
-                raise JobError("you already have the most jobs running that you are allowed; wait for one to finish or cancel one")
-            if everyone >= _int_env("DELENTIA_MAX_JOBS", 8):
-                raise JobError("the server is running as many jobs as it is allowed; try again shortly")
-            conn.execute("INSERT INTO agent_jobs (id, namespace, goal, status, created_at) VALUES (?, ?, ?, 'queued', ?)", (job_id, namespace, goal, time.time()))
-            self._ownership.insert(conn, job_id)
-        self._audit("submitted", job_id, namespace, {"goal_chars": len(goal)})
+            existing_id = _admit(conn, job_id) if _admit is not None else None
+            if existing_id is None:
+                mine = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE namespace=? AND status IN ('queued','running')", (namespace,)).fetchone()[0]
+                everyone = conn.execute("SELECT COUNT(*) FROM agent_jobs WHERE status IN ('queued','running')").fetchone()[0]
+                if mine >= _int_env("DELENTIA_MAX_JOBS_PER_USER", 3):
+                    raise JobError("you already have the most jobs running that you are allowed; wait for one to finish or cancel one")
+                if everyone >= _int_env("DELENTIA_MAX_JOBS", 8):
+                    raise JobError("the server is running as many jobs as it is allowed; try again shortly")
+                conn.execute("INSERT INTO agent_jobs (id, namespace, goal, status, created_at) VALUES (?, ?, ?, 'queued', ?)", (job_id, namespace, goal, time.time()))
+                self._ownership.insert(conn, job_id)
+                self._p._append_audit(conn, "agent_job", job_id, "submitted", namespace, {"goal_chars": len(goal)})
+        if existing_id is not None:
+            return self.get(existing_id) or {"id": existing_id}
         self._tasks[job_id] = loop.create_task(self._run(job_id, namespace, goal, max(1, min(int(max_iterations), 25)), max(5.0, min(float(max_seconds), 1800.0)),
                                                                                initial_taint, on_done))
         return self.get(job_id) or {"id": job_id}
@@ -184,18 +182,13 @@ class JobService:
             finished_by_me = self._ownership.update(job_id, dict(status="done", finished_at=time.time(), stopped=stopped, answer=(str(answer)[:MAX_RESULT_CHARS] if answer else None),
                          approval_id=result.get("approval_id"), steps=int(result.get("iterations") or steps["n"]),
                          cost_json=json.dumps(result.get("cost")) if result.get("cost") else None), outcome=outcome, scope=scope)
-            if finished_by_me:
-                self._audit("finished", job_id, namespace, {"stopped_reason": stopped})
         except asyncio.CancelledError:
-            if self._ownership.update(job_id, dict(status="cancelled", finished_at=time.time(), stopped="cancelled"), outcome="cancelled"):
-                self._audit("cancelled", job_id, namespace)
+            self._ownership.update(job_id, dict(status="cancelled", finished_at=time.time(), stopped="cancelled"), outcome="cancelled")
             raise
         except JobOwnershipLost:
             pass
         except Exception as exc:                                       # noqa: BLE001 - recorded, never raised into the server
             finished_by_me = self._ownership.update(job_id, dict(status="failed", finished_at=time.time(), stopped="exception", error=f"{type(exc).__name__}: the details are in the server log"), outcome="failed")
-            if finished_by_me:
-                self._audit("failed", job_id, namespace, {"error_type": type(exc).__name__})
             import logging
             logging.getLogger("delentia.jobs").exception("job %s failed", job_id)
         finally:

@@ -127,6 +127,8 @@ class ReadOnlyBoundary:
             or (scope.get("method") == "POST" and scope.get("path") == ROUTE)
             or (scope.get("method") == "GET" and re.fullmatch(ROUTE + r"/[0-9a-f]{32}", scope.get("path", "")))
             or (scope.get("method") == "POST" and re.fullmatch(ROUTE + r"/[0-9a-f]{32}/confirm", scope.get("path", "")))
+            or (scope.get("method") == "POST" and re.fullmatch(ROUTE + r"/[0-9a-f]{32}/jobs", scope.get("path", "")))
+            or (scope.get("method") in {"GET", "DELETE"} and re.fullmatch(ROUTE + r"/jobs/job-[0-9a-f]{12}", scope.get("path", "")))
         )
         if not allowed:
             if scope["type"] == "websocket":
@@ -185,7 +187,7 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
     policy_path = os.environ.get("DELENTIA_READONLY_POLICY")
     policy_hash = digest(policy.model_dump())
 
-    def authorize(request):
+    def check_actor(actor):
         # Reread the pinned operator policy on every operation. Changes revoke
         # access immediately; activating the replacement requires a restart.
         try:
@@ -194,10 +196,21 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             raise HTTPException(503, "service policy unavailable") from None
         if current is None or digest(current.model_dump()) != policy_hash:
             raise HTTPException(409, "policy changed; restart service")
-        actor = getattr(request.state, "delentia_user", None)
         if not actor or actor == "shared" or actor not in policy.actor_files:
             raise HTTPException(403, "actor not authorized")
+        # Background work has no bearer request to authenticate again. Revoking
+        # the named principal must also stop its queued/running contract work.
+        from rct_control_plane.api_tokens import TokenFileError, load_entries
+        try:
+            active = any(entry["name"] == actor and not entry.get("disabled") for entry in load_entries())
+        except (OSError, TokenFileError):
+            raise HTTPException(503, "actor registry unavailable") from None
+        if not active:
+            raise HTTPException(403, "actor revoked")
         return actor
+
+    def authorize(request):
+        return check_actor(getattr(request.state, "delentia_user", None))
 
     def backend(actor):
         loop = loop_factory(actor)
@@ -262,6 +275,11 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         if not supports_verified_reads():
             raise HTTPException(501, "verified reads require a POSIX backend with no-follow support")
         loop, store = backend(actor)
+        from rct_control_plane.readonly_jobs import model_free_loop
+        try:
+            model_free_loop(loop)
+        except IntentContractError:
+            raise HTTPException(409, "host configuration is incompatible with bounded execution") from None
         contract = authorized_contract(store, contract_id, actor)
         if (contract["version"] != payload.version or contract["plan_sha256"] != payload.plan_sha256
                 or contract["state"] != "plan_ready"):
@@ -274,8 +292,22 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             raise HTTPException(409, "contract changed; reload status") from None
         return public_result(authorized_contract(store, contract_id, actor), actor, policy)
 
+    from rct_control_plane.readonly_jobs import install_jobs
+    install_jobs(app, policy, loop_factory, check_actor, authorized_contract)
+
 
 @asynccontextmanager
 async def readonly_lifespan(app):
     """No general scheduler, gateway pollers, cron delivery or model warmup."""
-    yield
+    try:
+        yield
+    finally:
+        import asyncio
+        services = getattr(app.state, "readonly_job_services", {})
+        waits = []
+        for actor, service in services.items():
+            for job_id in list(service.jobs._tasks):
+                service.jobs.cancel(job_id, actor)
+                waits.append(service.jobs.wait(job_id, timeout=5.0))
+        if waits:
+            await asyncio.gather(*waits, return_exceptions=True)

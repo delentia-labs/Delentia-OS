@@ -49,7 +49,7 @@ urllib3>=2.7.0       # PYSEC-2026-141/142 (fixed 2.7.0)
 # Round 29 candidate list) rather than force a conflicting resolution.
 anyio>=4.14.2        # CVE-2026-63374/64847 (fixed 4.14.2)
 h2>=4.4.1            # PYSEC-2026-3628 (fixed 4.4.1)
-msgpack>=1.2.1       # PYSEC-2026-3625 (fixed 1.2.1)
+msgpack>=1.2.3       # PYSEC-2026-3625 (fixed 1.2.1)
 pip>=26.2.0          # PYSEC-2026-3721 (fixed 26.2.0)
 pygments>=2.20.0     # PYSEC-2026-2987 (fixed 2.20.0)
 soupsieve>=2.9.0     # PYSEC-2026-3071/3072, CVE-2026-85999/86000 (fixed 2.9.0)

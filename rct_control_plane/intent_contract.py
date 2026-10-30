@@ -325,13 +325,21 @@ class IntentContractStore:
             return self._request_contract(existing_id)
         return copy.deepcopy({**data, "id": contract_id, "state": state, "version": 1})
 
-    def transition(self, data: Dict[str, Any], state: str) -> Dict[str, Any]:
+    def transition(self, data: Dict[str, Any], state: str, *, connection: Any = None) -> Dict[str, Any]:
         # Freeze this writer's receipt before commit/audit. A second reader may
         # advance the row immediately after commit; returning get() could then
         # lend that later writer's running state/version to this caller.
         payload = copy.deepcopy({k: v for k, v in data.items() if k not in {"id", "state", "version"}})
         payload["plan_sha256"] = plan_digest(payload["plan"])
-        with self.db._connect() as conn:
+        def write(conn):
+            from rct_control_plane.contract_execution_guard import execution_guard
+            guard = execution_guard.get()
+            if guard is not None:
+                # Serialize ownership/cancel inspection with the receipt write;
+                # SELECT alone does not start a sqlite3 transaction.
+                if not conn.in_transaction:
+                    conn.execute("BEGIN IMMEDIATE")
+                guard(conn, data, state)
             changed = conn.execute("UPDATE intent_contracts SET state=?, version=version+1, payload=? "
                                    "WHERE id=? AND namespace=? AND version=? AND state=?",
                                    (state, self._encode(payload), data["id"], self.namespace, data["version"], data["state"])).rowcount
@@ -340,6 +348,13 @@ class IntentContractStore:
             self.db._append_audit(conn, "intent_contract", data["id"], state, self.namespace,
                                   {"version": data["version"] + 1,
                                    "payload_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()})
+        if connection is None:
+            with self.db._connect() as conn:
+                write(conn)
+        else:
+            if not connection.in_transaction:
+                raise IntentContractError("external contract transition requires an active transaction")
+            write(connection)
         return {**payload, "id": data["id"], "state": state, "version": data["version"] + 1}
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
