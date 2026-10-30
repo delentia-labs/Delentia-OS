@@ -18,7 +18,7 @@ import json
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from rct_control_plane import rct7_judge
 from research import rct7_holdout as base
@@ -128,7 +128,9 @@ def score_q(sealed: Dict[str, Any], verdicts: Dict[int, Optional[bool]]) -> Dict
     return base.score(view, verdicts)
 
 
-async def run_once2(sheet: Path, provider: Any, model: str, variant: str = "plain", again: bool = False, provider_kind: str = "ollama") -> Dict[str, Any]:
+async def run_once2(sheet: Path, provider: Any, model: str, variant: str = "plain", again: bool = False, provider_kind: str = "ollama",
+                    context_decoder: Optional[Callable[[str], str]] = None) -> Dict[str, Any]:
+    """`context_decoder` (set 4): the sheet holds the context with line breaks and pipes written as single characters; this turns the sealed text back into exactly what `judge_context.build` produced."""
     if variant not in ("plain", "context"):
         raise ValueError("variant must be plain or context")
     sealed = load_sealed2(sheet)
@@ -141,7 +143,8 @@ async def run_once2(sheet: Path, provider: Any, model: str, variant: str = "plai
     seconds: List[float] = []
     for n_text, item in sealed["items_data"].items():
         started = time.time()
-        v = await rct7_judge.judge_request(provider, item["request"], item["context"] if variant == "context" else None)
+        context = (context_decoder(item["context"]) if context_decoder else item["context"]) if variant == "context" else None
+        v = await rct7_judge.judge_request(provider, item["request"], context)
         verdicts[int(n_text)] = None if v.clear is None and not v.error.startswith("nothing") else (v.clear is False and bool(v.unknowns))
         seconds.append(time.time() - started)
     entry = {"model": model, "provider": provider_kind, "variant": variant, "prompt_version": version, "labels_sha256": sealed["labels_sha256"], "repeat": bool(prior),
@@ -182,14 +185,19 @@ def main() -> int:
     ap.add_argument("--provider", default="ollama", choices=("ollama", "openrouter"))
     ap.add_argument("--budget-usd", type=float, default=0.0)
     ap.add_argument("--again", action="store_true")
+    ap.add_argument("--set4", action="store_true", help="the sheet is set 4: decode the context cells (research/holdout4_sheet_r105.py) before the judge sees them")
     args = ap.parse_args()
     sheet = Path(args.sheet)
+    decoder = None
+    if args.set4:
+        from research import holdout4_sheet_r105
+        decoder = holdout4_sheet_r105.decode_cell
     if args.action == "seal":
         print(json.dumps({k: v for k, v in seal2(sheet, args.labels_text, args.labelled_by).items() if k != "items_data"}, ensure_ascii=False, indent=2))
     elif args.action == "run":
         if not args.model:
             raise SystemExit("--model is required")
-        entry = asyncio.run(run_once2(sheet, base._provider(args.provider, args.model, args.budget_usd), args.model, args.variant, args.again, args.provider))
+        entry = asyncio.run(run_once2(sheet, base._provider(args.provider, args.model, args.budget_usd), args.model, args.variant, args.again, args.provider, decoder))
         print(json.dumps({k: v for k, v in entry.items() if k != "verdicts"}, ensure_ascii=False, indent=2))
     else:
         for r in base.runs_of(sheet):
