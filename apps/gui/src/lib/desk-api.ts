@@ -245,7 +245,7 @@ export interface SubagentRun {
 
 
 // ---- governance view (governance_view.py, Round 56) --------------------------------
-export interface GovControl { id: string; name: string; on: boolean; detail: string; how_to_change: string; always_on: boolean; applicable: boolean }
+export interface GovControl { id: string; name: string; on: boolean; detail: string; detail_th?: string; how_to_change: string; always_on: boolean; applicable: boolean }
 export interface GovGap { control: string; severity: "bad" | "warn" | "info"; text: string; fix: string }
 export interface GovActivity {
   goals_blocked: number; goals_refused_by_jury: number; tool_calls_judged: number; tool_calls_blocked: number;

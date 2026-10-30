@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { describeReason } from "@/lib/reason-text";
+import { serverText } from "@/lib/server-text-th";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk, type CronJob, type CronPreview } from "@/lib/desk-api";
 import { taskDescription } from "@/lib/task-text";
@@ -113,7 +114,7 @@ function Jobs() {
           <label className="block"><span className="desk-mono text-[12px] text-dl-muted">{th ? "ให้เอเจนต์ทำอะไร" : "What should the agent do?"}</span>
             <textarea value={goal} onChange={(e) => setGoal(e.target.value)} rows={3} maxLength={2000}
               className="desk-focus mt-1 w-full rounded border border-dl-rule bg-dl-ink p-2 text-[13px] text-dl-text" placeholder={th ? "สรุปบันทึกของเมื่อคืนและบอกสิ่งที่ผิดปกติ" : "Summarise the overnight audit log and flag anything unusual"} /></label>
-          <label className="block"><span className="desk-mono text-[12px] text-dl-muted">{th ? "เมื่อไร" : "When?"} ({th ? "เขตเวลา" : "timezone"}: {d?.timezone ?? "…"})</span>
+          <label className="block"><span className="desk-mono text-[12px] text-dl-muted">{th ? "เมื่อไร" : "When?"} ({th ? "เขตเวลา" : "timezone"}: {serverText(d?.timezone, th) || "…"})</span>
             <input value={schedule} onChange={(e) => setSchedule(e.target.value)} maxLength={200}
               className="desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-2 py-1.5 text-[13px] text-dl-text" placeholder="every weekday at 8:30  ·  ทุกวันจันทร์ 9 โมงเช้า  ·  in 20 minutes" /></label>
           {schedule.trim() && preview ? (
@@ -189,7 +190,7 @@ export default function CronPage() {
               <Row label={lang === "th" ? "กำหนดการ" : "Schedule"}>{every(task.interval_seconds, lang === "th")}</Row>
               <Row label={lang === "th" ? "รันล่าสุด" : "Last run"}>{fmtTime(task.last_run_at)}</Row>
               <Row label={lang === "th" ? "จำนวนครั้ง" : "Runs"}>{task.run_count}</Row>
-              {task.last_output ? <p className="desk-mono mt-2 break-words text-[12px] text-dl-text">{task.last_output}</p> : null}
+              {task.last_output ? <p className="desk-mono mt-2 break-words text-[12px] text-dl-text">{serverText(task.last_output, lang === "th")}</p> : null}
               <div className="mt-3">
                 <Button onClick={() => runNow(task.task_id)} disabled={!d.running || running !== null}>
                   {running === task.task_id ? (lang === "th" ? "กำลังรัน…" : "Running…") : (lang === "th" ? "รันเดี๋ยวนี้" : "Run now")}

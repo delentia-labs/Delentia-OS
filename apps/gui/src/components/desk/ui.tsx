@@ -164,7 +164,9 @@ export function fmtTime(iso: string | number | null | undefined): string {
   if (Number.isNaN(d.getTime())) return String(iso);
   // Explicit day-month-year: the browser's default for a Thai locale is the Buddhist-era year
   // ("1/10/69"), which reads as 1969 or 2069 to anyone who does not expect it.
-  return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const thai = typeof document !== "undefined" && document.documentElement.lang !== "en";
+  // th-TH on its own gives the Buddhist-era year; the Gregorian calendar with Thai month names keeps the year the one people expect.
+  return d.toLocaleString(thai ? "th-TH-u-ca-gregory" : "en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export function fmtNum(n: number | null | undefined, digits = 2): string {

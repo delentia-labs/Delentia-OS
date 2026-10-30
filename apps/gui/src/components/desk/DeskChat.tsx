@@ -55,26 +55,28 @@ function Banner({ version, model, tools, skills, chain, namespace, mood }: {
   version?: string; model?: string; tools?: { count: number; approval: number; fdia: number };
   skills?: number; chain?: string; namespace?: string; mood?: Mood;
 }) {
+  const { lang } = useLang();
+  const th = lang === "th";
   return (
     <div className="grid gap-5 rounded-md border border-dl-fern/70 p-4 md:grid-cols-[auto_1fr]">
       <div className="flex flex-col items-start gap-3 md:border-r md:border-dl-rule md:pr-5">
         <PixelMark mood={mood} />
         <div className="desk-mono text-[12px] leading-relaxed text-dl-muted">
           <p className="text-dl-leaf">{model ?? "model: -"}</p>
-          <p>{namespace ? `session ${namespace}` : "new session"}</p>
+          <p>{namespace ? `${th ? "เซสชัน" : "session"} ${namespace}` : th ? "เซสชันใหม่" : "new session"}</p>
         </div>
       </div>
       <div className="desk-mono min-w-0 text-[13px] leading-relaxed">
         <p className="mb-3 text-dl-amber">Delentia Agent {version ? `v${version}` : ""}</p>
-        <p className="text-dl-text">• Constitutional cycle</p>
+        <p className="text-dl-text">• {th ? "วงจรธรรมนูญ" : "Constitutional cycle"}</p>
         <p className="mb-2 break-words text-dl-muted">{CYCLE.join(" → ")}</p>
-        <p className="text-dl-text">• Tools</p>
+        <p className="text-dl-text">• {th ? "เครื่องมือ" : "Tools"}</p>
         <p className="mb-2 text-dl-muted">
-          {tools ? `${tools.count} tools · ${tools.approval} need a signed approval · ${tools.fdia} go through the FDIA gate` : "-"}
+          {tools ? (th ? `${tools.count} เครื่องมือ · ${tools.approval} ต้องมีลายเซ็นอนุมัติ · ${tools.fdia} ผ่านด่าน FDIA` : `${tools.count} tools · ${tools.approval} need a signed approval · ${tools.fdia} go through the FDIA gate`) : "-"}
         </p>
-        <p className="text-dl-text">• Skills</p>
-        <p className="mb-2 text-dl-muted">{skills === undefined ? "-" : `${skills} learned from verified episodes (MEE-gated)`}</p>
-        <p className="text-dl-text">• Audit</p>
+        <p className="text-dl-text">• {th ? "ทักษะ" : "Skills"}</p>
+        <p className="mb-2 text-dl-muted">{skills === undefined ? "-" : (th ? `เรียนรู้จาก episode ที่ตรวจผ่านแล้ว ${skills} รายการ (ผ่านด่าน MEE)` : `${skills} learned from verified episodes (MEE-gated)`)}</p>
+        <p className="text-dl-text">• {th ? "บันทึกตรวจสอบ" : "Audit"}</p>
         <p className="text-dl-muted">{chain ?? "-"}</p>
       </div>
     </div>
@@ -232,7 +234,7 @@ function SummaryView({ summary, fdia, seconds }: { summary: Summary; fdia?: Fdia
       {summary.clarification_question ? (
         <div className="mt-2 rounded border border-dl-amber/60 bg-dl-amber/5 px-3 py-2 text-dl-text">
           <p className="text-dl-amber">The system stopped and is asking you</p>
-          <p className="mt-1 whitespace-pre-wrap">{summary.clarification_question}</p>
+          <p className="desk-doc mt-1 whitespace-pre-wrap">{summary.clarification_question}</p>
           <p className="mt-1 text-dl-muted">Answer it in <Link href="/approvals" className="underline underline-offset-2">Approvals</Link>, then send the same request again; your answer is attached once.</p>
         </div>
       ) : null}
@@ -343,7 +345,7 @@ export function DeskChat() {
     : undefined;
   const chainStatus = overview.data?.audit_verify?.status;
   const chainLine = overview.data
-    ? `chain ${chainStatus === "SUCCESS" ? "verified" : chainStatus === "FAILED" ? "BROKEN" : "not checked yet"} · ${overview.data.approvals_pending} approvals pending`
+    ? (lang === "th" ? `ห่วงโซ่ ${chainStatus === "SUCCESS" ? "ตรวจผ่านแล้ว" : chainStatus === "FAILED" ? "ขาด" : "ยังไม่ได้ตรวจ"} · รออนุมัติ ${overview.data.approvals_pending} รายการ` : `chain ${chainStatus === "SUCCESS" ? "verified" : chainStatus === "FAILED" ? "BROKEN" : "not checked yet"} · ${overview.data.approvals_pending} approvals pending`)
     : undefined;
 
   const stop = useCallback(() => {
@@ -497,7 +499,7 @@ export function DeskChat() {
 
             <form onSubmit={(ev) => { ev.preventDefault(); send(); }} className="desk-mono flex items-start gap-2 text-[14px]">
               <span className="pt-1 text-dl-leaf">›</span>
-              <label htmlFor="desk-input" className="sr-only">Message</label>
+              <label htmlFor="desk-input" className="sr-only">{thai ? "ข้อความ" : "Message"}</label>
               <textarea id="desk-input" rows={1} value={input} disabled={running}
                 onChange={(ev) => setInput(ev.target.value)}
                 onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(); } }}

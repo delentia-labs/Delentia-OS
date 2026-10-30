@@ -35,7 +35,7 @@ export default function GovernancePage() {
                       <Badge tone={!c.applicable ? "muted" : c.on ? "leaf" : "rust"}>{!c.applicable ? L("n/a", "ไม่เกี่ยวข้อง") : c.on ? L("on", "เปิด") : L("off", "ปิด")}</Badge>
                       <div className="min-w-0">
                         <p className="text-sm text-dl-text">{lang === "th" && GOV_TH[c.id] ? GOV_TH[c.id].name : c.name}{c.always_on ? <span className="desk-mono ml-2 text-[11px] text-dl-muted">{L("always on", "เปิดตลอด")}</span> : null}</p>
-                        <p className="text-[12px] leading-relaxed text-dl-muted">{c.detail}</p>
+                        <p className="text-[12px] leading-relaxed text-dl-muted">{lang === "th" && c.detail_th ? c.detail_th : c.detail}</p>
                         {!c.on && c.how_to_change ? <p className="desk-mono mt-0.5 text-[11px] text-dl-leaf">{lang === "th" && GOV_TH[c.id]?.fix ? GOV_TH[c.id].fix : c.how_to_change}</p> : null}
                       </div>
                     </li>
@@ -51,7 +51,7 @@ export default function GovernancePage() {
                       {g.gaps.map((x) => (
                         <li key={x.control} className="flex gap-3">
                           <Badge tone={SEVERITY[x.severity]}>{x.severity === "bad" ? L("fix", "ต้องแก้") : x.severity === "warn" ? L("weak", "อ่อน") : L("note", "หมายเหตุ")}</Badge>
-                          <p className="text-[13px] leading-relaxed text-dl-text">{lang === "th" && GOV_TH[x.control] ? `${GOV_TH[x.control].name}: ${g.controls.find((c) => c.id === x.control)?.detail ?? ""}` : x.text}</p>
+                          <p className="text-[13px] leading-relaxed text-dl-text">{lang === "th" && GOV_TH[x.control] ? `${GOV_TH[x.control].name}: ${g.controls.find((c) => c.id === x.control)?.detail_th || g.controls.find((c) => c.id === x.control)?.detail || ""}` : x.text}</p>
                         </li>
                       ))}
                     </ul>
