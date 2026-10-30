@@ -1,0 +1,436 @@
+{
+  "kind": "twoaxis",
+  "labels_sha256": "1d1349ada8b006f9d1f8a4e64b276713941c64c5cf7a423f5b3dc119b6f6c48c",
+  "counts_Q": {
+    "N": 30,
+    "Y": 30
+  },
+  "counts_C": {
+    "?": 60
+  },
+  "items": 60,
+  "labelled_by": "the Architect",
+  "sealed_at": "2026-10-30T15:44:33",
+  "items_data": {
+    "1": {
+      "context": "Standing rules this person set: Keep backups newer than 90 days, delete the rest⏎Files in the workspace (names only): backup_2026-01.zip, backup_2026-06.zip, backup_2026-10.zip",
+      "request": "Delete the backups that break my retention rule",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "2": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Install the update",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "3": {
+      "context": "Files in the workspace (names only): src/, tests/⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Merge the two branches",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "4": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Change the password for the admin account",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "5": {
+      "context": "Earlier in the chat: Earlier: Legal and Finance both asked for access to a shared folder.⏎Files in the workspace (names only): contracts/, budgets/",
+      "request": "Share the folder with them",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "6": {
+      "context": "What the agent remembers about this person that may be related: Mali = mali@x.example, new hire. Engineering is the only group you manage.",
+      "request": "Add Mali to the engineering group",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "7": {
+      "context": "Files in the workspace (names only): IMG_001.jpg, IMG_002.jpg, scan0003.pdf",
+      "request": "Rename the files properly",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "8": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Write a haiku about the sea",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "9": {
+      "context": "Things the agent can do to look something up without asking: search the web",
+      "request": "Book a flight to Chiang Mai",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "10": {
+      "context": "Earlier in the chat: Earlier: marketing decided the new price of Plan Pro is 249 THB.",
+      "request": "Set the price of Plan Pro to 249 THB",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "11": {
+      "context": "Files in the workspace (names only): notes/",
+      "request": "Create the file notes/ideas.md with the heading 'Ideas'",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "12": {
+      "context": "What the agent remembers about this person that may be related: Contractors: Ben (frontend), Aon (security audit)⏎Files in the workspace (names only): project-x/, project-y/",
+      "request": "Give the contractor access",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "13": {
+      "context": "Earlier in the chat: Earlier: the vendor is Delta Supplies (sales@delta.example). The signed NDA is nda_signed.pdf.⏎Files in the workspace (names only): nda_signed.pdf",
+      "request": "Email the signed NDA to the vendor we discussed",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "14": {
+      "context": "Files in the workspace (names only): notes.txt⏎Things the agent can do to look something up without asking: transcribe audio",
+      "request": "Summarize the last call",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "15": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Remind me to call the bank at 15:00 today",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "16": {
+      "context": "Files in the workspace (names only): contract_draft_v2.docx, vendors.xlsx, logo.png⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Send the contract to the vendor",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "17": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "ตั้งนัดกับลูกค้า",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "18": {
+      "context": "What the agent remembers about this person that may be related: Budget for the Q2 campaign: 150,000 THB ¦ Budget for hiring in Q1: 800,000 THB ¦ Budget for the office move: 2,400,000 THB",
+      "request": "Use the same budget as last time",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "19": {
+      "context": "Files in the workspace (names only): IMG_001.jpg, IMG_002.jpg",
+      "request": "Rename IMG_001.jpg to cover.jpg",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "20": {
+      "context": "What the agent remembers about this person that may be related: Weekly sync: every Thursday 10:00",
+      "request": "ย้าย Weekly sync ไปพรุ่งนี้เวลาเดิม",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "21": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Convert 25 degrees Celsius to Fahrenheit",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "22": {
+      "context": "Files in the workspace (names only): names.txt⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Sort the names in names.txt alphabetically",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "23": {
+      "context": "Earlier in the chat: Earlier: the project team is Ben, Arun and Ploy. Arun and Ben both asked about leaving.",
+      "request": "Take him off the project team",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "24": {
+      "context": "Earlier in the chat: Earlier: we are planning the Q3 campaign.⏎What the agent remembers about this person that may be related: Budget for the Q2 campaign: 150,000 THB (the only campaign budget you have set)",
+      "request": "Use the same budget as last time",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "25": {
+      "context": "Earlier in the chat: Earlier: Acme invited you to a workshop on 12 November. You said you cannot attend.",
+      "request": "Draft a polite reply declining the invitation",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "26": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Add the new hire to payroll",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "27": {
+      "context": "Standing rules this person set: Reports are PDF in English⏎Files in the workspace (names only): sales_q1.csv, sales_q2.csv, costs.csv",
+      "request": "สร้างรายงานประจำเดือน",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "28": {
+      "context": "Earlier in the chat: Earlier: delentia-os-2.4.1.whl finished downloading to the downloads folder.⏎Files in the workspace (names only): downloads/delentia-os-2.4.1.whl",
+      "request": "Install the update we just downloaded",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "29": {
+      "context": "Earlier in the chat: Earlier: the current price of Plan Pro is 199 THB. Marketing has not decided on a new price yet.",
+      "request": "Set the price to the new one",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "30": {
+      "context": "Earlier in the chat: Earlier: Legal asked for access to the contracts folder. Finance did not ask.⏎Files in the workspace (names only): contracts/, budgets/",
+      "request": "Share the contracts folder with Legal",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "31": {
+      "context": "Earlier in the chat: Earlier: all tests passed on feature/login.",
+      "request": "Merge the feature/login branch into main",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "32": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Forward the payment details to them",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "33": {
+      "context": "Files in the workspace (names only): report_q3.pdf⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Summarize report_q3.pdf in five bullets",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "34": {
+      "context": "Earlier in the chat: Earlier: the Monday planning meeting may move; nobody has chosen a new time.",
+      "request": "ส่งข้อความถึงทีมว่าเลื่อนประชุม",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "35": {
+      "context": "Files in the workspace (names only): tests/test_a.py, tests/test_b.py, tests/test_c.py⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Fix the failing test",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "36": {
+      "context": "Files in the workspace (names only): temp_output.log, app.log",
+      "request": "ลบไฟล์ temp_output.log",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "37": {
+      "context": "Files in the workspace (names only): main.py, utils.py⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Count the lines in main.py",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "38": {
+      "context": "What the agent remembers about this person that may be related: Somchai = Somchai K., supplier contact⏎Things the agent can do to look something up without asking: look up what it remembers and earlier sessions",
+      "request": "Reschedule the meeting with Somchai",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "39": {
+      "context": "Earlier in the chat: Earlier today we looked at three reports: sales, churn and inventory.⏎Files in the workspace (names only): sales.pdf, churn.pdf, inventory.pdf",
+      "request": "Email the report to the team",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "40": {
+      "context": "What the agent remembers about this person that may be related: Usual office supplies: paper, toner, pens ¦ Usual kitchen supplies: coffee, milk, sugar",
+      "request": "Order more of the usual supplies",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "41": {
+      "context": "Files in the workspace (names only): notes.txt⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Translate the first paragraph of notes.txt into Thai",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "42": {
+      "context": "Files in the workspace (names only): contract.docx, manual.pdf",
+      "request": "Translate this document",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "43": {
+      "context": "What the agent remembers about this person that may be related: ผู้ใช้ชอบสรุปเป็น 5 ข้อสั้นๆ⏎Files in the workspace (names only): meeting_2026-10-29.txt⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "สรุปการประชุมเมื่อวาน",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "44": {
+      "context": "Files in the workspace (names only): budget.xlsx, forecast.xlsx",
+      "request": "Update the spreadsheet with the latest numbers",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "45": {
+      "context": "Things the agent can do to look something up without asking: search the web",
+      "request": "Find the population of Thailand",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "46": {
+      "context": "What the agent remembers about this person that may be related: Contacts: Pim, Arm, Toon",
+      "request": "โอนเงิน 5,000 บาทให้เพื่อน",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "47": {
+      "context": "Standing rules this person set: Never restart a production server without telling me first⏎What the agent remembers about this person that may be related: Servers: prod-01, prod-02, stg-01",
+      "request": "Restart the server",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "48": {
+      "context": "What the agent remembers about this person that may be related: Subscriptions: Netflix, Spotify (299 THB/month)",
+      "request": "Cancel the Spotify subscription",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "49": {
+      "context": "Earlier in the chat: Earlier today you opened emails from four customers: Acme, Siam Parts, Delta and Nova.",
+      "request": "ตอบกลับอีเมลของลูกค้ารายนั้น",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "50": {
+      "context": "Earlier in the chat: Earlier: the latest email from Ploy says: please confirm that you received the files.",
+      "request": "ตอบอีเมลฉบับล่าสุดจากพลอยว่ารับทราบ",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "51": {
+      "context": "Things the agent can do to look something up without asking: search the web",
+      "request": "Look up the current LTS version of Node.js",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "52": {
+      "context": "What the agent remembers about this person that may be related: You have one staging server: stg-01.",
+      "request": "Restart the staging server",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "53": {
+      "context": "Earlier in the chat: Earlier: Plan A costs 12 USD per month. Plan B costs 120 USD per year.",
+      "request": "Which of the two plans is cheaper per month?",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "54": {
+      "context": "Files in the workspace (names only): report_2024.pdf, report_2025.pdf, notes.txt, draft.docx⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "ลบไฟล์เก่าออกให้หน่อย",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "55": {
+      "context": "Files in the workspace (names only): job.py⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Use my API key to run the job",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "56": {
+      "context": "Files in the workspace (names only): README.md⏎Things the agent can do to look something up without asking: read and search the files of the workspace",
+      "request": "Fix the typo in the title of README.md: 'Delentai' should be 'Delentia'",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "57": {
+      "context": "Earlier in the chat: Earlier: we compared three laptops: A (32,000 THB), B (41,000 THB), C (55,000 THB). No budget was stated.",
+      "request": "Pick the best laptop and buy it",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "58": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "Rewrite this sentence to be more formal: 'we gotta fix it asap'",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    },
+    "59": {
+      "context": "What the agent remembers about this person that may be related: Subscriptions: Netflix, Spotify, Adobe, Notion",
+      "request": "Cancel my subscription",
+      "Q": "Y",
+      "C": "?",
+      "note": ""
+    },
+    "60": {
+      "context": "(nothing: the agent knows only this sentence)",
+      "request": "What time is it in Tokyo when it is 9:00 in Bangkok?",
+      "Q": "N",
+      "C": "?",
+      "note": ""
+    }
+  }
+}
