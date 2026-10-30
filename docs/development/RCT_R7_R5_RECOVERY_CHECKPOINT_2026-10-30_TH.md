@@ -2,6 +2,19 @@
 
 วันที่ 30 ตุลาคม 2026 (Asia/Bangkok) — เป้าหมายคือ open-source ที่ผู้ใช้ติดตั้งบนเครื่องหรือ VPS ของตนเอง ไม่มี paid API ในรอบนี้
 
+## ผลล่าสุดและสถานะส่งมอบ
+
+- **Full suite ของ 509aa705: 9,184 passed / 12 failed / 55 skipped / 1 xfailed, 961.98 วินาที**
+- 12 failures: 9 missing Ollama model, 1 native DNS, 2 regex timing assertions ภายใต้ concurrent load (หนึ่งกรณีเป็น ratio ของ regex เก่าที่ใช้เป็น negative control อีกกรณีเกิน wall-clock 0.5 วินาที) ไม่แก้ตัวเลข threshold เพื่อให้ผ่าน
+- Supplemental หลัง full suite: **52 passed / 0 failed / 0 skipped, 117.01 วินาที** ครอบคลุม PostgreSQL 7 tests ที่ระบุ DSN แล้ว, regex timing ทั้งสองไฟล์ และ browser-act ทั้งไฟล์ รวมสามกรณีที่ start browser ไม่สำเร็จใน full suite
+- Parser regression และ fake-jury control ผ่านใน full suite ล่าสุด แต่ intermittent ReadError ของ fake-jury และ timing/browser sensitivity ต่อ concurrent load ยังต้องติดตาม ผล supplemental ไม่ลบ failures/skips จาก full suite
+- **PR #218** เป็น draft ของ combined 509aa705 ไป main เพื่อรัน full CI; PR #215 ยังคงเป็น focused implementation review ที่ซ้อนบน #212
+- main ล่าสุดที่ตรวจคือ **f3114596**: #213 และ #214 merge แล้ว; prospective merge กับ combined ให้ Git tree **0900f4c344716490ddefc725e0c45a7da51bac1e** เหมือนเดิมทุกไฟล์ จึงมีโค้ดของ main ล่าสุดในชุดที่ทดสอบแล้ว ไม่มีการ merge PR โดย Codex
+- Claude เปิด #216 (W08/W10) และ #217 (Thai Desk/Delta log); ยังไม่รวมใน combined นี้ ไม่ได้แก้ไฟล์ทับงานสองชุดนั้น
+- CI snapshot ของ #218: Lint & Type Check, Frontend (Node.js), Build/install/check/uninstall, CVE Scan (safety), Analyze(actions) ผ่าน; Python matrix และหลาย checks ยัง queued/in progress ไม่เรียกว่า CI ผ่านครบ และ CodeQL neutral ไม่แทน Analyze ทุกภาษา
+- ไม่มี paid API หรือ GUI lifecycle video ใหม่ในรอบนี้; ผล local ไม่ใช่ตัวเลข checkpoint ทางการของ main
+
+
 ## Revision และผลที่ตรวจแล้ว
 
 - `841e4481`: combined revision เดิมที่รวม main `61cdea9`, fonts `4cb36a3`, budget guard `bce3c91` และ Codex `0c22d5a2`; focused tests 191 ผ่านใน 27.88 วินาที ผลนี้ไม่ใช่ full suite
@@ -93,3 +106,18 @@ Full suite แรก 8b5abfb6: 9,185 passed / 12 failed / 52 skipped / 1 xfailed
 fake-jury control คาด accuracy 0.5 แต่ได้ 0.467 โดย unsafe_passed ยังตรง expected 15 (เป็น negative control ที่จงใจให้ scripted jurors ตอบผิด ไม่ใช่โมเดลจริง) รันแยกทั้งไฟล์ผ่าน 8 tests; diagnostic fake-only 10 รอบได้ผลตาม expected ทุกครั้ง แต่พบ voter ReadError รวม 3 ครั้งซึ่งถูกนับเป็น abstain ข้อมูลนี้แสดงว่าทางเชื่อมต่อ fixture ยังมีความไม่แน่นอน แต่ยังไม่พิสูจน์ root cause ของ failure แรก ต้องเก็บไว้เป็น unresolved intermittent finding ไม่ใช้ rerun ผ่านลบผลเดิม
 
 52 skips ของ suite แรกมี 7 PostgreSQL tests เพราะไม่ได้ตั้ง DELENTIA_TEST_PG_DSN ใน invocation นั้น ต้องตรวจเพิ่มโดยระบุ DSN ของฐานข้อมูลทดสอบ ไม่อ้างว่า container running เท่ากับ tests ผ่าน ที่เหลือส่วนใหญ่เป็น paid/live services, optional voice/video/weights, Windows-only และ Hermes ที่ไม่ได้ติดตั้ง
+
+## รายละเอียดรอบพัฒนาถัดไปของ RCT-7
+
+| รอบ | ขอบเขต implementation ที่เสนอ | Negative tests / เกณฑ์จบ |
+| --- | --- | --- |
+| R1 evidence assessment | Schema แยก observed bytes/hash, claimed facts, observed_at, claimed source date, source identity และ freshness policy; ระบุสถานะ unknown/stale/conflicting อย่างตรงไปตรงมา | ไม่มี source date ต้องไม่ถูกจัดว่า fresh; วันที่อนาคต/clock skew ต้องมี policy; สองแหล่งขัดกันต้องถามหรือแสดง conflict; hash ตรงไม่ลบ conflict |
+| R2 intent evaluation | ใช้ planner เดิมและชุด holdout ไทย/อังกฤษที่ล็อกก่อน tuning เพิ่ม labels สำหรับ negation, ambiguity, multi-intent และคำตอบที่ต้องถาม | รายงาน task quality และ process quality แยกกัน; ไม่ให้ clarification ทุกครั้งเป็นทางลัดทำคะแนน; แยก infrastructure errors จาก model errors |
+| R3/R4 semantic coverage | ระบุ domain handler/verifier ที่รองรับและเส้นทางย้อนจาก material criterion → necessary inputs → handler → receipt → verifier | ปฏิเสธ criterion ที่ไม่มี semantic verifier; DAG สมบูรณ์แต่ไม่ครอบคลุมเจตนาต้องไม่ผ่าน; unsupported domain ต้องแสดงขอบเขต |
+| R5 versioned correction | ออกแบบ transition สำหรับ correction จากสถานะที่อนุญาต ระบุ downstream invalidation และ approval ที่ต้องขอใหม่ตาม binding | stale actor/version, เปลี่ยนข้อมูลขณะ running, dependent result เก่า, restart ระหว่าง invalidation; write effect ต้อง reconcile ไม่ replay |
+| R6 Desk lifecycle | Claude ต่อ UI กับ schema backend ที่ตกลงร่วมกัน แล้วเลือก combined SHA เดียว | identity change, reconnect, cancel, restart, clarification และ receipts ผ่าน E2E พร้อมวิดีโอจริง ไม่ใช้ HTTP-only probe แทน |
+| R7 domain verifier ถัดไป | เลือก domain เดียวก่อน เช่น ใบเสนอราคาที่มีภาษี/ส่วนลดและเงื่อนไข กำหนด ground truth/oracle และหน่วย/สกุลเงิน/rounding | ข้อมูลขาด, tax รวม/ไม่รวม, currency mismatch, contradictory total และหลักฐาน stale ต้องไม่ถูกยอมรับเงียบ ๆ |
+
+ต้องแยก task completion จาก business outcome เสมอ: งาน “เปรียบเทียบงบ” สามารถทำสำเร็จโดยได้คำตอบว่าเกินงบ แต่คำว่า verified ต้องระบุว่าตรวจ arithmetic/criteria ใด ไม่สื่อว่าซื้อได้หรือข้อมูลผู้ขายจริงทั้งหมด
+
+การรวมงาน: Codex รับ backend/contracts/verifiers และ tests; Claude รับ research budget/evaluation กับ Desk/local first-run; shared API/event schema ต้องตกลงก่อนเปลี่ยน และยังไม่แตะ plan approval hooks หรือ JobService semantics โดยไม่มีการประสาน
