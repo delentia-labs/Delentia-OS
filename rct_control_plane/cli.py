@@ -1242,8 +1242,8 @@ def _package_version(distribution: str) -> Optional[str]:
         return None
 
 
-def _run_doctor_checks() -> List[Dict[str, Any]]:
-    """Collect environment, project, and local connectivity diagnostics."""
+def _run_doctor_checks(*, development: bool = False) -> List[Dict[str, Any]]:
+    """Check an installed CLI; source files/extra services are opt-in."""
     checks: List[Dict[str, Any]] = []
 
     checks.append(
@@ -1273,6 +1273,11 @@ def _run_doctor_checks() -> List[Dict[str, Any]]:
                 "hint": f"Install with: pip install {distribution}",
             }
         )
+
+    if not development:
+        # A wheel install works from any directory and does not require the
+        # repository or five development services to be running.
+        return checks
 
     for file_name, hint in [
         (".env", "Run delentia init to generate the environment file."),
@@ -1417,20 +1422,31 @@ def init(force: bool):
     default="table",
     help="Output format",
 )
-def doctor_cmd(output: str):
-    """Run local preflight checks for the RCT development environment."""
-    checks = _run_doctor_checks()
+@click.option("--development", is_flag=True, help="Also check source-checkout files and development ports 8000-8004.")
+def doctor_cmd(output: str, development: bool):
+    """Check this installation without requiring a source checkout or server.
+
+    Does not call a model or validate provider billing/capability. Use
+    --development for the additional repository/service checks.
+    """
+    checks = _run_doctor_checks(development=development)
     issues = sum(1 for check in checks if not check["ok"])
     summary = {
         "issues": issues,
         "ok": issues == 0,
+        "scope": "development" if development else "local_installation",
+        "not_checked": ["model reachability or capability", "provider billing", "shared-host readiness"],
         "checks": checks,
     }
 
     if output == "json":
         print_json(summary)
+        if issues:
+            raise click.exceptions.Exit(1)
         return
 
+    click.echo("Scope: development environment" if development else
+               "Scope: local installation. Model connectivity, capability and billing are not checked.")
     if _HAS_RICH:
         render_doctor_report(checks, issues)
     else:
@@ -1465,12 +1481,11 @@ def doctor_cmd(output: str):
             else "Run delentia start to bring the local API online"
         )
     if not next_steps:
-        next_steps.append(
-            "Run [bold cyan]delentia benchmark --suite fdia[/] to validate constitutional behavior"
-            if _HAS_RICH
-            else "Run delentia benchmark --suite fdia to validate constitutional behavior"
-        )
+        next_steps.append("Try `delentia demo init`, then `delentia demo run compare --scripted` without a model or API key.")
+        next_steps.append("Use `delentia setup` to choose your own model when ready.")
     _print_next_steps(next_steps)
+    if issues:
+        raise click.exceptions.Exit(1)
 
 
 @cli.command()
@@ -1749,7 +1764,7 @@ def model_set(model_id: str, provider: str, profile: Optional[str], verify: bool
 
 
 @cli.command("setup")
-@click.option("--home", default=None, help="Delentia home folder (default ~/.delentia); nothing is written outside it.")
+@click.option("--home", default=None, help="Delentia home folder (default DELENTIA_HOME or ~/.delentia); setup files stay under it.")
 @click.option("--provider", type=click.Choice(["ollama", "openrouter"]), default=None, help="Choose the provider instead of detecting one.")
 @click.option("--model", default=None, help="Choose the model instead of detecting one.")
 @click.option("--approver-key-here", is_flag=True, help="Create an approver key on THIS machine (a one-person trial only: the agent runs as the same user and could read it).")
