@@ -176,7 +176,7 @@ def test_the_cli_refuses_a_paid_run_and_names_the_reason(tmp_path, monkeypatch):
 
 
 def test_the_registered_runners_are_the_workflows_that_had_none():
-    assert sorted(lw.RUNNERS) == ["W03", "W06", "W09", "W12"]          # Round 103 added W03 and W06, Round 105 adds W09 and W12
+    assert sorted(lw.RUNNERS) == ["W03", "W06", "W08", "W09", "W10", "W12"]          # Round 103 added W03 and W06, Round 105 W09 and W12, Round 106 W08 and W10
     json.dumps(sorted(lw.RUNNERS))
 
 
