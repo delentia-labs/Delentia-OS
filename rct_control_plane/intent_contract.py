@@ -249,13 +249,16 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None, intent_review: dict | None = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         if evidence_requirement is not None:
             from rct_control_plane.evidence_requirement import parse_requirement
             plan["evidence_requirement"] = parse_requirement(evidence_requirement).model_dump(mode="json")
+        if intent_review is not None:
+            from rct_control_plane.intent_review import validate_review
+            plan["intent_review"] = validate_review(intent_review, goal, plan["criteria"], self.namespace, plan["workspace"])
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
                 "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
@@ -298,12 +301,25 @@ class IntentContractStore:
         return {**payload, "id": data["id"], "state": state, "version": data["version"] + 1}
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
-              criteria: Any = None, answers: Any = None) -> Dict[str, Any]:
+              criteria: Any = None, answers: Any = None, *, review_binding: dict | None = None,
+              intent_confirmation: dict | None = None) -> Dict[str, Any]:
         if type(version) is not int or version < 1:
             raise IntentContractError("the current positive integer version is required")
         data = self.get(contract_id)
         if data["version"] != version or data["state"] not in {"plan_ready", "waiting_for_clarification", "waiting_for_input"}:
             raise IntentContractError("intent contract is not ready at this version")
+        if "intent_review" in data["plan"]:
+            # Until revised proposals have a reviewed mapping to executable
+            # criteria, corrections require a fresh contract, never stale approval.
+            if data["state"] != "plan_ready" or response or revised_goal is not None or criteria is not None or answers is not None:
+                raise IntentContractError("typed intent changes require a new reviewed contract")
+            from rct_control_plane.intent_review import check_confirmation
+            try:
+                check_confirmation(data, self.namespace, review_binding, intent_confirmation)
+            except (ValueError, TypeError, KeyError) as exc:
+                raise IntentContractError("typed intent review confirmation refused") from exc
+        elif review_binding is not None or intent_confirmation is not None:
+            raise IntentContractError("contract has no typed intent review")
         if data["state"] == "waiting_for_input":
             questions = {q["id"] for q in data["plan"]["clarification_questions"]}
             if (not isinstance(answers, dict) or set(answers) != questions
