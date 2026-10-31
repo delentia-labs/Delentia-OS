@@ -384,7 +384,7 @@ def table(report: Dict[str, Any]) -> str:
         if tid in bars and rates.get(tid) is not None:
             cell = f"{rates[tid]:.1f}% -> {'PASS' if rates[tid] >= bars[tid] else 'FAIL'}"
         elif tid in judged:
-            cell = f"{judged[tid]['value']} -> {'PASS' if judged[tid]['pass'] else 'FAIL'}"
+            cell = f"{judged[tid]['value']} -> {'INCONCLUSIVE' if judged[tid].get('inconclusive') else ('PASS' if judged[tid]['pass'] else 'FAIL')}"
         elif tid == "T8" and report.get("spent_usd") is not None and report["estimate"].get("total_usd"):
             ratio = report["spent_usd"] / report["estimate"]["total_usd"] if report["estimate"]["total_usd"] else 0
             cell = f"${report['spent_usd']} of ${report['estimate']['total_usd']} estimated ({ratio:.2f}x) -> {'PASS' if ratio <= MARGIN else 'FAIL'}"
@@ -399,7 +399,7 @@ def table(report: Dict[str, Any]) -> str:
             cells = [(f"{rr[t]:.1f}%" if rr.get(t) is not None else "NOT RUN") for t in ("T1", "T2", "T3")]
             spent = round(sum(v.get("spent_usd", 0.0) for v in r.values() if isinstance(v, dict)), 4)
             t10 = ((r.get("toolchoice") or {}).get("judged") or {}).get("T10")
-            cell10 = (f"{t10['value']} -> {'PASS' if t10['pass'] else 'FAIL'}" if t10 else "NOT RUN")
+            cell10 = (f"{t10['value']} -> {'INCONCLUSIVE' if t10.get('inconclusive') else ('PASS' if t10['pass'] else 'FAIL')}" if t10 else "NOT RUN")
             lines.append(f"| {m} | {cells[0]} | {cells[1]} | {cells[2]} | {cell10} | ${spent} |")
     return "\n".join(lines)
 

@@ -106,8 +106,9 @@ def rehearsal_policy(req: "sm.Request") -> str:
 
 class FakeOpenRouter:
     def __init__(self, prices: Dict[str, Dict[str, float]], key: str = "rehearsal-not-a-real-key", policy: Any = rehearsal_policy,
-                 reject_json_mode: bool = False, hidden_markup: float = 0.0):
+                 reject_json_mode: bool = False, hidden_markup: float = 0.0, limit: Optional[float] = None):
         self.prices, self.key, self.policy = prices, key, policy
+        self.limit = limit                                # the credit limit set on the key at the provider (None = no cap), as /auth/key reports it
         self.hidden_markup = hidden_markup                # a charge to the key that the reply's own `usage.cost` does not show (the case a meter calibration must catch)
         self.reject_json_mode = reject_json_mode          # answer HTTP 400 to `response_format`, as some upstream providers do
         self.json_mode_requests = 0
@@ -138,7 +139,8 @@ class FakeOpenRouter:
                     if not self._authorised():
                         outer.rejected += 1
                         return self._send(401, {"error": "bad key"})
-                    return self._send(200, {"data": {"usage": round(outer.spent, 8), "limit": None}})
+                    left = None if outer.limit is None else round(outer.limit - outer.spent, 8)
+                    return self._send(200, {"data": {"usage": round(outer.spent, 8), "limit": outer.limit, "limit_remaining": left}})
                 self._send(404, {"error": "not found"})
 
             def do_POST(self) -> None:  # noqa: N802

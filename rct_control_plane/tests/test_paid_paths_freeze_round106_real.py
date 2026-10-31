@@ -5,6 +5,7 @@ the live workflows, the RCT-7 holdout runner and the P0 meter calibration.
 """
 import argparse
 import json
+import os
 import socket
 import sys
 from pathlib import Path
@@ -46,6 +47,7 @@ def frozen_file(tmp_path, **over):
 # ------------------------------------------------------------------ the helper
 def test_without_a_freeze_the_real_endpoint_is_refused_and_a_loopback_fake_is_not(monkeypatch):
     assert any("frozen configuration is required" in d for d in pf.freeze_problems("m/x", 0.1, 0.5, 1.0))
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", "http://127.0.0.1:9/api/v1")
     assert pf.freeze_problems("m/x", 0.1, 0.5, 1.0) == []                                       # a rehearsal: no money can move
     assert any("frozen configuration is required" in d for d in pf.freeze_problems("m/x", 0.1, 0.5, 1.0, force=True))     # a path that ignores the override still asks
@@ -71,15 +73,43 @@ def test_the_daaes_live_run_asks_before_it_builds_a_provider(tmp_path):
     assert "freeze:" in str(why.value) and "frozen configuration is required" in str(why.value)
 
 
-def test_the_daaes_benchmark_asks_even_when_a_loopback_override_is_set(tmp_path, monkeypatch):
+def _benchmark_args(tmp_path):
+    return argparse.Namespace(arms="d0", seeds="1", out=str(tmp_path), provider="openrouter", model="m/x", price_in=0.1, price_out=0.5, budget_usd=1.0, max_iterations=3,
+                              max_seconds=None, hermes_sandboxed=False, plan=None)
+
+
+def test_the_daaes_benchmark_asks_for_the_freeze_whenever_it_would_talk_to_the_real_endpoint(tmp_path, monkeypatch):
+    """Round 107: the paid branch used to ignore DELENTIA_OPENROUTER_BASE_URL and always go to openrouter.ai, so it could not be rehearsed against the fake (the first paid-day rehearsal
+    found that the biggest stage, P4, had never run on the paid path). It now goes where the runtime resolves the endpoint: the real one by default, a loopback fake when that is set.
+    A foreign host is ignored by that resolver, so it still means the real endpoint, and the real endpoint always needs the freeze."""
     from research.daaes import __main__ as daaes_main
     from research.daaes import budget_guard
-    monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", "http://127.0.0.1:9/api/v1")          # this branch ignores it and goes to the real endpoint
-    args = argparse.Namespace(arms="d0", seeds="1", out=str(tmp_path), provider="openrouter", model="m/x", price_in=0.1, price_out=0.5, budget_usd=1.0, max_iterations=3,
-                              max_seconds=None, hermes_sandboxed=False, plan=None)
-    with pytest.raises(budget_guard.BudgetExceeded) as why:
-        daaes_main._benchmark(args)
-    assert "freeze:" in str(why.value)
+    for override in (None, "https://evil.example/api/v1"):
+        if override is None:
+            monkeypatch.delenv("DELENTIA_OPENROUTER_BASE_URL", raising=False)
+        else:
+            monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", override)
+        with pytest.raises(budget_guard.BudgetExceeded) as why:
+            daaes_main._benchmark(_benchmark_args(tmp_path))
+        assert "freeze:" in str(why.value), override
+
+
+def test_the_daaes_benchmark_runs_against_a_loopback_fake_without_a_freeze_and_sends_the_key_only_there(tmp_path, monkeypatch):
+    from research.daaes import __main__ as daaes_main
+    from research.daaes import benchmark
+    seen = {}
+
+    def fake_run_matrix(out, url, key, model, *rest, **kw):
+        seen.update(url=url, key=key)
+        return {"cells": []}
+    monkeypatch.setattr(benchmark, "run_matrix", fake_run_matrix)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", "http://127.0.0.1:9/api/v1")
+    try:
+        daaes_main._benchmark(_benchmark_args(tmp_path))
+    except Exception:                                  # what happens after the matrix is not the point of this test
+        pass
+    assert seen["url"] == "http://127.0.0.1:9/api/v1" and seen["key"] == os.environ["OPENROUTER_API_KEY"]
 
 
 def test_the_live_workflows_ask_before_they_build_a_provider(tmp_path):
