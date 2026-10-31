@@ -16,6 +16,7 @@ Why this file exists. A pass rule written after the number is a description, not
 
 A stage is not started if the previous one did not meet its rule, except that P1b, P2 and P4 may run on the models P1 qualified. Every stage is run with `DELENTIA_OPENROUTER_DATA_COLLECTION=deny` and without a silent fallback to another provider
 (`DELENTIA_OPENROUTER_ALLOW_FALLBACKS=0` whenever a provider order is pinned); a model that cannot be served under those settings is recorded as `not_run` with the reason, not run under looser ones.
+Every command that can spend money refuses to send anything without a matching freeze (`python -m research.paid_run_freeze write ... --live-prices ...`): the orchestrator through `--freeze-file`, and the research commands (the DAAES live run and benchmark, the live workflows, the RCT-7 holdout runners, the P0 calibration) through the environment variable `DELENTIA_FREEZE_FILE`, set in the same terminal as the key. Against a loopback fake nothing is asked, because no money can move. The research harness's own real-model runner (`research/runner.py --policy real`, used for the P5 ablation) is not covered yet and is not part of the stages above.
 
 ## P0 — meter calibration
 * Pass: over at least 20 calls, our summed cost and the provider's summed cost differ by at most 10%. Otherwise: `fail`, nothing else is run until the meter is fixed, and the difference is recorded.

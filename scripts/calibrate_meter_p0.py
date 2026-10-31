@@ -69,6 +69,8 @@ def refusals(args: argparse.Namespace, env: Dict[str, str]) -> List[str]:
         worst = estimate(args.calls, args.prompt_tokens, args.max_tokens, args.price_in, args.price_out) * MARGIN
         if worst > args.budget_usd:
             problems.append(f"the worst case ${worst:.4f} (with a {MARGIN} x margin) is above --budget-usd ${args.budget_usd}")
+        from research import paid_run_freeze
+        problems.extend("freeze: " + d for d in paid_run_freeze.freeze_problems(args.model, args.price_in, args.price_out, args.budget_usd))
     return problems
 
 

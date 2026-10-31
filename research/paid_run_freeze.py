@@ -28,6 +28,7 @@ import json
 import math
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -198,10 +199,32 @@ def check(frozen: Dict[str, Any]) -> List[str]:
     return diffs
 
 
+def _same_price(a: Any, b: Any) -> bool:
+    """A price typed on a command line (0.1) and the same price parsed from a list (1e-07 x 1e6 = 0.09999999999999999) are the same price."""
+    return _finite_nonneg(a) and _finite_nonneg(b) and math.isclose(float(a), float(b), rel_tol=1e-6, abs_tol=1e-12)
+
+
+FREEZE_ENV = "DELENTIA_FREEZE_FILE"
+_LOOPBACK = re.compile(r"^http://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)")
+
+
+def freeze_problems(model: str, price_in: Any, price_out: Any, budget_usd: Any, *, force: bool = False) -> List[str]:
+    """What stands between a paid run of ONE model and the freeze: nothing to check against a loopback fake (no money can move), otherwise the file named by DELENTIA_FREEZE_FILE must match.
+    Every command that can spend money asks this before it sends anything. `force` = the caller talks to the real endpoint whatever DELENTIA_OPENROUTER_BASE_URL says."""
+    from rct_control_plane.llm_provider import openrouter_base_url
+    if not force and _LOOPBACK.match(openrouter_base_url()):
+        return []
+    try:
+        budget = float(budget_usd)
+    except (TypeError, ValueError):
+        return [f"the budget {budget_usd!r} is not a number"]
+    return check_for_run(os.environ.get(FREEZE_ENV), [model], {model: {"in": price_in, "out": price_out}}, budget)
+
+
 def check_for_run(path: Optional[str], models: List[str], prices: Dict[str, Dict[str, float]], budget_usd: float) -> List[str]:
     """What the orchestrator asks before a real run: the file exists, nothing differs, and the run is the one that was frozen (same models, same prices, a budget not above the frozen one)."""
     if not path:
-        return ["a frozen configuration is required for a real run: python -m research.paid_run_freeze write --models ... --stages ... --budget-usd ... --provider-cap-confirmed --out freeze.json (then --freeze-file)"]
+        return ["a frozen configuration is required for a real run: python -m research.paid_run_freeze write --models ... --live-prices --stages ... --budget-usd ... --provider-cap-confirmed --out freeze.json (then --freeze-file, or set DELENTIA_FREEZE_FILE for the research commands)"]
     try:
         frozen = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
@@ -212,7 +235,7 @@ def check_for_run(path: Optional[str], models: List[str], prices: Dict[str, Dict
         diffs.append(f"the run names models that were not frozen: {', '.join(sorted(set(models) - set(frozen_models)))}")
     for m in models:
         if m in frozen_models and m in prices:
-            if prices[m].get("in") != frozen_models[m]["price_in_per_mtok"] or prices[m].get("out") != frozen_models[m]["price_out_per_mtok"]:
+            if not _same_price(prices[m].get("in"), frozen_models[m]["price_in_per_mtok"]) or not _same_price(prices[m].get("out"), frozen_models[m]["price_out_per_mtok"]):
                 diffs.append(f"the price of {m} changed since the freeze")
     frozen_budget = (frozen.get("spending") or {}).get("budget_usd")
     if isinstance(frozen_budget, (int, float)) and budget_usd > frozen_budget:
