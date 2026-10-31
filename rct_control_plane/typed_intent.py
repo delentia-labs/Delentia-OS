@@ -52,7 +52,10 @@ def parse_intent(goal: str, response: str) -> GroundedIntent:
         raise ValueError("goal must contain 1..20000 characters")
     if not isinstance(response, str) or len(response) > 65536:
         raise ValueError("intent response exceeds limit")
-    proposal = IntentProposal.model_validate(strict_json(response))
+    value = strict_json(response)
+    if not isinstance(value, dict) or type(value.get("schema_version")) is not int:
+        raise ValueError("intent schema version must be an integer")
+    proposal = IntentProposal.model_validate(value)
     entries = [*proposal.material_criteria, *proposal.constraints, *proposal.unknowns]
     ids = [item.id for item in entries]
     if len(set(ids)) != len(ids):

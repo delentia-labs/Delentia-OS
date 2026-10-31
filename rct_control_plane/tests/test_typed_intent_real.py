@@ -33,12 +33,13 @@ def test_adapter_preserves_thai_negation_and_requests_review():
     assert provider.calls[0][1]['json_mode'] is True
 
 
-@pytest.mark.parametrize('mutation', ['quote', 'duplicate', 'version', 'tool', 'polarity'])
+@pytest.mark.parametrize('mutation', ['quote', 'duplicate', 'version', 'bool_version', 'tool', 'polarity'])
 def test_malformed_or_ungrounded_proposals_are_rejected(mutation):
     data = copy.deepcopy(DATA)
     if mutation == 'quote': data['material_criteria'][0]['source_quotes'] = ['invented source']
     if mutation == 'duplicate': data['constraints'][0]['id'] = 'summary'
     if mutation == 'version': data['schema_version'] = 2
+    if mutation == 'bool_version': data['schema_version'] = True
     if mutation == 'tool': data['tool'] = 'write_file'
     if mutation == 'polarity': data['constraints'][0]['polarity'] = 'ignore'
     with pytest.raises((ValueError, ValidationError)):
