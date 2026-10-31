@@ -104,3 +104,54 @@ def assess_evidence(observations: list[Observation], claims: list[SourceClaim], 
     # Even a current, nonconflicting claim is not certified true or authoritative.
     return EvidenceAssessment(claims=results, needs_review=not results or any(
         c.freshness != "current" or c.conflicting_claim_ids for c in results))
+
+
+class EvidencePolicy(PlanItem):
+    """Application-owned requirement set; never an execution permission."""
+    schema_version: Literal[1] = 1
+    id: str = Field(min_length=1, max_length=80)
+    required_claim_ids: list[str] = Field(min_length=1, max_length=256)
+
+    @model_validator(mode="after")
+    def unique_ids(self) -> EvidencePolicy:
+        if (any(not key.strip() or len(key) > 80 for key in self.required_claim_ids)
+                or len(set(self.required_claim_ids)) != len(self.required_claim_ids)):
+            raise ValueError("required claim identities must be nonempty and unique")
+        return self
+
+
+class EvidenceDecision(PlanItem):
+    schema_version: Literal[1] = 1
+    policy_sha256: str
+    assessment_sha256: str
+    satisfies_declared_policy: bool
+    reasons: list[str]
+    grants_execution: Literal[False] = False
+
+
+def apply_evidence_policy(policy: EvidencePolicy, assessment: EvidenceAssessment) -> EvidenceDecision:
+    """Require each named claim to be current and free of literal disagreement.
+
+    Digests bind local snapshots, not signatures, source trust or truth. An
+    unrequested claim cannot substitute for a missing required claim.
+    """
+    import json
+    policy = EvidencePolicy.model_validate(policy.model_dump())
+    assessment = EvidenceAssessment.model_validate(assessment.model_dump())
+    by_id = {c.claim_id: c for c in assessment.claims}
+    if len(by_id) != len(assessment.claims):
+        raise ValueError("duplicate assessment claim identity")
+    reasons = []
+    for key in sorted(policy.required_claim_ids):
+        item = by_id.get(key)
+        if item is None:
+            reasons.append(f"{key}:missing")
+        elif item.freshness != "current":
+            reasons.append(f"{key}:{item.freshness}")
+        if item is not None and item.conflicting_claim_ids:
+            reasons.append(f"{key}:disagreement")
+    def digest(value: PlanItem) -> str:
+        return hashlib.sha256(json.dumps(value.model_dump(mode="json"), sort_keys=True,
+                                         separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+    return EvidenceDecision(policy_sha256=digest(policy), assessment_sha256=digest(assessment),
+                            satisfies_declared_policy=not reasons, reasons=reasons)

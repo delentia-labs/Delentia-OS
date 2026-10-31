@@ -77,3 +77,36 @@ def test_empty_inventory_needs_review_and_json_round_trip_preserves_scope():
     from rct_control_plane.evidence_assessment import EvidenceAssessment
     result = assess([claim()])
     assert EvidenceAssessment.model_validate_json(result.model_dump_json()) == result
+
+
+@pytest.mark.parametrize('date,reason', [(NOW, None), (None, 'unknown'),
+    (NOW - timedelta(seconds=61), 'stale'), (NOW + timedelta(seconds=1), 'future')])
+def test_versioned_policy_requires_current_named_claim(date, reason):
+    from rct_control_plane.evidence_assessment import EvidencePolicy, apply_evidence_policy
+    policy = EvidencePolicy(id='quote-freshness', required_claim_ids=['c1'])
+    decision = apply_evidence_policy(policy, assess([claim(claimed_at=date)]))
+    assert decision.satisfies_declared_policy == (reason is None)
+    assert decision.reasons == ([] if reason is None else [f'c1:{reason}'])
+    assert decision.grants_execution is False
+
+
+def test_policy_cannot_substitute_other_claim_and_binds_both_snapshots():
+    from rct_control_plane.evidence_assessment import EvidencePolicy, apply_evidence_policy
+    a = assess([claim()])
+    p = EvidencePolicy(id='p', required_claim_ids=['c1'])
+    first = apply_evidence_policy(p, a)
+    missing = apply_evidence_policy(p.model_copy(update={'required_claim_ids': ['c2']}), a)
+    assert missing.reasons == ['c2:missing']
+    assert first.policy_sha256 != missing.policy_sha256
+    conflict = apply_evidence_policy(p, assess([claim(), claim(id='c2', value='101')]))
+    assert conflict.reasons == ['c1:disagreement']
+    assert conflict.assessment_sha256 != first.assessment_sha256
+    assert apply_evidence_policy(p, a) == first
+
+
+def test_policy_rejects_duplicate_ids_and_unknown_versions():
+    from rct_control_plane.evidence_assessment import EvidencePolicy
+    for kw in ({'schema_version': 2, 'required_claim_ids': ['c1']},
+               {'required_claim_ids': ['c1', 'c1']}, {'required_claim_ids': [' ']}):
+        with pytest.raises(ValidationError):
+            EvidencePolicy(id='p', **kw)
