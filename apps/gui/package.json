@@ -15,7 +15,7 @@
     "test:unit": "node --experimental-strip-types --no-warnings src/lib/signed-decision.test.mjs",
     "test:run-state": "node --experimental-strip-types --no-warnings src/lib/run-state.test.mjs",
     "test:nav": "node --experimental-strip-types --no-warnings src/lib/nav-model.test.mjs",
-    "test": "npm run test:unit && npm run test:run-state && npm run test:nav && npm run test:reason && npm run test:milestone && npm run test:webauthn && npm run test:readiness && npm run test:http && npm run test:fonts && npm run test:a11y",
+    "test": "npm run test:unit && npm run test:run-state && npm run test:nav && npm run test:reason && npm run test:milestone && npm run test:webauthn && npm run test:readiness && npm run test:http && npm run test:fonts && npm run test:servertext && npm run test:a11y",
     "test:reason": "node --experimental-strip-types --no-warnings src/lib/reason-text.test.mjs",
     "test:milestone": "node --experimental-strip-types --no-warnings src/lib/milestone.test.mjs",
     "test:readiness": "node --experimental-strip-types --no-warnings src/lib/readiness-text.test.mjs",
@@ -23,6 +23,7 @@
     "test:http": "node --experimental-strip-types --no-warnings src/lib/http-message.test.mjs",
     "test:webauthn": "node --experimental-strip-types --no-warnings src/lib/webauthn.test.mjs",
     "test:fonts": "node --experimental-strip-types --no-warnings src/lib/fonts-bundle.test.mjs",
+    "test:servertext": "node --experimental-strip-types --no-warnings src/lib/server-text-th.test.mjs",
     "test:e2e": "node scripts/a11y-e2e.mjs"
   },
   "dependencies": {
