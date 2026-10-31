@@ -38,6 +38,18 @@ export function ApprovalDevices() {
   const firstOpen = !!list.data?.first_device?.open;             // nobody can approve yet: the first device is added with a one-time code
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
+  const [codeNote, setCodeNote] = useState<string | null>(null);
+
+  // The code is shown in a small window on this computer's screen (never returned to this page); where no window can be opened, the answer says what to type.
+  const showCode = async () => {
+    setCodeNote(null);
+    try {
+      const answer = await desk.firstDeviceShow();
+      setCodeNote(answer.how);
+    } catch (err) {
+      setCodeNote(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const add = async () => {
     setBusy(true);
@@ -136,7 +148,10 @@ export function ApprovalDevices() {
         <div className="mt-4 rounded border border-dl-amber/50 bg-dl-amber/5 p-3 text-[13px] leading-relaxed text-dl-text">
           <p className="font-medium">{th ? "ยังไม่มีผู้อนุมัติ: เพิ่มเครื่องแรกด้วยรหัสครั้งเดียว" : "Nobody can approve yet: add the first device with a one-time code"}</p>
           <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-dl-muted">
-            <li>{th ? <>ในเทอร์มินัลบนเครื่องนี้ พิมพ์ <Code>delentia approvals first-device-code</Code> จะได้รหัส 8 ตัว (ใช้ได้ 10 นาที ลองได้ 5 ครั้ง)</> : <>In a terminal on this computer run <Code>delentia approvals first-device-code</Code> to get an 8-character code (valid 10 minutes, 5 tries).</>}</li>
+            <li>{th ? <>กดปุ่ม “แสดงรหัสในหน้าต่างเล็ก” จะมีหน้าต่างเล็กขึ้นบนหน้าจอคุณพร้อมรหัส 8 ตัว (ใช้ได้ 10 นาที ลองได้ 5 ครั้ง) รหัสแสดงเฉพาะบนหน้าจอ ไม่ถูกส่งมาที่หน้านี้ (หรือพิมพ์เองในเทอร์มินัล: <Code>delentia approvals first-device-code</Code>)</> : <>Press “Show the code in a small window”. A small window opens on your screen with an 8-character code (valid 10 minutes, 5 tries). The code appears on the screen only, never in this page. (Or type it yourself in a terminal: <Code>delentia approvals first-device-code</Code>.)</>}
+              <span className="mt-1 block"><Button tone="amber" onClick={showCode}>{th ? "แสดงรหัสในหน้าต่างเล็ก" : "Show the code in a small window"}</Button></span>
+              {codeNote ? <span role="status" className="mt-1 block text-dl-leaf">{codeNote}</span> : null}
+            </li>
             <li>{th ? "พิมพ์ชื่อเครื่องและรหัสด้านล่าง แล้วกด เพิ่มเครื่องนี้ Windows Hello จะถามตัวคุณ" : "Type a name and the code below, then press Add this device. Windows Hello asks you."}</li>
           </ol>
           {list.data?.first_device.code_waiting ? <p className="mt-1 text-dl-leaf">{th ? "มีรหัสรออยู่แล้ว" : "A code is waiting."}</p> : null}
