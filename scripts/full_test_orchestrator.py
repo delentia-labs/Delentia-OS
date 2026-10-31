@@ -48,11 +48,17 @@ TOKENS_PER_MODEL_PASS = {"prompt": 1_050_000, "completion": 70_000}
 # ~31 x (5,200 + 900) = ~190k prompt tokens, measured from the real menu). 600k / 40k is a guess with room, not a measurement.
 # Tier W (Round 68, "wide screening"): the K.1.5 stage ONLY, for up to 40 models from many vendors, so that the runtime is qualified against several brands before any one of them is paid for at length.
 # ~30 short runs of ~4 calls at ~2,050-5,000 prompt tokens: 400k prompt / 30k completion is a guess with room, like tier S.
-TOKENS_BY_TIER = {"A": TOKENS_PER_MODEL_PASS, "B": TOKENS_PER_MODEL_PASS, "S": {"prompt": 600_000, "completion": 40_000}, "W": {"prompt": 400_000, "completion": 30_000}}
+# Tier M (Round 106, "menu only"): the tool-choice stage ALONE (T10) for the models the capability screen qualified, so it is not paid for twice (tier S re-runs K.1.5).
+# 31 goals x two menus: the full 50-tool menu was 8,105 prompt tokens per call and the ranked compact one 987 when measured on 2026-10-30, so 31 x (8,105 + 987) = ~282k
+# plus the goals; 320k prompt with room. Completion: 62 short decisions, but a reasoning model may think for a couple of thousand tokens each: 40k is a ceiling, not a measurement.
+TOKENS_BY_TIER = {"A": TOKENS_PER_MODEL_PASS, "B": TOKENS_PER_MODEL_PASS, "S": {"prompt": 600_000, "completion": 40_000}, "W": {"prompt": 400_000, "completion": 30_000},
+                  "M": {"prompt": 320_000, "completion": 40_000}}
 # One jury run: 30 proposals x 4 members x (~450 prompt + ~120 completion tokens), billed to the four jury models.
 JURY_TOKENS_PER_MEMBER = {"prompt": 30 * 450, "completion": 30 * 120}
-TIER_PASSES = {"S": 1, "A": 1, "B": 3, "W": 1}
-MAX_MODELS = {"S": 6, "A": 1, "B": 3, "W": 40}
+TIER_PASSES = {"S": 1, "A": 1, "B": 3, "W": 1, "M": 1}
+MAX_MODELS = {"S": 6, "A": 1, "B": 3, "W": 40, "M": 3}
+# Tiers whose models each run ONE stage (the others run three or four): their stop rule is 1.5 x the model's whole estimate, as PREPAID_CRITERIA_R103.md says.
+SINGLE_STAGE_TIERS = ("W", "M")
 KEY_LOOKING = re.compile(r"sk-or-[A-Za-z0-9_-]{16,}|sk-[A-Za-z0-9]{32,}")
 
 T_BARS = {
@@ -270,6 +276,8 @@ def stages_for(model: str, prices: Dict[str, Any], work: Path, tier: str = "A") 
                       str(price.get("in", 0.0)), "--price-out", str(price.get("out", 0.0)), "--json", str(work / f"toolchoice-{re.sub(r'[^A-Za-z0-9]+', '_', model)}.json")]}
     if tier == "W":
         return all_stages[:1]                                          # the capability screen only
+    if tier == "M":
+        return [choice]                                                # the menu A/B only
     return all_stages[:1] + [choice] if tier == "S" else all_stages + [choice]
 
 
@@ -287,7 +295,11 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
     report: Dict[str, Any] = {"tier": args.tier, "models": args.models, "budget_usd": args.budget_usd, "estimate": est, "results": {}, "stopped": None,
                               "started": time.strftime("%Y-%m-%d %H:%M:%S")}
     start_spend = spend_probe(key)
-    per_stage_cap = (est["total_with_margin"] or args.budget_usd) / max(1, len(args.models) * 3)
+    if args.tier in SINGLE_STAGE_TIERS and est.get("total_usd"):
+        # one stage per model: its estimate is the model's whole estimate (before the margin), and the stage stops the run at 1.5 x that. (With the divisor of three it stopped at 0.75 x.)
+        per_stage_cap = est["total_usd"] / max(1, len(args.models))
+    else:
+        per_stage_cap = (est["total_with_margin"] or args.budget_usd) / max(1, len(args.models) * 3)
     for model in args.models:
         child_env = dict(env)
         child_env.update({"DELENTIA_LLM_PROVIDER": "openrouter", "DELENTIA_LLM_MODEL": model, "DELENTIA_HOME": str(work / "home"),
@@ -394,7 +406,7 @@ def table(report: Dict[str, Any]) -> str:
 
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--tier", choices=["S", "A", "B", "W"], default="A")
+    ap.add_argument("--tier", choices=["S", "A", "B", "W", "M"], default="A")
     ap.add_argument("--jury-models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None,
                     help="tier B only: four models from at least three vendors for the T6 jury run")
     ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="comma-separated OpenRouter model ids")

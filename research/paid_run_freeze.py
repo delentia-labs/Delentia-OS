@@ -41,7 +41,7 @@ from research import results_register  # noqa: E402
 FORMAT = "delentia-paid-run-freeze-1"
 CRITERIA = ROOT / "research" / "PREPAID_CRITERIA_R103.md"
 ORCHESTRATOR = ROOT / "scripts" / "full_test_orchestrator.py"
-STAGE_CEILINGS_USD = {"P0": 0.10, "P1": 5.00, "P2": 1.50, "P4": 4.00}         # the ceilings written in PREPAID_CRITERIA_R103.md; a stage that is not listed has no ceiling and is refused
+STAGE_CEILINGS_USD = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00}         # the ceilings written in PREPAID_CRITERIA_R103.md; a stage that is not listed has no ceiling and is refused
 
 ROLES = {"judge": "DELENTIA_RCT7_JUDGE", "chain": "DELENTIA_RCT7_CHAIN", "judge_context": "DELENTIA_RCT7_JUDGE_CONTEXT", "ask_and_wait": "DELENTIA_ASK_AND_WAIT", "warm_recall": "DELENTIA_WARM_RECALL",
          "tool_menu": "DELENTIA_TOOL_MENU", "parallel_tools": "DELENTIA_PARALLEL_TOOLS", "memory_embed": "DELENTIA_MEMORY_EMBED", "taint_gate": "DELENTIA_TAINT_GATE", "verify_grounding": "DELENTIA_VERIFY_GROUNDING"}
