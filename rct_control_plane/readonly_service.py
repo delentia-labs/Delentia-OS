@@ -54,6 +54,14 @@ class PublicReceipt(PlanItem):
     receipt_sha256: str
 
 
+class AcquisitionLink(PlanItem):
+    observation_id: str
+    receipt_sha256: str
+    tool_result_sha256: str
+    source_sha256: str
+    source_locator: str
+
+
 class PublicContract(PlanItem):
     id: str
     actor: str
@@ -69,6 +77,7 @@ class PublicContract(PlanItem):
     report: dict[str, Any] | None
     verified: bool
     evidence_decision: EvidenceDecision | None = None
+    acquisition_links: list[AcquisitionLink] = Field(default_factory=list)
 
 
 class BudgetResult(PlanItem):
@@ -178,6 +187,17 @@ def public_result(contract, actor, policy):
     # The digest covers the stored plan including the server workspace. It is
     # an opaque confirmation token here, not a hash of this redacted view.
     plan = {k: v for k, v in contract["plan"].items() if k != "workspace"}
+    links = []
+    if "evidence_requirement" in plan:
+        requirement = parse_requirement(plan["evidence_requirement"])
+        from rct_control_plane.verified_budget import validate_required_observation
+        for receipt in receipts:
+            if receipt["component_id"] == "inspect_sources":
+                validate_required_observation(plan, receipt["output"])
+                for observed in requirement.observations:
+                    links.append(AcquisitionLink(observation_id=observed.id,
+                        receipt_sha256=receipt["receipt_sha256"], tool_result_sha256=receipt["output"]["tool_result_sha256"],
+                        source_sha256=observed.sha256, source_locator=observed.locator))
     return BudgetResult(contract=PublicContract(
         id=contract["id"], actor=actor, workspace_id=policy.workspace_id,
         version=contract["version"], state=contract["state"], plan_sha256=contract["plan_sha256"],
@@ -189,7 +209,7 @@ def public_result(contract, actor, policy):
         } for r in receipts],
         execution_status=contract.get("execution_status", "not_started"),
         report=contract.get("execution_report"), verified=complete,
-        evidence_decision=contract.get("evidence_decision"),
+        evidence_decision=contract.get("evidence_decision"), acquisition_links=links,
     ))
 
 

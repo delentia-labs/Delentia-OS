@@ -82,6 +82,21 @@ def current_bytes(root: Path, relative: str) -> bytes:
         os.close(descriptor)
 
 
+def validate_required_observation(plan, output):
+    """Bind declared observations to this executor's single governed source.
+
+    Additional sources require a different executor, not an inferred read.
+    This proves byte identity, never source authorship or claim truth.
+    """
+    if "evidence_requirement" not in plan:
+        return
+    from rct_control_plane.evidence_requirement import parse_requirement
+    requirement = parse_requirement(plan["evidence_requirement"])
+    for observed in requirement.observations:
+        if observed.locator != output["relative_path"] or observed.sha256 != output["sha256"]:
+            raise ValueError("required observation differs from governed acquisition")
+
+
 def validate_receipts(plan, contract_id, namespace, receipts):
     from rct_control_plane.intent_contract import IntentContractError, compare, plan_digest
     if not isinstance(receipts, list) or len(receipts) > 50:
@@ -118,6 +133,7 @@ def validate_receipts(plan, contract_id, namespace, receipts):
             if digest(normalized) != data["output_sha256"]:
                 raise ValueError("receipt output is not canonical typed data")
             if typed["phase"] == "observation":
+                validate_required_observation(plan, normalized)
                 binding = plan["semantic_planning"]["quote_evidence"]
                 if (normalized["relative_path"] != binding["relative_path"] or normalized["sha256"] != binding["sha256"]
                         or not re.fullmatch(r"[0-9a-f]{64}", normalized["tool_result_sha256"])):
@@ -206,6 +222,7 @@ class BudgetPipeline:
             quote = Quote.model_validate(value)
             if quote.total_is_final is not True or Decimal(quote.total) > Decimal("1e15"):
                 raise ValueError("quote total/scope unresolved")
+            validate_required_observation(self.plan, {"relative_path": result["path"], "sha256": self.binding["sha256"]})
             self.scheduler.observe("inspect_sources", {"evidence_status": "observed_bytes", "relative_path": result["path"],
                 "sha256": self.binding["sha256"], "tool_result_sha256": digest(result), "quote": quote.model_dump()})
             self.scheduler.drain("compute")
