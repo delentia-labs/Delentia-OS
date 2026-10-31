@@ -44,3 +44,5 @@ Expanded regression: 159 passed / 220 warnings ใน 4.19 วินาที �
 7. เลือก 2–3 task families สำหรับ supervised evaluation เช่น document summary/citation, comparison, table analysis พร้อม native first-run และ Desk E2E/video หลัง review #217/#220
 
 สถานะยังเป็น experimental local-first runtime มี proposal/coverage layer ที่ใช้ข้าม domain ได้ แต่ยังไม่รับรอง general autonomous RCT-7 ไม่ merge/release หรือเรียก paid API ในรอบนี้
+
+ผลสุดท้ายหลังเพิ่ม boolean-version negative case: source ac4e1a40 ผ่าน 160 tests / 220 warnings ใน 4.10 วินาที; combined c6fb9ec7f58556effa54b8ffba0a502a0f39de7c ผ่าน 160 tests / 220 warnings ใน 4.07 วินาที Mypy ตรวจซ้ำผ่าน 280 files ผลเหล่านี้ไม่ใช่ model capability หรือ full suite ใหม่
