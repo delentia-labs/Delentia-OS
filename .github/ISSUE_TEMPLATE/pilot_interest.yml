@@ -1,0 +1,49 @@
+name: Pilot interest
+description: You would like to try Delentia on a real, bounded piece of your own work
+title: "[PILOT] "
+labels: ["pilot-interest"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Delentia OS is experimental and has no outside users yet. A pilot here means: one workflow of yours, run on your own machine, supervised by you, with written start and stop criteria agreed in advance (see `docs/demo/PILOT_ONE_WORKFLOW_TH.md`). There is no hosted service and nothing is promised beyond that.
+        Do not paste anything confidential into this issue.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What is the one workflow you would try?
+      description: What goes in, what should come out, how often, and what a mistake would cost.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: What would a wrong action cost?
+      options:
+        - Nothing important (read and summarise only)
+        - A file would need to be restored
+        - Money or a message to a customer could go out
+        - Something that cannot be undone
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Which model would you use?
+      options:
+        - A local model (Ollama)
+        - A hosted model I pay for
+        - I do not know yet
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who would approve risky steps?
+      options:
+        - Me
+        - Me and one other person
+        - A team with roles
+  - type: input
+    id: contact
+    attributes:
+      label: How should we reach you?
+      description: Leave blank to be answered on this issue.

@@ -1,0 +1,74 @@
+name: Install report
+description: Tell us how installing and the first run went, whether it worked or not
+title: "[INSTALL] "
+labels: ["install-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for trying Delentia OS. A report that says "it worked" is as useful as one that says "it failed": we are measuring how many people get from nothing to a working first run.
+        Please do not paste keys, tokens, passwords or personal paths. `delentia demo export-trace` removes the usual ones, but read it before you paste.
+  - type: dropdown
+    id: how
+    attributes:
+      label: How did you install it?
+      options:
+        - Windows installer (Delentia-Setup.exe)
+        - pip install delentia-os
+        - From a git checkout
+        - Docker
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version (output of `delentia --version`)
+      placeholder: "2.4.0"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system and Python version
+      placeholder: "Windows 11, Python 3.12 (or: installer, no Python)"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Did the first run work?
+      description: The first run is `delentia demo init --lang en` then `delentia demo run compare --scripted` (no model needed).
+      options:
+        - Yes, every check passed
+        - Partly (something failed or was unclear)
+        - No, I could not get it to run
+    validations:
+      required: true
+  - type: input
+    id: minutes
+    attributes:
+      label: Roughly how many minutes from "start" to the first passing run (or to giving up)?
+  - type: textarea
+    id: stuck
+    attributes:
+      label: Where did you get stuck, or what was unclear?
+      description: The step number, the command, and the last lines of output. "Nothing, it just worked" is a fine answer.
+  - type: dropdown
+    id: model
+    attributes:
+      label: Did you try it with a real model?
+      options:
+        - No, only the scripted demo
+        - Yes, a local model (Ollama)
+        - Yes, a hosted model (OpenRouter or another)
+  - type: textarea
+    id: model_notes
+    attributes:
+      label: If you used a real model, which one, and what happened?
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Sharing
+      options:
+        - label: I am happy for this report to be counted (without my name) in the project's public install statistics.

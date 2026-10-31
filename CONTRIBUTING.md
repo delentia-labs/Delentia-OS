@@ -1,6 +1,15 @@
-# Contributing to RCT Platform
+# Contributing to Delentia OS
 
-Thank you for your interest in contributing to the RCT Platform!
+Thank you for your interest in Delentia OS, an experimental, self-hosted AI agent runtime built around intent, governance and verifiable execution.
+
+## The most useful thing you can do right now
+
+You do not need to write code. **Install it, try the two-minute demo, and tell us where it went wrong.** The project has one author and no outside user yet, so a failed install is the most valuable thing we can learn about.
+
+1. `pip install delentia-os` (or the Windows installer from the [latest release](https://github.com/delentia-labs/Delentia-OS/releases/latest)), then `delentia demo init --lang en` and `delentia demo run compare --scripted`.
+2. Open an [**Install report**](https://github.com/delentia-labs/Delentia-OS/issues/new?template=install_report.yml) whether it worked or not. A report that says "worked, in 4 minutes" is as useful as one that says "stuck at step 3".
+3. Try to make the gate fail (see the [threat model](docs/security/THREAT_MODEL.md)) and report a bypass privately with [Report a vulnerability](https://github.com/delentia-labs/Delentia-OS/security/advisories/new).
+4. Read [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and tell us if a sentence there is too generous.
 
 ## Code of Conduct
 
@@ -47,7 +56,8 @@ git clone https://github.com/delentia-labs/delentia-os.git
 cd delentia-os
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
+pip install -r requirements.txt -r requirements-dev.txt
 
 # Run tests
 python -m pytest
@@ -69,7 +79,7 @@ By contributing, you agree that your contributions will be licensed under the [A
 
 ## How to Add a New Algorithm
 
-RCT Platform contains 41 reference algorithm implementations in `core/`. Here's how to add a new one.
+Delentia OS contains 41 reference algorithm implementations in `core/`. Here's how to add a new one.
 
 ### Step 1 — Decide the algorithm tier
 

@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a reproducible bug in the RCT Platform SDK
+about: Report a reproducible bug in Delentia OS
 title: "[BUG] "
 labels: bug
 assignees: ittirit720

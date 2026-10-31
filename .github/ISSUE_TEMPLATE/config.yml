@@ -6,6 +6,9 @@ contact_links:
   - name: Security Vulnerability
     url: https://github.com/delentia-labs/delentia-os/blob/main/SECURITY.md
     about: Do NOT open a public issue for security vulnerabilities. See SECURITY.md for responsible disclosure.
+  - name: Install report (worked or not)
+    url: https://github.com/delentia-labs/Delentia-OS/issues/new?template=install_report.yml
+    about: Tried the first run? Tell us how it went, even if it just worked.
   - name: Delentia Labs Website
     url: https://delentia.com
-    about: Enterprise features, commercial licensing, and production deployments.
+    about: About the project, design-partner pilots, and how to reach the author.
