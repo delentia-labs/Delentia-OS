@@ -2515,6 +2515,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 tools=[s["tool_name"] for s in result.get("steps", []) if s.get("tool_name")], tainted=getattr(self, "_episode_taint", None) is not None)
         except Exception:                      # a logging problem must never change an episode's outcome
             pass
+        # Round 106: the Delta Engine's durable, verified log joins the cycle's RECORD step (numbers and hashes only; agent_state_log.py). It never raises.
+        from rct_control_plane import agent_state_log
+        result["state_log"] = agent_state_log.record_for_loop(self, result, stopped_reason, verified_success)
         # Round 87 (found by the W08 whole-job test): an answer built from outside text was cached like any other and then served with NO model call on the next identical request, so one
         # run that a page had steered became the permanent answer. An episode that read outside text teaches no skill (Round 65) and now stores no warm answer either.
         read_outside_text = getattr(self, "_episode_taint", None) is not None and self._taint_enabled()

@@ -224,6 +224,11 @@ class VersionedDeltaLog:
         self._cache = (head, self._chain_hash_at(head), deepcopy(state))
         return state
 
+    def head_state(self) -> Dict[str, Any]:
+        """A copy of the state at the head (rebuilt and checked unless this process wrote it and nobody has written since). What a writer reads before it commits its change."""
+        with self._lock:
+            return self._head_state(self.head())
+
     def snapshot(self) -> int:
         """Write a snapshot of the current head (built from the checked history, so a damaged history is never frozen into a snapshot)."""
         with self._lock:

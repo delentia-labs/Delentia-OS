@@ -1,0 +1,25 @@
+{
+ "w2_cost": {
+  "episodes": 200,
+  "median_added_ms": 3.36,
+  "p95_added_ms": 43.75,
+  "median_episode_off_ms": 415.8,
+  "median_episode_on_ms": 419.1
+ },
+ "w3_size": {
+  "episodes": 1000,
+  "file_bytes": 1073152,
+  "bytes_per_episode": 1073.2,
+  "delta_plus_snapshot_bytes": 968725,
+  "write_ms_per_episode": 0.99,
+  "verify_seconds": 0.053,
+  "verify_ok": true,
+  "anchors": 40
+ },
+ "rules": {
+  "W2_median_le_15ms": true,
+  "W2_p95_le_40ms": false,
+  "W3_le_1500_bytes_per_episode": true,
+  "W3_verify_le_2s": true
+ }
+}

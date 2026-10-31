@@ -13,6 +13,7 @@ export const GOV_TH: Record<string, { name: string; fix: string }> = {
   memory_log: { name: "ประวัติความจำถูกเชื่อมเป็นโซ่และยึดไว้ในโซ่บันทึกตรวจสอบ", fix: "`delentia memory log verify` ชี้จุดที่โซ่ขาด; DELENTIA_MEMORY_ANCHOR_EVERY กำหนดความถี่ของการยึดปลายโซ่" },
   memory_sealing: { name: "ข้อความความจำของบุคคลลบได้ (ผนึกด้วยกุญแจของเขาเอง)", fix: "เลิกตั้ง DELENTIA_MEMORY_SEAL=off (เหตุการณ์ที่เขียนก่อนเปิดยังอ่านได้)" },
   episode_journal: { name: "episode ที่ถูกตัดกลางทางทำต่อได้ และขั้นที่ไม่รู้ผลจะไม่ถูกรันซ้ำเอง", fix: "เลิกตั้ง DELENTIA_EPISODE_JOURNAL=off" },
+  state_log: { name: "ประวัติสถานะของเอเจนต์แต่ละคนถูกเก็บเป็นเวอร์ชันที่ตรวจสอบได้ (Delta log)", fix: "เลิกตั้ง DELENTIA_STATE_LOG=off" },
   audit_text_sealed: { name: "คำของบุคคลถูกผนึกในโซ่บันทึกตรวจสอบ (จึงลบได้)", fix: "เลิกตั้ง DELENTIA_AUDIT_TEXT=plain (แถวที่เขียนก่อนเปิดยังอ่านได้)" },
   memory_recall_by_meaning: { name: "เรียกความจำตามความหมาย (โมเดลฝังข้อความในเครื่อง)", fix: "ตั้ง DELENTIA_MEMORY_EMBED=ollama (หรือ `auto`: เปิดเมื่อ Ollama ในเครื่องมีโมเดล) ข้อความไม่ออกจากเครื่องนี้ เว้นแต่ตั้ง DELENTIA_MEMORY_EMBED_ALLOW_REMOTE=1" },
   pinned_rules: { name: "กฎประจำที่บุคคลปักหมุดไว้ (แสดงให้ทุก episode เห็น)", fix: "delentia memory pin <id> (หรือ `memory add --pin`)" },

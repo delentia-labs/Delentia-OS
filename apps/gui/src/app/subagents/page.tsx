@@ -63,7 +63,7 @@ export default function SubagentsPage() {
             {runs.data?.runs.map((r) => (
               <Panel key={r.id} title={r.goal}
                 aside={r.timed_out ? <Badge tone="rust">{L("timed out", "หมดเวลา")}</Badge> : r.jitna?.response_verified ? <Badge tone="leaf">{L("verified", "ตรวจผ่าน")}</Badge> : <Badge tone="rust">{L("not verified", "ตรวจไม่ผ่าน")}</Badge>}>
-                {r.final_answer ? <p className="whitespace-pre-wrap break-words text-sm text-dl-text">{r.final_answer}</p> : null}
+                {r.final_answer ? <p className="desk-doc whitespace-pre-wrap break-words text-sm text-dl-text">{r.final_answer}</p> : null}
                 {r.error ? <p className="text-sm text-dl-rust">{r.error}</p> : null}
                 <div className="mt-3">
                   <Row label={L("Agent", "เอเจนต์")}>{r.agent_id}</Row>

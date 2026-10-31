@@ -1,6 +1,7 @@
 "use client";
 
 import { useLang } from "@/components/desk/i18n";
+import { serverText } from "@/lib/server-text-th";
 import { Badge, Code, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
 
@@ -22,8 +23,8 @@ export default function IdentityPage() {
         {d ? (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
             <div className="space-y-6">
-              <Panel title={L("How callers are identified", "วิธีระบุตัวผู้เรียก")} aside={<Badge tone={perPerson ? "leaf" : "amber"}>{d.mode}</Badge>}>
-                <Row label={L("Mode", "โหมด")}>{d.mode}</Row>
+              <Panel title={L("How callers are identified", "วิธีระบุตัวผู้เรียก")} aside={<Badge tone={perPerson ? "leaf" : "amber"}>{serverText(d.mode, lang === "th")}</Badge>}>
+                <Row label={L("Mode", "โหมด")}>{serverText(d.mode, lang === "th")}</Row>
                 <Row label={L("Shared token (DELENTIA_API_TOKEN)", "โทเคนร่วม (DELENTIA_API_TOKEN)")}>{d.shared_token_set ? L("set", "ตั้งแล้ว") : L("not set", "ยังไม่ได้ตั้ง")}</Row>
                 <Row label={L("Default role", "บทบาทเริ่มต้น")}>{d.default_role ?? L("no policy", "ไม่มีนโยบาย")}</Row>
                 <Row label={L("Tokens file", "ไฟล์โทเคน")}>{d.file}</Row>
@@ -47,7 +48,7 @@ export default function IdentityPage() {
               </Panel>
             </div>
             <Panel title={`${L("People", "ผู้ใช้")} (${d.users.length})`}>
-              {!d.users.length ? <p className="text-sm text-dl-muted">{L("No per-person tokens.", "ยังไม่มีโทเคนรายบุคคล")} {d.note}</p> : (
+              {!d.users.length ? <p className="text-sm text-dl-muted">{L("No per-person tokens.", "ยังไม่มีโทเคนรายบุคคล")} {serverText(d.note, lang === "th")}</p> : (
                 <div tabIndex={0} className="overflow-x-auto">
                   <table className="w-full min-w-[420px] text-left text-[13px]">
                     <thead className="desk-mono text-[11px] text-dl-muted">

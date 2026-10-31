@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { serverText } from "@/lib/server-text-th";
 import { Badge, Button, Code, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
 import { desk, type EndpointDecl, type ModelInfo, type ModelSetup, type PolicyVerdict, type ProbeResult, type ProviderPreset } from "@/lib/desk-api";
 
@@ -10,10 +11,10 @@ type Mode = "ollama" | "openrouter" | "endpoint";
 
 const field = "desk-focus desk-mono mt-1 w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50 disabled:opacity-50";
 
-function price(m: ModelInfo) {
+function price(m: ModelInfo, th = false) {
   const p = m.prompt_price_per_mtok ?? 0;
   const c = m.completion_price_per_mtok ?? 0;
-  return p === 0 && c === 0 ? "free" : `$${p.toFixed(2)} / $${c.toFixed(2)} per M tokens`;
+  return p === 0 && c === 0 ? (th ? "ฟรี" : "free") : `$${p.toFixed(2)} / $${c.toFixed(2)} ${th ? "ต่อล้านโทเค็น" : "per M tokens"}`;
 }
 
 function Verdict({ v, lang }: { v: PolicyVerdict | null | undefined; lang: string }) {
@@ -31,7 +32,7 @@ function Verdict({ v, lang }: { v: PolicyVerdict | null | undefined; lang: strin
   return (
     <p className={`rounded border px-3 py-2 text-[13px] leading-relaxed ${v.allowed ? "border-dl-leaf/50 text-dl-leaf" : "border-dl-rust/60 text-dl-rust"}`}>
       {v.allowed ? (lang === "th" ? "นโยบายอนุญาตปลายทางนี้: " : "The policy allows this endpoint: ") : (lang === "th" ? "นโยบายจะบล็อกปลายทางนี้: " : "The policy would block this endpoint: ")}
-      <span className="text-dl-muted">{v.reason}</span>
+      <span className="text-dl-muted">{serverText(v.reason, lang === "th")}</span>
     </p>
   );
 }
@@ -89,10 +90,10 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
           <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
             <div className="min-w-0">
               <p className="desk-mono truncate text-[13px] text-dl-text">{m.id}</p>
-              <p className="desk-mono text-[11px] text-dl-muted">{price(m)}{m.context_length ? ` · ${m.context_length.toLocaleString()} ctx` : ""}</p>
+              <p className="desk-mono text-[11px] text-dl-muted">{price(m, lang === "th")}{m.context_length ? ` · ${m.context_length.toLocaleString()} ${lang === "th" ? "โทเค็นบริบท" : "ctx"}` : ""}</p>
             </div>
             <div className="flex items-center gap-2">
-              {m.supports_tools ? <Badge tone="fern">tools</Badge> : null}
+              {m.supports_tools ? <Badge tone="fern">{lang === "th" ? "ใช้เครื่องมือได้" : "tools"}</Badge> : null}
               {sel && sel.model === m.id && sel.provider === provider ? <Badge tone="leaf">{lang === "th" ? "ใช้อยู่" : "in use"}</Badge> : (
                 <Button onClick={() => choose(m.id)} disabled={saving !== null}>{saving === m.id ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : (lang === "th" ? "ใช้โมเดลนี้" : "Use this model")}</Button>
               )}

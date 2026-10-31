@@ -458,8 +458,8 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     controls: List[Dict[str, Any]] = []
     gaps: List[Dict[str, str]] = []
 
-    def add(cid: str, name: str, on: bool, detail: str, fix: str, severity: str = "warn", always: bool = False, applicable: bool = True) -> None:
-        controls.append({"id": cid, "name": name, "on": on, "detail": detail, "how_to_change": fix, "always_on": always, "applicable": applicable})
+    def add(cid: str, name: str, on: bool, detail: str, fix: str, severity: str = "warn", always: bool = False, applicable: bool = True, detail_th: str = "") -> None:
+        controls.append({"id": cid, "name": name, "on": on, "detail": detail, "detail_th": detail_th, "how_to_change": fix, "always_on": always, "applicable": applicable})
         if not on and applicable:
             gaps.append({"control": cid, "severity": severity, "text": f"{name}: {detail}", "fix": fix})
 
@@ -473,43 +473,58 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         (f"{len(policy.rules)} rule(s), digest {policy.digest()[:12]}" if policy is not None and policy_source == "file" else
          f"no policy file of your own: the default starter '{fdia_policy.default_template_name()}' is judging tool calls (digest {policy.digest()[:12]}); write your own to change it" if policy is not None else
          policy_problem or "no policy file: only the built-in floor applies (risky tools need F >= 0.5; repo writes need a signature)"),
-        "Desk > FDIA policy (start from 'argument-aware': harmless inspection runs, everything else asks), or `delentia fdia template argaware`", "bad" if policy_problem else "warn")
+        "Desk > FDIA policy (start from 'argument-aware': harmless inspection runs, everything else asks), or `delentia fdia template argaware`", "bad" if policy_problem else "warn",
+        detail_th=(f"{len(policy.rules)} กฎ, digest {policy.digest()[:12]}" if policy is not None and policy_source == "file" else
+                   f"ยังไม่มีไฟล์นโยบายของคุณเอง: ตอนนี้ใช้แบบเริ่มต้น '{fdia_policy.default_template_name()}' ตัดสินการเรียกเครื่องมือ (digest {policy.digest()[:12]}); เขียนนโยบายของคุณเองเพื่อเปลี่ยน" if policy is not None else
+                   "ไฟล์นโยบายอ่านไม่ได้หรือไม่ถูกต้อง จึงปฏิเสธทุกการเรียกเครื่องมือ (ปิดไว้ก่อนเพื่อความปลอดภัย)" if policy_problem else
+                   "ไม่มีไฟล์นโยบาย: ใช้เฉพาะเกณฑ์ขั้นต่ำที่มากับระบบ (เครื่องมือเสี่ยงต้อง F >= 0.5; การเขียนไฟล์ใน repo ต้องมีลายเซ็น)"))
     # signatures
     keys, key_roles, key_problem = _approvers()
     add("approver_keys", "Approver keys (who may sign)", bool(keys),
         (f"{len(keys)} key(s), roles: {', '.join(sorted({r for r in key_roles.values() if r})) or 'none named'}" if keys
          else key_problem or "no approver key is configured, so nothing that needs a human can ever be approved (it fails closed, but also never runs)"),
-        "`delentia approvals keygen` on YOUR device, then add the public key to approvers.json", "bad")
+        "`delentia approvals keygen` on YOUR device, then add the public key to approvers.json", "bad",
+        detail_th=(f"{len(keys)} กุญแจ, บทบาท: {', '.join(sorted({r for r in key_roles.values() if r})) or 'ไม่ได้ระบุ'}" if keys
+                   else key_problem or "ยังไม่ได้ตั้งกุญแจผู้อนุมัติ จึงไม่มีทางอนุมัติสิ่งที่ต้องให้คนตัดสิน (ระบบปิดไว้ก่อน แต่ก็ไม่มีวันรัน)"))
     if policy is not None and keys:
         held = set(key_roles.values())
         needed = {role for rule in policy.rules for role in rule.human_approver_role}
         missing = sorted(needed - held)
         add("approver_roles", "Every role the policy asks for is held by a key", not missing,
             "all roles covered" if not missing else f"the policy asks for {', '.join(missing)} but no approver key holds it, so those actions can never be approved",
-            "add a key with that role to approvers.json, or change the rule", "bad")
+            "add a key with that role to approvers.json, or change the rule", "bad",
+            detail_th="ทุกบทบาทมีกุญแจครบ" if not missing else f"นโยบายต้องการบทบาท {', '.join(missing)} แต่ไม่มีกุญแจใดถือบทบาทนี้ การกระทำเหล่านั้นจึงไม่มีวันได้รับอนุมัติ")
     # identity
     from rct_control_plane import api_tokens
     per_user = api_tokens.per_user_mode()
     add("per_person_tokens", "A token per person (identity comes from the server)", per_user,
         "per-person tokens are on" if per_user else "one shared token or none: every caller is the same identity, so roles in the policy are labels, not controls",
-        "`delentia tokens create <name>`")
+        "`delentia tokens create <name>`",
+        detail_th="เปิดใช้โทเคนรายบุคคลแล้ว" if per_user else "ใช้โทเคนร่วมหรือไม่มีโทเคน: ทุกคนที่เรียกเป็นตัวตนเดียวกัน บทบาทในนโยบายจึงเป็นแค่ป้ายชื่อ ไม่ใช่การควบคุม")
     # audit
     signing = bool(os.getenv(audit_chain.SIGNING_KEY_ENV))
     add("audit_signed", "Audit chain signed on this host (A1)", signing, "every row is hash-chained" + (" and Ed25519-signed" if signing else " but NOT signed"),
-        "`delentia audit-chain keygen`, then set DELENTIA_AUDIT_SIGNING_KEY")
+        "`delentia audit-chain keygen`, then set DELENTIA_AUDIT_SIGNING_KEY",
+        detail_th="ทุกแถวถูกผูกเป็นห่วงโซ่แฮช" + (" และเซ็นด้วย Ed25519" if signing else " แต่ยังไม่ได้เซ็น"))
     add("audit_notary", "Separate notary process (A2)", bool(os.getenv(NOTARY_URL_ENV)),
         "tool calls are recorded by another process before they run" if os.getenv(NOTARY_URL_ENV) else "off: a compromised agent process could rewrite its own history",
-        "run `delentia notary serve` as another OS user and set DELENTIA_NOTARY_URL")
+        "run `delentia notary serve` as another OS user and set DELENTIA_NOTARY_URL",
+        detail_th="การเรียกเครื่องมือถูกบันทึกโดยอีกโปรเซสก่อนรัน" if os.getenv(NOTARY_URL_ENV) else "ปิดอยู่: โปรเซสของเอเจนต์ที่ถูกยึดอาจเขียนประวัติของตัวเองใหม่ได้")
     from rct_control_plane import audit_witness
     witness = audit_witness.status(conn)
     add("audit_anchor", "Chain head held by an outside witness (A3)", bool(witness["tamper_evident_against_host_compromise"]),
         witness["plain"] if witness["configured"] else "off: " + witness["plain"],
-        f"set {WITNESSES_ENV_NAME} (an http witness and a git witness are better than one), then `delentia audit-chain anchor-all`")
+        f"set {WITNESSES_ENV_NAME} (an http witness and a git witness are better than one), then `delentia audit-chain anchor-all`",
+        detail_th=("หัวห่วงโซ่ถูกเก็บไว้กับพยานภายนอก" if witness["tamper_evident_against_host_compromise"] else
+                   "ตั้งพยานแล้ว แต่ยังไม่มีพยานอิสระที่ถือหัวห่วงโซ่ล่าสุด" if witness["configured"] else
+                   "ปิดอยู่: ไม่ได้ตั้งพยานภายนอก หากผู้ที่มีสิทธิ์ root บนเครื่องเขียนบันทึกทั้งหมดใหม่ ก็จะไม่มีใครสังเกตเห็น"))
     if witness["configured"]:
         add("audit_second_witness", "A second, independent witness", witness["independent_witnesses"] >= 2,
             f"{witness['independent_witnesses']} witness(es) hold a recent head" if witness["independent_witnesses"] >= 2 else
             "one witness is a single party to trust: with a second one an attacker must defeat both",
-            f"add a git witness to {WITNESSES_ENV_NAME}", severity="info")
+            f"add a git witness to {WITNESSES_ENV_NAME}", severity="info",
+            detail_th=f"พยาน {witness['independent_witnesses']} ราย ถือหัวห่วงโซ่ล่าสุด" if witness["independent_witnesses"] >= 2 else
+            "พยานรายเดียวคือฝ่ายเดียวที่ต้องเชื่อใจ: ถ้ามีพยานคนที่สอง ผู้โจมตีต้องเอาชนะทั้งสอง")
     # Round 67: the memory event log, its anchors in the audit chain, and sealing (what makes erasure possible)
     from rct_control_plane import memory_erasure, memory_eventlog
 
@@ -531,13 +546,18 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         add("memory_log", "Memory history is chained and anchored in the audit chain", bool(anchor_report.get("ok")),
             (f"{anchor_report.get('anchors', 0)} anchor(s) match the log; {anchor_report.get('unanchored_events', 0)} event(s) since the last one are not yet anchored" if anchor_report.get("ok")
              else "; ".join(anchor_report.get("problems", [])[:2]) or "an anchored head no longer matches the log"),
-            "`delentia memory log verify` names the broken link; DELENTIA_MEMORY_ANCHOR_EVERY sets how often a head is anchored", "bad")
+            "`delentia memory log verify` names the broken link; DELENTIA_MEMORY_ANCHOR_EVERY sets how often a head is anchored", "bad",
+            detail_th=(f"{anchor_report.get('anchors', 0)} จุดยึดตรงกับบันทึก; {anchor_report.get('unanchored_events', 0)} เหตุการณ์หลังจุดยึดล่าสุดยังไม่ถูกยึด" if anchor_report.get("ok")
+                       else "หัวที่เคยยึดไว้ไม่ตรงกับบันทึกอีกต่อไป (รายละเอียดอยู่ในข้อความภาษาอังกฤษ)"))
     else:
         add("memory_log", "Memory history is chained and anchored in the audit chain", False, "the memory event log is off: revocation is a column, not a recorded fact, and nothing can be replayed",
-            "unset DELENTIA_MEMORY_EVENTLOG=off")
+            "unset DELENTIA_MEMORY_EVENTLOG=off",
+            detail_th="บันทึกเหตุการณ์ของความจำปิดอยู่: การเพิกถอนเป็นแค่คอลัมน์ ไม่ใช่ข้อเท็จจริงที่ถูกบันทึก และเล่นย้อนไม่ได้")
     add("memory_sealing", "A person's memory text can be erased (sealed with their own key)", bool(log_on and memory_erasure.sealing_enabled()),
         "event payloads and checkpoints are sealed per person; `delentia memory erase` destroys the key with an approver's signature" if log_on and memory_erasure.sealing_enabled()
-        else "off: the log holds readable text, so a person's data can be revoked but not erased", "unset DELENTIA_MEMORY_SEAL=off (events written before it was on stay readable)")
+        else "off: the log holds readable text, so a person's data can be revoked but not erased", "unset DELENTIA_MEMORY_SEAL=off (events written before it was on stay readable)",
+        detail_th=("เหตุการณ์และ checkpoint ถูกปิดผนึกด้วยกุญแจของแต่ละคน; `delentia memory erase` ทำลายกุญแจโดยต้องมีลายเซ็นผู้อนุมัติ" if log_on and memory_erasure.sealing_enabled()
+                   else "ปิดอยู่: บันทึกเก็บข้อความแบบอ่านได้ จึงเพิกถอนข้อมูลของบุคคลได้แต่ลบจริงไม่ได้"))
     from rct_control_plane import episode_journal
     journal_on = episode_journal.enabled()
     unfinished = 0
@@ -548,11 +568,22 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
             unfinished = 0
     add("episode_journal", "An episode that is cut off can be continued, and a step whose outcome is unknown is never rerun on its own", journal_on,
         (f"on: every step's intent is written before the tool runs; {unfinished} episode(s) have begun and not ended (a running one counts; `delentia episodes list` shows which are really interrupted)" if journal_on
-         else "off: a crash loses what an episode had done and a restart can repeat a side effect"), "unset DELENTIA_EPISODE_JOURNAL=off")
+         else "off: a crash loses what an episode had done and a restart can repeat a side effect"), "unset DELENTIA_EPISODE_JOURNAL=off",
+        detail_th=(f"เปิด: เจตนาของทุกขั้นถูกเขียนก่อนรันเครื่องมือ; มี {unfinished} episode ที่เริ่มแล้วยังไม่จบ (ตัวที่กำลังรันก็นับ; `delentia episodes list` บอกว่าตัวไหนถูกขัดจริง)" if journal_on
+                   else "ปิด: ถ้าล่มจะเสียสิ่งที่ episode ทำไปแล้ว และการรีสตาร์ทอาจทำผลข้างเคียงซ้ำ"))
+    from rct_control_plane import agent_state_log
+    state_on = agent_state_log.enabled()
+    add("state_log", "A person's agent history is kept as verified versions (the Delta log)", state_on,
+        (f"on: one version per episode (numbers and hashes only, no text); every {agent_state_log.anchor_every() or 'no'}th head is written into the audit chain; `delentia state-log verify --namespace <person>` replays and checks it" if state_on
+         else "off: nothing keeps the history of what the agent was at each episode; a counter in a table can be edited without a trace"), "unset DELENTIA_STATE_LOG=off",
+        detail_th=(f"เปิด: หนึ่งเวอร์ชันต่อหนึ่ง episode (เก็บเฉพาะตัวเลขและแฮช ไม่มีข้อความ); ทุกเวอร์ชันที่ {agent_state_log.anchor_every() or 'ไม่มี'} จะเขียนหัวบันทึกลงห่วงโซ่ตรวจสอบ; `delentia state-log verify --namespace <คน>` เล่นย้อนและตรวจ" if state_on
+                   else "ปิด: ไม่มีอะไรเก็บประวัติว่าเอเจนต์เป็นอย่างไรในแต่ละ episode ตัวนับในตารางแก้ได้โดยไม่เหลือร่องรอย"))
     from rct_control_plane import audit_text
     add("audit_text_sealed", "A person's words are sealed in the audit chain (so they can be erased)", audit_text.sealing_on(),
         "the goal, the model's reasoning and tool arguments are written under the person's own key; the chain holds ciphertext and hashes" if audit_text.sealing_on()
-        else "off: those words sit in the chain in the clear and a person's erasure cannot remove them", "unset DELENTIA_AUDIT_TEXT=plain (rows written before it was on stay readable)")
+        else "off: those words sit in the chain in the clear and a person's erasure cannot remove them", "unset DELENTIA_AUDIT_TEXT=plain (rows written before it was on stay readable)",
+        detail_th=("เป้าหมาย เหตุผลของโมเดล และอาร์กิวเมนต์ของเครื่องมือถูกเขียนภายใต้กุญแจของแต่ละคน; ห่วงโซ่เก็บแค่ข้อมูลเข้ารหัสและแฮช" if audit_text.sealing_on()
+                   else "ปิด: ถ้อยคำเหล่านั้นอยู่ในห่วงโซ่แบบอ่านได้ และการลบข้อมูลของบุคคลลบมันไม่ได้"))
     from rct_control_plane import memory_embeddings, memory_llm
     embed_on = memory_embeddings.enabled()
     cal = memory_embeddings.calibration() if embed_on else None
@@ -560,7 +591,10 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         (f"on: model {memory_embeddings.model()}, {'calibrated' if cal else 'NOT calibrated (it orders results but adds nothing to D; run `delentia memory calibrate --write`)'}"
          + ("; store-time questions on" if memory_llm.questions_enabled() else "") + ("; query expansion on" if memory_llm.expansion_enabled() else "")) if embed_on
         else "off: memories are found by shared words (a paraphrase is missed: 7 of 30 in the Round 68 benchmark against 24 with embeddings; Thai needs a multilingual model)",
-        "set DELENTIA_MEMORY_EMBED=ollama (or `auto`: on only when the local Ollama has the model); the text never leaves this machine unless DELENTIA_MEMORY_EMBED_ALLOW_REMOTE=1")
+        "set DELENTIA_MEMORY_EMBED=ollama (or `auto`: on only when the local Ollama has the model); the text never leaves this machine unless DELENTIA_MEMORY_EMBED_ALLOW_REMOTE=1",
+        detail_th=((f"เปิด: ใช้โมเดล {memory_embeddings.model()}, {'ปรับเทียบแล้ว' if cal else 'ยังไม่ได้ปรับเทียบ (จัดลำดับได้แต่ไม่เพิ่มค่าให้ D; รัน `delentia memory calibrate --write`)'}"
+                    + ("; เปิดคำถามตอนบันทึก" if memory_llm.questions_enabled() else "") + ("; เปิดการขยายคำค้น" if memory_llm.expansion_enabled() else "")) if embed_on
+                   else "ปิด: หาความจำจากคำที่ตรงกัน (ถ้าเปลี่ยนคำพูดจะหาไม่เจอ: 7 จาก 30 ในการวัดรอบ 68 เทียบกับ 24 เมื่อใช้ embedding; ภาษาไทยต้องใช้โมเดลหลายภาษา)"))
     try:
         pinned_rows = conn.execute("SELECT namespace, COUNT(*) FROM memories WHERE pinned_at IS NOT NULL AND revoked_at IS NULL GROUP BY namespace").fetchall()
     except sqlite3.Error:
@@ -569,7 +603,9 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
     add("pinned_rules", "Standing rules a person pinned (shown to every episode)", pinned_total > 0,
         f"{pinned_total} rule(s) pinned for {len(pinned_rows)} namespace(s); at most 5 per person are shown to an episode; a rule is the person's own words, never a tool permission" if pinned_total
         else "none pinned: a rule the person told the agent is found only when the goal resembles it (the best model showed 29 of 40 rules that way)",
-        "delentia memory pin <id>  (or `memory add --pin`)", severity="info", applicable=False)
+        "delentia memory pin <id>  (or `memory add --pin`)", severity="info", applicable=False,
+        detail_th=(f"ปักหมุด {pinned_total} กฎ ใน {len(pinned_rows)} namespace; แสดงให้ episode สูงสุด 5 กฎต่อคน; กฎคือถ้อยคำของเจ้าตัว ไม่ใช่สิทธิ์ใช้เครื่องมือ" if pinned_total
+                   else "ไม่มีกฎที่ปักหมุด: สิ่งที่คนบอกเอเจนต์ไว้จะถูกพบก็ต่อเมื่อเป้าหมายคล้ายกับมัน (โมเดลที่ดีที่สุดแสดงได้ 29 จาก 40 กฎ)"))
     from rct_control_plane import credential_pool
     pool_state = credential_pool.status()
     pooled = pool_state["providers"]
@@ -578,59 +614,73 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         (pool_state["error"] if pool_state["error"] else
          ("; ".join(f"{p}: {len(spec['keys'])} key name(s), {spec['strategy']}" for p, spec in pooled.items()) + (f"; not ready in this process: {', '.join(bad_keys)}" if bad_keys else ""))
          if pooled else "none: each provider has one key, and when it is revoked or out of credit the agent stops (a fallback model can still take over)"),
-        "delentia credentials set openrouter KEY_NAME_1 KEY_NAME_2   (names of environment variables, never keys)", severity="info", applicable=False)
+        "delentia credentials set openrouter KEY_NAME_1 KEY_NAME_2   (names of environment variables, never keys)", severity="info", applicable=False,
+        detail_th=(pool_state["error"] if pool_state["error"] else
+                   ("; ".join(f"{p}: {len(spec['keys'])} ชื่อกุญแจ, {spec['strategy']}" for p, spec in pooled.items()) + (f"; ยังไม่พร้อมในโปรเซสนี้: {', '.join(bad_keys)}" if bad_keys else ""))
+                   if pooled else "ไม่มี: แต่ละผู้ให้บริการมีกุญแจเดียว ถ้าถูกเพิกถอนหรือเครดิตหมดเอเจนต์จะหยุด (โมเดลสำรองยังรับช่วงได้)"))
     # sovereignty
     info = residency.describe()
     add("sovereignty", "Data-residency policy", bool(info.get("enforced")),
         (f"home region {(info.get('policy') or {}).get('home_region')}" if info.get("enforced") else "off: model calls are not checked for where the data goes"),
-        "Desk > Sovereignty, or `delentia sovereignty set`")
+        "Desk > Sovereignty, or `delentia sovereignty set`",
+        detail_th=(f"ภูมิภาคบ้าน {(info.get('policy') or {}).get('home_region')}" if info.get("enforced") else "ปิด: การเรียกโมเดลไม่ถูกตรวจว่าข้อมูลไปที่ไหน"))
     # screening
     mode = (os.environ.get(TOOL_RESULT_SCREEN_ENV) or "block").strip().lower()
-    add("injection_screen", "Injection screen on what tools bring back", mode != "off", f"mode: {mode}", f"set {TOOL_RESULT_SCREEN_ENV}=block", "bad", always=False)
+    add("injection_screen", "Injection screen on what tools bring back", mode != "off", f"mode: {mode}", f"set {TOOL_RESULT_SCREEN_ENV}=block", "bad", always=False, detail_th=f"โหมด: {mode}")
     second = injection_classifier.mode()
     add("second_opinion", "Small-model second opinion on suspect text", second != "off", f"mode: {second}",
-        "`delentia model set <model> --profile classifier`, then DELENTIA_CORD_SECOND_OPINION=flag|block", "info")
+        "`delentia model set <model> --profile classifier`, then DELENTIA_CORD_SECOND_OPINION=flag|block", "info", detail_th=f"โหมด: {second}")
     # jury
     jury_path = signedai_jury.config_path()
     needs_jury = bool(policy is not None and (policy.jury_by_risk or any(rule.jury_tier for rule in policy.rules)))
     add("jury", "Multi-model jury", jury_path.exists(),
         ("configured" if jury_path.exists() else "not used: the owner's policy asks for no jury" if not needs_jury else "the policy asks for a jury but no jury file exists, so those actions are refused"),
-        "write ~/.delentia/jury.json (members name environment variables, never keys; see `delentia jury run --help`)", "bad", applicable=needs_jury or jury_path.exists())
+        "write ~/.delentia/jury.json (members name environment variables, never keys; see `delentia jury run --help`)", "bad", applicable=needs_jury or jury_path.exists(),
+        detail_th=("ตั้งค่าแล้ว" if jury_path.exists() else "ไม่ได้ใช้: นโยบายของเจ้าของไม่ต้องการคณะลูกขุน" if not needs_jury else "นโยบายต้องการคณะลูกขุนแต่ไม่มีไฟล์ จึงปฏิเสธการกระทำเหล่านั้น"))
     # policy changes need a signature
     signed_changes = per_user or os.environ.get("DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE", "").strip().lower() in ("1", "true", "yes")
     add("policy_change_signed", "Changing the policy needs a signature", signed_changes,
         "a policy change waits for an approver's signature" if signed_changes else "anyone who can reach the API can change the owner's policy",
-        "DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE=1 (automatic once per-person tokens exist)")
+        "DELENTIA_POLICY_CHANGE_REQUIRES_SIGNATURE=1 (automatic once per-person tokens exist)",
+        detail_th="การเปลี่ยนนโยบายต้องรอลายเซ็นผู้อนุมัติ" if signed_changes else "ใครก็ตามที่เข้าถึง API ได้ก็เปลี่ยนนโยบายของเจ้าของได้")
     # Round 58-61
     from rct_control_plane.governed_autonomous_loop import TAINT_ENV
     taint_mode = (os.environ.get(TAINT_ENV) or "on").strip().lower()
     add("taint_gate", "Taint gate: after outside text, side effects need a signature", taint_mode not in ("off", "0", "false", "no"),
         "on: once an episode has read a page, file or search result, nothing that changes or sends anything runs without a person" if taint_mode not in ("off", "0", "false", "no")
-        else "OFF: a hijacked model could act on instructions hidden in text it read", f"unset {TAINT_ENV} (it is on by default)", "bad")
+        else "OFF: a hijacked model could act on instructions hidden in text it read", f"unset {TAINT_ENV} (it is on by default)", "bad",
+        detail_th=("เปิด: เมื่อ episode อ่านหน้าเว็บ ไฟล์ หรือผลค้นหาแล้ว สิ่งที่เปลี่ยนหรือส่งอะไรออกไปจะไม่รันถ้าไม่มีคนอนุมัติ" if taint_mode not in ("off", "0", "false", "no")
+                   else "ปิดอยู่: โมเดลที่ถูกชักจูงอาจทำตามคำสั่งที่ซ่อนอยู่ในข้อความที่อ่าน"))
     from rct_control_plane.governed_autonomous_loop import GovernedAutonomousLoop
     untrusted = GovernedAutonomousLoop._untrusted_prefixes()
     add("untrusted_folders", "Folders that hold other people's documents count as outside text", bool(untrusted),
         ("reading a file under " + ", ".join(untrusted) + " taints the episode like a web page") if untrusted
         else "switched off (DELENTIA_UNTRUSTED_PATHS=none): a file in the workspace is treated as the owner's own text, so a note hidden in a vendor's quote is not marked as foreign",
-        "DELENTIA_UNTRUSTED_PATHS=quotes/,inbox/ (comma-separated folders relative to the workspace; unset = inbox/, downloads/, attachments/, incoming/; none = off)", "info")
+        "DELENTIA_UNTRUSTED_PATHS=quotes/,inbox/ (comma-separated folders relative to the workspace; unset = inbox/, downloads/, attachments/, incoming/; none = off)", "info",
+        detail_th=(("การอ่านไฟล์ใต้ " + ", ".join(untrusted) + " ถือว่า episode ปนเปื้อนเหมือนอ่านหน้าเว็บ") if untrusted
+                   else "ปิดอยู่ (DELENTIA_UNTRUSTED_PATHS=none): ไฟล์ใน workspace ถูกมองเป็นข้อความของเจ้าของเอง บันทึกที่ซ่อนในใบเสนอราคาจึงไม่ถูกทำเครื่องหมายว่าเป็นของคนอื่น"))
     from rct_control_plane import envelope
     lim = envelope.limits()
     has_daily = any(lim.get(k) for k in ("daily_usd", "daily_tokens", "user_daily_usd", "user_daily_tokens"))
     add("spending_limits", "A daily spending or token limit", has_daily,
         "a daily limit is set" if has_daily else "none: nothing but the per-episode budget stops a busy day from costing more than you expect",
-        "`delentia limits` or DELENTIA_DAILY_BUDGET_USD / DELENTIA_DAILY_MAX_TOKENS")
+        "`delentia limits` or DELENTIA_DAILY_BUDGET_USD / DELENTIA_DAILY_MAX_TOKENS",
+        detail_th="ตั้งขีดจำกัดรายวันแล้ว" if has_daily else "ไม่มี: ไม่มีอะไรนอกจากงบต่อ episode ที่กันไม่ให้วันที่ยุ่งมากค่าใช้จ่ายเกินที่คิด")
     from rct_control_plane import approvals as _approvals
     decision_ttl, execution_ttl = _approvals.decision_ttl_seconds(), _approvals.execution_ttl_seconds()
     windows_on = decision_ttl > 0 and execution_ttl > 0
     add("approval_windows", "An approval has a time limit", windows_on,
         f"a request nobody decides within {decision_ttl / 3600:.0f} h expires, and an approval not used within {execution_ttl / 3600:.0f} h never runs (rows stay on disk)" if windows_on
         else "at least one window is switched off (0): an old approval can still be used long after the situation it was given for has changed",
-        f"{_approvals.DECISION_TTL_ENV} / {_approvals.EXECUTION_TTL_ENV} (seconds; 0 = no limit)", "info")
+        f"{_approvals.DECISION_TTL_ENV} / {_approvals.EXECUTION_TTL_ENV} (seconds; 0 = no limit)", "info",
+        detail_th=(f"คำขอที่ไม่มีใครตัดสินภายใน {decision_ttl / 3600:.0f} ชม. จะหมดอายุ และการอนุมัติที่ไม่ได้ใช้ภายใน {execution_ttl / 3600:.0f} ชม. จะไม่รัน (แถวยังอยู่ในดิสก์)" if windows_on
+                   else "ปิดช่วงเวลาอย่างน้อยหนึ่งช่วง (0): การอนุมัติเก่ายังใช้ได้นานหลังสถานการณ์ที่อนุมัติไว้เปลี่ยนไปแล้ว"))
     from rct_control_plane import verify_grounding
     verify_on = (os.environ.get(verify_grounding.ENV) or "on").strip().lower() not in ("off", "0", "false")
     add("verify_grounding", "VERIFY checks the answer against the evidence", verify_on,
         "an answer with an invented fact, an action no tool did, or success after an error is never learned as a skill" if verify_on else "off: only word overlap decides what is learned",
-        f"unset {verify_grounding.ENV}", "info")
+        f"unset {verify_grounding.ENV}", "info",
+        detail_th="คำตอบที่มีข้อเท็จจริงที่แต่งขึ้น การกระทำที่ไม่มีเครื่องมือทำ หรือการอ้างสำเร็จหลังเกิดข้อผิดพลาด จะไม่ถูกเรียนรู้เป็นทักษะ" if verify_on else "ปิด: ใช้แค่คำที่ซ้ำกันตัดสินว่าอะไรถูกเรียนรู้")
     from rct_control_plane import hooks as hooks_module
     try:
         registry = hooks_module.HookRegistry(_PersistenceShim(conn))
@@ -640,18 +690,23 @@ def _controls(conn: sqlite3.Connection) -> Tuple[List[Dict[str, Any]], List[Dict
         listed, active_hooks = [], []
     add("hooks", "Hooks (signed code that can only tighten)", bool(active_hooks),
         (f"{len(active_hooks)} active: " + ", ".join(h["name"] for h in active_hooks)) if active_hooks else "none active", "`delentia hooks propose` (every hook needs a signature)",
-        "info", applicable=bool(listed))
+        "info", applicable=bool(listed),
+        detail_th=(f"ใช้งานอยู่ {len(active_hooks)}: " + ", ".join(h["name"] for h in active_hooks)) if active_hooks else "ไม่มีที่ใช้งาน")
     from rct_control_plane import memory_nudge
     add("memory_nudge", "Memory suggestions (asks before remembering)", memory_nudge.enabled(),
         "on: what a person says about themselves is offered back; nothing is stored until they say yes" if memory_nudge.enabled() else "off",
-        f"set {memory_nudge.ENV}=1 (`delentia serve` does)", "info")
+        f"set {memory_nudge.ENV}=1 (`delentia serve` does)", "info",
+        detail_th="เปิด: สิ่งที่คนพูดถึงตัวเองจะถูกเสนอกลับมา ไม่มีอะไรถูกเก็บจนกว่าเขาจะตอบรับ" if memory_nudge.enabled() else "ปิด")
     owner_tools_open = (os.environ.get("DELENTIA_OWNER_TOOLS_FOR_CHANNELS") or "").strip().lower() in ("1", "true", "yes")
     add("owner_only_tools", "Chat people cannot read other people's requests through the agent", not owner_tools_open,
         "the audit-log, intents and reminder-firing tools are refused on chat channels and the HTTP agent API" if not owner_tools_open else "OFF: DELENTIA_OWNER_TOOLS_FOR_CHANNELS lets them through (a single-user host only)",
-        "unset DELENTIA_OWNER_TOOLS_FOR_CHANNELS", "bad")
-    add("secret_files", "The agent cannot read credential files", True, "always on: .env, keys, credentials and the runtime's own databases are refused by the read and search tools and @file", "", always=True)
-    add("cord_goal_screen", "CORD screens every goal before the model sees it", True, "always on in the governed loop", "", always=True)
-    add("fdia_floor", "FDIA gate with the built-in floor", True, "always on: a policy can tighten it, never loosen it", "", always=True)
+        "unset DELENTIA_OWNER_TOOLS_FOR_CHANNELS", "bad",
+        detail_th="เครื่องมือบันทึกตรวจสอบ เจตนา และการเตือนถูกปฏิเสธบนช่องแชตและ API ของเอเจนต์" if not owner_tools_open
+        else "ปิดอยู่: DELENTIA_OWNER_TOOLS_FOR_CHANNELS ปล่อยให้ผ่าน (ใช้ได้เฉพาะโฮสต์ที่มีผู้ใช้คนเดียว)")
+    add("secret_files", "The agent cannot read credential files", True, "always on: .env, keys, credentials and the runtime's own databases are refused by the read and search tools and @file", "", always=True,
+        detail_th="เปิดเสมอ: เครื่องมืออ่าน ค้นหา และ @file ปฏิเสธ .env กุญแจ ข้อมูลรับรอง และฐานข้อมูลของระบบเอง")
+    add("cord_goal_screen", "CORD screens every goal before the model sees it", True, "always on in the governed loop", "", always=True, detail_th="เปิดเสมอในลูปที่มีธรรมาภิบาล")
+    add("fdia_floor", "FDIA gate with the built-in floor", True, "always on: a policy can tighten it, never loosen it", "", always=True, detail_th="เปิดเสมอ: นโยบายทำให้เข้มขึ้นได้ แต่ไม่มีวันผ่อนให้หลวมกว่านี้")
     return controls, gaps
 
 
