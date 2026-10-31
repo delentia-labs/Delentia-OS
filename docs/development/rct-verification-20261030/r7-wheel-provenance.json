@@ -1,0 +1,31 @@
+{
+  "source_sha": "509aa705eaae7838f872b3d5b91ded68cb5dcad7",
+  "wheel": "delentia_os-2.4.1-py3-none-any.whl",
+  "sha256": "ef166827277d181078b4e9d5650d3ec9ca40d8e874f08fb850fde7e53c480b70",
+  "bytes": 2476851,
+  "woff2_files": 17,
+  "matching_source_wheel_installed": [
+    {
+      "path": "rct_control_plane/component_execution.py",
+      "sha256": "766d678722eaf009285c7a6b08be16168c411f9de6d3a0c54d711b3b1b11a131"
+    },
+    {
+      "path": "rct_control_plane/verified_budget.py",
+      "sha256": "8295adf750b434d00be3f94e4f1c8748831116daea1b946c2e28cb496136eca6"
+    },
+    {
+      "path": "rct_control_plane/budget_execution.py",
+      "sha256": "62ddd939e64591c41efbd2fcdbb62c56e228a2fe0d0406605461cb7a0eefa51d"
+    },
+    {
+      "path": "rct_control_plane/intent_contract.py",
+      "sha256": "e0816e0dfb5159b8ee1bb415cc54c03062e365b905cf1a7d8337c174d6b4a703"
+    },
+    {
+      "path": "rct_control_plane/safe_text.py",
+      "sha256": "02a297db56abdfd299fdca4d1c93498582c7b691e9ed0292d703e2751458d5c1"
+    }
+  ],
+  "installation_scope": "force reinstall into prior clean-wheel virtualenv; dependencies unchanged, pip check passed",
+  "paid_calls": 0
+}

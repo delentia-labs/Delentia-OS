@@ -1,5 +1,5 @@
 """Installed wheel HTTP contract/restart probe, no generation or paid API."""
-import tempfile,os,json,hashlib,sys,argparse
+import tempfile,os,json,hashlib,sys,argparse,copy
 from pathlib import Path
 args=argparse.ArgumentParser();args.add_argument('--out',required=True);a=args.parse_args()
 with tempfile.TemporaryDirectory() as td:
@@ -35,7 +35,20 @@ with tempfile.TemporaryDirectory() as td:
  contract=done.json()['contract'];assert contract['verified'] and contract['report']['remaining']=='0.20'
  reopened=client().get(ROUTE+'/'+plan['id'],headers=headers);assert reopened.status_code==200 and reopened.json()['contract']['verified']
  assert c.get(ROUTE+'/'+plan['id']).status_code==401
- store=IntentContractStore(factory('alice')._persistence,'alice');bad=store.get(plan['id']);bad.pop('execution_receipts');store.transition(bad,'criteria_satisfied')
+ store=IntentContractStore(factory('alice')._persistence,'alice')
+ from rct_control_plane.intent_contract import IntentContractError,plan_digest
+ from rct_control_plane.verified_budget import validate_receipts,digest
+ historical=copy.deepcopy(store.get(plan['id']))
+ historical['plan']['criteria'][0].update(kind='contains',value='missing business condition')
+ previous='0'*64
+ for receipt in historical['execution_receipts']:
+  receipt['plan_sha256']=plan_digest(historical['plan']);receipt['previous_sha256']=previous
+  receipt['receipt_sha256']=digest({k:v for k,v in receipt.items() if k!='receipt_sha256'})
+  previous=receipt['receipt_sha256']
+ try:validate_receipts(historical['plan'],plan['id'],'alice',historical['execution_receipts'])
+ except IntentContractError:pass
+ else:raise AssertionError('installed wheel accepted inconsistent historical pure criterion')
+ bad=store.get(plan['id']);bad.pop('execution_receipts');store.transition(bad,'criteria_satisfied')
  assert client().get(ROUTE+'/'+plan['id'],headers=headers).status_code==404
- result={'installed_module':str(component_execution.__file__),'python':sys.version,'checks':{'plan_before_execute':True,'confirmed_exact_arithmetic':True,'reopened_app_status':True,'anonymous_status_refused':True,'missing_receipts_refused':True},'paid_calls':0,'limitations':['deterministic budget workflow, not capable-model evaluation','reopened application/factory, not OS process crash test']}
+ result={'installed_module':str(component_execution.__file__),'python':sys.version,'checks':{'plan_before_execute':True,'confirmed_exact_arithmetic':True,'reopened_app_status':True,'anonymous_status_refused':True,'missing_receipts_refused':True,'historical_pure_criterion_refused':True},'paid_calls':0,'limitations':['deterministic budget workflow, not capable-model evaluation','reopened application/factory, not OS process crash test']}
  Path(a.out).write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result))

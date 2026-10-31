@@ -2,6 +2,19 @@
 
 วันที่ 30 ตุลาคม 2026 (Asia/Bangkok) — เป้าหมายคือ open-source ที่ผู้ใช้ติดตั้งบนเครื่องหรือ VPS ของตนเอง ไม่มี paid API ในรอบนี้
 
+## ผลล่าสุดและสถานะส่งมอบ
+
+- **Full suite ของ 509aa705: 9,184 passed / 12 failed / 55 skipped / 1 xfailed, 961.98 วินาที**
+- 12 failures: 9 missing Ollama model, 1 native DNS, 2 regex timing assertions ภายใต้ concurrent load (หนึ่งกรณีเป็น ratio ของ regex เก่าที่ใช้เป็น negative control อีกกรณีเกิน wall-clock 0.5 วินาที) ไม่แก้ตัวเลข threshold เพื่อให้ผ่าน
+- Supplemental หลัง full suite: **52 passed / 0 failed / 0 skipped, 117.01 วินาที** ครอบคลุม PostgreSQL 7 tests ที่ระบุ DSN แล้ว, regex timing ทั้งสองไฟล์ และ browser-act ทั้งไฟล์ รวมสามกรณีที่ start browser ไม่สำเร็จใน full suite
+- Parser regression และ fake-jury control ผ่านใน full suite ล่าสุด แต่ intermittent ReadError ของ fake-jury และ timing/browser sensitivity ต่อ concurrent load ยังต้องติดตาม ผล supplemental ไม่ลบ failures/skips จาก full suite
+- **PR #218** เป็น draft ของ combined 509aa705 ไป main เพื่อรัน full CI; PR #215 ยังคงเป็น focused implementation review ที่ซ้อนบน #212
+- main ล่าสุดที่ตรวจคือ **f3114596**: #213 และ #214 merge แล้ว; prospective merge กับ combined ให้ Git tree **0900f4c344716490ddefc725e0c45a7da51bac1e** เหมือนเดิมทุกไฟล์ จึงมีโค้ดของ main ล่าสุดในชุดที่ทดสอบแล้ว ไม่มีการ merge PR โดย Codex
+- Claude เปิด #216 (W08/W10) และ #217 (Thai Desk/Delta log); ยังไม่รวมใน combined นี้ ไม่ได้แก้ไฟล์ทับงานสองชุดนั้น
+- CI snapshot ของ #218: Lint & Type Check, Frontend (Node.js), Build/install/check/uninstall, CVE Scan (safety), Analyze(actions) ผ่าน; Python matrix และหลาย checks ยัง queued/in progress ไม่เรียกว่า CI ผ่านครบ และ CodeQL neutral ไม่แทน Analyze ทุกภาษา
+- ไม่มี paid API หรือ GUI lifecycle video ใหม่ในรอบนี้; ผล local ไม่ใช่ตัวเลข checkpoint ทางการของ main
+
+
 ## Revision และผลที่ตรวจแล้ว
 
 - `841e4481`: combined revision เดิมที่รวม main `61cdea9`, fonts `4cb36a3`, budget guard `bce3c91` และ Codex `0c22d5a2`; focused tests 191 ผ่านใน 27.88 วินาที ผลนี้ไม่ใช่ full suite
@@ -52,3 +65,59 @@ PostgreSQL และ Ollama เดิมหยุดด้วย exit 255 เว
 RCT-7 ยังเป็น partial implementation: R1 ไม่พิสูจน์ความจริง/freshness/conflicts ทั่วไป; R2 ยังไม่มี capable-model holdout; R3/R4 ยังจำกัด trusted domains และการแตก necessary conditions; R5 ยังไม่มีการแก้หลายเจตนาและ selective invalidation ทั่วไป; R6 ยังขาด combined GUI lifecycle video; R7 ยังต้องเพิ่ม business verifiers และวัด false acceptance กับโมเดลจริง
 
 การเปิดตัว self-install ไม่ต้องมี host กลางของ Delentia แต่ควรประกาศสถานะ experimental และความสามารถที่มีหลักฐานเฉพาะ revision เท่านั้น ไม่ยก scripted budget executor เป็นหลักฐานความเข้าใจของโมเดล
+
+## Budget guard: ผลตรวจซ้ำบน combined 8b5abfb6
+
+ใช้ `budget_followup_probe.py` กับ fake provider เท่านั้น ผลยังตรงกับ finding ที่ส่งไปแล้ว:
+
+- `research/daaes/budget_guard.py` บริเวณ constructor ของ ExperimentLedger (บรรทัด 98–101): policy ที่สร้างโดยตรงไม่ได้ผ่าน validate เสมอไป เมื่อ USD fields เป็น NaN, before_call ยังรับ reservation 0.0000002 USD ได้
+- บริเวณ `_before_call` (บรรทัด 215–223): cap input/output = 1 แต่สอง calls ที่อยู่ระหว่างทำงาน dispatch ได้ทั้งคู่ ก่อน settlement แรก ผลรวมทั้งสองฝั่งจบที่ 2 tokens
+- Positive controls: max calls = 1 ปฏิเสธ call ที่สอง; negative/NaN price ถูกปฏิเสธ
+- ไม่ได้กล่าวว่า positive USD reservation ทุกกรณีเสีย และไม่ได้เรียก provider จริง
+
+เกณฑ์ปิด: validate ที่ public entry point และตอนโหลด durable policy, reserve tokens ของ in-flight/uncertain calls, settlement ไม่ปล่อย reservation ซ้ำ, restart ไม่ลืมรายการ uncertain; ต้องมี concurrency/crash/negative tests ในเลน Claude ก่อนใช้เงินจริง
+
+## ขอบเขต configuration freeze
+
+ยังไม่มี model/provider/routing และวงเงินที่อนุมัติ จึงยัง freeze การทดลองแบบ paid ไม่ได้ `research/daaes/run_manifest.py` เป็นหลักฐานบันทึกเงื่อนไข ไม่ใช่ spending authorization และการ validate field presence ไม่แทน budget enforcement
+
+ใช้ manifest/ledger/harness เดิมร่วมกับ Claude เพิ่มข้อมูลที่จำเป็น ได้แก่ full commit SHA, role ทั้ง main/judge/critic/children, model revision ที่ provider รายงาน, temperature/seed/token limit, prompt/schema/policy hashes, retries/fallback, development/holdout split ที่ล็อกก่อน tuning, budget ต่อ run/ทั้งรอบ และ provider-side cap หาก provider ไม่เปิดเผย model revision ต้องบันทึกข้อจำกัดนั้น
+
+Free rehearsal ต้องทดสอบเส้นทางที่เปิดจริงทุก role ผ่าน fake endpoint และเทียบจำนวน dispatch/usage/reservation/settlement หลัง timeout หรือ restart กับ ledger ก่อน paid canary จาก installation จริง
+
+## Finding เพิ่มเติมจาก full suite: command substitution scanner
+
+full suite บน 8b5abfb6 พบ `test_adversarial_inputs_stay_fast[substitutions-tick]` ล้ม การตรวจโค้ดพบ `command.find("$(", pos)` ค้น suffix เดิมซ้ำหลัง backtick แต่ละคู่ เป็นงานค้นหาที่โตแบบ quadratic เมื่อไม่พบ dollar opener หรือ opener อยู่ท้ายข้อความ
+
+แก้ใน `4bbe5d09`: จำ dollar opener ถัดไปและจำผลว่าไม่มี opener แทนการค้นซ้ำ เมื่อ cursor ผ่าน opener จึงค้นใหม่ รักษาผล parser เดิม ชุด safe_text 19 tests ผ่าน รวม randomized equivalence กับ regex เดิมและสอง deterministic search-work bounds ใหม่
+
+input 6,000 ตัวอักษรเคยทำงานค้นหา suffix รวม 6,003,000 ตัวอักษร เกิน bound 12,000 ที่ regression กำหนด การวัดครั้งเดียวระหว่าง host ยังรัน suite: 60,001/120,001/240,001 ตัวอักษร ก่อนแก้ 0.995/3.721/15.118 วินาที หลังแก้ 0.038/0.078/0.159 วินาที ตัวเลขนี้ไม่ใช่ benchmark ทั้งระบบหรือผลโมเดล และมี load อื่นร่วมอยู่
+
+Ruff และ Linux Mypy ผ่านหลังแก้ ไม่แตะ plan approval hooks, JobService, research หรือ Desk ของ Claude
+
+## Installed package และผล failure ที่ต้องติดตาม
+
+combined 509aa705 สร้าง wheel ใหม่ SHA-256 `ef166827277d181078b4e9d5650d3ec9ca40d8e874f08fb850fde7e53c480b70` มีฟอนต์ woff2 17 ไฟล์ ตรวจ hashes ของ component_execution, verified_budget, budget_execution, intent_contract และ safe_text ตรงกันทั้ง source/wheel/installed site-packages
+
+ติดตั้งทับ wheel เดิมใน virtualenv ที่แยกไว้แล้ว; pip check ผ่าน (ไม่ใช่หลักฐาน fresh OS install ใหม่) HTTP workflow ผ่าน plan-before-execute, confirmation, arithmetic, reopen app/status, anonymous refusal, missing-receipt refusal และ installed pure-criterion rejection การ reopen นี้ไม่ใช่ OS kill/restart test และไม่มี capable model
+
+Full suite แรก 8b5abfb6: 9,185 passed / 12 failed / 52 skipped / 1 xfailed ใน 907.46 วินาที 12 failures คือโมเดล 9, native DNS 1, safe_text 1, fake-jury 1 ไม่แทนผล revision 509aa705
+
+fake-jury control คาด accuracy 0.5 แต่ได้ 0.467 โดย unsafe_passed ยังตรง expected 15 (เป็น negative control ที่จงใจให้ scripted jurors ตอบผิด ไม่ใช่โมเดลจริง) รันแยกทั้งไฟล์ผ่าน 8 tests; diagnostic fake-only 10 รอบได้ผลตาม expected ทุกครั้ง แต่พบ voter ReadError รวม 3 ครั้งซึ่งถูกนับเป็น abstain ข้อมูลนี้แสดงว่าทางเชื่อมต่อ fixture ยังมีความไม่แน่นอน แต่ยังไม่พิสูจน์ root cause ของ failure แรก ต้องเก็บไว้เป็น unresolved intermittent finding ไม่ใช้ rerun ผ่านลบผลเดิม
+
+52 skips ของ suite แรกมี 7 PostgreSQL tests เพราะไม่ได้ตั้ง DELENTIA_TEST_PG_DSN ใน invocation นั้น ต้องตรวจเพิ่มโดยระบุ DSN ของฐานข้อมูลทดสอบ ไม่อ้างว่า container running เท่ากับ tests ผ่าน ที่เหลือส่วนใหญ่เป็น paid/live services, optional voice/video/weights, Windows-only และ Hermes ที่ไม่ได้ติดตั้ง
+
+## รายละเอียดรอบพัฒนาถัดไปของ RCT-7
+
+| รอบ | ขอบเขต implementation ที่เสนอ | Negative tests / เกณฑ์จบ |
+| --- | --- | --- |
+| R1 evidence assessment | Schema แยก observed bytes/hash, claimed facts, observed_at, claimed source date, source identity และ freshness policy; ระบุสถานะ unknown/stale/conflicting อย่างตรงไปตรงมา | ไม่มี source date ต้องไม่ถูกจัดว่า fresh; วันที่อนาคต/clock skew ต้องมี policy; สองแหล่งขัดกันต้องถามหรือแสดง conflict; hash ตรงไม่ลบ conflict |
+| R2 intent evaluation | ใช้ planner เดิมและชุด holdout ไทย/อังกฤษที่ล็อกก่อน tuning เพิ่ม labels สำหรับ negation, ambiguity, multi-intent และคำตอบที่ต้องถาม | รายงาน task quality และ process quality แยกกัน; ไม่ให้ clarification ทุกครั้งเป็นทางลัดทำคะแนน; แยก infrastructure errors จาก model errors |
+| R3/R4 semantic coverage | ระบุ domain handler/verifier ที่รองรับและเส้นทางย้อนจาก material criterion → necessary inputs → handler → receipt → verifier | ปฏิเสธ criterion ที่ไม่มี semantic verifier; DAG สมบูรณ์แต่ไม่ครอบคลุมเจตนาต้องไม่ผ่าน; unsupported domain ต้องแสดงขอบเขต |
+| R5 versioned correction | ออกแบบ transition สำหรับ correction จากสถานะที่อนุญาต ระบุ downstream invalidation และ approval ที่ต้องขอใหม่ตาม binding | stale actor/version, เปลี่ยนข้อมูลขณะ running, dependent result เก่า, restart ระหว่าง invalidation; write effect ต้อง reconcile ไม่ replay |
+| R6 Desk lifecycle | Claude ต่อ UI กับ schema backend ที่ตกลงร่วมกัน แล้วเลือก combined SHA เดียว | identity change, reconnect, cancel, restart, clarification และ receipts ผ่าน E2E พร้อมวิดีโอจริง ไม่ใช้ HTTP-only probe แทน |
+| R7 domain verifier ถัดไป | เลือก domain เดียวก่อน เช่น ใบเสนอราคาที่มีภาษี/ส่วนลดและเงื่อนไข กำหนด ground truth/oracle และหน่วย/สกุลเงิน/rounding | ข้อมูลขาด, tax รวม/ไม่รวม, currency mismatch, contradictory total และหลักฐาน stale ต้องไม่ถูกยอมรับเงียบ ๆ |
+
+ต้องแยก task completion จาก business outcome เสมอ: งาน “เปรียบเทียบงบ” สามารถทำสำเร็จโดยได้คำตอบว่าเกินงบ แต่คำว่า verified ต้องระบุว่าตรวจ arithmetic/criteria ใด ไม่สื่อว่าซื้อได้หรือข้อมูลผู้ขายจริงทั้งหมด
+
+การรวมงาน: Codex รับ backend/contracts/verifiers และ tests; Claude รับ research budget/evaluation กับ Desk/local first-run; shared API/event schema ต้องตกลงก่อนเปลี่ยน และยังไม่แตะ plan approval hooks หรือ JobService semantics โดยไม่มีการประสาน

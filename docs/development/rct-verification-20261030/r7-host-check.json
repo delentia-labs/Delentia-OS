@@ -1,0 +1,11 @@
+{
+  "example.com": {
+    "error": "[Errno -3] Temporary failure in name resolution"
+  },
+  "registry.ollama.ai": {
+    "error": "[Errno -3] Temporary failure in name resolution"
+  },
+  "memory.max": "34359738368",
+  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "workspace_free_bytes": 27215372288
+}

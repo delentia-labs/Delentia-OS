@@ -1,0 +1,17 @@
+{
+  "sha": "509aa705eaae7838f872b3d5b91ded68cb5dcad7",
+  "passed": 52,
+  "failed": 0,
+  "skipped": 0,
+  "seconds": 117.01,
+  "by_class": {
+    "test_audit_chain_pg_real": 7,
+    "test_verify_regex_round68_real": 2,
+    "test_regex_audit_round72_real": 2,
+    "TestValidation": 28,
+    "TestGovernance": 5,
+    "TestRealBrowser": 8
+  },
+  "scope": "isolated supplemental after full suite; includes seven PG tests with explicit test DSN, both timing-test files and entire browser-act file",
+  "does_not_replace_full_suite": true
+}
