@@ -1,0 +1,85 @@
+{
+  "base_sha": "dc0b2df373a29edad6d9b328fbcf2e0a73910038",
+  "implementation_sha": "1113c5d3",
+  "full_python": {
+    "passed": 9077,
+    "failed": 12,
+    "skipped": 45,
+    "xfailed": 1,
+    "warnings": 8992,
+    "seconds": 630.14,
+    "coverage_measured": false
+  },
+  "regression": {
+    "passed": 137,
+    "seconds": 3.9
+  },
+  "installer_independent_patch": {
+    "passed": 30,
+    "seconds": 6.1,
+    "native_windows_run": false
+  },
+  "findings": [
+    {
+      "name": "test_the_check_script_says_fail_and_exits_non_zero_when_the_installers_log_does_not_end_with_done",
+      "class": "rct_control_plane.tests.test_windows_installer_round101_real",
+      "category": "installer interpreter/startup"
+    },
+    {
+      "name": "test_the_check_script_starts_the_program_on_free_ports_answers_and_stops_everything",
+      "class": "rct_control_plane.tests.test_windows_installer_round101_real",
+      "category": "installer interpreter/startup"
+    },
+    {
+      "name": "test_synthesize_function_real_deterministic_case",
+      "class": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_crawl_real_url",
+      "class": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool",
+      "category": "crawler/native DNS prerequisite"
+    },
+    {
+      "name": "test_ollama_provider_real_completion",
+      "class": "rct_control_plane.tests.test_llm_provider_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "class": "rct_control_plane.tests.test_llm_provider_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_autonomous_loop_accepts_injected_provider",
+      "class": "rct_control_plane.tests.test_llm_provider_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_decide_next_action_returns_well_formed_decision",
+      "class": "rct_control_plane.tests.test_autonomous_loop_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_autonomous_loop_real_tool_call_end_to_end",
+      "class": "rct_control_plane.tests.test_autonomous_loop_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "class": "rct_control_plane.tests.test_autonomous_loop_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "class": "rct_control_plane.tests.test_experiments_real",
+      "category": "local model prerequisite"
+    },
+    {
+      "name": "test_synthesizes_and_verifies_a_real_simple_function",
+      "class": "rct_control_plane.tests.test_genesis_synthesis_real",
+      "category": "local model prerequisite"
+    }
+  ],
+  "scope": "Cloud engineering evidence; not the canonical main CI checkpoint. Suites overlap and must not be added."
+}
