@@ -73,4 +73,4 @@ python scripts/measure_injection_defence.py
 python research/gate_properties.py --check     # fails if this map is stale or a named test is gone
 ```
 
-Report a gap, a wrong claim or a bypass to **security@delentia.com** (not a public issue for a vulnerability). We would rather fix a wrong sentence on this page than keep a good-looking one.
+Report a bypass or a vulnerability privately with [Report a vulnerability](https://github.com/delentia-labs/Delentia-OS/security/advisories/new) (not a public issue); a wrong sentence on this page can be a normal issue. We would rather fix a wrong sentence on this page than keep a good-looking one.

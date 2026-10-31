@@ -8,7 +8,7 @@ You do not need to write code. **Install it, try the two-minute demo, and tell u
 
 1. `pip install delentia-os` (or the Windows installer from the [latest release](https://github.com/delentia-labs/Delentia-OS/releases/latest)), then `delentia demo init --lang en` and `delentia demo run compare --scripted`.
 2. Open an [**Install report**](https://github.com/delentia-labs/Delentia-OS/issues/new?template=install_report.yml) whether it worked or not. A report that says "worked, in 4 minutes" is as useful as one that says "stuck at step 3".
-3. Try to make the gate fail (see the [threat model](docs/security/THREAT_MODEL.md)) and report a bypass privately to security@delentia.com.
+3. Try to make the gate fail (see the [threat model](docs/security/THREAT_MODEL.md)) and report a bypass privately with [Report a vulnerability](https://github.com/delentia-labs/Delentia-OS/security/advisories/new).
 4. Read [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and tell us if a sentence there is too generous.
 
 ## Code of Conduct
