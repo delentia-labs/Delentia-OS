@@ -150,3 +150,22 @@ def test_the_cli_writes_checks_and_refuses(tmp_path, capsys):
     assert pf.main(base + ["--provider-cap-confirmed"]) == 0 and out.exists()
     assert pf.main(["check", str(out)]) == 0
     assert math.isfinite(json.loads(out.read_text(encoding="utf-8"))["spending"]["budget_usd"])
+
+
+def test_live_prices_are_read_from_the_public_list_the_way_the_orchestrator_reads_them_and_a_missing_model_is_refused(tmp_path, monkeypatch, capsys):
+    import fake_openrouter
+    with fake_openrouter.FakeOpenRouter({"cheap/model": {"in": 0.1, "out": 0.5}, "mid/model": {"in": 1.0, "out": 3.0}}) as fake:
+        monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", fake.base_url)
+        out = tmp_path / "freeze.json"
+        base = ["write", "--models", "cheap/model,mid/model", "--live-prices", "--stages", "P0", "--budget-usd", "15", "--provider-cap-confirmed", "--out", str(out)]
+        assert pf.main(base) == 0
+        record = json.loads(out.read_text(encoding="utf-8"))
+        assert [m["id"] for m in record["models"]] == ["cheap/model", "mid/model"] and record["models"][1]["price_out_per_mtok"] == pytest.approx(3.0)
+        assert record["prices_source"].startswith("OpenRouter public model list, read ")
+        import full_test_orchestrator as orch
+        loaded = orch.load_prices(argparse.Namespace(prices_file=None, live_prices=True))
+        assert pf.check_for_run(str(out), ["cheap/model"], loaded, 15.0) == []                   # the run reads the same figures as the freeze did
+        assert pf.main(["write", "--models", "nobody/known", "--live-prices", "--stages", "P0", "--budget-usd", "15", "--provider-cap-confirmed", "--out", str(tmp_path / "x.json")]) == 2
+        assert "no valid price" in capsys.readouterr().err
+        assert pf.main(["write", "--models", "cheap/model", "--stages", "P0", "--budget-usd", "15", "--provider-cap-confirmed", "--out", str(tmp_path / "y.json")]) == 2
+        assert "give the prices" in capsys.readouterr().err

@@ -16,7 +16,8 @@ What is frozen:
 
 It does not make a run safe by itself; it makes the run reproducible and stops the commonest mistake: measuring something other than what was written down.
 
-    python -m research.paid_run_freeze write --models a/b,c/d --prices-file prices.json --stages P0,P1 --budget-usd 15 --provider-cap-confirmed --out freeze.json
+    python -m research.paid_run_freeze write --models a/b,c/d --live-prices --stages P0,P1 --budget-usd 15 --provider-cap-confirmed --out freeze.json
+    (--live-prices reads OpenRouter's public model list, the same way the orchestrator does, so the frozen prices and the prices of the run are read the same way; --prices-file takes a JSON of your own)
     python -m research.paid_run_freeze check freeze.json
 """
 from __future__ import annotations
@@ -45,6 +46,24 @@ STAGE_CEILINGS_USD = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.0
 
 ROLES = {"judge": "DELENTIA_RCT7_JUDGE", "chain": "DELENTIA_RCT7_CHAIN", "judge_context": "DELENTIA_RCT7_JUDGE_CONTEXT", "ask_and_wait": "DELENTIA_ASK_AND_WAIT", "warm_recall": "DELENTIA_WARM_RECALL",
          "tool_menu": "DELENTIA_TOOL_MENU", "parallel_tools": "DELENTIA_PARALLEL_TOOLS", "memory_embed": "DELENTIA_MEMORY_EMBED", "taint_gate": "DELENTIA_TAINT_GATE", "verify_grounding": "DELENTIA_VERIFY_GROUNDING"}
+
+
+def live_prices(models: List[str]) -> Dict[str, Dict[str, float]]:
+    """The price per million tokens of each model in OpenRouter's public list, parsed exactly as scripts/full_test_orchestrator.py does it (so a later run reads the same figures).
+    A model that is missing or has no usable price is left out; build() then refuses it by name."""
+    import httpx
+    from rct_control_plane.llm_provider import openrouter_base_url
+    data = httpx.get(f"{openrouter_base_url()}/models", timeout=30).json().get("data", [])
+    wanted, found = set(models), {}
+    for item in data:
+        if not isinstance(item, dict) or item.get("id") not in wanted:
+            continue
+        pricing = item.get("pricing") or {}
+        try:
+            found[item["id"]] = {"in": float(pricing["prompt"]) * 1e6, "out": float(pricing["completion"]) * 1e6}
+        except (KeyError, TypeError, ValueError):
+            continue
+    return found
 
 
 class FreezeError(ValueError):
@@ -206,8 +225,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     w = sub.add_parser("write")
     w.add_argument("--models", required=True)
-    w.add_argument("--prices-file", required=True, help='JSON {"model-id": {"in": usd_per_Mtok, "out": usd_per_Mtok}}')
-    w.add_argument("--prices-source", default="prices file")
+    w.add_argument("--prices-file", default=None, help='JSON {"model-id": {"in": usd_per_Mtok, "out": usd_per_Mtok}}')
+    w.add_argument("--live-prices", action="store_true", help="read the prices from OpenRouter's public model list (what the orchestrator's --live-prices reads); a --prices-file entry wins for the same model")
+    w.add_argument("--prices-source", default=None)
     w.add_argument("--stages", required=True)
     w.add_argument("--budget-usd", type=float, required=True)
     w.add_argument("--max-cost-per-run-usd", type=float, default=0.0)
@@ -219,8 +239,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = ap.parse_args(argv)
     if args.cmd == "write":
         try:
-            prices = json.loads(Path(args.prices_file).read_text(encoding="utf-8"))
-            record = build([m.strip() for m in args.models.split(",") if m.strip()], prices, args.prices_source, [s.strip() for s in args.stages.split(",") if s.strip()], args.budget_usd,
+            if not args.prices_file and not args.live_prices:
+                raise FreezeError("give the prices: --live-prices (OpenRouter's public list) or --prices-file")
+            models = [m.strip() for m in args.models.split(",") if m.strip()]
+            prices: Dict[str, Any] = {}
+            if args.live_prices:
+                prices.update(live_prices(models))
+            if args.prices_file:
+                prices.update(json.loads(Path(args.prices_file).read_text(encoding="utf-8")))
+            source = args.prices_source or ("OpenRouter public model list, read " + time.strftime("%Y-%m-%d %H:%M") if args.live_prices and not args.prices_file else "prices file")
+            record = build(models, prices, source, [s.strip() for s in args.stages.split(",") if s.strip()], args.budget_usd,
                            args.provider_cap_confirmed, args.max_cost_per_run_usd, args.reserve_usd)
         except (FreezeError, OSError, ValueError) as exc:
             print("refused:", exc, file=sys.stderr)
