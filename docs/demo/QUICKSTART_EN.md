@@ -1,14 +1,15 @@
-# Try Delentia yourself in 15 minutes (Thai-language demo)
+# Try Delentia yourself in 15 minutes
 
-Status: **experimental.** This demo shows one path: *give a goal in Thai → the agent uses real tools on a real folder → a result file → the answer is checked → close the program and open it again, and what you told it is still there.*
+Status: **experimental.** This demo shows one path: *give a goal → the agent uses real tools on a real folder → a result file → the answer is checked → close the program and open it again, and what you told it is still there.*
 It does not show that the agent can do everything, and it is not a benchmark of any model.
-(The Thai version, `QUICKSTART_TH.md`, is the source. If the two ever differ, trust the Thai one and tell us.)
+
+The demo runs in **English** (`delentia demo init --lang en`, used below) or in **Thai** (the default, `QUICKSTART_TH.md`). A demo folder keeps the language it was made with, so make a second folder with `--dir` to see the other one. The two folders hold the same three facts: two quotes are within the budget and one is not. If the English and Thai pages ever differ, tell us.
 
 ## No model yet? Start here (2 minutes)
 
 ```bash
 pip install delentia-os
-delentia demo init
+delentia demo init --lang en
 delentia demo run compare --scripted     # reads the sample quotes, answers, and the answer is checked
 delentia demo run edit --scripted        # stops and waits for a signature; then: delentia demo approve <id> --scripted
 ```
@@ -24,13 +25,13 @@ delentia demo run edit --scripted        # stops and waits for a signature; then
 
 ```bash
 python -m rct_control_plane.cli model show
-python -m rct_control_plane.cli demo init
+python -m rct_control_plane.cli demo init --lang en
 python -m rct_control_plane.cli demo run compare
 ```
 
 1. `model show` tells you which model will be used. If it warns about a missing key, set one first (next section).
-2. `demo init` creates `~/delentia-demo` with three **synthetic** vendor quotes (no personal data). It never overwrites anything.
-3. `demo run compare` asks the agent: read the quotes, build a price table, say which vendors are within 15,000 baht, do not change the original files, do not send anything out.
+2. `demo init --lang en` creates `~/delentia-demo` with three **synthetic** vendor quotes (no personal data). It never overwrites anything.
+3. `demo run compare` asks the agent: read the quotes, build a price table, say which vendors are within the 15,000 USD budget, do not change the original files, do not send anything out.
 
 The screen and the file `~/delentia-demo/results/<time>-compare-….md` report seven things: the status; which tools the agent called; how the FDIA safety gate decided; whether the agent read text from outside (taint); the answer;
 **a check of the answer against facts known in advance** (not the agent's own verification); and whether the audit chain is intact.
@@ -40,10 +41,10 @@ If a check fails the command exits with code 1 and the result file lists what fa
 
 | command | what you should see |
 |---|---|
-| `demo run compare` | all three files read; Siam Air and Bangkok Technic within budget, Thai Cooling over; originals unchanged |
+| `demo run compare` | all three files read; Harbor HVAC and Northwind Cooling within budget, Polar Systems over; originals unchanged (in a Thai folder the vendors are Siam Air, Bangkok Technic and Thai Cooling) |
 | `demo run edit` | **stops and waits for a signature**; the file is untouched; it prints an id, and `demo approve <id>` lets it through (once only) |
-| `demo run remember`, close the window, open again, `demo run ask` | it answers that the budget approver is Mr. Somchai and that tables are sorted from lowest to highest price |
-| `demo run budget` | it uses the new 12,000 baht budget, not 15,000 |
+| `demo run remember`, close the window, open again, `demo run ask` | it answers that the budget approver is Ms. Rivera and that tables are sorted from lowest to highest price (Mr. Somchai in the Thai folder) |
+| `demo run budget` | it uses the new 12,000 budget, not 15,000 |
 | `demo status` | model, waiting approvals, number of memories, audit chain |
 
 The demo approver key sits on the same machine as the agent so that you can see the whole approval flow at once. **A real deployment keeps approver keys on another device** (`delentia approvals sign`).
