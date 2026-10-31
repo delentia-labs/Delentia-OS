@@ -737,13 +737,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
 
     async def continue_intent(self, contract_id: str, version: int, response: str = "",
                               revised_goal: Optional[str] = None, acceptance_criteria: Any = None,
-                              on_plan: Optional[Callable[[dict], Any]] = None, answers: Any = None) -> dict:
+                              on_plan: Optional[Callable[[dict], Any]] = None, answers: Any = None, *,
+                              review_binding: dict | None = None, intent_confirmation: dict | None = None) -> dict:
         from rct_control_plane.intent_contract import IntentContractStore
         store = IntentContractStore(self._persistence, self.namespace)
         if store.get(contract_id)["plan"]["workspace"] != self._workspace_id():
             from rct_control_plane.intent_contract import IntentContractError
             raise IntentContractError("intent contract belongs to another workspace")
-        contract = store.claim(contract_id, version, response, revised_goal, acceptance_criteria, answers)
+        contract = store.claim(contract_id, version, response, revised_goal, acceptance_criteria, answers,
+                               review_binding=review_binding, intent_confirmation=intent_confirmation)
         if contract["state"] == "waiting_for_input":
             return {"goal": contract["goal"], "steps": [], "iterations": 0, "final_answer": None,
                     "stopped_reason": "waiting_for_input", "intent_contract": contract,

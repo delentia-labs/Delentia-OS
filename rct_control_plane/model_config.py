@@ -85,8 +85,9 @@ class ModelInfo:
 def config_path() -> Path:
     override = os.getenv("DELENTIA_MODEL_CONFIG")
     if override:
-        return Path(override)
-    return Path.home() / ".delentia" / "model.json"
+        return Path(override).expanduser()
+    from rct_control_plane.data_home import data_home
+    return (data_home() or Path.home() / ".delentia") / "model.json"
 
 
 def load_model_config(path: Optional[Path] = None) -> Dict[str, Any]:

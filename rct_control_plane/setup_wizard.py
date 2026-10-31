@@ -38,7 +38,8 @@ class Step:
 
 
 def delentia_home(override: Optional[str] = None) -> Path:
-    return Path(override).expanduser() if override else Path.home() / ".delentia"
+    from rct_control_plane.data_home import data_home
+    return Path(override).expanduser() if override else (data_home() or Path.home() / ".delentia")
 
 
 def inspect_machine(home: Path) -> Dict[str, Any]:

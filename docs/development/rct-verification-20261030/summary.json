@@ -1,0 +1,160 @@
+{
+  "scope": "cloud combined revision, not official main CI checkpoint",
+  "main_sha": "d1376d21f6dd88b3fa98a9263525859d27916c4b",
+  "combined_code_sha": "b421bf6d183cb929c1bdcb3260e08718a445ccb5",
+  "codex_code_sha": "b5af50ad",
+  "claude_font_sha": "4cb36a3",
+  "claude_budget_sha": "bce3c91",
+  "paid_calls": 0,
+  "full_python": {
+    "passed": 9165,
+    "failed": 10,
+    "skipped": 45,
+    "xfailed": 1,
+    "duration_seconds": 630.766,
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "category": "ollama_model",
+        "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "category": "native_dns",
+        "message": "KeyError: 'status_code'"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "category": "ollama_model",
+        "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "category": "ollama_model",
+        "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1793348670.8407664}]\nassert 'llm_error' == 'pending_approval'\n  \n  - pending_approval\n  + llm_error"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "category": "ollama_model",
+        "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    ]
+  },
+  "focused_projection": {
+    "passed": 99,
+    "duration_seconds": 4.23
+  },
+  "ruff": "passed CI directory scope",
+  "mypy": {
+    "platform": "linux",
+    "scope": "core signedai rct_control_plane",
+    "source_files": 277,
+    "result": "passed"
+  },
+  "mkdocs_strict": "passed",
+  "gui": {
+    "node_tests": "passed",
+    "api_unavailable_a11y_page_loads": 112,
+    "a11y_violations": 0,
+    "woff2_files": 17,
+    "external_font_requests": 0,
+    "network_none_build_after_dependency_install": "passed",
+    "complete_contract_gui_video": false
+  },
+  "installed_wheel": {
+    "code_sha": "b421bf6d183cb929c1bdcb3260e08718a445ccb5",
+    "wheel": "delentia_os-2.4.1-py3-none-any.whl",
+    "bytes": 2476541,
+    "sha256": "fdfd6a76a565e79309969499f350aa669d6f6bc9bdce9f7e7c1e8f3f7bcaf7af",
+    "source_wheel_installed_bindings": [
+      {
+        "path": "rct_control_plane/component_execution.py",
+        "source_sha256": "766d678722eaf009285c7a6b08be16168c411f9de6d3a0c54d711b3b1b11a131",
+        "wheel_sha256": "766d678722eaf009285c7a6b08be16168c411f9de6d3a0c54d711b3b1b11a131",
+        "installed_sha256": "766d678722eaf009285c7a6b08be16168c411f9de6d3a0c54d711b3b1b11a131"
+      },
+      {
+        "path": "rct_control_plane/budget_execution.py",
+        "source_sha256": "62ddd939e64591c41efbd2fcdbb62c56e228a2fe0d0406605461cb7a0eefa51d",
+        "wheel_sha256": "62ddd939e64591c41efbd2fcdbb62c56e228a2fe0d0406605461cb7a0eefa51d",
+        "installed_sha256": "62ddd939e64591c41efbd2fcdbb62c56e228a2fe0d0406605461cb7a0eefa51d"
+      },
+      {
+        "path": "rct_control_plane/verified_budget.py",
+        "source_sha256": "43e931411ec8980d8fd0941295d5e49dafc8194fe8f59d8f9460aec6b42804e8",
+        "wheel_sha256": "43e931411ec8980d8fd0941295d5e49dafc8194fe8f59d8f9460aec6b42804e8",
+        "installed_sha256": "43e931411ec8980d8fd0941295d5e49dafc8194fe8f59d8f9460aec6b42804e8"
+      },
+      {
+        "path": "rct_control_plane/intent_contract.py",
+        "source_sha256": "e0816e0dfb5159b8ee1bb415cc54c03062e365b905cf1a7d8337c174d6b4a703",
+        "wheel_sha256": "e0816e0dfb5159b8ee1bb415cc54c03062e365b905cf1a7d8337c174d6b4a703",
+        "installed_sha256": "e0816e0dfb5159b8ee1bb415cc54c03062e365b905cf1a7d8337c174d6b4a703"
+      }
+    ],
+    "woff2_files": 17
+  },
+  "installed_contract_groups": 6,
+  "installed_budget_http_checks": {
+    "plan_before_execute": true,
+    "confirmed_exact_arithmetic": true,
+    "reopened_app_status": true,
+    "anonymous_status_refused": true,
+    "missing_receipts_refused": true
+  },
+  "ab": {
+    "baseline_code": "544f222a",
+    "treatment_code": "52dda3bb",
+    "framework_correct_cases": [
+      2,
+      11
+    ],
+    "framework_total_cases": 11,
+    "receipt_correct_cases": [
+      1,
+      7
+    ],
+    "receipt_total_cases": 7,
+    "limitations": "authored deterministic regressions, no model/holdout claim"
+  },
+  "open_budget_findings": [
+    "nonfinite policy admitted without entry validation",
+    "in-flight tokens are not reserved"
+  ],
+  "evidence_sha256": {
+    "full.log": "524953f6553d7c1ecfc9310d9a2391589a0a4aa938074903d39544505230eeac",
+    "full.xml": "990c4f97cd48cb4b4d055443e167de73dde6b762b46bbbdfba1702032c3ac108",
+    "report-projection-final-focused.log": "5f5136053ad7b2158c13eeef939016fe2843c99f27acafd062bab1f8a44b3376",
+    "install-contract-final.json": "75e7f45a353b5dfcc5c9255aff3fdca99084d53e68622993746031b608e0f23a",
+    "installed-budget-workflow.json": "705b4522d6bf469f99c6f2f1ef4ace2eb529b5780114cbf0e487246e6a088b91",
+    "wheel-provenance.json": "f4f31b050d5fdf25dece319221194eaa9487a98a96bde7263b973e3d1b2f8b85",
+    "gui-tests-raw.log": "8faff33dbff370821242636618fde96296ebea48f922ca9cc434527b4d4fa300",
+    "gui-a11y.log": "ea59caa68dd9e4d52510dc45b9b9d46e0dcd6ee7f37cdce371091e08950eaa13",
+    "gui-network-none-build.log": "a39ce81c482e44a2253eb4b2d4e04640a58578b92a690a08fa6bb33c2da71f98"
+  }
+}

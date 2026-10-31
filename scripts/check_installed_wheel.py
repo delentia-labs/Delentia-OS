@@ -84,7 +84,8 @@ class Server:
     """`delentia serve` as a child process on a free loopback port; stopped on exit."""
 
     def __init__(self, box: Sandbox, extra_env: Optional[Dict[str, str]] = None):
-        self.box, self.port, self.extra_env, self.proc = box, free_port(), extra_env, None
+        self.box, self.port, self.extra_env = box, free_port(), extra_env
+        self.proc: Optional[subprocess.Popen[bytes]] = None
         self.log = box.root / f"serve-{self.port}.log"
 
     def __enter__(self) -> "Server":
@@ -135,9 +136,14 @@ def check_imports(box: Sandbox) -> Dict[str, Any]:
 
 
 def check_cli(box: Sandbox) -> Dict[str, Any]:
-    steps = [run(box, delentia_cmd("--help"), 300), run(box, delentia_cmd("version"), 300)]
+    doctor = ("import json; from click.testing import CliRunner; from rct_control_plane.cli import cli; "
+              "r=CliRunner().invoke(cli,['doctor','--output','json']); assert r.exit_code==0, r.output; "
+              "d=json.loads(r.output); assert d['ok'] and d['scope']=='local_installation', d; "
+              "assert not any(c['category'] in ('project','connectivity') for c in d['checks']); "
+              "print('installed doctor passes without repository files or development services')")
+    steps = [run(box, delentia_cmd("--help"), 300), run(box, delentia_cmd("version"), 300), run(box, [PY, "-c", doctor], 300)]
     ok = all(s["exit_code"] == 0 for s in steps)
-    return result("cli", ok, "--help and version run" if ok else "; ".join(f"{s['command']} -> {s['exit_code']}" for s in steps if s["exit_code"] != 0), steps)
+    return result("cli", ok, "--help, version and local installation doctor run" if ok else "; ".join(f"{s['command']} -> {s['exit_code']}" for s in steps if s["exit_code"] != 0), steps)
 
 
 def demo_steps(box: Sandbox) -> List[Dict[str, Any]]:

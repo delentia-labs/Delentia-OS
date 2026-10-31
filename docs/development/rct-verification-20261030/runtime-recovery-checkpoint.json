@@ -1,0 +1,41 @@
+{
+  "containers": [
+    {
+      "name": "/codex-delentia-pg-20261022",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 1830,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-30T09:29:42.150315394Z",
+        "FinishedAt": "2026-10-30T09:17:31.906275431Z"
+      }
+    },
+    {
+      "name": "/codex-delentia-ollama-20261022",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 1900,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-30T09:29:42.428631315Z",
+        "FinishedAt": "2026-10-30T09:17:31.906887627Z"
+      }
+    }
+  ],
+  "prior_exit_255_utc": "2026-10-30T09:17:31Z",
+  "prior_oom_killed": false,
+  "cause": "unknown; platform termination logs unavailable",
+  "model_pull_attempted_this_turn": false,
+  "models_available": []
+}

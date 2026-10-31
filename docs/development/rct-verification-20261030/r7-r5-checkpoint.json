@@ -1,0 +1,32 @@
+{
+  "previous_combined_focused": {
+    "code_sha": "841e448100c44791512cb0cfeaacb6c10ec34f84",
+    "tests": 191,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 27.874,
+    "junit_sha256": "10c21210eb3691dae7aa87553b0ea58a3aed65315191abdd45a88cbae6c0d779"
+  },
+  "r7_focused_before_added_r5_test": {
+    "code_sha": "f1d26866 (same application code; before additional R5 test)",
+    "tests": 108,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 4.469,
+    "junit_sha256": "fe0f2b66a86301aba7520291381c374e85d6dc67ed38918e228c7ad46400baae"
+  },
+  "r7_r5_focused": {
+    "passed": 21,
+    "seconds": 2.34,
+    "code_sha": "f1d26866"
+  },
+  "new_regression_before_fix": {
+    "failed": 2,
+    "reason": "DID NOT RAISE IntentContractError for inconsistent pure criteria"
+  },
+  "ruff": "passed core/signedai/rct_control_plane/microservices",
+  "mypy_linux": "passed 277 source files",
+  "paid_calls": 0
+}
