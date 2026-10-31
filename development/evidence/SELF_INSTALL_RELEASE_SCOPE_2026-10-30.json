@@ -1,0 +1,55 @@
+{
+  "schema_version": "1",
+  "artifact_type": "release_scope_and_evidence_plan_not_execution_authorization",
+  "release_target": "open-source local/self-managed experimental preview",
+  "release_level": "L1",
+  "runtime_location": "user PC or user-managed VPS",
+  "delentia_managed_shared_host_required": false,
+  "central_delentia_account_required": false,
+  "model_selection": "user-controlled Ollama or provider API",
+  "creator_paid_evaluation_authorized": false,
+  "release_claims": "mechanisms and workflows actually demonstrated; no general RCT-7 or production guarantee",
+  "main_integrated": "d1376d21f6dd88b3fa98a9263525859d27916c4b",
+  "code_checkpoint": "a49237d8ec0b22e4d918bcd678a3acdbd4ec0673",
+  "source_sha256": {
+    "rct_control_plane/cli.py": "879def2400437ca824f68d6d0486e792e4c982850e31f7e7c8f99f5ae2de58e8",
+    "rct_control_plane/setup_wizard.py": "ccc7706ea5fbce1ac7b94cfdc949e45c60b5c32c48fb530e59684b236e4eed94",
+    "rct_control_plane/model_config.py": "9a64e5848f2c49c954c7e5c224c435d38c6197b8f601c2bfdc2989d95215ebb3",
+    "scripts/check_installed_wheel.py": "efaf4594a8e86dd0fe606e298efdf0cb000aa5c1f2e833c83068ab70fc2f6f39",
+    "rct_control_plane/tests/test_local_first_onboarding_real.py": "05c8cc13da0d39b0079b66efcd30bf5d68f34d387e692486d6ea35185c188106",
+    "installer/windows/check_install.py": "1ece441377167b467e196fa8bf280c623a22f393b470f552d4ea82073cddb153"
+  },
+  "local_wheel": {
+    "version": "2.4.1 unreleased local build",
+    "sha256": "8cefe81c7c913e1a53c3e6868f80ef87a644ea11fdd4657ff18b84b3dc1c6cd9",
+    "desk_files": 233,
+    "empty_venv_install": true,
+    "editable_install": false
+  },
+  "platform_evidence": {
+    "Linux": "local wheel validated in this cloud, not every Linux/VPS distribution",
+    "Windows": "PR212 a49237d8 Windows CI build/install/check/uninstall passed; manual SmartScreen/outside-user first-run not verified",
+    "macOS": "native install not validated this round"
+  },
+  "before_paid_research": [
+    "Claude budget input/in-flight fixes and exact-config free rehearsal",
+    "pin model/provider/routing/settings/prompts/policy/schema and code",
+    "Architect sets total/per-run/reserve/call/token caps and provider-side limit",
+    "raw billing/usage/outcomes instrumentation verified"
+  ],
+  "before_marketing_self_install": [
+    "review final revision and CI; artifacts and checksums",
+    "first-user installation/workflow/restart/support docs verified",
+    "local Desk workflow demo if GUI is advertised",
+    "capable-model claims supported by registered outcomes",
+    "public limitations/platform status and canonical main CI numbers aligned"
+  ],
+  "separate_future_managed_host_gates": [
+    "shared tenancy controls",
+    "central host restore/witness/notary separation",
+    "central host 72h soak/outside pilot"
+  ],
+  "paid_calls": 0,
+  "wheel_code_checkpoint": "24db856cb55283772989d58b825b686d69625af6",
+  "includes_existing_installer_fix_pr": 202
+}
