@@ -171,7 +171,7 @@ def test_p2_signatures_that_do_not_belong_to_this_exact_action_never_approve(tmp
     assert mcp.dispatched == []
     sign(store, store.get(approval_id), key)                              # the one genuine signature still works
     asyncio.run(loop.resume(approval_id, continue_episode=False))
-    assert mcp.dispatched == [WRITE]
+    assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [WRITE]   # the runtime adds the file's state to a write that waited for a signature (Round 106)
 
 
 def test_p2_the_agent_cannot_sign_for_itself(tmp_path, monkeypatch):
@@ -334,7 +334,7 @@ def test_p5_replaying_one_approval_for_a_second_identical_request_does_not_work(
     asyncio.run(loop.resume(first.approval_id, continue_episode=False))
     with pytest.raises(ApprovalError):
         asyncio.run(loop.resume(first.approval_id, continue_episode=False))
-    assert mcp.dispatched == [WRITE]
+    assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [WRITE]   # the runtime adds the file's state to a write that waited for a signature (Round 106)
 
 
 # ------------------------------------------------------------------------------------------------ P6
@@ -517,7 +517,7 @@ def test_the_emergency_stop_reaches_an_action_a_person_already_approved(tmp_path
     assert mcp.dispatched == [] and store.get(approval_id).status == "APPROVED"      # not consumed
     monkeypatch.delenv(envelope.PAUSED_ENV)
     asyncio.run(loop.resume(approval_id, continue_episode=False))
-    assert mcp.dispatched == [WRITE]
+    assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [WRITE]   # the runtime adds the file's state to a write that waited for a signature (Round 106)
 
 
 def test_p10_an_action_cancelled_midway_is_never_run_a_second_time(tmp_path, monkeypatch):

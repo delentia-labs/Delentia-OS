@@ -297,7 +297,7 @@ class TestResumeWithNotary:
         self._approve(loop, paused["approval_id"])
         asyncio.run(loop.resume(paused["approval_id"], continue_episode=False))
 
-        assert mcp.dispatched == [("delentia_write_repo_file", WRITE["tool_args"])]
+        assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [("delentia_write_repo_file", WRITE["tool_args"])]
         kinds = [r["kind"] for r in notary.records_for_episode(notary_server["store"].db_path, "resume")]
         assert "approved_action_claim" in kinds and "approved_action_result" in kinds
         assert kinds.index("approved_action_claim") < kinds.index("approved_action_result")

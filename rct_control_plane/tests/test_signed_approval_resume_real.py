@@ -188,7 +188,7 @@ class TestPauseAndResume:
         result = asyncio.run(loop.run("write the release notes"))
         assert result["stopped_reason"] == "pending_approval"
         pending = loop._pending_actions().get(result["approval_id"])
-        assert pending.status == "PENDING" and pending.tool_args == WRITE["tool_args"]
+        assert pending.status == "PENDING" and pending.tool_args == {**WRITE["tool_args"], "expected_base_sha256": "absent"}
         assert result["action_sha256"] == pending.action_sha256
         assert mcp.dispatched == []
 
@@ -202,7 +202,7 @@ class TestPauseAndResume:
         _approve(store, key_path, store.get(paused["approval_id"]))
 
         outcome = asyncio.run(loop.resume(paused["approval_id"]))
-        assert mcp.dispatched == [("delentia_write_repo_file", WRITE["tool_args"])]
+        assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [("delentia_write_repo_file", WRITE["tool_args"])]
         assert outcome["executed_result"] == {"ok": True}
         assert outcome["continuation"]["stopped_reason"] == "llm_finished"
         assert "has now executed, exactly once" in calls["extra_contexts"][-1]
