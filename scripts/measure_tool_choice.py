@@ -103,6 +103,10 @@ def adoption(result: Dict[str, Any]) -> Dict[str, Any]:
         detail = ", ".join(f"{n} errored on {errored[n]} of {total} goals" for n in inconclusive)
         value += f" [INCONCLUSIVE: {detail}]"
         return {"T10": {"value": value, "pass": False, "inconclusive": True}}
+    # Round 106: "within one goal of the default" is true of 0/31 against 0/31 (the free rehearsal showed a fake model 'passing' that way). When neither arm chose more than one tool
+    # correctly the rule cannot tell the menus apart, so that is inconclusive, never a pass. (One arm at 0 and the other well above it is a real result and is judged as before.)
+    if max(base["right"], ranked["right"]) <= 1:
+        return {"T10": {"value": value + " [INCONCLUSIVE: neither arm chose more than one tool correctly, so the comparison says nothing about the menu]", "pass": False, "inconclusive": True}}
     return {"T10": {"value": value, "pass": bool(ok)}}
 
 

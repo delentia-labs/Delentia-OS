@@ -19,6 +19,10 @@ html, body { background: #0e1611; color: #e4eedd; color-scheme: dark; }
    rust = blocked or broken.
    ========================================================================== */
 :root {
+  /* Round 106: the three fonts (see fonts.css). Prompt: Thai and the interface; JetBrains Mono: English, code, data; Sarabun: documents the system writes. */
+  --font-th: "Prompt", system-ui, sans-serif;
+  --font-mono-en: "JetBrains Mono", ui-monospace, monospace;
+  --font-doc: "Sarabun", "Prompt", system-ui, sans-serif;
   --dl-ink: #0e1611;
   --dl-panel: #142019;
   --dl-panel-2: #1b2a21;

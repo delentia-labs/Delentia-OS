@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { serverText } from "@/lib/server-text-th";
 import { Badge, Button, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
 import { desk, type LawCheck, type LawLookup, type LawPackInfo } from "@/lib/desk-api";
 
@@ -144,7 +145,7 @@ export default function LawPage() {
               <label className="mt-2 flex items-start gap-2 text-[13px] text-dl-text"><input type="checkbox" className="mt-1" checked={allowFlagged} onChange={(e) => setAllowFlagged(e.target.checked)} />{T("The content screen flagged places in this text and I have read them: they are genuine statute text (a real statute speaks of closing, destroying and cancelling). Record the flags and import.", "ตัวกรองเนื้อหาตั้งธงบางจุดและฉันอ่านแล้ว: เป็นข้อความตัวบทจริง (ตัวบทจริงพูดถึงการปิด การทำลาย การยกเลิกได้) บันทึกธงและนำเข้า")}</label>
               <div className="mt-3 flex items-center gap-3">
                 <Button onClick={doImport} disabled={importing || !name.trim() || !edition.trim() || !jurisdiction.trim() || !source.trim() || !text.trim()}>{importing ? T("Importing…", "กำลังนำเข้า…") : T("Import", "นำเข้า")}</Button>
-                <span className="text-[12px] text-dl-muted">{d.notice}</span>
+                <span className="text-[12px] text-dl-muted">{serverText(d.notice, lang === "th")}</span>
               </div>
             </Panel>
           </div>

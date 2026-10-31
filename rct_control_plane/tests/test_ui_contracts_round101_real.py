@@ -82,7 +82,7 @@ def test_the_readiness_states_the_server_can_produce_are_exactly_the_states_that
 
 
 # ------------------------------------------------------------------ the guides and the command line
-GUIDES = ("FIRST_APPROVER", "INSTALL_WINDOWS", "UPDATES", "APPROVE_WITH_DEVICE")
+GUIDES = ("FIRST_APPROVER", "INSTALL_WINDOWS", "UPDATES", "APPROVE_WITH_DEVICE", "YOUR_DATA", "TESTER_FEEDBACK_FORM")
 
 
 def _commands_in(text: str) -> list:

@@ -32,6 +32,7 @@ class BudgetRequest(PlanItem):
     workspace_id: str = Field(min_length=1, max_length=80)
     budget: str = Field(min_length=1, max_length=100)
     evidence: QuoteEvidence
+    request_id: str | None = Field(default=None, min_length=1, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
 
 
 class ConfirmRequest(PlanItem):
@@ -235,7 +236,7 @@ def budget_review_catalog():
 def install_route(app, policy: ServicePolicy | None, loop_factory):
     if policy is None:
         return
-    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
+    from rct_control_plane.intent_contract import IntentContractError, IntentContractStore, IntentRequestConflict
     policy_path = os.environ.get("DELENTIA_READONLY_POLICY")
     policy_hash = digest(policy.binding_payload())
 
@@ -309,10 +310,14 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
                 "schema_version": 1, "material_criteria": [{"id": "C1",
                     "statement": "Compare quote with budget", "polarity": "required",
                     "source_quotes": ["Compare quote with budget"]}], "constraints": [], "unknowns": []}}
-        contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
-            Path(policy.workspace_root), {"semantic_plan": {
-                "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
-            }}, service_binding=binding, evidence_requirement=requirement, intent_review=review)
+        try:
+            contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
+                Path(policy.workspace_root), {"semantic_plan": {
+                    "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
+                }}, service_binding=binding, evidence_requirement=requirement, intent_review=review,
+                request_id=payload.request_id)
+        except IntentRequestConflict:
+            raise HTTPException(409, "request_id conflicts with an existing request") from None
         return public_result(contract, actor, policy)
 
     @app.get(ROUTE + "/{contract_id}", response_model=BudgetResult)

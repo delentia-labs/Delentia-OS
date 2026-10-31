@@ -1,11 +1,11 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-10-30 04:21:49Z",
+  "generated_at": "2026-10-30 08:41:27Z",
   "offline": false,
   "git": {
-    "sha": "368537d5bef45c1c8def0283646b588fe3197c60",
-    "short": "368537d",
-    "branch": "round105/release-levels-evidence",
+    "sha": "136906adb768a8345a4a3d28dc73302c339d2303",
+    "short": "136906a",
+    "branch": "round106/w08-w10-live-runners",
     "dirty": true
   },
   "canonical_checkpoint": {
@@ -17,10 +17,10 @@
     "last_updated": "2026-10-30"
   },
   "latest_completed_ci_on_main": {
-    "run": "40989051697",
+    "run": "41013560216",
     "conclusion": "success",
-    "sha": "dc0b2df",
-    "created_at": "2026-10-30T01:59:36Z"
+    "sha": "d1376d2",
+    "created_at": "2026-10-30T06:21:02Z"
   },
   "tools": {
     "count": 50,
@@ -131,8 +131,8 @@
   "master_workflows": {
     "workflows": 12,
     "scripted_whole_job": 12,
-    "live_runner": 9,
+    "live_runner": 11,
     "live_result_with_a_capable_model": 0
   },
-  "canonical_matches_latest_ci": true
+  "canonical_matches_latest_ci": false
 }

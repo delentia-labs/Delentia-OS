@@ -161,7 +161,7 @@ function SessionsInner() {
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <div className="max-h-[40vh] shrink-0 overflow-y-auto border-b border-dl-rule lg:max-h-none lg:w-[380px] lg:border-b-0 lg:border-r">
           {list.error ? <div className="p-4"><ErrorNote error={list.error} onRetry={list.reload} /></div> : null}
-          {list.data && !list.data.sessions.length ? <div className="p-4"><Empty title="No sessions yet">Run a goal in Chat (Agent mode).</Empty></div> : null}
+          {list.data && !list.data.sessions.length ? <div className="p-4"><Empty title={lang === "th" ? "ยังไม่มีเซสชัน" : "No sessions yet"}>{lang === "th" ? "สั่งงานในหน้าแชต (โหมด Agent) แล้วเซสชันจะปรากฏที่นี่" : "Run a goal in Chat (Agent mode)."}</Empty></div> : null}
           <ul>
             {list.data?.sessions.map((s) => (
               <li key={s.id}>

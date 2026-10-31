@@ -627,21 +627,43 @@ def _checkpoint_before(relative_path: str, tool: str) -> "tuple[Any, Optional[in
         return None, None
 
 
+ABSENT = "absent"
+
+
+def file_base_state(relative_path: str) -> str:
+    """What a whole-file write would replace, as one comparable string: the SHA-256 of the file's bytes, or "absent" when there is no file. Used so an approved write can tell that the file
+    is no longer the one the person looked at (Round 106)."""
+    resolved = _resolve_within_repo(relative_path)
+    if not resolved.is_file():
+        return ABSENT
+    import hashlib
+    return hashlib.sha256(resolved.read_bytes()).hexdigest()
+
+
 @mcp.tool()
-async def delentia_write_repo_file(relative_path: str, content_text: str) -> dict:
+async def delentia_write_repo_file(relative_path: str, content_text: str, expected_base_sha256: str = "") -> dict:
     """Real, write-capable repo file tool (Round 33, Architect-approved as
     part of "improve everything"). Higher blast radius than the Round 32
     read-only tools - an MCP client can create or overwrite a real file in
     this kernel's own repo. Guarded by: (1) the same path-traversal check
     as delentia_read_repo_file, (2) an explicit blocklist matching this
     workspace's own permanent do-not-touch patterns (.env*, *_secret*,
-    credentials.json, vault_master.key, anything under .git/)."""
+    credentials.json, vault_master.key, anything under .git/).
+
+    `expected_base_sha256` (Round 106) is set by the runtime, never chosen by the model: when a write waits for a person's signature the runtime records what the file was at that
+    moment (its SHA-256, or "absent"), the person signs that together with the content, and the write refuses to run if the file is something else by then. Empty = no check
+    (a direct call; the write the person signs always carries one)."""
     try:
         resolved = _resolve_within_repo(relative_path)
     except PathTraversalError as e:
         return {"error": str(e)}
     if _is_write_blocked(relative_path):
         return {"error": f"writes to this path are blocked by policy: {relative_path!r}"}
+    if expected_base_sha256:
+        now = file_base_state(relative_path)
+        if now != expected_base_sha256:
+            return {"error": "the file is not what it was when this write was proposed, so nothing was written; ask for the change again to see it against the file as it is now",
+                    "stale_base": True, "expected_base_sha256": expected_base_sha256, "base_sha256_now": now}
     resolved.parent.mkdir(parents=True, exist_ok=True)
     store, checkpoint = _checkpoint_before(relative_path, "delentia_write_repo_file")
     try:

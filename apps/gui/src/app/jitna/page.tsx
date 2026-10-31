@@ -54,8 +54,8 @@ export default function JitnaPage() {
               <span className="text-[12px] text-dl-muted">{T("or paste its contents", "หรือวางเนื้อหา")}</span>
             </div>
             <label className="mt-3 block">
-              <span className="sr-only">File contents</span>
-              <textarea value={text} onChange={(e) => { setText(e.target.value); setReport(null); }} rows={12} spellCheck={false} aria-label="File contents"
+              <span className="sr-only">{T("File contents", "เนื้อหาไฟล์")}</span>
+              <textarea value={text} onChange={(e) => { setText(e.target.value); setReport(null); }} rows={12} spellCheck={false} aria-label={T("File contents", "เนื้อหาไฟล์")}
                 placeholder='{"format": "jitna-file", "version": 1, …}' className={field} />
             </label>
             <label className="mt-3 block">

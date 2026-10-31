@@ -186,12 +186,20 @@ def compare(plan: Dict[str, Any], answer: str) -> List[Dict[str, Any]]:
     return differences
 
 
+class IntentRequestConflict(IntentContractError):
+    """A request key already belongs to different input in this namespace."""
+
+
 class IntentContractStore:
     def __init__(self, persistence: Any, namespace: str):
         self.db, self.namespace = persistence, namespace
         with self.db._connect() as conn:
             conn.execute("CREATE TABLE IF NOT EXISTS intent_contracts (id TEXT PRIMARY KEY, namespace TEXT NOT NULL, "
                          "state TEXT NOT NULL, version INTEGER NOT NULL, payload TEXT NOT NULL)")
+
+            conn.execute("CREATE TABLE IF NOT EXISTS intent_request_keys (namespace TEXT NOT NULL, "
+                         "key_sha256 TEXT NOT NULL, request_sha256 TEXT NOT NULL, contract_id TEXT NOT NULL, "
+                         "PRIMARY KEY(namespace, key_sha256))")
 
     def _encode(self, data: Dict[str, Any]) -> str:
         protected = audit_text.protect(self.namespace, {"data": data}, ("data",))
@@ -249,9 +257,24 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None, intent_review: dict | None = None) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None, intent_review: dict | None = None, request_id: str | None = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
+        key_hash = request_hash = None
+        if request_id is not None:
+            import re
+            if not isinstance(request_id, str) or not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", request_id):
+                raise IntentContractError("request_id must be 1..128 ASCII identifier characters")
+            key_hash = hashlib.sha256(request_id.encode("ascii")).hexdigest()
+            request_hash = plan_digest({"goal": goal, "criteria": criteria,
+                "workspace": str(root.resolve()), "planning_context": planning_context, "service_binding": service_binding})
+            with self.db._connect() as conn:
+                prior = conn.execute("SELECT request_sha256, contract_id FROM intent_request_keys WHERE namespace=? AND key_sha256=?",
+                                     (self.namespace, key_hash)).fetchone()
+            if prior is not None:
+                if prior[0] != request_hash:
+                    raise IntentRequestConflict("request_id already belongs to different input")
+                return self.get(prior[1])
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
         if evidence_requirement is not None:
             from rct_control_plane.evidence_requirement import parse_requirement
@@ -276,9 +299,26 @@ class IntentContractStore:
                 planning_context = derive_context(goal, plan["criteria"])
             data["planning_context"] = validate_context(planning_context, {c["id"] for c in plan["criteria"]})
         state = "waiting_for_input" if plan.get("clarification_questions") else "plan_ready"
+        existing_id = None
         with self.db._connect() as conn:
-            conn.execute("INSERT INTO intent_contracts VALUES (?, ?, ?, 1, ?)",
-                         (contract_id, self.namespace, state, self._encode(data)))
+            # Serialize the key lookup and both INSERTs across API workers.
+            # A failed transaction leaves neither an orphan key nor a plan.
+            conn.execute("BEGIN IMMEDIATE")
+            if key_hash is not None:
+                prior = conn.execute("SELECT request_sha256, contract_id FROM intent_request_keys WHERE namespace=? AND key_sha256=?",
+                                     (self.namespace, key_hash)).fetchone()
+                if prior is not None:
+                    if prior[0] != request_hash:
+                        raise IntentRequestConflict("request_id already belongs to different input")
+                    existing_id = prior[1]
+            if existing_id is None:
+                conn.execute("INSERT INTO intent_contracts VALUES (?, ?, ?, 1, ?)",
+                             (contract_id, self.namespace, state, self._encode(data)))
+                if key_hash is not None:
+                    conn.execute("INSERT INTO intent_request_keys VALUES (?, ?, ?, ?)",
+                                 (self.namespace, key_hash, request_hash, contract_id))
+        if existing_id is not None:
+            return self.get(existing_id)
         self.db.append_audit(entity_type="intent_contract", entity_id=contract_id, action=state, actor=self.namespace,
                              changes={"version": 1, "goal_sha256": hashlib.sha256(goal.encode()).hexdigest()})
         return copy.deepcopy({**data, "id": contract_id, "state": state, "version": 1})
