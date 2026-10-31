@@ -106,12 +106,61 @@ export const LEVELS: Level[] = [
     changesTh: ["แก้ไฟล์เล็ก ๆ หนึ่งไฟล์ที่คุณระบุชื่อในคำขอ รันได้โดยไม่ถาม (บันทึกของเดิมไว้ก่อน ย้อนคืนได้)", "เมื่อหลักฐานบางเกินไป ระบบจะถามคุณ แทนที่จะปฏิเสธคำขอ"] },
 ];
 
-export type Facts = { browserOk: boolean; hasApprover: boolean; policyChosen: boolean; checkupRan: boolean; practiceDone: boolean };
-export const STEP_IDS = ["browser", "approver", "level", "checkup", "practice"] as const;
+// ---------------------------------------------------------------- the model step
+
+export type ModelAdvice = { level: "ok" | "warn" | "fail"; text: string; fix: string };
+
+/** What the readiness state of the chosen model means for a person, and what to do. The states are the ones the server names (readiness.py). */
+export function modelAdvice(state: string, name: string, lang: Lang = "en"): ModelAdvice {
+  const th = lang === "th";
+  switch (state) {
+    case "ready":
+    case "configured":
+      return { level: "ok", text: th ? `มีโมเดลที่เลือกไว้แล้ว: ${name}` : `A model is chosen: ${name}`, fix: state === "configured" ? (th ? "ยังไม่ได้ลองเรียกจริง คำขอแรกจะบอกว่าใช้ได้หรือไม่" : "It has not been called yet; your first request will show whether it works.") : "" };
+    case "server_down":
+      return { level: "fail", text: th ? "โปรแกรมโมเดลในเครื่อง (Ollama) ยังไม่ทำงาน" : "The model program on this computer (Ollama) is not running.",
+        fix: th ? "ติดตั้งจาก ollama.com แล้วเปิดโปรแกรม จากนั้นกด “ตรวจอีกครั้ง” หรือเลือกโมเดลออนไลน์แทน" : "Install it from ollama.com and start it, then press “Check again”, or choose an online model instead." };
+    case "model_missing":
+      return { level: "fail", text: th ? `ยังไม่ได้ติดตั้งโมเดล ${name} ในเครื่อง` : `The model ${name} is not installed on this computer.`,
+        fix: th ? "เลือกโมเดลที่ติดตั้งแล้วด้านล่าง หรือพิมพ์ ollama pull <ชื่อโมเดล> ในเทอร์มินัลหนึ่งครั้ง" : "Pick one that is installed below, or type ollama pull <model name> in a terminal once." };
+    case "no_key":
+      return { level: "fail", text: th ? "โมเดลที่เลือกต้องใช้คีย์" : "The chosen model needs a key.", fix: th ? "ใส่คีย์ด้านล่าง" : "Enter the key below." };
+    default:
+      return { level: "warn", text: th ? "ยังไม่ทราบสถานะของโมเดล" : "The state of the model is not known.", fix: th ? "กด “ตรวจอีกครั้ง”" : "Press “Check again”." };
+  }
+}
+
+/** Said next to the local option, and said plainly: what was measured on this project's own tests with small local models on an ordinary computer. */
+export const LOCAL_NOTE = {
+  en: "Free and private, but small models on an ordinary computer are slow (often a minute or more per request) and make mistakes choosing tools. Good for trying Delentia; for real work an online model is usually needed. Delentia itself has not yet been measured with a strong online model.",
+  th: "ฟรีและเป็นส่วนตัว แต่โมเดลขนาดเล็กบนคอมพิวเตอร์ทั่วไปช้า (มักนานหนึ่งนาทีขึ้นไปต่อคำขอ) และเลือกเครื่องมือผิดได้ เหมาะกับการลองใช้ Delentia งานจริงมักต้องใช้โมเดลออนไลน์ และตัว Delentia เองยังไม่เคยถูกวัดกับโมเดลออนไลน์ที่เก่ง",
+};
+export const ONLINE_NOTE = {
+  en: "An online model costs money every time it is used. Before you paste a key, set a spending limit on the key at the provider (OpenRouter: Keys → credit limit). The key is kept in this program's memory only and is forgotten when it stops; it is never written to disk.",
+  th: "โมเดลออนไลน์เสียเงินทุกครั้งที่ใช้ ก่อนวางคีย์ ให้ตั้งวงเงินของคีย์ที่ผู้ให้บริการ (OpenRouter: Keys → credit limit) คีย์ถูกเก็บในหน่วยความจำของโปรแกรมเท่านั้น และถูกลืมเมื่อโปรแกรมหยุด ไม่เคยเขียนลงดิสก์",
+};
+
+/** The installed Ollama models a person could chat with: embedding and reranking models are for memory search, not for answering, and picking one would make every request fail. */
+export function chatModels(installed: string[]): string[] {
+  return installed.filter((n) => !/(^|[-_/])(bge|embed|embedding|minilm|rerank|reranker)([-_:.]|$)|nomic-embed|mxbai-embed|snowflake-arctic-embed|arctic-embed/i.test(n));
+}
+
+export type CatalogModel = { id: string; prompt_price_per_mtok: number | null; completion_price_per_mtok: number | null; supports_json_mode: boolean; supports_tools: boolean };
+
+/** The cheapest models that can take tools and a JSON reply (the loop needs both), by input price, free (":free") ones last because their limits make them poor for real work. */
+export function cheapestToolModels(catalog: CatalogModel[], limit = 25): CatalogModel[] {
+  const usable = catalog.filter((m) => m.supports_tools && m.supports_json_mode && typeof m.prompt_price_per_mtok === "number" && Number.isFinite(m.prompt_price_per_mtok) && m.prompt_price_per_mtok >= 0);
+  const paid = usable.filter((m) => !m.id.endsWith(":free")).sort((a, b) => (a.prompt_price_per_mtok as number) - (b.prompt_price_per_mtok as number) || a.id.localeCompare(b.id));
+  const free = usable.filter((m) => m.id.endsWith(":free")).sort((a, b) => a.id.localeCompare(b.id));
+  return [...paid, ...free].slice(0, limit);
+}
+
+export type Facts = { browserOk: boolean; modelOk: boolean; hasApprover: boolean; policyChosen: boolean; checkupRan: boolean; practiceDone: boolean };
+export const STEP_IDS = ["browser", "model", "approver", "level", "checkup", "practice"] as const;
 export type StepId = (typeof STEP_IDS)[number];
 
 /** The first step that is not done yet, or null when all are. The level step counts as done when a person has chosen one this visit or the system already has a policy file. */
 export function nextStep(f: Facts): StepId | null {
-  const done: Record<StepId, boolean> = { browser: f.browserOk, approver: f.hasApprover, level: f.policyChosen, checkup: f.checkupRan, practice: f.practiceDone };
+  const done: Record<StepId, boolean> = { browser: f.browserOk, model: f.modelOk, approver: f.hasApprover, level: f.policyChosen, checkup: f.checkupRan, practice: f.practiceDone };
   return STEP_IDS.find((id) => !done[id]) ?? null;
 }
