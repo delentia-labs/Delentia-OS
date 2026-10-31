@@ -51,3 +51,5 @@ Claude เปิด PR #219 paid-run-freeze โดยแก้ research/paid_run
 9. Marketing self-install preview ต้องมี first-run evidence บน OS ที่ประกาศ, known failures, keys/cost/privacy/update/rollback/uninstall และ demo ที่ตรงกับข้ออ้าง
 
 สถานะ: runtime ทดลอง local-first ที่มี verified execution เฉพาะ domain เพิ่ม R1 assessment foundation ในรอบนี้ ยังไม่รับรอง autonomous RCT-7 ทั่วไป ไม่มี paid calls, release หรือ merge โดย Codex
+
+Combined ใหม่ a55457a0f6414a44c8e0bce9bfd3260bed9b9023 ทดสอบชุดเดิมซ้ำผ่าน 118 cases / 204 warnings ใน 4.08 วินาที; push แล้วทั้ง implementation b044e683 และ combined นี้ ผล CI ใหม่ยังต้องรอ ไม่ใช้ผลเขียวของ 509aa705 รับรอง revision ใหม่
