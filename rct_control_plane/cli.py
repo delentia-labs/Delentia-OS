@@ -2514,7 +2514,8 @@ def approvals_review(key_path: str, host_dir: Optional[str], db: Optional[str]) 
 @approvals_group.command("first-device-code")
 @click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
 @click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
-def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> None:
+@click.option("--hold", is_flag=True, help="Keep the window open until Enter is pressed (the Desk opens this command in its own window so you can read the code).")
+def approvals_first_device_code(host_dir: Optional[str], db: Optional[str], hold: bool) -> None:
     """Print a one-time code that lets the FIRST approval device (Windows Hello) be added from the Desk, with no key to create.
 
     Only works while nobody can approve yet. Valid 10 minutes, 5 tries, used once. Type it into Desk -> Settings -> Approval devices while adding your computer."""
@@ -2534,6 +2535,12 @@ def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> N
     click.echo("   Next: open the Desk (`delentia desk`) -> Settings -> Approval devices -> type a name for this computer, type the code, press Add this device.")
     click.echo("   Windows Hello will ask for your face, fingerprint or PIN, and this computer becomes your first approver.")
     click.echo(f"   database: {chosen or 'the default (DELENTIA_HOME)'}")
+    if hold:
+        click.echo("")
+        try:
+            input("   Keep this window open while you type the code in the Delentia page. Press Enter here when you are done. ")
+        except EOFError:
+            pass
 
 
 @approvals_group.command("reject")

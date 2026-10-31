@@ -37,6 +37,7 @@ export default function StatusPage() {
       <PageHeader
         title={t("status")}
         lead={T("What needs you, what the agent did last, and whether everything is working.", "สิ่งที่ต้องการคุณ สิ่งที่เอเจนต์ทำล่าสุด และระบบทำงานปกติหรือไม่")}
+        actions={<Link href="/setup" className="desk-focus desk-mono rounded border border-dl-fern bg-dl-pine/60 px-3 py-1.5 text-xs text-dl-text hover:bg-dl-pine">{T("Setup & checkup", "ตั้งค่าและตรวจระบบ")}</Link>}
       />
       <PageBody>
         <UpdateBanner />
@@ -47,6 +48,11 @@ export default function StatusPage() {
             {readiness.data && !readiness.data.all_done ? (
               <Panel title={readiness.data.ready ? T("One more step", "อีกขั้นเดียว") : T("Getting started", "เริ่มต้นใช้งาน")}
                 aside={<Badge tone={readiness.data.ready ? "leaf" : "amber"}>{readiness.data.checks.filter((c) => c.ok).length} / {readiness.data.checks.length}</Badge>}>
+                <p className="mb-3 text-sm text-dl-text">
+                  {T("The quickest way: ", "ทางที่เร็วที่สุด: ")}
+                  <Link href="/setup" className="desk-focus text-dl-leaf underline">{T("open the Setup assistant", "เปิดตัวช่วยตั้งค่า")}</Link>
+                  {T(". It checks, asks only for what is missing, and does it all in this window.", " มันตรวจ ถามเฉพาะสิ่งที่ยังขาด และทำทั้งหมดในหน้าต่างนี้")}
+                </p>
                 <ol className="space-y-3">
                   {readiness.data.checks.map((c) => {
                     const d = describeCheck(c, lang);
