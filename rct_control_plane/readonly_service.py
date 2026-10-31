@@ -18,6 +18,8 @@ from pydantic import Field
 from starlette.responses import JSONResponse
 
 from rct_control_plane.rct_plan import PlanItem
+from rct_control_plane.evidence_assessment import EvidenceDecision
+from rct_control_plane.evidence_requirement import parse_requirement
 from rct_control_plane.verified_budget import QuoteEvidence, digest, strict_json
 
 ROUTE = "/v1/agent/readonly/budget"
@@ -66,6 +68,7 @@ class PublicContract(PlanItem):
     execution_status: Literal["not_started", "partial", "incomplete", "complete"]
     report: dict[str, Any] | None
     verified: bool
+    evidence_decision: EvidenceDecision | None = None
 
 
 class BudgetResult(PlanItem):
@@ -93,6 +96,11 @@ class ServicePolicy(PlanItem):
     workspace_id: str = Field(min_length=1, max_length=80)
     workspace_root: str
     actor_files: dict[str, list[str]]
+    evidence_requirements: dict[str, dict[str, dict[str, Any]]] = Field(default_factory=dict)
+
+    def binding_payload(self):
+        # Preserve existing policy digests when the optional gate is absent.
+        return self.model_dump(exclude={"evidence_requirements"} if not self.evidence_requirements else set())
 
 
 def load_policy(location: str | None = None) -> ServicePolicy | None:
@@ -110,6 +118,13 @@ def load_policy(location: str | None = None) -> ServicePolicy | None:
     for paths in policy.actor_files.values():
         for relative in paths:
             _file(root, relative)
+    for actor, files in policy.evidence_requirements.items():
+        if actor not in policy.actor_files or set(files) - set(policy.actor_files[actor]):
+            raise ValueError("evidence requirements must belong to authorized actor files")
+        for relative, value in files.items():
+            requirement = parse_requirement(value)
+            if any(o.locator != relative for o in requirement.observations):
+                raise ValueError("evidence observation locator differs from authorized file")
     return policy
 
 
@@ -166,7 +181,7 @@ def public_result(contract, actor, policy):
     return BudgetResult(contract=PublicContract(
         id=contract["id"], actor=actor, workspace_id=policy.workspace_id,
         version=contract["version"], state=contract["state"], plan_sha256=contract["plan_sha256"],
-        policy_sha256=digest(policy.model_dump()), plan=plan,
+        policy_sha256=digest(policy.binding_payload()), plan=plan,
         differences=contract.get("differences", []), receipts=[{
             **r, "recorded_ns": str(r["recorded_ns"]),
             "hashed_payload_json": json.dumps({k: v for k, v in r.items() if k != "receipt_sha256"},
@@ -174,6 +189,7 @@ def public_result(contract, actor, policy):
         } for r in receipts],
         execution_status=contract.get("execution_status", "not_started"),
         report=contract.get("execution_report"), verified=complete,
+        evidence_decision=contract.get("evidence_decision"),
     ))
 
 
@@ -182,7 +198,7 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         return
     from rct_control_plane.intent_contract import IntentContractError, IntentContractStore
     policy_path = os.environ.get("DELENTIA_READONLY_POLICY")
-    policy_hash = digest(policy.model_dump())
+    policy_hash = digest(policy.binding_payload())
 
     def authorize(request):
         # Reread the pinned operator policy on every operation. Changes revoke
@@ -191,7 +207,7 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             current = load_policy(policy_path)
         except (OSError, ValueError):
             raise HTTPException(503, "service policy unavailable") from None
-        if current is None or digest(current.model_dump()) != policy_hash:
+        if current is None or digest(current.binding_payload()) != policy_hash:
             raise HTTPException(409, "policy changed; restart service")
         actor = getattr(request.state, "delentia_user", None)
         if not actor or actor == "shared" or actor not in policy.actor_files:
@@ -233,6 +249,11 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             validate_budget(payload.budget)
         except ValueError:
             raise HTTPException(422, "invalid same-currency budget") from None
+        requirement = policy.evidence_requirements.get(actor, {}).get(payload.evidence.relative_path)
+        if requirement is not None:
+            parsed = parse_requirement(requirement)
+            if any(o.sha256 != payload.evidence.sha256 for o in parsed.observations):
+                raise HTTPException(409, "evidence differs from operator-bound observation")
         _, store = backend(actor)
         # Persist binding in the same INSERT as the plan: no unbound-contract
         # window, no second write that can attach authority to a generic plan.
@@ -242,7 +263,7 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
             Path(policy.workspace_root), {"semantic_plan": {
                 "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
-            }}, service_binding=binding)
+            }}, service_binding=binding, evidence_requirement=requirement)
         return public_result(contract, actor, policy)
 
     @app.get(ROUTE + "/{contract_id}", response_model=BudgetResult)
