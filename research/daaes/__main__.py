@@ -126,6 +126,10 @@ def _benchmark(args: Any) -> int:
             raise BudgetExceeded("a paid benchmark needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1 in the environment (set by you, never written by this tool)")
         if args.price_in is None or args.price_out is None or args.budget_usd <= 0:
             raise BudgetExceeded("a paid benchmark needs --price-in, --price-out (USD per million tokens) and --budget-usd: an unknown price is refused")
+        from research import paid_run_freeze
+        frozen = paid_run_freeze.freeze_problems(args.model, args.price_in, args.price_out, args.budget_usd, force=True)          # this branch always talks to the real endpoint
+        if frozen:
+            raise BudgetExceeded("freeze: " + "; ".join(frozen))
         policy = BudgetPolicy(total_usd=args.budget_usd, warning_usd=args.budget_usd * 0.6, stop_new_runs_usd=args.budget_usd * 0.8, reserve_usd=args.budget_usd * 0.2,
                               max_cost_per_run_usd=args.budget_usd * 0.1, max_llm_calls_per_run=args.max_iterations * 6)
         result = benchmark.run_matrix(out, "https://openrouter.ai/api/v1", os.environ["OPENROUTER_API_KEY"], args.model, args.price_in, args.price_out, arms, seeds, policy=policy,

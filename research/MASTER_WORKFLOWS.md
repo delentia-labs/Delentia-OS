@@ -22,7 +22,7 @@ Per short run about 30,000 prompt and 3,000 completion tokens; W05, W07, W08, W1
 
 ## Where each one stands today
 
-Of 12 workflows: 12 have a scripted run of the whole job, 9 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
+Of 12 workflows: 12 have a scripted run of the whole job, 11 have a live runner (code that can run it with a model and judge it), 0 have a live result with a capable model.
 
 | workflow | whole job run, scripted | live runner | what is missing next |
 |---|---|---|---|
@@ -33,11 +33,11 @@ Of 12 workflows: 12 have a scripted run of the whole job, 9 have a live runner (
 | W05 A scheduled job that runs unattended for days | yes | `scripts/autonomy_drill.py (scripted model)` | the same drill with a real model and a host that stays on for 8 hours, then 7 days |
 | W06 A job started by a signed event | yes | `research/live_workflows.py (run_w06; `python -m research.live_workflows run W06`)` | a live result with a capable model; a duplicate-delivery run on the host through the real HTTP route |
 | W07 A project across several sessions with a changing instruction | yes | `research/daaes/tc006.py (run_tc006 with provider=) through `python -m research.daaes live --case TC-006`` | a capable model (the live path is rehearsed against a fake paid endpoint, with the budget guard and a sealed bundle; no language model has run it) |
-| W08 A job done ten times gets cheaper and becomes a tool | yes | `scripts/measure_repeat_goal.py` | the forged-tool half of the job in the same run (C20 covers it separately); then the same ten requests with a live model |
-| W09 A payment-like job through a crash, an outage and a dead notary | yes | none | TC-010 with a live model driving the twelve steps; the host with a separate notary for the fail-closed part |
-| W10 Hostile content, a stranger, and two signatures | yes | `scripts/measure_injection_real_model.py` | a capable model (the small local models read the page in 2 to 11 of 18 scenarios) |
+| W08 A job done ten times gets cheaper and becomes a tool | yes | `research/live_workflows.py (run_w08; `python -m research.live_workflows run W08`) and scripts/measure_repeat_goal.py` | a live result with a capable model (the runner is rehearsed with a scripted model and its negative control; it asks seven requests, not ten, and the forged-tool half of the job is covered by C20 separately) |
+| W09 A payment-like job through a crash, an outage and a dead notary | yes | `research/live_workflows.py (run_w09; criteria written first in research/W09_CRITERIA_R105.md)` | a live result with a capable model (rehearsed with a scripted model: a real order service, a real governed agent killed the hard way at three points, continued by the real journal; the negative control with the keys off fails); a model outage in the middle of the job, a lost reply that is not a kill, a person's signature for each order, and the host with a separate notary for the fail-closed part are not covered |
+| W10 Hostile content, a stranger, and two signatures | yes | `research/live_workflows.py (run_w10; `python -m research.live_workflows run W10`) and scripts/measure_injection_real_model.py` | a capable model (the small local models read the page in 2 to 11 of 18 scenarios); the strangers half of the workflow (an unknown sender, pairing) is covered by the scripted whole-job test only |
 | W11 Prove what happened, hand it over, forget a person | yes | none | the same order on the host with the real public witness and an off-host backup; erasure does not reach a backup made BEFORE it (the test states this): old backups must be rotated or destroyed |
-| W12 Delegate in parallel and use an outside service | yes | none | a capable model (nothing here has a live result); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it |
+| W12 Delegate in parallel and use an outside service | yes | `research/live_workflows.py (run_w12; `python -m research.live_workflows run W12`)` | a live result with a capable model (the runner is rehearsed with a scripted parent and three real children; for a paid run the children's money is bounded by the shared token cap and refused if the worst case exceeds half the budget); harness case C25 covers three children, a forged answer caught and an outside service whose write waits for one signature, and C26 (Round 89) the children sharing the parent's one spending cap with what they spend charged back to it |
 
 ## The workflows
 

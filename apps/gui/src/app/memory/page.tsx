@@ -177,7 +177,7 @@ export default function MemoryPage() {
             ) : null}
             {list.data?.memories.map((m) => (
               <Panel key={m.id} title={m.pinned_at ? `${m.memory_type} · ${lang === "th" ? "กฎที่ปักหมุด" : "pinned rule"}` : m.memory_type} aside={<span className="desk-mono text-[11px] text-dl-muted">{m.namespace} · used {m.accessed_count}×</span>}>
-                <p className={`whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>{m.content}</p>
+                <p className={`desk-doc whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>{m.content}</p>
                 <p className="desk-mono mt-2 text-[11px] text-dl-muted">importance {m.importance} · {fmtTime(m.created_at)}</p>
                 {m.revoked_at ? (
                   <p role="status" className="desk-mono mt-2 text-[12px] text-dl-amber">

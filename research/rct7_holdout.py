@@ -184,6 +184,10 @@ def _provider(kind: str, model: str, budget_usd: float) -> Any:
     prices = lookup_openrouter_prices(model)
     if not prices:
         raise ValueError(f"no price for {model}: a budget that cannot be checked is not a budget")
+    from research import paid_run_freeze
+    frozen = paid_run_freeze.freeze_problems(model, prices[0], prices[1], budget_usd)
+    if frozen:
+        raise ValueError("freeze: " + "; ".join(frozen) + " (nothing was sent)")
     return MeteredProvider(OpenRouterProvider(model=model), max_cost_usd=budget_usd, prompt_price_per_mtok=prices[0], completion_price_per_mtok=prices[1])
 
 

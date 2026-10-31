@@ -106,3 +106,16 @@ def test_an_arm_that_mostly_errored_is_reported_as_inconclusive_not_as_a_pass_or
     clean = {"default": {"right": 20, "of": 31, "accuracy": 20 / 31, "errors": 1, "median_menu_tools": 28},
              "ranked+compact": {"right": 22, "of": 31, "accuracy": 22 / 31, "errors": 0, "median_menu_tools": 7}}
     assert mtc.adoption(clean)["T10"]["pass"] is True and "inconclusive" not in mtc.adoption(clean)["T10"]
+
+
+def test_two_arms_that_chose_nothing_right_are_inconclusive_not_a_pass_but_one_arm_failing_alone_is_a_result():
+    """Found by the free rehearsal of 2026-10-31: a fake model got 0/31 on both menus and the rule printed PASS, because 0 is within one goal of 0."""
+    nothing = {"default": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 0, "median_menu_tools": 40}, "ranked+compact": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 0, "median_menu_tools": 8}}
+    judged = mtc.adoption(nothing)["T10"]
+    assert judged["pass"] is False and judged["inconclusive"] is True and "neither arm" in judged["value"]
+    one = {"default": {"right": 1, "of": 31, "accuracy": 1 / 31, "errors": 0, "median_menu_tools": 40}, "ranked+compact": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 0, "median_menu_tools": 8}}
+    assert mtc.adoption(one)["T10"].get("inconclusive") is True
+    full_menu_confuses_it = {"default": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 0, "median_menu_tools": 40}, "ranked+compact": {"right": 22, "of": 31, "accuracy": 22 / 31, "errors": 0, "median_menu_tools": 8}}
+    assert mtc.adoption(full_menu_confuses_it)["T10"]["pass"] is True and "inconclusive" not in mtc.adoption(full_menu_confuses_it)["T10"]
+    ranked_loses_everything = {"default": {"right": 25, "of": 31, "accuracy": 25 / 31, "errors": 0, "median_menu_tools": 40}, "ranked+compact": {"right": 0, "of": 31, "accuracy": 0.0, "errors": 0, "median_menu_tools": 8}}
+    assert mtc.adoption(ranked_loses_everything)["T10"]["pass"] is False and "inconclusive" not in mtc.adoption(ranked_loses_everything)["T10"]

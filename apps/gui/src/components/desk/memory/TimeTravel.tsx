@@ -67,7 +67,7 @@ export function TimeTravel({ namespace, refreshVersion = 0 }: { namespace: strin
               <div className="space-y-2">
                 <p className="desk-mono text-[12px] text-dl-muted">{th ? "หลังเหตุการณ์" : "after event"} #{state.seq} · {state.memories.length} {th ? "รายการ" : "items"}</p>
                 {state.memories.map((m) => (
-                  <p key={m.id} className={`whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>
+                  <p key={m.id} className={`desk-doc whitespace-pre-wrap break-words text-sm ${m.revoked_at ? "text-dl-muted line-through" : "text-dl-text"}`}>
                     {m.content}{m.revoked_at ? <span className="desk-mono text-[11px] text-dl-amber"> · {th ? "เพิกถอน" : "revoked"}{m.revoked_reason ? `: ${m.revoked_reason}` : ""}</span> : null}
                   </p>
                 ))}

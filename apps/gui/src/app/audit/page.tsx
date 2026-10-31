@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { serverText } from "@/lib/server-text-th";
 import { EventExplorer } from "@/components/desk/events";
 import { Badge, Button, Code, ErrorNote, PageBody, PageHeader, Panel, Row, useDeskData } from "@/components/desk/ui";
 import { desk, type GovVerify, type WitnessesChecked } from "@/lib/desk-api";
@@ -34,7 +35,7 @@ export default function AuditPage() {
     { tier: "A2", name: L("Signed by a separate notary process", "ลงลายเซ็นโดยโปรเซส notary ที่แยกต่างหาก"), on: a.notary.configured,
       note: a.notary.configured ? `${L("notary at", "notary ที่")} ${a.notary.url}` : L("off: run `delentia notary serve` as another OS user and set DELENTIA_NOTARY_URL", "ปิด: รัน `delentia notary serve` ด้วยบัญชีผู้ใช้ระบบปฏิบัติการอีกบัญชี แล้วตั้ง DELENTIA_NOTARY_URL") },
     { tier: "A3", name: L("Chain head held by an outside witness", "ปลายโซ่ถูกเก็บไว้กับพยานภายนอก"), on: !!protection.data?.tamper_evident_against_host_compromise,
-      note: protection.data ? (protection.data.tamper_evident_against_host_compromise ? protection.data.plain : `${L("off", "ปิด")}: ${protection.data.plain}. ${L("Set DELENTIA_AUDIT_WITNESSES on the host.", "ตั้ง DELENTIA_AUDIT_WITNESSES บนเครื่องโฮสต์")}`)
+      note: protection.data ? (protection.data.tamper_evident_against_host_compromise ? serverText(protection.data.plain, lang === "th") : `${L("off", "ปิด")}: ${serverText(protection.data.plain, lang === "th")}. ${L("Set DELENTIA_AUDIT_WITNESSES on the host.", "ตั้ง DELENTIA_AUDIT_WITNESSES บนเครื่องโฮสต์")}`)
         : L("checking the witnesses…", "กำลังตรวจพยาน…") },
   ] : [];
 
@@ -81,7 +82,7 @@ export default function AuditPage() {
                 {protection.error ? <ErrorNote error={protection.error} onRetry={protection.reload} /> : null}
                 {protection.data ? (
                   <>
-                    <p className="text-[13px] leading-relaxed text-dl-text">{protection.data.plain}</p>
+                    <p className="text-[13px] leading-relaxed text-dl-text">{serverText(protection.data.plain, lang === "th")}</p>
                     {protection.data.problem ? <p role="alert" className="mt-2 text-[13px] text-dl-rust">{protection.data.problem}</p> : null}
                     <Row label={L("Rows newer than the newest anchor", "แถวที่ใหม่กว่าหมุดล่าสุด")}>{protection.data.rows_not_yet_anchored}</Row>
                     {protection.data.witnesses.map((w) => (
@@ -90,7 +91,7 @@ export default function AuditPage() {
                         {w.last_anchored_age_s !== null ? ` · ${Math.round(w.last_anchored_age_s / 60)} ${L("min ago", "นาทีที่แล้ว")}` : ""}
                       </Row>
                     ))}
-                    <p className="mt-3 text-[12px] leading-relaxed text-dl-muted">{L("Configure witnesses with ", "ตั้งพยานด้วย ")}<Code>DELENTIA_AUDIT_WITNESSES</Code>{L(" (an http witness and a git witness are better than one). Give an auditor a proof they can check without trusting this host: ", " (พยานแบบ http คู่กับแบบ git ดีกว่าอันเดียว) ให้ผู้ตรวจสอบมีหลักฐานที่ตรวจได้โดยไม่ต้องเชื่อเครื่องนี้: ")}<Code>delentia audit-chain export-proof --out proof.json</Code>, verified with <Code>scripts/verify_audit_bundle.py</Code>.</p>
+                    <p className="mt-3 text-[12px] leading-relaxed text-dl-muted">{L("Configure witnesses with ", "ตั้งพยานด้วย ")}<Code>DELENTIA_AUDIT_WITNESSES</Code>{L(" (an http witness and a git witness are better than one). Give an auditor a proof they can check without trusting this host: ", " (พยานแบบ http คู่กับแบบ git ดีกว่าอันเดียว) ให้ผู้ตรวจสอบมีหลักฐานที่ตรวจได้โดยไม่ต้องเชื่อเครื่องนี้: ")}<Code>delentia audit-chain export-proof --out proof.json</Code>{L(", verified with ", " ตรวจด้วย ")}<Code>scripts/verify_audit_bundle.py</Code>.</p>
                   </>
                 ) : null}
               </Panel>
@@ -106,7 +107,7 @@ export default function AuditPage() {
                     <Row label={L("Chain", "โซ่")}>{verify.chain.ok ? <Badge tone="leaf">{L("intact", "สมบูรณ์")}</Badge> : <Badge tone="rust">{L("broken at", "ขาดที่")} #{verify.chain.first_bad_seq}</Badge>}</Row>
                     {!verify.chain.ok ? <p className="text-[13px] text-dl-rust">{verify.chain.reason}</p> : null}
                     <Row label={L("Signatures", "ลายเซ็น")}>{verify.signature_check.startsWith("NOT") ? <Badge tone="amber">{L("not checked", "ยังไม่ได้ตรวจ")}</Badge> : <Badge tone="leaf">{L("checked", "ตรวจแล้ว")}</Badge>}</Row>
-                    <p className="pb-2 text-[12px] text-dl-muted">{verify.signature_check}</p>
+                    <p className="pb-2 text-[12px] text-dl-muted">{serverText(verify.signature_check, lang === "th")}</p>
                     <Row label={L("Episode signatures", "ลายเซ็นของ episode")}>{verify.episodes.signature_ok} {L("ok", "ผ่าน")} · {verify.episodes.signature_bad} {L("bad", "เสีย")} · {verify.episodes.unsigned} {L("unsigned", "ไม่มีลายเซ็น")} ({L("of", "จาก")} {verify.episodes.checked})</Row>
                     {verify.episodes.signature_bad ? <p className="text-[13px] text-dl-rust">{L("Rows with a bad episode signature: ", "แถวที่ลายเซ็น episode เสีย: ")}{verify.episodes.bad_audit_ids.join(", ")}</p> : null}
                     <Row label={L("Notary receipts kept locally", "ใบรับของ notary ที่เก็บไว้ในเครื่อง")}>{verify.notary.receipts_in_local_trail} ({L("gaps", "ช่องว่าง")}: {verify.notary.gaps})</Row>

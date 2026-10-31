@@ -1841,7 +1841,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if merged is None:
             return {"tool_result": {"plan_refused": "this step needs different approvers than the steps already in the plan; finish this plan and ask for it in the next one"}}
         step_no = len(proposals) + 1
-        proposals.append({"tool_name": tool_name, "tool_args": tool_args, "reasoning": reasoning, "kind": kind, "required_signatures": int(wanted.get("required_signatures") or 1),
+        proposals.append({"tool_name": tool_name, "tool_args": self._with_base(tool_name, tool_args), "reasoning": reasoning, "kind": kind, "required_signatures": int(wanted.get("required_signatures") or 1),
                           "approver_roles": roles, "rule_id": wanted.get("rule_id"), "reason": ((gate or {}).get("tool_result") or {}).get("reason") or "a plan step"})
         try:
             self._persistence.append_audit(entity_type="governed_loop_plan", entity_id=f"{self.namespace}-{tool_name}", action="step_proposed", actor=self.namespace,
@@ -2515,6 +2515,9 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 tools=[s["tool_name"] for s in result.get("steps", []) if s.get("tool_name")], tainted=getattr(self, "_episode_taint", None) is not None)
         except Exception:                      # a logging problem must never change an episode's outcome
             pass
+        # Round 106: the Delta Engine's durable, verified log joins the cycle's RECORD step (numbers and hashes only; agent_state_log.py). It never raises.
+        from rct_control_plane import agent_state_log
+        result["state_log"] = agent_state_log.record_for_loop(self, result, stopped_reason, verified_success)
         # Round 87 (found by the W08 whole-job test): an answer built from outside text was cached like any other and then served with NO model call on the next identical request, so one
         # run that a page had steered became the permanent answer. An episode that read outside text teaches no skill (Round 65) and now stores no warm answer either.
         read_outside_text = getattr(self, "_episode_taint", None) is not None and self._taint_enabled()
@@ -2808,6 +2811,18 @@ class GovernedAutonomousLoop(AutonomousLoop):
         except Exception:
             return None
 
+    @staticmethod
+    def _with_base(tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
+        """Round 106: a whole-file write that waits for a signature carries what the file was when it was proposed, inside the arguments the person signs. Whatever the model put in that
+        field is replaced; if the file cannot be read now the field is left empty and the write is checked no further (the path rules still apply)."""
+        if tool_name != "delentia_write_repo_file" or not isinstance(tool_args, dict) or not tool_args.get("relative_path"):
+            return tool_args
+        try:
+            from rct_control_plane import mcp_server as _mcp_module
+            return {**tool_args, "expected_base_sha256": _mcp_module.file_base_state(str(tool_args["relative_path"]))}
+        except Exception:
+            return {k: v for k, v in tool_args.items() if k != "expected_base_sha256"}
+
     def _record_pending_action(self, result: Dict[str, Any]) -> Optional[Any]:
         """Persists the exact action the episode paused on (both the K.1.8
         write/patch gate and the base loop's medium-risk sandbox gate end
@@ -2821,7 +2836,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         wanted = (last.get("tool_result") or {}).get("approval_policy") or {}
         record = self._pending_actions().create(
             namespace=self.namespace, goal=result["goal"], tool_name=tool_name,
-            tool_args=last.get("tool_args") or {}, reason=reason,
+            tool_args=self._with_base(tool_name, last.get("tool_args") or {}), reason=reason,
             required_signatures=int(wanted.get("required_signatures") or 1),
             approver_roles=wanted.get("approver_roles") or None, policy_rule=wanted.get("rule_id"),
             policy_digest=wanted.get("policy_digest"), workspace=self._workspace_id(),

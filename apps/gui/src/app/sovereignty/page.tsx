@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
+import { serverText } from "@/lib/server-text-th";
 import { Badge, Button, Code, ErrorNote, PageBody, PageHeader, Panel, Row, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk, type SovereigntyInfo } from "@/lib/desk-api";
 
@@ -83,7 +84,7 @@ export default function SovereigntyPage() {
           <div className="space-y-6">
             {!d.enforced ? (
               <div role="alert" className="rounded-md border border-dl-amber/60 bg-dl-amber/10 px-4 py-3 text-sm leading-relaxed text-dl-text">
-                {d.warning} <Code>delentia sovereignty set --region TH</Code>
+                {serverText(d.warning, lang === "th")} <Code>delentia sovereignty set --region TH</Code>
               </div>
             ) : null}
             <div className="grid gap-6 xl:grid-cols-2">
@@ -103,7 +104,7 @@ export default function SovereigntyPage() {
                 <Row label={L("Model", "โมเดล")}>{d.model}</Row>
                 <Row label={L("Processes data", "ประมวลผลข้อมูลที่")}>{d.hosting.kind} · {d.hosting.region}</Row>
                 <Row label={L("Operator", "ผู้ให้บริการ")}>{d.hosting.operator || "-"}</Row>
-                {d.reason ? <p className="mt-2 text-[13px] leading-relaxed text-dl-muted">{d.reason}</p> : null}
+                {d.reason ? <p className="mt-2 text-[13px] leading-relaxed text-dl-muted">{serverText(d.reason, lang === "th")}</p> : null}
                 {d.hosting.note ? <p className="mt-1 text-[12px] text-dl-muted">{d.hosting.note}</p> : null}
                 <p className="mt-3 text-[12px] leading-relaxed text-dl-muted">
                   {L("Plug in your own AI: ", "เสียบ AI ของตนเอง: ")}<Code>delentia model set &lt;model&gt; --provider openai-compat --base-url &lt;url&gt; --kind in_region --region TH</Code>

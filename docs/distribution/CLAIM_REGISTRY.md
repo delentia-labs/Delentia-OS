@@ -14,7 +14,7 @@ This file is the **single approved wording source** for every public-facing clai
 ### Test Suite
 | Claim | Approved Wording | Source |
 | --- | --- | --- |
-| Total passing tests | **8,585 passed · 46 skipped · 0 failed - public CI 2026-10-25, see TESTING_CANONICAL.md** | `TESTING_CANONICAL.md §1` |
+| Total passing tests | **9,069 passed · 46 skipped · 0 failed - public CI 2026-10-30, see TESTING_CANONICAL.md** | `TESTING_CANONICAL.md §1` |
 | Coverage | *(pending re-measurement - do not quote 90%/91% until re-run; see `TESTING_CANONICAL.md §1`)* | `TESTING_CANONICAL.md §1` |
 | Microservice slice | *(pending re-measurement alongside coverage)* | `TESTING_CANONICAL.md §1` |
 | Python matrix | **Python 3.10 / 3.11 / 3.12** | `ci.yml` |
@@ -94,7 +94,7 @@ Use one of these **approved status phrases** in all public communications:
 
 - ✅ `"Experimental, self-hosted, intent-centric AI agent runtime · Apache 2.0"`
 - ✅ `"Delentia OS: a governed agent runtime that stops and asks for a signature before it writes, sends or runs code (experimental)"`
-- ✅ `"8,585 tests passing (public CI run 40166394493, 2026-10-25) · Apache 2.0 · Python 3.10+"`
+- ✅ `"9,069 tests passing (public CI run 40989051697, 2026-10-30) · Apache 2.0 · Python 3.10+"`
 - ❌ Do NOT use `"stable SDK"` or `"production-derived"` (withdrawn 2026-10-23)
 - ✅ `"Delta-Memory: the delta log is 39% to 90% smaller than full snapshots (20 to 500 ticks, measured bytes, synthetic simulation) — reproducible with scripts/measure_delta_engine_real.py"`
 - ❌ Do NOT quote 91.5% or 95.3% for Delta-Memory: those were formula estimates
@@ -110,13 +110,13 @@ Use one of these **approved status phrases** in all public communications:
 
 ### X (Twitter/X)
 - Max 280 chars; favor one clear claim + evidence link
-- Approved: `"8,585 tests passing · Apache 2.0 · Python 3.10+ · on GitHub: github.com/delentia-labs/delentia-os"`
+- Approved: `"9,069 tests passing · Apache 2.0 · Python 3.10+ · on GitHub: github.com/delentia-labs/delentia-os"`
 - Approved: `"Delta-Memory: 39–90% smaller than full snapshots (20–500 ticks, measured bytes, synthetic) — python scripts/measure_delta_engine_real.py"`
 - Avoid: Thread of metrics without a reproducible evidence link
 
 ### Hacker News (Ask HN / Show HN)
 - Title must be factual; no superlatives
-- Approved title: `"Show HN: Delentia - a constitutional agent runtime with a deterministic FDIA gate (8,585 tests, Apache 2.0)"`
+- Approved title: `"Show HN: Delentia - a constitutional agent runtime with a deterministic FDIA gate (9,069 tests, Apache 2.0)"`
 - First comment must include: SSOT test numbers + Colab link + scope boundary table
 
 ### Reddit (r/MachineLearning, r/LocalLLaMA, r/Python)
