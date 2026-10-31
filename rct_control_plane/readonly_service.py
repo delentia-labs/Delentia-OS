@@ -6,6 +6,7 @@ API boundary, not OS isolation against an operator modifying files/hard links.
 from __future__ import annotations
 
 import os
+import copy
 import json
 import sqlite3
 import re
@@ -106,10 +107,16 @@ class ServicePolicy(PlanItem):
     workspace_root: str
     actor_files: dict[str, list[str]]
     evidence_requirements: dict[str, dict[str, dict[str, Any]]] = Field(default_factory=dict)
+    intent_review_required: bool = False
 
     def binding_payload(self):
         # Preserve existing policy digests when the optional gate is absent.
-        return self.model_dump(exclude={"evidence_requirements"} if not self.evidence_requirements else set())
+        excluded = set()
+        if not self.evidence_requirements:
+            excluded.add("evidence_requirements")
+        if not self.intent_review_required:
+            excluded.add("intent_review_required")
+        return self.model_dump(exclude=excluded)
 
 
 def load_policy(location: str | None = None) -> ServicePolicy | None:
@@ -186,7 +193,9 @@ def public_result(contract, actor, policy):
         raise HTTPException(409, "complete state lacks component receipts")
     # The digest covers the stored plan including the server workspace. It is
     # an opaque confirmation token here, not a hash of this redacted view.
-    plan = {k: v for k, v in contract["plan"].items() if k != "workspace"}
+    plan = copy.deepcopy({k: v for k, v in contract["plan"].items() if k != "workspace"})
+    if "intent_review" in plan:
+        plan["intent_review"]["binding"].pop("workspace_root", None)
     links = []
     if "evidence_requirement" in plan:
         requirement = parse_requirement(plan["evidence_requirement"])
@@ -213,6 +222,16 @@ def public_result(contract, actor, policy):
     ))
 
 
+def budget_review_catalog():
+    """Server-owned versioned capability description, not request authority.
+
+    This is the bounded budget executor only, not a general intent catalog.
+    """
+    return {"schema_version": 1, "executor": "verified_budget_v1",
+            "scope": "document_bytes_and_same_currency_arithmetic",
+            "criteria": ["C1"], "review_protocol": 1}
+
+
 def install_route(app, policy: ServicePolicy | None, loop_factory):
     if policy is None:
         return
@@ -233,6 +252,10 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         if not actor or actor == "shared" or actor not in policy.actor_files:
             raise HTTPException(403, "actor not authorized")
         return actor
+
+    def review_binding(actor):
+        return {"actor": actor, "workspace_root": str(Path(policy.workspace_root).resolve()),
+                "policy_sha256": policy_hash, "catalog_sha256": digest(budget_review_catalog())}
 
     def backend(actor):
         loop = loop_factory(actor)
@@ -280,10 +303,16 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         binding = {"profile": "readonly_budget_v1", "actor": actor, "workspace_id": policy.workspace_id,
                    "workspace_root": str(Path(policy.workspace_root).resolve()),
                    "executor": "verified_budget_v1", "policy_sha256": policy_hash}
+        review = None
+        if policy.intent_review_required:
+            review = {"schema_version": 1, "binding": review_binding(actor), "proposal": {
+                "schema_version": 1, "material_criteria": [{"id": "C1",
+                    "statement": "Compare quote with budget", "polarity": "required",
+                    "source_quotes": ["Compare quote with budget"]}], "constraints": [], "unknowns": []}}
         contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
             Path(policy.workspace_root), {"semantic_plan": {
                 "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
-            }}, service_binding=binding, evidence_requirement=requirement)
+            }}, service_binding=binding, evidence_requirement=requirement, intent_review=review)
         return public_result(contract, actor, policy)
 
     @app.get(ROUTE + "/{contract_id}", response_model=BudgetResult)
@@ -306,7 +335,14 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         try:
             # Existing CAS claim prevents two concurrent confirmations from
             # dispatching twice. Running/interrupted contracts cannot replay.
-            await loop.continue_intent(contract_id, payload.version)
+            if policy.intent_review_required:
+                if "intent_review" not in contract["plan"]:
+                    raise IntentContractError("contract lacks the required review")
+                await loop.continue_intent(contract_id, payload.version,
+                    review_binding=review_binding(actor), intent_confirmation={"contract_id": contract_id,
+                        "version": payload.version, "plan_sha256": payload.plan_sha256})
+            else:
+                await loop.continue_intent(contract_id, payload.version)
         except IntentContractError:
             raise HTTPException(409, "contract changed; reload status") from None
         return public_result(authorized_contract(store, contract_id, actor), actor, policy)
