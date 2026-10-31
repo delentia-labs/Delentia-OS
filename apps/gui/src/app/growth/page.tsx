@@ -145,7 +145,7 @@ export default function GrowthPage() {
               ) : null}
             </Panel>
             <Panel title={L("Recent episodes", "episode ล่าสุด")}>
-              <div className="max-h-[360px] overflow-auto">
+              <div tabIndex={0} role="region" aria-label={L("Recent episodes (scrollable)", "episode ล่าสุด (เลื่อนดูได้)")} className="desk-focus max-h-[360px] overflow-auto">
                 <table className="desk-mono w-full text-left text-[12px]">
                   <thead className="text-dl-muted"><tr>
                     <th className="py-1 pr-3 font-normal">{L("when", "เมื่อ")}</th><th className="pr-3 font-normal">D</th><th className="pr-3 font-normal">Δ</th>

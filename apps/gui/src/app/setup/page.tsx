@@ -7,7 +7,7 @@ import { ConfirmAction } from "@/components/desk/ConfirmAction";
 import { Badge, Button, ErrorNote, PageBody, PageHeader, Panel, useDeskData } from "@/components/desk/ui";
 import { desk, type BackupMade, type Checkup, type PracticeAction } from "@/lib/desk-api";
 import { deviceSupport } from "@/lib/webauthn";
-import { LEVELS, STEP_IDS, browserVerdict, nextStep, type BrowserVerdict, type LevelId, type StepId } from "@/lib/setup-model";
+import { LEVELS, LOCAL_NOTE, ONLINE_NOTE, STEP_IDS, browserVerdict, cheapestToolModels, chatModels, modelAdvice, nextStep, type BrowserVerdict, type LevelId, type StepId } from "@/lib/setup-model";
 
 type Tone = "leaf" | "amber" | "rust" | "muted";
 const LEVEL_TONE: Record<"ok" | "warn" | "fail", Tone> = { ok: "leaf", warn: "amber", fail: "rust" };
@@ -39,6 +39,13 @@ export default function SetupPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const modelCheck = readiness.data?.checks.find((c) => c.id === "model");
+  const modelDone = !!modelCheck?.ok;
+  const catalog = useDeskData(() => desk.models("openrouter"), [], 0);
+  const onlineChoices = cheapestToolModels(catalog.data?.catalog ?? []);
+  const [onlineModel, setOnlineModel] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [modelMessage, setModelMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const approverCheck = readiness.data?.checks.find((c) => c.id === "approver");
   const hasApprover = !!approverCheck?.ok;
   const activeDevices = devices.data?.devices.filter((d) => d.status === "ACTIVE").length ?? 0;
@@ -62,9 +69,38 @@ export default function SetupPage() {
 
   const hasPolicyFile = !!policy.data?.exists;
   const currentLevel: LevelId = policy.data?.policy?.plan_first?.length ? "plan_first" : "standard";
-  const next = nextStep({ browserOk: browser?.level === "ok" || browser?.level === "warn", hasApprover, policyChosen: levelSaved || hasPolicyFile, checkupRan: !!checkup, practiceDone: practiceResult !== null });
+  const next = nextStep({ browserOk: browser?.level === "ok" || browser?.level === "warn", modelOk: modelDone, hasApprover, policyChosen: levelSaved || hasPolicyFile, checkupRan: !!checkup, practiceDone: practiceResult !== null });
 
   const waitingEnrollments = (devices.data?.enrollments_waiting ?? []).filter((e) => e.status === "PENDING");
+
+  const chooseLocalModel = async (name: string) => {
+    setBusy(true);
+    setModelMessage(null);
+    try {
+      await desk.setModel("ollama", name);
+      setModelMessage({ tone: "ok", text: T(`Now using ${name} on this computer.`, `ใช้ ${name} บนเครื่องนี้แล้ว`) });
+      readiness.reload();
+    } catch (err) {
+      setModelMessage({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const chooseOnlineModel = async () => {
+    setBusy(true);
+    setModelMessage(null);
+    try {
+      const saved = await desk.saveModel({ provider: "openrouter", model: onlineModel, api_key: apiKey.trim() || undefined });
+      setApiKey("");                                           // the page forgets the key as soon as the server has it
+      setModelMessage({ tone: "ok", text: saved.key_note || T(`Saved: ${onlineModel}. The key is kept in this program's memory only.`, `บันทึกแล้ว: ${onlineModel} คีย์ถูกเก็บในหน่วยความจำของโปรแกรมเท่านั้น`) });
+      readiness.reload();
+    } catch (err) {
+      setModelMessage({ tone: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const activate = async (approvalId: string) => {
     try {
@@ -179,12 +215,13 @@ export default function SetupPage() {
 
   const stepTitle: Record<StepId, [string, string]> = {
     browser: ["1. Is this browser ready?", "1. เบราว์เซอร์นี้พร้อมไหม"],
-    approver: ["2. Who confirms risky work?", "2. ใครเป็นคนยืนยันงานเสี่ยง"],
-    level: ["3. How careful should it be?", "3. จะให้ระวังแค่ไหน"],
-    checkup: ["4. Check that everything works", "4. ตรวจว่าทุกอย่างทำงาน"],
-    practice: ["5. Practice one approval", "5. ลองอนุมัติหนึ่งครั้ง"],
+    model: ["2. Which model should answer?", "2. จะใช้โมเดลตัวไหนตอบ"],
+    approver: ["3. Who confirms risky work?", "3. ใครเป็นคนยืนยันงานเสี่ยง"],
+    level: ["4. How careful should it be?", "4. จะให้ระวังแค่ไหน"],
+    checkup: ["5. Check that everything works", "5. ตรวจว่าทุกอย่างทำงาน"],
+    practice: ["6. Practice one approval", "6. ลองอนุมัติหนึ่งครั้ง"],
   };
-  const doneMap: Record<StepId, boolean> = { browser: !!browser && browser.level === "ok", approver: hasApprover, level: levelSaved || hasPolicyFile, checkup: !!checkup, practice: practiceResult !== null };
+  const doneMap: Record<StepId, boolean> = { browser: !!browser && browser.level === "ok", model: modelDone, approver: hasApprover, level: levelSaved || hasPolicyFile, checkup: !!checkup, practice: practiceResult !== null };
   const stepBadge = (id: StepId) => (doneMap[id] ? <Badge tone="leaf">{T("done", "เสร็จ")}</Badge> : next === id ? <Badge tone="amber">{T("next", "ถัดไป")}</Badge> : <Badge tone="muted">{T("to do", "ยังไม่ได้ทำ")}</Badge>);
   const titleOf = (id: StepId) => stepTitle[id][th ? 1 : 0];
   const waitingPractice = practice ? waitingActions.data?.find((a) => a.approval_id === practice.approval_id) : undefined;
@@ -193,8 +230,8 @@ export default function SetupPage() {
     <>
       <PageHeader
         title={T("Setup assistant", "ตัวช่วยตั้งค่า")}
-        lead={T("Five short steps, all inside this window. Each one checks first and only asks for what is missing. You never have to open a terminal for the ordinary path, and nothing is approved without you.",
-          "ห้าขั้นสั้น ๆ ทำในหน้าต่างนี้ทั้งหมด แต่ละขั้นตรวจก่อนและขอเฉพาะสิ่งที่ยังขาด ทางปกติไม่ต้องเปิดเทอร์มินัล และไม่มีอะไรถูกอนุมัติโดยที่คุณไม่ได้ทำ")}
+        lead={T("Six short steps, all inside this window. Each one checks first and only asks for what is missing. You never have to open a terminal for the ordinary path, and nothing is approved without you.",
+          "หกขั้นสั้น ๆ ทำในหน้าต่างนี้ทั้งหมด แต่ละขั้นตรวจก่อนและขอเฉพาะสิ่งที่ยังขาด ทางปกติไม่ต้องเปิดเทอร์มินัล และไม่มีอะไรถูกอนุมัติโดยที่คุณไม่ได้ทำ")}
         actions={<Badge tone={next ? "amber" : "leaf"}>{next ? T(`next: ${titleOf(next)}`, `ถัดไป: ${titleOf(next)}`) : T("all done", "ครบทุกขั้น")}</Badge>}
       />
       <PageBody>
@@ -209,6 +246,53 @@ export default function SetupPage() {
               </>
             ) : <p className="text-sm text-dl-muted">{T("Checking…", "กำลังตรวจ…")}</p>}
             <div className="mt-3"><Button tone="ghost" onClick={() => void checkBrowser()}>{T("Check again", "ตรวจอีกครั้ง")}</Button></div>
+          </Panel>
+
+          <Panel title={titleOf("model")} aside={stepBadge("model")}>
+            {(() => {
+              const a = modelAdvice(String(modelCheck?.state ?? "unknown"), `${modelCheck?.provider ?? ""}: ${modelCheck?.model ?? ""}`, lang as "th" | "en");
+              return (
+                <>
+                  <p className={`text-sm ${a.level === "ok" ? "text-dl-leaf" : a.level === "warn" ? "text-dl-amber" : "text-dl-rust"}`}>{a.text}</p>
+                  {a.fix ? <p className="mt-1 text-[13px] leading-relaxed text-dl-muted">{a.fix}</p> : null}
+                </>
+              );
+            })()}
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="rounded border border-dl-rule p-3 text-[13px] leading-relaxed">
+                <p className="font-medium text-dl-text">{T("On this computer (Ollama)", "บนเครื่องนี้ (Ollama)")}</p>
+                <p className="mt-1 text-dl-muted">{T(LOCAL_NOTE.en, LOCAL_NOTE.th)}</p>
+                {modelCheck?.installed && chatModels(modelCheck.installed).length ? (
+                  <ul className="mt-2 space-y-1">
+                    {chatModels(modelCheck.installed).map((name) => (
+                      <li key={name} className="flex items-center justify-between gap-2">
+                        <span className="desk-mono text-[12px] text-dl-text">{name}</span>
+                        <Button tone="ghost" onClick={() => chooseLocalModel(name)} disabled={busy}>{T("Use this", "ใช้ตัวนี้")}</Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="mt-2 text-dl-muted">{modelCheck?.state === "server_down" ? T("Ollama is not running, so no models can be listed.", "Ollama ไม่ทำงาน จึงแสดงรายการโมเดลไม่ได้") : T("No model is installed yet. In a terminal, once: ollama pull qwen3:8b", "ยังไม่ได้ติดตั้งโมเดล ในเทอร์มินัลหนึ่งครั้ง: ollama pull qwen3:8b")}</p>}
+              </div>
+              <div className="rounded border border-dl-rule p-3 text-[13px] leading-relaxed">
+                <p className="font-medium text-dl-text">{T("Online (OpenRouter key)", "ออนไลน์ (คีย์ OpenRouter)")}</p>
+                <p className="mt-1 text-dl-muted">{T(ONLINE_NOTE.en, ONLINE_NOTE.th)}</p>
+                <label className="mt-2 block">
+                  <span className="text-dl-muted">{T("Model (the cheapest that can use tools)", "โมเดล (ตัวที่ถูกที่สุดที่ใช้เครื่องมือได้)")}</span>
+                  <select value={onlineModel} onChange={(e) => setOnlineModel(e.target.value)} className="desk-focus mt-1 block w-full rounded border border-dl-rule bg-dl-ink px-2 py-2 text-sm text-dl-text">
+                    <option value="">{catalog.data ? T("choose…", "เลือก…") : T("loading the list…", "กำลังโหลดรายการ…")}</option>
+                    {onlineChoices.map((m) => <option key={m.id} value={m.id}>{m.id} — ${(m.prompt_price_per_mtok ?? 0).toFixed(2)} / ${(m.completion_price_per_mtok ?? 0).toFixed(2)} {T("per million tokens", "ต่อล้านโทเคน")}</option>)}
+                  </select>
+                </label>
+                <label className="mt-2 block">
+                  <span className="text-dl-muted">{T("Key", "คีย์")}</span>
+                  <input type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-or-…"
+                    className="desk-focus desk-mono mt-1 block w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50" />
+                </label>
+                <div className="mt-2"><Button onClick={chooseOnlineModel} disabled={busy || !onlineModel || (!apiKey.trim() && !readiness.data?.checks.some((c) => c.id === "model" && c.state === "configured"))}>{T("Use this model", "ใช้โมเดลนี้")}</Button></div>
+              </div>
+            </div>
+            <div className="mt-3"><Button tone="ghost" onClick={() => readiness.reload()}>{T("Check again", "ตรวจอีกครั้ง")}</Button></div>
+            {modelMessage ? <p role="status" className={`mt-3 text-[13px] leading-relaxed ${modelMessage.tone === "ok" ? "text-dl-leaf" : "text-dl-rust"}`}>{modelMessage.text}</p> : null}
           </Panel>
 
           <Panel title={titleOf("approver")} aside={stepBadge("approver")}>
@@ -281,7 +365,7 @@ export default function SetupPage() {
               {T("A harmless action will wait for you, like real risky work does. Confirm it and watch it run once. It only writes a short note.", "การกระทำที่ไม่เป็นอันตรายหนึ่งอย่างจะรอให้คุณยืนยัน เหมือนงานเสี่ยงจริง ยืนยันแล้วดูมันรันหนึ่งครั้ง มันเขียนบันทึกสั้น ๆ เท่านั้น")}
             </p>
             <div className="mt-3"><Button onClick={startPractice} disabled={busy || !!practice || !hasApprover}>{T("Start a practice approval", "เริ่มลองอนุมัติ")}</Button></div>
-            {!hasApprover ? <p className="mt-2 text-[12px] text-dl-muted">{T("Finish step 2 first: nobody can confirm yet.", "ทำขั้นที่ 2 ให้เสร็จก่อน: ยังไม่มีผู้ยืนยัน")}</p> : null}
+            {!hasApprover ? <p className="mt-2 text-[12px] text-dl-muted">{T("Finish step 3 first: nobody can confirm yet.", "ทำขั้นที่ 3 ให้เสร็จก่อน: ยังไม่มีผู้ยืนยัน")}</p> : null}
             {practice ? (
               <div className="mt-3 rounded border border-dl-rule p-3 text-[13px] leading-relaxed">
                 <p className="text-dl-text">{T("Waiting for you:", "รอคุณอยู่:")} {waitingPractice?.goal ?? T("practice approval", "ลองอนุมัติ")}</p>
@@ -297,7 +381,7 @@ export default function SetupPage() {
               <p className="text-sm text-dl-leaf">{T("Everything is checked and you have confirmed one action yourself. Go to Chat and ask for something real.", "ตรวจครบแล้ว และคุณยืนยันการกระทำหนึ่งครั้งด้วยตัวเองแล้ว ไปที่ Chat แล้วสั่งงานจริงได้เลย")}</p>
             </Panel>
           ) : null}
-          <p className="text-[12px] text-dl-muted">{T(`Steps: ${STEP_IDS.length}. The setup writes nothing except what you confirm here, a backup you ask for, and a short practice note.`, `ทั้งหมด ${STEP_IDS.length} ขั้น ตัวช่วยตั้งค่าไม่เขียนอะไรนอกจากสิ่งที่คุณยืนยันที่นี่ สำรองข้อมูลที่คุณสั่ง และบันทึกฝึกสั้น ๆ`)}</p>
+          <p className="text-[12px] text-dl-muted">{T(`Steps: ${STEP_IDS.length}. The setup writes nothing except what you confirm or choose here, a backup you ask for, and a short practice note.`, `ทั้งหมด ${STEP_IDS.length} ขั้น ตัวช่วยตั้งค่าไม่เขียนอะไรนอกจากสิ่งที่คุณยืนยันที่นี่ สำรองข้อมูลที่คุณสั่ง และบันทึกฝึกสั้น ๆ`)}</p>
         </div>
       </PageBody>
     </>
