@@ -45,3 +45,5 @@ Review finding #219 เดิมยังใช้กับ head 4c89d37: loopba
 9. เมื่อมี model/provider/วงเงินอนุมัติ จึง canary → holdout ไทย/อังกฤษที่ล็อกก่อน tuning → เผยแพร่ experimental self-install preview ด้วย claims ที่หลักฐานรองรับ
 
 สถานะยังเป็น experimental local-first runtime ที่มี execution/verification เฉพาะ domain เพิ่ม durable contract evidence gate แบบ opt-in แล้ว แต่ยังไม่ครบ autonomous RCT-7 ทั่วไป ไม่มี paid API, merge หรือ release ในรอบนี้
+
+Combined 2737e84200ca93d9ed5e16da30ae28c895e8e36f: ชุดเดิม 187 passed / 218 warnings ใน 5.14 วินาที; legacy intent contracts เพิ่มเติม 22 passed / 44 warnings ใน 1.48 วินาที รายงานแยกกัน ไม่แทน full suite ใหม่
