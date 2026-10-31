@@ -2212,6 +2212,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#read-only-budget-request-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only budget request retries
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2670,6 +2681,17 @@
 <hr />
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
 <p>The SDK control plane has no authentication by default — it is intended for local development and reference use. For production deployments in the Enterprise stack, JWT-based auth and mTLS are added at the Gateway layer.</p>
+<h2 id="read-only-budget-request-retries">Read-only budget request retries<a class="headerlink" href="#read-only-budget-request-retries" title="Permanent link">&para;</a></h2>
+<p>The opt-in <code>/v1/agent/readonly/budget</code> create request accepts an optional
+<code>request_id</code> (1–128 ASCII letters, digits, <code>.</code>, <code>_</code>, <code>:</code>, <code>-</code>). Reusing the key
+with identical input returns the actor's current persisted contract. Reusing it
+with changed input or policy binding returns 409. Without a key, each request
+creates a new plan. Authorization and file grants are checked on every retry.
+This does not confirm a plan or replay execution. The updated wire schema is
+<a href="../readonly-budget-v1.schema.json">readonly-budget-v1.schema.json</a>.</p>
+<p>See the <a href="../../development/LIFECYCLE_REVIEW_2026-10-30_TH/">lifecycle audit and recovery plan</a>
+for transaction boundaries, outstanding job ownership/cancel findings and the
+separate roles of request idempotency and tool-effect idempotency.</p>
 
 
 
