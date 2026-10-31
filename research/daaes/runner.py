@@ -138,6 +138,10 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
             raise budget_guard.BudgetExceeded("a paid run needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1 in the environment (set by you, never written by this tool)")
         if price_in is None or price_out is None or budget_usd <= 0:
             raise budget_guard.BudgetExceeded("a paid run needs --price-in, --price-out (USD per million tokens) and --budget-usd: an unknown price is refused")
+        from research import paid_run_freeze
+        frozen = paid_run_freeze.freeze_problems(model, price_in, price_out, budget_usd)
+        if frozen:
+            raise budget_guard.BudgetExceeded("freeze: " + "; ".join(frozen))
         inner = live_adapter.openrouter_provider(model)
         pin, pout = price_in, price_out
         policy = budget_guard.BudgetPolicy(total_usd=budget_usd, warning_usd=budget_usd * 0.6, stop_new_runs_usd=budget_usd * 0.8, reserve_usd=budget_usd * 0.2,

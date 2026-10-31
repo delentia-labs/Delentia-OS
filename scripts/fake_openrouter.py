@@ -106,8 +106,9 @@ def rehearsal_policy(req: "sm.Request") -> str:
 
 class FakeOpenRouter:
     def __init__(self, prices: Dict[str, Dict[str, float]], key: str = "rehearsal-not-a-real-key", policy: Any = rehearsal_policy,
-                 reject_json_mode: bool = False):
+                 reject_json_mode: bool = False, hidden_markup: float = 0.0):
         self.prices, self.key, self.policy = prices, key, policy
+        self.hidden_markup = hidden_markup                # a charge to the key that the reply's own `usage.cost` does not show (the case a meter calibration must catch)
         self.reject_json_mode = reject_json_mode          # answer HTTP 400 to `response_format`, as some upstream providers do
         self.json_mode_requests = 0
         self.spent = 0.0
@@ -162,7 +163,7 @@ class FakeOpenRouter:
                 price = outer.prices[model]
                 cost = p_tokens * price["in"] / 1e6 + c_tokens * price["out"] / 1e6
                 with outer._lock:
-                    outer.spent += cost
+                    outer.spent += cost * (1.0 + outer.hidden_markup)
                     outer.calls += 1
                 self._send(200, {"id": "rehearsal", "object": "chat.completion", "model": model,
                                  "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
