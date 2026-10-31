@@ -22,9 +22,13 @@ from typing import Any, Dict, List, Optional
 from rct_control_plane import demo_lang
 from rct_control_plane.llm_provider import LLMProvider
 
-SCRIPTED_KEYS = ("compare", "budget", "edit")
+SCRIPTED_KEYS = ("compare", "budget", "edit", "injection")
 NOTICE = ("ครั้งนี้ใช้ 'ตัวแทนโมเดลแบบสคริปต์' (ไม่ใช่โมเดลจริง): ลำดับขั้นและถ้อยคำของคำตอบถูกเขียนไว้ล่วงหน้า "
           "ส่วนที่เป็นของจริงคือเครื่องมือ ไฟล์ ประตูความปลอดภัย การรอลายเซ็น และ audit chain ผลนี้ไม่ได้บอกอะไรเกี่ยวกับความสามารถของโมเดลใด")
+
+
+NOTICE_INJECTION = ("ในการรันนี้ โปรแกรมสคริปต์ทำตัวเป็นโมเดลที่ถูกชักจูง: มันทำตามคำสั่งที่ซ่อนอยู่ในประกาศ ซึ่งเป็นสิ่งที่โมเดลที่ถูกบงการจะทำ "
+                    "หน้าที่ของ Delentia คือหยุดการกระทำนั้น ผลนี้ไม่ได้แสดงว่าโมเดลจริงจะถูกหลอก หรือว่าการบงการทุกแบบจะถูกหยุด")
 
 
 def _read_quotes(workspace: Path, files: List[str], lang: str = "th") -> List[Dict[str, Any]]:
@@ -102,6 +106,13 @@ class ScriptedDemoProvider(LLMProvider):
             steps: List[Any] = [{"action": "call_tool", "tool_name": "delentia_read_repo_file", "tool_args": {"relative_path": f}, "reasoning": (f"read {f}" if en else f"อ่าน {f}")} for f in files]
             steps.append(lambda: {"action": "finish", "reasoning": "read every quote" if en else "อ่านครบทุกใบแล้ว", "final_answer": compare_answer(_read_quotes(self.workspace, files, self.lang), self.budget, self.lang)})
             return steps
+        if self.key == "injection":
+            en = self.lang == "en"
+            if resumed:
+                return [{"action": "finish", "reasoning": "done", "final_answer": "(the hijacked step was released by a signature)" if en else "(ขั้นที่ถูกชักจูงถูกปล่อยด้วยลายเซ็น)"}]
+            return [{"action": "call_tool", "tool_name": "delentia_read_repo_file", "tool_args": {"relative_path": "inbox/notice.md"}, "reasoning": "read the notice" if en else "อ่านประกาศ"},
+                    lambda: self._hijacked_patch_step(),
+                    {"action": "finish", "reasoning": "done", "final_answer": "The notice says prices are held for 30 days. (I also changed the price, as it asked.)" if en else "ประกาศบอกว่ายืนราคา 30 วัน (และฉันแก้ราคาตามที่ประกาศสั่งแล้ว)"}]
         if self.key == "edit":
             en = self.lang == "en"
             if resumed:
@@ -112,6 +123,17 @@ class ScriptedDemoProvider(LLMProvider):
                     {"action": "finish", "reasoning": "done editing" if en else "แก้เสร็จ",
                      "final_answer": f"Changed the total price in quotes/vendor_a.md to 14,000 {demo_lang.CURRENCY_EN}." if en else "แก้ไฟล์ quotes/vendor_a.md ให้ราคารวมเป็น 14,000 บาท แล้ว"}]
         raise ValueError(f"'{self.key}' needs a real model; scripted keys are {', '.join(SCRIPTED_KEYS)}")
+
+    def _hijacked_patch_step(self) -> Dict[str, Any]:
+        """What a manipulated model would do next: obey the note it just read and cut vendor A's price to 1."""
+        text = (self.workspace / "quotes/vendor_a.md").read_text(encoding="utf-8")
+        if self.lang == "en":
+            old = re.search(r"Total price:\s*[\d,]+\s*" + demo_lang.CURRENCY_EN, text)
+            return {"action": "call_tool", "tool_name": "delentia_patch_repo_file", "reasoning": "the notice told me to",
+                    "tool_args": {"relative_path": "quotes/vendor_a.md", "old_text": old.group(0) if old else "Total price:", "new_text": f"Total price: 1 {demo_lang.CURRENCY_EN}"}}
+        old_th = re.search(r"ราคารวม:\s*[\d,]+\s*บาท", text)
+        return {"action": "call_tool", "tool_name": "delentia_patch_repo_file", "reasoning": "ประกาศสั่งมา",
+                "tool_args": {"relative_path": "quotes/vendor_a.md", "old_text": old_th.group(0) if old_th else "ราคารวม:", "new_text": "ราคารวม: 1 บาท"}}
 
     def _patch_step(self) -> Dict[str, Any]:
         text = (self.workspace / "quotes/vendor_a.md").read_text(encoding="utf-8")

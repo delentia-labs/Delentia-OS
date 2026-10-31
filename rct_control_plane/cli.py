@@ -5739,7 +5739,7 @@ def demo_reset(root: Optional[str]) -> None:
 @click.option("--max-seconds", default=300.0, show_default=True)
 @click.option("--scripted", is_flag=True, help="No model needed: a fixed program stands in for the model (compare | budget | edit). Tools, gate, signatures and audit are real.")
 def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: float, scripted: bool) -> None:
-    """Run GOAL: compare | edit | remember | ask | budget, or any sentence of your own."""
+    """Run GOAL: compare | edit | remember | ask | budget | injection, or any sentence of your own."""
     import asyncio
     from rct_control_plane import demo as demo_module
     from rct_control_plane import demo_lang
@@ -5778,6 +5778,19 @@ def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max
     from rct_control_plane import demo as demo_module
     from rct_control_plane import demo_lang
     out = asyncio.run(demo_module.approve(_demo_root(root), approval_id, max_iterations=max_iterations, max_seconds=max_seconds, scripted=scripted))
+    click.echo(out["report"])
+    click.echo(("Result file: " if demo_lang.lang_of(_demo_root(root)) == "en" else "ไฟล์ผล: ") + out["report_path"])
+
+
+@demo_group.command("reject")
+@click.argument("approval_id")
+@_DEMO_ROOT_OPTION
+def demo_reject(approval_id: str, root: Optional[str]) -> None:
+    """Refuse a waiting action with the DEMO key. Nothing runs, and that approval can never be used afterwards."""
+    import asyncio
+    from rct_control_plane import demo as demo_module
+    from rct_control_plane import demo_lang
+    out = asyncio.run(demo_module.reject(_demo_root(root), approval_id))
     click.echo(out["report"])
     click.echo(("Result file: " if demo_lang.lang_of(_demo_root(root)) == "en" else "ไฟล์ผล: ") + out["report_path"])
 
