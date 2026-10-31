@@ -169,7 +169,6 @@ with httpx.Client(base_url="http://localhost:8000") as client:
 
 The SDK control plane has no authentication by default — it is intended for local development and reference use. For production deployments in the Enterprise stack, JWT-based auth and mTLS are added at the Gateway layer.
 
-<<<<<<< HEAD
 ## Background job ownership and outcomes
 
 Job `status` retains its existing transport/lifecycle meaning. In particular,
@@ -181,7 +180,7 @@ poll status instead of treating a remote cancel response as effect rollback.
 
 See [job ownership and outcomes](../development/JOB_OWNERSHIP_AND_OUTCOMES_2026-10-30_TH.md)
 for lease/fencing boundaries, migration requirements and W09 oracle cases.
-=======
+
 ## Read-only budget request retries
 
 The opt-in `/v1/agent/readonly/budget` create request accepts an optional
@@ -195,4 +194,3 @@ This does not confirm a plan or replay execution. The updated wire schema is
 See the [lifecycle audit and recovery plan](../development/LIFECYCLE_REVIEW_2026-10-30_TH.md)
 for transaction boundaries, outstanding job ownership/cancel findings and the
 separate roles of request idempotency and tool-effect idempotency.
->>>>>>> origin/main
