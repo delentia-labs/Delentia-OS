@@ -41,3 +41,5 @@ Budget guard policy-entry validation/in-flight token reservations เดิม�
 6. Self-install preview: native first-run, keys/cost/privacy, update/rollback/uninstall, Desk E2E/video และ known failures
 
 ไม่มี paid API, merge หรือ release ในรอบนี้ เป้าหมายยังเป็น open-source ติดตั้งบนเครื่อง/VPS ผู้ใช้เอง
+
+ผล combined 02738953e774562cfd419e0e747a0d48b4c0545b (รวม main 1ccc1c7c): ชุด R1/receipt/budget/read-only 124 passed ใน 3.95 วินาที; W08/W10 9 passed ใน 2.49 วินาที ผลสองชุดรายงานแยกกัน ไม่ใช้รับรอง full suite ใหม่

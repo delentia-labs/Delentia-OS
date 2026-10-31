@@ -249,10 +249,13 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
+        if evidence_requirement is not None:
+            from rct_control_plane.evidence_requirement import parse_requirement
+            plan["evidence_requirement"] = parse_requirement(evidence_requirement).model_dump(mode="json")
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
                 "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
@@ -316,7 +319,7 @@ class IntentContractStore:
                 if unknown["id"] in answers:
                     unknown["answer"] = answers[unknown["id"]].strip()
             data["revisions"].append({"from_version": version, "user_answers": answers, "provenance": "confirmed_user_input"})
-            for key in ("execution_receipts", "execution_report", "execution_status"):
+            for key in ("execution_receipts", "execution_report", "execution_status", "evidence_decision"):
                 data.pop(key, None)
             semantic_metadata = data["plan"].get("semantic_planning")
             data["plan"] = build_plan(data["goal"], data["plan"]["criteria"], Path(data["plan"]["workspace"]), context)
@@ -324,7 +327,10 @@ class IntentContractStore:
                 from rct_control_plane.semantic_plan import annotate as annotate_semantic
                 annotate_semantic(data["plan"], semantic_metadata)
             # Replanning must not reset preservation baselines.
-            prior = self.get(contract_id)["plan"]["protected_sha256"]
+            stored_plan = self.get(contract_id)["plan"]
+            if "evidence_requirement" in stored_plan:
+                data["plan"]["evidence_requirement"] = copy.deepcopy(stored_plan["evidence_requirement"])
+            prior = stored_plan["protected_sha256"]
             data["plan"]["protected_sha256"].update(prior)
             return self.transition(data, "plan_ready")
         if answers is not None:
@@ -340,7 +346,7 @@ class IntentContractStore:
             selected = validate_criteria(criteria) if criteria is not None else data["plan"]["criteria"]
             data["revisions"].append({"from_version": version, "goal": goal, "user_response": response, "criteria": selected})
             data["goal"] = goal
-            for key in ("execution_receipts", "execution_report", "execution_status"):
+            for key in ("execution_receipts", "execution_report", "execution_status", "evidence_decision"):
                 data.pop(key, None)
             request = data.get("planning_request", data.get("planning_context"))
             plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), request)
@@ -356,8 +362,21 @@ class IntentContractStore:
             for path, digest in data["plan"]["protected_sha256"].items():
                 if path in plan["protected_sha256"]:
                     plan["protected_sha256"][path] = digest
+            if "evidence_requirement" in data["plan"]:
+                plan["evidence_requirement"] = copy.deepcopy(data["plan"]["evidence_requirement"])
+            data.pop("evidence_decision", None)
             data["plan"], data["differences"] = plan, []
             return self.transition(data, "waiting_for_input" if plan.get("clarification_questions") else "plan_ready")
         elif response or revised_goal is not None or criteria is not None:
             raise IntentContractError("revise only after a clarification request")
+        if "evidence_requirement" in data["plan"]:
+            from datetime import datetime, timezone
+            from rct_control_plane.evidence_requirement import check_requirement
+            try:
+                decision = check_requirement(data["plan"]["evidence_requirement"], datetime.now(timezone.utc))
+            except (ValueError, TypeError) as exc:
+                raise IntentContractError("invalid evidence requirement; execution refused") from exc
+            if not decision.satisfies_declared_policy:
+                raise IntentContractError("evidence requirement not satisfied: " + ", ".join(decision.reasons))
+            data["evidence_decision"] = decision.model_dump()
         return self.transition(data, "running")
