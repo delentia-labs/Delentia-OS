@@ -78,7 +78,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--no-start", action="store_true", help="do not start the program (steps 1 to 4 only)")
     args = ap.parse_args(argv)
     app = args.app_dir.resolve()
-    python = (args.python or app / "python" / "python.exe").resolve()
+    # Preserve a venv executable symlink: resolving it selects the base
+    # interpreter and can change both installed packages and package version.
+    python = (args.python or app / "python" / "python.exe").absolute()
     scratch = Path(tempfile.mkdtemp(prefix="delentia-check-"))
     env = {**os.environ, "DELENTIA_HOME": str(scratch / "home"), "DELENTIA_UPDATE_CHECK": "off", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
     env.pop("DELENTIA_API_TOKEN", None)
