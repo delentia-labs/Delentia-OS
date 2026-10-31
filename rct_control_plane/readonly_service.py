@@ -6,6 +6,7 @@ API boundary, not OS isolation against an operator modifying files/hard links.
 from __future__ import annotations
 
 import os
+import copy
 import json
 import sqlite3
 import re
@@ -18,6 +19,8 @@ from pydantic import Field
 from starlette.responses import JSONResponse
 
 from rct_control_plane.rct_plan import PlanItem
+from rct_control_plane.evidence_assessment import EvidenceDecision
+from rct_control_plane.evidence_requirement import parse_requirement
 from rct_control_plane.verified_budget import QuoteEvidence, digest, strict_json
 
 ROUTE = "/v1/agent/readonly/budget"
@@ -53,6 +56,14 @@ class PublicReceipt(PlanItem):
     receipt_sha256: str
 
 
+class AcquisitionLink(PlanItem):
+    observation_id: str
+    receipt_sha256: str
+    tool_result_sha256: str
+    source_sha256: str
+    source_locator: str
+
+
 class PublicContract(PlanItem):
     id: str
     actor: str
@@ -67,6 +78,8 @@ class PublicContract(PlanItem):
     execution_status: Literal["not_started", "partial", "incomplete", "complete"]
     report: dict[str, Any] | None
     verified: bool
+    evidence_decision: EvidenceDecision | None = None
+    acquisition_links: list[AcquisitionLink] = Field(default_factory=list)
 
 
 class BudgetResult(PlanItem):
@@ -94,6 +107,17 @@ class ServicePolicy(PlanItem):
     workspace_id: str = Field(min_length=1, max_length=80)
     workspace_root: str
     actor_files: dict[str, list[str]]
+    evidence_requirements: dict[str, dict[str, dict[str, Any]]] = Field(default_factory=dict)
+    intent_review_required: bool = False
+
+    def binding_payload(self):
+        # Preserve existing policy digests when the optional gate is absent.
+        excluded = set()
+        if not self.evidence_requirements:
+            excluded.add("evidence_requirements")
+        if not self.intent_review_required:
+            excluded.add("intent_review_required")
+        return self.model_dump(exclude=excluded)
 
 
 def load_policy(location: str | None = None) -> ServicePolicy | None:
@@ -111,6 +135,13 @@ def load_policy(location: str | None = None) -> ServicePolicy | None:
     for paths in policy.actor_files.values():
         for relative in paths:
             _file(root, relative)
+    for actor, files in policy.evidence_requirements.items():
+        if actor not in policy.actor_files or set(files) - set(policy.actor_files[actor]):
+            raise ValueError("evidence requirements must belong to authorized actor files")
+        for relative, value in files.items():
+            requirement = parse_requirement(value)
+            if any(o.locator != relative for o in requirement.observations):
+                raise ValueError("evidence observation locator differs from authorized file")
     return policy
 
 
@@ -163,11 +194,24 @@ def public_result(contract, actor, policy):
         raise HTTPException(409, "complete state lacks component receipts")
     # The digest covers the stored plan including the server workspace. It is
     # an opaque confirmation token here, not a hash of this redacted view.
-    plan = {k: v for k, v in contract["plan"].items() if k != "workspace"}
+    plan = copy.deepcopy({k: v for k, v in contract["plan"].items() if k != "workspace"})
+    if "intent_review" in plan:
+        plan["intent_review"]["binding"].pop("workspace_root", None)
+    links = []
+    if "evidence_requirement" in plan:
+        requirement = parse_requirement(plan["evidence_requirement"])
+        from rct_control_plane.verified_budget import validate_required_observation
+        for receipt in receipts:
+            if receipt["component_id"] == "inspect_sources":
+                validate_required_observation(plan, receipt["output"])
+                for observed in requirement.observations:
+                    links.append(AcquisitionLink(observation_id=observed.id,
+                        receipt_sha256=receipt["receipt_sha256"], tool_result_sha256=receipt["output"]["tool_result_sha256"],
+                        source_sha256=observed.sha256, source_locator=observed.locator))
     return BudgetResult(contract=PublicContract(
         id=contract["id"], actor=actor, workspace_id=policy.workspace_id,
         version=contract["version"], state=contract["state"], plan_sha256=contract["plan_sha256"],
-        policy_sha256=digest(policy.model_dump()), plan=plan,
+        policy_sha256=digest(policy.binding_payload()), plan=plan,
         differences=contract.get("differences", []), receipts=[{
             **r, "recorded_ns": str(r["recorded_ns"]),
             "hashed_payload_json": json.dumps({k: v for k, v in r.items() if k != "receipt_sha256"},
@@ -175,7 +219,18 @@ def public_result(contract, actor, policy):
         } for r in receipts],
         execution_status=contract.get("execution_status", "not_started"),
         report=contract.get("execution_report"), verified=complete,
+        evidence_decision=contract.get("evidence_decision"), acquisition_links=links,
     ))
+
+
+def budget_review_catalog():
+    """Server-owned versioned capability description, not request authority.
+
+    This is the bounded budget executor only, not a general intent catalog.
+    """
+    return {"schema_version": 1, "executor": "verified_budget_v1",
+            "scope": "document_bytes_and_same_currency_arithmetic",
+            "criteria": ["C1"], "review_protocol": 1}
 
 
 def install_route(app, policy: ServicePolicy | None, loop_factory):
@@ -183,7 +238,7 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         return
     from rct_control_plane.intent_contract import IntentContractError, IntentContractStore, IntentRequestConflict
     policy_path = os.environ.get("DELENTIA_READONLY_POLICY")
-    policy_hash = digest(policy.model_dump())
+    policy_hash = digest(policy.binding_payload())
 
     def authorize(request):
         # Reread the pinned operator policy on every operation. Changes revoke
@@ -192,12 +247,16 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             current = load_policy(policy_path)
         except (OSError, ValueError):
             raise HTTPException(503, "service policy unavailable") from None
-        if current is None or digest(current.model_dump()) != policy_hash:
+        if current is None or digest(current.binding_payload()) != policy_hash:
             raise HTTPException(409, "policy changed; restart service")
         actor = getattr(request.state, "delentia_user", None)
         if not actor or actor == "shared" or actor not in policy.actor_files:
             raise HTTPException(403, "actor not authorized")
         return actor
+
+    def review_binding(actor):
+        return {"actor": actor, "workspace_root": str(Path(policy.workspace_root).resolve()),
+                "policy_sha256": policy_hash, "catalog_sha256": digest(budget_review_catalog())}
 
     def backend(actor):
         loop = loop_factory(actor)
@@ -234,17 +293,29 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
             validate_budget(payload.budget)
         except ValueError:
             raise HTTPException(422, "invalid same-currency budget") from None
+        requirement = policy.evidence_requirements.get(actor, {}).get(payload.evidence.relative_path)
+        if requirement is not None:
+            parsed = parse_requirement(requirement)
+            if any(o.sha256 != payload.evidence.sha256 for o in parsed.observations):
+                raise HTTPException(409, "evidence differs from operator-bound observation")
         _, store = backend(actor)
         # Persist binding in the same INSERT as the plan: no unbound-contract
         # window, no second write that can attach authority to a generic plan.
         binding = {"profile": "readonly_budget_v1", "actor": actor, "workspace_id": policy.workspace_id,
                    "workspace_root": str(Path(policy.workspace_root).resolve()),
                    "executor": "verified_budget_v1", "policy_sha256": policy_hash}
+        review = None
+        if policy.intent_review_required:
+            review = {"schema_version": 1, "binding": review_binding(actor), "proposal": {
+                "schema_version": 1, "material_criteria": [{"id": "C1",
+                    "statement": "Compare quote with budget", "polarity": "required",
+                    "source_quotes": ["Compare quote with budget"]}], "constraints": [], "unknowns": []}}
         try:
             contract = store.create("Compare quote with budget", [{"kind": "json_object"}],
                 Path(policy.workspace_root), {"semantic_plan": {
                     "budget": payload.budget, "quote_evidence": payload.evidence.model_dump(),
-                }}, service_binding=binding, request_id=payload.request_id)
+                }}, service_binding=binding, evidence_requirement=requirement, intent_review=review,
+                request_id=payload.request_id)
         except IntentRequestConflict:
             raise HTTPException(409, "request_id conflicts with an existing request") from None
         return public_result(contract, actor, policy)
@@ -269,7 +340,14 @@ def install_route(app, policy: ServicePolicy | None, loop_factory):
         try:
             # Existing CAS claim prevents two concurrent confirmations from
             # dispatching twice. Running/interrupted contracts cannot replay.
-            await loop.continue_intent(contract_id, payload.version)
+            if policy.intent_review_required:
+                if "intent_review" not in contract["plan"]:
+                    raise IntentContractError("contract lacks the required review")
+                await loop.continue_intent(contract_id, payload.version,
+                    review_binding=review_binding(actor), intent_confirmation={"contract_id": contract_id,
+                        "version": payload.version, "plan_sha256": payload.plan_sha256})
+            else:
+                await loop.continue_intent(contract_id, payload.version)
         except IntentContractError:
             raise HTTPException(409, "contract changed; reload status") from None
         return public_result(authorized_contract(store, contract_id, actor), actor, policy)

@@ -225,10 +225,10 @@ class IntentContractStore:
             raise IntentContractError("intent plan digest mismatch; execution refused")
         from rct_control_plane.budget_execution import validate_executor
         validate_executor(data["plan"])
-        if "execution_receipts" in data:
-            from rct_control_plane.verified_budget import validate_receipts
+        if any(key in data for key in ("execution_receipts", "execution_report", "execution_status")):
+            from rct_control_plane.verified_budget import validate_stored_execution
             try:
-                validate_receipts(data["plan"], contract_id, self.namespace, data["execution_receipts"])
+                validate_stored_execution(data, contract_id, self.namespace)
             except (ValueError, TypeError, KeyError) as exc:
                 raise IntentContractError("invalid stored execution receipts") from exc
         # Pre-versioned contracts from the first release are schema 1. Future
@@ -257,7 +257,7 @@ class IntentContractStore:
         return {"format": "delentia-intent-contract-export-1", "namespace": self.namespace,
                 "contains_personal_text": True, "executable": False, "contract": self.get(contract_id)}
 
-    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, request_id: str | None = None) -> Dict[str, Any]:
+    def create(self, goal: str, criteria: Any, root: Path, planning_context: Any = None, *, service_binding: dict | None = None, evidence_requirement: dict | None = None, intent_review: dict | None = None, request_id: str | None = None) -> Dict[str, Any]:
         if not isinstance(goal, str) or not goal.strip() or len(goal) > 20000:
             raise IntentContractError("goal must contain 1 to 20000 characters")
         key_hash = request_hash = None
@@ -276,6 +276,12 @@ class IntentContractStore:
                     raise IntentRequestConflict("request_id already belongs to different input")
                 return self.get(prior[1])
         plan = build_plan(goal, validate_criteria(criteria), root, planning_context)
+        if evidence_requirement is not None:
+            from rct_control_plane.evidence_requirement import parse_requirement
+            plan["evidence_requirement"] = parse_requirement(evidence_requirement).model_dump(mode="json")
+        if intent_review is not None:
+            from rct_control_plane.intent_review import validate_review
+            plan["intent_review"] = validate_review(intent_review, goal, plan["criteria"], self.namespace, plan["workspace"])
         contract_id = uuid.uuid4().hex
         data = {"schema_version": SCHEMA_VERSION, "original_goal": goal, "goal": goal, "plan": plan,
                 "revisions": [], "differences": [], "safe_to_resume": True, "plan_sha256": plan_digest(plan)}
@@ -335,12 +341,25 @@ class IntentContractStore:
         return {**payload, "id": data["id"], "state": state, "version": data["version"] + 1}
 
     def claim(self, contract_id: str, version: int, response: str = "", revised_goal: str | None = None,
-              criteria: Any = None, answers: Any = None) -> Dict[str, Any]:
+              criteria: Any = None, answers: Any = None, *, review_binding: dict | None = None,
+              intent_confirmation: dict | None = None) -> Dict[str, Any]:
         if type(version) is not int or version < 1:
             raise IntentContractError("the current positive integer version is required")
         data = self.get(contract_id)
         if data["version"] != version or data["state"] not in {"plan_ready", "waiting_for_clarification", "waiting_for_input"}:
             raise IntentContractError("intent contract is not ready at this version")
+        if "intent_review" in data["plan"]:
+            # Until revised proposals have a reviewed mapping to executable
+            # criteria, corrections require a fresh contract, never stale approval.
+            if data["state"] != "plan_ready" or response or revised_goal is not None or criteria is not None or answers is not None:
+                raise IntentContractError("typed intent changes require a new reviewed contract")
+            from rct_control_plane.intent_review import check_confirmation
+            try:
+                check_confirmation(data, self.namespace, review_binding, intent_confirmation)
+            except (ValueError, TypeError, KeyError) as exc:
+                raise IntentContractError("typed intent review confirmation refused") from exc
+        elif review_binding is not None or intent_confirmation is not None:
+            raise IntentContractError("contract has no typed intent review")
         if data["state"] == "waiting_for_input":
             questions = {q["id"] for q in data["plan"]["clarification_questions"]}
             if (not isinstance(answers, dict) or set(answers) != questions
@@ -356,7 +375,7 @@ class IntentContractStore:
                 if unknown["id"] in answers:
                     unknown["answer"] = answers[unknown["id"]].strip()
             data["revisions"].append({"from_version": version, "user_answers": answers, "provenance": "confirmed_user_input"})
-            for key in ("execution_receipts", "execution_report", "execution_status"):
+            for key in ("execution_receipts", "execution_report", "execution_status", "evidence_decision"):
                 data.pop(key, None)
             semantic_metadata = data["plan"].get("semantic_planning")
             data["plan"] = build_plan(data["goal"], data["plan"]["criteria"], Path(data["plan"]["workspace"]), context)
@@ -364,7 +383,10 @@ class IntentContractStore:
                 from rct_control_plane.semantic_plan import annotate as annotate_semantic
                 annotate_semantic(data["plan"], semantic_metadata)
             # Replanning must not reset preservation baselines.
-            prior = self.get(contract_id)["plan"]["protected_sha256"]
+            stored_plan = self.get(contract_id)["plan"]
+            if "evidence_requirement" in stored_plan:
+                data["plan"]["evidence_requirement"] = copy.deepcopy(stored_plan["evidence_requirement"])
+            prior = stored_plan["protected_sha256"]
             data["plan"]["protected_sha256"].update(prior)
             return self.transition(data, "plan_ready")
         if answers is not None:
@@ -380,7 +402,7 @@ class IntentContractStore:
             selected = validate_criteria(criteria) if criteria is not None else data["plan"]["criteria"]
             data["revisions"].append({"from_version": version, "goal": goal, "user_response": response, "criteria": selected})
             data["goal"] = goal
-            for key in ("execution_receipts", "execution_report", "execution_status"):
+            for key in ("execution_receipts", "execution_report", "execution_status", "evidence_decision"):
                 data.pop(key, None)
             request = data.get("planning_request", data.get("planning_context"))
             plan = build_plan(goal, selected, Path(data["plan"]["workspace"]), request)
@@ -396,8 +418,21 @@ class IntentContractStore:
             for path, digest in data["plan"]["protected_sha256"].items():
                 if path in plan["protected_sha256"]:
                     plan["protected_sha256"][path] = digest
+            if "evidence_requirement" in data["plan"]:
+                plan["evidence_requirement"] = copy.deepcopy(data["plan"]["evidence_requirement"])
+            data.pop("evidence_decision", None)
             data["plan"], data["differences"] = plan, []
             return self.transition(data, "waiting_for_input" if plan.get("clarification_questions") else "plan_ready")
         elif response or revised_goal is not None or criteria is not None:
             raise IntentContractError("revise only after a clarification request")
+        if "evidence_requirement" in data["plan"]:
+            from datetime import datetime, timezone
+            from rct_control_plane.evidence_requirement import check_requirement
+            try:
+                decision = check_requirement(data["plan"]["evidence_requirement"], datetime.now(timezone.utc))
+            except (ValueError, TypeError) as exc:
+                raise IntentContractError("invalid evidence requirement; execution refused") from exc
+            if not decision.satisfies_declared_policy:
+                raise IntentContractError("evidence requirement not satisfied: " + ", ".join(decision.reasons))
+            data["evidence_decision"] = decision.model_dump()
         return self.transition(data, "running")

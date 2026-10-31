@@ -1,0 +1,121 @@
+{
+  "sha": "509aa705eaae7838f872b3d5b91ded68cb5dcad7",
+  "pr": 218,
+  "complete": false,
+  "checks": [
+    {
+      "conclusion": "neutral",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/runs/124001520589",
+      "name": "CodeQL",
+      "status": "completed"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150686/job/124000688972",
+      "name": "Rust (Tauri backend)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150596/job/124000688702",
+      "name": "Wheel installs and starts in an empty environment",
+      "status": "queued"
+    },
+    {
+      "conclusion": "success",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150686/job/124000688536",
+      "name": "Frontend (Node.js)",
+      "status": "completed"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150637/job/124000688406",
+      "name": "SAST (bandit)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150596/job/124000688397",
+      "name": "Optional extras install and the core does not need them",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150671/job/124000688394",
+      "name": "Zero-cost suite (Linux, Python 3.12)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150637/job/124000688348",
+      "name": "CVE Scan \u2014 ML extras (non-blocking, real visibility)",
+      "status": "queued"
+    },
+    {
+      "conclusion": "success",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150691/job/124000688296",
+      "name": "Build, install, check, uninstall",
+      "status": "completed"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150637/job/124000688257",
+      "name": "Secret Detection (gitleaks)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150574/job/124000688148",
+      "name": "Tests (Python 3.11)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150574/job/124000688087",
+      "name": "Tests (Python 3.12)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150574/job/124000688044",
+      "name": "Tests (Python 3.10)",
+      "status": "in_progress"
+    },
+    {
+      "conclusion": "success",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150637/job/124000687955",
+      "name": "CVE Scan (safety)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037150574/job/124000687766",
+      "name": "Lint & Type Check",
+      "status": "completed"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037146256/job/124000680537",
+      "name": "Analyze (python)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037146256/job/124000680511",
+      "name": "Analyze (rust)",
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037146256/job/124000680497",
+      "name": "Analyze (javascript-typescript)",
+      "status": "queued"
+    },
+    {
+      "conclusion": "success",
+      "html_url": "https://github.com/delentia-labs/Delentia-OS/actions/runs/41037146256/job/124000680305",
+      "name": "Analyze (actions)",
+      "status": "completed"
+    }
+  ]
+}

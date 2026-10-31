@@ -82,13 +82,33 @@ def current_bytes(root: Path, relative: str) -> bytes:
         os.close(descriptor)
 
 
+def validate_required_observation(plan, output):
+    """Bind declared observations to this executor's single governed source.
+
+    Additional sources require a different executor, not an inferred read.
+    This proves byte identity, never source authorship or claim truth.
+    """
+    if "evidence_requirement" not in plan:
+        return
+    from rct_control_plane.evidence_requirement import parse_requirement
+    requirement = parse_requirement(plan["evidence_requirement"])
+    for observed in requirement.observations:
+        if observed.locator != output["relative_path"] or observed.sha256 != output["sha256"]:
+            raise ValueError("required observation differs from governed acquisition")
+
+
 def validate_receipts(plan, contract_id, namespace, receipts):
-    from rct_control_plane.intent_contract import IntentContractError, plan_digest
+    from rct_control_plane.intent_contract import IntentContractError, compare, plan_digest
     if not isinstance(receipts, list) or len(receipts) > 50:
         raise IntentContractError("invalid execution receipt list")
     import re
     graph = {node["id"]: node for node in plan["components"]}
-    completed = set();previous = "0" * 64;run_version = None
+    from rct_control_plane.budget_execution import compile_program, registry_for
+    program = compile_program(plan)
+    handlers = registry_for(plan)
+    typed_nodes = {node["id"]: node for node in program["nodes"]}
+    outputs: dict[str, dict] = {}
+    completed: set[str] = set();previous = "0" * 64;run_version = None
     for receipt in receipts:
         if not isinstance(receipt, dict):
             raise IntentContractError("invalid execution receipt")
@@ -106,8 +126,62 @@ def validate_receipts(plan, contract_id, namespace, receipts):
             raise IntentContractError("execution receipt binding or dependency mismatch")
         if run_version is not None and data["run_version"] != run_version:
             raise IntentContractError("execution receipts belong to different claims")
+        typed = typed_nodes[node["id"]]
+        handler = handlers[typed["handler"]]
+        try:
+            normalized = handler.output_model.model_validate(data["output"]).model_dump()
+            if digest(normalized) != data["output_sha256"]:
+                raise ValueError("receipt output is not canonical typed data")
+            if typed["phase"] == "observation":
+                validate_required_observation(plan, normalized)
+                binding = plan["semantic_planning"]["quote_evidence"]
+                if (normalized["relative_path"] != binding["relative_path"] or normalized["sha256"] != binding["sha256"]
+                        or not re.fullmatch(r"[0-9a-f]{64}", normalized["tool_result_sha256"])):
+                    raise ValueError("receipt source differs from pinned evidence")
+            elif typed["criteria"]:
+                if (normalized.get("criterion_id") != typed["criteria"][0]
+                        or data["output"].get("satisfied") is not True):
+                    raise ValueError("receipt does not verify its criterion")
+                criterion = next(c for c in plan["criteria"] if c["id"] == typed["criteria"][0])
+                if criterion["kind"] in {"contains", "language", "json_object"}:
+                    # Recheck only pure criteria against the recorded report.
+                    # Calling the live handler would also evaluate file predicates
+                    # against today's filesystem, changing historical semantics.
+                    report = outputs[typed["inputs"]["report"]]
+                    if compare({"criteria": [criterion]}, json.dumps(report, ensure_ascii=False)):
+                        raise ValueError("historical criterion is not satisfied by its recorded report")
+            else:
+                # Only the fixed, application-owned budget arithmetic/copy
+                # handlers are replayed. Never re-read files or run criterion
+                # handlers here: these are historical receipts, not a new run.
+                payload = {**typed["parameters"], **{port: outputs[parent] for port, parent in typed["inputs"].items()}}
+                if handler.run is None:
+                    raise ValueError("receipt handler has no implementation")
+                expected = handler.run(handler.input_model.model_validate(payload))
+                if digest(expected) != data["output_sha256"]:
+                    raise ValueError("receipt output differs from its recorded inputs")
+        except (ValueError, KeyError, TypeError) as exc:
+            raise IntentContractError("execution receipt semantic or type mismatch") from exc
+        outputs[node["id"]] = normalized
         run_version = data["run_version"]
         completed.add(node["id"]);previous = receipt["receipt_sha256"]
+    return outputs
+
+
+def validate_stored_execution(contract, contract_id, namespace):
+    """Bind the public report/completion projection to validated history.
+
+    No source reread or replay of user effects occurs during status lookup.
+    """
+    receipts = contract["execution_receipts"]
+    outputs = validate_receipts(contract["plan"], contract_id, namespace, receipts)
+    report = contract.get("execution_report")
+    expected = outputs.get("compare_budget")
+    if report is not None and (expected is None or digest(report) != digest(expected)):
+        raise ValueError("stored report differs from recorded computation")
+    if contract.get("execution_status") == "complete" and (
+            len(receipts) != len(contract["plan"]["components"]) or expected is None or report is None):
+        raise ValueError("stored completion lacks full receipts/report")
 
 
 class BudgetPipeline:
@@ -148,6 +222,7 @@ class BudgetPipeline:
             quote = Quote.model_validate(value)
             if quote.total_is_final is not True or Decimal(quote.total) > Decimal("1e15"):
                 raise ValueError("quote total/scope unresolved")
+            validate_required_observation(self.plan, {"relative_path": result["path"], "sha256": self.binding["sha256"]})
             self.scheduler.observe("inspect_sources", {"evidence_status": "observed_bytes", "relative_path": result["path"],
                 "sha256": self.binding["sha256"], "tool_result_sha256": digest(result), "quote": quote.model_dump()})
             self.scheduler.drain("compute")
@@ -170,7 +245,10 @@ class BudgetPipeline:
             raw = current_bytes(Path(self.plan["workspace"]), self.binding["relative_path"])
             if hashlib.sha256(raw).hexdigest() != self.binding["sha256"]:
                 raise ValueError("source changed after observation")
-            if digest(strict_json(answer)) != digest(self.report):
+            authoritative = self.scheduler.outputs.get("compare_budget")
+            if authoritative is None or digest(self.report) != digest(authoritative):
+                raise ValueError("report differs from completed computation")
+            if digest(strict_json(answer)) != digest(authoritative):
                 raise ValueError("answer differs from the verified arithmetic report")
             if differences:
                 raise ValueError("declared criteria not satisfied")

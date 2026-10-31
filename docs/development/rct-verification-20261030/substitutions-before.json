@@ -1,0 +1,17 @@
+[
+  {
+    "characters": 60001,
+    "seconds": 0.9951158900000792,
+    "matches": 30000
+  },
+  {
+    "characters": 120001,
+    "seconds": 3.7214684489999854,
+    "matches": 60000
+  },
+  {
+    "characters": 240001,
+    "seconds": 15.118258778000154,
+    "matches": 120000
+  }
+]

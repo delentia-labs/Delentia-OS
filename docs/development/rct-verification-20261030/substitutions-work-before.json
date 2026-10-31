@@ -1,0 +1,14 @@
+[
+  {
+    "characters": 6000,
+    "search_work_before": 6003000,
+    "allowed_bound": 12000,
+    "violates_bound": true
+  },
+  {
+    "characters": 6007,
+    "search_work_before": 6017007,
+    "allowed_bound": 12014,
+    "violates_bound": true
+  }
+]
