@@ -1,11 +1,11 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-10-30 06:24:14Z",
+  "generated_at": "2026-10-30 08:41:27Z",
   "offline": false,
   "git": {
-    "sha": "efef0a74092d71037ff06f69e8e4ce9f2cfc8356",
-    "short": "efef0a7",
-    "branch": "round105/w09-live-runner",
+    "sha": "136906adb768a8345a4a3d28dc73302c339d2303",
+    "short": "136906a",
+    "branch": "round106/w08-w10-live-runners",
     "dirty": true
   },
   "canonical_checkpoint": {
@@ -17,10 +17,10 @@
     "last_updated": "2026-10-30"
   },
   "latest_completed_ci_on_main": {
-    "run": "41001485991",
+    "run": "41013560216",
     "conclusion": "success",
-    "sha": "368537d",
-    "created_at": "2026-10-30T04:11:19Z"
+    "sha": "d1376d2",
+    "created_at": "2026-10-30T06:21:02Z"
   },
   "tools": {
     "count": 50,

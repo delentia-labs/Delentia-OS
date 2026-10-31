@@ -2,386 +2,386 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/DEVELOPMENT_PLAN_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/changelog/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/contributing/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/testing/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/algorithms/mee/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/algorithms/moip/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/algorithms/overview/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/algorithms/tier9-autonomy/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/api/control-plane/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/api/microservices/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/KERNEL_RFC_002_PROCESS_MODEL/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/KERNEL_RFC_003_SCHEDULER/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/KERNEL_RFC_004_IPC/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/KERNEL_RFC_005_SYSCALL/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/KERNEL_RFC_006_FAULT_ISOLATION/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/architecture/observability/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/arxiv_paper/rct_constitutional_ai_v1/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/assurance/ASSURANCE_CASE/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/benchmark/hallucination-methodology/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/benchmark/methodology/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/community/DISCUSSIONS_STARTER_THREADS/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/community/GITHUB_UI_LAUNCH_CHECKLIST/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/architecture/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/fdia/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/genome-system/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/governance/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/intent-contracts/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/intent-loop/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/jitna/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/rct-7-thinking/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/signedai/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/vault-1068/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/concepts/verified-budget-executor/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/ACP_SETUP/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/APPROVE_WITH_DEVICE_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/APPROVE_WITH_DEVICE_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/DESK_ONE_CLICK_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/EVIDENCE_RUN_R92/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/FIRST_APPROVER_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/FIRST_APPROVER_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/HF_UPLOAD_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/INSTALL_WINDOWS_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/INSTALL_WINDOWS_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/LAW_OFFICIAL_TEXT_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/MCP_LISTINGS_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/NOTARY_OS_ACCOUNT_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/NPM_PUBLISH_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/OPENROUTER_KEY_AND_CAP_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/OUTREACH_DRAFTS_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/PILOT_ONE_WORKFLOW_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/PLAN_FIRST_ENABLE_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/PLAN_FIRST_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/POLICY_SENTENCES_GUIDE_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/QUICKSTART_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/QUICKSTART_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/SAMPLE_OUTPUT/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/UPDATES_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/UPDATES_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/VIDEO_90S_SCRIPT/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/VPS_RENTAL_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/WHAT_IS_DELENTIA_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/WHAT_IS_DELENTIA_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/WITNESS_SETUP_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/screens/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/design/memory_event_log/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/distribution/CLAIM_REGISTRY/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/distribution/LAUNCH_EVIDENCE_PACK/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/distribution/OPERATIONS_PLAYBOOK/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/distribution/PLATFORM_KITS/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/getting-started/cli-reference/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/getting-started/cli-review-playbook/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/getting-started/installation/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/getting-started/quickstart/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/operators/OPERATOR_CONTRACT/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/public/CURRENT_PUBLIC_INFORMATION_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/public/CURRENT_PUBLIC_INFORMATION_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/public/RCT7_IMPLEMENTATION_STATUS/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/PUBLIC_RELEASE_PROVENANCE/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/READINESS_SNAPSHOT/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/RELEASE_HISTORY/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/RELEASE_LEVELS/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/RELEASE_READINESS_CHECKLIST/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/SOCIAL_LAUNCH_EXECUTION_PLAN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/VERSIONING_POLICY/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/VERSIONING_POLICY_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/VERSION_AUDIT_2026-10-26/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/devops/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/finance/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/game-ai/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/healthcare/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/supply-chain/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/use-cases/trading-agent-architecture/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/whitepaper/DELENTIA_WHITEPAPER_3.0_EN/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/whitepaper/DELENTIA_WHITEPAPER_3.0_TH/</loc>
-         <lastmod>2026-10-30</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>
