@@ -45,6 +45,8 @@ delentia demo approve <id> --scripted       # you sign; only now does the file c
 delentia demo status                        # the audit chain: how many rows, how many signed, intact or not
 ```
 
+> **Version note.** `--lang en` and `delentia demo run injection --scripted` are in **2.4.1 and later**. On 2.4.0 (the current release until 2.4.1 is published) the demo exists in Thai only; leave out `--lang en` there. `delentia --version` tells you which you have.
+
 Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT_EN.md) (a real run, in English; [the Thai run](docs/demo/SAMPLE_OUTPUT.md)).
 
 Prefer a web page to a terminal? In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). Release 2.4.0 and later carry the pages inside the package (2.3.0 and 2.3.1 do not have them); a source checkout builds them once with `python scripts/package_desk.py` (Node.js 20 or newer). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai).

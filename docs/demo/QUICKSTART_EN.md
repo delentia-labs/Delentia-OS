@@ -7,6 +7,8 @@ The demo runs in **English** (`delentia demo init --lang en`, used below) or in 
 
 ## No model yet? Start here (2 minutes)
 
+> `--lang en` needs **2.4.1 or later**. On 2.4.0 the demo is Thai only: leave out `--lang en`. Check with `delentia --version`.
+
 ```bash
 pip install delentia-os
 delentia demo init --lang en
