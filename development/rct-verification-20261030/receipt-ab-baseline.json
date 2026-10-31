@@ -1,0 +1,44 @@
+{
+  "arm": "baseline-544f222a",
+  "scope": "author-written deterministic receipt consistency checks; not capable-model evaluation or proof of source truth",
+  "paid_calls": 0,
+  "cases": [
+    {
+      "case": "valid_history",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "case": "false_verdict",
+      "accepted": true,
+      "expected": false
+    },
+    {
+      "case": "wrong_criterion",
+      "accepted": true,
+      "expected": false
+    },
+    {
+      "case": "wrong_total",
+      "accepted": true,
+      "expected": false
+    },
+    {
+      "case": "wrong_remainder",
+      "accepted": true,
+      "expected": false
+    },
+    {
+      "case": "wrong_composed_report",
+      "accepted": true,
+      "expected": false
+    },
+    {
+      "case": "wrong_source",
+      "accepted": true,
+      "expected": false
+    }
+  ],
+  "correct_cases": 1,
+  "total_cases": 7
+}

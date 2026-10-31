@@ -1,0 +1,79 @@
+{
+  "sha": "509aa705eaae7838f872b3d5b91ded68cb5dcad7",
+  "passed": 9184,
+  "failed": 12,
+  "skipped": 55,
+  "xfailed": 1,
+  "seconds": 961.98,
+  "failures": [
+    {
+      "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+      "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+    },
+    {
+      "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+      "message": "KeyError: 'status_code'"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+      "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1793354536.4816203}]\nassert 'llm_error' == 'pending_approval'\n  \n  - pending_approval\n  + llm_error"
+    },
+    {
+      "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_verify_regex_round68_real::test_a_hostile_goal_costs_linear_time_and_the_old_pattern_did_not",
+      "message": "AssertionError: (0.25773175299991635, 1.4427800690000367)\nassert 1.4427800690000367 > (0.25773175299991635 * 8)"
+    },
+    {
+      "test": "rct_control_plane.tests.test_regex_audit_round72_real::test_the_two_bounded_dsl_patterns_are_fast_and_still_read_ordinary_parameters",
+      "message": "AssertionError: ('(\\\\w{1,64})\\\\s{0,20}=\\\\s{0,20}(.{1,2000}?)(?:,|\\\n  |$)', 'a=a=a')\nassert (2730.418926371 - 2729.085688787) < 0.5\n +  where 2730.418926371 = <built-in function perf_counter>()\n +    where <built-in function perf_counter> = time.perf_counter"
+    }
+  ],
+  "skip_and_xfail_reasons": {
+    "collection skipped": 1,
+    "could not import 'soundfile': No module named 'soundfile'": 1,
+    "could not import 'imageio_ffmpeg': No module named 'imageio_ffmpeg'": 2,
+    "sibling TypeScript checkout not present": 1,
+    "the browser did not start (it may be unable to run its sandbox here)": 3,
+    "needs a speech engine and a cached Whisper model": 3,
+    "no speech engine on this machine": 3,
+    "needs a cached Whisper model": 2,
+    "talks to public time-stamping authorities: set DELENTIA_REAL_SERVICES=1": 2,
+    "Real, understood gap (documented since commit 6c6aea1, 2026-09-23, reconfirmed in Round 43): delentia_generate_image needs the 'diffusion' extras group + real model weights, which are NOT installed in CI (ci.yml installs only requirements.txt) - the kernel's own DiffusionEngine honestly reports simulated=True/byte_size=0 rather than faking success. This is an Architect-level trade-off (heavier/slower CI job vs. accepting this documented gap), not something to silently work around - xfail keeps CI green while keeping this failure visible and accurate instead of a silent skip.": 1,
+    "Windows Job Objects": 3,
+    "needs a speech engine and ffmpeg on this machine": 2,
+    "needs a speech engine": 1,
+    "paid live test: needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1": 9,
+    "Hermes is not installed in this environment": 10,
+    "set DELENTIA_TEST_PG_DSN to run the PostgreSQL audit chain tests": 7,
+    "real v0.5.1 adapter weights not present in this environment": 1,
+    "set DELENTIA_REAL_SERVICES=1 and start the services (see the module docstring)": 4
+  },
+  "paid_calls": 0
+}

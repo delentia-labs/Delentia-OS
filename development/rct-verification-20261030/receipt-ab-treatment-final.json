@@ -1,0 +1,44 @@
+{
+  "arm": "treatment-final",
+  "scope": "author-written deterministic receipt consistency checks; not capable-model evaluation or proof of source truth",
+  "paid_calls": 0,
+  "cases": [
+    {
+      "case": "valid_history",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "case": "false_verdict",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong_criterion",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong_total",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong_remainder",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong_composed_report",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong_source",
+      "accepted": false,
+      "expected": false
+    }
+  ],
+  "correct_cases": 7,
+  "total_cases": 7
+}

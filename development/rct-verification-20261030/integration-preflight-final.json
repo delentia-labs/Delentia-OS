@@ -1,0 +1,8 @@
+{
+  "native_dns_example_com": {
+    "error": "[Errno -3] Temporary failure in name resolution"
+  },
+  "ollama_tags": {
+    "models": []
+  }
+}

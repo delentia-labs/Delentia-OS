@@ -1,0 +1,85 @@
+{
+  "arm": "baseline-544f222a",
+  "scope": "framework deterministic regression/microbenchmark, not model or semantic RCT-7 evaluation",
+  "paid_calls": 0,
+  "cases": [
+    {
+      "case": "valid_bound_verdict",
+      "observed": true,
+      "expected": true,
+      "correct": true
+    },
+    {
+      "case": "negative_verdict",
+      "observed": true,
+      "expected": false,
+      "correct": false
+    },
+    {
+      "case": "wrong_criterion",
+      "observed": true,
+      "expected": false,
+      "correct": false
+    },
+    {
+      "case": "truthy_string",
+      "observed": false,
+      "expected": false,
+      "correct": true
+    },
+    {
+      "case": "invalid_literal_admission",
+      "observed": true,
+      "expected": false,
+      "correct": false
+    },
+    {
+      "case": "caller_program_mutation",
+      "observed": 99,
+      "expected": 5,
+      "correct": false
+    },
+    {
+      "case": "inspection_program_mutation",
+      "observed": 99,
+      "expected": 5,
+      "correct": false
+    },
+    {
+      "case": "observed_output_mutation",
+      "observed": 99,
+      "expected": 2,
+      "correct": false
+    },
+    {
+      "case": "reentrant_execution_count",
+      "observed": 2,
+      "expected": 1,
+      "correct": false
+    },
+    {
+      "case": "failed_callback_reset",
+      "observed": true,
+      "expected": false,
+      "correct": false
+    },
+    {
+      "case": "untyped_verifier_admission",
+      "observed": true,
+      "expected": false,
+      "correct": false
+    }
+  ],
+  "correct_cases": 2,
+  "total_cases": 11,
+  "valid_one_node_microbenchmark": {
+    "samples": 1000,
+    "median_ns": 14692.0,
+    "p95_ns": 36084
+  },
+  "limitations": [
+    "author-written cases, not independent holdout",
+    "one-node CPU overhead, not whole-workflow latency",
+    "before/after under one machine, no capable model tested"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "sha": "8b5abfb6a7bdd5224d7f20167580c7065bc6bc37",
+  "passed": 9185,
+  "failed": 12,
+  "skipped": 52,
+  "xfailed": 1,
+  "seconds": 907.46,
+  "failures": [
+    {
+      "test": "rct_control_plane.tests.test_safe_text_real::test_adversarial_inputs_stay_fast[substitutions-tick]",
+      "message": "AssertionError: substitutions-tick took 1.25s\nassert (1247.864882063 - 1246.610992764) < 1.0\n +  where 1247.864882063 = <built-in function perf_counter>()\n +    where <built-in function perf_counter> = time.perf_counter"
+    },
+    {
+      "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+      "message": "mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool delentia_synthesize_function"
+    },
+    {
+      "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+      "message": "KeyError: 'status_code'"
+    },
+    {
+      "test": "rct_control_plane.tests.test_jury_measure_round56_real::test_three_sloppy_members_let_every_unsafe_proposal_through_and_t6_fails",
+      "message": "assert (15 == 15 and 0.467 == 0.5)"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+      "message": "AssertionError: assert 'llm_error' in ('llm_finished', 'max_iterations_reached', 'parse_error')"
+    },
+    {
+      "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+      "message": "AssertionError: expected a pending_approval halt; got steps=[{'iteration': 1, 'tool_name': None, 'tool_args': {}, 'tool_result': {'llm_error': 'model endpoint answered HTTP 404'}, 'llm_reasoning': 'the model could not be reached: model endpoint answered HTTP 404 (after 1 attempt(s))', 'timestamp': 1793353483.6219687}]\nassert 'llm_error' == 'pending_approval'\n  \n  - pending_approval\n  + llm_error"
+    },
+    {
+      "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+      "message": "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    }
+  ],
+  "notes": [
+    "Before parser fix 4bbe5d09",
+    "Fake-jury isolated file: 8 passed; root cause not established",
+    "No paid calls"
+  ]
+}
