@@ -149,3 +149,34 @@ def test_changed_budget_after_clarification_invalidates_history_and_stale_versio
     assert final['execution_report']['remaining'] == '-2500.00'
     assert final['execution_report']['budget_limit'] == '10000.00'
     assert final['execution_receipts'][0]['run_version'] > old_receipts[0]['run_version']
+
+
+@pytest.mark.parametrize('field,value', [('locator', 'other.json'), ('sha256', '0' * 64)])
+def test_requirement_must_match_acquisition_before_computation(tmp_path, world, field, value):
+    from rct_control_plane.tests.test_evidence_contract_gate_real import requirement
+    loop, context, criteria = budget_tests.setup(tmp_path, world)
+    req = requirement()
+    req['observations'][0].update(locator='quote.json', sha256=context['semantic_plan']['quote_evidence']['sha256'])
+    req['observations'][0][field] = value
+    store = IntentContractStore(loop._persistence, 'verified')
+    c = store.create('Compare quote with budget', criteria, world, context, evidence_requirement=req)
+    running = store.claim(c['id'], c['version'])
+    pipeline = BudgetPipeline(running, 'verified')
+    pipeline.observe('delentia_read_repo_file', {'relative_path': 'quote.json'},
+                     {'content_text': (world / 'quote.json').read_text(encoding='utf-8'), 'path': 'quote.json', 'truncated': False})
+    assert pipeline.error == 'required observation differs from governed acquisition'
+    assert not pipeline.receipts and pipeline.report is None
+
+
+def test_rehashed_history_cannot_claim_an_unacquired_required_source(tmp_path, world):
+    from rct_control_plane.intent_contract import plan_digest
+    from rct_control_plane.tests.test_evidence_contract_gate_real import requirement
+    c = completed(tmp_path, world)
+    req = requirement()
+    req['observations'][0]['locator'] = 'not-read.json'
+    c['plan']['evidence_requirement'] = req
+    for receipt in c['execution_receipts']:
+        receipt['plan_sha256'] = plan_digest(c['plan'])
+    rehash(c['execution_receipts'])
+    with pytest.raises(IntentContractError, match='semantic or type mismatch'):
+        validate_receipts(c['plan'], c['id'], 'verified', c['execution_receipts'])

@@ -48,6 +48,7 @@ def test_http_gate_controls_confirmation(service, tmp_path, age, expected):
     c = planned.json()['contract']
     assert c['plan']['evidence_requirement']['schema_version'] == 1
     assert c['evidence_decision'] is None
+    assert c['acquisition_links'] == []
     result = confirm(client, c)
     assert result.status_code == expected, result.text
     status = client.get(ROUTE + '/' + c['id'], headers={'Authorization': 'Bearer alice-token'}).json()['contract']
@@ -56,6 +57,11 @@ def test_http_gate_controls_confirmation(service, tmp_path, age, expected):
     else:
         assert status['verified'] and status['evidence_decision']['satisfies_declared_policy']
         assert status['evidence_decision']['grants_execution'] is False
+        link = status['acquisition_links'][0]
+        receipt = next(r for r in status['receipts'] if r['component_id'] == 'inspect_sources')
+        assert link == {'observation_id': 'o1', 'receipt_sha256': receipt['receipt_sha256'],
+                        'tool_result_sha256': receipt['output']['tool_result_sha256'],
+                        'source_sha256': body['evidence']['sha256'], 'source_locator': 'alice.json'}
 
 
 def test_caller_cannot_replace_requirement_or_read_other_actor(service, tmp_path):
