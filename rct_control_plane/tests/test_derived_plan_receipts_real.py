@@ -50,17 +50,24 @@ def test_derived_revision_retains_original_and_protected_bytes(tmp_path):
     assert store.get(c['id']) == ready
 
 
-def test_transition_returns_own_receipt_even_when_next_claim_commits_during_audit(tmp_path, monkeypatch):
+def test_transition_returns_own_receipt_even_when_next_claim_commits_after_atomic_commit(tmp_path, monkeypatch):
+    from contextlib import contextmanager
     store = store_at(tmp_path)
     c = store.create('เทียบงบ', [{'kind': 'language', 'value': 'th'}], tmp_path, context())
-    original_audit = store.db.append_audit
+    original_connect = store.db._connect
     other = []
-    def racing_audit(**kwargs):
-        original_audit(**kwargs)
-        if kwargs['action'] == 'plan_ready':
+    fired = False
+    @contextmanager
+    def racing_connect():
+        nonlocal fired
+        with original_connect() as conn:
+            yield conn
+            wrote = conn.total_changes > 0
+        if wrote and not fired:
+            fired = True
             current = store.get(c['id'])
             other.append(store.claim(current['id'], current['version']))
-    monkeypatch.setattr(store.db, 'append_audit', racing_audit)
+    monkeypatch.setattr(store.db, '_connect', racing_connect)
     own = store.claim(c['id'], c['version'], answers={'budget': '15,000 บาท'})
     assert own['state'] == 'plan_ready' and own['version'] == 2
     assert other[0]['state'] == 'running' and other[0]['version'] == 3
@@ -70,13 +77,21 @@ def test_transition_returns_own_receipt_even_when_next_claim_commits_during_audi
 
 
 def test_creation_receipt_cannot_inherit_later_running_claim(tmp_path, monkeypatch):
+    from contextlib import contextmanager
     store = store_at(tmp_path)
-    original_audit = store.db.append_audit
-    def racing_audit(**kwargs):
-        original_audit(**kwargs)
-        if kwargs['action'] == 'plan_ready':
-            store.claim(kwargs['entity_id'], 1)
-    monkeypatch.setattr(store.db, 'append_audit', racing_audit)
+    original_connect = store.db._connect
+    fired = False
+    @contextmanager
+    def racing_connect():
+        nonlocal fired
+        with original_connect() as conn:
+            yield conn
+            wrote = conn.total_changes > 0
+            row = conn.execute('SELECT id FROM intent_contracts').fetchone() if wrote else None
+        if row is not None and not fired:
+            fired = True
+            store.claim(row[0], 1)
+    monkeypatch.setattr(store.db, '_connect', racing_connect)
     own = store.create('JSON', [{'kind': 'json_object'}], tmp_path)
     assert own['state'] == 'plan_ready' and own['version'] == 1
     assert store.get(own['id'])['state'] == 'running'
