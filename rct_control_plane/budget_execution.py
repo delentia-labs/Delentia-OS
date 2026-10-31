@@ -6,7 +6,7 @@ import re
 from decimal import Context, Decimal, localcontext
 from typing import Literal
 
-from rct_control_plane.component_execution import Handler, validate_program
+from rct_control_plane.component_execution import CriterionVerification, Handler, validate_program
 from rct_control_plane.rct_plan import PlanItem
 from rct_control_plane.verified_budget import Quote
 
@@ -46,7 +46,7 @@ class CriterionInput(ReportInput):
     criterion_id: str
 
 
-class CriterionResult(PlanItem):
+class CriterionResult(CriterionVerification):
     criterion_id: str
     satisfied: Literal[True]
 
@@ -55,7 +55,10 @@ def compare_budget(inputs):
     from rct_control_plane.semantic_plan import validate_budget
     budget, source = inputs.budget, inputs.source
     validate_budget(budget)
-    currency = re.search(r"THB|USD|EUR|บาท", budget, re.I)[0].upper().replace("บาท", "THB")
+    match = re.search(r"THB|USD|EUR|บาท", budget, re.I)
+    if match is None:
+        raise ValueError("budget currency is required")
+    currency = match[0].upper().replace("บาท", "THB")
     limit = Decimal(re.sub(r"THB|USD|EUR|บาท", "", budget, flags=re.I).strip().replace(",", ""))
     if source.quote.currency != currency:
         raise ValueError("currency mismatch; no implicit FX conversion")

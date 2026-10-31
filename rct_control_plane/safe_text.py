@@ -36,8 +36,12 @@ def substitutions(command: str) -> List[str]:
     out: List[str] = []
     pos = 0
     n = len(command)
+    # Retain the next opener (including absence) while consuming backticks.
+    # Searching the remaining suffix for every pair makes tick-only input quadratic.
+    dollar = command.find("$(")
     while pos < n:
-        dollar = command.find("$(", pos)
+        if 0 <= dollar < pos:
+            dollar = command.find("$(", pos)
         tick = ticks[bisect_left(ticks, pos)] if bisect_left(ticks, pos) < len(ticks) else -1
         candidates = [c for c in (dollar, tick) if c >= 0]
         if not candidates:

@@ -1,0 +1,25 @@
+{
+  "policy_negative": {
+    "admitted": false,
+    "exception": "BudgetExceeded"
+  },
+  "policy_nonfinite": {
+    "admitted": true,
+    "reservation": 2.0000000000000002e-07
+  },
+  "inflight_tokens": {
+    "input_cap": 1,
+    "output_cap": 1,
+    "fake_provider_calls": 2,
+    "finished_input": 2,
+    "finished_output": 2,
+    "errors": []
+  },
+  "original_call_cap": {
+    "configured": 1,
+    "fake_provider_calls": 1,
+    "second_refused": true
+  },
+  "negative_price": "refused",
+  "nan_price": "refused"
+}

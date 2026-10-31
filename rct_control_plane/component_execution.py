@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Callable, Literal
 
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 
 from rct_control_plane.rct_plan import PlanItem
 
@@ -30,6 +30,23 @@ class ExecutionNode(PlanItem):
 class ExecutionProgram(PlanItem):
     schema_version: Literal[1] = 1
     nodes: list[ExecutionNode] = Field(min_length=1, max_length=50)
+
+
+class CriterionVerification(PlanItem):
+    """Typed verifier statement; the scheduler binds it to its declared criterion.
+
+    This records a trusted handler's verdict, not independent source truth.
+    """
+    criterion_id: str = Field(min_length=1, max_length=80)
+    satisfied: bool
+
+
+class VerificationRejected(ValueError):
+    def __init__(self, criterion_id: str, observed: dict):
+        super().__init__(f"criterion {criterion_id} was not verified")
+        self.criterion_id = criterion_id
+        self.expected = {"criterion_id": criterion_id, "satisfied": True}
+        self.observed = copy.deepcopy(observed)
 
 
 @dataclass(frozen=True)
@@ -67,8 +84,19 @@ def validate_program(program, registry, criterion_ids, unknown_ids):
             upstream = registry.get(nodes[parent].handler)
             if upstream is None or fields[port].annotation is not upstream.output_model:
                 raise ValueError("incompatible handler input/output edge")
-        if node.criteria and node.phase != "verify":
-            raise ValueError("criteria must be assigned to verification handlers")
+        if node.phase != "observation" and not callable(handler.run):
+            raise ValueError("compute/verify handlers require an implementation")
+        if node.phase == "observation" and handler.run is not None:
+            raise ValueError("observation handlers must use governed dispatch")
+        for port, value in node.parameters.items():
+            TypeAdapter(fields[port].rebuild_annotation()).validate_python(value, strict=True)
+        if not node.inputs:
+            handler.input_model.model_validate(node.parameters)
+        if node.criteria:
+            if node.phase != "verify" or len(node.criteria) != 1:
+                raise ValueError("each verifier node must bind exactly one criterion")
+            if not issubclass(handler.output_model, CriterionVerification):
+                raise ValueError("criterion handlers require typed verification output")
         covered.extend(node.criteria)
     if set(covered) != set(criterion_ids) or len(covered) != len(set(covered)):
         raise ValueError("each criterion requires exactly one verifier")
@@ -95,57 +123,102 @@ class ComponentScheduler:
     A failure is sticky; callers must reconcile rather than retry this instance.
     """
     def __init__(self, program, registry, criterion_ids, answers, on_complete):
-        self.registry = MappingProxyType(dict(registry))
-        self.program = validate_program(program, self.registry, criterion_ids, answers)
-        self.nodes = {n.id: n for n in self.program.nodes}
-        self.answers = copy.deepcopy(answers)
-        self.outputs = {}
-        self.failed = None
+        self._registry = MappingProxyType(dict(registry))
+        self._criterion_ids = frozenset(criterion_ids)
+        self._program = validate_program(copy.deepcopy(program), self._registry, self._criterion_ids, answers)
+        self._nodes = {n.id: n for n in self._program.nodes}
+        self._answers = copy.deepcopy(answers)
+        self._outputs = {}
+        self._verified = set()
+        self._in_progress = set()
+        self._failed = None
         self.on_complete = on_complete
 
+    @property
+    def failed(self):
+        return self._failed
+
+    @property
+    def registry(self):
+        return self._registry
+
+    @property
+    def program(self):
+        return self._program.model_copy(deep=True)
+
+    @property
+    def nodes(self):
+        return {key: node.model_copy(deep=True) for key, node in self._nodes.items()}
+
+    @property
+    def answers(self):
+        return copy.deepcopy(self._answers)
+
+    @property
+    def outputs(self):
+        return copy.deepcopy(self._outputs)
+
     def ready(self, node):
-        return (node.id not in self.outputs and not self.failed
-                and set(node.depends_on) <= self.outputs.keys()
-                and all(self.answers.get(key) for key in node.requires))
+        node = self._nodes[node.id]
+        return (node.id not in self._outputs and node.id not in self._in_progress and not self._failed
+                and set(node.depends_on) <= self._outputs.keys()
+                and all(self._answers.get(key) for key in node.requires))
+
+    def _commit_output(self, node, output):
+        validated = self._registry[node.handler].output_model.model_validate(output).model_dump()
+        if node.criteria:
+            criterion = node.criteria[0]
+            if (not isinstance(output, dict) or output.get("criterion_id") != criterion
+                    or output.get("satisfied") is not True
+                    or validated.get("criterion_id") != criterion or validated.get("satisfied") is not True):
+                raise VerificationRejected(criterion, output if isinstance(output, dict) else validated)
+        self.on_complete(node.id, copy.deepcopy(validated))
+        self._outputs[node.id] = copy.deepcopy(validated)
+        self._verified.update(node.criteria)
 
     def record(self, key, output):
-        node = self.nodes[key]
+        node = self._nodes[key]
         if not self.ready(node):
             raise ValueError("component prerequisites not completed or critical input unavailable")
+        self._in_progress.add(key)
         try:
-            validated = self.registry[node.handler].output_model.model_validate(output).model_dump()
-            self.on_complete(key, copy.deepcopy(validated))
-            self.outputs[key] = copy.deepcopy(validated)
+            self._commit_output(node, output)
         except Exception:
-            self.failed = key
+            self._failed = key
             raise
+        finally:
+            self._in_progress.discard(key)
 
     def observe(self, key, output):
-        if self.nodes[key].phase != "observation":
+        if self._nodes[key].phase != "observation":
             raise ValueError("only observation nodes accept dispatched evidence")
         self.record(key, output)
 
     def drain(self, phase):
-        if self.failed:
+        if self._failed:
             raise ValueError("failed execution requires reconciliation")
         count = 0
         while True:
-            node = next((n for n in self.program.nodes if n.phase == phase and self.ready(n)), None)
+            node = next((n for n in self._program.nodes if n.phase == phase and self.ready(n)), None)
             if node is None:
                 return count
+            self._in_progress.add(node.id)
             try:
-                handler = self.registry[node.handler]
+                handler = self._registry[node.handler]
                 if handler.run is None or phase == "observation":
                     raise ValueError("observations require governed dispatch")
                 payload = copy.deepcopy(node.parameters)
-                payload.update({port: copy.deepcopy(self.outputs[parent]) for port, parent in node.inputs.items()})
+                payload.update({port: copy.deepcopy(self._outputs[parent]) for port, parent in node.inputs.items()})
                 inputs = handler.input_model.model_validate(payload)
-                self.record(node.id, handler.run(inputs))
+                self._commit_output(node, handler.run(inputs))
                 count += 1
             except Exception:
-                self.failed = node.id
+                self._failed = node.id
                 raise
+            finally:
+                self._in_progress.discard(node.id)
 
     def require_complete(self):
-        if self.failed or set(self.outputs) != set(self.nodes):
-            raise ValueError("not all planned components completed")
+        if (self._failed or self._in_progress or set(self._outputs) != set(self._nodes)
+                or self._verified != self._criterion_ids):
+            raise ValueError("not all planned components and criteria completed")

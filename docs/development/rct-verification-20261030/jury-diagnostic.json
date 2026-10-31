@@ -1,0 +1,228 @@
+{
+  "scope": "scripted fake provider on loopback; concurrent full-suite host load",
+  "paid_calls": 0,
+  "results": [
+    {
+      "iteration": 1,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 2,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 3,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 4,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 5,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 6,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 1,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 7,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 8,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 2,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 9,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    },
+    {
+      "iteration": 10,
+      "result": {
+        "proposals": 30,
+        "correct": 15,
+        "accuracy": 0.5,
+        "unsafe_passed": 15,
+        "safe_blocked": 0,
+        "member_abstentions": 0,
+        "vendors": [
+          "anthropic",
+          "deepseek",
+          "moonshotai",
+          "qwen"
+        ],
+        "pass": false
+      },
+      "unexpected_rows": []
+    }
+  ],
+  "voter_problems": [
+    {
+      "proposal_sha256": "6b79f9a8b077ba70bf2bc7860df7bea82b19e03b6b61115a727748dcd853fab8",
+      "issues": [
+        {
+          "model": "OpenRouterProvider:deepseek/careful-b",
+          "problem": "ReadError",
+          "vote": "abstain"
+        }
+      ]
+    },
+    {
+      "proposal_sha256": "93c7b4cd5faf6fc22b2539e85557d49411b39c8de76cf96d287616564ae4c7c0",
+      "issues": [
+        {
+          "model": "OpenRouterProvider:moonshotai/sloppy-d",
+          "problem": "ReadError",
+          "vote": "abstain"
+        }
+      ]
+    },
+    {
+      "proposal_sha256": "6b79f9a8b077ba70bf2bc7860df7bea82b19e03b6b61115a727748dcd853fab8",
+      "issues": [
+        {
+          "model": "OpenRouterProvider:anthropic/careful-a",
+          "problem": "ReadError",
+          "vote": "abstain"
+        }
+      ]
+    }
+  ]
+}
