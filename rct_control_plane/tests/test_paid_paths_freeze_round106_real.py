@@ -139,3 +139,57 @@ def test_with_a_matching_freeze_the_provider_is_built_and_nothing_is_sent_yet(tm
     from research import live_workflows
     guarded = live_workflows._provider("openrouter", "m/x", tmp_path, 1.0, 0.1, 0.5, 10)          # building it opens no connection: the autouse guard would have raised
     assert guarded is not None
+
+
+# ------------------------------------------------------------------ Round 108: the sixth path, the research runner with --policy real
+def _runner_args(config_path, **over):
+    base = dict(policy="real", model_config=str(config_path), budget_usd=1.0, price_in=0.1, price_out=0.5)
+    base.update(over)
+    return argparse.Namespace(**base)
+
+
+def _config(tmp_path, provider="openrouter", model="m/x"):
+    path = tmp_path / "model.json"
+    path.write_text(json.dumps({"provider": provider, "model": model}), encoding="utf-8")
+    return path
+
+
+def test_the_research_runner_with_a_real_policy_asks_for_the_freeze(tmp_path, monkeypatch):
+    from research import runner
+    problems = runner.real_run_freeze_problems(_runner_args(_config(tmp_path)))
+    assert any("frozen configuration is required" in p for p in problems)
+    monkeypatch.setenv(pf.FREEZE_ENV, frozen_file(tmp_path))
+    assert runner.real_run_freeze_problems(_runner_args(_config(tmp_path))) == []                  # the frozen model, price and budget
+    assert any("price of m/x changed" in p for p in runner.real_run_freeze_problems(_runner_args(_config(tmp_path), price_in=0.3)))
+    assert any("above the frozen" in p for p in runner.real_run_freeze_problems(_runner_args(_config(tmp_path), budget_usd=99.0)))
+    assert any("not frozen" in p for p in runner.real_run_freeze_problems(_runner_args(_config(tmp_path, model="other/model"))))
+
+
+def test_the_research_runner_names_a_missing_price_instead_of_a_confusing_mismatch(tmp_path):
+    from research import runner
+    problems = runner.real_run_freeze_problems(_runner_args(_config(tmp_path), price_in=None, price_out=None))
+    assert problems and "--price-in and --price-out" in problems[0]
+
+
+def test_the_research_runner_does_not_ask_for_a_local_model_or_a_loopback_fake(tmp_path, monkeypatch):
+    from research import runner
+    assert runner.real_run_freeze_problems(_runner_args(_config(tmp_path, provider="ollama", model="qwen3:8b"), price_in=None, price_out=None)) == []
+    monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", "http://127.0.0.1:9/api/v1")
+    assert runner.real_run_freeze_problems(_runner_args(_config(tmp_path))) == []
+
+
+def test_a_provider_the_endpoint_check_cannot_see_is_asked_too(tmp_path, monkeypatch):
+    """A loopback OpenRouter override says nothing about an openai-compatible endpoint, which could be anywhere and could cost money."""
+    from research import runner
+    monkeypatch.setenv("DELENTIA_OPENROUTER_BASE_URL", "http://127.0.0.1:9/api/v1")
+    problems = runner.real_run_freeze_problems(_runner_args(_config(tmp_path, provider="openai-compat")))
+    assert any("frozen configuration is required" in p for p in problems)
+
+
+def test_the_research_runner_refuses_before_it_starts_anything(tmp_path, capsys):
+    """The refusal comes before the first await, so the coroutine is stepped by hand: a real event loop opens a socket pair on Windows, which this file's no-network guard forbids."""
+    from research import runner
+    coro = runner.main_async(argparse.Namespace(policy="real", arms="A111", model_config=str(_config(tmp_path)), budget_usd=1.0, price_in=0.1, price_out=0.5, out=str(tmp_path / "o.jsonl")))
+    with pytest.raises(StopIteration) as done:
+        coro.send(None)
+    assert done.value.value == 7 and "REFUSED" in capsys.readouterr().out

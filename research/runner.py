@@ -626,6 +626,26 @@ def _load_units(split: str, only: Optional[List[str]], domain: str = "quotes") -
     return static, trajs
 
 
+def real_run_freeze_problems(args: argparse.Namespace) -> List[str]:
+    """Round 108: `--policy real` is a paid path like the other five (DAAES live and benchmark, live workflows, RCT-7 holdout, P0), so it asks for the frozen configuration before anything is sent.
+    The model comes from the config file the run will use; a local Ollama model moves no money and is not asked; against a loopback fake (a rehearsal) nothing is asked either."""
+    from research import paid_run_freeze
+    from rct_control_plane.model_config import load_model_config
+    if not args.model_config:
+        return ["--policy real needs --model-config (a file made with `delentia model set --config ...`)"]
+    cfg = load_model_config(Path(args.model_config))
+    provider, model = str(cfg.get("provider") or "").strip(), str(cfg.get("model") or "").strip()
+    if not provider or not model:
+        return ["the model config names no provider and model"]
+    if provider == "ollama":
+        return []
+    price_in, price_out = getattr(args, "price_in", None), getattr(args, "price_out", None)
+    problems = paid_run_freeze.freeze_problems(model, price_in, price_out, args.budget_usd if args.budget_usd is not None else 0.0, force=provider != "openrouter")
+    if problems and (price_in is None or price_out is None):
+        problems.insert(0, "--price-in and --price-out (USD per million tokens) are required for a paid run")
+    return problems
+
+
 async def main_async(args: argparse.Namespace) -> int:
     import logging
     logging.disable(logging.WARNING)
@@ -634,6 +654,11 @@ async def main_async(args: argparse.Namespace) -> int:
         _loguru.remove()
     except Exception:
         pass
+    if args.policy == "real":
+        frozen = real_run_freeze_problems(args)
+        if frozen:
+            print("REFUSED: " + "; ".join(frozen))
+            return 7
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     arms = _arms(args.arms)
@@ -759,6 +784,8 @@ def main() -> int:
     parser.add_argument("--work", default=None, help="working directory (default: a new temporary one)")
     parser.add_argument("--model-config", default=None)
     parser.add_argument("--budget-usd", type=float, default=None)
+    parser.add_argument("--price-in", type=float, default=None, help="Round 108: the model's price in USD per million prompt tokens (checked against the freeze for a paid run)")
+    parser.add_argument("--price-out", type=float, default=None, help="Round 108: the model's price in USD per million completion tokens")
     parser.add_argument("--budget-scope", default="run", choices=["run", "invocation"], help="run = a resume adds what every earlier invocation of this output file spent (default); invocation = this process only")
     parser.add_argument("--new-run", action="store_true", help="the configuration changed on purpose: move the old output aside (never deleted) and start a new run")
     parser.add_argument("--tool-menu", default="default", choices=["default", "ranked"], help="default = the full menu; ranked = the ranked compact menu (same for every arm of a run)")
