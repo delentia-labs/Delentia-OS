@@ -23,7 +23,7 @@ AI agents can plan and use tools. What happens when the model misreads you, read
 
 ## The governed cycle
 
-<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governed-cycle.svg" alt="The governed cycle: GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN, and back to the next episode" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governed-cycle.svg" alt="The governed cycle: GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN, and back to the next episode" width="860" /></p>
 
 **GUARD** (is the request itself an attack?) → **THINK** (a plan) → **ROUTE** (fast or careful) → **ACT** (each tool call is judged first) → **COMPRESS** (long tool output is made smaller and stays recoverable) → **VERIFY** (does the answer match what was asked?) → **RECORD** (a signed, hash-chained audit log) → **LEARN** (only verified episodes become skills).
 
@@ -31,7 +31,7 @@ This is the runtime's execution cycle. RCT-7, the creator's seven-step way of th
 
 ## Where the model stops and the runtime decides
 
-<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governance-boundary.svg" alt="The model proposes a tool call; the policy and tool gate allows it, requires a person's signature, or refuses it; results are screened, verified and written to the audit log and memory" width="640"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governance-boundary.svg" alt="The model proposes a tool call; the policy and tool gate allows it, requires a person's signature, or refuses it; results are screened, verified and written to the audit log and memory" width="640" /></p>
 
 The model proposes; the runtime enforces. The drawing shows the governed loop. It does **not** claim that every route into the system passes the gate: routes outside the loop (for example the raw `/mcp` gateway, which is owner-only) are listed in [`research/GATE_PROPERTIES.md`](research/GATE_PROPERTIES.md), and until a witness outside the machine exists the log is hash-chained and signed, **not** tamper-proof.
 
