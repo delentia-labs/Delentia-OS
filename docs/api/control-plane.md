@@ -169,6 +169,18 @@ with httpx.Client(base_url="http://localhost:8000") as client:
 
 The SDK control plane has no authentication by default — it is intended for local development and reference use. For production deployments in the Enterprise stack, JWT-based auth and mTLS are added at the Gateway layer.
 
+## Background job ownership and outcomes
+
+Job `status` retains its existing transport/lifecycle meaning. In particular,
+`done` means the runner returned; it may have stopped for clarification or an
+approval. The additive `task_outcome` and `verification_scope` fields describe
+the scoped task result. `cancel_requested=true` means a request was persisted;
+only the owning worker records `cancelled` after acknowledging it. Clients should
+poll status instead of treating a remote cancel response as effect rollback.
+
+See [job ownership and outcomes](../development/JOB_OWNERSHIP_AND_OUTCOMES_2026-10-30_TH.md)
+for lease/fencing boundaries, migration requirements and W09 oracle cases.
+
 ## Read-only budget request retries
 
 The opt-in `/v1/agent/readonly/budget` create request accepts an optional
