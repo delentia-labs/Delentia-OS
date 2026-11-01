@@ -1,6 +1,6 @@
 // Run with: npm run test:setup  (node 22.6+, no test framework)
 import assert from "node:assert/strict";
-import { LEVELS, STEP_IDS, approvalMessage, browserVerdict, nextStep, pemToDer, signWithKeyFile } from "./setup-model.ts";
+import { LEVELS, LOCAL_NOTE, ONLINE_NOTE, STEP_IDS, approvalMessage, browserVerdict, cheapestToolModels, chatModels, modelAdvice, nextStep, pemToDer, signWithKeyFile } from "./setup-model.ts";
 
 let n = 0;
 const test = async (name, fn) => { await fn(); n++; console.log("ok -", name); };
@@ -73,12 +73,42 @@ await test("the levels: two, the standard one changes nothing, the other lists w
   assert.deepEqual(LEVELS.map((l) => l.template), ["argaware", "planfirst"]);
 });
 await test("the next step is the first one not done", () => {
-  const all = { browserOk: true, hasApprover: true, policyChosen: true, checkupRan: true, practiceDone: true };
+  const all = { browserOk: true, modelOk: true, hasApprover: true, policyChosen: true, checkupRan: true, practiceDone: true };
   assert.equal(nextStep(all), null);
   assert.equal(nextStep({ ...all, browserOk: false }), "browser");
+  assert.equal(nextStep({ ...all, modelOk: false, practiceDone: false }), "model");
   assert.equal(nextStep({ ...all, hasApprover: false, practiceDone: false }), "approver");
   assert.equal(nextStep({ ...all, practiceDone: false }), "practice");
-  assert.deepEqual([...STEP_IDS], ["browser", "approver", "level", "checkup", "practice"]);
+  assert.deepEqual([...STEP_IDS], ["browser", "model", "approver", "level", "checkup", "practice"]);
+});
+await test("every model state says what it means and what to do, in both languages", () => {
+  for (const lang of ["en", "th"]) {
+    for (const state of ["ready", "configured", "server_down", "model_missing", "no_key", "something_new"]) {
+      const a = modelAdvice(state, "qwen3:8b", lang);
+      assert.ok(a.text.length > 10 && ["ok", "warn", "fail"].includes(a.level), state);
+      if (a.level !== "ok") assert.ok(a.fix.length > 5, state);
+    }
+    assert.equal(modelAdvice("server_down", "m", lang).level, "fail");
+    assert.equal(modelAdvice("ready", "m", lang).level, "ok");
+  }
+  assert.ok(modelAdvice("configured", "m").fix.includes("not been called"));            // a key is not proof that the model answers
+  assert.ok(modelAdvice("model_missing", "qwen3:8b").text.includes("qwen3:8b"));
+});
+await test("the notes say the true things: local is slow and weak at tools, online costs money and the key is not written to disk", () => {
+  assert.ok(/slow/.test(LOCAL_NOTE.en) && /not yet been measured/.test(LOCAL_NOTE.en) && LOCAL_NOTE.th.length > 40);
+  assert.ok(/costs money/.test(ONLINE_NOTE.en) && /never written to disk/.test(ONLINE_NOTE.en) && /spending limit/.test(ONLINE_NOTE.en) && ONLINE_NOTE.th.length > 40);
+});
+await test("only models that can answer are offered from the local list, never embedding or reranking ones", () => {
+  const got = chatModels(["bge-m3:latest", "bonsai-27b:latest", "delentia-os:latest", "llama3.2:3b", "nomic-embed-text:latest", "qwen2.5:7b", "qwen2.5vl:3b", "qwen3:8b", "mxbai-embed-large", "snowflake-arctic-embed2", "bge-reranker-v2", "all-minilm"]);
+  assert.deepEqual(got, ["bonsai-27b:latest", "delentia-os:latest", "llama3.2:3b", "qwen2.5:7b", "qwen2.5vl:3b", "qwen3:8b"]);
+  assert.deepEqual(chatModels([]), []);
+});
+await test("the cheapest usable online models: tools and JSON needed, priced, cheapest first, free ones last, never more than asked", () => {
+  const m = (id, p, tools = true, json = true) => ({ id, prompt_price_per_mtok: p, completion_price_per_mtok: p, supports_tools: tools, supports_json_mode: json });
+  const got = cheapestToolModels([m("b/dear", 3), m("a/cheap", 0.1), m("z/free:free", 0), m("c/notools", 0.01, false), m("d/nojson", 0.01, true, false), m("e/unpriced", null), m("f/mid", 1)], 25);
+  assert.deepEqual(got.map((x) => x.id), ["a/cheap", "f/mid", "b/dear", "z/free:free"]);
+  assert.equal(cheapestToolModels(Array.from({ length: 40 }, (_, i) => m(`v/m${i}`, i)), 5).length, 5);
+  assert.deepEqual(cheapestToolModels([]), []);
 });
 await test("the practice step runs only the approved action: it never calls the resume that continues with a model", async () => {
   const { readFileSync } = await import("node:fs");

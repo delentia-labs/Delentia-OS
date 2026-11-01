@@ -79,7 +79,7 @@ export function ConfirmAction({ approvalId, actionSha256, hasDevice, allowDevice
           onChange={(e) => withKeyFile(e.target.files?.[0])} />
       </div>
       {allowDevice && !hasDevice ? (
-        <p className="mt-2 text-[12px] text-dl-muted">{th ? "ยังไม่มีอุปกรณ์ที่เปิดใช้งาน ใช้ไฟล์กุญแจแทน หรือเพิ่มอุปกรณ์ในขั้นที่ 2" : "No device is active yet. Use a key file, or add a device in step 2."}</p>
+        <p className="mt-2 text-[12px] text-dl-muted">{th ? "ยังไม่มีอุปกรณ์ที่เปิดใช้งาน ใช้ไฟล์กุญแจแทน หรือเพิ่มอุปกรณ์ในขั้นตอนผู้ยืนยัน" : "No device is active yet. Use a key file, or add a device in the step about who confirms."}</p>
       ) : null}
       <p className="mt-2 text-[12px] leading-relaxed text-dl-muted">
         {th ? "ไฟล์กุญแจถูกอ่านในเบราว์เซอร์นี้เท่านั้น ไม่ถูกอัปโหลด หน้านี้ส่งแค่ลายเซ็นกับกุญแจสาธารณะ และลืมไฟล์ทันทีหลังเซ็น"
