@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 860" width="960" height="860" role="img" aria-labelledby="t d" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <title id="t">Where the model stops and the runtime decides</title>
+  <desc id="d">The language model proposes a tool call. The runtime's policy and tool gate allows it, requires a person's signature, or refuses it. Signed actions run exactly as signed; refusals are recorded. Results are screened, verified and written to the audit log and memory.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7aa7e0"/></marker>
+  </defs>
+  <rect width="960" height="860" rx="14" fill="#0f1720"/>
+  <text x="480" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#e6edf3">The model proposes. The runtime decides.</text>
+
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="60"  y="70" width="200" height="60" rx="12" fill="#16222f" stroke="#2f4a66"/><text x="160" y="106">The person's request</text>
+    <rect x="380" y="70" width="200" height="60" rx="12" fill="#16222f" stroke="#2f4a66"/><text x="480" y="106" font-weight="700">Delentia runtime</text>
+    <rect x="700" y="70" width="200" height="60" rx="12" fill="#2a2330" stroke="#6b4f86"/><text x="800" y="96">Language model</text><text x="800" y="116" font-size="12" fill="#c9b7dd">local or hosted: proposes only</text>
+  </g>
+  <g stroke="#7aa7e0" stroke-width="2" fill="none">
+    <path d="M260 100H374" marker-end="url(#a)"/>
+    <path d="M586 94H694" marker-end="url(#a)"/>
+    <path d="M694 112H586" marker-end="url(#a)"/>
+  </g>
+  <text x="640" y="84" font-size="12" fill="#b8c4d0" text-anchor="middle">asks</text>
+  <text x="640" y="130" font-size="12" fill="#b8c4d0" text-anchor="middle">proposes a tool call</text>
+
+  <path d="M480 130V176" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- gate -->
+  <rect x="300" y="180" width="360" height="86" rx="12" fill="#0b2a44" stroke="#3b7ab8" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="480" y="212" text-anchor="middle" font-size="17" font-weight="700" fill="#e6edf3">Policy and tool gate</text>
+  <text x="480" y="236" text-anchor="middle" font-size="13" fill="#b8c4d0">the FDIA score · the owner's policy · the taint rule</text>
+  <text x="480" y="254" text-anchor="middle" font-size="13" fill="#b8c4d0">every tool call of the governed loop passes here first</text>
+
+  <!-- left: allowed -->
+  <path d="M300 223H160V496H374" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="150" y="300" text-anchor="end" font-size="14" fill="#8fd18f" font-weight="700">Allowed</text>
+  <text x="150" y="318" text-anchor="end" font-size="12" fill="#b8c4d0">read-only, or your policy</text>
+  <text x="150" y="334" text-anchor="end" font-size="12" fill="#b8c4d0">says it may run</text>
+
+  <!-- middle: needs signature -->
+  <path d="M480 266V336" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="490" y="306" font-size="14" fill="#e8c16a" font-weight="700">Needs a signature</text>
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="380" y="340" width="200" height="74" rx="12" fill="#2b2615" stroke="#a88a2a"/>
+    <text x="480" y="370">A person signs</text><text x="480" y="392" font-size="12" fill="#e8d9a0">with a key, or a device they own</text>
+  </g>
+  <path d="M480 414V470" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="490" y="446" font-size="12" fill="#b8c4d0">signed: runs exactly that action, once</text>
+
+  <!-- right: refused -->
+  <path d="M660 223H800V336" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="812" y="290" font-size="14" fill="#e28b8b" font-weight="700">Refused</text>
+  <text x="812" y="308" font-size="12" fill="#b8c4d0">no signature can lift it</text>
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="700" y="340" width="200" height="74" rx="12" fill="#2b1a1a" stroke="#a04a4a"/>
+    <text x="800" y="370">Refusal, with evidence</text><text x="800" y="392" font-size="12" fill="#e8b8b8">the reason is written down</text>
+  </g>
+  <path d="M580 377H694" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="637" y="368" font-size="12" fill="#b8c4d0" text-anchor="middle">rejected</text>
+
+  <!-- tool runs -->
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="380" y="474" width="200" height="60" rx="12" fill="#1d2f1f" stroke="#4f8a4f"/>
+    <text x="480" y="500">The tool runs</text><text x="480" y="520" font-size="12" fill="#cfe9cf">inside the sandbox it is given</text>
+  </g>
+  <path d="M480 534V580" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="320" y="584" width="320" height="70" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="480" y="612">The result is screened</text><text x="480" y="634" font-size="12" fill="#b8c4d0">text from outside marks the episode tainted: from then on,</text><text x="480" y="648" font-size="12" fill="#b8c4d0">anything that sends or changes something needs a signature</text>
+  </g>
+  <path d="M480 654V690" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="320" y="694" width="320" height="56" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="480" y="720">The answer is checked against the request</text><text x="480" y="738" font-size="12" fill="#b8c4d0">a heuristic: it decides what is learned, not what you see</text>
+  </g>
+  <path d="M480 750V774" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <g font-size="15" fill="#e6edf3" text-anchor="middle">
+    <rect x="320" y="778" width="320" height="52" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="480" y="802">Audit log and memory</text><text x="480" y="820" font-size="12" fill="#b8c4d0">hash-chained and signed; you can re-verify it offline</text>
+  </g>
+  <path d="M800 414V804H646" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- limits -->
+  <rect x="40" y="590" width="250" height="160" rx="10" fill="none" stroke="#6f7a86" stroke-dasharray="5 4"/>
+  <text x="165" y="614" text-anchor="middle" font-size="13" font-weight="700" fill="#c9d1d9">Not drawn as covered</text>
+  <text x="165" y="636" text-anchor="middle" font-size="12" fill="#9aa5b1">Routes that are not part of the</text>
+  <text x="165" y="652" text-anchor="middle" font-size="12" fill="#9aa5b1">governed loop (for example the raw</text>
+  <text x="165" y="668" text-anchor="middle" font-size="12" fill="#9aa5b1">/mcp gateway, owner-only) and</text>
+  <text x="165" y="684" text-anchor="middle" font-size="12" fill="#9aa5b1">witnesses outside the machine.</text>
+  <text x="165" y="708" text-anchor="middle" font-size="12" fill="#9aa5b1">The list: research/GATE_PROPERTIES.md</text>
+  <text x="165" y="728" text-anchor="middle" font-size="12" fill="#9aa5b1">Until an outside witness exists, the log</text>
+  <text x="165" y="744" text-anchor="middle" font-size="12" fill="#9aa5b1">is signed, not tamper-proof.</text>
+</svg>
