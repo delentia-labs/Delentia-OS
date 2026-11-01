@@ -90,7 +90,7 @@ def example_1_basic_routing():
     # Get API key
     api_key = get_key(decision.key_context)
     print(f"\n🔑 API Key Context: {decision.key_context.value}")
-    print(f"   Key: {api_key[:20]}...")
+    print(f"   Key: (set, {len(api_key)} characters; never printed)")
     
     # Make API call (mocked)
     response = mock_llm_call(

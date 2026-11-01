@@ -134,6 +134,8 @@ jobs:
     name: Publish to npm
     needs: github-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: sdk-typescript
