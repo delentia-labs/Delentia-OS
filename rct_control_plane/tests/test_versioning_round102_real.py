@@ -258,3 +258,14 @@ def test_the_ordering_works_without_the_packaging_library_too(monkeypatch):
     monkeypatch.setitem(sys.modules, "packaging.version", None)
     assert cv.is_newer("2.4.0", "2.3.1") and cv.is_newer("2.10.0", "2.9.0") and cv.is_newer("2.4.0", "2.4.0rc1") and cv.is_newer("2.4.0rc2", "2.4.0rc1")
     assert not cv.is_newer("2.3.1", "2.4.0") and not cv.is_newer("2.4.0rc1", "2.4.0") and not cv.is_newer("garbage", "2.4.0")
+
+
+def test_the_npm_job_does_not_try_to_publish_a_version_that_is_already_on_npm():
+    """v2.4.1 showed a red cross on every release: the SDK's own version (1.4.0) was already on npm and the job published it again. The job now asks the registry first and skips every later step."""
+    steps = _workflow("release.yml")["jobs"]["npm-publish"]["steps"]
+    names = [s.get("name", "") for s in steps]
+    check = next(i for i, n in enumerate(names) if "already on npm" in n)
+    assert steps[check]["id"] == "npmver" and "npm view" in steps[check]["run"] and "publish=false" in steps[check]["run"]
+    for later in steps[check + 1:]:
+        assert later.get("if") == "steps.npmver.outputs.publish == 'true'", later.get("name")
+    assert any(s.get("run", "").startswith("npm publish") for s in steps[check + 1:])         # it still publishes when the version is new

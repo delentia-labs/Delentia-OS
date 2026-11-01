@@ -151,16 +151,37 @@ jobs:
           cache: "npm"
           cache-dependency-path: sdk-typescript/package-lock.json
 
+      # The TypeScript SDK has its own version (sdk-typescript/package.json), which is NOT the Python package's version.
+      # A release tag of the Python package must not try to publish the same npm version again: npm refuses it and the whole
+      # workflow showed a red cross on every release (found on v2.4.1, where 1.4.0 was already on the registry).
+      - name: Is this SDK version already on npm?
+        id: npmver
+        run: |
+          name=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          published=$(npm view "$name@$ver" version 2>/dev/null || true)
+          if [ "$published" = "$ver" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "$name@$ver is already on npm: nothing to publish for this release (bump sdk-typescript/package.json to publish a new SDK version)."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$ver is not on npm yet: publishing."
+          fi
+
       - name: Install dependencies
+        if: steps.npmver.outputs.publish == 'true'
         run: npm ci
 
       - name: Run tests
+        if: steps.npmver.outputs.publish == 'true'
         run: npm test -- --passWithNoTests
 
       - name: Build (prepublishOnly)
+        if: steps.npmver.outputs.publish == 'true'
         run: npm run build
 
       - name: Publish to npm
+        if: steps.npmver.outputs.publish == 'true'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_DELENTIA || secrets.NPM_TOKEN }}
