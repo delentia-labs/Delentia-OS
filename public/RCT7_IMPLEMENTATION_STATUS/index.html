@@ -2365,6 +2365,90 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../KNOWN_LIMITATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known limitations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../COMPARISON/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparison with other runtimes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2474,7 +2558,7 @@
 
 
 <h1 id="rct-7-the-definition-and-what-the-runtime-implements-today">RCT-7: the definition, and what the runtime implements today<a class="headerlink" href="#rct-7-the-definition-and-what-the-runtime-implements-today" title="Permanent link">&para;</a></h1>
-<p>Re-checked after round 97 (2026-10-24) by reading the code and running the tests named below. Thai summary at the end.</p>
+<p>Re-checked on 2026-10-31 (round 107) by reading the code and running the tests named below; the model-assisted parts were added in round 98 and measured on holdouts labelled by the project owner in rounds 99 to 105. Thai summary at the end.</p>
 <p><strong>RCT-7, Reverse Component Thinking</strong>, is the creator's way of working in seven steps. The table separates the <strong>requirement</strong> (the creator's definition of each step) from the <strong>implementation</strong>. A step that is only partly implemented is not described as done anywhere else in this repository.</p>
 <p><strong>Where the limit is.</strong> Everything marked "by rule" reads the request's own words and tests the result without a language model: it cannot see what the words do not say. What needs a model that can read intent (unknowns the words do not show, a vague goal, a wrong-but-well-formed answer) is <strong>not</strong> done, and no held-out measurement with a capable model exists yet. The wait-and-ask behaviour is <strong>on where a person is present</strong> (the Desk and the chat channels) and <strong>off where nobody is waiting</strong> (jobs, schedules, webhooks, subagents, the HTTP API), because a question to nobody would sit until it expires. <code>DELENTIA_ASK_AND_WAIT=1</code> turns it on everywhere, <code>=off</code> nowhere. This default was set on 2026-10-24 on the strength of a false-stop measurement made on cases the rules' author wrote (1 false stop in 40); it has not yet been measured on real requests. The plan and the lists below are always produced.</p>
 <table>
@@ -2492,8 +2576,8 @@
 <td>R1</td>
 <td>Observe</td>
 <td>Collect what is known <strong>and what is unknown</strong></td>
-<td>Always lists two kinds of unknown, by rule: a file the request tells the agent to read or edit that exists nowhere in the workspace, and a bare reference ("fix it") with no earlier conversation. With the flag, the episode stops before the first model call and asks. Unknowns the words do not show are not found by rule. <strong>Opt-in, off by default</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): a model proposes questions, each of which must cite words of the request (a question about something the request never mentions is dropped); it can only ask, never act. On the author's own 40 requests local 7-8B models found 18-20 of 20 with 0 false pauses; a 3B model found 10 of 20. A holdout labelled by someone else has not been run</td>
-<td>Partial (rules by default; model-proposed unknowns opt-in, not yet validated on a holdout)</td>
+<td>Always lists two kinds of unknown, by rule: a file the request tells the agent to read or edit that exists nowhere in the workspace, and a bare reference ("fix it") with no earlier conversation. With the flag, the episode stops before the first model call and asks. Unknowns the words do not show are not found by rule. <strong>Opt-in, off by default</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): a model proposes questions, each of which must cite words of the request (a question about something the request never mentions is dropped); it can only ask, never act. On the author's own 40 requests local 7-8B models found 18-20 of 20 with 0 false pauses; a 3B model found 10 of 20. On a holdout of 60 requests labelled by the project owner (not by the author of the rules), qwen3:8b found 0.85 of the requests that needed a question and paused on 0.16 of those that did not, against pass rules of at least 0.80 and at most 0.15 written beforehand: <strong>not met, by one case</strong>; qwen2.5:7b found 0.53. A later set of 60 new requests did not reproduce the one pass that an earlier two-axis set had shown for the variant that is given extra context (a pass at the edge of both bounds). No capable hosted model has been run</td>
+<td>Partial (rules by default; model-proposed unknowns opt-in; the owner-labelled holdouts did not meet their pass rule with local models)</td>
 </tr>
 <tr>
 <td>R2</td>
@@ -2520,37 +2604,38 @@
 <td>R5</td>
 <td>Identify core intent</td>
 <td>When the intent is not clear, <strong>ask the user and wait</strong></td>
-<td>A question store (sealed per person, survives a restart, answered once, the answer is a new intent version, the original is kept). The loop asks for the rule-visible unknowns above, and for a result that breaks a stated requirement. The answer attaches to the same request once, when the person sends it again; "accept" closes it without running anything. General "the intent is unclear" is the opt-in model proposal above, with a per-person brake: if most of what the model proposed to a person was dismissed, it stops proposing to them</td>
+<td>A question store (sealed per person, survives a restart, answered once, the answer is a new intent version, the original is kept). The loop asks for the rule-visible unknowns above, and for a result that breaks a stated requirement. The answer attaches to the same request once, when the person sends it again; "accept" closes it without running anything. General "the intent is unclear" is the opt-in model proposal above, with a per-person brake: if most of what the model proposed to a person was dismissed, it stops proposing to them. Where nobody is waiting (jobs, schedules, webhooks, the HTTP API) the loop does not ask: it is off there by design, and a "park the question and tell the owner" state does not exist yet</td>
 <td>Partial</td>
 </tr>
 <tr>
 <td>R6</td>
 <td>Reconstruct</td>
 <td>The user <strong>sees the plan before</strong> the real artifact is built</td>
-<td>The plan, its conditions, parts and unknowns reach the Desk before the first tool and are in every result (<code>rct7_plan</code>). Chat channels do not get a plan before the first tool; they get the question when the episode stops to ask</td>
+<td>The plan, its conditions, parts and unknowns reach the Desk before the first tool and are in every result (<code>rct7_plan</code>). Chat channels do not get a plan before the first tool; they get the question when the episode stops to ask. Separately, <strong>plan-first approval</strong> (off until the owner's policy turns it on) turns the effects of eight action kinds (delete, send out, money, permissions, publish, restore or cancel, move or shut down, edit a document) into one numbered plan with one signature over its digest; nothing runs before that signature</td>
 <td>Partial</td>
 </tr>
 <tr>
 <td>R7</td>
 <td>Compare with intent</td>
 <td>If the result does not match, <strong>report the difference, stop and ask</strong>, then analyse again with the answer</td>
-<td>For the seven kinds above, a difference stops the episode with a question that states expected and observed; nothing is learned from it. The end-of-episode similarity/grounding check still only decides whether the episode may become a skill. <strong>Opt-in</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): where the rules found no difference a model may judge that the answer misses a part of the request, and the part must be cited from the request; on the author's own 40 pairs 17-19 of 20 unmet answers were found with 0-1 false stops (7-8B models)</td>
+<td>For the seven kinds above, a difference stops the episode with a question that states expected and observed; nothing is learned from it. The end-of-episode similarity/grounding check still only decides whether the episode may become a skill. <strong>Opt-in</strong> (<code>DELENTIA_RCT7_JUDGE=propose</code>): where the rules found no difference a model may judge that the answer misses a part of the request, and the part must be cited from the request; on the author's own 40 pairs 17-19 of 20 unmet answers were found with 0-1 false stops (7-8B models). On a holdout of 40 pairs labelled by the project owner, qwen3:8b found 6 of 8 unmet answers (the rule written beforehand asked for 7 of 8) with 0 of 24 false stops; qwen2.5:7b found 6 of 8 with 8 of 24 false stops: <strong>neither met the rule</strong></td>
 <td>Partial</td>
 </tr>
 </tbody>
 </table>
 <h2 id="what-this-does-not-say">What this does not say<a class="headerlink" href="#what-this-does-not-say" title="Permanent link">&para;</a></h2>
 <ul>
-<li>It does not say the runtime has no clarification anywhere else: the intent-contract path (<code>intent_contract.py</code>) has its own questions and is separate.</li>
+<li>It does not say the runtime has no clarification anywhere else: the intent-contract path (<code>intent_contract.py</code>, <code>typed_intent.py</code>, <code>intent_conditions.py</code>, <code>intent_review.py</code>, <code>evidence_requirement.py</code>, <code>citation_verifier.py</code>, <code>citation_acquisition.py</code>) has its own questions, its own typed criteria and necessary conditions, and a citation verifier, and is separate from the loop described above. It is opt-in, covers a few task families, and is not yet reachable through a public route for general tasks. The two halves do not yet share one plan object; until they do, the same request can be analysed twice.</li>
+<li>The numbers above come from local 3B to 8B models on a CPU. <strong>No capable hosted model has driven the runtime under test conditions, so nothing here says RCT-7 makes a good model better.</strong> Completeness has three meanings (the structure exists; the judgement of unclear intent works; it measurably helps) and only the first is close.</li>
 <li>A "backward chain" means a plan structure that can be checked. It is not a claim about what happens inside a language model.</li>
 <li>Showing a plan does not mean every plan needs a new approval. Approvals follow the owner's policy and the risk of each action.</li>
 <li>A clarification answer is not an approval: it never lifts a gate, a forbidden path or a signature requirement.</li>
 <li>Measured only on cases written by the author of the rules (regression guards, not independent evidence): <code>research/rct7_round97_criteria.md</code> has the rules written before the code; <code>python -m research.rct7_round97_measure</code> reproduces the counts.</li>
 </ul>
 <h2 id="acceptance-cases-and-where-they-are-tested">Acceptance cases and where they are tested<a class="headerlink" href="#acceptance-cases-and-where-they-are-tested" title="Permanent link">&para;</a></h2>
-<p>RC01 an unknown that blocks the goal is asked about: <code>test_rct7_round97_real.py::test_a_missing_file_stops_before_the_first_model_call_and_asks</code> (a missing file only). RC02 not tested. RC03, RC04 not implemented (no evidence chain). RC05 ambiguous intent with two outcomes: not implemented (needs a model). RC06 the plan is shown before any effect: <code>test_ask_and_wait_loop_round96_real.py</code>. RC07 a wrong-language or wrong-format result is reported and paused: same file. RC08 a revised goal keeps the original: <code>test_clarifications_round92_real.py</code>, <code>test_rct7_round97_real.py</code>. RC09 a correct short answer is not stopped: <code>test_ask_and_wait_loop_round96_real.py</code>, <code>test_ask_and_wait_false_pause_round96_real.py</code>. RC10 a restart while waiting keeps the pending state: <code>test_clarifications_round92_real.py</code>.</p>
+<p>RC01 an unknown that blocks the goal is asked about: <code>test_rct7_round97_real.py::test_a_missing_file_stops_before_the_first_model_call_and_asks</code> (a missing file only). RC02 not tested. RC03 and RC04 (a claim that the evidence does not support is reported, a faithful answer has no gaps): <code>test_rct7_round98_real.py::test_the_baseline_chain_traces_tokens_to_steps_the_request_or_nowhere</code>, <code>::test_a_claim_is_verified_only_when_its_quote_occurs_verbatim_in_the_cited_step</code>, <code>::test_a_clause_of_the_answer_that_no_listed_claim_speaks_about_is_reported_as_a_gap</code>, and for claims of an action <code>test_rct7_action_claims_round99_real.py</code>. RC05 ambiguous intent with two outcomes: not implemented (needs a model). RC06 the plan is shown before any effect: <code>test_ask_and_wait_loop_round96_real.py</code>. RC07 a wrong-language or wrong-format result is reported and paused: same file. RC08 a revised goal keeps the original: <code>test_clarifications_round92_real.py</code>, <code>test_rct7_round97_real.py</code>. RC09 a correct short answer is not stopped: <code>test_ask_and_wait_loop_round96_real.py</code>, <code>test_ask_and_wait_false_pause_round96_real.py</code>. RC10 a restart while waiting keeps the pending state: <code>test_clarifications_round92_real.py</code>.</p>
 <h2 id="_1">สรุปภาษาไทย<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>ตรวจหลังรอบที่ 97 จากการอ่านโค้ดและรันเทสต์ ทุกขั้น R1–R7 ตอนนี้ "ทำได้บางส่วน" ไม่มีขั้นไหนครบตามนิยาม ส่วนที่ทำแล้วอ่านจากถ้อยคำของคำขอเองด้วยกฎ ไม่ใช้โมเดล: รู้ว่าไฟล์ที่สั่งให้อ่านไม่มีอยู่เลย, ประโยคที่อ้างถึงสิ่งที่ไม่มี, ข้อกำหนด 7 ชนิด (ภาษา, JSON, ไฟล์ที่ต้องบันทึก, ไฟล์ที่ห้ามแก้, จำนวนคำ, จำนวนตัวอักษร, จำนวนข้อ), ขั้นตอนที่ผู้ใช้เขียนแยกไว้เอง, แผนและเงื่อนไขที่แสดงก่อนใช้เครื่องมือตัวแรก, การหยุดถาม-รอ-ตอบ โดยคำตอบแนบกับคำขอเดิมหนึ่งครั้ง ส่วนที่ต้องใช้โมเดลที่เก่งพอและชุดทดสอบอิสระ (เจตนาคลุมเครือทั่วไป, สิ่งที่ไม่รู้ที่ถ้อยคำไม่บอก, ห่วงโซ่ย้อนกลับพร้อมหลักฐาน) ยังไม่ได้ทำ การหยุดถามเปิดอยู่เฉพาะที่มีคนอยู่หน้าจอ (Desk และแชท) และปิดสำหรับงานตั้งเวลา/job/webhook/API (<code>DELENTIA_ASK_AND_WAIT=1</code> เปิดทุกที่ <code>=off</code> ปิดทุกที่) ตัวเลขที่วัดมาจากเคสที่ผู้เขียนกฎเขียนเอง จึงเป็นเกราะกันถดถอย ไม่ใช่หลักฐานอิสระ</p>
+<p>ตรวจใหม่รอบที่ 107 (31 ต.ค. 2026): ส่วนที่ใช้โมเดลช่วย (judge, critic, โซ่หลักฐาน) วัดแล้วกับชุดที่เจ้าของระบบติดป้ายเอง 4 ชุด โมเดล 8B ในเครื่อง "ใกล้เกณฑ์แต่ไม่ถึง" (ชุดแรกขาดหนึ่งเคส ชุดที่สองไม่ผ่าน ชุดที่สามผ่านที่ขอบ ชุดที่สี่ไม่ทำซ้ำผลนั้น) และยังไม่เคยรันกับโมเดลที่เก่งเลย จึงยังพูดไม่ได้ว่า RCT-7 ช่วยให้โมเดลที่เก่งทำงานได้ดีขึ้น; ส่วนเส้นทาง contract ของอีกฝ่าย (typed intent, เงื่อนไขจำเป็น, ตัวตรวจ citation) ยังแยกจาก loop หลักและยังไม่รวมเป็นแผนเดียว. ตรวจครั้งก่อนหลังรอบที่ 97: ทุกขั้น R1–R7 ตอนนี้ "ทำได้บางส่วน" ไม่มีขั้นไหนครบตามนิยาม ส่วนที่ทำแล้วอ่านจากถ้อยคำของคำขอเองด้วยกฎ ไม่ใช้โมเดล: รู้ว่าไฟล์ที่สั่งให้อ่านไม่มีอยู่เลย, ประโยคที่อ้างถึงสิ่งที่ไม่มี, ข้อกำหนด 7 ชนิด (ภาษา, JSON, ไฟล์ที่ต้องบันทึก, ไฟล์ที่ห้ามแก้, จำนวนคำ, จำนวนตัวอักษร, จำนวนข้อ), ขั้นตอนที่ผู้ใช้เขียนแยกไว้เอง, แผนและเงื่อนไขที่แสดงก่อนใช้เครื่องมือตัวแรก, การหยุดถาม-รอ-ตอบ โดยคำตอบแนบกับคำขอเดิมหนึ่งครั้ง ส่วนที่ต้องใช้โมเดลที่เก่งพอและชุดทดสอบอิสระ (เจตนาคลุมเครือทั่วไป, สิ่งที่ไม่รู้ที่ถ้อยคำไม่บอก, ห่วงโซ่ย้อนกลับพร้อมหลักฐาน) ยังไม่ได้ทำ การหยุดถามเปิดอยู่เฉพาะที่มีคนอยู่หน้าจอ (Desk และแชท) และปิดสำหรับงานตั้งเวลา/job/webhook/API (<code>DELENTIA_ASK_AND_WAIT=1</code> เปิดทุกที่ <code>=off</code> ปิดทุกที่) ตัวเลขที่วัดมาจากเคสที่ผู้เขียนกฎเขียนเอง จึงเป็นเกราะกันถดถอย ไม่ใช่หลักฐานอิสระ</p>
 
 
 

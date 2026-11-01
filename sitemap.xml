@@ -5,7 +5,15 @@
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/COMPARISON/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/DEVELOPMENT_PLAN_TH/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/KNOWN_LIMITATIONS/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
@@ -209,6 +217,14 @@
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/demo/PAID_DAY_RUNBOOK_EN/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/demo/PAID_DAY_RUNBOOK_TH/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/PILOT_ONE_WORKFLOW_TH/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
@@ -234,6 +250,10 @@
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/demo/SAMPLE_OUTPUT/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/demo/SAMPLE_OUTPUT_EN/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
@@ -438,6 +458,10 @@
     </url>
     <url>
          <loc>https://delentia-labs.github.io/Delentia-OS/release/VERSION_AUDIT_2026-10-26/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://delentia-labs.github.io/Delentia-OS/security/THREAT_MODEL/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
