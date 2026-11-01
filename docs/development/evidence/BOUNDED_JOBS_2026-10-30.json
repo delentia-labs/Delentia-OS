@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "purpose": "Engineering evidence for bounded read-only background jobs; not canonical main CI counts",
+  "source_commit": "d635c698b533bdb81aa4253c0bae2fe90d9bf2bc",
+  "integration_base": "51713f9168ec7311b3fea89a249f2a3783631825",
+  "paid_calls": 0,
+  "files": {
+    "docs/development/BOUNDED_BACKGROUND_JOBS_2026-10-30_TH.md": "89411f302c0839f687eced37db167a564150323e034d5c6fb546c1a878351139",
+    "docs/development/PREPAID_EVALUATION_AND_MARKETING_GATES_2026-10-30_TH.md": "69ad767881eb99a67e1b0b2ced30582cc8b18123ed0b14d28c946d132112ec76",
+    "rct_control_plane/contract_execution_guard.py": "73e04a391685017233b9dd24d8ff15ac1f6613a86ff501c396422f06a7c8c140",
+    "rct_control_plane/intent_contract.py": "12bc0b2b055fa3c3c9e6ac7a09610b80e421c6cb853bb36b2b929e84b4308a42",
+    "rct_control_plane/job_ownership.py": "6248059db2e53e71f8ce3be06eb93415fc1cfc72e356af2a6aa15a872118f18f",
+    "rct_control_plane/jobs.py": "086c40371e45890a237aaca7746f1f9aa299b1877bb75b6c58896596039b504c",
+    "rct_control_plane/readonly_jobs.py": "ed11553106832e735058069a5f79101bffc42c29711279f63ac70d3265b722ad",
+    "rct_control_plane/readonly_service.py": "570ea1dded32767047509fad4582598a67e398b54f372168889f4755f3cf0a85",
+    "rct_control_plane/tests/test_job_atomic_audit_real.py": "ab606fe5ba2b7f56ad17ac66ce3d28bea1ee943f389ddcfe392b501cd76c17bf",
+    "rct_control_plane/tests/test_jobs_round60_real.py": "1f699f41215ccd76cf8aed1060a7014bea6bcaa90e92309a4cfe0e8bf4ce4d8e",
+    "rct_control_plane/tests/test_readonly_jobs_real.py": "e64be4c654b60b42f57a1f53553a2a8fec96b754b26116eacad53a0e7685d708"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "nltk": "3.10.4",
+    "msgpack": "1.2.3",
+    "model_tags": [],
+    "native_dns": "getent ahostsv4 example.com returned exit 2",
+    "browser": "task-owned container runner with sandbox enabled"
+  },
+  "new_tests": {
+    "passed": 22,
+    "seconds": 1.18,
+    "note": "Includes real kernel with generation forbidden; not capable-model evaluation"
+  },
+  "checks": {
+    "ruff": "passed",
+    "mypy_linux_six_files": "passed",
+    "mypy_new_files_check_untyped_defs": "passed",
+    "mkdocs_strict": "passed"
+  },
+  "full_suite": {
+    "passed": 9130,
+    "failed": 10,
+    "skipped": 45,
+    "xfailed": 1,
+    "warnings": 9038,
+    "seconds": 558.56,
+    "junit_sha256": "a57cf9b4bcb619ac24406cb04a6c6275f858f3e34aac57fb8c88dd12217fa77e",
+    "failures": [
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round32_new_tools_real.TestKernelCapabilityWrappers::test_synthesize_function_real_deterministic_case",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_mcp_server_round31_new_tools_real.TestWebCrawlTool::test_crawl_real_url",
+        "category": "native_dns"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_ollama_provider_real_completion",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_quota_tracker_blocks_the_real_call_after_limit_reached",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_llm_provider_real::test_autonomous_loop_accepts_injected_provider",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_decide_next_action_returns_well_formed_decision",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_real_tool_call_end_to_end",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_autonomous_loop_real::test_autonomous_loop_pauses_for_approval_on_medium_risk_command",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_experiments_real::test_compare_experiment_runs_reflects_real_benchmark_score_delta",
+        "category": "ollama_model_unavailable"
+      },
+      {
+        "test": "rct_control_plane.tests.test_genesis_synthesis_real::test_synthesizes_and_verifies_a_real_simple_function",
+        "category": "ollama_model_unavailable"
+      }
+    ],
+    "command": "python -m pytest -n 3 --dist loadfile --timeout=600 --junitxml=full.xml"
+  },
+  "after_main_merge": {
+    "commit": "30a32ba58f29d11cdb3b087117ee7931509f656d",
+    "main": "368537d5bef45c1c8def0283646b588fe3197c60",
+    "changed_paths": [
+      "requirements.lock.txt",
+      "requirements.txt"
+    ],
+    "tested_runtime_files_unchanged": {
+      "rct_control_plane/contract_execution_guard.py": true,
+      "rct_control_plane/intent_contract.py": true,
+      "rct_control_plane/job_ownership.py": true,
+      "rct_control_plane/jobs.py": true,
+      "rct_control_plane/readonly_jobs.py": true,
+      "rct_control_plane/readonly_service.py": true,
+      "rct_control_plane/tests/test_job_atomic_audit_real.py": true,
+      "rct_control_plane/tests/test_jobs_round60_real.py": true,
+      "rct_control_plane/tests/test_readonly_jobs_real.py": true
+    },
+    "dependency_versions_already_present_during_full_suite": true,
+    "regression": {
+      "passed": 147,
+      "warnings": 99,
+      "seconds": 7.84,
+      "junit_sha256": "b6c1678b9f266a6f5255f0e79a8a2ee8bbe81768f2dcc7dbabc0f9851664e37b"
+    }
+  },
+  "billing_rehearsal_tests_in_full_suite": {
+    "budget_guard": 11,
+    "live_adapter": 15,
+    "model_gateway": 14,
+    "paid_calls": 0
+  },
+  "crawler_reproduction": {
+    "url": "https://example.com",
+    "error": "refused: example.com does not resolve ([Errno -3] Temporary failure in name resolution)",
+    "refused_by": "url_safety"
+  },
+  "github": {
+    "pull_request": 207,
+    "base": "codex/combined-lifecycle-check-20261030",
+    "full_ci_triggered_for_stacked_base": false,
+    "claude_pr": 206,
+    "claude_pr_file_overlap": [],
+    "dependabot_inventory": {
+      "api_status": 403,
+      "reason": "Resource not accessible by integration",
+      "push_banner_only": {
+        "open": 4,
+        "severity": "low"
+      },
+      "complete_inventory_verified": false
+    }
+  },
+  "remaining": [
+    "main CI and review of dependencies",
+    "drain legacy workers and test load/clock/DB failures",
+    "long-term metadata retention",
+    "Desk combined E2E/video",
+    "pin and authorize capable-model experiment",
+    "model/native DNS prerequisites for workflows that need them",
+    "off-host restore/independent witness/notary separation/72h soak/outside review before shared pilot"
+  ]
+}
