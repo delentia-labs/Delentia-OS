@@ -142,6 +142,8 @@ nav:
     - Runtime features: reference/runtime-features.md
     - SDK modules and components: reference/sdk-and-components.md
     - Earlier README content: reference/legacy-numbers-and-history.md
+    - Earlier installation page (historical): reference/legacy-installation.md
+    - Earlier quick start (historical): reference/legacy-quickstart.md
   - Benchmark:
     - Methodology & Reproducibility: benchmark/methodology.md
     - Hallucination Rate Methodology (withdrawn): benchmark/hallucination-methodology.md
