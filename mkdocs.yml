@@ -136,6 +136,12 @@ nav:
     - RFC-005 Syscall & Capabilities: architecture/KERNEL_RFC_005_SYSCALL.md
     - RFC-006 Fault Isolation: architecture/KERNEL_RFC_006_FAULT_ISOLATION.md
     - Observability Guide: architecture/observability.md
+  - Reference:
+    - Index: reference/index.md
+    - The FDIA Equation: reference/fdia-equation.md
+    - Runtime features: reference/runtime-features.md
+    - SDK modules and components: reference/sdk-and-components.md
+    - Earlier README content: reference/legacy-numbers-and-history.md
   - Benchmark:
     - Methodology & Reproducibility: benchmark/methodology.md
     - Hallucination Rate Methodology (withdrawn): benchmark/hallucination-methodology.md

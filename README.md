@@ -1,38 +1,53 @@
-# Delentia OS — a governed AI agent runtime
+# Delentia OS
 
 [![CI](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/ci.yml)
-[![Security](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml/badge.svg)](https://github.com/delentia-labs/Delentia-OS/actions/workflows/security-scan.yml)
-[![codecov](https://codecov.io/gh/delentia-labs/Delentia-OS/graph/badge.svg?token=IE08MVKA6C)](https://app.codecov.io/gh/delentia-labs/Delentia-OS)
 [![PyPI](https://img.shields.io/pypi/v/delentia-os?label=PyPI)](https://pypi.org/project/delentia-os/)
 [![Windows installer](https://img.shields.io/github/v/release/delentia-labs/Delentia-OS?label=Windows%20installer&logo=windows)](https://github.com/delentia-labs/Delentia-OS/releases/latest)
-[![npm](https://img.shields.io/badge/npm-%40delentia%2Fdelentia--os-cb3837?logo=npm)](https://www.npmjs.com/package/@delentia/delentia-os)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Docs](https://img.shields.io/badge/docs-delentia--labs.github.io-blue?logo=readthedocs&logoColor=white)](https://delentia-labs.github.io/Delentia-OS/)
-[![Status](https://img.shields.io/badge/status-experimental-orange)](CHANGELOG.md)
-[![Website](https://img.shields.io/badge/website-delentia.com-brightgreen)](https://delentia.com)
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/delentia-labs/Delentia-OS/blob/main/notebooks/rct_playground.ipynb)
-[![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/delentia-labs/Delentia-OS/main?filepath=notebooks%2Frct_playground.ipynb)
-[![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-181717?logo=github&logoColor=white)](https://codespaces.new/delentia-labs/Delentia-OS)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+[![Status](https://img.shields.io/badge/status-experimental-orange)](docs/KNOWN_LIMITATIONS.md)
 
+**A self-hosted AI agent runtime in which the model only proposes. Every tool call is judged before it runs, anything that writes, sends or runs code waits for a person's signature, and every episode leaves a record you can verify.**
 
-## A governed AI agent runtime: it stops and asks before it acts, and it can prove what it did
+AI agents can plan and use tools. What happens when the model misreads you, reads a hostile web page, or the process dies halfway through a job? Most setups rely on the model behaving. Delentia OS does not: the runtime sits between the model and the tools and decides.
 
-Delentia OS is an agent runtime. An agent here is not a loop that does whatever the model says. Every episode passes the same fixed cycle:
+**What you can explore**
 
-**GUARD** (is the request itself an attack?) → **THINK** (plan) → **ROUTE** (fast or careful) → **ACT** (each tool call is judged first; anything that writes, sends or runs code waits for a person's Ed25519 signature) → **COMPRESS** → **VERIFY** (does the answer match what was asked?) → **RECORD** (hash-chained, signed audit log you can re-verify offline) → **LEARN** (only verified episodes become skills).
+- **Governed tool use.** A gate (a score, your own policy, and a rule about untrusted text) judges each call. Reading is quiet; writing, sending and running code stop and wait for a signature from a key or a device you own.
+- **A rule for hostile content.** Text that comes from outside (a web page, a file in an untrusted folder, a message) marks the episode as *tainted*. From then on, anything that could send or change something needs a signature, whatever the model says.
+- **Verifiable records.** Each episode is written to a hash-chained, signed audit log you can re-check offline.
+- **Recovery.** An interrupted episode can be continued, and a retried call carries the key of the call it retries (tested with a scripted model).
+- **Your model, your machine.** A local model (Ollama), any OpenAI-compatible endpoint, or OpenRouter. Nothing runs anywhere except where you install it.
 
-Why you might care: the model can be wrong, or be talked into something by text it reads on a web page. The runtime does not rely on the model behaving. Text from outside (a web page, a file in an untrusted folder, a message) marks the episode as *tainted*, and from then on anything that could send or change something needs a human signature, whatever the model says.
+[Run the demo (no model, no key)](#try-it-in-two-minutes-no-model-no-api-key) · [See what a run prints](docs/demo/SAMPLE_OUTPUT_EN.md) · [What is measured, and what is not](#what-is-measured-and-what-is-not) · [Known limitations](docs/KNOWN_LIMITATIONS.md) · [Reference](docs/reference/index.md)
+
+## The governed cycle
+
+<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governed-cycle.svg" alt="The governed cycle: GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN, and back to the next episode" width="860" /></p>
+
+**GUARD** (is the request itself an attack?) → **THINK** (a plan) → **ROUTE** (fast or careful) → **ACT** (each tool call is judged first) → **COMPRESS** (long tool output is made smaller and stays recoverable) → **VERIFY** (does the answer match what was asked?) → **RECORD** (a signed, hash-chained audit log) → **LEARN** (only verified episodes become skills).
+
+This is the runtime's execution cycle. RCT-7, the creator's seven-step way of thinking, is a separate thing and is tracked separately: steps 4 to 7 do not yet meet its definition ([status, step by step](docs/public/RCT7_IMPLEMENTATION_STATUS.md)).
+
+## Where the model stops and the runtime decides
+
+<p align="center"><img src="https://raw.githubusercontent.com/delentia-labs/Delentia-OS/main/docs/assets/governance-boundary.svg" alt="The model proposes a tool call; the policy and tool gate allows it, requires a person's signature, or refuses it; results are screened, verified and written to the audit log and memory" width="640" /></p>
+
+The model proposes; the runtime enforces. The drawing shows the governed loop. It does **not** claim that every route into the system passes the gate: routes outside the loop (for example the raw `/mcp` gateway, which is owner-only) are listed in [`research/GATE_PROPERTIES.md`](research/GATE_PROPERTIES.md), and until a witness outside the machine exists the log is hash-chained and signed, **not** tamper-proof.
 
 ## Install
 
-**Windows, no Python needed:** [**Download Delentia-Setup.exe**](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe), double-click it, then start **Delentia** from the Start menu. It installs for your account only (no administrator rights, nothing starts by itself, uninstalling never touches your data in `%USERPROFILE%\.delentia`) and needs the internet while installing (it fetches the Python packages). The program is **not code-signed yet**, so Windows SmartScreen will warn; check the download against the published checksum first ([`SHA256SUMS.txt`](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt)). Step by step, and what to do if something is wrong: [English](docs/demo/INSTALL_WINDOWS_EN.md) · [ภาษาไทย](docs/demo/INSTALL_WINDOWS_TH.md).
+| You are | Start here |
+|---|---|
+| **On Windows, no Python** | [**Download Delentia-Setup.exe**](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe), double-click it, then start **Delentia** from the Start menu. It installs for your account only (no administrator rights, nothing starts by itself, uninstalling never touches your data in `%USERPROFILE%\.delentia`) and needs the internet while installing. It is **not code-signed yet**, so Windows SmartScreen will warn: check the download against the published [`SHA256SUMS.txt`](https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt) first. Step by step: [English](docs/demo/INSTALL_WINDOWS_EN.md) · [ภาษาไทย](docs/demo/INSTALL_WINDOWS_TH.md) |
+| **A Python user** (3.10 or newer) | `pip install delentia-os`, then `delentia setup`, `delentia serve`, `delentia desk` |
+| **Using a local model** | The same, with [Ollama](https://ollama.com/download) installed: `delentia setup` helps you choose a model that answers |
+| **A contributor** | `git clone https://github.com/delentia-labs/Delentia-OS`, `pip install -e .`, then [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **A researcher** | The demo below, then [`research/`](research/) and the [results register](research/RESULTS_PUBLIC.md) |
 
-> The installer is attached to every release from **2.4.0** on. Releases 2.3.1 and earlier have no installer and no Desk pages.
+> The Windows installer is attached to every release from **2.4.0** on (2.3.1 and earlier have no installer and no Desk pages). Optional extras: `delentia-os[video]` (OpenCV), `delentia-os[vector]` (faiss). Install scripts for Linux, macOS and PowerShell exist in the repository ([`install.sh`](install.sh), [`install.ps1`](install.ps1)); read them before running anything piped from the internet.
 
-**Any system with Python 3.10 or newer:** `pip install delentia-os` (then `delentia setup`, `delentia serve`, `delentia desk`). Optional extras: `delentia-os[video]` (OpenCV), `delentia-os[vector]` (faiss).
-
-**Versions:** the package follows [Semantic Versioning](https://semver.org/) and only goes up. "*Public Technical Preview 0.1*" (Thai: *รุ่นทดลองเชิงเทคนิคสำหรับสาธารณะ 0.1*) is the name of a stage (what is opened to whom, see [`docs/release/RELEASE_LEVELS.md`](docs/release/RELEASE_LEVELS.md)), not a version number: the installer, the Desk and the package all carry the same number, shown by `delentia --version`. Once the stage is declared, the Desk and the installer show its name beside the number, in both languages. How numbers are chosen and what each part of the ecosystem is called: [`docs/release/VERSIONING_POLICY.md`](docs/release/VERSIONING_POLICY.md).
+**Versions.** The package follows [Semantic Versioning](https://semver.org/) and only goes up. "*Public Technical Preview 0.1*" (Thai: *รุ่นทดลองเชิงเทคนิคสำหรับสาธารณะ 0.1*) is the name of a stage (what is opened to whom, see [`docs/release/RELEASE_LEVELS.md`](docs/release/RELEASE_LEVELS.md)), not a version number; `delentia --version` shows the version. More: [`docs/release/VERSIONING_POLICY.md`](docs/release/VERSIONING_POLICY.md).
 
 ## Try it in two minutes: no model, no API key
 
@@ -42,908 +57,83 @@ delentia demo init --lang en                # a folder with three sample vendor 
 delentia demo run compare --scripted        # the agent reads the quotes, answers, and the answer is checked against what is known to be true
 delentia demo run edit --scripted           # asks to change a file: the agent STOPS and waits for a signature
 delentia demo approve <id> --scripted       # you sign; only now does the file change
+delentia demo run injection --scripted      # a hijacked model obeys a note hidden in a quote: watch the gate stop it
 delentia demo status                        # the audit chain: how many rows, how many signed, intact or not
 ```
 
-> **Version note.** `--lang en` and `delentia demo run injection --scripted` are in **2.4.1 and later**. On 2.4.0 (the current release until 2.4.1 is published) the demo exists in Thai only; leave out `--lang en` there. `delentia --version` tells you which you have.
+> **Version note.** `--lang en` and `delentia demo run injection --scripted` are in **2.4.1 and later**. On 2.4.0 the demo exists in Thai only; leave out `--lang en` there. `delentia --version` tells you which you have.
 
-Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT_EN.md) (a real run, in English; [the Thai run](docs/demo/SAMPLE_OUTPUT.md)).
+Not ready to install anything? [Here is what these commands print](docs/demo/SAMPLE_OUTPUT_EN.md) (a real run; [the Thai run](docs/demo/SAMPLE_OUTPUT.md)).
 
-Prefer a web page to a terminal? In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). Release 2.4.0 and later carry the pages inside the package (2.3.0 and 2.3.1 do not have them); a source checkout builds them once with `python scripts/package_desk.py` (Node.js 20 or newer). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai).
+`--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It shows the mechanism without a model installed. It says nothing about how good any model is, and every report says so on its first line.
 
-`--scripted` means a fixed program stands in for the **model** and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It is there so that you can see the mechanism without installing a model; it says nothing about how good any model is, and every report says so on its first line. To use a real model: `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
+**Prefer a web page?** In one window run `delentia serve`, in another `delentia desk`: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone): [how](docs/demo/APPROVE_WITH_DEVICE_TH.md) (Thai). **To use a real model:** `delentia setup`, then the same commands without `--scripted` (a local Ollama model or any OpenAI-compatible endpoint).
 
 ## What is measured, and what is not
 
-| Measured (and where) | Not yet |
+| Evidence | Where it stands |
 |---|---|
-| The public test suite: 9,069 passed, 46 skipped, 0 failed, 91.95% coverage ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/40989051697)) | A strong hosted model driving the runtime for days with real users |
-| The gate, the approvals and the taint rule against a scripted attacker (a hijacked model: 18 harmful side effects without the gate, 0 with it) | Independent witnesses for the audit chain: until they exist, the log is hash-chained and signed, **not** tamper-proof |
-| Local small models: they complete some simple tasks, not reliably (3 of 5 and 0 of 5 on a probe) | A public hosted service. Nothing here runs anywhere except on your machine |
+| The public test suite | **9,069 passed, 46 skipped, 0 failed, 91.95% coverage** ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/40989051697), commit `dc0b2df`, 2026-10-30). A checkpoint that is updated by hand, not live. It is evidence about the code, not about how well a model uses it |
+| The gate against a scripted attacker | A model that obeys every injected instruction: of 23 scenarios, 3 harmful side effects ran with the taint rule off and **0 with it on**, while 6 of 6 legitimate workflows still ran ([method and limits](docs/security/THREAT_MODEL.md)) |
+| Signed approvals, the audit chain, recovery after a crash | Tested with a scripted model, including a hard kill at three points and a forged answer on its way back |
+| Small local models | They complete some simple tasks, not reliably: on a five-goal probe qwen2.5:7b did 3, llama3.2:3b 0, qwen3:8b 4 (one machine, one run each) |
+| **A strong hosted model driving the runtime** | **No result yet.** Everything above uses a scripted model or a small local one |
+| **Independent reproduction** | **None yet** |
+| An outside witness for the audit chain | Built (a public git ledger, a time-stamp authority, a Cloudflare Worker) but not independent of the author: until it is, the log is hash-chained and signed, **not** tamper-proof |
+| The Windows installer | Built and run on a clean CI runner; not code-signed; not yet run on a second person's computer |
+| Production readiness | **Not declared.** Experimental research software |
 
-Details and the history of every claim: [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) and [`CHANGELOG.md`](CHANGELOG.md).
+Every measurement is entered in [a register](research/RESULTS_PUBLIC.md) with the commit it ran on, the rule written before it ran and what it cost. Details and history: [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md), [`CHANGELOG.md`](CHANGELOG.md), [`docs/COMPARISON.md`](docs/COMPARISON.md) (how this differs from the nearest projects).
 
 ## What is in this repository
 
-The agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and 5 reference microservices. A separate, private service layer is **not** part of this repository; the runtime can use any HTTP service that publishes an OpenAPI document through the same gate (`python -m rct_control_plane.openapi_mcp_bridge --help`).
-
----
-
-
-## What is Delentia, and what are RCT-7 and the FDIA Equation?
-
-**Delentia OS is an experimental, open-source, self-hosted, intent-centric AI agent runtime.** The agent loop, tools, memory, skills, schedules and subagents live inside it, and every episode passes the fixed cycle shown above. You choose the model and you run the installation. It is a research project by one creator, not a commercial product, and it is not production-stable for critical workloads. It does not change a language model's weights: it governs what an agent is allowed to do and keeps evidence of what it did.
-
-The one-page definition, with the history and what is still to be tested: [`docs/public/CURRENT_PUBLIC_INFORMATION_EN.md`](docs/public/CURRENT_PUBLIC_INFORMATION_EN.md) ([ภาษาไทย](docs/public/CURRENT_PUBLIC_INFORMATION_TH.md)).
-
-Two ideas from the creator shape the design:
-
-- **FDIA Equation, `F = (D^I) × A`.** It began as a framework about the future: **F**uture (the outcome that actually happens), **D**ata (reality and experience, good and bad), **I**ntent (the exponent that gives the data direction) and **A**rchitect (the human who designs, decides and answers for the outcome). The equation has no official expanded name. In this runtime it is read as an admissibility score for an action, used together with the owner's policy and signed human approvals; the score alone is not what stops an action. Details and the open questions: [Semantic mapping](#the-fdia-equation).
-- **RCT-7, Reverse Component Thinking.** A way of working in seven steps: observe, analyze, deconstruct, reason backward from the wanted result, identify the core intent, reconstruct (show the plan before building), and compare the result with the intent (stop and ask when it does not match). **This is the design. The runtime implements parts of it; steps 4 to 7 do not yet meet the creator's definition.** The checklist, step by step: [`docs/public/RCT7_IMPLEMENTATION_STATUS.md`](docs/public/RCT7_IMPLEMENTATION_STATUS.md).
-
-It provides:
-
-- **Auditability** — every episode is written to a hash-chained, signed audit log (witnesses outside the machine are not set up yet, so see the table above for what that does and does not prove)
-- **Human authority** — anything that writes, sends or runs code waits for a signature from a person's own key
-- **Explicit intent** — the equation and the plan make what the agent is trying to do visible
-- **Regional awareness** — adapters and a data-residency policy for ASEAN, JP, KR, CN contexts
-
-The project is developed in the open at [delentia.com](https://delentia.com) and in this repository; the code is Apache 2.0.
-
-🌐 **Website:** [delentia.com](https://delentia.com) · 🔗 **GitHub:** [github.com/delentia-labs](https://github.com/delentia-labs)
-
----
-
-## Install & Run (5-10 minutes, fully local, no API keys)
-
-**Linux / macOS / WSL2:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/delentia-labs/delentia-os/main/install.sh | bash
-```
-
-**Windows PowerShell:**
-```powershell
-iex (irm https://raw.githubusercontent.com/delentia-labs/delentia-os/main/install.ps1)
-```
-
-Or, if you just want the CLI without cloning the repo:
-```bash
-pip install delentia-os
-```
-
-Either way, then:
-```bash
-delentia doctor     # real preflight check - tells you exactly what's missing
-delentia init        # creates a local .env from the template
-delentia chat        # start the terminal chat UI
-```
-
-For a fully local, zero-cloud setup (nothing leaves your machine, no account, no API key): [install Ollama](https://ollama.com/download), run `ollama pull llama3.1`, and `delentia` talks to it at `http://127.0.0.1:11434` by default.
-
-Both installer scripts only create a project-local virtualenv - no sudo, no elevation, no system-wide changes. Read them before running them if you'd rather not pipe-to-shell: [`install.sh`](install.sh), [`install.ps1`](install.ps1).
-
-## Start Here in 5 Minutes (verify the claims yourself)
-
-If you're arriving from social media or seeing RCT Platform for the first time and want to check our work rather than take our word for it, use this path:
-
-1. **Try the offline demo** - run `python examples/quickdemo.py` or open `notebooks/rct_playground.ipynb`
-2. **Verify the claims** - see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current authoritative test and coverage checkpoint
-3. **Understand the scope boundary** - compare the open SDK surface vs enterprise-only surface in the table below
-4. **Check release readiness** - see [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
-5. **Find support channels** - see [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md) for Discussions, milestones, About, Topics, and profile setup
-
----
-
-## What's Included in This SDK
-
-| Component | In This SDK (Apache 2.0) | Enterprise Only (Proprietary) |
-|-----------|--------------------------|-------------------------------|
-| FDIA Scorer + equation engine | ✅ `core/fdia/fdia.py` | — |
-| SignedAI jury runner (independent votes, signed verdict; scripted-voter tests only) | ✅ `signedai/` | — |
-| `HexaCoreRegistry`: a table of example model roles used by the jury arithmetic (no fixed roster runs) | ✅ `signedai/core/registry.py` | — |
-| Delta Engine (memory deltas: ~39% smaller after 20 ticks, ~90% after 500, measured in bytes; see Round 52) | ✅ `core/delta_engine/` | — |
-| Regional Language Adapter | ✅ `core/regional_adapter/` | — |
-| RCT Control Plane DSL (22 modules) | ✅ `rct_control_plane/` | — |
-| JITNA Protocol v3 (Intake + Negotiation) | ✅ `rct_control_plane/jitna_protocol_v3.py` | — |
-| TOON Formatter (ALGO-42 compression engine) | ✅ `rct_control_plane/toon_formatter.py` | — |
-| CORD Security Engine (100 injection patterns) | ✅ `rct_control_plane/cord_security.py` | — |
-| ZK-FDIA: a hash commitment to an FDIA score (hides D, I, A; **not** a zero-knowledge proof, the verifier cannot check that the sealed F follows from them) | ✅ `rct_control_plane/zk_fdia.py` | — |
-| Helix-TTD (Topological drift detector) | ✅ `rct_control_plane/helix_ttd.py` | — |
-| PaymentEngine (Metered billing & trust gates) | ✅ `rct_control_plane/payment_engine.py` | — |
-| NodeNetwork (2/3 supermajority consensus) | ✅ `rct_control_plane/node_network.py` | — |
-| Groq LPU Adapter (Llama 3.3 integration) | ✅ `signedai/core/groq_adapter.py` | — |
-| PostgresPersistence (Layer 5/6 DB bridge) | ✅ `rct_control_plane/persistence_pg.py` | — |
-| rct-edge (TypeScript Edge Package) | ✅ `sdk-typescript/packages/rct-edge/` | — |
-| fdia-wasm (TypeScript WebAssembly Package) | ✅ `sdk-typescript/packages/fdia-wasm/` | — |
-| 5 Reference Microservices | ✅ `microservices/` (297 passing tests) | — |
-| CLI (`delentia` entry point) | ✅ editable install or built wheel | — |
-| Genome / Creator Profile API | ❌ 501 stub (`genome_api.py`) | ✅ Full implementation |
-| Full Production Microservice Stack | ❌ | ✅ private |
-| Enterprise Dashboard | ❌ | ✅ |
-| Docker Compose + full infra | ❌ | ✅ |
-| Private test suite (count not published) | ❌ | ✅ private |
-
-> **Status: experimental.** The SDK surface is versioned and the full suite is **9,069 passed, 46 skipped, 0 failed** (CI, 2026-10-30, see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)), CI enforces a 72% coverage floor (`--cov-fail-under=72`; Codecov separately targets 90% with tolerance), packages published on PyPI + npm. A passing suite is evidence about the code, not about how well a model uses it: no capable hosted model has driven the agent yet (see the table above).  
-> **Enterprise** (not in this repository) means a separate proprietary layer; this repository does not offer it as a running service — contact for licensing or a design-partner conversation.
-
----
-
-## Products
-
-| Product | Description | Link |
-|---------|-------------|------|
-| 🤖 **Delentia OS** (this repository) | The agent runtime: loop, tools, memory, skills, approvals, audit log | [Quick start](#try-it-in-two-minutes-no-model-no-api-key) |
-| 🛡️ **Delentia Guard** | A policy filter that sits in front of any MCP server and checks each tool call (npm `delentia-guard`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
-| 🔌 **Delentia MCP connector** | Six advisory tools hosted on Cloudflare Workers, reached through a stdio bridge (npm `delentia-mcp`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
-
-> SignedAI is the optional jury runner: models you name vote independently and the verdict is signed with Ed25519. It has been tested with scripted voters only and has not been shown to reduce hallucination.
-
----
-
-## The FDIA Equation
-
-$$F = D^I \times A$$
-
-The equation has three layers that should not be mixed up: the **framework** (a way of thinking about the future), a **computational model** (an action score with defined ranges), and the **enforcement** (policy and signed approvals that the execution path actually checks). The first column is what the creator means; the second is what the runtime computes.
-
-| Symbol | Meaning in the framework | What the runtime computes |
-|--------|---------|---------|
-| **F** | **Future**: the outcome that actually happens, not a prediction | An action-admissibility score. It is not the future and not a calibrated probability |
-| **D** | **Data**: reality and experience, good and bad, constraints | A data-evidence score in [0, 1] built from the person's own files, memory, verified skills, track record and the clarity of the request |
-| **I** | **Intent**: the exponent that gives the data direction | A strictness value, about 0.5 to 2, from the kind and risk of the goal. With D in [0, 1] a larger I makes F *smaller* for the same D |
-| **A** | **Architect**: the human who designs, decides and answers for the outcome | The owner's policy plus a verifiable Ed25519 signature for protected actions |
-
-> **Because D is in [0, 1], raising I lowers F for the same D** (0.8^2 = 0.64 < 0.8^1 = 0.8): a clearer, more demanding intent needs better data to pass. This is a property of that range; for D > 1 the exponent amplifies instead, and for D = 1 it has no effect. If D > 0 and I = 0 the raw arithmetic gives D^0 = 1, so the runtime returns 0 for D ≤ 0 or I ≤ 0 as an added rule, not as a consequence of the exponent.  
-> **When A = 0, the formula gives F = 0 and the gate refuses — on every code path that applies the gate** (the paths and the tests that pin them are listed in [research/GATE_PROPERTIES.md](research/GATE_PROPERTIES.md)). This is an invariant of those paths, not a guarantee about every path or about what a model writes; maintenance routes that are not part of the governed loop are listed there too.
-
----
-
-## Key Numbers
-
-> [!NOTE]  
-> **Disclaimer on Metrics:** The metrics below (such as hallucination rate, compression, and accuracy) represent synthetic measurements gathered under controlled testing environments (using local properties suites and mock benchmarks). They are not live SLAs and may vary under real enterprise traffic.
-
-| Metric | Value |
-|--------|-------|
-| **Public SDK validation** | See [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md) for the current verified checkpoint |
-| **Algorithms** | 41 (Tier 1–9, reference implementations) |
-| **LLM Models** | You choose: a local model (Ollama), any model on OpenRouter, or any OpenAI-compatible endpoint. No fixed roster |
-| **Hallucination Rate** | Not currently claimed. The earlier 0.3% figure was withdrawn 2026-09-28 because it could not be reproduced (see `docs/benchmark/hallucination-methodology.md`) |
-| **Memory Compression** | stores state diffs, not full state: 39% (20 ticks) to 90% (500 ticks) smaller than a full snapshot per tick, measured in bytes (`scripts/measure_delta_engine_real.py`). The earlier 91.5% was a formula estimate, not a measurement |
-| **Intent Recall Speed** | Cold start 3–5s -> Warm recall <50ms (synthetic benchmark) |
-| **Uptime SLA** | N/A (Experimental Hobby Platform, no enterprise SLA guaranteed) |
-| **Languages** | 8 regional pairs (JP, KR, CN, TW, TH, VN, ID, US) |
-| **Universal Adapters** | 13 (Home Assistant, Terraform, n8n, Obsidian, Playwright, ...) |
-| **FDIA Accuracy** | 0.9167 rank accuracy (11 of 12 hand-written cases; classification accuracy on the same set is 0.5833, 7 of 12). Tiny set: treat as a smoke test, not a benchmark. Baseline 0.65 is a design reference. |
-
-For the current single source of truth, see [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md).
-
----
-
-## Architecture
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│               DELENTIA OS SDK                            │
-│         Intent-Centric AI Operating System               │
-└──────────────────────────────────────────────────────────┘
-
-Layer 11: CI/CD & Quality Gates
-├─ GitHub Actions (ci.yml + security-scan.yml)
-├─ See docs/testing/TESTING_CANONICAL.md for the current, live test/coverage checkpoint (this number moves every round - do not hardcode it in two places that can drift apart, see Round 44's own audit) · Python 3.10/3.11/3.12
-└─ E2E integration tests (no Docker required)
-
-Layer 10: Enterprise Hardening
-├─ Security (JWT RS256, RBAC, ABAC, Rate Limiting)
-├─ Validation (SQL Injection 3-layer, Pydantic v2, XSS)
-└─ Resilience (Circuit Breaker, Retry policies)
-
-Layer 9: Control Plane
-├─ JITNA Wire Schema (JITNAPacket: I, D, Δ, A, R, M)
-├─ TOON Formatter (ALGO-42 compression, 40-50% token savings)
-├─ Ed25519 Signed Execution (RFC 8032)
-├─ Replay Engine (SHA-256 checkpoints)
-└─ rct_control_plane: 15-module DSL + intent schema
-
-Layer 8: Regional Language + data residency (routing and call-time enforcement)
-├─ LanguageDetector (EN, TH, JA, KO, ZH, VI, ID)
-└─ RegionalModelRouter (LRU cache, 4-level resolution)
-
-Layer 7: Universal Adapters (13 integrations)
-└─ Home Assistant · Terraform · n8n · Obsidian · Playwright · ...
-
-Layer 6: JITNA Protocol (RFC-001 v2.0)
-└─ AI-to-AI intent wire format + task negotiation
-
-Layer 5: SignedAI — optional jury of independent models
-├─ TIER_S (1) · TIER_4 (4) · TIER_6 (6) · TIER_8 (8 + veto)
-└─ Hallucination rate: not measured (earlier 0.3% claim withdrawn, see docs/benchmark)
-
-Layer 4: RCTDB v2.0 — 8-Dimensional Universal Memory
-└─ Registry Zone · Vault Zone · Governance Zone
-
-Layer 3: 41 Algorithms (Tier 1–9)
-Layer 2: OS Primitives (6 Kernel RFCs)
-Layer 1: 7 Genome System + Cognitive Kernel
-
-SDK Modules: signedai/ · core/ · rct_control_plane/
-             5 reference microservices
-```
-
-> **What is in this repository:** the agent runtime (`rct_control_plane/`), the 41 algorithms, the SDK modules and 5 reference microservices. **What is not:** a separate, proprietary service layer that lives in a private repository and is not part of this release. Enterprise licensing and early access: [delentia.com](https://delentia.com).
-
----
-
-## Quick Install (No API Keys Required)
-
-```bash
-# 1. Clone & install
-git clone https://github.com/delentia-labs/delentia-os.git
-cd delentia-os
-pip install -e .
-
-# 1b. (Only if you want to run the test suite) install the full dependency set.
-#     `pip install -e .` is enough for the CLI and demos, but tests import torch,
-#     numpy, opencv, faiss and others that pyproject.toml lists as optional extras.
-pip install -r requirements.txt -r requirements-dev.txt
-python -m pytest -q --no-header   # needs internet + Ollama for ~40 network-dependent tests
-
-# 2. Validate the CLI surface without API keys
-delentia version
-delentia start --ui-test
-
-# 3. Create a local .env template for real runs
-delentia init
-delentia doctor
-
-# 4. Run the 5-minute offline demo — zero API keys needed
-python examples/quickdemo.py
-
-# 5. Run the FDIA benchmark (target: 0.92 accuracy)
-python benchmark/fdia_benchmark.py --verbose
-
-# 6. Try the CLI
-delentia compile 'Protect resources from hostile agents'
-delentia governance
-delentia timeline
-```
-
-**Expected output (quickdemo.py):**
-```
-✅  Best action: act_001 (cooperate) — highest FDIA score
-Consensus: PASSED ✅ (threshold: 4/6)
-Final decision: EXECUTE — all 7 gates cleared, FDIA ≥ threshold, intent signed
-Memory compression ratio: 5.0× (baseline + 4 deltas vs 5 full-state copies)
-```
-
-**Expected output (fdia_benchmark.py):**
-```
-RCT FDIA Score       : 0.9167
-Industry Baseline    : 0.6500
-Delta vs Baseline    : +0.2667 (+41.0%)
-✅  Benchmark PASSED
-```
-
-## Quick Start (With API Keys)
-
-```bash
-# 1. Generate a local .env template
-delentia init
-# Edit .env with your API keys
-
-# 2. Run tests
-python -m pytest microservices/ -q
-
-# 3. Try the SignedAI demo
-python examples/signed_ai_demo.py
-
-# 4. Try the Hexa-Core demo
-python examples/hexa_core_demo.py
-```
-
-**Expected output (signed_ai_demo.py):**
-```
-ALL IMPORTS OK
-Tier 6: 6 signers, required=4
-Consensus: True, confidence=75.00%
-Supreme Architect: anthropic/claude-opus-4.6
-```
-
-## Verify This Repository Quickly
-
-Use these paths when you need evidence, not marketing copy:
-
-- **Property-based safety verification** - Audit the FDIA safety gate natively by running the Hypothesis properties suite:
-  ```bash
-  pytest tests/hypothesis/test_fdia_properties.py -v
-  ```
-- **The whole system against a scripted model (Round 52)** - 15 cases, 76 checks: guard, a real tool call, warm recall, signed approvals, memory, model failures, budget, data residency, delegation, three subagents in three OS processes and git worktrees, a forged subagent answer, audit tampering and the `.jitna` handoff. The model is a real HTTP endpoint that follows a script, so a result is about the system, not about a model:
-  ```bash
-  python scripts/full_pipeline_cases.py            # add --no-subagents for the 30-second version
-  python scripts/real_model_tool_probe.py qwen2.5:7b   # the other question: is this MODEL good enough to drive it?
-  ```
-- **Current test and coverage checkpoint** - [`docs/testing/TESTING_CANONICAL.md`](docs/testing/TESTING_CANONICAL.md)
-- **Release gate checklist** - [`docs/release/RELEASE_READINESS_CHECKLIST.md`](docs/release/RELEASE_READINESS_CHECKLIST.md)
-- **Public export and provenance policy** - [`docs/release/PUBLIC_RELEASE_PROVENANCE.md`](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
-- **GitHub UI launch tasks** - [`docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md`](docs/community/GITHUB_UI_LAUNCH_CHECKLIST.md)
-
----
-
-## Core Components
-
-### FDIA Engine (`core/fdia/fdia.py`)
-
-The FDIA Scorer evaluates candidate NPC/agent actions using a weighted constitutional formula. All methods are pure functions — deterministic, no side effects.
-
-```python
-from core.fdia.fdia import FDIAScorer, FDIAWeights, NPCAction, NPCIntentType
-
-scorer = FDIAScorer(weights=FDIAWeights())
-score = scorer.score_action(
-    agent_intent=NPCIntentType.DISCOVER,
-    action=NPCAction(action_id="a1", action_type="explore"),
-    world_resources={"knowledge": 50.0},
-    agent_reputation=0.85,
-    other_intents=[NPCIntentType.PROTECT],
-    governance_penalty=0.0,
-)
-print(f"FDIA score: {score:.4f}")  # deterministic float in [0.0, 1.0]
-```
-
-### SignedAI Consensus (`signedai/core/`)
-
-Multi-tier verification framework for AI decisions. Routes to the appropriate tier based on risk level.
-
-```python
-from signedai.core.registry import SignedAITier, RiskLevel, SignedAIRegistry
-from signedai.core.router import TierRouter
-
-# Tier selection by risk level
-tier_config = SignedAIRegistry.get_tier_by_risk(RiskLevel.HIGH)
-print(f"High-risk → {tier_config.tier.value}: {len(tier_config.signers)} signers")
-
-# Consensus calculation
-result = SignedAIRegistry.calculate_consensus(
-    tier=SignedAITier.TIER_6,
-    votes_for=4,
-    votes_against=2,
-)
-print(f"Consensus: {result.consensus_reached}, confidence={result.confidence:.2%}")
-
-# Cost estimation
-total_cost, breakdown = SignedAIRegistry.estimate_tier_cost(
-    SignedAITier.TIER_6, input_tokens=10_000, output_tokens=5_000
-)
-print(f"TIER_6 cost: ${total_cost:.4f}")
-```
-
-**SignedAI Tier Reference:**
-
-| Tier | Signers | Geopolitical Balance | Required Votes | Use Case |
-|------|---------|---------------------|----------------|----------|
-| TIER_S | 1 | — | 1 | Chat, low-risk queries |
-| TIER_4 | 4 | 2 West + 2 East | 3 (75%) | Code review, API design |
-| TIER_6 | 6 | 3 West + 3 East | 4 (67%) | Production releases, DB migrations |
-| TIER_8 | 6 + chairman veto | 3W + 3E + override | 6 (75%) | Critical infrastructure, crisis |
-
-### Delta Engine (`core/delta_engine/memory_delta.py`)
-
-Stores agent memory as compressed delta sequences — only what changed, not full state.
-
-| Property | Value |
-|----------|-------|
-| **Compression** | 39% (20 ticks) to 90% (500 ticks) measured in bytes — stores DIFF, not full state; the gain grows with history length, and plain zstd over full snapshots does as well or better |
-| **Deduplication** | SHA-256 content hash per record |
-| **Rollback** | Replay any agent to any past tick via delta chain |
-
-```python
-from core.delta_engine.memory_delta import (
-    MemoryDeltaEngine, AgentMemoryState, NPCIntentType
-)
-
-engine = MemoryDeltaEngine()
-engine.register_agent("agent-1", AgentMemoryState(
-    agent_id="agent-1", tick=0,
-    intent_type=NPCIntentType.ACCUMULATE,
-    resources={"gold": 100.0},
-))
-engine.record_delta(
-    agent_id="agent-1", tick=5,
-    intent_type=NPCIntentType.ACCUMULATE,
-    action_type="trade", outcome="success",
-    resource_changes={"gold": 10.0},
-)
-state = engine.get_state_at_tick("agent-1", tick=5)
-print(f"Gold at tick 5: {state.resources['gold']}")
-print(f"Compression: {engine.compute_compression_ratio():.1%}")
-```
-
-### Intent Loop Engine
-
-Every user intent passes through a 7-state pipeline:
-
-```
-RECEIVED → VALIDATED (FDIA) → MEMORY_CHECK → COMPUTING
-         → VERIFYING (SignedAI) → COMMITTING (RCTDB) → COMPLETED
-```
-
-| Property | Value |
-|----------|-------|
-| **Cold Start** | 3–5 seconds (full computation + SignedAI consensus) |
-| **Warm Recall** | <50ms (memory hit, semantic similarity > 0.95) |
-| **Cost Trend** | Decreases as memory fills — approaches $0 for repeated intents |
-
-### JITNA Protocol (RFC-001 v2.0)
-
-> **Just In Time Nodal Assembly** — agents are assembled into working groups just in time based on intent, then dissolved when the task completes.
-
-Full documentation: [docs/concepts/jitna.md](docs/concepts/jitna.md) | [RFC-001 Specification](docs/architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION.md)
-
-JITNA is a three-layer system:
-- **Layer 1 — Protocol** (`rct_control_plane/jitna_protocol.py`): RFC-001 wire format, Ed25519 signed packets, The 9 Codex
-- **Layer 2 — Language** (6-field I/D/Δ/A/R/M): a parser and formatter for the text form (`rct_control_plane/jitna_file.py`, Round 52) and the `.jitna` signed file; no template library ships in this repository, and earlier text that cited "50+ workflow templates" is withdrawn
-- **Layer 3 — Intake** (`microservices/intent-loop/loop_engine.py`): user-facing JITNAPacket + LoopMetrics
-
-```python
-from signedai.core.models import JITNAPacket
-
-# SignedAI Semantic Layer — verification-focused variant
-# (D=Domain, A=Assumptions, R=Requirements, M=Metrics)
-packet = JITNAPacket(
-    I="Refactor authentication module",
-    D="Backend engineering",
-    **{"Δ": "Adopt clean architecture pattern"},
-    A="No breaking changes to public API",
-    R="Test coverage must remain > 90%",
-    M="All existing tests pass, cyclomatic complexity < 10",
-)
-```
-
-The canonical 6-field JITNA Language schema uses I=Intent, D=**Data**, Δ=Delta, A=**Approach**, R=**Reflection**, M=**Memory** — the SignedAI variant above uses different field semantics for verification context. See [docs/concepts/jitna.md](docs/concepts/jitna.md) for the full disambiguation.
-
-#### The `.jitna` file (Round 52)
-
-A JITNA packet can be written as a signed file and sent over any network or medium; the receiver needs only the sender's public key. The 6-field language is plain text:
-
-```text
-I: Refactor the authentication module
-D: 800-line monolith, no tests
-Δ: separate domain logic from infrastructure
-A: hexagonal architecture
-M: all tests must pass
-```
-
-```bash
-delentia jitna keygen --out ~/.delentia/keys/jitna.pem        # prints the public key to publish
-delentia jitna pack --language intent.txt --source planner --target worker --key ~/.delentia/keys/jitna.pem -o task.jitna
-delentia jitna verify task.jitna --trust <sender public key>   # exit 0 valid+trusted, 3 valid but not trusted, 1 invalid
-delentia jitna unpack task.jitna --trust <sender public key>   # prints the language, only from a file that verifies
-```
-
-Each packet carries its own Ed25519 signature, and the file carries a **seal** over the whole body. The seal matters because a packet's own hash leaves `priority`, `correlation_id`, `metadata` and `status` outside what is signed. "Valid" (nothing changed after signing) and "trusted" (you pinned the signer's key) are reported separately: anyone can generate a key and sign anything. A `.jitna` file is signed, not encrypted. Receivers can also `POST /v1/jitna/verify`. Code: `rct_control_plane/jitna_file.py`.
-
-### Regional Adapter and data sovereignty (`core/regional_adapter/`, `rct_control_plane/residency.py`)
-
-You can do all of the following from the Desk (**Models** and **Sovereignty** pages) without the command line: pick a country, provider and model (or Other), declare where the endpoint processes data, test the connection (no prompt is sent, and an endpoint the policy would block is not contacted), and set the policy. A key typed there stays in the server's memory; only the name of its environment variable is saved.
-
-The idea: any country or organisation plugs in its own AI, and personal data does not leave the boundary it sets.
-
-Two parts, both real and tested:
-
-1. **Routing** (`regional_adapter.py`): picks a model and prompt style per region and language, with compliance tags (TH PDPA, KR PIPA, CN PIPL, JP APPI, GDPR-ready for the US/EU entries) and a registry of pilot tenants.
-2. **Enforcement** (`sovereignty.py`, `residency.py`, Round 52): a `SovereigntyPolicy` states the home region, the regions a call may reach, whether cross-border calls are allowed and what happens to personal data in one (`block`, `redact`, `allow`). Every model call is checked **before it is sent**:
-   - an endpoint outside the allowed regions is refused (`stopped_reason=residency_blocked`, nothing leaves);
-   - a permitted cross-border call that carries personal data is blocked or the data is replaced by placeholders; the scanner knows Thai national ID, Japanese My Number, Chinese resident ID and Korean RRN checksums, plus e-mail, phone and card numbers;
-   - an endpoint whose location is unknown counts as cross-border (fail closed); a broken policy file raises instead of silently allowing;
-   - the audit chain records the decision (kinds, counts, a hash), never the personal data.
-
-```bash
-# plug in your own AI: any OpenAI-compatible endpoint (a national provider, vLLM, llama.cpp, a gateway in your country)
-delentia model set typhoon-v2-70b-instruct --provider openai-compat     --base-url https://llm.example.th/v1 --kind in_region --region TH --credential-env TYPHOON_TOKEN
-delentia sovereignty set --region TH            # nothing may leave Thailand
-delentia sovereignty check "Call 081-234-5678"  # would this text be sent? (nothing is sent)
-```
-
-This resembles data-localisation duties but is **not legal compliance by itself**. Thailand's PDPA does not require data to stay in Thailand; it restricts transfers abroad unless the destination has adequate protection or a basis such as consent or contract safeguards applies (s.28-29), and requires a lawful basis, purpose limits and data-subject rights. The policy therefore lets an owner choose "stay in-region" (strict) or "cross-border with redaction and a recorded legal basis". China's PIPL and Korea's PIPA are stricter about transfers. Have counsel confirm the setting for your case.
-
-Not covered yet: egress by the crawl tool and the TypeScript MCP bridge are not checked by the policy, and the entry-point filter sees only text that goes through the model provider.
-
-| Entry | Languages |
-|-------|-----------|
-| Thailand | TH, EN |
-| Japan | JA, EN |
-| South Korea | KO, EN |
-| China | ZH, EN |
-| Taiwan | ZH-TW, EN |
-| Vietnam | VI, EN |
-| Indonesia | ID, EN |
-| US/Global | EN |
-
-### rct_control_plane
-
-15-module DSL + intent schema for composing multi-step agent pipelines:
-
-```python
-from rct_control_plane import IntentObject, ExecutionGraph, DSLParser
-
-parser = DSLParser()
-graph = parser.parse(dsl_text)
-print(f"Nodes: {len(graph.nodes)}, Edges: {len(graph.edges)}")
-```
-
-Available modules: `intent_schema` · `dsl_parser` · `execution_graph_ir` · `intent_compiler` · `policy_language` · `observability` · `control_plane_state` · `jitna_protocol` · `signed_execution` · `replay_engine` · `default_policies` · `cli` · `api` · `middleware` · `rich_formatter` · `plan_engine` · `architect_policy_loader` · `approval_gateway` · `otel_adapter`
-
-### Enterprise CLI Commands (v1.1.0)
-
-> **Historical, not currently runnable (noted 2026-09-24, version note updated 2026-09-25):** this block
-> describes v1.1.0's command surface; the current public CLI (`delentia`)
-> does not have `plan`, `apply`, `memory`, `policy`, or `approve`
-> commands - confirmed against `delentia --help`'s real, current command
-> list (`adapter, audit, build, chat, compile, doctor, evaluate,
-> governance, init, list, logs, metrics, replay, reset, serve, start,
-> status, timeline, version`). `plan_engine.py` and `approval_gateway.py`
-> are real modules with real logic (see "Available modules" above), just
-> not wired to any CLI command today. Also: `rct` here means the CLI's
-> old name - the real, current command is `delentia` (`pyproject.toml`'s
-> `delentia = "rct_control_plane.cli:main"`). The `rct serve` line's own
-> `(GET /metrics for Prometheus)` sub-claim is also fabricated - see the
-> API Contract table's own correction below; no route in this repo has
-> ever exposed `/metrics`, in v1.1.0 or since.
-
-```bash
-# Lifecycle
-rct plan "Refactor auth module"         # Terraform-style simulation — cost, risk, model roster
-rct apply "Deploy payment service"       # compile → evaluate → execute
-rct apply -f examples/pipeline.yaml     # Run JITNA pipeline file
-
-# Memory
-rct memory history                       # AI decision timeline with SHA-256 audit chain
-rct memory rollback 3                    # Roll back 3 ticks
-
-# Policy Governance
-rct policy add -f config/architect_policy.yaml   # Load policy rules from YAML
-rct policy list                          # List active rules
-rct policy test "Migrate database"       # Dry-run policy evaluation
-rct approve --pending                    # Interactive approval queue
-
-# Monitoring
-rct serve                                # Start API server (GET /metrics for Prometheus)
-```
-
-### TypeScript SDK (`sdk-typescript/`)
-
-```typescript
-import { computeFDIA, RCTClient, selectSignedAITier } from './src/index';
-
-// FDIA formula
-const score = computeFDIA(0.85, 0.90, 1.0);  // F = D^I × A
-
-// REST client
-const client = new RCTClient('http://localhost:8000');
-const result = await client.compile({ natural_language: 'Deploy service' });
-
-// Governance tier selection
-const tier = selectSignedAITier('enterprise', 'high');
-```
-
-### GitHub Action
-
-```yaml
-- uses: delentia-labs/delentia-os/github-action@v1.1.0
-  with:
-    intent: "Deploy to production"
-    rct_api_url: ${{ secrets.RCT_API_URL }}
-    user_tier: enterprise
-    min_governance_score: "0.8"
-    fail_on_reject: "true"
-```
-
-### Analysearch Intent (`microservices/analysearch-intent/`)
-
-Multi-disciplinary deep analysis engine with adversarial self-refinement:
-
-| Mode | Pipeline | Use Case |
-|------|----------|----------|
-| `quick` | Single-pass lookup | Fast factual queries |
-| `standard` | Analysis + research synthesis | Standard decisions |
-| `deep` | Mirror Mode (3 passes) | Critical analysis |
-| `mirror` | PROPOSE → COUNTER → REFINE loop | Adversarial self-challenge |
-
-Key capabilities:
-- **GIGO Protection** — Entropy-based input validation; garbage in = rejected before any LLM call
-- **Golden Keyword Crystallization** — ALGO-41 extracts the 3–5 decisive keywords from any query
-- **Cross-Disciplinary Synthesis** — Connects insights across unrelated domains automatically
-- **Intent Conservation** — Original intent preserved and checked through every refinement pass
-
-### HexaCoreRegistry: a table of example model roles (`signedai/core/registry.py`)
-
-10 purpose-specific AI roles with full geopolitical balance (v2.3):
-
-| Role | Model | Country | Specialty |
-|------|-------|---------|----------|
-| SUPREME_ARCHITECT | claude-opus-4.6 | US | Architecture, reasoning, final decisions |
-| LEAD_BUILDER | kimi-k2.5 | CN | Complex coding, visual analysis |
-| JUNIOR_BUILDER | minimax-m2.1 | CN | Routine coding, unit tests |
-| SPECIALIST | gemini-3-flash | US | Finance, health, multimodal, speed |
-| LIBRARIAN | grok-4.1-fast | US | Long context (2M tokens), RAG, science |
-| HUMANIZER | deepseek-v3.2 | CN | Natural language, creative, translation |
-| **REGIONAL_CORE** | **pluggable (e.g. typhoon-v2, HyperCLOVA, Rakuten AI)** | **VARIOUS** | **Pluggable regional LLM, cultural & legal compliance** |
-| **REGIONAL_THAI** | **typhoon-v2-70b** | **TH** | **Legacy Thai NLP specialist (maps to REGIONAL_CORE)** |
-| **OLLAMA_ADAPTER** | **ollama (local)** | **LOCAL** | **Local LLM fallback supporting the 1+4 Pillar Architecture (Executor, Router, Guardian, Scribe) for air-gapped inference** |
-| **GROQ_ADAPTER** | **llama-3.3-70b-versatile** | **LPU** | **Ultra-fast LPU inference, 128k ctx** |
-
-```python
-from signedai.core.registry import HexaCoreRegistry, HexaCoreRole
-
-# All example roles in the table
-for role, model in HexaCoreRegistry.MODELS.items():
-    print(f"{role.value}: {model.id} ({model.country})")
-
-# Geopolitical balance
-balance = HexaCoreRegistry.get_geopolitical_balance()
-# → {'US': 3, 'CN': 3, 'TH': 1, 'REGION': 1}
-
-# Pluggable regional specialist
-regional = HexaCoreRegistry.get_model(HexaCoreRole.REGIONAL_CORE)
-print(regional.specialties)  # ['Regional NLP', 'Local culture', 'Local legal', ...]
-
-# Dynamic model resolution based on request context (e.g. Vietnam)
-model_id = HexaCoreRegistry.get_model_id(
-    HexaCoreRole.REGIONAL_CORE,
-    context_lang="vi",
-    context_region="VN"
-)
-# → 'alibaba/qwen-2.5-7b' (or any custom registered model)
-```
-
-### SignedAI jury (`signedai/runner.py`, `delentia jury`)
-
-Several different models vote on a proposal and the verdict is signed. Give each tier role an endpoint in a JSON file (a key is never in the file; `credential_env` names a variable), then:
-
-```bash
-delentia jury run --config jury.json --tier tier_4 --question "Is this migration safe?" --proposal-file plan.md --sign-key jury-key.pem --out verdict.json
-delentia jury verify verdict.json --pubkey <hex>
-```
-
-What it guarantees: members are asked independently and at the same time; a reply that is not a clear vote, a timeout, an error or a member the sovereignty policy forbids is an abstention (it never counts as agreement and cannot lift the ratio); a jury whose answering members are one model is not a consensus (opt out with `--allow-shared-model`, recorded in the verdict); in tier 8 the chairman can veto but cannot force a pass; the verdict carries a SHA-256 digest and an optional Ed25519 signature that `verify` re-checks together with the vote counts and the tier rules. What it does not do yet: the governed loop does not call it by itself, and no multi-vendor vote has been run with real keys.
-
-### API hardening (Round 53)
-
-`delentia serve` rate-limits per caller (`DELENTIA_RATE_LIMIT`, default 600/60 s; an agent run costs 20 requests, a subagent fan-out 30). Model endpoints that keep failing are paused by a circuit breaker shared across episodes. Without `DELENTIA_API_TOKEN` the API answers only loopback clients; since Round 53 it also refuses a request whose `Origin` is a web page from another site or whose `Host` is not a loopback name (CORS used to be `*`, so any page the user opened could drive a local agent), and CORS answers only the local Desk and origins listed in `DELENTIA_CORS_ORIGINS`.
-
-### The owner's policy for A (`rct_control_plane/fdia_policy.py`, Desk page **FDIA**, `delentia fdia`)
-
-`F = D^I x A`: A is the accountable human. You write that responsibility down: which tools run freely, which need a human signature (from which approver role, how many distinct keys), which paths are off limits, which roles may ask, which tools are refused outright, and when a SignedAI jury must agree first (per rule, or per goal risk). Without a file only the built-in gate applies; with one, **every** tool call is judged, the most restrictive matching rule wins, a broken file refuses everything, and the policy can only tighten the built-in floor (path safety, the 0.5 threshold, repository writes always wait for a human). A signature never lifts a path or pattern you forbade.
-
-```bash
-delentia fdia template balanced --out ~/.delentia/fdia_policy.json
-delentia approvals keygen --out ~/keys/sec.pem --trust alice --role Security_Admin
-delentia fdia test delentia_write_repo_file --args '{"relative_path": ".env"}' --approved
-```
-
-The Desk page explains the equation with a live calculator and worked examples, edits the rules, and tests an unsaved draft. Roles come from the identity the server attached to the request, so use one API token per user if roles are to mean anything.
-
-### Other MCP servers, web search, starter skills, three more channels
-
-`~/.delentia/mcp_servers.json` lists MCP servers whose tools the agent may use as `mcp__<server>__<tool>`; they pass the same gate as the built-in tools (FDIA judgement, owner policy, audit), anything not declared read-only waits for a human signature, results are screened as third-party content, tool descriptions are screened against tool poisoning, and `delentia mcp inspect <server>` prints a digest you can pin. `delentia_web_search` works with a SearXNG instance or Brave (`DELENTIA_SEARCH_PROVIDER`) and says plainly when none is configured. `delentia skills starter install` adds 20 bundled playbooks (labelled as written by people, not learned). `delentia_crawl_url` now refuses cloud-metadata and this machine's own internal addresses. WhatsApp (signed webhook), Signal (through signal-cli-rest-api) and Email (IMAP/SMTP; the sender must be on the allowlist and the receiving server must have verified DKIM or SPF) join Telegram, Discord, Slack and LINE; every channel stays closed until its allowlist is set. Tested against local fakes of those services, not against the real ones. Thai prompt-injection screening: on a Thai set the rules did not see before they block about half of the attacks (15 of 31), about two thirds with a small local model's second opinion (21 of 31), with no harmless text blocked in 32; small, maintainer-written sets, indicative only.
-
-### One token per person, signed policy changes, a second opinion for CORD
-
-`delentia tokens create alice` prints a token once and stores only its SHA-256 in `~/.delentia/api_tokens.json`; with any entry the server is in per-user mode and the identity (namespace, memory, FDIA role) comes from the token, never from the request body. Since Round 62 a token is either a person's or an owner's (`delentia tokens create alice --owner`, `delentia tokens owner alice`): a person may talk to the agent and manage their own jobs, tasks, approvals and memory; every other route (the Desk, audit, policies, the MCP gateway) is default-denied for them. On a server with an API token, changing or turning off the owner's policy waits for an approver signature bound to that exact policy. `DELENTIA_CORD_SECOND_OPINION=flag|block` plus `delentia model set <small-model> --profile classifier` adds a small model's judgment of goals and third-party content on top of the rules (it can only add a finding and fails open); on a public labelled set the rules block 10% of attacks and rules + qwen2.5:7b 23%, with no false blocks. Tool Forge also has a Desk page (`/forge`).
-
-### Parallel tool calls and the Tool Forge
-
-`DELENTIA_PARALLEL_TOOLS=1` lets the model ask for several independent tool calls in one decision; they run as waves over the Execution Graph IR (`dag_executor.py`), every call is gated before any runs, and one refusal stops the batch. Measured on real tools: four independent 0.5 s waits 3.8x, a diamond 1.3x, a chain 1.0x, CPU-bound Python about 1.1x (`scripts/dag_wave_benchmark.py`).
-
-`delentia forge` is Genesis grown into a governed loop: repeated unmet goals (`forge gaps`) lead to a proposed pure-function tool (written by the model or by you; checked statically, smoke-tested in another process), a human signs the exact code hash, and only then can the agent call it (`delentia_run_forged_tool`). Pure functions only; not a jail against someone who can also get a human to sign.
-
----
-
-## Microservices
-
-Five reference microservices demonstrating production patterns:
-
-| Service | Port | Description |
-|---------|------|-------------|
-| `intent-loop` | 8001 | Core FDIA execution loop |
-| `analysearch-intent` | 8020 | Semantic search + intent analysis |
-| `vector-search` | 8016 | Vector similarity search over RCTDB |
-| `crystallizer` | 8004 | Output crystallization + fact verification |
-| `gateway-api` | 8000 | Unified entry point + rate limiting |
-
-Each service includes a `Dockerfile` and follows the OpenAPI contract in `contracts/openapi.yaml`. All 5 build, run, and report `healthy` under `docker compose up --build` (verified for real 2026-09-25, see `microservices/docker-compose.yml`'s own port mapping, which these match).
-
----
-
-## Benchmark Results
-
-Reproducible benchmarks are in [`benchmark/`](benchmark/).
-
-Run against your own setup:
-```bash
-python benchmark/run_benchmark.py --config benchmark/default_config.json
-```
-
-See [benchmark/README.md](benchmark/README.md) for methodology.
-
----
-
-## API Contract
-
-Full OpenAPI 3.1.0 specification: [`contracts/openapi.yaml`](contracts/openapi.yaml)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Service health |
-| `/v1/kernel/execute` | POST | Execute RCT Kernel with intent |
-| `/v1/rctdb/query` | POST | Query RCTDB knowledge vault |
-
-> **Corrected 2026-09-24/25:** `GET /metrics` for Prometheus does not exist in this repo's real routes (`rct_control_plane/api.py`, `microservices/*/gateway_main.py`/`main.py`) - confirmed via grep, no route registers that path. This same fabricated claim was found and fixed twice already this session in `docs/architecture/observability.md` and `docs/getting-started/cli-reference.md`; this was the third occurrence, in this README. `config/prometheus.yml` exists as a scrape-target config file, but nothing in this repo currently exposes a `/metrics` endpoint for it to scrape.
-
----
-
-## Earlier SDK milestones (historical)
-
-> **Note:** This section records earlier milestones and is kept for history. Current versions are on [PyPI](https://pypi.org/project/delentia-os/) and in [CHANGELOG.md](CHANGELOG.md); the status of each capability is in [RELEASE_LEVELS](docs/release/RELEASE_LEVELS.md).
-
-✅ **9,069 Passed** (public CI, 2026-10-30; see TESTING_CANONICAL.md for the checkpoint and caveats) — Full delentia-os test suite  
-✅ **Plan Engine** — `plan_engine.py` real Terraform-style pre-execution simulation logic *(corrected 2026-09-24: not currently wired to any real CLI command - `plan` isn't in `delentia --help`'s command list; the module itself is real)*  
-✅ **Policy Governance** — `approval_gateway.py` real omni-channel human approval logic, plus the real `delentia governance` command (shows governance violations from the audit log) *(corrected 2026-09-24: `rct policy` doesn't exist as a command; `approval_gateway.py` isn't currently wired to any CLI command either)*  
-✅ **TypeScript SDK** — `sdk-typescript/`: fdia, jitna, signedai, client modules  
-
-Previous milestone:  
-Private enterprise test suite: count not published (not independently verifiable from this repository)  
-
-Full SDK changelog → [CHANGELOG.md](CHANGELOG.md)
-
----
-
-## Whitepapers
-
-- **[Whitepaper 3.0](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md)** ([ภาษาไทย](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_TH.md)) — the current single source: FDIA and its four invariants, RCT-7, the Constitutional Cycle, the 10 layers as built, measured evidence and withdrawn claims
-- Earlier papers (historical): [Foundation (01)](docs/whitepapers/01_foundation/), [Architecture (02)](docs/whitepapers/02_architecture/)
-
----
-
-## Project Structure
-
-```
-delentia-os/
-├─ core/                        # Core algorithms + AI engine
-│  ├─ fdia/fdia.py              # FDIA Scorer (NPCIntentType, FDIAWeights)
-│  ├─ delta_engine/             # Delta-Memory (39-90% in measured bytes on a synthetic simulation, grows with run length)
-│  └─ regional_adapter/         # regional routing + sovereignty policy (data residency)
-├─ signedai/                    # SignedAI consensus framework
-│  └─ core/
-│     ├─ registry.py            # HexaCoreRegistry (table of example roles) + SignedAIRegistry
-│     ├─ router.py              # TierRouter (risk → tier selection)
-│     └─ models.py              # JITNAPacket, AnalysisJob
-├─ rct_control_plane/           # 19-module DSL + intent schema + enterprise platform
-│  ├─ plan_engine.py            # PlanEngine — Terraform-style pre-execution simulation
-│  ├─ architect_policy_loader.py # PolicyRule YAML loader
-│  ├─ approval_gateway.py       # Omni-channel human approval (SHA-256 tokens)
-│  └─ otel_adapter.py           # OpenTelemetry bridge for FDIA metrics
-├─ sdk-typescript/              # TypeScript SDK (fdia, jitna, signedai, client)
-├─ github-action/               # rct-policy-gate GitHub Action (Node 20)
-├─ microservices/               # 5 reference microservices
-│  ├─ intent-loop/              # Core FDIA execution loop (port 8001)
-│  ├─ analysearch-intent/       # Deep analysis + Mirror Mode (port 8020)
-│  ├─ vector-search/            # RCTDB semantic search (port 8016)
-│  ├─ crystallizer/             # Output crystallization (port 8004)
-│  └─ gateway-api/              # Unified entry + rate limiting (port 8000)
-├─ config/                      # Configuration files
-│  ├─ architect_policy.yaml     # 6 constitutional policy rules
-│  ├─ prometheus.yml            # Prometheus scrape config
-│  └─ grafana-datasources.yml   # Grafana auto-provision
-├─ docker-compose.monitoring.yml # Prometheus + Grafana + OTel Collector stack
-├─ examples/                    # Working code demos + pipeline.yaml
-├─ contracts/openapi.yaml       # OpenAPI 3.1.0 spec
-├─ apps/gui/                    # Desktop GUI, Next.js + Tauri (was Delentia-OS-Gui)
-├─ plugins/adapters/            # Adapter SDK, manifest schema and registry (was Delentia-Ecosystem)
-├─ deploy/                      # Docker, Kubernetes, Helm, Terraform (was Delentia-Infra-Public)
-└─ docs/                        # Architecture docs + whitepaper/ (3.0) + whitepapers/ (historical)
-   └─ assets/grafana-dashboard.json  # Pre-built Control Plane dashboard
-```
-
----
-
-## Built With
-
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
-
----
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-- 🐛 [Report Bugs](https://github.com/delentia-labs/delentia-os/issues)
-- 💡 [Suggest Features](https://github.com/delentia-labs/delentia-os/discussions)
-- 📖 Improve docs
-- 🧪 Add tests
-- 🔌 Build adapters for new integrations
-
----
-
-## Security
-
-For vulnerability reports, see [SECURITY.md](SECURITY.md).  
-Do **not** open public issues for security findings.
-
----
-
-## 👤 About the Author
-
-**Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)**  
-*Thinker and creator of Delentia*
-
-### Origin Story
-
-The creator's account: the work, including the FDIA Equation and RCT 7 Thinking, began on **28 June 2025**, on paper and in conversations with ordinary AI chat. FDIA began with the question **"What is the future?"** and the belief that people help shape their future through the data and experience they have, their intent and what they do. Later came a second question: if an AI agent is to work through a way of thinking we design, how can a human keep authority over what it does?
-
-**11 August 2025** is a separate personal turning point and a commitment to carry the work through. It is not the date the equation was first written. No independent timestamp of the original paper exists, so the dates are the creator's account.
-
-Delentia OS is where those questions became a runtime with inspectable code. What exists today, with the limits stated above: an agent runtime with a signed approval gate and an audit log; 41 algorithm modules, of which only some run inside the loop; the JITNA signed-packet format; an optional jury runner for several models; scripted demos; and a CI-verified test suite (see [TESTING_CANONICAL](docs/testing/TESTING_CANONICAL.md)). It is experimental and runs on the creator's machine. It is not a running public service. The whitepapers are the history of the design, not evidence that every statement in them has been tested.
-
-| | |
+| In | What |
 |---|---|
-| **GitHub** | [@ittirit-delentia](https://github.com/ittirit-delentia) |
-| **Email** | ittirit720@gmail.com |
-| **Org** | founder@delentia.com |
-| **Website** | [delentia.com](https://delentia.com) |
-| **LinkedIn** | [linkedin.com/in/ittirit-saengow](https://www.linkedin.com/in/ittirit-saengow/) |
-| **X / Twitter** | [@ittirit_rct](https://x.com/ittirit_rct) |
-| **Reddit** | [u/WindLate5307](https://www.reddit.com/user/WindLate5307/) |
-| **BIO** | [ittiritsaengow.link](https://ittiritsaengow.link) |
-| **Docs** | [delentia-labs.github.io/Delentia-OS](https://delentia-labs.github.io/Delentia-OS/) |
-| **Location** | Klong Toei, Bangkok, Thailand 🇹🇭 |
-| **Started** | 28 June 2025 (creator's account) |
-| **Turning point** | 11 August 2025 |
+| **The open-source runtime** (Apache 2.0) | The agent runtime (`rct_control_plane/`), the Desk web pages, the Windows installer, 41 algorithm modules (only some run inside the loop), the SDK modules and 5 reference microservices |
+| **Optional** | Local or hosted models, other MCP servers through the same gate, web search, chat channels (each closed until you name who may use it), the jury runner |
+| **Experimental** | RCT-7 steps 4 to 7, the model-assisted judge and critic, the Law Pack, memory by meaning |
+| **Not included** | A separate, proprietary service layer that lives in a private repository and is not part of this release. No hosted service: nothing here runs anywhere except on your machine |
 
-### Timeline
+> **Enterprise** (not in this repository) means that separate proprietary layer; this repository does not offer it as a running service. The runtime can use any HTTP service that publishes an OpenAPI document, through the same gate (`python -m rct_control_plane.openapi_mcp_bridge --help`).
 
-| Period | Milestone |
-|--------|-----------|
-| 28 Jun 2025 | Start of the work, including the FDIA Equation and RCT 7 Thinking (creator's account) |
-| 11 Aug 2025 | A personal turning point and commitment to carry the work through |
-| Oct 2025 | JITNA Protocol RFC-001 drafted |
-| Dec 2025 | Foundation whitepaper (~100 pages) |
-| Jan 2026 | 41 algorithms complete |
-| Feb 2026 | 3,053 Python files, Level 4 Virtuoso stress test |
-| Apr 2026 | Public SDK — 723 tests, 89%+ coverage, Apache 2.0 release |
-| May 2026 | Enterprise CLI Design System — Unicode block wordmark, FDIA formula card, boot animation, PyPI v1.0.4b0 live |
-| June 2026 | Enterprise Platform v1.1.0 — Plan/Apply/Memory/Policy/Approve CLI, TypeScript SDK, GitHub Action, OTel + Prometheus + Grafana, 800 tests 0 failed |
-| Sep 2026 (current) | Round 41-44 engineering pass — CI fully green (was red ~4 weeks), all 41/41 algorithms confirmed real, GovernedAutonomousLoop wires FDIA/JITNA/RCT-7/Delta into the agent loop for the first time, DAG-workflow-YAML + Skill Library re-application shipped, all 5 reference microservices verified via real `docker compose up`, dozens of fabricated numbers found and corrected across docs/CLI/README - see [CHANGELOG.md](CHANGELOG.md) for the itemized commit history |
+Two companion repositories: **Delentia Guard** (a policy filter in front of any MCP server, npm `delentia-guard`) and the **Delentia MCP connector** (six advisory tools, npm `delentia-mcp`), both in [delentia-mcp](https://github.com/delentia-labs/delentia-mcp).
 
-> See [ROADMAP.md](ROADMAP.md) for what comes next.
+## What Delentia is, and what RCT-7 and the FDIA Equation are
 
----
+**Delentia OS is an experimental, open-source, self-hosted, intent-centric AI agent runtime.** The agent loop, tools, memory, skills, schedules and subagents live inside it, and every episode passes the cycle above. You choose the model and you run the installation. It is a research project by one creator, not a commercial product, and it is not production-stable for critical workloads. It does not change a language model's weights: it governs what an agent is allowed to do and keeps evidence of what it did. The one-page definition, with the history and what is still to be tested: [`docs/public/CURRENT_PUBLIC_INFORMATION_EN.md`](docs/public/CURRENT_PUBLIC_INFORMATION_EN.md) ([ภาษาไทย](docs/public/CURRENT_PUBLIC_INFORMATION_TH.md)).
 
-## The Delentia Ecosystem
+- **FDIA Equation, `F = (D^I) × A`.** It began as a framework about the future: **F**uture (the outcome that actually happens), **D**ata (reality and experience, good and bad), **I**ntent (the exponent that gives the data direction) and **A**rchitect (the human who designs, decides and answers for the outcome). The equation has no official expanded name. In this runtime it is read as an admissibility score for an action, used together with the owner's policy and signed human approvals; the score alone is not what stops an action. Inside the gate D is a number between 0 and 1, so a larger I makes F *smaller* for the same D: a clearer, more demanding intent needs better data to pass. When A = 0 the formula gives F = 0 and the gate refuses, on every code path that applies the gate: this is an invariant of those paths, not a guarantee about every path or about what a model writes. [The full explanation](docs/reference/fdia-equation.md).
+- **RCT-7, Reverse Component Thinking.** A way of working in seven steps: observe, analyze, deconstruct, reason backward from the wanted result, identify the core intent, reconstruct (show the plan before building), and compare the result with the intent (stop and ask when it does not match). **This is the design. The runtime implements parts of it; steps 4 to 7 do not yet meet the creator's definition.** [The checklist](docs/public/RCT7_IMPLEMENTATION_STATUS.md).
 
-Delentia OS is the open-source core. The full ecosystem extends across:
+## Architecture and reference
+
+The README is a short entrance. The detail lives in the documentation:
+
+- [Reference index](docs/reference/index.md): [the FDIA Equation](docs/reference/fdia-equation.md), [runtime features](docs/reference/runtime-features.md) (data residency, API hardening, the owner's policy, MCP, Tool Forge), [SDK modules and components](docs/reference/sdk-and-components.md), [earlier README content](docs/reference/legacy-numbers-and-history.md) (key numbers, the older layer diagram, install variants, the project structure and the timeline, with dated corrections)
+- [Whitepaper 3.0](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_EN.md) ([ภาษาไทย](docs/whitepaper/DELENTIA_WHITEPAPER_3.0_TH.md)): the current single source for the design, the measured evidence and the withdrawn claims
+- [Threat model](docs/security/THREAT_MODEL.md) · [Known limitations](docs/KNOWN_LIMITATIONS.md) · [Release levels](docs/release/RELEASE_LEVELS.md) · [Release readiness checklist](docs/release/RELEASE_READINESS_CHECKLIST.md) · [Public release provenance](docs/release/PUBLIC_RELEASE_PROVENANCE.md)
+- [Documentation site](https://delentia-labs.github.io/Delentia-OS/) · [Website](https://delentia.com)
+
+## Community
+
+Bug reports and install reports are welcome through the [issue forms](https://github.com/delentia-labs/Delentia-OS/issues/new/choose); a question or an idea belongs in [Discussions](https://github.com/delentia-labs/Delentia-OS/discussions). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). **Security findings:** see [SECURITY.md](SECURITY.md) and do not open a public issue.
+
+## About the creator
+
+**Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)**, thinker and creator of Delentia, Klong Toei, Bangkok. The creator's account: the work, including the FDIA Equation and RCT-7, began on **28 June 2025**, on paper and in conversations with ordinary AI chat, with the question "What is the future?" and later a second one: if an AI agent is to work through a way of thinking we design, how can a human keep authority over what it does? **11 August 2025** is a separate personal turning point, not the date the equation was first written. No independent timestamp of the original paper exists, so the dates are the creator's account. The whitepapers are the history of the design, not evidence that every statement in them has been tested.
+
+[GitHub @ittirit-delentia](https://github.com/ittirit-delentia) · [LinkedIn](https://www.linkedin.com/in/ittirit-saengow/) · [X @ittirit_rct](https://x.com/ittirit_rct) · [Reddit u/WindLate5307](https://www.reddit.com/user/WindLate5307/) · [Bio](https://ittiritsaengow.link) · founder@delentia.com. The timeline of the project is in the [earlier README content](docs/reference/legacy-numbers-and-history.md); what comes next is in [ROADMAP.md](ROADMAP.md).
+
+## The Delentia ecosystem
 
 | Repository | Purpose | Status |
 |---|---|---|
-| [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Agent runtime and core SDK — plus the GUI (`apps/gui`), adapter registry (`plugins/adapters`) and public deployment files (`deploy/`), merged here in 2026-09 | ✅ Apache 2.0 |
-| [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) | MCP server (6 tools on Cloudflare Workers) and Delentia Guard, source in `ecosystem/` | ✅ Apache 2.0 |
+| [Delentia-OS](https://github.com/delentia-labs/Delentia-OS) | Agent runtime and core SDK, with the GUI (`apps/gui`), the adapter registry (`plugins/adapters`) and public deployment files (`deploy/`) | ✅ Apache 2.0 |
+| [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) | MCP server (6 tools on Cloudflare Workers) and Delentia Guard | ✅ Apache 2.0 |
 | [Delentia-AI-SLM](https://github.com/delentia-labs/Delentia-AI-SLM) | SLM fine-tuning experiments | 🗄️ Archived |
-| [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) | Enterprise HA — EKS/GKE, Vault (private) | 🔒 Proprietary |
-| [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise platform (private) | 🔒 Proprietary |
-| [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing + docs site — Next.js, Vercel | 🔒 Proprietary |
-
----
+| [Delentia-Infra-Enterprise](https://github.com/delentia-labs/Delentia-Infra-Enterprise) · [Delentia-Private-OS](https://github.com/delentia-labs/Delentia-Private-OS) | Enterprise infrastructure and platform | 🔒 Proprietary |
+| [Delentia-Website](https://github.com/delentia-labs/Delentia-Website) | Marketing and documentation site (Next.js, Vercel) | 🔒 Proprietary |
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
-
-Copyright 2026 Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว) — Delentia Labs  
-Made with ❤️ from Bangkok, Thailand 🇹🇭
-
+Apache 2.0, see [LICENSE](LICENSE). Copyright 2026 Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว), Delentia Labs. Made in Bangkok, Thailand.
