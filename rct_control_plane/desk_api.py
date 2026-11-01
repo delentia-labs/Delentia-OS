@@ -1551,6 +1551,31 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         from rct_control_plane import readiness as readiness_module
         return await asyncio.to_thread(readiness_module.report, _kernel()._persistence)
 
+    # ------------------------------------------------------------------ Round 106: the Setup assistant (checkup, backup now, a practice approval). Owner routes: none of them is on the person allowlist.
+    @router.get("/setup/checkup")
+    async def setup_checkup() -> Dict[str, Any]:
+        """Real, bounded, read-only checks in plain words (setup_assistant.checkup); nothing is changed."""
+        from rct_control_plane import setup_assistant
+        return await asyncio.to_thread(setup_assistant.checkup, _kernel()._persistence)
+
+    @router.post("/setup/backup")
+    async def setup_backup() -> Dict[str, Any]:
+        """One backup of the system's own data into <data folder>/backups, keys left out, never over another file."""
+        from rct_control_plane import backup, setup_assistant
+        try:
+            done = await asyncio.to_thread(setup_assistant.backup_now)
+        except backup.BackupError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        _kernel()._persistence.append_audit(entity_type="backup", entity_id=str(done["path"]), action="created", actor="desk", changes={"files": done["files"], "bytes": done["bytes"]})
+        return done
+
+    @router.post("/setup/practice")
+    async def setup_practice(request: Request) -> Dict[str, Any]:
+        """Puts one harmless action in front of the person that waits for approval, so the whole path can be rehearsed. Approving and running it use the ordinary routes."""
+        from rct_control_plane import setup_assistant
+        owner = getattr(request.state, "delentia_user", None) or "desk"
+        return await asyncio.to_thread(setup_assistant.practice_start, _kernel()._persistence, owner)
+
     # ------------------------------------------------------------------ Round 101: approval devices (passkeys) and approving from the Desk
     def _pk_stores() -> Any:
         from rct_control_plane.approvals import PendingActionStore
@@ -1560,6 +1585,12 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
 
     def _pk_fail(exc: Exception) -> HTTPException:
         return HTTPException(status_code=400, detail=str(exc))
+
+    @router.post("/passkeys/first-device/show")
+    async def passkeys_show_first_code() -> Dict[str, Any]:
+        """Opens a window on the person's screen that shows the one-time code for the first device (setup_assistant.open_code_window). The code is NOT in this answer."""
+        from rct_control_plane import setup_assistant
+        return await asyncio.to_thread(setup_assistant.open_code_window, _kernel()._persistence)
 
     @router.get("/passkeys")
     async def passkey_list() -> Dict[str, Any]:

@@ -22,7 +22,7 @@ What it is not
 - Not a sandbox, not a guarantee of safety, and not a measured reduction in hallucinations. See BENCHMARKS.md for what was measured and what was not.
 
 Free sandbox: 50 calls per day per IP, counted approximately.
-Source: https://github.com/delentia-labs/delentia-mcp (Apache-2.0). Security reports: security@delentia.com.
+Source: https://github.com/delentia-labs/delentia-mcp (Apache-2.0). Security reports: https://github.com/delentia-labs/delentia-mcp/security/advisories/new
 ```
 
 ## วางที่ไหน

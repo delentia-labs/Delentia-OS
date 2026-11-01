@@ -208,6 +208,11 @@ export interface UpdateState {
   status: "disabled" | "unknown" | "current" | "available"; current: string; enabled: boolean; releases_url: string; checked_at: number | null; error?: string | null;
   latest: { version: string; file: { filename: string; sha256: string; size: number } | null; published?: string | null } | null;
 }
+/** One line of the Setup assistant's checkup (setup_assistant.py): a plain sentence in both languages, what was found and what to do. */
+export interface CheckupItem { id: string; level: "ok" | "warn" | "fail"; en: string; th: string; detail_en: string; detail_th: string; fix_en: string; fix_th: string }
+export interface Checkup { overall: "ok" | "warn" | "fail"; checks: CheckupItem[]; at: number }
+export interface BackupMade { at: number; path: string; files: number; bytes: number; keys_note?: string | null }
+export interface PracticeAction { approval_id: string; action_sha256: string; reused: boolean }
 export interface Readiness {
   ready: boolean; all_done: boolean;
   checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number }[];
@@ -563,7 +568,14 @@ export const desk = {
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/decision`, { method: "POST", body: JSON.stringify(body) }),
   resume: (approvalId: string) =>
     call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({}) }),
+  /** Runs the approved action and stops: no new episode and no model call afterwards (the practice approval must never reach a model). */
+  runApproved: (approvalId: string) =>
+    call<Record<string, unknown>>(`/v1/agent/approvals/${encodeURIComponent(approvalId)}/resume`, { method: "POST", body: JSON.stringify({ continue: false }) }),
   readiness: () => call<Readiness>("/v1/desk/readiness"),
+  firstDeviceShow: () => call<{ opened: boolean; how: string; reason?: string }>("/v1/desk/passkeys/first-device/show", { method: "POST", body: JSON.stringify({}) }),
+  setupCheckup: () => call<Checkup>("/v1/desk/setup/checkup"),
+  setupBackup: () => call<BackupMade>("/v1/desk/setup/backup", { method: "POST", body: JSON.stringify({}) }),
+  setupPractice: () => call<PracticeAction>("/v1/desk/setup/practice", { method: "POST", body: JSON.stringify({}) }),
   update: () => call<UpdateState>("/v1/desk/update"),
   updateCheck: () => call<UpdateState>("/v1/desk/update/check", { method: "POST", body: JSON.stringify({}) }),
   updateSwitch: (enabled: boolean) => call<UpdateState>("/v1/desk/update/switch", { method: "POST", body: JSON.stringify({ enabled }) }),

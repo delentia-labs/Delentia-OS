@@ -133,7 +133,7 @@ class TestDemoPath:
         done = cli(["demo", "status", "--dir", str(world["root"])], world["env"])
         info = json.loads(done.stdout[done.stdout.index("{"):])
         assert info["audit"]["ok"] and info["audit"]["rows"] > 0 and info["memories"] >= 1
-        assert info["untrusted_paths"] == "quotes/"
+        assert info["untrusted_paths"] == "quotes/,inbox/"      # Round 107: the injection demo's notice lives in inbox/, which is outside text too
 
 
 class TestDemoChecker:

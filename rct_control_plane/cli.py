@@ -2529,7 +2529,8 @@ def approvals_review(key_path: str, host_dir: Optional[str], db: Optional[str]) 
 @approvals_group.command("first-device-code")
 @click.option("--host-dir", default=None, help="The folder made by scripts/local_host.py (default %USERPROFILE%/delentia-host). Its database is used, so DELENTIA_HOME need not be set.")
 @click.option("--db", default=None, help="Persistence DB (overrides --host-dir).")
-def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> None:
+@click.option("--hold", is_flag=True, help="Keep the window open until Enter is pressed (the Desk opens this command in its own window so you can read the code).")
+def approvals_first_device_code(host_dir: Optional[str], db: Optional[str], hold: bool) -> None:
     """Print a one-time code that lets the FIRST approval device (Windows Hello) be added from the Desk, with no key to create.
 
     Only works while nobody can approve yet. Valid 10 minutes, 5 tries, used once. Type it into Desk -> Settings -> Approval devices while adding your computer."""
@@ -2549,6 +2550,12 @@ def approvals_first_device_code(host_dir: Optional[str], db: Optional[str]) -> N
     click.echo("   Next: open the Desk (`delentia desk`) -> Settings -> Approval devices -> type a name for this computer, type the code, press Add this device.")
     click.echo("   Windows Hello will ask for your face, fingerprint or PIN, and this computer becomes your first approver.")
     click.echo(f"   database: {chosen or 'the default (DELENTIA_HOME)'}")
+    if hold:
+        click.echo("")
+        try:
+            input("   Keep this window open while you type the code in the Delentia page. Press Enter here when you are done. ")
+        except EOFError:
+            pass
 
 
 @approvals_group.command("reject")
@@ -5693,10 +5700,18 @@ def _demo_root(root: Optional[str]) -> "Path":
 
 @demo_group.command("init")
 @_DEMO_ROOT_OPTION
-def demo_init(root: Optional[str]) -> None:
+@click.option("--lang", type=click.Choice(["th", "en"]), default=None,
+              help="Language of the sample quotes and of every report (th | en). Default: th, or DELENTIA_DEMO_LANG. A folder keeps the language it was made with.")
+def demo_init(root: Optional[str], lang: Optional[str]) -> None:
     """Make the demo folder: three synthetic quotes, a demo approver key, an audit key. Never overwrites."""
     from rct_control_plane import demo as demo_module
-    out = demo_module.init(_demo_root(root))
+    wanted = lang or os.environ.get("DELENTIA_DEMO_LANG", "th").strip().lower()
+    out = demo_module.init(_demo_root(root), wanted if wanted in ("th", "en") else "th")
+    if out.get("lang") == "en":
+        click.echo(f"Demo folder: {out['root']}")
+        click.echo("Created: " + (", ".join(out["created"]) or "nothing (everything was already there)"))
+        click.echo("Next: delentia demo run compare --scripted   (no model needed)   or   delentia model show, then   delentia demo run compare")
+        return
     click.echo(f"เดโมอยู่ที่ {out['root']}")
     click.echo("สร้างใหม่: " + (", ".join(out["created"]) or "ไม่มี (มีครบอยู่แล้ว)"))
     click.echo("ต่อไป: delentia demo run compare --scripted  (ไม่ต้องมีโมเดล)  หรือ  delentia model show  แล้ว  delentia demo run compare")
@@ -5707,12 +5722,14 @@ def demo_init(root: Optional[str]) -> None:
 def demo_reset(root: Optional[str]) -> None:
     """Put the sample quotes back as `demo init` wrote them (a copy of any changed file is kept in results/; nothing is deleted)."""
     from rct_control_plane import demo as demo_module
+    from rct_control_plane import demo_lang
     out = demo_module.reset(_demo_root(root))
+    en = demo_lang.lang_of(_demo_root(root)) == "en"
     if not out["restored"]:
-        click.echo("ไฟล์ตัวอย่างยังเหมือนตอน init ไม่ต้องทำอะไร")
+        click.echo("The sample files are still as they were at init: nothing to do" if en else "ไฟล์ตัวอย่างยังเหมือนตอน init ไม่ต้องทำอะไร")
         return
-    click.echo("คืนไฟล์ตัวอย่างแล้ว: " + ", ".join(out["restored"]))
-    click.echo(f"สำเนาไฟล์ที่ถูกแก้เก็บไว้ที่ {out['backup']}")
+    click.echo(("Sample files restored: " if en else "คืนไฟล์ตัวอย่างแล้ว: ") + ", ".join(out["restored"]))
+    click.echo(f"A copy of the changed files is kept at {out['backup']}" if en else f"สำเนาไฟล์ที่ถูกแก้เก็บไว้ที่ {out['backup']}")
 
 
 @demo_group.command("run")
@@ -5722,23 +5739,29 @@ def demo_reset(root: Optional[str]) -> None:
 @click.option("--max-seconds", default=300.0, show_default=True)
 @click.option("--scripted", is_flag=True, help="No model needed: a fixed program stands in for the model (compare | budget | edit). Tools, gate, signatures and audit are real.")
 def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: float, scripted: bool) -> None:
-    """Run GOAL: compare | edit | remember | ask | budget, or any sentence of your own."""
+    """Run GOAL: compare | edit | remember | ask | budget | injection, or any sentence of your own."""
     import asyncio
     from rct_control_plane import demo as demo_module
+    from rct_control_plane import demo_lang
     from rct_control_plane.model_config import ModelConfigError
+    en = demo_lang.lang_of(_demo_root(root)) == "en"
     try:
         out = asyncio.run(demo_module.run_goal(_demo_root(root), goal, max_iterations=max_iterations, max_seconds=max_seconds, scripted=scripted))
     except ModelConfigError as exc:
-        click.echo(f"ยังตั้งโมเดลไม่ครบ: {exc}")
-        click.echo("ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
+        if en:
+            click.echo(f"The model is not set up completely: {exc}")
+            click.echo("Try the demo without a model:  delentia demo run compare --scripted")
+        else:
+            click.echo(f"ยังตั้งโมเดลไม่ครบ: {exc}")
+            click.echo("ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
         raise SystemExit(2) from None
     click.echo(out["report"])
-    click.echo(f"ไฟล์ผล: {out['report_path']}")
+    click.echo(("Result file: " if en else "ไฟล์ผล: ") + out["report_path"])
     approval = out["result"].get("approval_id")
     if approval:
-        click.echo(f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}" + (" --scripted" if scripted else ""))
+        click.echo((f"Waiting for approval, id {approval}  ->  delentia demo approve {approval}" if en else f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}") + (" --scripted" if scripted else ""))
     if str(out["result"].get("stopped_reason")) == "llm_error" and not scripted:
-        click.echo("ยังไม่มีโมเดลที่ใช้ได้? ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
+        click.echo("No model that works yet? Try the demo without a model:  delentia demo run compare --scripted" if en else "ยังไม่มีโมเดลที่ใช้ได้? ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
     if out["checks"] is not None and not all(c["ok"] for c in out["checks"]):
         raise SystemExit(1)
 
@@ -5753,9 +5776,23 @@ def demo_approve(approval_id: str, root: Optional[str], max_iterations: int, max
     """Sign a waiting action with the DEMO key (kept on this machine, demo only) and let the agent continue."""
     import asyncio
     from rct_control_plane import demo as demo_module
+    from rct_control_plane import demo_lang
     out = asyncio.run(demo_module.approve(_demo_root(root), approval_id, max_iterations=max_iterations, max_seconds=max_seconds, scripted=scripted))
     click.echo(out["report"])
-    click.echo(f"ไฟล์ผล: {out['report_path']}")
+    click.echo(("Result file: " if demo_lang.lang_of(_demo_root(root)) == "en" else "ไฟล์ผล: ") + out["report_path"])
+
+
+@demo_group.command("reject")
+@click.argument("approval_id")
+@_DEMO_ROOT_OPTION
+def demo_reject(approval_id: str, root: Optional[str]) -> None:
+    """Refuse a waiting action with the DEMO key. Nothing runs, and that approval can never be used afterwards."""
+    import asyncio
+    from rct_control_plane import demo as demo_module
+    from rct_control_plane import demo_lang
+    out = asyncio.run(demo_module.reject(_demo_root(root), approval_id))
+    click.echo(out["report"])
+    click.echo(("Result file: " if demo_lang.lang_of(_demo_root(root)) == "en" else "ไฟล์ผล: ") + out["report_path"])
 
 
 @demo_group.command("export-trace")
