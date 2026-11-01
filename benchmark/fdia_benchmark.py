@@ -48,7 +48,9 @@ console = Console()
 # and world context. Ground truth = which action should score HIGHEST.
 # ──────────────────────────────────────────────────────────────────────────────
 
-INDUSTRY_BASELINE = 0.65   # typical LLM decision accuracy without constitutional architecture
+# A DESIGN REFERENCE chosen by the author, not a measured industry figure: no model or system was run to obtain it.
+# It is kept so the printed delta stays comparable with earlier runs; read it as "the bar this smoke test sets for itself".
+INDUSTRY_BASELINE = 0.65
 THRESHOLD = 0.60           # FDIA minimum passing score
 
 @dataclass
@@ -424,6 +426,7 @@ def main(verbose: bool = False, output_json: bool = False) -> int:
         payload = {
             "rct_score":            round(rct_score, 4),
             "industry_baseline":    INDUSTRY_BASELINE,
+            "baseline_is_measured": False,
             "delta":                round(delta_vs_base, 4),
             "delta_pct":            round(delta_pct, 1),
             "rank_accuracy":        round(rank_acc, 4),
@@ -500,9 +503,9 @@ def main(verbose: bool = False, output_json: bool = False) -> int:
         "RCT FDIA Score",
         f"[bold {'green' if rct_score >= 0.90 else 'yellow'}]{rct_score:.4f}[/bold {'green' if rct_score >= 0.90 else 'yellow'}]",
     )
-    summary.add_row("Industry Baseline",       f"{INDUSTRY_BASELINE:.4f}")
+    summary.add_row("Design reference (not measured)", f"{INDUSTRY_BASELINE:.4f}")
     summary.add_row(
-        "Delta vs Baseline",
+        "Delta vs design reference",
         f"[bold green]+{delta_vs_base:.4f}  (+{delta_pct:.1f}%)[/bold green]",
     )
 
@@ -513,12 +516,12 @@ def main(verbose: bool = False, output_json: bool = False) -> int:
     if passed:
         console.print(
             "  [bold green]✅  Benchmark PASSED[/bold green]"
-            f" — RCT score {rct_score:.2f} ≥ industry baseline {INDUSTRY_BASELINE}\n"
+            f" — RCT score {rct_score:.2f} ≥ the design reference {INDUSTRY_BASELINE} (a self-set bar on 12 hand-written cases, not a comparison with any other system)\n"
         )
     else:
         console.print(
             "  [bold red]❌  Benchmark FAILED[/bold red]"
-            f" — RCT score {rct_score:.2f} < baseline {INDUSTRY_BASELINE}\n"
+            f" — RCT score {rct_score:.2f} < the design reference {INDUSTRY_BASELINE}\n"
         )
 
     return 0 if passed else 1
