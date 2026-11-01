@@ -2213,6 +2213,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#background-job-ownership-and-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background job ownership and outcomes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#read-only-budget-request-retries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2681,6 +2692,15 @@
 <hr />
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
 <p>The SDK control plane has no authentication by default — it is intended for local development and reference use. For production deployments in the Enterprise stack, JWT-based auth and mTLS are added at the Gateway layer.</p>
+<h2 id="background-job-ownership-and-outcomes">Background job ownership and outcomes<a class="headerlink" href="#background-job-ownership-and-outcomes" title="Permanent link">&para;</a></h2>
+<p>Job <code>status</code> retains its existing transport/lifecycle meaning. In particular,
+<code>done</code> means the runner returned; it may have stopped for clarification or an
+approval. The additive <code>task_outcome</code> and <code>verification_scope</code> fields describe
+the scoped task result. <code>cancel_requested=true</code> means a request was persisted;
+only the owning worker records <code>cancelled</code> after acknowledging it. Clients should
+poll status instead of treating a remote cancel response as effect rollback.</p>
+<p>See <a href="../../development/JOB_OWNERSHIP_AND_OUTCOMES_2026-10-30_TH/">job ownership and outcomes</a>
+for lease/fencing boundaries, migration requirements and W09 oracle cases.</p>
 <h2 id="read-only-budget-request-retries">Read-only budget request retries<a class="headerlink" href="#read-only-budget-request-retries" title="Permanent link">&para;</a></h2>
 <p>The opt-in <code>/v1/agent/readonly/budget</code> create request accepts an optional
 <code>request_id</code> (1–128 ASCII letters, digits, <code>.</code>, <code>_</code>, <code>:</code>, <code>-</code>). Reusing the key
