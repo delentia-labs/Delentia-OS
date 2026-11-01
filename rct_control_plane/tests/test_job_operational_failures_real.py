@@ -7,6 +7,13 @@ import pytest
 from rct_control_plane.jobs import JobError, JobService
 from rct_control_plane.persistence import ControlPlanePersistence
 
+
+def _is_disk_full(exc: sqlite3.OperationalError) -> bool:
+    """`sqlite_errorcode` exists from Python 3.11; on 3.10 the same condition is told by SQLite's own message."""
+    code = getattr(exc, "sqlite_errorcode", None)
+    return code == sqlite3.SQLITE_FULL if code is not None else "database or disk is full" in str(exc)
+
+
 pytestmark = pytest.mark.timeout(30)
 
 
@@ -117,7 +124,7 @@ def fill_database(db):
                 conn.execute('INSERT INTO pressure VALUES (zeroblob(128))')
                 conn.commit()
             except sqlite3.OperationalError as exc:
-                assert exc.sqlite_errorcode == sqlite3.SQLITE_FULL
+                assert _is_disk_full(exc)
                 conn.rollback()
                 break
 
@@ -144,7 +151,7 @@ def test_real_sqlite_full_rolls_back_submission_and_can_retry(tmp_path):
             conn.execute('INSERT INTO pressure VALUES (zeroblob(65536))')
         with pytest.raises(sqlite3.OperationalError) as error:
             service.submit('alice', 'read', _admit=claim)
-        assert error.value.sqlite_errorcode == sqlite3.SQLITE_FULL
+        assert _is_disk_full(error.value)
         assert not calls and service.list('alice') == []
         with db._connect() as conn:
             assert conn.execute('SELECT COUNT(*) FROM admission_claim').fetchone()[0] == 0
@@ -237,3 +244,14 @@ def test_readonly_shutdown_stops_local_task_when_cancel_cannot_persist(tmp_path)
         assert stopped.is_set() and not jobs._tasks
         assert jobs.get(job['id'])['status'] == 'cancelled'
     asyncio.run(scenario())
+
+
+def test_the_disk_full_check_also_works_where_sqlite_errorcode_does_not_exist():
+    """Python 3.10 has no `sqlite_errorcode` on the exception: the CI of this chain failed on exactly that."""
+    class Old(sqlite3.OperationalError):
+        def __getattribute__(self, name):
+            if name == "sqlite_errorcode":
+                raise AttributeError(name)
+            return super().__getattribute__(name)
+    assert _is_disk_full(Old("database or disk is full"))
+    assert not _is_disk_full(Old("database is locked"))
