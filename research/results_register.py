@@ -320,6 +320,43 @@ def render(register: Optional[Path] = None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_public(register: Optional[Path] = None) -> str:
+    """The register written for a reader who is not us: what was measured, with which model, what the written rule said, what came out, what it cost and what it does not show.
+    Every entry is listed, failures first-class (a result that missed its rule is a result), newest first. Nothing is added that the register does not hold."""
+    entries = read_entries(register or REGISTER)
+    replaced = {e["replaces"] for e in entries if e.get("replaces")}
+    hosted = [e for e in entries if e.get("provider") not in ("none", "ollama", "scripted") and e.get("verdict") in ("pass", "fail")]
+    lines = ["# Results, as measured", "",
+             "Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-only file that ties a result to the commit it ran on, the rule that was written before it ran, the configuration and the money it cost. "
+             "`pass` means the rule written beforehand was met; `fail` means it was not; `inconclusive` means the run did not give a figure (a model that mostly errored is never a pass); `not_run` means it could not be run under the stated terms. "
+             "A row marked **late rule** had its rule committed after the result existed: it describes, it does not test.", ""]
+    if not hosted:
+        lines += ["**There is no result with a capable hosted model in this register yet.** Everything here was measured with a scripted model or a local model of 3 to 8 billion parameters on one machine, "
+                  "so it says nothing about whether a stronger model does better with Delentia or without it.", ""]
+    lines += ["Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.", ""]
+    for e in reversed(entries):
+        status = e["verdict"] + (" (replaced by a later entry)" if e["id"] in replaced else "")
+        who = f"`{e['model']}`" + (f", {e['arm']}" if e.get("arm") else "")
+        cost = "no money spent" if not e.get("estimated_usd") and not e.get("actual_usd") else (
+            f"estimated ${e['estimated_usd']:.4f}" + ("" if e.get("actual_usd") is None else f", provider's figure ${e['actual_usd']:.4f}"))
+        m = e.get("metrics") or {}
+        figures = ", ".join(f"{k.replace('_', ' ')} {m[k]:g}" for k in sorted(m) if isinstance(m[k], (int, float)))
+        c = e.get("compare")
+        ab = ""
+        if c:
+            ab = f" Against {c['baseline_id']}: effect {c['effect']:+g}" + (f", interval [{c['ci_low']:g}, {c['ci_high']:g}]" if c.get("ci_low") is not None else "") + (f", n={c['n']}" if c.get("n") else "") + "."
+        lines += [f"## {e['id']}: {e['stage']} ({status})", "",
+                  f"- Model and arm: {who}" + (f", provider {e['provider']}" if e.get("provider") else ""),
+                  f"- Date: {e['date']}; code: commit `{e['commit'][:7]}`" + (" (with uncommitted changes)" if e.get("tree_dirty") else ""),
+                  f"- Rule: `{e['criteria']['file']}`, " + ("committed AFTER the result (late rule)" if e["criteria"].get("criteria_after_result") else "committed before the result"),
+                  f"- Cost: {cost}",
+                  f"- Units behind the verdict: {e.get('n') if e.get('n') is not None else 'not stated'}" + (f"; figures: {figures}" if figures else "") + ("; failure label: " + e["failure_label"] if e.get("failure_label") else ""),
+                  f"- What it says: {e.get('note') or 'no note'}{ab}", ""]
+    paid = sum(e["actual_usd"] for e in entries if e.get("actual_usd"))
+    lines += [f"Entries: {len(entries)}. Total actual cost registered: ${paid:.4f}.", ""]
+    return "\n".join(lines)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -343,6 +380,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     a.add_argument("--artifact", type=Path, action="append", default=[], help="a file to link and hash (per-item results, a log, a ledger); repeatable")
     a.add_argument("--served-by", default="", help="comma-separated upstream providers that answered (OpenRouter reports them)")
     sub.add_parser("render")
+    pub = sub.add_parser("render-public", help="a page for a reader who is not us (research/RESULTS_PUBLIC.md)")
+    pub.add_argument("--out", type=Path, default=None)
     sub.add_parser("verify")
     args = ap.parse_args(argv)
     try:
@@ -353,6 +392,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                           est_usd=args.est_usd, actual_usd=args.actual_usd, note=args.note, replaces=args.replaces, arm=args.arm, seed=args.seed, n=args.n,
                           metrics=_load(args.metrics_json), compare=_load(args.compare_json), served_by=[s for s in args.served_by.split(",") if s.strip()], failure_label=args.failure_label, artifacts=args.artifact)
             print(f"registered {e['id']}: {e['stage']} {e['model']} {e['verdict']}" + ("  (the criteria were committed after the result: marked as a late rule)" if e["criteria"]["criteria_after_result"] else ""))
+            return 0
+        if args.cmd == "render-public":
+            out = args.out or (REGISTER.parent / "RESULTS_PUBLIC.md")
+            out.write_text(render_public(), encoding="utf-8", newline="\n")
+            print(f"wrote {out}")
             return 0
         if args.cmd == "render":
             RENDERED.write_text(render(), encoding="utf-8", newline="\n")

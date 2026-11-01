@@ -233,3 +233,44 @@ def test_linked_artifacts_are_hashed_and_verify_finds_one_that_changed(world, tm
     assert any("artifact file" in p and "changed" in p for p in rr.verify(world["register"], root=world["repo"]))
     with pytest.raises(rr.RegisterError, match="does not exist"):
         _add(world, artifacts=[tmp_path / "nope.json"])
+
+
+# ---- Round 108: the page for a reader who is not us ----
+
+def test_the_public_page_lists_every_entry_with_its_verdict_cost_and_rule_timing(world):
+    _add(world, verdict="fail", actual_usd=0.04, note="missed the rule")
+    _add(world, verdict="pass", model="ollama/m", provider="ollama", est_usd=0.0, actual_usd=None)
+    page = rr.render_public(world["register"])
+    assert "## R0001:" in page and "## R0002:" in page
+    assert "(fail)" in page and "(pass)" in page and "missed the rule" in page
+    assert "provider's figure $0.0400" in page and "no money spent" in page
+    assert "**late rule**" in page                                         # the fixture writes the result AFTER the rule: that is a late rule, and the page says what it means
+
+
+def test_the_public_page_says_when_there_is_no_result_with_a_hosted_model_and_stops_saying_it_once_there_is(world):
+    _add(world, provider="ollama", model="qwen3:8b", est_usd=0.0, actual_usd=None)
+    assert "no result with a capable hosted model" in rr.render_public(world["register"])
+    _add(world, provider="openrouter", verdict="pass")
+    assert "no result with a capable hosted model" not in rr.render_public(world["register"])
+
+
+def test_an_inconclusive_or_not_run_hosted_entry_does_not_count_as_a_hosted_result(world):
+    _add(world, provider="openrouter", verdict="inconclusive")
+    _add(world, provider="openrouter", verdict="not_run")
+    assert "no result with a capable hosted model" in rr.render_public(world["register"])
+
+
+def test_the_public_page_replaced_entries_are_marked_and_nothing_secret_is_added(world):
+    first = _add(world, verdict="fail")
+    _add(world, verdict="pass", replaces=first["id"])
+    page = rr.render_public(world["register"])
+    assert "fail (replaced by a later entry)" in page
+    assert "sk-" not in page and "OPENROUTER_API_KEY" not in page
+
+
+def test_the_cli_writes_the_public_page_where_asked(world, tmp_path, monkeypatch):
+    _add(world)
+    monkeypatch.setattr(rr, "REGISTER", world["register"])
+    out = tmp_path / "pub.md"
+    assert rr.main(["render-public", "--out", str(out)]) == 0
+    assert out.read_text(encoding="utf-8").startswith("# Results, as measured")
