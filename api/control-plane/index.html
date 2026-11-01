@@ -2232,6 +2232,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Read-only budget request retries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contract-audit-and-erased-request-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contract audit and erased request keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2796,6 +2813,15 @@ This does not confirm a plan or replay execution. The updated wire schema is
 <p>See the <a href="../../development/LIFECYCLE_REVIEW_2026-10-30_TH/">lifecycle audit and recovery plan</a>
 for transaction boundaries, outstanding job ownership/cancel findings and the
 separate roles of request idempotency and tool-effect idempotency.</p>
+<h3 id="contract-audit-and-erased-request-keys">Contract audit and erased request keys<a class="headerlink" href="#contract-audit-and-erased-request-keys" title="Permanent link">&para;</a></h3>
+<p>Contract creation/state transitions use the existing transactional audit primitive:
+state/version, request mapping and audit-chain entries commit together or roll back.
+A failed audit write cannot leave a successfully claimed contract ready to dispatch.
+Erasure scrubs the stored request fingerprint while retaining a hashed-key replay
+tombstone. Retrying an erased/unavailable intent returns conflict; it does not
+reconstruct the old request. Tombstones currently have no automatic expiry.
+See <a href="../../development/ATOMIC_CONTRACT_AUDIT_2026-10-30_TH/">atomic contract audit</a>
+for SQLite scope, metadata retention limits and the dependency on PR #203.</p>
 
 
 

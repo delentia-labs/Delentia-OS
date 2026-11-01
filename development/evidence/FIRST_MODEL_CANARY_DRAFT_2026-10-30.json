@@ -1,0 +1,56 @@
+{
+  "schema_version": "1",
+  "status": "draft_blocked_no_paid_dispatch",
+  "purpose": "first controlled canary plumbing; not holdout or capability certification",
+  "candidate_workflow": "W03",
+  "source_checkpoint": "ad70eea12011ade3d9838d893439c5943c11a8a9",
+  "source_sha256": {
+    "research/live_workflows.py": "6d5a5c8441bbbe9e0228aa42f260a30146df704b14d792dad497abdb4aa80003",
+    "research/daaes/budget_guard.py": "f58a2c40bad3295a924add152b00fd37b965e753aaca327b28242650c4aad407",
+    "research/daaes/live_adapter.py": "6076e9e2ce03b750055a5ccdb85f60df57d3330632535e34319cbe20a939a3ce",
+    "rct_control_plane/job_clock.py": "6d22b9fa01f30d0df7b0ac758214f026e733d7ad392827ba504aceef31323ed2",
+    "rct_control_plane/jobs.py": "cb49d9facf0bb6710950ec2a7f9ccf88d69b725e241743985022d1882af00c16",
+    "rct_control_plane/job_ownership.py": "49d41276dd1fe4b905cd67ecba8deb57deaa98dbdf186085112d8a73ef405758",
+    "rct_control_plane/readonly_jobs.py": "77178dd59db6a05dbc38e74e9d912cb560c1e0faa6405d6cbef9cee9d25aca86"
+  },
+  "fixture": {
+    "environment": "RecordingWorld synthetic product page",
+    "prices_thb": [
+      199,
+      249
+    ],
+    "max_iterations_per_look": 6,
+    "looks": 2,
+    "namespace": "owner-w03"
+  },
+  "model": null,
+  "upstream_provider_and_routing": null,
+  "temperature_and_generation_settings": null,
+  "prompt_policy_schema_manifest": null,
+  "price_input_usd_per_million": null,
+  "price_output_usd_per_million": null,
+  "budget_total_usd": null,
+  "budget_per_run_usd": null,
+  "reserve_usd": null,
+  "provider_side_limit_verified": false,
+  "roles_to_audit": [
+    "main",
+    "judge_if_enabled",
+    "critic_if_enabled",
+    "jury_if_enabled",
+    "retry_or_fallback_if_enabled",
+    "children_if_enabled"
+  ],
+  "no_automatic_paid_fallback": true,
+  "raw_outcomes_required": true,
+  "holdout_labels_read": false,
+  "paid_authorized": false,
+  "blocking_gates": [
+    "budget guard F1/F2 fixed and independently rehearsed",
+    "main and enabled auxiliary/child calls inside verified caps",
+    "combined revision review and full CI",
+    "pin exact model/routing/settings/prompts/policy/schema/pricing",
+    "Architect sets total/per-run/reserve budget and provider-side limit",
+    "exact-config free rehearsal and raw outcomes verified"
+  ]
+}
