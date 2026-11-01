@@ -25,13 +25,26 @@ def test_no_pattern_the_runtime_builds_or_writes_is_slow_on_hostile_text():
 
 
 def test_the_two_bounded_dsl_patterns_are_fast_and_still_read_ordinary_parameters():
+    # A wall-clock bound under one second failed on a slow, loaded CI runner (0.57 s against 0.5 s for a pattern that takes 0.27 s here) although the pattern was not slower.
+    # What the old patterns had was quadratic growth, so this checks both: a generous absolute ceiling (the old defect took 1.1-3 s) and that doubling the input does not
+    # quadruple the time (bounded `{1,2000}` repetition grows about 2x; the unbounded one grew 4x). Best of three, to leave out a scheduling pause.
+    def best_of_three(compiled, text):
+        times = []
+        for _ in range(3):
+            started = time.perf_counter()
+            compiled.search(text)
+            times.append(time.perf_counter() - started)
+        return min(times)
+
     hostile = [("ก" * 20000), ("1" * 20000), ("a=" * 10000), ("x" + " " * 20000)]
     for pattern in (DSLParser.PARAMETER_PATTERN, DSLParser.DURATION_PATTERN):
         compiled = re.compile(pattern, re.MULTILINE)
         for text in hostile:
-            started = time.perf_counter()
-            compiled.search(text)
-            assert time.perf_counter() - started < 0.5, (pattern, text[:5])
+            single = best_of_three(compiled, text)
+            assert single < 1.5, (pattern, text[:5], single)
+            if single >= 0.05:                                                              # slow enough to measure growth
+                doubled = best_of_three(compiled, text * 2)
+                assert doubled / single < 3.2, (pattern, text[:5], single, doubled)
     found = re.findall(DSLParser.PARAMETER_PATTERN, "name = report, budget=15000\nlimit = 3 ", re.MULTILINE)
     assert [(k, v.strip()) for k, v in found] == [("name", "report"), ("budget", "15000"), ("limit", "3")]
     assert re.match(DSLParser.DURATION_PATTERN, "30s").group(1) == "30"
