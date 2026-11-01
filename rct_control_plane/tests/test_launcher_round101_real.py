@@ -105,7 +105,7 @@ def test_launch_starts_the_agent_and_the_desk_finds_them_again_and_stops_exactly
         first = run()
         assert first.returncode == 0, first.stderr + first.stdout
         assert f"http://localhost:{page}" in first.stdout
-        assert launcher.healthy(f"http://127.0.0.1:{api}/health") and launcher.healthy(f"http://127.0.0.1:{page}/")
+        assert launcher.healthy(f"http://127.0.0.1:{api}/health", timeout=15) and launcher.healthy(f"http://127.0.0.1:{page}/", timeout=15)   # a 2 s default failed twice under load (full suite, other jobs running)
         pids = {n: (tmp_path / "home" / "run" / f"{n}.pid").read_text() for n in ("serve", "desk")}
         second = run()
         assert second.returncode == 0 and "Starting" not in second.stdout                   # found what was already running, started nothing new
@@ -227,7 +227,7 @@ def test_two_real_launch_commands_at_once_start_one_agent(tmp_path):
             t.join(timeout=320)
         assert [o.returncode for o in outputs] == [0, 0], [o.stderr + o.stdout for o in outputs]
         assert sum("Starting the agent" in o.stdout for o in outputs) == 1          # exactly one of the two clicks started it
-        assert launcher.healthy(f"http://127.0.0.1:{api}/health") and launcher.healthy(f"http://127.0.0.1:{page}/")
+        assert launcher.healthy(f"http://127.0.0.1:{api}/health", timeout=15) and launcher.healthy(f"http://127.0.0.1:{page}/", timeout=15)   # a 2 s default failed twice under load (full suite, other jobs running)
         assert not (tmp_path / "home" / "run" / "launch.lock").exists()
     finally:
         subprocess.run([sys.executable, "-m", "rct_control_plane.cli", "launch", "--stop"], env=env, capture_output=True, text=True, timeout=120, cwd=str(tmp_path))

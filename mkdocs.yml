@@ -154,6 +154,9 @@ nav:
     - Versioning policy: release/VERSIONING_POLICY.md
     - Release history: release/RELEASE_HISTORY.md
     - Assurance case (one property): assurance/ASSURANCE_CASE.md
+    - Threat model: security/THREAT_MODEL.md
+    - Known limitations: KNOWN_LIMITATIONS.md
+    - Comparison with other runtimes: COMPARISON.md
   - Testing: testing.md
   - Changelog: changelog.md
   - Contributing: contributing.md
