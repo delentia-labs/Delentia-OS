@@ -167,7 +167,7 @@ def demo_signedai_tiers() -> None:
     console.print(tier_table)
 
     # Simulate a Tier-6 vote
-    console.print("\n  [dim]Simulating Tier-6 constitutional vote — financial query...[/dim]")
+    console.print("\n  [dim]Simulating Tier-6 constitutional vote — financial query (the votes below are fixed numbers, no model votes)...[/dim]")
     votes_approve = 5
     votes_reject  = 1
     threshold     = 4
@@ -224,7 +224,7 @@ def demo_intent_loop() -> None:
 def demo_delta_engine() -> None:
     console.rule("[bold green]Demo 4 · Delta Engine — Agent Memory Compression[/bold green]")
     console.print(
-        "[dim]Design principle: store only what CHANGED (74% compression vs full-state storage).[/dim]\n"
+        "[dim]Design principle: store only what CHANGED. The saving depends on how long the history is: on another, larger test it measured 39% after 20 ticks and 90% after 500, in bytes.[/dim]\n"
     )
 
     engine = MemoryDeltaEngine()
@@ -280,7 +280,7 @@ def demo_delta_engine() -> None:
     console.print(delta_table)
 
     ratio = engine.compute_compression_ratio()
-    ratio_display = f"{ratio:.0%}" if ratio > 0.01 else "~74% at production scale"
+    ratio_display = f"{ratio:.0%}" if ratio > 0.01 else "too little history here to show a saving (it grows with the history)"
     console.print(
         f"\n  Memory compression: [bold yellow]{ratio_display}[/bold yellow]"
         f" saved vs naïve full-state storage"
@@ -295,12 +295,13 @@ def demo_delta_engine() -> None:
 def main() -> None:
     console.print(
         Panel(
-            "[bold white]RCT Platform[/bold white] — Intent-Centric AI Operating System\n"
-            "[dim]Offline Demo · Zero API keys required · Apache 2.0[/dim]\n\n"
+            "[bold white]Delentia OS[/bold white] — an offline tour of four building blocks\n"
+            "[dim]Zero API keys · Apache 2.0 · this is NOT the agent runtime: votes are simulated and no model is called.[/dim]\n"
+            "[dim]To see the runtime stop and wait for a signature: delentia demo init --lang en[/dim]\n\n"
             "  [cyan]FDIA Equation:[/cyan]  F = D^I × A\n"
             "  [blue]SignedAI:[/blue]      Constitutional multi-signer governance\n"
             "  [magenta]RCT-7:[/magenta]         7-step cognitive intent processing\n"
-            "  [green]Delta Engine:[/green] 74% memory compression via state diffs",
+            "  [green]Delta Engine:[/green] memory kept as state diffs (the saving grows with the history)",
             title="[bold yellow]🔬 5-Minute Demo[/bold yellow]",
             border_style="bright_yellow",
             expand=False,
