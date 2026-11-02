@@ -2111,6 +2111,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../legacy-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier installation page (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../legacy-quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier quick start (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3229,6 +3285,9 @@
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Compression: </span><span class="si">{</span><span class="n">engine</span><span class="o">.</span><span class="n">compute_compression_ratio</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="intent-loop-engine">Intent Loop Engine<a class="headerlink" href="#intent-loop-engine" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>[context 2026-11-01]</strong> This 7-state pipeline is the older <strong>intent-loop reference microservice</strong> (<code>microservices/intent-loop</code>), which simulates execution and verification (its <code>/health</code> says so). It is not the agent runtime's cycle. The runtime's cycle is the eight steps in the README (GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN), implemented in <code>rct_control_plane/governed_autonomous_loop.py</code>; the five pillars of the Intent Loop are reported per episode by <code>rct_control_plane/intent_loop.py</code>. The two are different abstractions and one is not a stage of the other.</p>
+</blockquote>
 <p>Every user intent passes through a 7-state pipeline:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>RECEIVED → VALIDATED (FDIA) → MEMORY_CHECK → COMPUTING
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>         → VERIFYING (SignedAI) → COMMITTING (RCTDB) → COMPLETED

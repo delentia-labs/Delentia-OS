@@ -1007,10 +1007,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-fdia-score-evaluate-an-ai-action" class="md-nav__link">
+  <a href="#1-the-agent-reads-answers-and-is-checked" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. FDIA Score — Evaluate an AI Action
+        1. The agent reads, answers, and is checked
       
     </span>
   </a>
@@ -1018,10 +1018,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-signedai-consensus-multi-llm-verification" class="md-nav__link">
+  <a href="#2-the-agent-stops-and-waits-for-a-signature" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. SignedAI Consensus — Multi-LLM Verification
+        2. The agent stops and waits for a signature
       
     </span>
   </a>
@@ -1029,10 +1029,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-delta-engine-compressed-agent-memory" class="md-nav__link">
+  <a href="#3-a-hijacked-model-is-stopped" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Delta Engine — Compressed Agent Memory
+        3. A hijacked model is stopped
       
     </span>
   </a>
@@ -1040,10 +1040,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-intent-loop-jitna-packet" class="md-nav__link">
+  <a href="#4-look-at-the-record" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Intent Loop — JITNA Packet
+        4. Look at the record
       
     </span>
   </a>
@@ -1051,10 +1051,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-control-plane-dsl" class="md-nav__link">
+  <a href="#what-scripted-means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Control Plane DSL
+        What --scripted means
       
     </span>
   </a>
@@ -1062,10 +1062,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
+  <a href="#with-a-real-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Next Steps
+        With a real model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-a-web-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a web page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next
       
     </span>
   </a>
@@ -1989,6 +2011,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier installation page (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier quick start (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2809,114 +2887,46 @@
   
 
 
-<h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
-<p>Three examples covering the three core pillars of RCT Platform: <strong>FDIA scoring</strong>, <strong>SignedAI consensus</strong>, and <strong>Delta Engine memory</strong>.</p>
-<hr />
-<h2 id="1-fdia-score-evaluate-an-ai-action">1. FDIA Score — Evaluate an AI Action<a class="headerlink" href="#1-fdia-score-evaluate-an-ai-action" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">core.fdia.fdia</span><span class="w"> </span><span class="kn">import</span> <span class="n">FDIAScorer</span><span class="p">,</span> <span class="n">FDIAWeights</span><span class="p">,</span> <span class="n">NPCAction</span><span class="p">,</span> <span class="n">NPCIntentType</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">scorer</span> <span class="o">=</span> <span class="n">FDIAScorer</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">FDIAWeights</span><span class="p">())</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">score</span> <span class="o">=</span> <span class="n">scorer</span><span class="o">.</span><span class="n">score_action</span><span class="p">(</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">agent_intent</span><span class="o">=</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">DISCOVER</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">action</span><span class="o">=</span><span class="n">NPCAction</span><span class="p">(</span><span class="n">action_id</span><span class="o">=</span><span class="s2">"a1"</span><span class="p">,</span> <span class="n">action_type</span><span class="o">=</span><span class="s2">"explore"</span><span class="p">),</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">world_resources</span><span class="o">=</span><span class="p">{</span><span class="s2">"knowledge"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">},</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">agent_reputation</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">other_intents</span><span class="o">=</span><span class="p">[</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">PROTECT</span><span class="p">],</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">governance_penalty</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FDIA score: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># → FDIA score: 0.8245  (deterministic float in [0.0, 1.0])</span>
+<h1 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
+<p>A first run in a few minutes, without a model and without an API key. It shows the mechanism that makes Delentia OS different: the agent <strong>stops and waits for your signature</strong> before it changes anything, and a note hidden in a file cannot talk it into acting.</p>
+<p>You need <a href="../installation/">an installation</a> (the demo commands below need release 2.4.1 or later for <code>--lang en</code>; on 2.4.0 leave it out and the demo is in Thai).</p>
+<h2 id="1-the-agent-reads-answers-and-is-checked">1. The agent reads, answers, and is checked<a class="headerlink" href="#1-the-agent-reads-answers-and-is-checked" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>delentia<span class="w"> </span>demo<span class="w"> </span>init<span class="w"> </span>--lang<span class="w"> </span>en
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare<span class="w"> </span>--scripted
 </span></code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Constitutional Gate</p>
-<p>When <code>governance_penalty=1.0</code>, the score collapses to 0 and the action is blocked — regardless of data quality or intent.</p>
-</div>
-<hr />
-<h2 id="2-signedai-consensus-multi-llm-verification">2. SignedAI Consensus — Multi-LLM Verification<a class="headerlink" href="#2-signedai-consensus-multi-llm-verification" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">signedai.core.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">SignedAIRegistry</span><span class="p">,</span> <span class="n">SignedAITier</span><span class="p">,</span> <span class="n">RiskLevel</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># All methods are class methods — no instance needed</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">tier_config</span> <span class="o">=</span> <span class="n">SignedAIRegistry</span><span class="o">.</span><span class="n">get_tier_by_risk</span><span class="p">(</span><span class="n">RiskLevel</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Tier: </span><span class="si">{</span><span class="n">tier_config</span><span class="o">.</span><span class="n">tier</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>              <span class="c1"># → tier_6</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Signers: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tier_config</span><span class="o">.</span><span class="n">signers</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>         <span class="c1"># → 6</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Required votes: </span><span class="si">{</span><span class="n">tier_config</span><span class="o">.</span><span class="n">required_votes</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span><span class="c1"># → 4</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Chairman veto: </span><span class="si">{</span><span class="n">tier_config</span><span class="o">.</span><span class="n">chairman_veto</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># → False</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Calculate consensus result for a vote</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">result</span> <span class="o">=</span> <span class="n">SignedAIRegistry</span><span class="o">.</span><span class="n">calculate_consensus</span><span class="p">(</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">tier</span><span class="o">=</span><span class="n">SignedAITier</span><span class="o">.</span><span class="n">TIER_6</span><span class="p">,</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">votes_for</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">votes_against</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">)</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Consensus reached: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">consensus_reached</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># → True</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Confidence: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">confidence</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>             <span class="c1"># → 67%</span>
+<p><code>demo init</code> makes a folder with three sample vendor quotes and a demo approver key. <code>demo run compare</code> has the agent read the quotes and answer; the answer is then checked against what is known to be true.</p>
+<h2 id="2-the-agent-stops-and-waits-for-a-signature">2. The agent stops and waits for a signature<a class="headerlink" href="#2-the-agent-stops-and-waits-for-a-signature" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>edit<span class="w"> </span>--scripted<span class="w">         </span><span class="c1"># asks to change a file: the agent STOPS</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>approve<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--scripted<span class="w">     </span><span class="c1"># you sign; only now does the file change</span>
 </span></code></pre></div>
-<hr />
-<h2 id="3-delta-engine-compressed-agent-memory">3. Delta Engine — Compressed Agent Memory<a class="headerlink" href="#3-delta-engine-compressed-agent-memory" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">core.delta_engine.memory_delta</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">MemoryDeltaEngine</span><span class="p">,</span> <span class="n">AgentMemoryState</span><span class="p">,</span> <span class="n">NPCIntentType</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">MemoryDeltaEngine</span><span class="p">()</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Register an agent with initial state</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">engine</span><span class="o">.</span><span class="n">register_agent</span><span class="p">(</span><span class="s2">"agent-1"</span><span class="p">,</span> <span class="n">AgentMemoryState</span><span class="p">(</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">agent_id</span><span class="o">=</span><span class="s2">"agent-1"</span><span class="p">,</span> <span class="n">tick</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">intent_type</span><span class="o">=</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">ACCUMULATE</span><span class="p">,</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s2">"gold"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">},</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">))</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># Record what changed at tick 5 (delta, not full state)</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">engine</span><span class="o">.</span><span class="n">record_delta</span><span class="p">(</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">agent_id</span><span class="o">=</span><span class="s2">"agent-1"</span><span class="p">,</span> <span class="n">tick</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">intent_type</span><span class="o">=</span><span class="n">NPCIntentType</span><span class="o">.</span><span class="n">ACCUMULATE</span><span class="p">,</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">action_type</span><span class="o">=</span><span class="s2">"trade"</span><span class="p">,</span> <span class="n">outcome</span><span class="o">=</span><span class="s2">"success"</span><span class="p">,</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">resource_changes</span><span class="o">=</span><span class="p">{</span><span class="s2">"gold"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">},</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="p">)</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="n">state</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_state_at_tick</span><span class="p">(</span><span class="s2">"agent-1"</span><span class="p">,</span> <span class="n">tick</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Gold at tick 5: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">resources</span><span class="p">[</span><span class="s1">'gold'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>    <span class="c1"># → 110.0</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Compression: </span><span class="si">{</span><span class="n">engine</span><span class="o">.</span><span class="n">compute_compression_ratio</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># → ~74%</span>
+<p>The <code>&lt;id&gt;</code> is printed by the previous command. Nothing has changed on disk until you sign: that is the gate working.</p>
+<h2 id="3-a-hijacked-model-is-stopped">3. A hijacked model is stopped<a class="headerlink" href="#3-a-hijacked-model-is-stopped" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>injection<span class="w"> </span>--scripted
 </span></code></pre></div>
-<hr />
-<h2 id="4-intent-loop-jitna-packet">4. Intent Loop — JITNA Packet<a class="headerlink" href="#4-intent-loop-jitna-packet" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">signedai.core.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">JITNAPacket</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">packet</span> <span class="o">=</span> <span class="n">JITNAPacket</span><span class="p">(</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">I</span><span class="o">=</span><span class="s2">"Refactor authentication module"</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">D</span><span class="o">=</span><span class="s2">"Backend engineering"</span><span class="p">,</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="o">**</span><span class="p">{</span><span class="s2">"Δ"</span><span class="p">:</span> <span class="s2">"Adopt clean architecture pattern"</span><span class="p">},</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">A</span><span class="o">=</span><span class="s2">"No breaking changes to public API"</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">R</span><span class="o">=</span><span class="s2">"Test coverage must remain &gt; 90%"</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">M</span><span class="o">=</span><span class="s2">"All existing tests pass, cyclomatic complexity &lt; 10"</span><span class="p">,</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">)</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="nb">print</span><span class="p">(</span><span class="n">packet</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<p>A plain-sounding note hidden in one of the quotes tells the model to cut a vendor's price. The scripted model <strong>obeys it</strong>, as a worst-case model would. Because the text came from outside, the episode is marked <em>tainted</em> and the change waits for a signature instead of happening. <code>delentia demo reject &lt;id&gt;</code> refuses it.</p>
+<h2 id="4-look-at-the-record">4. Look at the record<a class="headerlink" href="#4-look-at-the-record" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>delentia<span class="w"> </span>demo<span class="w"> </span>status
 </span></code></pre></div>
-<hr />
-<h2 id="5-control-plane-dsl">5. Control Plane DSL<a class="headerlink" href="#5-control-plane-dsl" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rct_control_plane</span><span class="w"> </span><span class="kn">import</span> <span class="n">DSLParser</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">dsl_text</span> <span class="o">=</span> <span class="s2">"""</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s2">intent: "Deploy microservice"</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s2">steps:</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s2">  - build: docker</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s2">  - test: pytest --cov-fail-under=70</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="s2">  - deploy: k8s apply</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="s2">constraints:</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s2">  - no_downtime: true</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s2">"""</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="n">parser</span> <span class="o">=</span> <span class="n">DSLParser</span><span class="p">()</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">dsl_text</span><span class="p">)</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nodes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">, Edges: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<p>It prints the audit chain: how many rows, how many are signed, intact or not. Each row is hash-chained to the one before it, so an edited row is found; until an outside witness exists the log is <strong>not</strong> tamper-proof.</p>
+<h2 id="what-scripted-means">What <code>--scripted</code> means<a class="headerlink" href="#what-scripted-means" title="Permanent link">&para;</a></h2>
+<p>A fixed program stands in for the <strong>model</strong> and nothing else: the files, the tools, the safety gate, the wait for a signature, the signature check and the audit log are real. It shows the mechanism without installing a model. It says nothing about how good any model is, and every report says so on its first line. <a href="https://github.com/delentia-labs/Delentia-OS/blob/main/docs/demo/SAMPLE_OUTPUT_EN.md">What a run prints</a>.</p>
+<h2 id="with-a-real-model">With a real model<a class="headerlink" href="#with-a-real-model" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>delentia<span class="w"> </span>setup<span class="w">          </span><span class="c1"># chooses a model that answers (a local Ollama model or any OpenAI-compatible endpoint)</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare<span class="w">        </span><span class="c1"># the same command without --scripted</span>
 </span></code></pre></div>
-<hr />
-<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p>A small local model completes some simple tasks, not reliably, and can be slow on a CPU. No strong hosted model has driven the runtime yet.</p>
+<h2 id="in-a-web-page">In a web page<a class="headerlink" href="#in-a-web-page" title="Permanent link">&para;</a></h2>
+<p>In one window run <code>delentia serve</code>, in another <code>delentia desk</code>: it opens the Desk in your browser (what the agent did, what waits for you, memory, models). A risky action can be approved from the Desk with a device you already own (Windows Hello, a fingerprint, a phone).</p>
+<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../concepts/fdia/">Core Concepts — FDIA</a> — deep dive into the scoring engine</li>
-<li><a href="../../concepts/architecture/">Architecture Overview</a> — 11-layer system diagram</li>
-<li><a href="../../api/control-plane/">API Reference</a> — full REST API documentation</li>
+<li>What each part is: <a href="../../reference/">Reference</a> · <a href="../../reference/fdia-equation/">The FDIA Equation</a></li>
+<li>What is measured and what is not: <a href="../../#what-is-measured-and-what-is-not">Home</a> · <a href="../../KNOWN_LIMITATIONS/">Known limitations</a></li>
+<li>Something went wrong, or it worked: <a href="https://github.com/delentia-labs/Delentia-OS/issues/new/choose">open an install report</a></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Older quick start</p>
+<p>The previous version of this page taught the scoring functions of the older SDK (an NPC action scorer and an example vote). It is kept as <a href="../../reference/legacy-quickstart/">historical text</a>.</p>
+</div>
 
 
 

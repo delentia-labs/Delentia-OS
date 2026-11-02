@@ -990,10 +990,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#distribution-status" class="md-nav__link">
+  <a href="#windows-installer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Distribution Status
+        Windows installer
       
     </span>
   </a>
@@ -1001,10 +1001,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#from-source-development" class="md-nav__link">
+  <a href="#python-package" class="md-nav__link">
     <span class="md-ellipsis">
       
-        From Source (Development)
+        Python package
       
     </span>
   </a>
@@ -1012,10 +1012,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#first-run-cli-check" class="md-nav__link">
+  <a href="#using-a-local-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        First-Run CLI Check
+        Using a local model
       
     </span>
   </a>
@@ -1023,10 +1023,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verify-with-tests" class="md-nav__link">
+  <a href="#from-source-for-contributors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verify with Tests
+        From source (for contributors)
       
     </span>
   </a>
@@ -1034,10 +1034,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-gets-installed" class="md-nav__link">
+  <a href="#check-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Gets Installed
+        Check it works
       
     </span>
   </a>
@@ -1045,10 +1045,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#interactive-playground-no-install" class="md-nav__link">
+  <a href="#your-data-and-uninstalling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interactive Playground (No Install)
+        Your data, and uninstalling
       
     </span>
   </a>
@@ -2000,6 +2000,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier installation page (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier quick start (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2821,6 +2877,33 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>Pick the row that fits you. Nothing here installs a service that runs anywhere except on your own machine.</p>
+<table>
+<thead>
+<tr>
+<th>You are</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>On Windows, no Python</td>
+<td><a href="#windows-installer">The Windows installer</a></td>
+</tr>
+<tr>
+<td>A Python user (3.10 or newer)</td>
+<td><a href="#python-package"><code>pip install delentia-os</code></a></td>
+</tr>
+<tr>
+<td>Using a local model</td>
+<td><a href="#using-a-local-model">Python package + Ollama</a></td>
+</tr>
+<tr>
+<td>A contributor</td>
+<td><a href="#from-source-for-contributors">From source</a></td>
+</tr>
+</tbody>
+</table>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2831,87 +2914,63 @@
 </thead>
 <tbody>
 <tr>
-<td>Python</td>
-<td>3.10+</td>
+<td>Python (not needed for the Windows installer)</td>
+<td>3.10 or newer</td>
 </tr>
 <tr>
 <td>OS</td>
-<td>Linux, macOS, Windows</td>
+<td>Windows, Linux or macOS (the Windows installer is Windows only; macOS has not been tested by the author)</td>
+</tr>
+<tr>
+<td>A model</td>
+<td>Optional: the demos run without one. A real run needs a local model (Ollama) or any OpenAI-compatible endpoint</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="distribution-status">Distribution Status<a class="headerlink" href="#distribution-status" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Beta Preview — Packaging Ready, Public PyPI Pending</p>
-<p><code>delentia-os</code> v1.0.4b0 can be installed from source today and now supports clean wheel installs.
-Public PyPI publication is still a separate release step.</p>
-</div>
-<p>Current supported install paths:</p>
+<h2 id="windows-installer">Windows installer<a class="headerlink" href="#windows-installer" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/delentia-labs/Delentia-OS/releases/latest/download/Delentia-Setup.exe">Download <code>Delentia-Setup.exe</code></a>, double-click it, then start <strong>Delentia</strong> from the Start menu.</p>
 <ul>
-<li>editable/source install from this repository</li>
-<li>local wheel install from <code>dist/</code> after <code>python -m build</code></li>
+<li>It installs for your account only: no administrator rights, nothing starts by itself, and uninstalling never touches your data in <code>%USERPROFILE%\.delentia</code>.</li>
+<li>It needs the internet while installing (it fetches the Python packages).</li>
+<li>It is <strong>not code-signed yet</strong>, so Windows SmartScreen will warn. Check the download against the published <a href="https://github.com/delentia-labs/Delentia-OS/releases/latest/download/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> first.</li>
+<li>The installer is attached to every release from 2.4.0 on. Releases 2.3.1 and earlier have no installer and no Desk pages.</li>
 </ul>
-<hr />
-<h2 id="from-source-development">From Source (Development)<a class="headerlink" href="#from-source-development" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/delentia-labs/delentia-os.git
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>delentia-os
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Create a virtual environment</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">        </span><span class="c1"># Linux / macOS</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># .\.venv\Scripts\Activate.ps1  # Windows PowerShell</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Install the SDK in editable mode</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Install dev + test dependencies</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+<p>Step by step, and what to do if something is wrong: <a href="https://github.com/delentia-labs/Delentia-OS/blob/main/docs/demo/INSTALL_WINDOWS_EN.md">English</a> · <a href="https://github.com/delentia-labs/Delentia-OS/blob/main/docs/demo/INSTALL_WINDOWS_TH.md">ภาษาไทย</a>.</p>
+<h2 id="python-package">Python package<a class="headerlink" href="#python-package" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>delentia-os
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>delentia<span class="w"> </span>--version
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>delentia<span class="w"> </span>setup<span class="w">          </span><span class="c1"># checks for a model that answers, offers to make an audit key; writes only under your Delentia folder</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>delentia<span class="w"> </span>serve<span class="w">          </span><span class="c1"># the agent, on this machine</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>delentia<span class="w"> </span>desk<span class="w">           </span><span class="c1"># in another window: opens the Desk (web pages) in your browser</span>
 </span></code></pre></div>
-<hr />
-<h2 id="first-run-cli-check">First-Run CLI Check<a class="headerlink" href="#first-run-cli-check" title="Permanent link">&para;</a></h2>
-<p>After installation, validate the CLI before adding secrets:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>delentia<span class="w"> </span>version
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>delentia<span class="w"> </span>start<span class="w"> </span>--ui-test
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>delentia<span class="w"> </span>init
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>delentia<span class="w"> </span>doctor
+<p>Optional extras: <code>delentia-os[video]</code> (OpenCV) and <code>delentia-os[vector]</code> (faiss). <code>delentia doctor</code> checks the installation and says what is missing.</p>
+<h2 id="using-a-local-model">Using a local model<a class="headerlink" href="#using-a-local-model" title="Permanent link">&para;</a></h2>
+<p>Install <a href="https://ollama.com/download">Ollama</a>, then run <code>delentia setup</code>: it helps you choose a model that answers. Small models complete some simple tasks, not reliably (see the evidence table on the <a href="../../#what-is-measured-and-what-is-not">home page</a>). To use another endpoint, <code>delentia model show|list|set</code>: any OpenAI-compatible endpoint or OpenRouter works; a key is read from an environment variable whose name you give, never from a file.</p>
+<h2 id="from-source-for-contributors">From source (for contributors)<a class="headerlink" href="#from-source-for-contributors" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/delentia-labs/Delentia-OS.git
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">cd</span><span class="w"> </span>Delentia-OS
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">        </span><span class="c1"># Linux / macOS</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># .\.venv\Scripts\Activate.ps1  # Windows PowerShell</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt<span class="w">     </span><span class="c1"># only to run the test suite</span>
 </span></code></pre></div>
-<p><code>delentia init</code> now creates <code>.env</code> from the local project template when available and falls back to a built-in template in clean-room installs.</p>
-<hr />
-<h2 id="verify-with-tests">Verify with Tests<a class="headerlink" href="#verify-with-tests" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pytest<span class="w"> </span>--tb<span class="o">=</span>short<span class="w"> </span>-q
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># → 723 passed in ~3s</span>
+<p>A source checkout builds the Desk pages once with <code>python scripts/package_desk.py</code> (Node.js 20 or newer). The full test suite takes a long time and several tests call a local Ollama; the project's checks are in <a href="../../contributing/">CONTRIBUTING</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">The install scripts</p>
+<p><code>install.sh</code> and <code>install.ps1</code> in the repository clone the <strong>main</strong> branch, not a release, so they install unreleased code. Prefer the Windows installer or <code>pip install delentia-os</code>; read the scripts before running anything piped from the internet.</p>
+</div>
+<h2 id="check-it-works">Check it works<a class="headerlink" href="#check-it-works" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>delentia<span class="w"> </span>demo<span class="w"> </span>init<span class="w"> </span>--lang<span class="w"> </span>en
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>delentia<span class="w"> </span>demo<span class="w"> </span>run<span class="w"> </span>compare<span class="w"> </span>--scripted
 </span></code></pre></div>
-<hr />
-<h2 id="what-gets-installed">What Gets Installed<a class="headerlink" href="#what-gets-installed" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>delentia-os/
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── core/           ← FDIA engine, Delta engine, Regional adapter
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>├── signedai/       ← SignedAI jury runner, table of example model roles
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>├── rct_control_plane/  ← 15-module DSL + intent schema
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>└── microservices/  ← 5 reference microservices (read-only SDK)
-</span></code></pre></div>
-<p>The <code>rct</code> CLI entry point is registered automatically after installation:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>delentia<span class="w"> </span>--help
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>delentia<span class="w"> </span>version
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>delentia<span class="w"> </span>start<span class="w"> </span>--ui-test
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>delentia<span class="w"> </span>init
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>delentia<span class="w"> </span>doctor
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>delentia<span class="w"> </span>compile<span class="w"> </span>intent.json
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>delentia<span class="w"> </span>graph<span class="w"> </span>build<span class="w"> </span>--policy<span class="w"> </span>default
-</span></code></pre></div>
-<hr />
-<h2 id="interactive-playground-no-install">Interactive Playground (No Install)<a class="headerlink" href="#interactive-playground-no-install" title="Permanent link">&para;</a></h2>
-<p>Run the FDIA + SignedAI demos directly in your browser via Google Colab — no local install required:</p>
-<p><a href="https://colab.research.google.com/github/rctlabs/delentia-os/blob/main/notebooks/rct_playground.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
-<p>The notebook walks through:
-1. FDIA equation scoring (<code>F = D^I × A</code>)
-2. SignedAI tier routing
-3. Delta Engine compression concept
-4. Tier 9 full pipeline</p>
-<blockquote>
-<p><strong>Note:</strong> The Colab notebook is included in the <code>notebooks/</code> directory of this repository.</p>
-</blockquote>
+<p>The <a href="../quickstart/">quick start</a> explains what each step shows.</p>
+<h2 id="your-data-and-uninstalling">Your data, and uninstalling<a class="headerlink" href="#your-data-and-uninstalling" title="Permanent link">&para;</a></h2>
+<p>Everything the agent keeps (memory, the audit log, keys you made) is under <code>%USERPROFILE%\.delentia</code> (Windows) or <code>~/.delentia</code>. Where it is, how to back it up, how to erase one person and what that does not remove: <a href="https://github.com/delentia-labs/Delentia-OS/blob/main/docs/demo/YOUR_DATA_EN.md">Your data</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Older instructions</p>
+<p>The previous version of this page described a beta install for an earlier release. It is kept as <a href="../../reference/legacy-installation/">historical text</a>.</p>
+</div>
 
 
 
