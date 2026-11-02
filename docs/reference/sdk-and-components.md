@@ -1,6 +1,6 @@
 # SDK modules and components (reference)
 
-> **Moved from the README on 2026-11-01.** The README is now a short entrance; this is the detail that used to sit in it, with the text unchanged except where a line starts with **[corrected 2026-11-01]** or **[context 2026-11-01]**. Anything here that is older than the code is history, not a description of today: the status of each capability is in [Release levels](https://github.com/delentia-labs/Delentia-OS/blob/main/../release/RELEASE_LEVELS.md) and the current test checkpoint is in [Testing](https://github.com/delentia-labs/Delentia-OS/blob/main/../testing/TESTING_CANONICAL.md).
+> **Moved from the README on 2026-11-01.** The README is now a short entrance; this is the detail that used to sit in it, with the text unchanged except where a line starts with **[corrected 2026-11-01]** or **[context 2026-11-01]**. Anything here that is older than the code is history, not a description of today: the status of each capability is in [Release levels](https://github.com/delentia-labs/Delentia-OS/blob/main/docs/release/RELEASE_LEVELS.md) and the current test checkpoint is in [Testing](https://github.com/delentia-labs/Delentia-OS/blob/main/docs/testing/TESTING_CANONICAL.md).
 
 ## What's Included in This SDK
 
@@ -40,7 +40,7 @@
 
 | Product | Description | Link |
 |---------|-------------|------|
-| 🤖 **Delentia OS** (this repository) | The agent runtime: loop, tools, memory, skills, approvals, audit log | [Quick start](../../README.md) |
+| 🤖 **Delentia OS** (this repository) | The agent runtime: loop, tools, memory, skills, approvals, audit log | [Quick start](https://github.com/delentia-labs/Delentia-OS#readme) |
 | 🛡️ **Delentia Guard** | A policy filter that sits in front of any MCP server and checks each tool call (npm `delentia-guard`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
 | 🔌 **Delentia MCP connector** | Six advisory tools hosted on Cloudflare Workers, reached through a stdio bridge (npm `delentia-mcp`) | [delentia-mcp](https://github.com/delentia-labs/delentia-mcp) |
 
