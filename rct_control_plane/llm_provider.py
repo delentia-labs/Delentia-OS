@@ -342,6 +342,17 @@ def openrouter_base_url() -> str:
     return OPENROUTER_DEFAULT_BASE
 
 
+def openrouter_key_info(key: str, base: Optional[str] = None, timeout: float = 30.0) -> "httpx.Response":
+    """What the provider says about this key (credit limit, dollars used, what is left), as an HTTP response. The documented path is `/key`; the older `/auth/key` answered
+    the same on 2026-11-02 and is tried only when `/key` answers 404, so the paid-day check does not stand on an undocumented alias. The key goes only into the Authorization header."""
+    root = (base or openrouter_base_url()).rstrip("/")
+    headers = {"Authorization": f"Bearer {key}"}
+    reply = httpx.get(f"{root}/key", headers=headers, timeout=timeout)
+    if reply.status_code == 404:
+        reply = httpx.get(f"{root}/auth/key", headers=headers, timeout=timeout)
+    return reply
+
+
 # Models (as OpenRouter ids) that answered HTTP 400 to `response_format` in this process: later calls do not send it. OpenRouter routes to
 # many upstream providers and not all of them accept JSON mode; the loop's prompt already asks for JSON, so dropping the parameter costs
 # some reliability, not the call.

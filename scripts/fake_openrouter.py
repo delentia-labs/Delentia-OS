@@ -1,7 +1,7 @@
 """
 Round 55: a fake OpenRouter on loopback, for rehearsing the paid full test at no cost.
 
-It implements the three calls the paid path makes - `GET /api/v1/models` (public price list), `GET /api/v1/auth/key` (how much this key has
+It implements the three calls the paid path makes - `GET /api/v1/models` (public price list), `GET /api/v1/key` and the older `/api/v1/auth/key` (how much this key has
 spent) and `POST /api/v1/chat/completions` (with a `usage` block that carries tokens and a cost) - and answers with the scripted policies of
 rct_control_plane/tests/scripted_model.py. Point the runtime at it with DELENTIA_OPENROUTER_BASE_URL=http://127.0.0.1:<port>/api/v1
 (llm_provider.openrouter_base_url accepts loopback addresses and nothing else apart from openrouter.ai).
@@ -106,9 +106,10 @@ def rehearsal_policy(req: "sm.Request") -> str:
 
 class FakeOpenRouter:
     def __init__(self, prices: Dict[str, Dict[str, float]], key: str = "rehearsal-not-a-real-key", policy: Any = rehearsal_policy,
-                 reject_json_mode: bool = False, hidden_markup: float = 0.0, limit: Optional[float] = None):
+                 reject_json_mode: bool = False, hidden_markup: float = 0.0, limit: Optional[float] = None, key_paths: tuple = ("/key", "/auth/key")):
         self.prices, self.key, self.policy = prices, key, policy
-        self.limit = limit                                # the credit limit set on the key at the provider (None = no cap), as /auth/key reports it
+        self.key_paths = key_paths                        # which key-info paths answer: the documented /key, the older /auth/key, or both (the real service answered both on 2026-11-02)
+        self.limit = limit                                # the credit limit set on the key at the provider (None = no cap), as /key reports it
         self.hidden_markup = hidden_markup                # a charge to the key that the reply's own `usage.cost` does not show (the case a meter calibration must catch)
         self.reject_json_mode = reject_json_mode          # answer HTTP 400 to `response_format`, as some upstream providers do
         self.json_mode_requests = 0
@@ -135,7 +136,7 @@ class FakeOpenRouter:
                 if path.endswith("/models"):                 # public, like the real list
                     return self._send(200, {"data": [{"id": m, "pricing": {"prompt": str(p["in"] / 1e6), "completion": str(p["out"] / 1e6)}}
                                                      for m, p in outer.prices.items()]})
-                if path.endswith("/auth/key"):
+                if path.split("/api/v1", 1)[-1] in outer.key_paths:
                     if not self._authorised():
                         outer.rejected += 1
                         return self._send(401, {"error": "bad key"})
