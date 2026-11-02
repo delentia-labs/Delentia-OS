@@ -553,6 +553,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._compress_threshold_chars = compress_threshold_chars
         self._tool_output_store: Optional[Any] = None
         self._episode_compressions: List[Dict[str, Any]] = []
+        self._episode_compress_skips: List[Dict[str, Any]] = []
         self._resume_note: str = ""
         # Round 84: the durable journal of this episode's steps (episode_journal.py), so an interrupted episode can be continued. Best effort: a journal problem is audited, never fatal.
         self._journal: Any = None
@@ -761,6 +762,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         import uuid
         self._episode_start_time = time.time()
         self._episode_compressions = []
+        self._episode_compress_skips = []
         self._episode_id = uuid.uuid4().hex
         self._journal_step = 0
         self._journal_pending = {}
@@ -3477,8 +3479,13 @@ class GovernedAutonomousLoop(AutonomousLoop):
         text = self._render_tool_result(tool_result)
         if len(text) < self._compress_threshold_chars:
             return tool_result
+        from rct_control_plane import compress_policy
         from rct_control_plane.delta_v2 import compress_context
-        compressed = compress_context(text, intent_focus=goal, aggressive_mode=True, outline=True)
+        decision = compress_policy.decide(goal, tool_name, tool_args, text)
+        if not decision.apply:                                  # Round 109: the task needs the text, or the goal gives nothing to filter by: show it whole (the reason is kept for the episode's record)
+            self._episode_compress_skips.append({"tool_name": tool_name, "reason": decision.reason, "chars": len(text)})
+            return tool_result
+        compressed = compress_context(text, intent_focus=decision.focus, aggressive_mode=True, outline=True)
         if compressed.reduction_percentage < COMPRESS_MIN_REDUCTION_PCT:
             return tool_result
         if self._tool_output_store is None:

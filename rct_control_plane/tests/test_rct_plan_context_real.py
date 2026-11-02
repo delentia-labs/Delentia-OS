@@ -102,7 +102,8 @@ def test_contract_expands_omitted_thai_passage_through_real_mcp(tmp_path, monkey
         assert target in history[-1].tool_result['content']
         return finish(target)
     monkeypatch.setattr(autonomous_loop, 'decide_next_action', decide)
-    result = asyncio.run(loop.run('Read source.md and answer in Thai', acceptance_criteria=[{'kind': 'contains', 'value': target}], on_plan=lambda c: None))
+    # Round 109: goal-aware COMPRESS shows a goal with no word to filter by whole; "350" is a word that picks lines out of this text (and not the line 200 passage), so the omitted-passage path is still exercised
+    result = asyncio.run(loop.run('Read source.md and find line 350, then answer in Thai', acceptance_criteria=[{'kind': 'contains', 'value': target}], on_plan=lambda c: None))
     assert result['intent_contract']['state'] == 'criteria_satisfied', result
     assert [s['tool_name'] for s in result['steps'][:2]] == ['delentia_read_repo_file', 'delentia_expand_tool_output']
     assert (root / 'source.md').read_text(encoding='utf-8') == text
