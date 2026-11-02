@@ -2746,8 +2746,8 @@
 <h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
 <p>When an AI moves from answering to acting (reading files, editing them, opening web pages, sending messages) you need more than an answer that sounds clever. You need to know what it understood as the goal,
 what it is allowed to do, whether it remembers what you told it, and, when it goes wrong, whether you can trace what happened.</p>
-<h2 id="delentia-is-a-control-layer-around-an-agent-not-an-operating-system">Delentia is a control layer around an agent, not an operating system<a class="headerlink" href="#delentia-is-a-control-layer-around-an-agent-not-an-operating-system" title="Permanent link">&para;</a></h2>
-<p>"OS" does not mean Windows or Linux. It is a program that runs an AI agent and <strong>wraps it in a safety layer</strong> on your own machine (the model can be local or a hosted service).</p>
+<h2 id="delentia-is-an-agent-runtime-with-a-safety-layer-built-in-not-an-operating-system">Delentia is an agent runtime with a safety layer built in, not an operating system<a class="headerlink" href="#delentia-is-an-agent-runtime-with-a-safety-layer-built-in-not-an-operating-system" title="Permanent link">&para;</a></h2>
+<p>"OS" does not mean Windows or Linux. It is the program that runs the agent on your own machine: the loop, the tools, memory, skills, schedules, chat channels and subagents are inside it, and <strong>every task passes the same checks</strong> (guard, plan, act with your signature where it matters, verify, record, learn). The one thing it does not contain is the language model: that can be local or a hosted service.</p>
 <h2 id="what-it-gives-you-and-how-to-check-it-yourself">What it gives you (and how to check it yourself)<a class="headerlink" href="#what-it-gives-you-and-how-to-check-it-yourself" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2766,7 +2766,7 @@ what it is allowed to do, whether it remembers what you told it, and, when it go
 <tr>
 <td><strong>It is not steered by text from the web or from files it receives</strong></td>
 <td>Once the agent has read outside text, anything with a side effect needs your signature whatever the model "decides"</td>
-<td>Against a scripted model that obeys every instruction: side effects that ran 18 -&gt; 0 of 23 cases</td>
+<td>Against a scripted model that obeys every instruction (23 cases): with the built-in safety floor alone 18 side effects ran; with the default owner policy 3; with the outside-text rule on as well, 0 (the 6 legitimate workflows still ran). A scripted model, not a real one</td>
 </tr>
 <tr>
 <td><strong>It remembers your rules</strong></td>
@@ -2795,7 +2795,7 @@ what it is allowed to do, whether it remembers what you told it, and, when it go
 <li><strong>It has never been run with a model strong enough to use tools well.</strong> The local models tried still pick the wrong tool often, so the safety results come mostly from scripted stand-in models.</li>
 <li><strong>No outside users yet</strong>, and no public server.</li>
 <li>The log is <strong>tamper-evident, not tamper-proof</strong>: someone who controls the whole machine can rewrite it until an independent witness exists.</li>
-<li>Pinned rules: at most 5 are shown per task. Rules that are not pinned rely on similarity search, which showed the agent only 29 of 40 relevant rules in the measurement.</li>
+<li>Pinned rules: at most 8 are shown per task (the default; a sixth rule used to push the oldest one out silently, which is why the cap was raised and the cut is now announced). Rules that are not pinned rely on similarity search, which showed the agent only 29 of 40 relevant rules in the measurement.</li>
 <li>On English, bge-m3 scores slightly below nomic-embed-text (33 vs 37 of 40).</li>
 </ul>
 <h2 id="try-it-15-minutes">Try it (15 minutes)<a class="headerlink" href="#try-it-15-minutes" title="Permanent link">&para;</a></h2>
