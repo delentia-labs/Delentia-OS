@@ -33,6 +33,21 @@ def test_the_audit_itself_catches_a_catastrophic_pattern_and_kills_it():
     assert time.perf_counter() - started < 120
 
 
+def test_the_audit_measures_a_slow_run_again_and_still_flags_a_pattern_that_is_slow_every_time(tmp_path, monkeypatch):
+    """Round 108: a run over the limit is measured up to three times and the fastest counts, so one slow reading on a loaded CI runner is not an offence; a pattern that is slow every time still is.
+    `(\\d+)s` is the old unbounded duration pattern of dsl_parser.py: 1.5 s on 20,000 digits and about four times that on twice the input, on every try."""
+    import json
+    items = [{"pattern": r"(\d+)s", "flags": 0, "where": "planted:slow"}, {"pattern": "abc", "flags": 0, "where": "planted:fast"}]
+    path = tmp_path / "items.json"
+    path.write_text(json.dumps(items), encoding="utf-8")
+    monkeypatch.setenv("DELENTIA_REGEX_AUDIT_ITEMS", str(path))
+    report = audit.audit()
+    assert report["patterns"] == 2 and report["checked"] == 2, report
+    flagged = [o["where"] for o in report["offenders"]]
+    assert flagged == ["planted:slow"], report["offenders"]
+    assert report["offenders"][0]["seconds"] > audit.SLOW_S
+
+
 OLD_I015 = re.compile(r"(?:^|\n)\s*#{1,6}\s+(?:system|assistant|user|human|ai)\s*:", re.IGNORECASE | re.MULTILINE)
 OLD_I020 = re.compile(r"---+\s*(?:system|instructions?|prompt)\s*---+", re.IGNORECASE)
 OLD_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
