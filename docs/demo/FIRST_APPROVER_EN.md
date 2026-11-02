@@ -8,21 +8,15 @@ Delentia does a lot on its own, but anything really risky (deleting files, sendi
 
 ## Why the web page does not simply create one
 
-If the web page could create the first approver by itself, any other program on the computer (the agent included) could do the same and approve its own work. That would break the rule that a person decides. So the system uses a **one-time code** that appears only in a terminal window you open yourself. Another person, or a program that only reads the web page, never sees it.
+If the web page could create the first approver by itself, any other program on the computer (the agent included) could do the same and approve its own work. That would break the rule that a person decides. So the system uses a **one-time code** that appears only in a small window on your own screen. Another person, or a program that only reads the web page, never sees it.
 
 ## Steps (installed with the Windows installer)
 
 1. Open the Start menu, type **Delentia**, pick **Delentia** (the green icon with eyes). Wait a moment: the browser opens the Delentia page.
 2. The first page (Status) shows a **"Getting started"** box saying "Nobody can approve yet". Open **Settings** (left menu).
-3. Open a terminal: press the Windows key, type `cmd`, press Enter, then type
-
-   ```
-   "%LOCALAPPDATA%\Programs\Delentia\python\python.exe" -m rct_control_plane.cli approvals first-device-code
-   ```
-
-   (installed with pip? just type `delentia approvals first-device-code`)
-4. You get a code like `K7QM-4X2P`. It is valid for **10 minutes, 5 tries, one use**.
-5. Back in Settings → **Approval devices**, a yellow box repeats these steps. Type a **name for this computer** (for example "my laptop") and the **code**, then press **Add this device**.
+3. In Settings → **Approval devices** (or in the **Setup assistant**, step 3) press **"Show the code in a small window"**. A small black window opens on your screen. **You do not need to open a terminal or type a command.**
+4. The window shows a code like `K7QM-4X2P`. It is valid for **10 minutes, 5 tries, one use**. The code appears only in that window, never in the web page. If the window does not appear (or 10 minutes have passed), press the button again after 30 seconds. As a fallback, open a terminal (press the Windows key, type `cmd`, press Enter) and type `"%LOCALAPPDATA%\Programs\Delentia\python\python.exe" -m rct_control_plane.cli approvals first-device-code` (installed with pip? just type `delentia approvals first-device-code`).
+5. Back in the web page, type a **name for this computer** (for example "my laptop") and the **code**, then press **Add this device**.
 6. Windows Hello asks for your face, fingerprint or PIN. Confirm.
 7. Done. The message says "This computer is now your first approver" and the Getting started box disappears.
 

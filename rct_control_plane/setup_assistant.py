@@ -241,6 +241,17 @@ _LAST_CODE_WINDOW = [0.0]
 CODE_WINDOW_MIN_SECONDS = 30.0
 
 
+def console_interpreter(executable: str) -> Optional[str]:
+    """The interpreter that can show a console window. The Start-menu shortcut starts Delentia with pythonw.exe (no black window) and the agent it starts inherits that interpreter; a new console
+    opened for pythonw.exe stays invisible (measured: GetConsoleWindow() is 0 for pythonw.exe and 1 for python.exe, both started with CREATE_NEW_CONSOLE), so the code would be printed nowhere.
+    Next to pythonw.exe there is a python.exe in the same folder; if there is not, there is no window to offer."""
+    path = Path(executable)
+    if path.name.lower() != "pythonw.exe":
+        return executable
+    sibling = path.with_name("python.exe")
+    return str(sibling) if sibling.is_file() else None
+
+
 def open_code_window(persistence: Any, *, popen: Any = None, platform: Optional[str] = None, now: Optional[float] = None) -> Dict[str, Any]:
     """Opens a window on the person's screen that shows the one-time code for the FIRST approval device, so the Desk can offer a button instead of a terminal and a command.
     The code is printed by the ordinary `approvals first-device-code --hold` command in that window: it never travels through this call's answer. Only while nobody can approve yet; at most
@@ -253,10 +264,13 @@ def open_code_window(persistence: Any, *, popen: Any = None, platform: Optional[
         return {"opened": False, "reason": "someone_can_approve", "how": "Someone can already approve here, so no code is needed. Add the next device and let an approver vouch for it."}
     if now - _LAST_CODE_WINDOW[0] < CODE_WINDOW_MIN_SECONDS:
         return {"opened": False, "reason": "too_soon", "how": "A window was opened a moment ago. Look for it on your screen (it may be behind this one)."}
-    command = [sys.executable, "-m", "rct_control_plane.cli", "approvals", "first-device-code", "--hold", "--db", str(getattr(persistence, "db_path", ""))]
     how = "Open a terminal on this computer and type:  delentia approvals first-device-code"
     if (platform or sys.platform) != "win32":
         return {"opened": False, "reason": "no_window", "how": how}
+    interpreter = console_interpreter(sys.executable)
+    if interpreter is None:
+        return {"opened": False, "reason": "no_window", "how": how}
+    command = [interpreter, "-m", "rct_control_plane.cli", "approvals", "first-device-code", "--hold", "--db", str(getattr(persistence, "db_path", ""))]
     try:
         (popen or subprocess.Popen)(command, creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0), close_fds=True)
     except OSError as exc:
