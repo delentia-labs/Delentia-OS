@@ -139,6 +139,8 @@ print(f"Compression: {engine.compute_compression_ratio():.1%}")
 
 ### Intent Loop Engine
 
+> **[context 2026-11-01]** This 7-state pipeline is the older **intent-loop reference microservice** (`microservices/intent-loop`), which simulates execution and verification (its `/health` says so). It is not the agent runtime's cycle. The runtime's cycle is the eight steps in the README (GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN), implemented in `rct_control_plane/governed_autonomous_loop.py`; the five pillars of the Intent Loop are reported per episode by `rct_control_plane/intent_loop.py`. The two are different abstractions and one is not a stage of the other.
+
 Every user intent passes through a 7-state pipeline:
 
 ```
