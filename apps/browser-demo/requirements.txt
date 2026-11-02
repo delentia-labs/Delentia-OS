@@ -1,0 +1,2 @@
+gradio>=4.44
+delentia-os==2.4.1
