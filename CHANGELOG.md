@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2026-11-02
+
+A release made for the second-computer test: the installed program's first-run path now works end to end and the program is reachable from the desktop. Nothing here is a result with a capable model: there is none yet. The stage label *Public Technical Preview 0.1* is still **not declared**.
+
+Release level: L0 and L1 of `docs/release/RELEASE_LEVELS.md`.
+
+### Fixed
+- **The "Show the code in a small window" button opened nothing in the installed program.** The Start-menu shortcut starts Delentia with `pythonw.exe` (no console), the agent inherits that interpreter, and a console opened for `pythonw.exe` is invisible (measured: `GetConsoleWindow()` is 0 for a child of `pythonw.exe` and 1 for a child of `python.exe`). The one-time code was printed nowhere, so the first approver could not be set up from the Desk. The window now uses the `python.exe` beside `pythonw.exe`, and no window is claimed when there is none. (#251)
+- The install and first-approver guides (Thai and English) and the Desk's own hint still told people to type a long command in a terminal; they now point to the button and the Setup assistant, with the command kept as the fallback. (#251)
+
+### Changed
+- **Windows installer:** the desktop icon is ticked by default (it was unticked) and the last page offers "Open Delentia now" (ticked); neither happens under a silent install. (#252)
+
+### Added
+- **The scripted demos as a web page** (`apps/browser-demo`, for a Hugging Face Space): the model-free demos run in a fresh folder per visitor, nothing a visitor types reaches a command. (#249)
+- **A measurement of what the Delta engine does to the tokens sent to a model** (`scripts/measure_delta_tokens_r109.py`, `research/DELTA_TOKEN_SAVINGS_*_R109.md`), with the rules written first: the saving by kind of content and goal, the fidelity cost, the compounding over later calls, exact recovery and time. It found that COMPRESS is a filter by the goal's words, not lossless compression. (#253)
+- The Hugging Face upload guide names the new card files. (#250)
+
 ## [2.4.1] - 2026-11-01
 
 The first release a stranger can try end to end without a model: the model-free demo in English, a demo that shows what the project is for (a hijacked model that is stopped), the Setup assistant inside the Desk, the stage label beside the version, and the safety and measuring work behind it (a write refuses to overwrite a file that changed, jobs are fenced by worker, the RCT verdicts are bound to verified receipts, and nothing can spend money without a freeze and a ceiling). Nothing here is a result with a capable model: there is none yet.
