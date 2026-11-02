@@ -337,12 +337,34 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         if endpoint is not None and not isinstance(endpoint, dict):
             raise HTTPException(status_code=400, detail="'endpoint' must be an object")
         try:
-            return model_setup.apply_selection(
+            view = model_setup.apply_selection(
                 str(payload.get("provider", "")), str(payload.get("model", "")), endpoint=endpoint,
                 profile=(str(payload["profile"]).strip() if payload.get("profile") else None),
-                api_key=(str(payload["api_key"]) if payload.get("api_key") else None))
+                api_key=(str(payload["api_key"]) if payload.get("api_key") else None),
+                remember=bool(payload.get("remember", True)))          # the owner's decision (2026-11-02): a typed key is kept on this computer unless the person unticks it
         except (model_config.ModelConfigError, model_setup.SetupError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if payload.get("api_key") and view.get("credential_env"):
+            _record_key_event("kept_on_computer" if view.get("key_saved_on_computer") else "held_in_memory", str(view["credential_env"]))
+        return view
+
+    @router.post("/models/key/forget")
+    async def forget_model_key(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Forget a model key: the saved copy on this computer and the copy in this server's memory. Nothing else changes."""
+        from rct_control_plane import model_setup
+        try:
+            result = model_setup.forget_key(str(payload.get("env", "")))
+        except model_setup.SetupError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        _record_key_event("forgotten", result["env"])
+        return {**result, "view": model_setup.current_view()}
+
+    def _record_key_event(action: str, env_name: str) -> None:
+        """An audit row that names the variable and what happened: never the key, not even a part of it."""
+        try:
+            _kernel()._persistence.append_audit(entity_type="model_key", entity_id=env_name, action=action, actor="desk", changes={"env": env_name})
+        except Exception:                                    # an audit problem must not decide whether a key is forgotten
+            pass
 
     @router.get("/audit")
     async def audit(limit: int = Query(40, ge=1, le=500)) -> Dict[str, Any]:

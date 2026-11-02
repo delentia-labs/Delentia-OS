@@ -19,6 +19,7 @@ Inside the folder (only the parts that exist on your computer appear):
 | `agentic.db` | the record of what the agent did (the signed, chained audit trail), approvals, and memory |
 | `rct_control_plane.db` | the older control-plane tables (for example skills the agent learned) |
 | `keys\` | **private keys** (the audit signing key, approver keys). Whoever holds a private key can sign as you. Never mail it; never put it in a repository. |
+| `keys\model_keys.dat` | the **model keys you chose to keep** (for example your OpenRouter key), so you do not type them again after closing the program. On Windows the file is encrypted for your Windows account; elsewhere it is readable by you only. It is never copied into a backup, not even with `--include-keys`: after a restore you type the key again. See what is kept with `delentia model key status` and forget one with `delentia model key forget OPENROUTER_API_KEY` (or on the Models page). When a key expires or is rotated is up to you. |
 | `memory_keys\` | one key per person that seals that person's memory. Destroying a person's key is how they are erased. |
 | `approvers.json` | the public keys of the people allowed to approve actions |
 | `model.json` | which model Delentia uses (it never holds a key) |

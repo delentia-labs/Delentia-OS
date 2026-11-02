@@ -21,6 +21,7 @@ _NAME = re.compile(
     r"\.env(?:\.(?!example$|sample$|template$|dist$).+)?"           # .env, .env.local, .env.production - not .env.example
     r"|.*_secrets?(?:\..*)?|.*secrets?\.(?:json|ya?ml|toml|txt|ini)"
     r"|credentials(?:\.json)?|vault_master\.key|approvers\.json"
+    r"|model_keys\.dat|\.model_keys-[A-Za-z0-9_]{1,16}"               # the model keys the person chose to keep (secret_store), wherever the data folder is
     r"|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?"
     r"|.*\.(?:pem|key|p12|pfx|jks|keystore|kdbx|ppk|asc|gpg)"
     r"|.*\.(?:db|sqlite|sqlite3|db-wal|db-shm|db-journal)"          # the runtime's own stores hold every person's memory, goals and approvals

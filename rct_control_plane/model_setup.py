@@ -109,6 +109,7 @@ def current_view() -> Dict[str, Any]:
         "endpoint": endpoint,
         "credential_env": key_env or None,
         "credential_present": bool(key_env and os.environ.get(key_env)),
+        "key_store": __import__("rct_control_plane.secret_store", fromlist=["status"]).status_view(),
         "openrouter_key_present": __import__("rct_control_plane.credential_pool", fromlist=["available"]).available("openrouter", "OPENROUTER_API_KEY"),
         "profiles": {name: dict(p) for name, p in (cfg.get("profiles") or {}).items() if isinstance(p, dict)},
         "endpoint_verdict": policy_verdict(endpoint) if endpoint else None,
@@ -165,8 +166,9 @@ async def probe_endpoint(endpoint: Dict[str, Any], api_key: Optional[str] = None
 
 
 def apply_selection(provider: str, model: str, endpoint: Optional[Dict[str, Any]] = None, profile: Optional[str] = None,
-                    api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Saves the choice (never a key) and, when a key was typed, keeps it in memory for this process."""
+                    api_key: Optional[str] = None, remember: bool = False) -> Dict[str, Any]:
+    """Saves the choice (never in the model file: that refuses keys) and, when a key was typed, keeps it in memory for this process and, with `remember`, on this computer (secret_store) so it
+    survives a restart. The owner's decision of 2026-11-02: keeping a key is the default in the Desk; when it expires is the person's business."""
     provider = (provider or "").strip().lower()
     clean_endpoint: Optional[Dict[str, str]] = None
     key_env: Optional[str] = None
@@ -181,10 +183,39 @@ def apply_selection(provider: str, model: str, endpoint: Optional[Dict[str, Any]
         if not key_env:
             raise SetupError("a key was given but no environment variable name to keep it under")
         set_session_key(key_env, api_key)
+    kept_on_computer = False
+    if api_key and remember:
+        from rct_control_plane import secret_store
+        try:
+            secret_store.save(str(key_env), api_key)
+            kept_on_computer = True
+        except secret_store.SecretStoreError as exc:
+            raise SetupError(str(exc)) from exc
     path = model_config.save_model_selection(provider, model, profile=(profile or None), endpoint=clean_endpoint)
     view = current_view()
     view["saved"] = str(path)
     view["key_kept_in_memory"] = bool(api_key)
-    view["key_note"] = ("The key is held in this server's memory only and is gone when it restarts. To keep it, set the "
-                        f"environment variable {key_env} where the server starts.") if api_key else None
+    view["key_saved_on_computer"] = kept_on_computer
+    if not api_key:
+        view["key_note"] = None
+    elif kept_on_computer:
+        from rct_control_plane import secret_store
+        view["key_note"] = ("The key is kept on this computer" + (", encrypted for your Windows account" if secret_store.scheme() == "windows-dpapi" else ", in a file only you can read")
+                            + ", so you do not have to type it again. You can forget it on this page; when it expires or is rotated is up to you.")
+    else:
+        view["key_note"] = ("The key is held in this server's memory only and is gone when it restarts. To keep it, set the "
+                            f"environment variable {key_env} where the server starts.")
     return view
+
+
+def forget_key(env_name: str) -> Dict[str, Any]:
+    """Forget a key: remove the saved copy and clear it from this process. True/False tells whether a saved copy existed."""
+    from rct_control_plane import secret_store
+    name = check_key_env_name(env_name)
+    try:
+        had_saved = secret_store.forget(name)
+    except secret_store.SecretStoreError as exc:
+        raise SetupError(str(exc)) from exc
+    had_live = name in os.environ
+    forget_session_key(name)
+    return {"env": name, "forgot_saved_copy": had_saved, "cleared_from_this_process": had_live}

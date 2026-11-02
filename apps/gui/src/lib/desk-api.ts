@@ -57,7 +57,8 @@ export interface ModelSetup {
   selection: ModelSelection; config_path: string; endpoint: EndpointDecl | null; credential_env: string | null; credential_present: boolean;
   openrouter_key_present: boolean; profiles: Record<string, { provider: string; model: string }>; endpoint_verdict: PolicyVerdict | null;
   presets: { countries: { code: string; name: string }[]; providers: ProviderPreset[]; notice: string };
-  saved?: string; key_kept_in_memory?: boolean; key_note?: string | null;
+  saved?: string; key_kept_in_memory?: boolean; key_saved_on_computer?: boolean; key_note?: string | null;
+  key_store?: { enabled: boolean; scheme: "windows-dpapi" | "file-0600"; saved: { env: string; saved_at: number | null; last4: string }[] };
 }
 export interface ProbeResult {
   contacted: boolean; reachable: boolean; status?: number; models: string[]; error: string | null; key_sent?: boolean; verdict: PolicyVerdict | null;
@@ -439,8 +440,10 @@ export const desk = {
   modelSetup: () => call<ModelSetup>("/v1/desk/models/setup"),
   testEndpoint: (endpoint: EndpointDecl, apiKey?: string) =>
     call<ProbeResult>("/v1/desk/models/test", { method: "POST", body: JSON.stringify({ endpoint, api_key: apiKey || undefined }) }),
-  saveModel: (body: { provider: string; model: string; endpoint?: EndpointDecl; profile?: string; api_key?: string }) =>
+  saveModel: (body: { provider: string; model: string; endpoint?: EndpointDecl; profile?: string; api_key?: string; remember?: boolean }) =>
     call<ModelSetup>("/v1/desk/models", { method: "POST", body: JSON.stringify(body) }),
+  forgetKey: (env: string) =>
+    call<{ env: string; forgot_saved_copy: boolean; cleared_from_this_process: boolean; view: ModelSetup }>("/v1/desk/models/key/forget", { method: "POST", body: JSON.stringify({ env }) }),
   setSovereignty: (policy: SovereigntyPolicyInput) =>
     call<{ saved: string; enforced: boolean }>("/v1/desk/sovereignty", { method: "POST", body: JSON.stringify(policy) }),
   setModel: (provider: string, model: string) =>
