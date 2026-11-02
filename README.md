@@ -99,7 +99,7 @@ After `delentia demo approve f483af2136b0 --scripted`, the report says the file 
 
 | Evidence | Where it stands |
 |---|---|
-| The public test suite | **9,069 passed, 46 skipped, 0 failed, 91.95% coverage** ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/40989051697), commit `dc0b2df`, 2026-10-30). A checkpoint that is updated by hand, not live. It is evidence about the code, not about how well a model uses it |
+| The public test suite | **9,625 passed, 47 skipped, 0 failed, 92.18% coverage** ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/41300747145), commit `75e18b4`, 2026-11-01). A checkpoint that is updated by hand, not live. It is evidence about the code, not about how well a model uses it |
 | The gate against a scripted attacker | A model that obeys every injected instruction: of 23 scenarios, 3 harmful side effects ran with the taint rule off and **0 with it on**, while 6 of 6 legitimate workflows still ran ([method and limits](docs/security/THREAT_MODEL.md)) |
 | Signed approvals, the audit chain, recovery after a crash | Tested with a scripted model, including a hard kill at three points and a forged answer on its way back |
 | Small local models | They complete some simple tasks, not reliably: on a five-goal probe qwen2.5:7b did 3, llama3.2:3b 0, qwen3:8b 4 (one machine, one run each) |
