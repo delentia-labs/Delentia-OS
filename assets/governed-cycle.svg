@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" width="960" height="470" role="img" aria-labelledby="t d" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <title id="t">The Delentia governed cycle: eight steps every agent episode passes</title>
+  <desc id="d">GUARD, THINK, ROUTE, ACT, COMPRESS, VERIFY, RECORD, LEARN, in two rows of four, with a dashed arrow from LEARN back to the next episode.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7aa7e0"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8a94a0"/></marker>
+  </defs>
+  <rect width="960" height="470" rx="14" fill="#0f1720"/>
+  <text x="480" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#e6edf3">The governed cycle: what every episode passes through</text>
+
+  <!-- row 1 -->
+  <g font-size="14" fill="#e6edf3">
+    <rect x="40"  y="70" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="135" y="104" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">01</text>
+    <text x="135" y="128" text-anchor="middle" font-size="20" font-weight="700">GUARD</text>
+    <text x="135" y="152" text-anchor="middle" fill="#b8c4d0">is the request itself</text>
+    <text x="135" y="170" text-anchor="middle" fill="#b8c4d0">an attack?</text>
+
+    <rect x="290" y="70" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="385" y="104" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">02</text>
+    <text x="385" y="128" text-anchor="middle" font-size="20" font-weight="700">THINK</text>
+    <text x="385" y="152" text-anchor="middle" fill="#b8c4d0">a plan, from the</text>
+    <text x="385" y="170" text-anchor="middle" fill="#b8c4d0">person's own words</text>
+
+    <rect x="540" y="70" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="635" y="104" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">03</text>
+    <text x="635" y="128" text-anchor="middle" font-size="20" font-weight="700">ROUTE</text>
+    <text x="635" y="152" text-anchor="middle" fill="#b8c4d0">fast path or</text>
+    <text x="635" y="170" text-anchor="middle" fill="#b8c4d0">careful path</text>
+
+    <rect x="790" y="70" width="140" height="110" rx="12" fill="#1d2f1f" stroke="#4f8a4f"/>
+    <text x="860" y="104" text-anchor="middle" font-size="12" fill="#8fd18f" font-weight="700">04</text>
+    <text x="860" y="128" text-anchor="middle" font-size="20" font-weight="700">ACT</text>
+    <text x="860" y="152" text-anchor="middle" fill="#cfe9cf">each tool call is</text>
+    <text x="860" y="170" text-anchor="middle" fill="#cfe9cf">judged first</text>
+  </g>
+  <g stroke="#7aa7e0" stroke-width="2" fill="none">
+    <path d="M230 125H284" marker-end="url(#a)"/>
+    <path d="M480 125H534" marker-end="url(#a)"/>
+    <path d="M730 125H784" marker-end="url(#a)"/>
+  </g>
+
+  <!-- connector down -->
+  <path d="M860 180V232" stroke="#7aa7e0" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- row 2 (right to left) -->
+  <g font-size="14" fill="#e6edf3">
+    <rect x="790" y="240" width="140" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="860" y="274" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">05</text>
+    <text x="860" y="298" text-anchor="middle" font-size="19" font-weight="700">COMPRESS</text>
+    <text x="860" y="322" text-anchor="middle" fill="#b8c4d0">long tool output</text>
+    <text x="860" y="340" text-anchor="middle" fill="#b8c4d0">made smaller</text>
+
+    <rect x="540" y="240" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="635" y="274" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">06</text>
+    <text x="635" y="298" text-anchor="middle" font-size="20" font-weight="700">VERIFY</text>
+    <text x="635" y="322" text-anchor="middle" fill="#b8c4d0">does the answer match</text>
+    <text x="635" y="340" text-anchor="middle" fill="#b8c4d0">what was asked?</text>
+
+    <rect x="290" y="240" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="385" y="274" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">07</text>
+    <text x="385" y="298" text-anchor="middle" font-size="20" font-weight="700">RECORD</text>
+    <text x="385" y="322" text-anchor="middle" fill="#b8c4d0">hash-chained, signed</text>
+    <text x="385" y="340" text-anchor="middle" fill="#b8c4d0">audit log</text>
+
+    <rect x="40" y="240" width="190" height="110" rx="12" fill="#16222f" stroke="#2f4a66"/>
+    <text x="135" y="274" text-anchor="middle" font-size="12" fill="#7aa7e0" font-weight="700">08</text>
+    <text x="135" y="298" text-anchor="middle" font-size="20" font-weight="700">LEARN</text>
+    <text x="135" y="322" text-anchor="middle" fill="#b8c4d0">only verified episodes</text>
+    <text x="135" y="340" text-anchor="middle" fill="#b8c4d0">become skills</text>
+  </g>
+  <g stroke="#7aa7e0" stroke-width="2" fill="none">
+    <path d="M790 295H736" marker-end="url(#a)"/>
+    <path d="M540 295H486" marker-end="url(#a)"/>
+    <path d="M290 295H236" marker-end="url(#a)"/>
+  </g>
+
+  <!-- feedback -->
+  <path d="M135 350V392H480" stroke="#8a94a0" stroke-width="2" stroke-dasharray="6 5" fill="none"/>
+  <text x="498" y="397" font-size="14" fill="#b8c4d0">the next episode starts from what was recorded and learned</text>
+
+  <text x="480" y="440" text-anchor="middle" font-size="13" fill="#8a94a0">The execution cycle of the runtime. RCT-7 (the creator's seven-step way of thinking) is tracked separately: see docs/public/RCT7_IMPLEMENTATION_STATUS.md</text>
+  <text x="480" y="458" text-anchor="middle" font-size="12" fill="#6f7a86">A drawing of the design, checked against the code on 2026-11-01. It is not a measurement of how well any model uses it.</text>
+</svg>
