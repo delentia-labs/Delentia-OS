@@ -73,7 +73,11 @@ WelcomeLabel2=This will install Delentia {#AppVersion} on your computer.%n%n{#Mi
 #endif
 
 [Tasks]
-Name: "desktopicon"; Description: "Put a Delentia icon on the desktop"; GroupDescription: "Shortcuts:"; Flags: unchecked
+Name: "desktopicon"; Description: "Put a Delentia icon on the desktop"; GroupDescription: "Shortcuts:"
+
+[Run]
+; The last page offers to open Delentia now (ticked). Not under a silent install, so CI and scripted installs never start the program.
+Filename: "{app}\python\pythonw.exe"; Parameters: "-m rct_control_plane.cli launch"; WorkingDir: "{%USERPROFILE}"; Description: "Open Delentia now"; Flags: nowait postinstall skipifsilent
 
 [Files]
 Source: "{#StageDir}\python\*"; DestDir: "{app}\python"; Flags: recursesubdirs createallsubdirs ignoreversion
