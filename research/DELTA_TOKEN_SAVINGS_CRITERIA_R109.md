@@ -29,3 +29,10 @@ No model is called: tokens are counted with tiktoken `cl100k_base` (approximate 
 * "Saves X% of the tokens" is said only for the corpus and settings measured, with its limit. No claim about any model's quality, price or answer correctness: those need a model.
 * A saving that depends on the answer being in the part that was kept is reported together with the kept% and the extra-call cost, never alone.
 * Needles and corpus are fixed here by rule (seeded draws from files of this repository, generated tables and logs from fixed seeds); if a rule below fails the result is reported, the rule is not changed afterwards.
+
+## Added after the first run (labelled, so it cannot pass for a rule written in advance)
+* A fifth goal kind, `single` (one content word of the needle, the way a short question reads), because the first run's `partial` goals carried two words and a table's columns made every line match.
+* The cost of a miss was first priced as one extra call. That is right for a lookup and wrong for a task that needs the whole text; the table now has the two models side by side (`lookup`, `whole`).
+* A third history case in Q9 (a status dictionary of 40 separate fields, one changing), after the first two cases showed the patch never fires on file reads and I wanted to know whether it fires at all.
+* The exact-recovery check was first written against the wrong line format (`L<n>: ` prefix) and reported 5 mismatches that were mine; it now strips the prefix and compares line by line.
+Results and the comparison with the expectations above: `DELTA_TOKEN_SAVINGS_RESULTS_R109.md`.
