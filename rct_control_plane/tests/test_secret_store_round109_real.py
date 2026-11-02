@@ -124,8 +124,11 @@ def test_unusable_values_are_refused(value):
         secret_store.save("OPENROUTER_API_KEY", value)
 
 
-def test_the_saved_file_is_somewhere_the_agent_may_not_read_and_a_backup_leaves_it_out(tmp_path):
+def test_the_saved_file_is_somewhere_the_agent_may_not_read_and_a_backup_leaves_it_out(tmp_path, monkeypatch):
+    for name in ("HOME", "USERPROFILE"):                                                # the backup also reads the user's own ~/.delentia: keep this machine's real one out of the test
+        monkeypatch.setenv(name, str(tmp_path / "userhome"))
     secret_store.save("OPENROUTER_API_KEY", KEY)
+    ControlPlanePersistence(db_path=str(tmp_path / "home" / "agentic.db"))              # a backup needs something to back up (a fresh CI runner has no data of its own)
     assert secret_paths.blocked_reason(str(secret_store.store_path())) is not None
     out = tmp_path / "backup.zip"
     backup.create_backup(str(out), include_keys=True)                                   # even when the person asks for keys, a device-bound file would be useless and is not copied
