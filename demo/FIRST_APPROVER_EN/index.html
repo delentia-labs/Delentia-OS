@@ -2746,20 +2746,17 @@
 <h2 id="why-there-has-to-be-an-approver">Why there has to be an "approver"<a class="headerlink" href="#why-there-has-to-be-an-approver" title="Permanent link">&para;</a></h2>
 <p>Delentia does a lot on its own, but anything really risky (deleting files, sending data out, money, publishing, changing permissions, multi-step plans) <strong>always stops and waits for a person</strong>. That person is you, and the system has to know who you are. On a fresh install nobody is known yet, so risky work would wait forever (safe, but unusable). This step tells the system: "this computer, and my Windows Hello, is the approver."</p>
 <h2 id="why-the-web-page-does-not-simply-create-one">Why the web page does not simply create one<a class="headerlink" href="#why-the-web-page-does-not-simply-create-one" title="Permanent link">&para;</a></h2>
-<p>If the web page could create the first approver by itself, any other program on the computer (the agent included) could do the same and approve its own work. That would break the rule that a person decides. So the system uses a <strong>one-time code</strong> that appears only in a terminal window you open yourself. Another person, or a program that only reads the web page, never sees it.</p>
+<p>If the web page could create the first approver by itself, any other program on the computer (the agent included) could do the same and approve its own work. That would break the rule that a person decides. So the system uses a <strong>one-time code</strong> that appears only in a small window on your own screen. Another person, or a program that only reads the web page, never sees it.</p>
 <h2 id="steps-installed-with-the-windows-installer">Steps (installed with the Windows installer)<a class="headerlink" href="#steps-installed-with-the-windows-installer" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Open the Start menu, type <strong>Delentia</strong>, pick <strong>Delentia</strong> (the green icon with eyes). Wait a moment: the browser opens the Delentia page.</li>
 <li>The first page (Status) shows a <strong>"Getting started"</strong> box saying "Nobody can approve yet". Open <strong>Settings</strong> (left menu).</li>
-<li>Open a terminal: press the Windows key, type <code>cmd</code>, press Enter, then type</li>
+<li>In Settings → <strong>Approval devices</strong> (or in the <strong>Setup assistant</strong>, step 3) press <strong>"Show the code in a small window"</strong>. A small black window opens on your screen. <strong>You do not need to open a terminal or type a command.</strong></li>
+<li>The window shows a code like <code>K7QM-4X2P</code>. It is valid for <strong>10 minutes, 5 tries, one use</strong>. The code appears only in that window, never in the web page. If the window does not appear (or 10 minutes have passed), press the button again after 30 seconds. As a fallback, open a terminal (press the Windows key, type <code>cmd</code>, press Enter) and type <code>"%LOCALAPPDATA%\Programs\Delentia\python\python.exe" -m rct_control_plane.cli approvals first-device-code</code> (installed with pip? just type <code>delentia approvals first-device-code</code>).</li>
+<li>Back in the web page, type a <strong>name for this computer</strong> (for example "my laptop") and the <strong>code</strong>, then press <strong>Add this device</strong>.</li>
+<li>Windows Hello asks for your face, fingerprint or PIN. Confirm.</li>
+<li>Done. The message says "This computer is now your first approver" and the Getting started box disappears.</li>
 </ol>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>"%LOCALAPPDATA%\Programs\Delentia\python\python.exe" -m rct_control_plane.cli approvals first-device-code
-</span></code></pre></div>
-<p>(installed with pip? just type <code>delentia approvals first-device-code</code>)
-4. You get a code like <code>K7QM-4X2P</code>. It is valid for <strong>10 minutes, 5 tries, one use</strong>.
-5. Back in Settings → <strong>Approval devices</strong>, a yellow box repeats these steps. Type a <strong>name for this computer</strong> (for example "my laptop") and the <strong>code</strong>, then press <strong>Add this device</strong>.
-6. Windows Hello asks for your face, fingerprint or PIN. Confirm.
-7. Done. The message says "This computer is now your first approver" and the Getting started box disappears.</p>
 <h2 id="try-one-approval">Try one approval<a class="headerlink" href="#try-one-approval" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Open <strong>Chat</strong>, click the example "Check that the record of what the system did is intact", press Enter (safe: it asks nothing).</li>
