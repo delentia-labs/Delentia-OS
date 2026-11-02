@@ -28,7 +28,7 @@ Start menu → **Delentia** has four entries (green icon with eyes):
 * **Update Delentia** checks for and installs a newer version (always asks first). See `UPDATES_EN.md`.
 * **Check Delentia installation** tests that the program starts and answers on this computer (it uses a throw-away data folder, never yours) and writes `check_install_report.txt`: send that file to whoever is helping you if something is wrong.
 
-First do `FIRST_APPROVER_EN.md` (set up your first approver), then choose a model on the **Models** page.
+The first time, open the **Setup assistant** (the "Setup & checkup" button on the home page). It has 6 steps in one page and the ordinary path needs no terminal: check the browser, choose a model, set up your first approver with Windows Hello (`FIRST_APPROVER_EN.md` explains this step: one button, and the code appears in a small window), choose how much to be asked, run the check and back up, and approve one practice action (it does not go through a model, so it works even before you have a model or a key).
 
 ### Where your data is
 * The program is in `%LOCALAPPDATA%\Programs\Delentia`.
