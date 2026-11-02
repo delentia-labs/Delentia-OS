@@ -62,8 +62,8 @@ def is_loopback(url: str) -> bool:
 
 def key_info(key: str, url: Optional[str] = None) -> Dict[str, Any]:
     """What the provider itself says about this key: dollars used, the credit limit and what is left. The key goes only into the Authorization header."""
-    import httpx
-    reply = httpx.get(f"{url or base_url()}/auth/key", headers={"Authorization": f"Bearer {key}"}, timeout=30)
+    from rct_control_plane.llm_provider import openrouter_key_info
+    reply = openrouter_key_info(key, url or base_url())
     if reply.status_code != 200:
         raise Refused(f"the provider answered HTTP {reply.status_code} to the key check: the key is wrong, revoked or out of credit")
     data = reply.json().get("data", {})

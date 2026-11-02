@@ -204,9 +204,8 @@ def load_prices(args: argparse.Namespace) -> Dict[str, Dict[str, float]]:
 
 def openrouter_usage(key: str) -> float:
     """Dollars used so far on this key, from OpenRouter's key endpoint (the key goes only into the Authorization header)."""
-    import httpx
-    from rct_control_plane.llm_provider import openrouter_base_url
-    data = httpx.get(f"{openrouter_base_url()}/auth/key", headers={"Authorization": f"Bearer {key}"}, timeout=30).json().get("data", {})
+    from rct_control_plane.llm_provider import openrouter_key_info
+    data = openrouter_key_info(key).json().get("data", {})
     return float(data.get("usage") or 0.0)
 
 
