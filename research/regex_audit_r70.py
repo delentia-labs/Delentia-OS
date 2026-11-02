@@ -82,10 +82,16 @@ def _worker(start: int) -> int:
             continue
         worst, worst_name = 0.0, ""
         for name, text in inputs:
-            print(f"RUN {index} {name}", flush=True)
-            started = time.perf_counter()
-            compiled.search(text)
-            took = time.perf_counter() - started
+            # A run over the limit is measured again, up to twice, and the fastest counts: a loaded CI runner showed 1.43 s for a pattern that takes 0.27 s on a quiet machine
+            # (a bounded pattern, not a runaway), while a real blow-up is slow every time (3 s to 19 s in Round 72). Each attempt prints RUN again so the parent's kill timer restarts.
+            took = float("inf")
+            for _ in range(3):
+                print(f"RUN {index} {name}", flush=True)
+                started = time.perf_counter()
+                compiled.search(text)
+                took = min(took, time.perf_counter() - started)
+                if took <= SLOW_S:
+                    break
             if took > worst:
                 worst, worst_name = took, name
         print(f"DONE {index} {worst:.4f} {worst_name}", flush=True)
