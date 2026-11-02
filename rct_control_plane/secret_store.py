@@ -70,7 +70,7 @@ def _dpapi(data: bytes, protect: bool) -> bytes:
     blob_ent = Blob(len(_ENTROPY), ctypes.cast(ent, ctypes.POINTER(ctypes.c_char)))
     blob_out = Blob()
     if not fn(ctypes.byref(blob_in), None, ctypes.byref(blob_ent), None, None, 0x1, ctypes.byref(blob_out)):          # 0x1: never show a window
-        raise SecretStoreError(f"Windows could not {'protect' if protect else 'unprotect'} the saved keys (error {ctypes.get_last_error()})")
+        raise SecretStoreError(f"Windows could not {'protect' if protect else 'unprotect'} the saved keys (error {getattr(ctypes, 'get_last_error', lambda: 0)()})")      # get_last_error exists on Windows only
     try:
         return ctypes.string_at(blob_out.pbData, blob_out.cbData)
     finally:
