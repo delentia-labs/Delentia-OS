@@ -1,0 +1,2204 @@
+{
+  "tokenizer": "tiktoken cl100k_base (approximate)",
+  "corpus": [
+    {
+      "kind": "python",
+      "name": "governed_autonomous_loop.py[:30k]",
+      "chars": 30000,
+      "raw_message_tokens": 8706,
+      "goals": {
+        "literal": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 45.5,
+          "saved_pct_median": 45.5,
+          "saved_pct_min": 28.1,
+          "saved_pct_max": 78.1,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 44.3,
+          "shown_tokens_median": 4749
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 75.6,
+          "saved_pct_median": 75.6,
+          "saved_pct_min": 47.9,
+          "saved_pct_max": 80.5,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 10.3,
+          "shown_tokens_median": 2124
+        },
+        "edit": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 42.1,
+          "saved_pct_median": 42.1,
+          "saved_pct_min": 27.4,
+          "saved_pct_max": 70.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 49.0,
+          "shown_tokens_median": 5042
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 77.9,
+          "saved_pct_median": 77.9,
+          "saved_pct_min": 68.7,
+          "saved_pct_max": 80.7,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 9.1,
+          "shown_tokens_median": 1920
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 79.5,
+          "saved_pct_median": 79.5,
+          "saved_pct_min": 79.5,
+          "saved_pct_max": 79.5,
+          "needle_kept_pct": 8.3,
+          "lines_shown_pct_median": 9.6,
+          "shown_tokens_median": 1783
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 87.0,
+          "saved_pct_median": 87.0,
+          "saved_pct_min": 87.0,
+          "saved_pct_max": 87.0,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 3.0,
+          "shown_tokens_median": 1133
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "python",
+      "name": "cli.py[:30k]",
+      "chars": 30000,
+      "raw_message_tokens": 8381,
+      "goals": {
+        "literal": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 61.3,
+          "saved_pct_median": 61.3,
+          "saved_pct_min": 49.1,
+          "saved_pct_max": 82.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 31.1,
+          "shown_tokens_median": 3239
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 74.8,
+          "saved_pct_median": 74.8,
+          "saved_pct_min": 62.5,
+          "saved_pct_max": 82.5,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 17.1,
+          "shown_tokens_median": 2115
+        },
+        "edit": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 58.2,
+          "saved_pct_median": 58.2,
+          "saved_pct_min": 45.1,
+          "saved_pct_max": 74.9,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 35.8,
+          "shown_tokens_median": 3502
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 81.2,
+          "saved_pct_median": 81.2,
+          "saved_pct_min": 75.5,
+          "saved_pct_max": 82.5,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 11.4,
+          "shown_tokens_median": 1576
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 80.3,
+          "saved_pct_median": 80.3,
+          "saved_pct_min": 80.3,
+          "saved_pct_max": 80.3,
+          "needle_kept_pct": 33.3,
+          "lines_shown_pct_median": 10.6,
+          "shown_tokens_median": 1651
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 82.6,
+          "saved_pct_median": 82.6,
+          "saved_pct_min": 82.6,
+          "saved_pct_max": 82.6,
+          "needle_kept_pct": 33.3,
+          "lines_shown_pct_median": 9.4,
+          "shown_tokens_median": 1456
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "python",
+      "name": "a test file",
+      "chars": 29235,
+      "raw_message_tokens": 8688,
+      "goals": {
+        "literal": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 68.7,
+          "saved_pct_median": 68.7,
+          "saved_pct_min": 34.8,
+          "saved_pct_max": 86.3,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 22.7,
+          "shown_tokens_median": 2723
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 82.4,
+          "saved_pct_median": 82.4,
+          "saved_pct_min": 34.8,
+          "saved_pct_max": 87.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 8.6,
+          "shown_tokens_median": 1531
+        },
+        "edit": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 62.1,
+          "saved_pct_median": 62.1,
+          "saved_pct_min": 34.8,
+          "saved_pct_max": 78.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 30.4,
+          "shown_tokens_median": 3291
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 83.1,
+          "saved_pct_median": 83.1,
+          "saved_pct_min": 48.6,
+          "saved_pct_max": 87.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 7.6,
+          "shown_tokens_median": 1464
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 77.4,
+          "saved_pct_median": 77.4,
+          "saved_pct_min": 77.4,
+          "saved_pct_max": 77.4,
+          "needle_kept_pct": 16.7,
+          "lines_shown_pct_median": 13.9,
+          "shown_tokens_median": 1962
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 88.1,
+          "saved_pct_median": 88.1,
+          "saved_pct_min": 88.1,
+          "saved_pct_max": 88.1,
+          "needle_kept_pct": 8.3,
+          "lines_shown_pct_median": 3.9,
+          "shown_tokens_median": 1038
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "markdown_en",
+      "name": "whitepaper EN[:30k]",
+      "chars": 20703,
+      "raw_message_tokens": 5894,
+      "goals": {
+        "literal": {
+          "applied_pct": 91.7,
+          "saved_pct_median_when_applied": 33.4,
+          "saved_pct_median": 31.5,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 58.8,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 58.0,
+          "shown_tokens_median": 4039
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 72.7,
+          "saved_pct_median": 72.7,
+          "saved_pct_min": 47.4,
+          "saved_pct_max": 77.2,
+          "needle_kept_pct": 91.7,
+          "lines_shown_pct_median": 25.1,
+          "shown_tokens_median": 1612
+        },
+        "edit": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 30.5,
+          "saved_pct_median": 29.5,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 53.9,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 58.8,
+          "shown_tokens_median": 4157
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 75.5,
+          "saved_pct_median": 75.5,
+          "saved_pct_min": 51.2,
+          "saved_pct_max": 77.3,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 21.8,
+          "shown_tokens_median": 1442
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 61.9,
+          "saved_pct_median": 61.9,
+          "saved_pct_min": 61.9,
+          "saved_pct_max": 61.9,
+          "needle_kept_pct": 41.7,
+          "lines_shown_pct_median": 31.6,
+          "shown_tokens_median": 2245
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 81.5,
+          "saved_pct_median": 81.5,
+          "saved_pct_min": 81.5,
+          "saved_pct_max": 81.5,
+          "needle_kept_pct": 25.0,
+          "lines_shown_pct_median": 15.5,
+          "shown_tokens_median": 1093
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "markdown_en",
+      "name": "README[:30k]",
+      "chars": 26970,
+      "raw_message_tokens": 7215,
+      "goals": {
+        "literal": {
+          "applied_pct": 41.7,
+          "saved_pct_median_when_applied": 50.0,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 51.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 7215
+        },
+        "partial": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 52.3,
+          "saved_pct_median": 49.9,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 56.6,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 47.9,
+          "shown_tokens_median": 3617
+        },
+        "edit": {
+          "applied_pct": 33.3,
+          "saved_pct_median_when_applied": 47.9,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 50.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 7215
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 53.3,
+          "saved_pct_median": 53.3,
+          "saved_pct_min": 21.9,
+          "saved_pct_max": 56.6,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 43.0,
+          "shown_tokens_median": 3369
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 45.1,
+          "saved_pct_median": 45.1,
+          "saved_pct_min": 45.1,
+          "saved_pct_max": 45.1,
+          "needle_kept_pct": 50.0,
+          "lines_shown_pct_median": 49.0,
+          "shown_tokens_median": 3959
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 71.9,
+          "saved_pct_median": 71.9,
+          "saved_pct_min": 71.9,
+          "saved_pct_max": 71.9,
+          "needle_kept_pct": 41.7,
+          "lines_shown_pct_median": 24.5,
+          "shown_tokens_median": 2030
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "markdown_th",
+      "name": "Thai guides (3 files joined)",
+      "chars": 17543,
+      "raw_message_tokens": 13681,
+      "goals": {
+        "literal": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 41.7,
+          "saved_pct_median": 37.7,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 81.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 48.2,
+          "shown_tokens_median": 8517
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 83.4,
+          "saved_pct_median": 83.4,
+          "saved_pct_min": 35.2,
+          "saved_pct_max": 90.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 10.4,
+          "shown_tokens_median": 2276
+        },
+        "edit": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 40.2,
+          "saved_pct_median": 36.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 76.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 50.0,
+          "shown_tokens_median": 8749
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 85.9,
+          "saved_pct_median": 85.9,
+          "saved_pct_min": 22.7,
+          "saved_pct_max": 92.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 7.9,
+          "shown_tokens_median": 1925
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 85.0,
+          "saved_pct_median": 85.0,
+          "saved_pct_min": 85.0,
+          "saved_pct_max": 85.0,
+          "needle_kept_pct": 33.3,
+          "lines_shown_pct_median": 6.5,
+          "shown_tokens_median": 2049
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 85.1,
+          "saved_pct_median": 85.1,
+          "saved_pct_min": 85.1,
+          "saved_pct_max": 85.1,
+          "needle_kept_pct": 33.3,
+          "lines_shown_pct_median": 6.5,
+          "shown_tokens_median": 2043
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "markdown_th",
+      "name": "whitepaper TH[:30k]",
+      "chars": 18805,
+      "raw_message_tokens": 13082,
+      "goals": {
+        "literal": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 48.3,
+          "saved_pct_median": 47.9,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 80.8,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 46.1,
+          "shown_tokens_median": 6814
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 78.9,
+          "saved_pct_median": 78.9,
+          "saved_pct_min": 45.0,
+          "saved_pct_max": 85.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 18.9,
+          "shown_tokens_median": 2755
+        },
+        "edit": {
+          "applied_pct": 83.3,
+          "saved_pct_median_when_applied": 41.2,
+          "saved_pct_median": 38.8,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 68.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 51.5,
+          "shown_tokens_median": 8002
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 84.1,
+          "saved_pct_median": 84.1,
+          "saved_pct_min": 63.9,
+          "saved_pct_max": 86.2,
+          "needle_kept_pct": 91.7,
+          "lines_shown_pct_median": 13.8,
+          "shown_tokens_median": 2075
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 77.5,
+          "saved_pct_median": 77.5,
+          "saved_pct_min": 77.5,
+          "saved_pct_max": 77.5,
+          "needle_kept_pct": 25.0,
+          "lines_shown_pct_median": 15.6,
+          "shown_tokens_median": 2942
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 86.2,
+          "saved_pct_median": 86.2,
+          "saved_pct_min": 86.2,
+          "saved_pct_max": 86.2,
+          "needle_kept_pct": 25.0,
+          "lines_shown_pct_median": 12.0,
+          "shown_tokens_median": 1802
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "json",
+      "name": "prompt_cost.json",
+      "chars": 14457,
+      "raw_message_tokens": 5058,
+      "goals": {
+        "literal": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 85.6,
+          "saved_pct_median": 85.6,
+          "saved_pct_min": 85.6,
+          "saved_pct_max": 95.7,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 25.9,
+          "shown_tokens_median": 726
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 90.1,
+          "saved_pct_median": 90.1,
+          "saved_pct_min": 90.0,
+          "saved_pct_max": 96.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 15.6,
+          "shown_tokens_median": 503
+        },
+        "edit": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 84.9,
+          "saved_pct_median": 84.9,
+          "saved_pct_min": 84.8,
+          "saved_pct_max": 94.4,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 31.1,
+          "shown_tokens_median": 766
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 91.7,
+          "saved_pct_median": 91.7,
+          "saved_pct_min": 87.4,
+          "saved_pct_max": 96.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 9.6,
+          "shown_tokens_median": 418
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 96.2,
+          "saved_pct_median": 96.2,
+          "saved_pct_min": 96.2,
+          "saved_pct_max": 96.2,
+          "needle_kept_pct": 16.7,
+          "lines_shown_pct_median": 3.0,
+          "shown_tokens_median": 194
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 96.9,
+          "saved_pct_median": 96.9,
+          "saved_pct_min": 96.9,
+          "saved_pct_max": 96.9,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 3.7,
+          "shown_tokens_median": 155
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "yaml",
+      "name": "windows-installer.yml",
+      "chars": 6353,
+      "raw_message_tokens": 1971,
+      "goals": {
+        "literal": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 25.0,
+          "saved_pct_median": 25.0,
+          "saved_pct_min": 15.7,
+          "saved_pct_max": 39.8,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 72.9,
+          "shown_tokens_median": 1479
+        },
+        "partial": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 40.0,
+          "saved_pct_median": 40.0,
+          "saved_pct_min": 21.3,
+          "saved_pct_max": 52.7,
+          "needle_kept_pct": 91.7,
+          "lines_shown_pct_median": 51.0,
+          "shown_tokens_median": 1182
+        },
+        "edit": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 24.7,
+          "saved_pct_median": 24.7,
+          "saved_pct_min": 16.8,
+          "saved_pct_max": 39.3,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 75.0,
+          "shown_tokens_median": 1483
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 49.0,
+          "saved_pct_median": 49.0,
+          "saved_pct_min": 35.6,
+          "saved_pct_max": 52.8,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 42.7,
+          "shown_tokens_median": 1005
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 52.8,
+          "saved_pct_median": 52.8,
+          "saved_pct_min": 52.8,
+          "saved_pct_max": 52.8,
+          "needle_kept_pct": 25.0,
+          "lines_shown_pct_median": 38.5,
+          "shown_tokens_median": 930
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 52.8,
+          "saved_pct_median": 52.8,
+          "saved_pct_min": 52.8,
+          "saved_pct_max": 52.8,
+          "needle_kept_pct": 25.0,
+          "lines_shown_pct_median": 38.5,
+          "shown_tokens_median": 931
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "table",
+      "name": "generated table (520 rows)",
+      "chars": 32136,
+      "raw_message_tokens": 12492,
+      "goals": {
+        "literal": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 12492
+        },
+        "partial": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 12492
+        },
+        "edit": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 12492
+        },
+        "single": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 12492
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 97.3,
+          "saved_pct_median": 97.3,
+          "saved_pct_min": 97.3,
+          "saved_pct_max": 97.3,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.7,
+          "shown_tokens_median": 341
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 97.3,
+          "saved_pct_median": 97.3,
+          "saved_pct_min": 97.3,
+          "saved_pct_max": 97.3,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.7,
+          "shown_tokens_median": 338
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "log",
+      "name": "generated service log (700 lines)",
+      "chars": 67880,
+      "raw_message_tokens": 25920,
+      "goals": {
+        "literal": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 25920
+        },
+        "partial": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 25920
+        },
+        "edit": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 25920
+        },
+        "single": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 25920
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 98.2,
+          "saved_pct_median": 98.2,
+          "saved_pct_min": 98.2,
+          "saved_pct_max": 98.2,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.3,
+          "shown_tokens_median": 456
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 98.2,
+          "saved_pct_median": 98.2,
+          "saved_pct_min": 98.2,
+          "saved_pct_max": 98.2,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.3,
+          "shown_tokens_median": 457
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    },
+    {
+      "kind": "log",
+      "name": "generated pytest output (600 lines)",
+      "chars": 58203,
+      "raw_message_tokens": 15720,
+      "goals": {
+        "literal": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 15720
+        },
+        "partial": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 15720
+        },
+        "edit": {
+          "applied_pct": 0.0,
+          "saved_pct_median_when_applied": null,
+          "saved_pct_median": 0.0,
+          "saved_pct_min": 0.0,
+          "saved_pct_max": 0.0,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 100.0,
+          "shown_tokens_median": 15720
+        },
+        "single": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 97.2,
+          "saved_pct_median": 97.2,
+          "saved_pct_min": 95.3,
+          "saved_pct_max": 97.2,
+          "needle_kept_pct": 100.0,
+          "lines_shown_pct_median": 1.7,
+          "shown_tokens_median": 437
+        },
+        "generic": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 97.5,
+          "saved_pct_median": 97.5,
+          "saved_pct_min": 97.5,
+          "saved_pct_max": 97.5,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.5,
+          "shown_tokens_median": 392
+        },
+        "unrelated": {
+          "applied_pct": 100.0,
+          "saved_pct_median_when_applied": 97.5,
+          "saved_pct_median": 97.5,
+          "saved_pct_min": 97.5,
+          "saved_pct_max": 97.5,
+          "needle_kept_pct": 0.0,
+          "lines_shown_pct_median": 1.5,
+          "shown_tokens_median": 388
+        }
+      },
+      "compressed_in_the_generic_goal": true
+    }
+  ],
+  "quick": false,
+  "q6_never_worse_violations": [],
+  "q7_recovery_mismatches": [],
+  "by_kind": {
+    "python": {
+      "literal": {
+        "saved_pct_median": 61.3,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 31.1
+      },
+      "partial": {
+        "saved_pct_median": 75.6,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 10.3
+      },
+      "single": {
+        "saved_pct_median": 81.2,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 9.1
+      },
+      "edit": {
+        "saved_pct_median": 58.2,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 35.8
+      },
+      "generic": {
+        "saved_pct_median": 79.5,
+        "needle_kept_pct_mean": 19.4,
+        "lines_shown_pct_median": 10.6
+      },
+      "unrelated": {
+        "saved_pct_median": 87.0,
+        "needle_kept_pct_mean": 13.9,
+        "lines_shown_pct_median": 3.9
+      }
+    },
+    "markdown_en": {
+      "literal": {
+        "saved_pct_median": 15.8,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 79.0
+      },
+      "partial": {
+        "saved_pct_median": 61.3,
+        "needle_kept_pct_mean": 95.8,
+        "lines_shown_pct_median": 36.5
+      },
+      "single": {
+        "saved_pct_median": 64.4,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 32.4
+      },
+      "edit": {
+        "saved_pct_median": 14.8,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 79.4
+      },
+      "generic": {
+        "saved_pct_median": 53.5,
+        "needle_kept_pct_mean": 45.9,
+        "lines_shown_pct_median": 40.3
+      },
+      "unrelated": {
+        "saved_pct_median": 76.7,
+        "needle_kept_pct_mean": 33.4,
+        "lines_shown_pct_median": 20.0
+      }
+    },
+    "markdown_th": {
+      "literal": {
+        "saved_pct_median": 42.8,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 47.2
+      },
+      "partial": {
+        "saved_pct_median": 81.2,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 14.6
+      },
+      "single": {
+        "saved_pct_median": 85.0,
+        "needle_kept_pct_mean": 95.8,
+        "lines_shown_pct_median": 10.9
+      },
+      "edit": {
+        "saved_pct_median": 37.4,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 50.8
+      },
+      "generic": {
+        "saved_pct_median": 81.2,
+        "needle_kept_pct_mean": 29.1,
+        "lines_shown_pct_median": 11.1
+      },
+      "unrelated": {
+        "saved_pct_median": 85.7,
+        "needle_kept_pct_mean": 29.1,
+        "lines_shown_pct_median": 9.2
+      }
+    },
+    "json": {
+      "literal": {
+        "saved_pct_median": 85.6,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 25.9
+      },
+      "partial": {
+        "saved_pct_median": 90.1,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 15.6
+      },
+      "single": {
+        "saved_pct_median": 91.7,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 9.6
+      },
+      "edit": {
+        "saved_pct_median": 84.9,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 31.1
+      },
+      "generic": {
+        "saved_pct_median": 96.2,
+        "needle_kept_pct_mean": 16.7,
+        "lines_shown_pct_median": 3.0
+      },
+      "unrelated": {
+        "saved_pct_median": 96.9,
+        "needle_kept_pct_mean": 0.0,
+        "lines_shown_pct_median": 3.7
+      }
+    },
+    "yaml": {
+      "literal": {
+        "saved_pct_median": 25.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 72.9
+      },
+      "partial": {
+        "saved_pct_median": 40.0,
+        "needle_kept_pct_mean": 91.7,
+        "lines_shown_pct_median": 51.0
+      },
+      "single": {
+        "saved_pct_median": 49.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 42.7
+      },
+      "edit": {
+        "saved_pct_median": 24.7,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 75.0
+      },
+      "generic": {
+        "saved_pct_median": 52.8,
+        "needle_kept_pct_mean": 25.0,
+        "lines_shown_pct_median": 38.5
+      },
+      "unrelated": {
+        "saved_pct_median": 52.8,
+        "needle_kept_pct_mean": 25.0,
+        "lines_shown_pct_median": 38.5
+      }
+    },
+    "table": {
+      "literal": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "partial": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "single": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "edit": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "generic": {
+        "saved_pct_median": 97.3,
+        "needle_kept_pct_mean": 0.0,
+        "lines_shown_pct_median": 1.7
+      },
+      "unrelated": {
+        "saved_pct_median": 97.3,
+        "needle_kept_pct_mean": 0.0,
+        "lines_shown_pct_median": 1.7
+      }
+    },
+    "log": {
+      "literal": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "partial": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "single": {
+        "saved_pct_median": 48.6,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 50.9
+      },
+      "edit": {
+        "saved_pct_median": 0.0,
+        "needle_kept_pct_mean": 100.0,
+        "lines_shown_pct_median": 100.0
+      },
+      "generic": {
+        "saved_pct_median": 97.8,
+        "needle_kept_pct_mean": 0.0,
+        "lines_shown_pct_median": 1.4
+      },
+      "unrelated": {
+        "saved_pct_median": 97.8,
+        "needle_kept_pct_mean": 0.0,
+        "lines_shown_pct_median": 1.4
+      }
+    }
+  },
+  "episodes": {
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 25699,
+      "episode_prompt_tokens_compressed": 15431,
+      "saved_pct": 40.0,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 67.8
+    },
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 48796,
+      "episode_prompt_tokens_compressed": 28260,
+      "saved_pct": 42.1,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 71.4
+    },
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 95362,
+      "episode_prompt_tokens_compressed": 54290,
+      "saved_pct": 43.1,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 73.0
+    },
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 20065,
+      "episode_prompt_tokens_compressed": 9797,
+      "saved_pct": 51.2,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 86.8
+    },
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 39406,
+      "episode_prompt_tokens_compressed": 18870,
+      "saved_pct": 52.1,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 88.4
+    },
+    "governed_autonomous_loop.py[:30k] | task=whole | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 78460,
+      "episode_prompt_tokens_compressed": 37388,
+      "saved_pct": 52.3,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 3579,
+      "tool_output_share_of_raw_episode_pct": 88.8
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 25690,
+      "episode_prompt_tokens_compressed": 11436,
+      "saved_pct": 55.5,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 67.8
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 48781,
+      "episode_prompt_tokens_compressed": 20273,
+      "saved_pct": 58.4,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 71.4
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 95335,
+      "episode_prompt_tokens_compressed": 38319,
+      "saved_pct": 59.8,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 73.1
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 20104,
+      "episode_prompt_tokens_compressed": 5850,
+      "saved_pct": 70.9,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 86.6
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 39471,
+      "episode_prompt_tokens_compressed": 10963,
+      "saved_pct": 72.2,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 88.2
+    },
+    "governed_autonomous_loop.py[:30k] | task=lookup | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 78577,
+      "episode_prompt_tokens_compressed": 21561,
+      "saved_pct": 72.6,
+      "message_tokens_raw": 8706,
+      "message_tokens_compressed": 1598,
+      "tool_output_share_of_raw_episode_pct": 88.6
+    },
+    "whitepaper EN[:30k] | task=whole | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 20061,
+      "episode_prompt_tokens_compressed": 11423,
+      "saved_pct": 43.1,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 58.8
+    },
+    "whitepaper EN[:30k] | task=whole | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 37520,
+      "episode_prompt_tokens_compressed": 20244,
+      "saved_pct": 46.0,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 62.8
+    },
+    "whitepaper EN[:30k] | task=whole | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 72810,
+      "episode_prompt_tokens_compressed": 38258,
+      "saved_pct": 47.5,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 64.8
+    },
+    "whitepaper EN[:30k] | task=whole | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 14427,
+      "episode_prompt_tokens_compressed": 5789,
+      "saved_pct": 59.9,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 81.7
+    },
+    "whitepaper EN[:30k] | task=whole | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 28130,
+      "episode_prompt_tokens_compressed": 10854,
+      "saved_pct": 61.4,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 83.8
+    },
+    "whitepaper EN[:30k] | task=whole | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 55908,
+      "episode_prompt_tokens_compressed": 21356,
+      "saved_pct": 61.8,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1580,
+      "tool_output_share_of_raw_episode_pct": 84.3
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 20058,
+      "episode_prompt_tokens_compressed": 10556,
+      "saved_pct": 47.4,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 58.8
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 37515,
+      "episode_prompt_tokens_compressed": 18511,
+      "saved_pct": 50.7,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 62.8
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 72801,
+      "episode_prompt_tokens_compressed": 34793,
+      "saved_pct": 52.2,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 64.8
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 13917,
+      "episode_prompt_tokens_compressed": 4415,
+      "saved_pct": 68.3,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 84.7
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 27280,
+      "episode_prompt_tokens_compressed": 8276,
+      "saved_pct": 69.7,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 86.4
+    },
+    "whitepaper EN[:30k] | task=lookup | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 54378,
+      "episode_prompt_tokens_compressed": 16370,
+      "saved_pct": 69.9,
+      "message_tokens_raw": 5894,
+      "message_tokens_compressed": 1153,
+      "tool_output_share_of_raw_episode_pct": 86.7
+    },
+    "generated table (520 rows) | task=whole | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 33233,
+      "episode_prompt_tokens_compressed": 8533,
+      "saved_pct": 74.3,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 75.2
+    },
+    "generated table (520 rows) | task=whole | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 63864,
+      "episode_prompt_tokens_compressed": 14464,
+      "saved_pct": 77.4,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 78.2
+    },
+    "generated table (520 rows) | task=whole | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 125498,
+      "episode_prompt_tokens_compressed": 26698,
+      "saved_pct": 78.7,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 79.6
+    },
+    "generated table (520 rows) | task=whole | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 27599,
+      "episode_prompt_tokens_compressed": 2899,
+      "saved_pct": 89.5,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 90.5
+    },
+    "generated table (520 rows) | task=whole | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 54474,
+      "episode_prompt_tokens_compressed": 5074,
+      "saved_pct": 90.7,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 91.7
+    },
+    "generated table (520 rows) | task=whole | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 108596,
+      "episode_prompt_tokens_compressed": 9796,
+      "saved_pct": 91.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 142,
+      "tool_output_share_of_raw_episode_pct": 92.0
+    },
+    "generated table (520 rows) | task=lookup | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 33224,
+      "episode_prompt_tokens_compressed": 33224,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 75.2
+    },
+    "generated table (520 rows) | task=lookup | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 63849,
+      "episode_prompt_tokens_compressed": 63849,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 78.3
+    },
+    "generated table (520 rows) | task=lookup | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 125471,
+      "episode_prompt_tokens_compressed": 125471,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 79.6
+    },
+    "generated table (520 rows) | task=lookup | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 27167,
+      "episode_prompt_tokens_compressed": 27167,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 92.0
+    },
+    "generated table (520 rows) | task=lookup | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 53754,
+      "episode_prompt_tokens_compressed": 53754,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 93.0
+    },
+    "generated table (520 rows) | task=lookup | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 107300,
+      "episode_prompt_tokens_compressed": 107300,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 12492,
+      "message_tokens_compressed": 12492,
+      "tool_output_share_of_raw_episode_pct": 93.1
+    },
+    "generated service log (700 lines) | task=whole | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 60089,
+      "episode_prompt_tokens_compressed": 8535,
+      "saved_pct": 85.8,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 86.3
+    },
+    "generated service log (700 lines) | task=whole | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 117576,
+      "episode_prompt_tokens_compressed": 14468,
+      "saved_pct": 87.7,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 88.2
+    },
+    "generated service log (700 lines) | task=whole | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 232922,
+      "episode_prompt_tokens_compressed": 26706,
+      "saved_pct": 88.5,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 89.0
+    },
+    "generated service log (700 lines) | task=whole | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 54455,
+      "episode_prompt_tokens_compressed": 2901,
+      "saved_pct": 94.7,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 95.2
+    },
+    "generated service log (700 lines) | task=whole | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 108186,
+      "episode_prompt_tokens_compressed": 5078,
+      "saved_pct": 95.3,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 95.8
+    },
+    "generated service log (700 lines) | task=whole | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 216020,
+      "episode_prompt_tokens_compressed": 9804,
+      "saved_pct": 95.5,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 143,
+      "tool_output_share_of_raw_episode_pct": 96.0
+    },
+    "generated service log (700 lines) | task=lookup | menu=full | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 60098,
+      "episode_prompt_tokens_compressed": 60098,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 86.3
+    },
+    "generated service log (700 lines) | task=lookup | menu=full | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 117591,
+      "episode_prompt_tokens_compressed": 117591,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 88.2
+    },
+    "generated service log (700 lines) | task=lookup | menu=full | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 232949,
+      "episode_prompt_tokens_compressed": 232949,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 89.0
+    },
+    "generated service log (700 lines) | task=lookup | menu=ranked | 2 calls after the read": {
+      "episode_prompt_tokens_raw": 54614,
+      "episode_prompt_tokens_compressed": 54614,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 94.9
+    },
+    "generated service log (700 lines) | task=lookup | menu=ranked | 4 calls after the read": {
+      "episode_prompt_tokens_raw": 108451,
+      "episode_prompt_tokens_compressed": 108451,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 95.6
+    },
+    "generated service log (700 lines) | task=lookup | menu=ranked | 8 calls after the read": {
+      "episode_prompt_tokens_raw": 216497,
+      "episode_prompt_tokens_compressed": 216497,
+      "saved_pct": 0.0,
+      "message_tokens_raw": 25920,
+      "message_tokens_compressed": 25920,
+      "tool_output_share_of_raw_episode_pct": 95.8
+    }
+  },
+  "q3_net": {
+    "governed_autonomous_loop.py[:30k] | literal": {
+      "gross_saving_tokens": 11871,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 11871,
+        "breakeven_p_miss": 1.93
+      },
+      "whole": {
+        "lines_shown_pct": 44.3,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -17547,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "governed_autonomous_loop.py[:30k] | partial": {
+      "gross_saving_tokens": 19746,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 19746,
+        "breakeven_p_miss": 5.6
+      },
+      "whole": {
+        "lines_shown_pct": 10.3,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -12896,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "governed_autonomous_loop.py[:30k] | single": {
+      "gross_saving_tokens": 20358,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 20358,
+        "breakeven_p_miss": 6.13
+      },
+      "whole": {
+        "lines_shown_pct": 9.1,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -12080,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "governed_autonomous_loop.py[:30k] | generic": {
+      "gross_saving_tokens": 20769,
+      "lookup": {
+        "p_miss": 0.917,
+        "expected_miss_cost_tokens": 2919,
+        "net_saving_tokens": 17850,
+        "breakeven_p_miss": 6.52
+      },
+      "whole": {
+        "lines_shown_pct": 9.6,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -11532,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "cli.py[:30k] | literal": {
+      "gross_saving_tokens": 15426,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 15426,
+        "breakeven_p_miss": 3.33
+      },
+      "whole": {
+        "lines_shown_pct": 31.1,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -13017,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "cli.py[:30k] | partial": {
+      "gross_saving_tokens": 18798,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 18798,
+        "breakeven_p_miss": 5.35
+      },
+      "whole": {
+        "lines_shown_pct": 17.1,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -12860,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "cli.py[:30k] | single": {
+      "gross_saving_tokens": 20415,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 20415,
+        "breakeven_p_miss": 6.86
+      },
+      "whole": {
+        "lines_shown_pct": 11.4,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -10704,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "cli.py[:30k] | generic": {
+      "gross_saving_tokens": 20190,
+      "lookup": {
+        "p_miss": 0.667,
+        "expected_miss_cost_tokens": 2035,
+        "net_saving_tokens": 18155,
+        "breakeven_p_miss": 6.62
+      },
+      "whole": {
+        "lines_shown_pct": 10.6,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -11004,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "a test file | literal": {
+      "gross_saving_tokens": 17895,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 17895,
+        "breakeven_p_miss": 4.34
+      },
+      "whole": {
+        "lines_shown_pct": 22.7,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -11469,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "a test file | partial": {
+      "gross_saving_tokens": 21471,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 21471,
+        "breakeven_p_miss": 7.33
+      },
+      "whole": {
+        "lines_shown_pct": 8.6,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -10524,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "a test file | single": {
+      "gross_saving_tokens": 21672,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 21672,
+        "breakeven_p_miss": 7.57
+      },
+      "whole": {
+        "lines_shown_pct": 7.6,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -10256,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "a test file | generic": {
+      "gross_saving_tokens": 20178,
+      "lookup": {
+        "p_miss": 0.833,
+        "expected_miss_cost_tokens": 2801,
+        "net_saving_tokens": 17377,
+        "breakeven_p_miss": 6.0
+      },
+      "whole": {
+        "lines_shown_pct": 13.9,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -12248,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper EN[:30k] | literal": {
+      "gross_saving_tokens": 5565,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 5565,
+        "breakeven_p_miss": 1.02
+      },
+      "whole": {
+        "lines_shown_pct": 58.0,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -10278,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper EN[:30k] | partial": {
+      "gross_saving_tokens": 12846,
+      "lookup": {
+        "p_miss": 0.083,
+        "expected_miss_cost_tokens": 250,
+        "net_saving_tokens": 12596,
+        "breakeven_p_miss": 4.26
+      },
+      "whole": {
+        "lines_shown_pct": 25.1,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -5424,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper EN[:30k] | single": {
+      "gross_saving_tokens": 13356,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 13356,
+        "breakeven_p_miss": 4.7
+      },
+      "whole": {
+        "lines_shown_pct": 21.8,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -7626,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper EN[:30k] | generic": {
+      "gross_saving_tokens": 10947,
+      "lookup": {
+        "p_miss": 0.583,
+        "expected_miss_cost_tokens": 2125,
+        "net_saving_tokens": 8822,
+        "breakeven_p_miss": 3.0
+      },
+      "whole": {
+        "lines_shown_pct": 31.6,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -6690,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "README[:30k] | literal": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -8315,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "README[:30k] | partial": {
+      "gross_saving_tokens": 10794,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 10794,
+        "breakeven_p_miss": 2.15
+      },
+      "whole": {
+        "lines_shown_pct": 47.9,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -9434,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "README[:30k] | single": {
+      "gross_saving_tokens": 11538,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 11538,
+        "breakeven_p_miss": 2.42
+      },
+      "whole": {
+        "lines_shown_pct": 43.0,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -8938,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "README[:30k] | generic": {
+      "gross_saving_tokens": 9768,
+      "lookup": {
+        "p_miss": 0.5,
+        "expected_miss_cost_tokens": 2680,
+        "net_saving_tokens": 7088,
+        "breakeven_p_miss": 1.82
+      },
+      "whole": {
+        "lines_shown_pct": 49.0,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -10118,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "Thai guides (3 files joined) | literal": {
+      "gross_saving_tokens": 15492,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 15492,
+        "breakeven_p_miss": 1.56
+      },
+      "whole": {
+        "lines_shown_pct": 48.2,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -19234,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "Thai guides (3 files joined) | partial": {
+      "gross_saving_tokens": 34215,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 34215,
+        "breakeven_p_miss": 9.31
+      },
+      "whole": {
+        "lines_shown_pct": 10.4,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -6752,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "Thai guides (3 files joined) | single": {
+      "gross_saving_tokens": 35268,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 35268,
+        "breakeven_p_miss": 10.61
+      },
+      "whole": {
+        "lines_shown_pct": 7.9,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -9075,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "Thai guides (3 files joined) | generic": {
+      "gross_saving_tokens": 34896,
+      "lookup": {
+        "p_miss": 0.667,
+        "expected_miss_cost_tokens": 2300,
+        "net_saving_tokens": 32596,
+        "breakeven_p_miss": 10.12
+      },
+      "whole": {
+        "lines_shown_pct": 6.5,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -9447,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper TH[:30k] | literal": {
+      "gross_saving_tokens": 18804,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 18804,
+        "breakeven_p_miss": 2.29
+      },
+      "whole": {
+        "lines_shown_pct": 46.1,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -15828,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper TH[:30k] | partial": {
+      "gross_saving_tokens": 30981,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 30981,
+        "breakeven_p_miss": 7.46
+      },
+      "whole": {
+        "lines_shown_pct": 18.9,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -7710,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper TH[:30k] | single": {
+      "gross_saving_tokens": 33021,
+      "lookup": {
+        "p_miss": 0.083,
+        "expected_miss_cost_tokens": 288,
+        "net_saving_tokens": 32733,
+        "breakeven_p_miss": 9.5
+      },
+      "whole": {
+        "lines_shown_pct": 13.8,
+        "expand_calls_to_get_everything_back": 3,
+        "net_if_everything_is_fetched_back_tokens": -9525,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "whitepaper TH[:30k] | generic": {
+      "gross_saving_tokens": 30420,
+      "lookup": {
+        "p_miss": 0.75,
+        "expected_miss_cost_tokens": 3256,
+        "net_saving_tokens": 27164,
+        "breakeven_p_miss": 7.01
+      },
+      "whole": {
+        "lines_shown_pct": 15.6,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -8084,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "prompt_cost.json | literal": {
+      "gross_saving_tokens": 12996,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 12996,
+        "breakeven_p_miss": 6.11
+      },
+      "whole": {
+        "lines_shown_pct": 25.9,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -3652,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "prompt_cost.json | partial": {
+      "gross_saving_tokens": 13665,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 13665,
+        "breakeven_p_miss": 7.18
+      },
+      "whole": {
+        "lines_shown_pct": 15.6,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -3206,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "prompt_cost.json | single": {
+      "gross_saving_tokens": 13920,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 13920,
+        "breakeven_p_miss": 7.66
+      },
+      "whole": {
+        "lines_shown_pct": 9.6,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -3036,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "prompt_cost.json | generic": {
+      "gross_saving_tokens": 14592,
+      "lookup": {
+        "p_miss": 0.833,
+        "expected_miss_cost_tokens": 1328,
+        "net_saving_tokens": 13264,
+        "breakeven_p_miss": 9.15
+      },
+      "whole": {
+        "lines_shown_pct": 3.0,
+        "expand_calls_to_get_everything_back": 2,
+        "net_if_everything_is_fetched_back_tokens": -2588,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "windows-installer.yml | literal": {
+      "gross_saving_tokens": 1476,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 1476,
+        "breakeven_p_miss": 0.51
+      },
+      "whole": {
+        "lines_shown_pct": 72.9,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -2579,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "windows-installer.yml | partial": {
+      "gross_saving_tokens": 2367,
+      "lookup": {
+        "p_miss": 0.083,
+        "expected_miss_cost_tokens": 214,
+        "net_saving_tokens": 2153,
+        "breakeven_p_miss": 0.92
+      },
+      "whole": {
+        "lines_shown_pct": 51.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -2282,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "windows-installer.yml | single": {
+      "gross_saving_tokens": 2898,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 2898,
+        "breakeven_p_miss": 1.2
+      },
+      "whole": {
+        "lines_shown_pct": 42.7,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -2105,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "windows-installer.yml | generic": {
+      "gross_saving_tokens": 3123,
+      "lookup": {
+        "p_miss": 0.75,
+        "expected_miss_cost_tokens": 1748,
+        "net_saving_tokens": 1376,
+        "breakeven_p_miss": 1.34
+      },
+      "whole": {
+        "lines_shown_pct": 38.5,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -2030,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated table (520 rows) | literal": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -13592,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated table (520 rows) | partial": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -13592,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated table (520 rows) | single": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -13592,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated table (520 rows) | generic": {
+      "gross_saving_tokens": 36453,
+      "lookup": {
+        "p_miss": 1.0,
+        "expected_miss_cost_tokens": 1741,
+        "net_saving_tokens": 34712,
+        "breakeven_p_miss": 20.94
+      },
+      "whole": {
+        "lines_shown_pct": 1.7,
+        "expand_calls_to_get_everything_back": 4,
+        "net_if_everything_is_fetched_back_tokens": -5764,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated service log (700 lines) | literal": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -27020,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated service log (700 lines) | partial": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -27020,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated service log (700 lines) | single": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -27020,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated service log (700 lines) | generic": {
+      "gross_saving_tokens": 76392,
+      "lookup": {
+        "p_miss": 1.0,
+        "expected_miss_cost_tokens": 1856,
+        "net_saving_tokens": 74536,
+        "breakeven_p_miss": 41.16
+      },
+      "whole": {
+        "lines_shown_pct": 1.3,
+        "expand_calls_to_get_everything_back": 9,
+        "net_if_everything_is_fetched_back_tokens": -14004,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated pytest output (600 lines) | literal": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -16820,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated pytest output (600 lines) | partial": {
+      "gross_saving_tokens": 0,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 0,
+        "breakeven_p_miss": 0.0
+      },
+      "whole": {
+        "lines_shown_pct": 100.0,
+        "expand_calls_to_get_everything_back": 1,
+        "net_if_everything_is_fetched_back_tokens": -16820,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated pytest output (600 lines) | single": {
+      "gross_saving_tokens": 45849,
+      "lookup": {
+        "p_miss": 0.0,
+        "expected_miss_cost_tokens": 0,
+        "net_saving_tokens": 45849,
+        "breakeven_p_miss": 24.96
+      },
+      "whole": {
+        "lines_shown_pct": 1.7,
+        "expand_calls_to_get_everything_back": 8,
+        "net_if_everything_is_fetched_back_tokens": -12296,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    },
+    "generated pytest output (600 lines) | generic": {
+      "gross_saving_tokens": 45984,
+      "lookup": {
+        "p_miss": 1.0,
+        "expected_miss_cost_tokens": 1792,
+        "net_saving_tokens": 44192,
+        "breakeven_p_miss": 25.66
+      },
+      "whole": {
+        "lines_shown_pct": 1.5,
+        "expand_calls_to_get_everything_back": 8,
+        "net_if_everything_is_fetched_back_tokens": -11936,
+        "meaning": "saving exists only if answering from the lines shown is acceptable (information removed)"
+      }
+    }
+  },
+  "q8_time_ms": {
+    "governed_autonomous_loop.py[:30k] (30000 chars)": {
+      "median_ms": 1.2,
+      "max_ms": 1.6
+    },
+    "generated table (520 rows) (32136 chars)": {
+      "median_ms": 1.1,
+      "max_ms": 1.1
+    },
+    "cli.py (230000 chars)": {
+      "median_ms": 8.8,
+      "max_ms": 25.0
+    }
+  },
+  "q9_history": {
+    "six different parts": {
+      "tokens_with_render_history": 2106,
+      "tokens_written_out": 2106,
+      "patch_lines": 0,
+      "saved_pct": 0.0
+    },
+    "the same file read six times, one number changing": {
+      "tokens_with_render_history": 1770,
+      "tokens_written_out": 1770,
+      "patch_lines": 0,
+      "saved_pct": 0.0
+    },
+    "a status dictionary of 40 separate fields, one changing (the shape a patch can use)": {
+      "tokens_with_render_history": 502,
+      "tokens_written_out": 2052,
+      "patch_lines": 5,
+      "saved_pct": 75.5
+    }
+  }
+}

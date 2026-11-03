@@ -106,7 +106,7 @@ def goal_variants(needle: str) -> Dict[str, str]:
     words = [w for w in needle.split() if len(w) >= 3] or needle.split()
     rarest = max(words, key=len) if words else needle
     return {"literal": "Find this in the document: " + needle, "partial": "What does the document say about " + " ".join(words[:2]) + "?",
-            "single": "What does the document say about " + rarest + "?"}
+            "single": "What does the document say about " + rarest + "?", "edit": "Fix the typo in this line: " + needle}
 
 
 async def setup(repo: Path, corpus: List[Tuple[str, str, str]]):
@@ -165,6 +165,7 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
         goal_sets: Dict[str, List[Tuple[str, Optional[str]]]] = {
             "literal": [(goal_variants(nd)["literal"], nd) for nd in pool],
             "partial": [(goal_variants(nd)["partial"], nd) for nd in pool],
+            "edit": [(goal_variants(nd)["edit"], nd) for nd in pool],          # Round 109 (goal-aware COMPRESS): a goal that edits the text; the policy must show it whole
             "single": [(goal_variants(nd)["single"], nd) for nd in pool],      # ADDED AFTER the first run (see the criteria file): one content word of the needle, the way a short question reads
             "generic": [(GENERIC_GOAL, nd) for nd in pool],
             "unrelated": [(UNRELATED_GOAL, nd) for nd in pool],
@@ -172,6 +173,7 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
         for gkind, entries in goal_sets.items():
             saved: List[float] = []
             coverage: List[float] = []
+            saved_applied: List[float] = []
             kept = 0
             applied = 0
             cache: Dict[str, Tuple[Any, bool]] = {}
@@ -190,12 +192,14 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
                 kept += 1 if present else 0
                 saved.append(100.0 * (raw_tokens - shown_tokens) / raw_tokens)
                 if did:
+                    saved_applied.append(saved[-1])
+                if did:
                     original_lines = {ln.strip() for ln in text.splitlines() if ln.strip()}
                     shown_lines = {ln.strip() for ln in (shown.get("content") or "").splitlines() if ln.strip()}
                     coverage.append(100.0 * len(original_lines & shown_lines) / len(original_lines))
                 else:
                     coverage.append(100.0)
-            item["goals"][gkind] = {"applied_pct": round(100.0 * applied / len(entries), 1), "saved_pct_median": round(statistics.median(saved), 1),
+            item["goals"][gkind] = {"applied_pct": round(100.0 * applied / len(entries), 1), "saved_pct_median_when_applied": round(statistics.median(saved_applied), 1) if saved_applied else None, "saved_pct_median": round(statistics.median(saved), 1),
                                     "saved_pct_min": round(min(saved), 1), "saved_pct_max": round(max(saved), 1), "needle_kept_pct": round(100.0 * kept / len(entries), 1), "lines_shown_pct_median": round(statistics.median(coverage), 1),
                                     "shown_tokens_median": int(statistics.median([tokens(json.dumps(cache[g][0], ensure_ascii=False, default=str)) for g, _ in entries]))}
         # Q7: exact recovery of the original behind a compressed message
@@ -219,7 +223,7 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
     # Q1 / Q2 summary by kind and goal kind (median of the item medians)
     by_kind: Dict[str, Dict[str, Any]] = {}
     for r in rows:
-        k = by_kind.setdefault(r["kind"], {g: {"saved": [], "kept": []} for g in ("literal", "partial", "single", "generic", "unrelated")})
+        k = by_kind.setdefault(r["kind"], {g: {"saved": [], "kept": []} for g in ("literal", "partial", "single", "edit", "generic", "unrelated")})
         for g, v in r["goals"].items():
             k[g]["saved"].append(v["saved_pct_median"])
             k[g]["kept"].append(v["needle_kept_pct"])
@@ -253,10 +257,15 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
     pick = [r for r in rows if r["name"] in ("generated table (520 rows)", "generated service log (700 lines)", "governed_autonomous_loop.py[:30k]", "whitepaper EN[:30k]")]
     index_of = {c[1]: i for i, c in enumerate(corpus)}
     small = await mcp.call_tool("delentia_list_repo_files", {"relative_path": "corpus"}) if False else None   # noqa: F841 - a small second step is made below without a tool call
-    for r in pick:
+    for r, gkind in [(r, gk) for r in pick for gk in ("whole", "lookup")]:       # Round 109: both kinds of task, because goal-aware COMPRESS treats them differently
         i = index_of[r["name"]]
         result = await read_result(i)
-        goal = "Read corpus/item%d.txt and tell me what it contains." % i
+        if gkind == "whole":
+            goal = "Read corpus/item%d.txt and tell me what it contains." % i
+        else:
+            nd0 = needles(corpus[i][2], 1)[0]
+            rarest0 = max([w for w in nd0.split() if len(w) >= 3] or nd0.split(), key=len)
+            goal = "Where does corpus/item%d.txt mention %s?" % (i, rarest0)
         shown, _ = shown_of(goal, result)
         for menu in ("full", "ranked"):
             for later in (2, 4, 8):
@@ -271,7 +280,7 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
                     totals[label] = sum(tokens(p) for p in prompts)
                     if label == "raw":
                         totals["first_prompt_tokens"] = tokens(prompts[0])
-                episodes[f"{r['name']} | menu={menu} | {later} calls after the read"] = {
+                episodes[f"{r['name']} | task={gkind} | menu={menu} | {later} calls after the read"] = {
                     "episode_prompt_tokens_raw": totals["raw"], "episode_prompt_tokens_compressed": totals["compressed"],
                     "saved_pct": round(100.0 * (totals["raw"] - totals["compressed"]) / totals["raw"], 1),
                     "message_tokens_raw": tokens(json.dumps(result, ensure_ascii=False, default=str)), "message_tokens_compressed": tokens(json.dumps(shown, ensure_ascii=False, default=str)),
@@ -354,7 +363,7 @@ async def measure(quick: bool = False) -> Dict[str, Any]:
 def render(rep: Dict[str, Any]) -> str:
     out = [f"tokenizer: {rep['tokenizer']}", ""]
     out.append("Q1/Q2  saving on the tool-output message (median %) / needle still shown (%), by kind and goal; 'raw' = left uncompressed (under 6,000 chars or under 20% reduction)")
-    goal_kinds = ("literal", "partial", "single", "generic", "unrelated")
+    goal_kinds = ("literal", "partial", "single", "edit", "generic", "unrelated")
     out.append(f"{'kind':<13}" + "".join(f"{g:>15}" for g in goal_kinds) + "     (saved% / needle kept% / lines shown%)")
     for kind, gs in rep["by_kind"].items():
         out.append(f"{kind:<13}" + "".join(f"{gs[g]['saved_pct_median']:>5.0f}/{gs[g]['needle_kept_pct_mean']:<4.0f}/{gs[g]['lines_shown_pct_median']:<4.0f}" for g in goal_kinds))
