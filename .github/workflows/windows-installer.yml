@@ -101,15 +101,34 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem installer/windows/output
 
+      # The silent install normally takes about 4 minutes (it downloads the packages while it installs). On 2026-11-03 it stalled for over two hours on a runner with no output and held the whole release
+      # (the same build had passed twice before; earlier runs also sometimes took 30-50 minutes). So the wait is bounded: after 12 minutes the log is printed, the stuck install is killed with its children,
+      # and it is tried once more from a clean folder. Two stalls in a row fail the job with the logs, instead of hanging.
       - name: Install it silently, run the post-install check, uninstall
         shell: pwsh
+        timeout-minutes: 40
         run: |
           $setup = (Get-ChildItem installer/windows/output -Filter "Delentia-Setup-*.exe" | Select-Object -First 1).FullName
           $app = Join-Path $env:RUNNER_TEMP "delentia-app"
-          $p = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$app","/LOG=$env:RUNNER_TEMP\setup.log" -Wait -PassThru
-          Write-Host "installer exit code: $($p.ExitCode)"
-          if (Test-Path "$app\install.log") { Get-Content "$app\install.log" -Tail 8 }
-          if ($p.ExitCode -ne 0) { exit 1 }
+          $installed = $false
+          foreach ($attempt in 1..2) {
+            if (Test-Path $app) { Remove-Item -Recurse -Force $app -ErrorAction SilentlyContinue }
+            $p = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$app","/LOG=$env:RUNNER_TEMP\setup.log" -PassThru
+            if ($p.WaitForExit(720000)) {
+              Write-Host "attempt ${attempt}: installer exit code: $($p.ExitCode)"
+              if (Test-Path "$app\install.log") { Get-Content "$app\install.log" -Tail 8 }
+              if ($p.ExitCode -ne 0) { exit 1 }
+              $installed = $true
+              break
+            }
+            Write-Host "attempt ${attempt}: the installer was still running after 12 minutes; its log follows, then it is killed"
+            if (Test-Path "$env:RUNNER_TEMP\setup.log") { Get-Content "$env:RUNNER_TEMP\setup.log" -Tail 30 }
+            if (Test-Path "$app\install.log") { Get-Content "$app\install.log" -Tail 30 }
+            Get-Process | Where-Object { $_.ProcessName -match "Delentia-Setup|python|pip" } | Select-Object Id, ProcessName, CPU | Format-Table | Out-String | Write-Host
+            & taskkill /PID $p.Id /T /F | Out-Null
+            Get-Process -Name "Delentia-Setup*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+          if (-not $installed) { Write-Error "the silent install stalled twice"; exit 1 }
           & "$app\python\python.exe" "$app\check_install.py"
           if ($LASTEXITCODE -ne 0) { Get-Content "$app\check_install_report.txt"; exit 1 }
           $u = Start-Process -FilePath "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait -PassThru
