@@ -69,7 +69,7 @@ export interface PullView { name: string; status: "idle" | "downloading" | "done
 export interface LocalModelsView {
   hardware: { ram_gb: number | null; cpu_threads: number | null; platform: string };
   ollama: { state: "running" | "installed_not_running" | "not_installed"; installed: boolean; running: boolean; path: string | null; models: string[]; url: string; download_url: string };
-  recommendation: { catalog_date: string; try_first: string | null; rule: { factor: number; extra_gb: number; share: number; kind: string }; models: LocalModelRow[] };
+  recommendation: { catalog_date: string; rule: { factor: number; extra_gb: number; share: number; kind: string }; models: LocalModelRow[] };
   pull: PullView;
 }
 export interface ProbeResult {

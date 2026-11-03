@@ -113,13 +113,12 @@ def test_the_fit_rule_gives_the_stated_answers(ram, fits_tags, not_fit):
     assert all(rows[t]["fits"] is True for t in fits_tags) and all(rows[t]["fits"] is False for t in not_fit)
 
 
-def test_try_first_prefers_the_measured_model_when_it_fits_and_says_nothing_when_the_memory_is_unknown():
-    assert local_models.recommend(16.0)["try_first"] == "qwen3:8b"
-    assert local_models.recommend(8.0)["try_first"] == "qwen3:4b"                       # nothing measured fits: the largest light one, not a vendor-claim one
-    assert local_models.recommend(4.0)["try_first"] is None
-    unknown = local_models.recommend(None)
-    assert unknown["try_first"] is None and all(r["fits"] is None for r in unknown["models"])
+def test_no_model_is_recommended_over_another_and_the_rule_is_called_an_estimate():
+    for ram in (4.0, 8.0, 16.0, 32.0, None):
+        view = local_models.recommend(ram)
+        assert "try_first" not in view and "recommended" not in json.dumps(view).lower()
     assert local_models.recommend(16.0)["rule"]["kind"] == "estimate, not measured"
+    assert all(r["fits"] is None for r in local_models.recommend(None)["models"])             # unknown memory: no estimate at all
 
 
 def test_the_hardware_facts_are_real_numbers_on_this_computer():
@@ -228,7 +227,7 @@ def test_the_desk_view_puts_memory_ollama_and_the_recommendation_together(desk):
     client, _ = desk
     view = client.get("/v1/desk/local-models").json()
     assert view["ollama"]["state"] == "running" and view["ollama"]["models"] == ["qwen3:8b"]
-    assert view["recommendation"]["catalog_date"] == "2026-11-03" and view["pull"]["status"] == "idle"
+    assert view["recommendation"]["catalog_date"] == "2026-11-03" and view["pull"]["status"] == "idle" and "try_first" not in view["recommendation"]
     row = next(r for r in view["recommendation"]["models"] if r["tag"] == "qwen3:8b")
     assert row["installed"] is True and row["measured_here"] is True
 

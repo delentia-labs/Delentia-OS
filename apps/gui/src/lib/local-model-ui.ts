@@ -66,8 +66,8 @@ export function pullText(p: { status: string; percent: number | null; message: s
   }
 }
 
-/** The rows to show: the recommended one first, then those that probably fit, then the rest, each group in the catalog's own order. Nothing is ordered by claimed quality. */
-export function orderRows(rows: LocalModelRow[], tryFirst: string | null): LocalModelRow[] {
-  const rank = (r: LocalModelRow) => (r.tag === tryFirst ? 0 : r.fits === true ? 1 : r.fits === null ? 2 : 3);
+/** The rows to show: those that probably fit first, then the rest, each group in the catalog's own order. Nothing is ordered by claimed quality. */
+export function orderRows(rows: LocalModelRow[]): LocalModelRow[] {
+  const rank = (r: LocalModelRow) => (r.fits === true ? 0 : r.fits === null ? 1 : 2);
   return rows.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map((x) => x.r);
 }

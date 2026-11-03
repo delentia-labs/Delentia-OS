@@ -6,8 +6,8 @@ Until now the setup page told a new user to "type `ollama pull qwen3:8b` in a te
   * `hardware_facts()`    how much memory this computer has (read from the operating system; the number of CPU threads); nothing is guessed about a graphics card.
   * `CATALOG`             a short, curated list of local models with only facts that were read from the model's own Ollama page on 2026-11-03 (download size, tools support, licence) and, where this
                           project measured the model, what it measured. Models this project has NOT measured say so. Nothing here ranks quality.
-  * `recommend(ram)`      which of them probably fit, by a stated rule (an ESTIMATE, not a measurement), and which one to try first. "Try first" never means "good": every local model here is for trying
-                          Delentia; the measured results are in docs/KNOWN_LIMITATIONS.md.
+  * `recommend(ram)`      which of them probably fit, by a stated rule (an ESTIMATE, not a measurement). No model is recommended over another: the few results this project has
+                          are small and unstable (see the note of qwen3:8b), and every local model here is for trying Delentia; the measured results are in docs/KNOWN_LIMITATIONS.md.
   * `ollama_status()`, `start_ollama()`   is Ollama installed, is it running, start it. Installing Ollama stays the person's own click on the official download page: Delentia does not download or run an
                           installer by itself.
   * `PullManager`         downloads a model through Ollama's own HTTP API with progress, one at a time, cancellable, after a disk-space check, and only a model from the catalog.
@@ -62,8 +62,8 @@ CATALOG: List[LocalModel] = [
                "Small, for computers with about 8 GB of memory.", "ขนาดเล็ก สำหรับเครื่องแรมราว 8 GB"),
     LocalModel("qwen3:8b", "Qwen3 8B", 5.2, True, "see the model page",
                "The one this project has tried most.", "ตัวที่โครงการนี้ลองมากที่สุด",
-               "On a probe of 5 simple goals it completed 4 (one run); on the harder fixed task set it completed 0 of 4 in every arm; about 13 tokens a second on a CPU (one machine).",
-               "ในชุดทดสอบ 5 เป้าหมายง่าย ทำสำเร็จ 4 (รันครั้งเดียว) ในชุดงานฐานที่ยากกว่าทำสำเร็จ 0 จาก 4 ทุกแขน ความเร็วราว 13 โทเคนต่อวินาทีบน CPU (เครื่องเดียว)"),
+               "On the same 5 simple goals it completed 4 in one run and 2 in another run on a later day (one machine: the result moves a lot between runs); on the harder fixed task set it completed 0 of 4 in every arm; about 13 tokens a second on a CPU.",
+               "ใน 5 เป้าหมายง่ายชุดเดิม ทำสำเร็จ 4 ในรอบหนึ่งและ 2 ในอีกรอบหนึ่งวันถัดมา (เครื่องเดียว ผลแกว่งมากระหว่างรอบ) ในชุดงานฐานที่ยากกว่าทำสำเร็จ 0 จาก 4 ทุกแขน ความเร็วราว 13 โทเคนต่อวินาทีบน CPU"),
     LocalModel("qwen3:14b", "Qwen3 14B", 9.3, True, "see the model page",
                "Bigger. Needs a computer with plenty of memory.", "ใหญ่กว่า ต้องใช้เครื่องที่มีแรมมาก"),
     LocalModel("bonsai-2:4b", "Bonsai-2 4B (ternary weights)", 1.6, True, "Apache 2.0",
@@ -116,23 +116,14 @@ def hardware_facts() -> Dict[str, Any]:
 
 
 def recommend(ram_gb: Optional[float], installed: Optional[List[str]] = None) -> Dict[str, Any]:
-    """The catalog with, for this computer's memory, whether each model probably fits, and the one to try first."""
+    """The catalog with, for this computer's memory, whether each model probably fits. Nothing is ranked by quality."""
     have = set(installed or [])
     rows = []
     for m in CATALOG:
         f = fits(m, ram_gb)
         rows.append({**asdict(m), "estimated_memory_gb": estimated_memory_gb(m), "fits": f, "installed": m.tag in have or f"{m.tag}:latest" in have,
                      "measured_here": bool(m.measured_en)})
-    # to try first: the model this project has measured if it fits, else the largest light model that fits; never claimed to be good
-    first: Optional[str] = None
-    if ram_gb:
-        measured_fit = [r for r in rows if r["measured_here"] and r["fits"]]
-        if measured_fit:
-            first = measured_fit[0]["tag"]
-        else:
-            light = [r for r in rows if r["fits"] and not r["vendor_claim"]]
-            first = light[-1]["tag"] if light else (next((r["tag"] for r in rows if r["fits"]), None))
-    return {"catalog_date": CATALOG_DATE, "rule": {"factor": FIT_FACTOR, "extra_gb": FIT_EXTRA_GB, "share": FIT_SHARE, "kind": "estimate, not measured"}, "try_first": first, "models": rows}
+    return {"catalog_date": CATALOG_DATE, "rule": {"factor": FIT_FACTOR, "extra_gb": FIT_EXTRA_GB, "share": FIT_SHARE, "kind": "estimate, not measured"}, "models": rows}
 
 
 # ---------------------------------------------------------------- Ollama: is it there, start it

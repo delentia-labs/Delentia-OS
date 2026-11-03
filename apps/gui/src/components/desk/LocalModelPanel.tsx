@@ -67,7 +67,7 @@ export function LocalModelPanel({ onUse, busy }: { onUse: (name: string) => void
   const installed = chatModels(data.ollama.models);
   const advice = ollamaAdvice(data.ollama.state, installed.length > 0, lang as "th" | "en");
   const ram = data.hardware.ram_gb;
-  const rows = orderRows(data.recommendation.models, data.recommendation.try_first);
+  const rows = orderRows(data.recommendation.models);
 
   return (
     <div className="text-[13px] leading-relaxed">
@@ -118,7 +118,6 @@ export function LocalModelPanel({ onUse, busy }: { onUse: (name: string) => void
             <ul className="mt-2 divide-y divide-dl-rule/60">
               {rows.map((row) => {
                 const fit = fitText(row, ram, lang as "th" | "en");
-                const isFirst = row.tag === data.recommendation.try_first;
                 return (
                   <li key={row.tag} className="py-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,7 +125,6 @@ export function LocalModelPanel({ onUse, busy }: { onUse: (name: string) => void
                         <span className="desk-mono text-[12px] text-dl-text">{row.label}</span>{" "}
                         <Code>{row.tag}</Code>{" "}
                         <span className="text-dl-muted">{formatGb(row.size_gb)} {T("download", "ดาวน์โหลด")}</span>
-                        {isFirst ? <> <Badge tone="leaf">{T("to try first", "ลองตัวนี้ก่อน")}</Badge></> : null}
                         {row.installed ? <> <Badge tone="fern">{T("installed", "ติดตั้งแล้ว")}</Badge></> : null}
                       </div>
                       {!row.installed ? (

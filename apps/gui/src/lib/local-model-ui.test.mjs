@@ -48,10 +48,9 @@ test("every local model is described as for trying, in both languages", () => {
   assert.match(TRY_ONLY.th, /ลองใช้ Delentia/);
 });
 
-test("rows are ordered: the one to try first, then those that probably fit, then unknown, then those that may not fit; nothing is ordered by claimed quality", () => {
+test("rows are ordered by whether they probably fit, then in the catalog's own order; nothing is ordered by claimed quality and no row is recommended", () => {
   const rows = [row("big", false), row("a", true), row("unknown", null), row("first", true), row("b", true)];
-  assert.deepEqual(orderRows(rows, "first").map((r) => r.tag), ["first", "a", "b", "unknown", "big"]);
-  assert.deepEqual(orderRows(rows, null).map((r) => r.tag), ["a", "first", "b", "unknown", "big"]);
+  assert.deepEqual(orderRows(rows).map((r) => r.tag), ["a", "first", "b", "unknown", "big"]);
 });
 
 test("progress and sizes read plainly", () => {
