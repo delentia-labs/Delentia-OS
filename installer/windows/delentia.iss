@@ -144,9 +144,11 @@ begin
       RuntimeFailed := True;
       RuntimeCode := ResultCode;
       if RuntimeCode = 0 then RuntimeCode := 10;
-      MsgBox('Delentia was copied, but its parts could not be installed (code ' + IntToStr(ResultCode) + ').' + #13#10 + #13#10 +
-             'The most common reason is no internet connection. Connect, then run this installer again.' + #13#10 +
-             'The details are in: ' + ExpandConstant('{app}\install.log'), mbError, MB_OK);
+      { No box under a silent install: on 2026-11-03 this box was logged ("Message box (OK)") and then nothing answered it, so a FAILED silent install hung for hours instead of ending with its exit code. }
+      if not IsSilentRun then
+        MsgBox('Delentia was copied, but its parts could not be installed (code ' + IntToStr(ResultCode) + ').' + #13#10 + #13#10 +
+               'The most common reason is no internet connection. Connect, then run this installer again.' + #13#10 +
+               'The details are in: ' + ExpandConstant('{app}\install.log'), mbError, MB_OK);
     end;
   end;
 end;

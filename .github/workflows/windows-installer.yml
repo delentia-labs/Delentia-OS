@@ -9,7 +9,10 @@ name: Windows installer
 #   * by hand (Actions > Windows installer > Run workflow): build + smoke test; give a tag to attach the result to that release
 #
 # The inputs the installer needs are fetched here and recorded in the installer's SOURCES.json: the portable Python is pinned by SHA-256;
-# get-pip.py is fetched from bootstrap.pypa.io (it changes with each pip release, so its hash is recorded, not pinned); Inno Setup comes from Chocolatey.
+# get-pip.py is pinned to a commit of github.com/pypa/get-pip AND by SHA-256. It used to be fetched from bootstrap.pypa.io, which serves the newest one: on 2026-11-02 pip 26.3 came out, the new get-pip.py
+# refused to install pip into the portable Python ("To modify pip, please run ... python -m pip"; reproduced in an empty venv), every silent install failed, and the failure message box then held the
+# release for hours. The pinned one is the 26.2.2 script (2026-10-20), which still installs the newest pip (verified in an empty venv). Move the pin on purpose, after trying the new script.
+# Inno Setup comes from Chocolatey.
 # The installer is NOT code-signed: Windows SmartScreen will warn. That is stated in the README.
 
 on:
@@ -41,7 +44,8 @@ permissions:
 env:
   PYTHON_EMBED_URL: https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip
   PYTHON_EMBED_SHA256: 4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3
-  GET_PIP_URL: https://bootstrap.pypa.io/get-pip.py
+  GET_PIP_URL: https://raw.githubusercontent.com/pypa/get-pip/fa4e90301bf000c36309f3ad79c3ac720b55d6df/public/get-pip.py
+  GET_PIP_SHA256: f4448a01e3ab2914c65f4ca59d4cacba6b2dbde19a483fbac46587f8bbaff424
 
 jobs:
   build:
@@ -85,7 +89,9 @@ jobs:
           $got = (Get-FileHash inputs/python-embed.zip -Algorithm SHA256).Hash.ToLower()
           if ($got -ne $env:PYTHON_EMBED_SHA256) { Write-Error "the portable Python is $got, not the pinned $($env:PYTHON_EMBED_SHA256)"; exit 1 }
           Invoke-WebRequest -Uri $env:GET_PIP_URL -OutFile inputs/get-pip.py
-          (Get-FileHash inputs/get-pip.py -Algorithm SHA256).Hash.ToLower() | Write-Host
+          $gotpip = (Get-FileHash inputs/get-pip.py -Algorithm SHA256).Hash.ToLower()
+          if ($gotpip -ne $env:GET_PIP_SHA256) { Write-Error "get-pip.py is $gotpip, not the pinned $($env:GET_PIP_SHA256)"; exit 1 }
+          Write-Host "get-pip.py $gotpip (pinned)"
 
       - name: Install the Inno Setup compiler
         shell: pwsh

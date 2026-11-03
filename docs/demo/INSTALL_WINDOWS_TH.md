@@ -52,7 +52,7 @@ Settings → Apps → Delentia → Uninstall (หรือ Control Panel) ระ
 | ไฟล์ | จาก | ขนาดโดยประมาณ | ใช้ทำอะไร |
 |---|---|---|---|
 | `python-3.12.10-embed-amd64.zip` | https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip | ~10 MB | Python ฉบับพกพาที่ติดไปกับโปรแกรม (3.12.10 คือรุ่น 3.12 สุดท้ายที่มีตัวติดตั้งไบนารี) |
-| `get-pip.py` | https://bootstrap.pypa.io/get-pip.py | ~2.5 MB | สคริปต์ติดตั้ง pip ลงใน Python พกพา |
+| `get-pip.py` | https://raw.githubusercontent.com/pypa/get-pip/fa4e90301bf000c36309f3ad79c3ac720b55d6df/public/get-pip.py (pinned; see the installer workflow) | ~2.5 MB | สคริปต์ติดตั้ง pip ลงใน Python พกพา |
 | Inno Setup 6 (`innosetup-6.x.exe`) | https://jrsoftware.org/isdl.php | ~5 MB | โปรแกรมที่สร้างไฟล์ `Setup.exe` (ติดตั้งลงเครื่องผู้สร้างเท่านั้น ไม่ได้อยู่ในตัวติดตั้งของผู้ใช้) |
 
 สคริปต์ **ไม่ดาวน์โหลดอะไรเอง** รับเฉพาะไฟล์ที่คุณให้ และพิมพ์ SHA-256 ของแต่ละไฟล์ให้เทียบกับที่เว็บเจ้าของไฟล์ประกาศ (บันทึกใน `SOURCES.json` ในตัวติดตั้งด้วย)

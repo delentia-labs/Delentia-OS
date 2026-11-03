@@ -7,7 +7,7 @@ Nothing is downloaded by this script. You give it the three things it needs and 
 the values python.org and pypa.io publish:
 
   * the "embeddable package" of Python 3.12 for Windows 64-bit (python.org/downloads/windows, "Windows embeddable package (64-bit)")
-  * get-pip.py (https://bootstrap.pypa.io/get-pip.py)
+  * get-pip.py (https://raw.githubusercontent.com/pypa/get-pip/fa4e90301bf000c36309f3ad79c3ac720b55d6df/public/get-pip.py (pinned; see the installer workflow))
   * the Inno Setup compiler (https://jrsoftware.org/isinfo.php), only needed for the last step; `--stage-only` stops before it
   * the Delentia wheel: built here if you do not give one (this runs scripts/package_desk.py first, so the wheel carries the Desk; needs Node.js)
 
