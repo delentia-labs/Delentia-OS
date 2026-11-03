@@ -366,6 +366,49 @@ def build_desk_router(daemon_state: Callable[[], Dict[str, Any]]) -> APIRouter:
         except Exception:                                    # an audit problem must not decide whether a key is forgotten
             pass
 
+    # ---- Round 109: a local model from inside the Desk (see local_models.py): what this computer can hold, Ollama's state, start it, download a model with progress
+
+    @router.get("/local-models")
+    async def local_models_view() -> Dict[str, Any]:
+        from rct_control_plane import local_models
+        status = await asyncio.to_thread(local_models.ollama_status)
+        facts = local_models.hardware_facts()
+        return {"hardware": facts, "ollama": status, "recommendation": local_models.recommend(facts["ram_gb"], status["models"]), "pull": local_models.PULLS.state()}
+
+    @router.post("/ollama/start")
+    async def ollama_start() -> Dict[str, Any]:
+        from rct_control_plane import local_models
+        return await asyncio.to_thread(local_models.start_ollama)
+
+    @router.post("/ollama/pull")
+    async def ollama_pull(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Download one model of the catalog. The page shows its size first; `confirm` must be true (a download of several GB is the person's decision)."""
+        from rct_control_plane import local_models
+        if payload.get("confirm") is not True:
+            raise HTTPException(status_code=400, detail="the download must be confirmed")
+        try:
+            state = await asyncio.to_thread(local_models.PULLS.start, str(payload.get("name", "")))
+        except local_models.PullError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        _record_local_model_event("download_started", state["name"])
+        return state
+
+    @router.get("/ollama/pull")
+    async def ollama_pull_state() -> Dict[str, Any]:
+        from rct_control_plane import local_models
+        return local_models.PULLS.state()
+
+    @router.post("/ollama/pull/cancel")
+    async def ollama_pull_cancel() -> Dict[str, Any]:
+        from rct_control_plane import local_models
+        return local_models.PULLS.cancel()
+
+    def _record_local_model_event(action: str, tag: str) -> None:
+        try:
+            _kernel()._persistence.append_audit(entity_type="local_model", entity_id=tag, action=action, actor="desk", changes={"tag": tag})
+        except Exception:                                    # an audit problem must not decide whether a download starts
+            pass
+
     @router.get("/audit")
     async def audit(limit: int = Query(40, ge=1, le=500)) -> Dict[str, Any]:
         from rct_control_plane import audit_chain

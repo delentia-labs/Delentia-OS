@@ -94,9 +94,9 @@ await test("every model state says what it means and what to do, in both languag
   assert.ok(modelAdvice("configured", "m").fix.includes("not been called"));            // a key is not proof that the model answers
   assert.ok(modelAdvice("model_missing", "qwen3:8b").text.includes("qwen3:8b"));
 });
-await test("the notes say the true things: local is slow and weak at tools, online costs money and the key is not written to disk", () => {
+await test("the notes say the true things: local is slow and weak at tools, online costs money and the key is kept on this computer and can be forgotten (since the owner decided so, 2026-11-02)", () => {
   assert.ok(/slow/.test(LOCAL_NOTE.en) && /not yet been measured/.test(LOCAL_NOTE.en) && LOCAL_NOTE.th.length > 40);
-  assert.ok(/costs money/.test(ONLINE_NOTE.en) && /never written to disk/.test(ONLINE_NOTE.en) && /spending limit/.test(ONLINE_NOTE.en) && ONLINE_NOTE.th.length > 40);
+  assert.ok(/costs money/.test(ONLINE_NOTE.en) && /kept on this computer/.test(ONLINE_NOTE.en) && /spending limit/.test(ONLINE_NOTE.en) && /forget it/.test(ONLINE_NOTE.en) && !/never written to disk/.test(ONLINE_NOTE.en) && ONLINE_NOTE.th.length > 40);
 });
 await test("only models that can answer are offered from the local list, never embedding or reranking ones", () => {
   const got = chatModels(["bge-m3:latest", "bonsai-27b:latest", "delentia-os:latest", "llama3.2:3b", "nomic-embed-text:latest", "qwen2.5:7b", "qwen2.5vl:3b", "qwen3:8b", "mxbai-embed-large", "snowflake-arctic-embed2", "bge-reranker-v2", "all-minilm"]);
