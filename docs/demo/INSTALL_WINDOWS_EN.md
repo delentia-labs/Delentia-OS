@@ -52,7 +52,7 @@ Settings → Apps → Delentia → Uninstall (or Control Panel). It stops what i
 | File | From | Approx. size | Used for |
 |---|---|---|---|
 | `python-3.12.10-embed-amd64.zip` | https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip | ~10 MB | The portable Python shipped with the program (3.12.10 is the last 3.12 release with binary installers) |
-| `get-pip.py` | https://bootstrap.pypa.io/get-pip.py | ~2.5 MB | Installs pip into the portable Python |
+| `get-pip.py` | https://raw.githubusercontent.com/pypa/get-pip/fa4e90301bf000c36309f3ad79c3ac720b55d6df/public/get-pip.py (pinned; see the installer workflow) | ~2.5 MB | Installs pip into the portable Python |
 | Inno Setup 6 (`innosetup-6.x.exe`) | https://jrsoftware.org/isdl.php | ~5 MB | The program that builds `Setup.exe` (installed on the builder's machine only; it is not inside the user's installer) |
 
 The script **downloads nothing itself**. It takes the files you give it and prints the SHA-256 of each so you can compare with what the publisher announces (also saved in the installer as `SOURCES.json`).
