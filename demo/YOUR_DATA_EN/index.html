@@ -2789,6 +2789,10 @@
 <td><strong>private keys</strong> (the audit signing key, approver keys). Whoever holds a private key can sign as you. Never mail it; never put it in a repository.</td>
 </tr>
 <tr>
+<td><code>keys\model_keys.dat</code></td>
+<td>the <strong>model keys you chose to keep</strong> (for example your OpenRouter key), so you do not type them again after closing the program. On Windows the file is encrypted for your Windows account; elsewhere it is readable by you only. It is never copied into a backup, not even with <code>--include-keys</code>: after a restore you type the key again. See what is kept with <code>delentia model key status</code> and forget one with <code>delentia model key forget OPENROUTER_API_KEY</code> (or on the Models page). When a key expires or is rotated is up to you.</td>
+</tr>
+<tr>
 <td><code>memory_keys\</code></td>
 <td>one key per person that seals that person's memory. Destroying a person's key is how they are erased.</td>
 </tr>
