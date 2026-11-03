@@ -77,7 +77,7 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
           <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" autoComplete="new-password" spellCheck={false}
             placeholder={current?.openrouter_key_present ? "a key is already present in the server" : "sk-or-…"} className={field} />
           <span className="mt-1 block text-[12px] text-dl-muted">
-            {lang === "th" ? "เก็บในหน่วยความจำของเซิร์ฟเวอร์จนกว่าจะรีสตาร์ท ไม่เขียนลงไฟล์" : "Kept in the server's memory until it restarts. Never written to a file."}
+            {lang === "th" ? "เก็บไว้บนเครื่องนี้ (เข้ารหัสผูกกับบัญชี Windows ของคุณ) จึงไม่ต้องใส่ซ้ำหลังปิดโปรแกรม ลืมคีย์ได้ในกล่อง \"คีย์ที่เก็บไว้\" ทางซ้าย คีย์หมดอายุหรือเปลี่ยนเมื่อไรเป็นเรื่องของคุณ" : "Kept on this computer (encrypted for your Windows account), so you do not type it again after closing the program. Forget it in the \"Keys kept on this computer\" box on the left. When a key expires or is rotated is up to you."}
           </span>
         </label>
       ) : null}
@@ -256,8 +256,8 @@ function EndpointPanel({ setup, onSaved, lang }: { setup: ModelSetup; onSaved: (
           </div>
         </label>
         <p className="text-[12px] leading-relaxed text-dl-muted md:col-span-2">
-          {T("The key is kept in the server's memory until it restarts and is never written to a file or shown again. Only the variable's name is saved. To keep the key permanently, set that variable where the server starts.",
-             "key ถูกเก็บในหน่วยความจำของเซิร์ฟเวอร์จนกว่าจะรีสตาร์ท ไม่เขียนลงไฟล์และไม่แสดงซ้ำ บันทึกเฉพาะชื่อตัวแปร ถ้าต้องการเก็บถาวรให้ตั้งตัวแปรนั้นตอนเริ่มเซิร์ฟเวอร์")}
+          {T("The key is kept on this computer (encrypted for your Windows account), is never shown again and never goes into the model settings file; only the variable's name is saved there. Forget it any time in the \"Keys kept on this computer\" box. When it expires or is rotated is up to you.",
+             "key ถูกเก็บไว้บนเครื่องนี้ (เข้ารหัสผูกกับบัญชี Windows ของคุณ) ไม่แสดงซ้ำ และไม่อยู่ในไฟล์ตั้งค่าโมเดล ไฟล์นั้นบันทึกเฉพาะชื่อตัวแปร ลืมคีย์ได้ทุกเมื่อในกล่อง \"คีย์ที่เก็บไว้\" คีย์หมดอายุหรือเปลี่ยนเมื่อไรเป็นเรื่องของคุณ")}
           {preset?.note ? <span className="mt-1 block">{preset.note}{preset.docs ? <> · <a className="underline" href={preset.docs} target="_blank" rel="noreferrer noopener">docs</a></> : null}</span> : null}
         </p>
       </div>
@@ -296,6 +296,51 @@ function EndpointPanel({ setup, onSaved, lang }: { setup: ModelSetup; onSaved: (
 
 // ---- the page ---------------------------------------------------------------------------------------------------
 
+/** The keys the person chose to keep on this computer: which, since when, the last four characters, and a way to forget each. Never the key itself. */
+function SavedKeys({ store, onChanged, lang }: { store: ModelSetup["key_store"]; onChanged: () => void; lang: string }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const th = lang === "th";
+  const forget = async (env: string) => {
+    setBusy(env);
+    setMessage(null);
+    try {
+      await desk.forgetKey(env);
+      setMessage(th ? `ลืมคีย์ ${env} แล้ว` : `Forgot ${env}.`);
+      onChanged();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+  if (!store) return null;
+  const when = (ts: number | null) => (ts ? new Date(ts * 1000).toLocaleDateString(th ? "th-TH-u-ca-gregory" : "en-GB", { year: "numeric", month: "short", day: "numeric" }) : "");
+  return (
+    <Panel title={th ? "คีย์ที่เก็บไว้บนเครื่องนี้" : "Keys kept on this computer"}>
+      {!store.enabled ? <p className="text-[13px] text-dl-muted">{th ? "การเก็บคีย์ปิดอยู่ (DELENTIA_SECRET_STORE=off)" : "Keeping keys is switched off (DELENTIA_SECRET_STORE=off)."}</p> : null}
+      {store.enabled && !store.saved.length ? <p className="text-[13px] text-dl-muted">{th ? "ยังไม่มีคีย์ที่เก็บไว้ ใส่คีย์ตอนเลือกโมเดลแล้วจะถูกเก็บไว้ให้" : "No key is kept yet. A key you type when choosing a model is kept here."}</p> : null}
+      <ul className="divide-y divide-dl-rule/60">
+        {store.saved.map((k) => (
+          <li key={k.env} className="flex flex-wrap items-center justify-between gap-2 py-2">
+            <div className="min-w-0">
+              <p className="desk-mono truncate text-[13px] text-dl-text">{k.env}</p>
+              <p className="desk-mono text-[11px] text-dl-muted">{th ? "เก็บเมื่อ" : "kept"} {when(k.saved_at)}{k.last4 ? ` · …${k.last4}` : ""}</p>
+            </div>
+            <Button tone="ghost" onClick={() => forget(k.env)} disabled={busy !== null}>{th ? "ลืมคีย์นี้" : "Forget this key"}</Button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[12px] leading-relaxed text-dl-muted">
+        {store.scheme === "windows-dpapi"
+          ? (th ? "เข้ารหัสผูกกับบัญชี Windows ของคุณ โปรแกรมอื่นที่รันด้วยบัญชีเดียวกันยังอ่านได้ บัญชีอื่นหรือเครื่องอื่นอ่านไม่ได้ ไม่รวมในไฟล์สำรอง" : "Encrypted for your Windows account. A program running as the same account can still read it; another account or another computer cannot. Not included in backups.")
+          : (th ? "เก็บในไฟล์ที่เจ้าของเครื่องอ่านได้คนเดียว (ความปลอดภัยเท่ากับสิทธิ์ไฟล์ของระบบ) ไม่รวมในไฟล์สำรอง" : "Kept in a file only the owner can read (as safe as the operating system's file permissions). Not included in backups.")}
+      </p>
+      {message ? <p role="status" className="mt-2 text-[13px] text-dl-leaf">{message}</p> : null}
+    </Panel>
+  );
+}
+
 export default function ModelsPage() {
   const { t, lang } = useLang();
   const L = (en: string, thai: string) => (lang === "th" ? thai : en);
@@ -317,6 +362,7 @@ export default function ModelsPage() {
         {data ? (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <div className="space-y-6">
+              <SavedKeys store={data.key_store} onChanged={setup.reload} lang={lang} />
               <Panel title={lang === "th" ? "ที่ใช้อยู่ตอนนี้" : "In use now"}>
                 <Row label={L("Model", "โมเดล")}>{data.selection.model}</Row>
                 <Row label={L("Provider", "ผู้ให้บริการ")}>{data.selection.provider}</Row>

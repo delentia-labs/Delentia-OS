@@ -287,6 +287,7 @@ export default function SetupPage() {
                   <span className="text-dl-muted">{T("Key", "คีย์")}</span>
                   <input type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-or-…"
                     className="desk-focus desk-mono mt-1 block w-full rounded border border-dl-rule bg-dl-ink px-3 py-2 text-sm text-dl-text placeholder:text-dl-muted/50" />
+                  <span className="mt-1 block text-[12px] leading-relaxed text-dl-muted">{T("The key is kept on this computer (encrypted for your Windows account) so you do not type it again. Forget it on the Models page. When it expires is up to you.", "คีย์ถูกเก็บไว้บนเครื่องนี้ (เข้ารหัสผูกกับบัญชี Windows) จึงไม่ต้องใส่ซ้ำ ลืมคีย์ได้ที่หน้าโมเดล คีย์หมดอายุเมื่อไรเป็นเรื่องของคุณ")}</span>
                 </label>
                 <div className="mt-2"><Button onClick={chooseOnlineModel} disabled={busy || !onlineModel || (!apiKey.trim() && !readiness.data?.checks.some((c) => c.id === "model" && c.state === "configured"))}>{T("Use this model", "ใช้โมเดลนี้")}</Button></div>
               </div>

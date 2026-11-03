@@ -310,6 +310,11 @@ def cli():
     # before every subcommand, via both `delentia ...` and CliRunner-based tests)
     # makes the existing fix actually take effect instead of being dead code.
     _configure_encoding()
+    try:                                       # keys the person chose to keep on this computer (secret_store); a name already set in the environment wins
+        from rct_control_plane import secret_store
+        secret_store.apply_to_environment()
+    except Exception:                          # noqa: BLE001 - an unreadable store must never stop a command; the person is asked for the key again
+        pass
 
 
 @cli.command()
@@ -1626,15 +1631,64 @@ def model_group():
 
     Provider/model resolve from: env DELENTIA_LLM_PROVIDER / DELENTIA_LLM_MODEL,
     then ~/.delentia/model.json (profile entry, then default), then built-ins.
-    API keys are never stored in the config - set OPENROUTER_API_KEY in env.
+    API keys are never stored in the config file. Set OPENROUTER_API_KEY in the environment, or keep a key
+    on this computer with `delentia model key set` (or the Desk's model page); it is then loaded at start.
 
     Examples:
         delentia model show
         delentia model list --provider openrouter --search claude
         delentia model set anthropic/claude-sonnet-5 --provider openrouter
         delentia model set qwen2.5:7b --provider ollama --profile researcher
+        delentia model key set OPENROUTER_API_KEY
     """
     pass
+
+
+@model_group.group("key")
+def model_key_group():
+    """Keys kept on this computer, so you do not type them again after restarting (encrypted for your Windows account)."""
+
+
+@model_key_group.command("set")
+@click.argument("env_name")
+def model_key_set(env_name: str) -> None:
+    """Keep a key under ENV_NAME (for example OPENROUTER_API_KEY). The key is asked for here and never shown or put in a command line."""
+    from rct_control_plane import secret_store
+    value = click.prompt("Key (hidden, nothing is shown)", hide_input=True)
+    try:
+        secret_store.save(env_name, value.strip())
+    except secret_store.SecretStoreError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"Kept {env_name} on this computer ({secret_store.scheme()}). Forget it any time with: delentia model key forget {env_name}")
+
+
+@model_key_group.command("forget")
+@click.argument("env_name")
+def model_key_forget(env_name: str) -> None:
+    """Forget the saved copy of a key. A key set in the environment is not touched."""
+    from rct_control_plane import secret_store
+    try:
+        had = secret_store.forget(env_name)
+    except secret_store.SecretStoreError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo("Forgot the saved copy." if had else "There was no saved copy of that key.")
+
+
+@model_key_group.command("status")
+def model_key_status() -> None:
+    """Which keys are kept on this computer, when, and the last four characters. Never the key."""
+    import datetime
+    from rct_control_plane import secret_store
+    view = secret_store.status_view()
+    if not view["enabled"]:
+        click.echo("Keeping keys on this computer is switched off (DELENTIA_SECRET_STORE=off).")
+        return
+    if not view["saved"]:
+        click.echo(f"No key is kept on this computer ({view['scheme']}).")
+        return
+    for entry in view["saved"]:
+        when = datetime.datetime.fromtimestamp(entry["saved_at"]).strftime("%Y-%m-%d") if entry.get("saved_at") else "unknown date"
+        click.echo(f"{entry['env']}  saved {when}  ends ...{entry['last4']}  ({view['scheme']})")
 
 
 @model_group.command("show")

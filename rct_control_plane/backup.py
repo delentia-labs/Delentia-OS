@@ -65,6 +65,8 @@ def _sources(include_keys: bool) -> List[Dict[str, Any]]:
                 kind = "database"
             elif is_config:
                 kind = "config"
+            elif path.name.lower() == "model_keys.dat":
+                continue                                                  # the model keys the person kept (secret_store): never in a backup, even with --include-keys (on Linux it is a plain 0600 file; on Windows it is bound to the account); they are typed again
             elif is_key and include_keys and (path.suffix == ".pem" or {"keys", "memory_keys"} & {p.lower() for p in rel.parts}):      # Round 67: with the memory keys a restored backup can read the sealed memory log
                 kind = "key"
             else:
