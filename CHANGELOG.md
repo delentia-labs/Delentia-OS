@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3]
+
+Prepared, not released: it waits for the install on a second computer and a real Windows Hello test, so that what those find ships in the same release. Nothing here is a result with a capable model: there is none yet. The stage label *Public Technical Preview 0.1* is still not declared.
+
+Release level: L0 and L1 of `docs/release/RELEASE_LEVELS.md`.
+
+### Added
+- **A model key typed in the Desk is kept on this computer** (`rct_control_plane/secret_store.py`; Windows DPAPI, a 0600 file elsewhere, in `<data folder>/keys/model_keys.dat`), loaded at start unless an environment variable is already set. The Desk keeps it by default (a tick keeps it in memory only), shows which keys are kept and has a Forget button; `delentia model key set|status|forget`. The file is left out of every backup even with `--include-keys` and is unreadable to the agent's file tools wherever the data folder is. The audit row names the variable, never the key. When a key stops working is the owner's business; Delentia does not expire it. (#254)
+- **A local model without a terminal** (Desk Models and Setup): the memory of this computer, whether Ollama is installed or running, a button to start it, a short list of models with a size and a memory estimate (an estimate, marked as one) that can be downloaded with a progress bar after a confirmation (disk space checked, one at a time, cancellable, only models from the list), and an honest note that every local model is for trying. No model is recommended over another. Guides `docs/demo/LOCAL_MODELS_EN.md` and `_TH.md`. (#258)
+- **Local-model speed notes** in those guides: on the one computer measured, Ollama ignores the integrated graphics chip unless `OLLAMA_IGPU_ENABLE=1` is set; with it, prompt reading was 6-8 times faster and a five-goal run about a third faster, stable over 40 requests; and switching thinking off (`DELENTIA_OLLAMA_THINK=off`) made models faster but fewer goals were completed, so it is not the default. One computer, five goals, one run per goal; results in `research/LOCAL_MODEL_PILOT_RESULTS_R109.md` and `research/LOCAL_MODEL_PILOT2_RESULTS_R109.md`.
+
+### Changed
+- **COMPRESS reads the goal** (`rct_control_plane/compress_policy.py`). A tool result that a goal such as "summarise", "review" or "compare" needs in full, a goal that edits, a goal with no content word and a goal whose words are not in the text are shown whole instead of filtered by the goal's words; a lookup is filtered by its content words only. Above 120,000 characters the old filter stays. `DELENTIA_COMPRESS_POLICY=off` restores the old behaviour. Measured with no model: the needle was shown for generic goals 20.8% of the time before and 100% after; the saving on whole-text tasks goes to zero by design, because that saving was information removed. (#255)
+
+### Fixed
+- **Windows installer:** `get-pip.py` is pinned to a commit and checked against a SHA-256 (the current file failed with pip 26.3), and a silent install never waits on a message box and is bounded in time. (#257)
+
 ## [2.4.2] - 2026-11-02
 
 A release made for the second-computer test: the installed program's first-run path now works end to end and the program is reachable from the desktop. Nothing here is a result with a capable model: there is none yet. The stage label *Public Technical Preview 0.1* is still **not declared**.
