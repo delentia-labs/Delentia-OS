@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { ApprovalDevices } from "@/components/desk/ApprovalDevices";
 import { ConfirmAction } from "@/components/desk/ConfirmAction";
+import { LocalModelPanel } from "@/components/desk/LocalModelPanel";
 import { Badge, Button, ErrorNote, PageBody, PageHeader, Panel, useDeskData } from "@/components/desk/ui";
 import { desk, type BackupMade, type Checkup, type PracticeAction } from "@/lib/desk-api";
 import { deviceSupport } from "@/lib/webauthn";
-import { LEVELS, LOCAL_NOTE, ONLINE_NOTE, STEP_IDS, browserVerdict, cheapestToolModels, chatModels, modelAdvice, nextStep, type BrowserVerdict, type LevelId, type StepId } from "@/lib/setup-model";
+import { LEVELS, LOCAL_NOTE, ONLINE_NOTE, STEP_IDS, browserVerdict, cheapestToolModels, modelAdvice, nextStep, type BrowserVerdict, type LevelId, type StepId } from "@/lib/setup-model";
 
 type Tone = "leaf" | "amber" | "rust" | "muted";
 const LEVEL_TONE: Record<"ok" | "warn" | "fail", Tone> = { ok: "leaf", warn: "amber", fail: "rust" };
@@ -262,16 +263,7 @@ export default function SetupPage() {
               <div className="rounded border border-dl-rule p-3 text-[13px] leading-relaxed">
                 <p className="font-medium text-dl-text">{T("On this computer (Ollama)", "บนเครื่องนี้ (Ollama)")}</p>
                 <p className="mt-1 text-dl-muted">{T(LOCAL_NOTE.en, LOCAL_NOTE.th)}</p>
-                {modelCheck?.installed && chatModels(modelCheck.installed).length ? (
-                  <ul className="mt-2 space-y-1">
-                    {chatModels(modelCheck.installed).map((name) => (
-                      <li key={name} className="flex items-center justify-between gap-2">
-                        <span className="desk-mono text-[12px] text-dl-text">{name}</span>
-                        <Button tone="ghost" onClick={() => chooseLocalModel(name)} disabled={busy}>{T("Use this", "ใช้ตัวนี้")}</Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="mt-2 text-dl-muted">{modelCheck?.state === "server_down" ? T("Ollama is not running, so no models can be listed.", "Ollama ไม่ทำงาน จึงแสดงรายการโมเดลไม่ได้") : T("No model is installed yet. In a terminal, once: ollama pull qwen3:8b", "ยังไม่ได้ติดตั้งโมเดล ในเทอร์มินัลหนึ่งครั้ง: ollama pull qwen3:8b")}</p>}
+                <div className="mt-2"><LocalModelPanel onUse={(name) => void chooseLocalModel(name)} busy={busy} /></div>
               </div>
               <div className="rounded border border-dl-rule p-3 text-[13px] leading-relaxed">
                 <p className="font-medium text-dl-text">{T("Online (OpenRouter key)", "ออนไลน์ (คีย์ OpenRouter)")}</p>

@@ -119,10 +119,10 @@ export function modelAdvice(state: string, name: string, lang: Lang = "en"): Mod
       return { level: "ok", text: th ? `มีโมเดลที่เลือกไว้แล้ว: ${name}` : `A model is chosen: ${name}`, fix: state === "configured" ? (th ? "ยังไม่ได้ลองเรียกจริง คำขอแรกจะบอกว่าใช้ได้หรือไม่" : "It has not been called yet; your first request will show whether it works.") : "" };
     case "server_down":
       return { level: "fail", text: th ? "โปรแกรมโมเดลในเครื่อง (Ollama) ยังไม่ทำงาน" : "The model program on this computer (Ollama) is not running.",
-        fix: th ? "ติดตั้งจาก ollama.com แล้วเปิดโปรแกรม จากนั้นกด “ตรวจอีกครั้ง” หรือเลือกโมเดลออนไลน์แทน" : "Install it from ollama.com and start it, then press “Check again”, or choose an online model instead." };
+        fix: th ? "ใช้ปุ่มในกล่อง “บนเครื่องนี้” ด้านล่างเพื่อเปิดหน้าติดตั้ง Ollama หรือเริ่มโปรแกรม แล้วกด “ตรวจอีกครั้ง” หรือเลือกโมเดลออนไลน์แทน" : "Use the button in the “On this computer” box below to open the Ollama install page or to start it, then press “Check again”, or choose an online model instead." };
     case "model_missing":
       return { level: "fail", text: th ? `ยังไม่ได้ติดตั้งโมเดล ${name} ในเครื่อง` : `The model ${name} is not installed on this computer.`,
-        fix: th ? "เลือกโมเดลที่ติดตั้งแล้วด้านล่าง หรือพิมพ์ ollama pull <ชื่อโมเดล> ในเทอร์มินัลหนึ่งครั้ง" : "Pick one that is installed below, or type ollama pull <model name> in a terminal once." };
+        fix: th ? "เลือกโมเดลที่ติดตั้งแล้วด้านล่าง หรือกดดาวน์โหลดโมเดลจากรายการในกล่อง “บนเครื่องนี้” (ไม่ต้องใช้เทอร์มินัล)" : "Pick one that is installed below, or press Download on a model in the “On this computer” box (no terminal needed)." };
     case "no_key":
       return { level: "fail", text: th ? "โมเดลที่เลือกต้องใช้คีย์" : "The chosen model needs a key.", fix: th ? "ใส่คีย์ด้านล่าง" : "Enter the key below." };
     default:
@@ -136,8 +136,8 @@ export const LOCAL_NOTE = {
   th: "ฟรีและเป็นส่วนตัว แต่โมเดลขนาดเล็กบนคอมพิวเตอร์ทั่วไปช้า (มักนานหนึ่งนาทีขึ้นไปต่อคำขอ) และเลือกเครื่องมือผิดได้ เหมาะกับการลองใช้ Delentia งานจริงมักต้องใช้โมเดลออนไลน์ และตัว Delentia เองยังไม่เคยถูกวัดกับโมเดลออนไลน์ที่เก่ง",
 };
 export const ONLINE_NOTE = {
-  en: "An online model costs money every time it is used. Before you paste a key, set a spending limit on the key at the provider (OpenRouter: Keys → credit limit). The key is kept in this program's memory only and is forgotten when it stops; it is never written to disk.",
-  th: "โมเดลออนไลน์เสียเงินทุกครั้งที่ใช้ ก่อนวางคีย์ ให้ตั้งวงเงินของคีย์ที่ผู้ให้บริการ (OpenRouter: Keys → credit limit) คีย์ถูกเก็บในหน่วยความจำของโปรแกรมเท่านั้น และถูกลืมเมื่อโปรแกรมหยุด ไม่เคยเขียนลงดิสก์",
+  en: "An online model costs money every time it is used. Before you paste a key, set a spending limit on the key at the provider (OpenRouter: Keys → credit limit). The key is kept on this computer (encrypted for your Windows account) so you do not type it again; you can forget it on the Models page, and when it expires or is rotated is up to you.",
+  th: "โมเดลออนไลน์เสียเงินทุกครั้งที่ใช้ ก่อนวางคีย์ ให้ตั้งวงเงินของคีย์ที่ผู้ให้บริการ (OpenRouter: Keys → credit limit) คีย์ถูกเก็บไว้บนเครื่องนี้ (เข้ารหัสผูกกับบัญชี Windows ของคุณ) จึงไม่ต้องใส่ซ้ำ ลืมคีย์ได้ที่หน้า Models และคีย์หมดอายุหรือเปลี่ยนเมื่อไรเป็นเรื่องของคุณ",
 };
 
 /** The installed Ollama models a person could chat with: embedding and reranking models are for memory search, not for answering, and picking one would make every request fail. */

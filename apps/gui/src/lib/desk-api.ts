@@ -60,6 +60,18 @@ export interface ModelSetup {
   saved?: string; key_kept_in_memory?: boolean; key_saved_on_computer?: boolean; key_note?: string | null;
   key_store?: { enabled: boolean; scheme: "windows-dpapi" | "file-0600"; saved: { env: string; saved_at: number | null; last4: string }[] };
 }
+/** A local model in Delentia's short list (local_models.py). `fits` is an ESTIMATE from the stated rule, not a measurement; `measured_here` says whether this project measured the model. */
+export interface LocalModelRow {
+  tag: string; label: string; size_gb: number; tools: boolean; licence: string; note_en: string; note_th: string; measured_en: string; measured_th: string; vendor_claim: boolean;
+  estimated_memory_gb: number; fits: boolean | null; installed: boolean; measured_here: boolean;
+}
+export interface PullView { name: string; status: "idle" | "downloading" | "done" | "failed" | "cancelled"; completed: number; total: number; message: string; percent: number | null }
+export interface LocalModelsView {
+  hardware: { ram_gb: number | null; cpu_threads: number | null; platform: string };
+  ollama: { state: "running" | "installed_not_running" | "not_installed"; installed: boolean; running: boolean; path: string | null; models: string[]; url: string; download_url: string };
+  recommendation: { catalog_date: string; rule: { factor: number; extra_gb: number; share: number; kind: string }; models: LocalModelRow[] };
+  pull: PullView;
+}
 export interface ProbeResult {
   contacted: boolean; reachable: boolean; status?: number; models: string[]; error: string | null; key_sent?: boolean; verdict: PolicyVerdict | null;
 }
@@ -438,6 +450,11 @@ export const desk = {
   verifyJitna: (file: unknown, trustedKeys: string[]) =>
     call<JitnaReport>("/v1/jitna/verify", { method: "POST", body: JSON.stringify({ file, trusted_keys: trustedKeys }) }),
   modelSetup: () => call<ModelSetup>("/v1/desk/models/setup"),
+  localModels: () => call<LocalModelsView>("/v1/desk/local-models"),
+  ollamaStart: () => call<LocalModelsView["ollama"] & { started: boolean; message: string }>("/v1/desk/ollama/start", { method: "POST", body: JSON.stringify({}) }),
+  ollamaPull: (name: string) => call<PullView>("/v1/desk/ollama/pull", { method: "POST", body: JSON.stringify({ name, confirm: true }) }),
+  ollamaPullState: () => call<PullView>("/v1/desk/ollama/pull"),
+  ollamaPullCancel: () => call<PullView>("/v1/desk/ollama/pull/cancel", { method: "POST", body: JSON.stringify({}) }),
   testEndpoint: (endpoint: EndpointDecl, apiKey?: string) =>
     call<ProbeResult>("/v1/desk/models/test", { method: "POST", body: JSON.stringify({ endpoint, api_key: apiKey || undefined }) }),
   saveModel: (body: { provider: string; model: string; endpoint?: EndpointDecl; profile?: string; api_key?: string; remember?: boolean }) =>
