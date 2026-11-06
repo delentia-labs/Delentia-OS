@@ -35,5 +35,28 @@ The models above are not ranked and none is called "best". Two earlier results f
 ## Other programs (LM Studio, llama.cpp, vLLM…)
 Programs that offer an OpenAI-style address can be used from the **Models** page ("your own address"). Delentia has only been tried with Ollama, so the Desk does not offer the others.
 
+**Chat subscriptions turned into an API address.** Some programs take the sign-in of a monthly chat or coding subscription and present it as an API address. Delentia does not support this, does not recommend it, and has not tested it. Providers' terms may not allow it (reports say at least one major provider has said so; this project has not read every provider's terms, so read yours). Use an API key that you are entitled to use this way, an online model through a router that sells API access, or a local model.
+
+## Speed: the integrated graphics chip (one computer, read before you try it)
+Many laptops have a small graphics chip built into the processor. **Ollama does not use it by default**: on the computer where this project tested, Ollama's own log said it was dropping the integrated GPU unless `OLLAMA_IGPU_ENABLE=1` is set, so every model ran on the processor alone.
+
+What this project measured on **one** computer (AMD Ryzen AI Z2 Extreme with a Radeon 890M, Ollama 0.40.13, 2026-11-03), with the setting switched on in a second Ollama started only for the test:
+- Reading the prompt was 6-8 times faster; writing the answer was 15-40% faster.
+- A real five-goal run of `qwen3:8b` took 7.0 minutes instead of 10.1 (about a third less). The number of goals completed did not change beyond the noise.
+- 40 different requests one after another all answered, and the speed at the end was within 7% of the speed at the start. That is about four minutes, not hours.
+
+What it does **not** show: any other chip or driver, long use, or that the answers get better (they do not; only speed changed). Setting it up is a change to your own Ollama (an environment variable and a restart of Ollama); Delentia does not do it for you and has no button for it. If the computer becomes unstable, remove the variable and restart Ollama.
+
+## Thinking: faster or more correct, not both
+Models of the `qwen3` family write a long chain of thought before they answer. Delentia can ask Ollama to skip it (`DELENTIA_OLLAMA_THINK=off`). On the same computer, three rounds of the same five goals per model:
+
+| Model | Goals completed, thinking on | Goals completed, thinking off | Median seconds per goal, on / off |
+|---|---|---|---|
+| `qwen3:4b` | 9 of 15 | 3 of 15 | 97-120 / 20-22 |
+| `qwen3:8b` | 8 of 15 | 3 of 15 | 57-99 / 16-28 |
+| `bonsai-2:4b` | 14 of 15 | 10 of 15 | 23-27 / 7-18 |
+
+Turning thinking off made every model much faster and made every model complete fewer goals, so switching thinking off is **not the default and not advised** for `qwen3`. The number of goals a model completes also moved between identical runs (`qwen3:8b` completed 4, 2 and 2 with thinking on), so these counts do not rank the models. Five goals, one computer, one run per goal.
+
 ## What we are going to measure
 A benchmark of local models on Delentia's own tasks and on computers of different sizes is planned after the first outside users; until it exists, the table above says "not measured" and means it.
