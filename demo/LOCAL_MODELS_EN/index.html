@@ -2814,6 +2814,47 @@
 <p>The models above are not ranked and none is called "best". Two earlier results from this project for reference: <code>qwen2.5:7b</code> completed 3 of 5 simple goals and <code>llama3.2:3b</code> 0 of 5 (one run each).</p>
 <h2 id="other-programs-lm-studio-llamacpp-vllm">Other programs (LM Studio, llama.cpp, vLLM…)<a class="headerlink" href="#other-programs-lm-studio-llamacpp-vllm" title="Permanent link">&para;</a></h2>
 <p>Programs that offer an OpenAI-style address can be used from the <strong>Models</strong> page ("your own address"). Delentia has only been tried with Ollama, so the Desk does not offer the others.</p>
+<p><strong>Chat subscriptions turned into an API address.</strong> Some programs take the sign-in of a monthly chat or coding subscription and present it as an API address. Delentia does not support this, does not recommend it, and has not tested it. Providers' terms may not allow it (reports say at least one major provider has said so; this project has not read every provider's terms, so read yours). Use an API key that you are entitled to use this way, an online model through a router that sells API access, or a local model.</p>
+<h2 id="speed-the-integrated-graphics-chip-one-computer-read-before-you-try-it">Speed: the integrated graphics chip (one computer, read before you try it)<a class="headerlink" href="#speed-the-integrated-graphics-chip-one-computer-read-before-you-try-it" title="Permanent link">&para;</a></h2>
+<p>Many laptops have a small graphics chip built into the processor. <strong>Ollama does not use it by default</strong>: on the computer where this project tested, Ollama's own log said it was dropping the integrated GPU unless <code>OLLAMA_IGPU_ENABLE=1</code> is set, so every model ran on the processor alone.</p>
+<p>What this project measured on <strong>one</strong> computer (AMD Ryzen AI Z2 Extreme with a Radeon 890M, Ollama 0.40.13, 2026-11-03), with the setting switched on in a second Ollama started only for the test:
+- Reading the prompt was 6-8 times faster; writing the answer was 15-40% faster.
+- A real five-goal run of <code>qwen3:8b</code> took 7.0 minutes instead of 10.1 (about a third less). The number of goals completed did not change beyond the noise.
+- 40 different requests one after another all answered, and the speed at the end was within 7% of the speed at the start. That is about four minutes, not hours.</p>
+<p>What it does <strong>not</strong> show: any other chip or driver, long use, or that the answers get better (they do not; only speed changed). Setting it up is a change to your own Ollama (an environment variable and a restart of Ollama); Delentia does not do it for you and has no button for it. If the computer becomes unstable, remove the variable and restart Ollama.</p>
+<h2 id="thinking-faster-or-more-correct-not-both">Thinking: faster or more correct, not both<a class="headerlink" href="#thinking-faster-or-more-correct-not-both" title="Permanent link">&para;</a></h2>
+<p>Models of the <code>qwen3</code> family write a long chain of thought before they answer. Delentia can ask Ollama to skip it (<code>DELENTIA_OLLAMA_THINK=off</code>). On the same computer, three rounds of the same five goals per model:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Goals completed, thinking on</th>
+<th>Goals completed, thinking off</th>
+<th>Median seconds per goal, on / off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qwen3:4b</code></td>
+<td>9 of 15</td>
+<td>3 of 15</td>
+<td>97-120 / 20-22</td>
+</tr>
+<tr>
+<td><code>qwen3:8b</code></td>
+<td>8 of 15</td>
+<td>3 of 15</td>
+<td>57-99 / 16-28</td>
+</tr>
+<tr>
+<td><code>bonsai-2:4b</code></td>
+<td>14 of 15</td>
+<td>10 of 15</td>
+<td>23-27 / 7-18</td>
+</tr>
+</tbody>
+</table>
+<p>Turning thinking off made every model much faster and made every model complete fewer goals, so switching thinking off is <strong>not the default and not advised</strong> for <code>qwen3</code>. The number of goals a model completes also moved between identical runs (<code>qwen3:8b</code> completed 4, 2 and 2 with thinking on), so these counts do not rank the models. Five goals, one computer, one run per goal.</p>
 <h2 id="what-we-are-going-to-measure">What we are going to measure<a class="headerlink" href="#what-we-are-going-to-measure" title="Permanent link">&para;</a></h2>
 <p>A benchmark of local models on Delentia's own tasks and on computers of different sizes is planned after the first outside users; until it exists, the table above says "not measured" and means it.</p>
 
