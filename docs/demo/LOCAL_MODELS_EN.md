@@ -35,6 +35,8 @@ The models above are not ranked and none is called "best". Two earlier results f
 ## Other programs (LM Studio, llama.cpp, vLLM…)
 Programs that offer an OpenAI-style address can be used from the **Models** page ("your own address"). Delentia has only been tried with Ollama, so the Desk does not offer the others.
 
+**Chat subscriptions turned into an API address.** Some programs take the sign-in of a monthly chat or coding subscription and present it as an API address. Delentia does not support this, does not recommend it, and has not tested it. Providers' terms may not allow it (reports say at least one major provider has said so; this project has not read every provider's terms, so read yours). Use an API key that you are entitled to use this way, an online model through a router that sells API access, or a local model.
+
 ## Speed: the integrated graphics chip (one computer, read before you try it)
 Many laptops have a small graphics chip built into the processor. **Ollama does not use it by default**: on the computer where this project tested, Ollama's own log said it was dropping the integrated GPU unless `OLLAMA_IGPU_ENABLE=1` is set, so every model ran on the processor alone.
 
