@@ -37,6 +37,9 @@ CLIPS: Dict[str, Dict[str, Any]] = {
     "ep02_v2": {"video": "ep02_emu_war/EP02_The_War_Australia_Lost_to_Birds_v2.mp4", "readme": "ep02_emu_war/README.md", "declared_s": 60.2, "set": "report"},
 }
 COUNT_ONLY = {"ep04_animatic": {"video": "ep04_manhole/EP04_animatic_v1.mp4", "shots": 19}}
+# Round 2 (criteria: REFERENCE_CUTS_CRITERIA_R111_ROUND2.md): a real reference clip whose breakdown lists every shot, with dissolves of 5-8 frames
+ROUND2 = {"rollercoaster": {"video": "../reference ai clip for analysis/This Shape Saved Roller Coasters.mp4", "readme": "library/REF_BREAKDOWN_roller_coaster_TH.md", "declared_s": 63.2}}
+TOLERANCE_R2_S = 0.30
 
 
 # ------------------------------------------------------------------------------------------------ ground truth
@@ -119,8 +122,10 @@ def clip_signals(name: str, out: Path) -> Dict[str, Any]:
     from rct_control_plane import reference_analysis as ra
     cache = out / "signals" / f"{name}.json"
     if cache.is_file():
-        return json.loads(cache.read_text(encoding="utf-8"))
-    meta = {**CLIPS, **COUNT_ONLY}[name]
+        cached = json.loads(cache.read_text(encoding="utf-8"))
+        if "diffw" in cached:                                  # signals made before round 2 lack the windowed differences: they are made again
+            return cached
+    meta = {**CLIPS, **COUNT_ONLY, **ROUND2}[name]
     video = ROOT / meta["video"]
     facts = ra.probe(ra._safe_path(str(video)))
     declared = meta.get("declared_s")
@@ -133,12 +138,33 @@ def clip_signals(name: str, out: Path) -> Dict[str, Any]:
     return sig
 
 
+_TIME_ROW = re.compile(r"^\|\s*(\d+)\s*\|\s*([0-9]+(?:\.[0-9]+)?)\s*[\u2013\u2014-]\s*([0-9]+(?:\.[0-9]+)?)\s*\|")
+
+
+def breakdown_cuts(path: Path) -> List[float]:
+    """Cuts from a breakdown table `| # | start-end | ...`: the start of every shot but the first. Only the table under the heading that mentions 'Shot-by-shot' is read."""
+    starts: List[float] = []
+    inside = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.lstrip().startswith("#"):
+            inside = "shot-by-shot" in line.lower()
+            continue
+        if inside:
+            m = _TIME_ROW.match(line)
+            if m:
+                starts.append(float(m.group(2)))
+    return starts[1:]
+
+
 def evaluate_clip(name: str, rule: Dict[str, Any], out: Path) -> Dict[str, Any]:
     from rct_control_plane import reference_analysis as ra
     sig = clip_signals(name, out)
-    truth = truth_cuts(ROOT / CLIPS[name]["readme"])
+    if name in ROUND2:
+        truth, tol = breakdown_cuts(ROOT / ROUND2[name]["readme"]), TOLERANCE_R2_S
+    else:
+        truth, tol = truth_cuts(ROOT / CLIPS[name]["readme"]), TOLERANCE_S
     detected = ra.cuts_from_signals(sig, **rule)
-    m = match(detected, truth)
+    m = match(detected, truth, tol)
     return {"clip": name, **score(m, len(detected), len(truth)), "missed_at_s": m["missed"], "extra_at_s": m["extra"]}
 
 
@@ -227,6 +253,85 @@ def cmd_report_only(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------------------------------------ round 2: dissolves
+def candidates2() -> List[Dict[str, Any]]:
+    return [{"mode": "union", "colour_jump": float(j), "cell_fraction": 0.0, "flash_filter": False, "min_gap": g, "window": w} for w in (1, 2, 3) for j in (12, 16, 20, 25, 30) for g in (0.5, 1.0)]
+
+
+def simplicity2(c: Dict[str, Any]) -> Tuple[int, float, float]:
+    return (int(c["window"]) - 1, abs(c["colour_jump"] - 30.0), -c["min_gap"])
+
+
+def label2(c: Dict[str, Any]) -> str:
+    return f"window={c['window']} jump={c['colour_jump']:g} gap={c['min_gap']:g}"
+
+
+BASELINE2 = {**BASELINE, "window": 1}
+CRITERIA2 = Path(__file__).resolve().parent / "REFERENCE_CUTS_CRITERIA_R111_ROUND2.md"
+
+
+def cmd_r2_dev(args: argparse.Namespace) -> int:
+    out = Path(args.out)
+    rows = []
+    for c in candidates2():
+        r = evaluate_clip("rollercoaster", c, out)
+        rows.append({"candidate": c, "label": label2(c), **{k: r[k] for k in ("true_cuts", "detected_cuts", "matched", "recall", "precision", "f1")}})
+    rows.sort(key=lambda r: (-r["f1"], simplicity2(r["candidate"])))
+    base = next(r for r in rows if r["candidate"] == BASELINE2)
+    chosen = rows[0]
+    selection = {"chosen": chosen["candidate"], "chosen_label": chosen["label"], "dev2_result": {k: chosen[k] for k in ("matched", "recall", "precision", "f1")},
+                 "baseline_dev2_result": {k: base[k] for k in ("matched", "recall", "precision", "f1")}, "criteria_sha256": hashlib.sha256(CRITERIA2.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+                 "candidates_evaluated": len(rows)}
+    selection["selection_sha256"] = hashlib.sha256(json.dumps({k: v for k, v in selection.items() if k != "selection_sha256"}, sort_keys=True).encode()).hexdigest()
+    (out / "r2_dev_grid.json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
+    (out / "r2_selection.json").write_text(json.dumps(selection, indent=2), encoding="utf-8")
+    print("top 8 on DEV2 (roller coaster, tolerance 0.30 s):")
+    for r in rows[:8]:
+        print(f"  F1 {r['f1']:.3f} recall {r['recall']:.3f} precision {r['precision']:.3f}  {r['label']}")
+    print(f"baseline: matched {base['matched']}/{base['true_cuts']}, {base['detected_cuts']} detected, F1 {base['f1']:.3f} recall {base['recall']:.3f} precision {base['precision']:.3f}")
+    print(f"CHOSEN (written to r2_selection.json before any guard run): {chosen['label']}")
+    return 0
+
+
+def verdict2(base_dev: Dict[str, Any], chosen_dev: Dict[str, Any], base_guard: Dict[str, Any], chosen_guard: Dict[str, Any], ep03_base: Dict[str, Any], ep03_chosen: Dict[str, Any],
+             ep04_shots: int) -> Dict[str, Any]:
+    a = chosen_dev["f1"] >= base_dev["f1"] + 0.10
+    b = chosen_guard["recall"] >= 0.85 and chosen_guard["precision"] >= 0.75 and ep03_chosen["f1"] >= ep03_base["f1"] - 0.05
+    c = 15 <= ep04_shots <= 24
+    return {"a_dev2_f1_gain_at_least_0.10": a, "b_guard_holds": b, "c_ep04_count_15_to_24": c, "adopt_chosen_as_default": bool(a and b and c),
+            "baseline_finds_dissolves": base_dev["recall"] >= 0.5}
+
+
+def cmd_r2_guard(args: argparse.Namespace) -> int:
+    out = Path(args.out)
+    sel_file, res_file = out / "r2_selection.json", out / "r2_guard_results.json"
+    if not sel_file.is_file():
+        print("refused: r2_selection.json does not exist. Run r2-dev first: the choice is fixed before the guard clips and EP04 are run with it.")
+        return 2
+    if res_file.is_file() and not args.again:
+        print(f"refused: {res_file} exists. The guard is run once; --again records a repeat.")
+        return 2
+    from rct_control_plane import reference_analysis as ra
+    sel = json.loads(sel_file.read_text(encoding="utf-8"))
+    chosen = sel["chosen"]
+    result: Dict[str, Any] = {"selection_sha256": sel["selection_sha256"], "repeat": bool(res_file.is_file())}
+    guard_names = ["ep01_v1", "ep02_v3"]
+    for tag, rule in (("baseline", BASELINE2), ("chosen", chosen)):
+        rows = [evaluate_clip(n, rule, out) for n in guard_names]
+        ep03 = evaluate_clip("ep03_v2", rule, out)
+        n4 = len(ra.cuts_from_signals(clip_signals("ep04_animatic", out), **rule)) + 1
+        result[tag] = {"rule": rule, "guard_clips": rows, "guard_pooled": pooled(rows), "ep03": {k: ep03[k] for k in ("matched", "true_cuts", "detected_cuts", "recall", "precision", "f1")}, "ep04_shots": n4}
+    dev_base, dev_chosen = sel["baseline_dev2_result"], sel["dev2_result"]
+    result["verdict"] = verdict2(dev_base, dev_chosen, result["baseline"]["guard_pooled"], result["chosen"]["guard_pooled"], result["baseline"]["ep03"], result["chosen"]["ep03"], result["chosen"]["ep04_shots"])
+    res_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    for tag in ("baseline", "chosen"):
+        r = result[tag]
+        print(f"{tag.upper()}: guard pooled recall {r['guard_pooled']['recall']:.3f} precision {r['guard_pooled']['precision']:.3f}; EP03 F1 {r['ep03']['f1']:.3f}; EP04 shots {r['ep04_shots']} (README 19)")
+    print("DEV2: baseline", dev_base, "chosen", dev_chosen)
+    print("VERDICT", result["verdict"])
+    return 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", default=str(Path.home() / "daaes-results" / "ref_cuts"))
@@ -237,8 +342,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     h = sub.add_parser("holdout")
     h.add_argument("--again", action="store_true")
     sub.add_parser("report-only")
+    sub.add_parser("r2-dev")
+    g = sub.add_parser("r2-guard")
+    g.add_argument("--again", action="store_true")
     args = ap.parse_args(argv)
-    return {"signals": cmd_signals, "dev-grid": cmd_dev_grid, "holdout": cmd_holdout, "report-only": cmd_report_only}[args.cmd](args)
+    return {"signals": cmd_signals, "dev-grid": cmd_dev_grid, "holdout": cmd_holdout, "report-only": cmd_report_only, "r2-dev": cmd_r2_dev, "r2-guard": cmd_r2_guard}[args.cmd](args)
 
 
 if __name__ == "__main__":
