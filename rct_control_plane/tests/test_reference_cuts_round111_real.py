@@ -139,3 +139,80 @@ def test_only_the_dev_clip_is_decoded_before_the_selection(capsys):
     assert ce.cmd_signals(argparse.Namespace(set="holdout", out="x")) == 2
     assert {n for n, m in ce.CLIPS.items() if m["set"] == "holdout"} == {"ep01_v1", "ep02_v3"}
     assert {n for n, m in ce.CLIPS.items() if m["set"] == "dev"} == {"ep03_v2"}
+
+
+# ------------------------------------------------------------------------------------------------ round 2: dissolves
+BREAKDOWN = """# Breakdown
+
+## 3. Shot-by-shot breakdown (see `keyshots.jpg`)
+| # | Time | Location |
+|---|---|---|
+| 1 | 0.0\u20131.2 | track |
+| 2 | 1.2\u20132.6 | loop |
+| 3 | 2.7\u20134.0 | tower |
+
+## 4. Visual language
+| 4 | 9.0\u20139.9 | not read |
+"""
+
+
+def test_a_breakdown_table_gives_the_starts_of_every_shot_but_the_first(tmp_path):
+    f = tmp_path / "b.md"
+    f.write_text(BREAKDOWN, encoding="utf-8")
+    assert ce.breakdown_cuts(f) == [1.2, 2.7]
+
+
+@pytest.mark.skipif(not (ce.ROOT / "library" / "REF_BREAKDOWN_roller_coaster_TH.md").is_file(), reason="the creator's breakdown is not on this computer")
+def test_the_real_roller_coaster_breakdown_gives_the_18_cuts_the_criteria_list():
+    cuts = ce.breakdown_cuts(ce.ROOT / "library" / "REF_BREAKDOWN_roller_coaster_TH.md")
+    assert len(cuts) == 18 and cuts[0] == 1.2 and cuts[-1] == 59.6
+
+
+def test_a_window_catches_a_dissolve_that_no_single_step_shows():
+    # a dissolve spread over three samples: each neighbouring step is 12, the picture three samples apart is 36
+    s = sig([0, 0, 12, 12, 12, 0, 0, 0], scene=[])
+    s["diffw"] = {"2": [0, 0, 24, 24, 12, 0, 0], "3": [0, 12, 36, 24, 12, 0]}
+    assert ra.cuts_from_signals(s, mode="union", colour_jump=30) == []                    # window 1: no step above 30
+    assert ra.cuts_from_signals(s, mode="union", colour_jump=30, window=3) == [0.5]       # window 3 sees 36 between samples 2 and 5: the later sample, 0.5 s
+    assert ra.cuts_from_signals(s, mode="union", colour_jump=20, window=2) == [0.4]                                                    # 24 at 0.4 s and 0.5 s: one cut, the first
+    with pytest.raises(ValueError):
+        ra.cuts_from_signals(s, mode="union", window=4)
+    with pytest.raises(ValueError):
+        ra.cuts_from_signals(sig([0, 0]), mode="union", window=2)                       # signals made without windows say so
+
+
+def test_window_one_is_exactly_the_shipped_rule():
+    s = sig([0, 40, 0, 0, 0, 0, 0, 90, 0, 0], scene=[0.9])
+    assert ra.cuts_from_signals(s, window=1) == ra.cuts_from_signals(s) == [0.2, 0.8]
+
+
+def test_the_round_two_search_space_and_choice_order():
+    c = ce.candidates2()
+    assert len(c) == 30 and ce.BASELINE2 in c
+    assert len({ce.label2(x) for x in c}) == 30
+    assert sorted(c, key=ce.simplicity2)[0] == {**ce.BASELINE, "window": 1, "min_gap": 1.0}       # a tie: smaller window, jump nearest 30, then the larger gap
+    text = ce.CRITERIA2.read_text(encoding="utf-8")
+    assert "30 candidates" in text and "15 and 24" in text and "0.30 s" in text
+
+
+def test_the_round_two_verdict_needs_all_three_parts():
+    base = {"f1": 0.1, "recall": 0.05}
+    ok_dev = {"f1": 0.6}
+    guard = {"recall": 0.9, "precision": 0.8}
+    e3b, e3c = {"f1": 0.727}, {"f1": 0.714}
+    assert ce.verdict2(base, ok_dev, guard, guard, e3b, e3c, 19)["adopt_chosen_as_default"]
+    assert not ce.verdict2(base, ok_dev, guard, guard, e3b, e3c, 26)["adopt_chosen_as_default"]                      # EP04 count outside 15-24
+    assert not ce.verdict2(base, {"f1": 0.15}, guard, guard, e3b, e3c, 19)["adopt_chosen_as_default"]                # gain under 0.10
+    assert not ce.verdict2(base, ok_dev, guard, {"recall": 0.8, "precision": 0.8}, e3b, e3c, 19)["adopt_chosen_as_default"]      # the guard no longer holds
+    assert not ce.verdict2(base, ok_dev, guard, guard, e3b, {"f1": 0.6}, 19)["adopt_chosen_as_default"]             # EP03 fell by more than 0.05
+    assert not ce.verdict2(base, ok_dev, guard, guard, e3b, e3c, 19)["baseline_finds_dissolves"]
+
+
+def test_the_round_two_guard_refuses_without_a_selection_and_a_second_run(tmp_path, capsys):
+    ns = argparse.Namespace(out=str(tmp_path), again=False)
+    assert ce.cmd_r2_guard(ns) == 2
+    assert "r2_selection.json does not exist" in capsys.readouterr().out
+    (tmp_path / "r2_selection.json").write_text(json.dumps({"chosen": ce.BASELINE2, "selection_sha256": "0"}), encoding="utf-8")
+    (tmp_path / "r2_guard_results.json").write_text("{}", encoding="utf-8")
+    assert ce.cmd_r2_guard(ns) == 2
+    assert "run once" in capsys.readouterr().out
