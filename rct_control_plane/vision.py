@@ -59,10 +59,10 @@ def _roots() -> Tuple[Path, ...]:
     return tuple(roots)
 
 
-def load_image(path: str) -> Tuple[bytes, str, Path]:
+def load_image(path: str, allowed_roots: Optional[Tuple[Path, ...]] = None) -> Tuple[bytes, str, Path]:
     if not str(path or "").strip():
         raise VisionError("no image path was given")
-    roots = _roots()
+    roots = tuple(Path(r).resolve() for r in allowed_roots) if allowed_roots else _roots()      # Round 111: a caller that owns its frames (the reference analyzer) names its own folder
     candidate = Path(path)
     resolved = candidate.resolve() if candidate.is_absolute() else (roots[0] / candidate).resolve()
     if not any(resolved.is_relative_to(r) for r in roots):
@@ -106,6 +106,16 @@ def _residency_check(provider: Any, data: bytes, mime: str, persistence: Any, na
 
 
 async def _ask(provider: Any, data: bytes, mime: str, question: str, max_tokens: int) -> str:
+    """Round 111: the call goes through the provider's own `complete_with_images`, so a metered or budget-guarded provider counts a picture like text and the OpenRouter provider preferences
+    (for example data_collection=deny) apply to pictures too. A provider chain that cannot take pictures through that method falls back to the older direct request (unmetered)."""
+    try:
+        return str(await provider.complete_with_images(question, [(mime, data)], SYSTEM, 0.2, max_tokens))
+    except NotImplementedError:
+        pass
+    return await _ask_direct(provider, data, mime, question, max_tokens)
+
+
+async def _ask_direct(provider: Any, data: bytes, mime: str, question: str, max_tokens: int) -> str:
     from rct_control_plane import http_client
     from rct_control_plane.llm_provider import OllamaProvider, OpenAICompatibleProvider, OpenRouterProvider, openrouter_base_url
     inner = provider
@@ -114,7 +124,7 @@ async def _ask(provider: Any, data: bytes, mime: str, question: str, max_tokens:
             inner = inner.inner
     b64 = base64.b64encode(data).decode("ascii")
     if isinstance(inner, OllamaProvider):
-        payload = {"model": inner.model, "prompt": f"{SYSTEM}\n\n{question}", "images": [b64], "stream": False, "options": {"temperature": 0.2}}
+        payload = {"model": inner.model, "prompt": SYSTEM + chr(10) + chr(10) + question, "images": [b64], "stream": False, "options": {"temperature": 0.2}}
         async with http_client.async_client(timeout=300.0) as client:
             response = await client.post(f"{inner.llm_url}/api/generate", json=payload)
             response.raise_for_status()
@@ -131,9 +141,10 @@ async def _ask(provider: Any, data: bytes, mime: str, question: str, max_tokens:
     raise VisionError(f"the configured model provider ({type(inner).__name__}) cannot take images")
 
 
-async def describe_image(path: str, question: str = "", provider: Any = None, persistence: Any = None, namespace: str = "", max_tokens: int = 700) -> Dict[str, Any]:
+async def describe_image(path: str, question: str = "", provider: Any = None, persistence: Any = None, namespace: str = "", max_tokens: int = 700,
+                         allowed_roots: Optional[Tuple[Path, ...]] = None) -> Dict[str, Any]:
     try:
-        data, mime, resolved = load_image(path)
+        data, mime, resolved = load_image(path, allowed_roots)
         if provider is None:
             from rct_control_plane.llm_provider import get_default_provider
             provider = get_default_provider(profile=PROFILE)

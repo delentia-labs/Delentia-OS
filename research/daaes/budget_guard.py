@@ -24,7 +24,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from rct_control_plane.llm_provider import LLMProvider, LLMUsage
 
@@ -296,6 +296,33 @@ class GuardedProvider(LLMProvider):
         cost = usage.cost_usd if usage and usage.cost_usd is not None else (used_in * (self._pin or 0.0) + used_out * (self._pout or 0.0)) / 1_000_000      # a malformed value is replaced in after_call
         self._budget.after_call(reserved, used_in, used_out, cost)
         self.last_usage = LLMUsage(used_in, used_out, cost)
+        return out
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None, temperature: float = 0.2, max_tokens: int = 700) -> str:
+        """Round 111: a picture passes the same guard as text. The worst case reserves IMAGE_TOKEN_ALLOWANCE prompt tokens a picture; the amount recorded afterwards is what the provider reports."""
+        from rct_control_plane.llm_provider import IMAGE_TOKEN_ALLOWANCE, _count_tokens
+        full = f"{system_prompt}" + chr(10) + chr(10) + f"{prompt}" if system_prompt else prompt
+        tokens_in = _count_tokens(full) + IMAGE_TOKEN_ALLOWANCE * len(images)
+        try:
+            reserved = self._budget.before_call(tokens_in, max_tokens, self._pin, self._pout)
+        except BudgetExceeded as exc:
+            self.refused = str(exc)
+            raise
+        try:
+            out = await self._inner.complete_with_images(prompt, images, system_prompt, temperature, max_tokens)
+        except NotImplementedError:
+            self._budget.after_call(reserved, 0, 0, 0.0)          # nothing was sent: the reservation is released (it still counts as one call with no tokens)
+            raise
+        except BaseException:
+            self._budget.uncertain(reserved, tokens_in)
+            raise
+        usage: Optional[LLMUsage] = self._inner.last_usage
+        used_in = usage.prompt_tokens if usage and usage.prompt_tokens else tokens_in
+        used_out = usage.completion_tokens if usage and usage.completion_tokens else _count_tokens(out)
+        cost = usage.cost_usd if usage and usage.cost_usd is not None else (used_in * (self._pin or 0.0) + used_out * (self._pout or 0.0)) / 1_000_000
+        self._budget.after_call(reserved, used_in, used_out, cost)
+        self.last_usage = LLMUsage(used_in, used_out, cost)
+        self.last_served_by = getattr(self._inner, "last_served_by", None)
         return out
 
 

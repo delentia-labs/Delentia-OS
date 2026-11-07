@@ -15,15 +15,16 @@ This uses the driver `scripts/paid_day.py`, which keeps the whole day under one 
 | P1b | Compact tool menu vs full menu (only models that passed P1, at most 3) | $1.50 |
 | P2 | Do the judge, critic and context judge meet their own rules on sets you labelled? | $1.50 |
 | P4 | Does the same job come out differently with and without the runtime (TC-003, TC-006)? | $4.00 |
-| | **Sum of ceilings** | **$12.10** |
+| PR | Can a vision model read a reference video and write a plan, and does the RCT-7 text change the plan? (descriptive, at most 2 models) | $0.75 |
+| | **Sum of ceilings** | **$12.85** |
 
-$15 - $12.10 = **$2.90** is a reserve the key cannot reach (set the key's credit limit to 12.10). Real spending is expected to be much lower.
+$15 - $12.85 = **$2.15** is a reserve the key cannot reach (set the key's credit limit to 12.85). Real spending is expected to be much lower.
 
 ## Before the day (no key needed)
 
 1. At OpenRouter add **$15 of prepaid credit once** and **turn auto top-up off** (Settings -> Credits). A card adds about 5.5% (minimum $0.80).
 2. Revoke the old leaked key (Keys -> Delete) if you have not.
-3. Create a new key named `delentia-prepaid-2026-10` with **Credit limit = 12.10**. Copy it once.
+3. Create a new key named `delentia-prepaid-2026-10` with **Credit limit = 12.85**. Copy it once.
 4. In `C:\Users\whale\Delentia\Delentia-OS`: `git pull`, then `git status` must be clean (the freeze refuses a modified tree).
 5. Use `py -3.13` for every command.
 
@@ -45,7 +46,7 @@ Stay in this window for every step. The freeze records these values; a window se
 ## Step 2: freeze what will be measured
 
 ```powershell
-py -3.13 -m research.paid_run_freeze write --models $m --live-prices --stages P0,P1,P1b,P2,P4 --budget-usd 12.10 --provider-cap-confirmed --out $env:USERPROFILE\daaes-results\freeze.json
+py -3.13 -m research.paid_run_freeze write --models $m --live-prices --stages P0,P1,P1b,P2,P4,PR --budget-usd 12.85 --provider-cap-confirmed --out $env:USERPROFILE\daaes-results\freeze.json
 $env:DELENTIA_FREEZE_FILE = "$env:USERPROFILE\daaes-results\freeze.json"
 py -3.13 -m research.paid_run_freeze check $env:DELENTIA_FREEZE_FILE
 ```
@@ -58,7 +59,7 @@ Pass `--provider-cap-confirmed` only after item 3 above. `check` must say the ru
 py -3.13 scripts/paid_day.py preflight --models $m --freeze-file $env:DELENTIA_FREEZE_FILE
 ```
 
-Every line must be OK. It checks the key, the live-tests opt-in, data-collection denial, the freeze, **that the key has a provider-side credit limit of at most $12.10**, that enough is left for the stage about to run, that every price is known, and that the four RCT-7 sets are sealed. A line marked NO is what to fix first; nothing has been spent.
+Every line must be OK. It checks the key, the live-tests opt-in, data-collection denial, the freeze, **that the key has a provider-side credit limit of at most $12.85**, that enough is left for the stage about to run, that every price is known, and that the four RCT-7 sets are sealed. A line marked NO is what to fix first; nothing has been spent.
 
 ## Step 4: stage 1 (P0 + P1)
 
@@ -86,6 +87,24 @@ py -3.13 scripts/paid_day.py stage2 --selected "<id1>,<id2>,<id3>" --freeze-file
 ```
 
 It writes `selection.json` **before** starting (so the choice is visible before any result), refuses more than 3 models, and runs P1b (menu A/B), P2 (the four RCT-7 sets; each prompt+labels runs once per model) and P4 (TC-003 arms b0/d0, seeds 1700-1703, and TC-006). A model too expensive for a stage to fit its ceiling is skipped, with the reason in the log.
+
+## Step 5b: stage 3 (PR), reference to plan, with a vision model
+
+This stage asks a model that accepts images to read a synthetic reference video (six still frames; the video is made on your computer and the answers are known) and to write a production plan, in three ways: plain, with the plan text the runtime
+uses today, and with the seven RCT-7 steps as the order to think in. The rules are in `research/PREPAID_CRITERIA_R103.md`, section PR, written before any model ran. It is cheap (about $0.07 to $0.50 a model) and it needs at most two models.
+It also runs the free analyzer check first: if our own tool measures the video wrongly, nothing is sent to a model.
+
+```powershell
+py -3.13 scripts/paid_day.py stage3 --vision-models "<id1>[,<id2>]" --freeze-file $env:DELENTIA_FREEZE_FILE
+py -3.13 scripts/paid_day.py stage3 --vision-models "<id1>[,<id2>]" --freeze-file $env:DELENTIA_FREEZE_FILE --execute
+```
+
+The preflight refuses a model that the provider's own list does not say accepts images, more than two models, and a choice whose estimate with the 1.5x margin does not fit the $0.75 ceiling (two expensive models do not). It writes `selection_pr.json` before spending.
+
+Optional, not scored: add `--your-clip "C:\path\to\a-clip-you-own.mp4" --allow-your-clip-frames` to the `--execute` command. Up to 12 key frames of YOUR clip are then sent to the first model and you get a report to read. The frames leave your computer: only a clip you own,
+and no clip with people who did not agree to it.
+
+Free, no model, any time: `py -3.13 -m research.reference_stage analyze --video "C:\path\clip.mp4" --out $env:USERPROFILE\daaes-results\myclip` measures the clip (length, size, audio, where the cuts are, one key frame per shot) and sends nothing anywhere.
 
 ## Step 6: summary, and send the results to be registered
 

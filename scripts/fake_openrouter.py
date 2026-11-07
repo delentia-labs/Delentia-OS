@@ -85,6 +85,10 @@ def multi_file_reader(req: "sm.Request") -> str:
 def rehearsal_policy(req: "sm.Request") -> str:
     """Right answers to the K.1.5 goals and the Round 54 probe goals, and nothing smarter."""
     goal = req.goal.lower()
+    if "key frame of shot" in req.prompt or "plan how to produce a new short video" in req.prompt.lower():      # stage PR (reference to plan): answers from the seed's truth
+        from research import reference_eval, reference_stage
+        truth = reference_eval.make_truth()
+        return reference_stage.scripted_description(truth, req.prompt) if "key frame of shot" in req.prompt else reference_stage.scripted_plan(truth)
     if "formal acceptance test marker" in goal:
         if req.history_empty:
             return sm._call("delentia_recall", {"query": "formal acceptance test marker"}, "the user asked what I remember")
@@ -159,10 +163,15 @@ class FakeOpenRouter:
                 if model not in outer.prices:
                     return self._send(404, {"error": f"no such model {model}"})
                 messages = body.get("messages") or []
-                prompt = "\n".join(str(m.get("content", "")) for m in messages if m.get("role") != "system")
-                system = "\n".join(str(m.get("content", "")) for m in messages if m.get("role") == "system")
+
+                def _text(m: Dict[str, Any]) -> str:
+                    c = m.get("content", "")
+                    return " ".join(str(x.get("text", "")) for x in c if isinstance(x, dict) and x.get("type") == "text") if isinstance(c, list) else str(c)
+                images = sum(1 for m in messages if isinstance(m.get("content"), list) for x in m["content"] if isinstance(x, dict) and x.get("type") == "image_url")
+                prompt = "\n".join(_text(m) for m in messages if m.get("role") != "system")
+                system = "\n".join(_text(m) for m in messages if m.get("role") == "system")
                 content = outer.policy(sm.Request(prompt, system, body))
-                p_tokens, c_tokens = max(1, len(prompt + system) // 4), max(1, len(content) // 4)
+                p_tokens, c_tokens = max(1, len(prompt + system) // 4) + 1000 * images, max(1, len(content) // 4)       # a picture counts as 1,000 prompt tokens, not as its base64 text
                 price = outer.prices[model]
                 cost = p_tokens * price["in"] / 1e6 + c_tokens * price["out"] / 1e6
                 with outer._lock:

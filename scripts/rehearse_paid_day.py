@@ -3,10 +3,10 @@ Round 107: rehearse the whole paid day (scripts/paid_day.py: stage 1 and stage 2
 
     python scripts/rehearse_paid_day.py [--keep DIR]
 
-It starts scripts/fake_openrouter.py with a key limit of $12.10 (as the provider would report it), copies the four sealed holdout sheets to a temporary folder (so the rehearsal never writes a run
-into the real sheets' run files), and runs `paid_day.py stage1` and `stage2` with `--execute --rehearsal` exactly as the Architect will with a real key. It then checks that:
+It starts scripts/fake_openrouter.py with a key limit of $12.85 (as the provider would report it), copies the four sealed holdout sheets to a temporary folder (so the rehearsal never writes a run
+into the real sheets' run files), and runs `paid_day.py stage1`, `stage2` and `stage3` with `--execute --rehearsal` exactly as the Architect will with a real key. It then checks that:
   * every guard that can refuse did refuse (no key, no live-tests switch, no limit on the key, a limit above the cap, a real endpoint with --rehearsal, a loopback fake without it);
-  * P0, P1, P1b, P2 and P4 each ran their command and logged an exit code;
+  * P0, P1, P1b, P2, P4 and PR each ran their command and logged an exit code;
   * the money the script measured (the provider's own usage figure) equals what the fake charged;
   * the key never appears in the log or in any output file.
 A pass means the plumbing and the guards work. It says nothing about how a real model behaves: the fake's answers are scripted, so the verdicts of the stages are not the point.
@@ -48,7 +48,7 @@ def main() -> int:
                 shutil.copy(src, sheets / src.name)
     problems = []
     out = Path(args.keep) if args.keep else work / "out"
-    with fake_openrouter.FakeOpenRouter(prices, limit=12.10) as fake:
+    with fake_openrouter.FakeOpenRouter(prices, limit=paid_day.CAP_USD) as fake:
         os.environ.update({"DELENTIA_OPENROUTER_BASE_URL": fake.base_url, "OPENROUTER_API_KEY": fake.key, "DELENTIA_RUN_LIVE_TESTS": "1", "DELENTIA_OPENROUTER_DATA_COLLECTION": "deny"})
         common = ["--models", model, "--prices-file", str(work / "prices.json"), "--sheets-dir", str(sheets), "--out-dir", str(out), "--rehearsal"]
         print("=== the guards must refuse")
@@ -71,7 +71,7 @@ def main() -> int:
         fake.limit = 50.0
         if paid_day.main(["preflight", *common], dict(env), paid_day.key_info) == 0:
             problems.append("preflight accepted a key whose limit is above the cap")
-        fake.limit = 12.10
+        fake.limit = paid_day.CAP_USD
         print("\n=== the plan alone (dry run) must spend nothing")
         before = fake.spent
         paid_day.main(["stage1", *common], dict(env), paid_day.key_info)
@@ -81,18 +81,20 @@ def main() -> int:
         code1 = paid_day.main(["stage1", *common, "--execute"], dict(env), paid_day.key_info)
         print("\n=== stage 2 for real (against the fake)")
         code2 = paid_day.main(["stage2", "--selected", model, *common[2:], "--execute"], dict(env), paid_day.key_info)
+        print("\n=== stage 3 for real (against the fake): reference to plan")
+        code3 = paid_day.main(["stage3", "--vision-models", model, *common[2:], "--execute"], dict(env), paid_day.key_info)
         spent_fake = round(fake.spent, 6)
     log = out / "paid_day_log.jsonl"
     rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines() if line.strip()] if log.exists() else []
     ran = {r["stage"] for r in rows if "exit" in r}
-    for stage in ("P0", "P1", "P1b", "P2", "P4"):
+    for stage in ("P0", "P1", "P1b", "P2", "P4", "PR"):
         if stage not in ran:
             problems.append(f"stage {stage} never ran a command")
     if (out / "selection.json").exists() is False:
         problems.append("the selection was not written before stage 2")
     stage_usage = {s: max((r.get("stage_usage_usd", 0) for r in rows if r.get("stage") == s and "exit" in r), default=0.0) for s in paid_day.STAGE_CEILINGS}
     measured = round(sum(stage_usage.values()), 6)
-    print(f"\nfake charged ${spent_fake}; the stages' own measurement adds up to ${measured}; exit codes {code1}, {code2}")
+    print(f"\nfake charged ${spent_fake}; the stages' own measurement adds up to ${measured}; exit codes {code1}, {code2}, {code3}")
     if abs(measured - spent_fake) > max(0.002, spent_fake * 0.02):
         problems.append(f"the script's measured spend (${measured}) does not match what the fake charged (${spent_fake})")
     leaked = [str(p) for p in out.rglob("*") if p.is_file() and fake.key in p.read_text(encoding="utf-8", errors="ignore")]
