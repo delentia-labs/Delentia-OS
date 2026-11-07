@@ -2780,13 +2780,18 @@
 <td>$4.00</td>
 </tr>
 <tr>
+<td>PR</td>
+<td>โมเดลที่ดูภาพได้อ่านวิดีโออ้างอิงแล้วเขียนแผนได้หรือไม่ (เพิ่มเมื่อ 2026-11-07 ไม่เกิน 2 โมเดล)</td>
+<td>$0.75</td>
+</tr>
+<tr>
 <td></td>
 <td><strong>ผลรวมเพดาน</strong></td>
-<td><strong>$12.10</strong> (คาดว่าจะใช้จริงน้อยกว่านี้มาก)</td>
+<td><strong>$12.85</strong> (คาดว่าจะใช้จริงน้อยกว่านี้มาก)</td>
 </tr>
 </tbody>
 </table>
-<p>$2.90 ที่เหลือจาก $15 เป็นเงินสำรองที่ <strong>คีย์เข้าไม่ถึง</strong> (ขั้นที่ 2): จะใช้ได้ต้องให้คุณเพิ่มวงเงินของคีย์ด้วยตัวเอง กฎผ่าน/ไม่ผ่านของแต่ละขั้นเขียนไว้ใน <code>research/PREPAID_CRITERIA_R103.md</code> (commit ก่อนมีคีย์) ผลที่ไม่ถึงกฎบันทึกว่าไม่ถึง</p>
+<p>$2.15 ที่เหลือจาก $15 เป็นเงินสำรองที่ <strong>คีย์เข้าไม่ถึง</strong> (ขั้นที่ 2): จะใช้ได้ต้องให้คุณเพิ่มวงเงินของคีย์ด้วยตัวเอง กฎผ่าน/ไม่ผ่านของแต่ละขั้นเขียนไว้ใน <code>research/PREPAID_CRITERIA_R103.md</code> (commit ก่อนมีคีย์) ผลที่ไม่ถึงกฎบันทึกว่าไม่ถึง</p>
 <p>มัน <strong>ไม่</strong> ซื้อ: การเทียบ Delentia กับ Hermes (รอบนี้ไม่รัน h0) ความเป็นอิสระหลายวัน host หรือผู้ใช้ภายนอก</p>
 <h2 id="1">ขั้นที่ 1: ก่อนเริ่ม<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2797,7 +2802,7 @@
 <ol>
 <li><strong>เพิกถอนคีย์เก่าที่เคยรั่ว</strong> (openrouter.ai → Keys → Delete) ถ้ายังไม่ได้ทำ</li>
 <li><strong>เติมเครดิตแบบจ่ายล่วงหน้า $15 ครั้งเดียว</strong> และ <strong>ปิด auto top-up</strong> (Settings → Credits) จ่ายด้วยบัตรมีค่าธรรมเนียมราว 5.5% (ขั้นต่ำ $0.80) รวมราว $15.83 ถ้าเครดิตหมด การเรียกจะถูกปฏิเสธ ไม่มีบิลตามหลัง</li>
-<li><strong>สร้างคีย์ใหม่เฉพาะงานนี้</strong>: Keys → Create Key → ตั้งชื่อ <code>delentia-prepaid-2026-10</code> → <em>Credit limit</em> = <strong>12.10</strong> (นี่คือเพดาน ณ ผู้ให้บริการ ซึ่ง freeze ให้คุณยืนยันว่ามีอยู่) คัดลอกครั้งเดียว</li>
+<li><strong>สร้างคีย์ใหม่เฉพาะงานนี้</strong>: Keys → Create Key → ตั้งชื่อ <code>delentia-prepaid-2026-10</code> → <em>Credit limit</em> = <strong>12.85</strong> (นี่คือเพดาน ณ ผู้ให้บริการ ซึ่ง freeze ให้คุณยืนยันว่ามีอยู่) คัดลอกครั้งเดียว</li>
 <li>ชั้นของโปรแกรมเองซ้อนอยู่บน: ตัวรันปฏิเสธการเริ่มถ้า ค่าประมาณ × 1.5 สูงกว่างบที่ให้ และหยุดเมื่อโมเดลใช้เกิน 1.5 เท่าของค่าประมาณ ตัวนับของเอเจนต์ปฏิเสธการเรียกที่กรณีเลวร้ายที่สุดจะเกินงบ</li>
 </ol>
 <h2 id="3">ขั้นที่ 3: คีย์และการตั้งค่า ในหน้าต่างเทอร์มินัลเดียว<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
@@ -2813,7 +2818,7 @@
 <h2 id="4-freeze">ขั้นที่ 4: freeze สิ่งที่จะวัด<a class="headerlink" href="#4-freeze" title="Permanent link">&para;</a></h2>
 <div class="language-powershell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">New-Item</span> <span class="n">-ItemType</span> <span class="n">Directory</span> <span class="n">-Force</span> <span class="nv">$env:USERPROFILE</span><span class="p">\</span><span class="n">daaes-results</span> <span class="p">|</span> <span class="nb">Out-Null</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nv">$m</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-Content</span> <span class="n">research</span><span class="p">/</span><span class="n">screen_models_2026</span><span class="p">-</span><span class="n">10</span><span class="p">-</span><span class="n">16</span><span class="p">.</span><span class="n">txt</span><span class="p">)</span> <span class="n">-join</span> <span class="s2">","</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">py</span> <span class="p">-</span><span class="n">3</span><span class="p">.</span><span class="n">13</span> <span class="n">-m</span> <span class="n">research</span><span class="p">.</span><span class="n">paid_run_freeze</span> <span class="nb">write </span><span class="p">-</span><span class="n">-models</span> <span class="nv">$m</span> <span class="p">-</span><span class="n">-live-prices</span> <span class="p">-</span><span class="n">-stages</span> <span class="n">P0</span><span class="p">,</span><span class="n">P1</span><span class="p">,</span><span class="n">P1b</span><span class="p">,</span><span class="n">P2</span><span class="p">,</span><span class="n">P4</span> <span class="p">-</span><span class="n">-budget-usd</span> <span class="n">12</span><span class="p">.</span><span class="n">10</span> <span class="p">-</span><span class="n">-provider-cap-confirmed</span> <span class="p">-</span><span class="n">-out</span> <span class="nv">$env:USERPROFILE</span><span class="p">\</span><span class="n">daaes-results</span><span class="p">\</span><span class="n">freeze</span><span class="p">.</span><span class="n">json</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">py</span> <span class="p">-</span><span class="n">3</span><span class="p">.</span><span class="n">13</span> <span class="n">-m</span> <span class="n">research</span><span class="p">.</span><span class="n">paid_run_freeze</span> <span class="nb">write </span><span class="p">-</span><span class="n">-models</span> <span class="nv">$m</span> <span class="p">-</span><span class="n">-live-prices</span> <span class="p">-</span><span class="n">-stages</span> <span class="n">P0</span><span class="p">,</span><span class="n">P1</span><span class="p">,</span><span class="n">P1b</span><span class="p">,</span><span class="n">P2</span><span class="p">,</span><span class="n">P4</span><span class="p">,</span><span class="n">PR</span> <span class="p">-</span><span class="n">-budget-usd</span> <span class="n">12</span><span class="p">.</span><span class="n">85</span> <span class="p">-</span><span class="n">-provider-cap-confirmed</span> <span class="p">-</span><span class="n">-out</span> <span class="nv">$env:USERPROFILE</span><span class="p">\</span><span class="n">daaes-results</span><span class="p">\</span><span class="n">freeze</span><span class="p">.</span><span class="n">json</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nv">$env:DELENTIA_FREEZE_FILE</span> <span class="p">=</span> <span class="s2">"$env:USERPROFILE\daaes-results\freeze.json"</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">py</span> <span class="p">-</span><span class="n">3</span><span class="p">.</span><span class="n">13</span> <span class="n">-m</span> <span class="n">research</span><span class="p">.</span><span class="n">paid_run_freeze</span> <span class="n">check</span> <span class="nv">$env:DELENTIA_FREEZE_FILE</span>
 </span></code></pre></div>
