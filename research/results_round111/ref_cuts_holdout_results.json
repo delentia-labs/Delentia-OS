@@ -1,0 +1,133 @@
+{
+  "selection_sha256": "3b7327ff7c8fb56ee2069416d5d741e28842eda347979ad0a06c5fc9ea5a0a38",
+  "repeat": false,
+  "tolerance_s": 0.2,
+  "baseline": {
+    "rule": {
+      "mode": "union",
+      "colour_jump": 30.0,
+      "cell_fraction": 0.0,
+      "flash_filter": false,
+      "min_gap": 0.5
+    },
+    "clips": [
+      {
+        "clip": "ep01_v1",
+        "true_cuts": 13,
+        "detected_cuts": 14,
+        "matched": 10,
+        "missed": 3,
+        "extra": 4,
+        "recall": 0.769,
+        "precision": 0.714,
+        "f1": 0.741,
+        "count_ratio": 1.071,
+        "missed_at_s": [
+          7.467,
+          40.867,
+          48.667
+        ],
+        "extra_at_s": [
+          7.67,
+          33.9,
+          41.1,
+          48.87
+        ]
+      },
+      {
+        "clip": "ep02_v3",
+        "true_cuts": 15,
+        "detected_cuts": 16,
+        "matched": 14,
+        "missed": 1,
+        "extra": 2,
+        "recall": 0.933,
+        "precision": 0.875,
+        "f1": 0.903,
+        "count_ratio": 1.062,
+        "missed_at_s": [
+          57.867
+        ],
+        "extra_at_s": [
+          54.8,
+          57.6
+        ]
+      }
+    ],
+    "pooled": {
+      "true_cuts": 28,
+      "detected_cuts": 30,
+      "matched": 24,
+      "recall": 0.857,
+      "precision": 0.8,
+      "f1": 0.828
+    }
+  },
+  "chosen": {
+    "rule": {
+      "mode": "union",
+      "colour_jump": 30.0,
+      "cell_fraction": 0.0,
+      "flash_filter": false,
+      "min_gap": 1.0
+    },
+    "label": "union jump=30 cells>=0 flash=off gap=1",
+    "clips": [
+      {
+        "clip": "ep01_v1",
+        "true_cuts": 13,
+        "detected_cuts": 14,
+        "matched": 10,
+        "missed": 3,
+        "extra": 4,
+        "recall": 0.769,
+        "precision": 0.714,
+        "f1": 0.741,
+        "count_ratio": 1.071,
+        "missed_at_s": [
+          7.467,
+          40.867,
+          48.667
+        ],
+        "extra_at_s": [
+          7.67,
+          33.9,
+          41.1,
+          48.87
+        ]
+      },
+      {
+        "clip": "ep02_v3",
+        "true_cuts": 15,
+        "detected_cuts": 16,
+        "matched": 14,
+        "missed": 1,
+        "extra": 2,
+        "recall": 0.933,
+        "precision": 0.875,
+        "f1": 0.903,
+        "count_ratio": 1.062,
+        "missed_at_s": [
+          57.867
+        ],
+        "extra_at_s": [
+          54.8,
+          57.6
+        ]
+      }
+    ],
+    "pooled": {
+      "true_cuts": 28,
+      "detected_cuts": 30,
+      "matched": 24,
+      "recall": 0.857,
+      "precision": 0.8,
+      "f1": 0.828
+    }
+  },
+  "verdict": {
+    "baseline_useful_for_planning": true,
+    "chosen_useful_for_planning": true,
+    "adopt_chosen_as_default": false
+  }
+}
