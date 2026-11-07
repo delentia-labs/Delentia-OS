@@ -16,7 +16,7 @@ import re
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Dict, Optional, TYPE_CHECKING
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rct_control_plane.topic_cache import TopicCache
@@ -79,6 +79,13 @@ class LLMProvider(ABC):
                         temperature: float = 0.7, max_tokens: int = 2048,
                         json_mode: bool = False) -> str:
         ...
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
+                                   temperature: float = 0.2, max_tokens: int = 700) -> str:
+        """Round 111: one call whose prompt also carries pictures (`images` = [(mime type, bytes), ...]). A provider that cannot take pictures raises NotImplementedError and the
+        caller decides what to do; the wrappers that count money (MeteredProvider, the experiment budget guard) forward to the provider they wrap, so a picture is counted like text:
+        before this, `vision.py` posted straight to the endpoint and the episode meter never saw the call."""
+        raise NotImplementedError(f"{type(self).__name__} cannot take images")
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
@@ -172,6 +179,19 @@ class OllamaProvider(LLMProvider):
         if cacheable and cache is not None:
             cache.put(full_prompt, full_prompt, result, ttl_seconds=self._CACHE_TTL_SECONDS)
         return result
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
+                                   temperature: float = 0.2, max_tokens: int = 700) -> str:
+        import base64
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        payload = {"model": self.model, "prompt": full_prompt, "images": [base64.b64encode(d).decode("ascii") for _, d in images], "stream": False,
+                   "options": {"temperature": temperature}}
+        async with http_client.async_client(timeout=300.0) as client:
+            response = await client.post(f"{self.llm_url}/api/generate", json=payload)
+            response.raise_for_status()
+            data = response.json()
+        self.last_usage = LLMUsage(int(data.get("prompt_eval_count") or 0), int(data.get("eval_count") or 0), 0.0)
+        return str(data["response"])
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
@@ -317,6 +337,23 @@ def _build_openrouter_payload(
     return payload
 
 
+# Round 111: what a picture is assumed to cost in prompt tokens when a budget is checked BEFORE the call (providers differ: roughly 250 to 1,600 for a frame of this size).
+# It is a worst-case allowance for the reservation only; the amount charged afterwards is what the provider reports.
+IMAGE_TOKEN_ALLOWANCE = 2000
+
+
+def _vision_payload(model: str, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str], temperature: float, max_tokens: int, compat: CompatProfile) -> dict:
+    """The OpenAI-style request with picture parts: the same payload as a text call (so provider preferences such as data_collection=deny apply to pictures too) with the last user
+    message turned into [text, image_url, ...]."""
+    import base64
+    payload = _build_openrouter_payload(model, prompt, system_prompt, temperature, max_tokens, False, compat)
+    parts: List[dict] = [{"type": "text", "text": prompt}]
+    for mime, data in images:
+        parts.append({"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"}})
+    payload["messages"][-1]["content"] = parts
+    return payload
+
+
 OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_BASE_ENV = "DELENTIA_OPENROUTER_BASE_URL"
 
@@ -450,6 +487,22 @@ class OpenRouterProvider(LLMProvider):
                                    float(cost) if isinstance(cost, (int, float)) else None, int((details or {}).get("cached_tokens") or 0))
         return text
 
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
+                                   temperature: float = 0.2, max_tokens: int = 700) -> str:
+        payload = _vision_payload(self.model, prompt, images, system_prompt, temperature, max_tokens, self.compat)
+        async with http_client.async_client(timeout=openrouter_timeout_s()) as client:
+            response = await self.post_json(client, f"{openrouter_base_url()}/chat/completions", payload)
+            response.raise_for_status()
+            data, text = reply_text(response)
+        served = data.get("provider")
+        self.last_served_by = served[:80] if isinstance(served, str) else None
+        usage = data.get("usage") or {}
+        cost = usage.get("cost")
+        details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
+        self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0),
+                                   float(cost) if isinstance(cost, (int, float)) else None, int((details or {}).get("cached_tokens") or 0))
+        return text
+
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,
                                temperature: float = 0.7, max_tokens: int = 2048) -> AsyncIterator[str]:
         """Real token streaming via OpenRouter's OpenAI-compatible SSE
@@ -558,6 +611,17 @@ class OpenAICompatibleProvider(LLMProvider):
             data, text = reply_text(response)
         usage = data.get("usage") or {}
         # A self-hosted or national endpoint reports no price; unknown cost stays None.
+        self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), None)
+        return text
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
+                                   temperature: float = 0.2, max_tokens: int = 700) -> str:
+        payload = _vision_payload(self.model, prompt, images, system_prompt, temperature, max_tokens, self.compat)
+        async with http_client.async_client(timeout=self.timeout) as client:
+            response = await self.post_json(client, f"{self.base_url}/chat/completions", payload)
+            response.raise_for_status()
+            data, text = reply_text(response)
+        usage = data.get("usage") or {}
         self.last_usage = LLMUsage(int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), None)
         return text
 
@@ -764,14 +828,14 @@ class MeteredProvider(LLMProvider):
         return (prompt_tokens * self.prompt_price_per_mtok
                 + completion_tokens * self.completion_price_per_mtok) / 1_000_000
 
-    def _check_budget(self, prompt_text: str, max_tokens: int) -> None:
+    def _check_budget(self, prompt_text: str, max_tokens: int, extra_prompt_tokens: int = 0) -> None:
         if self.budget_problem:
             self.refused = f"budget: {self.budget_problem}, so the call cannot be checked"
             raise BudgetExceededError(self.refused)
         if (self.max_cost_usd is not None or self.max_tokens_total is not None) and not (isinstance(max_tokens, int) and not isinstance(max_tokens, bool) and max_tokens >= 0):
             self.refused = f"budget: the output limit {max_tokens!r} of this call is not a whole number, so its worst case cannot be computed"
             raise BudgetExceededError(self.refused)
-        worst_prompt = _count_tokens(prompt_text)
+        worst_prompt = _count_tokens(prompt_text) + max(0, int(extra_prompt_tokens))
         if self.max_tokens_total is not None:
             used = self.prompt_tokens + self.completion_tokens + self.children_tokens
             if used + worst_prompt + max_tokens > self.max_tokens_total:
@@ -788,11 +852,11 @@ class MeteredProvider(LLMProvider):
                                 f"> ${self.max_cost_usd}")
                 raise BudgetExceededError(self.refused)
 
-    def _record(self, prompt_text: str, completion_text: str) -> None:
+    def _record(self, prompt_text: str, completion_text: str, extra_prompt_tokens: int = 0) -> None:
         usage = self._inner.last_usage
         self._inner.last_usage = None
         if usage is None or (usage.prompt_tokens == 0 and usage.completion_tokens == 0 and usage.cost_usd is None):
-            usage = LLMUsage(_count_tokens(prompt_text), _count_tokens(completion_text), None)
+            usage = LLMUsage(_count_tokens(prompt_text) + max(0, int(extra_prompt_tokens)), _count_tokens(completion_text), None)
         reported = usage.cost_usd if _good_amount(usage.cost_usd) else None        # a NaN or negative cost from a provider would poison or shrink the total: the price-based estimate is used
         cost = reported if reported is not None else self._price(usage.prompt_tokens, usage.completion_tokens)
         self.calls += 1
@@ -805,9 +869,9 @@ class MeteredProvider(LLMProvider):
             self.cost_usd += cost
         self.last_usage = LLMUsage(usage.prompt_tokens, usage.completion_tokens, cost, usage.cached_tokens)
 
-    def _record_uncertain(self, prompt_text: str, partial_text: str = "") -> None:
+    def _record_uncertain(self, prompt_text: str, partial_text: str = "", extra_prompt_tokens: int = 0) -> None:
         """The call raised after the request may have reached the provider. It counts as a call; its prompt (and any text already received) counts as used, at the price when it is known."""
-        used_in, used_out = _count_tokens(prompt_text), _count_tokens(partial_text) if partial_text else 0
+        used_in, used_out = _count_tokens(prompt_text) + max(0, int(extra_prompt_tokens)), _count_tokens(partial_text) if partial_text else 0
         self.calls += 1
         self.uncertain_calls += 1
         self.prompt_tokens += used_in
@@ -829,6 +893,22 @@ class MeteredProvider(LLMProvider):
             self._record_uncertain(full)
             raise
         self._record(full, result)
+        return result
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
+                                   temperature: float = 0.2, max_tokens: int = 700) -> str:
+        """Round 111: a picture is counted like text. The worst case reserves IMAGE_TOKEN_ALLOWANCE prompt tokens per picture; what is charged afterwards is what the provider reports."""
+        full = f"{system_prompt}" + chr(10) + chr(10) + f"{prompt}" if system_prompt else prompt
+        extra = IMAGE_TOKEN_ALLOWANCE * len(images)
+        self._check_budget(full, max_tokens, extra)
+        try:
+            result = await self._inner.complete_with_images(prompt, images, system_prompt, temperature, max_tokens)
+        except NotImplementedError:
+            raise                                       # nothing was sent: this provider cannot take images, and that is not a spent call
+        except BaseException:
+            self._record_uncertain(full, "", extra)
+            raise
+        self._record(full, result, extra)
         return result
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None,

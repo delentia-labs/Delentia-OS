@@ -4,6 +4,7 @@ Round 107: the paid day as ONE guarded script that you run in your own terminal.
     python scripts/paid_day.py preflight --models a/b,c/d,...                 # checks only, nothing is spent
     python scripts/paid_day.py stage1    --models a/b,c/d,... [--execute]     # P0 meter calibration, then P1 capability screen
     python scripts/paid_day.py stage2    --selected a/b,c/d   [--execute]     # P1b menu A/B, P2 RCT-7 sets, P4 base tasks, for at most three qualified models
+    python scripts/paid_day.py stage3    --vision-models a/b[,c/d] [--execute]  # PR reference to plan: a vision model reads a synthetic reference video and writes a plan (at most two models)
     python scripts/paid_day.py summary                                        # what was spent and what each stage said, with the commands that register it
 
 Why a script. The stages are written down in research/PREPAID_CRITERIA_R103.md and every one of them already has its own command. What went wrong in earlier paid-test plans was never a command, it was the
@@ -33,8 +34,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-CAP_USD = 12.10                       # the sum of the stage ceilings (0.10 + 5.00 + 1.50 + 1.50 + 4.00): the credit limit to set on the key
-STAGE_CEILINGS = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00}
+CAP_USD = 12.85                       # the sum of the stage ceilings (0.10 + 5.00 + 1.50 + 1.50 + 4.00 + 0.75): the credit limit to set on the key (it was 12.10 before stage PR was added on 2026-11-07)
+STAGE_CEILINGS = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00, "PR": 0.75}
+PR_PROMPT_TOKENS, PR_COMPLETION_TOKENS, PR_MARGIN = 57_000, 21_000, 1.5      # the token estimates and margin written in PREPAID_CRITERIA_R103.md, section PR
 SETS = {
     "set1": "RCT7_HOLDOUT_LABELLING_SHEET_FOR_THE_ARCHITECT.md",
     "set2": "RCT7_R7_HOLDOUT_LABELLING_SHEET_FOR_THE_ARCHITECT.md",
@@ -92,7 +94,7 @@ def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str
     if not getattr(args, "rehearsal", False):
         freeze = args.freeze_file or env.get("DELENTIA_FREEZE_FILE")
         if not freeze or not Path(freeze).is_file():
-            rows.append(check("a frozen configuration exists", False, "write it first: python -m research.paid_run_freeze write --models ... --live-prices --stages P0,P1,P1b,P2,P4 --budget-usd 12.10 --provider-cap-confirmed --out freeze.json"))
+            rows.append(check("a frozen configuration exists", False, "write it first: python -m research.paid_run_freeze write --models ... --live-prices --stages P0,P1,P1b,P2,P4,PR --budget-usd 12.85 --provider-cap-confirmed --out freeze.json"))
         else:
             res = subprocess.run([sys.executable, "-m", "research.paid_run_freeze", "check", str(freeze)], capture_output=True, text=True, cwd=str(ROOT), env=env)
             rows.append(check("the frozen configuration still matches", res.returncode == 0, (res.stdout + res.stderr).strip()[-400:] or "ok"))
@@ -106,7 +108,7 @@ def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str
                               "the provider reports no limit for this key: set one on openrouter.ai (Keys, credit limit) before anything else" if limit is None else f"limit ${limit}"))
             rows.append(check(f"the limit is at most ${CAP_USD:.2f}", isinstance(limit, (int, float)) and limit <= CAP_USD + 1e-9,
                               f"limit ${limit}: the stage ceilings add up to ${CAP_USD:.2f}; a higher limit leaves room for a runaway the ceilings are meant to prevent"))
-            needed = {"stage1": STAGE_CEILINGS["P0"] + STAGE_CEILINGS["P1"], "stage2": STAGE_CEILINGS["P1b"] + STAGE_CEILINGS["P2"] + STAGE_CEILINGS["P4"]}.get(getattr(args, "command", ""), CAP_USD)
+            needed = {"stage1": STAGE_CEILINGS["P0"] + STAGE_CEILINGS["P1"], "stage2": STAGE_CEILINGS["P1b"] + STAGE_CEILINGS["P2"] + STAGE_CEILINGS["P4"], "stage3": STAGE_CEILINGS["PR"]}.get(getattr(args, "command", ""), CAP_USD)
             rows.append(check("what is left on the limit covers the stages about to run", (left >= needed - 1e-9) if isinstance(left, (int, float)) else (isinstance(limit, (int, float)) and limit >= needed - 1e-9),
                               f"remaining ${left}: this step may use up to ${needed:.2f}"))
             rows.append(check("the key is fresh enough", got["usage"] < 1.0, f"already used ${got['usage']}: the stage ceilings are measured from now, so older spending only matters for the limit above"))
@@ -114,19 +116,55 @@ def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str
             rows.append(check("the key works", False, str(exc)))
         except Exception as exc:                                    # noqa: BLE001 - any network problem is a failed check, not a crash
             rows.append(check("the provider answers", False, f"{type(exc).__name__}: {str(exc)[:160]}"))
-    models = [m for m in (args.models or args.selected or []) if m]
-    rows.append(check("models are named", bool(models), "pass --models (stage 1) or --selected (stage 2)"))
+    models = [m for m in (args.models or args.selected or getattr(args, "vision_models", None) or []) if m]
+    rows.append(check("models are named", bool(models), "pass --models (stage 1), --selected (stage 2) or --vision-models (stage 3)"))
     if getattr(args, "selected", None):
         rows.append(check("at most three models go on", len(args.selected) <= 3, f"{len(args.selected)} given"))
+    if getattr(args, "command", "") == "stage3" and models:
+        rows.append(check("at most two vision models", len(models) <= 2, f"{len(models)} given"))
+        flags = vision_flags(models, rehearsal=getattr(args, "rehearsal", False))
+        for m in models:
+            rows.append(check(f"accepts images: {m}", flags.get(m) is True, "the provider's own list does not say this model takes images" if flags.get(m) is not True else "yes"))
+        if prices:
+            total = sum(pr_estimate(prices[m]) * PR_MARGIN for m in models if m in prices)
+            rows.append(check("the estimate with the 1.5x margin fits the stage ceiling", total <= STAGE_CEILINGS["PR"] + 1e-9,
+                              f"${total:.3f} with the margin against ${STAGE_CEILINGS['PR']:.2f}: choose one model, or a cheaper one"))
     if prices is not None:
         for m in models:
             p = prices.get(m)
             rows.append(check(f"price known: {m}", p is not None and p.get("in") is not None and p.get("out") is not None, f"{p}" if p else "not in the provider's list"))
     sheets_dir = Path(args.sheets_dir)
     for name, fname in SETS.items():
+        if getattr(args, "command", "") == "stage3":
+            break                                                  # stage PR does not use the holdout sheets
         sealed = (sheets_dir / fname).with_suffix(".sealed.json")
         rows.append(check(f"sheet {name} is sealed", (sheets_dir / fname).is_file() and sealed.is_file(), f"{sealed}"))
+    if getattr(args, "your_clip", None):
+        rows.append(check("your clip exists and --allow-your-clip-frames was given", Path(args.your_clip).is_file() and bool(getattr(args, "allow_your_clip_frames", False)),
+                          "--your-clip names a file you own, and --allow-your-clip-frames says you understand that up to 12 frames of it will be sent to the model"))
     return rows
+
+
+def pr_estimate(price: Dict[str, float]) -> float:
+    """The stage PR cost of one model at its prices (USD), from the token estimates in the criteria, before the margin."""
+    return (PR_PROMPT_TOKENS * price["in"] + PR_COMPLETION_TOKENS * price["out"]) / 1_000_000
+
+
+def vision_flags(models: List[str], rehearsal: bool = False) -> Dict[str, Optional[bool]]:
+    """Which models the provider's public list says take images (`architecture.input_modalities` contains `image`). Against a loopback fake the fake's models are accepted; a model the list does not mention is not accepted."""
+    if rehearsal:
+        return {m: True for m in models}
+    import httpx
+    out: Dict[str, Optional[bool]] = {}
+    try:
+        data = httpx.get(f"{base_url()}/models", timeout=30).json().get("data", [])
+    except Exception:                                  # the list cannot be read: no model is accepted, and the preflight line says so
+        return out
+    for item in data:
+        if isinstance(item, dict) and item.get("id") in models:
+            modalities = ((item.get("architecture") or {}).get("input_modalities")) or []
+            out[item["id"]] = "image" in modalities
+    return out
 
 
 def render_checks(rows: List[Dict[str, Any]]) -> str:
@@ -282,6 +320,23 @@ def stage2(args: argparse.Namespace, day: Day, selected: List[str], prices: Dict
                                           "--budget-usd", str(round(per_model_p4 * 0.2, 4)), *price_args(prices, model), "--out", str(day.out / f"p4_tc006_{model.replace('/', '_')}")], start)
 
 
+def stage3(args: argparse.Namespace, day: Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> None:
+    """PR, reference to plan (research/PREPAID_CRITERIA_R103.md, section PR). The free analyzer check (O) runs inside the stage and stops it before any model is asked if our tool is wrong."""
+    selection = {"vision_models": models, "written_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "written_before": "any stage PR spending", "prices": {m: prices[m] for m in models}}
+    sel_file = day.out / "selection_pr.json"
+    sel_file.write_text(json.dumps(selection, indent=2), encoding="utf-8")
+    print(f"selection written first: {sel_file} (sha256 {hashlib.sha256(sel_file.read_bytes()).hexdigest()[:16]}...)")
+    start = day.usage() if day.execute else 0.0
+    for model in models:
+        budget = round(pr_estimate(prices[model]) * PR_MARGIN, 4)
+        day.run("PR", f"{model} reference", [sys.executable, "-m", "research.reference_stage", "run", "--provider", "openrouter", "--model", model, "--budget-usd", str(budget),
+                                             *price_args(prices, model), "--max-calls", "30", "--out", str(day.out / "pr")], start)
+    if getattr(args, "your_clip", None) and getattr(args, "allow_your_clip_frames", False) and models:
+        model = models[0]
+        day.run("PR", f"{model} your clip (not scored)", [sys.executable, "-m", "research.reference_stage", "describe", "--provider", "openrouter", "--model", model, "--video", str(args.your_clip),
+                                                         "--allow-send-frames", "--max-frames", "12", "--budget-usd", "0.10", *price_args(prices, model), "--out", str(day.out / "pr_your_clip")], start)
+
+
 def summary(out: Path) -> str:
     log = out / "paid_day_log.jsonl"
     if not log.is_file():
@@ -296,7 +351,7 @@ def summary(out: Path) -> str:
     for r in refused:
         lines.append(f"\nREFUSED: {r['stage']} {r['label']}: {r['refused']}")
     lines += ["", "Register each result (the criteria file is committed before the run; read each result file first and give the verdict the stage's own rule gives):",
-              "  python -m research.results_register add --stage <P0|P1|P1b|P2|P4> --model <id> --provider openrouter --criteria research/PREPAID_CRITERIA_R103.md --result <file> --verdict <pass|fail|inconclusive|not_run> --est-usd <x> --actual-usd <provider's figure>"]
+              "  python -m research.results_register add --stage <P0|P1|P1b|P2|P4|PR> --model <id> --provider openrouter --criteria research/PREPAID_CRITERIA_R103.md --result <file> --verdict <pass|fail|inconclusive|not_run> --est-usd <x> --actual-usd <provider's figure>"]
     return "\n".join(lines)
 
 
@@ -304,9 +359,12 @@ def summary(out: Path) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["preflight", "stage1", "stage2", "summary"])
+    ap.add_argument("command", choices=["preflight", "stage1", "stage2", "stage3", "summary"])
     ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="stage 1: the candidate model ids")
     ap.add_argument("--selected", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="stage 2: at most three models that stage 1 qualified")
+    ap.add_argument("--vision-models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="stage 3: at most two models that accept images")
+    ap.add_argument("--your-clip", default=None, help="stage 3, optional: a video you own; up to 12 key frames are sent to the first vision model and the result is not scored")
+    ap.add_argument("--allow-your-clip-frames", action="store_true", help="says you understand that frames of your clip leave this computer")
     ap.add_argument("--p0-model", default=None, help="the model for the meter calibration (default: the cheapest candidate)")
     ap.add_argument("--freeze-file", default=None)
     ap.add_argument("--prices-file", default=None, help="JSON {model: {in, out}} instead of the provider's public list (rehearsal)")
@@ -324,7 +382,7 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if args.command == "summary":
         print(summary(out))
         return 0
-    models = args.selected if args.command == "stage2" else args.models
+    models = args.selected if args.command == "stage2" else (args.vision_models if args.command == "stage3" else args.models)
     prices = load_prices(args, models or []) if models else {}
     rows = preflight(args, env, info, prices if models else None)
     print("Preflight:\n" + render_checks(rows))
@@ -340,6 +398,8 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     try:
         if args.command == "stage1":
             stage1(args, day, models or [], prices)
+        elif args.command == "stage3":
+            stage3(args, day, models or [], prices)
         else:
             stage2(args, day, models or [], prices)
     except Refused as exc:

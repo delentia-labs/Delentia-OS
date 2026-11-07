@@ -13,9 +13,10 @@ For the owner of the system (the Architect), done in **your own terminal**. **Ne
 | P1b | Can the small tool menu (about 1,000 tokens) replace the full one (about 8,000) without choosing worse? | $1.50 |
 | P2 | Do the judge, critic and context judge meet their rules on a capable model, on your own sealed sets? | $1.50 |
 | P4 | Does the same task come out differently with and without the runtime (TC-003, TC-006)? | $4.00 |
-| | **Sum of the ceilings** | **$12.10** (the plan is expected to cost much less) |
+| PR | Can a vision model read a reference video and write a plan? (added 2026-11-07, at most 2 models) | $0.75 |
+| | **Sum of the ceilings** | **$12.85** (the plan is expected to cost much less) |
 
-The remaining $2.90 of the $15 is a reserve **the key cannot reach** (step 2): spending it needs you to raise the key's limit on purpose. The pass rules for each stage are written in `research/PREPAID_CRITERIA_R103.md` (committed before any key existed); a result that does not meet its rule is recorded as not met.
+The remaining $2.15 of the $15 is a reserve **the key cannot reach** (step 2): spending it needs you to raise the key's limit on purpose. The pass rules for each stage are written in `research/PREPAID_CRITERIA_R103.md` (committed before any key existed); a result that does not meet its rule is recorded as not met.
 
 It does **not** buy: a comparison of Delentia with Hermes (h0 is not run in this round), multi-day autonomy, a host, or any outside user.
 
@@ -28,7 +29,7 @@ It does **not** buy: a comparison of Delentia with Hermes (h0 is not run in this
 
 1. **Revoke the old key** that leaked earlier (openrouter.ai → Keys → delete), if you have not.
 2. **Add $15 as prepaid credit, once**, and **turn auto top-up off** (Settings → Credits). A card payment costs about 5.5% (minimum $0.80): about $15.83 in total. If the credit runs out, calls are refused; there is no bill afterwards.
-3. **Create one new key for this work**: Keys → Create Key → name `delentia-prepaid-2026-10` → *Credit limit* = **12.10** (this is the cap AT THE PROVIDER; the freeze asks you to state that it exists). Copy it once.
+3. **Create one new key for this work**: Keys → Create Key → name `delentia-prepaid-2026-10` → *Credit limit* = **12.85** (this is the cap AT THE PROVIDER; the freeze asks you to state that it exists). Copy it once.
 4. The program's own layers are on top: the orchestrator refuses a start whose estimate × 1.5 is above the budget you give it and stops when a model's spend passes 1.5 × its estimate; the agent's meter refuses a call whose worst case would pass the budget.
 
 ## Step 3: the key and the settings, in one terminal window
@@ -51,7 +52,7 @@ Use **this same window for every step below.** The freeze records these settings
 ```powershell
 New-Item -ItemType Directory -Force $env:USERPROFILE\daaes-results | Out-Null
 $m = (Get-Content research/screen_models_2026-10-16.txt) -join ","
-py -3.13 -m research.paid_run_freeze write --models $m --live-prices --stages P0,P1,P1b,P2,P4 --budget-usd 12.10 --provider-cap-confirmed --out $env:USERPROFILE\daaes-results\freeze.json
+py -3.13 -m research.paid_run_freeze write --models $m --live-prices --stages P0,P1,P1b,P2,P4,PR --budget-usd 12.85 --provider-cap-confirmed --out $env:USERPROFILE\daaes-results\freeze.json
 $env:DELENTIA_FREEZE_FILE = "$env:USERPROFILE\daaes-results\freeze.json"
 py -3.13 -m research.paid_run_freeze check $env:DELENTIA_FREEZE_FILE
 ```
