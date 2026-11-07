@@ -25,6 +25,8 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from rct_control_plane.llm_provider import BudgetExceededError
+
 MAX_IMAGE_BYTES = 5_000_000
 PROFILE = "vision"
 _BLOCKED_NAME_PARTS = (".env", "_secret", "credentials", "vault_master.key", "id_rsa", ".pem", ".key")
@@ -146,12 +148,18 @@ async def describe_image(path: str, question: str = "", provider: Any = None, pe
     try:
         data, mime, resolved = load_image(path, allowed_roots)
         if provider is None:
+            from rct_control_plane import budget_share
             from rct_control_plane.llm_provider import get_default_provider
             provider = get_default_provider(profile=PROFILE)
+            meter = budget_share.current_meter.get()
+            if meter is not None and hasattr(meter, "side_provider"):
+                provider = meter.side_provider(provider)            # Round 111: the picture is charged to the running episode's cap
         _residency_check(provider, data, mime, persistence, namespace)
         text = await _ask(provider, data, mime, " ".join((question or DEFAULT_QUESTION).split())[:600], max_tokens)
     except VisionError as exc:
         return {"error": str(exc), "refused_by": "vision"}
+    except BudgetExceededError as exc:                       # the episode's cap would be passed: nothing was sent
+        return {"error": str(exc), "refused_by": "budget"}
     except Exception as exc:                                  # the backend is down, has no vision model, or returned an error: say so, do not crash the episode
         return {"error": f"the vision model could not answer ({type(exc).__name__}: {str(exc)[:200]}); choose one with `delentia model set <model> --profile vision`"}
     return {"description": text.strip()[:6000], "model": str(getattr(provider, "model", "?")),

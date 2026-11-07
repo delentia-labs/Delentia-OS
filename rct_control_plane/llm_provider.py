@@ -764,6 +764,53 @@ def _good_amount(x: Any) -> bool:
     return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x >= 0
 
 
+class SideProvider(LLMProvider):
+    """A provider whose calls are charged to an episode's MeteredProvider (see `MeteredProvider.side_provider`). It answers `complete` and `complete_with_images` through the other provider and
+    checks the episode's budget BEFORE each call and records what the call used AFTER it; a call refused by the budget is never sent."""
+
+    def __init__(self, meter: "MeteredProvider", other: LLMProvider) -> None:
+        self._meter, self._other = meter, other
+
+    @property
+    def inner(self) -> LLMProvider:
+        return self._other                      # the places that look through wrappers (residency, the legacy picture path) see the real provider
+
+    @property
+    def model(self) -> str:
+        return str(getattr(self._other, "model", "?"))
+
+    @property
+    def last_served_by(self) -> Optional[str]:      # type: ignore[override]
+        return getattr(self._other, "last_served_by", None)
+
+    async def complete(self, prompt: str, system_prompt: Optional[str] = None, temperature: float = 0.7, max_tokens: int = 2048, json_mode: bool = False) -> str:
+        full = f"{system_prompt}" + chr(10) + chr(10) + f"{prompt}" if system_prompt else prompt
+        self._meter._check_budget(full, max_tokens)
+        try:
+            result = await self._other.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
+        except BaseException:
+            self._meter._record_uncertain(full)
+            raise
+        self._meter._record(full, result, 0, self._other)
+        self.last_usage = self._meter.last_usage
+        return result
+
+    async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None, temperature: float = 0.2, max_tokens: int = 700) -> str:
+        full = f"{system_prompt}" + chr(10) + chr(10) + f"{prompt}" if system_prompt else prompt
+        extra = IMAGE_TOKEN_ALLOWANCE * len(images)
+        self._meter._check_budget(full, max_tokens, extra)
+        try:
+            result = await self._other.complete_with_images(prompt, images, system_prompt, temperature, max_tokens)
+        except NotImplementedError:
+            raise                                       # nothing was sent: not a spent call
+        except BaseException:
+            self._meter._record_uncertain(full, "", extra)
+            raise
+        self._meter._record(full, result, extra, self._other)
+        self.last_usage = self._meter.last_usage
+        return result
+
+
 class MeteredProvider(LLMProvider):
     """Round 50 (Round 48 end-point criterion 7, "know the cost in
     advance"): wraps one episode's provider, adds up what each call used,
@@ -852,9 +899,10 @@ class MeteredProvider(LLMProvider):
                                 f"> ${self.max_cost_usd}")
                 raise BudgetExceededError(self.refused)
 
-    def _record(self, prompt_text: str, completion_text: str, extra_prompt_tokens: int = 0) -> None:
-        usage = self._inner.last_usage
-        self._inner.last_usage = None
+    def _record(self, prompt_text: str, completion_text: str, extra_prompt_tokens: int = 0, source: Any = None) -> None:
+        src = source if source is not None else self._inner          # Round 111: a side call (the vision model) reports its usage on its own provider
+        usage = src.last_usage
+        src.last_usage = None
         if usage is None or (usage.prompt_tokens == 0 and usage.completion_tokens == 0 and usage.cost_usd is None):
             usage = LLMUsage(_count_tokens(prompt_text) + max(0, int(extra_prompt_tokens)), _count_tokens(completion_text), None)
         reported = usage.cost_usd if _good_amount(usage.cost_usd) else None        # a NaN or negative cost from a provider would poison or shrink the total: the price-based estimate is used
@@ -894,6 +942,10 @@ class MeteredProvider(LLMProvider):
             raise
         self._record(full, result)
         return result
+
+    def side_provider(self, other: LLMProvider) -> "SideProvider":
+        """Round 111: another model used by a TOOL of this episode (the vision model) is counted against this episode's cap: same budget check before the call, same record after it."""
+        return SideProvider(self, other)
 
     async def complete_with_images(self, prompt: str, images: List[Tuple[str, bytes]], system_prompt: Optional[str] = None,
                                    temperature: float = 0.2, max_tokens: int = 700) -> str:
