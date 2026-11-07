@@ -38,7 +38,7 @@ CLIPS: Dict[str, Dict[str, Any]] = {
 }
 COUNT_ONLY = {"ep04_animatic": {"video": "ep04_manhole/EP04_animatic_v1.mp4", "shots": 19}}
 # Round 2 (criteria: REFERENCE_CUTS_CRITERIA_R111_ROUND2.md): a real reference clip whose breakdown lists every shot, with dissolves of 5-8 frames
-ROUND2 = {"rollercoaster": {"video": "../reference ai clip for analysis/This Shape Saved Roller Coasters.mp4", "readme": "library/REF_BREAKDOWN_roller_coaster_TH.md", "declared_s": 63.2}}
+ROUND2: Dict[str, Dict[str, Any]] = {"rollercoaster": {"video": "../reference ai clip for analysis/This Shape Saved Roller Coasters.mp4", "readme": "library/REF_BREAKDOWN_roller_coaster_TH.md", "declared_s": 63.2}}
 TOLERANCE_R2_S = 0.30
 
 
