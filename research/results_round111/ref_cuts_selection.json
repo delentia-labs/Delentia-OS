@@ -1,0 +1,25 @@
+{
+  "chosen": {
+    "mode": "union",
+    "colour_jump": 30.0,
+    "cell_fraction": 0.0,
+    "flash_filter": false,
+    "min_gap": 1.0
+  },
+  "chosen_label": "union jump=30 cells>=0 flash=off gap=1",
+  "dev_result": {
+    "matched": 15,
+    "recall": 0.833,
+    "precision": 0.75,
+    "f1": 0.789
+  },
+  "baseline_dev_result": {
+    "matched": 16,
+    "recall": 0.889,
+    "precision": 0.615,
+    "f1": 0.727
+  },
+  "criteria_sha256": "fe202574d775648da1cb0d64d08435f821fcf49c57e882e4e469b2a9f0bea67d",
+  "candidates_evaluated": 74,
+  "selection_sha256": "3b7327ff7c8fb56ee2069416d5d741e28842eda347979ad0a06c5fc9ea5a0a38"
+}

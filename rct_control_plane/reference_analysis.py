@@ -124,36 +124,78 @@ def probe(path: Path) -> Dict[str, Any]:
             "video_codec": str(video.get("codec_name") or ""), "has_audio": audio is not None, "audio_codec": str((audio or {}).get("codec_name") or "")}
 
 
-def _colour_jump_cuts(path: Path, jump: float = COLOUR_JUMP, sample_fps: int = 10) -> List[float]:
-    """Cuts that ffmpeg's scene score cannot see. That score is computed on brightness only, so a cut between two colours of about the same brightness (purple to green, red to blue) scores near zero.
-    Here the video is shrunk to a 16x9 thumbnail at `sample_fps` and a cut is a jump in the mean absolute colour difference between neighbouring thumbnails above `jump` (0-255)."""
+CELL_JUMP = 40.0                # a thumbnail cell counts as changed when its mean colour difference is above this (0-255)
+FLASH_LOOKAHEAD = 3             # samples: a jump whose picture is back within this many samples is a flash, not a cut
+MODES = ("scene_only", "colour_only", "union")
+
+
+def cut_signals(path: Path, threshold: float = SCENE_THRESHOLD, sample_fps: int = 10) -> Dict[str, Any]:
+    """The raw signals the cut rule works on, computed once so that rules can be compared without decoding the video again:
+      scene     times (s) where ffmpeg's brightness-based scene score is above `threshold` (blind to a change of colour at the same brightness);
+      diff[i]   mean absolute colour difference (0-255) between thumbnail i and i-1 (16x9 pixels at `sample_fps` a second), index 0 is the transition into sample 1;
+      cells[i]  the fraction of the 144 thumbnail cells whose difference is above CELL_JUMP (a real cut changes most of the picture, a graphic that pops in changes a few cells);
+      back[i]   True when sample i+FLASH_LOOKAHEAD is closer to sample i-1 than to sample i (the picture came back: a flash, not a cut)."""
     w, h = 16, 9
     size = w * h * 3
-    try:
-        done = subprocess.run([_tool("ffmpeg"), "-hide_banner", "-nostdin", "-v", "error", "-i", str(path), "-an", "-vf", f"fps={sample_fps},scale={w}:{h}:flags=area",
-                               "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, timeout=TOOL_TIMEOUT_S, shell=False)
-    except subprocess.TimeoutExpired as exc:
-        raise ReferenceError(f"ffmpeg did not finish within {TOOL_TIMEOUT_S} seconds") from exc
-    raw = done.stdout
-    frames = [raw[i:i + size] for i in range(0, len(raw) - size + 1, size)]
-    cuts = []
-    for i in range(1, len(frames)):
-        diff = sum(abs(a - b) for a, b in zip(frames[i], frames[i - 1], strict=False)) / size
-        if diff > jump:
-            cuts.append(round(i / sample_fps, 2))
-    return cuts
-
-
-def detect_cuts(path: Path, threshold: float = SCENE_THRESHOLD) -> List[float]:
-    """Times (seconds) where the picture changes enough to count as a cut: ffmpeg's brightness-based scene score above the threshold, plus the colour-jump detector above. Cuts closer than
-    half a second are one cut (a flash frame is not two shots)."""
     done = _run([_tool("ffmpeg"), "-hide_banner", "-nostdin", "-i", str(path), "-an", "-vf", f"select='gt(scene,{threshold})',showinfo", "-f", "null", "-"])
     scene = [round(float(m), 2) for m in re.findall(r"pts_time:([0-9]+(?:\.[0-9]+)?)", done.stderr or "")]
+    try:
+        thumbs = subprocess.run([_tool("ffmpeg"), "-hide_banner", "-nostdin", "-v", "error", "-i", str(path), "-an", "-vf", f"fps={sample_fps},scale={w}:{h}:flags=area",
+                                 "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, timeout=TOOL_TIMEOUT_S, shell=False)
+    except subprocess.TimeoutExpired as exc:
+        raise ReferenceError(f"ffmpeg did not finish within {TOOL_TIMEOUT_S} seconds") from exc
+    raw_frames = thumbs.stdout
+    frames = [raw_frames[i:i + size] for i in range(0, len(raw_frames) - size + 1, size)]
+
+    def mean_abs(x: bytes, y: bytes) -> float:
+        return sum(abs(p1 - p2) for p1, p2 in zip(x, y, strict=False)) / size
+
+    diff: List[float] = []
+    cells: List[float] = []
+    back: List[bool] = []
+    for i in range(1, len(frames)):
+        cur, prev = frames[i], frames[i - 1]
+        diff.append(round(mean_abs(cur, prev), 3))
+        changed = 0
+        for c in range(w * h):
+            o = c * 3
+            if (abs(cur[o] - prev[o]) + abs(cur[o + 1] - prev[o + 1]) + abs(cur[o + 2] - prev[o + 2])) / 3 > CELL_JUMP:
+                changed += 1
+        cells.append(round(changed / (w * h), 3))
+        j = i + FLASH_LOOKAHEAD
+        back.append(bool(j < len(frames) and mean_abs(frames[j], prev) < mean_abs(frames[j], cur)))
+    return {"sample_fps": sample_fps, "scene": scene, "diff": diff, "cells": cells, "back": back}
+
+
+def cuts_from_signals(sig: Dict[str, Any], mode: str = "union", colour_jump: float = COLOUR_JUMP, cell_fraction: float = 0.0, flash_filter: bool = False,
+                      min_gap: float = MIN_SHOT_S) -> List[float]:
+    """Cut times (s) from the signals under one rule. The defaults are the detector as it was first shipped (union of the scene score and a colour jump above 30, cuts closer than 0.5 s are one)."""
+    if mode not in MODES:
+        raise ValueError("mode is one of " + ", ".join(MODES))
+    fps = int(sig["sample_fps"])
+    found: List[float] = []
+    if mode in ("scene_only", "union"):
+        found += [float(t) for t in sig["scene"]]
+    if mode in ("colour_only", "union"):
+        for i, d in enumerate(sig["diff"]):
+            if d <= colour_jump:
+                continue
+            if cell_fraction > 0 and sig["cells"][i] < cell_fraction:
+                continue
+            if flash_filter and sig["back"][i]:
+                continue
+            found.append(round((i + 1) / fps, 2))
     merged: List[float] = []
-    for c in sorted(c for c in {*scene, *_colour_jump_cuts(path)} if c > 0.0):
-        if not merged or c - merged[-1] >= MIN_SHOT_S:
+    for c in sorted(c for c in {*found} if c > 0.0):
+        if not merged or c - merged[-1] >= min_gap:
             merged.append(c)
     return merged
+
+
+def detect_cuts(path: Path, threshold: float = SCENE_THRESHOLD, **rule: Any) -> List[float]:
+    """Times (seconds) where the picture changes enough to count as a cut. By default: ffmpeg's brightness-based scene score above the threshold, plus a colour jump between neighbouring
+    thumbnails above 30; cuts closer than half a second are one cut. `rule` takes the arguments of `cuts_from_signals` (mode, colour_jump, cell_fraction, flash_filter, min_gap)."""
+    return cuts_from_signals(cut_signals(path, threshold), **rule)
 
 
 def build_shots(duration: float, cuts: List[float]) -> List[Dict[str, Any]]:
