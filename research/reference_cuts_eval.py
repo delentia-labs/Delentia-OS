@@ -68,7 +68,7 @@ def match(detected: List[float], truth: List[float], tol: float = TOLERANCE_S) -
     """One detected cut to one true cut, nearest pairs first, within `tol` seconds."""
     pairs = sorted(((abs(d - t), di, ti) for di, d in enumerate(detected) for ti, t in enumerate(truth) if abs(d - t) <= tol))
     used_d, used_t, matched = set(), set(), []
-    for dist, di, ti in pairs:
+    for _dist, di, ti in pairs:
         if di in used_d or ti in used_t:
             continue
         used_d.add(di)
