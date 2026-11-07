@@ -1,0 +1,152 @@
+{
+  "selection_sha256": "56f7b7a601f52f88ec7fd0193e7264912529b331553f6eda923f2ab93be2f22a",
+  "repeat": false,
+  "baseline": {
+    "rule": {
+      "mode": "union",
+      "colour_jump": 30.0,
+      "cell_fraction": 0.0,
+      "flash_filter": false,
+      "min_gap": 0.5,
+      "window": 1
+    },
+    "guard_clips": [
+      {
+        "clip": "ep01_v1",
+        "true_cuts": 13,
+        "detected_cuts": 14,
+        "matched": 10,
+        "missed": 3,
+        "extra": 4,
+        "recall": 0.769,
+        "precision": 0.714,
+        "f1": 0.741,
+        "count_ratio": 1.071,
+        "missed_at_s": [
+          7.467,
+          40.867,
+          48.667
+        ],
+        "extra_at_s": [
+          7.67,
+          33.9,
+          41.1,
+          48.87
+        ]
+      },
+      {
+        "clip": "ep02_v3",
+        "true_cuts": 15,
+        "detected_cuts": 16,
+        "matched": 14,
+        "missed": 1,
+        "extra": 2,
+        "recall": 0.933,
+        "precision": 0.875,
+        "f1": 0.903,
+        "count_ratio": 1.062,
+        "missed_at_s": [
+          57.867
+        ],
+        "extra_at_s": [
+          54.8,
+          57.6
+        ]
+      }
+    ],
+    "guard_pooled": {
+      "true_cuts": 28,
+      "detected_cuts": 30,
+      "matched": 24,
+      "recall": 0.857,
+      "precision": 0.8,
+      "f1": 0.828
+    },
+    "ep03": {
+      "matched": 16,
+      "true_cuts": 18,
+      "detected_cuts": 26,
+      "recall": 0.889,
+      "precision": 0.615,
+      "f1": 0.727
+    },
+    "ep04_shots": 2
+  },
+  "chosen": {
+    "rule": {
+      "mode": "union",
+      "colour_jump": 20.0,
+      "cell_fraction": 0.0,
+      "flash_filter": false,
+      "min_gap": 1.0,
+      "window": 3
+    },
+    "guard_clips": [
+      {
+        "clip": "ep01_v1",
+        "true_cuts": 13,
+        "detected_cuts": 16,
+        "matched": 12,
+        "missed": 1,
+        "extra": 4,
+        "recall": 0.923,
+        "precision": 0.75,
+        "f1": 0.828,
+        "count_ratio": 1.214,
+        "missed_at_s": [
+          48.667
+        ],
+        "extra_at_s": [
+          33.6,
+          34.6,
+          48.87,
+          56.7
+        ]
+      },
+      {
+        "clip": "ep02_v3",
+        "true_cuts": 15,
+        "detected_cuts": 17,
+        "matched": 14,
+        "missed": 1,
+        "extra": 3,
+        "recall": 0.933,
+        "precision": 0.824,
+        "f1": 0.875,
+        "count_ratio": 1.125,
+        "missed_at_s": [
+          57.867
+        ],
+        "extra_at_s": [
+          36.4,
+          54.7,
+          57.6
+        ]
+      }
+    ],
+    "guard_pooled": {
+      "true_cuts": 28,
+      "detected_cuts": 33,
+      "matched": 26,
+      "recall": 0.929,
+      "precision": 0.788,
+      "f1": 0.852
+    },
+    "ep03": {
+      "matched": 15,
+      "true_cuts": 18,
+      "detected_cuts": 24,
+      "recall": 0.833,
+      "precision": 0.625,
+      "f1": 0.714
+    },
+    "ep04_shots": 26
+  },
+  "verdict": {
+    "a_dev2_f1_gain_at_least_0.10": true,
+    "b_guard_holds": true,
+    "c_ep04_count_15_to_24": false,
+    "adopt_chosen_as_default": false,
+    "baseline_finds_dissolves": false
+  }
+}
