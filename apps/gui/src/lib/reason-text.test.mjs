@@ -8,7 +8,7 @@ const test = (name, fn) => { fn(); n++; console.log("ok -", name); };
 // Every stopped_reason the runtime can produce (collected from rct_control_plane by grep, Round 101).
 const RUNTIME = ["llm_finished", "warm_recall", "pending_approval", "plan_ready", "needs_clarification", "waiting_for_clarification", "waiting_for_input", "fdia_blocked", "guard_blocked",
   "jury_rejected", "intent_constraint_blocked", "notary_unavailable", "residency_blocked", "budget_exceeded", "daily_budget_exhausted", "rate_limited", "paused", "stuck_repeating",
-  "max_iterations_reached", "max_seconds_exceeded", "parse_error", "llm_error", "exception", "nesting_limit", "delegation_depth_exceeded", "running", "interrupted"];
+  "max_iterations_reached", "max_seconds_exceeded", "parse_error", "llm_error", "model_not_running", "exception", "nesting_limit", "delegation_depth_exceeded", "running", "interrupted"];
 
 test("every code the runtime can produce has a text in both languages", () => {
   for (const code of RUNTIME) {

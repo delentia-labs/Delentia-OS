@@ -106,7 +106,17 @@ export default function StatusPage() {
 
             <Panel title={T("Is it working?", "ระบบทำงานปกติไหม")}>
               <Row label={T("The service", "บริการ")}>{health.loading && !health.data ? "…" : up ? <Badge tone="leaf">{T("running", "ทำงานอยู่")}</Badge> : <Badge tone="rust">{T("not reachable", "ติดต่อไม่ได้")}</Badge>}</Row>
-              <Row label={T("The model", "โมเดล")}>{o ? `${o.model.model} (${o.model.provider})` : "-"}</Row>
+              <Row label={T("The model", "โมเดล")}>
+                {(() => {
+                  const name = o ? `${o.model.model} (${o.model.provider})` : "";
+                  const mc = readiness.data?.checks.find((c) => c.id === "model");
+                  if (!mc) return name || "-";
+                  const d = describeCheck(mc, lang);
+                  if (mc.state === "ready") return <span>{name} <Badge tone="leaf">{T("ready", "พร้อมใช้")}</Badge></span>;
+                  if (mc.state === "configured") return <span>{name} <Badge tone="amber">{T("chosen, not tested yet", "เลือกแล้ว ยังไม่ได้ทดสอบ")}</Badge></span>;
+                  return <span>{mc.chosen === false ? T("no model chosen yet", "ยังไม่ได้เลือกโมเดล") : name} <Badge tone="rust">{d.label}</Badge> {d.href ? <Link href={d.href} className="text-dl-leaf underline">{T("fix it", "แก้ตรงนี้")}</Link> : null}</span>;
+                })()}
+              </Row>
               <Row label={T("The record of what it did", "บันทึกสิ่งที่มันทำ")}>
                 {chainOk === null ? "-" : chainOk ? <Badge tone="leaf">{T("intact", "สมบูรณ์")}</Badge> : <Badge tone="rust">{T("damaged: open Audit", "เสียหาย: เปิดหน้าตรวจสอบ")}</Badge>}
               </Row>

@@ -44,7 +44,7 @@ def test_every_stop_reason_the_runtime_names_has_a_plain_text():
 
 def test_a_text_without_a_runtime_source_is_one_of_the_known_indirect_ones():
     table = set(re.findall(r"^\s{2}(\w+): E\(", _read(LIB / "reason-text.ts"), re.M))
-    indirect = {"budget_exceeded", "daily_budget_exhausted", "interrupted", "rate_limited", "running"}            # produced through a conditional expression or another module
+    indirect = {"budget_exceeded", "daily_budget_exhausted", "interrupted", "llm_error", "rate_limited", "running"}            # produced through a conditional expression or another module
     assert table - _runtime_stop_reasons() <= indirect, sorted(table - _runtime_stop_reasons() - indirect)
 
 
@@ -71,10 +71,10 @@ def test_every_daemon_task_has_a_thai_and_english_description():
 def test_the_readiness_states_the_server_can_produce_are_exactly_the_states_that_have_a_text():
     from rct_control_plane import readiness
     produced = set()
-    grids = itertools.product(["ollama", "openrouter"], [None, [], ["qwen2.5:7b"], ["llama3.2:3b"]], [None, True, False], [0, 1], [0, 1], [0, 3])
-    for provider, installed, key_present, keys, devices, episodes in grids:
+    grids = itertools.product(["ollama", "openrouter"], [None, [], ["qwen2.5:7b"], ["llama3.2:3b"]], [None, True, False], [0, 1], [0, 1], [0, 3], [True, False])
+    for provider, installed, key_present, keys, devices, episodes, program in grids:
         facts = {"provider": provider, "model": "qwen2.5:7b", "ollama_models": installed if provider == "ollama" else None, "key_present": key_present,
-                 "needs_key": provider != "ollama", "approver_keys": keys, "approver_devices": devices, "episodes": episodes}
+                 "needs_key": provider != "ollama", "approver_keys": keys, "approver_devices": devices, "episodes": episodes, "ollama_installed": program}
         for check in readiness.evaluate(facts)["checks"]:
             produced.add(f"{check['id']}:{check['state']}")
     texts = set(re.findall(r'^\s{2}"([a-z_]+:[a-z_]+)":', _read(LIB / "readiness-text.ts"), re.M))

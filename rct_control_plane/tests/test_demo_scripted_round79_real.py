@@ -62,7 +62,7 @@ class TestScriptedDemo:
         env = {k: v for k, v in world["env"].items() if k not in ("DELENTIA_LLM_PROVIDER", "DELENTIA_LLM_MODEL")}
         env.update({"DELENTIA_LLM_PROVIDER": "ollama", "DELENTIA_OLLAMA_URL": "http://127.0.0.1:9"})
         run = cli(["demo", "run", "compare", "--dir", str(world["root"])], env)
-        assert "llm_error" in run.stdout and "--scripted" in run.stdout
+        assert "model_not_running" in run.stdout and "--scripted" in run.stdout        # Round 112: a refused local connection has its own, plainer code
 
     def test_a_half_configured_model_gives_a_message_not_a_traceback(self, world):
         run = cli(["demo", "run", "compare", "--dir", str(world["root"])], world["env"])          # provider openai-compat without an endpoint

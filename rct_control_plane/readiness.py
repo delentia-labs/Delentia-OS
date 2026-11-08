@@ -26,14 +26,33 @@ def _ollama_models(url: str) -> Optional[List[str]]:
         return None
 
 
+def _ollama_installed() -> bool:
+    """Is the Ollama program on this computer at all (so 'not running' and 'not installed' can be told apart)? A bounded look at the PATH and the usual install folders; never starts anything."""
+    import shutil
+    if shutil.which("ollama"):
+        return True
+    candidates = []
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        candidates.append(os.path.join(local, "Programs", "Ollama", "ollama.exe"))
+    for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
+        if base:
+            candidates.append(os.path.join(base, "Ollama", "ollama.exe"))
+    candidates += ["/usr/local/bin/ollama", "/usr/bin/ollama", "/opt/homebrew/bin/ollama", "/Applications/Ollama.app"]
+    return any(os.path.exists(c) for c in candidates)
+
+
 def gather(persistence: Any) -> Dict[str, Any]:
     from rct_control_plane import model_config, model_setup
     from rct_control_plane.approvals import trusted_approver_keys
     selection = model_config.resolve_model_selection()
-    facts: Dict[str, Any] = {"provider": selection.provider, "model": selection.model, "ollama_models": None, "key_present": None}
+    facts: Dict[str, Any] = {"provider": selection.provider, "model": selection.model, "ollama_models": None, "key_present": None,
+                             "chosen": not (selection.provider_source == "builtin" and selection.model_source == "builtin")}
     if selection.provider == "ollama":
         from rct_control_plane.llm_provider import DEFAULT_OLLAMA_URL
         facts["ollama_models"] = _ollama_models(os.getenv("DELENTIA_OLLAMA_URL") or DEFAULT_OLLAMA_URL)
+        if facts["ollama_models"] is None:
+            facts["ollama_installed"] = _ollama_installed()
     else:
         view = model_setup.current_view()
         facts["key_present"] = bool(view.get("credential_present") or (selection.provider == "openrouter" and view.get("openrouter_key_present")))
@@ -62,7 +81,9 @@ def _model_state(facts: Dict[str, Any]) -> Dict[str, Any]:
     if provider == "ollama":
         installed = facts.get("ollama_models")
         if installed is None:
-            return {"state": "server_down", "ok": False, "provider": provider, "model": model}
+            # nothing answers: either the program is not on this computer at all, or it is installed and not started
+            state = "server_down" if facts.get("ollama_installed", True) else "not_installed"
+            return {"state": state, "ok": False, "provider": provider, "model": model, "chosen": bool(facts.get("chosen", True))}
         have = model in installed or f"{model}:latest" in installed
         return {"state": "ready" if have else "model_missing", "ok": have, "provider": provider, "model": model, "installed": installed[:12]}
     if facts.get("needs_key") and not facts.get("key_present"):

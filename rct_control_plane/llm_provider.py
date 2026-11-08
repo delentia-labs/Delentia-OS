@@ -788,8 +788,9 @@ class SideProvider(LLMProvider):
         self._meter._check_budget(full, max_tokens)
         try:
             result = await self._other.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
-        except BaseException:
-            self._meter._record_uncertain(full)
+        except BaseException as exc:
+            if not is_local_refusal(exc):
+                self._meter._record_uncertain(full)
             raise
         self._meter._record(full, result, 0, self._other)
         self.last_usage = self._meter.last_usage
@@ -803,12 +804,32 @@ class SideProvider(LLMProvider):
             result = await self._other.complete_with_images(prompt, images, system_prompt, temperature, max_tokens)
         except NotImplementedError:
             raise                                       # nothing was sent: not a spent call
-        except BaseException:
-            self._meter._record_uncertain(full, "", extra)
+        except BaseException as exc:
+            if not is_local_refusal(exc):
+                self._meter._record_uncertain(full, "", extra)
             raise
         self._meter._record(full, result, extra, self._other)
         self.last_usage = self._meter.last_usage
         return result
+
+
+LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "[::1]"})
+
+
+def is_local_refusal(exc: BaseException) -> bool:
+    """True when the model server ON THIS COMPUTER refused the connection: nothing is listening (the program is not installed or not started).
+    Nothing was sent, so nothing is counted as spent, and it does not heal by itself, so it is not retried. A refusal from any other host is neither."""
+    try:
+        import httpx
+    except ImportError:     # pragma: no cover
+        return False
+    if not isinstance(exc, httpx.ConnectError):
+        return False
+    try:
+        host = (exc.request.url.host or "").lower()
+    except Exception:       # noqa: BLE001 - an error with no request attached says nothing about where it went
+        return False
+    return host in LOCAL_HOSTS
 
 
 class MeteredProvider(LLMProvider):
@@ -937,8 +958,9 @@ class MeteredProvider(LLMProvider):
         self._check_budget(full, max_tokens)
         try:
             result = await self._inner.complete(prompt, system_prompt, temperature, max_tokens, json_mode)
-        except BaseException:
-            self._record_uncertain(full)
+        except BaseException as exc:
+            if not is_local_refusal(exc):
+                self._record_uncertain(full)
             raise
         self._record(full, result)
         return result
@@ -957,8 +979,9 @@ class MeteredProvider(LLMProvider):
             result = await self._inner.complete_with_images(prompt, images, system_prompt, temperature, max_tokens)
         except NotImplementedError:
             raise                                       # nothing was sent: this provider cannot take images, and that is not a spent call
-        except BaseException:
-            self._record_uncertain(full, "", extra)
+        except BaseException as exc:
+            if not is_local_refusal(exc):
+                self._record_uncertain(full, "", extra)
             raise
         self._record(full, result, extra)
         return result
@@ -972,8 +995,9 @@ class MeteredProvider(LLMProvider):
             async for chunk in self._inner.stream_complete(prompt, system_prompt, temperature, max_tokens):
                 chunks.append(chunk)
                 yield chunk
-        except BaseException:
-            self._record_uncertain(full, "".join(chunks))
+        except BaseException as exc:
+            if not is_local_refusal(exc):
+                self._record_uncertain(full, "".join(chunks))
             raise
         self._inner.last_usage = None  # streamed responses carry no usage here; estimate instead
         self._record(full, "".join(chunks))

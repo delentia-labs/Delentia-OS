@@ -6,7 +6,7 @@ let n = 0;
 const test = (name, fn) => { fn(); n++; console.log("ok -", name); };
 
 // Every (check, state) rct_control_plane/readiness.py can produce.
-const SERVER = ["model:ready", "model:configured", "model:server_down", "model:model_missing", "model:no_key", "approver:ready", "approver:nobody", "first_request:done", "first_request:not_yet"];
+const SERVER = ["model:ready", "model:configured", "model:server_down", "model:not_installed", "model:model_missing", "model:no_key", "approver:ready", "approver:nobody", "first_request:done", "first_request:not_yet"];
 const sample = (key) => { const [id, state] = key.split(":"); return { id, state, essential: true, ok: state === "ready", model: "qwen2.5:7b", provider: "ollama", installed: ["llama3.2:3b"], keys: 1, devices: 0, episodes: 2 }; };
 
 test("every state the server can produce has a text in both languages", () => {
@@ -27,7 +27,7 @@ test("Thai texts contain Thai and English texts do not", () => {
   }
 });
 test("a problem points at a page the person can open; a state that is fine points nowhere", () => {
-  for (const key of ["model:server_down", "model:model_missing", "model:no_key", "approver:nobody"]) assert.ok(describeCheck(sample(key), "en").href?.startsWith("/"), key);
+  for (const key of ["model:server_down", "model:not_installed", "model:model_missing", "model:no_key", "approver:nobody"]) assert.ok(describeCheck(sample(key), "en").href?.startsWith("/"), key);
   for (const key of ["model:ready", "approver:ready", "first_request:done"]) assert.equal(describeCheck(sample(key), "en").href, null, key);
 });
 test("a missing model names what is installed instead", () => {

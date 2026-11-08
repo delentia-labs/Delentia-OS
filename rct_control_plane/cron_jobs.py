@@ -41,7 +41,7 @@ DELIVERY_CHANNELS = ("telegram", "signal", "whatsapp")
 HOURLY_CAP_ENV = "DELENTIA_CRON_MAX_RUNS_PER_HOUR"
 RUN_SECONDS_ENV = "DELENTIA_CRON_MAX_SECONDS"
 # A run that ended like this did not do the job (and will end like this again): it counts toward switching the job off.
-FAILING_STOPS = frozenset({"llm_error", "notary_unavailable", "guard_blocked", "fdia_blocked", "jury_rejected", "exception", "max_seconds_exceeded"})
+FAILING_STOPS = frozenset({"llm_error", "model_not_running", "notary_unavailable", "guard_blocked", "fdia_blocked", "jury_rejected", "exception", "max_seconds_exceeded"})
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cron_jobs (

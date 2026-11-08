@@ -247,7 +247,7 @@ class AcpServer:
         if result.get("approval_id") or stopped == "pending_approval":
             extra = (f"\n\nThis needs a human signature (approval {result.get('approval_id') or '?'}). An editor's button cannot give it: sign on the approver's own device with "
                      "`delentia approvals sign`, then `delentia approvals approve`.")
-        elif stopped == "llm_error":
+        elif stopped in ("llm_error", "model_not_running"):
             extra = "\n\nThe model could not be reached. Check `delentia model show`."
         elif stopped in ("paused", "daily_limit", "stuck_repeating", "notary_unavailable"):
             extra = f"\n\nThe episode stopped: {stopped}."

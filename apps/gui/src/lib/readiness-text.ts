@@ -6,7 +6,7 @@ export type Lang = "th" | "en";
 export type CheckId = "model" | "approver" | "first_request";
 export interface ReadinessCheck {
   id: CheckId; essential: boolean; ok: boolean; state: string;
-  provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number;
+  provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number; chosen?: boolean;
 }
 export interface ReadinessText { label: string; what: string; next: string; href: string | null }
 
@@ -17,6 +17,7 @@ const P = (en: string, th: string): Pair => ({ en, th });
 export const STATES: Record<string, (c: ReadinessCheck) => { label: Pair; what: Pair; next: Pair; href: string | null }> = {
   "model:ready": (c) => ({ label: P(`The model is ready: ${c.model}`, `โมเดลพร้อม: ${c.model}`), what: P("The local model service answers and has this model.", "บริการโมเดลในเครื่องตอบและมีโมเดลนี้แล้ว"), next: P("Nothing to do.", "ไม่ต้องทำอะไร"), href: null }),
   "model:configured": (c) => ({ label: P(`A model is chosen: ${c.model} (${c.provider})`, `เลือกโมเดลแล้ว: ${c.model} (${c.provider})`), what: P("It has not been tested from here, but its key is in place.", "ยังไม่ได้ทดสอบจากหน้านี้ แต่มีกุญแจพร้อมแล้ว"), next: P("Ask something in Chat to see it work.", "ลองสั่งงานที่หน้าแชตเพื่อดูว่าทำงานไหม"), href: "/chat" }),
+  "model:not_installed": () => ({ label: P("No model program is installed on this computer", "ยังไม่ได้ติดตั้งโปรแกรมโมเดลบนเครื่องนี้"), what: P("The agent thinks with a model, and none is available yet: there is no local model program here and no online model has been chosen.", "เอเจนต์คิดด้วยโมเดล และตอนนี้ยังไม่มีโมเดลให้ใช้ ทั้งโปรแกรมโมเดลในเครื่องและโมเดลออนไลน์"), next: P("Open the Setup assistant: it lets you choose an online model with a key, or shows where to install a local one yourself.", "เปิดตัวช่วยตั้งค่า: เลือกโมเดลออนไลน์ด้วยคีย์ หรือดูว่าจะติดตั้งโมเดลในเครื่องเองได้ที่ไหน"), href: "/setup" }),
   "model:server_down": () => ({ label: P("The local model service is not running", "บริการโมเดลในเครื่องยังไม่ทำงาน"), what: P("The agent thinks with a model; without one it can not do anything.", "เอเจนต์คิดด้วยโมเดล ถ้าไม่มีก็ทำอะไรไม่ได้"), next: P("Start Ollama and wait a moment, or choose an online model on the Models page.", "เปิดโปรแกรม Ollama แล้วรอสักครู่ หรือเลือกโมเดลออนไลน์ที่หน้าโมเดล"), href: "/llm" }),
   "model:model_missing": (c) => ({ label: P(`The model ${c.model} is not downloaded`, `ยังไม่ได้ดาวน์โหลดโมเดล ${c.model}`), what: P(`The model service is running but does not have it${c.installed?.length ? ` (it has: ${c.installed.slice(0, 4).join(", ")})` : ""}.`, `บริการโมเดลทำงานอยู่แต่ไม่มีโมเดลนี้${c.installed?.length ? ` (ที่มี: ${c.installed.slice(0, 4).join(", ")})` : ""}`), next: P("Open the Models page and choose one it has, or download this one with Ollama.", "ไปที่หน้าโมเดลเพื่อเลือกตัวที่มีอยู่ หรือดาวน์โหลดตัวนี้ด้วย Ollama"), href: "/llm" }),
   "model:no_key": (c) => ({ label: P(`The key for ${c.provider} is missing`, `ยังไม่มีกุญแจ (API key) ของ ${c.provider}`), what: P("An online model needs the key from its provider. It is kept in the server's memory only.", "โมเดลออนไลน์ต้องใช้กุญแจจากผู้ให้บริการ เก็บไว้ในหน่วยความจำของเซิร์ฟเวอร์เท่านั้น"), next: P("Enter it on the Models page.", "ใส่ที่หน้าโมเดล"), href: "/llm" }),

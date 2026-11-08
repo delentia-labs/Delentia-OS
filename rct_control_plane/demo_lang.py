@@ -64,6 +64,7 @@ STOP_TEXT_EN: Dict[str, str] = {
     "guard_blocked": "blocked at the start by GUARD (the request looked like an attack)",
     "max_iterations_reached": "reached the maximum number of steps without finishing",
     "stuck_repeating": "stopped by itself: it repeated the same step too many times",
+    "model_not_running": "the model program on this computer is not running: start it, or choose an online model with `delentia model set`",
     "llm_error": "the model could not be called: check `delentia model show` and that the model (for example Ollama) is running",
     "parse_error": "the model answered in a format the system cannot read",
     "paused": "the system is paused (delentia pause)",
