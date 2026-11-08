@@ -116,10 +116,18 @@ def test_gather_reads_a_real_local_server_and_a_real_approver_key(ollama, tmp_pa
 def test_an_unreachable_server_answers_quickly_instead_of_hanging(tmp_path, monkeypatch):
     import time
     monkeypatch.setenv("DELENTIA_OLLAMA_URL", "http://127.0.0.1:9")            # nothing listens on the discard port
+    monkeypatch.setattr(readiness, "_ollama_installed", lambda: True)          # Round 112: whether the program is installed depends on the machine (CI has none); this test is about answering quickly
     persistence = ControlPlanePersistence(db_path=str(tmp_path / "r.db"))
     started = time.monotonic()
     report = readiness.report(persistence)
     assert _check(report, "model")["state"] == "server_down" and time.monotonic() - started < 5
+
+
+def test_an_unreachable_server_with_no_program_installed_is_not_installed(tmp_path, monkeypatch):
+    monkeypatch.setenv("DELENTIA_OLLAMA_URL", "http://127.0.0.1:9")
+    monkeypatch.setattr(readiness, "_ollama_installed", lambda: False)
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "r.db"))
+    assert _check(readiness.report(persistence), "model")["state"] == "not_installed"
 
 
 def test_the_route_returns_the_checks_and_no_secret(tmp_path, monkeypatch, ollama):
