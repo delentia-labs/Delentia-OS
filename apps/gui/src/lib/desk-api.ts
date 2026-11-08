@@ -228,7 +228,7 @@ export interface BackupMade { at: number; path: string; files: number; bytes: nu
 export interface PracticeAction { approval_id: string; action_sha256: string; reused: boolean }
 export interface Readiness {
   ready: boolean; all_done: boolean;
-  checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number }[];
+  checks: { id: "model" | "approver" | "first_request"; essential: boolean; ok: boolean; state: string; provider?: string; model?: string; installed?: string[]; keys?: number; devices?: number; episodes?: number; chosen?: boolean }[];
 }
 export interface PendingAction {
   approval_id: string; namespace: string; goal: string; tool_name: string; tool_args: Record<string, unknown>;

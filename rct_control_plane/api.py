@@ -1911,7 +1911,7 @@ class ControlPlaneAPI:
                     status_code=504,
                     detail=f"the local LLM backend timed out mid-episode (namespace={namespace}): {e}",
                 ) from e
-            if result.get("stopped_reason") == "llm_error":
+            if result.get("stopped_reason") in ("llm_error", "model_not_running"):
                 # Round 52: a model that stays unreachable ends the episode with llm_error
                 # (after retries) instead of raising; the caller still gets an honest gateway status.
                 note = next((str((st.get("tool_result") or {}).get("llm_error")) for st in reversed(result.get("steps") or [])
@@ -1972,7 +1972,7 @@ class ControlPlaneAPI:
                     raise IntentContractError("the current integer version is required")
                 result = await loop.continue_intent(contract_id, payload["version"], payload.get("response", ""),
                                                     payload.get("revised_goal"), payload.get("acceptance_criteria"), answers=payload.get("answers"))
-                if result.get("stopped_reason") == "llm_error":
+                if result.get("stopped_reason") in ("llm_error", "model_not_running"):
                     raise HTTPException(status_code=502, detail="model unavailable while continuing intent contract")
                 return {**result, "namespace": namespace}
             except IntentContractError as exc:

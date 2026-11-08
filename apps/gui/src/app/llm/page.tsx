@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { serverText } from "@/lib/server-text-th";
@@ -82,7 +83,18 @@ function CatalogPanel({ provider, current, onSaved, lang }: { provider: "ollama"
         </label>
       ) : null}
       {message ? <p role="status" className={`mb-3 text-[13px] ${message.tone === "leaf" ? "text-dl-leaf" : "text-dl-rust"}`}>{message.text}</p> : null}
-      {list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
+      {list.error && provider === "ollama" ? (
+        <div className="rounded border border-dl-amber/50 bg-dl-amber/5 p-3 text-[13px] leading-relaxed">
+          <p className="text-dl-text">{lang === "th" ? "ติดต่อโปรแกรมโมเดลบนเครื่องนี้ (Ollama) ไม่ได้ อาจยังไม่ได้ติดตั้ง หรือติดตั้งแล้วแต่ยังไม่ได้เปิด" : "Can not reach the model program on this computer (Ollama). It may not be installed yet, or it is installed and not started."}</p>
+          <p className="mt-2 text-dl-muted">{lang === "th" ? "ทางเลือก: ใช้โมเดลออนไลน์ด้วยคีย์ (แท็บ OpenRouter ด้านบน เหมาะกับงานจริง) หรือติดตั้งโมเดลในเครื่อง (ช้า เหมาะกับลองเล่น)" : "Your options: use an online model with a key (the OpenRouter tab above; better for real work), or install a local model (slow; fine for trying things)."}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Link href="/setup" className="desk-focus rounded border border-dl-leaf px-3 py-1.5 text-dl-leaf hover:bg-dl-pine">{lang === "th" ? "เปิดตัวช่วยตั้งค่า" : "Open the Setup assistant"}</Link>
+            <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="desk-focus text-dl-leaf underline">{lang === "th" ? "หน้าดาวน์โหลด Ollama (ติดตั้งเอง)" : "Ollama download page (you install it yourself)"}</a>
+            <button type="button" onClick={list.reload} className="desk-focus text-dl-muted underline">{lang === "th" ? "ตรวจอีกครั้ง" : "Check again"}</button>
+          </div>
+          <details className="mt-2 text-[12px] text-dl-muted"><summary className="cursor-pointer">{lang === "th" ? "รายละเอียดทางเทคนิค" : "Technical detail"}</summary><p className="desk-mono mt-1 break-words">{String(list.error)}</p></details>
+        </div>
+      ) : list.error ? <ErrorNote error={list.error} onRetry={list.reload} /> : null}
       {list.loading && !list.data ? <p className="desk-mono text-sm text-dl-muted">{lang === "th" ? "กำลังโหลดรายการโมเดล…" : "Loading the catalog…"}</p> : null}
       {list.data?.catalog && !list.data.catalog.length ? <Empty title={lang === "th" ? "ไม่พบโมเดล" : "No models found"} /> : null}
       <ul className="divide-y divide-dl-rule/60">

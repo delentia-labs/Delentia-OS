@@ -5814,7 +5814,7 @@ def demo_run(goal: str, root: Optional[str], max_iterations: int, max_seconds: f
     approval = out["result"].get("approval_id")
     if approval:
         click.echo((f"Waiting for approval, id {approval}  ->  delentia demo approve {approval}" if en else f"รออนุมัติ รหัส {approval}  →  delentia demo approve {approval}") + (" --scripted" if scripted else ""))
-    if str(out["result"].get("stopped_reason")) == "llm_error" and not scripted:
+    if str(out["result"].get("stopped_reason")) in ("llm_error", "model_not_running") and not scripted:
         click.echo("No model that works yet? Try the demo without a model:  delentia demo run compare --scripted" if en else "ยังไม่มีโมเดลที่ใช้ได้? ลองดูเดโมโดยไม่ต้องมีโมเดล:  delentia demo run compare --scripted")
     if out["checks"] is not None and not all(c["ok"] for c in out["checks"]):
         raise SystemExit(1)

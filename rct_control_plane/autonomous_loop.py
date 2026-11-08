@@ -46,6 +46,11 @@ LLM_RETRY_BACKOFF_ENV = "DELENTIA_LLM_RETRY_BACKOFF"
 _TRANSIENT_HTTP_STATUS = (408, 409, 425, 429, 500, 502, 503, 504)
 
 
+def _is_local_refusal(exc: BaseException) -> bool:
+    from rct_control_plane.llm_provider import is_local_refusal
+    return is_local_refusal(exc)
+
+
 def _is_transient_llm_error(exc: BaseException) -> bool:
     if getattr(exc, "transient", False) is True:        # llm_provider.LLMReplyError: a 200 that carried no usable reply
         return True
@@ -716,14 +721,18 @@ class AutonomousLoop:
                     except (BudgetExceededError, ResidencyViolation):
                         raise
                     except Exception as exc:    # noqa: BLE001 - any provider failure ends the episode, not the caller
-                        if attempt < retries and _is_transient_llm_error(exc):
+                        local_refused = _is_local_refusal(exc)
+                        if attempt < retries and not local_refused and _is_transient_llm_error(exc):
                             attempt += 1
                             await asyncio.sleep(_retry_delay(exc, backoff, attempt))
                             continue
                         llm_error = _describe_llm_error(exc)
-                        stopped_reason = "llm_error"
+                        stopped_reason = "model_not_running" if local_refused else "llm_error"
+                        # the technical text stays in the record; the sentence a person reads says what to do
+                        reasoning = ("the model program on this computer is not running (nothing answered at its local address); start it or choose an online model"
+                                     if local_refused else f"the model could not be reached: {llm_error} (after {attempt + 1} attempt(s))")
                         step = LoopStep(iteration=i, tool_name=None, tool_args={}, tool_result={"llm_error": llm_error},
-                                        llm_reasoning=f"the model could not be reached: {llm_error} (after {attempt + 1} attempt(s))")
+                                        llm_reasoning=reasoning)
                         history.append(step)
                         self._persist_step(step)
                         await _notify(step)

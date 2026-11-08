@@ -2376,7 +2376,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         claimed_id = getattr(self, "_claimed_clarification", None)
         if claimed_id:
             result["continues_clarification"] = claimed_id
-            if stopped_reason in ("llm_error", "notary_unavailable"):
+            if stopped_reason in ("llm_error", "model_not_running", "notary_unavailable"):
                 self._release_claimed_clarification()         # the episode never got to use the answer: the person does not have to answer again
         contract = getattr(self, "_active_contract", None)
         if contract is not None:

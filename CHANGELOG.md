@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - Unreleased
+
+Found by the first install of 2.4.3 on a second, clean Windows computer (no Ollama, no model); criteria written first in `research/FIRSTRUN_CRITERIA_R112.md`.
+
+### Fixed
+- **A request with no model program on the computer ended in about 11-17 seconds with a raw error.** A connection refused by the model program ON THIS COMPUTER is not retried any more (nothing is listening, trying again cannot help): the same question now ends in about 2.7 s on the measuring machine (11.5 s before) with its own stop reason, `model_not_running`, and a sentence that says what to do. A refusal from any other host is still retried. A call that never left is no longer counted as spent tokens.
+- **The Status page showed a model name as if it worked.** The model row now shows whether it can be used (ready / not installed / not running / needs a key / chosen but not tested) and links to the Setup assistant; a computer where nothing was ever chosen says so.
+- **The Models page showed `[WinError 10061]` for the local model tab.** It now explains in plain words, offers the Setup assistant, an online model, and the official Ollama download page (the person installs it; Delentia downloads nothing by itself), with the technical text under a fold.
+
 ## [2.4.3] - 2026-11-07
 
 Released on 2026-11-07 on the Architect's decision, BEFORE the install on a second computer and the real Windows Hello test: this version carries the conveniences for a person who does not write code (a model key that is kept, a local-model helper without a terminal), and whatever those two tests find ships in the next release. Nothing here is a result with a capable model: there is none yet. The stage label *Public Technical Preview 0.1* is still not declared.
