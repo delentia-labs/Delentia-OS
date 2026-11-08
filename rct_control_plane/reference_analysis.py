@@ -127,6 +127,7 @@ def probe(path: Path) -> Dict[str, Any]:
 CELL_JUMP = 40.0                # a thumbnail cell counts as changed when its mean colour difference is above this (0-255)
 FLASH_LOOKAHEAD = 3             # samples: a jump whose picture is back within this many samples is a flash, not a cut
 MODES = ("scene_only", "colour_only", "union")
+WINDOWS = (1, 2, 3)             # samples between the two thumbnails that are compared: a dissolve of 5-8 frames fills 2-3 samples at 10 a second
 
 
 def cut_signals(path: Path, threshold: float = SCENE_THRESHOLD, sample_fps: int = 10) -> Dict[str, Any]:
@@ -134,7 +135,8 @@ def cut_signals(path: Path, threshold: float = SCENE_THRESHOLD, sample_fps: int 
       scene     times (s) where ffmpeg's brightness-based scene score is above `threshold` (blind to a change of colour at the same brightness);
       diff[i]   mean absolute colour difference (0-255) between thumbnail i and i-1 (16x9 pixels at `sample_fps` a second), index 0 is the transition into sample 1;
       cells[i]  the fraction of the 144 thumbnail cells whose difference is above CELL_JUMP (a real cut changes most of the picture, a graphic that pops in changes a few cells);
-      back[i]   True when sample i+FLASH_LOOKAHEAD is closer to sample i-1 than to sample i (the picture came back: a flash, not a cut)."""
+      back[i]   True when sample i+FLASH_LOOKAHEAD is closer to sample i-1 than to sample i (the picture came back: a flash, not a cut);
+      diffw[w]  for w in 2 and 3: the mean absolute colour difference between sample j and sample j+w (so a dissolve that is spread over w samples shows up as one jump)."""
     w, h = 16, 9
     size = w * h * 3
     done = _run([_tool("ffmpeg"), "-hide_banner", "-nostdin", "-i", str(path), "-an", "-vf", f"select='gt(scene,{threshold})',showinfo", "-f", "null", "-"])
@@ -164,11 +166,12 @@ def cut_signals(path: Path, threshold: float = SCENE_THRESHOLD, sample_fps: int 
         cells.append(round(changed / (w * h), 3))
         j = i + FLASH_LOOKAHEAD
         back.append(bool(j < len(frames) and mean_abs(frames[j], prev) < mean_abs(frames[j], cur)))
-    return {"sample_fps": sample_fps, "scene": scene, "diff": diff, "cells": cells, "back": back}
+    diffw = {str(w): [round(mean_abs(frames[j + w], frames[j]), 3) for j in range(len(frames) - w)] for w in WINDOWS if w > 1}
+    return {"sample_fps": sample_fps, "scene": scene, "diff": diff, "cells": cells, "back": back, "diffw": diffw}
 
 
 def cuts_from_signals(sig: Dict[str, Any], mode: str = "union", colour_jump: float = COLOUR_JUMP, cell_fraction: float = 0.0, flash_filter: bool = False,
-                      min_gap: float = MIN_SHOT_S) -> List[float]:
+                      min_gap: float = MIN_SHOT_S, window: int = 1) -> List[float]:
     """Cut times (s) from the signals under one rule. The defaults are the detector as it was first shipped (union of the scene score and a colour jump above 30, cuts closer than 0.5 s are one)."""
     if mode not in MODES:
         raise ValueError("mode is one of " + ", ".join(MODES))
@@ -176,7 +179,16 @@ def cuts_from_signals(sig: Dict[str, Any], mode: str = "union", colour_jump: flo
     found: List[float] = []
     if mode in ("scene_only", "union"):
         found += [float(t) for t in sig["scene"]]
-    if mode in ("colour_only", "union"):
+    if mode in ("colour_only", "union") and window > 1:
+        if window not in WINDOWS:
+            raise ValueError("window is one of " + ", ".join(str(w) for w in WINDOWS))
+        series = (sig.get("diffw") or {}).get(str(window))
+        if series is None:
+            raise ValueError("these signals were made without windowed differences: compute them again")
+        for j, d in enumerate(series):
+            if d > colour_jump:
+                found.append(round((j + window) / fps, 2))          # the later of the two samples: the end of a dissolve
+    elif mode in ("colour_only", "union"):
         for i, d in enumerate(sig["diff"]):
             if d <= colour_jump:
                 continue

@@ -1,0 +1,26 @@
+{
+  "chosen": {
+    "mode": "union",
+    "colour_jump": 20.0,
+    "cell_fraction": 0.0,
+    "flash_filter": false,
+    "min_gap": 1.0,
+    "window": 3
+  },
+  "chosen_label": "window=3 jump=20 gap=1",
+  "dev2_result": {
+    "matched": 15,
+    "recall": 0.833,
+    "precision": 0.469,
+    "f1": 0.6
+  },
+  "baseline_dev2_result": {
+    "matched": 1,
+    "recall": 0.056,
+    "precision": 0.333,
+    "f1": 0.095
+  },
+  "criteria_sha256": "daafcd2ff9d2c3b50b8a71acd4a9ec710c1266b6de7452d07b088362ee3e7099",
+  "candidates_evaluated": 30,
+  "selection_sha256": "56f7b7a601f52f88ec7fd0193e7264912529b331553f6eda923f2ab93be2f22a"
+}
