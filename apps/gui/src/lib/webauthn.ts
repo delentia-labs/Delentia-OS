@@ -37,8 +37,15 @@ type CredentialLike = { id: string; rawId: ArrayBuffer; type: string; response: 
 
 /** What the server expects back: every buffer as base64url. */
 export function serializeCredential(cred: CredentialLike): Json {
+  // A browser's response object keeps these as getters on its prototype, which Object.entries() does not list: name them.
   const response: Json = {};
-  for (const [name, value] of Object.entries(cred.response)) response[name] = value ? toBase64Url(value) : null;
+  const source = cred.response as Record<string, ArrayBuffer | null | undefined>;
+  const names = new Set<string>(["clientDataJSON", "attestationObject", "authenticatorData", "signature", "userHandle", ...Object.keys(source)]);
+  for (const name of names) {
+    const value = source[name];
+    if (value === undefined && !(name in source)) continue;
+    response[name] = value ? toBase64Url(value) : null;
+  }
   return { id: cred.id, rawId: toBase64Url(cred.rawId), type: cred.type, response };
 }
 
