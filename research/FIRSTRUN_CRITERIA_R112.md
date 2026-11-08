@@ -16,3 +16,9 @@ Source: the Architect's first install of 2.4.3 on a second, clean Windows comput
 
 ## Not claimed
 Nothing here says anything about model quality. A real clean-computer retest (the Architect's second computer) is the evidence for R5/R6 as a person experiences them; the unit tests only pin the logic.
+
+## Amendment of 2026-11-08, written after seeing the numbers (the rules above are NOT changed)
+R2 says 'ends in 3.0 s or less on this machine (measured before: 2.7 s)'. That 2.7 s was a warm call (the kernel already imported). Measured after the change: warm 2.68 s (script, full kernel) and 2.3 s (real
+`delentia serve` over HTTP, second request); but the FIRST call in a fresh process took 3.24 s in the test and the FIRST request to a fresh server took 8.2 s, because it pays for importing the kernel. R2 is met
+for a warm call. It is NOT met for the first question after the program starts: that one is slower, and the Architect's 17 s was probably this cold start plus the retries. The timing test therefore times the second call
+and reports the first; a cold-start improvement (warming the kernel when the server starts) is a separate item, not claimed here.

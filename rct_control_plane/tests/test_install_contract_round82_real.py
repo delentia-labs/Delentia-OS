@@ -67,7 +67,7 @@ def test_main_writes_a_receipt_and_the_exit_code_follows_the_checks(tmp_path, mo
     monkeypatch.setitem(contract.RUNNERS, "imports", lambda box: contract.result("imports", True, "fine"))
     monkeypatch.setitem(contract.RUNNERS, "cli", lambda box: contract.result("cli", False, "broken"))
     receipt = tmp_path / "receipt.json"
-    code = contract.main(["--receipt", str(receipt), "--skip", "demo", "--skip", "serve", "--skip", "memory", "--skip", "readonly"])
+    code = contract.main(["--receipt", str(receipt), "--skip", "demo", "--skip", "serve", "--skip", "nomodel", "--skip", "memory", "--skip", "readonly"])
     data = json.loads(receipt.read_text(encoding="utf-8"))
     assert code == 1 and data["all_passed"] is False and [c["check"] for c in data["checks"]] == ["imports", "cli"]
 

@@ -12,13 +12,14 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
 import time
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 API_PORT = 8000
 DESK_PORT = 3010
@@ -157,6 +158,112 @@ def launch_lock(run: Path, wait_seconds: float, stale_after: float = 600.0) -> I
         path.unlink(missing_ok=True)
 
 
+# ---------------------------------------------------------------------------------------------------------------------------------- ports (Round 112B)
+PORT_TRIES = 20
+PORTS_FILE = "ports.json"
+_SEMVER = re.compile(r"^\d+\.\d+\.\d+")
+
+
+def is_our_agent(port: int, timeout: float = 2.0) -> bool:
+    """True only when what answers on this port looks like a Delentia agent: /health is JSON with status "healthy", a version number and a timestamp.
+    Another program that merely answers 200 on /health (many development servers do) is NOT ours and must not be adopted."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as response:        # noqa: S310 - a loopback address this module built
+            if response.status != 200:
+                return False
+            body = json.loads(response.read(20_000))
+    except Exception:                                                                                   # noqa: BLE001 - not answering, or answering something else, is not ours
+        return False
+    return isinstance(body, dict) and body.get("status") == "healthy" and bool(_SEMVER.match(str(body.get("version", "")))) and "timestamp" in body
+
+
+def is_our_desk(port: int, timeout: float = 2.0) -> bool:
+    """The Desk page server names itself in its Server header (desk_launcher: DelentiaDeskLauncher)."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=timeout) as response:          # noqa: S310
+            return response.status == 200 and "DelentiaDeskLauncher" in str(response.headers.get("Server", ""))
+    except Exception:                                                                                   # noqa: BLE001
+        return False
+
+
+def port_free(port: int) -> bool:
+    """Can this computer's loopback address bind the port right now? (127.0.0.1 only: nothing here ever binds another address.)"""
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        try:
+            probe.bind(("127.0.0.1", int(port)))
+            return True
+        except OSError:
+            return False
+
+
+def choose_port(preferred: int, is_ours, recorded: Optional[int] = None, tries: int = PORT_TRIES, free=None) -> "tuple[int, bool]":
+    """(port, reuse). The port recorded by the last start comes first, then the preferred one, then the next ones. A port where our own program already answers is reused; a free port is taken;
+    a port held by anything else (answering or not) is skipped at once, never waited on."""
+    free = free or port_free
+    order: List[int] = []
+    for candidate in ([recorded] if recorded else []) + list(range(preferred, preferred + tries)):
+        if candidate and candidate not in order:
+            order.append(int(candidate))
+    for candidate in order:
+        if is_ours(candidate):
+            return candidate, True
+        if free(candidate):
+            return candidate, False
+    raise RuntimeError(f"no free port was found from {preferred} to {preferred + tries - 1}; close a program that holds them and start again")
+
+
+def read_ports(run: Path) -> Dict[str, int]:
+    try:
+        data = json.loads((run / PORTS_FILE).read_text(encoding="utf-8"))
+        return {k: int(v) for k, v in data.items() if k in ("agent", "desk") and isinstance(v, int)}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def write_ports(run: Path, agent: int, desk: int) -> None:
+    run.mkdir(parents=True, exist_ok=True)
+    (run / PORTS_FILE).write_text(json.dumps({"agent": agent, "desk": desk}), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------- an own window (Round 112B)
+def window_command(url: str, platform: Optional[str] = None, env: Optional[Dict[str, str]] = None, exists=os.path.exists) -> Optional[List[str]]:
+    """The command that opens the Desk as an application window (no tabs, its own taskbar entry) in the installed Chrome or Edge, using the person's normal profile so a passkey or a sign-in is kept.
+    None when that is not possible (not Windows, no such browser, or DELENTIA_DESK_WINDOW=tab): the caller opens an ordinary tab instead."""
+    environ: Mapping[str, str] = os.environ if env is None else env
+    if (environ.get("DELENTIA_DESK_WINDOW") or "").strip().lower() == "tab":
+        return None
+    if (platform or sys.platform) != "win32":
+        return None
+    bases = [environ.get("ProgramFiles"), environ.get("ProgramFiles(x86)"), environ.get("LOCALAPPDATA")]
+    candidates = []
+    for base in bases:
+        if base:
+            candidates.append(os.path.join(base, "Google", "Chrome", "Application", "chrome.exe"))
+    for base in bases[:2]:
+        if base:
+            candidates.append(os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe"))
+    for exe in candidates:
+        if exists(exe):
+            return [exe, f"--app={url}"]
+    return None
+
+
+def open_window(url: str) -> str:
+    """Open the Desk: an application window when possible, else a tab in the default browser. Returns 'window' or 'tab'."""
+    command = window_command(url)
+    if command is not None:
+        try:
+            subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)         # noqa: S603 - a path found on disk plus a loopback address
+            return "window"
+        except OSError:
+            pass
+    import webbrowser
+    webbrowser.open(url)
+    return "tab"
+
+
+
 def launch(api_port: int = API_PORT, desk_port: int = DESK_PORT, wait_seconds: float = 120.0, say=print) -> Dict[str, Any]:
     """Start (or find) the agent and the Desk. Returns {"url", "started": [...], "already": [...]}; raises RuntimeError with a sentence a person can act on."""
     from rct_control_plane import desk_assets
@@ -171,8 +278,12 @@ def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: floa
     logs, run = base / "logs", base / "run"
     started: List[str] = []
     already: List[str] = []
+    recorded = read_ports(run)
+    api_port, api_reuse = choose_port(api_port, is_our_agent, recorded.get("agent"))
+    if api_port != API_PORT and not api_reuse:
+        say(f"Port {API_PORT} is used by another program; Delentia will use {api_port} instead.")
     api_health = f"http://127.0.0.1:{api_port}/health"
-    if healthy(api_health):
+    if api_reuse:
         already.append("agent")
     else:
         say("Starting the agent (the first start takes about 20 seconds)...")
@@ -180,8 +291,9 @@ def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: floa
         started.append("agent")
         if not wait_healthy(api_health, wait_seconds):
             raise RuntimeError(f"the agent did not answer within {int(wait_seconds)} seconds. Look at {logs / 'serve.log'} for the reason")
+    desk_port, desk_reuse = choose_port(desk_port, is_our_desk, recorded.get("desk"))
     desk_url = f"http://localhost:{desk_port}"
-    if healthy(f"http://127.0.0.1:{desk_port}/"):
+    if desk_reuse:
         already.append("desk")
     else:
         say("Starting the Desk page...")
@@ -189,7 +301,8 @@ def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: floa
         started.append("desk")
         if not wait_healthy(f"http://127.0.0.1:{desk_port}/", 60):
             raise RuntimeError(f"the Desk page did not start. Look at {logs / 'desk.log'} for the reason (is port {desk_port} used by something else?)")
-    return {"url": desk_url, "started": started, "already": already, "logs": str(logs)}
+    write_ports(run, api_port, desk_port)
+    return {"url": desk_url, "started": started, "already": already, "logs": str(logs), "api_port": api_port, "desk_port": desk_port}
 
 
 def stop(say=print) -> Dict[str, str]:

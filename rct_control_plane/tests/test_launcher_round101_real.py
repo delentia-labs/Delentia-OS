@@ -195,6 +195,9 @@ def test_two_threads_that_launch_at_once_start_the_agent_once(tmp_path, monkeypa
 
     monkeypatch.setattr(launcher, "healthy", lambda url, timeout=2.0: ("8000" in url and "serve" in up) or ("3010" in url and "desk" in up))
     monkeypatch.setattr(launcher, "start_detached", fake_start)
+    monkeypatch.setattr(launcher, "is_our_agent", lambda port, timeout=2.0: "serve" in up)          # Round 112B: ownership is asked, not just 'something answers'
+    monkeypatch.setattr(launcher, "is_our_desk", lambda port, timeout=2.0: "desk" in up)
+    monkeypatch.setattr(launcher, "port_free", lambda port: True)
     results: list = []
     threads = [threading.Thread(target=lambda: results.append(launcher.launch(8000, 3010, wait_seconds=5, say=lambda *_: None))) for _ in range(2)]
     for t in threads:

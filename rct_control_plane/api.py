@@ -1917,6 +1917,9 @@ class ControlPlaneAPI:
                 note = next((str((st.get("tool_result") or {}).get("llm_error")) for st in reversed(result.get("steps") or [])
                              if isinstance(st.get("tool_result"), dict) and st["tool_result"].get("llm_error")), "unknown error")
                 timed_out = "timeout" in note.lower() or "HTTP 504" in note or "HTTP 408" in note
+                if result.get("stopped_reason") == "model_not_running":
+                    # Round 112: a refused connection to the model program on this computer: say what to do, in words (the technical text stays in the audit record)
+                    raise HTTPException(status_code=502, detail=f"the model program on this computer is not running (nothing answered at its local address); start it or choose an online model (namespace={namespace})")
                 raise HTTPException(
                     status_code=504 if timed_out else 502,
                     detail=f"the LLM backend timed out or was unreachable mid-episode (namespace={namespace}): {note}",
