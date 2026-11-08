@@ -191,17 +191,28 @@ def _ask(server: "Server", goal: str, timeout: float = 120.0) -> Dict[str, Any]:
 
 
 def check_nomodel(box: Sandbox) -> Dict[str, Any]:
-    """Round 112 (criteria R12): a computer with no model program. The installed server must answer a goal with HTTP 502 and a plain sentence, and not take long about it.
-    The first request warms the server (lazy imports) and is not timed; the second is timed against 5 s (about 2.7 s on the measuring machine; a CI runner is slower)."""
+    """Round 112 (criteria R12 and R13): a computer with no model program. The installed server must answer a goal with HTTP 502 and a plain sentence, and not take long about it.
+    The server warms its first-question path in the background; once /health says `warm`, even the FIRST question must answer within 5 s (it took 8.2 s before the warming)."""
     closed = free_port()                                      # nothing listens here: a real refused connection
     with Server(box, {"DELENTIA_OLLAMA_URL": f"http://127.0.0.1:{closed}", "DELENTIA_LLM_PROVIDER": "ollama", "DELENTIA_LLM_MODEL": "qwen2.5:7b"}) as server:
         if server.wait_healthy() is None:
             return result("nomodel", False, "the server did not answer /health:\n" + server.tail())
-        warm = _ask(server, "What can you do?")
+        # Round 112C (R13): the server warms its first-question path in the background and says so in /health (`warm`); the FIRST question is timed once that is true
+        waited = time.time()
+        warm_flag = None
+        while time.time() - waited < 120:
+            try:
+                warm_flag = json.loads(server.get("/health")["body"]).get("warm")
+            except Exception:                                  # noqa: BLE001
+                warm_flag = None
+            if warm_flag is True:
+                break
+            time.sleep(0.5)
+        warm = _ask(server, "What can you do?")                # the first question after the warming
         timed = _ask(server, "What can you do?")
         plain = "not running" in timed["body"] and "WinError" not in timed["body"] and "ConnectError" not in timed["body"]
-        ok = warm["status"] == 502 and timed["status"] == 502 and plain and timed["seconds"] <= 5.0
-        return result("nomodel", ok, f"no model program: HTTP {timed['status']} in {timed['seconds']} s (first, warming: {warm['seconds']} s); plain sentence: {plain}; body: {timed['body'][:160]}")
+        ok = warm_flag is True and warm["status"] == 502 and timed["status"] == 502 and plain and warm["seconds"] <= 5.0 and timed["seconds"] <= 5.0
+        return result("nomodel", ok, f"no model program: HTTP {timed['status']} in {timed['seconds']} s; the FIRST question after warming took {warm['seconds']} s (warm flag {warm_flag}, waited {round(time.time() - waited - warm['seconds'] - timed['seconds'], 1)} s); plain sentence: {plain}; body: {timed['body'][:160]}")
 
 
 def check_memory(box: Sandbox) -> Dict[str, Any]:

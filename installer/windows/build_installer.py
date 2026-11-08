@@ -115,6 +115,24 @@ def write_milestone(stage_dir: Path, version_module: Any = None) -> Optional[Dic
     return labels
 
 
+PROGRESS_TEXT = {
+    "en_status": "Step 2 of 2: downloading and installing the parts Delentia needs from the internet. The moving bar only shows that Setup is working. It is not a percentage and may look the same for a long time. Please do not close this window.",
+    "th_status": "ขั้นที่ 2 จาก 2: กำลังดาวน์โหลดและติดตั้งส่วนที่ Delentia ต้องใช้จากอินเทอร์เน็ต แถบที่เคลื่อนไหวบอกเพียงว่าตัวติดตั้งกำลังทำงาน ไม่ใช่เปอร์เซ็นต์ และอาจดูเหมือนเดิมเป็นเวลานาน กรุณาอย่าปิดหน้าต่างนี้",
+    "en_detail": "Needs an internet connection. Details are written to install.log in the Delentia folder.",
+    "th_detail": "ต้องใช้อินเทอร์เน็ต รายละเอียดถูกบันทึกไว้ในไฟล์ install.log ในโฟลเดอร์ของ Delentia",
+}
+
+
+def write_progress_text(stage_dir: Path) -> Dict[str, str]:
+    """Round 112C: the install-step text in English and Thai, as an include for the Inno script. UTF-8 with a byte-order mark so the Thai is read as Thai; nothing Thai travels on the compiler's command line."""
+    lines = ["#undef ProgressStatusEN", "#undef ProgressStatusTH", "#undef ProgressDetailEN", "#undef ProgressDetailTH"]
+    for name, key in (("ProgressStatusEN", "en_status"), ("ProgressStatusTH", "th_status"), ("ProgressDetailEN", "en_detail"), ("ProgressDetailTH", "th_detail")):
+        lines.append('#define ' + name + ' "' + PROGRESS_TEXT[key] + '"')
+    Path(stage_dir).mkdir(parents=True, exist_ok=True)
+    (Path(stage_dir) / "progress.iss").write_text(chr(10).join(lines) + chr(10), encoding="utf-8-sig")
+    return dict(PROGRESS_TEXT)
+
+
 def build_wheel(out_dir: Path) -> Path:
     subprocess.run([sys.executable, str(ROOT / "scripts" / "package_desk.py")], check=True, cwd=str(ROOT))
     subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", str(out_dir)], check=True, cwd=str(ROOT))
@@ -180,6 +198,7 @@ def main() -> int:
     used = stage(args.python_embed, args.get_pip, wheel, args.stage_dir, args.offline_wheels)
     print(f"staged {args.stage_dir} for Delentia {version}")
     ms_label = write_milestone(args.stage_dir)
+    write_progress_text(args.stage_dir)
     print(f"  milestone label: {ms_label['both'] if ms_label else '(not declared: the installer shows none)'}")
     for k in ("python_embed", "get_pip", "wheel"):
         print(f"  {k}: {used[k]['file']}  sha256 {used[k]['sha256']}")

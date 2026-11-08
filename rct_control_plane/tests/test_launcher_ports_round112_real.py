@@ -192,3 +192,26 @@ def test_the_window_uses_the_normal_profile():
     chrome = os.path.join(WIN["ProgramFiles"], "Google", "Chrome", "Application", "chrome.exe")
     command = launcher.window_command("http://localhost:3010", "win32", WIN, exists=lambda p: p == chrome)
     assert not any(part.startswith("--user-data-dir") for part in command), "a separate profile would lose the person's passkeys and sign-in"
+
+
+def test_a_recorded_agent_that_is_alive_but_slow_to_answer_is_not_replaced_by_a_second_one(tmp_path, monkeypatch):
+    """Found by the older launch test once the server warmed itself in the background: /health can take seconds while it warms. A recorded port whose recorded process is alive is ours."""
+    import subprocess
+    sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    try:
+        run = tmp_path / "run"
+        run.mkdir()
+        (run / "serve.pid").write_text(str(sleeper.pid), encoding="ascii")
+        (run / "desk.pid").write_text(str(sleeper.pid), encoding="ascii")
+        launcher.write_ports(run, 8003, 3012)
+        started = []
+        monkeypatch.setattr(launcher, "is_our_agent", lambda port, timeout=4.0: False)         # it did not answer in time
+        monkeypatch.setattr(launcher, "is_our_desk", lambda port, timeout=2.0: False)
+        monkeypatch.setattr(launcher, "port_free", lambda port: False)                            # and the port is held (by it)
+        monkeypatch.setattr(launcher, "start_detached", lambda argv, log, pid, env=None: started.append(argv) or 1)
+        monkeypatch.setattr(launcher, "wait_healthy", lambda url, seconds: True)
+        result = launcher._launch_locked(tmp_path, 8000, 3010, 5, lambda *_: None)
+        assert started == [], "no second agent or Desk was started"
+        assert result["api_port"] == 8003 and result["desk_port"] == 3012 and sorted(result["already"]) == ["agent", "desk"]
+    finally:
+        sleeper.kill()

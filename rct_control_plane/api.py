@@ -215,6 +215,7 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     timestamp: str
+    warm: Optional[bool] = None                       # Round 112C: only when the server warms its first-question path (delentia serve): False while it does, True when done
     milestone: Optional[Dict[str, str]] = None        # the stage label (e.g. Public Technical Preview 0.1), only once the owner has declared it; never a version
 
 
@@ -281,6 +282,45 @@ _DAEMON_SIGNAL_GATEWAY: Optional[Any] = None
 _DAEMON_EMAIL_GATEWAY: Optional[Any] = None
 
 
+_WARM: Dict[str, Any] = {"enabled": False, "done": False}
+_PIPELINE_WARM_THREAD: Optional[Any] = None        # the 41-algorithm pipeline warm-up thread (started by the daemon branch of the lifespan); `warm` waits for it
+
+
+def warm_state() -> Optional[bool]:
+    """None when this server does not warm (tests, one-off runs); otherwise whether the warming has finished."""
+    return bool(_WARM["done"]) if _WARM["enabled"] else None
+
+
+def _warm_agent_path() -> None:
+    """Round 112C: the first question after the program starts used to pay for imports (8.2 s measured on a fresh server). Do that work in a background thread while the person is still looking at the page:
+    the tool server, the loop factory, the token counter, the TLS context, the recall probe. Nothing here talks to a model or writes to the audit record."""
+    try:
+        from rct_control_plane import http_client, memory_embeddings
+        from rct_control_plane.agent_factory import build_governed_loop
+        from rct_control_plane.llm_provider import _count_tokens
+        from rct_control_plane.mcp_server import _kernel as warm_kernel
+        from rct_control_plane.mcp_server import mcp as warm_mcp
+        http_client.shared_ssl_context()
+        _count_tokens("warm")
+        memory_embeddings.enabled()                                      # fills the five-minute availability cache
+        build_governed_loop(warm_kernel, "warm-up", persistence=warm_kernel._persistence, mcp_server=warm_mcp)
+    except Exception:                                                    # noqa: BLE001 - warming is an optimisation; a failure just means the first question is slower
+        logger.warning("warm-up of the first-question path failed", exc_info=True)
+    finally:
+        # The pipeline warm-up competes for the processor with the first question (measured: 4.3 s with it still running, 1.3 s once it had finished), so `warm` is reported only after it is done too.
+        try:
+            if os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes") and os.environ.get("DELENTIA_DAEMON_ENABLED") == "1":
+                for _ in range(100):
+                    if _PIPELINE_WARM_THREAD is not None:
+                        break
+                    time.sleep(0.1)
+                if _PIPELINE_WARM_THREAD is not None:
+                    _PIPELINE_WARM_THREAD.join(timeout=90)
+        except Exception:                                                # noqa: BLE001
+            pass
+        _WARM["done"] = True
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     """Round 36: starts the real AutonomousScheduler daemon (reminder
@@ -303,6 +343,10 @@ async def _lifespan(app: FastAPI):
     env var."""
     global _DAEMON_SCHEDULER, _DAEMON_STARTED_AT, _DAEMON_TELEGRAM_GATEWAY, _DAEMON_DISCORD_GATEWAY, _DAEMON_SLACK_GATEWAY
     global _DAEMON_SIGNAL_GATEWAY, _DAEMON_EMAIL_GATEWAY
+    if os.environ.get("DELENTIA_WARM_START") == "1" and not _WARM["enabled"]:
+        import threading
+        _WARM["enabled"], _WARM["done"] = True, False
+        threading.Thread(target=_warm_agent_path, daemon=True, name="first-question-warmup").start()
     if os.environ.get("DELENTIA_DAEMON_ENABLED") != "1":
         yield
         return
@@ -316,7 +360,9 @@ async def _lifespan(app: FastAPI):
     if os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes"):
         import threading
         from rct_control_plane.algorithm_pipeline import warm_up
-        threading.Thread(target=warm_up, args=(ALGORITHM_KERNEL,), daemon=True, name="pipeline-warmup").start()
+        global _PIPELINE_WARM_THREAD
+        _PIPELINE_WARM_THREAD = threading.Thread(target=warm_up, args=(ALGORITHM_KERNEL,), daemon=True, name="pipeline-warmup")
+        _PIPELINE_WARM_THREAD.start()
 
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
@@ -479,6 +525,7 @@ class ControlPlaneAPI:
                 version=PACKAGE_VERSION,
                 timestamp=datetime.utcnow().isoformat(),
                 milestone=milestone_for_health(),
+                warm=warm_state(),
             )
         
         @self.app.get("/health/detailed", response_model=DetailedHealthResponse)

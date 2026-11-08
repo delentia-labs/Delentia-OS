@@ -164,7 +164,7 @@ PORTS_FILE = "ports.json"
 _SEMVER = re.compile(r"^\d+\.\d+\.\d+")
 
 
-def is_our_agent(port: int, timeout: float = 2.0) -> bool:
+def is_our_agent(port: int, timeout: float = 4.0) -> bool:
     """True only when what answers on this port looks like a Delentia agent: /health is JSON with status "healthy", a version number and a timestamp.
     Another program that merely answers 200 on /health (many development servers do) is NOT ours and must not be adopted."""
     try:
@@ -249,6 +249,14 @@ def window_command(url: str, platform: Optional[str] = None, env: Optional[Dict[
     return None
 
 
+def default_gateway(run: Optional[Path] = None) -> str:
+    """Where `delentia desk` should look for the agent when no address is given: the agent `delentia launch` recorded, if it still answers as Delentia; else the usual port 8000."""
+    recorded = read_ports(run if run is not None else home() / "run").get("agent")
+    if recorded and is_our_agent(recorded):
+        return f"http://127.0.0.1:{recorded}"
+    return f"http://127.0.0.1:{API_PORT}"
+
+
 def open_window(url: str) -> str:
     """Open the Desk: an application window when possible, else a tab in the default browser. Returns 'window' or 'tab'."""
     command = window_command(url)
@@ -279,7 +287,16 @@ def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: floa
     started: List[str] = []
     already: List[str] = []
     recorded = read_ports(run)
-    api_port, api_reuse = choose_port(api_port, is_our_agent, recorded.get("agent"))
+
+    def recorded_and_running(name: str, port: int) -> bool:
+        """The port this launcher recorded, and the process it recorded for it is still alive: ours even if it answers slowly (a server that is warming up can take seconds to answer /health)."""
+        try:
+            pid = int((run / f"{name}.pid").read_text(encoding="ascii").strip())
+        except (OSError, ValueError):
+            return False
+        return recorded.get("agent" if name == "serve" else "desk") == port and pid_alive(pid)
+
+    api_port, api_reuse = choose_port(api_port, lambda p: is_our_agent(p) or recorded_and_running("serve", p), recorded.get("agent"))
     if api_port != API_PORT and not api_reuse:
         say(f"Port {API_PORT} is used by another program; Delentia will use {api_port} instead.")
     api_health = f"http://127.0.0.1:{api_port}/health"
@@ -291,7 +308,7 @@ def _launch_locked(base: Path, api_port: int, desk_port: int, wait_seconds: floa
         started.append("agent")
         if not wait_healthy(api_health, wait_seconds):
             raise RuntimeError(f"the agent did not answer within {int(wait_seconds)} seconds. Look at {logs / 'serve.log'} for the reason")
-    desk_port, desk_reuse = choose_port(desk_port, is_our_desk, recorded.get("desk"))
+    desk_port, desk_reuse = choose_port(desk_port, lambda p: is_our_desk(p) or recorded_and_running("desk", p), recorded.get("desk"))
     desk_url = f"http://localhost:{desk_port}"
     if desk_reuse:
         already.append("desk")

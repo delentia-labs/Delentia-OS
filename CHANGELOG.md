@@ -18,6 +18,11 @@ Found by the first install of 2.4.3 on a second, clean Windows computer (no Olla
 - **The installer no longer looks frozen** during the step that downloads the packages: the bar is animated and the text says it is not a percentage and needs the internet (no number of minutes is promised: none was measured on a clean computer).
 - **Sessions hides attempts where no model could be reached** behind a visible count and a switch. Nothing is deleted; they stay in the audit record.
 - **A new install check in CI**: the installed package, with no model program reachable, answers a goal with a plain sentence within 5 s on a warm server. The first question after the program starts is slower (about 8 s measured on a fresh server, because it imports the kernel); that cold start is not fixed here.
+- **A computer with no model program no longer waits for the operating system.** On Windows a refused connection to a closed local port takes about 2 seconds (4 for the name `localhost`). A connection to this computer that is not accepted within 0.75 s is now given up on (the model call, the recall probe and the readiness probe), which changes nothing for a working Ollama. A no-model question in a warm process went from 2.2-2.7 s to about 0.9 s. `DELENTIA_LOCAL_CONNECT_TIMEOUT_S` changes the limit.
+- **The first question after the program starts is no longer the slow one.** `delentia serve` warms the path a first question needs in the background and `/health` says `warm: true` when it is done: the first question on a fresh server took 8.2 s and now about 1.4 s once it is warm. A question asked while the warming still runs is slower (about 4 s). Off with `DELENTIA_WARM_START=0`.
+- **A local model that is simply not there no longer trips the circuit breaker.** Refused or locally timed-out connections are not counted as failures of the endpoint, so the answer stays the plain "not running" sentence instead of "circuit open" after five questions. Other failures are counted as before.
+- **`delentia desk` finds the agent `delentia launch` chose** (the port the launcher recorded), else port 8000; `--gateway` still wins. A recorded agent that is still running but slow to answer is no longer mistaken for a stranger.
+- **The installer's progress text is also in Thai** (through a UTF-8 include; not yet seen on screen).
 
 ## [2.4.3] - 2026-11-07
 

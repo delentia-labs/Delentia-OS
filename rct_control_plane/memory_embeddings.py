@@ -67,6 +67,9 @@ _auto_probe: Dict[str, Any] = {"at": -1e9, "url": "", "model": "", "ok": False, 
 
 
 def _installed_models(url: str) -> List[str]:
+    from rct_control_plane import local_net
+    if not local_net.quick_connect_ok(url):                                  # nothing listens on this computer: do not wait for the operating system's long refusal (about 2 s on Windows)
+        return []
     try:
         tags = json.loads(urllib.request.urlopen(url + "/api/tags", timeout=2.0).read())
         return sorted({str(m.get("name", "")) for m in tags.get("models", [])})

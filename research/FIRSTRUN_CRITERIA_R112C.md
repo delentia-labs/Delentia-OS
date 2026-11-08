@@ -16,3 +16,12 @@ Source: the four open items I listed after part 2 and the Architect asked to clo
 
 ## Not claimed
 Nothing here makes a model answer faster; it only removes waiting for something that is not there. The first question after the program starts may still pay for imports that the warm thread has not finished (R13 measures after `warm`). The Thai text and the animated bar are judged by a person on screen.
+
+## Results (written after the runs; the rules above were not changed)
+- **R17** met: warm no-model question 0.91-0.94 s in a process (was 2.15-2.7 s); a refused loopback connection is now given up after 0.75 s instead of the operating system's 2.05 s.
+- **R13** met: on a real `delentia serve` the first question after `warm: true` took **1.36 s** (8.2 s before); `warm` became true 6.3 s after the server answered /health. A question asked while the warming still runs is slower (4.3 s measured: the 41-algorithm pipeline warm-up competes for the processor), which is why `warm` waits for that warm-up too. 30 s after the server was healthy the first question took 1.33 s.
+- **R14** met: ten refused local calls never open the circuit; five remote or non-refusal failures still do (tests).
+- **R15** met: `delentia desk` uses the recorded agent when it answers as Delentia, else 8000; an explicit `--gateway` wins (tests).
+- **R16** met at script level: the Thai text is written through a UTF-8-with-byte-order-mark include and says the same points as the English; it has not been compiled here (no Inno Setup on this machine: the clean Windows runner compiles it in CI) and nobody has seen it on screen.
+- **Found while doing it:** with the server warming in the background `/health` can answer slowly, and the launcher then took its own recorded, running agent for a stranger and would have started a second one; a recorded port whose recorded process is alive is now ours even if it answers late (regression test added).
+- **Cold-start cost stays:** the very first question asked in the first seconds after start still competes with the warming. Not claimed away.

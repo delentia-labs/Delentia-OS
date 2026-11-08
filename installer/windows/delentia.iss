@@ -27,6 +27,16 @@
 #ifexist AddBackslash(StageDir) + "milestone.iss"
   #include AddBackslash(StageDir) + "milestone.iss"
 #endif
+; Round 112C: the install-step text in English and Thai (build_installer.py writes progress.iss as UTF-8 with a byte-order mark; this fallback keeps an older staged folder compiling)
+#ifexist AddBackslash(StageDir) + "progress.iss"
+  #include AddBackslash(StageDir) + "progress.iss"
+#endif
+#ifndef ProgressStatusEN
+  #define ProgressStatusEN "Step 2 of 2: downloading and installing the parts Delentia needs from the internet. The moving bar only shows that Setup is working. It is not a percentage and may look the same for a long time. Please do not close this window."
+  #define ProgressStatusTH ""
+  #define ProgressDetailEN "Needs an internet connection. Details are written to install.log in the Delentia folder."
+  #define ProgressDetailTH ""
+#endif
 
 [Setup]
 AppId={{B7A1C3E4-5D26-4F0A-9E31-D3E71A7E0101}
@@ -138,8 +148,8 @@ begin
   begin
     { Round 112B: this step downloads the packages Delentia needs and the bar used to sit still at the end of the file copy, so a first-time install looked frozen (seen on a clean computer, 2026-11-08).
       The bar is now animated and the text says what is happening and that it is not a percentage. No number of minutes is promised: none was measured on a clean computer. }
-    WizardForm.StatusLabel.Caption := 'Step 2 of 2: downloading and installing the parts Delentia needs from the internet. The moving bar only shows that Setup is working. It is not a percentage and may look the same for a long time. Please do not close this window.';
-    WizardForm.FilenameLabel.Caption := 'Needs an internet connection. Details are written to install.log in the Delentia folder.';
+    WizardForm.StatusLabel.Caption := '{#ProgressStatusEN}' + #13#10 + #13#10 + '{#ProgressStatusTH}';
+    WizardForm.FilenameLabel.Caption := '{#ProgressDetailEN}' + #13#10 + '{#ProgressDetailTH}';
     WizardForm.ProgressGauge.Style := npbstMarquee;
     Command := '/C ""' + ExpandConstant('{app}\install_runtime.cmd') + '" "{#WheelName}""';
     if (not Exec(ExpandConstant('{cmd}'), Command, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode)) or (ResultCode <> 0) then

@@ -18,6 +18,9 @@ PROBE_TIMEOUT_S = 1.5
 
 def _ollama_models(url: str) -> Optional[List[str]]:
     """The model names a local Ollama lists, or None when it can not be reached (a bounded read; never raises)."""
+    from rct_control_plane import local_net
+    if not local_net.quick_connect_ok(url):
+        return None
     try:
         with urllib.request.urlopen(url.rstrip("/") + "/api/tags", timeout=PROBE_TIMEOUT_S) as response:      # noqa: S310 - loopback or the owner's configured address
             body = json.loads(response.read(2_000_000))

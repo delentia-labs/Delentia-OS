@@ -3709,12 +3709,12 @@ def launch_command(api_port: int, desk_port: int, no_browser: bool, stop_it: boo
 
 
 @cli.command("desk")
-@click.option("--gateway", default="http://127.0.0.1:8000", show_default=True, help="Where `delentia serve` is listening.")
+@click.option("--gateway", default=None, help="Where `delentia serve` is listening (default: the agent `delentia launch` started, else http://127.0.0.1:8000).")
 @click.option("--token-file", type=click.Path(dir_okay=False), default=None, help="A file holding the API token (default: the DELENTIA_API_TOKEN environment variable, or none on a loopback host).")
 @click.option("--port", default=3010, show_default=True, type=int, help="Where the Desk pages are served (127.0.0.1 only).")
 @click.option("--no-browser", is_flag=True, default=False, help="Do not open the browser.")
 @click.option("--wait-seconds", default=20.0, show_default=True, type=float, help="How long to wait for the agent to answer (it may have only just started).")
-def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser: bool, wait_seconds: float) -> None:
+def desk_command(gateway: Optional[str], token_file: Optional[str], port: int, no_browser: bool, wait_seconds: float) -> None:
     """Open the Desk (the web pages) against a running `delentia serve`, with no token to paste.
 
     It serves the built pages on this machine only, hands the address and the token to the page without putting the token in the address, and opens your browser at http://localhost:PORT
@@ -3722,7 +3722,8 @@ def desk_command(gateway: str, token_file: Optional[str], port: int, no_browser:
     import time
     import urllib.request
     import webbrowser
-    from rct_control_plane import desk_assets, desk_launcher
+    from rct_control_plane import desk_assets, desk_launcher, launcher as _launcher
+    gateway = gateway or _launcher.default_gateway()
     root = desk_assets.find_desk_root()
     if root is None:
         click.echo(click.style(desk_assets.missing_message(), fg="red"), err=True)
@@ -3837,6 +3838,7 @@ def serve_command(host: str, port: int, reload: bool, workers: int, allow_no_aut
     os.environ.setdefault("DELENTIA_ALGORITHM_PIPELINE", "1")
     os.environ.setdefault("DELENTIA_WARM_RECALL", "1")
     os.environ.setdefault("DELENTIA_CONTEXT_FILES", "1")      # Round 57: AGENTS.md / SOUL.md standing instructions (screened, size-limited, hashed into the audit row)
+    os.environ.setdefault("DELENTIA_WARM_START", "1")          # Round 112C: warm the first-question path in the background (off with 0)
     os.environ.setdefault("DELENTIA_STARTER_SKILLS", "1")      # Round 55: the bundled starter playbooks (idempotent)
     os.environ.setdefault("DELENTIA_MEMORY_NUDGE", "1")        # Round 61: offer to remember what a person says about themselves (they answer yes or no)
     os.environ.setdefault("DELENTIA_MEMORY_EMBED", "auto")     # Round 72: recall by meaning when the local Ollama has an embedding model (bge-m3 first, then nomic-embed-text); with none, words only. Nothing leaves the machine.
