@@ -23,6 +23,27 @@ assert.equal(out.rawId, toBase64Url(bytes));
 assert.equal(out.response.userHandle, null);
 assert.equal(out.response.clientDataJSON, toBase64Url(bytes));
 
+// A real browser's AuthenticatorAttestationResponse / AuthenticatorAssertionResponse keeps its fields as getters on the PROTOTYPE, so Object.entries() on it is empty.
+// A plain-object stand-in hid this: the first real Chrome test sent no fields and the server answered "a field is missing or too long".
+class AttestationResponse {
+  get clientDataJSON() { return bytes.buffer; }
+  get attestationObject() { return bytes.buffer; }
+}
+class AssertionResponse {
+  get clientDataJSON() { return bytes.buffer; }
+  get authenticatorData() { return bytes.buffer; }
+  get signature() { return bytes.buffer; }
+  get userHandle() { return null; }
+}
+assert.deepEqual(Object.entries(new AttestationResponse()), []);                    // what the old code iterated over
+const made = serializeCredential({ id: "abc", rawId: bytes.buffer, type: "public-key", response: new AttestationResponse() });
+assert.equal(made.response.clientDataJSON, toBase64Url(bytes));
+assert.equal(made.response.attestationObject, toBase64Url(bytes));
+const asked = serializeCredential({ id: "abc", rawId: bytes.buffer, type: "public-key", response: new AssertionResponse() });
+assert.equal(asked.response.authenticatorData, toBase64Url(bytes));
+assert.equal(asked.response.signature, toBase64Url(bytes));
+assert.equal(asked.response.userHandle, null);
+
 assert.equal(placeProblem({ protocol: "http:", hostname: "localhost", port: "3010" }, true), null);
 assert.match(placeProblem({ protocol: "http:", hostname: "127.0.0.1", port: "3010" }, true), /http:\/\/localhost:3010/);
 assert.match(placeProblem({ protocol: "http:", hostname: "127.0.0.1", port: "3010" }, true, "th"), /localhost:3010/);
