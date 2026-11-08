@@ -37,7 +37,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 PY = sys.executable
 IS_POSIX = os.name == "posix"
-CHECKS = ("imports", "cli", "demo", "serve", "memory", "readonly")
+CHECKS = ("imports", "cli", "demo", "serve", "nomodel", "memory", "readonly")
 FIRST_IMPORTS = ("rct_control_plane.cli", "rct_control_plane.api", "rct_control_plane.governed_autonomous_loop", "rct_control_plane.mcp_server", "rct_control_plane.acp_server",
                  "rct_control_plane.algorithm_kernel_41", "rct_control_plane.agent_factory")
 
@@ -178,6 +178,32 @@ def check_serve(box: Sandbox) -> Dict[str, Any]:
         return result("serve", health["status"] == 200 and models["status"] == 200, detail)
 
 
+def _ask(server: "Server", goal: str, timeout: float = 120.0) -> Dict[str, Any]:
+    import urllib.error
+    request = urllib.request.Request(f"http://127.0.0.1:{server.port}/v1/agent/run", data=json.dumps({"goal": goal, "max_seconds": 30}).encode(), headers={"Content-Type": "application/json"})
+    started = time.time()
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as resp:
+            status, body = resp.status, resp.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        status, body = exc.code, exc.read().decode("utf-8", "replace")
+    return {"status": status, "body": body, "seconds": round(time.time() - started, 2)}
+
+
+def check_nomodel(box: Sandbox) -> Dict[str, Any]:
+    """Round 112 (criteria R12): a computer with no model program. The installed server must answer a goal with HTTP 502 and a plain sentence, and not take long about it.
+    The first request warms the server (lazy imports) and is not timed; the second is timed against 5 s (about 2.7 s on the measuring machine; a CI runner is slower)."""
+    closed = free_port()                                      # nothing listens here: a real refused connection
+    with Server(box, {"DELENTIA_OLLAMA_URL": f"http://127.0.0.1:{closed}", "DELENTIA_LLM_PROVIDER": "ollama", "DELENTIA_LLM_MODEL": "qwen2.5:7b"}) as server:
+        if server.wait_healthy() is None:
+            return result("nomodel", False, "the server did not answer /health:\n" + server.tail())
+        warm = _ask(server, "What can you do?")
+        timed = _ask(server, "What can you do?")
+        plain = "not running" in timed["body"] and "WinError" not in timed["body"] and "ConnectError" not in timed["body"]
+        ok = warm["status"] == 502 and timed["status"] == 502 and plain and timed["seconds"] <= 5.0
+        return result("nomodel", ok, f"no model program: HTTP {timed['status']} in {timed['seconds']} s (first, warming: {warm['seconds']} s); plain sentence: {plain}; body: {timed['body'][:160]}")
+
+
 def check_memory(box: Sandbox) -> Dict[str, Any]:
     marker = "install-contract-marker-" + str(int(time.time()))
     add = run(box, delentia_cmd("memory", "add", marker))
@@ -222,7 +248,7 @@ def check_readonly(box: Sandbox) -> Dict[str, Any]:
                   f"steps_ok={[s['exit_code'] == 0 for s in steps]} server_up={up} written_inside_package={changed[:5]}", steps)
 
 
-RUNNERS: Dict[str, Callable[[Sandbox], Dict[str, Any]]] = {"imports": check_imports, "cli": check_cli, "demo": check_demo, "serve": check_serve, "memory": check_memory, "readonly": check_readonly}
+RUNNERS: Dict[str, Callable[[Sandbox], Dict[str, Any]]] = {"imports": check_imports, "cli": check_cli, "demo": check_demo, "serve": check_serve, "nomodel": check_nomodel, "memory": check_memory, "readonly": check_readonly}
 
 
 def main(argv: Optional[List[str]] = None) -> int:

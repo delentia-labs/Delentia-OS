@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { CycleStrip } from "@/components/desk/CycleStrip";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Empty, ErrorNote, PageBody, PageHeader, Panel, Row, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
 import { describeReason } from "@/lib/reason-text";
+import { hiddenLabel, splitSessions } from "@/lib/session-filter";
 import { desk, type SessionEvent } from "@/lib/desk-api";
 
 function EventLine({ e }: { e: SessionEvent }) {
@@ -151,6 +152,8 @@ function SessionsInner() {
   const router = useRouter();
   const selected = params.get("id") ? Number(params.get("id")) : null;
   const list = useDeskData(() => desk.sessions(100), [], 20000);
+  const [showAll, setShowAll] = useState(false);
+  const split = splitSessions(list.data?.sessions ?? [], showAll, selected);
 
   return (
     <>
@@ -163,7 +166,7 @@ function SessionsInner() {
           {list.error ? <div className="p-4"><ErrorNote error={list.error} onRetry={list.reload} /></div> : null}
           {list.data && !list.data.sessions.length ? <div className="p-4"><Empty title={lang === "th" ? "ยังไม่มีเซสชัน" : "No sessions yet"}>{lang === "th" ? "สั่งงานในหน้าแชต (โหมด Agent) แล้วเซสชันจะปรากฏที่นี่" : "Run a goal in Chat (Agent mode)."}</Empty></div> : null}
           <ul>
-            {list.data?.sessions.map((s) => (
+            {split.visible.map((s) => (
               <li key={s.id}>
                 <button onClick={() => router.replace(`/sessions?id=${s.id}`)} aria-current={selected === s.id ? "true" : undefined}
                   className="desk-focus block w-full border-b border-dl-rule/60 px-4 py-3 text-left hover:bg-dl-pine/30 aria-[current=true]:bg-dl-pine/50">
@@ -176,6 +179,12 @@ function SessionsInner() {
               </li>
             ))}
           </ul>
+          {list.data && (split.hiddenCount > 0 || showAll) ? (
+            <div className="border-b border-dl-rule/60 px-4 py-3">
+              <button type="button" onClick={() => setShowAll(!showAll)} className="desk-focus text-[12px] text-dl-leaf underline">{hiddenLabel(split.hiddenCount, showAll, lang)}</button>
+              <p className="mt-1 text-[11px] text-dl-muted">{lang === "th" ? "ไม่มีอะไรถูกลบ รอบเหล่านี้ยังอยู่ในบันทึกตรวจสอบ" : "Nothing is deleted: these attempts stay in the audit record."}</p>
+            </div>
+          ) : null}
         </div>
         <PageBody>
           {selected ? <Detail id={selected} /> : <Empty title={lang === "th" ? "เลือกรายการทางซ้าย" : "Choose a session"}>{lang === "th" ? "เลือกหนึ่งรายการเพื่อดูว่าเอเจนต์ทำอะไรไปบ้างและผ่านด่านไหน" : "Pick one from the list to see what the agent did and which checks it passed."}</Empty>}

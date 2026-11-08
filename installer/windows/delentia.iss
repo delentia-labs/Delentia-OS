@@ -136,11 +136,15 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    WizardForm.StatusLabel.Caption := 'Installing Delentia and the parts it needs (this takes a few minutes and needs the internet)...';
-    WizardForm.FilenameLabel.Caption := '';
+    { Round 112B: this step downloads the packages Delentia needs and the bar used to sit still at the end of the file copy, so a first-time install looked frozen (seen on a clean computer, 2026-11-08).
+      The bar is now animated and the text says what is happening and that it is not a percentage. No number of minutes is promised: none was measured on a clean computer. }
+    WizardForm.StatusLabel.Caption := 'Step 2 of 2: downloading and installing the parts Delentia needs from the internet. The moving bar only shows that Setup is working. It is not a percentage and may look the same for a long time. Please do not close this window.';
+    WizardForm.FilenameLabel.Caption := 'Needs an internet connection. Details are written to install.log in the Delentia folder.';
+    WizardForm.ProgressGauge.Style := npbstMarquee;
     Command := '/C ""' + ExpandConstant('{app}\install_runtime.cmd') + '" "{#WheelName}""';
     if (not Exec(ExpandConstant('{cmd}'), Command, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode)) or (ResultCode <> 0) then
     begin
+      WizardForm.ProgressGauge.Style := npbstNormal;
       RuntimeFailed := True;
       RuntimeCode := ResultCode;
       if RuntimeCode = 0 then RuntimeCode := 10;
@@ -150,6 +154,8 @@ begin
                'The most common reason is no internet connection. Connect, then run this installer again.' + #13#10 +
                'The details are in: ' + ExpandConstant('{app}\install.log'), mbError, MB_OK);
     end;
+    WizardForm.ProgressGauge.Style := npbstNormal;
+    WizardForm.FilenameLabel.Caption := '';
   end;
 end;
 

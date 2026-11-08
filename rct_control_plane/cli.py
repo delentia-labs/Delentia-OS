@@ -3688,7 +3688,6 @@ def launch_command(api_port: int, desk_port: int, no_browser: bool, stop_it: boo
     """One double click: start the agent and the Desk in the background and open the Desk in your browser.
 
     `delentia launch --stop` ends what this started (and only that). Logs: the `logs` folder of your Delentia home."""
-    import webbrowser
     from rct_control_plane import launcher, update_check
     if stop_it:
         launcher.stop(click.echo)
@@ -3706,7 +3705,7 @@ def launch_command(api_port: int, desk_port: int, no_browser: bool, stop_it: boo
     if line:
         click.echo(line)
     if not no_browser:
-        webbrowser.open(result["url"])
+        launcher.open_window(result["url"])
 
 
 @cli.command("desk")
