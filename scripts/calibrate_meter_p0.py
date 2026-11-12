@@ -74,13 +74,15 @@ def refusals(args: argparse.Namespace, env: Dict[str, str]) -> List[str]:
     return problems
 
 
-def settled_usage(read: Callable[[], float], *, tries: int = 8, wait: float = 5.0, sleep: Callable[[float], None] = time.sleep) -> Dict[str, Any]:
-    """The key's usage figure can lag behind the calls. Read it until two reads in a row agree (or the tries run out) and say which happened."""
+def settled_usage(read: Callable[[], float], *, tries: int = 8, wait: float = 5.0, sleep: Callable[[float], None] = time.sleep, stable_reads: int = 2) -> Dict[str, Any]:
+    """The key's usage figure can lag behind the calls. Read it until `stable_reads` reads in a row agree (or the tries run out) and say which happened.
+    Round 112: two reads 5 s apart were not enough. On 2026-11-12 the second P0 run read 0.03249, 0.03544, 0.03592, 0.03592 and called the last two 'settled'; the figure was 4 calls short of the meter's
+    (19.9%). The default for a real run is now several reads over a minute or more (see main)."""
     seen: List[float] = [read()]
     for _ in range(tries):
         sleep(wait)
         seen.append(read())
-        if len(seen) >= 2 and seen[-1] == seen[-2]:
+        if len(seen) >= stable_reads and len(set(seen[-stable_reads:])) == 1:
             return {"value": seen[-1], "settled": True, "reads": seen}
     return {"value": seen[-1], "settled": False, "reads": seen}
 
@@ -143,7 +145,9 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     parser.add_argument("--prompt-tokens", type=int, default=1500)
     parser.add_argument("--max-tokens", type=int, default=8)
     parser.add_argument("--budget-usd", type=float, default=0.10)
-    parser.add_argument("--wait", type=float, default=5.0, help="seconds between reads of the key's usage figure")
+    parser.add_argument("--wait", type=float, default=15.0, help="seconds between reads of the key's usage figure")
+    parser.add_argument("--stable-reads", type=int, default=5, help="how many reads in a row must agree before the figure counts as settled (default 5 reads 15 s apart: a minute)")
+    parser.add_argument("--tries", type=int, default=40, help="at most this many further reads (default 40 x 15 s = 10 minutes)")
     parser.add_argument("--json", default=None)
     args = parser.parse_args(argv)
     env = dict(os.environ if env is None else env)
@@ -160,7 +164,7 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     provider = MeteredProvider(inner, max_cost_usd=args.budget_usd, prompt_price_per_mtok=args.price_in, completion_price_per_mtok=args.price_out)
     before = openrouter_usage(key)
     sent = asyncio.run(send_calls(provider, args.model, args.calls, args.prompt_tokens, args.max_tokens))
-    usage = settled_usage(lambda: openrouter_usage(key), wait=args.wait, sleep=sleep)
+    usage = settled_usage(lambda: openrouter_usage(key), tries=args.tries, wait=args.wait, sleep=sleep, stable_reads=args.stable_reads)
     summary = provider.summary()
     result = judge(summary, sent["completed"], before, usage, args.price_in, args.price_out, sum(getattr(inner, "reported", [])))
     report = {"model": args.model, "prices_per_mtok": {"in": args.price_in, "out": args.price_out}, "calls_requested": args.calls, "prompt_tokens_target": args.prompt_tokens,
