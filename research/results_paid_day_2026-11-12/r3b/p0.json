@@ -1,0 +1,44 @@
+{
+  "model": "z-ai/glm-4.7-flash",
+  "prices_per_mtok": {
+    "in": 0.060500000000000005,
+    "out": 0.39999999999999997
+  },
+  "calls_requested": 24,
+  "prompt_tokens_target": 1500,
+  "served_by": null,
+  "meter": {
+    "calls": 3,
+    "prompt_tokens": 4585,
+    "completion_tokens": 0,
+    "cost_usd": 0.0002773925,
+    "cost_known": true
+  },
+  "usage_before": 0.930835244,
+  "usage_reads": [
+    0.930835244,
+    0.931123446,
+    0.931123446,
+    0.931123446,
+    0.931123446,
+    0.931123446
+  ],
+  "failed": [
+    "call 0: LLMReplyError: the endpoint answered with an empty message",
+    "call 1: LLMReplyError: the endpoint answered with an empty message",
+    "call 2: LLMReplyError: the endpoint answered with an empty message"
+  ],
+  "result": {
+    "calls_with_provider_reported_cost": 0,
+    "calls_completed": 0,
+    "provider_usd": 0.000288202,
+    "meter_usd": 0.0002773925,
+    "price_estimate_usd": 0.0002773925,
+    "usage_settled": true,
+    "tolerance": 0.1,
+    "cached_prompt_tokens": 0,
+    "uncertain_calls": 3,
+    "verdict": "fail",
+    "why": "only 0 calls completed; the rule needs at least 20"
+  }
+}

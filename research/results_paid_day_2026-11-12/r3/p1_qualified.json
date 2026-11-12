@@ -1,0 +1,45 @@
+{
+  "qualified": {
+    "z-ai/glm-5.2": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 85.0,
+        "T2": 90.0,
+        "T3": 100.0
+      }
+    },
+    "google/gemini-3.8-flash": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 95.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "qwen/qwen3.5-397b-a17b": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 100.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "amazon/nova-pro-v1": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 0.0
+      }
+    }
+  },
+  "proposal": [
+    "qwen/qwen3.5-397b-a17b",
+    "google/gemini-3.8-flash"
+  ],
+  "note": "a proposal only: run stage 2 with --selected naming the models YOU choose"
+}
