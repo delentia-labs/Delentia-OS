@@ -327,6 +327,10 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
             if refusal and proc.returncode != 0:
                 report["stopped"] = f"the account refused the calls during {stage['name']} on {model} ({refusal}): out of credit or a revoked key; nothing more was run"
                 return report
+            if stage["name"] == "k15" and getattr(args, "out", None):
+                # Round 112: the per-run lines of K.1.5 (each run's stopped_reason and steps) used to be thrown away, so a T3 failure could not be explained. Kept now, next to the report.
+                keep = Path(args.out)
+                keep.with_name(f"{keep.stem}_k15_{re.sub(r'[^A-Za-z0-9]+', '_', model)}.log").write_text(output, encoding="utf-8")
             if stage["name"] == "k15":
                 rates = parse_k15(output)
                 model_result["k15"]["rates"] = rates
@@ -339,7 +343,14 @@ def run_plan(args: argparse.Namespace, prices: Dict[str, Any], est: Dict[str, An
                 model_result["repeat"]["judged"] = judge_repeat(json.loads(extra).get(model, {}))
             elif extra and stage["name"] == "toolchoice":
                 model_result["toolchoice"]["judged"] = json.loads(extra).get(model, {}).get("judged", {})
-            if spent > per_stage_cap * MARGIN:
+            per_model_max = getattr(args, "per_model_max_usd", None)
+            if per_model_max is not None:
+                # Round 112: an absolute ceiling for ONE model's stage, instead of 1.5 x an estimate made from list prices (measured 2.5x to 7.6x too low when the privacy setting routes to a dearer endpoint).
+                # The stage ceiling and the in-process daily budget still bound the whole run.
+                if spent > per_model_max:
+                    report["stopped"] = f"{stage['name']} on {model} spent ${spent} > its absolute ceiling ${per_model_max}"
+                    return report
+            elif spent > per_stage_cap * MARGIN:
                 report["stopped"] = f"{stage['name']} on {model} spent ${spent} > 1.5 x its estimate ${round(per_stage_cap, 4)}"
                 return report
             if after - start_spend > args.budget_usd:
@@ -416,6 +427,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--execute", action="store_true", help="really run (spends money); without it only the plan is printed")
     ap.add_argument("--freeze-file", default=None, help="Round 106: the file written by `python -m research.paid_run_freeze write ...`; a real run is refused without it, or when anything differs from it")
     ap.add_argument("--no-freeze", action="store_true", help="only for the free rehearsal against the fake endpoint: skips the freeze check")
+    ap.add_argument("--per-model-max-usd", type=float, default=None, help="Round 112: stop the run if ONE model's stage spends more than this (replaces the 1.5 x estimate rule; the stage ceiling still applies)")
     ap.add_argument("--out", default=None, help="write the JSON report here")
     args = ap.parse_args(argv)
     from_list: Dict[str, Dict[str, float]] = {}
