@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.4] - Unreleased
+## [2.4.4] - 2026-11-12
 
 Found by the first install of 2.4.3 on a second, clean Windows computer (no Ollama, no model); criteria written first in `research/FIRSTRUN_CRITERIA_R112.md`.
 
 ### Fixed
+- **Adding a device (passkey) failed in a real browser with `400: a field is missing or too long`.** The Desk read the browser's response with a loop that sees nothing on a real browser object (its fields live on the prototype), so it sent an empty answer. Earlier tests used plain objects and could not see it; the new test uses a class shaped like the browser's and fails on the old code. Found on the second computer with Chrome; **not yet tried again with a real authenticator.**
+- **The agent's picture tool (`delentia_describe_image`) is charged to the running episode's cap** (it was not, and the 2.4.3 notes said so): a call that would pass the cap is refused and never sent.
+- **Research only, no behaviour change:** the reference-video cut detector was measured twice against the creator's own shot lists (hard cuts pass at the edge; a dissolve rule is not adopted, results registered R0007 and R0008).
 - **A request with no model program on the computer ended in about 11-17 seconds with a raw error.** A connection refused by the model program ON THIS COMPUTER is not retried any more (nothing is listening, trying again cannot help): the same question now ends in about 2.7 s on the measuring machine (11.5 s before) with its own stop reason, `model_not_running`, and a sentence that says what to do. A refusal from any other host is still retried. A call that never left is no longer counted as spent tokens.
 - **The Status page showed a model name as if it worked.** The model row now shows whether it can be used (ready / not installed / not running / needs a key / chosen but not tested) and links to the Setup assistant; a computer where nothing was ever chosen says so.
 - **The Models page showed `[WinError 10061]` for the local model tab.** It now explains in plain words, offers the Setup assistant, an online model, and the official Ollama download page (the person installs it; Delentia downloads nothing by itself), with the technical text under a fold.
