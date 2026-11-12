@@ -95,3 +95,25 @@ def test_each_prompt_differs_from_the_first_characters_so_a_prefix_cache_cannot_
     assert a[:30] != b[:30] and a != b
     from rct_control_plane.llm_provider import _count_tokens
     assert 300 <= _count_tokens(a) <= 360
+
+
+def test_a_longer_run_of_equal_reads_is_required_when_asked():
+    """Round 112: two equal reads (5 s apart) called a figure settled while it was still short by 20%. With stable_reads=4 the same sequence is not settled until four agree."""
+    reads = iter([1.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0])
+    got = p0.settled_usage(lambda: next(reads), tries=20, wait=0, sleep=lambda s: None, stable_reads=4)
+    assert got["settled"] and got["value"] == 4.0 and got["reads"][-4:] == [4.0, 4.0, 4.0, 4.0]
+    early = iter([1.0, 2.0, 3.0, 3.0, 4.0])
+    two = p0.settled_usage(lambda: next(early), tries=20, wait=0, sleep=lambda s: None)            # the old default (two in a row) still stops at the 3.0 pair
+    assert two["value"] == 3.0
+
+
+def test_a_figure_that_keeps_moving_is_not_settled_however_many_reads_agree_in_pairs():
+    moving = iter([1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0])
+    got = p0.settled_usage(lambda: next(moving), tries=7, wait=0, sleep=lambda s: None, stable_reads=3)
+    assert got["settled"] is False
+
+
+def test_the_real_run_defaults_to_a_minute_of_agreement():
+    import inspect
+    src = inspect.getsource(p0.main)
+    assert 'default=15.0' in src and '"--stable-reads"' in src and "default=5" in src and "default=40" in src
