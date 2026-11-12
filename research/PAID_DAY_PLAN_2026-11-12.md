@@ -41,5 +41,24 @@ No result here says anything about a capable model driving the agent for days, a
 3. The key is deleted at OpenRouter if it will not be used again.
 4. What is left (about $7 of balance) is a decision for after the results: for example a second, separately ceilinged run of the live workflow runners (W03, W06, W08, W10, W12) with the best passing model. It is not spent until a plan for it is written first.
 
+## Planned outputs (what a reader can be given afterwards)
+Each is built from registered results, never from memory:
+1. `research/RESULTS_REGISTER.jsonl` entries (stage, model, commit, rule written before, verdict, estimated and actual cost, the upstream provider that answered) and the page for outside readers made from them: `python -m research.results_register render-public` (`research/RESULTS_PUBLIC.md`).
+2. A **tested-models page** for users (which models passed the loop screen, what they cost per task, what failed and why, the date and the provider), replacing "no capable model has driven this runtime" in `docs/KNOWN_LIMITATIONS.md` with the real, narrower sentence.
+3. A **cost-meter statement** (P0): whether the runtime's own cost figure matched the provider's, and by how much.
+4. A **tool-menu decision** (P1b): whether hosted models get the compact menu by default.
+5. An **RCT-7 status update** (P2): `docs/public/RCT7_IMPLEMENTATION_STATUS.md` with the judge / critic / context-judge numbers on the Architect's labelled sets for capable models, next to the earlier local-model numbers.
+6. A **runtime-vs-plain description** (P4): same jobs and models with and without the runtime, four runs per arm, with the intervals; written as a description.
+7. A **reference-to-plan note** (PR) for `future plan 06`.
+8. The website's `/benchmark` page can list only what the register holds, each with method and limits.
+
 ## Amendments
-(none yet)
+### Amendment 1 (2026-11-12, before any key exists): stage PF, the free models
+OpenRouter's rules, read from its limits page on 2026-11-12: a model whose id ends in `:free` is limited to 20 requests per minute, and to 1,000 requests per UTC day once at least $10 of credit has ever been bought on the account (50 a day below that); free requests do not spend credit; a negative balance blocks them. This account has bought more than $10 in total.
+* **What it is for:** more breadth in the loop screen at no cost, never a replacement for the paid screen.
+* **Privacy:** the same as the paid day, `deny`. Whether a free endpoint satisfies it **is not known** (OpenRouter's public endpoint listing does not show the data policy). A free model with no compliant endpoint is `not_run`. No exception is made.
+* **Models (fixed now, 13):** baidu/ernie-5.5-flash-preview:free, cohere/north-mini-code:free, dots-studio/dots-3-note-preview:free, google/gemma-4-26b-a4b-it:free, google/gemma-4-31b-it:free, liquid/lfm-2.5-2.6b:free, liquid/lfm-3-1.7b:free, nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free, nvidia/nemotron-3-ultra-550b-a55b:free, nvidia/nemotron-3.5-lightning:free, nvidia/nemotron-3.5-super-vl:free, recursive/flint-v1.0:free, thinkingmachines/inkling-2-small:free. Left out on purpose: `openrouter/free` (a router: the model that answers is not fixed, so the result could not be reproduced) and the two music models.
+* **Stage and rule:** stage 1 (P1) only, with the same rule (T1 and T2 at least 90%, T3 exactly 100%). It is a SEPARATE run after the paid day's stage 1, in its own output folder, with its own freeze, with `--p0-model meta-llama/llama-3.1-8b-instruct` (a free model cannot calibrate a cost meter: 0 against 0), in alphabetical order. Cost 0; its ceiling is requests, not dollars.
+* **Request budget:** stop at 900 requests in one UTC day (margin under 1,000). Each model needs up to about 140 requests (an estimate from the battery size, not measured), so about 6 or 7 models fit in a day and the 13 take two days; the rest waits for the next UTC day. Results of free routes are dated and name the upstream provider that answered; a free route can change or disappear and is not reproducible months later.
+* **Stage 2:** free passers are not added to the paid day's selection. A second day for them needs its own amendment, written before it runs.
+* **Not claimed:** a free model's result is not a claim about the same model's paid route.
