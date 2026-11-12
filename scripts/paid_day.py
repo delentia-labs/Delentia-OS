@@ -274,7 +274,7 @@ def stage1(args: argparse.Namespace, day: Day, models: List[str], prices: Dict[s
             raise Refused(f"P0 did not pass ({verdict}): no later stage is started. Read {day.out / 'p0.json'}; an inconclusive result is repeated with more calls inside the same $0.10, a fail means the meter is fixed first.")
     start = day.usage() if day.execute else 0.0
     code, _ = day.run("P1", "capability screen", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(models), "--budget-usd", "5",
-                      *price_source_args(args), *freeze_args(args), "--execute", "--out", str(day.out / "p1.json")], start)
+                      *price_source_args(args), *freeze_args(args), *(["--per-model-max-usd", str(args.per_model_max_usd)] if getattr(args, "per_model_max_usd", None) is not None else []), "--execute", "--out", str(day.out / "p1.json")], start)
     result: Dict[str, Any] = {"p0_model": p0_model}
     if day.execute and (day.out / "p1.json").exists():
         report = json.loads((day.out / "p1.json").read_text(encoding="utf-8"))
@@ -365,6 +365,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--vision-models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="stage 3: at most two models that accept images")
     ap.add_argument("--your-clip", default=None, help="stage 3, optional: a video you own; up to 12 key frames are sent to the first vision model and the result is not scored")
     ap.add_argument("--allow-your-clip-frames", action="store_true", help="says you understand that frames of your clip leave this computer")
+    ap.add_argument("--per-model-max-usd", type=float, default=None, help="stage 1: stop if one model's stage spends more than this (Round 112, run P1-r2); default: the old 1.5 x estimate rule")
     ap.add_argument("--p0-model", default=None, help="the model for the meter calibration (default: the cheapest candidate)")
     ap.add_argument("--freeze-file", default=None)
     ap.add_argument("--prices-file", default=None, help="JSON {model: {in, out}} instead of the provider's public list (rehearsal)")
