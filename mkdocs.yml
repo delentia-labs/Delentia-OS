@@ -161,6 +161,7 @@ nav:
     - Release levels: release/RELEASE_LEVELS.md
     - Versioning policy: release/VERSIONING_POLICY.md
     - Release history: release/RELEASE_HISTORY.md
+    - Preview 0.1 closure plan: release/PTP01_CLOSURE_PLAN.md
     - Assurance case (one property): assurance/ASSURANCE_CASE.md
     - Threat model: security/THREAT_MODEL.md
     - Known limitations: KNOWN_LIMITATIONS.md
