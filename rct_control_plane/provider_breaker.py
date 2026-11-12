@@ -21,8 +21,8 @@ import os
 import time
 from typing import Any, AsyncIterator, Dict, Optional, Tuple
 
-from rct_control_plane.enterprise_hardening import CircuitBreaker, CircuitOpenError, CircuitState
-from rct_control_plane.llm_provider import LLMProvider, LLMUsage
+from rct_control_plane.enterprise_hardening import CircuitBreaker, CircuitState
+from rct_control_plane.llm_provider import LLMProvider, LLMUsage, is_local_refusal
 
 BREAKER_ENV = "DELENTIA_LLM_BREAKER"
 THRESHOLD_ENV = "DELENTIA_LLM_BREAKER_THRESHOLD"
@@ -87,11 +87,18 @@ class CircuitBreakerProvider(LLMProvider):
 
     async def complete(self, prompt: str, system_prompt: Optional[str] = None, temperature: float = 0.7,
                        max_tokens: int = 2048, json_mode: bool = False) -> str:
+        # Round 112C: a refused or locally timed-out connection means no program listens on this computer, which is not a fault of the endpoint: it is neither counted nor does it open the circuit.
+        if self.breaker.state == CircuitState.OPEN:
+            self.breaker.stats.total_short_circuited += 1
+            raise self._unavailable()
         try:
-            return await self.breaker.acall(self._inner.complete, prompt, system_prompt=system_prompt, temperature=temperature,
-                                            max_tokens=max_tokens, json_mode=json_mode)
-        except CircuitOpenError as exc:
-            raise self._unavailable() from exc
+            out = await self._inner.complete(prompt, system_prompt=system_prompt, temperature=temperature, max_tokens=max_tokens, json_mode=json_mode)
+        except Exception as exc:
+            if not is_local_refusal(exc):
+                self.breaker._record_failure()
+            raise
+        self.breaker._record_success()
+        return out
 
     async def stream_complete(self, prompt: str, system_prompt: Optional[str] = None, temperature: float = 0.7,
                               max_tokens: int = 2048) -> AsyncIterator[str]:

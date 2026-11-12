@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from rct_control_plane.topic_cache import TopicCache
 
 import httpx  # noqa: F401 - kept: tests and callers patch llm_provider.httpx
-from rct_control_plane import http_client
+from rct_control_plane import http_client, local_net
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
@@ -165,7 +165,7 @@ class OllamaProvider(LLMProvider):
         think = ollama_think_setting()
         if think is not None:
             payload["think"] = think
-        async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
+        async with http_client.async_client(timeout=local_net.timeout_for(self.llm_url, OLLAMA_TIMEOUT_S)) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
             data = response.json()
@@ -186,7 +186,7 @@ class OllamaProvider(LLMProvider):
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         payload = {"model": self.model, "prompt": full_prompt, "images": [base64.b64encode(d).decode("ascii") for _, d in images], "stream": False,
                    "options": {"temperature": temperature}}
-        async with http_client.async_client(timeout=300.0) as client:
+        async with http_client.async_client(timeout=local_net.timeout_for(self.llm_url, 300.0)) as client:
             response = await client.post(f"{self.llm_url}/api/generate", json=payload)
             response.raise_for_status()
             data = response.json()
@@ -206,7 +206,7 @@ class OllamaProvider(LLMProvider):
         think = ollama_think_setting()
         if think is not None:
             payload["think"] = think
-        async with http_client.async_client(timeout=OLLAMA_TIMEOUT_S) as client:
+        async with http_client.async_client(timeout=local_net.timeout_for(self.llm_url, OLLAMA_TIMEOUT_S)) as client:
             async with client.stream("POST", f"{self.llm_url}/api/generate", json=payload) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -823,7 +823,7 @@ def is_local_refusal(exc: BaseException) -> bool:
         import httpx
     except ImportError:     # pragma: no cover
         return False
-    if not isinstance(exc, httpx.ConnectError):
+    if not isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout)):         # Round 112C: on Windows a refusal can also show up as a connect timeout once the connect timeout is short
         return False
     try:
         host = (exc.request.url.host or "").lower()
