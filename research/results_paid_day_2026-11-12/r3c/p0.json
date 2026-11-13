@@ -1,0 +1,47 @@
+{
+  "model": "meta-llama/llama-4-maverick",
+  "prices_per_mtok": {
+    "in": 0.35,
+    "out": 1.0
+  },
+  "calls_requested": 24,
+  "prompt_tokens_target": 1500,
+  "served_by": "Parasail",
+  "meter": {
+    "calls": 24,
+    "prompt_tokens": 36066,
+    "completion_tokens": 48,
+    "cost_usd": 0.01260774,
+    "cost_known": true
+  },
+  "usage_before": 0.931123446,
+  "usage_reads": [
+    0.934272016,
+    0.934272016,
+    0.934272016,
+    0.942147626,
+    0.942147626,
+    0.942147626,
+    0.943731186,
+    0.943731186,
+    0.943731186,
+    0.943731186,
+    0.943731186
+  ],
+  "failed": [],
+  "result": {
+    "calls_with_provider_reported_cost": 24,
+    "calls_completed": 24,
+    "provider_usd": 0.01260774,
+    "meter_usd": 0.01260774,
+    "price_estimate_usd": 0.0126711,
+    "usage_settled": true,
+    "tolerance": 0.1,
+    "cached_prompt_tokens": 352,
+    "uncertain_calls": 0,
+    "meter_vs_provider": 0.0,
+    "price_estimate_vs_provider": 0.005,
+    "verdict": "pass",
+    "why": "the meter is within 10% of the provider's figure (0.0%)"
+  }
+}

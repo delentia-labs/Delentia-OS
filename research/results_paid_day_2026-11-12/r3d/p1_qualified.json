@@ -1,0 +1,33 @@
+{
+  "qualified": {
+    "bytedance-seed/seed-2.0-mini": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "z-ai/glm-4.7-flash": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 5.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "openai/gpt-oss-safeguard-20b": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 0.0
+      }
+    }
+  },
+  "proposal": [],
+  "note": "a proposal only: run stage 2 with --selected naming the models YOU choose"
+}

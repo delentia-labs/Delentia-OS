@@ -1,0 +1,62 @@
+{
+  "qualified": {
+    "nvidia/nemotron-3-ultra-550b-a55b": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 15.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "x-ai/grok-build-0.1": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 100.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "meta-llama/llama-4-maverick": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 0.0,
+        "T3": 100.0
+      }
+    },
+    "minimax/minimax-m3.1-flash": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 10.0,
+        "T3": 100.0
+      }
+    },
+    "cohere/command-r-08-2024": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 85.0,
+        "T2": 0.0,
+        "T3": 100.0
+      }
+    },
+    "anthropic/claude-haiku-5.5": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 0.0
+      }
+    }
+  },
+  "proposal": [
+    "x-ai/grok-build-0.1"
+  ],
+  "note": "a proposal only: run stage 2 with --selected naming the models YOU choose"
+}

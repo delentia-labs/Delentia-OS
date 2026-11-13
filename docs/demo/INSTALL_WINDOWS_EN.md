@@ -16,7 +16,13 @@ The installer is called `Delentia-Setup-<version>.exe` and works like any other 
 
 ### Install
 1. Double-click `Delentia-Setup-<version>.exe`. No administrator rights; it installs for your account only.
-2. Windows may show "Windows protected your PC" (SmartScreen) because the file is not code-signed yet. Press **More info → Run anyway** if you downloaded it from the official release page and its SHA-256 matches the one announced.
+2. Windows may show "Windows protected your PC" (SmartScreen) because the file is not code-signed yet. Before you continue, check the download against the published checksum: download `SHA256SUMS.txt` from the same release page, then in PowerShell run
+
+   ```powershell
+   Get-FileHash .\Delentia-Setup-<version>.exe -Algorithm SHA256
+   ```
+
+   and compare the `Hash` value with the line for that file in `SHA256SUMS.txt` (letters may differ in case; every character must match). If it matches, press **More info → Run anyway**. If it does not match, do not run it: download again from the official release page, and if it still differs, report it. A match proves the file is the one published; it does not prove the publisher is trustworthy, which is why the code is public and the installer will be code-signed once a signing route is in place.
 3. Press Next. You may choose a desktop icon.
 4. The installer copies files, then downloads and installs the parts Delentia needs. **It needs the internet and takes 3-10 minutes.** If it fails, a window says why and where the log (`install.log`) is; connect and run the installer again.
 5. When it says it is finished, open the Start menu and start **Delentia**.

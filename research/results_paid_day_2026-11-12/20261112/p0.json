@@ -1,0 +1,39 @@
+{
+  "model": "meta-llama/llama-3.1-8b-instruct",
+  "prices_per_mtok": {
+    "in": 0.02,
+    "out": 0.04
+  },
+  "calls_requested": 24,
+  "prompt_tokens_target": 1500,
+  "served_by": "Cloudflare",
+  "meter": {
+    "calls": 24,
+    "prompt_tokens": 37084,
+    "completion_tokens": 48,
+    "cost_usd": 0.005650544,
+    "cost_known": true
+  },
+  "usage_before": 0.0,
+  "usage_reads": [
+    0.001883464,
+    0.005650544,
+    0.005650544
+  ],
+  "failed": [],
+  "result": {
+    "calls_with_provider_reported_cost": 24,
+    "calls_completed": 24,
+    "provider_usd": 0.005650544,
+    "meter_usd": 0.005650544,
+    "price_estimate_usd": 0.0007436,
+    "usage_settled": true,
+    "tolerance": 0.1,
+    "cached_prompt_tokens": 0,
+    "uncertain_calls": 0,
+    "meter_vs_provider": 0.0,
+    "price_estimate_vs_provider": 0.8684,
+    "verdict": "pass",
+    "why": "the meter is within 10% of the provider's figure (0.0%)"
+  }
+}
