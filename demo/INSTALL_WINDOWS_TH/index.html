@@ -2783,11 +2783,14 @@
 <h3 id="_3">ติดตั้ง<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <ol>
 <li>ดับเบิลคลิก <code>Delentia-Setup-&lt;เวอร์ชัน&gt;.exe</code> (ไม่ต้องใช้สิทธิ์ผู้ดูแลระบบ ติดตั้งให้เฉพาะบัญชีของคุณ)</li>
-<li>Windows อาจขึ้นหน้าต่าง "Windows protected your PC" (SmartScreen) เพราะไฟล์ยังไม่ได้ลงนามรหัสโปรแกรม (code signing) กด <strong>More info → Run anyway</strong> ถ้าคุณโหลดจากหน้าปล่อยเวอร์ชันอย่างเป็นทางการ และตรวจ SHA-256 ตรงกับที่ประกาศ</li>
-<li>กด Next ตามขั้นตอน เลือกได้ว่าจะวางไอคอนบนเดสก์ท็อปหรือไม่</li>
-<li>ตัวติดตั้งคัดลอกไฟล์ แล้วดาวน์โหลดและติดตั้งส่วนประกอบที่ Delentia ต้องใช้ <strong>ต้องต่ออินเทอร์เน็ต ใช้เวลา 3-10 นาที</strong> ถ้าล้มเหลวจะมีหน้าต่างบอกสาเหตุและที่เก็บบันทึก (<code>install.log</code>) ต่อเน็ตแล้วรันตัวติดตั้งซ้ำ</li>
-<li>เมื่อบอกว่าเสร็จแล้ว เปิดเมนู Start แล้วเริ่ม <strong>Delentia</strong></li>
+<li>Windows อาจขึ้นหน้าต่าง "Windows protected your PC" (SmartScreen) เพราะไฟล์ยังไม่ได้ลงนามรหัสโปรแกรม (code signing) ก่อนไปต่อ ให้ตรวจไฟล์ที่โหลดกับค่า checksum ที่ประกาศไว้: โหลด <code>SHA256SUMS.txt</code> จากหน้าปล่อยเวอร์ชันเดียวกัน แล้วใน PowerShell รัน</li>
 </ol>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">Get-FileHash</span> <span class="p">.\</span><span class="n">Delentia-Setup</span><span class="p">-&lt;</span><span class="n">เวอร</span><span class="err">์</span><span class="n">ช</span><span class="err">ั</span><span class="n">น</span><span class="p">&gt;.</span><span class="n">exe</span> <span class="n">-Algorithm</span> <span class="n">SHA256</span>
+</span></code></pre></div>
+<p>เทียบค่า <code>Hash</code> กับบรรทัดของไฟล์นั้นใน <code>SHA256SUMS.txt</code> (ตัวพิมพ์เล็กใหญ่ต่างกันได้ แต่ทุกตัวอักษรต้องตรง) ถ้าตรง กด <strong>More info → Run anyway</strong> ถ้าไม่ตรง อย่ารัน ให้โหลดใหม่จากหน้าปล่อยเวอร์ชันอย่างเป็นทางการ และถ้ายังต่างให้รายงาน ค่าที่ตรงยืนยันว่าเป็นไฟล์เดียวกับที่ประกาศ แต่ไม่ได้พิสูจน์ว่าผู้เผยแพร่น่าเชื่อถือ จึงเปิดโค้ดสาธารณะไว้ และจะลงนามตัวติดตั้งเมื่อมีช่องทางลงนาม
+3. กด Next ตามขั้นตอน เลือกได้ว่าจะวางไอคอนบนเดสก์ท็อปหรือไม่
+4. ตัวติดตั้งคัดลอกไฟล์ แล้วดาวน์โหลดและติดตั้งส่วนประกอบที่ Delentia ต้องใช้ <strong>ต้องต่ออินเทอร์เน็ต ใช้เวลา 3-10 นาที</strong> ถ้าล้มเหลวจะมีหน้าต่างบอกสาเหตุและที่เก็บบันทึก (<code>install.log</code>) ต่อเน็ตแล้วรันตัวติดตั้งซ้ำ
+5. เมื่อบอกว่าเสร็จแล้ว เปิดเมนู Start แล้วเริ่ม <strong>Delentia</strong></p>
 <h3 id="_4">ใช้งาน<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <p>เมนู Start → <strong>Delentia</strong> มี 4 รายการ (ไอคอนสีเขียวมีตา):
 * <strong>Delentia</strong> เปิดโปรแกรม (ไม่มีหน้าต่างดำ) แล้วเบราว์เซอร์เปิดหน้า Delentia ที่ <code>http://localhost:3010</code> ครั้งแรกรอราว 20-60 วินาที
@@ -2864,7 +2867,7 @@
 </table>
 <p>สคริปต์ <strong>ไม่ดาวน์โหลดอะไรเอง</strong> รับเฉพาะไฟล์ที่คุณให้ และพิมพ์ SHA-256 ของแต่ละไฟล์ให้เทียบกับที่เว็บเจ้าของไฟล์ประกาศ (บันทึกใน <code>SOURCES.json</code> ในตัวติดตั้งด้วย)</p>
 <h3 id="_9">คำสั่งสร้าง<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python installer/windows/build_installer.py --python-embed &lt;python-3.12.10-embed-amd64.zip&gt; --get-pip &lt;get-pip.py&gt;
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python installer/windows/build_installer.py --python-embed &lt;python-3.12.10-embed-amd64.zip&gt; --get-pip &lt;get-pip.py&gt;
 </span></code></pre></div>
 * ไม่ระบุ <code>--wheel</code> จะ build wheel ให้เอง (รัน <code>scripts/package_desk.py</code> ก่อน เพื่อให้หน้าเว็บอยู่ในแพ็กเกจ ต้องมี Node.js 20+)
 * <code>--stage-only</code> จัดไฟล์แล้วหยุด (ไม่ต้องมี Inno Setup) ใช้ตรวจโครงสร้าง

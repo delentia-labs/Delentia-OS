@@ -2783,11 +2783,14 @@
 <h3 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Double-click <code>Delentia-Setup-&lt;version&gt;.exe</code>. No administrator rights; it installs for your account only.</li>
-<li>Windows may show "Windows protected your PC" (SmartScreen) because the file is not code-signed yet. Press <strong>More info → Run anyway</strong> if you downloaded it from the official release page and its SHA-256 matches the one announced.</li>
-<li>Press Next. You may choose a desktop icon.</li>
-<li>The installer copies files, then downloads and installs the parts Delentia needs. <strong>It needs the internet and takes 3-10 minutes.</strong> If it fails, a window says why and where the log (<code>install.log</code>) is; connect and run the installer again.</li>
-<li>When it says it is finished, open the Start menu and start <strong>Delentia</strong>.</li>
+<li>Windows may show "Windows protected your PC" (SmartScreen) because the file is not code-signed yet. Before you continue, check the download against the published checksum: download <code>SHA256SUMS.txt</code> from the same release page, then in PowerShell run</li>
 </ol>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">Get-FileHash</span> <span class="p">.\</span><span class="n">Delentia-Setup</span><span class="p">-&lt;</span><span class="n">version</span><span class="p">&gt;.</span><span class="n">exe</span> <span class="n">-Algorithm</span> <span class="n">SHA256</span>
+</span></code></pre></div>
+<p>and compare the <code>Hash</code> value with the line for that file in <code>SHA256SUMS.txt</code> (letters may differ in case; every character must match). If it matches, press <strong>More info → Run anyway</strong>. If it does not match, do not run it: download again from the official release page, and if it still differs, report it. A match proves the file is the one published; it does not prove the publisher is trustworthy, which is why the code is public and the installer will be code-signed once a signing route is in place.
+3. Press Next. You may choose a desktop icon.
+4. The installer copies files, then downloads and installs the parts Delentia needs. <strong>It needs the internet and takes 3-10 minutes.</strong> If it fails, a window says why and where the log (<code>install.log</code>) is; connect and run the installer again.
+5. When it says it is finished, open the Start menu and start <strong>Delentia</strong>.</p>
 <h3 id="use">Use<a class="headerlink" href="#use" title="Permanent link">&para;</a></h3>
 <p>Start menu → <strong>Delentia</strong> has four entries (green icon with eyes):
 * <strong>Delentia</strong> starts the program (no black window) and opens it in your browser at <code>http://localhost:3010</code>. The first start takes 20-60 seconds.
@@ -2864,7 +2867,7 @@
 </table>
 <p>The script <strong>downloads nothing itself</strong>. It takes the files you give it and prints the SHA-256 of each so you can compare with what the publisher announces (also saved in the installer as <code>SOURCES.json</code>).</p>
 <h3 id="build-command">Build command<a class="headerlink" href="#build-command" title="Permanent link">&para;</a></h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python installer/windows/build_installer.py --python-embed &lt;python-3.12.10-embed-amd64.zip&gt; --get-pip &lt;get-pip.py&gt;
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python installer/windows/build_installer.py --python-embed &lt;python-3.12.10-embed-amd64.zip&gt; --get-pip &lt;get-pip.py&gt;
 </span></code></pre></div>
 * Without <code>--wheel</code> it builds the wheel itself (it runs <code>scripts/package_desk.py</code> first so the web pages are inside the package; needs Node.js 20+).
 * <code>--stage-only</code> lays out the files and stops (no Inno Setup needed); use it to check the layout.
