@@ -1,0 +1,43 @@
+{
+  "model": "amazon/nova-lite-v1",
+  "prices_per_mtok": {
+    "in": 0.06,
+    "out": 0.24
+  },
+  "calls_requested": 24,
+  "prompt_tokens_target": 1500,
+  "served_by": "Amazon Bedrock",
+  "meter": {
+    "calls": 24,
+    "prompt_tokens": 29742,
+    "completion_tokens": 48,
+    "cost_usd": 0.00179604,
+    "cost_known": true
+  },
+  "usage_before": 0.164713266,
+  "usage_reads": [
+    0.165986046,
+    0.165986046,
+    0.166509306,
+    0.166509306,
+    0.166509306,
+    0.166509306,
+    0.166509306
+  ],
+  "failed": [],
+  "result": {
+    "calls_with_provider_reported_cost": 24,
+    "calls_completed": 24,
+    "provider_usd": 0.00179604,
+    "meter_usd": 0.00179604,
+    "price_estimate_usd": 0.00179604,
+    "usage_settled": true,
+    "tolerance": 0.1,
+    "cached_prompt_tokens": 0,
+    "uncertain_calls": 0,
+    "meter_vs_provider": 0.0,
+    "price_estimate_vs_provider": 0.0,
+    "verdict": "pass",
+    "why": "the meter is within 10% of the provider's figure (0.0%)"
+  }
+}

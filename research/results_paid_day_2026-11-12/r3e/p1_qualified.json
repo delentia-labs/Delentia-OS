@@ -1,0 +1,69 @@
+{
+  "qualified": {
+    "xiaomi/mimo-v2.6-flash": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 70.0,
+        "T3": 100.0
+      }
+    },
+    "qwen/qwen3.5-flash-02-23": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "nvidia/nemotron-3.5-lightning": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 0.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "deepseek/deepseek-v4-flash": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 75.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "google/gemma-3-12b-it": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 80.0,
+        "T3": 100.0
+      }
+    },
+    "mistralai/ministral-3b-2512": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 0.0,
+        "T3": 100.0
+      }
+    },
+    "meta-llama/llama-3.1-8b-instruct": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 0.0,
+        "T3": 100.0
+      }
+    }
+  },
+  "proposal": [],
+  "note": "a proposal only: run stage 2 with --selected naming the models YOU choose"
+}
