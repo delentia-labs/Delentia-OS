@@ -136,9 +136,11 @@ async def run_once2(sheet: Path, provider: Any, model: str, variant: str = "plai
     sealed = load_sealed2(sheet)
     runs = base.runs_of(sheet)
     version = prompt_version(variant)
-    prior = [r for r in runs if r["model"] == model and r["prompt_version"] == version and r["labels_sha256"] == sealed["labels_sha256"]]
+    prior = [r for r in runs if r["model"] == model and r["prompt_version"] == version and r["labels_sha256"] == sealed["labels_sha256"] and base.same_allowance(r)]
     if prior and not again:
         raise ValueError(f"{model} already ran the {variant} judge on these labels (once is the rule: no tuning after seeing a result); use --again to record a repeat")
+    provider = rec = base.Recording(provider)
+    replies: Dict[str, Dict[str, Any]] = {}
     verdicts: Dict[int, Optional[bool]] = {}
     seconds: List[float] = []
     for n_text, item in sealed["items_data"].items():
@@ -146,10 +148,13 @@ async def run_once2(sheet: Path, provider: Any, model: str, variant: str = "plai
         context = (context_decoder(item["context"]) if context_decoder else item["context"]) if variant == "context" else None
         v = await rct7_judge.judge_request(provider, item["request"], context)
         verdicts[int(n_text)] = None if v.clear is None and not v.error.startswith("nothing") else (v.clear is False and bool(v.unknowns))
+        replies[n_text] = base.reply_record(rec, verdicts[int(n_text)])
+        rec.clear()
         seconds.append(time.time() - started)
     entry = {"model": model, "provider": provider_kind, "variant": variant, "prompt_version": version, "labels_sha256": sealed["labels_sha256"], "repeat": bool(prior),
              "when": time.strftime("%Y-%m-%dT%H:%M:%S"), "median_seconds": round(sorted(seconds)[len(seconds) // 2], 2), "result": score_q(sealed, verdicts),
-             "verdicts": {str(n): v for n, v in sorted(verdicts.items())}, "cite_guard": rct7_judge.cite_guard_on()}
+             "verdicts": {str(n): v for n, v in sorted(verdicts.items())}, "cite_guard": rct7_judge.cite_guard_on(), "judge_max_tokens": rct7_judge.judge_max_tokens(),
+             "unusable": base.unusable_counts(replies), "replies": replies}
     _, runs_path = base._paths(sheet)
     runs.append(entry)
     runs_path.write_text(json.dumps(runs, ensure_ascii=False, indent=2), encoding="utf-8")

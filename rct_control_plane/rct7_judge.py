@@ -225,6 +225,20 @@ def request_prompt_ctx(request: str, context: str) -> str:
             "Is the REQUEST clear enough to act on, given the CONTEXT? Answer with the JSON object only.")
 
 
+JUDGE_MAX_TOKENS_ENV = "DELENTIA_RCT7_JUDGE_MAX_TOKENS"
+JUDGE_MAX_TOKENS_DEFAULT = 300
+
+
+def judge_max_tokens() -> int:
+    """The reply allowance of the judge and the critic. Default 300 (what was always sent). A model that reasons before it answers can use the whole allowance before the JSON object
+    (paid runs of 2026-11-13: up to 66% of the replies of one model were unusable), so a measurement may raise it; a value outside 100 to 8000 or unreadable falls back to 300."""
+    try:
+        value = int((os.environ.get(JUDGE_MAX_TOKENS_ENV) or "").strip() or JUDGE_MAX_TOKENS_DEFAULT)
+    except ValueError:
+        return JUDGE_MAX_TOKENS_DEFAULT
+    return value if 100 <= value <= 8000 else JUDGE_MAX_TOKENS_DEFAULT
+
+
 def context_prompt_version() -> str:
     """A hash of the context-aware prompt, so the frozen text cannot change unnoticed."""
     import hashlib
@@ -242,9 +256,9 @@ async def judge_request(provider: Any, request: str, context: Optional[str] = No
         return RequestVerdict(True)
     try:
         if context is not None:
-            reply = await provider.complete(request_prompt_ctx(request, context), system_prompt=SYSTEM_REQUEST_CTX, temperature=0.0, max_tokens=300, json_mode=True)
+            reply = await provider.complete(request_prompt_ctx(request, context), system_prompt=SYSTEM_REQUEST_CTX, temperature=0.0, max_tokens=judge_max_tokens(), json_mode=True)
         else:
-            reply = await provider.complete(request_prompt(request), system_prompt=SYSTEM_REQUEST, temperature=0.0, max_tokens=300, json_mode=True)
+            reply = await provider.complete(request_prompt(request), system_prompt=SYSTEM_REQUEST, temperature=0.0, max_tokens=judge_max_tokens(), json_mode=True)
     except Exception as exc:                                   # noqa: BLE001 - a judge outage must not stop the agent
         return RequestVerdict(None, error=type(exc).__name__)
     return parse_request_verdict(reply, request)
@@ -254,7 +268,7 @@ async def judge_result(provider: Any, request: str, answer: str) -> ResultVerdic
     if not answer or not answer.strip():
         return ResultVerdict(None, error="no answer to review")
     try:
-        reply = await provider.complete(result_prompt(request, answer), system_prompt=SYSTEM_RESULT, temperature=0.0, max_tokens=300, json_mode=True)
+        reply = await provider.complete(result_prompt(request, answer), system_prompt=SYSTEM_RESULT, temperature=0.0, max_tokens=judge_max_tokens(), json_mode=True)
     except Exception as exc:                                   # noqa: BLE001
         return ResultVerdict(None, error=type(exc).__name__)
     return parse_result_verdict(reply, request)

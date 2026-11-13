@@ -810,6 +810,15 @@ RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {"W03": run_w03, "W06": run_
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------- CLI
+DEFAULT_MAX_CALLS = 30
+MAX_CALLS_BY_WORKFLOW = {"W10": 120}        # twenty scenarios: with 30 calls only 9 of them read the page (WS-1, 2026-11-13)
+
+
+def resolved_max_calls(workflow: str, given: Optional[int]) -> int:
+    """An explicit --max-calls wins; otherwise the workflow's own limit, else 30."""
+    return int(given) if given is not None else MAX_CALLS_BY_WORKFLOW.get(workflow, DEFAULT_MAX_CALLS)
+
+
 def _provider(kind: str, model: str, out: Path, budget_usd: float, price_in: Optional[float], price_out: Optional[float], max_calls: int) -> Any:
     from research.daaes import budget_guard, live_adapter
     from rct_control_plane.llm_provider import OllamaProvider
@@ -826,7 +835,8 @@ def _provider(kind: str, model: str, out: Path, budget_usd: float, price_in: Opt
     frozen = paid_run_freeze.freeze_problems(model, price_in, price_out, budget_usd)
     if frozen:
         raise SystemExit("freeze: " + "; ".join(frozen))
-    policy = budget_guard.BudgetPolicy(total_usd=budget_usd, warning_usd=budget_usd * 0.6, stop_new_runs_usd=budget_usd * 0.8, reserve_usd=budget_usd * 0.2, max_cost_per_run_usd=budget_usd * 0.5, max_llm_calls_per_run=max_calls)
+    policy = budget_guard.BudgetPolicy(total_usd=budget_usd, warning_usd=budget_usd * 0.6, stop_new_runs_usd=budget_usd * 0.8, reserve_usd=budget_usd * 0.2, max_cost_per_run_usd=budget_usd * 0.5, max_llm_calls_per_run=max_calls,
+                                       max_input_tokens_per_run=budget_guard.PAID_MAX_INPUT_TOKENS_PER_RUN, max_output_tokens_per_run=budget_guard.PAID_MAX_OUTPUT_TOKENS_PER_RUN)
     return live_adapter.guarded(live_adapter.openrouter_provider(model), out / "live_ledger.json", policy, f"wf-{model}-{time.time_ns()}", price_in, price_out)
 
 
@@ -841,7 +851,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--budget-usd", type=float, default=0.0)
     r.add_argument("--price-in", type=float, default=None)
     r.add_argument("--price-out", type=float, default=None)
-    r.add_argument("--max-calls", type=int, default=30)
+    r.add_argument("--max-calls", type=int, default=None, help="the limit of model calls of one run (default: 30; W10, which has twenty scenarios, 120)")
     r.add_argument("--token-cap", type=int, default=W12_TOKEN_CAP, help="W12 and W09: the token cap of one model-driven episode (W12: shared by the parent and its children)")
     r.add_argument("--kill-point", default="all", choices=["all", *W09_SCENARIOS], help="W09 only")
     r.add_argument("--scripted", action="store_true", help="W09 only: a scripted model instead of the model under test (rehearsal, no cost)")
@@ -855,7 +865,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         episodes = 1 if args.kill_point == "notary_down" else (6 if args.kill_point == "all" else 2)
         extra = {"kill_point": args.kill_point, "scripted": args.scripted, "token_cap": args.token_cap,
                  "child_env": {} if args.scripted else w12_child_env(args.provider, args.model, args.token_cap, args.budget_usd, args.price_in, args.price_out, episodes=episodes)}
-    guard = _provider(args.provider, args.model, out, args.budget_usd, args.price_in, args.price_out, args.max_calls)
+    guard = _provider(args.provider, args.model, out, args.budget_usd, args.price_in, args.price_out, resolved_max_calls(args.workflow, args.max_calls))
     result = RUNNERS[args.workflow](guard, out / f".work-{args.workflow}-{time.time_ns()}", **extra)
     result["guard_refused"] = getattr(guard, "refused", None)
     result["provider"] = args.provider

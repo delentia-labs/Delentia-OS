@@ -145,7 +145,8 @@ def run_live(case: str, kind: str, model: str, out: Path, *, seed: int = 1701, f
         inner = live_adapter.openrouter_provider(model)
         pin, pout = price_in, price_out
         policy = budget_guard.BudgetPolicy(total_usd=budget_usd, warning_usd=budget_usd * 0.6, stop_new_runs_usd=budget_usd * 0.8, reserve_usd=budget_usd * 0.2,
-                                           max_cost_per_run_usd=budget_usd * 0.5, max_llm_calls_per_run=max_iterations * 3)
+                                           max_cost_per_run_usd=budget_usd * 0.5, max_llm_calls_per_run=max_iterations * 3,
+                                           max_input_tokens_per_run=budget_guard.PAID_MAX_INPUT_TOKENS_PER_RUN, max_output_tokens_per_run=budget_guard.PAID_MAX_OUTPUT_TOKENS_PER_RUN)
     else:
         raise ValueError("kind is 'ollama' or 'openrouter'")
     work = out / ".work" / case / arm / str(seed)
