@@ -44,6 +44,14 @@ FORMAT = "delentia-paid-run-freeze-1"
 CRITERIA = ROOT / "research" / "PREPAID_CRITERIA_R103.md"
 ORCHESTRATOR = ROOT / "scripts" / "full_test_orchestrator.py"
 STAGE_CEILINGS_USD = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00, "PR": 0.75}         # the ceilings written in PREPAID_CRITERIA_R103.md; a stage that is not listed has no ceiling and is refused
+# Round 113: stages that belong to a LATER experiment with its own criteria file and its own key. They are kept apart from the table above on purpose: that table is the day of 2026-11-12 (its sum, 12.85, is
+# pinned by tests and by the key's credit limit). PW = the workflow screen of research/WORKFLOW_SCREEN_CRITERIA_R113.md.
+EXTRA_STAGE_CEILINGS_USD = {"PW": 3.00}
+
+
+def stage_ceiling(stage: str) -> Optional[float]:
+    """The ceiling written for a stage in a criteria file, or None when no criteria file gives it one."""
+    return STAGE_CEILINGS_USD.get(stage, EXTRA_STAGE_CEILINGS_USD.get(stage))
 
 ROLES = {"judge": "DELENTIA_RCT7_JUDGE", "chain": "DELENTIA_RCT7_CHAIN", "judge_context": "DELENTIA_RCT7_JUDGE_CONTEXT", "ask_and_wait": "DELENTIA_ASK_AND_WAIT", "warm_recall": "DELENTIA_WARM_RECALL",
          "tool_menu": "DELENTIA_TOOL_MENU", "parallel_tools": "DELENTIA_PARALLEL_TOOLS", "memory_embed": "DELENTIA_MEMORY_EMBED", "taint_gate": "DELENTIA_TAINT_GATE", "verify_grounding": "DELENTIA_VERIFY_GROUNDING"}
@@ -124,7 +132,7 @@ def build(models: List[str], prices: Dict[str, Dict[str, float]], prices_source:
     if problems:
         raise FreezeError("; ".join(problems))
     snap = results_register.config_snapshot()
-    ceilings = {s: STAGE_CEILINGS_USD[s] for s in stages}
+    ceilings = {s: float(stage_ceiling(s) or 0.0) for s in stages}                # every stage has a ceiling here: problems_before_freezing refused the others
     record: Dict[str, Any] = {
         "format": FORMAT, "frozen_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "code": code_state(), "package_version": snap["package_version"], "python": platform.python_version(),
         "platform": f"{platform.system()} {platform.machine()}", "config": snap["env"], "roles": roles_state(), "policy": policy_state(), "prompt_versions": prompt_versions(),
@@ -152,12 +160,12 @@ def problems_before_freezing(models: List[str], prices: Dict[str, Dict[str, floa
     if not stages:
         problems.append("no stage named")
     for s in stages:
-        if s not in STAGE_CEILINGS_USD:
-            problems.append(f"stage {s} has no ceiling in PREPAID_CRITERIA_R103.md (known: {', '.join(sorted(STAGE_CEILINGS_USD))})")
+        if stage_ceiling(s) is None:
+            problems.append(f"stage {s} has no ceiling in a criteria file (known: {', '.join(sorted({**STAGE_CEILINGS_USD, **EXTRA_STAGE_CEILINGS_USD}))})")
     if not _finite_nonneg(budget_usd) or budget_usd <= 0:
         problems.append("--budget-usd must be a real amount above zero: the credit cap you set at the provider")
-    elif sum(STAGE_CEILINGS_USD.get(s, 0) for s in stages) > budget_usd:
-        problems.append(f"the ceilings of the chosen stages add up to ${sum(STAGE_CEILINGS_USD.get(s, 0) for s in stages):.2f}, more than the budget ${budget_usd}")
+    elif sum(stage_ceiling(s) or 0 for s in stages) > budget_usd:
+        problems.append(f"the ceilings of the chosen stages add up to ${sum(stage_ceiling(s) or 0 for s in stages):.2f}, more than the budget ${budget_usd}")
     if not provider_cap_confirmed:
         problems.append("--provider-cap-confirmed is missing: say that a spending cap exists at the provider (a default or an estimate here is not a cap)")
     return problems
