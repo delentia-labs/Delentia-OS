@@ -1,0 +1,18 @@
+{
+  "selected": [
+    "x-ai/grok-build-0.1",
+    "qwen/qwen3.5-397b-a17b"
+  ],
+  "written_at": "2026-11-13T11:56:20",
+  "written_before": "any stage 2 spending",
+  "prices": {
+    "x-ai/grok-build-0.1": {
+      "in": 1.0,
+      "out": 2.0
+    },
+    "qwen/qwen3.5-397b-a17b": {
+      "in": 0.6,
+      "out": 3.5999999999999996
+    }
+  }
+}
