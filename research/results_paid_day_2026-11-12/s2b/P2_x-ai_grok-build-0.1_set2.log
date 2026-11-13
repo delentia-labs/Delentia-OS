@@ -1,0 +1,234 @@
+2026-11-13 12:22:04 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-13 12:22:04.569 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+2026-11-13 12:22:04 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/13/26 12:22:04] INFO     Running in mock mode - algo_10_delta_memory.py:268
+                             no database connection                            
+                    INFO     Scheduler initialized           algo_15_hrm.py:372
+                             (max_workers=5,                                   
+                             max_concurrent=20)                                
+                    INFO     FAISSBackend initialized:    algo_16_vector.py:440
+                             type=flat, metric=cosine                          
+                    INFO     FAISS index created:         algo_16_vector.py:479
+                             dimension=384, type=flat                          
+                    INFO     VectorEngine initialized:    algo_16_vector.py:164
+                             dimension=384                                     
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     TimeoutController initialized:  algo_35_atc.py:211
+                             base=5.0s, range=[1.0-60.0]s,                     
+                             percentile=95.0%, buffer=1.2x                     
+                    INFO     PredictiveEngine initialized:   algo_35_atc.py:479
+                             baseline=5.0s                                     
+                    INFO     Prompt engine    algo_18_adaptive_prompting.py:156
+                             initialized                                       
+                    INFO     RAG engine       algo_18_adaptive_prompting.py:439
+                             initialized with                                  
+                             direct                                            
+                             in-process                                        
+                             VectorEngine                                      
+2026-11-13 12:22:04 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-13 12:22:04.627 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+                    INFO     GraphEngine          algo_17_graph_traversal.py:69
+                             initialized                                       
+                    INFO     Initializing VideoProcessor    algo_27_tvra.py:205
+                    INFO     Initializing AudioProcessor    algo_27_tvra.py:434
+                             with Whisper tiny                                 
+                    INFO     DiffusionEngine       algo_14_rct_diffusion.py:168
+                             initialized on cpu                                
+                             (model=segmind/tiny-s                             
+                             d)                                                
+2026-11-13 12:22:04 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/13/26 12:22:05] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:09] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:11] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:15] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:18] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:20] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:28] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:31] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:34] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:39] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:46] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:53] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:22:56] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:00] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:03] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:06] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:09] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:13] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:16] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:19] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:24] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:31] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:34] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:37] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:40] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:42] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:45] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:49] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:52] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:23:54] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:00] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:03] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:07] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:10] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:16] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:26] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:29] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:35] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:40] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 12:24:42] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+{
+  "model": "x-ai/grok-build-0.1",
+  "provider": "openrouter",
+  "prompt_version": "8292fc3416cc",
+  "labels_sha256": "471ac6879a23c20f9783c7a1292bd1dc56a31a61378c463624c9395065362c3a",
+  "repeat": false,
+  "when": "2026-11-13T12:24:44",
+  "median_seconds": 3.41,
+  "result": {
+    "found": 8,
+    "of_needing_a_stop": 8,
+    "found_rate": 1.0,
+    "found_interval": [
+      0.676,
+      1.0
+    ],
+    "false_stops": 0,
+    "of_fine": 24,
+    "false_stop_rate": 0.0,
+    "false_stop_interval": [
+      0.0,
+      0.138
+    ],
+    "malformed": 0,
+    "rule_met": true,
+    "rule": {
+      "found_at_least": 0.8,
+      "false_stops_at_most": 0.15
+    }
+  },
+  "verdicts": {
+    "1": false,
+    "2": false,
+    "3": true,
+    "4": false,
+    "5": false,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": true,
+    "11": false,
+    "12": false,
+    "13": true,
+    "14": false,
+    "15": false,
+    "16": false,
+    "17": true,
+    "18": false,
+    "19": false,
+    "20": false,
+    "21": true,
+    "22": false,
+    "23": true,
+    "24": false,
+    "25": false,
+    "26": false,
+    "27": true,
+    "28": false,
+    "29": false,
+    "30": true,
+    "31": false,
+    "32": true,
+    "33": false,
+    "34": false,
+    "35": true,
+    "36": false,
+    "37": false,
+    "38": false,
+    "39": false,
+    "40": false
+  },
+  "cite_guard": true
+}
