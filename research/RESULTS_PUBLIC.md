@@ -4,6 +4,204 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0074: P2 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set4 context, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 30
+- What it says: [s2a] CORRECTION of R0050 (Amendment 11): the original note did not state the malformed replies. Found 8 of 30, false stops 3 of 30, malformed 19 of 60. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict changed to inconclusive (25% or more malformed). The cost is already counted in R0050. Run commit 8772dff4.
+
+## R0073: P2 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set4 plain, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 30
+- What it says: [s2a] CORRECTION of R0049 (Amendment 11): the original note did not state the malformed replies. Found 15 of 30, false stops 10 of 30, malformed 14 of 60. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict unchanged. The cost is already counted in R0049. Run commit 8772dff4.
+
+## R0072: P2 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set3 context, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 25
+- What it says: [s2a] CORRECTION of R0048 (Amendment 11): the original note did not state the malformed replies. Found 12 of 25, false stops 1 of 35, malformed 13 of 60. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict unchanged. The cost is already counted in R0048. Run commit 8772dff4.
+
+## R0071: P2 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set3 plain, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 25
+- What it says: [s2a] CORRECTION of R0047 (Amendment 11): the original note did not state the malformed replies. Found 19 of 25, false stops 14 of 35, malformed 9 of 60. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict unchanged. The cost is already counted in R0047. Run commit 8772dff4.
+
+## R0070: P2 (pass)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set2, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 8
+- What it says: [s2a] CORRECTION of R0046 (Amendment 11): the original note did not state the malformed replies. Found 8 of 8, false stops 0 of 24, malformed 1 of 32. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict unchanged. The cost is already counted in R0046. Run commit 8772dff4.
+
+## R0069: P2 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, set1, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 34
+- What it says: [s2a] CORRECTION of R0045 (Amendment 11): the original note did not state the malformed replies. Found 24 of 34, false stops 3 of 25, malformed 8 of 59. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Verdict unchanged. The cost is already counted in R0045. Run commit 8772dff4.
+
+## R0068: P4 (not_run)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, d0 live, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/PREPAID_CRITERIA_R103.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 0
+- What it says: [s2b] TC-006 (a project across sessions), one run of arm d0: NOT RUN, by decision of the Architect before running (Amendment 11): one command takes about 45 minutes (78 s per call), the P2 results of this model are mostly unreadable, and no conclusion of the day would change. Nothing was sent. Run commit 8772dff4.
+
+## R0067: P4 (not_run)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, b0 vs d0, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/PREPAID_CRITERIA_R103.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 0
+- What it says: [s2b] TC-003 (fix a broken package), arms b0 and d0, 4 tasks per arm: NOT RUN, by decision of the Architect before running (Amendment 11): one command takes about 45 minutes (78 s per call), the P2 results of this model are mostly unreadable, and no conclusion of the day would change. Nothing was sent. Run commit 8772dff4.
+
+## R0066: P2 (not_run)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set4 context, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 0
+- What it says: [s2b] the judge on set 4 with the context: NOT RUN. The driver refused it because stage P2 had used $1.6211 against its ceiling of $1.50 (Amendment 11). Nothing was sent to the model. Run commit 8772dff4.
+
+## R0065: P2 (not_run)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set4 plain, provider openrouter
+- Date: 2026-11-13T07:37:51Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: no money spent
+- Units behind the verdict: 0
+- What it says: [s2b] the judge on set 4, plain prompt: NOT RUN. The driver refused it because stage P2 had used $1.6211 against its ceiling of $1.50 (Amendment 11). Nothing was sent to the model. Run commit 8772dff4.
+
+## R0064: P2 (inconclusive)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set3 context, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1662
+- Units behind the verdict: 25; figures: false stops 3, found 16
+- What it says: [s2b] the judge on set 3 with the context (rule H3: false stops lower by at least 2 items and found lower by at most 1): found 16 of 25 needing a stop, false stops 3 of 35, malformed 26; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Registered as inconclusive: 25% or more of the items were malformed (reading rule of Amendment 11), so the run measures the reply cap, not the model's judgement; the numbers are kept above. Run commit 8772dff4.
+
+## R0063: P2 (inconclusive)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set3 plain, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.4531
+- Units behind the verdict: 25; figures: false stops 13, found 14
+- What it says: [s2b] the judge on set 3, plain prompt: found 14 of 25 needing a stop, false stops 13 of 35, malformed 28; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Registered as inconclusive: 25% or more of the items were malformed (reading rule of Amendment 11), so the run measures the reply cap, not the model's judgement; the numbers are kept above. Run commit 8772dff4.
+
+## R0062: P2 (inconclusive)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set2, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0621
+- Units behind the verdict: 8; figures: false stops 0, found 2
+- What it says: [s2b] the critic on the Architect's set 2; the rule of the criteria file: found 2 of 8 needing a stop, false stops 0 of 24, malformed 21; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Registered as inconclusive: 25% or more of the items were malformed (reading rule of Amendment 11), so the run measures the reply cap, not the model's judgement; the numbers are kept above. Run commit 8772dff4.
+
+## R0061: P2 (inconclusive)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, set1, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.2010
+- Units behind the verdict: 34; figures: false stops 2, found 17
+- What it says: [s2b] the judge (clarity) on the Architect's set 1; rule found >= 0.80 and false stops <= 0.15: found 17 of 34 needing a stop, false stops 2 of 25, malformed 26; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Replies the runner could not read are counted as 'did not stop' (malformed): see Amendment 11 (the judge calls send max_tokens=300; cause not established; the raw reply is not kept). Registered as inconclusive: 25% or more of the items were malformed (reading rule of Amendment 11), so the run measures the reply cap, not the model's judgement; the numbers are kept above. Run commit 8772dff4.
+
+## R0060: P2 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, set4 context, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1370
+- Units behind the verdict: 30; figures: false stops 10, found 22
+- What it says: [s2b] the judge on set 4 with the context: found 22 of 30 needing a stop, false stops 10 of 30, malformed 0; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0059: P2 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, set4 plain, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1547
+- Units behind the verdict: 30; figures: false stops 15, found 29
+- What it says: [s2b] the judge on set 4, plain prompt: found 29 of 30 needing a stop, false stops 15 of 30, malformed 0; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0058: P2 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, set3 context, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1351
+- Units behind the verdict: 25; figures: false stops 7, found 21
+- What it says: [s2b] the judge on set 3 with the context (rule H3: false stops lower by at least 2 items and found lower by at most 1): found 21 of 25 needing a stop, false stops 7 of 35, malformed 0; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0057: P2 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, set3 plain, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1275
+- Units behind the verdict: 25; figures: false stops 20, found 24
+- What it says: [s2b] the judge on set 3, plain prompt: found 24 of 25 needing a stop, false stops 20 of 35, malformed 0; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0056: P2 (pass)
+
+- Model and arm: `x-ai/grok-build-0.1`, set2, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0647
+- Units behind the verdict: 8; figures: false stops 0, found 8
+- What it says: [s2b] the critic on the Architect's set 2; the rule of the criteria file: found 8 of 8 needing a stop, false stops 0 of 24, malformed 0; runner rule_met=True. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0055: P2 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, set1, provider openrouter
+- Date: 2026-11-13T07:37:50Z; code: commit `16775b8`
+- Rule: `research/rct7_round98_criteria.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1197
+- Units behind the verdict: 34; figures: false stops 4, found 31
+- What it says: [s2b] the judge (clarity) on the Architect's set 1; rule found >= 0.80 and false stops <= 0.15: found 31 of 34 needing a stop, false stops 4 of 25, malformed 0; runner rule_met=False. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
+
+## R0054: P1b (pass)
+
+- Model and arm: `qwen/qwen3.5-397b-a17b`, provider openrouter
+- Date: 2026-11-13T07:37:49Z; code: commit `16775b8`
+- Rule: `research/PREPAID_CRITERIA_R103.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1957
+- Units behind the verdict: 31
+- What it says: [s2b] tool-menu A/B on 31 unseen goals: default 16/31, ranked+compact 21/31, median menu 40 -> 8 tools; rule T10: the ranked+compact menu within one goal of the default menu's accuracy and smaller. One model, one run: not a ranking and not by itself a reason to change the default for hosted models. Run commit 8772dff4.
+
+## R0053: P1b (pass)
+
+- Model and arm: `x-ai/grok-build-0.1`, provider openrouter
+- Date: 2026-11-13T07:37:49Z; code: commit `16775b8`
+- Rule: `research/PREPAID_CRITERIA_R103.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.3534
+- Units behind the verdict: 31
+- What it says: [s2b] tool-menu A/B on 31 unseen goals: default 16/31, ranked+compact 21/31, median menu 40 -> 8 tools; rule T10: the ranked+compact menu within one goal of the default menu's accuracy and smaller. One model, one run: not a ranking and not by itself a reason to change the default for hosted models. Run commit 8772dff4.
+
 ## R0052: P4 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, d0 live, provider openrouter
@@ -22,7 +220,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 8
 - What it says: [s2a] TC-003 (fix a broken package), 4 tasks per arm. b0 (no runtime) passed 0 of 4 and made a false success claim 4 of 4; d0 (with the runtime) passed 0 of 4 with 0 hard failures, but every d0 run stopped at pending_approval: the runtime held the write for a human signature and nobody signed, so d0 never applied a fix. Mean scores 90.0 and 95.0. Descriptive only (4 pairs: 'too few pairs to say anything'); it shows the gate holding with a real model, not that the runtime repairs better. Run commit 8772dff4.
 
-## R0050: P2 (fail)
+## R0050: P2 (fail (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set4 context, provider openrouter
 - Date: 2026-11-13T04:57:41Z; code: commit `5b4378f`
@@ -31,7 +229,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 30; figures: false stops 3, found 8
 - What it says: [s2a] the judge on set 4 with the context: found 8 of 30 needing a stop, false stops 3; rule_met=False as the runner computes it. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
 
-## R0049: P2 (fail)
+## R0049: P2 (fail (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set4 plain, provider openrouter
 - Date: 2026-11-13T04:57:41Z; code: commit `5b4378f`
@@ -40,7 +238,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 30; figures: false stops 10, found 15
 - What it says: [s2a] the judge on set 4, plain prompt: found 15 of 30 needing a stop, false stops 10; rule_met=False as the runner computes it. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
 
-## R0048: P2 (fail)
+## R0048: P2 (fail (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set3 context, provider openrouter
 - Date: 2026-11-13T04:57:41Z; code: commit `5b4378f`
@@ -49,7 +247,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 25; figures: false stops 1, found 12
 - What it says: [s2a] the judge on set 3 with the context (rule H3: false stops lower by at least 2 items and found lower by at most 1): found 12 of 25 needing a stop, false stops 1; rule_met=False as the runner computes it. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
 
-## R0047: P2 (fail)
+## R0047: P2 (fail (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set3 plain, provider openrouter
 - Date: 2026-11-13T04:57:41Z; code: commit `5b4378f`
@@ -58,7 +256,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 25; figures: false stops 14, found 19
 - What it says: [s2a] the judge on set 3, plain prompt: found 19 of 25 needing a stop, false stops 14; rule_met=False as the runner computes it. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
 
-## R0046: P2 (pass)
+## R0046: P2 (pass (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set2, provider openrouter
 - Date: 2026-11-13T04:57:40Z; code: commit `5b4378f`
@@ -67,7 +265,7 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 8; figures: false stops 0, found 8
 - What it says: [s2a] the critic on the Architect's set 2; the rule of the criteria file: found 8 of 8 needing a stop, false stops 0; rule_met=True as the runner computes it. One run per model and prompt, sealed labels, never rerun to improve. Run commit 8772dff4.
 
-## R0045: P2 (fail)
+## R0045: P2 (fail (replaced by a later entry))
 
 - Model and arm: `anthropic/claude-haiku-5.5`, set1, provider openrouter
 - Date: 2026-11-13T04:57:40Z; code: commit `5b4378f`
@@ -472,4 +670,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 52. Total actual cost registered: $2.7986.
+Entries: 74. Total actual cost registered: $4.9688.
