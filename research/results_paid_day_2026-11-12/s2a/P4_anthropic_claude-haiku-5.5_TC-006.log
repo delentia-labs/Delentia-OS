@@ -1,0 +1,106 @@
+2026-11-13 11:42:42 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-13 11:42:42.806 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+2026-11-13 11:42:42 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/13/26 11:42:42] INFO     Running in mock mode - algo_10_delta_memory.py:268
+                             no database connection                            
+                    INFO     Scheduler initialized           algo_15_hrm.py:372
+                             (max_workers=5,                                   
+                             max_concurrent=20)                                
+                    INFO     FAISSBackend initialized:    algo_16_vector.py:440
+                             type=flat, metric=cosine                          
+                    INFO     FAISS index created:         algo_16_vector.py:479
+                             dimension=384, type=flat                          
+                    INFO     VectorEngine initialized:    algo_16_vector.py:164
+                             dimension=384                                     
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     TimeoutController initialized:  algo_35_atc.py:211
+                             base=5.0s, range=[1.0-60.0]s,                     
+                             percentile=95.0%, buffer=1.2x                     
+                    INFO     PredictiveEngine initialized:   algo_35_atc.py:479
+                             baseline=5.0s                                     
+                    INFO     Prompt engine    algo_18_adaptive_prompting.py:156
+                             initialized                                       
+                    INFO     RAG engine       algo_18_adaptive_prompting.py:439
+                             initialized with                                  
+                             direct                                            
+                             in-process                                        
+                             VectorEngine                                      
+2026-11-13 11:42:42 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-13 11:42:42.863 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+                    INFO     GraphEngine          algo_17_graph_traversal.py:69
+                             initialized                                       
+                    INFO     Initializing VideoProcessor    algo_27_tvra.py:205
+                    INFO     Initializing AudioProcessor    algo_27_tvra.py:434
+                             with Whisper tiny                                 
+                    INFO     DiffusionEngine       algo_14_rct_diffusion.py:168
+                             initialized on cpu                                
+                             (model=segmind/tiny-s                             
+                             d)                                                
+2026-11-13 11:42:42 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:42:44] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:42:46] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:42:47] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:42:49] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:42:50] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:42:54] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:42:55] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:42:57] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:43:00] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:43:01] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:43:04] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:43:05] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:43:07] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:43:08] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:43:09] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:43:10] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/13/26 11:43:13] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/13/26 11:43:17] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+{
+  "case": "TC-006",
+  "arm": "d0_live-openrouter-anthropic_claude-haiku-5.5",
+  "seed": 1701,
+  "passed": false,
+  "score": 60.0,
+  "hard_failures": [],
+  "seconds": 38.2,
+  "agent": null,
+  "guard_refused": null,
+  "folder": "%USERPROFILE%\\.delentia\\paid-day\\s2a\\p4_tc006_anthropic_claude-haiku-5.5\\2026-11-13\\TC-006\\d0_live-openrouter-anthropic_claude-haiku-5.5\\1701",
+  "bundle_sha256": "ce7075c3d5d52469a46c647fd2eec71ff79b5c6b6f2ccddf303fa1b99e271d0d",
+  "verified": true
+}

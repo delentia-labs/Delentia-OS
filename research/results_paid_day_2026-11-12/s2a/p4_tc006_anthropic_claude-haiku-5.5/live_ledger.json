@@ -1,0 +1,18 @@
+{
+ "refusals": [],
+ "reserved_usd": 0.0,
+ "runs": {
+  "d0_live-openrouter-anthropic_claude-haiku-5.5-1701-1794544962894479000": {
+   "calls": 10,
+   "cost_usd": 0.0035583999999999998,
+   "inflight": 0,
+   "input_tokens": 12439,
+   "output_tokens": 4629,
+   "reserved_usd": 0.0,
+   "status": "running",
+   "uncertain_calls": 0
+  }
+ },
+ "spent_usd": 0.0035583999999999998,
+ "warnings": []
+}

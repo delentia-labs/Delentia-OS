@@ -1,0 +1,46 @@
+{
+  "qualified": {
+    "anthropic/claude-haiku-5.5": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 100.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "amazon/nova-pro-v1": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 100.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    },
+    "amazon/nova-lite-v1": {
+      "qualified": false,
+      "why": "below the bar",
+      "rates": {
+        "T1": 100.0,
+        "T2": 20.0,
+        "T3": 100.0
+      }
+    },
+    "moonshotai/kimi-k2": {
+      "qualified": true,
+      "why": "T1, T2 >= 90% and T3 = 100%",
+      "rates": {
+        "T1": 90.0,
+        "T2": 100.0,
+        "T3": 100.0
+      }
+    }
+  },
+  "proposal": [
+    "anthropic/claude-haiku-5.5",
+    "moonshotai/kimi-k2",
+    "amazon/nova-pro-v1"
+  ],
+  "note": "a proposal only: run stage 2 with --selected naming the models YOU choose"
+}

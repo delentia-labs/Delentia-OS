@@ -1,0 +1,13 @@
+{
+  "selected": [
+    "anthropic/claude-haiku-5.5"
+  ],
+  "written_at": "2026-11-13T11:22:27",
+  "written_before": "any stage 2 spending",
+  "prices": {
+    "anthropic/claude-haiku-5.5": {
+      "in": 0.09999999999999999,
+      "out": 0.5
+    }
+  }
+}

@@ -12,3 +12,7 @@ research/SEALED_*.json -text
 
 # Round 80: shell scripts run on Linux hosts; a CRLF checkout breaks them
 *.sh text eol=lf
+
+# Round 113: registered result files are compared by byte hash (research/RESULTS_REGISTER.jsonl), so no line-ending conversion on a Windows checkout
+research/results_paid_day_*/** -text
+research/results_round*/** -text
