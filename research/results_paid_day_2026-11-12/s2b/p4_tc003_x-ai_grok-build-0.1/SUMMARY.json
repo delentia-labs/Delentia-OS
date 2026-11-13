@@ -1,0 +1,62 @@
+{
+  "summary": {
+    "arms": {
+      "b0": {
+        "runs": 4,
+        "valid": 4,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "pass_ci95": [
+          0.0,
+          0.602365
+        ],
+        "mean_score": 69.108,
+        "hard_failures": 0,
+        "mean_cost_usd": 0.051961,
+        "mean_seconds": 159.1,
+        "invalid_or_timeout": 0
+      },
+      "d0": {
+        "runs": 4,
+        "valid": 4,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "pass_ci95": [
+          0.0,
+          0.602365
+        ],
+        "mean_score": 69.108,
+        "hard_failures": 0,
+        "mean_cost_usd": 0.052039,
+        "mean_seconds": 160.2,
+        "invalid_or_timeout": 0
+      }
+    },
+    "pairs": {
+      "d0 - b0": {
+        "pairs": 4,
+        "skipped_tasks": [],
+        "mean_score_difference": 0.0,
+        "score_difference_ci95": [
+          0.0,
+          0.0
+        ],
+        "only_a_passed": 0,
+        "only_b_passed": 0,
+        "both_passed": 0,
+        "neither_passed": 4,
+        "mcnemar_exact_p": 1.0,
+        "note": "too few pairs to say anything",
+        "holm_adjusted_p": 1.0
+      }
+    },
+    "n_tasks": 4
+  },
+  "model": "x-ai/grok-build-0.1",
+  "seeds": [
+    1700,
+    1701,
+    1702,
+    1703
+  ]
+}
