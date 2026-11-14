@@ -53,7 +53,6 @@ def main() -> int:
     (work / "prices.json").write_text(json.dumps(prices), encoding="utf-8")
     out = Path(args.keep) if args.keep else work / "out"
     env_base = dict(os.environ, PYTHONUTF8="1")
-    rows: List[dict] = []
 
     # ------------------------------------------------------------------ A: the faults, on the judge's own runner
     faults = {3: "429", 5: "html", 7: "long", 9: "reasoning", 11: "402"}
