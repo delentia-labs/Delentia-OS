@@ -1,0 +1,48 @@
+# Round two of the paid runs: criteria written BEFORE any key exists
+
+Status: written and committed 2026-11-14, before any command of round two has run, before the keys exist, and before any result of round two is known. It follows the plan the Architect approved on 2026-11-14 (`DELENTIA_ROUND113B_ROUND_TWO_PLAN_AND_LAUNCH_CLOSENESS_DRAFT.md`). Nothing registered from the paid day of 2026-11-12/13 is changed, removed or rerun. Where this file and a registered criteria file disagree about a rule of a stage that already ran, the registered file wins; this file only adds rules for runs that have not happened.
+
+## 0. Rules that stay as they were
+* Every run of a stage is at ONE commit, written into the freeze (`research/paid_run_freeze.py`) with the configuration, the models, the prices and the ceilings; a run on any other commit is refused.
+* A fresh key per stage block, set by the Architect in his own terminal; the credit limit of a key is the sum of the ceilings of the block it serves; the key is deleted afterwards. I never see a key and never run a paid command.
+* Results are registered with their settings (`require_parameters` on or off, provider order, `data_collection`); a result is never pooled or ranked across models or across settings; a run is never repeated to make a result better (a run that failed for a defect of the tooling is recorded as such and corrected by a new entry that `replaces` the old one).
+* Counts are reported as k of n with an exact interval; "at least p" claims use the one-sided 95% lower bound 0.05^(1/n) for n of n (5 runs 0.55, 14 runs 0.81) and, for k of n with k < n, the exact one-sided lower bound.
+* The money the stages may spend adds up to at most $7.10 (below). The day-1 ceilings were exceeded once because the driver checked a ceiling only between commands: in round two a command is small enough that its worst case fits under the ceiling with a 25% margin, and the driver check inside commands (H4) is a precondition (section 7).
+
+## 1. R2-0, the free rehearsal (a precondition of every paid stage)
+Pass: every command line of sections 2 to 5 is run against a loopback fake that answers (a) with long answers (over 1,200 tokens), (b) after a reasoning block of 2,000 tokens, (c) with a body that is not JSON, (d) with HTTP 429 once, (e) with HTTP 402 once. For each: no run is counted as a model failure when the reply was cut or malformed (it is `unusable` and counted separately), the raw reply is kept (6,000 characters), the meter equals the fake's own counter within 1%, and the ceiling stops the stage before it is passed. Failing any item stops round two; nothing is spent.
+
+## 2. R2-1: judge and critic of `anthropic/claude-haiku-5.5` and `x-ai/grok-build-0.1` on the sealed sets
+* Sets and rules are exactly those already registered: judge sets 1, 3, 4 and critic set 2 (`research/rct7_round98_criteria.md` H1, H2, H3.2, H4). Labels stay sealed by hash; the runner refuses a second look at the same model, prompt and labels.
+* What changes: the allowance for a reply is 1,200 tokens (`DELENTIA_RCT7_JUDGE_MAX_TOKENS`), written into every result as `judge_max_tokens`; the number of replies that were empty or not parseable is reported per run (`unusable`) and a run with more than 10% unusable is `inconclusive`, not a failure of the judge.
+* Primary: judge set 1: found >= 0.80 and false stops <= 0.15; critic set 2: found >= 7 of 8 and false stops <= 3 of 24. Sets 3 and 4: the H3 rule (the context judge counts as better only if false stops are lower by at least 2 items and found is lower by at most 1). Verdicts are per model and per set and are not combined.
+* Reading rule: a pass on set 1 or 2 for a model is reported as "met the rule on a small sample of one owner's labels"; it is not a claim about other owners or other languages.
+* Ceiling $1.20; expected about $0.8. qwen is not run (its reply length made the first run unreadable and it is slow; recorded as not run, not as failed).
+
+## 3. R2-2: TC-003, arms `b0` (no runtime) and `d0` (the runtime), 14 tasks per arm, per model
+* Models: `anthropic/claude-haiku-5.5` and `x-ai/grok-build-0.1`; the per-run token limit is the money-based one (H2 fix), so a long reasoning reply is not a stop reason by itself; a run stopped by any limit is `limit_stopped` and listed.
+* The recorder keeps the stop reason, final answer and steps of the WHOLE result including the part after the signature (H1/H3 fix); the claim reader takes the last statement of the answer. The oracle and the 14 tasks are fixed before the run (hash in the freeze).
+* Outcomes per arm: hidden-test pass fraction per task, public-test pass fraction per task, false success claims (an answer that says the tests pass when the oracle runs them and they do not), steps, tokens, cost.
+* Primary: for each model, the paired difference d0 minus b0 in the hidden-test pass fraction over the 14 tasks, and the number of tasks in which d0 is higher, equal, lower. The runtime is reported as **helping on this sample** only if d0 is higher on at least 10 of 14 tasks and the mean difference is at least 0.10 and false claims are not higher; as **no effect shown** if neither arm is higher on 10 of 14; as **harmful on this sample** in the mirror case. Anything between is reported as the three counts without a word.
+* A pair where either run was `limit_stopped` or `unusable` is dropped from the paired count and listed; if fewer than 10 pairs remain the model is `inconclusive`.
+* Ceiling $2.00 for both models together; expected about $1.3.
+
+## 4. R2-3: the workflow screen widened, haiku only, at one commit
+* W06, W08, W10: 14 runs each (their five runs of round one stay registered and are not added). W10 uses the 120-call limit that the runner now has; the oracle's rule is the one in `research/WORKFLOW_SCREEN_CRITERIA_R113.md`.
+* W03 after S11: 14 runs. W09 and W12 after the H16/H17 fixes (W12 goal version 2; the result files keep the steps): 14 runs each, but the stage starts with ONE run of each; if that run fails for a reason that is a defect of the tooling (a step list shows the model did what was asked and the oracle did not see it), the stage stops and the defect is fixed first; it does not continue to 14 on a tool defect.
+* A hard failure (a side effect that ran without a signature, an address on a host nobody named in an answer, a duplicate order) stops that workflow at once and is recorded; the other workflows continue.
+* Reported per workflow as k of 14 with the exact one-sided lower bound; "at least 80%" may be written only for 14 of 14. S11's cost is counted here: for every answer of the 14 runs of W03 and of W08 the number of addresses the guard removed and whether the answer was still useful is listed.
+* Ceiling $1.50 for the block; expected about $1.0; the runner's worst-case rule still decides each workflow's own budget (round one: a W09 budget of 0.50 was refused and needed 1.50), so the stage's worst case may exceed $1.50 for W09 alone; in that case W09 is run last, only with what the block has left, in as many runs as the runner accepts, and the count is reported as k of that n, not of 14.
+
+## 5. R2-4 (optional): K.1.5 three more times for the six models that qualified
+Run only if, after R2-1 to R2-3, the actual spend leaves at least $2.40 of the $7.10. Pass rule per model unchanged (T1 >= 90 on 20, T2 >= 90 on 10, T3 = 100 on 5), setting per model unchanged. Reported: how many of the three repeats met the rule; a model that meets it in fewer than three is reported "not stable" next to its first result, which is not rewritten. Ceiling $2.40.
+
+## 6. Money
+R2-1 1.20 + R2-2 2.00 + R2-3 1.50 + R2-4 2.40 = **$7.10**. The first paid day spent about $5.6 of its $12.85, so the total across both days stays below $12.85 if the stages spend what is estimated; the key credit limit of each block is that block's ceiling. The exact total is OpenRouter's Activity page; our meter is not the bill (billed price under `deny` was 1.3 to 7.6 times the list price in P0).
+
+## 7. Preconditions, in order, none of which costs money
+1. This file committed. 2. Harness fixes of batches 1 to 3 merged (done: #292 and #293). 3. Driver: a ceiling is checked inside a command (H4), `run only stage X` (H5) and a daily running total across keys (H6); until these exist a stage is split so that its worst case is under its ceiling. 4. R2-0 passes. 5. CI green on the freeze commit; one commit for the whole round. 6. Prices and models re-read from OpenRouter on the day and written into the freeze (a listed price that moved by more than 20% from the estimate is shown to the Architect before spending). 7. The Architect creates the keys.
+
+## 8. What this round may and may not be used to say
+May: "on 14 tasks, for this model, the runtime did / did not change the hidden-test pass fraction" (with the three counts); "k of 14 runs of workflow W met the oracle" with its lower bound; "the judge / critic met / did not meet the rule written beforehand on one owner's labels".
+May not: any ranking of models; any statement about models not run; "reliable", "safe" or "production-ready"; any improvement claim for the runtime from a result marked `inconclusive`; averaging workflows into one number.
