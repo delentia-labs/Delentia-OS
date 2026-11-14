@@ -116,8 +116,9 @@ Use one of these **approved status phrases** in all public communications:
 
 ### Hacker News (Ask HN / Show HN)
 - Title must be factual; no superlatives
-- Approved title: `"Show HN: Delentia - a constitutional agent runtime with a deterministic FDIA gate (9,912 tests, Apache 2.0)"`
-- First comment must include: SSOT test numbers + Colab link + scope boundary table
+- Approved title (changed 2026-11-14 by the owner; the earlier title said "deterministic FDIA gate" and quoted a test count, which claimed more than the evidence shows): `"Show HN: Delentia – an experimental agent runtime with signed approvals"`
+- Post only when someone outside the project can follow the Quickstart (docs/START_HERE.md), and when the author can stay online for the replies.
+- The title and the first comment are written by the author in his own words (Hacker News guidelines forbid AI-generated posts). The first comment says: why it was started, the one problem it addresses, what can be tried in two minutes (`demo run injection --scripted`, and what "scripted" means), what is not proven, and which part the author wants criticised. It links docs/START_HERE.md.
 
 ### Reddit (r/MachineLearning, r/LocalLLaMA, r/Python)
 - Lead with the reproducible proof: `python -m pytest -q --no-header`
