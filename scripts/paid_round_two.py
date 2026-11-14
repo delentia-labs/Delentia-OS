@@ -48,14 +48,23 @@ def total_file(env: Dict[str, str], override: Optional[str] = None) -> Path:
     return Path(override) if override else Path(env.get("DELENTIA_HOME") or Path.home() / ".delentia") / "paid-day" / "round2_total.json"
 
 
-def window_ceiling(command: str, models: List[str], group: Optional[str] = None) -> float:
-    """The most this window (one key, one setting) may spend: a model's share of R2-1 or R2-2, half of R2-4 (one group), the whole block otherwise."""
+def stage_spent(path: Path, stage: str) -> float:
+    """What the running-total file says the stage already spent (in earlier windows): a block that is continued in a new window gets only what is left of its ceiling."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).is_file() else {}
+    except (OSError, ValueError):
+        return 0.0                                                        # an unreadable file is refused elsewhere (Day.running_total), not guessed here
+    return round(sum(float(e.get("usd", 0.0)) for e in data.get("entries", []) if e.get("stage") == stage), 6)
+
+
+def window_ceiling(command: str, models: List[str], group: Optional[str] = None, spent: float = 0.0) -> float:
+    """The most this window (one key, one setting) may spend: a model's share of R2-1 or R2-2, half of R2-4 (one group), and for the other blocks what is left of the block's ceiling after `spent`."""
     stage = BLOCK_OF[command]
     if command in MODEL_SHARES:
         return round(sum(MODEL_SHARES[command].get(m, CEILINGS[stage] / 2) for m in models), 4)
     if command == "r2-4":
         return round(CEILINGS[stage] / 2, 4)
-    return CEILINGS[stage]
+    return round(max(0.0, CEILINGS[stage] - spent), 4)
 
 
 def setting_problem(command: str, models: List[str], group: Optional[str], env: Dict[str, str]) -> Optional[str]:
@@ -71,7 +80,8 @@ def setting_problem(command: str, models: List[str], group: Optional[str], env: 
 def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str], Dict[str, Any]] = pd.key_info) -> List[Dict[str, Any]]:
     models = ([args.model] if args.command in ("r2-3", "r2-5") and args.model else None) or args.models or []
     group = getattr(args, "group", None)
-    ceiling = window_ceiling(args.command, models, group)
+    spent = stage_spent(total_file(env, args.total_file), BLOCK_OF[args.command]) if args.command in ("r2-3", "r2-5") else 0.0
+    ceiling = window_ceiling(args.command, models, group, spent)
     rows = [pd.check("OPENROUTER_API_KEY is set", bool(env.get("OPENROUTER_API_KEY")), "set it in this terminal: the key is a fresh one for this window, limit = the window's ceiling"),
             pd.check("DELENTIA_RUN_LIVE_TESTS=1", env.get("DELENTIA_RUN_LIVE_TESTS") == "1", "paid runs are opt-in"),
             pd.check("provider data collection is denied", (env.get("DELENTIA_OPENROUTER_DATA_COLLECTION") or "").lower() == "deny", "set DELENTIA_OPENROUTER_DATA_COLLECTION=deny")]
@@ -267,7 +277,8 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if not args.execute:
         print("\nDry run: the commands below are what --execute would run. Nothing is spent.")
     os.environ.update({k: v for k, v in env.items() if k.startswith("DELENTIA_") or k == "OPENROUTER_API_KEY"})
-    window = dict(CEILINGS, **{BLOCK_OF[args.command]: window_ceiling(args.command, models, args.group)})
+    already = stage_spent(total_file(env, args.total_file), BLOCK_OF[args.command]) if args.command in ("r2-3", "r2-5") else 0.0
+    window = dict(CEILINGS, **{BLOCK_OF[args.command]: window_ceiling(args.command, models, args.group, already)})
     day = pd.Day(out, env, info, args.execute, ceilings=window, watch_seconds=args.watch_seconds, total_file=total_file(env, args.total_file), total_limit=TOTAL_LIMIT)
     runner = {"r2-1": r2_1, "r2-2": r2_2, "r2-3": r2_3, "r2-4": r2_4, "r2-5": r2_5}[args.command]
     try:

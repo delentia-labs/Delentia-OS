@@ -228,3 +228,16 @@ class TestTheFreezeKnowsTheRoundTwoStages:
         problems = fz.problems_before_freezing(["anthropic/claude-haiku-5.5"], {"anthropic/claude-haiku-5.5": {"in": 0.1, "out": 0.5}}, list(r2.CEILINGS), r2.TOTAL_LIMIT, True)
         assert not [p for p in problems if "ceiling" in p or "budget" in p], problems                  # (an uncommitted working tree is a different, correct refusal)
         assert fz.STAGE_CEILINGS_USD == {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00, "PR": 0.75}          # day one's table is untouched
+
+
+class TestAContinuedBlockGetsWhatIsLeft:
+    def test_r2_3_continued_in_a_new_window_has_the_ceiling_minus_what_it_spent(self, tmp_path, capsys):
+        (tmp_path / "total.json").write_text(json.dumps({"total": 0.9, "entries": [{"stage": "R2-3", "label": "W06 run 1", "usd": 0.9}, {"stage": "R2-1", "label": "x", "usd": 0.5}]}), encoding="utf-8")
+        assert r2.stage_spent(tmp_path / "total.json", "R2-3") == pytest.approx(0.9)
+        assert r2.window_ceiling("r2-3", ["m"], None, 0.9) == pytest.approx(0.6)
+        assert run(tmp_path, ["r2-3", "--model", "anthropic/claude-haiku-5.5"], inf=info(1.5)) == 2          # a key limited to the whole 1.50 is now too high
+        assert "at most this window's ceiling $0.60" in capsys.readouterr().out
+        assert run(tmp_path, ["r2-3", "--model", "anthropic/claude-haiku-5.5"], inf=info(0.6)) == 0
+
+    def test_an_unspent_block_still_has_its_whole_ceiling(self, tmp_path):
+        assert r2.stage_spent(tmp_path / "nothing.json", "R2-3") == 0.0 and r2.window_ceiling("r2-5", ["m"]) == 0.80
