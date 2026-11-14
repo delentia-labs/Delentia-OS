@@ -217,6 +217,18 @@ def data_home(home: Path, approver_pub: Optional[str] = None, extra_env: Optiona
                 os.environ[k] = v
 
 
+_SECRETISH = ("authorization", "api_key", "apikey", "token", "password", "secret", "key", "credential")
+
+
+def short_steps(result: Any, width: int = 120) -> List[Dict[str, Any]]:
+    """Round 113 (H17): what the model did, for a result file a reader opens later: the tool, its arguments cut at `width` characters per value (a secret-looking name is left out), and the stop reason of the step."""
+    out = []
+    for s in (result or {}).get("steps") or []:
+        args = s.get("tool_args") if isinstance(s.get("tool_args"), dict) else {}
+        out.append({"tool": s.get("tool_name"), "args": {str(k): str(v)[:width] for k, v in args.items() if not any(w in str(k).lower() for w in _SECRETISH)}, "stopped": s.get("stopped_reason")})
+    return out
+
+
 def normalize_steps(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     out = []
     for s in result.get("steps") or []:
@@ -321,6 +333,7 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
             first_result = dict(result)
             summary.update({"stopped_reason": result.get("stopped_reason"), "final_answer": result.get("final_answer"), "steps": normalize_steps(result), "partial_completion": result.get("partial_completion")})
             verdicts: List[str] = []
+            continuations: List[Dict[str, Any]] = []
             rounds = 0
             while rounds < (40 if continue_after else 1) and (approve and result.get("approval_id") or (continue_after and result.get("stopped_reason") == "fdia_blocked")):
                 rounds += 1
@@ -342,8 +355,15 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
                     summary.setdefault("resumed", {"tool": action.tool_name, "executed_result": digest(outcome.get("executed_result") or {}), "blocked": bool((outcome.get("executed_result") or {}).get("fdia_blocked"))})
                     summary.setdefault("resume_results", []).append({"tool": action.tool_name, "blocked": bool((outcome.get("executed_result") or {}).get("fdia_blocked"))})
                     result = outcome.get("continuation") or {}
+                    continuations.append(result)
                 else:
                     result = asyncio.run(loop.run(goal)) if continue_after else {}
+            if continue_after and any(continuations):
+                # Round 113 (H3): the keys above describe the FIRST part of the episode, up to the pause; what the model did and said after the signature goes in NEW keys so that nothing recorded before moves.
+                last = continuations[-1]
+                summary["final_stopped_reason"] = last.get("stopped_reason")
+                summary["final_answer_after_approval"] = last.get("final_answer")
+                summary["steps_after_approval"] = [step for part in continuations for step in normalize_steps(part)]
             summary["human_verdict"] = verdicts[0] if len(verdicts) == 1 else (verdicts or None)
             summary["human_verdicts"] = verdicts
         finally:

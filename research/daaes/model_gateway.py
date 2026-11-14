@@ -8,7 +8,7 @@ only place a guard can stand for BOTH is on the wire. This is that place: a loop
 
   * the real key lives only in the gateway process (given to `ModelGateway(...)` by whoever starts it, from its own environment); the agent gets a random gateway token that is worthless anywhere else;
   * every call is checked BEFORE it is forwarded against the same ledger (`budget_guard.ExperimentLedger` / `RunBudget`): worst-case cost of the call, calls per run, tokens per run, the experiment
-    total with its reserve, and an UNKNOWN PRICE IS REFUSED; a refused call is answered with HTTP 429 and never reaches the endpoint;
+    total with its reserve, and an UNKNOWN PRICE IS REFUSED; a refused call is answered with HTTP 402 (Round 113; it was 429, which the loop retries as a busy provider) and never reaches the endpoint;
   * streaming is relayed as it arrives (Hermes streams); usage is read from the stream's last chunk, or estimated when the endpoint gives none;
   * every call is written to `calls.jsonl` (request hash, model, tokens, cost, refused or not, seconds) so both systems are measured by the same instrument and the evidence bundle can hold it;
   * one gateway = one run (one RunBudget): the arms of a paired comparison each get their own, sharing one ledger file, so the experiment total is enforced across arms.
@@ -181,7 +181,7 @@ class ModelGateway:
         except BudgetExceeded as exc:
             self.stats["refused"] += 1
             self._log({"at": started, "request_sha": digest, "model": model, "prompt_tokens_est": prompt_tokens, "refused": str(exc)})
-            return handler._json(429, {"error": {"message": f"budget guard: {exc}", "type": "budget_exceeded"}})   # type: ignore[attr-defined]
+            return handler._json(402, {"error": {"message": f"budget guard: {exc}", "type": "budget_exceeded"}})   # Round 113: 402, not 429: the loop asks again after a 429 as if the provider were busy   # type: ignore[attr-defined]
         streaming = bool(request.get("stream"))
         usage: Dict[str, Any] = {}
         text_out: list = []

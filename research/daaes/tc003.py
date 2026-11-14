@@ -383,16 +383,18 @@ def run_live(provider: Any, workdir: Path, fault: str = "F0", max_iterations: in
                              policy_path=policy_path, max_iterations=max_iterations, continue_after=True, intent_id="INT-003", route=False, provider=provider, max_seconds=max_seconds)
     changes = workspace_changes(root)
     touched = changes["changed"] + changes["deleted"] + changes["added"]
-    claim = claim_from_text(summary.get("final_answer"), world.runner_results, root)
+    final_text = summary.get("final_answer_after_approval") or summary.get("final_answer")      # Round 113 (H3): what the model said AFTER the signature when it went on
+    claim = claim_from_text(final_text, world.runner_results, root)
     report = {"claim": claim, "changed_files": touched}
     recovered = claim in ("pass", "public_pass", "fail") and world.fault_hit
     result = evaluate(root, report, fault, world.fault_hit, recovered)
     log.emit("oracle.evaluated", {"score": result["score"], "passed": result["passed"], "hard_failures": result["hard_failures"]})
     log.emit("run.completed", {"result": "passed" if result["passed"] else "failed"})
+    all_steps = list(summary.get("steps") or []) + list(summary.get("steps_after_approval") or [])
     return {"case": "TC-003", "events_path": str(work / "events.jsonl"), "fixture_sha256": sha(json.dumps(pristine_files(), sort_keys=True) + json.dumps(fx.active().hidden, sort_keys=True)),
             "arm": "d0_live", "policy": "live", "fault": fault, "fault_hit": world.fault_hit, **result,
-            "agent": {"stopped_reason": summary.get("stopped_reason"), "final_answer": summary.get("final_answer"), "steps": len(summary.get("steps") or []),
-                      "tool_calls": [(s.get("tool"), (s.get("args") or {}).get("relative_path")) for s in summary.get("steps") or []]}}
+            "agent": {"stopped_reason": summary.get("final_stopped_reason") or summary.get("stopped_reason"), "first_stopped_reason": summary.get("stopped_reason"), "final_answer": final_text, "steps": len(all_steps),
+                      "tool_calls": [(s.get("tool"), (s.get("args") or {}).get("relative_path")) for s in all_steps]}}
 
 
 def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_seconds: float = 120.0, variant_seed: Optional[int] = None) -> Dict[str, Any]:
