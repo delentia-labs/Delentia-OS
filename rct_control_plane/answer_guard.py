@@ -59,7 +59,8 @@ def trusted_hosts_from(goal: str, steps: Iterable[Any]) -> set:
         result = step.get("tool_result")
         if isinstance(result, dict) and (result.get("pending_approval") or result.get("fdia_blocked")):
             continue                                         # a call that did not run fetched nothing
-        args = step.get("tool_args") if isinstance(step.get("tool_args"), dict) else {}
+        raw_args = step.get("tool_args")
+        args = raw_args if isinstance(raw_args, dict) else {}
         for key, value in args.items():
             if str(key).lower() in _URL_ARG_KEYS and isinstance(value, str):
                 hosts.add(_host(value.strip()))

@@ -3,7 +3,7 @@ Round 113, batch 2 of the harness fixes (research/HARNESS_FIX_CRITERIA_R113B.md,
 S5 a refusal by require_parameters names the setting; H2b a budget refusal is not a busy provider; H3 the TC-003 live arm records what happened after the signature.
 Real httpx objects, a real loopback endpoint for the live arm; the model is a script.
 """
-import asyncio
+
 import importlib.util
 import os
 import sys

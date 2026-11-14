@@ -220,7 +220,7 @@ def data_home(home: Path, approver_pub: Optional[str] = None, extra_env: Optiona
 _SECRETISH = ("authorization", "api_key", "apikey", "token", "password", "secret", "key", "credential")
 
 
-def short_steps(result: Dict[str, Any], width: int = 120) -> List[Dict[str, Any]]:
+def short_steps(result: Any, width: int = 120) -> List[Dict[str, Any]]:
     """Round 113 (H17): what the model did, for a result file a reader opens later: the tool, its arguments cut at `width` characters per value (a secret-looking name is left out), and the stop reason of the step."""
     out = []
     for s in (result or {}).get("steps") or []:
