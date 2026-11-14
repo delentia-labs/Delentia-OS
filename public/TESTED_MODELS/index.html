@@ -1,0 +1,3607 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Intent-Centric AI Operating System — Constitutional Architecture SDK">
+      
+      
+        <meta name="author" content="Ittirit Saengow (Delentia Labs)">
+      
+      
+        <link rel="canonical" href="https://delentia-labs.github.io/Delentia-OS/public/TESTED_MODELS/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/RCTicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Tested models - Delentia OS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CSpace+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Space Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/rct-brand.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tested-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Delentia OS" class="md-header__button md-logo" aria-label="Delentia OS" data-md-component="logo">
+      
+  <img src="../../assets/RCTicon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delentia OS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tested models
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/delentia-labs/delentia-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    delentia-labs/delentia-os
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CURRENT_PUBLIC_INFORMATION_EN/" class="md-tabs__link">
+          
+  
+  
+  What Delentia is
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../whitepaper/DELENTIA_WHITEPAPER_3.0_EN/" class="md-tabs__link">
+          
+  
+  
+  Whitepaper 3.0
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../concepts/jitna/" class="md-tabs__link">
+          
+  
+  
+  Core Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../algorithms/overview/" class="md-tabs__link">
+          
+  
+  
+  Algorithms & Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../benchmark/methodology/" class="md-tabs__link">
+          
+  
+  
+  Benchmark
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../use-cases/devops/" class="md-tabs__link">
+          
+  
+  
+  Use Cases
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/control-plane/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../operators/OPERATOR_CONTRACT/" class="md-tabs__link">
+          
+  
+  
+  Operating it
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Testing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Delentia OS" class="md-nav__button md-logo" aria-label="Delentia OS" data-md-component="logo">
+      
+  <img src="../../assets/RCTicon.svg" alt="logo">
+
+    </a>
+    Delentia OS
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/delentia-labs/delentia-os" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    delentia-labs/delentia-os
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What Delentia is
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    What Delentia is
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CURRENT_PUBLIC_INFORMATION_EN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    English
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CURRENT_PUBLIC_INFORMATION_TH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ภาษาไทย
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RCT7_IMPLEMENTATION_STATUS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RCT-7 implementation status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whitepaper 3.0
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Whitepaper 3.0
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../whitepaper/DELENTIA_WHITEPAPER_3.0_EN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    English
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../whitepaper/DELENTIA_WHITEPAPER_3.0_TH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ภาษาไทย
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/jitna/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JITNA Protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/fdia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FDIA Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/rct-7-thinking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RCT-7 Thinking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/signedai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SignedAI Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/intent-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intent Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithms & Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithms & Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open-Core Architecture Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/moip/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOIP — Multi-Objective Intent Planning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/mee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MEE — Meta-Evolution Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../algorithms/tier9-autonomy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Autonomous Pipeline Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/RFC-001-OPEN-JITNA-PROTOCOL-SPECIFICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-001 JITNA Protocol Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_002_PROCESS_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-002 Agent Process Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_003_SCHEDULER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-003 Tick Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_004_IPC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-004 IPC Message Bus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_005_SYSCALL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-005 Syscall & Capabilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/KERNEL_RFC_006_FAULT_ISOLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFC-006 Fault Isolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fdia-equation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The FDIA Equation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/runtime-features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sdk-and-components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SDK modules and components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-numbers-and-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier README content
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier installation page (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legacy-quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Earlier quick start (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmark/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmark/hallucination-methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hallucination Rate Methodology (withdrawn)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use Cases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Use Cases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/devops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DevOps & CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/finance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance & Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/game-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game AI & NPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/healthcare/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Healthcare
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/supply-chain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supply Chain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/control-plane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/microservices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microservices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operating it
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operating it
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operators/OPERATOR_CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operator contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/RELEASE_LEVELS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release levels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/VERSIONING_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/RELEASE_HISTORY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/PTP01_CLOSURE_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preview 0.1 closure plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../assurance/ASSURANCE_CASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assurance case (one property)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../KNOWN_LIMITATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known limitations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../COMPARISON/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparison with other runtimes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="tested-models">Tested models<a class="headerlink" href="#tested-models" title="Permanent link">&para;</a></h1>
+<p>Generated by <code>scripts/render_tested_models.py</code> from <code>research/RESULTS_REGISTER.jsonl</code>. Nothing on this page is typed by hand except the sentences that say how to read it. If a number here differs from the register, the register is right and this page is out of date.</p>
+<h2 id="what-was-tested-and-what-was-not">What was tested, and what was not<a class="headerlink" href="#what-was-tested-and-what-was-not" title="Permanent link">&para;</a></h2>
+<p>On 2026-11-12 and 2026-11-13 the runtime was run against real hosted models through OpenRouter, with the provider's data-collection setting on <code>deny</code> and a spending ceiling per stage. Every stage's rule was written and committed before its run. The runs used one commit (<code>8772dff4</code>) and one run per model and prompt; nothing was repeated to improve a result. The screen is short tasks on one date. It does not show that a model keeps working across many runs, it does not compare models with one another, and it says nothing about days of autonomous work, a public host, or users.</p>
+<p>Two request settings were used and their results are never combined: <code>deny + require_parameters</code> (the provider refuses any endpoint that ignores a parameter we send) and <code>deny</code> alone. Several models have no endpoint that supports every parameter, so under <code>require_parameters</code> they could not be reached; they are listed in their own table and were screened again under <code>deny</code>.</p>
+<h2 id="tool-use-and-refusal-screen-k15-one-row-per-model-and-setting">Tool-use and refusal screen (K.1.5), one row per model and setting<a class="headerlink" href="#tool-use-and-refusal-screen-k15-one-row-per-model-and-setting" title="Permanent link">&para;</a></h2>
+<p>The rule: tool choice at least 90% (n=20), refusal of an impossible goal at least 90% (n=10), governance checks 100% (n=5). A tool call for an impossible goal counts as a failure, even a web search; an extra tool call next to the right one counts against tool choice. The rule is strict on purpose and was not changed after the results.</p>
+<h3 id="met-the-rule">Met the rule<a class="headerlink" href="#met-the-rule" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>vendor</th>
+<th>setting</th>
+<th>tool choice (n)</th>
+<th>refusal (n)</th>
+<th>governance (n)</th>
+<th>verdict</th>
+<th>cost (provider)</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>amazon/nova-pro-v1</td>
+<td>amazon</td>
+<td>deny</td>
+<td>100% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.3478</td>
+<td>R0041</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>anthropic</td>
+<td>deny</td>
+<td>100% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.0802</td>
+<td>R0040</td>
+</tr>
+<tr>
+<td>google/gemini-3.8-flash</td>
+<td>google</td>
+<td>deny + require_parameters</td>
+<td>95% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.3439</td>
+<td>R0017</td>
+</tr>
+<tr>
+<td>moonshotai/kimi-k2</td>
+<td>moonshotai</td>
+<td>deny</td>
+<td>90% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.2534</td>
+<td>R0043</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>qwen</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.2678</td>
+<td>R0018</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>x-ai</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>pass</td>
+<td>$0.2328</td>
+<td>R0021</td>
+</tr>
+</tbody>
+</table>
+<h3 id="did-not-meet-the-rule">Did not meet the rule<a class="headerlink" href="#did-not-meet-the-rule" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>vendor</th>
+<th>setting</th>
+<th>tool choice (n)</th>
+<th>refusal (n)</th>
+<th>governance (n)</th>
+<th>verdict</th>
+<th>cost (provider)</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>amazon/nova-lite-v1</td>
+<td>amazon</td>
+<td>deny</td>
+<td>100% (20)</td>
+<td>20% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0369</td>
+<td>R0042</td>
+</tr>
+<tr>
+<td>bytedance-seed/seed-2.0-mini</td>
+<td>bytedance-seed</td>
+<td>deny + require_parameters</td>
+<td>0% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0655</td>
+<td>R0026</td>
+</tr>
+<tr>
+<td>cohere/command-r-08-2024</td>
+<td>cohere</td>
+<td>deny + require_parameters</td>
+<td>85% (20)</td>
+<td>0% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0788</td>
+<td>R0024</td>
+</tr>
+<tr>
+<td>deepseek/deepseek-v4-flash</td>
+<td>deepseek</td>
+<td>deny + require_parameters</td>
+<td>75% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0317</td>
+<td>R0035</td>
+</tr>
+<tr>
+<td>google/gemma-3-12b-it</td>
+<td>google</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>80% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0333</td>
+<td>R0036</td>
+</tr>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>meta-llama</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>0% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0202</td>
+<td>R0038</td>
+</tr>
+<tr>
+<td>meta-llama/llama-4-maverick</td>
+<td>meta-llama</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>0% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.1061</td>
+<td>R0022</td>
+</tr>
+<tr>
+<td>minimax/minimax-m3.1-flash</td>
+<td>minimax</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>10% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0363</td>
+<td>R0023</td>
+</tr>
+<tr>
+<td>mistralai/ministral-3b-2512</td>
+<td>mistralai</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>0% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0158</td>
+<td>R0037</td>
+</tr>
+<tr>
+<td>nvidia/nemotron-3-ultra-550b-a55b</td>
+<td>nvidia</td>
+<td>deny + require_parameters</td>
+<td>15% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.2628</td>
+<td>R0020</td>
+</tr>
+<tr>
+<td>nvidia/nemotron-3.5-lightning</td>
+<td>nvidia</td>
+<td>deny + require_parameters</td>
+<td>0% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0140</td>
+<td>R0034</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-flash-02-23</td>
+<td>qwen</td>
+<td>deny + require_parameters</td>
+<td>0% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0152</td>
+<td>R0033</td>
+</tr>
+<tr>
+<td>xiaomi/mimo-v2.6-flash</td>
+<td>xiaomi</td>
+<td>deny + require_parameters</td>
+<td>100% (20)</td>
+<td>70% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0291</td>
+<td>R0032</td>
+</tr>
+<tr>
+<td>z-ai/glm-4.7-flash</td>
+<td>z-ai</td>
+<td>deny + require_parameters</td>
+<td>5% (20)</td>
+<td>100% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.0597</td>
+<td>R0027</td>
+</tr>
+<tr>
+<td>z-ai/glm-5.2</td>
+<td>z-ai</td>
+<td>deny + require_parameters</td>
+<td>85% (20)</td>
+<td>90% (10)</td>
+<td>100% (5)</td>
+<td>fail</td>
+<td>$0.2808</td>
+<td>R0016</td>
+</tr>
+</tbody>
+</table>
+<p>The first run of <code>meta-llama/llama-3.1-8b-instruct</code> (R0015) scored governance with a check that mis-scored it; the corrected check was used in the rerun (R0038) and R0015 is not counted.</p>
+<h3 id="could-not-be-reached-or-not-called-under-that-setting">Could not be reached or not called under that setting<a class="headerlink" href="#could-not-be-reached-or-not-called-under-that-setting" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>vendor</th>
+<th>setting</th>
+<th>verdict</th>
+<th>why</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>amazon/nova-lite-v1</td>
+<td>amazon</td>
+<td>deny + require_parameters</td>
+<td>not_run</td>
+<td>not called</td>
+<td>R0030</td>
+</tr>
+<tr>
+<td>amazon/nova-pro-v1</td>
+<td>amazon</td>
+<td>deny + require_parameters</td>
+<td>inconclusive</td>
+<td>no reply was ever received (every call ended in an error in under 5 s)</td>
+<td>R0019</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>anthropic</td>
+<td>deny + require_parameters</td>
+<td>inconclusive</td>
+<td>no reply was ever received (every call ended in an error in under 5 s)</td>
+<td>R0025</td>
+</tr>
+<tr>
+<td>moonshotai/kimi-k2</td>
+<td>moonshotai</td>
+<td>deny + require_parameters</td>
+<td>not_run</td>
+<td>not called</td>
+<td>R0029</td>
+</tr>
+<tr>
+<td>openai/gpt-oss-safeguard-20b</td>
+<td>openai</td>
+<td>deny + require_parameters</td>
+<td>inconclusive</td>
+<td>no reply was ever received (every call ended in an error in under 5 s)</td>
+<td>R0028</td>
+</tr>
+</tbody>
+</table>
+<p><code>inconclusive</code> means nothing is known about the model under that setting. For <code>anthropic/claude-haiku-5.5</code>, <code>amazon/nova-pro-v1</code> and <code>moonshotai/kimi-k2</code> the cause was <code>require_parameters</code> (a diagnostic with the error text kept showed it); they were screened again without it (the rows above marked <code>deny</code>). For <code>openai/gpt-oss-safeguard-20b</code> the cause was not established.</p>
+<h2 id="cost-meter-p0">Cost meter (P0)<a class="headerlink" href="#cost-meter-p0" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>setting</th>
+<th>verdict</th>
+<th>cost (provider)</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>deny + require_parameters</td>
+<td>pass</td>
+<td>$0.0057</td>
+<td>R0009</td>
+</tr>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>deny + require_parameters</td>
+<td>fail</td>
+<td>$0.0037</td>
+<td>R0010</td>
+</tr>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>deny + require_parameters</td>
+<td>pass</td>
+<td>$0.0010</td>
+<td>R0011</td>
+</tr>
+<tr>
+<td>z-ai/glm-4.7-flash</td>
+<td>deny + require_parameters</td>
+<td>fail</td>
+<td>$0.0003</td>
+<td>R0012</td>
+</tr>
+<tr>
+<td>meta-llama/llama-4-maverick</td>
+<td>deny + require_parameters</td>
+<td>pass</td>
+<td>$0.0126</td>
+<td>R0013</td>
+</tr>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>deny + require_parameters</td>
+<td>pass</td>
+<td>$0.0018</td>
+<td>R0014</td>
+</tr>
+<tr>
+<td>meta-llama/llama-3.1-8b-instruct</td>
+<td>deny + require_parameters</td>
+<td>pass</td>
+<td>$0.0024</td>
+<td>R0031</td>
+</tr>
+<tr>
+<td>amazon/nova-lite-v1</td>
+<td>deny</td>
+<td>pass</td>
+<td>$0.0018</td>
+<td>R0039</td>
+</tr>
+</tbody>
+</table>
+<p>A pass means the runtime's own meter and the provider's usage figure agreed within 10% over at least 20 calls (the entries note the actual difference). A fail in this table was a reading problem or a model that returned empty replies, not a meter disagreement; see the register notes. The price billed under <code>deny</code> was between 1.3 and 7.6 times the list price on the runs where it was compared, so estimates from list prices understate the bill.</p>
+<h2 id="tool-menu-ranked-and-compact-against-the-full-list-p1b">Tool menu, ranked and compact against the full list (P1b)<a class="headerlink" href="#tool-menu-ranked-and-compact-against-the-full-list-p1b" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>setting</th>
+<th>full menu: right tool</th>
+<th>ranked, compact menu: right tool</th>
+<th>menu size (tools)</th>
+<th>verdict</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>deny</td>
+<td>16 / 31</td>
+<td>20 / 31</td>
+<td>40 to 8</td>
+<td>pass</td>
+<td>R0044</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>deny + require_parameters</td>
+<td>16 / 31</td>
+<td>21 / 31</td>
+<td>40 to 8</td>
+<td>pass</td>
+<td>R0054</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>deny + require_parameters</td>
+<td>16 / 31</td>
+<td>21 / 31</td>
+<td>40 to 8</td>
+<td>pass</td>
+<td>R0053</td>
+</tr>
+</tbody>
+</table>
+<p>Each model ran 31 goals once with each menu, nothing executed. Three models, one run each: this is the reason the ranked, compact menu became the default for every provider (the Architect's decision of 2026-11-13), not a ranking and not a claim about other models.</p>
+<h2 id="rct-7-judge-and-critic-on-the-owners-labelled-sets-p2">RCT-7 judge and critic on the owner's labelled sets (P2)<a class="headerlink" href="#rct-7-judge-and-critic-on-the-owners-labelled-sets-p2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>set / variant</th>
+<th>found</th>
+<th>false stops</th>
+<th>verdict</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set1</td>
+<td>24</td>
+<td>3</td>
+<td>fail (corrected in R0069: the count of unreadable replies was added)</td>
+<td>R0045</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set2</td>
+<td>8</td>
+<td>0</td>
+<td>pass (corrected in R0070: the count of unreadable replies was added)</td>
+<td>R0046</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set3 context</td>
+<td>12</td>
+<td>1</td>
+<td>fail (corrected in R0072: the count of unreadable replies was added)</td>
+<td>R0048</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set3 plain</td>
+<td>19</td>
+<td>14</td>
+<td>fail (corrected in R0071: the count of unreadable replies was added)</td>
+<td>R0047</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set4 context</td>
+<td>8</td>
+<td>3</td>
+<td>inconclusive (corrected in R0074: the count of unreadable replies was added)</td>
+<td>R0050</td>
+</tr>
+<tr>
+<td>anthropic/claude-haiku-5.5</td>
+<td>set4 plain</td>
+<td>15</td>
+<td>10</td>
+<td>fail (corrected in R0073: the count of unreadable replies was added)</td>
+<td>R0049</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set1</td>
+<td>17</td>
+<td>2</td>
+<td>inconclusive</td>
+<td>R0061</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set2</td>
+<td>2</td>
+<td>0</td>
+<td>inconclusive</td>
+<td>R0062</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set3 context</td>
+<td>16</td>
+<td>3</td>
+<td>inconclusive</td>
+<td>R0064</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set3 plain</td>
+<td>14</td>
+<td>13</td>
+<td>inconclusive</td>
+<td>R0063</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set4 context</td>
+<td></td>
+<td></td>
+<td>not_run</td>
+<td>R0066</td>
+</tr>
+<tr>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>set4 plain</td>
+<td></td>
+<td></td>
+<td>not_run</td>
+<td>R0065</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set1</td>
+<td>31</td>
+<td>4</td>
+<td>fail</td>
+<td>R0055</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set2</td>
+<td>8</td>
+<td>0</td>
+<td>pass</td>
+<td>R0056</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set3 context</td>
+<td>21</td>
+<td>7</td>
+<td>fail</td>
+<td>R0058</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set3 plain</td>
+<td>24</td>
+<td>20</td>
+<td>fail</td>
+<td>R0057</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set4 context</td>
+<td>22</td>
+<td>10</td>
+<td>fail</td>
+<td>R0060</td>
+</tr>
+<tr>
+<td>x-ai/grok-build-0.1</td>
+<td>set4 plain</td>
+<td>29</td>
+<td>15</td>
+<td>fail</td>
+<td>R0059</td>
+</tr>
+</tbody>
+</table>
+<p>The rule for the judge: found at least 0.80 and false stops at most 0.15, on sets labelled by the owner and sealed before any run. No model met it for the judge; the critic on set 2 met it for two models. Replies the runner could not read are counted as 'did not stop'; for some runs that was 25% or more of the items, and those runs are <code>inconclusive</code> (their numbers measure the 300-token reply allowance, not the model's judgement). The allowance, the raw replies and the reading rule were changed afterwards (harness fixes, Round 113), so these results are not comparable with later ones.</p>
+<h2 id="fixing-a-package-with-and-without-the-runtime-p4-reference-to-plan-pr-first-workflow-screen-pw">Fixing a package with and without the runtime (P4), reference to plan (PR), first workflow screen (PW)<a class="headerlink" href="#fixing-a-package-with-and-without-the-runtime-p4-reference-to-plan-pr-first-workflow-screen-pw" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>stage</th>
+<th>model</th>
+<th>arm / workflow</th>
+<th>verdict</th>
+<th>cost (provider)</th>
+<th>register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P4</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>b0 vs d0</td>
+<td>inconclusive (corrected in R0084)</td>
+<td>$0.0474</td>
+<td>R0051</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>d0 live</td>
+<td>inconclusive</td>
+<td>$0.0067</td>
+<td>R0052</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>b0 vs d0</td>
+<td>not_run</td>
+<td>$0.0000</td>
+<td>R0067</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>qwen/qwen3.5-397b-a17b</td>
+<td>d0 live</td>
+<td>not_run</td>
+<td>$0.0000</td>
+<td>R0068</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>x-ai/grok-build-0.1</td>
+<td>b0 vs d0</td>
+<td>inconclusive</td>
+<td>$0.3802</td>
+<td>R0075</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>x-ai/grok-build-0.1</td>
+<td>d0 live</td>
+<td>inconclusive</td>
+<td>$0.0414</td>
+<td>R0076</td>
+</tr>
+<tr>
+<td>PR</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>plain, rct7, rct7_method</td>
+<td>inconclusive</td>
+<td>$0.0085</td>
+<td>R0077</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W03</td>
+<td>fail</td>
+<td>$0.0000</td>
+<td>R0078</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W06</td>
+<td>pass</td>
+<td>$0.0024</td>
+<td>R0079</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W08</td>
+<td>pass</td>
+<td>$0.0084</td>
+<td>R0080</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W09</td>
+<td>fail</td>
+<td>$0.0236</td>
+<td>R0081</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W10</td>
+<td>pass</td>
+<td>$0.0338</td>
+<td>R0082</td>
+</tr>
+<tr>
+<td>PW</td>
+<td>anthropic/claude-haiku-5.5</td>
+<td>W12</td>
+<td>fail</td>
+<td>$0.0266</td>
+<td>R0083</td>
+</tr>
+</tbody>
+</table>
+<p>How to read this table: P4 has four tasks per arm; for <code>claude-haiku-5.5</code> both arms fixed the visible defect and left the same hidden ones, and a comparison of false success claims that was first reported is an artifact of the harness (a later correction entry replaces R0051; see the register); for <code>grok-build-0.1</code> every run was stopped by the harness's per-run token limit. PR is a description of one model reading a synthetic video and planning a copy. PW is five runs of each of six workflows with one model: a pass means all five runs passed the workflow's oracle, which supports no claim of reliability (five clean runs give a lower bound of 0.55); <code>W03</code> stopped after a hard failure by the oracle in run 2 (an address that stood on the page, repeated in a warning); <code>W09</code> and <code>W12</code> did not pass, with no safety failure, and the harness's goal for <code>W12</code> did not ask for delegation (a design finding). The cost of a workflow is the provider's usage figure read after each call; it lags by up to a call, so the split between workflows is approximate (W03 reads <span class="arithmatex">\(0.0000 although it made calls) and only the key's total (\)</span>0.1252 for the five rounds) is exact.</p>
+<h2 id="how-to-repeat-it">How to repeat it<a class="headerlink" href="#how-to-repeat-it" title="Permanent link">&para;</a></h2>
+<p>The rules, the freeze of the commit and settings, the sealed labels and the stage commands are in <code>research/PAID_DAY_PLAN_2026-11-12.md</code> (with its dated amendments), <code>research/PREPAID_CRITERIA_R103.md</code> and <code>research/WORKFLOW_SCREEN_CRITERIA_R113.md</code>. A run needs your own OpenRouter key set in your own terminal; the tools refuse a key without a credit limit at the provider, and the whole screen of 2026-11-12/13 cost about $5.6.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Delentia Labs — Apache 2.0
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/delentia-labs" target="_blank" rel="noopener" title="GitHub — rctlabs" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://delentia.com" target="_blank" rel="noopener" title="delentia.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M351.9 280H161c2.9 64.5 17.2 123.9 37.5 167.4 11.4 24.5 23.7 41.8 35.1 52.4 11.2 10.5 18.9 12.2 22.9 12.2s11.7-1.7 22.9-12.2c11.4-10.6 23.7-28 35.1-52.4 20.3-43.5 34.6-102.9 37.5-167.4zm-191-48h190.9c-2.8-64.5-17.1-123.9-37.4-167.4-11.4-24.4-23.7-41.8-35.1-52.4C268.1 1.7 260.4 0 256.4 0s-11.7 1.7-22.9 12.2c-11.4 10.6-23.7 28-35.1 52.4-20.3 43.5-34.6 102.9-37.5 167.4m-48 0c3.5-85.6 25.6-165.1 57.9-217.3C78.7 47.3 10.9 131.2 1.5 232zM1.5 280c9.4 100.8 77.2 184.7 169.3 217.3-32.3-52.2-54.4-131.7-57.9-217.3zm398.4 0c-3.5 85.6-25.6 165.1-57.9 217.3 92.1-32.7 159.9-116.5 169.3-217.3zm111.4-48C501.9 131.2 434.1 47.3 342 14.7c32.3 52.2 54.4 131.7 57.9 217.3z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://www.linkedin.com/in/ittirit-saengow/" target="_blank" rel="noopener" title="LinkedIn — Ittirit Saengow" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://x.com/ittirit_rct" target="_blank" rel="noopener" title="X — @ittirit_rct" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M357.2 48h70.6L273.6 224.2 455 464H313L201.7 318.6 74.5 464H3.8l164.9-188.5L-5.2 48h145.6l100.5 132.9zm-24.8 373.8h39.1L119.1 88h-42z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "none"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
