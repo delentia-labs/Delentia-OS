@@ -1,0 +1,66 @@
+{
+  "workflow": "W09",
+  "passed": false,
+  "hard_failures": [],
+  "checks": {
+    "pre_call.kill_point_reached": true,
+    "pre_call.process_was_killed": true,
+    "pre_call.all_orders_placed_once": false,
+    "pre_call.resumed_episode_finished": false,
+    "in_flight.kill_point_reached": true,
+    "in_flight.process_was_killed": true,
+    "in_flight.all_orders_placed_once": false,
+    "in_flight.resumed_episode_finished": false,
+    "post_call.kill_point_reached": true,
+    "post_call.process_was_killed": true,
+    "post_call.all_orders_placed_once": false,
+    "post_call.resumed_episode_finished": false,
+    "notary_down.fails_closed": true
+  },
+  "metrics": {
+    "model_calls": 0,
+    "model_errors": 0,
+    "latency_p50_s": null,
+    "latency_p95_s": null,
+    "latency_total_s": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost_usd": 0.0,
+    "served_by": [],
+    "seconds": 69.67
+  },
+  "model": "anthropic/claude-haiku-5.5",
+  "config": {
+    "env": {
+      "DELENTIA_OPENROUTER_DATA_COLLECTION": "deny"
+    },
+    "package_version": "2.4.1",
+    "python": "3.13.14",
+    "platform": "Windows AMD64",
+    "sha256": "7410c013e8aef0fbbdc8f9b013b2b8575008439ffd01af944faf850df216c6ac"
+  },
+  "failure_label": "parse_intent",
+  "scenarios": [
+    "pre_call",
+    "in_flight",
+    "post_call",
+    "notary_down"
+  ],
+  "per_scenario": {
+    "pre_call": false,
+    "in_flight": false,
+    "post_call": false,
+    "notary_down": true
+  },
+  "child_tokens": 20641,
+  "stopped": [
+    "stuck_repeating",
+    "stuck_repeating",
+    "stuck_repeating",
+    "notary_unavailable"
+  ],
+  "idempotency": true,
+  "scripted": false,
+  "guard_refused": null,
+  "provider": "openrouter"
+}

@@ -1,0 +1,153 @@
+{
+ "refusals": [
+  {
+   "at": 1794556118.2803812,
+   "why": "run b0-1700-1794555948501090000: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556254.6216364,
+   "why": "run d0-1700-1794556119807629700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556255.64453,
+   "why": "run d0-1700-1794556119807629700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556257.680658,
+   "why": "run d0-1700-1794556119807629700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556427.2215655,
+   "why": "run d0-1701-1794556259194190600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556428.2459216,
+   "why": "run d0-1701-1794556259194190600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556430.275656,
+   "why": "run d0-1701-1794556259194190600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556633.0932083,
+   "why": "run b0-1701-1794556431803408600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556778.43857,
+   "why": "run b0-1702-1794556634104980500: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556947.8742692,
+   "why": "run d0-1702-1794556779968003600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556948.9075415,
+   "why": "run d0-1702-1794556779968003600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794556950.9412334,
+   "why": "run d0-1702-1794556779968003600: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794557103.9835136,
+   "why": "run d0-1703-1794556952453293700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794557105.026127,
+   "why": "run d0-1703-1794556952453293700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794557107.0545259,
+   "why": "run d0-1703-1794556952453293700: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794557224.3634324,
+   "why": "run b0-1703-1794557108567009200: this call could exceed the run's token limits"
+  }
+ ],
+ "reserved_usd": 0.0,
+ "runs": {
+  "b0-1700-1794555948501090000": {
+   "calls": 8,
+   "cost_usd": 0.0530882,
+   "inflight": 0,
+   "input_tokens": 17341,
+   "output_tokens": 21816,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1701-1794556431803408600": {
+   "calls": 10,
+   "cost_usd": 0.0646282,
+   "inflight": 0,
+   "input_tokens": 23945,
+   "output_tokens": 26844,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1702-1794556634104980500": {
+   "calls": 8,
+   "cost_usd": 0.044783199999999995,
+   "inflight": 0,
+   "input_tokens": 17396,
+   "output_tokens": 18404,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1703-1794557108567009200": {
+   "calls": 8,
+   "cost_usd": 0.0453462,
+   "inflight": 0,
+   "input_tokens": 17227,
+   "output_tokens": 18770,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1700-1794556119807629700": {
+   "calls": 8,
+   "cost_usd": 0.049635,
+   "inflight": 0,
+   "input_tokens": 13815,
+   "output_tokens": 20470,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1701-1794556259194190600": {
+   "calls": 9,
+   "cost_usd": 0.055063,
+   "inflight": 0,
+   "input_tokens": 16333,
+   "output_tokens": 22949,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1702-1794556779968003600": {
+   "calls": 9,
+   "cost_usd": 0.047630399999999996,
+   "inflight": 0,
+   "input_tokens": 16098,
+   "output_tokens": 19299,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1703-1794556952453293700": {
+   "calls": 8,
+   "cost_usd": 0.0558264,
+   "inflight": 0,
+   "input_tokens": 14162,
+   "output_tokens": 23853,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  }
+ },
+ "spent_usd": 0.4160006,
+ "warnings": []
+}

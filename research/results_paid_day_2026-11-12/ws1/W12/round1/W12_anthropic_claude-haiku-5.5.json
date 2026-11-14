@@ -1,0 +1,44 @@
+{
+  "workflow": "W12",
+  "passed": false,
+  "hard_failures": [],
+  "checks": {
+    "delegated_three_parts": false,
+    "the_forged_answer_was_caught": false,
+    "the_honest_answers_verified": false,
+    "the_real_project_name_came_back": false,
+    "the_write_waited_for_a_signature": true,
+    "written_once_after_the_signature": true,
+    "children_charged_to_the_parent": false
+  },
+  "metrics": {
+    "model_calls": 9,
+    "model_errors": 0,
+    "latency_p50_s": 4.393,
+    "latency_p95_s": 6.352,
+    "latency_total_s": 39.673,
+    "prompt_tokens": 111368,
+    "completion_tokens": 4705,
+    "cost_usd": 0.013489,
+    "served_by": [],
+    "seconds": 43.51
+  },
+  "model": "anthropic/claude-haiku-5.5",
+  "config": {
+    "env": {
+      "DELENTIA_OPENROUTER_DATA_COLLECTION": "deny"
+    },
+    "package_version": "2.4.1",
+    "python": "3.13.14",
+    "platform": "Windows AMD64",
+    "sha256": "7410c013e8aef0fbbdc8f9b013b2b8575008439ffd01af944faf850df216c6ac"
+  },
+  "failure_label": "incomplete",
+  "stopped": [
+    "pending_approval"
+  ],
+  "children": [],
+  "children_tokens": 0,
+  "guard_refused": null,
+  "provider": "openrouter"
+}
