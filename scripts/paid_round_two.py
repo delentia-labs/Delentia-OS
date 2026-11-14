@@ -95,7 +95,7 @@ def r2_2(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
     start = day.usage() if day.execute else 0.0
     per_model = round(CEILINGS["R2-2"] / len(models) * 0.8, 4)
     for model in models:
-        day.run("R2-2", f"{model} TC-003 b0 d0", [sys.executable, "-m", "research.daaes", "benchmark", "--provider", "openrouter", "--model", model, "--arms", "b0,d0", "--seeds", TC003_SEEDS,
+        day.run("R2-2", f"{model} TC-003 b0 d0", [sys.executable, "-m", "research.daaes", "benchmark", "--provider", "openrouter", "--model", model, "--arms", "b0,d0", "--seeds", (args.seeds if args.rehearsal and args.seeds else TC003_SEEDS),
                                                   "--budget-usd", str(per_model), *pd.price_args(prices, model), "--out", str(day.out / f"r2_tc003_{model.replace('/', '_')}")], start)
 
 
@@ -171,6 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workflows", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None)
     ap.add_argument("--runs", type=int, default=14)
     ap.add_argument("--tooling-checked", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="r2-3: W09 and/or W12, after you and Claude have read the step list of their first run")
+    ap.add_argument("--seeds", default=None, help="r2-2, with --rehearsal only: fewer seeds for a quick rehearsal (a real run always uses 14)")
     ap.add_argument("--freeze-file", default=None)
     ap.add_argument("--prices-file", default=None)
     ap.add_argument("--sheets-dir", default=str(ROOT.parent))
@@ -189,6 +190,9 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if args.command == "summary":
         print(summary(out))
         return 0
+    if args.seeds and not args.rehearsal:
+        print("Refused: --seeds is for a rehearsal only; a real r2-2 always runs 14 seeds. Nothing was spent.")
+        return 2
     preflight_only = args.command == "preflight"
     if preflight_only:
         if not args.stage:
