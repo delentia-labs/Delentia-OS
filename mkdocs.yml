@@ -104,6 +104,7 @@ extra:
 
 nav:
   - Home: index.md
+  - Start here (install, run, verify, limits): START_HERE.md
   - What Delentia is:
     - English: public/CURRENT_PUBLIC_INFORMATION_EN.md
     - ภาษาไทย: public/CURRENT_PUBLIC_INFORMATION_TH.md

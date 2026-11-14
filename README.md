@@ -11,7 +11,7 @@
 
 AI agents can plan and use tools. What happens when the model misreads you, reads a hostile web page, or the process dies halfway through a job? Most setups rely on the model behaving. Delentia OS does not: the runtime sits between the model and the tools and decides.
 
-> **Status: experimental research software by one author.** It is not certified for production or critical work, no strong hosted model has driven it under test yet, and nothing here runs anywhere except on your own machine. Read [what is measured, and what is not](#what-is-measured-and-what-is-not) and the [known limitations](docs/KNOWN_LIMITATIONS.md) before you give it anything that matters.
+> **Status: experimental research software by one author, built together with AI coding assistants** (most commits carry a `Co-Authored-By` trailer: count them yourself, see [Start here](docs/START_HERE.md#6-how-it-was-built-and-where-the-ideas-come-from)). It is not certified for production or critical work, no strong hosted model has driven it under test yet, and nothing here runs anywhere except on your own machine. Read [what is measured, and what is not](#what-is-measured-and-what-is-not) and the [known limitations](docs/KNOWN_LIMITATIONS.md) before you give it anything that matters.
 
 **What you can explore**
 
@@ -22,7 +22,7 @@ AI agents can plan and use tools. What happens when the model misreads you, read
 - **Recovery.** An interrupted episode can be continued, and a retried call carries the key of the call it retries (tested with scripted models and hard kills, not yet with a hosted model).
 - **Your model, your machine.** A local model (Ollama), any OpenAI-compatible endpoint, or OpenRouter. Nothing runs anywhere except where you install it.
 
-[Run the demo (no model, no key)](#try-it-in-two-minutes-no-model-no-api-key) · [What a run looks like](#what-a-run-looks-like) · [What is measured, and what is not](#what-is-measured-and-what-is-not) · [FAQ](#faq) · [Known limitations](docs/KNOWN_LIMITATIONS.md) · [Reference](docs/reference/index.md)
+[**Start here: install, run, verify, limits**](docs/START_HERE.md) · [Run the demo (no model, no key)](#try-it-in-two-minutes-no-model-no-api-key) · [What a run looks like](#what-a-run-looks-like) · [What is measured, and what is not](#what-is-measured-and-what-is-not) · [FAQ](#faq) · [Known limitations](docs/KNOWN_LIMITATIONS.md) · [Reference](docs/reference/index.md)
 
 ## The governed cycle
 
@@ -99,7 +99,7 @@ After `delentia demo approve f483af2136b0 --scripted`, the report says the file 
 
 | Evidence | Where it stands |
 |---|---|
-| The public test suite | **9,625 passed, 47 skipped, 0 failed, 92.18% coverage** ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/41300747145), commit `75e18b4`, 2026-11-01). A checkpoint that is updated by hand, not live. It is evidence about the code, not about how well a model uses it |
+| The public test suite | **9,912 passed, 62 skipped, 0 failed, 92.10% coverage** ([CI run](https://github.com/delentia-labs/Delentia-OS/actions/runs/43570824206), commit `98b0688c52ee843497c24630ba3f810c395383b1`, 2026-11-14). A checkpoint that is updated by hand, not live. It is evidence about the code, not about how well a model uses it |
 | The gate against a scripted attacker | A model that obeys every injected instruction: of 23 scenarios, 3 harmful side effects ran with the taint rule off and **0 with it on**, while 6 of 6 legitimate workflows still ran ([method and limits](docs/security/THREAT_MODEL.md)) |
 | Signed approvals, the audit chain, recovery after a crash | Tested with a scripted model, including a hard kill at three points and a forged answer on its way back |
 | Small local models | They complete some simple tasks, not reliably: on a five-goal probe qwen2.5:7b did 3, llama3.2:3b 0, qwen3:8b 4 (one machine, one run each) |
@@ -202,7 +202,7 @@ Not promises, the order the author is working in: the first measurements with st
 
 ## About the creator
 
-**Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)**, thinker and creator of Delentia, Klong Toei, Bangkok. The creator's account: the work, including the FDIA Equation and RCT-7, began on **28 June 2025**, on paper and in conversations with ordinary AI chat, with the question "What is the future?" and later a second one: if an AI agent is to work through a way of thinking we design, how can a human keep authority over what it does? **11 August 2025** is a separate personal turning point, not the date the equation was first written. No independent timestamp of the original paper exists, so the dates are the creator's account. The whitepapers are the history of the design, not evidence that every statement in them has been tested.
+**Ittirit Saengow (อิทธิฤทธิ์ แซ่โง้ว)**, thinker and creator of Delentia, Klong Toei, Bangkok. The creator's account: the work, including the FDIA Equation and RCT-7, began on **28 June 2025**, on paper and in conversations with ordinary AI chat, with the question "What is the future?" and later a second one: if an AI agent is to work through a way of thinking we design, how can a human keep authority over what it does? **11 August 2025** is a separate personal turning point, not the date the equation was first written. No independent timestamp of the original paper exists, so the dates are the creator's account. The first commit in this repository is from **11 April 2026**. The whitepapers are the history of the design, not evidence that every statement in them has been tested.
 
 [GitHub @ittirit-delentia](https://github.com/ittirit-delentia) · [LinkedIn](https://www.linkedin.com/in/ittirit-saengow/) · [X @ittirit_rct](https://x.com/ittirit_rct) · [Reddit u/WindLate5307](https://www.reddit.com/user/WindLate5307/) · [Bio](https://ittiritsaengow.link) · founder@delentia.com. The timeline of the project is in the [earlier README content](docs/reference/legacy-numbers-and-history.md).
 
