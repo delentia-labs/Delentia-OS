@@ -122,7 +122,12 @@ def main() -> int:
             print(f"C. {name}: exit {proc.returncode}")
             if proc.returncode != 0:
                 problems.append(f"C: {name} ended with exit {proc.returncode}: {(proc.stdout + proc.stderr)[-400:]}")
+        n_k15 = len(list((out / "c4").glob("r2_4_*.json")))
+        if not args.quick and n_k15 != 6:
+            problems.append(f"C: r2-4 left {n_k15} result files, expected 6 (an orchestrator that refuses exits 0: that was missed once)")
         spent_fake = fake.spent
+        if not args.quick and spent_fake <= 0.05:
+            problems.append("C: r2-4 spent almost nothing: its commands did not reach the endpoint")
         counted = json.loads(total_c.read_text(encoding="utf-8"))["total"] if total_c.exists() else 0.0
         print(f"D. fake charged ${spent_fake:.6f}; the running total says ${counted:.6f}")
         if abs(counted - spent_fake) > max(0.002, spent_fake * 0.01):

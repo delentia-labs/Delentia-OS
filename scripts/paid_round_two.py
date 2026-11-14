@@ -26,12 +26,13 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 import paid_day as pd  # noqa: E402
 
-CEILINGS = {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 2.40}
-TOTAL_LIMIT = round(sum(CEILINGS.values()), 2)                    # 7.10: the sum written in the criteria, section 6
+CEILINGS = {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30}
+TOTAL_LIMIT = round(sum(CEILINGS.values()), 2)                    # 8.00: the sum written in the criteria, section 6
 JUDGE_ALLOWANCE = "1200"
 TC003_SEEDS = "1700-1713"                                         # 14 tasks per arm
 WORKFLOW_BUDGETS = {"W03": 0.15, "W06": 0.15, "W08": 0.30, "W09": 1.50, "W10": 0.40, "W12": 0.30}     # the first screen's per-run budgets (the runner's own worst-case rule still decides)
 WORKFLOW_ORDER = ["W06", "W08", "W10", "W03", "W12", "W09"]       # W09 last: it is the one whose worst case can not fit 14 runs
+K15_COMMAND_BUDGET = 0.60
 CAREFUL = {"W09", "W12"}                                          # one run until --tooling-checked says the step list was read
 K15_GROUPS = {"require_parameters": ["qwen/qwen3.5-397b-a17b", "x-ai/grok-build-0.1", "google/gemini-3.8-flash"],
               "without": ["anthropic/claude-haiku-5.5", "amazon/nova-pro-v1", "moonshotai/kimi-k2"]}
@@ -141,8 +142,14 @@ def r2_4(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
                 os.environ.pop("DELENTIA_OPENROUTER_REQUIRE_PARAMETERS", None)
             day.env.update(env_extra)
             os.environ.update(env_extra)
-            day.run("R2-4", f"K15 repeat {rep} {group}", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(members), "--budget-usd", str(round(CEILINGS["R2-4"] / 6, 4)),
-                                                          *pd.price_source_args(args), *pd.freeze_args(args), "--execute", "--out", str(day.out / f"r2_4_{group}_{rep}.json")], start)
+            result_file = day.out / f"r2_4_{group}_{rep}.json"
+            # the orchestrator's own rule asks for the estimate WITH its 1.5x margin to fit under --budget-usd, so the per-command budget is a sixth of the ceiling plus 10%: the real spend is about the estimate, not the margin
+            day.run("R2-4", f"K15 repeat {rep} {group}", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(members), "--budget-usd", str(K15_COMMAND_BUDGET),
+                                                          *pd.price_source_args(args), *pd.freeze_args(args), "--execute", "--out", str(result_file)], start)
+            if day.execute and not result_file.exists():                  # the orchestrator exits 0 when IT refuses ("estimate with margin is above the budget"): that is not a result
+                log = day.out / f"R2-4_K15_repeat_{rep}_{group}.log"
+                tail = log.read_text(encoding="utf-8", errors="replace")[-300:] if log.exists() else ""
+                raise pd.Refused(f"K15 repeat {rep} {group} produced no result file: the orchestrator refused or failed ({tail.strip()[-200:]})")
 
 
 def summary(out: Path) -> str:

@@ -58,8 +58,8 @@ def plan(tmp_path):
 class TestNumbersAgreeWithTheCriteria:
     def test_ceilings_and_total_are_the_criteria_files(self):
         text = (ROOT / "research" / "ROUND_TWO_CRITERIA_R113.md").read_text(encoding="utf-8")
-        assert r2.CEILINGS == {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 2.40} and r2.TOTAL_LIMIT == 7.10
-        for needle in ("$1.20", "$2.00", "$1.50", "$2.40", "$7.10", "14 tasks per arm", "1,200 tokens"):
+        assert r2.CEILINGS == {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30} and r2.TOTAL_LIMIT == 8.00
+        for needle in ("$1.20", "$2.00", "$1.50", "$3.30", "$8.00", "14 tasks per arm", "1,200 tokens"):
             assert needle in text, needle
         assert r2.JUDGE_ALLOWANCE == "1200" and r2.TC003_SEEDS == "1700-1713"          # 14 seeds
 
@@ -81,7 +81,7 @@ class TestRefusals:
         assert run(tmp_path, ["r2-2"]) == 2
 
     def test_a_spent_round_refuses_the_next_block(self, tmp_path, capsys):
-        (tmp_path / "total.json").write_text(json.dumps({"total": 7.10, "entries": []}), encoding="utf-8")
+        (tmp_path / "total.json").write_text(json.dumps({"total": 8.00, "entries": []}), encoding="utf-8")
         assert run(tmp_path, ["r2-2", "--models", "anthropic/claude-haiku-5.5"], inf=info(2.0)) == 2
 
     def test_a_missing_freeze_without_rehearsal_is_refused(self, tmp_path):
@@ -124,7 +124,7 @@ class TestWhatEachBlockPlans:
         assert len([r for r in plan(tmp_path) if r.get("dry_run")]) == 6
 
     def test_r2_4_plans_three_repeats_of_the_two_groups_with_their_own_setting(self, tmp_path):
-        assert run(tmp_path, ["r2-4"], inf=info(2.4)) == 0
+        assert run(tmp_path, ["r2-4"], inf=info(3.3)) == 0
         rows = [r for r in plan(tmp_path) if r.get("dry_run")]
         assert len(rows) == 6 and sum("qwen/qwen3.5-397b-a17b" in r["argv"] for r in rows) == 3 and sum("anthropic/claude-haiku-5.5" in r["argv"] for r in rows) == 3
 
@@ -157,3 +157,16 @@ class TestHardFailureHaltsAWorkflow:
         args = r2.build_parser().parse_args(["r2-3", "--model", "m/x", "--workflows", "W06", "--runs", "3", "--rehearsal"])
         with pytest.raises(pd.Refused, match="left no result file"):
             r2.r2_3(args, day, ["m/x"], {"m/x": {"in": 0.1, "out": 0.5}})
+
+
+class TestAnOrchestratorRefusalIsNotASuccess:
+    def test_r2_4_stops_when_the_orchestrator_exits_zero_without_a_result(self, tmp_path, monkeypatch):
+        """Found by the free rehearsal: the orchestrator refuses (estimate with margin above the budget) and exits 0; the block must stop, not carry on."""
+        day = pd.Day(tmp_path / "out", dict(ENV), info(3.3), True, ceilings=r2.CEILINGS, watch_seconds=5.0)
+        monkeypatch.setattr(day, "run", lambda *a, **k: (0, 0.0))
+        args = r2.build_parser().parse_args(["r2-4", "--rehearsal", "--prices-file", str(tmp_path / "p.json")])
+        with pytest.raises(pd.Refused, match="produced no result file"):
+            r2.r2_4(args, day, [], {})
+
+    def test_the_per_command_budget_covers_the_orchestrators_margin_rule(self):
+        assert r2.K15_COMMAND_BUDGET * 6 >= r2.CEILINGS["R2-4"] and r2.K15_COMMAND_BUDGET * 6 <= r2.CEILINGS["R2-4"] * 1.2
