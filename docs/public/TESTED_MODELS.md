@@ -111,7 +111,7 @@ The rule for the judge: found at least 0.80 and false stops at most 0.15, on set
 
 | stage | model | arm / workflow | verdict | cost (provider) | register |
 |---|---|---|---|---|---|
-| P4 | anthropic/claude-haiku-5.5 | b0 vs d0 | inconclusive | $0.0474 | R0051 |
+| P4 | anthropic/claude-haiku-5.5 | b0 vs d0 | inconclusive (corrected in R0084) | $0.0474 | R0051 |
 | P4 | anthropic/claude-haiku-5.5 | d0 live | inconclusive | $0.0067 | R0052 |
 | P4 | qwen/qwen3.5-397b-a17b | b0 vs d0 | not_run | $0.0000 | R0067 |
 | P4 | qwen/qwen3.5-397b-a17b | d0 live | not_run | $0.0000 | R0068 |
