@@ -80,12 +80,26 @@ def _retry_delay(exc: BaseException, backoff: float, attempt: int) -> float:
     return delay
 
 
+def _names_requested_parameters(exc: BaseException) -> bool:
+    """True when an HTTP error's body is the provider's 'No endpoints found that can handle the requested parameters'. Reads the body only to test for that phrase."""
+    try:
+        text = (exc.response.text or "")[:2000].lower()    # type: ignore[attr-defined]
+    except Exception:                                      # noqa: BLE001 - an unreadable body is simply not that error
+        return False
+    return "requested parameters" in text or "no endpoints found" in text
+
+
 def _describe_llm_error(exc: BaseException) -> str:
     """One line for the step record; never includes request bodies or headers (the prompt
     and the API key must not end up in the audit trail through an error message)."""
     try:
         import httpx
         if isinstance(exc, httpx.HTTPStatusError):
+            if exc.response.status_code == 404 and _names_requested_parameters(exc):
+                # Round 113 (S5): with DELENTIA_OPENROUTER_REQUIRE_PARAMETERS=1 a model whose endpoints do not all support every parameter we send is refused with a 404 that says so in its body.
+                # The sentence below is fixed text: it never carries the body, a header or the request.
+                return ("model endpoint answered HTTP 404: no endpoint of this model supports every parameter this run sends; unset DELENTIA_OPENROUTER_REQUIRE_PARAMETERS "
+                        "(it makes the provider refuse any endpoint that ignores a parameter) or choose another model")
             return f"model endpoint answered HTTP {exc.response.status_code}"
     except ImportError:     # pragma: no cover
         pass

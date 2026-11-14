@@ -129,7 +129,8 @@ def main() -> int:
                     result = asyncio.run(loop.run(GOAL))
             else:
                 result = asyncio.run(loop.run(GOAL))
-            out = {"stopped_reason": result.get("stopped_reason"), "episode_id": loop._episode_id, "cost": result.get("cost") or {}, "answer": str(result.get("final_answer") or "")[:300]}
+            out = {"stopped_reason": result.get("stopped_reason"), "episode_id": loop._episode_id, "cost": result.get("cost") or {}, "answer": str(result.get("final_answer") or "")[:300],
+                   "steps": ds.short_steps(result)}
             print("RESULT " + json.dumps(out, default=str))
             return 0
         decisions = [*[place(n) for n in range(args.from_order, 4)], FINISH]       # a careful agent re-sends the order it was in the middle of: the key makes that safe
@@ -139,7 +140,7 @@ def main() -> int:
         else:
             out = asyncio.run(loop.resume_interrupted(args.episode_id, allow_unknown=True))
         print("RESULT " + json.dumps({"resumed": out.get("resumed"), "reason": out.get("reason"), "stopped_reason": out.get("stopped_reason"), "unknown": out.get("unknown"),
-                                      "cost": out.get("cost") or {}, "answer": str(out.get("final_answer") or "")[:300]}, default=str))
+                                      "cost": out.get("cost") or {}, "answer": str(out.get("final_answer") or "")[:300], "steps": ds.short_steps(out.get("continuation") or out)}, default=str))
         return 0
 
 

@@ -2298,7 +2298,8 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if getattr(self, "_episode_taint", None) is not None and self._taint_enabled():
             # Round 58, answer channel: after reading text from outside, an address in the answer must have come from the person or from a page (answer_guard.py).
             from rct_control_plane import answer_guard
-            removed = answer_guard.sanitize_result(result, result["goal"], getattr(self, "_episode_seen_urls", set()))
+            trusted = answer_guard.trusted_hosts_from(result["goal"], result.get("steps") or []) if answer_guard.hosts_enabled() else None      # Round 113 (S11)
+            removed = answer_guard.sanitize_result(result, result["goal"], getattr(self, "_episode_seen_urls", set()), trusted)
             if removed:
                 try:
                     self._persistence.append_audit(entity_type="governed_loop_taint", entity_id=f"{self.namespace}-{getattr(self, '_episode_id', '')}", action="answer_sanitized",

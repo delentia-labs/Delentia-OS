@@ -171,9 +171,9 @@ def test_every_budget_refusal_happens_before_the_call_and_the_upstream_never_see
         if case == "call_limit":
             assert first[0] == 200 and up.calls == 1
             second = post(gw, body)
-            assert second[0] == 429 and up.calls == 1
+            assert second[0] == 402 and up.calls == 1
         else:
-            assert first[0] in (403, 429) and up.calls == 0 and not up.requests, (case, first)
+            assert first[0] in (402, 403) and up.calls == 0 and not up.requests, (case, first)
         assert gw.stats["refused"] >= 1
         rows = [json.loads(line) for line in (tmp_path / "calls.jsonl").read_text(encoding="utf-8").splitlines()]
         assert any(r.get("refused") for r in rows)
