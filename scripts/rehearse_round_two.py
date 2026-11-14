@@ -112,11 +112,12 @@ def main() -> int:
         env = dict(env_base, DELENTIA_OPENROUTER_BASE_URL=fake.base_url, OPENROUTER_API_KEY=fake.key, DELENTIA_RUN_LIVE_TESTS="1", DELENTIA_OPENROUTER_DATA_COLLECTION="deny")
         common = ["--prices-file", str(work / "prices.json"), "--sheets-dir", str(sheets), "--total-file", str(total_c), "--execute", "--rehearsal"]
         steps = [("r2-2", ["r2-2", "--models", ",".join(MODELS[:2]), "--seeds", "1700-1701", "--out-dir", str(out / "c2")]),
-                 ("r2-3", ["r2-3", "--model", MODELS[0], "--workflows", "W06,W08", "--runs", "2", "--out-dir", str(out / "c3")])]
+                 ("r2-3", ["r2-3", "--model", MODELS[0], "--workflows", "W06,W08", "--runs", "2", "--out-dir", str(out / "c3")]),
+                 ("r2-5", ["r2-5", "--model", MODELS[0], "--out-dir", str(out / "c5")])]
         if not args.quick:
             steps.append(("r2-4", ["r2-4", "--out-dir", str(out / "c4")]))
         for name, argv in steps:
-            fake.limit = {"r2-2": 2.00, "r2-3": 1.50, "r2-4": 2.40}[name]               # the key of each block is limited to that block's ceiling, as the criteria say
+            fake.limit = {"r2-2": 2.00, "r2-3": 1.50, "r2-4": 3.30, "r2-5": 0.80}[name]               # the key of each block is limited to that block's ceiling, as the criteria say
             proc = subprocess.run([sys.executable, "scripts/paid_round_two.py", *argv, *common], env=env, cwd=str(ROOT), capture_output=True, text=True, timeout=3600)
             print(f"C. {name}: exit {proc.returncode}")
             if proc.returncode != 0:

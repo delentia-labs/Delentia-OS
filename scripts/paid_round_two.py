@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 import paid_day as pd  # noqa: E402
 
-CEILINGS = {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30}
+CEILINGS = {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30, "R2-5": 0.80}
 TOTAL_LIMIT = round(sum(CEILINGS.values()), 2)                    # 8.00: the sum written in the criteria, section 6
 JUDGE_ALLOWANCE = "1200"
 TC003_SEEDS = "1700-1713"                                         # 14 tasks per arm
@@ -36,7 +36,7 @@ K15_COMMAND_BUDGET = 0.60
 CAREFUL = {"W09", "W12"}                                          # one run until --tooling-checked says the step list was read
 K15_GROUPS = {"require_parameters": ["qwen/qwen3.5-397b-a17b", "x-ai/grok-build-0.1", "google/gemini-3.8-flash"],
               "without": ["anthropic/claude-haiku-5.5", "amazon/nova-pro-v1", "moonshotai/kimi-k2"]}
-BLOCK_OF = {"r2-1": "R2-1", "r2-2": "R2-2", "r2-3": "R2-3", "r2-4": "R2-4"}
+BLOCK_OF = {"r2-1": "R2-1", "r2-2": "R2-2", "r2-3": "R2-3", "r2-4": "R2-4", "r2-5": "R2-5"}
 
 
 def total_file(env: Dict[str, str], override: Optional[str] = None) -> Path:
@@ -132,6 +132,21 @@ def r2_3(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
                 print(f"   HARD FAILURE in {w}: no further runs of {w}. Tell Claude.")
 
 
+TC006_SEEDS = (1701, 1702, 1703)                                    # three runs of W07 (Amendment 2); the seed names the run
+TC006_RUN_BUDGET = 0.25
+
+
+def r2_5(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> None:
+    model = models[0]
+    start = day.usage() if day.execute else 0.0
+    for k, seed in enumerate(TC006_SEEDS, 1):
+        folder = day.out / "r2_5" / f"run{k:02d}"
+        code, _ = day.run("R2-5", f"TC-006 run {k}", [sys.executable, "-m", "research.daaes", "live", "--case", "TC-006", "--provider", "openrouter", "--model", model, "--seed", str(seed),
+                                                      "--budget-usd", str(TC006_RUN_BUDGET), *pd.price_args(prices, model), "--out", str(folder)], start)
+        if day.execute and (code != 0 or not folder.exists()):
+            raise pd.Refused(f"TC-006 run {k} ended with exit {code} and no output folder: recorded, not retried; read its log before anything else (a tooling defect stops the block)")
+
+
 def r2_4(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> None:
     start = day.usage() if day.execute else 0.0
     for rep in range(1, 4):
@@ -171,7 +186,7 @@ def summary(out: Path) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("command", choices=["preflight", "r2-1", "r2-2", "r2-3", "r2-4", "summary"])
+    ap.add_argument("command", choices=["preflight", "r2-1", "r2-2", "r2-3", "r2-4", "r2-5", "summary"])
     ap.add_argument("--stage", choices=list(BLOCK_OF), default=None, help="preflight: which block's checks")
     ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None)
     ap.add_argument("--model", default=None, help="r2-3: the one model (haiku)")
@@ -206,8 +221,8 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
             print("Refused: preflight needs --stage r2-1|r2-2|r2-3|r2-4")
             return 2
         args.command = args.stage
-    models = [args.model] if args.command == "r2-3" and args.model else (args.models or [])
-    if args.command in ("r2-1", "r2-2", "r2-3") and not models:
+    models = [args.model] if args.command in ("r2-3", "r2-5") and args.model else (args.models or [])
+    if args.command in ("r2-1", "r2-2", "r2-3", "r2-5") and not models:
         print("Refused: --models (r2-3: --model) is needed. Nothing was spent.")
         return 2
     if args.command in ("r2-1", "r2-2") and len(models) > 2:
@@ -225,7 +240,7 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
         print("\nDry run: the commands below are what --execute would run. Nothing is spent.")
     os.environ.update({k: v for k, v in env.items() if k.startswith("DELENTIA_") or k == "OPENROUTER_API_KEY"})
     day = pd.Day(out, env, info, args.execute, ceilings=CEILINGS, watch_seconds=args.watch_seconds, total_file=total_file(env, args.total_file), total_limit=TOTAL_LIMIT)
-    runner = {"r2-1": r2_1, "r2-2": r2_2, "r2-3": r2_3, "r2-4": r2_4}[args.command]
+    runner = {"r2-1": r2_1, "r2-2": r2_2, "r2-3": r2_3, "r2-4": r2_4, "r2-5": r2_5}[args.command]
     try:
         runner(args, day, models or [], prices)
     except pd.Refused as exc:

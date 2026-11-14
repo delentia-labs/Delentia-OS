@@ -58,8 +58,8 @@ def plan(tmp_path):
 class TestNumbersAgreeWithTheCriteria:
     def test_ceilings_and_total_are_the_criteria_files(self):
         text = (ROOT / "research" / "ROUND_TWO_CRITERIA_R113.md").read_text(encoding="utf-8")
-        assert r2.CEILINGS == {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30} and r2.TOTAL_LIMIT == 8.00
-        for needle in ("$1.20", "$2.00", "$1.50", "$3.30", "$8.00", "14 tasks per arm", "1,200 tokens"):
+        assert r2.CEILINGS == {"R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30, "R2-5": 0.80} and r2.TOTAL_LIMIT == 8.80
+        for needle in ("$1.20", "$2.00", "$1.50", "$3.30", "$0.80", "$8.80", "14 tasks per arm", "1,200 tokens"):
             assert needle in text, needle
         assert r2.JUDGE_ALLOWANCE == "1200" and r2.TC003_SEEDS == "1700-1713"          # 14 seeds
 
@@ -81,7 +81,7 @@ class TestRefusals:
         assert run(tmp_path, ["r2-2"]) == 2
 
     def test_a_spent_round_refuses_the_next_block(self, tmp_path, capsys):
-        (tmp_path / "total.json").write_text(json.dumps({"total": 8.00, "entries": []}), encoding="utf-8")
+        (tmp_path / "total.json").write_text(json.dumps({"total": 8.80, "entries": []}), encoding="utf-8")
         assert run(tmp_path, ["r2-2", "--models", "anthropic/claude-haiku-5.5"], inf=info(2.0)) == 2
 
     def test_a_missing_freeze_without_rehearsal_is_refused(self, tmp_path):
@@ -170,3 +170,24 @@ class TestAnOrchestratorRefusalIsNotASuccess:
 
     def test_the_per_command_budget_covers_the_orchestrators_margin_rule(self):
         assert r2.K15_COMMAND_BUDGET * 6 >= r2.CEILINGS["R2-4"] and r2.K15_COMMAND_BUDGET * 6 <= r2.CEILINGS["R2-4"] * 1.2
+
+
+class TestR25W07:
+    def test_r2_5_plans_three_tc006_runs_with_their_seeds_and_budget(self, tmp_path):
+        assert run(tmp_path, ["r2-5", "--model", "anthropic/claude-haiku-5.5"], inf=info(0.8)) == 0
+        rows = [r for r in plan(tmp_path) if r.get("dry_run")]
+        assert len(rows) == 3 and {r["stage"] for r in rows} == {"R2-5"}
+        assert [("--seed " + str(s)) in r["argv"] for r, s in zip(rows, r2.TC006_SEEDS, strict=True)] == [True, True, True]
+        assert all("--case TC-006" in r["argv"] and "--budget-usd 0.25" in r["argv"] and "claude-haiku-5.5" in r["argv"] for r in rows)
+        assert 3 * r2.TC006_RUN_BUDGET <= r2.CEILINGS["R2-5"]
+
+    def test_r2_5_needs_a_model_and_a_key_limit_within_its_ceiling(self, tmp_path):
+        assert run(tmp_path, ["r2-5"]) == 2
+        assert run(tmp_path, ["r2-5", "--model", "anthropic/claude-haiku-5.5"], inf=info(3.3)) == 2
+
+    def test_a_crashed_tc006_run_stops_the_block(self, tmp_path, monkeypatch):
+        day = pd.Day(tmp_path / "out", dict(ENV), info(0.8), True, ceilings=r2.CEILINGS, watch_seconds=5.0)
+        monkeypatch.setattr(day, "run", lambda *a, **k: (1, 0.0))
+        args = r2.build_parser().parse_args(["r2-5", "--model", "m/x", "--rehearsal"])
+        with pytest.raises(pd.Refused, match="TC-006 run 1"):
+            r2.r2_5(args, day, ["m/x"], {"m/x": {"in": 0.1, "out": 0.5}})
