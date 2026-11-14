@@ -36,14 +36,15 @@ def test_the_builtin_default_is_a_local_model_so_it_is_on_with_nothing_configure
     assert tool_menu.ranked_enabled() and tool_menu.compact_enabled()
 
 
-def test_a_hosted_model_keeps_the_full_menu_by_default(monkeypatch):
+def test_a_hosted_model_gets_the_ranked_compact_menu_by_default_since_round_113(monkeypatch):
+    """Round 113 (research/HARNESS_FIX_CRITERIA_R113.md, S1): the A/B this file's first version waited for ran on three hosted models (register R0044, R0053, R0054)."""
     monkeypatch.setenv("DELENTIA_LLM_PROVIDER", "openrouter")
-    assert not tool_menu.ranked_enabled() and not tool_menu.compact_enabled()
+    assert tool_menu.ranked_enabled() and tool_menu.compact_enabled()
 
 
 def test_the_configuration_file_decides_when_the_environment_does_not(tmp_path):
     (tmp_path / "model.json").write_text(json.dumps({"provider": "openrouter", "model": "anthropic/claude-sonnet-5"}), encoding="utf-8")
-    assert not tool_menu.ranked_enabled()
+    assert tool_menu.ranked_enabled()                          # Round 113: a hosted model in the configuration file is ranked too; `full` still goes back (next test)
 
 
 @pytest.mark.parametrize("value", ["full", "off", "0", "default"])

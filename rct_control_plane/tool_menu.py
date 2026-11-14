@@ -207,15 +207,17 @@ def ranked_enabled() -> bool:
     Why local: measured on this machine (scripts/measure_prompt_cost.py, 49 tools), the full menu is 7,688 prompt tokens per model call against 1,023 ranked, and a local CPU
     model reads about 66 tokens a second, so the full menu costs about two minutes per call; a 4-call episode is 44,427 tokens (full menu, output compressed) against 17,767 (ranked,
     compressed). Two small models also chose the right tool more often from the ranked menu (qwen3:8b 21 of 31 against 16 of 31). Hosted models stay on the full menu until a capable
-    model's A/B says otherwise."""
+    model's A/B says otherwise.
+    Round 113 (2026-11-13, the Architect's decision): that A/B ran on three hosted models (register R0044, R0053, R0054: more right choices from the ranked compact menu, 8 tools instead of 40),
+    so unset now means ranked for EVERY provider. One run per model, 31 goals; `full` goes back."""
     value = (os.environ.get(MENU_ENV) or "").strip().lower()
-    return value == "ranked" if value else _model_is_local()
+    return value == "ranked" if value else True
 
 
 def compact_enabled() -> bool:
     """DELENTIA_TOOL_MENU_FORMAT=compact forces the short argument format, any other value forces the full schema. Unset: follows ranked_enabled() (on for a local model)."""
     value = (os.environ.get(FORMAT_ENV) or "").strip().lower()
-    return value == "compact" if value else _model_is_local()
+    return value == "compact" if value else True
 
 
 def top_k() -> int:
