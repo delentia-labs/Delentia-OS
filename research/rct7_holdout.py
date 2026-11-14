@@ -191,12 +191,59 @@ def _provider(kind: str, model: str, budget_usd: float) -> Any:
     return MeteredProvider(OpenRouterProvider(model=model), max_cost_usd=budget_usd, prompt_price_per_mtok=prices[0], completion_price_per_mtok=prices[1])
 
 
+class Recording:
+    """Wraps a provider and remembers what the last call answered (or the error it raised), so a run can say WHY an item was unusable. Everything else is passed through."""
+
+    def __init__(self, inner: Any):
+        self._inner = inner
+        self.last_reply: Optional[str] = None
+        self.last_error: Optional[str] = None
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name)
+
+    def clear(self) -> None:
+        self.last_reply, self.last_error = None, None
+
+    async def complete(self, *args: Any, **kwargs: Any) -> Any:
+        self.clear()
+        try:
+            reply = await self._inner.complete(*args, **kwargs)
+        except Exception as exc:                                   # noqa: BLE001 - recorded, then raised again for the judge's own handling
+            self.last_error = f"{type(exc).__name__}: {str(exc)[:300]}"
+            raise
+        self.last_reply = reply if isinstance(reply, str) else repr(reply)
+        return reply
+
+
+REPLY_KEEP_CHARS = 6000
+
+
+def reply_record(rec: "Recording", verdict: Optional[bool]) -> Dict[str, Any]:
+    """What is kept per item: the raw reply (cut) or the error text, and for an unusable item which of the two kinds it was."""
+    out: Dict[str, Any] = {"reply": (rec.last_reply or "")[:REPLY_KEEP_CHARS] if rec.last_reply is not None else None, "error": rec.last_error}
+    if verdict is None:
+        out["unusable"] = "provider_error" if rec.last_error else "unparsed_reply"
+    return out
+
+
+def unusable_counts(replies: Dict[str, Dict[str, Any]]) -> Dict[str, int]:
+    return {kind: sum(1 for r in replies.values() if r.get("unusable") == kind) for kind in ("provider_error", "unparsed_reply")}
+
+
+def same_allowance(entry: Dict[str, Any]) -> bool:
+    """An entry written before the allowance was recorded was run with 300."""
+    return int(entry.get("judge_max_tokens", rct7_judge.JUDGE_MAX_TOKENS_DEFAULT)) == rct7_judge.judge_max_tokens()
+
+
 async def run_once(sheet: Path, provider: Any, model: str, again: bool = False, provider_kind: str = "ollama") -> Dict[str, Any]:
     sealed = load_sealed(sheet)
     runs = runs_of(sheet)
-    prior = [r for r in runs if r["model"] == model and r["prompt_version"] == rct7_judge_prompt_version() and r["labels_sha256"] == sealed["labels_sha256"]]
+    prior = [r for r in runs if r["model"] == model and r["prompt_version"] == rct7_judge_prompt_version() and r["labels_sha256"] == sealed["labels_sha256"] and same_allowance(r)]
     if prior and not again:
-        raise ValueError(f"{model} already ran on these labels with this prompt (once is the rule: no tuning after seeing a result); use --again to record a repeat")
+        raise ValueError(f"{model} already ran on these labels with this prompt and this reply allowance (once is the rule: no tuning after seeing a result); use --again to record a repeat")
+    provider = rec = Recording(provider)
+    replies: Dict[str, Dict[str, Any]] = {}
     verdicts: Dict[int, Optional[bool]] = {}
     seconds: List[float] = []
     for n_text, item in sealed["items_data"].items():
@@ -207,11 +254,13 @@ async def run_once(sheet: Path, provider: Any, model: str, again: bool = False, 
         else:
             r = await rct7_judge.judge_result(provider, item["request"], item["answer"])
             verdicts[int(n_text)] = None if r.meets is None and not r.error.startswith("nothing") else (r.meets is False and bool(r.unmet))
+        replies[n_text] = reply_record(rec, verdicts[int(n_text)])
+        rec.clear()
         seconds.append(time.time() - started)
     entry = {"model": model, "provider": provider_kind, "prompt_version": rct7_judge_prompt_version(), "labels_sha256": sealed["labels_sha256"], "repeat": bool(prior),
              "when": time.strftime("%Y-%m-%dT%H:%M:%S"), "median_seconds": round(sorted(seconds)[len(seconds) // 2], 2), "result": score(sealed, verdicts),
              "verdicts": {str(n): v for n, v in sorted(verdicts.items())},        # per item, so a result can be read by group afterwards without a second run (round 99: the first run kept only totals)
-             "cite_guard": rct7_judge.cite_guard_on()}
+             "cite_guard": rct7_judge.cite_guard_on(), "judge_max_tokens": rct7_judge.judge_max_tokens(), "unusable": unusable_counts(replies), "replies": replies}
     _, runs_path = _paths(sheet)
     runs.append(entry)
     runs_path.write_text(json.dumps(runs, ensure_ascii=False, indent=2), encoding="utf-8")

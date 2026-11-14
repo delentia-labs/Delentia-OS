@@ -47,6 +47,12 @@ def _good_int(x: Any, minimum: int) -> bool:
     return isinstance(x, int) and not isinstance(x, bool) and x >= minimum
 
 
+# The per-run token limits of a PAID policy. The dollar limits (per run and in total) and the call limit are what bound a paid run; a token count sized for short replies stopped every run
+# of a model that writes 5,000 to 9,000 completion tokens per call (plan Amendment 12, 2026-11-13). These are the values the free policies already use.
+PAID_MAX_INPUT_TOKENS_PER_RUN = 2_000_000
+PAID_MAX_OUTPUT_TOKENS_PER_RUN = 500_000
+
+
 class BudgetExceeded(RuntimeError):
     """A call (or a new run) was refused before anything was sent."""
 

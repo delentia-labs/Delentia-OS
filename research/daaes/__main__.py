@@ -108,7 +108,7 @@ def _seeds(spec: str) -> List[int]:
 
 def _benchmark(args: Any) -> int:
     from research.daaes import benchmark
-    from research.daaes.budget_guard import BudgetExceeded, BudgetPolicy
+    from research.daaes.budget_guard import PAID_MAX_INPUT_TOKENS_PER_RUN, PAID_MAX_OUTPUT_TOKENS_PER_RUN, BudgetExceeded, BudgetPolicy
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
     seeds = _seeds(args.seeds)
     out = Path(args.out)
@@ -133,7 +133,8 @@ def _benchmark(args: Any) -> int:
         if frozen:
             raise BudgetExceeded("freeze: " + "; ".join(frozen))
         policy = BudgetPolicy(total_usd=args.budget_usd, warning_usd=args.budget_usd * 0.6, stop_new_runs_usd=args.budget_usd * 0.8, reserve_usd=args.budget_usd * 0.2,
-                              max_cost_per_run_usd=args.budget_usd * 0.1, max_llm_calls_per_run=args.max_iterations * 6)
+                              max_cost_per_run_usd=args.budget_usd * 0.1, max_llm_calls_per_run=args.max_iterations * 6,
+                              max_input_tokens_per_run=PAID_MAX_INPUT_TOKENS_PER_RUN, max_output_tokens_per_run=PAID_MAX_OUTPUT_TOKENS_PER_RUN)
         result = benchmark.run_matrix(out, endpoint, os.environ["OPENROUTER_API_KEY"], args.model, args.price_in, args.price_out, arms, seeds, policy=policy,
                                       max_iterations=args.max_iterations, max_seconds=args.max_seconds, real_model=True, hermes_sandboxed=args.hermes_sandboxed, progress=print)
     print((out / "SUMMARY.md").read_text(encoding="utf-8"))
