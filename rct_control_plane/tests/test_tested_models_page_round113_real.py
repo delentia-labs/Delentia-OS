@@ -2,8 +2,6 @@
 The 'Tested models' page (docs/public/TESTED_MODELS.md) is generated from research/RESULTS_REGISTER.jsonl and nothing else. These tests pin: it matches the register, it names no ranking or praise,
 models are in alphabetical order inside each table, every register id it cites exists, and a result the register marks as replaced is shown as corrected, not hidden.
 """
-import json
-import os
 import re
 import sys
 from pathlib import Path
