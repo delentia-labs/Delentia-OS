@@ -1,0 +1,18 @@
+{
+ "refusals": [],
+ "reserved_usd": 0.0,
+ "runs": {
+  "pr-anthropic/claude-haiku-5.5-1794557880501156800": {
+   "calls": 21,
+   "cost_usd": 0.011386499999999999,
+   "inflight": 0,
+   "input_tokens": 21480,
+   "output_tokens": 18477,
+   "reserved_usd": 0.0,
+   "status": "running",
+   "uncertain_calls": 0
+  }
+ },
+ "spent_usd": 0.011386499999999999,
+ "warnings": []
+}

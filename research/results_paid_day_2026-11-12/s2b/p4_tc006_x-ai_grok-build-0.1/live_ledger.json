@@ -1,0 +1,27 @@
+{
+ "refusals": [
+  {
+   "at": 1794557358.2876503,
+   "why": "run d0_live-openrouter-x-ai_grok-build-0.1-1701-1794557229941550400: this call could exceed the run's token limits"
+  },
+  {
+   "at": 1794557362.3516622,
+   "why": "run d0_live-openrouter-x-ai_grok-build-0.1-1701-1794557229941550400: this call could exceed the run's token limits"
+  }
+ ],
+ "reserved_usd": 0.0,
+ "runs": {
+  "d0_live-openrouter-x-ai_grok-build-0.1-1701-1794557229941550400": {
+   "calls": 5,
+   "cost_usd": 0.0414106,
+   "inflight": 0,
+   "input_tokens": 4317,
+   "output_tokens": 18854,
+   "reserved_usd": 0.0,
+   "status": "running",
+   "uncertain_calls": 0
+  }
+ },
+ "spent_usd": 0.0414106,
+ "warnings": []
+}
