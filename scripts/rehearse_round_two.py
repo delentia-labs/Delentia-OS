@@ -84,16 +84,17 @@ def main() -> int:
     expensive = {m: {"in": 20.0, "out": 75.0} for m in MODELS}      # a run of 60 calls costs about its own budget, so six runs pass the stage ceiling
     (work / "prices_expensive.json").write_text(json.dumps(expensive), encoding="utf-8")
     total_b = work / "total_b.json"
-    with fake_openrouter.FakeOpenRouter(expensive, limit=1.20) as fake:
-        env = dict(env_base, DELENTIA_OPENROUTER_BASE_URL=fake.base_url, OPENROUTER_API_KEY=fake.key, DELENTIA_RUN_LIVE_TESTS="1", DELENTIA_OPENROUTER_DATA_COLLECTION="deny")
+    with fake_openrouter.FakeOpenRouter(expensive, limit=1.05) as fake:            # grok's window: its share of R2-1 is 1.05 and it ran WITH require_parameters on day one
+        env = dict(env_base, DELENTIA_OPENROUTER_BASE_URL=fake.base_url, OPENROUTER_API_KEY=fake.key, DELENTIA_RUN_LIVE_TESTS="1", DELENTIA_OPENROUTER_DATA_COLLECTION="deny",
+                   DELENTIA_OPENROUTER_REQUIRE_PARAMETERS="1")
         sheets_b = work / "sheets_b"
         shutil.copytree(sheets, sheets_b)
         for f in sheets_b.glob("*.runs.json"):
             f.unlink()
         # run the script as the Architect will, in its own process
-        proc = subprocess.run([sys.executable, "scripts/paid_round_two.py", "r2-1", "--models", MODELS[0], "--prices-file", str(work / "prices_expensive.json"), "--sheets-dir", str(sheets_b),
+        proc = subprocess.run([sys.executable, "scripts/paid_round_two.py", "r2-1", "--models", MODELS[1], "--prices-file", str(work / "prices_expensive.json"), "--sheets-dir", str(sheets_b),
                                "--out-dir", str(out / "b"), "--total-file", str(total_b), "--watch-seconds", "0.5", "--execute", "--rehearsal"], env=env, cwd=str(ROOT), capture_output=True, text=True, timeout=1800)
-        print(f"B. exit {proc.returncode}; fake charged ${fake.spent:.4f}; ceiling of R2-1 is $1.20")
+        print(f"B. exit {proc.returncode}; fake charged ${fake.spent:.4f}; grok's window ceiling is $1.05")
         log = out / "b" / "paid_day_log.jsonl"
         logged = [json.loads(x) for x in log.read_text(encoding="utf-8").splitlines() if x.strip()] if log.exists() else []
         if not any(("stopped_by_driver" in r) or ("refused" in r) for r in logged):
@@ -103,29 +104,41 @@ def main() -> int:
         counted = json.loads(total_b.read_text(encoding="utf-8"))["total"] if total_b.exists() else 0.0
         if abs(counted - fake.spent) > max(0.002, fake.spent * 0.01):
             problems.append(f"B: the running total (${counted:.4f}) does not equal what the fake charged (${fake.spent:.4f})")
-        if fake.spent > 1.20 * 1.5:
+        if fake.spent > 1.05 * 1.5:
             problems.append(f"B: the fake was charged ${fake.spent:.4f}, more than 1.5x the ceiling")
 
-    # ------------------------------------------------------------------ C: the other blocks, to the end, with a fake that behaves
+    # ------------------------------------------------------------------ C: the other windows, to the end, with a fake that behaves (one window per model setting, as the Architect will run them)
     total_c = work / "total_c.json"
     with fake_openrouter.FakeOpenRouter(prices, limit=2.00) as fake:
         env = dict(env_base, DELENTIA_OPENROUTER_BASE_URL=fake.base_url, OPENROUTER_API_KEY=fake.key, DELENTIA_RUN_LIVE_TESTS="1", DELENTIA_OPENROUTER_DATA_COLLECTION="deny")
         common = ["--prices-file", str(work / "prices.json"), "--sheets-dir", str(sheets), "--total-file", str(total_c), "--execute", "--rehearsal"]
-        steps = [("r2-2", ["r2-2", "--models", ",".join(MODELS[:2]), "--seeds", "1700-1701", "--out-dir", str(out / "c2")]),
-                 ("r2-3", ["r2-3", "--model", MODELS[0], "--workflows", "W06,W08", "--runs", "2", "--out-dir", str(out / "c3")]),
-                 ("r2-5", ["r2-5", "--model", MODELS[0], "--out-dir", str(out / "c5")])]
+        rp = {"DELENTIA_OPENROUTER_REQUIRE_PARAMETERS": "1"}
+        steps = [("r2-2 haiku", ["r2-2", "--models", MODELS[0], "--seeds", "1700-1701", "--out-dir", str(out / "c2h")], {}, 0.70),
+                 ("r2-2 grok", ["r2-2", "--models", MODELS[1], "--seeds", "1700-1701", "--out-dir", str(out / "c2g")], rp, 1.30),
+                 ("r2-3 haiku", ["r2-3", "--model", MODELS[0], "--workflows", "W06,W08", "--runs", "2", "--out-dir", str(out / "c3")], {}, 1.50),
+                 ("r2-5 haiku", ["r2-5", "--model", MODELS[0], "--out-dir", str(out / "c5")], {}, 0.80)]
         if not args.quick:
-            steps.append(("r2-4", ["r2-4", "--out-dir", str(out / "c4")]))
-        for name, argv in steps:
-            fake.limit = {"r2-2": 2.00, "r2-3": 1.50, "r2-4": 3.30, "r2-5": 0.80}[name]               # the key of each block is limited to that block's ceiling, as the criteria say
-            proc = subprocess.run([sys.executable, "scripts/paid_round_two.py", *argv, *common], env=env, cwd=str(ROOT), capture_output=True, text=True, timeout=3600)
+            steps += [("r2-4 without", ["r2-4", "--group", "without", "--out-dir", str(out / "c4a")], {}, 1.65),
+                      ("r2-4 require_parameters", ["r2-4", "--group", "require_parameters", "--out-dir", str(out / "c4b")], rp, 1.65)]
+        banked = 0.0
+        for name, argv, extra, limit in steps:
+            banked += fake.spent
+            fake.spent = 0.0                                                                           # a NEW key for every window: it starts at zero (what the key's own usage reports)
+            fake.limit = limit                                                                         # the key of each window is limited to that window's ceiling, as the criteria say
+            proc = subprocess.run([sys.executable, "scripts/paid_round_two.py", *argv, *common], env=dict(env, **extra), cwd=str(ROOT), capture_output=True, text=True, timeout=3600)
             print(f"C. {name}: exit {proc.returncode}")
             if proc.returncode != 0:
                 problems.append(f"C: {name} ended with exit {proc.returncode}: {(proc.stdout + proc.stderr)[-400:]}")
-        n_k15 = len(list((out / "c4").glob("r2_4_*.json")))
+        banked += fake.spent
+        fake.spent = 0.0
+        wrong = subprocess.run([sys.executable, "scripts/paid_round_two.py", "r2-2", "--models", MODELS[1], "--seeds", "1700-1701", "--out-dir", str(out / "c2x"), *common], env=env, cwd=str(ROOT),
+                               capture_output=True, text=True, timeout=600)
+        if wrong.returncode != 2 or "WITH it" not in wrong.stdout:
+            problems.append("C: grok in a window WITHOUT require_parameters was not refused")
+        n_k15 = len(list((out / "c4a").glob("r2_4_*.json"))) + len(list((out / "c4b").glob("r2_4_*.json")))
         if not args.quick and n_k15 != 6:
             problems.append(f"C: r2-4 left {n_k15} result files, expected 6 (an orchestrator that refuses exits 0: that was missed once)")
-        spent_fake = fake.spent
+        spent_fake = banked + fake.spent
         if not args.quick and spent_fake <= 0.05:
             problems.append("C: r2-4 spent almost nothing: its commands did not reach the endpoint")
         counted = json.loads(total_c.read_text(encoding="utf-8"))["total"] if total_c.exists() else 0.0

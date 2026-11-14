@@ -21,7 +21,8 @@ spec.loader.exec_module(r2)
 pd = r2.pd
 
 KEY = "sk-or-v1-THIS-IS-A-TEST-KEY-0123456789abcdef"
-ENV = {"OPENROUTER_API_KEY": KEY, "DELENTIA_RUN_LIVE_TESTS": "1", "DELENTIA_OPENROUTER_DATA_COLLECTION": "deny"}
+ENV = {"OPENROUTER_API_KEY": KEY, "DELENTIA_RUN_LIVE_TESTS": "1", "DELENTIA_OPENROUTER_DATA_COLLECTION": "deny"}           # the window of a model that ran WITHOUT require_parameters on day one (haiku)
+ENV_RP = dict(ENV, DELENTIA_OPENROUTER_REQUIRE_PARAMETERS="1")                                                              # the window of grok, which ran WITH it
 PRICES = {"anthropic/claude-haiku-5.5": {"in": 0.1, "out": 0.5}, "x-ai/grok-build-0.1": {"in": 0.2, "out": 1.0}}
 
 
@@ -71,14 +72,27 @@ class TestRefusals:
 
     def test_a_key_limit_above_the_blocks_ceiling_is_refused(self, tmp_path, capsys):
         code = run(tmp_path, ["r2-1", "--models", "anthropic/claude-haiku-5.5"], inf=info(limit=12.85))
-        assert code == 2 and "at most this block" in capsys.readouterr().out
+        assert code == 2 and "at most this window" in capsys.readouterr().out
 
     def test_a_key_without_a_limit_is_refused(self, tmp_path):
         assert run(tmp_path, ["r2-2", "--models", "anthropic/claude-haiku-5.5"], inf=lambda k: {"usage": 0.0, "limit": None, "limit_remaining": None}) == 2
 
-    def test_more_than_two_models_and_no_models_are_refused(self, tmp_path):
+    def test_unknown_models_and_no_models_are_refused(self, tmp_path):
         assert run(tmp_path, ["r2-1", "--models", "a/x,b/y,c/z"]) == 2
         assert run(tmp_path, ["r2-2"]) == 2
+
+    def test_models_with_different_settings_cannot_share_a_window(self, tmp_path, capsys):
+        assert run(tmp_path, ["r2-1", "--models", "anthropic/claude-haiku-5.5,x-ai/grok-build-0.1"], inf=info(1.2)) == 2
+        assert "do not share one known setting" in capsys.readouterr().out
+
+    def test_a_window_with_the_wrong_require_parameters_setting_is_refused(self, tmp_path, capsys):
+        assert run(tmp_path, ["r2-1", "--models", "x-ai/grok-build-0.1"], inf=info(1.05)) == 2                     # grok ran WITH it on day one; this window has it unset
+        assert "ran on day one WITH it" in capsys.readouterr().out
+        assert run(tmp_path, ["r2-1", "--models", "anthropic/claude-haiku-5.5"], env=ENV_RP, inf=info(0.15)) == 2   # haiku ran WITHOUT it
+        assert "ran on day one WITHOUT it" in capsys.readouterr().out
+
+    def test_r2_4_needs_a_group(self, tmp_path, capsys):
+        assert run(tmp_path, ["r2-4"], inf=info(1.65)) == 2 and "needs --group" in capsys.readouterr().out
 
     def test_a_spent_round_refuses_the_next_block(self, tmp_path, capsys):
         (tmp_path / "total.json").write_text(json.dumps({"total": 8.80, "entries": []}), encoding="utf-8")
@@ -91,26 +105,36 @@ class TestRefusals:
         assert code == 2
 
     def test_preflight_alone_spends_nothing_and_reports_zero(self, tmp_path):
-        assert run(tmp_path, ["preflight", "--stage", "r2-1", "--models", "anthropic/claude-haiku-5.5"]) == 0
+        assert run(tmp_path, ["preflight", "--stage", "r2-1", "--models", "anthropic/claude-haiku-5.5"], inf=info(0.15)) == 0
         assert not (tmp_path / "out" / "paid_day_log.jsonl").exists()
 
 
 class TestWhatEachBlockPlans:
-    def test_r2_1_plans_six_runs_per_model_with_the_allowance_and_a_per_run_budget(self, tmp_path, capsys):
-        code = run(tmp_path, ["r2-1", "--models", "anthropic/claude-haiku-5.5,x-ai/grok-build-0.1"])
+    def test_r2_1_plans_six_runs_for_a_model_with_the_allowance_and_its_share(self, tmp_path, capsys):
+        code = run(tmp_path, ["r2-1", "--models", "anthropic/claude-haiku-5.5"], inf=info(0.15))
         out = capsys.readouterr().out
         assert code == 0 and "Dry run" in out and KEY not in out
         rows = [r for r in plan(tmp_path) if r.get("dry_run")]
-        assert len(rows) == 12 and {r["stage"] for r in rows} == {"R2-1"}
+        assert len(rows) == 6 and {r["stage"] for r in rows} == {"R2-1"}
         assert os.environ["DELENTIA_RCT7_JUDGE_MAX_TOKENS"] == "1200"
         text = " ".join(r["argv"] for r in rows)
-        assert text.count("--variant plain") == 4 and text.count("--variant context") == 4 and text.count("--set4") == 4
-        assert all("--budget-usd 0.2" in r["argv"] for r in rows)                          # 1.20 / (2 models * 3)
+        assert text.count("--variant plain") == 2 and text.count("--variant context") == 2 and text.count("--set4") == 2
+        assert all("--budget-usd 0.05" in r["argv"] for r in rows)                          # haiku's share 0.15 / 3
+
+    def test_r2_1_for_grok_runs_in_its_own_window_with_require_parameters_and_a_bigger_share(self, tmp_path):
+        assert run(tmp_path, ["r2-1", "--models", "x-ai/grok-build-0.1"], env=ENV_RP, inf=info(1.05)) == 0
+        rows = [r for r in plan(tmp_path) if r.get("dry_run")]
+        assert len(rows) == 6 and all("--budget-usd 0.35" in r["argv"] for r in rows)       # 1.05 / 3
+
+    def test_the_shares_of_r2_1_and_r2_2_add_up_to_their_block_ceilings(self):
+        for command, stage in (("r2-1", "R2-1"), ("r2-2", "R2-2")):
+            assert round(sum(r2.MODEL_SHARES[command].values()), 2) == r2.CEILINGS[stage]
+        assert r2.window_ceiling("r2-4", [], "without") * 2 == pytest.approx(r2.CEILINGS["R2-4"])
 
     def test_r2_2_plans_one_benchmark_per_model_over_fourteen_seeds(self, tmp_path):
-        assert run(tmp_path, ["r2-2", "--models", "anthropic/claude-haiku-5.5,x-ai/grok-build-0.1"], inf=info(2.0)) == 0
+        assert run(tmp_path, ["r2-2", "--models", "anthropic/claude-haiku-5.5"], inf=info(0.70)) == 0
         rows = [r for r in plan(tmp_path) if r.get("dry_run")]
-        assert len(rows) == 2 and all("--seeds 1700-1713" in r["argv"] and "--arms b0,d0" in r["argv"] and "--budget-usd 0.8" in r["argv"] for r in rows)
+        assert len(rows) == 1 and "--seeds 1700-1713" in rows[0]["argv"] and "--arms b0,d0" in rows[0]["argv"] and "--budget-usd 0.56" in rows[0]["argv"]
 
     def test_r2_3_runs_w09_and_w12_once_and_the_others_fourteen_times(self, tmp_path):
         assert run(tmp_path, ["r2-3", "--model", "anthropic/claude-haiku-5.5"], inf=info(1.5)) == 0
@@ -123,10 +147,12 @@ class TestWhatEachBlockPlans:
         assert run(tmp_path, ["r2-3", "--model", "anthropic/claude-haiku-5.5", "--workflows", "W12,W09", "--tooling-checked", "W09,W12", "--runs", "3"], inf=info(1.5)) == 0
         assert len([r for r in plan(tmp_path) if r.get("dry_run")]) == 6
 
-    def test_r2_4_plans_three_repeats_of_the_two_groups_with_their_own_setting(self, tmp_path):
-        assert run(tmp_path, ["r2-4"], inf=info(3.3)) == 0
+    def test_r2_4_plans_three_repeats_of_one_group_in_a_window_with_that_groups_setting(self, tmp_path):
+        assert run(tmp_path, ["r2-4", "--group", "without"], inf=info(1.65)) == 0
         rows = [r for r in plan(tmp_path) if r.get("dry_run")]
-        assert len(rows) == 6 and sum("qwen/qwen3.5-397b-a17b" in r["argv"] for r in rows) == 3 and sum("anthropic/claude-haiku-5.5" in r["argv"] for r in rows) == 3
+        assert len(rows) == 3 and all("anthropic/claude-haiku-5.5" in r["argv"] and "qwen/qwen3.5-397b-a17b" not in r["argv"] for r in rows)
+        assert run(tmp_path, ["r2-4", "--group", "require_parameters"], env=ENV_RP, inf=info(1.65)) == 0
+        assert run(tmp_path, ["r2-4", "--group", "require_parameters"], inf=info(1.65)) == 2         # the wrong window for this group
 
 
 class TestHardFailureHaltsAWorkflow:
@@ -164,7 +190,7 @@ class TestAnOrchestratorRefusalIsNotASuccess:
         """Found by the free rehearsal: the orchestrator refuses (estimate with margin above the budget) and exits 0; the block must stop, not carry on."""
         day = pd.Day(tmp_path / "out", dict(ENV), info(3.3), True, ceilings=r2.CEILINGS, watch_seconds=5.0)
         monkeypatch.setattr(day, "run", lambda *a, **k: (0, 0.0))
-        args = r2.build_parser().parse_args(["r2-4", "--rehearsal", "--prices-file", str(tmp_path / "p.json")])
+        args = r2.build_parser().parse_args(["r2-4", "--group", "without", "--rehearsal", "--prices-file", str(tmp_path / "p.json")])
         with pytest.raises(pd.Refused, match="produced no result file"):
             r2.r2_4(args, day, [], {})
 
@@ -191,3 +217,14 @@ class TestR25W07:
         args = r2.build_parser().parse_args(["r2-5", "--model", "m/x", "--rehearsal"])
         with pytest.raises(pd.Refused, match="TC-006 run 1"):
             r2.r2_5(args, day, ["m/x"], {"m/x": {"in": 0.1, "out": 0.5}})
+
+
+class TestTheFreezeKnowsTheRoundTwoStages:
+    def test_every_stage_of_round_two_has_the_criteria_ceiling_in_the_freeze(self):
+        """Found while preparing the commands: the freeze refused R2-1..R2-5 ('no ceiling in a criteria file'), so nobody could have frozen the round."""
+        from research import paid_run_freeze as fz
+        for stage, ceiling in r2.CEILINGS.items():
+            assert fz.stage_ceiling(stage) == ceiling, stage
+        problems = fz.problems_before_freezing(["anthropic/claude-haiku-5.5"], {"anthropic/claude-haiku-5.5": {"in": 0.1, "out": 0.5}}, list(r2.CEILINGS), r2.TOTAL_LIMIT, True)
+        assert not [p for p in problems if "ceiling" in p or "budget" in p], problems                  # (an uncommitted working tree is a different, correct refusal)
+        assert fz.STAGE_CEILINGS_USD == {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.00, "PR": 0.75}          # day one's table is untouched

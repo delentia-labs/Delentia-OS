@@ -36,6 +36,11 @@ K15_COMMAND_BUDGET = 0.60
 CAREFUL = {"W09", "W12"}                                          # one run until --tooling-checked says the step list was read
 K15_GROUPS = {"require_parameters": ["qwen/qwen3.5-397b-a17b", "x-ai/grok-build-0.1", "google/gemini-3.8-flash"],
               "without": ["anthropic/claude-haiku-5.5", "amazon/nova-pro-v1", "moonshotai/kimi-k2"]}
+# Round two runs each model in a window with the setting that model had on day one (R0044-R0084: haiku WITHOUT `require_parameters`, grok WITH it): results are never pooled across settings, and a freeze pins one.
+MODEL_SETTING = {"anthropic/claude-haiku-5.5": "without", "amazon/nova-pro-v1": "without", "moonshotai/kimi-k2": "without",
+                 "x-ai/grok-build-0.1": "require_parameters", "qwen/qwen3.5-397b-a17b": "require_parameters", "google/gemini-3.8-flash": "require_parameters"}
+MODEL_SHARES = {"r2-1": {"anthropic/claude-haiku-5.5": 0.15, "x-ai/grok-build-0.1": 1.05},       # day one: haiku about $0.007 and grok about $0.13 per judge run; the shares add up to the block's ceiling
+                "r2-2": {"anthropic/claude-haiku-5.5": 0.70, "x-ai/grok-build-0.1": 1.30}}
 BLOCK_OF = {"r2-1": "R2-1", "r2-2": "R2-2", "r2-3": "R2-3", "r2-4": "R2-4", "r2-5": "R2-5"}
 
 
@@ -43,10 +48,31 @@ def total_file(env: Dict[str, str], override: Optional[str] = None) -> Path:
     return Path(override) if override else Path(env.get("DELENTIA_HOME") or Path.home() / ".delentia") / "paid-day" / "round2_total.json"
 
 
+def window_ceiling(command: str, models: List[str], group: Optional[str] = None) -> float:
+    """The most this window (one key, one setting) may spend: a model's share of R2-1 or R2-2, half of R2-4 (one group), the whole block otherwise."""
+    stage = BLOCK_OF[command]
+    if command in MODEL_SHARES:
+        return round(sum(MODEL_SHARES[command].get(m, CEILINGS[stage] / 2) for m in models), 4)
+    if command == "r2-4":
+        return round(CEILINGS[stage] / 2, 4)
+    return CEILINGS[stage]
+
+
+def setting_problem(command: str, models: List[str], group: Optional[str], env: Dict[str, str]) -> Optional[str]:
+    """The `require_parameters` setting of this window must be the one its models had on day one, and one setting only."""
+    wanted = {group} if (command == "r2-4" and group) else {MODEL_SETTING.get(m) for m in models}
+    if None in wanted or len(wanted) != 1:
+        return f"the models {models or '(none)'} do not share one known setting (run models with different settings in separate windows)"
+    want = next(iter(wanted))
+    have = "require_parameters" if (env.get("DELENTIA_OPENROUTER_REQUIRE_PARAMETERS") or "").strip() in ("1", "true", "yes") else "without"
+    return None if have == want else f"this window has DELENTIA_OPENROUTER_REQUIRE_PARAMETERS {'set' if have != 'without' else 'unset'}, these models ran on day one {'WITH' if want == 'require_parameters' else 'WITHOUT'} it"
+
+
 def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str], Dict[str, Any]] = pd.key_info) -> List[Dict[str, Any]]:
-    stage = BLOCK_OF[args.command]
-    ceiling = CEILINGS[stage]
-    rows = [pd.check("OPENROUTER_API_KEY is set", bool(env.get("OPENROUTER_API_KEY")), "set it in this terminal: the key is a fresh one for this block, limit = the block's ceiling"),
+    models = ([args.model] if args.command in ("r2-3", "r2-5") and args.model else None) or args.models or []
+    group = getattr(args, "group", None)
+    ceiling = window_ceiling(args.command, models, group)
+    rows = [pd.check("OPENROUTER_API_KEY is set", bool(env.get("OPENROUTER_API_KEY")), "set it in this terminal: the key is a fresh one for this window, limit = the window's ceiling"),
             pd.check("DELENTIA_RUN_LIVE_TESTS=1", env.get("DELENTIA_RUN_LIVE_TESTS") == "1", "paid runs are opt-in"),
             pd.check("provider data collection is denied", (env.get("DELENTIA_OPENROUTER_DATA_COLLECTION") or "").lower() == "deny", "set DELENTIA_OPENROUTER_DATA_COLLECTION=deny")]
     loopback = pd.is_loopback(pd.base_url())
@@ -57,10 +83,12 @@ def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str
             limit = got.get("limit")
             rows.append(pd.check("the key has a credit limit set at the provider", limit is not None, "set the key's credit limit in the OpenRouter console"))
             if limit is not None:
-                rows.append(pd.check(f"the limit is at most this block's ceiling ${ceiling:.2f}", float(limit) <= ceiling + 1e-9, f"limit ${limit}: a higher limit leaves room for the runaway the ceiling prevents"))
+                rows.append(pd.check(f"the limit is at most this window's ceiling ${ceiling:.2f}", float(limit) <= ceiling + 1e-9, f"limit ${limit}: a higher limit leaves room for the runaway the ceiling prevents"))
             rows.append(pd.check("the key is fresh (used under $0.10)", float(got.get("usage", 0.0)) < 0.10, f"already used ${got.get('usage')}"))
         except Exception as exc:                                         # the provider could not be asked: nothing is assumed
             rows.append(pd.check("the key can be read at the provider", False, f"{type(exc).__name__}"))
+    problem = setting_problem(args.command, models if args.command != "r2-4" else [], group, env) if (models or group) else "no model or group named"
+    rows.append(pd.check("the require_parameters setting matches what these models had on day one", problem is None, problem or ""))
     freeze = args.freeze_file or env.get("DELENTIA_FREEZE_FILE")
     rows.append(pd.check("a frozen configuration is named (or --rehearsal)", bool(freeze) or bool(args.rehearsal), "python -m research.paid_run_freeze write ... (one commit for the whole round)"))
     tf = total_file(env, args.total_file)
@@ -81,7 +109,7 @@ def r2_1(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
     day.env["DELENTIA_RCT7_JUDGE_MAX_TOKENS"] = JUDGE_ALLOWANCE
     os.environ["DELENTIA_RCT7_JUDGE_MAX_TOKENS"] = JUDGE_ALLOWANCE
     start = day.usage() if day.execute else 0.0
-    per_run = round(CEILINGS["R2-1"] / (len(models) * 3), 4)
+    per_run = round(window_ceiling("r2-1", models) / (len(models) * 3), 4)
     for model in models:
         for label, module in [("set1", "research.rct7_holdout"), ("set2", "research.rct7_holdout"), ("set3 plain", "research.rct7_holdout_twoaxis"), ("set3 context", "research.rct7_holdout_twoaxis"),
                               ("set4 plain", "research.rct7_holdout_twoaxis"), ("set4 context", "research.rct7_holdout_twoaxis")]:
@@ -94,7 +122,7 @@ def r2_1(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
 
 def r2_2(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> None:
     start = day.usage() if day.execute else 0.0
-    per_model = round(CEILINGS["R2-2"] / len(models) * 0.8, 4)
+    per_model = round(window_ceiling("r2-2", models) / len(models) * 0.8, 4)
     for model in models:
         day.run("R2-2", f"{model} TC-003 b0 d0", [sys.executable, "-m", "research.daaes", "benchmark", "--provider", "openrouter", "--model", model, "--arms", "b0,d0", "--seeds", (args.seeds if args.rehearsal and args.seeds else TC003_SEEDS),
                                                   "--budget-usd", str(per_model), *pd.price_args(prices, model), "--out", str(day.out / f"r2_tc003_{model.replace('/', '_')}")], start)
@@ -148,23 +176,19 @@ def r2_5(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[
 
 
 def r2_4(args: argparse.Namespace, day: pd.Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> None:
+    """One group of three models, three repeats, in a window whose `require_parameters` setting is that group's (the setting is checked by the preflight and pinned by the freeze)."""
+    group = args.group
+    members = K15_GROUPS[group]
     start = day.usage() if day.execute else 0.0
     for rep in range(1, 4):
-        for group, members in K15_GROUPS.items():
-            env_extra = {"DELENTIA_OPENROUTER_REQUIRE_PARAMETERS": "1"} if group == "require_parameters" else {}
-            if group == "without":
-                day.env.pop("DELENTIA_OPENROUTER_REQUIRE_PARAMETERS", None)
-                os.environ.pop("DELENTIA_OPENROUTER_REQUIRE_PARAMETERS", None)
-            day.env.update(env_extra)
-            os.environ.update(env_extra)
-            result_file = day.out / f"r2_4_{group}_{rep}.json"
-            # the orchestrator's own rule asks for the estimate WITH its 1.5x margin to fit under --budget-usd, so the per-command budget is a sixth of the ceiling plus 10%: the real spend is about the estimate, not the margin
-            day.run("R2-4", f"K15 repeat {rep} {group}", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(members), "--budget-usd", str(K15_COMMAND_BUDGET),
-                                                          *pd.price_source_args(args), *pd.freeze_args(args), "--execute", "--out", str(result_file)], start)
-            if day.execute and not result_file.exists():                  # the orchestrator exits 0 when IT refuses ("estimate with margin is above the budget"): that is not a result
-                log = day.out / f"R2-4_K15_repeat_{rep}_{group}.log"
-                tail = log.read_text(encoding="utf-8", errors="replace")[-300:] if log.exists() else ""
-                raise pd.Refused(f"K15 repeat {rep} {group} produced no result file: the orchestrator refused or failed ({tail.strip()[-200:]})")
+        result_file = day.out / f"r2_4_{group}_{rep}.json"
+        # the orchestrator's own rule asks for the estimate WITH its 1.5x margin to fit under --budget-usd, so the per-command budget is a little above a sixth of the block's ceiling: the real spend is about the estimate, not the margin
+        day.run("R2-4", f"K15 repeat {rep} {group}", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(members), "--budget-usd", str(K15_COMMAND_BUDGET),
+                                                      *pd.price_source_args(args), *pd.freeze_args(args), "--execute", "--out", str(result_file)], start)
+        if day.execute and not result_file.exists():                  # the orchestrator exits 0 when IT refuses ("estimate with margin is above the budget"): that is not a result
+            log = day.out / f"R2-4_K15_repeat_{rep}_{group}.log"
+            tail = log.read_text(encoding="utf-8", errors="replace")[-300:] if log.exists() else ""
+            raise pd.Refused(f"K15 repeat {rep} {group} produced no result file: the orchestrator refused or failed ({tail.strip()[-200:]})")
 
 
 def summary(out: Path) -> str:
@@ -189,7 +213,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("command", choices=["preflight", "r2-1", "r2-2", "r2-3", "r2-4", "r2-5", "summary"])
     ap.add_argument("--stage", choices=list(BLOCK_OF), default=None, help="preflight: which block's checks")
     ap.add_argument("--models", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None)
-    ap.add_argument("--model", default=None, help="r2-3: the one model (haiku)")
+    ap.add_argument("--model", default=None, help="r2-3, r2-5: the one model (haiku)")
+    ap.add_argument("--group", choices=sorted(K15_GROUPS), default=None, help="r2-4: which three models (and so which require_parameters setting): run each group in its own window")
     ap.add_argument("--workflows", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None)
     ap.add_argument("--runs", type=int, default=14)
     ap.add_argument("--tooling-checked", type=lambda s: [m.strip() for m in s.split(",") if m.strip()], default=None, help="r2-3: W09 and/or W12, after you and Claude have read the step list of their first run")
@@ -223,12 +248,15 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
         args.command = args.stage
     models = [args.model] if args.command in ("r2-3", "r2-5") and args.model else (args.models or [])
     if args.command in ("r2-1", "r2-2", "r2-3", "r2-5") and not models:
-        print("Refused: --models (r2-3: --model) is needed. Nothing was spent.")
+        print("Refused: --models (r2-3 and r2-5: --model) is needed. Nothing was spent.")
+        return 2
+    if args.command == "r2-4" and not args.group:
+        print("Refused: r2-4 needs --group require_parameters or --group without (one setting per window). Nothing was spent.")
         return 2
     if args.command in ("r2-1", "r2-2") and len(models) > 2:
         print("Refused: at most two models (the criteria name haiku and grok). Nothing was spent.")
         return 2
-    prices = pd.load_prices(args, models or sum(K15_GROUPS.values(), []))
+    prices = pd.load_prices(args, models or (K15_GROUPS[args.group] if args.group else []))
     rows = preflight(args, env, info)
     print("Preflight:\n" + pd.render_checks(rows))
     if not all(r["ok"] for r in rows):
@@ -239,7 +267,8 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if not args.execute:
         print("\nDry run: the commands below are what --execute would run. Nothing is spent.")
     os.environ.update({k: v for k, v in env.items() if k.startswith("DELENTIA_") or k == "OPENROUTER_API_KEY"})
-    day = pd.Day(out, env, info, args.execute, ceilings=CEILINGS, watch_seconds=args.watch_seconds, total_file=total_file(env, args.total_file), total_limit=TOTAL_LIMIT)
+    window = dict(CEILINGS, **{BLOCK_OF[args.command]: window_ceiling(args.command, models, args.group)})
+    day = pd.Day(out, env, info, args.execute, ceilings=window, watch_seconds=args.watch_seconds, total_file=total_file(env, args.total_file), total_limit=TOTAL_LIMIT)
     runner = {"r2-1": r2_1, "r2-2": r2_2, "r2-3": r2_3, "r2-4": r2_4, "r2-5": r2_5}[args.command]
     try:
         runner(args, day, models or [], prices)
