@@ -108,6 +108,17 @@ def preflight(args: argparse.Namespace, env: Dict[str, str], info: Callable[[str
         so_far = TOTAL_LIMIT
         rows.append(pd.check("the running total can be read", False, str(exc)))
     rows.append(pd.check(f"the running total ${so_far:.2f} is under the round's ${TOTAL_LIMIT:.2f}", so_far < TOTAL_LIMIT - 1e-9, f"file {tf}"))
+    # Amendment 5, item 5: before money is spent, what the model will be SHOWN must hold the tools the job needs, with their argument names (no model, no cost).
+    wanted = {"r2-3": [w for w in ("W09", "W12") if not args.workflows or w in args.workflows], "r2-5": ["TC-006"]}.get(args.command, [])
+    if wanted:
+        from research import live_menu_check as lmc
+        for name in wanted:
+            try:
+                result = lmc.CHECKS[name]()
+                detail = "" if result["ok"] else f"missing tools {result['missing_tools']}, missing arguments {result['missing_args']}"
+            except Exception as exc:                                         # a check that cannot run is a refusal, not a pass
+                result, detail = {"ok": False}, f"{type(exc).__name__}: {exc}"
+            rows.append(pd.check(f"{name}: the menu the model receives holds its tools and their argument names", bool(result["ok"]), detail))
     if args.command == "r2-1":
         for name, fname in pd.SETS.items():
             sealed = (Path(args.sheets_dir) / fname).with_suffix(".sealed.json")

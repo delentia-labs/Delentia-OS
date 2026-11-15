@@ -1,0 +1,1407 @@
+{
+ "k": 10,
+ "tools_in_list": 69,
+ "external": {
+  "ranked": {
+   "recall": 0.955,
+   "mean_menu": 10.57,
+   "n": 44,
+   "rows": [
+    {
+     "goal": "N01",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N02",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N06",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N07",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N08",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N09",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N10",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N11",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T01",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T02",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T06",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T07",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T08",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T09",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T10",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T11",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C01",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C02",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C05",
+     "size": 9,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C06",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C07",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C08",
+     "size": 12,
+     "ok": false,
+     "missing": [
+      "mcp__calendar__list_events"
+     ]
+    },
+    {
+     "goal": "M01",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M02",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M04",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M06",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M07",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M08",
+     "size": 11,
+     "ok": false,
+     "missing": [
+      "mcp__mailbox__search_messages"
+     ]
+    },
+    {
+     "goal": "X01",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X02",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X06",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  },
+  "R1": {
+   "recall": 0.955,
+   "mean_menu": 11.89,
+   "n": 44,
+   "rows": [
+    {
+     "goal": "N01",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N02",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N03",
+     "size": 14,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N06",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N07",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N08",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N09",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N10",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "N11",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T01",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T02",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T05",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T06",
+     "size": 15,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T07",
+     "size": 15,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T08",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T09",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T10",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "T11",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C01",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C02",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C03",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C05",
+     "size": 9,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C06",
+     "size": 15,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C07",
+     "size": 14,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "C08",
+     "size": 12,
+     "ok": false,
+     "missing": [
+      "mcp__calendar__list_events"
+     ]
+    },
+    {
+     "goal": "M01",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M02",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M03",
+     "size": 20,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M04",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M05",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M06",
+     "size": 15,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M07",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "M08",
+     "size": 13,
+     "ok": false,
+     "missing": [
+      "mcp__mailbox__search_messages"
+     ]
+    },
+    {
+     "goal": "X01",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X02",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X03",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X04",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X05",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "X06",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  }
+ },
+ "builtin_dev": {
+  "ranked": {
+   "recall": 1.0,
+   "mean_menu": 9.42,
+   "n": 36,
+   "rows": [
+    {
+     "goal": "What do you remember about my deployment",
+     "size": 3,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Remember that the staging database is ca",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Open pyproject.toml and tell me which Py",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Find every place in the code that mentio",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Create docs/runbook.md with a short chec",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Change the default port in config.py fro",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Run the unit tests for the parser module",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Fetch https://example.org/changelog and ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Look up who maintains the zstandard libr",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Remind me tomorrow at 9 to renew the TLS",
+     "size": 2,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Are there any reminders due right now?",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Split this job between three helpers: on",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show me the last ten approvals and who s",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which intents did the system process ear",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What files are waiting in the shared tra",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Save this meeting summary into the trans",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Convert the CSV that was dropped in the ",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is it true that Python 3.13 removed the ",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is the background scheduler running, and",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which worktrees do we have open for the ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Give the helper its own isolated checkou",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What capabilities does this runtime have",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Draw a simple logo concept: a green leaf",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "The earlier command output was compresse",
+     "size": 9,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which tools have we written ourselves th",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Use the slugify tool we created to turn ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Extract the key terms from this paragrap",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Write a small function that checks wheth",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ฉันจำอะไรเกี่ยวกับรูปแบบการ deploy ของที",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "จำไว้ว่าฐานข้อมูล staging ชื่อ stg-order",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "เปิดไฟล์ README.md แล้วบอกว่าโปรเจ็กต์นี",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นหาทุกที่ในโค้ดที่พูดถึง rate limit",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "เตือนฉันพรุ่งนี้ 9 โมงให้ต่ออายุใบรับรอง",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นเว็บหน่อยว่า Python เวอร์ชันล่าสุดคือ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ตอนนี้ scheduler เบื้องหลังยังทำงานอยู่ไ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ขอดูประวัติการอนุมัติ 10 รายการล่าสุด",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  },
+  "R1": {
+   "recall": 1.0,
+   "mean_menu": 9.69,
+   "n": 36,
+   "rows": [
+    {
+     "goal": "What do you remember about my deployment",
+     "size": 3,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Remember that the staging database is ca",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Open pyproject.toml and tell me which Py",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Find every place in the code that mentio",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Create docs/runbook.md with a short chec",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Change the default port in config.py fro",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Run the unit tests for the parser module",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Fetch https://example.org/changelog and ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Look up who maintains the zstandard libr",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Remind me tomorrow at 9 to renew the TLS",
+     "size": 2,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Are there any reminders due right now?",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Split this job between three helpers: on",
+     "size": 15,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show me the last ten approvals and who s",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which intents did the system process ear",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What files are waiting in the shared tra",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Save this meeting summary into the trans",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Convert the CSV that was dropped in the ",
+     "size": 14,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is it true that Python 3.13 removed the ",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is the background scheduler running, and",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which worktrees do we have open for the ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Give the helper its own isolated checkou",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What capabilities does this runtime have",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Draw a simple logo concept: a green leaf",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "The earlier command output was compresse",
+     "size": 9,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which tools have we written ourselves th",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Use the slugify tool we created to turn ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Extract the key terms from this paragrap",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Write a small function that checks wheth",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ฉันจำอะไรเกี่ยวกับรูปแบบการ deploy ของที",
+     "size": 12,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "จำไว้ว่าฐานข้อมูล staging ชื่อ stg-order",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "เปิดไฟล์ README.md แล้วบอกว่าโปรเจ็กต์นี",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นหาทุกที่ในโค้ดที่พูดถึง rate limit",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "เตือนฉันพรุ่งนี้ 9 โมงให้ต่ออายุใบรับรอง",
+     "size": 5,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นเว็บหน่อยว่า Python เวอร์ชันล่าสุดคือ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ตอนนี้ scheduler เบื้องหลังยังทำงานอยู่ไ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ขอดูประวัติการอนุมัติ 10 รายการล่าสุด",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  }
+ },
+ "builtin_holdout": {
+  "ranked": {
+   "recall": 0.968,
+   "mean_menu": 8.16,
+   "n": 31,
+   "rows": [
+    {
+     "goal": "Do you know anything about how our custo",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Note for later: the on-call phone number",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show me what is inside src/app.py.",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Where in the repository is the retry log",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Add a CHANGELOG.md entry saying version ",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "In utils.py replace the word colour with",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Execute the linter over the whole projec",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Go to https://example.org/pricing and te",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Search the internet for the current stab",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Ping me on Friday afternoon to review th",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Did any of my scheduled alerts fire?",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Hand the three modules to three separate",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What actions has the system taken today,",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "List the requests that were interpreted ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What is sitting in the file handoff dire",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Put the draft contract into the handoff ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Turn the markdown file in the handoff di",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Verify this statement against what is kn",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is the daemon alive?",
+     "size": 2,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show every separate working copy created",
+     "size": 10,
+     "ok": false,
+     "missing": [
+      "delentia_list_worktrees"
+     ]
+    },
+    {
+     "goal": "Set up an isolated branch checkout for t",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which features are available in this sys",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Make a picture of a mountain at sunrise.",
+     "size": 3,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "That big tool result was shortened. Show",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What custom tools did we add that are ac",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Run our own median tool on the numbers 4",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Pull the main keywords out of this suppo",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ขอฟังก์ชันสั้นๆ ที่เช็กว่าอีเมลถูกรูปแบบ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ลูกค้าชอบให้ติดต่อทางช่องทางไหน เคยบอกไว",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นในโค้ดหาที่ที่เขียน retry ไว้",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ไปที่ https://example.org/pricing แล้วบอ",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  },
+  "R1": {
+   "recall": 0.968,
+   "mean_menu": 8.65,
+   "n": 31,
+   "rows": [
+    {
+     "goal": "Do you know anything about how our custo",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Note for later: the on-call phone number",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show me what is inside src/app.py.",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Where in the repository is the retry log",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Add a CHANGELOG.md entry saying version ",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "In utils.py replace the word colour with",
+     "size": 7,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Execute the linter over the whole projec",
+     "size": 9,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Go to https://example.org/pricing and te",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Search the internet for the current stab",
+     "size": 13,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Ping me on Friday afternoon to review th",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Did any of my scheduled alerts fire?",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Hand the three modules to three separate",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What actions has the system taken today,",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "List the requests that were interpreted ",
+     "size": 18,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What is sitting in the file handoff dire",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Put the draft contract into the handoff ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Turn the markdown file in the handoff di",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Verify this statement against what is kn",
+     "size": 8,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Is the daemon alive?",
+     "size": 2,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Show every separate working copy created",
+     "size": 10,
+     "ok": false,
+     "missing": [
+      "delentia_list_worktrees"
+     ]
+    },
+    {
+     "goal": "Set up an isolated branch checkout for t",
+     "size": 6,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Which features are available in this sys",
+     "size": 4,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Make a picture of a mountain at sunrise.",
+     "size": 3,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "That big tool result was shortened. Show",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "What custom tools did we add that are ac",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Run our own median tool on the numbers 4",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "Pull the main keywords out of this suppo",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ขอฟังก์ชันสั้นๆ ที่เช็กว่าอีเมลถูกรูปแบบ",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ลูกค้าชอบให้ติดต่อทางช่องทางไหน เคยบอกไว",
+     "size": 11,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ค้นในโค้ดหาที่ที่เขียน retry ไว้",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    },
+    {
+     "goal": "ไปที่ https://example.org/pricing แล้วบอ",
+     "size": 10,
+     "ok": true,
+     "missing": []
+    }
+   ]
+  }
+ },
+ "verdict": {
+  "gain_points": 0.0,
+  "mean_menu_growth": 1.32,
+  "builtin_holdout_loss_points": 0.0,
+  "checks": {
+   "external_recall_gain_points_at_least_10": false,
+   "mean_menu_growth_at_most_2": true,
+   "builtin_holdout_loss_points_at_most_1": true
+  },
+  "propose_adoption": false
+ }
+}
