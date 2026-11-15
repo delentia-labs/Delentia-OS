@@ -176,14 +176,57 @@ def render_checks(rows: List[Dict[str, Any]]) -> str:
 class Day:
     """One output folder, one log, and the spending guard (the provider's own usage figure, read before and after every command)."""
 
-    def __init__(self, out: Path, env: Dict[str, str], info: Callable[[str], Dict[str, Any]] = key_info, execute: bool = False):
+    # Round 113 (H4, H6): `watch_seconds` is how often the provider's usage figure is read WHILE a command runs (a command that reaches `trip_fraction` of its stage's ceiling is stopped, process tree
+    # included: the provider's figure lags by up to one call, so the trip is below the ceiling); `total_file` + `total_limit` keep a running total across keys and days and refuse a command when it is reached.
+    def __init__(self, out: Path, env: Dict[str, str], info: Callable[[str], Dict[str, Any]] = key_info, execute: bool = False, *,
+                 ceilings: Optional[Dict[str, float]] = None, watch_seconds: float = 15.0, trip_fraction: float = 0.9,
+                 total_file: Optional[Path] = None, total_limit: Optional[float] = None):
         self.out, self.env, self.info, self.execute = out, dict(env), info, execute
         self.out.mkdir(parents=True, exist_ok=True)
         self.log = self.out / "paid_day_log.jsonl"
         self.spent: Dict[str, float] = {}
+        self.ceilings = dict(STAGE_CEILINGS if ceilings is None else ceilings)
+        self.watch_seconds, self.trip_fraction = watch_seconds, trip_fraction
+        self.total_file, self.total_limit = total_file, total_limit
 
     def usage(self) -> float:
         return float(self.info(self.env["OPENROUTER_API_KEY"])["usage"])
+
+    def running_total(self) -> float:
+        if not self.total_file or not Path(self.total_file).is_file():
+            return 0.0
+        try:
+            return float(json.loads(Path(self.total_file).read_text(encoding="utf-8")).get("total", 0.0))
+        except (ValueError, OSError) as exc:
+            raise Refused(f"the running total file {self.total_file} cannot be read: not spending until it is fixed or removed by you") from exc
+
+    def add_to_total(self, amount: float, stage: str, label: str) -> None:
+        if not self.total_file or amount <= 0:
+            return
+        data: Dict[str, Any] = {"total": 0.0, "entries": []}
+        if Path(self.total_file).is_file():
+            data = json.loads(Path(self.total_file).read_text(encoding="utf-8"))
+        data["total"] = round(float(data.get("total", 0.0)) + amount, 6)
+        data.setdefault("entries", []).append({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "stage": stage, "label": label, "usd": round(amount, 6)})
+        Path(self.total_file).parent.mkdir(parents=True, exist_ok=True)
+        Path(self.total_file).write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def kill_tree(proc: "subprocess.Popen[Any]") -> None:
+        if proc.poll() is not None:
+            return
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            import signal
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
 
     def record(self, entry: Dict[str, Any]) -> None:
         with self.log.open("a", encoding="utf-8") as handle:
@@ -192,10 +235,16 @@ class Day:
     def run(self, stage: str, label: str, argv: List[str], start_usage: float, timeout: float = 5400.0) -> Tuple[int, float]:
         """Run one command. Refuses first if the stage already used its ceiling; the argument list never contains the key."""
         assert "OPENROUTER_API_KEY" not in " ".join(argv)
-        so_far = max(0.0, self.usage() - start_usage) if self.execute else 0.0
-        if so_far >= STAGE_CEILINGS[stage] - 1e-9:
-            self.record({"stage": stage, "label": label, "refused": f"the stage already used ${so_far:.4f}, its ceiling is ${STAGE_CEILINGS[stage]:.2f}"})
-            raise Refused(f"stage {stage} reached its ceiling (${so_far:.4f} of ${STAGE_CEILINGS[stage]:.2f}); not starting '{label}'")
+        ceiling = self.ceilings[stage]
+        usage_before = self.usage() if self.execute else 0.0
+        so_far = max(0.0, usage_before - start_usage) if self.execute else 0.0
+        if so_far >= ceiling - 1e-9:
+            self.record({"stage": stage, "label": label, "refused": f"the stage already used ${so_far:.4f}, its ceiling is ${ceiling:.2f}"})
+            raise Refused(f"stage {stage} reached its ceiling (${so_far:.4f} of ${ceiling:.2f}); not starting '{label}'")
+        total_before = self.running_total() if self.execute else 0.0
+        if self.total_limit is not None and total_before >= self.total_limit - 1e-9:
+            self.record({"stage": stage, "label": label, "refused": f"the running total is ${total_before:.4f}, its limit is ${self.total_limit:.2f}"})
+            raise Refused(f"the running total reached its limit (${total_before:.4f} of ${self.total_limit:.2f}); not starting '{label}'")
         printable = " ".join(argv[1:] if argv and argv[0] == sys.executable else argv)
         print(f"\n-- {stage} / {label}\n   python {printable}")
         if not self.execute:
@@ -203,12 +252,36 @@ class Day:
             return 0, 0.0
         began = time.time()
         log_file = self.out / f"{stage}_{label.replace(' ', '_').replace('/', '_')}.log"
+        stopped_by = ""
         with log_file.open("w", encoding="utf-8", errors="replace") as handle:
-            proc = subprocess.run(argv, stdout=handle, stderr=subprocess.STDOUT, text=True, cwd=str(ROOT), env=self.env, timeout=timeout)
+            popen_kw: Dict[str, Any] = {"start_new_session": True} if os.name != "nt" else {}
+            proc = subprocess.Popen(argv, stdout=handle, stderr=subprocess.STDOUT, text=True, cwd=str(ROOT), env=self.env, **popen_kw)
+            while True:
+                try:
+                    proc.wait(timeout=self.watch_seconds)
+                    break
+                except subprocess.TimeoutExpired:
+                    pass
+                if time.time() - began > timeout:
+                    self.kill_tree(proc)
+                    raise subprocess.TimeoutExpired(argv, timeout)
+                now = self.usage()
+                stage_now, total_now = now - start_usage, total_before + max(0.0, now - usage_before)
+                if stage_now >= ceiling * self.trip_fraction:
+                    stopped_by = f"stage usage ${stage_now:.4f} reached {self.trip_fraction:.0%} of its ceiling ${ceiling:.2f}"
+                elif self.total_limit is not None and total_now >= self.total_limit * self.trip_fraction:
+                    stopped_by = f"running total ${total_now:.4f} reached {self.trip_fraction:.0%} of its limit ${self.total_limit:.2f}"
+                if stopped_by:
+                    self.kill_tree(proc)
+                    break
         used = self.usage() - start_usage
-        self.record({"stage": stage, "label": label, "argv": printable, "exit": proc.returncode, "seconds": round(time.time() - began, 1), "stage_usage_usd": round(used, 6), "log": str(log_file)})
-        print(f"   exit {proc.returncode}, {time.time() - began:.0f}s, stage usage so far ${used:.4f} of ${STAGE_CEILINGS[stage]:.2f}  ({log_file.name})")
-        if used > STAGE_CEILINGS[stage] * 1.5:
+        self.add_to_total(max(0.0, used - so_far), stage, label)
+        self.record({"stage": stage, "label": label, "argv": printable, "exit": proc.returncode, "seconds": round(time.time() - began, 1), "stage_usage_usd": round(used, 6), "log": str(log_file),
+                     **({"stopped_by_driver": stopped_by} if stopped_by else {})})
+        print(f"   exit {proc.returncode}, {time.time() - began:.0f}s, stage usage so far ${used:.4f} of ${ceiling:.2f}  ({log_file.name})")
+        if stopped_by:
+            raise Refused(f"'{label}' was stopped while it ran: {stopped_by}. Its partial output is in {log_file.name}; what it spent is counted.")
+        if used > ceiling * 1.5:
             raise Refused(f"stage {stage} used ${used:.4f}, more than 1.5x its ceiling: stopping the day")
         return proc.returncode, used
 
@@ -262,16 +335,27 @@ def propose(qualified: Dict[str, Any], prices: Dict[str, Dict[str, float]], limi
     return picks
 
 
+def wanted(args: argparse.Namespace, stage: str) -> bool:
+    """Round 113 (H5): `--only P1b,P4` runs just those stages of the command; nothing given = all of them (the old behaviour)."""
+    only = getattr(args, "only", None)
+    return not only or stage in only
+
+
 def stage1(args: argparse.Namespace, day: Day, models: List[str], prices: Dict[str, Dict[str, float]]) -> Dict[str, Any]:
     p0_model = args.p0_model or min(models, key=lambda m: prices[m]["in"] + prices[m]["out"])
     start = day.usage() if day.execute else 0.0
-    code, _ = day.run("P0", f"meter {p0_model}", [sys.executable, "scripts/calibrate_meter_p0.py", p0_model, *price_args(prices, p0_model), "--budget-usd", "0.10", "--json", str(day.out / "p0.json")], start)
-    if day.execute:
-        p0 = json.loads((day.out / "p0.json").read_text(encoding="utf-8")) if (day.out / "p0.json").exists() else {}
-        verdict = (p0.get("result") or {}).get("verdict")
-        print(f"   P0 verdict: {verdict}  ({(p0.get('result') or {}).get('why', '')})")
-        if code != 0 or verdict != "pass":
-            raise Refused(f"P0 did not pass ({verdict}): no later stage is started. Read {day.out / 'p0.json'}; an inconclusive result is repeated with more calls inside the same $0.10, a fail means the meter is fixed first.")
+    if wanted(args, "P0"):
+        code, _ = day.run("P0", f"meter {p0_model}", [sys.executable, "scripts/calibrate_meter_p0.py", p0_model, *price_args(prices, p0_model), "--budget-usd", "0.10", "--json", str(day.out / "p0.json")], start)
+        if day.execute:
+            p0 = json.loads((day.out / "p0.json").read_text(encoding="utf-8")) if (day.out / "p0.json").exists() else {}
+            verdict = (p0.get("result") or {}).get("verdict")
+            print(f"   P0 verdict: {verdict}  ({(p0.get('result') or {}).get('why', '')})")
+            if code != 0 or verdict != "pass":
+                raise Refused(f"P0 did not pass ({verdict}): no later stage is started. Read {day.out / 'p0.json'}; an inconclusive result is repeated with more calls inside the same $0.10, a fail means the meter is fixed first.")
+    else:
+        print("-- P0 skipped (--only)")
+    if not wanted(args, "P1"):
+        return {"p0_model": p0_model}
     start = day.usage() if day.execute else 0.0
     code, _ = day.run("P1", "capability screen", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "W", "--models", ",".join(models), "--budget-usd", "5",
                       *price_source_args(args), *freeze_args(args), *(["--per-model-max-usd", str(args.per_model_max_usd)] if getattr(args, "per_model_max_usd", None) is not None else []), "--execute", "--out", str(day.out / "p1.json")], start)
@@ -295,11 +379,12 @@ def stage2(args: argparse.Namespace, day: Day, selected: List[str], prices: Dict
     sel_file.write_text(json.dumps(selection, indent=2), encoding="utf-8")
     print(f"selection written first: {sel_file} (sha256 {hashlib.sha256(sel_file.read_bytes()).hexdigest()[:16]}...)")
     start = day.usage() if day.execute else 0.0
-    day.run("P1b", "menu A/B", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "M", "--models", ",".join(selected), "--budget-usd", "1.5",
-                                *price_source_args(args), *freeze_args(args), "--execute", "--out", str(day.out / "p1b.json")], start)
+    if wanted(args, "P1b"):
+        day.run("P1b", "menu A/B", [sys.executable, "scripts/full_test_orchestrator.py", "--tier", "M", "--models", ",".join(selected), "--budget-usd", "1.5",
+                                    *price_source_args(args), *freeze_args(args), "--execute", "--out", str(day.out / "p1b.json")], start)
     start = day.usage() if day.execute else 0.0
     per_model = round(STAGE_CEILINGS["P2"] / len(selected), 4)
-    for model in selected:
+    for model in (selected if wanted(args, "P2") else []):
         runs = [("set1", ["python", "-m", "research.rct7_holdout", "run"]), ("set2", ["python", "-m", "research.rct7_holdout", "run"]),
                 ("set3 plain", ["python", "-m", "research.rct7_holdout_twoaxis", "run"]), ("set3 context", ["python", "-m", "research.rct7_holdout_twoaxis", "run"]),
                 ("set4 plain", ["python", "-m", "research.rct7_holdout_twoaxis", "run"]), ("set4 context", ["python", "-m", "research.rct7_holdout_twoaxis", "run"])]
@@ -313,7 +398,7 @@ def stage2(args: argparse.Namespace, day: Day, selected: List[str], prices: Dict
             day.run("P2", f"{model} {label}", argv, start)
     start = day.usage() if day.execute else 0.0
     per_model_p4 = round(STAGE_CEILINGS["P4"] / len(selected), 4)
-    for model in selected:
+    for model in (selected if wanted(args, "P4") else []):
         day.run("P4", f"{model} TC-003 b0 d0", [sys.executable, "-m", "research.daaes", "benchmark", "--provider", "openrouter", "--model", model, "--arms", "b0,d0", "--seeds", P4_SEEDS,
                                                 "--budget-usd", str(round(per_model_p4 * 0.8, 4)), *price_args(prices, model), "--out", str(day.out / f"p4_tc003_{model.replace('/', '_')}")], start)
         day.run("P4", f"{model} TC-006", [sys.executable, "-m", "research.daaes", "live", "--case", "TC-006", "--provider", "openrouter", "--model", model,
@@ -372,6 +457,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--sheets-dir", default=str(ROOT.parent), help="where the four sealed holdout sheets are (default: the workspace folder above the repository)")
     ap.add_argument("--out-dir", default=None)
     ap.add_argument("--execute", action="store_true", help="really run (spends money); without it only the plan and the checks are printed")
+    ap.add_argument("--only", type=lambda s: [x.strip() for x in s.split(",") if x.strip()], default=None,
+                    help="run only these stages of the command, e.g. --only P1b,P4 (stage1: P0,P1; stage2: P1b,P2,P4); a name that is not a stage of the command is refused")
+    ap.add_argument("--total-file", default=None, help="a running total of what was spent, kept across keys and days (JSON); a command is refused once --total-limit is reached")
+    ap.add_argument("--total-limit", type=float, default=None, help="USD: with --total-file, the most the running total may reach")
+    ap.add_argument("--watch-seconds", type=float, default=15.0, help="how often the provider's usage is read while a command runs (it is stopped at 90%% of its stage ceiling)")
     ap.add_argument("--rehearsal", action="store_true", help="only against a loopback fake endpoint: skips the freeze check")
     return ap
 
@@ -383,6 +473,13 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if args.command == "summary":
         print(summary(out))
         return 0
+    valid_only = {"stage1": {"P0", "P1"}, "stage2": {"P1b", "P2", "P4"}, "stage3": {"PR"}}.get(args.command, set())
+    if args.only and (not valid_only or not set(args.only) <= valid_only):
+        print(f"Refused: --only {','.join(args.only)} is not made of stages of {args.command} ({', '.join(sorted(valid_only)) or 'none'}). Nothing was spent.")
+        return 2
+    if bool(args.total_file) != (args.total_limit is not None):
+        print("Refused: --total-file and --total-limit go together. Nothing was spent.")
+        return 2
     models = args.selected if args.command == "stage2" else (args.vision_models if args.command == "stage3" else args.models)
     prices = load_prices(args, models or []) if models else {}
     rows = preflight(args, env, info, prices if models else None)
@@ -395,7 +492,8 @@ def main(argv: Optional[List[str]] = None, env: Optional[Dict[str, str]] = None,
     if not args.execute:
         print("\nDry run: the commands below are what --execute would run. Nothing is spent.")
     os.environ.update({k: v for k, v in env.items() if k.startswith("DELENTIA_") or k == "OPENROUTER_API_KEY"})
-    day = Day(out, env, info, args.execute)
+    day = Day(out, env, info, args.execute, watch_seconds=args.watch_seconds,
+              total_file=Path(args.total_file) if args.total_file else None, total_limit=args.total_limit)
     try:
         if args.command == "stage1":
             stage1(args, day, models or [], prices)

@@ -85,6 +85,11 @@ def multi_file_reader(req: "sm.Request") -> str:
 def rehearsal_policy(req: "sm.Request") -> str:
     """Right answers to the K.1.5 goals and the Round 54 probe goals, and nothing smarter."""
     goal = req.goal.lower()
+    system = getattr(req, "system", "") or ""
+    if system.startswith("You review a REQUEST"):                    # the RCT-7 judge (round 113: the rehearsal of the judge sets needs a reply it can parse)
+        return json.dumps({"clear": True, "unknowns": []})
+    if system.startswith("You compare a REQUEST with an ANSWER"):     # the critic
+        return json.dumps({"meets": True, "unmet": []})
     if "key frame of shot" in req.prompt or "plan how to produce a new short video" in req.prompt.lower():      # stage PR (reference to plan): answers from the seed's truth
         from research import reference_eval, reference_stage
         truth = reference_eval.make_truth()
@@ -110,16 +115,21 @@ def rehearsal_policy(req: "sm.Request") -> str:
 
 class FakeOpenRouter:
     def __init__(self, prices: Dict[str, Dict[str, float]], key: str = "rehearsal-not-a-real-key", policy: Any = rehearsal_policy,
-                 reject_json_mode: bool = False, hidden_markup: float = 0.0, limit: Optional[float] = None, key_paths: tuple = ("/key", "/auth/key")):
+                 reject_json_mode: bool = False, hidden_markup: float = 0.0, limit: Optional[float] = None, key_paths: tuple = ("/key", "/auth/key"),
+                 faults: Optional[Dict[int, str]] = None):
         self.prices, self.key, self.policy = prices, key, policy
         self.key_paths = key_paths                        # which key-info paths answer: the documented /key, the older /auth/key, or both (the real service answered both on 2026-11-02)
         self.limit = limit                                # the credit limit set on the key at the provider (None = no cap), as /key reports it
         self.hidden_markup = hidden_markup                # a charge to the key that the reply's own `usage.cost` does not show (the case a meter calibration must catch)
         self.reject_json_mode = reject_json_mode          # answer HTTP 400 to `response_format`, as some upstream providers do
         self.json_mode_requests = 0
+        # Round 113 (R2-0): a call number (1 = the first chat call) -> what goes wrong on that call: "429" (retry-after 1), "402" (out of credit), "html" (a gateway page with HTTP 200),
+        # "long" (a reply cut by its length limit, billed), "reasoning" (2,000 tokens of reasoning before a valid reply, billed). A call with no entry behaves as before.
+        self.faults = dict(faults or {})
         self.spent = 0.0
         self.calls = 0
         self.rejected = 0
+        self.refused_calls = 0
         self._lock = threading.Lock()
         outer = self
 
@@ -170,15 +180,44 @@ class FakeOpenRouter:
                 images = sum(1 for m in messages if isinstance(m.get("content"), list) for x in m["content"] if isinstance(x, dict) and x.get("type") == "image_url")
                 prompt = "\n".join(_text(m) for m in messages if m.get("role") != "system")
                 system = "\n".join(_text(m) for m in messages if m.get("role") == "system")
+                with outer._lock:
+                    call_no = outer.calls + outer.refused_calls + 1
+                    fault = outer.faults.get(call_no)
+                    if fault in ("429", "402", "html"):
+                        outer.refused_calls += 1
+                if fault == "429":
+                    raw = json.dumps({"error": {"message": "rate limited"}}).encode("utf-8")
+                    self.send_response(429)
+                    self.send_header("Retry-After", "1")
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(raw)))
+                    self.end_headers()
+                    self.wfile.write(raw)
+                    return
+                if fault == "402":
+                    return self._send(402, {"error": {"message": "Insufficient credits"}})
+                if fault == "html":
+                    raw = b"<html><body>Bad gateway</body></html>"
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.send_header("Content-Length", str(len(raw)))
+                    self.end_headers()
+                    self.wfile.write(raw)
+                    return
                 content = outer.policy(sm.Request(prompt, system, body))
-                p_tokens, c_tokens = max(1, len(prompt + system) // 4) + 1000 * images, max(1, len(content) // 4)       # a picture counts as 1,000 prompt tokens, not as its base64 text
+                reasoning_tokens, finish = 0, "stop"
+                if fault == "long":
+                    content, finish = ("The answer begins and goes on " * 400)[:6000], "length"
+                elif fault == "reasoning":
+                    reasoning_tokens = 2000
+                p_tokens, c_tokens = max(1, len(prompt + system) // 4) + 1000 * images, max(1, len(content) // 4) + reasoning_tokens       # a picture counts as 1,000 prompt tokens, not as its base64 text
                 price = outer.prices[model]
                 cost = p_tokens * price["in"] / 1e6 + c_tokens * price["out"] / 1e6
                 with outer._lock:
                     outer.spent += cost * (1.0 + outer.hidden_markup)
                     outer.calls += 1
                 self._send(200, {"id": "rehearsal", "object": "chat.completion", "model": model,
-                                 "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
+                                 "choices": [{"index": 0, "message": {"role": "assistant", "content": content, **({"reasoning": "r" * 8000} if reasoning_tokens else {})}, "finish_reason": finish}],
                                  "usage": {"prompt_tokens": p_tokens, "completion_tokens": c_tokens, "total_tokens": p_tokens + c_tokens, "cost": cost}})
 
             def log_message(self, *args: Any) -> None:
