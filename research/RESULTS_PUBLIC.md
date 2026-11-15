@@ -4,6 +4,123 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0097: R2-2 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, TC-003 b0 vs d0, provider openrouter
+- Date: 2026-11-15T06:16:38Z; code: commit `5bbc49b` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1522
+- Units behind the verdict: 14; figures: hard failures 15
+- What it says: R2-2 TC-003, haiku, 14 tasks (seeds 1700-1713), arms b0 (no runtime) and d0 (runtime); commit a0de0d02, freeze W (require_parameters unset, data_collection=deny); window key total $0.156 on the Keys page. Primary (hidden-test pass fraction per task): all 14 pairs: d0 higher in 0, equal in 11, lower in 3 (1704, 1710, 1713); mean difference -0.039; hidden mean b0 0.805, d0 0.766; oracle passes 0 of 14 in both arms. The rule for 'helping' (d0 higher in >= 10 of 14, mean difference >= 0.10, no more false claims) is NOT met; 'harmful' is not met either. Dropped pairs: 2 d0 runs ended llm_error (1704, 1709): the last three requests were identical and every reply stopped at 2048 completion tokens with an empty final answer (probable cause, not proven: an empty or cut reply is retried unchanged and never reaches the loop's 4096 retry). Reading A: drop those 2 pairs, 12 remain, d0 higher in 0, equal 10, lower 2 -> no effect shown. 3 d0 runs ended stuck_repeating (1701, 1710, 1713); the criteria do not say whether that stop is a 'limit'; reading B drops all 5, leaves 9 pairs (< 10) -> inconclusive. The choice between A and B was made after reading the results. Registered as inconclusive for that reason. False success claims: b0 11 of 14, d0 4 of 14; DO NOT cite as evidence of honesty: d0 answers are hedged mainly because its write waits for a signature and the tests cannot be re-run after it. Cost per run b0 $0.0060, d0 $0.0051. One model, one task family.
+
+## R0096: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set4 context, provider openrouter
+- Date: 2026-11-15T05:45:50Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1221
+- Units behind the verdict: 60; figures: false stops 10, found 21, latency p50 s 6.97
+- What it says: Judge, sealed set 4, context prompt: found 21 of 30, false stops 10 of 30 (0.333). H3/H4 rule: false stops lower by 5, found lower by 8, so NOT met. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0095: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set4 plain, provider openrouter
+- Date: 2026-11-15T05:45:50Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1522
+- Units behind the verdict: 60; figures: false stops 15, found 29, latency p50 s 10.24
+- What it says: Judge, sealed set 4, plain prompt (baseline arm): found 29 of 30, false stops 15 of 30 (0.5). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0094: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set3 context, provider openrouter
+- Date: 2026-11-15T05:45:49Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1272
+- Units behind the verdict: 60; figures: false stops 6, found 22, latency p50 s 6.46
+- What it says: Judge, sealed set 3, context prompt (ctx-5dbf3fa34125): found 22 of 25, false stops 6 of 35 (0.171). H3 rule (false stops lower by >= 2 AND found lower by <= 1): false stops lower by 14, found lower by 2, so H3 NOT met (by one item of found); do not report the context judge as better. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0093: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set3 plain, provider openrouter
+- Date: 2026-11-15T05:45:49Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1246
+- Units behind the verdict: 60; figures: false stops 20, found 24, latency p50 s 6.08
+- What it says: Judge, sealed set 3, plain prompt (baseline arm of the H3 contrast): found 24 of 25, false stops 20 of 35 (0.571). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0092: R2-1 (pass)
+
+- Model and arm: `x-ai/grok-build-0.1`, critic set2, provider openrouter
+- Date: 2026-11-15T05:45:48Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0617
+- Units behind the verdict: 32; figures: false stops 0, found 8, latency p50 s 4.02
+- What it says: Critic, sealed set 2: found 8 of 8, false stops 0 of 24. Rule found >= 7 of 8 and false stops <= 3 of 24: met, on one owner's labels (small sample). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0091: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set1, provider openrouter
+- Date: 2026-11-15T05:45:48Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1147
+- Units behind the verdict: 59; figures: false stops 4, found 31, latency p50 s 5.77
+- What it says: Judge, sealed set 1: found 31 of 34 (0.912), false stops 4 of 25 (0.16, interval 0.064-0.347). Rule found >= 0.80 and false stops <= 0.15: NOT met, by one item of 25. Same totals and the same decision on all 60 items as haiku (R0085), with different reply wording. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0090: R2-1 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, judge set4 context, provider openrouter
+- Date: 2026-11-15T04:58:45Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0096
+- Units behind the verdict: 60; figures: false stops 8, found 19, latency p50 s 2.3
+- What it says: Judge, sealed set 4, context prompt: found 19 of 30, false stops 8 of 30 (0.267). H3/H4 rule: false stops lower by 5, found lower by 7 (more than 1), so NOT met; do not report the context judge as better. Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
+## R0089: R2-1 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, judge set4 plain, provider openrouter
+- Date: 2026-11-15T04:58:44Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0071
+- Units behind the verdict: 60; figures: false stops 13, found 26, latency p50 s 2.1
+- What it says: Judge, sealed set 4, plain prompt (baseline arm of the H4 contrast): found 26 of 30, false stops 13 of 30 (0.433). Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
+## R0088: R2-1 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, judge set3 context, provider openrouter
+- Date: 2026-11-15T04:58:44Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0077
+- Units behind the verdict: 60; figures: false stops 3, found 20, latency p50 s 1.91
+- What it says: Judge, sealed set 3, context prompt (ctx-5dbf3fa34125): found 20 of 25, false stops 3 of 35 (0.086). H3 rule (false stops lower by >= 2 AND found lower by <= 1): false stops lower by 16, found lower by 3, so H3 NOT met; do not report the context judge as better. The runner's own rule_met flag (found >= 0.80, false stops <= 0.15) is true for this run but is not the criteria's test for set 3. Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
+## R0087: R2-1 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, judge set3 plain, provider openrouter
+- Date: 2026-11-15T04:58:43Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0070
+- Units behind the verdict: 60; figures: false stops 19, found 23, latency p50 s 2.01
+- What it says: Judge, sealed set 3, plain prompt (baseline arm of the H3 contrast): found 23 of 25, false stops 19 of 35 (0.543). Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
+## R0086: R2-1 (pass)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, critic set2, provider openrouter
+- Date: 2026-11-15T04:58:43Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0024
+- Units behind the verdict: 32; figures: false stops 0, found 8, latency p50 s 1.42
+- What it says: Critic, sealed set 2: found 8 of 8, false stops 0 of 24. Rule found >= 7 of 8 and false stops <= 3 of 24: met, on one owner's labels (small sample). Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
+## R0085: R2-1 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, judge set1, provider openrouter
+- Date: 2026-11-15T04:58:42Z; code: commit `a0de0d0` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0052
+- Units behind the verdict: 59; figures: false stops 4, found 31, latency p50 s 1.74
+- What it says: Judge, sealed set 1: found 31 of 34 (0.912), false stops 4 of 25 (0.16, interval 0.064-0.347). Rule found >= 0.80 and false stops <= 0.15: NOT met, by one item of 25. Run 2026-11-15 at commit a0de0d02 (CI green), freeze W (require_parameters unset, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Window key total (OpenRouter Keys page, rounded) $0.040; provider-side per-command usage from the driver.
+
 ## R0084: P4 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, b0 vs d0, provider openrouter
@@ -760,4 +877,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 84. Total actual cost registered: $5.4937.
+Entries: 97. Total actual cost registered: $6.3875.

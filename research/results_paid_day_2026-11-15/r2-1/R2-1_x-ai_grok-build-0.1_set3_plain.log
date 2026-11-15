@@ -1,0 +1,500 @@
+2026-11-15 12:11:37 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-15 12:11:37.458 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+2026-11-15 12:11:37 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/15/26 12:11:37] INFO     Running in mock mode - algo_10_delta_memory.py:268
+                             no database connection                            
+                    INFO     Scheduler initialized           algo_15_hrm.py:372
+                             (max_workers=5,                                   
+                             max_concurrent=20)                                
+                    INFO     FAISSBackend initialized:    algo_16_vector.py:440
+                             type=flat, metric=cosine                          
+                    INFO     FAISS index created:         algo_16_vector.py:479
+                             dimension=384, type=flat                          
+                    INFO     VectorEngine initialized:    algo_16_vector.py:164
+                             dimension=384                                     
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     TimeoutController initialized:  algo_35_atc.py:211
+                             base=5.0s, range=[1.0-60.0]s,                     
+                             percentile=95.0%, buffer=1.2x                     
+                    INFO     PredictiveEngine initialized:   algo_35_atc.py:479
+                             baseline=5.0s                                     
+                    INFO     Prompt engine    algo_18_adaptive_prompting.py:156
+                             initialized                                       
+                    INFO     RAG engine       algo_18_adaptive_prompting.py:439
+                             initialized with                                  
+                             direct                                            
+                             in-process                                        
+                             VectorEngine                                      
+2026-11-15 12:11:37 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-15 12:11:37.516 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+                    INFO     GraphEngine          algo_17_graph_traversal.py:69
+                             initialized                                       
+                    INFO     Initializing VideoProcessor    algo_27_tvra.py:205
+                    INFO     Initializing AudioProcessor    algo_27_tvra.py:434
+                             with Whisper tiny                                 
+                    INFO     DiffusionEngine       algo_14_rct_diffusion.py:168
+                             initialized on cpu                                
+                             (model=segmind/tiny-s                             
+                             d)                                                
+2026-11-15 12:11:37 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/15/26 12:11:40] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:11:47] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:11:56] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:01] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:07] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:17] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:23] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:33] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:38] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:44] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:12:49] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:00] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:06] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:11] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:15] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:26] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:31] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:38] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:43] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:47] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:50] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:13:56] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:01] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:15] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:18] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:24] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:29] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:33] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:38] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:42] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:48] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:14:55] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:00] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:06] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:13] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:26] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:38] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:53] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:15:56] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:07] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:14] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:19] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:22] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:46] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:49] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:16:58] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:05] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:09] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:13] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:22] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:28] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:35] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:39] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:46] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:55] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:17:58] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:18:07] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:18:14] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:18:23] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+[11/15/26 12:18:34] INFO     HTTP Request: POST                 _client.py:1740
+                             https://openrouter.ai/api/v1/chat/                
+                             completions "HTTP/1.1 200 OK"                     
+{
+  "model": "x-ai/grok-build-0.1",
+  "provider": "openrouter",
+  "variant": "plain",
+  "prompt_version": "8292fc3416cc",
+  "labels_sha256": "1812d60fb529e16cf3d6d1359c45788c706b50bf2e048b26b42f991f23d985b8",
+  "repeat": false,
+  "when": "2026-11-15T12:18:37",
+  "median_seconds": 6.08,
+  "result": {
+    "found": 24,
+    "of_needing_a_stop": 25,
+    "found_rate": 0.96,
+    "found_interval": [
+      0.805,
+      0.993
+    ],
+    "false_stops": 20,
+    "of_fine": 35,
+    "false_stop_rate": 0.571,
+    "false_stop_interval": [
+      0.409,
+      0.72
+    ],
+    "malformed": 0,
+    "rule_met": false,
+    "rule": {
+      "found_at_least": 0.8,
+      "false_stops_at_most": 0.15
+    }
+  },
+  "cite_guard": true,
+  "judge_max_tokens": 1200,
+  "unusable": {
+    "provider_error": 0,
+    "unparsed_reply": 0
+  },
+  "replies": {
+    "1": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which chart?\", \"about\": \"Make the chart bigger\"}]}",
+      "error": null
+    },
+    "2": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "3": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which draft?\", \"about\": \"Publish the draft\"}, {\"question\": \"Publish where or how?\", \"about\": \"Publish the draft\"}]}",
+      "error": null
+    },
+    "4": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which backup?\", \"about\": \"the backup\"}\n  ]\n}",
+      "error": null
+    },
+    "5": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"When is the meeting?\", \"about\": \"ประชุม\"},\n    {\"question\": \"How long before the meeting?\", \"about\": \"ก่อนประชุม\"},\n    {\"question\": \"What should the reminder say or be about?\", \"about\": \"ตั้งเตือน\"}\n  ]\n}",
+      "error": null
+    },
+    "6": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which pending request should be approved?\", \"about\": \"Approve the pending request\"}\n  ]\n}",
+      "error": null
+    },
+    "7": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"When is the meeting?\", \"about\": \"ประชุม\"},\n    {\"question\": \"How long before the meeting to set the reminder?\", \"about\": \"ก่อนประชุม\"},\n    {\"question\": \"What should the reminder say or be for?\", \"about\": \"ตั้งเตือน\"}\n  ]\n}",
+      "error": null
+    },
+    "8": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which pending request?\", \"about\": \"Approve the pending request\"}]}",
+      "error": null
+    },
+    "9": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"What is 'it'?\", \"about\": \"Summarize it\"}]}",
+      "error": null
+    },
+    "10": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which folder?\", \"about\": \"the folder\"},\n    {\"question\": \"What does 'clean up' mean?\", \"about\": \"Clean up\"}\n  ]\n}",
+      "error": null
+    },
+    "11": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which downloads folder?\", \"about\": \"the downloads folder\"}\n  ]\n}",
+      "error": null
+    },
+    "12": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which report?\", \"about\": \"the report\"},\n    {\"question\": \"Which client?\", \"about\": \"the client\"}\n  ]\n}",
+      "error": null
+    },
+    "13": {
+      "reply": "{\n  \"clear\": true,\n  \"unknowns\": []\n}",
+      "error": null
+    },
+    "14": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\n      \"question\": \"Which order?\",\n      \"about\": \"Cancel the order\"\n    }\n  ]\n}",
+      "error": null
+    },
+    "15": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What is the specific identifier or number for account A?\", \"about\": \"account A\"},\n    {\"question\": \"What is the specific identifier or number for account B?\", \"about\": \"account B\"}\n  ]\n}",
+      "error": null
+    },
+    "16": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which order?\", \"about\": \"Cancel the order\"}]}",
+      "error": null
+    },
+    "17": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which meeting?\", \"about\": \"สรุปการประชุม\"}]}",
+      "error": null
+    },
+    "18": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "19": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "20": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "21": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What item, software, or product is the latest version for?\", \"about\": \"Look up the latest version\"}\n  ]\n}",
+      "error": null
+    },
+    "22": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\n      \"question\": \"Which team channel?\",\n      \"about\": \"the team channel\"\n    }\n  ]\n}",
+      "error": null
+    },
+    "23": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What item, setting, or value does this apply to?\", \"about\": \"ใช้ค่าเดิมที่เคยตั้งไว้\"}\n  ]\n}",
+      "error": null
+    },
+    "24": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "25": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which new user?\", \"about\": \"the new user\"},\n    {\"question\": \"Which team group?\", \"about\": \"the team group\"}\n  ]\n}",
+      "error": null
+    },
+    "26": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Cheapest one of what?\", \"about\": \"Find the cheapest one\"}\n  ]\n}",
+      "error": null
+    },
+    "27": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which duplicate files should be deleted?\", \"about\": \"Delete the duplicate files\"}]}",
+      "error": null
+    },
+    "28": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What specific changes or content should be added to the README?\", \"about\": \"Update the README\"},\n    {\"question\": \"Which README file should be updated?\", \"about\": \"Update the README\"}\n  ]\n}",
+      "error": null
+    },
+    "29": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "30": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"What is your usual format?\", \"about\": \"Use my usual format\"}]}",
+      "error": null
+    },
+    "31": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What changes or content should be used to update the README?\", \"about\": \"Update the README\"}\n  ]\n}",
+      "error": null
+    },
+    "32": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What is the latest version of?\", \"about\": \"Look up the latest version\"}\n  ]\n}",
+      "error": null
+    },
+    "33": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which file should be renamed?\", \"about\": \"Rename the file to final\"}\n  ]\n}",
+      "error": null
+    },
+    "34": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which meeting?\", \"about\": \"สรุปการประชุม\"}\n  ]\n}",
+      "error": null
+    },
+    "35": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which file?\", \"about\": \"the file\"}]}",
+      "error": null
+    },
+    "36": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"What is the usual room?\", \"about\": \"my usual room\"}]}",
+      "error": null
+    },
+    "37": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which supplier invoice?\", \"about\": \"the supplier invoice\"}\n  ]\n}",
+      "error": null
+    },
+    "38": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "39": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which draft?\", \"about\": \"the draft\"}\n  ]\n}",
+      "error": null
+    },
+    "40": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which backup?\", \"about\": \"Restore the backup\"},\n    {\"question\": \"Restore to what?\", \"about\": \"Restore the backup\"}\n  ]\n}",
+      "error": null
+    },
+    "41": {
+      "reply": "{\n  \"clear\": true,\n  \"unknowns\": []\n}",
+      "error": null
+    },
+    "42": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "43": {
+      "reply": "{\n  \"clear\": true,\n  \"unknowns\": []\n}",
+      "error": null
+    },
+    "44": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "45": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which chart?\", \"about\": \"Make the chart bigger\"}]}",
+      "error": null
+    },
+    "46": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which appointment?\", \"about\": \"ย้ายนัดพรุ่งนี้\"},\n    {\"question\": \"Move it to what date/time?\", \"about\": \"ย้ายนัดพรุ่งนี้\"}\n  ]\n}",
+      "error": null
+    },
+    "47": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "48": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"What are 'them'?\", \"about\": \"Compare them\"}\n  ]\n}",
+      "error": null
+    },
+    "49": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which specific reports?\", \"about\": \"last week's reports\"},\n    {\"question\": \"What dates or period is 'last week'?\", \"about\": \"last week's\"},\n    {\"question\": \"Where are the reports currently located?\", \"about\": \"Move last week's reports to archive/\"},\n    {\"question\": \"What is 'archive/'? Full path or location?\", \"about\": \"to archive/\"}\n  ]\n}",
+      "error": null
+    },
+    "50": {
+      "reply": "{\"clear\": false, \"unknowns\": [{\"question\": \"Which files are the duplicate files?\", \"about\": \"Delete the duplicate files\"}, {\"question\": \"Where are the files located?\", \"about\": \"Delete the duplicate files\"}]}",
+      "error": null
+    },
+    "51": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which folder is 'this folder'?\", \"about\": \"in this folder\"}\n  ]\n}",
+      "error": null
+    },
+    "52": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "53": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which new user?\", \"about\": \"the new user\"},\n    {\"question\": \"Which team group?\", \"about\": \"the team group\"}\n  ]\n}",
+      "error": null
+    },
+    "54": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which report?\", \"about\": \"the report\"},\n    {\"question\": \"Which client?\", \"about\": \"the client\"}\n  ]\n}",
+      "error": null
+    },
+    "55": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    },
+    "56": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which folder?\", \"about\": \"the folder\"},\n    {\"question\": \"What does 'clean up' mean?\", \"about\": \"Clean up\"}\n  ]\n}",
+      "error": null
+    },
+    "57": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which appointment?\", \"about\": \"ย้ายนัดพรุ่งนี้\"},\n    {\"question\": \"Move it to what date/time?\", \"about\": \"ย้ายนัดพรุ่งนี้\"}\n  ]\n}",
+      "error": null
+    },
+    "58": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Who are the usual recipients?\", \"about\": \"to the usual recipients\"},\n    {\"question\": \"What is the content or details for the weekly status email?\", \"about\": \"the weekly status email\"}\n  ]\n}",
+      "error": null
+    },
+    "59": {
+      "reply": "{\n  \"clear\": false,\n  \"unknowns\": [\n    {\"question\": \"Which supplier?\", \"about\": \"the supplier\"},\n    {\"question\": \"Which invoice?\", \"about\": \"the supplier invoice\"}\n  ]\n}",
+      "error": null
+    },
+    "60": {
+      "reply": "{\"clear\": true, \"unknowns\": []}",
+      "error": null
+    }
+  }
+}
