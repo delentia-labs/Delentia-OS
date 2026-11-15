@@ -404,6 +404,13 @@ class LLMReplyError(RuntimeError):
     transient = True
 
 
+class LLMReplyCut(LLMReplyError):
+    """Round 114: an empty message because the reply stopped at the allowance (`finish_reason` "length"): a reasoning model spent all of it thinking. Re-sending the identical request would only
+    do the same again, so this is NOT transient; the loop asks once more with a larger allowance (autonomous_loop.decide_next_action). Found by window 3 of round two (register R0097)."""
+
+    transient = False
+
+
 def reply_text(response: Any) -> Any:
     """(data, text) from a chat-completions response. Raises LLMReplyError (transient) with a short reason that never contains the request or a key."""
     try:
@@ -424,6 +431,8 @@ def reply_text(response: Any) -> Any:
     if isinstance(content, list):                          # some providers answer with a list of parts
         content = "".join(str(part.get("text") or "") for part in content if isinstance(part, dict))
     if not isinstance(content, str) or not content.strip():
+        if isinstance(choices[0], dict) and choices[0].get("finish_reason") == "length":
+            raise LLMReplyCut("the endpoint answered with an empty message: the reply was cut at the allowance (finish_reason length)")
         raise LLMReplyError("the endpoint answered with an empty message")
     return data, content
 
