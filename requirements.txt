@@ -52,7 +52,7 @@ h2>=4.4.1            # PYSEC-2026-3628 (fixed 4.4.1)
 msgpack>=1.2.3       # PYSEC-2026-3625 (fixed 1.2.1)
 pip>=26.2.0          # PYSEC-2026-3721 (fixed 26.2.0)
 pygments>=2.20.0     # PYSEC-2026-2987 (fixed 2.20.0)
-soupsieve>=2.9.0     # PYSEC-2026-3071/3072, CVE-2026-85999/86000 (fixed 2.9.0)
+soupsieve>=2.10.0    # PYSEC-2026-3071/3072, CVE-2026-85999/86000 (fixed 2.9.0); :has() quadratic time (fixed 2.10.0). Python 3.10 resolves to 2.10; 3.11.5+ gets the newest, which also fixes the later ReDoS/recursion advisories.
 # Round 29 Task 59: not directly imported by this project's own code
 # either (verified via grep), pulled in transitively.
 lxml>=6.1.0                  # PYSEC-2026 lxml advisory (fixed 6.1.0)
