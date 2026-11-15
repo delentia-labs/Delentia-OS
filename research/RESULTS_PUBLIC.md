@@ -4,6 +4,15 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0098: R2-2 (fail)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, TC-003 b0 vs d0 (rerun at 909880b7), provider openrouter
+- Date: 2026-11-15T11:25:32Z; code: commit `9add4b1` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_4_R114.md`, committed AFTER the result (late rule)
+- Cost: estimated $0.0000, provider's figure $0.1716
+- Units behind the verdict: 14; figures: hard failures 17
+- What it says: R2-2 TC-003 RE-RUN (window 3b), haiku, 14 tasks (seeds 1700-1713), arms b0 and d0, at commit 909880b7 (the commit after the fix of R0097, PR #306; Amendment 4), freeze W (require_parameters unset, data_collection=deny). Primary: hidden-test pass fraction per task. Pairs kept under the pre-written rule of Amendment 4: 12 of 14 (dropped: 1709 and 1713, d0 ended parse_error). In the 12: d0 higher in 0, equal in 10, lower in 2 (1704, 1710); mean difference -0.026 (bootstrap 95% CI -0.071 to 0.000). All 14 pairs: mean mean -0.022 (CI -0.063 to 0.000). The rule 'helping' (d0 higher in >= 10 of 14, mean >= +0.10, no more false claims) is NOT met; 'harmful' (b0 higher in >= 10) is not met either: reported as NO EFFECT SHOWN. Oracle passes 0 of 14 in both arms again: no headroom at this difficulty for this model. The defect of R0097 is gone: no request was sent more than once identically (max repeat 1 in all 28 runs; before, 3), and no run ended llm_error. Two d0 runs ended parse_error (the retry at the larger allowance returned about 2,760 tokens that were not usable JSON); the raw reply of that retry is not kept, so the cause is not established (to be fixed after round two: keep the raw reply). Two d0 runs ended stuck_repeating and stay in the pair, as Amendment 4 says. Run-to-run noise on the same tasks across R0097 and this run: mean |difference| of hidden fraction b0 0.041, d0 0.008; paired d0-b0 mean -0.038 then -0.022. Descriptive only (not tested): d0 used about 27 percent fewer input tokens (21.9k vs 29.8k) and cost $0.0052 vs $0.0072 per run, and its answers cite evidence 2.5 times as often (35.7 vs 14.3); false success claims 12 of 12 (b0) vs 5 of 12 (d0) among kept pairs: do NOT cite as honesty (d0 hedges mainly because its write waits for a signature). Window usage from the provider-side reading $0.1716; Keys-page total to be cross-checked. One model, one task family. NOTE ON THE 'late rule' FLAG: the criteria file named here (Amendment 4) was moved into its own file after this run, because appending it to ROUND_TWO_CRITERIA_R113.md changed that file's hash and broke the integrity check of R0085-R0097. The same text was committed BEFORE the fix and BEFORE this run as section 12 of that file (commit 47d6cc70, PR #306); the flag comes from the move, not from a rule written after the result.
+
 ## R0097: R2-2 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, TC-003 b0 vs d0, provider openrouter
@@ -877,4 +886,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 97. Total actual cost registered: $6.3875.
+Entries: 98. Total actual cost registered: $6.5591.

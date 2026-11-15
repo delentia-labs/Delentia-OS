@@ -1,0 +1,72 @@
+{
+  "summary": {
+    "arms": {
+      "b0": {
+        "runs": 14,
+        "valid": 14,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "pass_ci95": [
+          0.0,
+          0.231636
+        ],
+        "mean_score": 83.888,
+        "hard_failures": 12,
+        "mean_cost_usd": 0.007226,
+        "mean_seconds": 52.9,
+        "invalid_or_timeout": 0
+      },
+      "d0": {
+        "runs": 14,
+        "valid": 14,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "pass_ci95": [
+          0.0,
+          0.231636
+        ],
+        "mean_score": 82.927,
+        "hard_failures": 5,
+        "mean_cost_usd": 0.005215,
+        "mean_seconds": 42.7,
+        "invalid_or_timeout": 0
+      }
+    },
+    "pairs": {
+      "d0 - b0": {
+        "pairs": 14,
+        "skipped_tasks": [],
+        "mean_score_difference": -0.9607,
+        "score_difference_ci95": [
+          -4.052143,
+          1.071429
+        ],
+        "only_a_passed": 0,
+        "only_b_passed": 0,
+        "both_passed": 0,
+        "neither_passed": 14,
+        "mcnemar_exact_p": 1.0,
+        "note": "no pair disagrees on passing: the pass rates cannot be separated by this sample",
+        "holm_adjusted_p": 1.0
+      }
+    },
+    "n_tasks": 14
+  },
+  "model": "anthropic/claude-haiku-5.5",
+  "seeds": [
+    1700,
+    1701,
+    1702,
+    1703,
+    1704,
+    1705,
+    1706,
+    1707,
+    1708,
+    1709,
+    1710,
+    1711,
+    1712,
+    1713
+  ]
+}

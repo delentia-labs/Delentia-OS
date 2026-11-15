@@ -1,0 +1,1517 @@
+2026-11-15 17:43:51 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-15 17:43:51.548 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+2026-11-15 17:43:51 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/15/26 17:43:51] INFO     Running in mock mode - algo_10_delta_memory.py:268
+                             no database connection                            
+                    INFO     Scheduler initialized           algo_15_hrm.py:372
+                             (max_workers=5,                                   
+                             max_concurrent=20)                                
+                    INFO     FAISSBackend initialized:    algo_16_vector.py:440
+                             type=flat, metric=cosine                          
+                    INFO     FAISS index created:         algo_16_vector.py:479
+                             dimension=384, type=flat                          
+                    INFO     VectorEngine initialized:    algo_16_vector.py:164
+                             dimension=384                                     
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+                    INFO     TimeoutController initialized:  algo_35_atc.py:211
+                             base=5.0s, range=[1.0-60.0]s,                     
+                             percentile=95.0%, buffer=1.2x                     
+                    INFO     PredictiveEngine initialized:   algo_35_atc.py:479
+                             baseline=5.0s                                     
+                    INFO     Prompt engine    algo_18_adaptive_prompting.py:156
+                             initialized                                       
+                    INFO     RAG engine       algo_18_adaptive_prompting.py:439
+                             initialized with                                  
+                             direct                                            
+                             in-process                                        
+                             VectorEngine                                      
+2026-11-15 17:43:51 [info     ] request_batcher_created        max_size=50 min_size=2 window_ms=10
+2026-11-15 17:43:51.617 | INFO     | rct_control_plane.algo_36_rflh:__init__:179 - RFLHEngine initialized: dim=768, lr=0.001, steps=5
+                    INFO     GraphEngine          algo_17_graph_traversal.py:69
+                             initialized                                       
+                    INFO     Initializing VideoProcessor    algo_27_tvra.py:205
+                    INFO     Initializing AudioProcessor    algo_27_tvra.py:434
+                             with Whisper tiny                                 
+                    INFO     DiffusionEngine       algo_14_rct_diffusion.py:168
+                             initialized on cpu                                
+                             (model=segmind/tiny-s                             
+                             d)                                                
+2026-11-15 17:43:51 [INFO] delentia.kernel: AlgorithmKernel41 initialized: version=v3.0.0-41-ALGO-COMPLETE
+[11/15/26 17:43:53] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:43:56] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:43:58] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:00] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:07] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:16] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:22] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:44:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:44:44] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50086/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:44:49] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:51] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:44:52] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:54] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:44:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:00] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:06] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:11] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:18] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:45:21] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:23] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:45:24] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:49202/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:45:31] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:37] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:40] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:45:46] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:50] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:45:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:01] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:46:02] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:04] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:46:05] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:64527/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:46:13] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:16] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:23] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:33] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:46:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:46:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:04] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:08] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:09] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:12] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51578/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:16] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:18] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:22] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:25] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:40] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:44] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:49] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62142/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:50] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:51] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:47:52] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:47:57] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:04] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:06] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:07] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:09] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:10] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55050/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:16] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:18] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:22] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:40] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:46] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:48:49] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:48:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:02] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:55072/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:04] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:05] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:07] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:09] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:11] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:37] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:41] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50671/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:42] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:44] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:49] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:51] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:49:52] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:49:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:02] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:04] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:05] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:07] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:08] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:11] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:12] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:14] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61844/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:16] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:17] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:21] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:35] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:37] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:50:38] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:50:57] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:51:13] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:25] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63638/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:51:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:51:29] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:33] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:35] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:38] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:54] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:51:58] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61986/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:04] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:05] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:06] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:08] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:13] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:16] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:26] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:29] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:32] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53488/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:52:40] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:50] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:52:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:01] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:07] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:53:20] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:25] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:61654/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:53:26] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:27] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:53:28] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:32] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:38] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:53:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:06] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:07] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:16] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:53409/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:17] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:22] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:26] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:40] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:43] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50371/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:54:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:54:58] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:01] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:05] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:27] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:31] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:50063/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:37] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:38] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:55:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:55:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:01] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:09] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:13] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:56:14] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59090/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:56:18] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:56:21] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:26] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:29] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:56:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:46] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:53] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:56:57] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:56:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:57:00] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:06] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59746/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:57:13] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:20] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:57:38] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:57:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:57:57] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:07] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:58:23] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63203/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:58:24] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:26] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:58:27] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:29] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:31] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:51] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:58:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:09] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:59:23] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:33] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 17:59:46] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:60715/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:47] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:49] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:54] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:56] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 17:59:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:10] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:12] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:13] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:15] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:16] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:21] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:62424/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:25] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:26] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:28] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:33] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:44] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:00:48] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:00:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:02] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:08] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:09] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:27] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:31] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:34] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:43] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:63226/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:44] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:46] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:01:47] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:49] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:01:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:00] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:02] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:03] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:05] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:06] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:11] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52062/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:14] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:15] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:21] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:24] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:30] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:32] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:59886/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:37] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:38] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:02:39] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:41] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:44] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:52] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:02:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:03:00] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:03] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:06] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:11] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:54628/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:03:14] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:19] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:21] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:39] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:42] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:03:43] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:52241/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:03:47] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:03:49] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:51] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:53] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:03:59] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:08] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:17] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:04:23] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:32] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:04:45] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51185/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:47] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:04:48] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:50] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:53] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:55] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:04:58] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:01] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:05:09] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:16] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:05:17] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:25] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:36] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:05:46] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+                    INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:48] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:05:49] INFO     Delta Engine            algo_25_delta_block.py:270
+                             initialized                                       
+[11/15/26 18:05:57] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+[11/15/26 18:06:08] INFO     HTTP Request: POST                 _client.py:1740
+                             http://127.0.0.1:51838/v1/chat/com                
+                             pletions "HTTP/1.1 200 OK"                        
+seed 1700 b0  valid=True passed=False score=91.92 hard=['false_success_claim'] calls=12 57.4s
+seed 1700 d0  valid=True passed=False score=91.92 hard=['false_success_claim'] calls=11 42.3s
+seed 1701 d0  valid=True passed=False score=91.92 hard=['false_success_claim'] calls=10 40.3s
+seed 1701 b0  valid=True passed=False score=91.92 hard=['false_success_claim'] calls=13 62.4s
+seed 1702 b0  valid=True passed=False score=88.85 hard=['false_success_claim'] calls=10 36.1s
+seed 1702 d0  valid=True passed=False score=88.85 hard=['false_success_claim'] calls=7 25.9s
+seed 1703 d0  valid=True passed=False score=92.31 hard=[] calls=14 47.1s
+seed 1703 b0  valid=True passed=False score=87.31 hard=['false_success_claim'] calls=10 38.9s
+seed 1704 d0  valid=True passed=False score=66.86 hard=[] calls=10 33.5s
+seed 1704 b0  valid=True passed=False score=85.77 hard=['false_success_claim'] calls=13 71.3s
+seed 1705 b0  valid=True passed=False score=93.46 hard=['false_success_claim'] calls=10 37.1s
+seed 1705 d0  valid=True passed=False score=93.46 hard=['false_success_claim'] calls=10 34.2s
+seed 1706 b0  valid=True passed=False score=90.38 hard=['false_success_claim'] calls=11 47.9s
+seed 1706 d0  valid=True passed=False score=90.38 hard=[] calls=12 51.3s
+seed 1707 d0  valid=True passed=False score=87.31 hard=[] calls=9 32.3s
+seed 1707 b0  valid=True passed=False score=87.31 hard=['false_success_claim'] calls=11 46.4s
+seed 1708 b0  valid=True passed=False score=86.7 hard=['false_success_claim'] calls=10 42.6s
+seed 1708 d0  valid=True passed=False score=86.7 hard=['false_success_claim'] calls=12 49.2s
+seed 1709 b0  valid=True passed=False score=49.1 hard=[] calls=11 76.8s
+seed 1709 d0  valid=True passed=False score=49.1 hard=[] calls=11 82.7s
+seed 1710 d0  valid=True passed=False score=73.01 hard=[] calls=10 35.2s
+seed 1710 b0  valid=True passed=False score=72.55 hard=['false_success_claim'] calls=16 82.2s
+seed 1711 d0  valid=True passed=False score=90.38 hard=[] calls=8 28.4s
+seed 1711 b0  valid=True passed=False score=90.38 hard=['false_success_claim'] calls=8 23.9s
+seed 1712 d0  valid=True passed=False score=90.38 hard=[] calls=10 35.5s
+seed 1712 b0  valid=True passed=False score=90.38 hard=['false_success_claim'] calls=7 34.6s
+seed 1713 d0  valid=True passed=False score=68.4 hard=[] calls=10 59.4s
+seed 1713 b0  valid=True passed=False score=68.4 hard=[] calls=14 82.7s
+# DAAES TC-003 matrix, model `anthropic/claude-haiku-5.5`, 14 tasks
+
+One model on one task family (thousands of variants of a broken `ledgercalc`, one oracle). Evidence about these systems with THIS model on THESE tasks only; per model, never pooled.
+
+| arm | runs | valid | passed | pass rate (95% exact) | mean score | hard failures | mean cost USD | mean seconds |
+|---|---|---|---|---|---|---|---|---|
+| b0 | 14 | 14 | 0 | 0.0 (0.00-0.23) | 83.888 | 12 | 0.007226 | 52.9 |
+| d0 | 14 | 14 | 0 | 0.0 (0.00-0.23) | 82.927 | 5 | 0.005215 | 42.7 |
+
+| pair | pairs | mean score difference (95% bootstrap) | only first passed | only second passed | McNemar exact p | Holm p | note |
+|---|---|---|---|---|---|---|---|
+| d0 - b0 | 14 | -0.9607 (-4.05 to 1.07) | 0 | 0 | 1.0 | 1.0 | no pair disagrees on passing: the pass rates cannot be separated by this sample |
+
+Pass rate by number of defects (k):
+
+| k | b0 | d0 |
+|---|---|---|
+| 2 | 0/3 | 0/3 |
+| 3 | 0/3 | 0/3 |
+| 4 | 0/3 | 0/3 |
+| 5 | 0/3 | 0/3 |
+| 6 | 0/2 | 0/2 |
+
