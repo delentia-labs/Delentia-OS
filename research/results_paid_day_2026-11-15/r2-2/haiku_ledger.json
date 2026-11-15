@@ -1,0 +1,288 @@
+{
+ "refusals": [],
+ "reserved_usd": 0.0,
+ "runs": {
+  "b0-1700-1794721816519197300": {
+   "calls": 10,
+   "cost_usd": 0.0059803,
+   "inflight": 0,
+   "input_tokens": 26098,
+   "output_tokens": 6741,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1701-1794721975675299000": {
+   "calls": 12,
+   "cost_usd": 0.007856499999999999,
+   "inflight": 0,
+   "input_tokens": 34300,
+   "output_tokens": 8853,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1702-1794722039227187600": {
+   "calls": 6,
+   "cost_usd": 0.0023514,
+   "inflight": 0,
+   "input_tokens": 12029,
+   "output_tokens": 2297,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1703-1794722123915793600": {
+   "calls": 9,
+   "cost_usd": 0.004672300000000001,
+   "inflight": 0,
+   "input_tokens": 21858,
+   "output_tokens": 4973,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1704-1794722217548754000": {
+   "calls": 15,
+   "cost_usd": 0.012097,
+   "inflight": 0,
+   "input_tokens": 45110,
+   "output_tokens": 15172,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1705-1794722302559423100": {
+   "calls": 10,
+   "cost_usd": 0.0053154,
+   "inflight": 0,
+   "input_tokens": 25894,
+   "output_tokens": 5452,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1706-1794722369157208200": {
+   "calls": 10,
+   "cost_usd": 0.0058122,
+   "inflight": 0,
+   "input_tokens": 26702,
+   "output_tokens": 6284,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1707-1794722488238148300": {
+   "calls": 8,
+   "cost_usd": 0.0036328,
+   "inflight": 0,
+   "input_tokens": 18193,
+   "output_tokens": 3627,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1708-1794722515354318400": {
+   "calls": 9,
+   "cost_usd": 0.0041836,
+   "inflight": 0,
+   "input_tokens": 20996,
+   "output_tokens": 4168,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1709-1794722577741952900": {
+   "calls": 7,
+   "cost_usd": 0.004888999999999999,
+   "inflight": 0,
+   "input_tokens": 14905,
+   "output_tokens": 6797,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1710-1794722731984954300": {
+   "calls": 14,
+   "cost_usd": 0.010723,
+   "inflight": 0,
+   "input_tokens": 44090,
+   "output_tokens": 12628,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1711-1794722836170642100": {
+   "calls": 7,
+   "cost_usd": 0.0031313,
+   "inflight": 0,
+   "input_tokens": 15233,
+   "output_tokens": 3216,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1712-1794722889852792300": {
+   "calls": 8,
+   "cost_usd": 0.0034098,
+   "inflight": 0,
+   "input_tokens": 17008,
+   "output_tokens": 3418,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "b0-1713-1794722947455992800": {
+   "calls": 14,
+   "cost_usd": 0.0098088,
+   "inflight": 0,
+   "input_tokens": 46078,
+   "output_tokens": 10402,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1700-1794721860999726400": {
+   "calls": 14,
+   "cost_usd": 0.0082763,
+   "inflight": 0,
+   "input_tokens": 34418,
+   "output_tokens": 9669,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1701-1794721920732909200": {
+   "calls": 13,
+   "cost_usd": 0.006794799999999999,
+   "inflight": 0,
+   "input_tokens": 28738,
+   "output_tokens": 7842,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1702-1794722057382489600": {
+   "calls": 8,
+   "cost_usd": 0.0031813,
+   "inflight": 0,
+   "input_tokens": 13833,
+   "output_tokens": 3596,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1703-1794722085477569700": {
+   "calls": 10,
+   "cost_usd": 0.0038866000000000005,
+   "inflight": 0,
+   "input_tokens": 19241,
+   "output_tokens": 3925,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1704-1794722157740257100": {
+   "calls": 10,
+   "cost_usd": 0.0077315,
+   "inflight": 0,
+   "input_tokens": 26500,
+   "output_tokens": 10163,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1705-1794722338708027800": {
+   "calls": 9,
+   "cost_usd": 0.0036445,
+   "inflight": 0,
+   "input_tokens": 16975,
+   "output_tokens": 3894,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1706-1794722409707162900": {
+   "calls": 12,
+   "cost_usd": 0.0062173,
+   "inflight": 0,
+   "input_tokens": 27303,
+   "output_tokens": 6974,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1707-1794722456839638200": {
+   "calls": 9,
+   "cost_usd": 0.0035412,
+   "inflight": 0,
+   "input_tokens": 16912,
+   "output_tokens": 3700,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1708-1794722544089383800": {
+   "calls": 10,
+   "cost_usd": 0.0043394,
+   "inflight": 0,
+   "input_tokens": 20239,
+   "output_tokens": 4631,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1709-1794722615941930000": {
+   "calls": 12,
+   "cost_usd": 0.0110516,
+   "inflight": 0,
+   "input_tokens": 32891,
+   "output_tokens": 15525,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1710-1794722703055135600": {
+   "calls": 9,
+   "cost_usd": 0.0030827,
+   "inflight": 0,
+   "input_tokens": 15562,
+   "output_tokens": 3053,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1711-1794722808555545700": {
+   "calls": 8,
+   "cost_usd": 0.0030017999999999998,
+   "inflight": 0,
+   "input_tokens": 13823,
+   "output_tokens": 3239,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1712-1794722859719044100": {
+   "calls": 9,
+   "cost_usd": 0.0035404,
+   "inflight": 0,
+   "input_tokens": 17099,
+   "output_tokens": 3661,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  },
+  "d0-1713-1794722916088210400": {
+   "calls": 10,
+   "cost_usd": 0.0037733000000000003,
+   "inflight": 0,
+   "input_tokens": 19593,
+   "output_tokens": 3628,
+   "reserved_usd": 0.0,
+   "status": "finished",
+   "uncertain_calls": 0
+  }
+ },
+ "spent_usd": 0.15592609999999996,
+ "warnings": []
+}
