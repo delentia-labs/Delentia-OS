@@ -17,7 +17,7 @@ This page describes measurement *procedures*; it does not report results.
 | Memory compression (was "74%") | **Withdrawn as stated.** Measured in bytes: 39% (20 ticks) to 90% (500 ticks), and snapshot + zstd saves 96.7-99.6% (`research/delta_storage.json`). |
 | Warm recall speed (was "<50 ms") | A design target; not measured as a benchmark. |
 | FDIA accuracy (was "0.92") | **Withdrawn.** The only measured figure is 11 of 12 on a small hand-written rank test (a smoke test). |
-| Test coverage | 92.18% line coverage with 9,625 tests passed, 47 skipped, 0 failed (CI run 41300747145, 2026-11-01): evidence about the code, not about model behaviour. |
+| Test coverage | 92.10% line coverage with 9,912 tests passed, 62 skipped, 0 failed (CI run 43570824206, 2026-11-14): evidence about the code, not about model behaviour. |
 
 ---
 

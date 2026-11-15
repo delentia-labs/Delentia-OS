@@ -1,0 +1,245 @@
+{
+  "version": "2.4.4",
+  "tag": "v2.4.4",
+  "repo": "delentia-labs/Delentia-OS",
+  "started": "2026-11-12T14:29:29+0700",
+  "finished": "2026-11-12T14:47:21+0700",
+  "python": "3.13.14",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "scripted_model_note": "DEMO-* use a scripted stand-in for the model: they show the gate, the approval and the audit, not how well a language model works.",
+  "verdict": "pass",
+  "checks": [
+    {
+      "id": "INSTALL",
+      "title": "installed in an empty environment, pip check clean, `delentia --version` says 2.4.4",
+      "status": "pass",
+      "detail": "delentia, version 2.4.4",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m pip install --quiet --no-cache-dir delentia-os==2.4.4",
+          "exit_code": 0,
+          "seconds": 287.9,
+          "output_tail": "\n[notice] A new release of pip is available: 26.1.2 -> 26.3\n[notice] To update, run: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m pip install --upgrade pip\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m pip check",
+          "exit_code": 0,
+          "seconds": 2.0,
+          "output_tail": "No broken requirements found.\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli --version",
+          "exit_code": 0,
+          "seconds": 2.4,
+          "output_tail": "delentia, version 2.4.4\n"
+        }
+      ]
+    },
+    {
+      "id": "WHEEL-SHA",
+      "title": "the wheel pip downloads has the SHA-256 PyPI published",
+      "status": "pass",
+      "detail": "e6d456ebc24cb1bc4de12181ae741af4407875ce29b89ea4aebdc2b79cd5652e (PyPI: e6d456ebc24cb1bc4de12181ae741af4407875ce29b89ea4aebdc2b79cd5652e)",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m pip download --no-deps --no-cache-dir -d C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\dl delentia-os==2.4.4",
+          "exit_code": 0,
+          "seconds": 142.4,
+          "output_tail": "Collecting delentia-os==2.4.4\n  Downloading delentia_os-2.4.4-py3-none-any.whl.metadata (32 kB)\nDownloading delentia_os-2.4.4-py3-none-any.whl (2.6 MB)\n   ---------------------------------------- 2.6/2.6 MB 40.9 MB/s  0:00:00\nSaved .\\dl\\delentia_os-2.4.4-py3-none-any.whl\nSuccessfully downloaded delentia-os\n\n[notice] A new release of pip is available: 26.1.2 -> 26.3\n[notice] To update, run: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m pip install --upgrade pip\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-01",
+      "title": "compare (scripted): every check passes, the chain is intact and signed, the originals are unchanged",
+      "status": "pass",
+      "detail": "5 checks passed, 0 failed; audit {'ok': True, 'rows': 11, 'signed': 11, 'checked_against_own_key': True}",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo run compare --scripted --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo",
+          "exit_code": 0,
+          "seconds": 14.0,
+          "output_tail": "hat is known to be true (not the agent's own check)\n- passed: the table has the price of all 3 quotes\n- passed: says that Harbor HVAC is within the 15,000 USD budget\n- passed: says that Northwind Cooling is within the 15,000 USD budget\n- passed: does not say that Polar Systems (over budget) is within the budget\n- passed: the original files were not changed\n\n## Look-back record\n- audit chain: intact - 11 rows - 11 signed\n- 'not changed' only means the hashes of the original files still match those taken at init. It is not a statement that the data inside the quotes is true.\n\nResult file: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo\\results\\20261112-143831-compare-6f97.md\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo status --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo",
+          "exit_code": 0,
+          "seconds": 2.1,
+          "output_tail": "{\n  \"root\": \"C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\delentia-receipts-oyl2ex23\\\\demo\",\n  \"waiting\": [],\n  \"memories\": 0,\n  \"audit\": {\n    \"ok\": true,\n    \"rows\": 11,\n    \"signed\": 11,\n    \"checked_against_own_key\": true\n  },\n  \"results\": [\n    \"20261112-143831-compare-6f97.md\"\n  ],\n  \"untrusted_paths\": \"quotes/,inbox/\",\n  \"model\": null\n}\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-02",
+      "title": "edit (scripted): it stops and waits, the file is unchanged until a signature, one signature changes it, a second approval does not change it again",
+      "status": "pass",
+      "detail": "approval id 20f819a3f537; unchanged while waiting: True; changed after the signature: True; unchanged by a second approval: True",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo run edit --scripted --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo",
+          "exit_code": 0,
+          "seconds": 2.7,
+          "output_tail": "md is in a folder declared untrusted) -> anything that could send data out or change something now needs a person to sign\n\n## The answer checked against what is known to be true (not the agent's own check)\n- passed: the original files were not changed before the signature\n\n## Look-back record\n- audit chain: intact - 20 rows - 20 signed\n- 'not changed' only means the hashes of the original files still match those taken at init. It is not a statement that the data inside the quotes is true.\n\nResult file: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo\\results\\20261112-143836-edit-f555.md\nWaiting for approval, id 20f819a3f537  ->  delentia demo approve 20f819a3f537 --scripted\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo approve 20f819a3f537 --scripted --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo",
+          "exit_code": 0,
+          "seconds": 2.8,
+          "output_tail": "ct - 26 rows - 26 signed\n- 'not changed' only means the hashes of the original files still match those taken at init. It is not a statement that the data inside the quotes is true.\n\n> This signature used the demo key, which sits on the same machine as the agent, only so that you can see the whole flow. A real approval is signed from another device (`delentia approvals sign`).\n\n> The sample file was changed (as approved). Before you run another demo that uses the quotes, run `delentia demo reset` (it keeps a copy of the changed file in results/ and deletes nothing).\n\nResult file: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo\\results\\20261112-143840-approve-20f819a3f537.md\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo approve 20f819a3f537 --scripted --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo",
+          "exit_code": 1,
+          "seconds": 2.0,
+          "output_tail": "รายการ 20f819a3f537 อยู่ในสถานะ EXECUTED แล้ว: ลายเซ็นใช้ได้ครั้งเดียว จึงไม่มีอะไรถูกรันซ้ำ (this approval is EXECUTED; a signature works once, nothing was run again)\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-03",
+      "title": "a signature from a key nobody trusts is refused, and the file stays unchanged",
+      "status": "pass",
+      "detail": "exit code 1; file unchanged: True; VER_PUBKEYS or C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\user-home\\.delentia\\approvers.json); nothing can be approved (fail-closed)",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli approvals keygen --out C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\wrong-approver.pem",
+          "exit_code": 0,
+          "seconds": 0.6,
+          "output_tail": "private key : C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\wrong-approver.pem  (keep it off the agent host if you can)\npublic key  : 81177937831a1e9a919fae5ad5a731873377ddbeffa081b6b6579f120c1a9b37\nTo trust it on the agent host, add it to DELENTIA_APPROVER_PUBKEYS or ~/.delentia/approvers.json\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli approvals approve 20f819a3f537 --key C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\wrong-approver.pem --db C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo\\data\\agentic.db",
+          "exit_code": 1,
+          "seconds": 0.7,
+          "output_tail": "ce in quotes/vendor_a.md to 14,000 USD\n  arguments: {\"new_text\": \"Total price: 14,000 USD\", \"old_text\": \"Total price: 12,500 USD\", \"relative_path\": \"quotes/vendor_a.md\"}\n  why it waits: this episode has read text from outside (delentia_read_repo_file (quotes/vendor_a.md is in a folder declared untrusted)), so delentia_patch_repo_file cannot run without a human signature: an instruction hidden in that text could be steering it (injection protection by taint: reading and answering stay free)\nError: no trusted approvers configured (DELENTIA_APPROVER_PUBKEYS or C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\user-home\\.delentia\\approvers.json); nothing can be approved (fail-closed)\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-04",
+      "title": "injection (scripted): it stops and waits for a person; refusing it is signed and leaves the files unchanged",
+      "status": "pass",
+      "detail": "approval id 292dd9a72edf; reject exit 0; files unchanged: True",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo init --lang en --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection",
+          "exit_code": 0,
+          "seconds": 0.6,
+          "output_tail": "Demo folder: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection\nCreated: lang.txt, quotes/vendor_a.md, quotes/vendor_b.md, quotes/vendor_c.md, README_EN.md, inbox/notice.md, keys/demo-approver.pem, keys/audit.pem, data/originals.json\nNext: delentia demo run compare --scripted   (no model needed)   or   delentia model show, then   delentia demo run compare\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo run injection --scripted --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection",
+          "exit_code": 0,
+          "seconds": 3.0,
+          "output_tail": " what is known to be true (not the agent's own check)\n- passed: the notice was recognised as text from outside\n- passed: the hijacked step stopped and is waiting for a person's signature\n- passed: the quote was not changed (the hijacked step is still waiting)\n\n## Look-back record\n- audit chain: intact - 9 rows - 9 signed\n- 'not changed' only means the hashes of the original files still match those taken at init. It is not a statement that the data inside the quotes is true.\n\nResult file: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection\\results\\20261112-143846-injection-9146.md\nWaiting for approval, id 292dd9a72edf  ->  delentia demo approve 292dd9a72edf --scripted\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli demo reject 292dd9a72edf --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection",
+          "exit_code": 0,
+          "seconds": 2.1,
+          "output_tail": "# Refused 2026-11-12 14:38:48\n\n**Action:** `delentia_patch_repo_file` on the waiting approval `292dd9a72edf`\n**Status now:** REJECTED\n\n- Files that changed: none\n- The refusal is signed with the demo key and recorded in the audit chain; the action cannot run any more.\n\n> The demo key sits on the same machine as the agent only so that you can see the flow. A real refusal is signed from another device.\n\nResult file: C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo-injection\\results\\20261112-143848-reject-292dd9a72edf.md\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-05",
+      "title": "the audit chain verifies, and a copy with ONE stored value changed does not",
+      "status": "pass",
+      "detail": "intact chain exit 0; altered copy exit 1 (changed one stored value in column entity_type)",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli audit-chain verify --db C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\demo\\data\\agentic.db",
+          "exit_code": 0,
+          "seconds": 0.6,
+          "output_tail": "chain      : OK\nrows       : 26 chained, 26 signed, 0 legacy (written before the chain existed)\nhead       : seq=26 hash=fe3e3ed37dc8e216d19b663f1c19dc02064cb9695a4d1a7267f80822c140f1f8\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\venv\\Scripts\\python.exe -m rct_control_plane.cli audit-chain verify --db C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\tampered.db",
+          "exit_code": 1,
+          "seconds": 0.6,
+          "output_tail": "chain      : BROKEN\nrows       : 26 chained, 0 signed, 0 legacy (written before the chain existed)\nhead       : seq=26 hash=fe3e3ed37dc8e216d19b663f1c19dc02064cb9695a4d1a7267f80822c140f1f8\nfirst break: seq=1 - audit_trail row 1 was modified after it was written\n"
+        }
+      ]
+    },
+    {
+      "id": "GITHUB-ASSETS",
+      "title": "v2.4.4 carries the wheel, the sdist, both installers and SHA256SUMS.txt, and each installer equals its line",
+      "status": "pass",
+      "detail": "missing: none; hash mismatch: none; sha256 {'Delentia-Setup-2.4.4.exe': '1ea32000f42f297253f8cbd6e7356f4dc4a7d40c4f2d65e8a11bf7e8e7fb9d17', 'Delentia-Setup.exe': '1ea32000f42f297253f8cbd6e7356f4dc4a7d40c4f2d65e8a11bf7e8e7fb9d17', 'SHA256SUMS.txt': '9bcf8523d415c31ca7b6f579a22da9068335d1ca2886ec7df1944c71d9db6e3c'}",
+      "evidence": [
+        {
+          "command": "gh release view v2.4.4 --repo delentia-labs/Delentia-OS --json assets,tagName,publishedAt,isDraft,isPrerelease,targetCommitish",
+          "exit_code": 0,
+          "seconds": 1.6,
+          "output_tail": "ithub.com/delentia-labs/Delentia-OS/releases/download/v2.4.4/delentia_os-2.4.4.tar.gz\"},{\"apiUrl\":\"https://api.github.com/repos/delentia-labs/Delentia-OS/releases/assets/738059440\",\"contentType\":\"text/plain; charset=utf-8\",\"createdAt\":\"2026-11-12T04:28:53Z\",\"digest\":\"sha256:9bcf8523d415c31ca7b6f579a22da9068335d1ca2886ec7df1944c71d9db6e3c\",\"downloadCount\":3,\"id\":\"RA_kwDOR_yRPc4r_eSw\",\"label\":\"\",\"name\":\"SHA256SUMS.txt\",\"size\":176,\"state\":\"uploaded\",\"updatedAt\":\"2026-11-12T04:28:54Z\",\"url\":\"https://github.com/delentia-labs/Delentia-OS/releases/download/v2.4.4/SHA256SUMS.txt\"}],\"isDraft\":false,\"isPrerelease\":false,\"publishedAt\":\"2026-11-12T04:24:17Z\",\"tagName\":\"v2.4.4\",\"targetCommitish\":\"main\"}\n"
+        },
+        {
+          "command": "gh release download v2.4.4 --repo delentia-labs/Delentia-OS --dir C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\release --clobber",
+          "exit_code": 0,
+          "seconds": 1.9,
+          "output_tail": ""
+        }
+      ]
+    },
+    {
+      "id": "GITHUB-TAG",
+      "title": "v2.4.4 points at a full commit and the workflow runs on it are recorded",
+      "status": "pass",
+      "detail": "commit 6cfff4b671342e6ab69c628daa6735e98ca07cb3; tag ref tag 36d88a72fe67af7793471126760a0f108508e651; runs: Release success #43154541084, Trigger Ecosystem Release success #43154541038, Docs success #43154077256, CodeQL success #43154076952, CI success #43154077291",
+      "evidence": [
+        {
+          "command": "gh api repos/delentia-labs/Delentia-OS/git/ref/tags/v2.4.4 --jq .object.type + \" \" + .object.sha",
+          "exit_code": 0,
+          "seconds": 0.5,
+          "output_tail": "tag 36d88a72fe67af7793471126760a0f108508e651\n"
+        },
+        {
+          "command": "gh api repos/delentia-labs/Delentia-OS/commits/v2.4.4 --jq .sha",
+          "exit_code": 0,
+          "seconds": 0.6,
+          "output_tail": "6cfff4b671342e6ab69c628daa6735e98ca07cb3\n"
+        },
+        {
+          "command": "gh run list --repo delentia-labs/Delentia-OS --commit 6cfff4b671342e6ab69c628daa6735e98ca07cb3 --json databaseId,name,status,conclusion,workflowName --limit 30",
+          "exit_code": 0,
+          "seconds": 1.0,
+          "output_tail": "[{\"conclusion\":\"success\",\"databaseId\":43154541084,\"name\":\"Release\",\"status\":\"completed\",\"workflowName\":\"Release\"},{\"conclusion\":\"success\",\"databaseId\":43154541038,\"name\":\"Trigger Ecosystem Release\",\"status\":\"completed\",\"workflowName\":\"Trigger Ecosystem Release\"},{\"conclusion\":\"success\",\"databaseId\":43154077256,\"name\":\"Docs\",\"status\":\"completed\",\"workflowName\":\"Docs\"},{\"conclusion\":\"success\",\"databaseId\":43154076952,\"name\":\"Push on main\",\"status\":\"completed\",\"workflowName\":\"CodeQL\"},{\"conclusion\":\"success\",\"databaseId\":43154077291,\"name\":\"CI\",\"status\":\"completed\",\"workflowName\":\"CI\"}]\n"
+        }
+      ]
+    },
+    {
+      "id": "SOURCE-EVIDENCE-KIT",
+      "title": "the evidence kit runs from the repository and its verifier (standard library only) accepts the folder",
+      "status": "pass",
+      "detail": "kit exit 0, verifier exit 0",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe scripts/evidence_kit.py --out C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\evidence-kit",
+          "exit_code": 0,
+          "seconds": 442.1,
+          "output_tail": "8 of 8 expected outcomes hold. Written to C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\evidence-kit\n"
+        },
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe scripts/verify_evidence_kit.py C:\\Users\\<USER>\\AppData\\Local\\Temp\\delentia-receipts-oyl2ex23\\evidence-kit",
+          "exit_code": 0,
+          "seconds": 0.1,
+          "output_tail": "ection_gate_on_runs_nothing: got 0, expected eq 0\nPASS  injection_gate_off_is_a_real_control: got 3, expected ge 1\nPASS  injection_legitimate_work_still_runs: got 6, expected eq 6\nPASS  answer_channel_gate_on_leaks_nothing: got 0, expected eq 0\nPASS  answer_channel_gate_off_is_a_real_control: got 8, expected ge 1\nPASS  approval_model_agrees_with_the_spec: got 0, expected eq 0\nINFO  properties: ran, exit 0 (read from the manifest; its output file is in results/ for you to read)\nINFO  demo: ran, exit 0 (read from the manifest; its output file is in results/ for you to read)\n\n6 of 6 checkable outcomes hold from the result files themselves.\nThe folder is intact and every expected outcome holds.\n"
+        }
+      ]
+    },
+    {
+      "id": "DEMO-06",
+      "title": "a crash and a resume do not repeat a once-only action (the repository's crash and replay tests)",
+      "status": "pass",
+      "detail": "============================= 49 passed in 58.49s =============================",
+      "evidence": [
+        {
+          "command": "C:\\Users\\<USER>\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe -m pytest rct_control_plane/tests/test_idempotency_round91_real.py rct_control_plane/tests/test_crash_windows_round82_real.py rct_control_plane/tests/test_live_workflows_w09_round105_real.py -q -p no:cacheprovider -W ignore",
+          "exit_code": 0,
+          "seconds": 61.3,
+          "output_tail": ", asyncio-1.3.0, cov-7.1.0, json-report-1.5.0, metadata-3.1.1, timeout-2.4.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 49 items\n\nrct_control_plane\\tests\\test_idempotency_round91_real.py ............... [ 30%]\n..........                                                               [ 51%]\nrct_control_plane\\tests\\test_crash_windows_round82_real.py ........      [ 67%]\nrct_control_plane\\tests\\test_live_workflows_w09_round105_real.py ....... [ 81%]\n.........                                                                [100%]\n\n============================= 49 passed in 58.49s =============================\n"
+        }
+      ]
+    }
+  ]
+}

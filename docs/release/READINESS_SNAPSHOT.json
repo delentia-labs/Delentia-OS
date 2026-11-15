@@ -1,22 +1,27 @@
 {
   "generated_by": "scripts/readiness_snapshot.py",
-  "generated_at": "2026-11-02 03:58:16Z",
-  "offline": true,
+  "generated_at": "2026-11-14 10:26:34Z",
+  "offline": false,
   "git": {
-    "sha": "0e29748060abc7053686ed9fe96a19158e50f2fc",
-    "short": "0e29748",
-    "branch": "round108/test-checkpoint",
+    "sha": "80c7184c950ad87a43e0547490ccf63132ba41fa",
+    "short": "80c7184",
+    "branch": "round113/launch-prep",
     "dirty": true
   },
   "canonical_checkpoint": {
-    "passed": "9,625",
-    "skipped": "47",
-    "coverage": "92.18",
-    "ci_run": "41300747145",
-    "commit": "75e18b4",
-    "last_updated": "2026-11-01"
+    "passed": "9,912",
+    "skipped": "62",
+    "coverage": "92.10",
+    "ci_run": "43570824206",
+    "commit": "98b0688c52ee843497c24630ba3f810c395383b1",
+    "last_updated": "2026-11-14"
   },
-  "latest_completed_ci_on_main": null,
+  "latest_completed_ci_on_main": {
+    "run": "43570824206",
+    "conclusion": "success",
+    "sha": "98b0688",
+    "created_at": "2026-11-14T07:22:46Z"
+  },
   "tools": {
     "count": 50,
     "taint_source": 9,
@@ -129,5 +134,5 @@
     "live_runner": 11,
     "live_result_with_a_capable_model": 0
   },
-  "canonical_matches_latest_ci": null
+  "canonical_matches_latest_ci": true
 }
