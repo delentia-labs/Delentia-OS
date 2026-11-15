@@ -533,10 +533,16 @@ OR, if the goal is already achieved or no tool call is needed:
 {{"action": "finish", "reasoning": "<why>", "final_answer": "<your answer to the goal>"}}
 {_batch_guidance()}"""
 
-    if system_prompt is not None:
-        raw_text = await provider.complete(prompt, system_prompt=system_prompt, temperature=0.3, json_mode=True)
-    else:
-        raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
+    from rct_control_plane.llm_provider import LLMReplyCut      # local import, as is_local_refusal above
+    try:
+        if system_prompt is not None:
+            raw_text = await provider.complete(prompt, system_prompt=system_prompt, temperature=0.3, json_mode=True)
+        else:
+            raw_text = await provider.complete(prompt, temperature=0.3, json_mode=True)
+    except LLMReplyCut:
+        # Round 114: the reply was empty because it stopped at the allowance (a reasoning model spent it all thinking). Treat it as an unusable first reply so the one retry below, with the larger
+        # allowance, runs; before this the provider's error reached the loop, which re-sent the identical request with the same allowance (found by window 3 of round two, R0097).
+        raw_text = ""
 
     decision = _extract_json(raw_text)
     if decision is None or "action" not in decision:
@@ -545,10 +551,13 @@ OR, if the goal is already achieved or no tool call is needed:
         # with the JSON only. One retry, not a loop: it costs one more model call (metered like any other) and only when the first reply was unusable.
         retry_prompt = (prompt + "\n\nYour previous reply was not a valid JSON object (it may have been cut off while you were thinking). "
                         "Reply again with ONLY the JSON object, as short as you can: no thinking out loud, no text outside the JSON.")
-        if system_prompt is not None:                             # any exception (the budget meter's refusals included) reaches the loop exactly as it does from the first call
-            raw_retry = await provider.complete(retry_prompt, system_prompt=system_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
-        else:
-            raw_retry = await provider.complete(retry_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
+        try:
+            if system_prompt is not None:                         # any other exception (the budget meter's refusals included) reaches the loop exactly as it does from the first call
+                raw_retry = await provider.complete(retry_prompt, system_prompt=system_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
+            else:
+                raw_retry = await provider.complete(retry_prompt, temperature=0.0, max_tokens=4096, json_mode=True)
+        except LLMReplyCut:                                       # cut again, even at the larger allowance: the same end as any second unusable reply
+            raw_retry = ""
         second = _extract_json(raw_retry)
         if second is not None and "action" in second:
             return second
