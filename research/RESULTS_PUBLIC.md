@@ -4,6 +4,60 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0096: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set4 context, provider openrouter
+- Date: 2026-11-15T05:45:50Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1221
+- Units behind the verdict: 60; figures: false stops 10, found 21, latency p50 s 6.97
+- What it says: Judge, sealed set 4, context prompt: found 21 of 30, false stops 10 of 30 (0.333). H3/H4 rule: false stops lower by 5, found lower by 8, so NOT met. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0095: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set4 plain, provider openrouter
+- Date: 2026-11-15T05:45:50Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1522
+- Units behind the verdict: 60; figures: false stops 15, found 29, latency p50 s 10.24
+- What it says: Judge, sealed set 4, plain prompt (baseline arm): found 29 of 30, false stops 15 of 30 (0.5). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0094: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set3 context, provider openrouter
+- Date: 2026-11-15T05:45:49Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1272
+- Units behind the verdict: 60; figures: false stops 6, found 22, latency p50 s 6.46
+- What it says: Judge, sealed set 3, context prompt (ctx-5dbf3fa34125): found 22 of 25, false stops 6 of 35 (0.171). H3 rule (false stops lower by >= 2 AND found lower by <= 1): false stops lower by 14, found lower by 2, so H3 NOT met (by one item of found); do not report the context judge as better. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0093: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set3 plain, provider openrouter
+- Date: 2026-11-15T05:45:49Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1246
+- Units behind the verdict: 60; figures: false stops 20, found 24, latency p50 s 6.08
+- What it says: Judge, sealed set 3, plain prompt (baseline arm of the H3 contrast): found 24 of 25, false stops 20 of 35 (0.571). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0092: R2-1 (pass)
+
+- Model and arm: `x-ai/grok-build-0.1`, critic set2, provider openrouter
+- Date: 2026-11-15T05:45:48Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0617
+- Units behind the verdict: 32; figures: false stops 0, found 8, latency p50 s 4.02
+- What it says: Critic, sealed set 2: found 8 of 8, false stops 0 of 24. Rule found >= 7 of 8 and false stops <= 3 of 24: met, on one owner's labels (small sample). Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
+## R0091: R2-1 (fail)
+
+- Model and arm: `x-ai/grok-build-0.1`, judge set1, provider openrouter
+- Date: 2026-11-15T05:45:48Z; code: commit `1cfb55a` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1147
+- Units behind the verdict: 59; figures: false stops 4, found 31, latency p50 s 5.77
+- What it says: Judge, sealed set 1: found 31 of 34 (0.912), false stops 4 of 25 (0.16, interval 0.064-0.347). Rule found >= 0.80 and false stops <= 0.15: NOT met, by one item of 25. Same totals and the same decision on all 60 items as haiku (R0085), with different reply wording. Run 2026-11-15 at commit a0de0d02 (CI green), freeze R (require_parameters=1, data_collection=deny), judge_max_tokens=1200, unusable replies 0 of every run. Cost: provider-side usage per command from the driver; the window key total on the Keys page is to be cross-checked.
+
 ## R0090: R2-1 (fail)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, judge set4 context, provider openrouter
@@ -814,4 +868,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 90. Total actual cost registered: $5.5328.
+Entries: 96. Total actual cost registered: $6.2353.
