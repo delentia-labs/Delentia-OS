@@ -1,0 +1,25 @@
+{
+  "purpose": "Thai requests that need NO external tool (notes, tickets, calendar, mailbox servers). Written before the Thai lexicon rule (research/THAI_TOOL_MENU_CRITERIA_R115.md section 2c). Adoption rule 3: on these, the mean number of external tools in the menu is at most 1. Several are deliberate near-misses that share a verb with an external tool (อ่าน, ดู, หา, เขียน, ลบ) but ask for a built-in tool or for no tool.",
+  "goals": [
+    "เขียนกลอนสั้นๆ เกี่ยวกับทะเล",
+    "แปลประโยคนี้เป็นภาษาอังกฤษ: ขอบคุณที่ช่วยเหลือ",
+    "คำนวณ 25 คูณ 18 ให้หน่อย",
+    "อธิบายหน่อยว่า FDIA คืออะไร",
+    "อ่านไฟล์ pyproject.toml แล้วบอกชื่อโปรเจกต์",
+    "ค้นหาไฟล์ที่มีคำว่า FDIA ในโปรเจกต์",
+    "ดูว่ามี worktree อะไรอยู่บ้าง",
+    "เขียนไฟล์ hello.txt ในโฟลเดอร์ exchange ว่า สวัสดี",
+    "ช่วยสรุปเรื่องสั้นๆ ว่า RCT-7 ทำอะไร",
+    "ลบไฟล์ temp_output.log ออกจากโปรเจกต์",
+    "ดูว่าผมเคยบอกอะไรเกี่ยวกับการตั้งค่าไว้บ้าง",
+    "หาข้อมูลเรื่องราคาทองวันนี้บนเว็บ",
+    "อ่านหน้าเว็บ https://example.com แล้วสรุปให้",
+    "จำไว้ว่าผมชอบคำตอบสั้นๆ",
+    "ทำเครื่องหมายไว้ว่าวันนี้ต้องตรวจสอบเรื่องความปลอดภัย",
+    "เตือนฉันตอนบ่ายสามให้โทรหาธนาคาร",
+    "ตรวจสอบว่าบันทึกการตรวจสอบ (audit chain) ยังสมบูรณ์ไหม",
+    "เปรียบเทียบสองไฟล์นี้ว่าต่างกันตรงไหน",
+    "สร้างรายการสิ่งที่ต้องทำสำหรับการย้ายระบบ แล้วตอบเป็นข้อความ",
+    "อธิบายขั้นตอนการติดตั้งโปรแกรมนี้ทีละข้อ"
+  ]
+}
