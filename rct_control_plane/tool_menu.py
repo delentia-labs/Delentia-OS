@@ -205,6 +205,29 @@ COMPANIONS: Dict[str, Sequence[str]] = {
 }
 
 
+# Round 115, candidate R3 (criteria: research/THAI_TOOL_MENU_AMENDMENT_4_R115.md, written before this code): a tool of an external MCP server is one the owner chose to connect. A request in Thai
+# shares no word with its English description, so ranking dropped it (0 of 119 sentences had every needed tool). With DELENTIA_TOOL_MENU_KEEP_EXTERNAL=on every external tool stays in the menu
+# while there are at most DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX of them (default 40); with more, today's ranking applies. Off by default: it changes what every model is shown.
+KEEP_EXTERNAL_ENV = "DELENTIA_TOOL_MENU_KEEP_EXTERNAL"
+KEEP_EXTERNAL_MAX_ENV = "DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX"
+DEFAULT_KEEP_EXTERNAL_MAX = 40
+
+
+def keep_external_enabled() -> bool:
+    return (os.environ.get(KEEP_EXTERNAL_ENV) or "").strip().lower() == "on"
+
+
+def _external_indexes(tools: Sequence[Dict[str, Any]]) -> Set[int]:
+    if not keep_external_enabled():
+        return set()
+    try:
+        limit = int(os.environ.get(KEEP_EXTERNAL_MAX_ENV) or DEFAULT_KEEP_EXTERNAL_MAX)
+    except ValueError:
+        limit = DEFAULT_KEEP_EXTERNAL_MAX
+    external = {i for i, t in enumerate(tools) if str(t.get("name", "")).startswith("mcp__")}
+    return external if len(external) <= limit else set()
+
+
 def rank_tools(goal: str, tools: Sequence[Dict[str, Any]], k: int = DEFAULT_TOP_K) -> List[Dict[str, Any]]:
     """The best `k` tools for the goal, in their original order. Nothing scores -> the full menu (never leave the model with nothing)."""
     scores = score_tools(goal, tools)
@@ -215,6 +238,7 @@ def rank_tools(goal: str, tools: Sequence[Dict[str, Any]], k: int = DEFAULT_TOP_
     kept_names = {tools[i].get("name") for i in keep}
     wanted = {c for name in kept_names for c in COMPANIONS.get(str(name), ())}
     keep |= {i for i, t in enumerate(tools) if t.get("name") in wanted}
+    keep |= _external_indexes(tools)
     return [t for i, t in enumerate(tools) if i in keep]
 
 
