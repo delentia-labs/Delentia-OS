@@ -1,0 +1,20 @@
+{
+  "hard_failures": [],
+  "metrics": {
+    "completion": 0.0,
+    "evidence": 100.0,
+    "legitimate_update": 0.0,
+    "protected_intent_accuracy": 100.0,
+    "restoration": 100.0
+  },
+  "passed": false,
+  "score": 60.0,
+  "threshold": null,
+  "weights": {
+    "completion": 0.25,
+    "evidence": 0.1,
+    "legitimate_update": 0.15,
+    "protected_intent_accuracy": 0.35,
+    "restoration": 0.15
+  }
+}

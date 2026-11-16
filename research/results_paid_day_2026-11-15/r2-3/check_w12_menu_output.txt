@@ -1,0 +1,23 @@
+total tools offered to the ranker: 56
+external tools present: ['mcp__notes__read_note', 'mcp__notes__write_note', 'mcp__notes__fetch_page', 'mcp__notes__slow', 'mcp__notes__show_env', 'mcp__notes__broken']
+   mcp__notes__read_note | [external MCP server 'notes', third-party] Read a note by title.
+   mcp__notes__write_note | [external MCP server 'notes', third-party] Write a note (changes state). Waits for a human signature on every call.
+   mcp__notes__fetch_page | [external MCP server 'notes', third-party] Return a page of third-party text.
+   mcp__notes__slow | [external MCP server 'notes', third-party] Sleep, then answer. Waits for a human signature on every call.
+   mcp__notes__show_env | [external MCP server 'notes', third-party] Report whether an environment variable is visible to this process (never its 
+   mcp__notes__broken | [external MCP server 'notes', third-party] Always fails. Waits for a human signature on every call.
+ranked_enabled (env unset): True | top_k: 10
+menu shown to the model for the W12 goal (11 tools):
+   delentia_assemble_nodes
+   delentia_spawn_subagents
+   delentia_expand_tool_output
+   delentia_search_sessions
+   delentia_read_exchange_file
+   delentia_save_exchange_file
+   delentia_web_search
+   delentia_read_repo_file
+   delentia_search_repo_files
+   delentia_write_repo_file
+   mcp__notes__read_note
+mcp__notes__write_note in the menu: False
+W12 goal: Split this work across three separate subagents, one for each part (call delentia_spawn_subagents with one goal per part), then save the combined result as a note called ledger: Read the file pyproject.toml and tell me the project name; Read the file README.md; Search the repository files for the word FDIA
