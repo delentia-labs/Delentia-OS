@@ -26,6 +26,7 @@ TOOLS = [{"name": f"mcp__{s}__{t}", "description": d, "input_schema": {}} for s,
 def clean(monkeypatch):
     monkeypatch.delenv(tool_menu.THAI_MENU_ENV, raising=False)
     monkeypatch.delenv(tool_menu.MENU_ENV, raising=False)
+    monkeypatch.setenv(tool_menu.KEEP_EXTERNAL_ENV, "off")          # T1 is tested on its own: R3 (on by default since Amendment 6) would put every external tool in the menu
 
 
 def names(goal):

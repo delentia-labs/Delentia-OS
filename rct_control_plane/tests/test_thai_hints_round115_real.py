@@ -27,6 +27,7 @@ def clean(monkeypatch, tmp_path):
     for var in (th.SWITCH_ENV, th.PATH_ENV, tool_menu.THAI_MENU_ENV, tool_menu.MENU_ENV):
         monkeypatch.delenv(var, raising=False)
     th._cache.update(path=None, mtime=None, data={})
+    monkeypatch.setenv(tool_menu.KEEP_EXTERNAL_ENV, "off")          # A1 is tested on its own: R3 (on by default since Amendment 6) would put every external tool in the menu
     monkeypatch.setenv(th.PATH_ENV, str(tmp_path / "hints.json"))
     yield
 

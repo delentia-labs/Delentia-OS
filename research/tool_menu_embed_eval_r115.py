@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import logging
 import statistics
 import time
@@ -80,6 +81,7 @@ def negatives(path):
 
 
 def main():
+    os.environ["DELENTIA_TOOL_MENU_KEEP_EXTERNAL"] = "off"          # these measurements compare against the menu of before R3 became the default (Amendment 6)
     logging.disable(logging.WARNING)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=["grid", "holdout"])

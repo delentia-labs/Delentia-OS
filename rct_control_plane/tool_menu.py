@@ -207,14 +207,16 @@ COMPANIONS: Dict[str, Sequence[str]] = {
 
 # Round 115, candidate R3 (criteria: research/THAI_TOOL_MENU_AMENDMENT_4_R115.md, written before this code): a tool of an external MCP server is one the owner chose to connect. A request in Thai
 # shares no word with its English description, so ranking dropped it (0 of 119 sentences had every needed tool). With DELENTIA_TOOL_MENU_KEEP_EXTERNAL=on every external tool stays in the menu
-# while there are at most DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX of them (default 40); with more, today's ranking applies. Off by default: it changes what every model is shown.
+# while there are at most DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX of them (default 40); with more, the ranking applies.
+# ON BY DEFAULT since 2026-11-16 (the Architect's decision after the model test, research/THAI_TOOL_MENU_AMENDMENT_6_R115.md): `off`, `0`, `false` or `no` restores the old menu exactly.
 KEEP_EXTERNAL_ENV = "DELENTIA_TOOL_MENU_KEEP_EXTERNAL"
 KEEP_EXTERNAL_MAX_ENV = "DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX"
 DEFAULT_KEEP_EXTERNAL_MAX = 40
 
 
 def keep_external_enabled() -> bool:
-    return (os.environ.get(KEEP_EXTERNAL_ENV) or "").strip().lower() == "on"
+    value = (os.environ.get(KEEP_EXTERNAL_ENV) or "").strip().lower()
+    return value not in ("off", "0", "false", "no")
 
 
 def _external_indexes(tools: Sequence[Dict[str, Any]]) -> Set[int]:

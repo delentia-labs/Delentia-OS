@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import logging
 import statistics
 from pathlib import Path
@@ -84,6 +85,7 @@ def verdict(external: Dict[str, Dict[str, Any]], builtin_holdout: Dict[str, Dict
 
 
 def main() -> int:
+    os.environ["DELENTIA_TOOL_MENU_KEEP_EXTERNAL"] = "off"          # these measurements compare against the menu of before R3 became the default (Amendment 6)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--k", type=int, default=0, help="menu size (default: the runtime's)")
     ap.add_argument("--json", default=None)

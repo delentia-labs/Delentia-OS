@@ -70,7 +70,7 @@ async def run(provider: Any, sets: Dict[str, List[Dict[str, Any]]], tools: List[
                     if arm == "r3":
                         os.environ[tool_menu.KEEP_EXTERNAL_ENV] = "on"
                     else:
-                        os.environ.pop(tool_menu.KEEP_EXTERNAL_ENV, None)
+                        os.environ[tool_menu.KEEP_EXTERNAL_ENV] = "off"          # the 'today' arm is the menu of before R3 became the default
                     menu = tool_menu.rank_tools(item["goal"], tools, k)
                     try:
                         decision = await decide(item["goal"], [], menu, llm_provider=provider)

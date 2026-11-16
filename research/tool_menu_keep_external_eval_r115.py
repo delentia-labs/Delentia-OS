@@ -24,7 +24,7 @@ SECOND = Path(__file__).resolve().parent / "tool_menu_owner_holdout_r115.json"
 @contextmanager
 def keep(value, maximum=None):
     old = {k: os.environ.get(k) for k in (tool_menu.KEEP_EXTERNAL_ENV, tool_menu.KEEP_EXTERNAL_MAX_ENV)}
-    for k, v in ((tool_menu.KEEP_EXTERNAL_ENV, value), (tool_menu.KEEP_EXTERNAL_MAX_ENV, None if maximum is None else str(maximum))):
+    for k, v in ((tool_menu.KEEP_EXTERNAL_ENV, "off" if value is None else value), (tool_menu.KEEP_EXTERNAL_MAX_ENV, None if maximum is None else str(maximum))):       # None = the old menu (R3 is on by default since Amendment 6)
         if v is None:
             os.environ.pop(k, None)
         else:

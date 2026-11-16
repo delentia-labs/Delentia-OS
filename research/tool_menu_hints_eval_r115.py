@@ -61,6 +61,7 @@ def negs(path):
 
 
 def main():
+    os.environ["DELENTIA_TOOL_MENU_KEEP_EXTERNAL"] = "off"          # these measurements compare against the menu of before R3 became the default (Amendment 6)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--hints", required=True)
     ap.add_argument("--third", default=None)

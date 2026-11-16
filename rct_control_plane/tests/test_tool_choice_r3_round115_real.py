@@ -47,7 +47,7 @@ def test_the_two_arms_see_different_menus_and_the_environment_is_restored(monkey
         return {"action": "finish"}
 
     out = run(decide, {"thai_89": [{"goal": "ปิดงาน 310 ได้เลยนะ", "needs": ["mcp__tickets__update_ticket"], "id": 9}]})
-    assert [s[0] for s in seen] == [None, "on"]
+    assert [s[0] for s in seen] == ["off", "on"]               # the 'today' arm is named off explicitly: on is the default since Amendment 6
     assert not [n for n in seen[0][1] if n.startswith("mcp__")] and all(t["name"] in seen[1][1] for t in EXTERNAL)
     assert os.environ.get(tool_menu.KEEP_EXTERNAL_ENV) is None and os.environ.get(tool_menu.FORMAT_ENV) == "full"
     assert [r["arm"] for r in out["rows"]] == ["today", "r3"] and [r["menu_tools"] for r in out["rows"]][0] < [r["menu_tools"] for r in out["rows"]][1]

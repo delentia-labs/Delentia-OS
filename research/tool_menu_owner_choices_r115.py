@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import logging
 import statistics
 from pathlib import Path
@@ -59,6 +60,7 @@ def summarise(rows):
 
 
 def main():
+    os.environ["DELENTIA_TOOL_MENU_KEEP_EXTERNAL"] = "off"          # these measurements compare against the menu of before R3 became the default (Amendment 6)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--json", default=None)
     args = ap.parse_args()
