@@ -64,3 +64,23 @@ def test_the_two_request_settings_are_never_combined_in_one_row():
     for line in body.splitlines():
         if line.startswith("| ") and "deny + require_parameters" in line:
             assert "| deny |" not in line
+
+
+# ---- round two section (2026-11-16) ------------------------------------------------------------------------------------------------------------------
+def test_round_two_section_counts_come_from_the_result_files():
+    body = text()
+    section = body.split("## Round two", 1)[1].split("## How to repeat it", 1)[0]
+    assert re.search(r"\| W12 \| anthropic/claude-haiku-5.5 \| 14 of 14 \| 0 \| 0\.807 \| pass \|", section), "W12's repeat must read 14 of 14 with the lower bound 0.807"
+    assert re.search(r"\| W09 \| anthropic/claude-haiku-5.5 \| 6 of 14 \| 0 \|", section)
+    assert re.search(r"\| W12 \| anthropic/claude-haiku-5.5 \| 0 of 14 \| 0 \| 0\.000 \| inconclusive \|", section), "the earlier 0 of 14 stays visible"
+
+
+def test_a_corrected_round_two_row_is_shown_as_corrected():
+    section = text().split("## Round two", 1)[1]
+    assert "fail (corrected in R0109)" in section
+
+
+def test_the_lower_bound_is_the_exact_one_sided_bound():
+    assert abs(page.lower_bound(14, 14) - 0.05 ** (1 / 14)) < 1e-12
+    assert page.lower_bound(0, 14) == 0.0
+    assert 0.18 < page.lower_bound(6, 14) < 0.23
