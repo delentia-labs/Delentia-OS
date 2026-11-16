@@ -199,3 +199,48 @@ def test_the_checks_of_the_three_live_workflows_pass_on_the_current_code():
     for name, check in lmc.CHECKS.items():
         result = check()
         assert result["ok"], (name, result)
+
+
+# ================================ Amendment 6 (research/ROUND_TWO_AMENDMENT_6_R114.md, written before this code) ================================
+def test_a6_every_extension_is_one_order():
+    c = orders_api.canonical_order_id
+    assert [c(x) for x in ("order-1", "order-1.txt", "order-1.json", " order-1.csv ", "order-1.tar.gz")] == ["order-1", "order-1", "order-1", "order-1", "order-1.tar"]
+
+
+def test_a6_the_effects_of_run_14_pass_the_oracle():
+    verdict = lw.assess_w09(_obs({"order-1.json": 1, "order-2.json": 1, "order-3.json": 1}))
+    assert verdict["checks"]["all_orders_placed_once"] and verdict["passed"], verdict
+
+
+def test_a6_a_duplicate_across_extensions_is_still_a_hard_failure_and_a_missing_order_still_fails():
+    dup = lw.assess_w09(_obs({"order-1": 1, "order-2": 1, "order-2.json": 1, "order-3": 1}))
+    assert any("duplicate effect" in h for h in dup["hard_failures"])
+    missing = lw.assess_w09(_obs({"order-1.json": 1, "order-2.json": 1}))
+    assert not missing["checks"]["all_orders_placed_once"]
+
+
+def test_a6_the_hold_matches_a_json_id(tmp_path):
+    server, markers = _serve(tmp_path)
+    try:
+        (markers / "hold.json").write_text(json.dumps({"order": "order-2.txt", "ms": 400}), encoding="utf-8")
+        _post(server, "order-2.json", "k-json")
+        assert (markers / "api_committed_holding").exists()
+    finally:
+        server.shutdown()
+
+
+def test_a6_the_goal_gives_the_content_and_is_version_2():
+    from research.daaes import w09_child
+    assert w09_child.GOAL_VERSION == 2
+    assert "Use the category reports and any short text as the content of each order." in w09_child.GOAL
+    assert w09_child.GOAL.startswith("Process the three orders (order-1, order-2 and order-3) with the order service")
+
+
+def test_a6_children_usage_is_summed():
+    observed = {"pre_call": {"first_run": {"cost": {"calls": 3, "prompt_tokens": 1000, "completion_tokens": 200, "cost_usd": 0.001}},
+                             "resume": {"cost": {"calls": 2, "prompt_tokens": 500, "completion_tokens": 100, "cost_usd": 0.0005}}},
+                "notary_down": {"first_run": {"cost": {"calls": 1, "prompt_tokens": 300, "completion_tokens": 50, "cost_usd": 0.0002}}}}
+    total = lw.w09_child_usage(observed)
+    assert {k: v for k, v in total.items() if k != "cost_usd"} == {"model_calls": 6, "prompt_tokens": 1800, "completion_tokens": 350}
+    assert abs(total["cost_usd"] - 0.0017) < 1e-9
+    assert lw.w09_child_usage({}) == {"model_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0.0}

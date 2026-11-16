@@ -629,6 +629,19 @@ def _w09_scenario(work: Path, scenario: str, *, scripted: bool, child_env: Dict[
                 pass
 
 
+def w09_child_usage(observed: Dict[str, Dict[str, Any]]) -> Dict[str, float]:
+    """Calls, tokens and money the children reported in their RESULT lines (first run and resume of every scenario)."""
+    total = {"model_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0.0}
+    for obs in observed.values():
+        for key in ("first_run", "resume"):
+            cost = (obs.get(key) or {}).get("cost") or {}
+            total["model_calls"] += int(cost.get("calls") or 0)
+            total["prompt_tokens"] += int(cost.get("prompt_tokens") or 0)
+            total["completion_tokens"] += int(cost.get("completion_tokens") or 0)
+            total["cost_usd"] += float(cost.get("cost_usd") or 0.0)
+    return total
+
+
 def assess_w09(obs: Dict[str, Any]) -> Dict[str, Any]:
     """The oracle for ONE W09 scenario. Pure: `obs` is what the service's ledger and its request log showed, and what the journal said, afterwards."""
     hard: List[str] = []
@@ -692,8 +705,13 @@ def run_w09(provider: Any, home: Path, *, kill_point: str = "all", scripted: boo
         for key in ("first_run", "resume"):
             cost = (obs.get(key) or {}).get("cost") or {}
             tokens += int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
-    return _finish("W09", verdict, timed, started, scenarios=scenarios, per_scenario={s: v["passed"] for s, v in verdicts.items()}, child_tokens=tokens, observed=observed,
-                   stopped=[o.get("resume_stopped") or o.get("notary_stopped") for o in observed.values()], idempotency=idempotency, scripted=scripted)
+    from research.daaes import w09_child
+    result = _finish("W09", verdict, timed, started, scenarios=scenarios, per_scenario={s: v["passed"] for s, v in verdicts.items()}, child_tokens=tokens, observed=observed,
+                     stopped=[o.get("resume_stopped") or o.get("notary_stopped") for o in observed.values()], idempotency=idempotency, scripted=scripted, goal_version=w09_child.GOAL_VERSION)
+    usage = w09_child_usage(observed)                                    # the agents are other processes: what they spent is added to the run's metrics (Amendment 6, item 3)
+    for key, value in usage.items():
+        result["metrics"][key] = round((result["metrics"].get(key) or 0) + value, 6) if key == "cost_usd" else int(result["metrics"].get(key) or 0) + int(value)
+    return result
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------- W08
