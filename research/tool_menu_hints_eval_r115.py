@@ -72,7 +72,7 @@ def main():
     every = asyncio.run(sib.builtin_tools()) + sib.synthetic_tools(spec["servers"])
     stored = th.load(Path(args.hints))
     valid = sum(1 for t in every if str(t["name"]).startswith("mcp__") and stored.get(t["name"], {}).get("for") == th.fingerprint(t))
-    print(f"{len(every)} tools, menu size {k}; hints file {args.hints}: {valid} of 17 external tools have a valid hint")
+    print(f"{len(every)} tools, menu size {k}; hints file {args.hints}: {valid} of 19 external tools have a valid hint")
     sets = {"development (seen)": ev.owner_cases(ev.DEV), "second form (seen by T1, E1)": ev.owner_cases(SECOND)}
     if args.third:
         sets["THIRD FORM (decision)"] = ev.owner_cases(args.third)
