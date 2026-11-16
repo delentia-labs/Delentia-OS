@@ -561,8 +561,10 @@ OR, if the goal is already achieved or no tool call is needed:
         second = _extract_json(raw_retry)
         if second is not None and "action" in second:
             return second
+        # Round two, Amendment 5: keep what the model really sent (cut), so the cause of a parse_error can be read afterwards instead of guessed.
         return {"action": "finish", "reasoning": "parse_error", "final_answer": raw_text,
-                "tool_name": None, "tool_args": {}, "parse_error": True}
+                "tool_name": None, "tool_args": {}, "parse_error": True,
+                "raw_first": (raw_text or "")[:4000], "raw_retry": (raw_retry or "")[:4000]}
 
     decision.setdefault("tool_name", None)
     decision.setdefault("tool_args", {})
@@ -780,7 +782,8 @@ class AutonomousLoop:
                 stopped_reason = "parse_error"
                 final_answer = decision.get("final_answer")
                 step = LoopStep(iteration=i, tool_name=None, tool_args={},
-                                 tool_result=None, llm_reasoning=decision["reasoning"])
+                                 tool_result={"parse_error": {"raw_first": decision.get("raw_first", ""), "raw_retry": decision.get("raw_retry", "")}},
+                                 llm_reasoning=decision["reasoning"])
                 history.append(step)
                 self._persist_step(step)
                 await _notify(step)

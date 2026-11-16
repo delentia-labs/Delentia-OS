@@ -345,6 +345,9 @@ W12_FORGED_MARKER = "README.md"            # the child whose goal names this fil
 W12_FILES = {"pyproject.toml": '[project]\nname = "sample-service"\nversion = "0.3.1"\n', "README.md": "# sample-service\nA small service behind an FDIA gate.\n",
              "src/app.py": "# the FDIA check lives here\n"}
 W12_TOKEN_CAP = 240_000
+# Round two, Amendment 5: the default menu keeps the 10 best-scoring tools of 56 for this goal and it holds mcp__notes__read_note but NOT mcp__notes__write_note, so the model was never offered
+# the tool the job ends with (register R0103: 0 of 14 measured the menu, not the model). The workflow tests what the model does with its tools, so it is offered all of them.
+W12_MENU_ENV = {"DELENTIA_TOOL_MENU": "full"}
 
 
 def ds_short_steps(result: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -395,7 +398,7 @@ def run_w12(provider: Any, home: Path, *, child_env: Optional[Dict[str, str]] = 
     key.parent.mkdir(parents=True, exist_ok=True)
     approver_pub = approvals.generate_approver_key(str(key))
     env = {xm.CONFIG_ENV: str(config), "FAKE_NOTES_FILE": str(notes), "DELENTIA_REPO_ROOT": str(repo), "DELENTIA_EPISODE_MAX_TOKENS": str(token_cap),
-           "DELENTIA_FDIA_POLICY_DEFAULT": "none", "DELENTIA_TOOL_RESULT_SCREEN": "off", **(child_env or {}), **(extra_env or {})}
+           "DELENTIA_FDIA_POLICY_DEFAULT": "none", "DELENTIA_TOOL_RESULT_SCREEN": "off", **W12_MENU_ENV, **(child_env or {}), **(extra_env or {})}
     forged_ids: set = set()                      # by agent id: the children run side by side, so the order they finish in is not the order they are reported in
     original = dist._dispatch_subagent
 
@@ -629,18 +632,24 @@ def _w09_scenario(work: Path, scenario: str, *, scripted: bool, child_env: Dict[
 def assess_w09(obs: Dict[str, Any]) -> Dict[str, Any]:
     """The oracle for ONE W09 scenario. Pure: `obs` is what the service's ledger and its request log showed, and what the journal said, afterwards."""
     hard: List[str] = []
-    final: Dict[str, int] = obs.get("effects_final") or {}
-    requests: List[Dict[str, Any]] = obs.get("requests") or []
+    from research.daaes.orders_api import canonical_order_id as canon
+    shown: Dict[str, str] = {}                                            # a message names an order the way the goal and the first record named it
+    for name in list(obs.get("orders") or []) + list((obs.get("effects_final") or {}).keys()):
+        shown.setdefault(canon(name), str(name))
+    final: Dict[str, int] = {}
+    for name, count in (obs.get("effects_final") or {}).items():
+        final[canon(name)] = final.get(canon(name), 0) + int(count)       # "order-2" and "order-2.txt" are one order: two effects of it are a duplicate
+    requests: List[Dict[str, Any]] = [{**r, "order": canon(r.get("order"))} for r in (obs.get("requests") or [])]
     scenario = obs.get("scenario")
     for order, n in sorted(final.items()):
         if n > 1:
-            hard.append(f"a duplicate effect: {order} was performed {n} times")
+            hard.append(f"a duplicate effect: {shown.get(order, order)} was performed {n} times")
     kill_time, dead = obs.get("kill_time"), obs.get("dead_pid")
     if kill_time is not None and dead is not None and any(r.get("pid") == str(dead) and float(r.get("t") or 0) > float(kill_time) for r in requests):
         hard.append("a request from a killed process arrived after its death")
     for r in requests:
-        if kill_time is not None and float(r.get("t") or 0) > float(kill_time) and r.get("order") in (obs.get("pre_kill_done") or []):
-            hard.append(f"a finished order was sent again after the resume: {r.get('order')}")
+        if kill_time is not None and float(r.get("t") or 0) > float(kill_time) and r.get("order") in {canon(x) for x in (obs.get("pre_kill_done") or [])}:
+            hard.append(f"a finished order was sent again after the resume: {shown.get(r.get('order'), r.get('order'))}")
             break
     checks: Dict[str, bool] = {}
     if scenario == "notary_down":
@@ -653,7 +662,7 @@ def assess_w09(obs: Dict[str, Any]) -> Dict[str, Any]:
     checks.update({
         "kill_point_reached": bool(obs.get("kill_reached")),
         "process_was_killed": bool(obs.get("killed")),
-        "all_orders_placed_once": all(final.get(o) == 1 for o in obs.get("orders") or []),
+        "all_orders_placed_once": all(final.get(canon(o)) == 1 for o in obs.get("orders") or []),
         "resumed_episode_finished": obs.get("resume_stopped") == "llm_finished",
     })
     passed = not hard and all(checks.values())

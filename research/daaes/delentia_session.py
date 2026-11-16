@@ -106,7 +106,13 @@ class DirWorld(ScriptedWorld):
         self.root.mkdir(parents=True, exist_ok=True)
 
     async def list_tools(self) -> List[Any]:
-        return [_Tool("delentia_read_repo_file"), _Tool("delentia_write_repo_file"), _Tool("delentia_crawl_url"), _Tool("delentia_recall")]
+        """The REAL definitions (name, description, argument names) of the four tools. A bare `_Tool(name)` has the name as its description and an empty argument schema, so a live model that is
+        not told the argument is `relative_path` guesses `path` and every read fails (found by the first live TC-006 run, register R0105, whose 0 of 3 measured the harness, not the model).
+        Scripted models pass exact arguments and never needed to be told. Round two, Amendment 5."""
+        from rct_control_plane.mcp_server import mcp
+        real = {t.name: t for t in await mcp.list_tools()}
+        names = ("delentia_read_repo_file", "delentia_write_repo_file", "delentia_crawl_url", "delentia_recall")
+        return [real[n] if n in real else _Tool(n) for n in names]
 
     def _inside(self, relative: Any) -> Path:
         """A path the model named, kept inside this workspace: an absolute path, a drive, or `..` that leaves the folder is refused. Lexical normalisation, then a prefix check, then the

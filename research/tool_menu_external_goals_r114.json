@@ -1,0 +1,79 @@
+{
+  "purpose": "Round two, Amendment 5, section 3. Labelled goals over four SYNTHETIC external tool servers, written before any measurement of candidate rule R1. Each goal names the tools it needs; a goal is served only if ALL of them are in the menu the model receives. The built-in tools of the runtime are added to the list by the measuring script, so the menu competes with the real 52 tools.",
+  "classification_rule": "A tool is read-type when its name (after the server prefix) starts with read_, get_, list_, search_, find_ or fetch_; every other tool is write-type. Fixed here, before the measurement.",
+  "servers": {
+    "notes": {
+      "read_note": "Read a note by title.",
+      "list_notes": "List the titles of all notes.",
+      "write_note": "Write a note (changes state).",
+      "delete_note": "Delete a note by title (changes state)."
+    },
+    "tickets": {
+      "get_ticket": "Get one ticket by its id.",
+      "list_tickets": "List open tickets, newest first.",
+      "search_tickets": "Search tickets by text.",
+      "create_ticket": "Create a new ticket with a title and a description (changes state).",
+      "update_ticket": "Update the status or the assignee of a ticket (changes state).",
+      "comment_ticket": "Add a comment to a ticket (changes state)."
+    },
+    "calendar": {
+      "list_events": "List events in a date range.",
+      "get_event": "Get one event by its id.",
+      "create_event": "Create a calendar event with a title, a start and an end (changes state).",
+      "delete_event": "Delete a calendar event by its id (changes state)."
+    },
+    "mailbox": {
+      "read_message": "Read one message by its id.",
+      "search_messages": "Search messages by sender or text.",
+      "list_folders": "List the folders of the mailbox.",
+      "draft_message": "Save a draft message to a recipient (changes state).",
+      "move_message": "Move a message to another folder (changes state)."
+    }
+  },
+  "goals": [
+    {"id": "N01", "goal": "Read the note called Weekly Plan and tell me what is on it", "needs": ["mcp__notes__read_note"]},
+    {"id": "N02", "goal": "Read the note called Budget and save a shorter version of it as a note called Budget Short", "needs": ["mcp__notes__read_note", "mcp__notes__write_note"]},
+    {"id": "N03", "goal": "List all my notes", "needs": ["mcp__notes__list_notes"]},
+    {"id": "N04", "goal": "Save a note called Ideas with the three ideas we just discussed", "needs": ["mcp__notes__write_note"]},
+    {"id": "N05", "goal": "Look at the note Roadmap, then record a summary of it in a new note named Roadmap Summary", "needs": ["mcp__notes__read_note", "mcp__notes__write_note"]},
+    {"id": "N06", "goal": "Delete the note called Old Draft", "needs": ["mcp__notes__delete_note"]},
+    {"id": "N07", "goal": "Read the notes Alpha and Beta and write one combined note called Alpha Beta", "needs": ["mcp__notes__read_note", "mcp__notes__write_note"]},
+    {"id": "N08", "goal": "Find out which notes exist and read the first one", "needs": ["mcp__notes__list_notes", "mcp__notes__read_note"]},
+    {"id": "N09", "goal": "Read the note Meeting and tell me who attended", "needs": ["mcp__notes__read_note"]},
+    {"id": "N10", "goal": "Copy the content of the note Template into a new note called Template Copy", "needs": ["mcp__notes__read_note", "mcp__notes__write_note"]},
+    {"id": "N11", "goal": "Read the file pyproject.toml and then save the project name as a note called Project Name", "needs": ["delentia_read_repo_file", "mcp__notes__write_note"]},
+    {"id": "T01", "goal": "Get ticket 4412 and tell me who it is assigned to", "needs": ["mcp__tickets__get_ticket"]},
+    {"id": "T02", "goal": "List the open tickets", "needs": ["mcp__tickets__list_tickets"]},
+    {"id": "T03", "goal": "Create a ticket titled Login page is slow with a short description", "needs": ["mcp__tickets__create_ticket"]},
+    {"id": "T04", "goal": "Look at ticket 77 and set its status to closed", "needs": ["mcp__tickets__get_ticket", "mcp__tickets__update_ticket"]},
+    {"id": "T05", "goal": "Search the tickets for the word timeout and add a comment to the newest one saying we are looking into it", "needs": ["mcp__tickets__search_tickets", "mcp__tickets__comment_ticket"]},
+    {"id": "T06", "goal": "Find tickets about billing and read the first one", "needs": ["mcp__tickets__search_tickets", "mcp__tickets__get_ticket"]},
+    {"id": "T07", "goal": "Read ticket 301 and then open a new ticket for the follow-up work", "needs": ["mcp__tickets__get_ticket", "mcp__tickets__create_ticket"]},
+    {"id": "T08", "goal": "Reassign ticket 12 to Mali", "needs": ["mcp__tickets__update_ticket"]},
+    {"id": "T09", "goal": "Add a comment to ticket 90 thanking the reporter", "needs": ["mcp__tickets__comment_ticket"]},
+    {"id": "T10", "goal": "Check ticket 18 and write a comment with what is still missing", "needs": ["mcp__tickets__get_ticket", "mcp__tickets__comment_ticket"]},
+    {"id": "T11", "goal": "List the open tickets and update the oldest one to in progress", "needs": ["mcp__tickets__list_tickets", "mcp__tickets__update_ticket"]},
+    {"id": "C01", "goal": "List my events for next week", "needs": ["mcp__calendar__list_events"]},
+    {"id": "C02", "goal": "Get the event with id 55 and tell me where it takes place", "needs": ["mcp__calendar__get_event"]},
+    {"id": "C03", "goal": "Create an event called Review on Friday from 10 to 11", "needs": ["mcp__calendar__create_event"]},
+    {"id": "C04", "goal": "Look at my events on Monday and put a new event called Planning after the last one", "needs": ["mcp__calendar__list_events", "mcp__calendar__create_event"]},
+    {"id": "C05", "goal": "Delete the event with id 31", "needs": ["mcp__calendar__delete_event"]},
+    {"id": "C06", "goal": "Read event 8 and remove it from the calendar", "needs": ["mcp__calendar__get_event", "mcp__calendar__delete_event"]},
+    {"id": "C07", "goal": "List the events on the 3rd and schedule a call called Sync at the first free hour", "needs": ["mcp__calendar__list_events", "mcp__calendar__create_event"]},
+    {"id": "C08", "goal": "Check whether I have anything on Tuesday", "needs": ["mcp__calendar__list_events"]},
+    {"id": "M01", "goal": "Read message 903 and summarise it", "needs": ["mcp__mailbox__read_message"]},
+    {"id": "M02", "goal": "Search my messages from Somchai", "needs": ["mcp__mailbox__search_messages"]},
+    {"id": "M03", "goal": "List my mail folders", "needs": ["mcp__mailbox__list_folders"]},
+    {"id": "M04", "goal": "Write a draft reply to Somchai saying the report will be ready on Monday", "needs": ["mcp__mailbox__draft_message"]},
+    {"id": "M05", "goal": "Read message 12 and save a draft reply to the sender", "needs": ["mcp__mailbox__read_message", "mcp__mailbox__draft_message"]},
+    {"id": "M06", "goal": "Search messages about the invoice and move the newest one to the folder Finance", "needs": ["mcp__mailbox__search_messages", "mcp__mailbox__move_message"]},
+    {"id": "M07", "goal": "Move message 77 to the Archive folder", "needs": ["mcp__mailbox__move_message"]},
+    {"id": "M08", "goal": "Read the latest message from Nok and draft a short thank you", "needs": ["mcp__mailbox__search_messages", "mcp__mailbox__draft_message"]},
+    {"id": "X01", "goal": "Read ticket 5 and save its title as a note called Ticket Five", "needs": ["mcp__tickets__get_ticket", "mcp__notes__write_note"]},
+    {"id": "X02", "goal": "Read the note Agenda and create an event called Agenda Review for tomorrow at 9", "needs": ["mcp__notes__read_note", "mcp__calendar__create_event"]},
+    {"id": "X03", "goal": "Read message 41 and open a ticket about the problem it describes", "needs": ["mcp__mailbox__read_message", "mcp__tickets__create_ticket"]},
+    {"id": "X04", "goal": "List my events for Wednesday and write them into a note called Wednesday", "needs": ["mcp__calendar__list_events", "mcp__notes__write_note"]},
+    {"id": "X05", "goal": "Get ticket 60 and draft a message to the assignee asking for an update", "needs": ["mcp__tickets__get_ticket", "mcp__mailbox__draft_message"]},
+    {"id": "X06", "goal": "Read the notes list and tell me how many notes there are", "needs": ["mcp__notes__list_notes"]}
+  ]
+}

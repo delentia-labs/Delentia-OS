@@ -29,6 +29,12 @@ from typing import Any, Dict
 from research.daaes.mock_api import Store
 
 
+def canonical_order_id(order: Any) -> str:
+    """One name for an order whether or not the caller wrote the extension ("order-2" and "order-2.txt" are the same order; Round two, Amendment 5)."""
+    text = str(order).strip()
+    return text[:-4] if text.lower().endswith(".txt") else text
+
+
 def make_handler(store: Store, markers: Path) -> type:
     log_lock = threading.Lock()
 
@@ -52,7 +58,7 @@ def make_handler(store: Store, markers: Path) -> type:
                 return self._send(404, {"error": "not found"})
             length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(length) or b"{}")
-            order = str(body.get("order"))
+            order = canonical_order_id(body.get("order"))
             key = self.headers.get("Idempotency-Key")
             result = store.commit(key or f"nokey-{uuid.uuid4().hex}", order, {"order": order})
             with log_lock, open(markers / "requests.jsonl", "a", encoding="utf-8") as f:
@@ -63,7 +69,7 @@ def make_handler(store: Store, markers: Path) -> type:
                     hold = json.loads(hold_file.read_text(encoding="utf-8"))
                 except ValueError:
                     hold = {}
-                if hold.get("order") == order and int(hold.get("ms") or 0) > 0:
+                if canonical_order_id(hold.get("order")) == order and int(hold.get("ms") or 0) > 0:
                     (markers / "api_committed_holding").write_text(order, encoding="utf-8")
                     time.sleep(int(hold["ms"]) / 1000.0)
             code = result.pop("http")
