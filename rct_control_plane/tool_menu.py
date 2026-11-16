@@ -88,6 +88,51 @@ HINTS: Dict[str, str] = {
 
 _SUFFIXES = ("ing", "ed", "es", "s")
 
+# Round 115 (criteria: research/THAI_TOOL_MENU_CRITERIA_R115.md, written before this table). A Thai request shares no word with the ENGLISH name and description of an external tool, so none of
+# them reached the menu (0 of 119 sentences the Architect ticked). This is a small fixed table from Thai words to the English tool words they mean, applied to a request that contains a Thai
+# character, before scoring. It is data you can read and change, not a model. Off unless DELENTIA_TOOL_MENU_THAI=on (the Architect decides the default after the holdout).
+THAI_MENU_ENV = "DELENTIA_TOOL_MENU_THAI"
+_T = r"[฀-๿]"
+THAI_NOUNS = (
+    # what the tool works on: a request names the DOMAIN (a server) with a noun
+    (r"โน้ต|โนต|จด(?!ทะเบียน|หมาย)", "note notes"),
+    (r"ตั๋ว|เคส|ทิกเก็ต", "ticket tickets issue case"),
+    (r"ปฏิทิน|นัดหมาย|นัด|ประชุม|อีเวนต์", "calendar event events meeting"),
+    (r"อีเมล|อีเมลล์|เมล|จดหมาย|(?<!เป็น)(?<!ภาษา)ข้อความ|กล่องขาเข้า", "message messages mail email mailbox inbox"),
+    (r"โฟลเดอร์|ที่เก็บถาวร|แฟ้ม", "folder folders archive"),
+)
+THAI_VERBS = (
+    # what is done: only counted when a noun above names the domain, so 'read the file' or 'delete the log' does not pull in every external 'read' or 'delete' tool
+    (r"อ่าน|เปิดอ่าน", "read"),
+    (r"ดู(?!แล)|เช็ก|เช็ค|ตรวจดู|แสดง|ขอดู|เปิดดู", "read view check display"),
+    (r"รายการ|รายชื่อ|มีอะไรบ้าง|ทั้งหมด", "list"),
+    (r"ค้นหา|สืบค้น|ค้น|(?:(?<!" + _T + r")|(?<=ช่วย)|(?<=แล้ว)|(?<=ไป)|(?<=ลอง))หา(?![ยร])", "search"),
+    (r"เขียน|จด|บันทึก|ลงใน|ใส่ไว้|เก็บไว้|ฝากจด", "write save record"),
+    (r"สร้าง|เปิดเคส|จอง|เพิ่ม|ตั้ง(?!แต่)|แจ้ง(?!หนี้)|ใส่นัด|ลงนัด", "create new add"),
+    (r"ลบ|ทิ้ง|เคลียร์|ยกเลิก", "delete remove cancel clear"),
+    (r"อัปเดต|อัพเดต|แก้ไข|เปลี่ยน|ปิดเคส|ปิดตั๋ว|โอน|ส่งต่อ|มอบหมาย|เลื่อน", "update change assign status reschedule"),
+    (r"ย้าย|ขยับ|เก็บเข้า|ไว้ในโฟลเดอร์", "move"),
+    (r"ร่าง|ตอบ(?!คำถาม)|ทัก|ขอเลื่อน", "draft reply"),
+    (r"คอมเมนต์|ความเห็น", "comment"),
+)
+_THAI_NOUNS_RE = tuple((re.compile(pattern), words) for pattern, words in THAI_NOUNS)
+_THAI_VERBS_RE = tuple((re.compile(pattern), words) for pattern, words in THAI_VERBS)
+_THAI_CHAR = re.compile(_T)
+
+
+def thai_menu_enabled() -> bool:
+    return (os.environ.get(THAI_MENU_ENV) or "").strip().lower() == "on"
+
+
+def thai_expansion(goal: str) -> str:
+    """The English tool words a Thai request means, or '' when the request has no Thai character (an English request is scored exactly as before) or names no domain noun."""
+    if not _THAI_CHAR.search(goal or ""):
+        return ""
+    nouns = [words for pattern, words in _THAI_NOUNS_RE if pattern.search(goal)]
+    if not nouns:
+        return ""
+    return " ".join(nouns + [words for pattern, words in _THAI_VERBS_RE if pattern.search(goal)])
+
 
 def _stem(word: str) -> str:
     for suffix in _SUFFIXES:
@@ -129,6 +174,8 @@ def score_tools(goal: str, tools: Sequence[Dict[str, Any]]) -> List[float]:
         for w in d["name"] | d["text"]:
             df[w] = df.get(w, 0) + 1
     goal_words, goal_thai = tokens(goal), thai_trigrams(goal)
+    if thai_menu_enabled():
+        goal_words = goal_words | tokens(thai_expansion(goal))
     scores = []
     for d in docs:
         s = 0.0
