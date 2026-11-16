@@ -27,12 +27,8 @@ THAI = re.compile(r"[฀-๿]")
 
 # Prompt v2 (Amendment 3, note 1: the one allowed change, made on the development sentences). v1 was frozen before the first hint was generated; it produced padded hints (combinations of the same
 # words) that shared generic trigrams across many tools. It never mentions a request, a dataset or the owner.
-PROMPT = ("You help Thai speakers find software tools by name in everyday conversation.
-"
-          "Tool name: {name}
-Tool description: {description}
-
-"
+PROMPT = ("You help Thai speakers find software tools by name in everyday conversation.\n"
+          "Tool name: {name}\nTool description: {description}\n\n"
           "Write the Thai words a Thai speaker would use to ask for this tool: the action it performs and the thing it works on. Give 5 to 8 DIFFERENT items. "
           "Each item is one word or a short phrase of at most three words, at least three Thai letters long. Do not combine the same word with many others, "
           "and do not use a generic word (data, message, information) alone. Separate the items with single spaces. Output only the Thai words, nothing else.")
