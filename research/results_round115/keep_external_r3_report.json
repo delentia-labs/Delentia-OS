@@ -1,0 +1,48 @@
+{
+ "full_menu_tokens_all_tools_full_format": 8520,
+ "development (119, Thai)": {
+  "today_pct": 0.0,
+  "r3_pct": 100.0,
+  "tokens_today": 370,
+  "tokens_r3": 748
+ },
+ "second form (89, Thai)": {
+  "today_pct": 0.0,
+  "r3_pct": 100.0,
+  "tokens_today": 416,
+  "tokens_r3": 795
+ },
+ "English external goals (44)": {
+  "today_pct": 95.5,
+  "r3_pct": 100.0,
+  "tokens_today": 333,
+  "tokens_r3": 607
+ },
+ "scaling": {
+  "5": {
+   "today": 372,
+   "r3": 463
+  },
+  "10": {
+   "today": 370,
+   "r3": 565
+  },
+  "19": {
+   "today": 370,
+   "r3": 748
+  },
+  "40": {
+   "today": 370,
+   "r3": 1241
+  }
+ },
+ "tokens_per_external_tool": 20.4,
+ "breakeven_external_tools": 401,
+ "checks": {
+  "presence_at_least_95_on_all_three_sets": true,
+  "tokens_with_19_external_at_most_2500": true,
+  "builtin_dev_recall_not_lower": true,
+  "builtin_holdout_recall_not_lower": true
+ },
+ "propose": true
+}
