@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import threading
 import time
 import uuid
@@ -32,7 +33,7 @@ from research.daaes.mock_api import Store
 def canonical_order_id(order: Any) -> str:
     """One name for an order whether or not the caller wrote the extension ("order-2" and "order-2.txt" are the same order; Round two, Amendment 5)."""
     text = str(order).strip()
-    return text[:-4] if text.lower().endswith(".txt") else text
+    return re.sub(r"\.[A-Za-z0-9]{1,5}$", "", text)                 # one trailing extension of any kind (Amendment 6: the model also writes order-1.json)
 
 
 def make_handler(store: Store, markers: Path) -> type:
