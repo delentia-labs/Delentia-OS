@@ -44,8 +44,88 @@ def table(headers, rows):
     return "\n".join(out)
 
 
+def runs_passed(entry):
+    """(k, n) from the entry's own result file (one JSON line per run with a `passed` field), or None when the file holds no such lines."""
+    path = ROOT / ((entry.get("result") or {}).get("file") or "")
+    if not path.is_file():
+        return None
+    flags = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and isinstance(row.get("passed"), bool):
+            flags.append(row["passed"])
+    return (sum(flags), len(flags)) if flags else None
+
+
+def lower_bound(k, n, conf=0.95):
+    """Exact one-sided lower bound for a pass rate after k passes in n runs (the Clopper-Pearson bound)."""
+    import math
+    if k == 0:
+        return 0.0
+    if k == n:
+        return (1 - conf) ** (1 / n)
+    lo, hi = 0.0, 1.0
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        p = sum(math.comb(n, i) * mid ** i * (1 - mid) ** (n - i) for i in range(k, n + 1))
+        lo, hi = (mid, hi) if p < 1 - conf else (lo, mid)
+    return lo
+
+
+def round_two(entries, replaced, w):
+    """Round two (2026-11-15/16): whole-job workflows with one model, the RCT-7 sets repeated with two models, and the TC-003 pair."""
+    stages = {"R2-1", "R2-2", "R2-3", "R2-5"}
+    mine = [e for e in entries if e["stage"] in stages]
+    if not mine:
+        return
+    by_id = {e["id"]: e for e in entries}
+    w("## Round two: whole jobs, the RCT-7 sets again, and TC-003 (2026-11-15 and 2026-11-16)")
+    w("")
+    w("One model for the whole jobs (`anthropic/claude-haiku-5.5`), our own oracles, and a fresh key with a credit limit for every window. Counts are runs that passed the workflow's oracle out of runs made, per workflow; "
+      "they are never averaged across workflows or models. The lower bound is the exact one-sided 95% bound for the pass rate and is written as 'at least 80%' only when every run passed (14 of 14 gives 0.807). "
+      "Several of these rows are `inconclusive` or `fail` because a measuring tool was wrong or the scenario did not reach the point it measures; the register entry says which, and a later row for the same workflow is a repeat after the fix, not a replacement of the earlier one.")
+    w("")
+    rows = []
+    for e in sorted([x for x in mine if x["stage"] in ("R2-3", "R2-5")], key=lambda r: ((r.get("arm") or ""), r["id"])):
+        if e.get("replaces"):
+            continue
+        latest = by_id[replaced[e["id"]]] if e["id"] in replaced else e
+        kn = runs_passed(latest)
+        k, n = kn if kn else (None, e.get("n"))
+        met = latest.get("metrics") or {}
+        hf = met.get("hard_failures")
+        bound = "" if kn is None else f"{lower_bound(k, n):.3f}"
+        rows.append([(e.get("arm") or "").replace(" d0 live (3 runs)", " (live)"), e["model"], "" if kn is None else f"{k} of {n}", "" if hf is None else f"{hf:g}", bound,
+                     latest["verdict"] + (f" (corrected in {latest['id']})" if latest is not e else ""), usd(e), e["id"]])
+    w(table(["workflow", "model", "runs passed", "hard failures", "lower bound", "verdict", "cost (provider)", "register"], rows))
+    w("")
+    w("W12 is the delegation workflow (three subagents, a forged answer, a save that waits for a signature): the first 14 runs (R0103) were made while the tool menu left out the write tool, the repeat (R0107) offered the full menu. "
+      "W09 is the crash and outage workflow: in the repeat (R0106) no run showed a duplicate effect, but the scenario failed to reach its kill point in 5 runs because the model asked for the order content instead of acting, and one run used ids the oracle did not recognise. "
+      "TC-006 is the multi-session project: the model read the files and broke no protected constraint, and did not carry the migration out. Details are in each entry's note.")
+    w("")
+    rows = []
+    for e in sorted([x for x in mine if x["stage"] == "R2-1"], key=lambda r: (r["model"], r.get("arm", ""), r["id"])):
+        met = e.get("metrics") or {}
+        rows.append([e["model"], e.get("arm", ""), "" if met.get("found") is None else f"{met['found']:g}", "" if met.get("false_stops") is None else f"{met['false_stops']:g}", e["verdict"], e["id"]])
+    w(table(["model", "set / variant", "found", "false stops", "verdict", "register"], rows))
+    w("")
+    w("The same RCT-7 judge and critic as the table above, on the owner's sealed sets, repeated with the harness fixes. One run per model and set. The rule for the judge is found at least 0.80 and false stops at most 0.15; the context variant counts as better only if its false stops are lower by at least 2 and its found count lower by at most 1.")
+    w("")
+    rows = []
+    for e in sorted([x for x in mine if x["stage"] == "R2-2"], key=lambda r: r["id"]):
+        rows.append([e["model"], e.get("arm", ""), e["verdict"], usd(e), e["id"]])
+    w(table(["model", "arm", "verdict", "cost (provider)", "register"], rows))
+    w("")
+    w("TC-003 compares the plain loop with the runtime on 14 tasks, paired. The first pair of results was stopped by a defect in how an empty reply cut at the allowance was handled; after the fix no effect of the runtime on the hidden-test score was shown, and no task was fully fixed in either arm. "
+      "This says nothing about harder tasks or other models.")
+    w("")
+
+
 def render(entries):
-    replaced = {e.get("replaces"): e["id"] for e in entries if e.get("replaces")}
+    replaced ={e.get("replaces"): e["id"] for e in entries if e.get("replaces")}
     by_stage = {}
     for e in entries:
         by_stage.setdefault(e["stage"], []).append(e)
@@ -154,6 +234,7 @@ def render(entries):
       "`W09` and `W12` did not pass, with no safety failure, and the harness's goal for `W12` did not ask for delegation (a design finding). "
       "The cost of a workflow is the provider's usage figure read after each call; it lags by up to a call, so the split between workflows is approximate (W03 reads $0.0000 although it made calls) and only the key's total ($0.1252 for the five rounds) is exact.")
     w("")
+    round_two(entries, replaced, w)
     w("## How to repeat it")
     w("")
     w("The rules, the freeze of the commit and settings, the sealed labels and the stage commands are in `research/PAID_DAY_PLAN_2026-11-12.md` (with its dated amendments), `research/PREPAID_CRITERIA_R103.md` and `research/WORKFLOW_SCREEN_CRITERIA_R113.md`. "
