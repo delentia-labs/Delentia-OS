@@ -162,6 +162,9 @@ def _doc(tool: Dict[str, Any]) -> Dict[str, Set[str]]:
     hint = HINTS.get(name, "")
     description = str(tool.get("description") or "")[:400]
     english_hint, _, thai_hint = hint.partition("|")
+    if not hint:
+        from rct_control_plane import tool_hints_th              # Round 115, candidate A1: an external tool's own Thai hint (off unless DELENTIA_TOOL_MENU_THAI_HINTS=on)
+        thai_hint = tool_hints_th.hint_for(tool)
     return {"name": _name_parts(name), "text": tokens(description) | tokens(english_hint), "thai": thai_trigrams(thai_hint) | thai_trigrams(description)}
 
 
