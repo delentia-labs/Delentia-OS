@@ -5,7 +5,7 @@ Found by window 3 of round two (register R0097): in two of the 14 runs of haiku 
 allowance with an empty message, and the episode ended `llm_error`. The loop's own recovery for an unusable reply (one more request with a 4,096 allowance) never ran, because the provider raised
 `LLMReplyError` for the empty message before the loop saw any text and the loop's transient retry then re-sent the identical request with the same allowance.
 
-Criteria written first: research/ROUND_TWO_CRITERIA_R113.md, Amendment 4. These tests drive the REAL provider, the REAL retry policy and the REAL governed loop through a loopback server.
+Criteria written first: research/ROUND_TWO_AMENDMENT_4_R114.md (Amendment 4 of research/ROUND_TWO_CRITERIA_R113.md). These tests drive the REAL provider, the REAL retry policy and the REAL governed loop through a loopback server.
 """
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
