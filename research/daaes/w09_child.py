@@ -30,9 +30,9 @@ from research.daaes import delentia_session as ds
 
 # The goal names no file that does not exist: the D/I gate measures the data a goal depends on, and a goal that cites a missing file is stopped at the cold start (`fdia_blocked`, found when the
 # first version of this runner named an orders.csv that was not there).
-GOAL_VERSION = 2          # v2 (Amendment 6): the goal gives the content the tool needs; v1 left a model to ask for it, and five of 14 runs ended with a question and no tool call
+GOAL_VERSION = 3          # v3 (Amendment 7): the values are given and quoted. v1 left a model to ask for the content (5 of 14 runs); v2 ('use the category reports ...') was read as a FILE (0 of 14 passed)
 GOAL = ("Process the three orders (order-1, order-2 and order-3) with the order service, one at a time, and tell me when all three are done. "
-        "Use the category reports and any short text as the content of each order.")
+        "For every order, use the category \"reports\" and the content \"sample order text\" (nothing needs to be looked up).")
 ORDERS = ["order-1.txt", "order-2.txt", "order-3.txt"]
 
 
