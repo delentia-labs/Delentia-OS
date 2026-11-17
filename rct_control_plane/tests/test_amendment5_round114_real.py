@@ -229,11 +229,15 @@ def test_a6_the_hold_matches_a_json_id(tmp_path):
         server.shutdown()
 
 
-def test_a6_the_goal_gives_the_content_and_is_version_2():
+def test_a7_the_goal_gives_quoted_values_names_no_file_and_is_version_3():
     from research.daaes import w09_child
-    assert w09_child.GOAL_VERSION == 2
-    assert "Use the category reports and any short text as the content of each order." in w09_child.GOAL
+    assert w09_child.GOAL_VERSION == 3
+    assert 'the category "reports" and the content "sample order text"' in w09_child.GOAL
+    assert "nothing needs to be looked up" in w09_child.GOAL
     assert w09_child.GOAL.startswith("Process the three orders (order-1, order-2 and order-3) with the order service")
+    # v2 said 'use the category reports ...' and a model read it as a file named category_reports.md (Amendment 7): no sentence of the goal may read like a file or a path
+    for word in ("category reports", ".md", ".txt", ".csv", "file", "folder", "README"):
+        assert word not in w09_child.GOAL, word
 
 
 def test_a6_children_usage_is_summed():
