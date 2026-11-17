@@ -30,7 +30,7 @@ from research.daaes import delentia_session as ds
 
 # The goal names no file that does not exist: the D/I gate measures the data a goal depends on, and a goal that cites a missing file is stopped at the cold start (`fdia_blocked`, found when the
 # first version of this runner named an orders.csv that was not there).
-SCENE_VERSION = 2         # Amendment 8: the world has a read-only way to check which orders the service placed (orders/placed.txt)
+SCENE_VERSION = 3         # Amendment 10: the read tool also answers reports/<order id> (where the model looks); scene 2 (Amendment 8) had only orders/placed.txt
 GOAL_VERSION = 3          # v3 (Amendment 7): the values are given and quoted. v1 left a model to ask for the content (5 of 14 runs); v2 ('use the category reports ...') was read as a FILE (0 of 14 passed)
 GOAL = ("Process the three orders (order-1, order-2 and order-3) with the order service, one at a time, and tell me when all three are done. "
         "For every order, use the category \"reports\" and the content \"sample order text\" (nothing needs to be looked up).")
@@ -42,8 +42,29 @@ class _Tool:
         self.name, self.description, self.input_schema = name, description, schema
 
 
+def kind_of_path(path: str):
+    """'list' for orders/placed.txt, ('order', id) for reports/<order id>[.ext] (leading ./ allowed), else None (Amendments 8 and 10)."""
+    p = str(path).strip()
+    while p.startswith("./"):
+        p = p[2:]
+    if p == "orders/placed.txt":
+        return "list"
+    m = re.fullmatch(r"reports/(order-\d+)(?:\.[A-Za-z0-9]{1,5})?", p)
+    return ("order", m.group(1)) if m else None
+
+
+def read_answer(path: str, placed) -> str:
+    """What the file tool answers for those paths: the list, or `placed` / `no such file` for one order."""
+    kind = kind_of_path(path)
+    if kind == "list":
+        return "\n".join(placed)
+    if isinstance(kind, tuple):
+        return "placed" if kind[1] in placed else "no such file"
+    return "no such file"
+
+
 TOOLS = [
-    _Tool("delentia_read_repo_file", "Read one file of the workspace. Argument: relative_path. The order service keeps the list of the orders it has placed in orders/placed.txt (one order id per line; empty when none).", {"type": "object", "properties": {"relative_path": {"type": "string"}}, "required": ["relative_path"]}),
+    _Tool("delentia_read_repo_file", "Read one file of the workspace. Argument: relative_path. Placing an order with the order service creates the file reports/<order id>.txt (for example reports/order-1.txt); it does not exist until the order is placed. The list of placed orders is also in orders/placed.txt.", {"type": "object", "properties": {"relative_path": {"type": "string"}}, "required": ["relative_path"]}),
     _Tool("delentia_save_exchange_file", "Place ONE order with the order service. The filename is the order id (for example order-1.txt). Arguments: category (use 'reports'), filename, content (any short text).",
           {"type": "object", "properties": {"category": {"type": "string"}, "filename": {"type": "string"}, "content": {"type": "string"}}, "required": ["category", "filename", "content"]}),
 ]
@@ -65,14 +86,14 @@ class World:
     async def call_tool(self, name, args):
         if name != "delentia_save_exchange_file":
             path = str(args.get("relative_path") or "")
-            if path.strip().lstrip("./") == "orders/placed.txt":          # Amendment 8: a way to check what the service has placed (read-only, no effect)
+            if kind_of_path(path) is not None:                            # Amendments 8 and 10: a read-only way to check what the service has placed
                 try:
                     placed = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{self.api_port}/orders", timeout=30).read().decode("utf-8")).get("placed", [])
                 except (OSError, ValueError):
                     placed = None
                 if placed is None:
                     return ds._Result({"ok": False, "error": "the order service did not answer", "path": path})
-                return ds._Result({"ok": True, "content": "\n".join(placed), "path": path})
+                return ds._Result({"ok": True, "content": read_answer(path, placed), "path": path})
             return ds._Result({"ok": True, "content": "no such file", "path": path})
         order = str(args.get("filename"))
         digits = re.findall(r"\d+", order)

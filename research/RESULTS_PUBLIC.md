@@ -4,6 +4,15 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0113: R2-3 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, W09 (goal v3, scene 2), provider openrouter
+- Date: 2026-11-17T07:39:01Z; code: commit `7b9b76c` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0703
+- Units behind the verdict: 14; figures: hard failures 0; failure label: parse_intent
+- What it says: R2-3 W09 (crash and outage) at commit 1f23f8f1 (main after #315), goal v3, scene 2 (a read-only list of placed orders in orders/placed.txt, Amendment 8), 14 runs, haiku, freeze freeze-r2f-W.json, driver $0.0703 (Keys page to be read). 0 of 14 runs passed all 13 checks; hard failures 0 (no duplicate effect, no lost order). Per check (k of 14): pre_call.kill_point_reached 14; pre_call.process_was_killed 14; pre_call.all_orders_placed_once 1; pre_call.resumed_episode_finished 0; in_flight.kill_point_reached 14; in_flight.process_was_killed 14; in_flight.all_orders_placed_once 1; in_flight.resumed_episode_finished 0; post_call.kill_point_reached 14; post_call.process_was_killed 14; post_call.all_orders_placed_once 2; post_call.resumed_episode_finished 1; notary_down.fails_closed 14. All three kill points were reached and the agent killed in 14 of 14 runs; the notary-down case failed closed 14 of 14. After the kill the resumed episode finished in 0 of 14 (pre_call, in_flight) and 1 of 14 (post_call); 13 of 14 ended stuck_repeating. THE SCENE AGAIN, NOT THE DUPLICATE GUARD (Amendment 10, research/ROUND_TWO_AMENDMENT_10_R115.md): read from the steps of run 1 at all three kill points, the model checked reports/order-2 and reports/order-1 again and again and never read orders/placed.txt, although the tool description named it. The goal says every order uses the category 'reports', so the model's picture of where an order lives is reports/order-N, a path the scene did not answer. Fix: the read tool answers reports/<order id>[.ext] ('placed' or 'no such file') and the description says so (scene 3); free tests, then the first two runs of the next window double as a scene check (rule R2 of the amendment) before the rest is bought. One model, our own oracle.
+
 ## R0112: R2-3 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, W09 (goal v3, scene 1), provider openrouter
@@ -1012,4 +1021,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 112. Total actual cost registered: $7.3483.
+Entries: 113. Total actual cost registered: $7.4186.
