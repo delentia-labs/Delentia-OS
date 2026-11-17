@@ -129,7 +129,8 @@ def test_a_real_run_is_refused_without_the_key_the_opt_in_and_the_freeze(monkeyp
     base = ["--model", "anthropic/claude-haiku-5.5", "--price-in", "0.1", "--price-out", "0.5", "--budget-usd", "0.25"]
     monkeypatch.setattr(sys, "argv", ["x", *base])
     assert tc.main() == 0 and "Dry run" in capsys.readouterr().out                           # the dry run sends nothing
-    for var in ("OPENROUTER_API_KEY", "DELENTIA_RUN_LIVE_TESTS", "DELENTIA_FREEZE_FILE"):
+    # a loopback base URL (left by a rehearsal test in the same process) switches the freeze check off by design, so this test must not inherit one
+    for var in ("OPENROUTER_API_KEY", "DELENTIA_RUN_LIVE_TESTS", "DELENTIA_FREEZE_FILE", "DELENTIA_OPENROUTER_BASE_URL"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(sys, "argv", ["x", *base, "--execute"])
     with pytest.raises(SystemExit) as info:
