@@ -707,7 +707,7 @@ def run_w09(provider: Any, home: Path, *, kill_point: str = "all", scripted: boo
             tokens += int(cost.get("prompt_tokens") or 0) + int(cost.get("completion_tokens") or 0)
     from research.daaes import w09_child
     result = _finish("W09", verdict, timed, started, scenarios=scenarios, per_scenario={s: v["passed"] for s, v in verdicts.items()}, child_tokens=tokens, observed=observed,
-                     stopped=[o.get("resume_stopped") or o.get("notary_stopped") for o in observed.values()], idempotency=idempotency, scripted=scripted, goal_version=w09_child.GOAL_VERSION)
+                     stopped=[o.get("resume_stopped") or o.get("notary_stopped") for o in observed.values()], idempotency=idempotency, scripted=scripted, goal_version=w09_child.GOAL_VERSION, scene_version=w09_child.SCENE_VERSION)
     usage = w09_child_usage(observed)                                    # the agents are other processes: what they spent is added to the run's metrics (Amendment 6, item 3)
     for key, value in usage.items():
         result["metrics"][key] = round((result["metrics"].get(key) or 0) + value, 6) if key == "cost_usd" else int(result["metrics"].get(key) or 0) + int(value)
