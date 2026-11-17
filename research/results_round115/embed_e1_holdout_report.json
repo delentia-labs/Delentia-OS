@@ -1,0 +1,20 @@
+{
+ "m": 4,
+ "tau": 0.5,
+ "verdict": {
+  "gain_points": 44.9,
+  "menu_growth": 2.29,
+  "checks": {
+   "holdout_share_at_least_70": false,
+   "holdout_gain_at_least_40_points": true,
+   "menu_growth_at_most_3": true,
+   "negatives2_external_at_most_1": false,
+   "guards_loss_at_most_1_point": true,
+   "median_extra_time_at_most_150_ms": true
+  },
+  "propose_adoption": false,
+  "rule_6_service_down_equals_today": "tested separately by the unit tests (the add-on is skipped when the service does not answer)"
+ },
+ "holdout_today": 0.0,
+ "holdout_e1": 44.9
+}

@@ -1,0 +1,25 @@
+{
+  "purpose": "A SECOND set of Thai requests that need no external tool, written after the first set (tool_menu_thai_negatives_r115.json) had been used to adjust the Thai table, and before the holdout or this set was run. It is the guard of adoption rule 3 in research/THAI_TOOL_MENU_CRITERIA_R115.md (see Amendment 1). Several are deliberate near-misses that share a word with a domain noun (note, ticket, calendar, mail, folder) or a verb of the table.",
+  "goals": [
+    "อธิบายหน่อยว่าปฏิทินจันทรคติของไทยทำงานอย่างไร",
+    "เขียนบทความสั้นๆ เกี่ยวกับการจดบันทึกที่ดี",
+    "ช่วยแต่งประโยคแจ้งเตือนลูกค้าให้สุภาพขึ้น",
+    "แปลอีเมลฉบับนี้เป็นภาษาอังกฤษ: ขอบคุณสำหรับการติดต่อ",
+    "ค้นหาไฟล์ที่ชื่อ notes.md ในโปรเจกต์",
+    "อ่านไฟล์ README.md แล้วสรุปเป็นสามข้อ",
+    "สรุปความต่างระหว่าง git merge กับ git rebase",
+    "เปิดหน้าเว็บ https://example.com/calendar แล้วบอกว่าเขียนว่าอะไร",
+    "จำไว้ว่าฉันชอบให้ตอบเป็นข้อๆ",
+    "คำนวณดอกเบี้ย 3% ต่อปี ของเงิน 50,000 บาท เป็นเวลา 5 ปี",
+    "ตรวจดูว่ามี worktree ค้างอยู่ไหม แล้วลบอันที่ไม่ใช้",
+    "ถอดเสียงไฟล์ meeting.mp3 เป็นข้อความ",
+    "บอกวิธีตั้งค่า firewall บนเครื่อง Linux ทีละขั้น",
+    "ตรวจว่าข้อความนี้เป็นความจริงไหม: โลกกลม",
+    "เตือนฉันพรุ่งนี้ตอนเก้าโมงให้ส่งรายงาน",
+    "ตั้งงานให้รันสรุปยอดขายทุกวันจันทร์",
+    "ช่วยดูโค้ดฟังก์ชันนี้หน่อยว่าผิดตรงไหน",
+    "สร้างรูปภาพโลโก้สีเขียวรูปต้นไม้",
+    "ลบไฟล์ cache ทั้งหมดในโฟลเดอร์ build",
+    "เปลี่ยนชื่อไฟล์ report_old.txt เป็น report.txt"
+  ]
+}

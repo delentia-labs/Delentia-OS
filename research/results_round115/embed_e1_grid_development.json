@@ -1,0 +1,151 @@
+{
+ "grid": [
+  {
+   "m": 3,
+   "tau": 0.3,
+   "dev_pct": 53.8,
+   "dev_menu": 11.16,
+   "neg1_external": 3
+  },
+  {
+   "m": 3,
+   "tau": 0.35,
+   "dev_pct": 52.9,
+   "dev_menu": 11.13,
+   "neg1_external": 2.7
+  },
+  {
+   "m": 3,
+   "tau": 0.4,
+   "dev_pct": 51.3,
+   "dev_menu": 11.03,
+   "neg1_external": 2.6
+  },
+  {
+   "m": 3,
+   "tau": 0.45,
+   "dev_pct": 47.1,
+   "dev_menu": 10.67,
+   "neg1_external": 1.75
+  },
+  {
+   "m": 3,
+   "tau": 0.5,
+   "dev_pct": 37.8,
+   "dev_menu": 9.89,
+   "neg1_external": 0.9
+  },
+  {
+   "m": 4,
+   "tau": 0.3,
+   "dev_pct": 58.0,
+   "dev_menu": 12.15,
+   "neg1_external": 3.95
+  },
+  {
+   "m": 4,
+   "tau": 0.35,
+   "dev_pct": 57.1,
+   "dev_menu": 12.08,
+   "neg1_external": 3.6
+  },
+  {
+   "m": 4,
+   "tau": 0.4,
+   "dev_pct": 55.5,
+   "dev_menu": 11.95,
+   "neg1_external": 3.35
+  },
+  {
+   "m": 4,
+   "tau": 0.45,
+   "dev_pct": 51.3,
+   "dev_menu": 11.39,
+   "neg1_external": 2.1
+  },
+  {
+   "m": 4,
+   "tau": 0.5,
+   "dev_pct": 39.5,
+   "dev_menu": 10.29,
+   "neg1_external": 1
+  },
+  {
+   "m": 5,
+   "tau": 0.3,
+   "dev_pct": 66.4,
+   "dev_menu": 13.14,
+   "neg1_external": 4.9
+  },
+  {
+   "m": 5,
+   "tau": 0.35,
+   "dev_pct": 65.5,
+   "dev_menu": 13.05,
+   "neg1_external": 4.5
+  },
+  {
+   "m": 5,
+   "tau": 0.4,
+   "dev_pct": 63.9,
+   "dev_menu": 12.86,
+   "neg1_external": 4
+  },
+  {
+   "m": 5,
+   "tau": 0.45,
+   "dev_pct": 58.8,
+   "dev_menu": 12.03,
+   "neg1_external": 2.45
+  },
+  {
+   "m": 5,
+   "tau": 0.5,
+   "dev_pct": 43.7,
+   "dev_menu": 10.6,
+   "neg1_external": 1.05
+  },
+  {
+   "m": 6,
+   "tau": 0.3,
+   "dev_pct": 71.4,
+   "dev_menu": 14.13,
+   "neg1_external": 5.85
+  },
+  {
+   "m": 6,
+   "tau": 0.35,
+   "dev_pct": 70.6,
+   "dev_menu": 14.01,
+   "neg1_external": 5.4
+  },
+  {
+   "m": 6,
+   "tau": 0.4,
+   "dev_pct": 68.1,
+   "dev_menu": 13.74,
+   "neg1_external": 4.6
+  },
+  {
+   "m": 6,
+   "tau": 0.45,
+   "dev_pct": 62.2,
+   "dev_menu": 12.6,
+   "neg1_external": 2.8
+  },
+  {
+   "m": 6,
+   "tau": 0.5,
+   "dev_pct": 46.2,
+   "dev_menu": 10.83,
+   "neg1_external": 1.1
+  }
+ ],
+ "chosen": {
+  "m": 4,
+  "tau": 0.5,
+  "dev_pct": 39.5,
+  "dev_menu": 10.29,
+  "neg1_external": 1
+ }
+}

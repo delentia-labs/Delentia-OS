@@ -48,7 +48,9 @@ STAGE_CEILINGS_USD = {"P0": 0.10, "P1": 5.00, "P1b": 1.50, "P2": 1.50, "P4": 4.0
 # pinned by tests and by the key's credit limit). PW = the workflow screen of research/WORKFLOW_SCREEN_CRITERIA_R113.md.
 EXTRA_STAGE_CEILINGS_USD = {"PW": 3.00,
                             # round two (research/ROUND_TWO_CRITERIA_R113.md, with Amendments 1 and 2): R2-1 judge/critic, R2-2 TC-003, R2-3 workflows, R2-4 K.1.5 repeats, R2-5 W07 (TC-006)
-                            "R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30, "R2-5": 0.80}
+                            "R2-1": 1.20, "R2-2": 2.00, "R2-3": 1.50, "R2-4": 3.30, "R2-5": 0.80,
+                            # Round 115: the model test of the R3 menu (research/THAI_TOOL_MENU_AMENDMENT_5_R115.md, section 2: key limit and budget 0.25)
+                            "R3-1": 0.25}
 
 
 def stage_ceiling(stage: str) -> Optional[float]:

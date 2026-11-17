@@ -1,0 +1,883 @@
+{
+ "form": "ranker-choice-2026-11-16",
+ "answered": 30,
+ "provenance": "Exported from RANKER_GOALS_CHOICE_FORM_FOR_THE_ARCHITECT.html by the Architect on 2026-11-16: 30 of 30 situations confirmed, 119 of 120 sentences ticked (all four in 29 situations, three in situation 9), no own sentence, no note. Situations and sentences were written by the assistant (general knowledge, not user data); the Architect confirmed the needed actions and ticked what sounds like him. Tags: L literal wording, S synonym, I indirect.",
+ "items": [
+  {
+   "id": 1,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "เก็บเรื่องที่คุยกับลูกค้าไว้ในโน้ตด้วย",
+     "tag": "S"
+    },
+    {
+     "text": "จดสรุปที่คุยกับลูกค้าไว้ให้หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "เขียนโน้ตสรุปการคุยกับลูกค้าเมื่อกี้ ชื่อ สรุปลูกค้า",
+     "tag": "L"
+    },
+    {
+     "text": "ฉันกลัวลืมว่าลูกค้าตกลงอะไรไว้",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 2,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "งบที่ตกลงกันไว้คือเท่าไหร่",
+     "tag": "I"
+    },
+    {
+     "text": "อ่านโน้ตเรื่องงบให้หน่อย",
+     "tag": "L"
+    },
+    {
+     "text": "ขอดูที่เคยจดเรื่องงบหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "เมื่อวานจดเรื่องงบไว้ว่าอะไรนะ",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 3,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ทิ้งโน้ตร่างที่ไม่ใช้แล้วไป",
+     "tag": "S"
+    },
+    {
+     "text": "เคลียร์โน้ตเก่าๆ ให้หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "ลบโน้ตแบบร่างอันเก่าออก",
+     "tag": "L"
+    },
+    {
+     "text": "โน้ตร่างอันเก่ารกแล้ว",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 4,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "แสดงรายชื่อโน้ตทั้งหมด",
+     "tag": "L"
+    },
+    {
+     "text": "เปิดดูโน้ตทั้งหมดหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "ตอนนี้มีอะไรจดไว้บ้าง",
+     "tag": "S"
+    },
+    {
+     "text": "ฉันจำไม่ได้ว่าเคยจดอะไรไว้บ้าง",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 5,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "แผนไตรมาสยาวเกิน ทำให้อ่านง่ายหน่อย",
+     "tag": "I"
+    },
+    {
+     "text": "เอาโน้ตแผนไตรมาสมาย่อแล้วเก็บไว้อีกอัน",
+     "tag": "S"
+    },
+    {
+     "text": "อ่านโน้ตแผนไตรมาสแล้วเขียนเวอร์ชันสั้นเป็นโน้ตใหม่",
+     "tag": "L"
+    },
+    {
+     "text": "ย่อแผนไตรมาสให้สั้นลงแล้วใส่ไว้ในโน้ตใหม่",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 6,
+   "topic": "note",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "อย่าให้ลืมซื้อนม ไข่ กาแฟนะ",
+     "tag": "I"
+    },
+    {
+     "text": "ฝากจดรายการซื้อของ นม ไข่ กาแฟ",
+     "tag": "S"
+    },
+    {
+     "text": "สร้างโน้ตรายการซื้อของ มีนม ไข่ กาแฟ",
+     "tag": "L"
+    },
+    {
+     "text": "จดไว้ว่าต้องซื้อ นม ไข่ กาแฟ",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 7,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ลูกค้าถามถึงเรื่อง 4412",
+     "tag": "I"
+    },
+    {
+     "text": "4412 ตอนนี้เป็นไงแล้ว",
+     "tag": "S"
+    },
+    {
+     "text": "ตั๋ว 4412 ใครรับอยู่",
+     "tag": "S"
+    },
+    {
+     "text": "ดูตั๋วหมายเลข 4412",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 8,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "สร้างตั๋วใหม่เรื่องหน้า login ช้า",
+     "tag": "L"
+    },
+    {
+     "text": "เปิดเคสเรื่องหน้า login ช้าให้หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "แจ้งปัญหาว่าหน้า login โหลดช้า",
+     "tag": "S"
+    },
+    {
+     "text": "หน้า login ช้ามาก ใครสักคนต้องดูแล้ว",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 9,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "อัปเดตตั๋ว 77 เป็นปิดแล้ว",
+     "tag": "L"
+    },
+    {
+     "text": "ปิดเคส 77 ได้เลย",
+     "tag": "S"
+    },
+    {
+     "text": "77 เรียบร้อยแล้ว เคลียร์ออกจากรายการ",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 10,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ดู 18 หน่อย ถ้าข้อมูลไม่ครบก็เขียนบอกไว้",
+     "tag": "S"
+    },
+    {
+     "text": "เช็กเคส 18 แล้วตอบไปว่ายังขาดอะไร",
+     "tag": "S"
+    },
+    {
+     "text": "ดูตั๋ว 18 แล้วคอมเมนต์ว่ายังขาดข้อมูลอะไร",
+     "tag": "L"
+    },
+    {
+     "text": "เคส 18 ดูไม่ครบ ให้คนรู้ว่าขาดอะไร",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 11,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "หาเคสที่เกี่ยวกับ timeout หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "มีใครแจ้งเรื่อง timeout ไว้บ้างไหม",
+     "tag": "S"
+    },
+    {
+     "text": "ค้นหาตั๋วที่พูดถึง timeout",
+     "tag": "L"
+    },
+    {
+     "text": "เหมือนเคยมีคนบ่นเรื่อง timeout",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 12,
+   "topic": "ticket",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "12 มะลิน่าจะเหมาะกว่า",
+     "tag": "I"
+    },
+    {
+     "text": "โอนเคส 12 ให้มะลิดูแลต่อ",
+     "tag": "S"
+    },
+    {
+     "text": "ส่งเรื่อง 12 ต่อให้มะลิ",
+     "tag": "S"
+    },
+    {
+     "text": "เปลี่ยนผู้รับผิดชอบตั๋ว 12 เป็นมะลิ",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 13,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "สัปดาห์หน้าจะยุ่งไหม",
+     "tag": "I"
+    },
+    {
+     "text": "แสดงนัดทั้งหมดของสัปดาห์หน้า",
+     "tag": "L"
+    },
+    {
+     "text": "สัปดาห์หน้าฉันมีอะไรบ้าง",
+     "tag": "S"
+    },
+    {
+     "text": "ขอดูตารางสัปดาห์หน้าหน่อย",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 14,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ใส่นัดทบทวนงานวันศุกร์ตอนสิบโมงให้ที",
+     "tag": "S"
+    },
+    {
+     "text": "จองเวลาวันศุกร์ 10 โมงสำหรับทบทวนงาน",
+     "tag": "S"
+    },
+    {
+     "text": "สร้างนัดชื่อ ทบทวน วันศุกร์ 10:00-11:00",
+     "tag": "L"
+    },
+    {
+     "text": "วันศุกร์สิบโมงต้องทบทวนงาน",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 15,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "31 ไม่ต้องไปแล้ว",
+     "tag": "I"
+    },
+    {
+     "text": "ลบนัดหมายเลข 31",
+     "tag": "L"
+    },
+    {
+     "text": "เอานัด 31 ออกจากปฏิทินหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "ยกเลิกนัด 31",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 16,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "อังคารนี้มีอะไรชนไหม",
+     "tag": "S"
+    },
+    {
+     "text": "ตรวจดูว่าวันอังคารมีนัดไหม",
+     "tag": "L"
+    },
+    {
+     "text": "วันอังคารฉันว่างหรือเปล่า",
+     "tag": "S"
+    },
+    {
+     "text": "อยากนัดใครสักคนวันอังคาร",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 17,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "หาช่วงว่างวันที่ 3 แล้วใส่นัดคุย Sync ให้ที",
+     "tag": "S"
+    },
+    {
+     "text": "วันที่ 3 อยากคุย Sync ในเวลาที่ว่าง",
+     "tag": "I"
+    },
+    {
+     "text": "เช็กวันที่ 3 แล้วจอง Sync ตอนที่ว่างเร็วที่สุด",
+     "tag": "S"
+    },
+    {
+     "text": "ดูนัดวันที่ 3 แล้วสร้างนัดชื่อ Sync ในช่วงที่ว่างชั่วโมงแรก",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 18,
+   "topic": "calendar",
+   "needs": [
+    "mcp__calendar__get_event"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "นัด 55 ไปที่ไหน",
+     "tag": "S"
+    },
+    {
+     "text": "ขอดูข้อมูลนัด 55 หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "แสดงรายละเอียดนัดหมายเลข 55",
+     "tag": "L"
+    },
+    {
+     "text": "ลืมไปแล้วว่านัด 55 จัดที่ไหน",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 19,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__read_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "เปิดอีเมลฉบับ 903 ให้ดูหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "มีคนส่งเรื่องสำคัญมา น่าจะเป็น 903",
+     "tag": "I"
+    },
+    {
+     "text": "อ่านข้อความหมายเลข 903",
+     "tag": "L"
+    },
+    {
+     "text": "903 เขียนมาว่าอะไร",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 20,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__search_messages"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ค้นหาข้อความจากสมชาย",
+     "tag": "L"
+    },
+    {
+     "text": "จำได้ว่าสมชายเคยส่งไฟล์มาให้",
+     "tag": "I"
+    },
+    {
+     "text": "สมชายส่งอะไรมาบ้าง",
+     "tag": "S"
+    },
+    {
+     "text": "หาอีเมลที่สมชายเคยส่งมา",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 21,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__draft_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ตอบสมชายไปว่ารายงานเสร็จวันจันทร์",
+     "tag": "S"
+    },
+    {
+     "text": "ร่างข้อความตอบสมชายว่ารายงานเสร็จวันจันทร์",
+     "tag": "L"
+    },
+    {
+     "text": "บอกสมชายว่ารายงานจะส่งวันจันทร์",
+     "tag": "S"
+    },
+    {
+     "text": "สมชายรอรายงานอยู่ วันจันทร์ได้แน่",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 22,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__move_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "เคลียร์ 77 ออกจากกล่องขาเข้า",
+     "tag": "S"
+    },
+    {
+     "text": "77 อ่านแล้ว ไม่อยากเห็นในกล่องแล้ว",
+     "tag": "I"
+    },
+    {
+     "text": "เก็บอีเมล 77 เข้าที่เก็บถาวร",
+     "tag": "S"
+    },
+    {
+     "text": "ย้ายข้อความ 77 ไปโฟลเดอร์ Archive",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 23,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__list_folders"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "แสดงรายการโฟลเดอร์ของกล่องจดหมาย",
+     "tag": "L"
+    },
+    {
+     "text": "ไม่รู้ว่าเก็บอีเมลเก่าไว้ตรงไหน",
+     "tag": "I"
+    },
+    {
+     "text": "ตอนนี้มีโฟลเดอร์อะไรบ้าง",
+     "tag": "S"
+    },
+    {
+     "text": "ขอดูว่าอีเมลถูกแยกไว้ที่ไหนบ้าง",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 24,
+   "topic": "mail",
+   "needs": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ใบแจ้งหนี้อันล่าสุดควรไปอยู่ใน Finance",
+     "tag": "I"
+    },
+    {
+     "text": "อีเมลใบแจ้งหนี้อันล่าสุดช่วยส่งไปไว้ในโฟลเดอร์ Finance",
+     "tag": "S"
+    },
+    {
+     "text": "ค้นหาข้อความเรื่องใบแจ้งหนี้แล้วย้ายอันล่าสุดไปโฟลเดอร์ Finance",
+     "tag": "L"
+    },
+    {
+     "text": "หาอีเมลใบแจ้งหนี้ แล้วเอาอันใหม่สุดเข้า Finance",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 25,
+   "topic": "multi",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "อ่านตั๋ว 5 แล้วเขียนชื่อเรื่องลงโน้ตชื่อ Ticket Five",
+     "tag": "L"
+    },
+    {
+     "text": "อยากมีโน้ตสรุปว่าเคส 5 เรื่องอะไร",
+     "tag": "I"
+    },
+    {
+     "text": "เอาหัวข้อตั๋ว 5 ไปเก็บไว้ในโน้ตหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "จดชื่อเรื่องของเคส 5 ไว้ในโน้ต",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 26,
+   "topic": "multi",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ดูโน้ตวาระประชุม แล้วลงนัดทบทวนพรุ่งนี้เก้าโมง",
+     "tag": "S"
+    },
+    {
+     "text": "อ่านโน้ต Agenda แล้วสร้างนัดชื่อ Agenda Review พรุ่งนี้ 9:00",
+     "tag": "L"
+    },
+    {
+     "text": "ประชุมพรุ่งนี้ ต้องทบทวน Agenda ก่อน",
+     "tag": "I"
+    },
+    {
+     "text": "จากโน้ต Agenda จองเวลาพรุ่งนี้เช้าไว้ทบทวน",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 27,
+   "topic": "multi",
+   "needs": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "อีเมล 41 มีปัญหา แจ้งเป็นเคสได้เลย",
+     "tag": "S"
+    },
+    {
+     "text": "อีเมล 41 เป็นปัญหาที่ต้องมีคนตาม",
+     "tag": "I"
+    },
+    {
+     "text": "ลูกค้าเขียนมาในอีเมล 41 เปิดเคสให้หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "อ่านข้อความ 41 แล้วสร้างตั๋วงานเรื่องปัญหาที่เขียนมา",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 28,
+   "topic": "multi",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "จดนัดวันพุธทั้งหมดไว้ในโน้ต",
+     "tag": "S"
+    },
+    {
+     "text": "อยากได้ตารางวันพุธในรูปโน้ต",
+     "tag": "I"
+    },
+    {
+     "text": "เอาตารางวันพุธไปเก็บไว้ในโน้ตหน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "แสดงนัดวันพุธแล้วเขียนลงโน้ตชื่อ Wednesday",
+     "tag": "L"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 29,
+   "topic": "multi",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "เคส 60 ไม่คืบหน้าเลย ต้องมีคนไปถาม",
+     "tag": "I"
+    },
+    {
+     "text": "ดูตั๋ว 60 แล้วร่างข้อความถึงผู้รับผิดชอบขอความคืบหน้า",
+     "tag": "L"
+    },
+    {
+     "text": "เช็กเคส 60 แล้วทักคนที่ดูแลไปถามความคืบหน้า",
+     "tag": "S"
+    },
+    {
+     "text": "ตั๋ว 60 เงียบมานาน ร่างข้อความตามเรื่องให้ที",
+     "tag": "S"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  },
+  {
+   "id": 30,
+   "topic": "multi",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "needs_confirmed": true,
+   "chosen": [
+    {
+     "text": "ดูนัดพรุ่งนี้แล้วร่างข้อความถึงสมชายว่าเลื่อนนัด",
+     "tag": "L"
+    },
+    {
+     "text": "เช็กนัดพรุ่งนี้ แล้วบอกสมชายไปว่าขอเลื่อน",
+     "tag": "S"
+    },
+    {
+     "text": "พรุ่งนี้ชนกัน ร่างอีเมลขอเลื่อนนัดสมชายให้หน่อย",
+     "tag": "S"
+    },
+    {
+     "text": "นัดสมชายพรุ่งนี้ไม่ไหว ต้องเลื่อน",
+     "tag": "I"
+    }
+   ],
+   "none_matched": false,
+   "own": "",
+   "note": ""
+  }
+ ]
+}

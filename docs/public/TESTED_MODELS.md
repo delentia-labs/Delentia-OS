@@ -140,6 +140,7 @@ One model for the whole jobs (`anthropic/claude-haiku-5.5`), our own oracles, an
 | W08 | anthropic/claude-haiku-5.5 | 14 of 14 | 0 | 0.807 | pass | $0.0247 | R0100 |
 | W09 | anthropic/claude-haiku-5.5 | 0 of 1 | 0 | 0.000 | inconclusive | $0.0052 | R0104 |
 | W09 | anthropic/claude-haiku-5.5 | 6 of 14 | 0 | 0.206 | inconclusive | $0.0610 | R0106 |
+| W09 (goal v2) | anthropic/claude-haiku-5.5 | 0 of 14 | 0 | 0.000 | inconclusive | $0.0850 | R0111 |
 | W10 | anthropic/claude-haiku-5.5 | 14 of 14 | 0 | 0.807 | pass | $0.1348 | R0101 |
 | W12 | anthropic/claude-haiku-5.5 | 0 of 14 | 0 | 0.000 | inconclusive | $0.0513 | R0103 |
 | W12 | anthropic/claude-haiku-5.5 | 14 of 14 | 0 | 0.807 | pass | $0.1870 | R0107 |

@@ -1,0 +1,2472 @@
+{
+ "k": 10,
+ "summary": {
+  "all": {
+   "n": 119,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 8.18,
+   "mean_menu_r1": 8.18
+  },
+  "tag L": {
+   "n": 30,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 8.77,
+   "mean_menu_r1": 8.77
+  },
+  "tag S": {
+   "n": 60,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 8.02,
+   "mean_menu_r1": 8.02
+  },
+  "tag I": {
+   "n": 29,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 7.9,
+   "mean_menu_r1": 7.9
+  },
+  "topic note": {
+   "n": 24,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 8.38,
+   "mean_menu_r1": 8.38
+  },
+  "topic ticket": {
+   "n": 23,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 6.83,
+   "mean_menu_r1": 6.83
+  },
+  "topic calendar": {
+   "n": 24,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 7.62,
+   "mean_menu_r1": 7.62
+  },
+  "topic mail": {
+   "n": 24,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 9.42,
+   "mean_menu_r1": 9.42
+  },
+  "topic multi": {
+   "n": 24,
+   "ranked_all_tools_present_pct": 0.0,
+   "r1_all_tools_present_pct": 0.0,
+   "mean_menu_ranked": 8.58,
+   "mean_menu_r1": 8.58
+  }
+ },
+ "verdict": {
+  "gain_points": 0.0,
+  "mean_menu_growth": 0.0,
+  "builtin_holdout_loss_points": 0.0,
+  "checks": {
+   "gain_points_at_least_10": false,
+   "mean_menu_growth_at_most_2": true,
+   "builtin_holdout_loss_points_at_most_1": true
+  },
+  "propose_adoption": false
+ },
+ "builtin_holdout": {
+  "ranked": {
+   "recall": 0.968,
+   "mean_menu": 8.16,
+   "n": 31
+  },
+  "R1": {
+   "recall": 0.968,
+   "mean_menu": 8.65,
+   "n": 31
+  }
+ },
+ "rows": [
+  {
+   "id": 1,
+   "topic": "note",
+   "goal": "เก็บเรื่องที่คุยกับลูกค้าไว้ในโน้ตด้วย",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 1,
+   "topic": "note",
+   "goal": "จดสรุปที่คุยกับลูกค้าไว้ให้หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 1,
+   "topic": "note",
+   "goal": "เขียนโน้ตสรุปการคุยกับลูกค้าเมื่อกี้ ชื่อ สรุปลูกค้า",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 1,
+   "topic": "note",
+   "goal": "ฉันกลัวลืมว่าลูกค้าตกลงอะไรไว้",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 2,
+   "topic": "note",
+   "goal": "งบที่ตกลงกันไว้คือเท่าไหร่",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note"
+   ]
+  },
+  {
+   "id": 2,
+   "topic": "note",
+   "goal": "อ่านโน้ตเรื่องงบให้หน่อย",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "size": 9,
+   "size_r1": 9,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note"
+   ]
+  },
+  {
+   "id": 2,
+   "topic": "note",
+   "goal": "ขอดูที่เคยจดเรื่องงบหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note"
+   ]
+  },
+  {
+   "id": 2,
+   "topic": "note",
+   "goal": "เมื่อวานจดเรื่องงบไว้ว่าอะไรนะ",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note"
+   ]
+  },
+  {
+   "id": 3,
+   "topic": "note",
+   "goal": "ทิ้งโน้ตร่างที่ไม่ใช้แล้วไป",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__delete_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__delete_note"
+   ]
+  },
+  {
+   "id": 3,
+   "topic": "note",
+   "goal": "เคลียร์โน้ตเก่าๆ ให้หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__delete_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__delete_note"
+   ]
+  },
+  {
+   "id": 3,
+   "topic": "note",
+   "goal": "ลบโน้ตแบบร่างอันเก่าออก",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__delete_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__delete_note"
+   ]
+  },
+  {
+   "id": 3,
+   "topic": "note",
+   "goal": "โน้ตร่างอันเก่ารกแล้ว",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "size": 4,
+   "size_r1": 4,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__delete_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__delete_note"
+   ]
+  },
+  {
+   "id": 4,
+   "topic": "note",
+   "goal": "แสดงรายชื่อโน้ตทั้งหมด",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__list_notes"
+   ],
+   "missing_r1": [
+    "mcp__notes__list_notes"
+   ]
+  },
+  {
+   "id": 4,
+   "topic": "note",
+   "goal": "เปิดดูโน้ตทั้งหมดหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "size": 9,
+   "size_r1": 9,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__list_notes"
+   ],
+   "missing_r1": [
+    "mcp__notes__list_notes"
+   ]
+  },
+  {
+   "id": 4,
+   "topic": "note",
+   "goal": "ตอนนี้มีอะไรจดไว้บ้าง",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__list_notes"
+   ],
+   "missing_r1": [
+    "mcp__notes__list_notes"
+   ]
+  },
+  {
+   "id": 4,
+   "topic": "note",
+   "goal": "ฉันจำไม่ได้ว่าเคยจดอะไรไว้บ้าง",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__list_notes"
+   ],
+   "missing_r1": [
+    "mcp__notes__list_notes"
+   ]
+  },
+  {
+   "id": 5,
+   "topic": "note",
+   "goal": "แผนไตรมาสยาวเกิน ทำให้อ่านง่ายหน่อย",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 5,
+   "topic": "note",
+   "goal": "เอาโน้ตแผนไตรมาสมาย่อแล้วเก็บไว้อีกอัน",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 5,
+   "topic": "note",
+   "goal": "อ่านโน้ตแผนไตรมาสแล้วเขียนเวอร์ชันสั้นเป็นโน้ตใหม่",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 5,
+   "topic": "note",
+   "goal": "ย่อแผนไตรมาสให้สั้นลงแล้วใส่ไว้ในโน้ตใหม่",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "size": 9,
+   "size_r1": 9,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 6,
+   "topic": "note",
+   "goal": "อย่าให้ลืมซื้อนม ไข่ กาแฟนะ",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 6,
+   "topic": "note",
+   "goal": "ฝากจดรายการซื้อของ นม ไข่ กาแฟ",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 6,
+   "topic": "note",
+   "goal": "สร้างโน้ตรายการซื้อของ มีนม ไข่ กาแฟ",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 6,
+   "topic": "note",
+   "goal": "จดไว้ว่าต้องซื้อ นม ไข่ กาแฟ",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 7,
+   "topic": "ticket",
+   "goal": "ลูกค้าถามถึงเรื่อง 4412",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket"
+   ]
+  },
+  {
+   "id": 7,
+   "topic": "ticket",
+   "goal": "4412 ตอนนี้เป็นไงแล้ว",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "size": 3,
+   "size_r1": 3,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket"
+   ]
+  },
+  {
+   "id": 7,
+   "topic": "ticket",
+   "goal": "ตั๋ว 4412 ใครรับอยู่",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket"
+   ]
+  },
+  {
+   "id": 7,
+   "topic": "ticket",
+   "goal": "ดูตั๋วหมายเลข 4412",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket"
+   ]
+  },
+  {
+   "id": 8,
+   "topic": "ticket",
+   "goal": "สร้างตั๋วใหม่เรื่องหน้า login ช้า",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 8,
+   "topic": "ticket",
+   "goal": "เปิดเคสเรื่องหน้า login ช้าให้หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 8,
+   "topic": "ticket",
+   "goal": "แจ้งปัญหาว่าหน้า login โหลดช้า",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 8,
+   "topic": "ticket",
+   "goal": "หน้า login ช้ามาก ใครสักคนต้องดูแล้ว",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 9,
+   "topic": "ticket",
+   "goal": "อัปเดตตั๋ว 77 เป็นปิดแล้ว",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 9,
+   "topic": "ticket",
+   "goal": "ปิดเคส 77 ได้เลย",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 9,
+   "topic": "ticket",
+   "goal": "77 เรียบร้อยแล้ว เคลียร์ออกจากรายการ",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 10,
+   "topic": "ticket",
+   "goal": "ดู 18 หน่อย ถ้าข้อมูลไม่ครบก็เขียนบอกไว้",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ]
+  },
+  {
+   "id": 10,
+   "topic": "ticket",
+   "goal": "เช็กเคส 18 แล้วตอบไปว่ายังขาดอะไร",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "size": 4,
+   "size_r1": 4,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ]
+  },
+  {
+   "id": 10,
+   "topic": "ticket",
+   "goal": "ดูตั๋ว 18 แล้วคอมเมนต์ว่ายังขาดข้อมูลอะไร",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ]
+  },
+  {
+   "id": 10,
+   "topic": "ticket",
+   "goal": "เคส 18 ดูไม่ครบ ให้คนรู้ว่าขาดอะไร",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ]
+  },
+  {
+   "id": 11,
+   "topic": "ticket",
+   "goal": "หาเคสที่เกี่ยวกับ timeout หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__search_tickets"
+   ],
+   "missing_r1": [
+    "mcp__tickets__search_tickets"
+   ]
+  },
+  {
+   "id": 11,
+   "topic": "ticket",
+   "goal": "มีใครแจ้งเรื่อง timeout ไว้บ้างไหม",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__search_tickets"
+   ],
+   "missing_r1": [
+    "mcp__tickets__search_tickets"
+   ]
+  },
+  {
+   "id": 11,
+   "topic": "ticket",
+   "goal": "ค้นหาตั๋วที่พูดถึง timeout",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__search_tickets"
+   ],
+   "missing_r1": [
+    "mcp__tickets__search_tickets"
+   ]
+  },
+  {
+   "id": 11,
+   "topic": "ticket",
+   "goal": "เหมือนเคยมีคนบ่นเรื่อง timeout",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__search_tickets"
+   ],
+   "missing_r1": [
+    "mcp__tickets__search_tickets"
+   ]
+  },
+  {
+   "id": 12,
+   "topic": "ticket",
+   "goal": "12 มะลิน่าจะเหมาะกว่า",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 12,
+   "topic": "ticket",
+   "goal": "โอนเคส 12 ให้มะลิดูแลต่อ",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 12,
+   "topic": "ticket",
+   "goal": "ส่งเรื่อง 12 ต่อให้มะลิ",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 12,
+   "topic": "ticket",
+   "goal": "เปลี่ยนผู้รับผิดชอบตั๋ว 12 เป็นมะลิ",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__update_ticket"
+   ],
+   "missing_r1": [
+    "mcp__tickets__update_ticket"
+   ]
+  },
+  {
+   "id": 13,
+   "topic": "calendar",
+   "goal": "สัปดาห์หน้าจะยุ่งไหม",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 13,
+   "topic": "calendar",
+   "goal": "แสดงนัดทั้งหมดของสัปดาห์หน้า",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 13,
+   "topic": "calendar",
+   "goal": "สัปดาห์หน้าฉันมีอะไรบ้าง",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 13,
+   "topic": "calendar",
+   "goal": "ขอดูตารางสัปดาห์หน้าหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 4,
+   "size_r1": 4,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 14,
+   "topic": "calendar",
+   "goal": "ใส่นัดทบทวนงานวันศุกร์ตอนสิบโมงให้ที",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 14,
+   "topic": "calendar",
+   "goal": "จองเวลาวันศุกร์ 10 โมงสำหรับทบทวนงาน",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 14,
+   "topic": "calendar",
+   "goal": "สร้างนัดชื่อ ทบทวน วันศุกร์ 10:00-11:00",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 14,
+   "topic": "calendar",
+   "goal": "วันศุกร์สิบโมงต้องทบทวนงาน",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 15,
+   "topic": "calendar",
+   "goal": "31 ไม่ต้องไปแล้ว",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__delete_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__delete_event"
+   ]
+  },
+  {
+   "id": 15,
+   "topic": "calendar",
+   "goal": "ลบนัดหมายเลข 31",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "size": 2,
+   "size_r1": 2,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__delete_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__delete_event"
+   ]
+  },
+  {
+   "id": 15,
+   "topic": "calendar",
+   "goal": "เอานัด 31 ออกจากปฏิทินหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "size": 3,
+   "size_r1": 3,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__delete_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__delete_event"
+   ]
+  },
+  {
+   "id": 15,
+   "topic": "calendar",
+   "goal": "ยกเลิกนัด 31",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "size": 3,
+   "size_r1": 3,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__delete_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__delete_event"
+   ]
+  },
+  {
+   "id": 16,
+   "topic": "calendar",
+   "goal": "อังคารนี้มีอะไรชนไหม",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 16,
+   "topic": "calendar",
+   "goal": "ตรวจดูว่าวันอังคารมีนัดไหม",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 16,
+   "topic": "calendar",
+   "goal": "วันอังคารฉันว่างหรือเปล่า",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 9,
+   "size_r1": 9,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 16,
+   "topic": "calendar",
+   "goal": "อยากนัดใครสักคนวันอังคาร",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "size": 3,
+   "size_r1": 3,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events"
+   ]
+  },
+  {
+   "id": 17,
+   "topic": "calendar",
+   "goal": "หาช่วงว่างวันที่ 3 แล้วใส่นัดคุย Sync ให้ที",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "size": 12,
+   "size_r1": 12,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 17,
+   "topic": "calendar",
+   "goal": "วันที่ 3 อยากคุย Sync ในเวลาที่ว่าง",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 17,
+   "topic": "calendar",
+   "goal": "เช็กวันที่ 3 แล้วจอง Sync ตอนที่ว่างเร็วที่สุด",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 17,
+   "topic": "calendar",
+   "goal": "ดูนัดวันที่ 3 แล้วสร้างนัดชื่อ Sync ในช่วงที่ว่างชั่วโมงแรก",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "size": 12,
+   "size_r1": 12,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 18,
+   "topic": "calendar",
+   "goal": "นัด 55 ไปที่ไหน",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__get_event"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__get_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__get_event"
+   ]
+  },
+  {
+   "id": 18,
+   "topic": "calendar",
+   "goal": "ขอดูข้อมูลนัด 55 หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__get_event"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__get_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__get_event"
+   ]
+  },
+  {
+   "id": 18,
+   "topic": "calendar",
+   "goal": "แสดงรายละเอียดนัดหมายเลข 55",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__get_event"
+   ],
+   "size": 4,
+   "size_r1": 4,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__get_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__get_event"
+   ]
+  },
+  {
+   "id": 18,
+   "topic": "calendar",
+   "goal": "ลืมไปแล้วว่านัด 55 จัดที่ไหน",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__get_event"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__get_event"
+   ],
+   "missing_r1": [
+    "mcp__calendar__get_event"
+   ]
+  },
+  {
+   "id": 19,
+   "topic": "mail",
+   "goal": "เปิดอีเมลฉบับ 903 ให้ดูหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__read_message"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message"
+   ]
+  },
+  {
+   "id": 19,
+   "topic": "mail",
+   "goal": "มีคนส่งเรื่องสำคัญมา น่าจะเป็น 903",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__read_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message"
+   ]
+  },
+  {
+   "id": 19,
+   "topic": "mail",
+   "goal": "อ่านข้อความหมายเลข 903",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__read_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message"
+   ]
+  },
+  {
+   "id": 19,
+   "topic": "mail",
+   "goal": "903 เขียนมาว่าอะไร",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__read_message"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message"
+   ]
+  },
+  {
+   "id": 20,
+   "topic": "mail",
+   "goal": "ค้นหาข้อความจากสมชาย",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__search_messages"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages"
+   ]
+  },
+  {
+   "id": 20,
+   "topic": "mail",
+   "goal": "จำได้ว่าสมชายเคยส่งไฟล์มาให้",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__search_messages"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages"
+   ]
+  },
+  {
+   "id": 20,
+   "topic": "mail",
+   "goal": "สมชายส่งอะไรมาบ้าง",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__search_messages"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages"
+   ]
+  },
+  {
+   "id": 20,
+   "topic": "mail",
+   "goal": "หาอีเมลที่สมชายเคยส่งมา",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__search_messages"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages"
+   ]
+  },
+  {
+   "id": 21,
+   "topic": "mail",
+   "goal": "ตอบสมชายไปว่ารายงานเสร็จวันจันทร์",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 21,
+   "topic": "mail",
+   "goal": "ร่างข้อความตอบสมชายว่ารายงานเสร็จวันจันทร์",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 21,
+   "topic": "mail",
+   "goal": "บอกสมชายว่ารายงานจะส่งวันจันทร์",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 21,
+   "topic": "mail",
+   "goal": "สมชายรอรายงานอยู่ วันจันทร์ได้แน่",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 22,
+   "topic": "mail",
+   "goal": "เคลียร์ 77 ออกจากกล่องขาเข้า",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__move_message"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 22,
+   "topic": "mail",
+   "goal": "77 อ่านแล้ว ไม่อยากเห็นในกล่องแล้ว",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__move_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 22,
+   "topic": "mail",
+   "goal": "เก็บอีเมล 77 เข้าที่เก็บถาวร",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__move_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 22,
+   "topic": "mail",
+   "goal": "ย้ายข้อความ 77 ไปโฟลเดอร์ Archive",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__move_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 23,
+   "topic": "mail",
+   "goal": "แสดงรายการโฟลเดอร์ของกล่องจดหมาย",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__list_folders"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__list_folders"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__list_folders"
+   ]
+  },
+  {
+   "id": 23,
+   "topic": "mail",
+   "goal": "ไม่รู้ว่าเก็บอีเมลเก่าไว้ตรงไหน",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__list_folders"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__list_folders"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__list_folders"
+   ]
+  },
+  {
+   "id": 23,
+   "topic": "mail",
+   "goal": "ตอนนี้มีโฟลเดอร์อะไรบ้าง",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__list_folders"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__list_folders"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__list_folders"
+   ]
+  },
+  {
+   "id": 23,
+   "topic": "mail",
+   "goal": "ขอดูว่าอีเมลถูกแยกไว้ที่ไหนบ้าง",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__list_folders"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__list_folders"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__list_folders"
+   ]
+  },
+  {
+   "id": 24,
+   "topic": "mail",
+   "goal": "ใบแจ้งหนี้อันล่าสุดควรไปอยู่ใน Finance",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 24,
+   "topic": "mail",
+   "goal": "อีเมลใบแจ้งหนี้อันล่าสุดช่วยส่งไปไว้ในโฟลเดอร์ Finance",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 24,
+   "topic": "mail",
+   "goal": "ค้นหาข้อความเรื่องใบแจ้งหนี้แล้วย้ายอันล่าสุดไปโฟลเดอร์ Finance",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 24,
+   "topic": "mail",
+   "goal": "หาอีเมลใบแจ้งหนี้ แล้วเอาอันใหม่สุดเข้า Finance",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__search_messages",
+    "mcp__mailbox__move_message"
+   ]
+  },
+  {
+   "id": 25,
+   "topic": "multi",
+   "goal": "อ่านตั๋ว 5 แล้วเขียนชื่อเรื่องลงโน้ตชื่อ Ticket Five",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 25,
+   "topic": "multi",
+   "goal": "อยากมีโน้ตสรุปว่าเคส 5 เรื่องอะไร",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "size": 5,
+   "size_r1": 5,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 25,
+   "topic": "multi",
+   "goal": "เอาหัวข้อตั๋ว 5 ไปเก็บไว้ในโน้ตหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 25,
+   "topic": "multi",
+   "goal": "จดชื่อเรื่องของเคส 5 ไว้ในโน้ต",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "size": 9,
+   "size_r1": 9,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 26,
+   "topic": "multi",
+   "goal": "ดูโน้ตวาระประชุม แล้วลงนัดทบทวนพรุ่งนี้เก้าโมง",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 26,
+   "topic": "multi",
+   "goal": "อ่านโน้ต Agenda แล้วสร้างนัดชื่อ Agenda Review พรุ่งนี้ 9:00",
+   "tag": "L",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "size": 11,
+   "size_r1": 11,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 26,
+   "topic": "multi",
+   "goal": "ประชุมพรุ่งนี้ ต้องทบทวน Agenda ก่อน",
+   "tag": "I",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 26,
+   "topic": "multi",
+   "goal": "จากโน้ต Agenda จองเวลาพรุ่งนี้เช้าไว้ทบทวน",
+   "tag": "S",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ],
+   "missing_r1": [
+    "mcp__notes__read_note",
+    "mcp__calendar__create_event"
+   ]
+  },
+  {
+   "id": 27,
+   "topic": "multi",
+   "goal": "อีเมล 41 มีปัญหา แจ้งเป็นเคสได้เลย",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 27,
+   "topic": "multi",
+   "goal": "อีเมล 41 เป็นปัญหาที่ต้องมีคนตาม",
+   "tag": "I",
+   "needs": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 27,
+   "topic": "multi",
+   "goal": "ลูกค้าเขียนมาในอีเมล 41 เปิดเคสให้หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 27,
+   "topic": "multi",
+   "goal": "อ่านข้อความ 41 แล้วสร้างตั๋วงานเรื่องปัญหาที่เขียนมา",
+   "tag": "L",
+   "needs": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ],
+   "missing_r1": [
+    "mcp__mailbox__read_message",
+    "mcp__tickets__create_ticket"
+   ]
+  },
+  {
+   "id": 28,
+   "topic": "multi",
+   "goal": "จดนัดวันพุธทั้งหมดไว้ในโน้ต",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 28,
+   "topic": "multi",
+   "goal": "อยากได้ตารางวันพุธในรูปโน้ต",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 28,
+   "topic": "multi",
+   "goal": "เอาตารางวันพุธไปเก็บไว้ในโน้ตหน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "size": 6,
+   "size_r1": 6,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 28,
+   "topic": "multi",
+   "goal": "แสดงนัดวันพุธแล้วเขียนลงโน้ตชื่อ Wednesday",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__notes__write_note"
+   ]
+  },
+  {
+   "id": 29,
+   "topic": "multi",
+   "goal": "เคส 60 ไม่คืบหน้าเลย ต้องมีคนไปถาม",
+   "tag": "I",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 8,
+   "size_r1": 8,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 29,
+   "topic": "multi",
+   "goal": "ดูตั๋ว 60 แล้วร่างข้อความถึงผู้รับผิดชอบขอความคืบหน้า",
+   "tag": "L",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 29,
+   "topic": "multi",
+   "goal": "เช็กเคส 60 แล้วทักคนที่ดูแลไปถามความคืบหน้า",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 29,
+   "topic": "multi",
+   "goal": "ตั๋ว 60 เงียบมานาน ร่างข้อความตามเรื่องให้ที",
+   "tag": "S",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__tickets__get_ticket",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 30,
+   "topic": "multi",
+   "goal": "ดูนัดพรุ่งนี้แล้วร่างข้อความถึงสมชายว่าเลื่อนนัด",
+   "tag": "L",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 30,
+   "topic": "multi",
+   "goal": "เช็กนัดพรุ่งนี้ แล้วบอกสมชายไปว่าขอเลื่อน",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 30,
+   "topic": "multi",
+   "goal": "พรุ่งนี้ชนกัน ร่างอีเมลขอเลื่อนนัดสมชายให้หน่อย",
+   "tag": "S",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 7,
+   "size_r1": 7,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ]
+  },
+  {
+   "id": 30,
+   "topic": "multi",
+   "goal": "นัดสมชายพรุ่งนี้ไม่ไหว ต้องเลื่อน",
+   "tag": "I",
+   "needs": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "size": 10,
+   "size_r1": 10,
+   "ok": false,
+   "ok_r1": false,
+   "missing": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ],
+   "missing_r1": [
+    "mcp__calendar__list_events",
+    "mcp__mailbox__draft_message"
+   ]
+  }
+ ]
+}

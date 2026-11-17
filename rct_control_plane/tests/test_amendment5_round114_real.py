@@ -180,8 +180,10 @@ def test_w12_with_the_default_menu_is_refused_and_with_the_full_menu_passes():
     from research import live_menu_check as lmc
     needs = {"delentia_spawn_subagents": [], "mcp__notes__write_note": ["title", "text"]}
     tools = lmc._w12_tools()
+    old = lmc.check_menu(lw.W12_GOAL, tools, needs, env={"DELENTIA_TOOL_MENU": "ranked", "DELENTIA_TOOL_MENU_KEEP_EXTERNAL": "off"})
+    assert not old["ok"] and "mcp__notes__write_note" in old["missing_tools"], old                  # the defect of R0103, reproduced offline with the ranking as it was
     default = lmc.check_menu(lw.W12_GOAL, tools, needs, env={"DELENTIA_TOOL_MENU": "ranked"})
-    assert not default["ok"] and "mcp__notes__write_note" in default["missing_tools"], default      # the defect of R0103, reproduced offline with the real ranking
+    assert default["ok"], default                                                                     # since Amendment 6 (R3 on by default) the ranked menu keeps every connected external tool
     full = lmc.check_menu(lw.W12_GOAL, tools, needs, env=dict(lw.W12_MENU_ENV))
     assert full["ok"] and not full["ranked"], full
 
