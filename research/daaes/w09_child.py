@@ -30,7 +30,7 @@ from research.daaes import delentia_session as ds
 
 # The goal names no file that does not exist: the D/I gate measures the data a goal depends on, and a goal that cites a missing file is stopped at the cold start (`fdia_blocked`, found when the
 # first version of this runner named an orders.csv that was not there).
-SCENE_VERSION = 3         # Amendment 10: the read tool also answers reports/<order id> (where the model looks); scene 2 (Amendment 8) had only orders/placed.txt
+SCENE_VERSION = 4         # Amendment 12: an order that was not placed answers "no such file: <order id> has not been placed yet" (scene 3 answered a bare "no such file": the pre_call resumed episode looped)
 GOAL_VERSION = 3          # v3 (Amendment 7): the values are given and quoted. v1 left a model to ask for the content (5 of 14 runs); v2 ('use the category reports ...') was read as a FILE (0 of 14 passed)
 GOAL = ("Process the three orders (order-1, order-2 and order-3) with the order service, one at a time, and tell me when all three are done. "
         "For every order, use the category \"reports\" and the content \"sample order text\" (nothing needs to be looked up).")
@@ -59,7 +59,7 @@ def read_answer(path: str, placed) -> str:
     if kind == "list":
         return "\n".join(placed)
     if isinstance(kind, tuple):
-        return "placed" if kind[1] in placed else "no such file"
+        return "placed" if kind[1] in placed else f"no such file: {kind[1]} has not been placed yet"          # Amendment 12: say what the absence means
     return "no such file"
 
 
