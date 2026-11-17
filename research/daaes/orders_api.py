@@ -79,6 +79,14 @@ def make_handler(store: Store, markers: Path) -> type:
         def do_GET(self) -> None:
             if self.path == "/health":
                 return self._send(200, {"ok": True})
+            if self.path == "/orders":                           # read-only: the orders committed so far (Amendment 8); no effect, not logged as a request
+                import sqlite3
+                conn = sqlite3.connect(store.path)
+                try:
+                    placed = sorted({row[0] for row in conn.execute("SELECT business_key FROM effects")})
+                finally:
+                    conn.close()
+                return self._send(200, {"placed": placed})
             return self._send(404, {"error": "not found"})
     return Handler
 

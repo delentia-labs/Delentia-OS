@@ -30,6 +30,7 @@ from research.daaes import delentia_session as ds
 
 # The goal names no file that does not exist: the D/I gate measures the data a goal depends on, and a goal that cites a missing file is stopped at the cold start (`fdia_blocked`, found when the
 # first version of this runner named an orders.csv that was not there).
+SCENE_VERSION = 2         # Amendment 8: the world has a read-only way to check which orders the service placed (orders/placed.txt)
 GOAL_VERSION = 3          # v3 (Amendment 7): the values are given and quoted. v1 left a model to ask for the content (5 of 14 runs); v2 ('use the category reports ...') was read as a FILE (0 of 14 passed)
 GOAL = ("Process the three orders (order-1, order-2 and order-3) with the order service, one at a time, and tell me when all three are done. "
         "For every order, use the category \"reports\" and the content \"sample order text\" (nothing needs to be looked up).")
@@ -42,7 +43,7 @@ class _Tool:
 
 
 TOOLS = [
-    _Tool("delentia_read_repo_file", "Read one file of the workspace. Argument: relative_path.", {"type": "object", "properties": {"relative_path": {"type": "string"}}, "required": ["relative_path"]}),
+    _Tool("delentia_read_repo_file", "Read one file of the workspace. Argument: relative_path. The order service keeps the list of the orders it has placed in orders/placed.txt (one order id per line; empty when none).", {"type": "object", "properties": {"relative_path": {"type": "string"}}, "required": ["relative_path"]}),
     _Tool("delentia_save_exchange_file", "Place ONE order with the order service. The filename is the order id (for example order-1.txt). Arguments: category (use 'reports'), filename, content (any short text).",
           {"type": "object", "properties": {"category": {"type": "string"}, "filename": {"type": "string"}, "content": {"type": "string"}}, "required": ["category", "filename", "content"]}),
 ]
@@ -63,7 +64,16 @@ class World:
 
     async def call_tool(self, name, args):
         if name != "delentia_save_exchange_file":
-            return ds._Result({"ok": True, "content": "nothing to read here", "path": args.get("relative_path")})
+            path = str(args.get("relative_path") or "")
+            if path.strip().lstrip("./") == "orders/placed.txt":          # Amendment 8: a way to check what the service has placed (read-only, no effect)
+                try:
+                    placed = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{self.api_port}/orders", timeout=30).read().decode("utf-8")).get("placed", [])
+                except (OSError, ValueError):
+                    placed = None
+                if placed is None:
+                    return ds._Result({"ok": False, "error": "the order service did not answer", "path": path})
+                return ds._Result({"ok": True, "content": "\n".join(placed), "path": path})
+            return ds._Result({"ok": True, "content": "no such file", "path": path})
         order = str(args.get("filename"))
         digits = re.findall(r"\d+", order)
         n = int(digits[0]) if digits else 0
