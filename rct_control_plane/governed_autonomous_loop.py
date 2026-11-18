@@ -389,6 +389,26 @@ def needs_signature_always(tool_name: str) -> bool:
     return tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS or external_mcp.needs_approval(tool_name)
 
 
+NOTE_LONG_TEXT_CHARS = 120      # Amendment 17: a text argument longer than this is described by its length in the note a model reads after an approval
+NOTE_ARGUMENTS_CHARS = 300
+
+
+def _arguments_for_note(tool_args: Any) -> str:
+    """The arguments of an approved action as the model is told them afterwards: short arguments first (the path of a write is what the model must not lose), a long text replaced by
+    its length, the whole cut at NOTE_ARGUMENTS_CHARS. Before Amendment 17 the JSON was cut in the order the tool takes its arguments, which for a write puts the long content
+    first and the path beyond the cut."""
+    if not isinstance(tool_args, dict):
+        return json.dumps(tool_args, default=str)[:NOTE_ARGUMENTS_CHARS]
+    short: Dict[str, Any] = {}
+    long_texts: Dict[str, Any] = {}
+    for key, value in tool_args.items():
+        if isinstance(value, str) and len(value) > NOTE_LONG_TEXT_CHARS:
+            long_texts[key] = f"<{len(value)} characters>"
+        else:
+            short[key] = value
+    return json.dumps({**short, **long_texts}, default=str, ensure_ascii=False)[:NOTE_ARGUMENTS_CHARS]
+
+
 def _sha(value: Any) -> Optional[str]:
     """Hash for notary records (hashes only, never content); None stays None."""
     if value is None:
@@ -2923,13 +2943,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
                 self._resume_note = (
                     "A human confirmed the plan you proposed and the system has now run its steps, in order, exactly once "
                     f"(executed {tool_result.get('executed')} of {tool_result.get('planned')}; halted: {tool_result.get('halted') or 'no'}). "
-                    f"Result: {summary}. Do not request those actions again; report what happened and continue toward the goal only if something is left."
+                    f"Result: {summary}. Do not request those exact actions again; report what happened and continue toward the goal only if something is left. "
+                    "Further actions are still yours to request; each one that changes something needs its own confirmation."
                 )
             else:
                 self._resume_note = (
                     "A human approved and the system has now executed, exactly once, an action you requested "
-                    f"earlier: {action.tool_name} with arguments {json.dumps(action.tool_args, default=str)[:300]}. "
-                    f"Result: {summary}. Do not request that action again; continue toward the goal from here."
+                    f"earlier: {action.tool_name} with arguments {_arguments_for_note(action.tool_args)}. "
+                    f"Result: {summary}. Do not request that exact action again (the same tool with the same arguments). "
+                    "Other actions, including further changes to this file or to other files, are still yours to request; each one that changes something needs its own approval. "
+                    "Continue toward the goal from here."
                 )
             outcome["continuation"] = await self.run(action.goal, on_step=on_step)
         return outcome
