@@ -786,6 +786,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._meter = None                         # a loop that is reused must not report the previous episode's cost for one that never started
         budget_share.current_meter.set(None)
         self._episode_call_counts: Dict[str, int] = {}
+        self._episode_last_result: Dict[str, str] = {}      # Amendment 15: the hash of the last result of each call fingerprint; a repeat counts only while the result stays the same
         self._plan_proposals: List[Dict[str, Any]] = []     # Round 101: effects of a planned kind that were asked for and NOT run
         self._plan_goal = goal
         await self._notarise_best_effort("episode_start", goal_sha256=_sha(goal))
@@ -823,6 +824,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         # A short follow-up ("and the second one?") means something only inside its conversation, so the answer to the same words must not be reused from, or stored as, a bare goal.
         warm_hit = await self._warm_lookup(goal) if (not getattr(self, "_active_contract", None) and self._warm_recall and not conversation_text and not claimed and not attachments["refs"]) else None
         self._episode_call_counts = {}                    # the replay went through the gate and was counted there; the episode itself starts from zero
+        self._episode_last_result = {}
         pipeline_advice = "" if warm_hit else await self._pipeline_before(goal, clarity, compile_result)
         self._episode_rct7_steps = kernel.algo_04_rct7(goal)
         if self._research is not None and not self._research.plan:
@@ -3187,6 +3189,14 @@ class GovernedAutonomousLoop(AutonomousLoop):
     ) -> Any:
         """Result hash of what the tool actually returned (before compression)."""
         self._episode_evidence.append({"tool": tool_name, "args": tool_args, "sha256": _sha(tool_result)})
+        # Amendment 15: a repeat counts only while the result is the same. A call that returns something new (the tests run again after an edit) is the first of a new run, not a loop.
+        fingerprint, result_hash = str(_sha({"tool": tool_name, "args": tool_args})), str(_sha(tool_result))
+        last = getattr(self, "_episode_last_result", None)
+        if last is None:
+            last = self._episode_last_result = {}
+        if fingerprint in last and last[fingerprint] != result_hash:
+            (getattr(self, "_episode_call_counts", None) or {})[fingerprint] = 1
+        last[fingerprint] = result_hash
         if self._notary is not None:
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))
