@@ -276,6 +276,8 @@ def note_for(ep: JournalEpisode, side_effect_tools: frozenset, unknown_ok: bool)
             lines.append(f"  step {s.n}: {s.tool} {json.dumps(s.args, ensure_ascii=False, default=str)[:200]} -> OUTCOME UNKNOWN (it was about to run or was running when the process stopped; this tool {kind})")
     if any(s.state == "dangling" and s.tool in side_effect_tools for s in ep.steps):
         lines.append("A step whose outcome is unknown may or may not have taken effect. Check with a read-only tool first. Do not repeat it blindly." + (" A person has said to go on." if unknown_ok else ""))
+        # Amendment 14: the note said to check but not what a check settles. A model that obeys carefully re-checked for ever when the check said "not done".
+        lines.append("A check you make after this note was written is newer than the interruption: trust it. If the check shows that the step did not take effect, do it again once, with exactly the same arguments, and do not check again before that. If the check shows that it took effect, do not repeat it.")
         if any(s.state == "dangling" and s.tool in side_effect_tools and s.idem for s in ep.steps):
             lines.append("If you do repeat such a step with exactly the same arguments, it is sent with the same idempotency key as before: a service that honours keys will not do it twice; one that ignores them will.")
     lines.append("Do not repeat the steps that are done. Continue toward the goal from here.")

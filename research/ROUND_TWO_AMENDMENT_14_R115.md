@@ -1,0 +1,23 @@
+# Round two, Amendment 14 (2026-11-18, written before the change and before any further paid run): what a resumed episode is told to do after it has checked
+
+## What the two latest W09 windows showed (scene 3 then scene 4, haiku, two runs each, hard failures 0)
+At the kill points `in_flight` and `post_call` the resumed episode finished with every order placed exactly once, in all four runs. At `pre_call` (the process was killed before the request of order 2 was sent) the resumed episode did not place order 2 in any of the four runs and ended `stuck_repeating`.
+The model's own reasoning was read (the audit rows of the run are sealed under the person's key; they were opened with that key, offline). At `pre_call` it called the read-only check, received "no such file: order-2 has not been placed yet", and wrote, step after step: "Step 2 has an unknown outcome, so I must check with the read-only tool before doing anything else. The earlier read predates the interrupted step, so I need a fresh check." It then checked again, with the same arguments and the same answer, until the repeated-call rule stopped it.
+## Cause
+The note a resumed episode receives (`episode_journal.note_for`) says: "A step whose outcome is unknown may or may not have taken effect. Check with a read-only tool first. Do not repeat it blindly." The note is written once when the episode resumes and never changes. It says to check; it does not say that a check made afterwards settles the question, nor what to do when the check shows that the step did not take effect. A careful model, which is what the note asks for, keeps checking. Where the check shows "done" (in_flight, post_call) it moves on; where it shows "not done" it has nothing in the note telling it to act. This is a weakness of the runtime's own text, not of the scene (scenes 2 to 4 each fixed a real scene defect) and not of the duplicate guard (no duplicate effect in any run).
+
+## Change (the text only; no gate, no permission, no new tool)
+`note_for` keeps every sentence it has and adds, right after the existing sentence about an unknown outcome, when and only when a step that can change something has an unknown outcome:
+"A check you make after this note was written is newer than the interruption: trust it. If the check shows that the step did not take effect, do it again once, with exactly the same arguments, and do not check again before that. If the check shows that it took effect, do not repeat it."
+The note still grants no permission: a repeated step goes through the same gate, the same policy and the same idempotency key as any call. The text is added only to the case that already prints the sentence it follows; episodes whose unknown steps are read-only, and episodes with nothing unknown, get exactly the text they got before.
+
+## Rules, written before the change
+N1 Free tests: the new sentences are present when a side-effect step is unknown (with and without a recorded idempotency key and with `unknown_ok` true and false), absent when the unknown step only reads and when nothing is unknown, the older sentences are all still there in the same order, and the note contains no sentence that grants a permission (no "approved", "allowed", "you may"). The existing idempotency tests pass unchanged.
+N2 Free: the W09 scripted rehearsal passes as before and its negative control (`DELENTIA_IDEMPOTENCY=off` in the resumed process) still fails with a duplicate effect, because the note cannot make an unguarded service safe.
+N3 Paid scene check, rule S2 of Amendment 12 unchanged: the first two runs of a fresh window; if in BOTH the resumed episode finishes at pre_call (and in_flight and post_call finish too), the window continues to 14 runs with the same key; if not, it stops after run 2 and the sealed reasoning is read again; no more runs are bought until a new amendment explains it.
+N4 The pass rule of W09 is unchanged: 14 of 14 with all 13 checks and no hard failure allows "at least 80%"; k of 14 otherwise; one model, our own oracle.
+N5 The product claim this change allows, if N3 passes: "a resumed episode that finds an interrupted step did not take effect repeats it once, safely, with the same idempotency key". The change does not allow a claim about other models; with another model the same measurement has to be made.
+N6 The text was changed to fix a weakness found by measuring, with a model that reads instructions carefully. A model that already repeats a not-done step without the sentence (the local qwen models in the free probe never read the check at all) is not evidence for or against it.
+
+## Not changed
+The goal, the scene (scene 4), the oracle, the 13 checks, the kill points, the idempotency behaviour, the gate, the policy.
