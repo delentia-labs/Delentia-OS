@@ -1,0 +1,1131 @@
+{
+ "model": "amazon/nova-pro-v1",
+ "summary": {
+  "thai_89/today": {
+   "n": 45,
+   "counts": {
+    "unparsed": 22,
+    "wrong_tool": 9,
+    "finished_without_tool": 14
+   },
+   "median_menu_tools": 10
+  },
+  "thai_89/r3": {
+   "n": 45,
+   "counts": {
+    "right": 16,
+    "unparsed": 19,
+    "wrong_tool": 5,
+    "finished_without_tool": 5
+   },
+   "median_menu_tools": 29
+  }
+ },
+ "verdict": {
+  "complete": false,
+  "propose": false,
+  "why": "the run did not reach every set and arm"
+ },
+ "paired": {
+  "r3_only": 16,
+  "today_only": 0
+ },
+ "usage_usd": 1.0620904,
+ "stopped": "stopped at 1.0621 of the ceiling 0.9900 after 90 decisions",
+ "rows": [
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ข้อสรุปประชุมเช้านี้สำคัญ อย่าให้หาย",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_ask_user"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ข้อสรุปประชุมเช้านี้สำคัญ อย่าให้หาย",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เอาข้อสรุปประชุมเมื่อกี้ไปเก็บไว้ในโน้ตให้ที",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เอาข้อสรุปประชุมเมื่อกี้ไปเก็บไว้ในโน้ตให้ที",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ช่วยจดข้อสรุปประชุมเช้านี้ไว้หน่อยนะ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ช่วยจดข้อสรุปประชุมเช้านี้ไว้หน่อยนะ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ไวไฟออฟฟิศรหัสอะไรนะ จำไม่ได้แล้ว",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 6,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ไวไฟออฟฟิศรหัสอะไรนะ จำไม่ได้แล้ว",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ขอเปิดดูโน้ตไวไฟหน่อยครับ",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 6,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ขอเปิดดูโน้ตไวไฟหน่อยครับ",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ที่เคยจดเรื่องไวไฟออฟฟิศไว้ว่ายังไงนะ",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_search_sessions"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ที่เคยจดเรื่องไวไฟออฟฟิศไว้ว่ายังไงนะ",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_recall"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "โน้ตของขวัญปีที่แล้วไม่ต้องเก็บแล้วล่ะ",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "โน้ตของขวัญปีที่แล้วไม่ต้องเก็บแล้วล่ะ",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ลบโน้ตรายการของขวัญปีที่แล้ว",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ลบโน้ตรายการของขวัญปีที่แล้ว",
+   "needs": [
+    "mcp__notes__delete_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "โน้ตที่เก็บไว้มีเรื่องอะไรบ้างนะ",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "โน้ตที่เก็บไว้มีเรื่องอะไรบ้างนะ",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "อยากเห็นภาพรวมว่าฉันจดอะไรไว้บ้าง",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 11,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_list_forged_tools"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "อยากเห็นภาพรวมว่าฉันจดอะไรไว้บ้าง",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 30,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เปิดลิสต์โน้ตให้ดูหน่อย",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 6,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เปิดลิสต์โน้ตให้ดูหน่อย",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__list_notes"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "อ่านโน้ตสูตรอาหารแล้วเขียนฉบับย่อลงโน้ตใหม่",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "อ่านโน้ตสูตรอาหารแล้วเขียนฉบับย่อลงโน้ตใหม่",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "สูตรอาหารยาวไป ทำให้ใช้ตอนทำครัวได้สะดวกหน่อย",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 12,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_list_forged_tools"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "สูตรอาหารยาวไป ทำให้ใช้ตอนทำครัวได้สะดวกหน่อย",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 31,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เอาสูตรอาหารในโน้ตมาสรุปเหลือแต่ส่วนผสม แล้วจดไว้ใหม่",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 6,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เอาสูตรอาหารในโน้ตมาสรุปเหลือแต่ส่วนผสม แล้วจดไว้ใหม่",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เก็บรายการที่จะถามหมอไว้ในโน้ต",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เก็บรายการที่จะถามหมอไว้ในโน้ต",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "อย่าลืมว่าต้องถามหมอเรื่องปวดหัวกับนอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 9,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "อย่าลืมว่าต้องถามหมอเรื่องปวดหัวกับนอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 28,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "จดเรื่องที่ต้องถามหมอไว้ให้ที ปวดหัวกับนอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "จดเรื่องที่ต้องถามหมอไว้ให้ที ปวดหัวกับนอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เขียนโน้ตเรื่องที่ต้องถามหมอ มี ปวดหัว นอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เขียนโน้ตเรื่องที่ต้องถามหมอ มี ปวดหัว นอนไม่หลับ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เปิดดูตั๋วหมายเลข 2208",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "menu_tools": 6,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เปิดดูตั๋วหมายเลข 2208",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ขอดูรายละเอียดของ 2208 หน่อย",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "menu_tools": 5,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ขอดูรายละเอียดของ 2208 หน่อย",
+   "needs": [
+    "mcp__tickets__get_ticket"
+   ],
+   "menu_tools": 24,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "แจ้งทีมไอทีว่าเมลส่งไม่ได้ผ่านระบบตั๋ว",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 11,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "แจ้งทีมไอทีว่าเมลส่งไม่ได้ผ่านระบบตั๋ว",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 30,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__tickets__create_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เมลส่งไม่ออกมาทั้งเช้าแล้ว ต้องมีใครสักคนดูให้ที",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 11,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_delegate"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เมลส่งไม่ออกมาทั้งเช้าแล้ว ต้องมีใครสักคนดูให้ที",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 30,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ลงเคสให้หน่อย อีเมลภายในส่งไม่ออกตั้งแต่เช้า",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ลงเคสให้หน่อย อีเมลภายในส่งไม่ออกตั้งแต่เช้า",
+   "needs": [
+    "mcp__tickets__create_ticket"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__tickets__create_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ปิดงาน 310 ได้เลยนะ",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 11,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_crawl_url"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ปิดงาน 310 ได้เลยนะ",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 30,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "310 แก้แล้ว ติ๊กว่าเสร็จให้หน่อย",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 5,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "310 แก้แล้ว ติ๊กว่าเสร็จให้หน่อย",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 24,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เปลี่ยนสถานะตั๋ว 310 เป็นเสร็จสิ้น",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 8,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_read_repo_file"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เปลี่ยนสถานะตั๋ว 310 เป็นเสร็จสิ้น",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 27,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "mcp__tickets__get_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เปิด 145 ดู แล้วฝากข้อความในนั้นว่าขอรูปด้วย",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เปิด 145 ดู แล้วฝากข้อความในนั้นว่าขอรูปด้วย",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "145 ยังไม่มีรูป ให้ผู้แจ้งรู้ด้วย",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "145 ยังไม่มีรูป ให้ผู้แจ้งรู้ด้วย",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 29,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ดูตั๋ว 145 แล้วคอมเมนต์ว่ายังไม่ได้แนบรูป",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ดูตั๋ว 145 แล้วคอมเมนต์ว่ายังไม่ได้แนบรูป",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__tickets__get_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เช็กเคส 145 ถ้ายังไม่มีรูปก็เขียนเตือนไว้ในเคส",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 12,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เช็กเคส 145 ถ้ายังไม่มีรูปก็เขียนเตือนไว้ในเคส",
+   "needs": [
+    "mcp__tickets__get_ticket",
+    "mcp__tickets__comment_ticket"
+   ],
+   "menu_tools": 31,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__tickets__get_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ค้นหาตั๋วที่เกี่ยวกับการชำระเงินล้มเหลว",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "menu_tools": 11,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ค้นหาตั๋วที่เกี่ยวกับการชำระเงินล้มเหลว",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "menu_tools": 30,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "มีเคสเรื่องจ่ายเงินไม่ผ่านไหม ช่วยหาให้หน่อย",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "menu_tools": 11,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "มีเคสเรื่องจ่ายเงินไม่ผ่านไหม ช่วยหาให้หน่อย",
+   "needs": [
+    "mcp__tickets__search_tickets"
+   ],
+   "menu_tools": 30,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "โอนงาน 88 ไปให้พลอยดูต่อแทนนที",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 12,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_delegate"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "โอนงาน 88 ไปให้พลอยดูต่อแทนนที",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 31,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__tickets__update_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เปลี่ยนผู้รับผิดชอบตั๋ว 88 จากนทีเป็นพลอย",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 8,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_read_repo_file"
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เปลี่ยนผู้รับผิดชอบตั๋ว 88 จากนทีเป็นพลอย",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 27,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "mcp__tickets__get_ticket"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ฝากพลอยรับเคส 88 ต่อจากนที",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 6,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ฝากพลอยรับเคส 88 ต่อจากนที",
+   "needs": [
+    "mcp__tickets__update_ticket"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ขอดูนัดทั้งหมดของวันพฤหัสนี้",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 6,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ขอดูนัดทั้งหมดของวันพฤหัสนี้",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เช็กตารางวันพฤหัสให้หน่อย",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 3,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เช็กตารางวันพฤหัสให้หน่อย",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 22,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "พฤหัสนี้ฉันมีนัดอะไรบ้างนะ",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 8,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "พฤหัสนี้ฉันมีนัดอะไรบ้างนะ",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 27,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "สร้างนัดชื่อ ทำฟัน วันเสาร์ 14:00-15:00",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "menu_tools": 11,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "สร้างนัดชื่อ ทำฟัน วันเสาร์ 14:00-15:00",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "menu_tools": 30,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__create_event"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ลงนัดทำฟันวันเสาร์บ่ายสองให้หน่อย",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "menu_tools": 9,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ลงนัดทำฟันวันเสาร์บ่ายสองให้หน่อย",
+   "needs": [
+    "mcp__calendar__create_event"
+   ],
+   "menu_tools": 28,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ช่วยตัดนัด 12 ทิ้งให้หน่อย",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "menu_tools": 3,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ช่วยตัดนัด 12 ทิ้งให้หน่อย",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "menu_tools": 22,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เอานัด 12 ออกไปเลย ลูกค้ายกเลิกแล้ว",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "menu_tools": 8,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เอานัด 12 ออกไปเลย ลูกค้ายกเลิกแล้ว",
+   "needs": [
+    "mcp__calendar__delete_event"
+   ],
+   "menu_tools": 27,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "บ่ายวันจันทร์ฉันว่างอยู่หรือเปล่า",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 11,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "บ่ายวันจันทร์ฉันว่างอยู่หรือเปล่า",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 30,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ตรวจดูว่าบ่ายวันจันทร์มีนัดไหม",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 10,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ตรวจดูว่าบ่ายวันจันทร์มีนัดไหม",
+   "needs": [
+    "mcp__calendar__list_events"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__calendar__list_events"
+  }
+ ]
+}

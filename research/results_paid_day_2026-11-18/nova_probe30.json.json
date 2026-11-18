@@ -1,0 +1,795 @@
+{
+ "model": "amazon/nova-pro-v1",
+ "summary": {
+  "english_44/today": {
+   "n": 5,
+   "counts": {
+    "right": 4,
+    "wrong_tool": 1
+   },
+   "median_menu_tools": 11
+  },
+  "english_44/r3": {
+   "n": 5,
+   "counts": {
+    "right": 4,
+    "finished_without_tool": 1
+   },
+   "median_menu_tools": 25
+  },
+  "negatives_20/today": {
+   "n": 5,
+   "counts": {
+    "ok": 5
+   },
+   "median_menu_tools": 10
+  },
+  "negatives_20/r3": {
+   "n": 5,
+   "counts": {
+    "ok": 2,
+    "unparsed": 2,
+    "external_use": 1
+   },
+   "median_menu_tools": 29
+  },
+  "thai_89/today": {
+   "n": 5,
+   "counts": {
+    "wrong_tool": 2,
+    "unparsed": 3
+   },
+   "median_menu_tools": 10
+  },
+  "thai_89/r3": {
+   "n": 5,
+   "counts": {
+    "right": 2,
+    "unparsed": 2,
+    "wrong_tool": 1
+   },
+   "median_menu_tools": 29
+  }
+ },
+ "verdict": {
+  "probe": true,
+  "propose": false,
+  "why": "a probe (--limit-per-set): the pass rule is not applied"
+ },
+ "paired": {
+  "r3_only": 2,
+  "today_only": 3
+ },
+ "usage_usd": 0.2030632,
+ "stopped": null,
+ "rows": [
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_ask_user",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e04\\u0e23\\u0e2b\\u0e17\\u0e32\\u0e07\\u0e23\\u0e31\\u0e01\\u0e2b\\u0e48\\u0e32\\u0e19\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e48\\u0e2b\\u0e23\\u0e38\\u0e48\\u0e07\\u0e40\\u0e0a\\u0e35\\u0e48\\u0e2b\\u0e48\\u0e32\\u0e19\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e48\\u0e2b\\u0e23\\u0e38\\u0e48\\u0e07\\u0e15\\u0e49\\u0e32\\u0e27\\u0e07\\u0e43\\u0e15\\u0e48\\u0e32\\u0e2b\\u0e23\\u0e38\\u0e48\\u0e07\\u0e15\\u0e49\\u0e32\\u0e27\\u0e07\\u0e43\\u0e15\\u0e48\\u0e32\\u0e2b\\u0e23\\u0e38\\u0e48\\u0e07\\u0e15\\u0e49\\u0e32\\u0e27\\u0e07\\u0e43\\u0e15\\u0e48\\u0e32\\u0e2b\\u0e2",
+     "prompt_tokens": 994,
+     "completion_tokens": 1780,
+     "cost_usd": 0.0064912,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.006491
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__write_note\", \"tool_args\": {\"arg\": \"ประชุมเช้า\\n\\n1. การปรับปรุงระบบงานใหม่จะเริ่มต้นในสัปดาห์หน้า\\n2. ทีมการตลาดต้องการข้อมูลเพิ่มเติมเกี่ยวกับการทำตลาดล่าสุด\\n3. การประชุมครั้งต่อไปจะจัดขึ้นในวันพฤหัสบดี เวลา 9 โมงเช้า\"}, \"reasoning\": \"เริ่มต้นโดยการสร้างโน้ตชื่อ 'ประชุมเช้า' และใส่ข้อสรุปสามข้อลงไปตามที่กำหนดในเป้าหมาย\"}",
+     "prompt_tokens": 1436,
+     "completion_tokens": 261,
+     "cost_usd": 0.001984,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001984
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ข้อสรุปประชุมเช้านี้สำคัญ อย่าให้หาย",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e04\\u0e2d\\u0e32\\u0e2a\\u0e23\\u0e38\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e38\\u0e21\\u0e43\\u0e01\\u0e2d\\u0e32\\u0e01\\u0e21\\u0e48\\u0e32\\u0e19\\u0e43\\u0e17\\u0e48\\u0e47\\u0e19\\u0e43\\u0e2b\\u0e2d\\u0e22\\u0e48\\u0e23\\u0e37\\u0e48\\u0e47\\u0e01\\u0e23\\u0e38\\u0e07\\u0e43\\u0e01\\u0e2d\\u0e32\\u0e01\\u0e21\\u0e48\\u0e32\\u0e19\\u0e43\\u0e17\\u0e48\\u0e47\\u0e19\\u0e43\\u0e2b\\u0e2d\\u0e22\\u0e48\\u0e23\\u0e37\\u0e48\\u0e47\\u0e01\\u0e23\\u0e38\\u0e07\\u0e43\\u0e01\\u0e2d\\u0e32\\u0e01\\u0e21\\u0e48\\u0e32\\u0e19\\u0e43\\u0e17\\u0e48\\u0e47\\u0e19\\u0e43\\u0e2b\\u0e2d\\u0e22\\u0e48\\u0e2",
+     "prompt_tokens": 1005,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0073576,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e04\\u0e2d\\u0e2a\\u0e2a\\u0e31\\u0e23\\u0e38\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e38\\u0e21\\u0e43\\u0e04\\u0e19\\u0e43\\u0e01\\u0e48\\u0e23\\u0e30\\u0e2d\\u0e22\\u0e48\\u0e22\\u0e32\\u0e19\\u0e43\\u0e2b\\u0e22\\u0e48\", \"why\": \"\\u0e04\\u0e32\\u0e23\\u0e17\\u0e35\\u0e48\\u0e23\\u0e48\\u0e32\\u0e22\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e17\\u0e35\\u0e48\\u0e23\\u0e48\\u0e32\\u0e22\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e17\\u0e35\\u0e48\\u0e23\\u0e48\\u0e32\\u0e22\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e17\\u0e35\\u0e48\\u0e23\\u0e48\\u0e32\\u0e22\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e17\\u0e35",
+     "prompt_tokens": 1052,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0139488,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.021306
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ข้อสรุปประชุมเช้านี้สำคัญ อย่าให้หาย",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__write_note\", \"tool_args\": {\"arg\": \"ข้อสรุปประชุมเช้านี้\"}, \"reasoning\": \"\\u0e04\\u0e32\\u0e23\\u0e17\\u0e35\\u0e01\\u0e23\\u0e31\\u0e1a\\u0e43\\u0e2b\\u0e2b\\u0e32\\u0e2a\\u0e32\\u0e23\\u0e01\\u0e31\\u0e0a\\u0e23\\u0e38\\u0e1a\\u0e23\\u0e31\\u0e2b\\u0e27\\u0e32\\u0e22\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e43\\u0e2b\\u0e2b\\u0e32\\u0e2a\\u0e32\\u0e23\\u0e01\\u0e31\\u0e0a\\u0e23\\u0e38\\u0e1a\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e39\\u0e21\\u0e17\\u0e35\\u0e01\\u0e23\\u0e31\\u0e1a\\u0e43\\u0e2b\\u0e2b\\u0e32\\u0e2a\\u0e32\\u0e23\\u0e01\\u0e31\\u0e0a\\u0e23\\u0e38\\u0e1b\\u0e23\\u0e30\\u0",
+     "prompt_tokens": 1447,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0077112,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__write_note\", \"tool_args\": {\"arg\": \"ข้อสรุปประชุมเช้านี้สำคัญ อย่าให้หาย\"}, \"reasoning\": \"เพื่อให้แน่ใจว่าข้อสรุปจะไม่หาย ฉันจะเขียนมันเป็นบันทึก\"}",
+     "prompt_tokens": 1494,
+     "completion_tokens": 114,
+     "cost_usd": 0.00156,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.009271
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "เอาข้อสรุปประชุมเมื่อกี้ไปเก็บไว้ในโน้ตให้ที",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e04\\u0e23\\u0e2d\\u0e17\\u0e2a\\u0e31\\u0e17\\u0e23\\u0e48\\u0e32\\u0e22\\u0e30\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e43\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e3",
+     "prompt_tokens": 906,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0072784,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"\\u0e23\\u0e31\\u0e2b\\u0e07\\u0e23\\u0e31\\u0e2d\\u0e07\\u0e07\\u0e32\\u0e23\\u0e17\\u0e35\\u0e48\\u0e23\\u0e01\\u0e32\\u0e23\\u0e1a\\u0e23\\u0e38\\u0e17\\u0e32\\u0e22\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\u0e21\\u0e39\\u0e25\\u0e43\\u0e01\\u0e48\\u0e32\\",
+     "prompt_tokens": 953,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0138696,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.021148
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "เอาข้อสรุปประชุมเมื่อกี้ไปเก็บไว้ในโน้ตให้ที",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__list_notes\", \"tool_args\": {}, \"reasoning\": \"\\u0e0a\\u0e31\\u0e04\\u0e23\\u0e32\\u0e22\\u0e48\\u0e35\\u0e48\\u0e07\\u0e48\\u0e34\\u0e01\\u0e31\\u0e1a\\u0e44\\u0e25\\u0e07\\u0e48\\u0e34\\u0e01\\u0e47\\u0e49\\u0e2d\\u0e07\\u0e48\\u0e31\\u0e19\\u0e43\\u0e21\\u0e07\\u0e48\\u0e32\\u0e23\\u0e30\\u0e01\\u0e31\\u0e1a\\u0e44\\u0e25\\u0e07\\u0e48\\u0e34\\u0e01\\u0e47\\u0e49\\u0e2d\\u0e07\\u0e48\\u0e31\\u0e19\\u0e43\\u0e21\\u0e07\\u0e48\\u0e32\\u0e23\\u0e30\\u0e01\\u0e31\\u0e1a\\u0e44\\u0e25\\u0e07\\u0e48\\u0e34\\u0e01\\u0e47\\u0e49\\u0e2d\\u0e07\\u0e48\\u0e31\\u0e19\\u0e43\\u0e21\\u0e07\\u0e48\\u0e32\\u0e23\\u0e30\\u0e01\\u0e31\\u0e1a\\u",
+     "prompt_tokens": 1348,
+     "completion_tokens": 2048,
+     "cost_usd": 0.007632,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__list_notes\", \"tool_args\": {}, \"reasoning\": \"\\u0e0a\\u0e27\\u0e32\\u0e25\\u0e32\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e2b\\u0e49\\u0e32\\u0e01\\u0e39\\u0e48\\u0e21\\u0e48\\u0e39\\u0e48\\u0e07\\u0e43\\u0e0a\\u0e49\\u0e32\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e01\\u0e31\\u0e1a\\u0e23\\u0e39\\u0e21\\u0e43\\u0e17\\u0e35\\u0e48\\u0e01\\u0e31\\u0e1a\\u0e23\\u",
+     "prompt_tokens": 1395,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0142232,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.021855
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ช่วยจดข้อสรุปประชุมเช้านี้ไว้หน่อยนะ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_ask_user",
+   "calls": [
+    {
+     "raw": "{\n  \"action\": \"delentia_ask_user\",\n  \"tool_args\": {\n    \"question\": \"ข้อสรุปของประชุมเช้านี้คืออะไร?\",\n    \"why\": \"ต้องการข้อมูลเพื่อจดข้อสรุปประชุม\"\n  },\n  \"reasoning\": \"ต้องการข้อมูลจากผู้ใช้เพื่อบันทึกข้อสรุปประชุมเช้านี้\"\n}",
+     "prompt_tokens": 979,
+     "completion_tokens": 131,
+     "cost_usd": 0.0012024,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001202
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ช่วยจดข้อสรุปประชุมเช้านี้ไว้หน่อยนะ",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_ask_user",
+   "calls": [
+    {
+     "raw": "{\"action\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e0a\\u0e49\\u0e32\\u0e22\\u0e08\\u0e32\\u0e23\\u0e32\\u0e2b\\u0e32\\u0e22\\u0e0a\\u0e48\\u0e32\\u0e21\\u0e04\\u0e23\\u0e38\\u0e1a\\u0e23\\u0e31\\u0e01\\u0e23\\u0e30\\u0e1a\\u0e38\\u0e1a\\u0e23\\u0e31\\u0e01\\u0e23\\u0e30\\u0e1a\\u0e38\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e38\\u0e21\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e38\\u0e21\\u0e19\\u0e35\\u0e27\\u0e32\\u0e14\\u0e35\\u0e43\\u0e01\\u0e23\\u0e38\\u0e1a\\u0e01\\u0e31\\u0e19\\u0e01\\u0e39\\u0e19\\u0e43\\u0e2b\\u0e32\\u0e22\\u0e08\\u0e32\\u0e23\\u0e32\\u0e2b\\u0e32\\u0e22\\u0e04\\u0e49\\u0e32\\u0e23\\u0e30\\u0e23\\u0e30\\u0e1a\\u0e38\\u0e1b\\u0e23\\u0e30\\u0e0a\\u0e38\\u0e21\\u0e1b\\",
+     "prompt_tokens": 1421,
+     "completion_tokens": 1885,
+     "cost_usd": 0.0071688,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.007169
+  },
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "ไวไฟออฟฟิศรหัสอะไรนะ จำไม่ได้แล้ว",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 6,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e40\\u0e23\\u0e35\\u0e48\\u0e07\\u0e2a\\u0e23\\u0e48\\u0e31\\u0e22\\u0e4c\\u0e2a\\u0e31\\u0e21\\u0e32\\u0e0a\\u0e34\\u0e2a\\u0e48\\u0e39\\u0e48\\u0e2b\\u0e49\\u0e32\\u0e25\\u0e32\\u0e07\\u0e40\\u0e2b\\u0e31\\u0e19\\u0e43\\u0e2b\\u0e32\\u0e41\\u0e2b\\u0e32\\u0e2a\\u0e43\\u0e17\\u0e32\\u0e48\\u0e07\\u0e43\\u0e17\\u0e22\\u0e48\\u0e27\\u0e48\\u0e32\\u0e23\\u0e30\\u0e01\\u0e31\\u0e19\\u0e2a\\u0e39\\u0e48\\u0e01\\u0e32\\u0e23\\u0e4c\\u0e2a\\u0e39\\u0e48\\u0e19\\u0e31\\u0e19\\u0e43\\u0e2b\\u0e32\\u0e41\\u0e2b\\u0e32\\u0e2a\\u0e43\\u0e17\\u0e32\\u0e48\\u0e07\\u0e43\\u0e17\\u0e22\\u0e48\\u0e27\\u0e48\\u0e32\\u0e23\\u0e30\\u0e01\\",
+     "prompt_tokens": 678,
+     "completion_tokens": 2048,
+     "cost_usd": 0.007096,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e40\\u0e23\\u0e35\\u0e48\\u0e2b\\u0e23\\u0e38\\u0e48\\u0e2a\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e15\\u0e32\\u0e48\\u0e23\\u0e47\\u0e14\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e31\\u0e19\\u0e43\\u0e17\\u0e48\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e31\\u0e19\\u0e43\\u0e17\\u0e48\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e31\\u0e19\\u0e43\\u0e17\\u0e48\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e31\\u0e19\\u0e43\\u0e17\\u0e48\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e2b\\u0e2a\\u0e39\\u0e1a\\u0e31\\u0e19\\u0e43\\u0e17\\u0e48\\u0e23\\u0e48\\u0e32\\u0e07\\",
+     "prompt_tokens": 725,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0136872,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.020783
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "ไวไฟออฟฟิศรหัสอะไรนะ จำไม่ได้แล้ว",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e40\\u0e25\\u0e21\\u0e23\\u0e32\\u0e23\\u0e2b\\u0e31\\u0e2a\\u0e40\\u0e2a\\u0e01\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\u0e2b\\u0e21\\u0e48\\u0e32\\u0e43\\",
+     "prompt_tokens": 1120,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0074496,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"delentia_ask_user\", \"tool_args\": {\"question\": \"\\u0e23\\u0e34\\u0e07\\u0e43\\u0e01\\u0e27\\u0e32\\u0e22\\u0e44\\u0e27\\u0e44\\u0e17\\u0e35\\u0e48\\u0e14\\u0e48\\u0e21\\u0e32\\u0e07\\u0e43\\u0e27\\u0e48\\u0e47\\u0e19\\u0e31\\u0e19\\u0e43\\u0e2b\\u0e19\\u0e49\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e17\\u0e35\\u0e48\\u0e01\\u0e48\\",
+     "prompt_tokens": 1167,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0140408,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.02149
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "Read the note called Weekly Plan and tell me what is on it",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 11,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Weekly Plan\"}, \"reasoning\": \"To achieve the goal of reading the note called 'Weekly Plan', I need to directly use the tool that reads notes by title. This will give me the exact content of the note.\"}",
+     "prompt_tokens": 836,
+     "completion_tokens": 80,
+     "cost_usd": 0.0009248,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.000925
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "Read the note called Weekly Plan and tell me what is on it",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Weekly Plan\"}, \"reasoning\": \"The goal is to read the note called 'Weekly Plan', and the tool'mcp__notes__read_note' is directly relevant to this goal as it allows reading a note by title. Using this tool will give a grounded, verified answer.\"}",
+     "prompt_tokens": 1171,
+     "completion_tokens": 94,
+     "cost_usd": 0.0012376,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001238
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "Read the note called Budget and save a shorter version of it as a note called Budget Short",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 11,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Budget\"}, \"reasoning\": \"To achieve the goal, I first need to read the note called 'Budget' to understand its content and then create a shorter version of it. Reading the note is the first necessary step.\"}",
+     "prompt_tokens": 765,
+     "completion_tokens": 79,
+     "cost_usd": 0.0008648,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.000865
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "Read the note called Budget and save a shorter version of it as a note called Budget Short",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Budget\"}, \"reasoning\": \"I need to read the note called 'Budget' to proceed with creating a shorter version of it. This is the first step towards achieving the goal.\"}",
+     "prompt_tokens": 1100,
+     "completion_tokens": 71,
+     "cost_usd": 0.0011072,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001107
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "List all my notes",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 11,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__list_notes",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__list_notes\", \"tool_args\": {\"arg\": \"\"}, \"reasoning\": \"This tool directly lists all the notes, which is exactly the goal. It provides a grounded, verified answer instead of a guess. No other tool is necessary for this specific goal.\"}",
+     "prompt_tokens": 738,
+     "completion_tokens": 76,
+     "cost_usd": 0.0008336,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.000834
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "List all my notes",
+   "needs": [
+    "mcp__notes__list_notes"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__list_notes",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__list_notes\", \"tool_args\": {}, \"reasoning\": \"This tool directly lists all the notes, which is the goal. It provides a grounded, verified answer instead of a guess.\"}",
+     "prompt_tokens": 1074,
+     "completion_tokens": 61,
+     "cost_usd": 0.0010544,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001054
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "Save a note called Ideas with the three ideas we just discussed",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 11,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_list_forged_tools",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_list_forged_tools\", \"tool_args\": {}, \"reasoning\": \"To determine if there is a tool available that can help save the note with the discussed ideas, I need to list the forged tools first. This will provide me with the necessary information to decide the next action. If a relevant tool is found, I can then use it to save the note. If not, I will need to consider alternative actions or report that the goal cannot be achieved with the available tools.\"}",
+     "prompt_tokens": 793,
+     "completion_tokens": 119,
+     "cost_usd": 0.0010152,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001015
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "Save a note called Ideas with the three ideas we just discussed",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 26,
+   "verdict": "finished_without_tool",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal to save a note called 'Ideas' with the three ideas we just discussed cannot be completed because the specific ideas were not provided in the history or the goal description. Without the content to save, the goal remains unachievable with the given tools and information.\", \"final_answer\": \"Unable to complete the goal due to insufficient information about the ideas to be saved.\"}",
+     "prompt_tokens": 1150,
+     "completion_tokens": 91,
+     "cost_usd": 0.0012112,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001211
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "Look at the note Roadmap, then record a summary of it in a new note named Roadmap Summary",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 11,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Roadmap\"}, \"reasoning\": \"To summarize the 'Roadmap' note, I first need to read its content. This will provide the necessary information to create a summary.\"}",
+     "prompt_tokens": 847,
+     "completion_tokens": 70,
+     "cost_usd": 0.0009016,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.000902
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "Look at the note Roadmap, then record a summary of it in a new note named Roadmap Summary",
+   "needs": [
+    "mcp__notes__read_note",
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 26,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Roadmap\"}, \"reasoning\": \"To summarize the 'Roadmap' note, I first need to read its content. This will provide the necessary information to create the 'Roadmap Summary' note.\"}",
+     "prompt_tokens": 1204,
+     "completion_tokens": 75,
+     "cost_usd": 0.0012032,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001203
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "เขียนเรียงความเรื่องแม่ของฉันหนึ่งหน้า",
+   "needs": [],
+   "menu_tools": 10,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\n  \"action\": \"finish\",\n  \"reasoning\": \"The goal is to write an essay about 'my mother' in one page. This is a creative writing task that doesn't require the use of any specific tool from the provided list. The tools available are for information retrieval, memory management, and web interaction, none of which are necessary for the creative process of writing an essay. Therefore, I will provide a sample essay in Thai as the final answer.\",\n  \"final_answer\": \"แม่ของฉันเป็นคนที่ฉันรักและเคารพมากที่สุดในโลก. เธอเป็นแหล่งของความรัก ความอบอุ่น และการสนับสนุน. แม่ทำงานหนักเพื่อให้ฉันและพี่น้องของฉัน",
+     "prompt_tokens": 950,
+     "completion_tokens": 439,
+     "cost_usd": 0.0021648,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.002165
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "เขียนเรียงความเรื่องแม่ของฉันหนึ่งหน้า",
+   "needs": [],
+   "menu_tools": 29,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to write an essay about my mother in Thai, which is a creative writing task that does not require the use of any of the available tools. The tools provided are for information retrieval, memory management, and system operations, none of which are applicable to the creative process of writing an essay. Therefore, I will provide a sample essay in Thai as a demonstration.\", \"final_answer\": \"\\u0e23\\u0e31\\u0e2b\\u0e32\\u0e07\\u0e23\\u0e35\\u0e48\\u0e2d\\u0e07\\u0e04\\u0e49\\u0e32\\u0e21\\u0e48\\u0e23\\u0e30\\u0e43\\u0e01\\u0e2d\\u0e48\\u0e07\\u0e40\\u0e23\\u0e37\\u0e48\\u0e2d",
+     "prompt_tokens": 1392,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0076672,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to write an essay about the user's mother in Thai, which is a creative writing task that does not require the use of any specific tool from the provided list. The tools available are for information retrieval, memory management, and system operations, none of which are directly applicable to the creative process of writing an essay. Therefore, the goal can be considered achieved through the user's own writing without the need for tool assistance.\", \"final_answer\": \"เขียนเรียงความเรื่องแม่ของฉันหนึ่งหน้า เป็นงานเขียนสร้างสรรค์ที่ไม่ต้องการใช้เครื่อ",
+     "prompt_tokens": 1439,
+     "completion_tokens": 382,
+     "cost_usd": 0.0023736,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.010041
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "ช่วยจดสรุปหนังสือที่อ่านเมื่อวานให้หน่อย แล้วตอบมาเป็นข้อความเลย",
+   "needs": [],
+   "menu_tools": 10,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\n  \"action\": \"finish\",\n  \"reasoning\": \"ไม่มีข้อมูลเกี่ยวกับหนังสือที่อ่านเมื่อวานในประวัติ และไม่มีเครื่องมือที่เหมาะสมในการดึงข้อมูลนี้\",\n  \"final_answer\": \"ไม่สามารถจดสรุปหนังสือที่อ่านเมื่อวานได้ เนื่องจากไม่มีข้อมูลเกี่ยวกับหนังสือนั้นในระบบ\"\n}",
+     "prompt_tokens": 937,
+     "completion_tokens": 164,
+     "cost_usd": 0.0012744,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001274
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "ช่วยจดสรุปหนังสือที่อ่านเมื่อวานให้หน่อย แล้วตอบมาเป็นข้อความเลย",
+   "needs": [],
+   "menu_tools": 29,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"\\u0e23\\u0e31\\u0e1a\\u0e17\\u0e34\\u0e2b\\u0e23\\u0e30\\u0e19\\u0e31\\u0e43\\u0e21\\u0e23\\u0e31\\u0e2b\\u0e07\\u0e32\\u0e22\\u0e31\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\u0e37\\u0e48\\u0e48\\u0e2d\\u0e2d\\u0e40\\u0e2b\\u0e47\\u0e49\\u0e48\\u0e23\\",
+     "prompt_tokens": 1379,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0076568,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"\\u0e23\\u0e31\\u0e1a\\u0e23\\u0e30\\u0e48\\u0e21\\u0e48\\u0e32\\u0e15\\u0e34\\u0e1a\\u0e2b\\u0e32\\u0e23\\u0e48\\u0e32\\u0e22\\u0e38\\u0e17\\u0e34\\u0e15\\u0e32\\u0e07\\u0e48\\u0e32\\u0e27\\u0e48\\u0e32\\u0e14\\u0e35\\u0e48\\u0e22\\u0e38\\u0e17\\u0e34\\u0e14\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e07\\u0e48\\u0e32\\u0e27\\u0e48\\u0e32\\u0e14\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e07\\u0e48\\u0e32\\u0e27\\u0e48\\u0e32\\u0e14\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e07\\u0e48\\u0e32\\u0e27\\u0e48\\u0e32\\u0e14\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\u0e23\\u0e07\\u0e48\\u0e32\\u0e27\\u0e48\\u0e32\\u0e14\\u0e35\\u0e48\\u0e01\\u0e48\\u0e32\\",
+     "prompt_tokens": 1426,
+     "completion_tokens": 4096,
+     "cost_usd": 0.014248,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.021905
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "อธิบายว่าตั๋วเครื่องบินแบบไป-กลับต่างจากเที่ยวเดียวอย่างไร",
+   "needs": [],
+   "menu_tools": 11,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to explain the difference between round-trip and one-way airline tickets, which can be done directly without needing to call any tools.\", \"final_answer\": \"\\u0e44\\u0e15\\u0e2d\\u0e49\\u0e2d\\u0e2a\\u0e40\\u0e04\\u0e23\\u0e37\\u0e2d\\u0e07\\u0e1a\\u0e34\\u0e19\\u0e23\\u0e31\\u0e22\\u0e01\\u0e32\\u0e23\\u0e23\\u0e37\\u0e21\\u0e01\\u0e31\\u0e1a\\u0e14\\u0e35\\u0e17\\u0e35\\u0e22\\u0e40\\u0e14\\u0e35\\u0e2d\\u0e48\\u0e27\\u0e07\\u0e43\\u0e15\\u0e32\\u0e48\\u0e07\\u0e48\\u0e32\\u0e25\\u0e30\\u0e07\\u0e43\\u0e15\\u0e32\\u0e48\\u0e07\\u0e48\\u0e2b\\u0e32\\u0e23\\u0e37\\u0e21\\u0e01\\u0e31\\u0e1a\\u0e14\\u0e35\\u0e17\\u",
+     "prompt_tokens": 1001,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0073544,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to explain the difference between round-trip and one-way airline tickets, which can be done without using any of the available tools. Here is the answer: ตั๋วเครื่องบินแบบไป-กลับ (round-trip ticket) แตกต่างจากเที่ยวเดียว (one-way ticket) ตรงที่ตั๋วแบบไป-กลับจะมีการกำหนดเที่ยวบินสำหรับทั้งการไปและการกลับ ในขณะที่ตั๋วเที่ยวเดียวจะมีเพียงการกำหนดเที่ยวบินสำหรับการไปเท่านั้น นอกจากนี้ ตั๋วแบบไป-กลับมักจะมีราคาถูกกว่าการซื้อตั๋วเที่ยวเดียวสองใบแยกกัน\", \"final_answer\": \"ตั๋วเครื่องบินแบบไป-กลับ (round-trip ticket) แตกต่างจากเที่ยวเดียว (one-way ticket) ",
+     "prompt_tokens": 1048,
+     "completion_tokens": 514,
+     "cost_usd": 0.0024832,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.009838
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "อธิบายว่าตั๋วเครื่องบินแบบไป-กลับต่างจากเที่ยวเดียวอย่างไร",
+   "needs": [],
+   "menu_tools": 30,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to explain the difference between round-trip and one-way airline tickets, which does not require the use of any of the available tools. The explanation can be provided directly.\", \"final_answer\": \"\\u0e44\\u0e15\\u0e49\\u0e2d\\u0e27\\u0e40\\u0e04\\u0e23\\u0e37\\u0e2d\\u0e07\\u0e1a\\u0e34\\u0e19\\u0e23\\u0e48\\u0e32\\u0e19\\u0e43\\u0e15\\u0e48\\u0e2d\\u0e2d\\u0e01\\u0e25\\u0e31\\u0e1a\\u0e01\\u0e31\\u0e1a\\u0e41\\u0e15\\u0e48\\u0e2d\\u0e2d\\u0e01\\u0e25\\u0e31\\u0e1a\\u0e43\\u0e15\\u0e48\\u0e2d\\u0e2d\\u0e01\\u0e25\\u0e31\\u0e1a\\u0e01\\u0e31\\u0e1a\\u0e41\\u0e15\\u0e48\\u0e2d\\u0e2d\\u0e01\\u0e25\\u0e31\\u",
+     "prompt_tokens": 1443,
+     "completion_tokens": 2048,
+     "cost_usd": 0.007708,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to explain the difference between round-trip and one-way airline tickets, which can be done without using any of the available tools.\", \"final_answer\": \"ตั๋วเครื่องบินแบบไป-กลับ (round-trip ticket) แตกต่างจากเที่ยวเดียว (one-way ticket) ตรงที่ตั๋วแบบไป-กลับจะมีการกำหนดเที่ยวบินสำหรับทั้งการไปและการกลับ ในขณะที่ตั๋วเที่ยวเดียวจะมีการกำหนดเที่ยวบินเพียงเที่ยวเดียว ไม่มีการกำหนดเที่ยวบินสำหรับการกลับ ซึ่งผู้โดยสารจะต้องซื้อตั๋วเที่ยวเดียวอีกครั้งสำหรับการกลับ\"}",
+     "prompt_tokens": 1490,
+     "completion_tokens": 282,
+     "cost_usd": 0.0020944,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.009802
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "ปฏิทินปีนี้วันหยุดนักขัตฤกษ์มีกี่วัน",
+   "needs": [],
+   "menu_tools": 4,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is asking for the number of public holidays in the current year, which is a factual question that requires up-to-date information from an external source. None of the available tools can directly provide this information or access an external source to retrieve it. Therefore, the goal is outside what these tools can do.\", \"final_answer\": \"\\u0e2a\\u0e31\\u0e21\\u0e23\\u0e32\\u0e0a\\u0e48\\u0e37\\u0e48\\u0e22\\u0e32\\u09f9\\u0e07\\u0e43\\u0e0a\\u0e49\\u0e48\\u0e2b\\u0e32\\u0e2a\\u0e0a\\u0e49\\u0e32\\u0e22\\u0e48\\u0e32\\u0e07\\u0e43\\u0e0a\\u0e49\\u0e23\\u0e30\\u0e48\\u0e47\\u0e19\\u0e3",
+     "prompt_tokens": 656,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0070784,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"ไม่มีเครื่องมือที่เหมาะสมในการตอบคำถามนี้ เนื่องจากต้องการข้อมูลเฉพาะเจาะจงเกี่ยวกับปฏิทินปีนี้ซึ่งไม่สามารถได้มาจากเครื่องมือที่มีอยู่\", \"final_answer\": \"ไม่สามารถตอบคำถามนี้ได้ด้วยเครื่องมือที่มีอยู่\"}",
+     "prompt_tokens": 703,
+     "completion_tokens": 164,
+     "cost_usd": 0.0010872,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.008166
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "ปฏิทินปีนี้วันหยุดนักขัตฤกษ์มีกี่วัน",
+   "needs": [],
+   "menu_tools": 23,
+   "verdict": "external_use",
+   "error": null,
+   "chose": "mcp__calendar__list_events",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__calendar__list_events\", \"tool_args\": {\"arg\": \"ปีนี้\"}, \"reasoning\": \"เพื่อหาจำนวนวันหยุดนักขัตฤกษ์ในปีนี้ ฉันจำเป็นต้องรับรู้เหตุการณ์ทั้งหมดในปีนี้ก่อน เพื่อตรวจสอบว่ามีวันหยุดนักขัตฤกษ์อยู่เท่าไหร่\"}",
+     "prompt_tokens": 1098,
+     "completion_tokens": 161,
+     "cost_usd": 0.0013936,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001394
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "ค้นหาในไฟล์ log ว่ามีคำว่า error กี่ครั้ง",
+   "needs": [],
+   "menu_tools": 11,
+   "verdict": "ok",
+   "error": null,
+   "chose": "delentia_list_exchange_files",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_list_exchange_files\", \"tool_args\": {\"category\": \"logs\"}, \"reasoning\": \"เริ่มต้นด้วยการค้นหาไฟล์ log ใน Neural Exchange Bridge เพื่อระบุว่ามีไฟล์ log อะไรบ้างที่สามารถตรวจสอบได้\"}",
+     "prompt_tokens": 995,
+     "completion_tokens": 106,
+     "cost_usd": 0.0011352,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001135
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "ค้นหาในไฟล์ log ว่ามีคำว่า error กี่ครั้ง",
+   "needs": [],
+   "menu_tools": 30,
+   "verdict": "unparsed",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_list_exchange_files\", \"tool_args\": {\"category\": \"logs\"}, \"reasoning\": \"\\u0e0a\\u0e39\\u0e14\\u0e43\\u0e2b\\u0e48\\u0e32\\u0e23\\u0e31\\u0e2b\\u0e07\\u0e32\\u0e23\\u0e1a\\u0e49\\u0e32\\u0e23\\u0e23\\u0e37\\u0e48\\u0e2d\\u0e07\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e1a\\u0e48\\u0e32\\u0e23\\u0e23\\u0e37\\u0e48\\u0e2d\\u0e07\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e1a\\u0e48\\u0e32\\u0e23\\u0e23\\u0e37\\u0e48\\u0e2d\\u0e07\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e1a\\u0e48\\u0e32\\u0e23\\u0e23\\u0e37\\u0e48\\u0e2d\\u0e07\\u0e43\\u0e2b\\u0e19\\u0e48\\u0e32\\u0e1a\\u0e48\\u0e32\\u0e23\\u0e23\\u0e37\\u0e48\\u0e2d\\u0e07\\u0e43\\u0e2b\\u",
+     "prompt_tokens": 1437,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0077032,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"delentia_list_exchange_files\", \"tool_args\": {\"category\": \"logs\"}, \"reasoning\": \"\\u0e0a\\u0e39\\u0e14\\u0e25\\u0e32\\u0e01\\u0e31\\u0e1a\\u0e2b\\u0e32\\u0e22\\u0e48\\u0e32\\u0e43\\u0e15\\u0e48\\u0e2b\\u0e23\\u0e31\\u0e2d\\u0e40\\u0e2b\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e15\\u0e48\\u0e2b\\u0e23\\u0e31\\u0e2d\\u0e40\\u0e2b\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e15\\u0e48\\u0e2b\\u0e23\\u0e31\\u0e2d\\u0e40\\u0e2b\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e15\\u0e48\\u0e2b\\u0e23\\u0e31\\u0e2d\\u0e40\\u0e2b\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e15\\u0e48\\u0e2b\\u0e23\\u0e31\\u0e2d\\u0e40\\u0e2b\\u0e23\\u0e48\\u0e32\\u0e07\\u0e43\\u0e15\\u",
+     "prompt_tokens": 1484,
+     "completion_tokens": 4096,
+     "cost_usd": 0.0142944,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.021998
+  }
+ ]
+}

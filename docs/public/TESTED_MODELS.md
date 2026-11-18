@@ -144,6 +144,8 @@ One model for the whole jobs (`anthropic/claude-haiku-5.5`), our own oracles, an
 | W09 (goal v3, scene 1) | anthropic/claude-haiku-5.5 | 0 of 14 | 0 | 0.000 | inconclusive | $0.0680 | R0112 |
 | W09 (goal v3, scene 2) | anthropic/claude-haiku-5.5 | 0 of 14 | 0 | 0.000 | inconclusive | $0.0703 | R0113 |
 | W09 scene check (goal v3, scene 3) | anthropic/claude-haiku-5.5 | 0 of 2 | 0 | 0.000 | inconclusive | $0.0093 | R0114 |
+| W09 scene check (goal v3, scene 4) after the resume-note change | anthropic/claude-haiku-5.5 | 0 of 2 | 0 | 0.000 | inconclusive | $0.0100 | R0124 |
+| W09 scene check (goal v3, scene 4) before the resume-note change | anthropic/claude-haiku-5.5 | 0 of 2 | 0 | 0.000 | inconclusive | $0.0100 | R0121 |
 | W10 | anthropic/claude-haiku-5.5 | 14 of 14 | 0 | 0.807 | pass | $0.1348 | R0101 |
 | W12 | anthropic/claude-haiku-5.5 | 0 of 14 | 0 | 0.000 | inconclusive | $0.0513 | R0103 |
 | W12 | anthropic/claude-haiku-5.5 | 14 of 14 | 0 | 0.807 | pass | $0.1870 | R0107 |
@@ -171,6 +173,9 @@ The same RCT-7 judge and critic as the table above, on the owner's sealed sets, 
 |---|---|---|---|---|
 | anthropic/claude-haiku-5.5 | TC-003 b0 vs d0 | inconclusive | $0.1522 | R0097 |
 | anthropic/claude-haiku-5.5 | TC-003 b0 vs d0 (rerun at 909880b7) | fail | $0.1716 | R0098 |
+| anthropic/claude-haiku-5.5 | TC-003 visible tier, b0, headroom screen (rule H1) | pass | $0.1240 | R0116 |
+| anthropic/claude-haiku-5.5 | TC-003 visible tier, d0 (42 runs, commit e4ee857b) | inconclusive | $0.2620 | R0122 |
+| anthropic/claude-haiku-5.5 | TC-003 visible tier, d0 after the repeated-call fix (42 runs, commit 114656c6) | inconclusive | $0.2720 | R0123 |
 
 TC-003 compares the plain loop with the runtime on 14 tasks, paired. The first pair of results was stopped by a defect in how an empty reply cut at the allowance was handled; after the fix no effect of the runtime on the hidden-test score was shown, and no task was fully fixed in either arm. This says nothing about harder tasks or other models.
 
