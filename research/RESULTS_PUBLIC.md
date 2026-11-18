@@ -4,6 +4,15 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0114: R2-3 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, W09 scene check (goal v3, scene 3), provider openrouter
+- Date: 2026-11-17T10:18:01Z; code: commit `cfb3151` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0093
+- Units behind the verdict: 2; figures: hard failures 0; failure label: parse_intent
+- What it says: R2-3 W09 scene check (Amendment 10 rule R2): runs 1 and 2 only, commit 8c803b16 (main after #316-#318), goal v3, scene 3 (the read tool answers reports/<order id>), haiku, freeze freeze-r2g-W.json, driver $0.0093 (Keys page to be read). Hard failures 0 of 2. Per check (k of 2): pre_call.kill_point_reached 2; pre_call.process_was_killed 2; pre_call.all_orders_placed_once 0; pre_call.resumed_episode_finished 0; in_flight.kill_point_reached 2; in_flight.process_was_killed 2; in_flight.all_orders_placed_once 2; in_flight.resumed_episode_finished 2; post_call.kill_point_reached 2; post_call.process_was_killed 2; post_call.all_orders_placed_once 2; post_call.resumed_episode_finished 2; notary_down.fails_closed 2. At in_flight and post_call the resumed episode read reports/order-2 (placed), placed order 3 and finished, every order placed exactly once, in both runs (scene 1: 0 of 14 and scene 2: 0-1 of 14). At pre_call it read reports/order-2 (answer 'no such file'), then order-2 again, order-1 and order-2 again and was stopped stuck_repeating; orders 2 and 3 were never placed. Notary down failed closed in both runs. THE SCENE AGAIN (Amendment 12, research/ROUND_TWO_AMENDMENT_12_R115.md): where an order was placed the answer says 'placed' and the model goes on; where it was not placed the bare 'no such file' does not tell it that the order was never placed. Fix: the answer becomes 'no such file: <order id> has not been placed yet' (scene 4), then the same scene check again. The rule of Amendment 10 (stop after run 2 when pre_call does not finish) was applied: no more runs were bought. One model, our own oracle.
+
 ## R0113: R2-3 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, W09 (goal v3, scene 2), provider openrouter
@@ -1021,4 +1030,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 113. Total actual cost registered: $7.4186.
+Entries: 114. Total actual cost registered: $7.4279.
