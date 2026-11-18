@@ -25,6 +25,27 @@ const EXACT: Record<string, string> = {
     "ไม่มีพยานได้รับหัวห่วงโซ่เมื่อไม่นานมานี้: ให้ถือว่าบันทึกเห็นร่องรอยการแก้เป็นจุดๆ ได้ แต่ไม่ครอบคลุมการเขียนใหม่ทั้งหมด",
   "NOT checked: the chain's hashes are verified, but no public key is known here to check the signatures against":
     "ยังไม่ได้ตรวจลายเซ็น: ตรวจแฮชของห่วงโซ่แล้ว แต่ที่นี่ไม่รู้จักกุญแจสาธารณะที่ใช้เทียบลายเซ็น",
+  // Round 115: the 20 bundled starter skills (rct_control_plane/starter_skills.py), shown as the titles on the Skills page. The Architect reads these before they are merged.
+  "read a file in the repository and summarize what it does": "อ่านไฟล์ในที่เก็บโค้ดแล้วสรุปว่ามันทำอะไร",
+  "find where a function, class or setting is defined or used in the repository": "หาว่าฟังก์ชัน คลาส หรือการตั้งค่าหนึ่งถูกนิยามหรือถูกใช้อยู่ที่ใดในที่เก็บโค้ด",
+  "explain how a module or feature works by reading its source": "อธิบายว่าโมดูลหรือฟีเจอร์ทำงานอย่างไร โดยอ่านซอร์สโค้ดของมัน",
+  "list the TODO and FIXME comments in the code": "ไล่รายการคอมเมนต์ TODO และ FIXME ในโค้ด",
+  "compare two files and say what differs between them": "เปรียบเทียบไฟล์สองไฟล์ แล้วบอกว่าต่างกันตรงไหน",
+  "remember a fact or preference the user told me for later": "จำข้อเท็จจริงหรือความชอบที่ผู้ใช้บอกไว้ เพื่อใช้ภายหลัง",
+  "recall what the user told me before about a topic": "นึกย้อนถึงสิ่งที่ผู้ใช้เคยบอกไว้เกี่ยวกับหัวข้อหนึ่ง",
+  "read a web page at a given url and summarize it": "อ่านหน้าเว็บจาก URL ที่ให้มา แล้วสรุป",
+  "research a topic on the web and answer with sources": "ค้นคว้าหัวข้อหนึ่งบนเว็บ แล้วตอบพร้อมแหล่งที่มา",
+  "check whether a claim or number about the project is true": "ตรวจสอบว่าข้ออ้างหรือตัวเลขเกี่ยวกับโปรเจกต์เป็นจริงหรือไม่",
+  "run a command or the tests and report the result": "รันคำสั่งหรือชุดทดสอบ แล้วรายงานผล",
+  "fix a bug in a source file with a small patch and check it": "แก้บั๊กในไฟล์ซอร์สด้วยแพตช์เล็กๆ แล้วตรวจสอบ",
+  "create a new file with given content in the repository": "สร้างไฟล์ใหม่ที่มีเนื้อหาตามที่กำหนดในที่เก็บโค้ด",
+  "remind the user about something later or schedule a task": "เตือนผู้ใช้เรื่องหนึ่งในภายหลัง หรือตั้งเวลาให้งานหนึ่ง",
+  "split a large job into independent subtasks that run in parallel": "แบ่งงานใหญ่เป็นงานย่อยที่เป็นอิสระต่อกันและรันพร้อมกัน",
+  "show what the agent did recently from the audit log": "แสดงสิ่งที่เอเจนต์ทำล่าสุดจากบันทึกตรวจสอบ",
+  "convert stored content to another format such as markdown or json": "แปลงเนื้อหาที่เก็บไว้เป็นรูปแบบอื่น เช่น markdown หรือ json",
+  "list what tools and capabilities this agent has": "ไล่รายการเครื่องมือและความสามารถที่เอเจนต์นี้มี",
+  "use a tool the system built for itself earlier": "ใช้เครื่องมือที่ระบบสร้างขึ้นเองก่อนหน้านี้",
+  "read the full text of a tool result that was compressed": "อ่านข้อความเต็มของผลลัพธ์เครื่องมือที่ถูกบีบอัดไว้",
 };
 
 const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLang } from "@/components/desk/i18n";
 import { Badge, Button, Empty, ErrorNote, PageBody, PageHeader, Panel, fmtNum, fmtTime, useDeskData } from "@/components/desk/ui";
 import { desk } from "@/lib/desk-api";
+import { serverText } from "@/lib/server-text-th";
 
 
 /** "read_repo_file → finish": what the skill does, before the raw record. */
@@ -93,17 +94,19 @@ export default function SkillsPage() {
         ) : null}
         <div className="grid gap-4 xl:grid-cols-2">
           {skills.data?.skills.map((s) => (
-            <Panel key={s.id} title={s.problem_statement}
+            <Panel key={s.id} title={serverText(s.problem_statement, lang === "th")}
               aside={s.archived ? <Badge tone="rust">{L("archived", "เก็บเข้าคลัง")}</Badge> : s.governance_violation ? <Badge tone="rust">{L("violation", "ผิดกฎ")}</Badge> : s.bundled ? <Badge tone="leaf">{L("bundled starter", "สกิลเริ่มต้นที่แถมมา")}</Badge> : s.imported ? <Badge tone="amber">{L("imported", "นำเข้า")}</Badge> : <Badge tone="leaf">{L("growth", "การเติบโต")} {fmtNum(s.growth_ratio)}</Badge>}>
               {stepChain(s.solution) ? <p className="desk-mono mb-2 text-[12px] text-dl-text">{stepChain(s.solution)}</p> : null}
               <pre tabIndex={0} className="desk-mono max-h-40 overflow-auto whitespace-pre-wrap rounded border border-dl-rule bg-dl-ink p-2 text-[12px] text-dl-muted">
                 {typeof s.solution === "string" ? s.solution : JSON.stringify(s.solution, null, 2)}
               </pre>
               <p className="desk-mono mt-2 text-[11px] text-dl-muted">
-                {s.bundled ? "written by people and shipped with the runtime, not learned" : s.imported ? "somebody else's SKILL.md, imported by a person; third-party text" : <>MEE g {fmtNum(s.g_before)} → {fmtNum(s.g_after)} · Δ {fmtNum(s.delta)}</>} · {fmtTime(s.created_at)}
+                {s.bundled ? L("written by people and shipped with the runtime, not learned", "เขียนโดยคนและมาพร้อมกับโปรแกรม ไม่ใช่สิ่งที่เรียนรู้เอง") : s.imported ? L("somebody else's SKILL.md, imported by a person; third-party text", "SKILL.md ของคนอื่นที่คนนำเข้ามา เป็นข้อความจากบุคคลที่สาม") : <>MEE g {fmtNum(s.g_before)} → {fmtNum(s.g_after)} · Δ {fmtNum(s.delta)}</>} · {fmtTime(s.created_at)}
               </p>
               <p className="desk-mono mt-1 text-[11px] text-dl-muted">
-                reuse: {s.successes} worked / {s.failures} did not of {s.uses} · reliability {fmtNum(s.reliability)} · solved {s.reinforced}×
+                {lang === "th"
+                  ? <>ใช้ซ้ำ: สำเร็จ {s.successes} / ไม่สำเร็จ {s.failures} จาก {s.uses} ครั้ง · ความน่าเชื่อถือ {fmtNum(s.reliability)} · แก้ปัญหาได้ {s.reinforced} ครั้ง</>
+                  : <>reuse: {s.successes} worked / {s.failures} did not of {s.uses} · reliability {fmtNum(s.reliability)} · solved {s.reinforced}×</>}
               </p>
             </Panel>
           ))}
