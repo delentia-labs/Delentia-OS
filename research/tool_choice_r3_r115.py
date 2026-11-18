@@ -27,6 +27,37 @@ from research import tool_menu_thai_eval_r115 as ev  # noqa: E402
 SECOND = ROOT / "research" / "tool_menu_owner_holdout_r115.json"
 NEG3 = ROOT / "research" / "tool_menu_thai_negatives3_r115.json"
 ARMS = ("today", "r3")
+RAW_CHARS = 600
+
+
+class Recorder:
+    """Wraps a provider and records, per model call, what the criteria of Amendment 13 want read afterwards: the tokens, the provider-reported cost, who answered and the raw reply.
+    A decision can make two calls (the loop asks once more when a reply cannot be read), so `take()` returns every call since the last take."""
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+        self._calls: List[Dict[str, Any]] = []
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name)
+
+    async def complete(self, *args: Any, **kwargs: Any) -> str:
+        entry: Dict[str, Any] = {"raw": None}
+        try:
+            text = await self._inner.complete(*args, **kwargs)
+        except Exception as exc:                                       # noqa: BLE001 - recorded, then raised as before
+            entry["error"] = f"{type(exc).__name__}: {exc}"[:200]
+            self._calls.append(entry)
+            raise
+        usage = getattr(self._inner, "last_usage", None)
+        entry.update({"prompt_tokens": getattr(usage, "prompt_tokens", None), "completion_tokens": getattr(usage, "completion_tokens", None),
+                      "cost_usd": getattr(usage, "cost_usd", None), "served_by": getattr(self._inner, "last_served_by", None), "raw": str(text)[:RAW_CHARS]})
+        self._calls.append(entry)
+        return text
+
+    def take(self) -> List[Dict[str, Any]]:
+        calls, self._calls = self._calls, []
+        return calls
 
 
 def goal_sets(spec: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
@@ -54,18 +85,22 @@ def score(decision: Dict[str, Any], needs: List[str]) -> str:
 
 
 async def run(provider: Any, sets: Dict[str, List[Dict[str, Any]]], tools: List[Dict[str, Any]], decide: Callable, usage: Optional[Callable[[], float]] = None,
-              stop_at_usd: Optional[float] = None, k: int = 10) -> Dict[str, Any]:
+              stop_at_usd: Optional[float] = None, k: int = 10, limit_per_set: Optional[int] = None, keep_raw: bool = False) -> Dict[str, Any]:
     from rct_control_plane import tool_menu
     saved = {n: os.environ.get(n) for n in (tool_menu.FORMAT_ENV, tool_menu.KEEP_EXTERNAL_ENV)}
     os.environ[tool_menu.FORMAT_ENV] = "compact"
     rows: List[Dict[str, Any]] = []
     stopped = None
+    spent, dearest = 0.0, 0.0                   # the local meter of Amendment 13: the sum of the provider-reported costs, and the dearest decision so far
     try:
         for set_name, goals in sets.items():
-            for item in goals:
+            for item in (goals if limit_per_set is None else goals[:limit_per_set]):
                 for arm in ARMS:
                     if usage is not None and stop_at_usd is not None and len(rows) % 10 == 0 and usage() >= stop_at_usd:
                         stopped = f"stopped at {usage():.4f} of the ceiling {stop_at_usd:.4f} after {len(rows)} decisions"
+                        raise StopIteration
+                    if stop_at_usd is not None and spent + dearest >= stop_at_usd:
+                        stopped = f"stopped by the local meter at {spent:.4f} (the next decision may cost up to {dearest:.4f}) of the ceiling {stop_at_usd:.4f} after {len(rows)} decisions"
                         raise StopIteration
                     if arm == "r3":
                         os.environ[tool_menu.KEEP_EXTERNAL_ENV] = "on"
@@ -77,8 +112,15 @@ async def run(provider: Any, sets: Dict[str, List[Dict[str, Any]]], tools: List[
                         verdict, error = score(decision, item["needs"]), None
                     except Exception as exc:                                       # noqa: BLE001 - recorded as an error, never hidden
                         decision, verdict, error = {}, "error", f"{type(exc).__name__}: {exc}"[:140]
+                    calls = provider.take() if hasattr(provider, "take") else []
+                    cost = sum(c["cost_usd"] for c in calls if isinstance(c.get("cost_usd"), (int, float)))
+                    spent, dearest = spent + cost, max(dearest, cost)
+                    if not (keep_raw or verdict in ("unparsed", "error")):
+                        for c in calls:
+                            c["raw"] = None                                          # the raw reply is kept for every unreadable or errored one, and for all with --keep-raw
                     rows.append({"set": set_name, "arm": arm, "goal": item["goal"], "needs": item["needs"], "menu_tools": len(menu), "verdict": verdict, "error": error,
-                                 "chose": decision.get("tool_name") or next((c.get("tool_name") for c in (decision.get("calls") or []) if isinstance(c, dict)), None)})
+                                 "chose": decision.get("tool_name") or next((c.get("tool_name") for c in (decision.get("calls") or []) if isinstance(c, dict)), None),
+                                 "calls": calls, "cost_usd": round(cost, 6)})
     except StopIteration:
         pass
     finally:
@@ -147,10 +189,14 @@ def main() -> int:
     ap.add_argument("--budget-usd", type=float, required=True)
     ap.add_argument("--execute", action="store_true")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--limit-per-set", type=int, default=None, help="a probe: only the first N goals of each set (both arms); the pass rule is NOT applied (Amendment 13)")
+    ap.add_argument("--keep-raw", action="store_true", help="keep the raw reply of every call, not only of the unreadable ones")
     args = ap.parse_args()
     logging.disable(logging.WARNING)
     spec = json.loads(sib.EXTERNAL.read_text(encoding="utf-8"))
     sets = goal_sets(spec)
+    if args.limit_per_set is not None:
+        sets = {name: goals[:max(0, args.limit_per_set)] for name, goals in sets.items()}
     calls = 2 * sum(len(v) for v in sets.values())
     est = calls * (2000 * args.price_in + 150 * args.price_out) / 1e6
     print(f"{calls} decisions ({', '.join(f'{k} {len(v)}' for k, v in sets.items())} x 2 arms); estimated cost ${est:.4f} with a 1.5x margin ${1.5 * est:.4f}; ceiling ${args.budget_usd:.2f}")
@@ -179,9 +225,14 @@ def main() -> int:
     from rct_control_plane.llm_provider import get_default_provider
     tools = asyncio.run(sib.builtin_tools()) + sib.synthetic_tools(spec["servers"])
     start = time.time()
-    result = asyncio.run(run(get_default_provider(), sets, tools, autonomous_loop.decide_next_action, usage=lambda: pd.key_info(key)["usage"], stop_at_usd=0.9 * args.budget_usd))
+    result = asyncio.run(run(Recorder(get_default_provider()), sets, tools, autonomous_loop.decide_next_action, usage=lambda: pd.key_info(key)["usage"], stop_at_usd=0.9 * args.budget_usd,
+                             limit_per_set=args.limit_per_set, keep_raw=args.keep_raw or args.limit_per_set is not None))
     used = pd.key_info(key)["usage"]
-    summary, verdict = summarise(result["rows"]), verdict_of(result["rows"], ceiling_ok=used <= args.budget_usd and result["stopped"] is None)
+    summary = summarise(result["rows"])
+    verdict = ({"probe": True, "propose": False, "why": "a probe (--limit-per-set): the pass rule is not applied"} if args.limit_per_set is not None
+               else verdict_of(result["rows"], ceiling_ok=used <= args.budget_usd and result["stopped"] is None))
+    metered = sum(r.get("cost_usd") or 0.0 for r in result["rows"])
+    print("  provider-reported cost of the calls: $%.4f (%d decisions, $%.4f per decision)" % (metered, len(result["rows"]), metered / max(1, len(result["rows"]))))
     for name, s in summary.items():
         print(f"  {name:<22} n={s['n']:>3} {json.dumps(s['counts'])} median menu {s['median_menu_tools']} tools")
     print("  paired:", json.dumps(paired(result["rows"])), "| provider usage $%.4f in %.0f s" % (used, time.time() - start))
