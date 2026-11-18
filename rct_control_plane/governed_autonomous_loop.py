@@ -389,6 +389,9 @@ def needs_signature_always(tool_name: str) -> bool:
     return tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS or external_mcp.needs_approval(tool_name)
 
 
+WORLD_CHANGING_TOOLS = frozenset({"delentia_write_repo_file", "delentia_patch_repo_file", "delentia_save_exchange_file", "delentia_run_sandboxed_command"})      # Amendment 18
+
+
 def _sha(value: Any) -> Optional[str]:
     """Hash for notary records (hashes only, never content); None stays None."""
     if value is None:
@@ -3197,6 +3200,10 @@ class GovernedAutonomousLoop(AutonomousLoop):
         if fingerprint in last and last[fingerprint] != result_hash:
             (getattr(self, "_episode_call_counts", None) or {})[fingerprint] = 1
         last[fingerprint] = result_hash
+        if tool_name in WORLD_CHANGING_TOOLS and not (isinstance(tool_result, dict) and (tool_result.get("pending_approval") or tool_result.get("error") or tool_result.get("blocked"))):
+            # Amendment 18: an effect that ran changes what the same question will answer, so the counts of the episode start again (the third read after a save is not the third read of the first two).
+            (getattr(self, "_episode_call_counts", None) or {}).clear()
+            last.clear()
         if self._notary is not None:
             await self._notarise_best_effort("tool_result", tool_name=tool_name,
                                              arguments_sha256=_sha(tool_args), result_sha256=_sha(tool_result))

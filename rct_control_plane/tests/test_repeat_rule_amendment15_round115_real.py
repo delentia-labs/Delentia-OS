@@ -59,3 +59,27 @@ def test_the_repeat_limit_setting_still_applies_to_an_unchanged_result(tmp_path,
     monkeypatch.setenv(envelope.REPEAT_LIMIT_ENV, "5")
     r = rig_with(tmp_path, monkeypatch, [SAME] * 8, ["4 failed"])
     assert r.go()["stopped_reason"] == "stuck_repeating" and len(r.mcp.dispatched) == 4
+
+
+# ------------------------------------------------------------------ Amendment 18: an executed effect resets the counts
+SAVE = ("delentia_save_exchange_file", {"category": "reports", "filename": "order-3.txt", "content": "x"})
+
+
+def test_reads_after_an_executed_effect_are_not_stopped_as_repeats_of_the_reads_before_it(tmp_path, monkeypatch):
+    monkeypatch.setenv("DELENTIA_FDIA_POLICY_DEFAULT", "none")
+    r = rig_with(tmp_path, monkeypatch, [SAME, SAME, SAVE, SAME, SAME], ["not placed"])
+    result = r.go()
+    assert result["stopped_reason"] != "stuck_repeating", result["stopped_reason"]
+    assert [n for n, _ in r.mcp.dispatched].count("delentia_read_repo_file") == 4 and ("delentia_save_exchange_file" in [n for n, _ in r.mcp.dispatched])
+
+
+def test_a_search_between_the_reads_does_not_clear_the_counts(tmp_path, monkeypatch):
+    search = ("delentia_web_search", {"query": "x"})
+    r = rig_with(tmp_path, monkeypatch, [SAME, SAME, search, SAME, SAME], ["same answer"])
+    result = r.go()
+    assert result["stopped_reason"] == "stuck_repeating"                                   # a loop of search and read is still a loop
+
+
+def test_without_an_effect_the_same_read_three_times_still_stops(tmp_path, monkeypatch):
+    r = rig_with(tmp_path, monkeypatch, [SAME] * 5, ["same answer"])
+    assert r.go()["stopped_reason"] == "stuck_repeating" and len(r.mcp.dispatched) == 2
