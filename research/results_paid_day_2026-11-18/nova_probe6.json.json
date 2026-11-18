@@ -1,0 +1,195 @@
+{
+ "model": "amazon/nova-pro-v1",
+ "summary": {
+  "english_44/today": {
+   "n": 1,
+   "counts": {
+    "right": 1
+   },
+   "median_menu_tools": 11
+  },
+  "english_44/r3": {
+   "n": 1,
+   "counts": {
+    "right": 1
+   },
+   "median_menu_tools": 25
+  },
+  "negatives_20/today": {
+   "n": 1,
+   "counts": {
+    "ok": 1
+   },
+   "median_menu_tools": 10
+  },
+  "negatives_20/r3": {
+   "n": 1,
+   "counts": {
+    "ok": 1
+   },
+   "median_menu_tools": 29
+  },
+  "thai_89/today": {
+   "n": 1,
+   "counts": {
+    "wrong_tool": 1
+   },
+   "median_menu_tools": 10
+  },
+  "thai_89/r3": {
+   "n": 1,
+   "counts": {
+    "right": 1
+   },
+   "median_menu_tools": 29
+  }
+ },
+ "verdict": {
+  "probe": true,
+  "propose": false,
+  "why": "a probe (--limit-per-set): the pass rule is not applied"
+ },
+ "paired": {
+  "r3_only": 1,
+  "today_only": 0
+ },
+ "usage_usd": 0.0,
+ "stopped": null,
+ "rows": [
+  {
+   "set": "thai_89",
+   "arm": "today",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 10,
+   "verdict": "wrong_tool",
+   "error": null,
+   "chose": "delentia_ask_user",
+   "calls": [
+    {
+     "raw": "{\n  \"action\": \"delentia_ask_user\",\n  \"tool_args\": {\n    \"question\": \"โปรดให้ข้อสรุปสามข้อสำหรับโน้ต 'ประชุมเช้า'\",\n    \"why\": \"เพื่อให้สามารถสร้างโน้ตชื่อ 'ประชุมเช้า' พร้อมข้อสรุปสามข้อได้\"\n  },\n  \"reasoning\": \"ต้องการข้อมูลจากผู้ใช้เพื่อสร้างโน้ตตามที่ต้องการ\"\n}",
+     "prompt_tokens": 994,
+     "completion_tokens": 157,
+     "cost_usd": 0.0012976,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001298
+  },
+  {
+   "set": "thai_89",
+   "arm": "r3",
+   "goal": "สร้างโน้ตชื่อ ประชุมเช้า แล้วใส่ข้อสรุปสามข้อลงไป",
+   "needs": [
+    "mcp__notes__write_note"
+   ],
+   "menu_tools": 29,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__write_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__write_note\", \"tool_args\": {\"arg\": \"ประชุมเช้า\\n\\nข้อสรุป:\\n1. ต้องปรับปรุงการทำงานของทีมเพื่อให้มีประสิทธิภาพมากขึ้น\\n2. ต้องมีการติดตามผลงานของแต่ละสมาชิกให้ชัดเจน\\n3. ต้องมีการประชุมประจำสัปดาห์เพื่อติดตามความคืบหน้าของโครงการ\"}, \"reasoning\": \"เริ่มต้นด้วยการสร้างโน้ตชื่อ 'ประชุมเช้า' และใส่ข้อสรุปสามข้อลงไปตามที่กำหนดในเป้าหมาย\"}",
+     "prompt_tokens": 1436,
+     "completion_tokens": 257,
+     "cost_usd": 0.0019712,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001971
+  },
+  {
+   "set": "english_44",
+   "arm": "today",
+   "goal": "Read the note called Weekly Plan and tell me what is on it",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 11,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Weekly Plan\"}, \"reasoning\": \"To achieve the goal of reading the note called 'Weekly Plan', I need to directly use the tool that can read notes by title. This is the most direct and relevant tool for this goal.\"}",
+     "prompt_tokens": 836,
+     "completion_tokens": 82,
+     "cost_usd": 0.0009312,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.000931
+  },
+  {
+   "set": "english_44",
+   "arm": "r3",
+   "goal": "Read the note called Weekly Plan and tell me what is on it",
+   "needs": [
+    "mcp__notes__read_note"
+   ],
+   "menu_tools": 25,
+   "verdict": "right",
+   "error": null,
+   "chose": "mcp__notes__read_note",
+   "calls": [
+    {
+     "raw": "{\"action\": \"call_tool\", \"tool_name\": \"mcp__notes__read_note\", \"tool_args\": {\"arg\": \"Weekly Plan\"}, \"reasoning\": \"To achieve the goal of reading the note called 'Weekly Plan', I need to directly use the tool that reads notes by title. This will provide the exact content of the note without any guesswork.\"}",
+     "prompt_tokens": 1171,
+     "completion_tokens": 82,
+     "cost_usd": 0.0011992,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001199
+  },
+  {
+   "set": "negatives_20",
+   "arm": "today",
+   "goal": "เขียนเรียงความเรื่องแม่ของฉันหนึ่งหน้า",
+   "needs": [],
+   "menu_tools": 10,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\n  \"action\": \"finish\",\n  \"reasoning\": \"The goal is to write an essay about 'my mother' in Thai, which is a creative writing task. None of the available tools are designed for creative writing or generating personal narratives. Therefore, I must finish honestly and state that this goal is outside the capabilities of the provided tools.\",\n  \"final_answer\": \"เนื่องจากเป้าหมายคือการเขียนเรียงความเรื่อง 'แม่ของฉัน' ซึ่งเป็นงานเขียนสร้างสรรค์ และไม่มีเครื่องมือที่มีอยู่ที่ออกแบบมาเพื่อการเขียนสร้างสรรค์หรือสร้างเรื่องราวส่วนตัว ดังนั้น ฉันต้องยุติงานโดยตรงและระบุว่าเป้าหมายนี้อยู่นอกขอบเขตของเครื่อ",
+     "prompt_tokens": 950,
+     "completion_tokens": 273,
+     "cost_usd": 0.0016336,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.001634
+  },
+  {
+   "set": "negatives_20",
+   "arm": "r3",
+   "goal": "เขียนเรียงความเรื่องแม่ของฉันหนึ่งหน้า",
+   "needs": [],
+   "menu_tools": 29,
+   "verdict": "ok",
+   "error": null,
+   "chose": null,
+   "calls": [
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to write an essay about my mother in Thai, which is a creative writing task. None of the available tools are designed to generate creative content or essays. Therefore, I must finish honestly and state that this goal is outside the capabilities of the provided tools.\", \"final_answer\": \"เนื่องจากเป้าหมายน\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u00e1\\u",
+     "prompt_tokens": 1392,
+     "completion_tokens": 2048,
+     "cost_usd": 0.0076672,
+     "served_by": "Amazon Bedrock"
+    },
+    {
+     "raw": "{\"action\": \"finish\", \"reasoning\": \"The goal is to write an essay about my mother in Thai, which is a creative writing task. None of the available tools are designed for creative writing or generating personal narratives. Therefore, I cannot use any of the listed tools to achieve this goal.\", \"final_answer\": \"เนื่องจากเป้าหมายนี้ต้องการการเขียนเรียงความเชิงสร้างสรรค์ซึ่งไม่สามารถทำได้ด้วยเครื่องมือที่มีอยู่ ฉันไม่สามารถทำเป้าหมายนี้ได้\"}",
+     "prompt_tokens": 1439,
+     "completion_tokens": 166,
+     "cost_usd": 0.0016824,
+     "served_by": "Amazon Bedrock"
+    }
+   ],
+   "cost_usd": 0.00935
+  }
+ ]
+}

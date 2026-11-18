@@ -4,6 +4,96 @@ Every line below is an entry of `research/RESULTS_REGISTER.jsonl`, an append-onl
 
 Limits that apply to every entry: one machine, one author, small samples (the count n is shown), labels written by the author or by the owner of the project and not by an independent party, and no result is a claim about any other model.
 
+## R0124: R2-3 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, W09 scene check (goal v3, scene 4) after the resume-note change, provider openrouter
+- Date: 2026-11-18T07:50:26Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_14_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0100
+- Units behind the verdict: 2; figures: hard failures 0; failure label: incomplete
+- What it says: W09 scene check after Amendments 14 and 15 (commit 114656c6, 2 runs, Keys page $0.010), hard failures 0. Rule N3 NOT met: 3 of 6 kill-point cells ended llm_finished, 3 ended stuck_repeating. pre_call run 1: the model checked, saw 'not placed yet', PLACED order 2 (the new sentence worked), then read again and was stopped; pre_call run 2: it read the check three times and never placed order 2. in_flight/post_call: in 3 of 4 cells all three orders were placed once and the episode ended stuck_repeating: read, read, SAVE, read - the third read after the effect was stopped at the gate before it could show a changed result (Amendment 18). Safety holds (no duplicate and no lost effect in any run); completion depends on the model acting on a check that says 'not placed' (1 of 2 runs did). Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0123: R2-2 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, TC-003 visible tier, d0 after the repeated-call fix (42 runs, commit 114656c6), provider openrouter
+- Date: 2026-11-18T07:50:25Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_15_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.2720
+- Units behind the verdict: 42; figures: hard failures 2; failure label: false_block
+- What it says: d0 on the visible tier after Amendment 15 and 14 (commit 114656c6, key limit 0.60, Keys page $0.272 = driver $0.2723): oracle passed 2 of 42, hard failures 2, mean score 69.9, stuck_repeating 23 of 42 (rule F3: at most 5, FAILED, so the b0 comparison was not bought). Cause read from events.jsonl and the sealed reasoning: d0 made exactly ONE write in 39 of 42 episodes (b0 on the same tasks: two or more writes in 10 of 14); after the approved write the model said 'a write was already applied once, so I should not repeat it' and 'I don't know which path it targeted': the note after an approval cut the arguments at 300 characters in tool order (the path was lost) and said 'Do not request that action again' (read as 'do not write again'): Amendment 17. This pass rate is NOT a result about the runtime. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0122: R2-2 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, TC-003 visible tier, d0 (42 runs, commit e4ee857b), provider openrouter
+- Date: 2026-11-18T07:50:25Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/TC003_HEADROOM_AMENDMENT_1_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.2620
+- Units behind the verdict: 42; figures: hard failures 1; failure label: false_block
+- What it says: d0 (the Delentia governed loop) on the visible tier, seeds 5000-5041, haiku, Keys page $0.262 (driver 42 x $0.006245): oracle passed 3 of 42 (7%), hard failures 1, mean score 69.1; 30 of 42 episodes ended stuck_repeating, 9 llm_finished, 3 parse_error. b0 on the same tasks passed 9 of 14. INCONCLUSIVE: the repeated-call rule counted the same call (run the tests, arguments {}) across an edit and stopped the episode (Amendment 15); the b0 comparison was not bought. The same mechanism may have affected 5 of the 28 d0 runs of R0097 and R0098 (stuck_repeating); those entries are not retracted. This pass rate is NOT a result about the runtime. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0121: R2-3 (inconclusive)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, W09 scene check (goal v3, scene 4) before the resume-note change, provider openrouter
+- Date: 2026-11-18T07:50:24Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_CRITERIA_R113.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0100
+- Units behind the verdict: 2; figures: hard failures 0; failure label: incomplete
+- What it says: W09 scene check at commit e4ee857b, scene 4 (an unplaced order answers 'has not been placed yet'), 2 runs, haiku, Keys page $0.010. in_flight and post_call finished with every order placed once in both runs; pre_call ended stuck_repeating in both (rule S2 of Amendment 12: stop after 2 runs). Hard failures 0. The sealed reasoning of the model (opened with the person's key) shows it re-checks for ever: 'the earlier read predates the interrupted step, so I need a fresh check'. The resume note said to check but not what a check settles: Amendment 14. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0120: R3-1 (pass)
+
+- Model and arm: `moonshotai/kimi-k2`, R3 vs today, tool choice (306 decisions), provider openrouter
+- Date: 2026-11-18T07:50:24Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/THAI_TOOL_MENU_AMENDMENT_5_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.3800
+- Units behind the verdict: 306; figures: hard failures 0, model errors 1
+- What it says: R3 tool-choice test with the second model (commit e4ee857b, freeze freeze-r2n-kimi, key limit 1.10, Keys page $0.380, provider-reported $0.3752, 2,634 s). Thai (89 sentences): first tool right today 0, r3 54 (+60.7 points); English (44): today 40, r3 42; the 20 Thai requests that need no external tool: external tool used 0 in both arms; unreadable or error replies today 0%, r3 0.7% (1 of 143). Paired over 153 goals: right with r3 only 56, with today only 0. All five rules of Amendment 5 hold: the model test supports R3 for this model too. Together with haiku (0 to 48 of 89, R0110) this is a replication across two models of different makers; it is NOT a claim about every model. One decision per goal, synthetic tools written by us, sentences written by the assistant and ticked by the Architect, strict first-tool score, nothing executed. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0119: R3-1 (pass)
+
+- Model and arm: `moonshotai/kimi-k2`, R3 tool choice probe (30 decisions), provider openrouter
+- Date: 2026-11-18T07:50:23Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_16_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0470
+- Units behind the verdict: 30; figures: hard failures 0, model errors 0
+- What it says: Amendment 16 rule A probe (--limit-per-set 5 --keep-raw, commit e4ee857b, key limit 0.30, Keys page $0.047, provider-reported $0.0422): rule Q1 met: 0 of 30 unreadable, $0.0014 per decision, 0 calls cut at 2,048 tokens (largest 1,728). Served by Novita; one first reply was empty and the loop's retry was readable. Descriptive only (n = 5 per cell). The full R3 test is allowed. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0118: R3-1 (fail)
+
+- Model and arm: `amazon/nova-pro-v1`, R3 tool choice probe (30 decisions), provider openrouter
+- Date: 2026-11-18T07:50:23Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_13_NOTE_1_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.2310
+- Units behind the verdict: 30; figures: hard failures 0, model errors 0; failure label: parse_intent
+- What it says: Amendment 13 note 1 probe (--limit-per-set 5 --keep-raw, commit e4ee857b, key limit 0.50, Keys page $0.231, provider-reported $0.2308): rule Q1 NOT met on all three limits: 7 of 30 unreadable (limit 3), $0.0077 per decision (limit $0.0030), 19 of 42 calls cut at 2,048 tokens (limit 3). Every unreadable reply is a Thai goal (5 of 10 Thai goals, 2 of 10 negatives, which are Thai sentences); the English set was readable 10 of 10 at $0.0010 per decision. The raw replies show runaway text: a field of the reply turns into repeating Thai characters until the cut, and the retry at 4,096 tokens does the same. Finding about nova-pro (n = 5 per cell, not a rate): it degenerates when it writes Thai in the loop's JSON reply. Q2 applies: nova-pro is not used for the full Thai test; Amendment 16 moves it to kimi-k2. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0117: R3-1 (inconclusive)
+
+- Model and arm: `amazon/nova-pro-v1`, R3 tool choice probe (6 decisions), provider openrouter
+- Date: 2026-11-18T07:50:22Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/ROUND_TWO_AMENDMENT_13_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.0160
+- Units behind the verdict: 6; figures: hard failures 0, model errors 0
+- What it says: Amendment 13 probe (--limit-per-set 1 --keep-raw, commit e4ee857b, key limit 0.30): 6 decisions, 0 unreadable, $0.0027 per decision (Keys page $0.016), all served by Amazon Bedrock. Rule P3(a) was met literally, but one reply ran to the 2,048-token cut and was asked again ($0.0094 for that decision). A probe: no pass rule applied. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0116: R2-2 (pass)
+
+- Model and arm: `anthropic/claude-haiku-5.5`, TC-003 visible tier, b0, headroom screen (rule H1), provider openrouter
+- Date: 2026-11-18T07:50:22Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/TC003_HEADROOM_CRITERIA_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $0.1240
+- Units behind the verdict: 14; figures: hard failures 0
+- What it says: Headroom screen of the visible tier (7 distinct tasks x 2, seeds 5000-5013, commit 8c803b16, freeze freeze-r2i-tc003, key limit 0.40, Keys page $0.124): oracle passed 9 of 14 (64%, exact 95% interval 35% to 87%), 14 valid, hard failures 0, k = 2 passed 8 of 10, k = 3 passed 1 of 4. Rule H1 (3 to 11 of 14) holds: the tier gives headroom for haiku b0. Four of the 7 tasks differ between their two runs. A screen of 7 tasks, not a benchmark. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
+## R0115: R3-1 (inconclusive)
+
+- Model and arm: `amazon/nova-pro-v1`, R3 tool choice, first window (90 of 306 decisions), provider openrouter
+- Date: 2026-11-18T07:50:21Z; code: commit `217e753` (with uncommitted changes)
+- Rule: `research/THAI_TOOL_MENU_AMENDMENT_5_R115.md`, committed before the result
+- Cost: estimated $0.0000, provider's figure $1.0700
+- Units behind the verdict: 90; figures: hard failures 0, model errors 0; failure label: parse_intent
+- What it says: First nova-pro window of the R3 tool-choice test (commit 8c803b16, key limit 1.10): stopped by its own ceiling after 90 of 306 decisions (the first 45 Thai goals x 2 arms), Keys page $1.07 (script $1.0621, 1,616 s). 41 of 90 replies unreadable (today 22 of 45, r3 19 of 45): the rule allows 10%, so INCONCLUSIVE. Cost per decision $0.0118 against an estimate of $0.0021 (5.6 times). Among readable replies r3 chose a needed tool 16 times, today 0 (descriptive; the English set and the negatives were not reached). The script kept neither raw replies nor usage (Amendment 13 fixes that); its ceiling was checked every 10 decisions and passed by $0.07. Limits: one model, our own scenes/oracles, short runs; per model, never pooled.
+
 ## R0114: R2-3 (inconclusive)
 
 - Model and arm: `anthropic/claude-haiku-5.5`, W09 scene check (goal v3, scene 3), provider openrouter
@@ -1030,4 +1120,4 @@ Limits that apply to every entry: one machine, one author, small samples (the co
 - Units behind the verdict: 7
 - What it says: 7 of 7 on the 59-run free DAAES suite, code of 2026-10-26 (main before #195); hashes normalise line endings
 
-Entries: 114. Total actual cost registered: $7.4279.
+Entries: 124. Total actual cost registered: $9.8499.
