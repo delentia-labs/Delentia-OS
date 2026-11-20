@@ -1,0 +1,21 @@
+# Round two, Amendment 18 (2026-11-18, written before the change): an executed effect resets the repeated-call counts
+
+## What the W09 scene check of 2026-11-18 showed (haiku, 2 runs, commit 114656c6 = main with Amendments 14 and 15, hard failures 0 of 2, key `delentia-r2r-w2`)
+Rule N3 of Amendment 14 needed pre_call, in_flight and post_call to finish in both runs. Result: 3 of 6 kill-point cells finished (`llm_finished`), 3 ended `stuck_repeating`.
+* pre_call, run 1: after the note's new sentence the model read the check ("not placed yet"), **placed order 2** (the sentence worked: effect `order-2` = 1), then read `reports/order-2` again and was stopped. pre_call, run 2: it read the check three times and never placed order 2 (the behaviour of the earlier scenes).
+* in_flight and post_call: in 3 of the 4 cells all three orders were placed exactly once, and the episode still ended `stuck_repeating` instead of `llm_finished`: sequence read `reports/order-2`, read it again, SAVE order 3, read `reports/order-2` again, stopped. Before the new sentence the same cells ended `llm_finished` in all 4 runs (scene 3 and 4).
+## Cause of the stops of the second kind
+The repeated-call rule counts by (tool, arguments) over the whole episode. The two reads before the save and the read after it are the same call; the third request is stopped at the gate, before it can show that its result changed. The save in between changed the world, so the third read is not the same question as the first two. Amendment 15 restarts a count when a call RETURNS a different result; it cannot help here because the request that would return a different result is the one stopped. Running the check again after the effect you have just caused is what a careful agent does (the note asks for it).
+
+## Change (the rule only; the limit, the audit row, every other stop unchanged)
+When a call that changes the world has been executed (`delentia_write_repo_file`, `delentia_patch_repo_file`, `delentia_save_exchange_file`, `delentia_run_sandboxed_command`), the repeated-call counts of the episode are cleared (and the last-result hashes of Amendment 15). A call that is merely a source of outside text (a search, a crawl, a page) or a request for a person's attention does not clear them: a loop of "search, read, search, read" is still a loop. External tools of other servers are not in the list (their effect is not known).
+Known limit: an agent that alternates an effect and the same read forever is bounded by the iteration, time and cost caps, not by this rule.
+
+## Rules, written before the change
+E1 Free tests (the Amendment 15 and envelope tests pass unchanged): the same read three times with the same result still stops at the third; read, read, EFFECT, read, read: the reads after the effect are not stopped (before: the first read after the effect was); read, read, SEARCH, read: still stopped at the third read; the stop audit row keeps its shape.
+E2 Paid check, after the change is on main, a fresh window, the first two runs as a scene check exactly as in Amendment 12 rule S2: in_flight and post_call must END `llm_finished` in both runs (they did before the sentence of Amendment 14) and the number of cells that end `stuck_repeating` must be at most 1 of 6. pre_call finishing is NOT required for this amendment: whether a model acts on a check that says "not placed" is a behaviour of the model (run 1 did, run 2 did not) and is reported as k of n; it is the reason W09 is paused after this window, whatever the result (see below).
+E3 The W09 pass rule stays; if E2 holds and pre_call finishes in both runs the window continues to 14 as before; if E2 holds and pre_call does not, W09 is recorded as "safety holds (no duplicate and no lost effect in any run), completion depends on the model's reading of a check, k of n" and no more W09 money is spent in round two. Two defects of the runtime's own text were found with W09 (Amendments 14 and 18), the scene was corrected three times (Amendments 8, 10, 12), and the remaining variation is the model's.
+E4 Registered: the 2 runs of 2026-11-18 (this scene check) as INCONCLUSIVE with the observations above.
+
+## Not changed
+The goal, the scene 4, the oracle, the 13 checks, the kill points, the idempotency behaviour, the repeat limit.
