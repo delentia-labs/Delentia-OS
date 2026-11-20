@@ -147,13 +147,40 @@ def visible_combinations() -> List[Tuple[Mutation, ...]]:
     return out
 
 
+HIDDEN_TIER_BASE = 6000       # seeds from here on select the hidden-heavy tier H (research/EFFICACY_S07_CRITERIA_R115.md B1): k = 3..5, at least two defects the visible tests do not show
+
+
 def is_visible_tier(seed: int) -> bool:
-    return seed >= VISIBLE_TIER_BASE
+    return VISIBLE_TIER_BASE <= seed < HIDDEN_TIER_BASE
+
+
+def is_hidden_tier(seed: int) -> bool:
+    return seed >= HIDDEN_TIER_BASE
+
+
+def tier_of(seed: int) -> str:
+    return "hidden" if is_hidden_tier(seed) else ("visible" if is_visible_tier(seed) else "mixed")
 
 
 def pick(seed: int) -> List[Mutation]:
     """The defects of one variant: k = 2..6 by seed, drawn without replacement, never two edits of one slot, at least one the visible tests reveal and at least one they do not.
     A pure function of the seed. Seeds from VISIBLE_TIER_BASE on: the visible tier, a pure function of (seed - base) modulo the 7 combinations."""
+    if is_hidden_tier(seed):
+        rng = random.Random(f"tc003-hidden-{seed}")
+        k = 3 + (seed % 3)
+        visible = [m for m in MUTATIONS if m.id in VISIBLE]
+        hidden_only = [m for m in MUTATIONS if m.id not in VISIBLE]
+        chosen = [rng.choice(visible)]
+        rest = hidden_only[:]
+        rng.shuffle(rest)
+        for m in rest:
+            if sum(1 for c in chosen if c.id not in VISIBLE) == 2 and len(chosen) >= k:
+                break
+            if _compatible(chosen, m) and sum(1 for c in chosen if c.id not in VISIBLE) < max(2, k - 1):
+                chosen.append(m)
+            if len(chosen) == k and sum(1 for c in chosen if c.id not in VISIBLE) >= 2:
+                break
+        return sorted(chosen, key=lambda m: m.id)
     if is_visible_tier(seed):
         combos = visible_combinations()
         return sorted(combos[(seed - VISIBLE_TIER_BASE) % len(combos)], key=lambda m: m.id)
@@ -180,12 +207,12 @@ def build(seed: int) -> fx.Fixture:
     buggy = apply(fx.REFERENCE, chosen)
     buggy = {**fx.BUGGY, **buggy}                                    # __init__.py comes from the original fixture; the three modules from the mutated reference
     buggy["ledgercalc/__init__.py"] = fx.INIT
-    return fx.Fixture(f"variant-{'v' if is_visible_tier(seed) else ''}{seed}-k{len(chosen)}", buggy, fx.REFERENCE, fx.PUBLIC_TESTS, hidden_suite(), fx.PYPROJECT)
+    return fx.Fixture(f"variant-{ {'visible': 'v', 'hidden': 'h', 'mixed': ''}[tier_of(seed)] }{seed}-k{len(chosen)}", buggy, fx.REFERENCE, fx.PUBLIC_TESTS, hidden_suite(), fx.PYPROJECT)
 
 
 def describe(seed: int) -> Dict[str, object]:
     chosen = pick(seed)
-    return {"seed": seed, "tier": "visible" if is_visible_tier(seed) else "mixed", "k": len(chosen), "defects": [{"id": m.id, "file": m.file, "what": m.what} for m in chosen]}
+    return {"seed": seed, "tier": tier_of(seed), "k": len(chosen), "defects": [{"id": m.id, "file": m.file, "what": m.what} for m in chosen]}
 
 
 # --------------------------------------------------------------------------------------------- running the suites (for the audit and the tests)
