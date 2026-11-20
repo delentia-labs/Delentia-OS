@@ -97,6 +97,7 @@ _EXTRA_COLUMNS = (
     ("policy_digest", "TEXT"),
     ("workspace", "TEXT"),            # Round 82 (N2): the folder the action was asked for; part of what the approver signs
     ("claimed_at", "REAL"),           # Round 82 (T06): when the action was claimed for execution, so a claim that never got a receipt can be found
+    ("trace_json", "TEXT"),           # Amendment 19: what the paused episode had done (context for the continuation); NOT part of the digest a person signs
 )
 
 
@@ -150,6 +151,7 @@ class PendingAction:
     workspace: Optional[str] = None
     claimed_at: Optional[float] = None
     signatures_collected: int = 0
+    trace: Optional[Dict[str, Any]] = None          # Amendment 19: steps, reasoning and taint of the episode that paused (not signed, not part of the digest)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -291,11 +293,25 @@ def sign_decision(private_key_path: str, approval_id: str, action_sha256: str, d
     }
 
 
+TRACE_MAX_JSON_CHARS = 12000      # Amendment 19: the most the stored trace of a paused episode may take
+
+
+def _load_trace(text: Optional[str]) -> Optional[Dict[str, Any]]:
+    """The trace of a paused episode as a dict; None for an old row, an empty column or one that cannot be read (the continuation then behaves as it always did)."""
+    if not text:
+        return None
+    try:
+        value = json.loads(text)
+    except ValueError:
+        return None
+    return value if isinstance(value, dict) else None
+
+
 # ------------------------------------------------------------------- store
 
 _SELECT = ("SELECT approval_id, namespace, goal, tool_name, tool_args_json, action_sha256, reason, status, "
            "created_at, decided_at, approver_public_key, signature_hex, executed_at, result_json, "
-           "required_signatures, approver_roles_json, policy_rule, policy_digest, workspace, claimed_at FROM pending_actions")
+           "required_signatures, approver_roles_json, policy_rule, policy_digest, workspace, claimed_at, trace_json FROM pending_actions")
 
 
 class PendingActionStore:
@@ -311,22 +327,28 @@ class PendingActionStore:
     def create(self, namespace: str, goal: str, tool_name: str, tool_args: Dict[str, Any],
                reason: Optional[str] = None, *, required_signatures: int = 1,
                approver_roles: Optional[List[str]] = None, policy_rule: Optional[str] = None,
-               policy_digest: Optional[str] = None, workspace: Optional[str] = None) -> PendingAction:
+               policy_digest: Optional[str] = None, workspace: Optional[str] = None, trace: Optional[Dict[str, Any]] = None) -> PendingAction:
         approval_id = uuid.uuid4().hex[:12]
+        trace_json = json.dumps(trace, ensure_ascii=False, sort_keys=True)[:TRACE_MAX_JSON_CHARS] if trace else None
+        if trace_json is not None:
+            try:
+                json.loads(trace_json)
+            except ValueError:
+                trace_json = json.dumps({"truncated": True, "taint": (trace or {}).get("taint")}, ensure_ascii=False)     # a cut inside the JSON must not leave a row nobody can read
         digest = action_digest(approval_id, namespace, goal, tool_name, tool_args, policy_digest, workspace)
         required_signatures = max(1, min(3, int(required_signatures)))
         action = PendingAction(approval_id, namespace, goal, tool_name, dict(tool_args), digest,
                                reason, "PENDING", _now(), required_signatures=required_signatures,
                                approver_roles=list(approver_roles) if approver_roles else None,
-                               policy_rule=policy_rule, policy_digest=policy_digest, workspace=workspace)
+                               policy_rule=policy_rule, policy_digest=policy_digest, workspace=workspace, trace=_load_trace(trace_json))
         with self._persistence._connect() as conn:
             conn.execute(
                 "INSERT INTO pending_actions (approval_id, namespace, goal, tool_name, tool_args_json, "
                 "action_sha256, reason, status, created_at, required_signatures, approver_roles_json, "
-                "policy_rule, policy_digest, workspace) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "policy_rule, policy_digest, workspace, trace_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (approval_id, namespace, goal, tool_name, json.dumps(tool_args, sort_keys=True),
                  digest, reason, "PENDING", action.created_at, required_signatures,
-                 json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest, workspace),
+                 json.dumps(action.approver_roles) if action.approver_roles else None, policy_rule, policy_digest, workspace, trace_json),
             )
         try:
             self._persistence.append_audit(
@@ -394,6 +416,7 @@ class PendingActionStore:
             executed_at=row[12], result=json.loads(row[13]) if row[13] else None,
             required_signatures=int(row[14] or 1), approver_roles=json.loads(row[15]) if row[15] else None,
             policy_rule=row[16], policy_digest=row[17], workspace=row[18], claimed_at=row[19],
+            trace=_load_trace(row[20]),
         )
 
     def decide(self, approval_id: str, decision: str, public_key_hex: str, signature_hex: str) -> PendingAction:
