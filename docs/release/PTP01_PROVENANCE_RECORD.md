@@ -11,7 +11,7 @@ from the GitHub release page and the PyPI JSON of that version; nothing here is 
 | Source archive SHA-256 | `979b6679e7e1a3a35a2720110e2e1c89f667edb4c14fa74969930b5a37952e53` | |
 | Windows installer SHA-256 (`Delentia-Setup-<v>.exe`, also published as `Delentia-Setup.exe`) | `1ea32000f42f297253f8cbd6e7356f4dc4a7d40c4f2d65e8a11bf7e8e7fb9d17` (15,239,522 bytes) | |
 | `SHA256SUMS.txt` SHA-256 | `9bcf8523d415c31ca7b6f579a22da9068335d1ca2886ec7df1944c71d9db6e3c` | |
-| Installer clean-runner workflow | 42463014635 (success; build, silent install, check, uninstall) | |
+| Installer clean-runner workflow | not read (the two runs found on 2026-11-20 are for other commits; to be read from the tag) | |
 | CI run on the tagged commit | | |
 | Installed-package receipts (`scripts/release_receipts.py`) | 11 of 11 pass, recorded on issue #274 | |
 | Installer run on another person's computer | not done | |
