@@ -162,3 +162,15 @@ def test_an_untainted_episode_gives_an_untainted_continuation(tmp_path, monkeypa
 def test_the_taint_is_restored_after_the_continuation(tmp_path, monkeypatch, approver):
     loop, _p, _c, _a, _w, _r = go(tmp_path, monkeypatch, approver, [CRAWL, WRITE])
     assert loop._initial_taint is None or loop._initial_taint == ""                            # a loop that is reused does not stay tainted
+
+
+def test_erasing_a_person_removes_the_words_kept_in_the_trace(tmp_path):
+    """The trace holds what the paused episode read and thought: it is the person's words, so erasure must overwrite it (found by the W11 handover test on CI)."""
+    from rct_control_plane.memory_erasure import scrub_tables
+    persistence = ControlPlanePersistence(db_path=str(tmp_path / "e.db"))
+    store = PendingActionStore(persistence)
+    a = store.create("alice", "g", "t", {"x": 1}, trace={"steps": [{"tool": "r", "args": "{}", "result": "ALICEWORDS"}], "reasoning": "ALICEWORDS", "taint": {"tainted": False}})
+    with persistence._connect() as conn:
+        scrub_tables(conn, "alice")
+        raw = conn.execute("SELECT trace_json FROM pending_actions WHERE approval_id = ?", (a.approval_id,)).fetchone()[0]
+    assert "ALICEWORDS" not in raw
