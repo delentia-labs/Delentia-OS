@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.5] - Unreleased
+## [2.4.5] - 2026-11-20
 
 The first public build since 2.4.4 that carries the results of the paid test days of 2026-11-12 to 2026-11-20. Most of what changed is how the loop behaves with a real, hosted model; **nothing here is a result that the runtime makes a model better at tasks** (the measured results, including the ones that did not meet their rules, are in `research/RESULTS_REGISTER.md` and `docs/public/TESTED_MODELS.md`). The stage label *Public Technical Preview 0.1* is still **not declared**.
 
