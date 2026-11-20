@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - Unreleased
+
+The first public build since 2.4.4 that carries the results of the paid test days of 2026-11-12 to 2026-11-20. Most of what changed is how the loop behaves with a real, hosted model; **nothing here is a result that the runtime makes a model better at tasks** (the measured results, including the ones that did not meet their rules, are in `research/RESULTS_REGISTER.md` and `docs/public/TESTED_MODELS.md`). The stage label *Public Technical Preview 0.1* is still **not declared**.
+
+Release level: L0 and L1 of `docs/release/RELEASE_LEVELS.md`.
+
+### Changed
+- **Every connected external tool stays in the tool menu while there are at most 40** (`DELENTIA_TOOL_MENU_KEEP_EXTERNAL`, on by default; `off` restores the old menu exactly; the limit is `DELENTIA_TOOL_MENU_KEEP_EXTERNAL_MAX`). Measured with the ranked menu before this change: for 119 Thai requests, **0** had every needed tool in the menu, because ranking compared Thai words with English tool descriptions. With the change a model chose the right first tool 0 to 48 of 89 times (haiku) and 38 to 39 of 44 in English, at about 20 more prompt tokens per external tool; with more than 40 external tools the ranking applies. A second model (`moonshotai/kimi-k2`) was run on the same test and its result is registered. (#313, #329)
+- **The ranked, compact tool menu is the default for hosted models too** (it was for a local model only); `DELENTIA_TOOL_MENU=full` goes back. On the 31 labelled goals it chose a needed tool more often than the full menu for the three models it was tried on, with a menu of about 8 tools instead of 40. (#292)
+- **A reply that stops at the allowance gets the one larger retry** instead of the identical request three times (a reasoning model that spends the whole allowance thinking used to end the episode `llm_error`). (#306)
+- **An answer written after outside text was read can name an address only if the person wrote its host, an executed tool call was given it, or a search returned it** (it could name any address a page printed word for word, including one inside a warning to the reader). Cost: an ordinary answer loses a third-party link it quotes from a page. `DELENTIA_ANSWER_GUARD_HOSTS=off` restores the earlier rule. (#293)
+
+### Fixed
+- **What the model is told after an approved write** (found by reading the event logs of the paid runs): the note names the path and shows long content as its length (it cut the path off), says only the exact action is not to be repeated (it was read as "do not write again"), and says what to do when a check shows the step did not take effect. (#323, #326)
+- **The repeated-call rule no longer ends an edit-and-test loop**: a repeat counts only while the result stays the same, and an executed write, patch, save or sandboxed command resets the counts. In a 42-episode measurement 30 ended `stuck_repeating` before the first change. (#322, #327)
+- **After an approval the continuation is told what the paused episode had done and keeps its taint** (it started with neither, so it could read outside text again without the rule that applies to the episode that was paused). The pending action stores a bounded trace; erasing a person overwrites it. (#330)
+- **A model that is refused by the provider because no endpoint supports every parameter** gets a fixed plain sentence instead of the provider's body. (#293)
+- **The Skills page is in Thai** (English-only text nodes 114 to 54; the Thai text is waiting for the owner's reading). (#324)
+- Dependencies: next 16.4.5, opentelemetry-api 1.45.2, soupsieve (four alerts closed), minimatch 11.0.1 pinned under the Desk's lint tooling. Open Dependabot and code-scanning alerts: 0. (#279, #291, #304, #314)
+
+### Added
+- **`scripts/video_demo/record_demo_video.py`**: records the 90-second model-free demo from a published version, one console window, English and Thai subtitles, with a hygiene scan of the transcript. (#333)
+- **`scripts/release_receipts.py`** checks a published release from the installed package and writes down what happened (INSTALL, DEMO-01 to DEMO-05, GitHub assets); 2.4.4 passed 11 of 11. (#282)
+- **Research harness only (not in the product's behaviour):** the results register R0009 to R0124, the paid-run driver with a ceiling inside each command, the plain-agent baseline with a rule-bound signer (arm `b0s`), a harder TC-003 tier, and a tested-models page generated from the register. (#285 to #332)
+
+### Known limits that did not change
+Not code-signed (SmartScreen warns); installed on a second computer by a person: not yet, and the passkey check with a real authenticator: not yet; no result with a strong model on long tasks that shows a benefit of the runtime; RCT-7 and FDIA D^I have no measured benefit yet.
+
 ## [2.4.4] - 2026-11-12
 
 Found by the first install of 2.4.3 on a second, clean Windows computer (no Ollama, no model); criteria written first in `research/FIRSTRUN_CRITERIA_R112.md`.
