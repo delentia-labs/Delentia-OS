@@ -2816,74 +2816,104 @@
 
 
 <h1 id="90-second-evidence-video-script-and-shot-list">90-second evidence video — script and shot list<a class="headerlink" href="#90-second-evidence-video-script-and-shot-list" title="Permanent link">&para;</a></h1>
-<p>Purpose: show a stranger, in 90 seconds, something they can then reproduce themselves with a few commands. It uses the model-free demo, so what is shown is the gate, the signature wait and the
-audit chain, <strong>not</strong> a language model's ability — say so on screen. Nothing in it is edited to hide a failure; record in one take, terminal only, 120×30, dark theme, font ≥ 18 pt.</p>
-<h2 id="setup-before-recording">Setup (before recording)<a class="headerlink" href="#setup-before-recording" title="Permanent link">&para;</a></h2>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip install delentia-os        # in a fresh virtual environment; show the version line
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>delentia demo init             # makes the sample folder and a demo approver key; the demo commands below need it
+<p>Purpose: show a stranger, in about 90 seconds, something they can then reproduce themselves with a few commands. It uses the model-free demo, so what is shown is the gate, the signature wait and the
+audit chain, <strong>not</strong> a language model's ability — the video says so on screen.</p>
+<h2 id="how-it-is-made-since-2026-11-20">How it is made (since 2026-11-20)<a class="headerlink" href="#how-it-is-made-since-2026-11-20" title="Permanent link">&para;</a></h2>
+<p>The video is <strong>recorded by a script, not by hand</strong>: <code>scripts/video_demo/record_demo_video.py</code>. It makes a short work folder at a drive root, creates a fresh virtual environment, installs the
+published package into it, opens one console window, types the commands below at human speed (the typing is simulated; <strong>every command is executed for real</strong>) and records only that window
+with ffmpeg. It writes English and Thai subtitles (<code>.srt</code>), burns each into an <code>.mp4</code>, a contact sheet, and a hygiene report that scans the transcript for the user name, <code>C:\Users</code>,
+AppData, key-like strings and e-mail addresses. The environment it runs in has every <code>DELENTIA</code>, <code>OPENROUTER</code>, <code>*KEY</code>, <code>*TOKEN</code> and <code>*SECRET</code> variable removed.</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>py -3.13 scripts\video_demo\record_demo_video.py --package delentia-os==&lt;version on PyPI&gt; --tests-line "&lt;the line from the latest green CI run on main&gt;"
 </span></code></pre></div>
-Record on the version that is on PyPI and say its number on screen; if the video is recorded from a source checkout instead, say which commit.</p>
-<h2 id="shots">Shots<a class="headerlink" href="#shots" title="Permanent link">&para;</a></h2>
+<code>--tests-line</code> is required on purpose: the "measured" card must quote the test count of an actual CI run, never a number remembered from an older round. Record only a version that is on PyPI,
+and read the contact sheet and <code>hygiene_report.txt</code> before anything is posted.</p>
+<h2 id="shots-what-the-script-plays">Shots (what the script plays)<a class="headerlink" href="#shots-what-the-script-plays" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Time</th>
+<th>Shot</th>
 <th>What is on screen</th>
-<th>Spoken line (EN)</th>
-<th>Spoken line (TH)</th>
+<th>Subtitle (EN)</th>
+<th>Subtitle (TH)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>0:00–0:08</td>
-<td>Title card: "Delentia — a governed agent runtime. Experimental."</td>
-<td>"This is an experimental runtime that puts a gate and a signature in front of an agent's actions."</td>
-<td>"นี่คือรันไทม์เชิงทดลองที่วางประตูและลายเซ็นไว้หน้าการกระทำของเอเจนต์"</td>
+<td>title card</td>
+<td>"Delentia OS <version> — a governed agent runtime — EXPERIMENTAL"; "No language model is used in this recording"</td>
+<td>An experimental runtime that puts a gate and a signature in front of an agent's actions. No language model is used here.</td>
+<td>รันไทม์เชิงทดลองที่วางประตูและลายเซ็นไว้หน้าการกระทำของเอเจนต์ ในคลิปนี้ไม่ได้ใช้โมเดลภาษา</td>
 </tr>
 <tr>
-<td>0:08–0:20</td>
-<td><code>delentia demo run compare --scripted</code> finishing in a few seconds (4 to 5 s on the author's machine; yours will differ), five checks passing</td>
-<td>"No model is used here: a fixed program stands in for it. The tools, the gate and the audit log are real."</td>
-<td>"ไม่มีโมเดลในที่นี้: โปรแกรมที่กำหนดไว้ทำหน้าที่แทน เครื่องมือ ประตู และ audit log เป็นของจริง"</td>
+<td>version</td>
+<td><code>pip show delentia-os \| Select-String Version</code>, then <code>delentia demo init --lang en --dir demo</code></td>
+<td>The version published on PyPI; the demo folder is made in a throw-away location.</td>
+<td>รุ่นที่เผยแพร่บน PyPI โฟลเดอร์เดโมสร้างในที่ชั่วคราว</td>
 </tr>
 <tr>
-<td>0:20–0:40</td>
-<td><code>delentia demo run edit --scripted</code> stops with "waiting for a signature"; <code>ls</code> shows the result file does <strong>not</strong> exist yet</td>
-<td>"The write is held. Nothing was written."</td>
-<td>"การเขียนถูกพักไว้ ยังไม่มีการเขียนอะไร"</td>
+<td>compare</td>
+<td><code>delentia demo run compare --scripted --dir demo</code> (last 16 lines), five checks</td>
+<td>A fixed program stands in for the model. The tools, the gate and the audit log are real; the five checks come from outside the agent.</td>
+<td>โปรแกรมที่กำหนดไว้ทำหน้าที่แทนโมเดล เครื่องมือ ประตู และ audit log เป็นของจริง การตรวจ 5 ข้อมาจากภายนอกเอเจนต์</td>
 </tr>
 <tr>
-<td>0:40–0:55</td>
-<td><code>delentia demo approve &lt;id&gt; --scripted</code>; the file now exists</td>
-<td>"A signed approval releases exactly that one action."</td>
-<td>"ลายเซ็นปล่อยการกระทำนั้นเพียงหนึ่งอย่าง"</td>
+<td>edit (before)</td>
+<td><code>Select-String "Total price"</code> on the quote file</td>
+<td>The quote file says what it says today.</td>
+<td>ไฟล์ใบเสนอราคาเป็นอย่างที่เห็นตอนนี้</td>
 </tr>
 <tr>
-<td>0:55–1:10</td>
-<td><code>delentia demo status</code> → chain intact, rows signed (it checks with the demo's own key, so do not use the host's <code>audit-chain verify</code> here); then, on a <strong>disposable copy</strong> of the demo folder only, change one character in the database and run it again → it fails and names the row</td>
-<td>"Every step is in a hash chain. Change one character and the check fails."</td>
-<td>"ทุกขั้นอยู่ใน hash chain แก้หนึ่งตัวอักษรแล้วตรวจจะไม่ผ่าน"</td>
+<td>edit (waits)</td>
+<td><code>delentia demo run edit --scripted</code>, stops at "waiting for a signature"; the same <code>Select-String</code> shows the file is unchanged</td>
+<td>The write is held: nothing has been written.</td>
+<td>การเขียนถูกพักไว้ ยังไม่มีอะไรถูกเขียน</td>
 </tr>
 <tr>
-<td>1:10–1:22</td>
-<td>A table card: measured / not yet. Measured: 7,820 tests on CI, gate properties, the injection measurement with a scripted hijacked model. Not yet: a capable model's results, a public host, an independent witness, any outside user</td>
-<td>"What is measured, and what is not yet. We have no results yet with a capable model."</td>
-<td>"สิ่งที่วัดแล้ว และสิ่งที่ยังไม่มี: ยังไม่มีผลกับโมเดลที่เก่ง"</td>
+<td>approve</td>
+<td><code>delentia demo approve &lt;id&gt; --scripted</code> (the id is read from the previous output); the line now shows the new total</td>
+<td>A signed approval releases exactly that one action.</td>
+<td>ลายเซ็นปล่อยการกระทำนั้นเพียงหนึ่งอย่าง</td>
 </tr>
 <tr>
-<td>1:22–1:30</td>
-<td>The four commands as text (<code>pip install delentia-os</code>, <code>delentia demo init</code>, <code>delentia demo run compare --scripted</code>, <code>delentia demo run edit --scripted</code>) and the repository address</td>
-<td>"Run it yourself: four commands, no model and no API key."</td>
-<td>"ลองเองได้: สี่คำสั่ง ไม่ต้องมีโมเดลหรือคีย์"</td>
+<td>chain ok</td>
+<td><code>delentia demo status</code> (first 9 lines): chain intact, rows signed</td>
+<td>Every step is in a hash chain: all rows present and signed.</td>
+<td>ทุกขั้นอยู่ใน hash chain: ทุกแถวอยู่ครบและมีลายเซ็น</td>
+</tr>
+<tr>
+<td>tamper</td>
+<td>on a <strong>throw-away copy</strong> (<code>demo_copy</code>), <code>alter_one_character.py</code> changes one character in one stored row of the audit table, then <code>delentia demo status --dir demo_copy</code></td>
+<td>Change ONE character in one stored row, then check again: it fails.</td>
+<td>แก้หนึ่งตัวอักษรในหนึ่งแถว แล้วตรวจอีกครั้ง: ไม่ผ่าน</td>
+</tr>
+<tr>
+<td>measured / not yet</td>
+<td>a card: the CI test count (from <code>--tests-line</code>); "0 of 23 side effects ran with the taint rule on" (a scripted, hijacked model); the cost meter agreed with the provider's own figure within 10%. NOT YET: results with a strong model on long tasks; any outside user; an independent witness; RCT-7 and FDIA D^I have no measured benefit yet; the Windows installer is not code-signed</td>
+<td>What is measured, and what is not yet. There are no results with a strong model yet.</td>
+<td>สิ่งที่วัดแล้ว และสิ่งที่ยังไม่มี: ยังไม่มีผลกับโมเดลที่เก่ง</td>
+</tr>
+<tr>
+<td>try it</td>
+<td><code>pip install delentia-os</code>, <code>delentia demo init --lang en</code>, <code>delentia demo run compare --scripted</code>, <code>delentia demo run edit --scripted</code>, the repository address</td>
+<td>Run it yourself: four commands, no model and no API key.</td>
+<td>ลองเองได้: สี่คำสั่ง ไม่ต้องมีโมเดลหรือคีย์</td>
 </tr>
 </tbody>
 </table>
+<h3 id="corrections-to-the-earlier-version-of-this-script">Corrections to the earlier version of this script<a class="headerlink" href="#corrections-to-the-earlier-version-of-this-script" title="Permanent link">&para;</a></h3>
+<ul>
+<li>It said the tamper check "names the row". The real <code>demo status</code> output says only that the chain is <strong>not</strong> intact; it does not print which row. The video shows exactly what the command prints.</li>
+<li>It quoted 7,820 tests. The number now comes from the <code>--tests-line</code> argument (the latest green CI run on main); the repository's own checkpoint is in <code>docs/testing/TESTING_CANONICAL.md</code>.</li>
+<li>It said <code>delentia demo init</code>; the English recording needs <code>--lang en</code> (the default is Thai).</li>
+<li>It set a terminal of 120x30 at 18 pt by hand; the recorder sets a 100x28 console with an in-process 22 pt Consolas font, for 1280x720 output.</li>
+</ul>
 <h2 id="rules-for-the-recording">Rules for the recording<a class="headerlink" href="#rules-for-the-recording" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Show the real version number (<code>pip show delentia-os</code>) and the real date; do not splice takes.</li>
-<li>Do not show any key, token or personal path; use a throw-away user folder.</li>
+<li>Show the real version number (<code>pip show delentia-os</code>) and the real date; the video is one take, nothing is spliced.</li>
+<li>No key, token or personal path appears; the work folder is at a drive root and the environment is cleaned (the hygiene report must be empty before posting).</li>
 <li>Say "experimental" in the first ten seconds and show the "not yet" card; never say "secure", "certified", "tamper-proof" or "production-ready".</li>
 <li>Put the exact commands in the video description so they can be copied.</li>
+<li>The owner chooses: subtitles only, or his own voice over the same video. A synthetic voice is not used.</li>
 </ul>
 
 
