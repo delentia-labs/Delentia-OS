@@ -28,7 +28,7 @@ from research.daaes import stats
 from research.daaes.budget_guard import BudgetPolicy
 from research.daaes.model_gateway import ModelGateway
 
-ARMS = ("b0", "d0", "h0")
+ARMS = ("b0", "b0s", "d0", "h0")
 
 
 @contextmanager
@@ -79,9 +79,9 @@ def run_cell(arm: str, seed: int, out: Path, upstream_url: str, upstream_key: Op
             if arm == "d0":
                 with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url, DELENTIA_OPENROUTER_TIMEOUT_S=wait):
                     result = tc003.run_live(OpenRouterProvider(api_key=gw.token, model=model), work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed)
-            elif arm == "b0":
+            elif arm in ("b0", "b0s"):
                 with _env(DELENTIA_OPENROUTER_BASE_URL=gw.base_url, DELENTIA_LLM_PROVIDER="openrouter", DELENTIA_LLM_MODEL=model, OPENROUTER_API_KEY=gw.token, DELENTIA_EPISODE_BUDGET_USD="0", DELENTIA_OPENROUTER_TIMEOUT_S=wait):
-                    result = tc003.run_plain(work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed)
+                    result = tc003.run_plain(work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed, signed=(arm == "b0s"))
             elif arm == "h0":
                 result = tc003.run_hermes(gw.base_url, gw.token, model, work, max_iterations=max_iterations, max_seconds=max_seconds, variant_seed=seed, real_model=real_model, sandboxed=hermes_sandboxed)
             else:
