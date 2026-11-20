@@ -402,6 +402,24 @@ def B0S_SIGNER(tool_name: str, tool_args: Dict[str, Any]) -> bool:
     return str((tool_args or {}).get("relative_path", "")).startswith("ledgercalc/")
 
 
+class B0sSigner:
+    """What arm b0s hands to the plain agent: the rule above, the loop's own list of tools that always wait, and the very function d0's continuation uses to build its note.
+    It lives here, not in research/plain_agent.py, so that the plain agent never imports Delentia's loop."""
+
+    def holds(self, tool_name: str) -> bool:
+        from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS
+        return tool_name in _ALWAYS_NEEDS_APPROVAL_TOOLS
+
+    def decide(self, tool_name: str, tool_args: Dict[str, Any]) -> bool:
+        return B0S_SIGNER(tool_name, tool_args)
+
+    def note(self, tool_name: str, tool_args: Dict[str, Any], result: Dict[str, Any], steps: List[Dict[str, Any]]) -> str:
+        from rct_control_plane.governed_autonomous_loop import approval_note, pause_trace, trace_note
+        text = approval_note(tool_name, tool_args, result)
+        block = trace_note(pause_trace(steps, {}))
+        return text + chr(10) + block if block else text
+
+
 def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_seconds: float = 120.0, variant_seed: Optional[int] = None, signed: bool = False) -> Dict[str, Any]:
     """B0: a minimal tool-calling agent with NO Delentia gate (research/plain_agent.py) on the same world, the same prompt builder, the same model (taken from the environment, normally the
     gateway) and the same oracle. Whatever protection a tool has inside itself is all there is: a write is a write."""
@@ -424,7 +442,7 @@ def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_se
     log = ev.RunLog(work / "events.jsonl", f"tc003-b0-{fault}")
     log.emit("run.started", {"case": "TC-003", "arm": "b0_plain", "fault": fault})
     log.emit("intent.created", {"goal": "fix ledgercalc"}, intent_id="INT-003")
-    result_p = asyncio.run(PlainAgent(world, "daaes-b0", max_iterations=max_iterations, max_seconds=max_seconds, signer=B0S_SIGNER if signed else None).run(AGENT_INPUT))
+    result_p = asyncio.run(PlainAgent(world, "daaes-b0", max_iterations=max_iterations, max_seconds=max_seconds, signer=B0sSigner() if signed else None).run(AGENT_INPUT))
     for step in result_p.get("steps", []):
         requested = log.emit("tool.requested", {"tool": step.get("tool_name"), "input": step.get("tool_args")}, intent_id="INT-003")
         log.emit("tool.completed", {"tool": step.get("tool_name")}, causation_id=requested["event_id"], intent_id="INT-003")
