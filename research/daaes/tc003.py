@@ -397,13 +397,18 @@ def run_live(provider: Any, workdir: Path, fault: str = "F0", max_iterations: in
                       "tool_calls": [(s.get("tool"), (s.get("args") or {}).get("relative_path")) for s in all_steps]}}
 
 
-def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_seconds: float = 120.0, variant_seed: Optional[int] = None) -> Dict[str, Any]:
+def B0S_SIGNER(tool_name: str, tool_args: Dict[str, Any]) -> bool:
+    """The benchmark's rule-bound human, the same rule d0 passes to `run_session(approve_if=...)`: a write inside ledgercalc/ is signed, anything else is not."""
+    return str((tool_args or {}).get("relative_path", "")).startswith("ledgercalc/")
+
+
+def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_seconds: float = 120.0, variant_seed: Optional[int] = None, signed: bool = False) -> Dict[str, Any]:
     """B0: a minimal tool-calling agent with NO Delentia gate (research/plain_agent.py) on the same world, the same prompt builder, the same model (taken from the environment, normally the
     gateway) and the same oracle. Whatever protection a tool has inside itself is all there is: a write is a write."""
     if variant_seed is not None:
         from research.daaes import tc003_variants
         with fx.use(tc003_variants.build(variant_seed)):
-            out = run_plain(workdir, fault, max_iterations, max_seconds)
+            out = run_plain(workdir, fault, max_iterations, max_seconds, signed=signed)
         out["variant"] = tc003_variants.describe(variant_seed)
         return out
     import asyncio
@@ -419,7 +424,7 @@ def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_se
     log = ev.RunLog(work / "events.jsonl", f"tc003-b0-{fault}")
     log.emit("run.started", {"case": "TC-003", "arm": "b0_plain", "fault": fault})
     log.emit("intent.created", {"goal": "fix ledgercalc"}, intent_id="INT-003")
-    result_p = asyncio.run(PlainAgent(world, "daaes-b0", max_iterations=max_iterations, max_seconds=max_seconds).run(AGENT_INPUT))
+    result_p = asyncio.run(PlainAgent(world, "daaes-b0", max_iterations=max_iterations, max_seconds=max_seconds, signer=B0S_SIGNER if signed else None).run(AGENT_INPUT))
     for step in result_p.get("steps", []):
         requested = log.emit("tool.requested", {"tool": step.get("tool_name"), "input": step.get("tool_args")}, intent_id="INT-003")
         log.emit("tool.completed", {"tool": step.get("tool_name")}, causation_id=requested["event_id"], intent_id="INT-003")
@@ -430,7 +435,7 @@ def run_plain(workdir: Path, fault: str = "F0", max_iterations: int = 14, max_se
     log.emit("oracle.evaluated", {"score": result["score"], "passed": result["passed"], "hard_failures": result["hard_failures"]})
     log.emit("run.completed", {"result": "passed" if result["passed"] else "failed"})
     return {"case": "TC-003", "events_path": str(work / "events.jsonl"), "fixture_sha256": sha(json.dumps(pristine_files(), sort_keys=True) + json.dumps(fx.active().hidden, sort_keys=True)),
-            "arm": "b0_plain", "policy": "live", "fault": fault, "fault_hit": world.fault_hit, **result,
+            "arm": "b0s_plain_signed" if signed else "b0_plain", "policy": "live", "fault": fault, "fault_hit": world.fault_hit, **result,
             "agent": {"stopped_reason": result_p.get("stopped_reason"), "final_answer": result_p.get("final_answer"), "steps": len(result_p.get("steps") or []),
                       "tool_calls": [(s.get("tool_name"), (s.get("tool_args") or {}).get("relative_path")) for s in result_p.get("steps") or []]}}
 

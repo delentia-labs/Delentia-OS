@@ -20,7 +20,12 @@ from typing import Any, Dict, List, Optional
 
 
 class PlainAgent:
-    def __init__(self, mcp_server: Any, namespace: str, max_iterations: int = 12, max_seconds: float = 90.0, max_tokens: Optional[int] = None) -> None:
+    def __init__(self, mcp_server: Any, namespace: str, max_iterations: int = 12, max_seconds: float = 90.0, max_tokens: Optional[int] = None,
+                 signer: Optional[Any] = None) -> None:
+        """`signer` (arm b0s, Amendment 19 / S0.7 A1): a callable (tool_name, tool_args) -> bool standing for the benchmark's rule-bound human. With it, a tool that Delentia's loop
+        always holds for approval waits here too: executed only if the signer says yes, otherwise the episode ends `pending_approval`; after a yes the model is told what d0's model
+        is told (`approval_note` + the trace), with a fresh step allowance, as d0's continuation has. Without it the agent is the plain B0, unchanged."""
+        self._signer = signer
         self._mcp = mcp_server
         self.namespace = namespace
         self.max_iterations = max_iterations
@@ -35,14 +40,21 @@ class PlainAgent:
                  for t in await self._mcp.list_tools()]
         known = {t["name"] for t in tools}
         history: List[LoopStep] = []
+        all_steps: List[Dict[str, Any]] = []
+        extra_context = ""
+        segment_start = 0
         started = time.monotonic()
         stopped, answer = "max_iterations_reached", None
-        for i in range(1, self.max_iterations + 1):
+        i = 0
+        while True:
+            i += 1
+            if i - segment_start > self.max_iterations:
+                break
             if time.monotonic() - started > self.max_seconds:
                 stopped = "max_seconds_exceeded"
                 break
             try:
-                decision = await decide_next_action(goal, history, tools, llm_provider=meter)
+                decision = await decide_next_action(goal, history, tools, llm_provider=meter, extra_context=extra_context)
             except Exception as exc:                                    # noqa: BLE001 - a refused (over-budget) or failing model call ends the episode
                 stopped = "budget_exceeded" if "budget" in str(exc).lower() or "token" in str(exc).lower() else "model_error"
                 break
@@ -53,12 +65,36 @@ class PlainAgent:
             if name not in known:
                 history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result={"error": f"unknown tool {name!r}"}, llm_reasoning=str(decision.get("reasoning") or "")))
                 continue
+            if self._signer is not None:
+                from rct_control_plane.governed_autonomous_loop import _ALWAYS_NEEDS_APPROVAL_TOOLS, approval_note, pause_trace, trace_note
+                if name in _ALWAYS_NEEDS_APPROVAL_TOOLS:
+                    asked = {"tool_name": name, "tool_args": args, "llm_reasoning": str(decision.get("reasoning") or "")}
+                    if not self._signer(name, args):
+                        history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result={"pending_approval": True, "tool_name": name}, llm_reasoning=asked["llm_reasoning"]))
+                        stopped = "pending_approval"
+                        break
+                    try:
+                        raw = await self._mcp.call_tool(name, args)
+                        result = json.loads(raw.content[0].text)
+                    except Exception as exc:                            # noqa: BLE001
+                        result = {"error": str(exc)}
+                    history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result=result, llm_reasoning=asked["llm_reasoning"]))
+                    steps_now = [{"tool_name": s.tool_name, "tool_args": s.tool_args, "tool_result": s.tool_result, "llm_reasoning": s.llm_reasoning} for s in history[:-1]] + [asked]
+                    extra_context = approval_note(name, args, result)
+                    block = trace_note(pause_trace(steps_now, {}))
+                    if block:
+                        extra_context += chr(10) + block
+                    all_steps.extend(steps_now[:-1])
+                    all_steps.append({"tool_name": name, "tool_args": args, "tool_result": result, "llm_reasoning": asked["llm_reasoning"]})
+                    history = []                                         # d0's continuation starts from the note, not from the old history
+                    segment_start = i
+                    continue
             try:
                 raw = await self._mcp.call_tool(name, args)                # whatever the tool itself enforces is all there is
                 result = json.loads(raw.content[0].text)
             except Exception as exc:                                    # noqa: BLE001
                 result = {"error": str(exc)}
             history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result=result, llm_reasoning=str(decision.get("reasoning") or "")))
-        return {"goal": goal, "stopped_reason": stopped, "final_answer": answer, "iterations": len(history),
-                "steps": [{"tool_name": s.tool_name, "tool_args": s.tool_args, "tool_result": s.tool_result, "llm_reasoning": s.llm_reasoning} for s in history],
+        return {"goal": goal, "stopped_reason": stopped, "final_answer": answer, "iterations": len(all_steps) + len(history),
+                "steps": all_steps + [{"tool_name": s.tool_name, "tool_args": s.tool_args, "tool_result": s.tool_result, "llm_reasoning": s.llm_reasoning} for s in history],
                 "cost": meter.summary()}

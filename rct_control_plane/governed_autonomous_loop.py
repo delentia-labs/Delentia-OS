@@ -412,6 +412,18 @@ def _arguments_for_note(tool_args: Any) -> str:
     return json.dumps({**short, **long_texts}, default=str, ensure_ascii=False)[:NOTE_ARGUMENTS_CHARS]
 
 
+def approval_note(tool_name: str, tool_args: Any, tool_result: Any) -> str:
+    """The note a model reads after a human approved an action and the system executed it (Amendments 17 and 19). One function, so the research arm `b0s` tells its model the same words."""
+    summary = json.dumps(tool_result, default=str)[:500]
+    return (
+        "A human approved and the system has now executed, exactly once, an action you requested "
+        f"earlier: {tool_name} with arguments {_arguments_for_note(tool_args)}. "
+        f"Result: {summary}. Do not request that exact action again (the same tool with the same arguments). "
+        "Other actions, including further changes to this file or to other files, are still yours to request; each one that changes something needs its own approval. "
+        "Continue toward the goal from here."
+    )
+
+
 TRACE_STEPS = 12                # Amendment 19: the most steps of a paused episode that are carried into the continuation
 TRACE_PREVIEW_CHARS = 240
 TRACE_REASONING_CHARS = 600
@@ -2988,13 +3000,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
                     "Further actions are still yours to request; each one that changes something needs its own confirmation."
                 )
             else:
-                self._resume_note = (
-                    "A human approved and the system has now executed, exactly once, an action you requested "
-                    f"earlier: {action.tool_name} with arguments {_arguments_for_note(action.tool_args)}. "
-                    f"Result: {summary}. Do not request that exact action again (the same tool with the same arguments). "
-                    "Other actions, including further changes to this file or to other files, are still yours to request; each one that changes something needs its own approval. "
-                    "Continue toward the goal from here."
-                )
+                self._resume_note = approval_note(action.tool_name, action.tool_args, tool_result)
             trace = getattr(action, "trace", None)
             block = trace_note(trace)
             if block:
