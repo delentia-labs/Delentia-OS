@@ -120,3 +120,31 @@ The first-run fixes need a release anyway: **2.4.4** (patch: fixes, no new capab
 4. Claude runs DEMO-01 to DEMO-06 against the installed 2.4.4 and stores the receipts.
 5. Security triage PR for `minimatch`; Architect decides on the dismissals.
 6. Provenance record, snapshot regeneration, claims check; then the Architect's GO or NO-GO.
+
+## 11. Update 2026-11-20 (read from GitHub and PyPI that day)
+
+| Item | Value | Source |
+|---|---|---|
+| Main | `f8c2e428` (after #332 at `811d88a7` and #333 at `f8c2e428`); CI of both commits was still running when this was written | `gh run list --branch main` |
+| Public release | `v2.4.4` (2026-11-12, tag on `6cfff4b6`), unchanged; it does **not** contain the Thai tool-menu default (R3, #313), the plain-agent arm with a signer (#332) or the recorder (#333) | `gh release list` |
+| Release record | `PTP01_PROVENANCE_RECORD.md` (DEL-PTP-05): the 2.4.4 facts are filled in from the release and PyPI; the 2.4.5 column is empty until it exists | this change |
+| Open pull requests | none besides the one carrying this text | `gh pr list` |
+| Code scanning alerts | 0 open | `gh api .../code-scanning/alerts` |
+| Dependabot alerts | 0 open (the five development-scope alerts of 2026-11-12 are closed) | `gh api .../dependabot/alerts` |
+| Readiness snapshot | generated 2026-11-14 from `80c7184`: still **stale**; regenerate on the release candidate | `docs/release/READINESS_SNAPSHOT.md` |
+
+### GO / NO-GO today
+Of the six blocking items in section 2: item 2 (no critical or high alert) is **met** today; items 1, 4 and 5 can only be closed on a release candidate and are Claude's to do once
+2.4.5 exists; item 6 is the owner's. **Item 3 is the only one nobody but the owner can close: the installer run on a computer that is not the author's, including SmartScreen as a person sees it, and one
+Windows Hello check with a real authenticator.** So the state is NO-GO, for that one reason, and it stays NO-GO until that run is recorded (a failed run is also recorded).
+
+### Why 2.4.5 and not the declaring release
+2.4.4 predates everything merged since 2026-11-12 that a visitor meets: the Thai tool menu on by default, the keep-external-tools limit, the new request settings of the paid runs.
+A person who installs the public build today does not get them. A new patch release is needed before the second-computer run, so the owner tests what will be declared. The declaration
+itself (flipping `declared` and `status`, section 9) is a later release.
+
+### Next actions, in order
+1. Prepare 2.4.5 (changelog, date, release history); the owner pushes `v2.4.5`; Claude checks it from PyPI in an empty environment and runs DEMO-01 to DEMO-06 with `scripts/release_receipts.py`.
+2. Record the evidence video from the published 2.4.5 with `scripts/video_demo/record_demo_video.py` (`docs/demo/VIDEO_90S_SCRIPT.md`); the owner watches it before it is posted.
+3. The owner runs INST-01 to INST-08 and the passkey check on the second computer with the 2.4.5 installer.
+4. Fill the 2.4.5 column of `PTP01_PROVENANCE_RECORD.md`, regenerate the readiness snapshot, run the claims checks; then the owner's GO or NO-GO.
