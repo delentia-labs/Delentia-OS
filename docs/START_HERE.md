@@ -2,7 +2,7 @@
 
 Delentia OS is an experimental, self-hosted AI agent runtime. The model only proposes; the runtime judges each tool call, makes anything that writes, sends or runs code wait for a person's signature, and keeps a signed record you can check. This page is the shortest path from "what is it" to "I checked it myself". Nothing here asks you to trust the author: every claim points to something you can run or read.
 
-**Status:** experimental research software by one author. Not production-stable. No strong hosted model has driven it under controlled comparison yet (see [what is measured](#4-what-is-measured-and-what-is-not)).
+**Status:** experimental research software by one author. Not production-stable. Hosted models have driven it in short pre-registered runs, but no controlled comparison shows a benefit on task success yet (see [what is measured](#4-what-is-measured-and-what-is-not)).
 
 ## 1. Install
 
