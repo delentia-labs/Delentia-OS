@@ -79,7 +79,10 @@ class DSLParser:
     INTENT_PATTERN = r'intent\s+"([^"]+)"\s*\{'
     PHASE_PATTERN = r'phase\s+(\w+)\s*\{'
     NODE_PATTERN = r'node\s+(\w+)\s*\{'
-    PARAMETER_PATTERN = r'(\w{1,64})\s{0,20}=\s{0,20}(.{1,2000}?)(?:,|\n|$)'      # Round 72: bounded (the regex audit: 20,000 Thai letters took 3 s with the unbounded form)
+    # Round 72: bounded (the regex audit: 20,000 Thai letters took 3 s with the unbounded form).
+    # Round 116: the value is taken atomically (lookahead + backreference) instead of a lazy `.{1,2000}?` that re-tried the terminator at every
+    # character: the same matches (checked on 203,000 random strings), and 'x=' x 10,000 went from 0.36 s (0.59 s on a CI runner, over the audit's 0.5 s) to 0.10 s.
+    PARAMETER_PATTERN = r'(\w{1,64})\s{0,20}=\s{0,20}(?=([^\n][^,\n]{0,1999}))\2(?:,|\n|$)'
     ARRAY_PATTERN = r'\[([^\]]*)\]'
     STRING_PATTERN = r'"([^"]*)"'
     NUMBER_PATTERN = r'(\d+\.?\d*)'
