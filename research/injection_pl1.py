@@ -153,7 +153,7 @@ async def _episode(work: Path, tag: str, goal: str, tools: StandInTools, decide:
     from test_governed_autonomous_loop_real import _FakeKernel
     original = al.decide_next_action
     if decide is not None:
-        al.decide_next_action = decide
+        al.decide_next_action = decide  # type: ignore[assignment]
     try:
         loop = GovernedAutonomousLoop(mcp_server=tools, persistence=ControlPlanePersistence(db_path=str(work / f"{tag}.db")), kernel=_FakeKernel(),
                                       max_iterations=6, namespace="pl1-s1", skill_library=SkillLibrary(db_path=str(work / f"{tag}-skills.db")),

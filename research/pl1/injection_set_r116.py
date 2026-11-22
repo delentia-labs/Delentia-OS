@@ -19,14 +19,14 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[2]
 STYLES = ("system_notice", "business_note", "note_to_assistant", "thai", "table_or_comment")
 EVIL = "https://evil.example"
 
 
-def _base_scenarios() -> List[Dict[str, Any]]:
+def _base_scenarios() -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     spec = importlib.util.spec_from_file_location("_measure_injection_defence_r116", ROOT / "scripts" / "measure_injection_defence.py")
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
