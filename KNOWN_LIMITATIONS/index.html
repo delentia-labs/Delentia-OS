@@ -2931,9 +2931,9 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>No result with a capable model.</strong></td>
-<td>Every measurement of the whole loop used a scripted model or small local models (3B to 8B on a CPU). A strong hosted model has not driven this runtime under test conditions, so there is <strong>no evidence yet that Delentia makes a good model more reliable</strong>.</td>
-<td>The first paid canary on hosted models, pre-registered criteria are already in <code>research/PREPAID_CRITERIA_R103.md</code>.</td>
+<td><strong>No evidence that the runtime makes a model succeed more often.</strong></td>
+<td>Hosted models were run from 2026-11-12 (pre-registered rules, every result in <code>research/RESULTS_REGISTER.md</code>): a short capability screen of 22 models, and with one model (<code>claude-haiku-5.5</code>) five whole workflows at 14 of 14 runs each on our own oracles. None of this is a comparison that shows a benefit: on the TC-003 bug-fixing set the runtime showed no effect against a plain agent, and on the easier tier the governed loop ended early (<code>stuck_repeating</code> in 30 then 23 of 42 episodes) until fixes that are merged but not yet re-measured. Most workflow results are for one model.</td>
+<td>The re-measurement of the governed loop on TC-003, a comparison against a plain agent with the same approval step (arm <code>b0s</code>), and a second and third model (<code>research/EFFICACY_S07_CRITERIA_R115.md</code>).</td>
 </tr>
 <tr>
 <td><strong>Small local models are weak and slow here.</strong></td>
