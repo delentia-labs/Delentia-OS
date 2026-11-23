@@ -32,7 +32,7 @@ Why scripted: a first run must not depend on whether a small local model happens
 
 | What | How |
 |---|---|
-| The release you installed is the release that was tested | [`docs/release/evidence/2.4.4/RECEIPT.md`](release/evidence/2.4.4/RECEIPT.md) (verdict pass, 11 of 11 checks, produced by `scripts/release_receipts.py` from the installed package) and `receipt.json` next to it. Personal paths were removed; nothing else was edited. These receipts were produced by the author, not by an independent party. |
+| The release you installed is the release that was tested | [`docs/release/evidence/2.4.5/RECEIPT.md`](release/evidence/2.4.5/RECEIPT.md) (verdict pass, 11 of 11 checks, produced by `scripts/release_receipts.py` from the installed package) and `receipt.json` next to it. Personal paths were removed; nothing else was edited. These receipts were produced by the author, not by an independent party. |
 | The audit chain detects an edit | `delentia demo status`, or the DEMO-05 check in the receipt (a copy with one stored value changed fails). It detects changes inside the chain; it does not stop someone who controls the machine and the signing key (see the [threat model](security/THREAT_MODEL.md)). |
 | The tests | Continuous integration on `main`: 9,912 passed, 62 skipped, 92.10% coverage (run 43570824206, 2026-11-14). The number belongs to that run, not to your machine. |
 | An outsider can check a record | `scripts/verify_audit_bundle.py` verifies an exported bundle with the public key only. |
