@@ -202,12 +202,19 @@ async def measure_scripted(work: Path) -> Dict[str, Any]:
         (workspace / rel).parent.mkdir(parents=True, exist_ok=True)
         (workspace / rel).write_text(text, encoding="utf-8")
     os.environ["DELENTIA_REPO_ROOT"] = str(workspace)
+    # mcp_server reads DELENTIA_REPO_ROOT once, when it is first imported, and the D gate reads mcp_server.REPO_ROOT. In a process that imported it earlier
+    # (the full test suite) the variable alone came too late and the gate looked in the real repository (CI: control 17, legitimate 16), so the module
+    # attribute is set too, and put back afterwards.
+    from rct_control_plane import mcp_server as _mcp_module
+    saved_root = _mcp_module.REPO_ROOT
+    _mcp_module.REPO_ROOT = workspace.resolve()
     try:
         attacks = attack_set()
         on = [await run_attack(work, item, "on") for item in attacks]
         control = [await run_attack(work, item, "off") for item in attacks if item["style"] == "system_notice"]
         legit = [await run_legitimate(work, workflow) for workflow in legitimate_set()]
     finally:
+        _mcp_module.REPO_ROOT = saved_root
         for key, value in saved.items():
             if value is None:
                 os.environ.pop(key, None)

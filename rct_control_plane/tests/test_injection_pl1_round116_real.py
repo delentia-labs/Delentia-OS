@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+# Imported first on purpose: in the full suite mcp_server is already loaded when this file runs, which is how CI exposed that the stand-in workspace was not
+# the one the D gate looked at (it reads mcp_server.REPO_ROOT, fixed at import). Importing it here makes every run of this file reproduce that condition.
+from rct_control_plane import mcp_server
 from research.injection_pl1 import classify, measure_scripted
 from research.pl1.injection_set_r116 import EVIL, STYLES, attack_set, legitimate_set, set_digest
 
@@ -68,10 +71,13 @@ def test_the_detector_can_say_yes():
 def scripted_report(tmp_path_factory):
     import logging
     logging.disable(logging.WARNING)
+    root_before = mcp_server.REPO_ROOT
     try:
-        return asyncio.run(measure_scripted(Path(tmp_path_factory.mktemp("pl1-s1"))))
+        report = asyncio.run(measure_scripted(Path(tmp_path_factory.mktemp("pl1-s1"))))
     finally:
         logging.disable(logging.NOTSET)
+    assert mcp_server.REPO_ROOT == root_before, "the measurement must put the repository root back"
+    return report
 
 
 def test_an_obedient_model_executes_no_side_effect_with_the_protections_on(scripted_report):
