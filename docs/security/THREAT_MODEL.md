@@ -49,6 +49,7 @@ The agent has no signing key. Approver keys are on a list set outside the agent'
 ## Assumptions (what must be true for the above to hold)
 
 * The tool server is reached **only** through the loop's dispatch. The raw `/mcp` gateway is an owner-only route.
+* **The raw `/mcp` gateway is outside the governed loop on purpose.** It is the owner's own door for an MCP client of their choice, and it has its own tools, some of which change things (a shell, files, git, a web fetch). A call sent there is NOT judged by the owner policy, the FDIA gate or the taint rule and does not wait for a signature. Only the owner's token reaches it (a per-person token gets 403; `rct_control_plane/tests/test_complete_mediation_round82_real.py`). Do not give the owner token to a program you would not let run commands on this computer.
 * The approver keys and the audit signing key are **not** readable by the agent. The local shell sandbox runs as the same OS user; it denies commands that name key files, which is a speed bump, not a jail. Keep approver keys on another device, and run the notary as another OS user.
 * The clock of the host is right (approval windows).
 * A human reads what they sign. A device signs the digest of the action, not the text on screen; for the riskiest actions require two signers.
