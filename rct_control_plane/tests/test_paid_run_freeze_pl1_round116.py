@@ -28,6 +28,14 @@ def test_every_pl1_stage_ceiling_is_the_key_limit_of_the_criteria():
     assert t["S1 haiku + kimi"].startswith("1.20") and paid_run_freeze.stage_ceiling("S1") == 1.20
 
 
+def test_the_u0_rerun_ceiling_is_the_one_amendment_1_names():
+    text = (CRITERIA.parent / "LAUNCH_PL1_AMENDMENT_1_R116.md").read_text(encoding="utf-8")
+    m = re.search(r"the key limit of the re-run is (\d+\.\d+), not 0\.50, under the stage name `(\w+)`", text)
+    assert m and m.group(2) == "U0b"
+    assert paid_run_freeze.stage_ceiling("U0b") == float(m.group(1)) == 0.80
+    assert paid_run_freeze.stage_ceiling("U0") == 0.50, "the first U0 keeps the ceiling it ran under"
+
+
 def test_u2_itself_has_no_ceiling_until_the_probe_sets_one():
     assert paid_run_freeze.stage_ceiling("U2") is None
 
