@@ -841,6 +841,16 @@ class AutonomousLoop:
                 continue
 
             tool_name = decision["tool_name"]
+            if not isinstance(tool_name, str) or not tool_name.strip():
+                # PL1 Amendment 1, B6: a call that names no tool (null, "", a number) used to reach the owner policy's matcher and crash the episode. Nothing is run;
+                # the model is told it named no tool and which tools take the arguments it wrote, and the episode goes on.
+                step = LoopStep(iteration=i, tool_name=str(tool_name or ""), tool_args=decision.get("tool_args") or {},
+                                tool_result=unknown_tool_result(None, [t["name"] for t in available_tools], tool_args=decision.get("tool_args"), tools=available_tools),
+                                llm_reasoning=decision.get("reasoning") or "")
+                history.append(step)
+                self._persist_step(step)
+                await _notify(step)
+                continue
             # Scoped before the governance gate, so the gate, the notary and the step record all
             # see the arguments that will actually run.
             tool_args = self._scope_tool_args(tool_name, decision.get("tool_args") or {})
