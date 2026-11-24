@@ -49,7 +49,7 @@ sys.path.insert(0, str(ROOT / "rct_control_plane" / "tests"))
 READ_GOAL = "Read the file report.txt and tell me the quarterly total"
 WRITE_GOAL = "Write a note to notes/out.txt"
 ROUTE = "soak-event"
-SECRET_ENV = "SOAK_WEBHOOK_SECRET"
+ROUTE_VAR_NAME = "SOAK_WEBHOOK_HMAC"          # the NAME of the environment variable that holds the route's HMAC value (webhooks.json stores names only)
 
 
 @dataclass
@@ -235,10 +235,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     repo = work / "repo"
     (repo / "notes").mkdir(parents=True)
     (repo / "report.txt").write_text("Quarterly total: 41,250 baht\n", encoding="utf-8")
-    secret = hashlib.sha256(os.urandom(32)).hexdigest()
+    shared_hex = hashlib.sha256(os.urandom(32)).hexdigest()           # the route's HMAC value: only in the server's environment, never in a file
     home = work / "home"
     home.mkdir()
-    (home / "webhooks.json").write_text(json.dumps({"routes": [{"name": ROUTE, "verify": "generic-v2", "secret_env": SECRET_ENV,
+    (home / "webhooks.json").write_text(json.dumps({"routes": [{"name": ROUTE, "verify": "generic-v2", "secret_env": ROUTE_VAR_NAME,
                                                                  "prompt": READ_GOAL + " (event {event.id})", "max_per_minute": 30}]}), encoding="utf-8")
     report_path, health_path = out / "report.json", out / "health.jsonl"
 
@@ -252,7 +252,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         env = {**os.environ, "PYTHONIOENCODING": "utf-8", "DELENTIA_HOME": str(home), "DELENTIA_REPO_ROOT": str(repo), "DELENTIA_MODEL_CONFIG": str(config),
                "DELENTIA_LLM_PROVIDER": "openai-compat", "DELENTIA_LLM_MODEL": model.model_id, "DELENTIA_LLM_RETRY_BACKOFF": "0.01",
                "DELENTIA_APPROVERS_FILE": str(work / "approvers.json"), "DELENTIA_APPROVER_PUBKEYS": public, "DELENTIA_AUDIT_SIGNING_KEY": str(audit_key),
-               "DELENTIA_MEMORY_EMBED": "off", "USERPROFILE": str(home), "HOME": str(home), SECRET_ENV: secret, **profile.env}
+               "DELENTIA_MEMORY_EMBED": "off", "USERPROFILE": str(home), "HOME": str(home), ROUTE_VAR_NAME: shared_hex, **profile.env}
         for name in ("DELENTIA_API_TOKEN", "DELENTIA_API_TOKENS_FILE", "DELENTIA_FDIA_POLICY", "DELENTIA_NOTARY_URL", "DELENTIA_WEBHOOKS"):
             env.pop(name, None)
         print(f"soak ({profile.name}, {profile.duration_s / 3600:.2f} h) in {work}; server on 127.0.0.1:{port}", flush=True)
@@ -316,7 +316,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         n_signed += 1
                         body = json.dumps({"event": {"id": f"signed-{n_signed}"}}).encode("utf-8")
                         stamp = int(time.time())
-                        status, _ = http("POST", f"{base}/v1/webhooks/{ROUTE}", body, {"X-Webhook-Timestamp": str(stamp), "X-Webhook-Signature-V2": sign_v2(secret.encode(), body, stamp),
+                        status, _ = http("POST", f"{base}/v1/webhooks/{ROUTE}", body, {"X-Webhook-Timestamp": str(stamp), "X-Webhook-Signature-V2": sign_v2(shared_hex.encode(), body, stamp),
                                                                                     "X-Delivery-Id": f"soak-signed-{n_signed}"})
                         signed.append({"t": now, "status": status})
                         print(f"  signed webhook {n_signed}: HTTP {status}", flush=True)
