@@ -18,6 +18,14 @@ The criteria fix R1 at 14 runs of W09 goal v3, haiku, key limit 0.20, pass = eve
 
 The 20-minute test is a test of the script, not an A1 result, and is not registered as one.
 
+## A1: what the 20-minute test found (2026-11-24, written before the change)
+
+The test profile ran (scripted model, 20 min; the B4 local-model probe was using the processor at the same time): 7 of 8 rules held (every due occurrence ran once: 9/9, 9/9, 4/4, 5/5, 5/5; the write job waited 5 of 5 times and wrote nothing; 4 signed webhooks started 4 episodes, 3 forged ones got 401; nothing ran after the pause; 4 of 4 audit checks verified; no restart). It FAILED "/health never two timeouts in a row": the two timeouts were at 30 and 45 s, when the first scheduled episodes ran.
+
+Cause, measured: with the 41-algorithm pipeline on (`delentia serve` turns it on) the FIRST episode of a process takes 20.6 s, about 10 s of it in ALGO-34 loading NLTK and TextBlob the first time; the pipeline's adapters run on the server's event loop, so nothing else answers meanwhile (one /health took 17.8 s). Without a job the warm-up thread alone stalled /health once (5.0 s). The episode started while the warm-up thread (which loads the same libraries) was still running.
+
+Change: before the pipeline's first stage, an episode WAITS for the pipeline warm-up thread if one is running, in a worker thread (`asyncio.to_thread`), so the event loop keeps answering; after it the libraries are loaded and the adapters take milliseconds. No adapter changes; a process with no warm-up thread (tests, one-off runs) is unchanged; the wait is bounded (120 s) and a failed warm-up does not stop the episode. Rule: (a) with a warm-up thread alive, an episode's pipeline does not start before it ends, and the event loop answers meanwhile; (b) the A1 test profile run again shows no two /health timeouts in a row, or the cause of any is read before anything else. The 20-minute runs are tests of the script, not A1 results.
+
 ## G1: the log
 
 `research/pl1/dogfood_log.jsonl` starts empty; `python -m research.pl1.dogfood add ...` appends a row with the fields of the criteria and never rewrites one; `report` prints k of n with a Wilson interval and every row.
