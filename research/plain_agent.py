@@ -34,7 +34,7 @@ class PlainAgent:
         self.max_tokens = max_tokens
 
     async def run(self, goal: str) -> Dict[str, Any]:
-        from rct_control_plane.autonomous_loop import LoopStep, decide_next_action
+        from rct_control_plane.autonomous_loop import LoopStep, _accepts_earlier_context, decide_next_action
         from rct_control_plane.llm_provider import MeteredProvider, get_default_provider
         meter = MeteredProvider(get_default_provider(), max_tokens_total=self.max_tokens)
         tools = [{"name": t.name, "description": getattr(t, "description", "") or "", "input_schema": getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {}}
@@ -55,7 +55,10 @@ class PlainAgent:
                 stopped = "max_seconds_exceeded"
                 break
             try:
-                decision = await decide_next_action(goal, history, tools, llm_provider=meter, extra_context=extra_context)
+                if extra_context and _accepts_earlier_context(decide_next_action):      # PL1 Amendment 1: the signer's note goes above the history, as in d0
+                    decision = await decide_next_action(goal, history, tools, llm_provider=meter, earlier_context=extra_context)
+                else:
+                    decision = await decide_next_action(goal, history, tools, llm_provider=meter, extra_context=extra_context)
             except Exception as exc:                                    # noqa: BLE001 - a refused (over-budget) or failing model call ends the episode
                 stopped = "budget_exceeded" if "budget" in str(exc).lower() or "token" in str(exc).lower() else "model_error"
                 break

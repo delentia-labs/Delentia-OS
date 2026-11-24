@@ -446,14 +446,32 @@ def cache_friendly_layout() -> bool:
     return (os.environ.get(LAYOUT_ENV) or "").strip().lower() == "cache_friendly"
 
 
+EARLIER_CONTEXT_HEADING = "Before this episode started (every step under 'History so far' below happened AFTER this):"
+
+
+def _accepts_earlier_context(fn: Any) -> bool:
+    """Whether a decision function (the real one, or a stand-in a test or a research runner put in its place) takes `earlier_context`."""
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return False
+    return "earlier_context" in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+
+
 async def decide_next_action(
     goal: str,
     history: List[LoopStep],
     available_tools: List[Dict[str, Any]],
     llm_provider: Optional["LLMProvider"] = None,
     extra_context: str = "",
+    earlier_context: str = "",
 ) -> Dict[str, Any]:
-    """Round 44 (item I.2): `extra_context`, when non-empty, is inserted as
+    """PL1 Amendment 1 (2026-11-24): `earlier_context`, when non-empty, is what happened BEFORE this episode (the action a person approved, or the
+    crash an episode is resumed from). It is placed between the goal and the history under EARLIER_CONTEXT_HEADING, because text placed after the
+    history is read as newer than it: U0 at 8f937bbe showed a model re-running tests it had just run, saying it had not seen them "after the write".
+    Empty: the prompt is the one it was before, byte for byte.
+
+    Round 44 (item I.2): `extra_context`, when non-empty, is inserted as
     its own section of the prompt below - added so GovernedAutonomousLoop
     can inject real retrieved-skill text (rct_control_plane.skill_library's
     retrieve_similar_skills()) without this function needing to know
@@ -495,6 +513,7 @@ async def decide_next_action(
 
     context_parts = [p for p in (_detect_repeated_call(history), extra_context) if p]
     context_section = ("\n" + "\n\n".join(context_parts) + "\n") if context_parts else ""
+    earlier_section = f"\n{EARLIER_CONTEXT_HEADING}\n{earlier_context}\n" if earlier_context else ""
 
     system_prompt: Optional[str] = None
     if cache_friendly_layout():
@@ -511,7 +530,7 @@ OR, if the goal is already achieved or no tool call is needed:
 {_batch_guidance()}"""
         prompt = f"""The goal you are working toward:
 {goal}
-
+{earlier_section}
 History so far:
 {history_desc}
 {context_section}
@@ -522,7 +541,7 @@ Decide the SINGLE next action now, as one JSON object."""
 
 Available tools:
 {tools_desc}
-
+{earlier_section}
 History so far:
 {history_desc}
 {context_section}
@@ -601,6 +620,13 @@ class AutonomousLoop:
     async def _decide_action(self, goal, history, available_tools, extra_context):
         """Overridable decision source; execution still goes through this loop's gates."""
         kwargs = {"extra_context": extra_context} if extra_context else {}
+        earlier = getattr(self, "_episode_earlier_text", "")         # PL1 Amendment 1: a resume note goes above the history; passed only when there is one
+        if earlier:
+            if _accepts_earlier_context(decide_next_action):
+                kwargs["earlier_context"] = earlier
+            else:
+                # A stand-in written before Amendment 1 (tests, research fakes) has no such parameter: it gets the note the old way, ahead of the other context.
+                kwargs["extra_context"] = "\n\n".join(p for p in (earlier, extra_context) if p)
         if self._llm_provider is not None:
             return await decide_next_action(goal, history, available_tools, self._llm_provider, **kwargs)
         return await decide_next_action(goal, history, available_tools, **kwargs)
