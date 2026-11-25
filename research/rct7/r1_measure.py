@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Set
 from research.rct7 import r1_goals
 
 CHANGE_TYPES = {"DEBUG", "REFACTOR", "BUILD_APP", "DEPLOY", "OPTIMIZE", "DOCUMENT", "TRANSFORM", "TEST"}
-MISMATCH_KINDS = {"language", "format", "max_words", "max_chars", "item_count", "required_artifact", "forbidden_effect", "preserve_interface"}
+MISMATCH_KINDS = {"language", "format", "max_words", "max_chars", "item_count", "required_artifact", "forbidden_effect", "preserve_interface", "budget", "deadline"}
 COMPILER_KINDS = {"COST": "budget", "TIME": "deadline"}          # the compiler's other constraint types (QUALITY, SECURITY, COMPLIANCE, RESOURCE) are not stated-constraint kinds
 
 

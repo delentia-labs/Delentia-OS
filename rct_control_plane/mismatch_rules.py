@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-KINDS = ("language", "format", "required_artifact", "forbidden_effect", "max_words", "max_chars", "item_count")
+KINDS = ("language", "format", "required_artifact", "forbidden_effect", "max_words", "max_chars", "item_count", "preserve_interface", "budget", "deadline")
 WRITE_TOOLS = ("delentia_write_repo_file", "delentia_patch_repo_file")
 _PATH = r"([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})"
 
@@ -76,6 +76,37 @@ _FORBID = re.compile(
 )
 
 
+# RCT-7 stage R-1 (research/RCT7_R1_CRITERIA_R116.md), tuned on the 60 development requests only. Bounded patterns only (the regex audit runs them).
+# What must stay the same for the outside world: signatures, a public API, command names or flags, a response schema, an output format.
+_IFACE = r"(?:(?:public\s+)?(?:function\s+)?signatures?|public\s+(?:interface|api|functions?)|(?:job's\s+|its\s+)?public\s+api|function names|command(?:-line)?\s+(?:names|flags)|endpoints|response schema|output format)"
+_PRESERVE = re.compile(
+    r"\b(?:preserve|keep|keeping|maintain)\s+(?:all\s+)?(?:the\s+)?(?:existing\s+)?" + _IFACE
+    + r"|\bwithout\s+changing\s+(?:the\s+|its\s+|their\s+)?" + _IFACE
+    + r"|" + _IFACE + r"\s+(?:must|should)\s+(?:stay|remain)\s+(?:the\s+same|unchanged)"
+    + r"|(?:ห้าม|ไม่|โดยไม่|โดยห้าม)\s*(?:เปลี่ยน|แก้)\s*(?:signature|ชื่อฟังก์ชัน|ชื่อคำสั่ง)",
+    re.IGNORECASE)
+# A category of files not to change (not one named file): the tests, configuration, any code at all; and an action not to take.
+_FORBID_CATEGORY = re.compile(
+    r"\b(?:do\s+not|don't|never)\s+(?:modify|change|edit|touch)\s+(?:the\s+|any\s+)?(?P<en>tests?(?:\s+folder)?|configuration files|config(?:uration)?|code|files?)\b(?![/\w]|\.\w)"
+    r"|\bwithout\s+changing\s+(?:the\s+)?(?P<en2>tests?)\b(?![/\w]|\.\w)"
+    r"|\bkeep\s+(?:the\s+)?(?:existing\s+)?(?P<en3>tests?)\s+(?:untouched|unchanged)\b"
+    r"|(?:ห้าม|อย่า)\s*(?:แก้|แก้ไข|แตะ)\s*(?:ไฟล์)?\s*(?P<th>เทสต์|config)(?![/\w]|\.\w)",
+    re.IGNORECASE)
+_FORBID_ACTION = re.compile(r"\bwithout\s+(?P<act>restarting|deleting|dropping|stopping)\s+(?:the\s+)?(?P<obj>[a-z]+)", re.IGNORECASE)
+_FORBID_LEAVE = re.compile(r"\bleave\s+([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})\s+alone\b|\bwithout\s+changing\s+([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})", re.IGNORECASE)
+_BUDGET = re.compile(r"\b(?:budget|bill|cost|spend)\b[^.;]{0,40}?(?:\$\s?\d[\d,]{0,12}|\d[\d,]{0,12}\s?(?:usd|dollars|baht))|\b(?:under|below|at most|no more than|within)\s+\$\s?\d[\d,]{0,12}"
+                     r"|งบ(?:ประมาณ)?\s*\d[\d,]{0,12}\s*บาท", re.IGNORECASE)
+_DEADLINE = re.compile(r"\bby\s+(?:the\s+end\s+of\s+(?:the\s+)?(?:day|week|month)|tomorrow|tonight|(?:this\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b"
+                       r"|\b(?:before|by)\s+\d{1,2}(?::\d\d)?\s*(?:am|pm)\b|\bwithin\s+(?:\d{1,3}|one|two|three)\s+(?:days?|weeks?|months?|hours?)\b"
+                       r"|ภายใน\s*(?:วัน(?:จันทร์|อังคาร|พุธ|พฤหัส|ศุกร์|เสาร์|อาทิตย์)|พรุ่งนี้|(?:\d{1,3}|หนึ่ง|สอง|สาม)\s*(?:วัน|สัปดาห์|อาทิตย์|เดือน))", re.IGNORECASE)
+_FORMAT_OTHER = re.compile(r"\b(?:to|into|as)\s+(?P<f1>json|csv)\b|\bas\s+a\s+(?P<f2>table|numbered list)\b|เป็น\s*(?P<f3>csv|json|ตาราง)", re.IGNORECASE)
+_WRITE_TO = re.compile(r"\b(?:write|put)\s+(?:the\s+)?(?:result|output|it|them)\s+(?:to|into)\s+([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})"
+                       r"|\b(?:write|create|add)\b[^.;]{0,50}?\btests?\b[^.;]{0,60}?\bin\s+([\w][\w./\\-]{0,120}\.py)", re.IGNORECASE)
+_NUMBER_WORDS = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
+_NUMBER_WORD = re.compile(r"\b(one|two|three|four|five|six|seven|eight|nine|ten)\b", re.IGNORECASE)
+_THAI_WORDS_MAX = re.compile(r"(?:ไม่เกิน|ภายใน)\s*(\d{1,4})\s*คำ")
+_LANG_DOC = re.compile(r"เอกสารภาษา\s*(ไทย|อังกฤษ)")
+
 _NUM = r"(\d{1,4})"
 _MAX_WORDS = re.compile(
     r"\b(?:in|within|under|below|less than|fewer than|at most|no more than|up to|maximum of|a maximum of|max|limit(?:ed)?(?: the answer)? to)\s+" + _NUM + r"\s+words?\b"
@@ -91,6 +122,8 @@ _ITEMS_MAX = re.compile(
     r"\b(?:up to|at most|no more than|a maximum of|maximum of|max)\s+" + _NUM + r"\s+" + _ITEM_NOUN
     + r"|(?:ไม่เกิน|ภายใน)\s*" + _NUM + r"\s*ข้อ", re.IGNORECASE)
 _LIST_LINE = re.compile(r"^(\s*)(?:[-*•]|\d{1,2}[.)])\s+\S")
+# R-1: "a list of exactly 3 items", "in 5 steps", "give me the 3 most common ..."
+_ITEMS_EXTRA = re.compile(r"\blist\s+of\s+(?:exactly\s+)?(\d{1,3})\s+items?\b|\bin\s+(\d{1,3})\s+steps\b|\b(?:give|list|show)\s+(?:me\s+)?(?:the\s+)?(\d{1,3})\s+(?:most|largest|biggest|top|latest)\b", re.IGNORECASE)
 
 
 def _language_of(word: str) -> Optional[str]:
@@ -146,27 +179,60 @@ def _derive_one(goal: str) -> List[Requirement]:
         lang = next((_language_of(g) for g in m.groups() if g), None)
         if lang:
             targets[lang] = m.group(0)
+    if not targets:
+        for m in _LANG_DOC.finditer(text):                 # R-1: "เป็นเอกสารภาษาอังกฤษ" (a document in English)
+            lang = _language_of(m.group(1))
+            if lang:
+                targets[lang] = m.group(0)
     if len(targets) == 1:
         (lang, words), = targets.items()
         out.append(Requirement("language", lang, words))
     if jm := _JSON.search(text):
         out.append(Requirement("format", "json", jm.group(0)))
+    elif fm := _FORMAT_OTHER.search(text):                 # R-1: "to JSON", "as a table", "เป็น CSV" (only JSON is checked; the others are shown as conditions)
+        out.append(Requirement("format", (fm.group("f1") or fm.group("f2") or fm.group("f3") or "").lower().replace("ตาราง", "table"), fm.group(0)))
     for m in _SAVE.finditer(text):
         path = next((g for g in m.groups() if g), None)
         if path:
             out.append(Requirement("required_artifact", _clean_path(path), m.group(0)))
+    if not any(r.kind == "required_artifact" for r in out):
+        for m in _WRITE_TO.finditer(text):
+            path = next((g for g in m.groups() if g), None)
+            if path:
+                out.append(Requirement("required_artifact", _clean_path(path), m.group(0)))
     for m in _FORBID.finditer(text):
         path = next((g for g in m.groups() if g), None)
         if path:
             out.append(Requirement("forbidden_effect", _clean_path(path), m.group(0)))
+    for m in _FORBID_LEAVE.finditer(text):
+        path = next((g for g in m.groups() if g), None)
+        if path and not any(r.kind == "forbidden_effect" and r.value == _clean_path(path) for r in out):
+            out.append(Requirement("forbidden_effect", _clean_path(path), m.group(0)))
+    for m in _FORBID_CATEGORY.finditer(text):
+        word = (m.group("en") or m.group("en2") or m.group("en3") or m.group("th") or "").lower()
+        category = "tests" if word.startswith("test") or word == "เทสต์" else "config" if word.startswith("config") else "any"
+        out.append(Requirement("forbidden_effect", "category:" + category, m.group(0)))
+    for m in _FORBID_ACTION.finditer(text):
+        out.append(Requirement("forbidden_effect", f"action:{m.group('act').lower()} {m.group('obj').lower()}", m.group(0)))
+    if pm := _PRESERVE.search(text):
+        out.append(Requirement("preserve_interface", pm.group(0), pm.group(0)))
+    if bm := _BUDGET.search(text):
+        out.append(Requirement("budget", bm.group(0), bm.group(0)))
+    if dm := _DEADLINE.search(text):
+        out.append(Requirement("deadline", dm.group(0), dm.group(0)))
     if wm := _MAX_WORDS.search(text):
         out.append(Requirement("max_words", str(int(next(g for g in wm.groups() if g))), wm.group(0)))
+    elif tw := _THAI_WORDS_MAX.search(text):
+        out.append(Requirement("max_words", str(int(tw.group(1))), tw.group(0)))
     if cm := _MAX_CHARS.search(text):
         out.append(Requirement("max_chars", str(int(next(g for g in cm.groups() if g))), cm.group(0)))
-    if im := _ITEMS_MAX.search(text):
+    counted = _NUMBER_WORD.sub(lambda m: _NUMBER_WORDS[m.group(1).lower()], text)       # R-1: "five steps", "the three most common" count like "5 steps"
+    if im := _ITEMS_MAX.search(counted):
         out.append(Requirement("item_count", "<=" + str(int(next(g for g in im.groups() if g))), im.group(0)))
-    elif em := _ITEMS_EXACT.search(text):
+    elif em := _ITEMS_EXACT.search(counted):
         out.append(Requirement("item_count", "=" + str(int(next(g for g in em.groups() if g))), em.group(0)))
+    elif xm := _ITEMS_EXTRA.search(counted):
+        out.append(Requirement("item_count", "=" + str(int(next(g for g in xm.groups() if g))), xm.group(0)))
     return out
 
 
@@ -265,12 +331,15 @@ def check(requirements: Iterable[Requirement], answer: Optional[str], steps: Opt
             if (op == "=" and items != n) or (op == "<=" and items > n):
                 found.append(Difference("item_count", f"{'at most ' if op == '<=' else ''}{n} items", f"{items} items", "the list in the answer does not have the number of items the goal asked for"))
         elif req.kind == "forbidden_effect":
+            if req.value.startswith("action:"):
+                continue                                         # R-1: an action not to take (restart a database) is shown, not checked
+            category = req.value[len("category:"):] if req.value.startswith("category:") else None
             for step in steps or []:
                 if step.get("tool_name") not in WRITE_TOOLS or not _executed(step):
                     continue
                 args = step.get("tool_args") or {}
                 path = _clean_path(str(args.get("relative_path") or args.get("path") or ""))
-                if path and (path == req.value or path.endswith("/" + req.value)):
+                if path and (_in_category(path, category) if category else (path == req.value or path.endswith("/" + req.value))):
                     found.append(Difference("forbidden_effect", f"{req.value} left untouched", f"{step.get('tool_name')} changed {path}", "a write went through to a file the goal said not to change"))
                     break
     return found
@@ -363,13 +432,29 @@ def question_for(goal: str, differences: List[Difference]) -> str:
 
 CHECKED_BY = {
     "language": "the script of the answer's own sentences (code, links and file names removed)",
-    "format": "the answer parses as JSON",
+    "format": "the answer parses as JSON (other formats: shown, not checked)",
     "required_artifact": "the file exists in the workspace afterwards",
-    "forbidden_effect": "no write or patch to that file went through",
+    "forbidden_effect": "no write or patch to that file (or, for a category, to a file of that category) went through; an action not to take is shown, not checked",
     "max_words": "the words of the answer's own prose, counted (not checked for Thai)",
     "max_chars": "the length of the answer in characters",
     "item_count": "the top-level list items of the answer (no list lines: no verdict)",
+    "preserve_interface": "not checked by rule: shown to the model and the person as a condition",
+    "budget": "not checked by rule: shown as a condition (the episode's own cost cap is set elsewhere)",
+    "deadline": "not checked by rule: shown as a condition",
 }
+
+
+def _in_category(path: str, category: str) -> bool:
+    """R-1: whether a written path belongs to a protected category ('tests', 'config', 'any')."""
+    name = path.rsplit("/", 1)[-1].lower()
+    low = path.lower()
+    if category == "any":
+        return True
+    if category == "tests":
+        return low.startswith("tests/") or "/tests/" in low or low.startswith("test/") or name.startswith("test_") or name.endswith("_test.py")
+    if category == "config":
+        return name.endswith((".yaml", ".yml", ".toml", ".ini", ".cfg", ".env")) or "config" in name or "settings" in name
+    return False
 
 
 def conditions_for(goal: str) -> List[Dict[str, str]]:

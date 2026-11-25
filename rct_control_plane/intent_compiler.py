@@ -409,6 +409,7 @@ class IntentCompiler:
         result.keywords = self._extract_keywords(text_lower)
         result.metadata["head"], result.metadata["later_action"] = self._head_kind(text_lower)
         result.metadata["head_word"] = self._head_word(text_lower)
+        result.metadata["work_kind"] = self._work_kind(text_lower)
 
         # Extract entities
         result.entities = self._extract_entities(text, text_lower)
@@ -617,8 +618,40 @@ class IntentCompiler:
             return "read", later
         return None, later
 
+    # RCT-7 stage R-1 (research/RCT7_R1_CRITERIA_R116.md): the kind of work read from what the request asks to DO, in order. The first rule that matches
+    # decides; a request no rule reads is left to the keyword scores below (as before). Tuned on the 60 development requests only. Bounded patterns
+    # (no nested repetition), checked by the repository's regex audit.
+    _WORK_RULES: "List[tuple]" = [
+        (IntentType.ANALYZE_RISK, r"\bwhat could go wrong\b|^(?:assess|evaluate|review)\b[^.?!]{0,120}?\b(?:risks?|could (?:delete|break|lose)|unsafe|danger)|ประเมินความเสี่ยง"),
+        # a noun written as part of a path ("docs/hello.md", "tests/test_a.py") is a place, not the kind of work: (?![/\w]|\.\w) after the noun
+        (IntentType.TEST, r"^(?:write|add|create)\b[^.?!]{0,40}?\btests?\b(?![/\w]|\.\w)|^run\b[^.?!]{0,30}?\btests?\b(?![/\w]|\.\w)|^make\b[^.?!]{0,30}?\bflaky test|^(?:เขียน|รัน)เทสต์"),
+        (IntentType.DOCUMENT, r"^(?:write|update|draft)\b[^.?!]{0,60}?\b(?:readme|docs?|documentation|docstrings?|changelog|release notes|guide|manual|summary)\b(?![/\w]|\.\w)|^document\b"
+                              r"|^เขียน(?:คู่มือ|คำอธิบาย|เอกสาร)|เป็นเอกสาร"),
+        (IntentType.DEBUG, r"^(?:debug|fix|repair|correct|troubleshoot|diagnose|resolve)\b|\bfix (?:it|this|that|the)\b[^.?!]{0,10}"
+                           r"|^(?:ช่วย)?หาสาเหตุ|^(?:ช่วย)?แก้(?:บั๊ก|ข้อผิดพลาด|ไข)|(?:ผิด|พัง|ล้มเหลว)[^.?!]{0,60}?แก้"),
+        (IntentType.DEPLOY, r"^(?:deploy|release|publish|roll out|ship|launch)\b|ขึ้นเซิร์ฟเวอร์|ดีพลอย"),
+        (IntentType.OPTIMIZE, r"^speed up\b|^optimi[sz]e\b|^(?:reduce|cut|lower|make)\b[^.?!]{0,50}?\b(?:faster|memory|latency|cost|bill|time|speed)\b|เร็วขึ้น"),
+        (IntentType.TRANSFORM, r"^(?:convert|translate|merge|normali[sz]e|transform)\b|^(?:ช่วย)?แปลง"),
+        (IntentType.STRATEGY, r"^(?:plan|propose|outline|design)\b|^(?:ช่วย)?วางแผน"),
+        (IntentType.REFACTOR, r"^(?:refactor|restructure|reorgani[sz]e|rename|split|clean up)\b|ปรับโครงสร้าง|จัดระเบียบ"),
+        (IntentType.BUILD_APP, r"^(?:create|build|add|scaffold)\b|^(?:ช่วย)?สร้าง"),
+    ]
+
+    @classmethod
+    def _work_kind(cls, text: str) -> Optional[IntentType]:
+        """The kind of work the request asks for, by the rules above, or None."""
+        lead = cls._POLITE_LEAD.sub("", text.strip(), count=1)
+        lead = cls._THAI_LEAD.sub("", lead, count=1).strip()
+        for kind, pattern in cls._WORK_RULES:
+            if re.search(pattern, lead):
+                return kind
+        return None
+
     def _classify_intent_type(self, lexical: LexicalResult) -> Optional[IntentType]:
         """Classify intent type based on keywords"""
+        work = lexical.metadata.get("work_kind")
+        if work is not None:
+            return work                                     # RCT-7 R-1: what the request asks to do comes first
         head = lexical.metadata.get("head")
         later = bool(lexical.metadata.get("later_action"))
         scores = {}
