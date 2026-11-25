@@ -42,7 +42,7 @@ WORDS = {
            "ran_once": "ran exactly once", "stopped": "stopped", "calls": "model calls", "verify": "VERIFY", "skill": "skill learned", "cost": "cost",
            "pillars": "Intent Loop", "memories": "memories recalled", "skills_used": "skills used", "pipeline": "algorithm pipeline", "ok": "ok",
            "errors": "errors", "autorun": "small edit ran under the owner's rule", "envelope": "safety envelope", "chain": "audit chain",
-           "chain_ok": "rows, hash-chained, every link verified", "chain_bad": "DOES NOT VERIFY", "model": "model", "sealed": "[sealed]", "plan_card": "plan proposed", "answer": "the model gave its final answer"},
+           "chain_ok": "rows, hash-chained, every link verified", "chain_bad": "DOES NOT VERIFY", "model": "model", "sealed": "[sealed]", "plan_card": "plan proposed", "answer": "the model gave its final answer", "no_plan": "none shown to the model", "placeholder": "placeholders, no content"},
     "th": {"guard_clean": "ตรวจเป้าหมายด้วย CORD: ผ่าน", "guard_block": "CORD บล็อกเป้าหมาย", "plan": "แผน RCT-7", "steps": "ขั้น",
            "missing": "ข้อมูลที่ยังขาด", "jitna_ok": "แพ็กเก็ตของตอนนี้เซ็น (JITNA, Ed25519) และตรวจผ่าน", "jitna_bad": "แพ็กเก็ตของตอนนี้ตรวจไม่ผ่าน",
            "allow": "อนุญาต", "ask": "ต้องให้คนเซ็น: ตอนนี้หยุดรอ", "block": "บล็อก", "rule": "กฎ",
@@ -50,7 +50,7 @@ WORDS = {
            "ran_once": "ทำงานครั้งเดียวพอดี", "stopped": "จบด้วย", "calls": "ครั้งที่เรียกโมเดล", "verify": "VERIFY", "skill": "เรียนรู้เป็นทักษะ", "cost": "ค่าใช้จ่าย",
            "pillars": "Intent Loop", "memories": "ความจำที่ดึงมาใช้", "skills_used": "ทักษะที่ใช้", "pipeline": "pipeline อัลกอริทึม", "ok": "สำเร็จ",
            "errors": "ผิดพลาด", "autorun": "แก้ไฟล์เล็กตามกฎของเจ้าของ", "envelope": "safety envelope", "chain": "audit chain",
-           "chain_ok": "แถว เชื่อมด้วย hash ตรวจครบทุกข้อต่อ", "chain_bad": "ตรวจไม่ผ่าน", "model": "โมเดล", "sealed": "[ปิดผนึก]", "plan_card": "เสนอแผน", "answer": "โมเดลให้คำตอบสุดท้าย"},
+           "chain_ok": "แถว เชื่อมด้วย hash ตรวจครบทุกข้อต่อ", "chain_bad": "ตรวจไม่ผ่าน", "model": "โมเดล", "sealed": "[ปิดผนึก]", "plan_card": "เสนอแผน", "answer": "โมเดลให้คำตอบสุดท้าย", "no_plan": "ไม่มีแผนส่งให้โมเดล", "placeholder": "แม่แบบว่าง ไม่มีเนื้อหา"},
 }
 
 
@@ -156,10 +156,13 @@ def render_row(row: Tuple[int, str, str, str, Dict[str, Any], str], opener: Open
         guard = c.get("guard") or {}
         verdict = str(guard.get("verdict") or guard.get("status") or ("clean" if not guard.get("rejected") else "blocked")) if isinstance(guard, dict) else str(guard)
         lines.append(f"   GUARD  {w['guard_clean'] if 'block' not in verdict.lower() and 'reject' not in verdict.lower() else w['guard_block']}")
-        steps = c.get("rct7_steps") or []
+        opened = opener.open(ns, c.get("rct7_steps"))             # the plan may be sealed per person: count its steps, not the keys of the sealed value
+        steps = opened if isinstance(opened, list) else []
         intent = c.get("intent") or {}
-        itype = intent.get("intent_type") if isinstance(intent, dict) else None
-        lines.append(f"   THINK  {w['plan']}: {len(steps)} {w['steps']}" + (f" · intent {itype}" if itype else ""))
+        itype = (intent.get("intent_type") or intent.get("type")) if isinstance(intent, dict) else None
+        placeholder = bool(steps) and all(str(s).startswith("Step ") and " for " in str(s)[:12] for s in steps)
+        shown = w["no_plan"] if not steps else (f"{len(steps)} {w['steps']}" + (f" ({w['placeholder']})" if placeholder else ""))
+        lines.append(f"   THINK  {w['plan']}: {shown}" + (f" · intent {itype}" if itype else ""))
         evidence = c.get("data_evidence") or {}
         missing = evidence.get("missing") or [] if isinstance(evidence, dict) else []
         lines.append(f"   FDIA   D={float(c.get('D') or 0):.2f}  I={float(c.get('I') or 0):.2f}" + (f"  · {w['missing']}: {len(missing)}" if missing else ""))

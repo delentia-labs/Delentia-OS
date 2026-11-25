@@ -99,3 +99,11 @@ def test_no_trace_prints_nothing_of_it(tmp_path, capsys):
 def test_a_missing_database_gives_no_lines(tmp_path):
     assert list(run_trace.trace(tmp_path)) == []
     assert run_trace.main([str(tmp_path / "nothing")]) == 2
+
+
+def test_a_sealed_plan_is_counted_by_its_steps_and_placeholders_are_named(rehearsed):
+    """PL1 Amendment 4, A6: the plan is sealed per person; the trace opens it before counting (it once printed '3 steps', the keys of the sealed value)."""
+    home, _lines = rehearsed
+    think = [line for _rid, line in run_trace.trace(home) if "THINK" in line]
+    assert think and all("3 steps" not in line for line in think)
+    assert all(("placeholders" in line) or ("none shown" in line) or ("7 steps" in line) for line in think)
