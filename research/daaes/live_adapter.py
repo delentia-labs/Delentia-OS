@@ -37,7 +37,7 @@ def run_live_episode(goal: str, home: Path, provider: Any, *, namespace: str = "
 
     with data_home(Path(home), extra_env=extra_env):
         persistence = ControlPlanePersistence(db_path=str(Path(home) / "agentic.db"))
-        loop = build_governed_loop(NullKernel(), namespace=namespace, max_iterations=max_iterations, persistence=persistence, mcp_server=mcp_server, conversation_turns=0, llm_provider=provider)
+        loop = build_governed_loop(NullKernel(plan=False), namespace=namespace, max_iterations=max_iterations, persistence=persistence, mcp_server=mcp_server, conversation_turns=0, llm_provider=provider)
         result = asyncio.run(loop.run(goal))
     result["guard_refused"] = getattr(provider, "refused", None)
     return result

@@ -162,10 +162,11 @@ class TestApproverKeys:
 # --------------------------------------------------- loop: pause -> resume
 
 def _script(monkeypatch, decisions):
-    calls = {"n": 0, "extra_contexts": []}
+    calls = {"n": 0, "extra_contexts": [], "histories": []}
 
     async def _fake(goal, history, available_tools, llm_provider=None, extra_context=""):
         calls["extra_contexts"].append(extra_context)
+        calls["histories"].append([(h.tool_name, h.tool_result) for h in history])
         i = calls["n"]
         calls["n"] += 1
         if i < len(decisions):
@@ -205,7 +206,10 @@ class TestPauseAndResume:
         assert [(n, {k: v for k, v in a.items() if k != "expected_base_sha256"}) for n, a in mcp.dispatched] == [("delentia_write_repo_file", WRITE["tool_args"])]
         assert outcome["executed_result"] == {"ok": True}
         assert outcome["continuation"]["stopped_reason"] == "llm_finished"
-        assert "has now executed, exactly once" in calls["extra_contexts"][-1]
+        # PL1 Amendment 4, A1: resumed in the same process, the continuation sees the approved write as a step of its history (no note)
+        last_history = calls["histories"][-1]
+        assert any(name == "delentia_write_repo_file" and (res or {}).get("approved_by_a_person_and_ran_once") for name, res in last_history)
+        assert "has now executed, exactly once" not in calls["extra_contexts"][-1]
         assert store.get(paused["approval_id"]).status == "EXECUTED"
 
         with pytest.raises(ApprovalError):

@@ -58,8 +58,9 @@ def test_c_the_note_after_an_approval_comes_from_the_one_function_both_arms_call
     d0_calls = list(calls)
     calls.clear()
     matrix(tmp_path / "second", "perfect", ["b0s"], [1700])
-    assert d0_calls and calls, "both arms read their note from approval_note"
-    assert {c[0] for c in d0_calls} == {c[0] for c in calls} and all(t.startswith("A human approved and the system has now executed, exactly once") for _, t in d0_calls + calls)
+    # PL1 Amendment 4, A1: both arms resume in the same process and carry their history, so neither sends the note (the note is built for d0's record, b0s builds none)
+    assert all(t.startswith("A human approved and the system has now executed, exactly once") for _, t in d0_calls + calls)
+    assert calls == [], "b0s no longer builds a note: it keeps its history, as d0 does in the same process"
 
 
 def test_the_note_text_is_exactly_the_text_of_the_loop_for_the_same_arguments():

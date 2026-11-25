@@ -55,7 +55,9 @@ EXTRA_STAGE_CEILINGS_USD = {"PW": 3.00,
                             # U1 is option A of decision D-U; U2 itself gets its ceiling from the price probe, by a later amendment, so it is not listed yet)
                             "U0": 0.50, "U1": 3.20, "U2-probe": 0.40, "R1": 0.20, "S1": 1.20,
                             # PL1 Amendment 1, B3 note: the re-run of U0 after the change, key limit 0.80 (research/LAUNCH_PL1_AMENDMENT_1_R116.md)
-                            "U0b": 0.80}
+                            "U0b": 0.80,
+                            # PL1 Amendment 4, B3: the third attempt at U0 after the 'pause, not forget' change, key limit 0.80 (research/LAUNCH_PL1_AMENDMENT_4_R116.md)
+                            "U0c": 0.80}
 
 
 def stage_ceiling(stage: str) -> Optional[float]:

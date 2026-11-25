@@ -49,6 +49,7 @@ def run_and_capture_the_note(tmp_path, monkeypatch, approver):
     loop = _loop(tmp_path, "a17", mcp=_FakeMCP())
     paused = asyncio.run(loop.run("fix the package"))
     sign(loop._pending_actions(), approver, loop._pending_actions().get(paused["approval_id"]))
+    loop._paused_histories = {}          # a resume in another process (PL1 Amendment 4: in the same process the history is carried and no note is sent)
     asyncio.run(loop.resume(paused["approval_id"], continue_episode=True))
     notes = [c for c in seen["contexts"] if "A human approved and the system has now executed" in c]
     assert notes, "the continuation did not carry the note"
