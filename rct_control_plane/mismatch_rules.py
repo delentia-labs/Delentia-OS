@@ -189,8 +189,10 @@ def _derive_one(goal: str) -> List[Requirement]:
         out.append(Requirement("language", lang, words))
     if jm := _JSON.search(text):
         out.append(Requirement("format", "json", jm.group(0)))
-    elif fm := _FORMAT_OTHER.search(text):                 # R-1: "to JSON", "as a table", "เป็น CSV" (only JSON is checked; the others are shown as conditions)
-        out.append(Requirement("format", (fm.group("f1") or fm.group("f2") or fm.group("f3") or "").lower().replace("ตาราง", "table"), fm.group(0)))
+    elif fm := _FORMAT_OTHER.search(text):                 # R-1: "to JSON", "as a table", "เป็น CSV": the format of what is produced, shown as a condition and NOT checked
+        # against the answer (found after the held-out run: "a tool that converts CSV to JSON" said nothing about the answer; only "as/in/return ... JSON" above is checked)
+        value = (fm.group("f1") or fm.group("f2") or fm.group("f3") or "").lower().replace("ตาราง", "table")
+        out.append(Requirement("format", "output:" + value, fm.group(0)))
     for m in _SAVE.finditer(text):
         path = next((g for g in m.groups() if g), None)
         if path:

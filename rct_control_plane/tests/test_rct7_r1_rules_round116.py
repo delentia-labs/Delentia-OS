@@ -102,3 +102,12 @@ def test_shown_only_kinds_never_stop_anything(tmp_path):
     write = {"tool_name": "delentia_write_repo_file", "tool_args": {"relative_path": "a.py"}, "tool_result": {"ok": True}}
     assert m.check(reqs, "done", [write], Path(tmp_path)) == []
     assert all(c["checked_by"] for c in m.conditions_for("Refactor it without changing its public interface, before 5 pm"))
+
+
+def test_the_format_of_a_produced_file_is_not_checked_against_the_answer(tmp_path):
+    """Found after the held-out run (g14): 'converts CSV to JSON' describes the output, not the answer; a prose answer must not be stopped for it."""
+    reqs = m.derive_requirements("Convert customers.csv to JSON and save it as customers.json.")
+    assert ("format", "output:json") in [(r.kind, r.value) for r in reqs]
+    assert m.check(reqs, "Saved customers.json with 120 rows.", [], Path(tmp_path)) == [] or all(d.criterion != "format" for d in m.check(reqs, "Saved customers.json with 120 rows.", [], Path(tmp_path)))
+    answer_json = m.derive_requirements("List the five largest invoices as JSON.")
+    assert ("format", "json") in [(r.kind, r.value) for r in answer_json], "asking for the answer as JSON is still checked"
