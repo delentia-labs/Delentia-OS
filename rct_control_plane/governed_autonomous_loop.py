@@ -586,6 +586,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_jitna_verified: bool = False
         self._episode_start_time: float = 0.0
         self._episode_context_text: str = ""
+        self._episode_earlier_text: str = ""          # PL1 Amendment 1: the resume note, shown above the history
         # Round 48 R1.1/R1.3: switches exist so the effect of each context
         # section can be measured (A/B) rather than assumed.
         self._rct7_in_prompt = rct7_in_prompt
@@ -926,9 +927,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
             self._episode_rct7_steps, self._episode_context_text = [], ""
             return refused
         resume_note, self._resume_note = self._resume_note, ""
+        # PL1 Amendment 1: the note of an approval or a crash resume describes what happened BEFORE this episode, so it goes above the history
+        # (decide_next_action's earlier_context), not with the context sections below it, where a model read it as newer than its own later steps.
+        self._episode_earlier_text = resume_note
         context_files = self._load_context_files()
         sections = [
-            resume_note,
             context_files["text"],
             conversation_text,
             attachments["text"],

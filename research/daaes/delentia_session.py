@@ -183,9 +183,10 @@ def scripted_model(decisions: List[Dict[str, Any]]):
     original = loop_module.decide_next_action
     state: Dict[str, Any] = {"i": 0, "contexts": []}
 
-    async def fake(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "") -> Dict[str, Any]:
+    async def fake(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "", earlier_context: str = "") -> Dict[str, Any]:
         i = state["i"]
         state["i"] += 1
+        extra_context = "\n\n".join(p for p in (earlier_context, extra_context) if p)      # PL1 Amendment 1: a resume note arrives as earlier_context; recorded (and handed to a callable entry) as before
         state["contexts"].append(extra_context)                          # what the model was shown: the cases check that restored intent is really in it
         if i < len(decisions):
             entry = decisions[i]
@@ -252,9 +253,10 @@ def _live_recorder() -> Any:
     state: Dict[str, Any] = {"i": 0, "contexts": []}
     original = autonomous_loop_module.decide_next_action
 
-    async def recording(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "") -> Dict[str, Any]:
-        state["contexts"].append(extra_context)
-        return await original(goal, history, available_tools, llm_provider=llm_provider, extra_context=extra_context)
+    async def recording(goal: str, history: Any, available_tools: Any, llm_provider: Any = None, extra_context: str = "", earlier_context: str = "") -> Dict[str, Any]:
+        # PL1 Amendment 1: a resume note now arrives as earlier_context (shown above the history); it is recorded with the rest of what the model was shown and passed on unchanged.
+        state["contexts"].append("\n\n".join(p for p in (earlier_context, extra_context) if p))
+        return await original(goal, history, available_tools, llm_provider=llm_provider, extra_context=extra_context, earlier_context=earlier_context)
     autonomous_loop_module.decide_next_action = recording                       # type: ignore[assignment]
     try:
         yield state

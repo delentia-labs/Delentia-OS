@@ -53,7 +53,9 @@ EXTRA_STAGE_CEILINGS_USD = {"PW": 3.00,
                             "R3-1": 0.25,
                             # Round 116: Launch Proof Level 1 (research/LAUNCH_PL1_CRITERIA_R116.md, the budget table: each ceiling is the key limit written there;
                             # U1 is option A of decision D-U; U2 itself gets its ceiling from the price probe, by a later amendment, so it is not listed yet)
-                            "U0": 0.50, "U1": 3.20, "U2-probe": 0.40, "R1": 0.20, "S1": 1.20}
+                            "U0": 0.50, "U1": 3.20, "U2-probe": 0.40, "R1": 0.20, "S1": 1.20,
+                            # PL1 Amendment 1, B3 note: the re-run of U0 after the change, key limit 0.80 (research/LAUNCH_PL1_AMENDMENT_1_R116.md)
+                            "U0b": 0.80}
 
 
 def stage_ceiling(stage: str) -> Optional[float]:
