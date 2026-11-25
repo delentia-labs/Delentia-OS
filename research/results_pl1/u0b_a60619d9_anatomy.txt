@@ -1,0 +1,52 @@
+changed=False: 13
+changed=False,second=False: 13
+changed=True: 28
+changed=True,second=False: 18
+changed=True,second=True: 10
+reread_any: 35
+stuck=False: 15
+stuck=True: 26
+stuck_last_tool=delentia_read_repo_file: 22
+stuck_last_tool=delentia_run_public_tests: 4
+write: 41
+(5000, 2, True, '4 failed, 1 passed in 0.86s', '3 failed, 2 passed in 0.15s', 1, 'llm_finished', True)
+(5001, 1, True, '2 failed, 3 passed in 0.14s', '2 errors in 0.42s', 2, 'stuck_repeating', False)
+(5002, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.14s', 1, 'stuck_repeating', False)
+(5003, 2, True, '4 failed, 1 passed in 0.15s', '2 failed, 3 passed in 0.15s', 1, 'llm_finished', False)
+(5004, 2, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 2, 'stuck_repeating', False)
+(5005, 2, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 2, 'llm_finished', False)
+(5006, 1, True, '4 failed, 1 passed in 0.14s', '2 errors in 0.29s', 1, 'stuck_repeating', False)
+(5007, 1, True, '4 failed, 1 passed in 0.14s', '3 failed, 2 passed in 0.14s', 0, 'stuck_repeating', False)
+(5008, 1, True, '2 failed, 3 passed in 0.14s', '1 failed, 4 passed in 0.13s', 2, 'stuck_repeating', False)
+(5009, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.14s', 1, 'stuck_repeating', False)
+(5010, 1, True, '4 failed, 1 passed in 0.15s', '2 failed, 3 passed in 0.14s', 0, 'llm_finished', False)
+(5011, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.16s', 1, 'llm_finished', False)
+(5012, 1, True, '4 failed, 1 passed in 0.14s', '2 errors in 0.29s', 2, 'stuck_repeating', False)
+(5013, 2, True, '4 failed, 1 passed in 0.14s', '5 passed in 0.14s', 1, 'llm_finished', True)
+(5014, 2, True, '4 failed, 1 passed in 0.14s', '1 failed, 4 passed in 0.13s', 2, 'llm_finished', True)
+(5015, 1, False, '2 failed, 3 passed in 0.14s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5016, 1, True, '4 failed, 1 passed in 0.14s', '3 failed, 2 passed in 0.14s', 1, 'stuck_repeating', False)
+(5018, 1, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5019, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.15s', 2, 'llm_finished', False)
+(5020, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.14s', 2, 'llm_finished', False)
+(5021, 1, True, '4 failed, 1 passed in 0.14s', '3 failed, 2 passed in 0.14s', 3, 'stuck_repeating', False)
+(5022, 1, False, '2 failed, 3 passed in 0.14s', '2 failed, 3 passed in 0.13s', 1, 'stuck_repeating', False)
+(5023, 1, True, '4 failed, 1 passed in 0.14s', '3 failed, 2 passed in 0.14s', 0, 'llm_finished', False)
+(5024, 1, True, '4 failed, 1 passed in 0.14s', '5 passed in 0.14s', 0, 'llm_finished', True)
+(5025, 1, True, '4 failed, 1 passed in 0.15s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5026, 2, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 2, 'llm_finished', False)
+(5027, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.14s', 3, 'stuck_repeating', False)
+(5028, 2, True, '4 failed, 1 passed in 0.14s', '3 failed, 2 passed in 0.17s', 1, 'llm_finished', True)
+(5029, 1, False, '2 failed, 3 passed in 0.14s', '2 failed, 3 passed in 0.14s', 0, 'stuck_repeating', False)
+(5030, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.15s', 2, 'stuck_repeating', False)
+(5031, 1, True, '4 failed, 1 passed in 0.16s', '1 failed, 4 passed in 0.15s', 2, 'stuck_repeating', False)
+(5032, 1, True, '4 failed, 1 passed in 0.15s', '2 failed, 3 passed in 0.14s', 2, 'stuck_repeating', False)
+(5033, 1, True, '4 failed, 1 passed in 0.15s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5034, 1, False, '4 failed, 1 passed in 0.15s', '4 failed, 1 passed in 0.14s', 1, 'stuck_repeating', False)
+(5035, 1, True, '4 failed, 1 passed in 0.15s', '1 failed, 4 passed in 0.14s', 3, 'stuck_repeating', False)
+(5036, 1, True, '2 failed, 3 passed in 0.14s', '5 passed in 0.15s', 0, 'llm_finished', True)
+(5037, 1, False, '4 failed, 1 passed in 0.14s', '4 failed, 1 passed in 0.14s', 1, 'stuck_repeating', False)
+(5038, 2, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 1, 'llm_finished', False)
+(5039, 2, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5040, 1, True, '4 failed, 1 passed in 0.14s', '2 failed, 3 passed in 0.14s', 1, 'stuck_repeating', False)
+(5041, 1, False, '4 failed, 1 passed in 0.15s', '4 failed, 1 passed in 0.14s', 1, 'stuck_repeating', False)
