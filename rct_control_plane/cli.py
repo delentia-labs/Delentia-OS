@@ -255,7 +255,7 @@ def format_output(data: Any, format: OutputFormat) -> None:
 _HELP_SECTIONS = (
     ("Start here", ("setup", "launch", "serve", "desk", "demo", "agent", "chat", "approvals", "doctor")),
     ("Everyday", ("update", "model","memory", "profile", "skills", "cron", "task", "sessions", "checkpoints", "clarify", "law", "credentials", "context", "insights")),
-    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "state-log", "host-check", "host-metrics")),
+    ("Safety and records", ("fdia", "pause", "resume", "limits", "audit-chain", "notary", "backup", "tokens", "pairing", "hooks", "sovereignty", "jury", "episodes", "state-log", "trace", "host-check", "host-metrics")),
     ("Connect and extend", ("mcp", "acp", "webhook", "forge", "search-status", "jitna", "intent-contract")),
     ("Measure and research", ("experiments", "growth", "trajectories", "algorithms", "metrics")),
     ("Older commands (still work)", ("adapter", "audit", "build", "compile", "evaluate", "governance", "init", "list", "logs", "replay", "reset", "start", "status", "timeline", "workflow", "version")),
@@ -2213,6 +2213,20 @@ def _approval_store(db: Optional[str]):
     # Round 101: the database the server and the loops write pending actions to (agentic.db). The default used to be control_plane.db, so `delentia approvals list|approve|sign` on a host showed
     # "No pending actions" for an action that was waiting, unless --db was given.
     return PendingActionStore(ControlPlanePersistence(db_path=db or agentic_db_path()))
+
+
+@cli.command("trace")
+@click.option("--db", default=None, help="the agentic.db to read (default: this data home's)")
+@click.option("--follow", is_flag=True, help="keep printing new rows as the agent writes them, until Ctrl+C")
+@click.option("--reasoning", is_flag=True, help="also print the model's reasoning for each step")
+@click.option("--lang", type=click.Choice(["en", "th"]), default="en", show_default=True)
+def trace_command(db: Optional[str], follow: bool, reasoning: bool, lang: str) -> None:
+    """What the governed loop did, one line per step, from the record it keeps: GUARD, the RCT-7 plan, FDIA D/I/F, every gate decision and its rule, each
+    tool call, signatures and approvals, the end of each episode, and whether the audit chain verifies. Only reads; costs nothing (Round 116)."""
+    from rct_control_plane import run_trace
+    from rct_control_plane.data_home import agentic_db_path
+    argv = [db or str(agentic_db_path()), "--lang", lang] + (["--follow"] if follow else []) + (["--reasoning"] if reasoning else [])
+    raise SystemExit(run_trace.main(argv))
 
 
 @cli.group("state-log")

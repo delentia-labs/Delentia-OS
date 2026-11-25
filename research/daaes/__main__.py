@@ -52,6 +52,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     bench.add_argument("--price-out", type=float, default=None, help="USD per million output tokens (paid only)")
     bench.add_argument("--hermes-sandboxed", action="store_true", help="say that the shell Hermes will use is inside a container or a throw-away account (required for h0 with a real model)")
     bench.add_argument("--hermes-container", default=None, help="run h0 inside this docker image (see research/daaes/hermes_arm/Dockerfile); also counts as the sandbox a real model requires")
+    bench.add_argument("--no-trace", action="store_true", help="do not print the governed record of each d0 run while it goes (printed by default; read-only, costs nothing)")
+    bench.add_argument("--trace-lang", choices=("en", "th"), default="en", help="language of the printed trace")
     bench.add_argument("--plan", default="perfect", choices=("perfect", "forged", "tampering", "idle"), help="rehearsal only: what the scripted agent does")
     abl = sub.add_parser("ablation", help="the ablation arms D0-D6 on the scripted cases, each arm's manipulation checked (a folder outside the repository)")
     abl.add_argument("--out", default=None)
@@ -106,21 +108,40 @@ def _seeds(spec: str) -> List[int]:
     return out
 
 
+def _trace_printer(lang: str) -> Any:
+    """The governed record of each d0 run, printed as it is written (rct_control_plane.run_trace). While it prints, the per-request HTTP lines and the
+    'Delta Engine initialized' lines are not shown: they say nothing the trace does not, and they hide it."""
+    import logging
+    for name in ("httpx", "rct_control_plane.algo_25_delta_block"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8")
+
+    def emit(line: str) -> None:
+        print(line, flush=True)
+    emit.lang = lang                                                             # type: ignore[attr-defined]
+    return emit
+
+
 def _benchmark(args: Any) -> int:
     from research.daaes import benchmark
     from research.daaes.budget_guard import PAID_MAX_INPUT_TOKENS_PER_RUN, PAID_MAX_OUTPUT_TOKENS_PER_RUN, BudgetExceeded, BudgetPolicy
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
     seeds = _seeds(args.seeds)
     out = Path(args.out)
+    trace = None
+    if not getattr(args, "no_trace", False):
+        trace = _trace_printer(getattr(args, "trace_lang", "en"))
     if args.provider == "rehearsal":
         from research.daaes.scripted_upstream import PRICE_IN, PRICE_OUT, ScriptedUpstream
         with ScriptedUpstream(args.plan) as up:
             result = benchmark.run_matrix(out, up.url, "rehearsal-not-a-key", args.model, PRICE_IN, PRICE_OUT, arms, seeds, max_iterations=args.max_iterations, max_seconds=args.max_seconds,
-                                          real_model=False, hermes_sandboxed=args.hermes_sandboxed, before_cell=up.reset, progress=print)
+                                          real_model=False, hermes_sandboxed=args.hermes_sandboxed, before_cell=up.reset, progress=print, trace=trace)
     elif args.provider == "ollama":
         url = os.environ.get("DELENTIA_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/") + "/v1"
         result = benchmark.run_matrix(out, url, None, args.model, 0.0, 0.0, arms, seeds, max_iterations=args.max_iterations, max_seconds=args.max_seconds, real_model=True,
-                                      hermes_sandboxed=args.hermes_sandboxed, progress=print)
+                                      hermes_sandboxed=args.hermes_sandboxed, progress=print, trace=trace)
     else:
         if not os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DELENTIA_RUN_LIVE_TESTS") != "1":
             raise BudgetExceeded("a paid benchmark needs OPENROUTER_API_KEY and DELENTIA_RUN_LIVE_TESTS=1 in the environment (set by you, never written by this tool)")
@@ -136,7 +157,7 @@ def _benchmark(args: Any) -> int:
                               max_cost_per_run_usd=args.budget_usd * 0.1, max_llm_calls_per_run=args.max_iterations * 6,
                               max_input_tokens_per_run=PAID_MAX_INPUT_TOKENS_PER_RUN, max_output_tokens_per_run=PAID_MAX_OUTPUT_TOKENS_PER_RUN)
         result = benchmark.run_matrix(out, endpoint, os.environ["OPENROUTER_API_KEY"], args.model, args.price_in, args.price_out, arms, seeds, policy=policy,
-                                      max_iterations=args.max_iterations, max_seconds=args.max_seconds, real_model=True, hermes_sandboxed=args.hermes_sandboxed, progress=print)
+                                      max_iterations=args.max_iterations, max_seconds=args.max_seconds, real_model=True, hermes_sandboxed=args.hermes_sandboxed, progress=print, trace=trace)
     print((out / "SUMMARY.md").read_text(encoding="utf-8"))
     return 0 if all(r["valid"] or r.get("outcome") == "not_evaluated" for r in result["rows"]) else 1
 
