@@ -3061,6 +3061,7 @@
 <h2 id="assumptions-what-must-be-true-for-the-above-to-hold">Assumptions (what must be true for the above to hold)<a class="headerlink" href="#assumptions-what-must-be-true-for-the-above-to-hold" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The tool server is reached <strong>only</strong> through the loop's dispatch. The raw <code>/mcp</code> gateway is an owner-only route.</li>
+<li><strong>The raw <code>/mcp</code> gateway is outside the governed loop on purpose.</strong> It is the owner's own door for an MCP client of their choice, and it has its own tools, some of which change things (a shell, files, git, a web fetch). A call sent there is NOT judged by the owner policy, the FDIA gate or the taint rule and does not wait for a signature. Only the owner's token reaches it (a per-person token gets 403; <code>rct_control_plane/tests/test_complete_mediation_round82_real.py</code>). Do not give the owner token to a program you would not let run commands on this computer.</li>
 <li>The approver keys and the audit signing key are <strong>not</strong> readable by the agent. The local shell sandbox runs as the same OS user; it denies commands that name key files, which is a speed bump, not a jail. Keep approver keys on another device, and run the notary as another OS user.</li>
 <li>The clock of the host is right (approval windows).</li>
 <li>A human reads what they sign. A device signs the digest of the action, not the text on screen; for the riskiest actions require two signers.</li>
