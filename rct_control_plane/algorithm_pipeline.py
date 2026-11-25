@@ -734,3 +734,25 @@ def warm_up(kernel: Any) -> float:
     except Exception:
         pass
     return time.perf_counter() - started
+
+
+WARM_WAIT_S = 120.0
+_WARM_THREAD: Optional[Any] = None
+
+
+def start_warm_up(kernel: Any) -> Any:
+    """Start `warm_up` in a background thread and remember it, so an episode can wait for it (PL1 Amendment 2). Returns the thread."""
+    import threading
+    global _WARM_THREAD
+    _WARM_THREAD = threading.Thread(target=warm_up, args=(kernel,), daemon=True, name="pipeline-warmup")
+    _WARM_THREAD.start()
+    return _WARM_THREAD
+
+
+async def wait_for_warm_up(timeout: float = WARM_WAIT_S) -> None:
+    """PL1 Amendment 2: the adapters run on the event loop, so the first episode of a process used to load NLTK/TextBlob there (about 10 s of a 20 s first episode,
+    nothing else answered meanwhile). If the warm-up thread is still loading them, wait for it in a worker thread: the event loop keeps answering, and afterwards
+    the adapters take milliseconds. No warm-up thread (tests, one-off runs): nothing to wait for."""
+    thread = _WARM_THREAD
+    if thread is not None and thread.is_alive():
+        await asyncio.to_thread(thread.join, timeout)

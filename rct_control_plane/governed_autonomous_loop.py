@@ -2654,7 +2654,11 @@ class GovernedAutonomousLoop(AutonomousLoop):
         pipeline = self._get_pipeline()
         if pipeline is None:
             return ""
-        from rct_control_plane.algorithm_pipeline import PipelineContext
+        from rct_control_plane.algorithm_pipeline import PipelineContext, wait_for_warm_up
+        try:
+            await wait_for_warm_up()          # PL1 Amendment 2: while the warm-up thread loads the language libraries, wait off the event loop
+        except Exception:                     # noqa: BLE001 - a failed warm-up never stops the episode
+            pass
         intent = getattr(compile_result, "intent", None)
         ctx = PipelineContext(
             goal=goal, namespace=self.namespace, kernel=self._get_kernel(), persistence=self._persistence,

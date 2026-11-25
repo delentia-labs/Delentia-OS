@@ -358,11 +358,9 @@ async def _lifespan(app: FastAPI):
     from rct_control_plane.gateways.slack_gateway import SlackGateway
 
     if os.environ.get("DELENTIA_ALGORITHM_PIPELINE", "").strip() in ("1", "true", "yes"):
-        import threading
-        from rct_control_plane.algorithm_pipeline import warm_up
+        from rct_control_plane.algorithm_pipeline import start_warm_up
         global _PIPELINE_WARM_THREAD
-        _PIPELINE_WARM_THREAD = threading.Thread(target=warm_up, args=(ALGORITHM_KERNEL,), daemon=True, name="pipeline-warmup")
-        _PIPELINE_WARM_THREAD.start()
+        _PIPELINE_WARM_THREAD = start_warm_up(ALGORITHM_KERNEL)          # PL1 Amendment 2: remembered, so an episode waits for it off the event loop
 
     _DAEMON_SCHEDULER = AutonomousScheduler(kernel=ALGORITHM_KERNEL)
     _DAEMON_SCHEDULER.start(poll_interval_seconds=5.0)
