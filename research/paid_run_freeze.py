@@ -57,7 +57,9 @@ EXTRA_STAGE_CEILINGS_USD = {"PW": 3.00,
                             # PL1 Amendment 1, B3 note: the re-run of U0 after the change, key limit 0.80 (research/LAUNCH_PL1_AMENDMENT_1_R116.md)
                             "U0b": 0.80,
                             # PL1 Amendment 4, B3: the third attempt at U0 after the 'pause, not forget' change, key limit 0.80 (research/LAUNCH_PL1_AMENDMENT_4_R116.md)
-                            "U0c": 0.80}
+                            "U0c": 0.80,
+                            # PL1 Amendment 5, A3: the U0 screen of other models at one commit, haiku as the anchor (research/LAUNCH_PL1_AMENDMENT_5_R116.md)
+                            "U0m-haiku": 0.30, "U0m-deepseek": 0.30, "U0m-kimi": 1.30}
 
 
 def stage_ceiling(stage: str) -> Optional[float]:
