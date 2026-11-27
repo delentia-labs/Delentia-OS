@@ -111,3 +111,12 @@ def test_the_format_of_a_produced_file_is_not_checked_against_the_answer(tmp_pat
     assert m.check(reqs, "Saved customers.json with 120 rows.", [], Path(tmp_path)) == [] or all(d.criterion != "format" for d in m.check(reqs, "Saved customers.json with 120 rows.", [], Path(tmp_path)))
     answer_json = m.derive_requirements("List the five largest invoices as JSON.")
     assert ("format", "json") in [(r.kind, r.value) for r in answer_json], "asking for the answer as JSON is still checked"
+
+
+@pytest.mark.parametrize("lead", ["ห้ามแก้", "ห้ามแก้ไฟล์", "อย่าลบ", "do not modify", "without changing", "keep the", "budget", "ภายใน"])
+def test_hostile_whitespace_is_read_quickly(lead):
+    """CodeQL found a polynomial regex: 'ห้ามแก้' then 20,000 spaces took 5.6 s (two free \s* around an optional word). Bounded now; this pins it."""
+    import time
+    started = time.perf_counter()
+    m.derive_requirements(lead + " " * 20000)
+    assert time.perf_counter() - started < 1.0

@@ -71,7 +71,7 @@ _JSON = re.compile(r"\b(?:as|in|return|returns|output|respond with|reply with)\s
 _SAVE = re.compile(r"\bsave\s+(?:it\s+|the\s+\w+\s+|this\s+)?(?:as|to|in|into)\s+" + _PATH + r"|บันทึก(?:ผล)?(?:เป็น|ลง(?:ใน)?|ไว้ที่)\s*(?:ไฟล์)?\s*" + _PATH, re.IGNORECASE)
 _FORBID = re.compile(
     r"\b(?:do\s+not|don't|never)\s+(?:modify|change|edit|overwrite|touch|delete|remove)\s+(?:the\s+)?(?:file\s+)?" + _PATH
-    + r"|(?:ห้าม|อย่า)\s*(?:แก้ไข|แก้|ลบ|เขียนทับ)\s*(?:ไฟล์)?\s*" + _PATH,
+    + r"|(?:ห้าม|อย่า)\s{0,3}(?:แก้ไข|แก้|ลบ|เขียนทับ)\s{0,3}(?:ไฟล์\s{0,3})?" + _PATH,          # bounded (R-1, CodeQL): two free \s* around an optional word were polynomial
     re.IGNORECASE,
 )
 
@@ -90,7 +90,7 @@ _FORBID_CATEGORY = re.compile(
     r"\b(?:do\s+not|don't|never)\s+(?:modify|change|edit|touch)\s+(?:the\s+|any\s+)?(?P<en>tests?(?:\s+folder)?|configuration files|config(?:uration)?|code|files?)\b(?![/\w]|\.\w)"
     r"|\bwithout\s+changing\s+(?:the\s+)?(?P<en2>tests?)\b(?![/\w]|\.\w)"
     r"|\bkeep\s+(?:the\s+)?(?:existing\s+)?(?P<en3>tests?)\s+(?:untouched|unchanged)\b"
-    r"|(?:ห้าม|อย่า)\s*(?:แก้|แก้ไข|แตะ)\s*(?:ไฟล์)?\s*(?P<th>เทสต์|config)(?![/\w]|\.\w)",
+    r"|(?:ห้าม|อย่า)\s{0,3}(?:แก้|แก้ไข|แตะ)\s{0,3}(?:ไฟล์\s{0,3})?(?P<th>เทสต์|config)(?![/\w]|\.\w)",          # bounded: two free \s* around an optional word were polynomial (CodeQL)
     re.IGNORECASE)
 _FORBID_ACTION = re.compile(r"\bwithout\s+(?P<act>restarting|deleting|dropping|stopping)\s+(?:the\s+)?(?P<obj>[a-z]+)", re.IGNORECASE)
 _FORBID_LEAVE = re.compile(r"\bleave\s+([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})\s+alone\b|\bwithout\s+changing\s+([\w][\w./\\-]{0,120}\.[A-Za-z0-9]{1,6})", re.IGNORECASE)
