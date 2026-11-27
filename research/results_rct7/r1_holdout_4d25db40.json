@@ -1,0 +1,379 @@
+{
+  "summary": {
+    "n": 20,
+    "intent_right": 19,
+    "with_constraints": 15,
+    "constraints_all_found": 13,
+    "extra_constraint_kinds": 1,
+    "question_as_change": 0,
+    "change_as_question": 0,
+    "missed_kinds": {
+      "required_artifact": 1,
+      "forbidden_effect": 1
+    },
+    "intent_confusions": {
+      "DEBUG->TEST": 1
+    }
+  },
+  "rows": [
+    {
+      "id": "g01",
+      "lang": "en",
+      "goal": "Fix the failing tests in the ledgercalc package. Preserve all public function signatures and do not modify the tests.",
+      "intent_want": "DEBUG",
+      "intent_got": "DEBUG",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect",
+        "preserve_interface"
+      ],
+      "constraints_got": [
+        "forbidden_effect",
+        "preserve_interface"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g03",
+      "lang": "en",
+      "goal": "Repair the crash in export.py that happens when the customer list is empty. Leave config.yaml alone.",
+      "intent_want": "DEBUG",
+      "intent_got": "DEBUG",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [
+        "forbidden_effect"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g11",
+      "lang": "th",
+      "goal": "ปรับโครงสร้างโค้ดใน billing.py ให้อ่านง่ายขึ้น โดยห้ามเปลี่ยน signature ของฟังก์ชัน",
+      "intent_want": "REFACTOR",
+      "intent_got": "REFACTOR",
+      "intent_ok": true,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [
+        "preserve_interface"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g14",
+      "lang": "en",
+      "goal": "Create a small command-line tool that converts CSV invoices to JSON and save it as tools/csv2json.py.",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "format",
+        "required_artifact"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [
+        "format"
+      ],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g21",
+      "lang": "th",
+      "goal": "เขียนคู่มือการติดตั้งเป็นภาษาไทย บันทึกเป็นไฟล์ docs/install_th.md",
+      "intent_want": "DOCUMENT",
+      "intent_got": "DOCUMENT",
+      "intent_ok": true,
+      "constraints_want": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g26",
+      "lang": "th",
+      "goal": "ยอดรวมของไตรมาสนี้ในไฟล์ report.txt คือเท่าไร",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g28",
+      "lang": "en",
+      "goal": "List the five largest invoices in invoices.csv as JSON.",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [
+        "format",
+        "item_count"
+      ],
+      "constraints_got": [
+        "format",
+        "item_count"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g33",
+      "lang": "en",
+      "goal": "Explain in one paragraph what the refund_amount function does.",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g36",
+      "lang": "th",
+      "goal": "เขียนเทสต์เพิ่มสำหรับฟังก์ชัน line_total ให้ครอบคลุมกรณีส่วนลดเป็นศูนย์",
+      "intent_want": "TEST",
+      "intent_got": "TEST",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g38",
+      "lang": "en",
+      "goal": "Deploy the website to the staging server.",
+      "intent_want": "DEPLOY",
+      "intent_got": "DEPLOY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g40",
+      "lang": "th",
+      "goal": "นำเวอร์ชันใหม่ขึ้นเซิร์ฟเวอร์ทดสอบ",
+      "intent_want": "DEPLOY",
+      "intent_got": "DEPLOY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g45",
+      "lang": "en",
+      "goal": "Make the search endpoint faster while keeping the response schema the same.",
+      "intent_want": "OPTIMIZE",
+      "intent_got": "OPTIMIZE",
+      "intent_ok": true,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [
+        "preserve_interface"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g48",
+      "lang": "en",
+      "goal": "Translate the user guide into Thai and save it as docs/guide_th.md.",
+      "intent_want": "TRANSFORM",
+      "intent_got": "TRANSFORM",
+      "intent_ok": true,
+      "constraints_want": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g53",
+      "lang": "en",
+      "goal": "Outline how we should move the team to weekly releases by the end of the month.",
+      "intent_want": "STRATEGY",
+      "intent_got": "STRATEGY",
+      "intent_ok": true,
+      "constraints_want": [
+        "deadline"
+      ],
+      "constraints_got": [
+        "deadline"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g57",
+      "lang": "en",
+      "goal": "Evaluate the risks of upgrading the payment library; do not change any file.",
+      "intent_want": "ANALYZE_RISK",
+      "intent_got": "ANALYZE_RISK",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [
+        "forbidden_effect"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g58",
+      "lang": "en",
+      "goal": "Something is wrong with the totals again, can you sort it out? Don't touch the tests.",
+      "intent_want": "DEBUG",
+      "intent_got": "TEST",
+      "intent_ok": false,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [
+        "forbidden_effect"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g62",
+      "lang": "en",
+      "goal": "Write release notes in Thai for version 2.4.5 as a markdown file named RELEASE_TH.md.",
+      "intent_want": "DOCUMENT",
+      "intent_got": "DOCUMENT",
+      "intent_ok": true,
+      "constraints_want": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "language"
+      ],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g71",
+      "lang": "en",
+      "goal": "Publish the documentation site; do not change the DNS settings.",
+      "intent_want": "DEPLOY",
+      "intent_got": "DEPLOY",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g72",
+      "lang": "th",
+      "goal": "ช่วยวางแผนการทดสอบระบบกับผู้ใช้ภายนอก 5 คน ภายในสองสัปดาห์",
+      "intent_want": "STRATEGY",
+      "intent_got": "STRATEGY",
+      "intent_ok": true,
+      "constraints_want": [
+        "deadline"
+      ],
+      "constraints_got": [
+        "deadline"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g79",
+      "lang": "th",
+      "goal": "รันเทสต์ทั้งหมดแล้วรายงานผลเป็นตาราง",
+      "intent_want": "TEST",
+      "intent_got": "TEST",
+      "intent_ok": true,
+      "constraints_want": [
+        "format"
+      ],
+      "constraints_got": [
+        "format"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    }
+  ],
+  "verdict": {
+    "pass": true,
+    "rules": {
+      "intent right in at least 18 of 20": true,
+      "every stated kind found in at least 12 of 15": true,
+      "at most 2 kinds reported that are not stated": true,
+      "no question read as a change and no change read as a question": true
+    }
+  }
+}

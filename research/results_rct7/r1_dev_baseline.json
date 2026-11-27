@@ -1,0 +1,1002 @@
+{
+  "summary": {
+    "n": 60,
+    "intent_right": 35,
+    "with_constraints": 39,
+    "constraints_all_found": 8,
+    "extra_constraint_kinds": 0,
+    "question_as_change": 0,
+    "change_as_question": 2,
+    "missed_kinds": {
+      "preserve_interface": 8,
+      "forbidden_effect": 8,
+      "format": 4,
+      "item_count": 3,
+      "deadline": 2,
+      "language": 2,
+      "max_words": 2,
+      "required_artifact": 2,
+      "budget": 2
+    },
+    "intent_confusions": {
+      "DEBUG->REFACTOR": 4,
+      "DOCUMENT->BUILD_APP": 3,
+      "ANALYZE_RISK->QUERY": 2,
+      "REFACTOR->None": 2,
+      "DEBUG->QUERY": 1,
+      "DOCUMENT->REFACTOR": 1,
+      "DOCUMENT->QUERY": 1,
+      "TEST->BUILD_APP": 1,
+      "DEPLOY->TEST": 1,
+      "DEPLOY->None": 1,
+      "OPTIMIZE->TRANSFORM": 1,
+      "OPTIMIZE->REFACTOR": 1,
+      "TRANSFORM->REFACTOR": 1,
+      "ANALYZE_RISK->TRANSFORM": 1,
+      "BUILD_APP->REFACTOR": 1,
+      "OPTIMIZE->None": 1,
+      "DEBUG->TEST": 1,
+      "TRANSFORM->BUILD_APP": 1
+    }
+  },
+  "rows": [
+    {
+      "id": "g02",
+      "lang": "en",
+      "goal": "The invoice total is off by one cent when a discount applies. Find the bug in pricing.py and fix it.",
+      "intent_want": "DEBUG",
+      "intent_got": "DEBUG",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g04",
+      "lang": "en",
+      "goal": "Debug why the nightly job stops after the first record and correct it without changing the job's public API.",
+      "intent_want": "DEBUG",
+      "intent_got": "QUERY",
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": true
+    },
+    {
+      "id": "g05",
+      "lang": "th",
+      "goal": "แก้บั๊กใน pricing.py ที่ทำให้ยอดรวมผิด ห้ามแก้ไฟล์เทสต์",
+      "intent_want": "DEBUG",
+      "intent_got": "DEBUG",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g06",
+      "lang": "th",
+      "goal": "ช่วยหาสาเหตุที่สคริปต์ backup.py ล้มเหลวเมื่อโฟลเดอร์ว่าง แล้วแก้ให้ถูกต้อง",
+      "intent_want": "DEBUG",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g07",
+      "lang": "en",
+      "goal": "The login page throws a 500 error after the last update. Fix it and keep the function names unchanged.",
+      "intent_want": "DEBUG",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g08",
+      "lang": "th",
+      "goal": "แก้ข้อผิดพลาดใน report.py ให้เทสต์ผ่านทั้งหมด โดยไม่เปลี่ยนชื่อฟังก์ชันสาธารณะ",
+      "intent_want": "DEBUG",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g09",
+      "lang": "en",
+      "goal": "Refactor utils.py into smaller functions without changing its public interface.",
+      "intent_want": "REFACTOR",
+      "intent_got": "REFACTOR",
+      "intent_ok": true,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g10",
+      "lang": "en",
+      "goal": "Clean up the duplicated code in the three report modules; do not touch the tests folder.",
+      "intent_want": "REFACTOR",
+      "intent_got": "REFACTOR",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g12",
+      "lang": "en",
+      "goal": "Rename the internal helper _calc to _compute_total across the module and keep behaviour identical.",
+      "intent_want": "REFACTOR",
+      "intent_got": "REFACTOR",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g13",
+      "lang": "en",
+      "goal": "Restructure the settings loader so it reads one file instead of three.",
+      "intent_want": "REFACTOR",
+      "intent_got": "REFACTOR",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g15",
+      "lang": "en",
+      "goal": "Build a simple web page that lists the open orders from orders.json.",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g16",
+      "lang": "th",
+      "goal": "สร้างสคริปต์ใหม่สำหรับส่งออกรายงานยอดขายรายเดือน บันทึกเป็น scripts/monthly_report.py",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "required_artifact"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g17",
+      "lang": "en",
+      "goal": "Write a new module that validates Thai national ID numbers, with a budget of no more than $2 of model calls.",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [
+        "budget"
+      ],
+      "constraints_got": [
+        "budget"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g18",
+      "lang": "th",
+      "goal": "สร้างหน้าเว็บสำหรับกรอกข้อมูลลูกค้าใหม่ ภายในวันศุกร์นี้",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [
+        "deadline"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g19",
+      "lang": "en",
+      "goal": "Write a README for the ledgercalc package in English, at most 300 words.",
+      "intent_want": "DOCUMENT",
+      "intent_got": "BUILD_APP",
+      "intent_ok": false,
+      "constraints_want": [
+        "language",
+        "max_words"
+      ],
+      "constraints_got": [
+        "language",
+        "max_words"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g20",
+      "lang": "en",
+      "goal": "Document every public function in api.py with a docstring; do not change any code.",
+      "intent_want": "DOCUMENT",
+      "intent_got": "DOCUMENT",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g22",
+      "lang": "en",
+      "goal": "Update the changelog with the three fixes from this week as a bulleted list of exactly three items.",
+      "intent_want": "DOCUMENT",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [
+        "item_count"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g23",
+      "lang": "th",
+      "goal": "สรุปการเปลี่ยนแปลงของเวอร์ชันนี้เป็นเอกสารภาษาอังกฤษ ไม่เกิน 200 คำ",
+      "intent_want": "DOCUMENT",
+      "intent_got": "QUERY",
+      "intent_ok": false,
+      "constraints_want": [
+        "language",
+        "max_words"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": true
+    },
+    {
+      "id": "g24",
+      "lang": "en",
+      "goal": "What is the quarterly total in report.txt?",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g25",
+      "lang": "en",
+      "goal": "Which functions in pricing.py call validate_rate?",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g27",
+      "lang": "en",
+      "goal": "Summarise the meeting notes in notes/2026-11.md in Thai, in at most 120 words.",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [
+        "language",
+        "max_words"
+      ],
+      "constraints_got": [
+        "language",
+        "max_words"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g29",
+      "lang": "th",
+      "goal": "ช่วยอ่าน contract.md แล้วบอกว่าวันหมดสัญญาคือวันไหน",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g30",
+      "lang": "en",
+      "goal": "How many orders were placed in October according to orders.json?",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g31",
+      "lang": "en",
+      "goal": "Search the repository for any place that still uses the old API key name and tell me the files.",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g32",
+      "lang": "th",
+      "goal": "มีไฟล์ไหนบ้างที่ยังเรียกใช้ฟังก์ชัน old_total",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g34",
+      "lang": "en",
+      "goal": "Write unit tests for the refund_amount function in tests/test_refunds_extra.py; do not change refunds.py.",
+      "intent_want": "TEST",
+      "intent_got": "BUILD_APP",
+      "intent_ok": false,
+      "constraints_want": [
+        "forbidden_effect",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "forbidden_effect"
+      ],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g35",
+      "lang": "en",
+      "goal": "Run the visible test suite and tell me how many tests fail.",
+      "intent_want": "TEST",
+      "intent_got": "TEST",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g37",
+      "lang": "en",
+      "goal": "Add tests that check the export handles an empty list; keep the existing tests untouched.",
+      "intent_want": "TEST",
+      "intent_got": "TEST",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g39",
+      "lang": "en",
+      "goal": "Release version 2.4.6 to PyPI after the tests pass, before 5 pm today.",
+      "intent_want": "DEPLOY",
+      "intent_got": "TEST",
+      "intent_ok": false,
+      "constraints_want": [
+        "deadline"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g41",
+      "lang": "en",
+      "goal": "Roll out the new configuration to production without restarting the database.",
+      "intent_want": "DEPLOY",
+      "intent_got": null,
+      "intent_ok": false,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g42",
+      "lang": "en",
+      "goal": "Speed up the report generation; it currently takes 40 seconds.",
+      "intent_want": "OPTIMIZE",
+      "intent_got": "OPTIMIZE",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g43",
+      "lang": "en",
+      "goal": "Reduce the memory use of the import job without changing its output format.",
+      "intent_want": "OPTIMIZE",
+      "intent_got": "TRANSFORM",
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g44",
+      "lang": "th",
+      "goal": "ทำให้หน้ารายการสินค้าโหลดเร็วขึ้น",
+      "intent_want": "OPTIMIZE",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g46",
+      "lang": "en",
+      "goal": "Convert customers.csv to JSON and save it as customers.json.",
+      "intent_want": "TRANSFORM",
+      "intent_got": "TRANSFORM",
+      "intent_ok": true,
+      "constraints_want": [
+        "format",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "required_artifact"
+      ],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g47",
+      "lang": "th",
+      "goal": "แปลงไฟล์ orders.xlsx เป็น CSV",
+      "intent_want": "TRANSFORM",
+      "intent_got": "TRANSFORM",
+      "intent_ok": true,
+      "constraints_want": [
+        "format"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g49",
+      "lang": "en",
+      "goal": "Merge the three monthly CSV files into one file sorted by date.",
+      "intent_want": "TRANSFORM",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g50",
+      "lang": "en",
+      "goal": "Plan the migration of our data store from SQLite to Postgres in five steps.",
+      "intent_want": "STRATEGY",
+      "intent_got": "STRATEGY",
+      "intent_ok": true,
+      "constraints_want": [
+        "item_count"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g51",
+      "lang": "th",
+      "goal": "วางแผนการเปิดตัวผลิตภัณฑ์ใหม่ภายในงบ 50,000 บาท",
+      "intent_want": "STRATEGY",
+      "intent_got": "STRATEGY",
+      "intent_ok": true,
+      "constraints_want": [
+        "budget"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g52",
+      "lang": "en",
+      "goal": "Propose a roadmap for the next quarter, at most 10 bullet points.",
+      "intent_want": "STRATEGY",
+      "intent_got": "STRATEGY",
+      "intent_ok": true,
+      "constraints_want": [
+        "item_count"
+      ],
+      "constraints_got": [
+        "item_count"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g54",
+      "lang": "en",
+      "goal": "Assess the security risks of exposing the API on a public host.",
+      "intent_want": "ANALYZE_RISK",
+      "intent_got": "ANALYZE_RISK",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g55",
+      "lang": "th",
+      "goal": "ประเมินความเสี่ยงของการย้ายฐานข้อมูลไปคลาวด์",
+      "intent_want": "ANALYZE_RISK",
+      "intent_got": "QUERY",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g56",
+      "lang": "en",
+      "goal": "Review the deployment script for anything that could delete data, and report it as a table.",
+      "intent_want": "ANALYZE_RISK",
+      "intent_got": "TRANSFORM",
+      "intent_ok": false,
+      "constraints_want": [
+        "format"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g59",
+      "lang": "en",
+      "goal": "Is the refund rule in refunds.py the same as the one described in policy.md?",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g60",
+      "lang": "th",
+      "goal": "ระบบคำนวณภาษีผิดอีกแล้ว ช่วยดูและแก้ให้หน่อย อย่าแก้ไฟล์ config",
+      "intent_want": "DEBUG",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g61",
+      "lang": "en",
+      "goal": "Add a new endpoint /v1/refunds that returns the refund history, keeping all existing endpoints unchanged.",
+      "intent_want": "BUILD_APP",
+      "intent_got": "REFACTOR",
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g63",
+      "lang": "th",
+      "goal": "ช่วยสรุปไฟล์ notes.md เป็นภาษาอังกฤษไม่เกิน 5 ข้อ",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [
+        "item_count",
+        "language"
+      ],
+      "constraints_got": [
+        "item_count",
+        "language"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g64",
+      "lang": "en",
+      "goal": "Split the 900-line main.py into modules; the command-line flags must stay the same.",
+      "intent_want": "REFACTOR",
+      "intent_got": null,
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g65",
+      "lang": "en",
+      "goal": "Make the flaky test in test_export.py reliable without changing export.py.",
+      "intent_want": "TEST",
+      "intent_got": "TEST",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g66",
+      "lang": "th",
+      "goal": "แปลงรายงานเป็น JSON แล้วบันทึกเป็น report.json",
+      "intent_want": "TRANSFORM",
+      "intent_got": "TRANSFORM",
+      "intent_ok": true,
+      "constraints_want": [
+        "format",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "format",
+        "required_artifact"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g67",
+      "lang": "en",
+      "goal": "Cut the cloud bill of the nightly job; keep it under $30 a month.",
+      "intent_want": "OPTIMIZE",
+      "intent_got": null,
+      "intent_ok": false,
+      "constraints_want": [
+        "budget"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g68",
+      "lang": "en",
+      "goal": "Give me the three most common error messages in app.log, as a numbered list.",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [
+        "format",
+        "item_count"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g69",
+      "lang": "th",
+      "goal": "เขียนคำอธิบายฟังก์ชัน refund_amount เป็นภาษาไทยสั้นๆ ไม่เกิน 50 คำ",
+      "intent_want": "DOCUMENT",
+      "intent_got": "BUILD_APP",
+      "intent_ok": false,
+      "constraints_want": [
+        "language",
+        "max_words"
+      ],
+      "constraints_got": [
+        "language"
+      ],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g70",
+      "lang": "en",
+      "goal": "Correct the off-by-one error in the pagination code and verify with the visible tests.",
+      "intent_want": "DEBUG",
+      "intent_got": "TEST",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g73",
+      "lang": "en",
+      "goal": "What could go wrong if we turn off the approval step for small edits?",
+      "intent_want": "ANALYZE_RISK",
+      "intent_got": "QUERY",
+      "intent_ok": false,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g74",
+      "lang": "en",
+      "goal": "Create a Thai-language landing page and save it as site/index_th.html.",
+      "intent_want": "BUILD_APP",
+      "intent_got": "BUILD_APP",
+      "intent_ok": true,
+      "constraints_want": [
+        "language",
+        "required_artifact"
+      ],
+      "constraints_got": [
+        "required_artifact"
+      ],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g75",
+      "lang": "en",
+      "goal": "Does the test suite cover the case where the discount is larger than the price?",
+      "intent_want": "QUERY",
+      "intent_got": "QUERY",
+      "intent_ok": true,
+      "constraints_want": [],
+      "constraints_got": [],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g76",
+      "lang": "th",
+      "goal": "จัดระเบียบโฟลเดอร์ scripts ใหม่ โดยห้ามเปลี่ยนชื่อคำสั่งที่ผู้ใช้เรียก",
+      "intent_want": "REFACTOR",
+      "intent_got": null,
+      "intent_ok": false,
+      "constraints_want": [
+        "preserve_interface"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g77",
+      "lang": "en",
+      "goal": "Normalise all dates in orders.csv to ISO 8601 and write the result to orders_iso.csv.",
+      "intent_want": "TRANSFORM",
+      "intent_got": "BUILD_APP",
+      "intent_ok": false,
+      "constraints_want": [
+        "required_artifact"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g78",
+      "lang": "en",
+      "goal": "The test suite fails on Python 3.10 only. Fix it so it passes on 3.10, 3.11 and 3.12 without changing the tests.",
+      "intent_want": "DEBUG",
+      "intent_got": "DEBUG",
+      "intent_ok": true,
+      "constraints_want": [
+        "forbidden_effect"
+      ],
+      "constraints_got": [],
+      "constraints_all_found": false,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    },
+    {
+      "id": "g80",
+      "lang": "en",
+      "goal": "Write a one-page summary of the PL1 results for the website, no more than 400 words, in English.",
+      "intent_want": "DOCUMENT",
+      "intent_got": "BUILD_APP",
+      "intent_ok": false,
+      "constraints_want": [
+        "language",
+        "max_words"
+      ],
+      "constraints_got": [
+        "language",
+        "max_words"
+      ],
+      "constraints_all_found": true,
+      "constraints_extra": [],
+      "question_as_change": false,
+      "change_as_question": false
+    }
+  ]
+}
