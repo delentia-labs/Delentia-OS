@@ -55,3 +55,12 @@ def test_the_freeze_accepts_u0_and_still_refuses_an_unknown_stage(monkeypatch):
     assert any("stage U9 has no ceiling" in p for p in bad)
     over = paid_run_freeze.problems_before_freezing(["anthropic/claude-haiku-5.5"], prices, ["U0"], 0.40, True)
     assert any("add up to" in p for p in over), "a key limit below the stage ceiling is refused"
+
+
+def test_the_other_model_screen_has_the_ceilings_amendment_5_names():
+    text = (CRITERIA.parent / "LAUNCH_PL1_AMENDMENT_5_R116.md").read_text(encoding="utf-8")
+    rows = re.findall(r"\| \d \| `(U0m-\w+)` \| `([^`]+)` \| [^|]+\| [^|]+\| (\d+\.\d+) \|", text)
+    assert [r[0] for r in rows] == ["U0m-haiku", "U0m-deepseek", "U0m-kimi"]
+    for stage, _model, limit in rows:
+        assert paid_run_freeze.stage_ceiling(stage) == float(limit)
+    assert "at least 7 of 14" in text and "at most 2 of 14" in text
