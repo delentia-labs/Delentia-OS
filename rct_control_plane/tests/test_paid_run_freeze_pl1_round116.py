@@ -36,6 +36,12 @@ def test_the_u0_rerun_ceiling_is_the_one_amendment_1_names():
     assert paid_run_freeze.stage_ceiling("U0") == 0.50, "the first U0 keeps the ceiling it ran under"
 
 
+def test_the_third_u0_attempt_has_the_ceiling_amendment_4_names():
+    text = (CRITERIA.parent / "LAUNCH_PL1_AMENDMENT_4_R116.md").read_text(encoding="utf-8")
+    assert "stage `U0c`, key limit 0.80" in text
+    assert paid_run_freeze.stage_ceiling("U0c") == 0.80
+
+
 def test_u2_itself_has_no_ceiling_until_the_probe_sets_one():
     assert paid_run_freeze.stage_ceiling("U2") is None
 

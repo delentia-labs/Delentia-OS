@@ -153,7 +153,7 @@ def main() -> int:
     world = World(Path(args.markers), args.api_port, args.mode, args.kill_point, args.kill_order)
     with ds.data_home(Path(args.home)):
         persistence = ControlPlanePersistence(db_path=str(Path(args.home) / "agentic.db"))
-        loop = build_governed_loop(ds.NullKernel(), namespace="alice", max_iterations=14, max_seconds=args.max_seconds, persistence=persistence, mcp_server=world, conversation_turns=0)
+        loop = build_governed_loop(ds.NullKernel(plan=bool(args.scripted)), namespace="alice", max_iterations=14, max_seconds=args.max_seconds, persistence=persistence, mcp_server=world, conversation_turns=0)
         loop._route_enabled = False                                  # type: ignore[attr-defined]
         if args.mode == "run":
             decisions = [*[place(n) for n in (1, 2, 3)], FINISH]

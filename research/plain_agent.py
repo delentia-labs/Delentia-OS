@@ -81,12 +81,12 @@ class PlainAgent:
                         result = json.loads(raw.content[0].text)
                     except Exception as exc:                            # noqa: BLE001
                         result = {"error": str(exc)}
-                    history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result=result, llm_reasoning=str(asked["llm_reasoning"])))
-                    steps_now = [{"tool_name": s.tool_name, "tool_args": s.tool_args, "tool_result": s.tool_result, "llm_reasoning": s.llm_reasoning} for s in history[:-1]] + [asked]
-                    extra_context = self._signer.note(name, args, result, steps_now)
-                    all_steps.extend(steps_now[:-1])
-                    all_steps.append({"tool_name": name, "tool_args": args, "tool_result": result, "llm_reasoning": asked["llm_reasoning"]})
-                    history = []                                         # d0's continuation starts from the note, not from the old history
+                    # PL1 Amendment 4, A1: as d0's continuation now does in the same process, the history is kept and the signed action is one of its steps,
+                    # marked as approved; no note. The step allowance starts again, as d0's continuation episode does.
+                    shown = dict(result) if isinstance(result, dict) else {"result": result}
+                    shown["approved_by_a_person_and_ran_once"] = True
+                    history.append(LoopStep(iteration=i, tool_name=name, tool_args=args, tool_result=shown, llm_reasoning=str(asked["llm_reasoning"])))
+                    extra_context = ""
                     segment_start = i
                     continue
             try:
