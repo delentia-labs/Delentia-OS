@@ -104,7 +104,9 @@ def run_cell(arm: str, seed: int, out: Path, upstream_url: str, upstream_key: Op
 
 def run_matrix(out: Path, upstream_url: str, upstream_key: Optional[str], model: str, price_in: float, price_out: float, arms: List[str], seeds: List[int], *, policy: Optional[BudgetPolicy] = None,
                max_iterations: int = 14, max_seconds: float = 600.0, real_model: bool = True, hermes_sandboxed: bool = False, order_seed: int = 20261017, allowed_models: Optional[set] = None,
-               progress: Optional[Any] = None, before_cell: Optional[Any] = None) -> Dict[str, Any]:
+               progress: Optional[Any] = None, before_cell: Optional[Any] = None, trace: Optional[Any] = None) -> Dict[str, Any]:
+    """`trace`, when given, is a function that takes one line: the governed record of every d0 run is printed through it while the run goes
+    (rct_control_plane.run_trace, read-only; it changes nothing the model is shown or the oracle reads)."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     results = out / "results.jsonl"
@@ -119,8 +121,20 @@ def run_matrix(out: Path, upstream_url: str, upstream_key: Optional[str], model:
                 continue
             if before_cell is not None:
                 before_cell(arm, seed)                                              # a rehearsal tells its scripted endpoint which task and arm is about to run
-            row = run_cell(arm, seed, out, upstream_url, upstream_key, model, price_in, price_out, policy, max_iterations=max_iterations, max_seconds=max_seconds, real_model=real_model,
-                           hermes_sandboxed=hermes_sandboxed, allowed_models=allowed_models)
+            follower = None
+            if trace is not None:
+                trace(f"━━ seed {seed} · arm {arm} " + "━" * 40)
+                if arm == "d0":
+                    from rct_control_plane.run_trace import Follower
+                    follower = Follower(out / "runs" / f"{arm}-{seed}" / "home", trace, lang=getattr(trace, "lang", "en")).start()
+                else:
+                    trace("   (no governed record to trace: this arm is the plain agent" + (" with a signer)" if arm == "b0s" else ")"))
+            try:
+                row = run_cell(arm, seed, out, upstream_url, upstream_key, model, price_in, price_out, policy, max_iterations=max_iterations, max_seconds=max_seconds, real_model=real_model,
+                               hermes_sandboxed=hermes_sandboxed, allowed_models=allowed_models)
+            finally:
+                if follower is not None:
+                    follower.stop()
             with open(results, "a", encoding="utf-8") as f:
                 f.write(json.dumps(row, sort_keys=True, default=str) + "\n")
             if progress:
