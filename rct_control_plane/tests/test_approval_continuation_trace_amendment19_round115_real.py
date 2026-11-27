@@ -88,6 +88,7 @@ def go(tmp_path, monkeypatch, approver, decisions, after=None, world=None):
     if after is not None:
         script.extend(after)
         seen["n"] = len(decisions)
+    loop._paused_histories = {}          # a resume in another process (PL1 Amendment 4: in the same process the history is carried and no note is sent)
     result = asyncio.run(loop.resume(paused["approval_id"], continue_episode=True))
     return loop, paused, seen["contexts"], action, world, result
 

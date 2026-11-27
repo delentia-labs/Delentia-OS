@@ -587,6 +587,7 @@ class GovernedAutonomousLoop(AutonomousLoop):
         self._episode_start_time: float = 0.0
         self._episode_context_text: str = ""
         self._episode_earlier_text: str = ""          # PL1 Amendment 1: the resume note, shown above the history
+        self._paused_histories: Dict[str, List[Any]] = {}      # PL1 Amendment 4, A1: approval id -> what the model had in front of it when it paused (this process only)
         # Round 48 R1.1/R1.3: switches exist so the effect of each context
         # section can be measured (A/B) rather than assumed.
         self._rct7_in_prompt = rct7_in_prompt
@@ -2930,6 +2931,15 @@ class GovernedAutonomousLoop(AutonomousLoop):
         )
         result["approval_id"] = record.approval_id
         result["action_sha256"] = record.action_sha256
+        # PL1 Amendment 4, A1: keep what the model had in front of it (every earlier step, whole, and what this episode itself carried over from an earlier
+        # approval), so a resume in this process continues with it instead of starting from an empty history. Memory only: a resume in another process gets the note.
+        try:
+            from rct_control_plane.autonomous_loop import LoopStep
+            known = {f for f in LoopStep.__dataclass_fields__}
+            earlier = [LoopStep(**{k: v for k, v in s.items() if k in known}) for s in steps[:-1] if isinstance(s, dict)]
+            self._paused_histories[record.approval_id] = list(getattr(self, "_episode_carried", None) or []) + earlier
+        except Exception:                     # noqa: BLE001 - without it the resume falls back to the note, as before
+            pass
         return record
 
     async def resume(
@@ -3012,6 +3022,16 @@ class GovernedAutonomousLoop(AutonomousLoop):
             block = trace_note(trace)
             if block:
                 self._resume_note += "\n" + block                  # Amendment 19: what the paused episode had done, so the continuation does not start from nothing
+            carried = self._paused_histories.pop(approval_id, None)
+            if carried is not None and action.tool_name != "delentia_plan":
+                # PL1 Amendment 4, A1: this process still holds what the model had in front of it. The continuation goes on from that whole history, with the
+                # approved action as an ordinary step (its result marked as approved by a person), and without the note: the history says it all, once.
+                from rct_control_plane.autonomous_loop import LoopStep
+                approved_result = dict(tool_result) if isinstance(tool_result, dict) else {"result": tool_result}
+                approved_result["approved_by_a_person_and_ran_once"] = True
+                self._carried_history = list(carried) + [LoopStep(iteration=len(carried) + 1, tool_name=action.tool_name, tool_args=dict(action.tool_args or {}),
+                                                                  tool_result=approved_result, llm_reasoning="(approved by a person; ran exactly once)")]
+                self._resume_note = ""
             previous_taint = self._initial_taint
             if isinstance(trace, dict) and (trace.get("taint") or {}).get("tainted"):
                 self._initial_taint = str((trace.get("taint") or {}).get("source_tool") or "outside text read before the approval")[:160]      # the taint crosses the approval, as it does a crash (resume_interrupted)

@@ -34,7 +34,8 @@ class Request:
         self.goal = prompt[start + len(marker):end].strip() if start >= 0 and end > start else ""
         self.history_empty = "(no actions taken yet)" in prompt
         self.memories = [m.strip() for m in re.findall(r"^- \[[^\]]*\] (.*)$", prompt, flags=re.M)]
-        self.resumed = "A human approved and the system has now executed" in prompt
+        # resumed after an approval: the note (a resume in another process) or, since PL1 Amendment 4, the approved action carried as a step of the history
+        self.resumed = "A human approved and the system has now executed" in prompt or "approved_by_a_person_and_ran_once" in prompt
         self.tool_names = re.findall(r"^- (delentia_[a-z_0-9]+):", prompt, flags=re.M)
 
 

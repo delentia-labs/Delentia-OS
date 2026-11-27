@@ -97,6 +97,7 @@ def run_and_resume(tmp_path, monkeypatch, approver, script_before, script_after)
     sign(loop._pending_actions(), approver, loop._pending_actions().get(paused["approval_id"]))
     before = len(provider.prompts)
     provider.script = list(script_after)
+    loop._paused_histories = {}          # a resume in another process (PL1 Amendment 4: in the same process the history is carried and no note is sent)
     result = asyncio.run(loop.resume(paused["approval_id"], continue_episode=True))
     return loop, provider, provider.prompts[before:], result
 
@@ -133,18 +134,20 @@ def test_a_stand_in_written_before_the_change_still_gets_the_note(tmp_path, monk
     paused = asyncio.run(loop.run("fix the package"))
     sign(loop._pending_actions(), approver, loop._pending_actions().get(paused["approval_id"]))
     seen.clear()
+    loop._paused_histories = {}          # a resume in another process (PL1 Amendment 4: in the same process the history is carried and no note is sent)
     asyncio.run(loop.resume(paused["approval_id"], continue_episode=True))
     assert seen and seen[0].startswith(NOTE_START)
 
 
-def test_b0s_places_its_note_the_same_way(tmp_path, monkeypatch):
-    """Arm b0s (research/plain_agent.py) passes the signer's note as earlier_context, so the two arms see the same words in the same place."""
+def test_b0s_keeps_its_history_across_a_signed_write_and_sends_no_note(tmp_path, monkeypatch):
+    """PL1 Amendment 4, A1: arm b0s (research/plain_agent.py) does what d0's continuation now does in the same process: the history stays, the signed
+    write is one of its steps (marked approved), no note."""
     from research.plain_agent import PlainAgent
     calls = []
-    script = [WRITE, RUN_TESTS, FINISH]
+    script = [read("ledgercalc/pricing.py"), WRITE, RUN_TESTS, FINISH]
 
     async def recording(goal, history, available_tools, llm_provider=None, extra_context="", earlier_context=""):
-        calls.append({"extra": extra_context, "earlier": earlier_context})
+        calls.append({"extra": extra_context, "earlier": earlier_context, "tools": [h.tool_name for h in history], "results": [h.tool_result for h in history]})
         return dict(script.pop(0)) if script else dict(FINISH)
     monkeypatch.setattr(autonomous_loop_module, "decide_next_action", recording)
 
@@ -160,5 +163,7 @@ def test_b0s_places_its_note_the_same_way(tmp_path, monkeypatch):
 
     agent = PlainAgent(World(), "pl1b0s", max_iterations=6, max_seconds=60, signer=Signer())
     asyncio.run(agent.run("fix the package"))
-    assert calls[0] == {"extra": "", "earlier": ""}
-    assert all(c["earlier"] == "SIGNER NOTE delentia_write_repo_file" and c["extra"] == "" for c in calls[1:])
+    after = calls[2]
+    assert after["earlier"] == "" and after["extra"] == "", "no note"
+    assert after["tools"] == ["delentia_read_repo_file", "delentia_write_repo_file"], "the read before the write is still in the history"
+    assert after["results"][1].get("approved_by_a_person_and_ran_once") is True

@@ -328,6 +328,17 @@ def unknown_tool_result(tool_name: Any, known_names: List[str], limit: int = 3, 
     }
 
 
+CHANGING_TOOLS = frozenset({"delentia_write_repo_file", "delentia_patch_repo_file", "delentia_save_exchange_file", "delentia_run_sandboxed_command"})
+
+
+def _changed_something(step: LoopStep) -> bool:
+    """A step whose tool changes the world and that actually ran (not refused, not waiting, not failed)."""
+    if step.tool_name not in CHANGING_TOOLS or not isinstance(step.tool_result, dict):
+        return False
+    r = step.tool_result
+    return not (r.get("pending_approval") or r.get("error") or r.get("blocked") or r.get("fdia_blocked"))
+
+
 def _detect_repeated_call(history: List[LoopStep]) -> str:
     """Round 44 item J.1.4(c): real, evidence-based fix for a confirmed
     failure mode - J.4.2's real Ollama integration testing (qwen2.5:7b)
@@ -351,8 +362,11 @@ def _detect_repeated_call(history: List[LoopStep]) -> str:
     last = history[-1]
     if last.tool_name is None:
         return ""
-    for prior in history[:-1]:
+    for j in range(len(history) - 2, -1, -1):
+        prior = history[j]
         if prior.tool_name == last.tool_name and prior.tool_args == last.tool_args:
+            if any(_changed_something(step) for step in history[j + 1:-1]):
+                return ""                   # PL1 Amendment 4, A2: something changed in between (a write ran), so the same call can answer differently: checking is not a loop
             return (
                 f"IMPORTANT: You already called {last.tool_name}({last.tool_args}) and "
                 f"received this result: {last.tool_result}. Calling it again with the same "
@@ -604,6 +618,8 @@ class AutonomousLoop:
                  llm_provider: Optional["LLMProvider"] = None):
         self._mcp = mcp_server
         self._persistence = persistence
+        self._carried_history: Optional[List[LoopStep]] = None        # PL1 Amendment 4, A1: set by a resume in this process, read once by run()
+        self._episode_carried: List[LoopStep] = []
         self.max_iterations = max_iterations
         self.max_seconds = max_seconds
         self.namespace = namespace
@@ -705,6 +721,18 @@ class AutonomousLoop:
         t_start = time.time()
         available_tools = await self._available_tools()
         history: list = []
+        # PL1 Amendment 4, A1: what an approved continuation carries over (the paused episode's steps and the approved action). Shown to the model before this
+        # episode's own steps, numbered on from them; never part of this episode's own steps, counts or result.
+        carried: List[LoopStep] = list(getattr(self, "_carried_history", None) or [])
+        self._carried_history = None
+        self._episode_carried = carried
+
+        def _prompt_history() -> List[LoopStep]:
+            if not carried:
+                return history
+            from dataclasses import replace
+            n = len(carried)
+            return [replace(s, iteration=k + 1) for k, s in enumerate(carried)] + [replace(s, iteration=s.iteration + n) for s in history]
         stopped_reason = "max_iterations_reached"
         final_answer = None
 
@@ -759,7 +787,7 @@ class AutonomousLoop:
             # call before it is made; the episode then ends cleanly with
             # stopped_reason "budget_exceeded" instead of raising.
             async def _decide() -> Dict[str, Any]:
-                return await self._decide_action(goal, history, iteration_tools, extra_context)
+                return await self._decide_action(goal, _prompt_history(), iteration_tools, extra_context)
 
             try:
                 retries = max(0, int(os.environ.get(LLM_RETRIES_ENV, "2")))
@@ -791,6 +819,8 @@ class AutonomousLoop:
                         break
                 if decision is None:
                     break
+                if isinstance(decision, dict) and not isinstance(decision.get("reasoning"), str):
+                    decision["reasoning"] = str(decision.get("reasoning") or "")      # PL1 Amendment 4, A4: a reply without a reasoning field used to crash the loop (KeyError, U0b seed 5017)
             except (BudgetExceededError, ResidencyViolation) as exc:
                 # Round 52: a residency block ends the episode the same way a budget
                 # refusal does: before the call, so nothing was sent.

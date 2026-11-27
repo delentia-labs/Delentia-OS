@@ -60,14 +60,16 @@ class _Tool:
 class NullKernel:
     """Deterministic stand-in for the algorithm kernel (the loop only calls these two methods); D and I are fixed so a run depends on nothing but its script."""
 
-    def __init__(self, D: float = 1.0, I: float = 1.0) -> None:
-        self.D, self.I = D, I
+    def __init__(self, D: float = 1.0, I: float = 1.0, plan: bool = True) -> None:
+        self.D, self.I, self.plan = D, I, plan
 
     def synthesize_fdia_inputs(self, intent_text: str) -> Any:
         return self.D, self.I, None
 
     def algo_04_rct7(self, intent: str) -> List[str]:
-        return [f"Step {i} for {intent[:10]}" for i in range(1, 8)]
+        # PL1 Amendment 4, A5: a real model is shown no plan at all rather than seven placeholders ("Step 1 for You are re"); scripted runs keep them (their
+        # decisions do not read the prompt, and some cases count the steps). The real ALGO-04 is not part of what these harnesses measure.
+        return [f"Step {i} for {intent[:10]}" for i in range(1, 8)] if self.plan else []
 
 
 class ScriptedWorld:
@@ -293,7 +295,7 @@ def run_session(home: Path, goal: str, decisions: List[Any], world: Any, log: Op
     with data_home(home, approver_pub=pub, extra_env={**(extra_env or {}), **research_env, **({"DELENTIA_FDIA_POLICY": str(policy_path)} if policy_path else {})} or None), model as model_state:
         persistence = ControlPlanePersistence(db_path=str(home / "agentic.db"))
         from rct_control_plane.agent_memory import AgentMemory
-        kernel = NullKernel()
+        kernel = NullKernel(plan=provider is None)
         kernel._agent_memory = AgentMemory("shared_default", persistence)                  # type: ignore[attr-defined]  # the product's kernel has one; the loop recalls the person's own namespace through it
         loop = build_governed_loop(kernel, namespace=namespace, max_iterations=max_iterations, max_seconds=max_seconds, persistence=persistence, mcp_server=world, conversation_turns=0, llm_provider=provider)
         if treated is not None:
